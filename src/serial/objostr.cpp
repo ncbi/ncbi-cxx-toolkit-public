@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/03/29 15:55:29  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.32  2000/02/17 20:02:44  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -170,7 +177,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
     _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
 #if ALLOW_CYCLES
-    m_Objects.Add(object, typeInfo->GetRealTypeInfo(object));
+    m_Objects.Add(object, typeInfo);
     COObjectInfo info(m_Objects, object, typeInfo);
     if ( info.IsMember() ) {
         if ( !info.GetRootObjectInfo().IsWritten() ) {
@@ -204,7 +211,7 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
            NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
 #if ALLOW_CYCLES
-    m_Objects.Add(object, typeInfo->GetRealTypeInfo(object));
+    m_Objects.Add(object, typeInfo);
     if ( object != 0 ) {
         COObjectInfo info(m_Objects, object, typeInfo);
         if ( info.IsMember() ) {
@@ -250,7 +257,7 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         return;
     }
 #if ALLOW_CYCLES
-    m_Objects.Add(object, typeInfo->GetRealTypeInfo(object));
+    m_Objects.Add(object, typeInfo);
     COObjectInfo info(m_Objects, object, typeInfo);
     WritePointer(info, typeInfo);
     _ASSERT(!info.IsMember());

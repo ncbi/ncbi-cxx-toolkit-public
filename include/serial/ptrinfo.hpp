@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/03/29 15:55:21  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.17  2000/03/07 14:05:31  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -125,7 +132,14 @@ public:
             return m_DataType;
         }
     
-    virtual TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
+    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+        {
+            return x_GetObjectPointer(object);
+        }
+    TObjectPtr GetObjectPointer(TObjectPtr object) const
+        {
+            return const_cast<TObjectPtr>(x_GetObjectPointer(object));
+        }
     virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
     virtual void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
 
@@ -139,7 +153,31 @@ public:
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
+    virtual bool IsPointer(void) const;
+    virtual void GetPointedObject(CConstObjectInfo& object) const;
+    virtual void GetPointedObject(CObjectInfo& object) const;
+
+    virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool HaveChildren(TConstObjectPtr object) const;
+    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
+    virtual void Begin(CConstChildrenIterator& cc) const;
+    virtual void Begin(CChildrenIterator& cc) const;
+    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
+    virtual bool Valid(const CConstChildrenIterator& cc) const;
+    virtual bool Valid(const CChildrenIterator& cc) const;
+    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+    virtual void GetChild(const CConstChildrenIterator& cc,
+                          CConstObjectInfo& child) const;
+    virtual void GetChild(const CChildrenIterator& cc,
+                          CObjectInfo& child) const;
+    virtual void NextType(CChildrenTypesIterator& cc) const;
+    virtual void Next(CConstChildrenIterator& cc) const;
+    virtual void Next(CChildrenIterator& cc) const;
+    virtual void Erase(CChildrenIterator& cc) const;
+
 protected:
+    virtual TConstObjectPtr x_GetObjectPointer(TConstObjectPtr obj) const;
+
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;

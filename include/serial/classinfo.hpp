@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/03/29 15:55:19  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.26  2000/03/07 14:05:29  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -138,8 +145,11 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <map>
 #include <list>
 #include <vector>
@@ -158,6 +168,7 @@ class CClassInfoTmpl : public CTypeInfo {
 public:
     typedef CMembers::TIndex TIndex;
     typedef vector<pair<CMemberId, CTypeRef> > TSubClasses;
+    typedef map<TTypeInfo, bool> TContainedTypes;
 
     CClassInfoTmpl(const type_info& ti, size_t size);
     CClassInfoTmpl(const string& name, const type_info& ti, size_t size);
@@ -208,19 +219,17 @@ public:
             return this;
         }
 
-    virtual TMemberIndex FindMember(const string& name) const;
-    virtual TMemberIndex LocateMember(TConstObjectPtr object,
-                                      TConstObjectPtr member,
-                                      TTypeInfo memberTypeInfo) const;
-
-    virtual const CMemberId* GetMemberId(TMemberIndex index) const;
-    virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
+    TMemberIndex FindMember(const string& name) const;
+    const CMemberId* GetMemberId(TMemberIndex index) const;
+    const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
 
     // finds type info (throws runtime_error if absent)
     static TTypeInfo GetClassInfoByName(const string& name);
     static TTypeInfo GetClassInfoById(const type_info& id);
     static TTypeInfo GetClassInfoBy(const type_info& id,
                                     void (*creator)(void));
+
+    void SetParentClass(TTypeInfo parentClass);
 
     void AddSubClass(const CMemberId& id, const CTypeRef& type);
     void AddSubClass(const char* id, TTypeInfoGetter getter);
@@ -233,6 +242,25 @@ public:
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
 
+    virtual bool IsType(TTypeInfo type) const;
+    virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool HaveChildren(TConstObjectPtr object) const;
+    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
+    virtual void Begin(CConstChildrenIterator& cc) const;
+    virtual void Begin(CChildrenIterator& cc) const;
+    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
+    virtual bool Valid(const CConstChildrenIterator& cc) const;
+    virtual bool Valid(const CChildrenIterator& cc) const;
+    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+    virtual void GetChild(const CConstChildrenIterator& cc,
+                          CConstObjectInfo& child) const;
+    virtual void GetChild(const CChildrenIterator& cc,
+                          CObjectInfo& child) const;
+    virtual void NextType(CChildrenTypesIterator& cc) const;
+    virtual void Next(CConstChildrenIterator& cc) const;
+    virtual void Next(CChildrenIterator& cc) const;
+    virtual void Erase(CChildrenIterator& cc) const;
+
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
@@ -241,9 +269,21 @@ protected:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const;
 
+    void ReadMembers(CObjectIStream& in, CObjectIStream::Block& block,
+                     TObjectPtr object) const;
+    void SkipMembers(CObjectIStream& in, CObjectIStream::Block& block) const;
+    void WriteMembers(CObjectOStream& out, CObjectOStream::Block& block,
+                     TConstObjectPtr object) const;
+
     TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+    TTypeInfo GetParentTypeInfo(void) const;
 
     void RegisterSubClasses(void) const;
+    void UpdateClassInfo(const void* /*object*/)
+        {
+            // do nothing
+        }
+    void UpdateClassInfo(const CObject* object);
 
 private:
     const type_info& m_Id;
@@ -253,7 +293,9 @@ private:
 
     CMembersInfo m_Members;
 
+    const CClassInfoTmpl* m_ParentClassInfo;
     auto_ptr<TSubClasses> m_SubClasses;
+    mutable auto_ptr<TContainedTypes> m_ContainedTypes;
 
     // class mapping
     typedef list<CClassInfoTmpl*> TClasses;
@@ -270,6 +312,7 @@ private:
     static TClasses& Classes(void);
     static TClassesById& ClassesById(void);
     static TClassesByName& ClassesByName(void);
+
 };
 
 class CStructInfoTmpl : public CClassInfoTmpl
@@ -305,6 +348,18 @@ public:
         }
 };
 
+class CCObjectClassInfo : public CClassInfoTmpl
+{
+    typedef CClassInfoTmpl CParent;
+public:
+    CCObjectClassInfo(void)
+        : CParent(typeid(CObject), sizeof(CObject))
+        {
+        }
+
+    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+};
+
 template<class CLASS>
 class CAbstractClassInfo : public CClassInfoTmpl
 {
@@ -315,18 +370,26 @@ public:
     CAbstractClassInfo(void)
         : CParent(typeid(TObjectType), sizeof(TObjectType))
         {
+            const TObjectType* object = 0;
+            UpdateClassInfo(object);
         }
     CAbstractClassInfo(const string& name)
         : CParent(name, typeid(TObjectType), sizeof(TObjectType))
         {
+            const TObjectType* object = 0;
+            UpdateClassInfo(object);
         }
     CAbstractClassInfo(const char* name)
         : CParent(name, typeid(TObjectType), sizeof(TObjectType))
         {
+            const TObjectType* object = 0;
+            UpdateClassInfo(object);
         }
     CAbstractClassInfo(const char* name, const type_info& info)
         : CParent(name, info, sizeof(TObjectType))
         {
+            const TObjectType* object = 0;
+            UpdateClassInfo(object);
         }
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const

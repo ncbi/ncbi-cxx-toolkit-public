@@ -5,6 +5,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objostrasn.hpp>
+#include <serial/iterator.hpp>
 #include "cppwebenv.hpp"
 
 #if HAVE_NCBI_C
@@ -68,7 +69,7 @@ int CTestSerial::Run(void)
                long(static_cast<CSerialObject*>(&write1)));
 
         write.m_Name = "name";
-        write.m_NamePtr = &write1.m_Name;
+        //        write.m_NamePtr = &write1.m_Name;
         write.m_Size = -1;
         write.m_Attributes.push_back("m_Attributes");
         write.m_Attributes.push_back("m_Size");
@@ -91,11 +92,59 @@ int CTestSerial::Run(void)
         write1.m_NamePtr = new string("test");
         write1.m_Size = 0x7fff;
         write1.m_Attributes.push_back("write1");
-        write1.m_Next = &write1;
+        //        write1.m_Next = &write1;
 #if HAVE_NCBI_C
         write1.m_WebEnv = 0;
 #endif
         write1.m_Name2 = "name2";
+
+        const CSerialObject& cwrite = write;
+
+        {
+            for ( CTypeIterator<CSerialObject> oi = Begin(write); oi; ++oi ) {
+                const CSerialObject& obj = *oi;
+                NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
+                //            oi.Erase();
+                CTypeIterator<CSerialObject> oi1(Begin(write));
+                CTypeIterator<CSerialObject> oi2;
+                oi2 = Begin(write);
+            }
+        }
+        {
+            for ( CTypeConstIterator<CSerialObject> oi = Begin(write); oi;
+                  ++oi ) {
+                const CSerialObject& obj = *oi;
+                NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
+                //            oi.Erase();
+                CTypeConstIterator<CSerialObject> oi1(Begin(write));
+                CTypeConstIterator<CSerialObject> oi2;
+                oi2 = Begin(write);
+            }
+        }
+        {
+            for ( CTypeConstIterator<CSerialObject> oi = Begin(cwrite); oi;
+                  ++oi ) {
+                const CSerialObject& obj = *oi;
+                NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
+                //oi.Erase();
+                CTypeConstIterator<CSerialObject> oi1(Begin(cwrite));
+                CTypeConstIterator<CSerialObject> oi2;
+                oi2 = Begin(cwrite);
+            }
+        }
+
+        {
+            for ( CStdTypeConstIterator<string> si = Begin(cwrite); si; ++si ) {
+                NcbiCerr <<"String: \""<<*si<<"\""<<NcbiEndl;
+            }
+        }
+
+        {
+            for ( CObjectsConstIterator oi = Begin(cwrite); oi; ++oi ) {
+                const CObject& obj = *oi;
+                NcbiCerr <<"CObject: @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
+            }
+        }
 
         {
             {

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/03/29 15:55:27  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.43  2000/03/14 14:42:30  vasilche
 * Fixed error reporting.
 *
@@ -201,7 +208,6 @@
 #endif
 
 #define ALLOW_CYCLES 1
-#undef SKIP_NON_CLASS
 
 BEGIN_NCBI_SCOPE
 
@@ -329,7 +335,7 @@ CObjectInfo CObjectIStream::ReadObject(void)
 {
     try {
         CObjectInfo object(MapType(ReadTypeName()));
-        ReadExternalObject(object.GetObject(), object.GetTypeInfo());
+        ReadExternalObject(object.GetObjectPtr(), object.GetTypeInfo());
         return object;
     }
     catch (...) {
@@ -401,7 +407,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                                  info.GetTypeInfo()->GetName() +
                                  " need: " + declaredType->GetName());
                 }
-                return info.GetObject();
+                return info.GetObjectPtr();
             }
         case eThisPointer:
             {
@@ -435,11 +441,9 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         }
         while ( info.GetTypeInfo() != declaredType ) {
             // try to check parent class pointer
-            if ( info.GetTypeInfo()->FindMember(NcbiEmptyString) == 0 ) {
-                const CMemberInfo* parent =
-                    info.GetTypeInfo()->GetMemberInfo(0);
-                info = CObjectInfo(parent->GetMember(info.GetObject()),
-                                   parent->GetTypeInfo());
+            TTypeInfo parentType = info.GetTypeInfo()->GetParentTypeInfo();
+            if ( parentType ) {
+                info.Set(info.GetObjectPtr(), parentType);
             }
             else {
                 SetFailFlags(eFormatError);
@@ -448,7 +452,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                              declaredType->GetName());
             }
         }
-        return info.GetObject();
+        return info.GetObjectPtr();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -508,7 +512,7 @@ void CObjectIStream::SelectMember(CObjectInfo& object)
     }
     TMemberIndex index = ReadMemberSuffix(classInfo->GetMembers());
     const CMemberInfo* memberInfo = classInfo->GetMemberInfo(index);
-    object.Set(memberInfo->GetMember(object.GetObject()),
+    object.Set(memberInfo->GetMember(object.GetObjectPtr()),
                memberInfo->GetTypeInfo());
 }
 
@@ -956,10 +960,6 @@ void CObjectIStream::SkipStringStore(void)
 CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
                                                       TTypeInfo typeInfo)
 {
-#if SKIP_NON_CLASS
-    if ( dynamic_cast<const CClassInfoTmpl*>(typeInfo) == 0 )
-        return TIndex(-1);
-#endif
 #if ALLOW_CYCLES
     TIndex index = m_Objects.size();
     m_Objects.push_back(CObjectInfo(object, typeInfo));

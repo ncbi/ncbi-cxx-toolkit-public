@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/03/29 15:55:28  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.39  2000/03/14 14:42:31  vasilche
 * Fixed error reporting.
 *
@@ -898,8 +905,7 @@ void CObjectIStreamAsn::StartMember(Member& m, LastMember& lastMember)
     if ( id.second == 0 )
         ThrowError(eFormatError, "member id expected");
     TMemberIndex index =
-        lastMember.GetMembers().FindMember(CBufferId(id),
-                                           lastMember.GetIndex());
+        lastMember.GetMembers().FindMember(id, lastMember.GetIndex());
     if ( index < 0 ) {
         string message =
             "\"" + string(id.first, id.second) + "\": unexpected member, should be one of: ";

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/03/29 15:55:30  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.18  2000/02/17 20:02:46  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -134,26 +141,106 @@ TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const
     return this;
 }
 
-CTypeInfo::TMemberIndex CTypeInfo::FindMember(const string& ) const
-{
-    return -1;
-}
-
-CTypeInfo::TMemberIndex CTypeInfo::LocateMember(TConstObjectPtr ,
-                                                TConstObjectPtr ,
-                                                TTypeInfo ) const
-{
-    return -1;
-}
-
-const CMemberId* CTypeInfo::GetMemberId(TMemberIndex ) const
+TTypeInfo CTypeInfo::GetParentTypeInfo(void) const
 {
     return 0;
 }
 
-const CMemberInfo* CTypeInfo::GetMemberInfo(TMemberIndex ) const
+bool CTypeInfo::IsPointer(void) const
 {
-    return 0;
+    return false;
+}
+
+void CTypeInfo::GetPointedObject(CConstObjectInfo& /*object*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::GetPointedObject(CObjectInfo& /*object*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+bool CTypeInfo::IsType(TTypeInfo typeInfo) const
+{
+    return this == typeInfo;
+}
+
+bool CTypeInfo::MayContainType(TTypeInfo /*typeInfo*/) const
+{
+    return false;
+}
+
+bool CTypeInfo::HaveChildren(TConstObjectPtr /*object*/) const
+{
+    return false;
+}
+
+void CTypeInfo::BeginTypes(CChildrenTypesIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::Begin(CConstChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::Begin(CChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+bool CTypeInfo::ValidTypes(const CChildrenTypesIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+bool CTypeInfo::Valid(const CConstChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+bool CTypeInfo::Valid(const CChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+TTypeInfo CTypeInfo::GetChildType(const CChildrenTypesIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::GetChild(const CConstChildrenIterator& /*cc*/,
+                         CConstObjectInfo& /*child*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::GetChild(const CChildrenIterator& /*cc*/,
+                         CObjectInfo& /*child*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::NextType(CChildrenTypesIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::Next(CConstChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::Next(CChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void CTypeInfo::Erase(CChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
 }
 
 END_NCBI_SCOPE

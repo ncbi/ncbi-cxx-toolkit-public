@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/29 15:55:29  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.7  2000/03/10 21:16:47  vasilche
 * Removed EOF workaround code.
 *
@@ -181,10 +188,10 @@ char* CStreamBuffer::FillBuffer(char* pos)
         m_DataEndPos += count;
         load -= count;
     }
-    _ASSERT(m_CurrentPos >= m_Buffer);
-    _ASSERT(pos >= m_CurrentPos);
+    _ASSERT(m_Buffer <= m_CurrentPos);
+    _ASSERT(m_CurrentPos <= pos);
     _ASSERT(pos < m_DataEndPos);
-    _ASSERT(m_DataEndPos - m_Buffer <= m_BufferSize);
+    _ASSERT(m_DataEndPos <= m_Buffer + m_BufferSize);
     return pos;
 }
 

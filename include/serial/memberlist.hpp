@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/29 15:55:20  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.7  2000/02/01 21:44:35  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -77,6 +84,11 @@ BEGIN_NCBI_SCOPE
 
 class CMemberId;
 class CMemberInfo;
+class CChildrenTypesIterator;
+class CConstChildrenIterator;
+class CChildrenIterator;
+class CConstObjectInfo;
+class CObjectInfo;
 
 // This class supports sets of members with IDs
 class CMembers {
@@ -127,7 +139,7 @@ public:
     TIndex FindMember(const string& name) const;
     TIndex FindMember(const char* name) const;
     TIndex FindMember(TTag tag) const;
-    TIndex FindMember(const char* name, TIndex pos) const;
+    TIndex FindMember(const pair<const char*, size_t>& name, TIndex pos) const;
     TIndex FindMember(TTag tag, TIndex pos) const;
 
 private:
@@ -163,6 +175,24 @@ public:
         {
             return m_MembersInfo[index];
         }
+
+    bool MayContainType(TTypeInfo type) const;
+    bool HaveChildren(TConstObjectPtr object) const;
+    void BeginTypes(CChildrenTypesIterator& cc) const;
+    void Begin(CConstChildrenIterator& cc) const;
+    void Begin(CChildrenIterator& cc) const;
+    bool ValidTypes(const CChildrenTypesIterator& cc) const;
+    bool Valid(const CConstChildrenIterator& cc) const;
+    bool Valid(const CChildrenIterator& cc) const;
+    TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+    void GetChild(const CConstChildrenIterator& cc,
+                  CConstObjectInfo& child) const;
+    void GetChild(const CChildrenIterator& cc,
+                  CObjectInfo& child) const;
+    void NextType(CChildrenTypesIterator& cc) const;
+    void Next(CConstChildrenIterator& cc) const;
+    void Next(CChildrenIterator& cc) const;
+    //void Erase(CChildrenIterator& cc) const;
 
 private:
     TMembersInfo m_MembersInfo;

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/03/29 15:55:26  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.34  2000/03/14 14:42:30  vasilche
 * Fixed error reporting.
 *
@@ -199,7 +206,8 @@ void CheckMemberOptional(CObjectIStream& in,
     const CMemberInfo* info = members.GetMemberInfo(index);
     if ( !info->Optional() ) {
         in.ThrowError(in.eFormatError,
-                      "member "+members.GetMemberId(index).ToString()+" expected");
+                      "member "+members.GetMemberId(index).ToString()+
+                      " expected");
     }
 }
 
@@ -232,7 +240,8 @@ void AssignMemberDefault(CObjectIStream& in, TObjectPtr object,
     const CMemberInfo* info = members.GetMemberInfo(index);
     if ( !info->Optional() ) {
         in.ThrowError(in.eFormatError,
-                      "member "+members.GetMemberId(index).ToString()+" expected");
+                      "member "+members.GetMemberId(index).ToString()+
+                      " expected");
     }
     TObjectPtr member = info->GetMember(object);
     // assign member dafault
@@ -287,7 +296,7 @@ void ReadMember(CObjectIStream& in, TObjectPtr object,
 
 CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
     : CParent(ClassName(id)), m_Id(id), m_Size(size),
-      m_RandomOrder(false), m_Implicit(false)
+      m_RandomOrder(false), m_Implicit(false), m_ParentClassInfo(0)
 {
     Register();
 }
@@ -295,7 +304,7 @@ CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
 CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
                                size_t size)
     : CParent(name), m_Id(id), m_Size(size),
-      m_RandomOrder(false), m_Implicit(false)
+      m_RandomOrder(false), m_Implicit(false), m_ParentClassInfo(0)
 {
     Register();
 }
@@ -303,7 +312,7 @@ CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
 CClassInfoTmpl::CClassInfoTmpl(const char* name, const type_info& id,
                                size_t size)
     : CParent(name), m_Id(id), m_Size(size),
-      m_RandomOrder(false), m_Implicit(false)
+      m_RandomOrder(false), m_Implicit(false), m_ParentClassInfo(0)
 {
     Register();
 }
@@ -438,6 +447,20 @@ size_t CClassInfoTmpl::GetSize(void) const
     return m_Size;
 }
 
+void CClassInfoTmpl::UpdateClassInfo(const CObject* object)
+{
+    SetParentClass(CObject::GetTypeInfo());
+}
+
+void CClassInfoTmpl::SetParentClass(TTypeInfo parentType)
+{
+    const CClassInfoTmpl* parentClass =
+        dynamic_cast<const CClassInfoTmpl*>(parentType);
+    _ASSERT(parentClass != 0);
+    _ASSERT(!m_ParentClassInfo || m_ParentClassInfo == CObject::GetTypeInfo());
+    m_ParentClassInfo = parentClass;
+}
+
 void CClassInfoTmpl::AddSubClass(const CMemberId& id,
                                  const CTypeRef& type)
 {
@@ -462,17 +485,11 @@ void CClassInfoTmpl::AddSubClassNull(const char* id)
     AddSubClassNull(CMemberId(id));
 }
 
-static
+static inline
 const CMemberInfo* GetImplicitMember(const CMembersInfo& members)
 {
-    if ( members.GetSize() == 1 ) {
-        return members.GetMemberInfo(0);
-    }
-    else {
-        _ASSERT(members.GetSize() == 2);
-        _ASSERT(members.GetMemberId(0).GetName().empty());
-        return members.GetMemberInfo(1);
-    }
+    _ASSERT(members.GetSize() == 1);
+    return members.GetMemberInfo(0);
 }
 
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
@@ -483,9 +500,47 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
         // we'll behave as this one member
         const CMemberInfo* info = GetImplicitMember(m_Members);
         info->GetTypeInfo()->WriteData(out, info->GetMember(object));
-        return;
     }
-    CObjectOStream::Block block(out, RandomOrder());
+    else {
+        CObjectOStream::Block block(out, RandomOrder());
+        WriteMembers(out, block, object);
+    }
+}
+
+void CClassInfoTmpl::SkipData(CObjectIStream& in) const
+{
+    if ( Implicit() ) {
+        // special case: class contains only one implicit member
+        // we'll behave as this one member
+        const CMemberInfo* info = GetImplicitMember(m_Members);
+        info->GetTypeInfo()->SkipData(in);
+    }
+    else {
+        CObjectIStream::Block block(in, RandomOrder());
+        SkipMembers(in, block);
+    }
+}
+
+void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+    if ( Implicit() ) {
+        // special case: class contains only one implicit member
+        // we'll behave as this one member
+        const CMemberInfo* info = GetImplicitMember(m_Members);
+        info->GetTypeInfo()->ReadData(in, info->GetMember(object));
+    }
+    else {
+        CObjectIStream::Block block(in, RandomOrder());
+        ReadMembers(in, block, object);
+    }
+}
+
+void CClassInfoTmpl::WriteMembers(CObjectOStream& out,
+                                  CObjectOStream::Block& block,
+                                  TConstObjectPtr object) const
+{
+    if ( m_ParentClassInfo )
+        m_ParentClassInfo->WriteMembers(out, block, object);
     for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
         if ( !IsMemberDefault(object, m_Members, i) ) {
             // write member
@@ -497,16 +552,11 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
     }
 }
 
-void CClassInfoTmpl::SkipData(CObjectIStream& in) const
+void CClassInfoTmpl::SkipMembers(CObjectIStream& in,
+                                 CObjectIStream::Block& block) const
 {
-    if ( Implicit() ) {
-        // special case: class contains only one implicit member
-        // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(m_Members);
-        info->GetTypeInfo()->SkipData(in);
-        return;
-    }
-    CObjectIStream::Block block(in, RandomOrder());
+    if ( m_ParentClassInfo && m_ParentClassInfo != CObject::GetTypeInfo() )
+        m_ParentClassInfo->SkipMembers(in, block);
     if ( RandomOrder() ) {
         vector<bool> read(m_Members.GetSize());
         while ( block.Next() ) {
@@ -552,16 +602,12 @@ void CClassInfoTmpl::SkipData(CObjectIStream& in) const
     }
 }
 
-void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
+void CClassInfoTmpl::ReadMembers(CObjectIStream& in,
+                                 CObjectIStream::Block& block,
+                                 TObjectPtr object) const
 {
-    if ( Implicit() ) {
-        // special case: class contains only one implicit member
-        // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(m_Members);
-        info->GetTypeInfo()->ReadData(in, info->GetMember(object));
-        return;
-    }
-    CObjectIStream::Block block(in, RandomOrder());
+    if ( m_ParentClassInfo && m_ParentClassInfo != CObject::GetTypeInfo() )
+        m_ParentClassInfo->ReadMembers(in, block, object);
     if ( RandomOrder() ) {
         vector<bool> read(m_Members.GetSize());
         while ( block.Next() ) {
@@ -608,6 +654,23 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
 }
 
+const type_info*
+CCObjectClassInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
+{
+    return &typeid(*static_cast<const CObject*>(object));
+}
+
+TTypeInfo CObject::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCObjectClassInfo;
+    return typeInfo;
+}
+
+TTypeInfo CClassInfoTmpl::GetParentTypeInfo(void) const
+{
+    return m_ParentClassInfo;
+}
+
 CTypeInfo::TMemberIndex CClassInfoTmpl::FindMember(const string& name) const
 {
     return m_Members.FindMember(name);
@@ -623,40 +686,7 @@ const CMemberInfo* CClassInfoTmpl::GetMemberInfo(TMemberIndex index) const
     return m_Members.GetMemberInfo(index);
 }
 
-CTypeInfo::TMemberIndex CClassInfoTmpl::LocateMember(TConstObjectPtr object,
-                                                     TConstObjectPtr member,
-                                                     TTypeInfo memberTypeInfo) const
-{
-    _TRACE("LocateMember(" << NStr::PtrToString(object) << ", " <<
-           NStr::PtrToString(member) <<
-           ", " << memberTypeInfo->GetName() << ")");
-    TConstObjectPtr objectEnd = EndOf(object);
-    TConstObjectPtr memberEnd = memberTypeInfo->EndOf(member);
-    if ( member < object || memberEnd > objectEnd ) {
-        return -1;
-    }
-    size_t memberOffset = Sub(member, object);
-    size_t memberEndOffset = Sub(memberEnd, object);
-    typedef CMembersInfo::TMembersByOffset TMembersByOffset;
-    const TMembersByOffset& members = m_Members.GetMembersByOffset();
-    TMembersByOffset::const_iterator after =
-        members.lower_bound(memberEndOffset);
-    if ( after == members.begin() )
-        return -1;
-
-    TMemberIndex before = after == members.end()?
-        members.rbegin()->second:
-        (--after)->second;
-
-    const CMemberInfo& memberInfo = *GetMemberInfo(before);
-    if ( memberOffset < memberInfo.GetOffset() ||
-         memberEndOffset > memberInfo.GetEndOffset() ) {
-        return -1;
-    }
-    return before;
-}
-
-bool CClassInfoTmpl::IsDefault(TConstObjectPtr object) const
+bool CClassInfoTmpl::IsDefault(TConstObjectPtr /*object*/) const
 {
     return false;
 #if 0
@@ -705,6 +735,105 @@ void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
 const type_info* CClassInfoTmpl::GetCPlusPlusTypeInfo(TConstObjectPtr ) const
 {
     return 0;
+}
+
+bool CClassInfoTmpl::IsType(TTypeInfo typeInfo) const
+{
+    if ( typeInfo == this )
+        return true;
+    TTypeInfo parentType = m_ParentClassInfo;
+    if ( parentType )
+        return parentType->IsType(typeInfo);
+    return false;
+}
+
+bool CClassInfoTmpl::MayContainType(TTypeInfo typeInfo) const
+{
+    TContainedTypes* cache = m_ContainedTypes.get();
+    if ( cache ) {
+        TContainedTypes::const_iterator found = cache->find(typeInfo);
+        if ( found != cache->end() )
+            return found->second;
+        (*cache)[typeInfo] = false;
+    }
+    else {
+        m_ContainedTypes.reset(cache = new TContainedTypes);
+    }
+    bool contains = GetMembers().MayContainType(typeInfo);
+    (*cache)[typeInfo] = contains;
+    return contains;
+}
+
+bool CClassInfoTmpl::HaveChildren(TConstObjectPtr object) const
+{
+    return GetMembers().HaveChildren(object);
+}
+
+void CClassInfoTmpl::BeginTypes(CChildrenTypesIterator& cc) const
+{
+    GetMembers().BeginTypes(cc);
+}
+
+void CClassInfoTmpl::Begin(CConstChildrenIterator& cc) const
+{
+    GetMembers().Begin(cc);
+}
+
+void CClassInfoTmpl::Begin(CChildrenIterator& cc) const
+{
+    GetMembers().Begin(cc);
+}
+
+bool CClassInfoTmpl::ValidTypes(const CChildrenTypesIterator& cc) const
+{
+    return GetMembers().ValidTypes(cc);
+}
+
+bool CClassInfoTmpl::Valid(const CConstChildrenIterator& cc) const
+{
+    return GetMembers().Valid(cc);
+}
+
+bool CClassInfoTmpl::Valid(const CChildrenIterator& cc) const
+{
+    return GetMembers().Valid(cc);
+}
+
+TTypeInfo CClassInfoTmpl::GetChildType(const CChildrenTypesIterator& cc) const
+{
+    return GetMembers().GetChildType(cc);
+}
+
+void CClassInfoTmpl::GetChild(const CConstChildrenIterator& cc,
+                                CConstObjectInfo& child) const
+{
+    GetMembers().GetChild(cc, child);
+}
+
+void CClassInfoTmpl::GetChild(const CChildrenIterator& cc,
+                         CObjectInfo& child) const
+{
+    GetMembers().GetChild(cc, child);
+}
+
+void CClassInfoTmpl::NextType(CChildrenTypesIterator& cc) const
+{
+    GetMembers().NextType(cc);
+}
+
+void CClassInfoTmpl::Next(CConstChildrenIterator& cc) const
+{
+    GetMembers().Next(cc);
+}
+
+void CClassInfoTmpl::Next(CChildrenIterator& cc) const
+{
+    GetMembers().Next(cc);
+}
+
+void CClassInfoTmpl::Erase(CChildrenIterator& /*cc*/) const
+{
+    THROW1_TRACE(runtime_error, "not implemented");
 }
 
 TObjectPtr CStructInfoTmpl::Create(void) const

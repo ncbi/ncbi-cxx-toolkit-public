@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/03/29 15:55:28  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.13  2000/02/17 20:02:44  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -90,8 +97,6 @@
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
 
-#undef SKIP_NON_CLASS
-
 BEGIN_NCBI_SCOPE
 
 COObjectList::COObjectList(void)
@@ -105,14 +110,12 @@ COObjectList::~COObjectList(void)
 
 bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-#if SKIP_NON_CLASS
-    if ( dynamic_cast<const CClassInfoTmpl*>(typeInfo) == 0 )
-        return true;
-#endif
-
     _TRACE("COObjectList::Add(" << NStr::PtrToString(object) << ", " <<
            typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
            ", end: " << NStr::PtrToString(typeInfo->EndOf(object)));
+
+    typeInfo = typeInfo->GetRealTypeInfo(object);
+
     // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
     typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
@@ -176,7 +179,7 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
             ++before;
         }
     }
-    // our object is smallest -> check for overlapping with first
+    // our object pointer value is smallest -> check for overlapping with first
     TObjects::iterator after = m_Objects.upper_bound(endOfObject);
     // after->first < endOfObject, (after-1) >= endOfObject
     for ( TObjects::iterator i = after; i != before; ++i ) {
@@ -197,20 +200,7 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 bool COObjectList::CheckMember(TConstObjectPtr owner, TTypeInfo ownerTypeInfo,
                                TConstObjectPtr member, TTypeInfo memberTypeInfo)
 {
-    while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
-        _TRACE("CheckMember(" <<
-               long(owner) << ": " << ownerTypeInfo->GetName() << ", " <<
-               long(member) << ": " << memberTypeInfo->GetName() << ")");
-        CTypeInfo::TMemberIndex index =
-            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
-        if ( index < 0 ) {
-            return false;
-        }
-        const CMemberInfo* memberInfo = ownerTypeInfo->GetMemberInfo(index);
-        ownerTypeInfo = memberInfo->GetTypeInfo();
-        owner = memberInfo->GetMember(owner);
-    }
-    return true;
+    return owner == member && ownerTypeInfo->IsType(memberTypeInfo);
 }
 
 void COObjectList::CheckAllWritten(void) const
@@ -232,16 +222,6 @@ void COObjectList::SetObject(COObjectInfo& info,
                              TConstObjectPtr member,
                              TTypeInfo memberTypeInfo) const
 {
-#if SKIP_NON_CLASS
-    if ( dynamic_cast<const CClassInfoTmpl*>(memberTypeInfo) == 0 ) {
-        const_cast<TConstObjectPtr&>(info.m_RootObjectBase.first) = member;
-        info.m_RootObjectBase.second.m_Index = TIndex(-1);
-        info.m_RootObjectBase.second.m_TypeInfo = memberTypeInfo;
-        info.m_RootObject = &info.m_RootObjectBase;
-        return;
-    }
-#endif
-
     // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
     typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
@@ -256,31 +236,13 @@ void COObjectList::SetObject(COObjectInfo& info,
     TConstObjectPtr owner = info.GetRootObject();
     TTypeInfo ownerTypeInfo = info.GetRootObjectInfo().GetTypeInfo();
 
-    while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
-        CTypeInfo::TMemberIndex index =
-            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
-        if ( index < 0 ) {
-            THROW1_TRACE(runtime_error, "object is not collected");
-        }
-        const CMemberInfo* memberInfo = ownerTypeInfo->GetMemberInfo(index);
-        if ( !info.IsMember() ) {
-            info.m_Members.reset(new list< pair<const CMemberId*,
-                                 const CMemberInfo*> >);
-        }
-        info.m_Members->push_back(make_pair(ownerTypeInfo->GetMemberId(index),
-                                            memberInfo));
-        ownerTypeInfo = memberInfo->GetTypeInfo();
-        owner = memberInfo->GetMember(owner);
+    if ( owner != member || !ownerTypeInfo->IsType(memberTypeInfo) ) {
+        THROW1_TRACE(runtime_error, "object is not collected");
     }
 }
 
 void COObjectList::RegisterObject(const CORootObjectInfo& info)
 {
-#if SKIP_NON_CLASS
-    if ( dynamic_cast<const CClassInfoTmpl*>(info.GetTypeInfo()) == 0 )
-        return;
-#endif
-
     const_cast<CORootObjectInfo&>(info).m_Index = m_NextObjectIndex++;
 }
 

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/03/29 15:55:29  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.29  2000/03/10 21:16:47  vasilche
 * Removed EOF workaround code.
 *
@@ -426,7 +433,7 @@ void CObjectOStreamAsnBinary::WriteNull(void)
 
 template<typename T>
 static inline
-void WriteNumberValue(CObjectOStreamAsnBinary& out, const T& data)
+void WriteSNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 {
     if ( data >= -0x80 && data < 0x80 ) {
         // one byte
@@ -461,10 +468,53 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 
 template<typename T>
 static inline
-void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
+void WriteUNumberValue(CObjectOStreamAsnBinary& out, const T& data)
+{
+    if ( data < 0x80 ) {
+        // one byte
+        out.WriteShortLength(1);
+        out.WriteByte(data);
+    }
+    else if ( data < 0x8000 ) {
+        // two bytes
+        out.WriteShortLength(2);
+        out.WriteByte(data >> 8);
+        out.WriteByte(data);
+    }
+    else if ( data < 0x800000 ) {
+        // three bytes
+        out.WriteShortLength(3);
+        out.WriteByte(data >> 16);
+        out.WriteByte(data >> 8);
+        out.WriteByte(data);
+    }
+    else if ( (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
+        // full length unsigned - and doesn't fit in signed place
+        out.WriteShortLength(sizeof(data) + 1);
+        out.WriteByte(0);
+        WriteBytesOf(out, data);
+    }
+    else {
+        // full length signed
+        out.WriteShortLength(sizeof(data));
+        WriteBytesOf(out, data);
+    }
+}
+
+template<typename T>
+static inline
+void WriteStdUNumber(CObjectOStreamAsnBinary& out, const T& data)
 {
     out.WriteSysTag(eInteger);
-    WriteNumberValue(out, data);
+    WriteUNumberValue(out, data);
+}
+
+template<typename T>
+static inline
+void WriteStdSNumber(CObjectOStreamAsnBinary& out, const T& data)
+{
+    out.WriteSysTag(eInteger);
+    WriteSNumberValue(out, data);
 }
 
 void CObjectOStreamAsnBinary::WriteBool(bool data)
@@ -483,29 +533,29 @@ void CObjectOStreamAsnBinary::WriteChar(char data)
 
 void CObjectOStreamAsnBinary::WriteInt(int data)
 {
-    WriteStdNumber(*this, data);
+    WriteStdSNumber(*this, data);
 }
 
 void CObjectOStreamAsnBinary::WriteUInt(unsigned data)
 {
-    WriteStdNumber(*this, data);
+    WriteStdUNumber(*this, data);
 }
 
 void CObjectOStreamAsnBinary::WriteLong(long data)
 {
 #if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    WriteStdNumber(*this, int(data));
+    WriteStdSNumber(*this, int(data));
 #else
-    WriteStdNumber(*this, data);
+    WriteStdSNumber(*this, data);
 #endif
 }
 
 void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
 {
 #if ULONG_MAX == UINT_MAX
-    WriteStdNumber(*this, unsigned(data));
+    WriteStdUNumber(*this, unsigned(data));
 #else
-    WriteStdNumber(*this, data);
+    WriteStdUNumber(*this, data);
 #endif
 }
 
@@ -559,7 +609,11 @@ bool CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
     }
     values.FindName(value, false); // check value
     WriteSysTag(eEnumerated);
-    WriteNumberValue(*this, value);
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    WriteSNumberValue(*this, int(value));
+#else
+    WriteSNumberValue(*this, value);
+#endif
     return true;
 }
 
@@ -578,7 +632,7 @@ void CObjectOStreamAsnBinary::WriteMemberSuffix(const CMemberId& id)
 void CObjectOStreamAsnBinary::WriteObjectReference(TIndex index)
 {
     WriteTag(eApplication, false, eObjectReference);
-    WriteNumberValue(*this, index);
+    WriteUNumberValue(*this, index);
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)

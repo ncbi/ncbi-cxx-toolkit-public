@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/03/29 15:55:21  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.31  2000/03/07 14:05:31  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -169,7 +176,7 @@ public:
     void Write(TConstObjectPtr object, const CTypeRef& type);
     void WriteObject(const CObjectInfo& object)
         {
-            Write(object.GetObject(), object.GetTypeInfo());
+            Write(object.GetObjectPtr(), object.GetTypeInfo());
         }
 
     virtual void WriteTypeName(const string& name);

@@ -1,6 +1,3 @@
-#if defined(TYPEINFO__HPP)  &&  !defined(TYPEINFO__INL)
-#define TYPEINFO__INL
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,18 +30,31 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2000/03/29 15:55:22  vasilche
+* Revision 1.1  2000/03/29 15:55:27  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
 * 	CTypeIterator<class>, CTypeConstIterator<class>,
 * 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
 * 	CObjectsIterator and CObjectsConstIterator.
 *
-* Revision 1.1  1999/05/19 19:56:33  vasilche
-* Commit just in case.
-*
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
+#include <serial/object.hpp>
+#include <serial/typeinfo.hpp>
 
-#endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */
+BEGIN_NCBI_SCOPE
+
+bool CObjectTypeInfo::IsCObject(TTypeInfo typeInfo)
+{
+    return typeInfo->IsType(0);
+}
+
+CObjectInfo::CObjectInfo(TTypeInfo typeInfo)
+    : CObjectTypeInfo(typeInfo), m_ObjectPtr(typeInfo->Create()),
+      m_Ref(GetCObjectPtr(m_ObjectPtr, typeInfo))
+{
+}
+
+END_NCBI_SCOPE

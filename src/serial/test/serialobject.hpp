@@ -2,6 +2,7 @@
 #define SERIALOBJECT_HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <string>
 #include <list>
 #include <vector>
@@ -11,7 +12,7 @@ struct struct_Web_Env;
 
 USING_NCBI_SCOPE;
 
-class CSerialObject
+class CSerialObject : public CObject
 {
 public:
     CSerialObject(void);

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/03/29 15:55:29  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.19  2000/03/14 14:42:32  vasilche
 * Fixed error reporting.
 *
@@ -134,6 +141,37 @@ void CStlOneArgTemplate::SetDataId(const CMemberId& id)
     m_DataId = id;
 }
 
+bool CStlOneArgTemplate::MayContainType(TTypeInfo typeInfo) const
+{
+    return GetDataTypeInfo()->IsType(typeInfo) ||
+        GetDataTypeInfo()->MayContainType(typeInfo);
+}
+
+bool CStlOneArgTemplate::HaveChildren(TConstObjectPtr object) const
+{
+    return !IsDefault(object);
+}
+
+void CStlOneArgTemplate::BeginTypes(CChildrenTypesIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+bool CStlOneArgTemplate::ValidTypes(const CChildrenTypesIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0;
+}
+
+TTypeInfo CStlOneArgTemplate::GetChildType(const CChildrenTypesIterator& /*cc*/) const
+{
+    return GetDataTypeInfo();
+}
+
+void CStlOneArgTemplate::NextType(CChildrenTypesIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
                                          TTypeInfo keyType,
                                          TTypeInfo dataType)
@@ -165,6 +203,40 @@ void CStlTwoArgsTemplate::SetKeyId(const CMemberId& id)
 void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
 {
     m_ValueId = id;
+}
+
+bool CStlTwoArgsTemplate::MayContainType(TTypeInfo typeInfo) const
+{
+    return
+        GetKeyTypeInfo()->IsType(typeInfo) ||
+        GetKeyTypeInfo()->MayContainType(typeInfo) ||
+        GetValueTypeInfo()->IsType(typeInfo) ||
+        GetValueTypeInfo()->MayContainType(typeInfo);
+}
+
+bool CStlTwoArgsTemplate::HaveChildren(TConstObjectPtr object) const
+{
+    return !IsDefault(object);
+}
+
+void CStlTwoArgsTemplate::BeginTypes(CChildrenTypesIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+bool CStlTwoArgsTemplate::ValidTypes(const CChildrenTypesIterator& cc) const
+{
+    return cc.GetIndex().m_Index < 2;
+}
+
+TTypeInfo CStlTwoArgsTemplate::GetChildType(const CChildrenTypesIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0? GetKeyTypeInfo(): GetValueTypeInfo();
+}
+
+void CStlTwoArgsTemplate::NextType(CChildrenTypesIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
 }
 
 CStlClassInfoMapImpl::CStlClassInfoMapImpl(const char* templ,

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/03/29 15:55:28  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.29  2000/03/14 14:42:31  vasilche
 * Fixed error reporting.
 *
@@ -888,7 +895,13 @@ CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
     // enum element by value
     ExpectSysTag(eEnumerated);
     long value;
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    int data;
+    ReadStdSigned(*this, data);
+    value = data;
+#else
     ReadStdSigned(*this, value);
+#endif
     values.FindName(value, false); // check value
     return make_pair(value, true);
 }

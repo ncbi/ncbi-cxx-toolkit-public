@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/03/29 15:55:27  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.8  2000/02/01 21:47:22  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -68,6 +75,7 @@
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
+#include <serial/iterator.hpp>
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -196,10 +204,13 @@ CMembers::TIndex CMembers::FindMember(TTag tag) const
     return i->second;
 }
 
-CMembers::TIndex CMembers::FindMember(const char* name, TIndex pos) const
+CMembers::TIndex CMembers::FindMember(const pair<const char*, size_t>& name,
+                                      TIndex pos) const
 {
     for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
-        if ( strcmp(m_Members[i].GetName().c_str(), name) == 0 )
+        const string& s = m_Members[i].GetName();
+        if ( s.size() == name.second &&
+             memcmp(s.data(), name.first, name.second) == 0 )
             return i;
     }
     return -1;
@@ -289,6 +300,87 @@ CMembersInfo::GetMembersByOffset(void) const
         }
     }
     return *members;
+}
+
+bool CMembersInfo::MayContainType(TTypeInfo typeInfo) const
+{
+    iterate ( TMembersInfo, i, m_MembersInfo ) {
+        TTypeInfo childType = (*i)->GetTypeInfo();
+        if ( childType->IsType(typeInfo) ||
+            childType->MayContainType(typeInfo) )
+            return true;
+    }
+    return false;
+}
+
+bool CMembersInfo::HaveChildren(TConstObjectPtr /*object*/) const
+{
+    return !m_MembersInfo.empty();
+}
+
+void CMembersInfo::BeginTypes(CChildrenTypesIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+void CMembersInfo::Begin(CConstChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+void CMembersInfo::Begin(CChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+bool CMembersInfo::ValidTypes(const CChildrenTypesIterator& cc) const
+{
+    return cc.GetIndex().m_Index < m_MembersInfo.size();
+}
+
+bool CMembersInfo::Valid(const CConstChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index < m_MembersInfo.size();
+}
+
+bool CMembersInfo::Valid(const CChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index < m_MembersInfo.size();
+}
+
+TTypeInfo CMembersInfo::GetChildType(const CChildrenTypesIterator& cc) const
+{
+    return m_MembersInfo[cc.GetIndex().m_Index]->GetTypeInfo();
+}
+
+void CMembersInfo::GetChild(const CConstChildrenIterator& cc,
+                            CConstObjectInfo& child) const
+{
+    const CMemberInfo* member = m_MembersInfo[cc.GetIndex().m_Index];
+    child.Set(member->GetMember(cc.GetParent().GetObjectPtr()),
+              member->GetTypeInfo());
+}
+
+void CMembersInfo::GetChild(const CChildrenIterator& cc,
+                         CObjectInfo& child) const
+{
+    const CMemberInfo* member = m_MembersInfo[cc.GetIndex().m_Index];
+    child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
+}
+
+void CMembersInfo::NextType(CChildrenTypesIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CMembersInfo::Next(CConstChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CMembersInfo::Next(CChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
 }
 
 END_NCBI_SCOPE

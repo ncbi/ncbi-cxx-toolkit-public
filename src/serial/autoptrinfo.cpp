@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/29 15:55:26  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.6  2000/03/10 21:47:50  vasilche
 * AutoPointer should write/read data inline.
 *
@@ -96,7 +103,7 @@ void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
 void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
                                     TObjectPtr object) const
 {
-    TObjectPtr data = const_cast<TObjectPtr>(GetObjectPointer(object));
+    TObjectPtr data = GetObjectPointer(object);
     TTypeInfo dataType = GetDataTypeInfo();
     if ( data == 0 ) {
         SetObjectPointer(object, data = dataType->Create());

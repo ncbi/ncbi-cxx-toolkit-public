@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/03/29 15:55:26  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.35  2000/03/14 14:42:29  vasilche
 * Fixed error reporting.
 *
@@ -670,7 +677,7 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     io.End();
 }
 
-void COldAsnTypeInfo::SkipData(CObjectIStream& in) const
+void COldAsnTypeInfo::SkipData(CObjectIStream& /*in*/) const
 {
     THROW1_TRACE(runtime_error, "cannot skip COldAsnTypeInfo");
 }

@@ -405,8 +405,7 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define SET_PARENT_CLASS(BaseClass) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),"",CLASS_PTR(BaseClass), \
-                            &BaseClass::GetTypeInfo)
+    info->SetParentClass(BaseClass::GetTypeInfo())
 
 #define BEGIN_STRUCT_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(NCBI_NAME2(struct_, Class), NCBI_NAME2(GetTypeInfo_struct_, Class), \

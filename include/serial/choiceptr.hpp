@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/03/29 15:55:18  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.12  2000/03/07 14:05:28  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -149,7 +156,7 @@ public:
         : CParent("AutoPtr", type, type)
         { }
     
-    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
         {
             return static_cast<const TObjectType*>(object)->get();
         }

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/03/29 15:55:22  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.32  2000/03/10 15:01:42  vasilche
 * Fixed OPTIONAL members reading.
 *
@@ -162,6 +169,7 @@
 #include <serial/objostr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/choiceptr.hpp>
+#include <serial/iterator.hpp>
 #include <set>
 #include <map>
 #include <list>
@@ -189,6 +197,13 @@ public:
         {
             return m_DataType.Get();
         }
+
+    virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool HaveChildren(TConstObjectPtr object) const;
+    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
+    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
+    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+    virtual void NextType(CChildrenTypesIterator& cc) const;
 
 private:
     CMemberId m_DataId;
@@ -226,6 +241,13 @@ public:
             return m_ValueType.Get();
         }
 
+    virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool HaveChildren(TConstObjectPtr object) const;
+    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
+    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
+    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+    virtual void NextType(CChildrenTypesIterator& cc) const;
+
 private:
     CMemberId m_KeyId;
     CMemberId m_ValueId;
@@ -248,7 +270,7 @@ public:
         : CParent("auto_ptr", "?", typeRef)
         { }
     
-    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
         {
             return static_cast<const TObjectType*>(object)->get();
         }
@@ -284,7 +306,7 @@ public:
         : CParent("CRef", "?", typeRef)
         { }
     
-    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
         {
             return static_cast<const TObjectType*>(object)->GetPointerOrNull();
         }
@@ -320,7 +342,7 @@ public:
         : CParent("auto_ptr", "?", type)
         { }
     
-    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
         {
             return static_cast<const TObjectType*>(object)->get();
         }
@@ -371,6 +393,33 @@ public:
         {
             return *static_cast<const TObjectType*>(object);
         }
+    static TObjectType& Get(const CChildrenIterator& object)
+        {
+            return Get(object.GetParentPtr());
+        }
+    static const TObjectType& Get(const CConstChildrenIterator& object)
+        {
+            return Get(object.GetParentPtr());
+        }
+
+    typedef typename TObjectType::const_iterator CConstIterator;
+    typedef typename TObjectType::iterator CIterator;
+    static const CConstIterator& Iterator(const CConstChildrenIterator& cc)
+        {
+            return static_cast<const CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static CConstIterator& Iterator(CConstChildrenIterator& cc)
+        {
+            return static_cast<CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static const CIterator& Iterator(const CChildrenIterator& cc)
+        {
+            return static_cast<const CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static CIterator& Iterator(CChildrenIterator& cc)
+        {
+            return static_cast<CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
 
     virtual TObjectPtr Create(void) const
         {
@@ -415,6 +464,43 @@ public:
                   ++i, ++index ) {
                 dataTypeInfo->Assign(AddEmpty(dst, index), &*i);
             }
+        }
+
+    void Begin(CConstChildrenIterator& cc) const
+        {
+            cc.GetIndex().m_AnyIterator = CObjectFor<CConstIterator>::New();
+            Iterator(cc) = Get(cc).begin();
+        }
+    void Begin(CChildrenIterator& cc) const
+        {
+            cc.GetIndex().m_AnyIterator = CObjectFor<CIterator>::New();
+            Iterator(cc) = Get(cc).begin();
+        }
+    bool Valid(const CConstChildrenIterator& cc) const
+        {
+            return Iterator(cc) != Get(cc).end();
+        }
+    bool Valid(const CChildrenIterator& cc) const
+        {
+            return Iterator(cc) != Get(cc).end();
+        }
+    void GetChild(const CConstChildrenIterator& cc,
+                  CConstObjectInfo& child) const
+        {
+            child.Set(&*Iterator(cc), GetDataTypeInfo());
+        }
+    void GetChild(const CChildrenIterator& cc,
+                  CObjectInfo& child) const
+        {
+            child.Set(const_cast<TObjectPtr>(static_cast<TConstObjectPtr>(&*Iterator(cc))), GetDataTypeInfo());
+        }
+    void Next(CConstChildrenIterator& cc) const
+        {
+            ++Iterator(cc);
+        }
+    void Next(CChildrenIterator& cc) const
+        {
+            ++Iterator(cc);
         }
 
 protected:
@@ -662,6 +748,49 @@ public:
         {
             return *static_cast<TObjectType*>(object);
         }
+    static TObjectType& Get(const CChildrenIterator& object)
+        {
+            return Get(object.GetParentPtr());
+        }
+    static const TObjectType& Get(const CConstChildrenIterator& object)
+        {
+            return Get(object.GetParentPtr());
+        }
+
+    typedef typename TObjectType::const_iterator CConstIterator;
+    typedef typename TObjectType::iterator CIterator;
+    static const CConstIterator& Iterator(const CConstChildrenIterator& cc)
+        {
+            return static_cast<const CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static CConstIterator& Iterator(CConstChildrenIterator& cc)
+        {
+            return static_cast<CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static const CIterator& Iterator(const CChildrenIterator& cc)
+        {
+            return static_cast<const CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static CIterator& Iterator(CChildrenIterator& cc)
+        {
+            return static_cast<CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+        }
+    static size_t Index(const CConstChildrenIterator& cc)
+        {
+            return cc.GetIndex().m_Index;
+        }
+    static size_t& Index(CConstChildrenIterator& cc)
+        {
+            return cc.GetIndex().m_Index;
+        }
+    static size_t Index(const CChildrenIterator& cc)
+        {
+            return cc.GetIndex().m_Index;
+        }
+    static size_t& Index(CChildrenIterator& cc)
+        {
+            return cc.GetIndex().m_Index;
+        }
 
     virtual size_t GetSize(void) const
         {
@@ -703,6 +832,55 @@ public:
             const TObjectType& from = Get(src);
             for ( TConstIterator i = from.begin(); i != from.end(); ++i ) {
                 to.insert(*i);
+            }
+        }
+
+    void Begin(CConstChildrenIterator& cc) const
+        {
+            cc.GetIndex().m_AnyIterator = CObjectFor<CConstIterator>::New();
+            Index(cc) = 0;
+            Iterator(cc) = Get(cc).begin();
+        }
+    void Begin(CChildrenIterator& cc) const
+        {
+            cc.GetIndex().m_AnyIterator = CObjectFor<CIterator>::New();
+            Index(cc) = 0;
+            Iterator(cc) = Get(cc).begin();
+        }
+    bool Valid(const CConstChildrenIterator& cc) const
+        {
+            return Iterator(cc) != Get(cc).end();
+        }
+    bool Valid(const CChildrenIterator& cc) const
+        {
+            return Iterator(cc) != Get(cc).end();
+        }
+    void GetChild(const CConstChildrenIterator& cc,
+                  CConstObjectInfo& child) const
+        {
+            if ( Index(cc) == 0 )
+                child.Set(&Iterator(cc)->first, GetKeyTypeInfo());
+            else
+                child.Set(&Iterator(cc)->second, GetValueTypeInfo());
+        }
+    void GetChild(const CChildrenIterator& cc,
+                  CObjectInfo& child) const
+        {
+            if ( Index(cc) == 0 )
+                child.Set(const_cast<Key*>(&Iterator(cc)->first), GetKeyTypeInfo());
+            else
+                child.Set(&Iterator(cc)->second, GetValueTypeInfo());
+        }
+    void Next(CConstChildrenIterator& cc) const
+        {
+            if ( (Index(cc) ^= 1) == 0 ) {
+                ++Iterator(cc);
+            }
+        }
+    void Next(CChildrenIterator& cc) const
+        {
+            if ( (Index(cc) ^= 1) == 0 ) {
+                ++Iterator(cc);
             }
         }
 

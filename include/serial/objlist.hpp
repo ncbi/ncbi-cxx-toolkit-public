@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/29 15:55:21  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.7  2000/01/10 19:46:32  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -68,8 +75,6 @@
 #include <map>
 #include <list>
 #include <functional>
-
-#define SKIP_NON_CLASS 1
 
 BEGIN_NCBI_SCOPE
 
@@ -119,32 +124,22 @@ public:
 
     bool IsMember(void) const
         {
-            return m_Members.get() != 0;
+            return false;
         }
 
-    const CMemberId& GetMemberId(void) const
+    int GetMemberId(void) const
         {
-            return *(m_Members->back().first);
-        }
-
-    const CMemberInfo& GetMemberInfo(void) const
-        {
-            return *(m_Members->back().second);
+            return -1;
         }
 
     void ToContainerObject(void)
         {
-            m_Members->pop_back();
         }
 
 private:
     friend class COObjectList;
 
     const pair<const TConstObjectPtr, CORootObjectInfo>* m_RootObject;
-#if SKIP_NON_CLASS
-    pair<const TConstObjectPtr, CORootObjectInfo> m_RootObjectBase;
-#endif
-    auto_ptr< list< pair<const CMemberId*, const CMemberInfo*> > > m_Members;
 };
 
 class COObjectList

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/03/29 15:55:29  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
 * Revision 1.17  2000/03/07 14:06:23  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -103,6 +110,7 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -151,7 +159,7 @@ TTypeInfo CPointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 }
 
 TConstObjectPtr
-CPointerTypeInfo::GetObjectPointer(TConstObjectPtr object) const
+CPointerTypeInfo::x_GetObjectPointer(TConstObjectPtr object) const
 {
     return *static_cast<const TConstObjectPtr*>(object);
 }
@@ -228,6 +236,101 @@ void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 void CPointerTypeInfo::SkipData(CObjectIStream& in) const
 {
     in.SkipExternalObject(GetDataTypeInfo());
+}
+
+bool CPointerTypeInfo::IsPointer(void) const
+{
+    return true;
+}
+
+void CPointerTypeInfo::GetPointedObject(CConstObjectInfo& object) const
+{
+    object.Set(GetObjectPointer(object.GetObjectPtr()), GetDataTypeInfo());
+}
+
+void CPointerTypeInfo::GetPointedObject(CObjectInfo& object) const
+{
+    object.Set(GetObjectPointer(object.GetObjectPtr()), GetDataTypeInfo());
+}
+
+bool CPointerTypeInfo::MayContainType(TTypeInfo typeInfo) const
+{
+    return GetDataTypeInfo()->IsType(typeInfo) ||
+        GetDataTypeInfo()->MayContainType(typeInfo);
+}
+
+bool CPointerTypeInfo::HaveChildren(TConstObjectPtr object) const
+{
+    return GetObjectPointer(object) != 0;
+}
+
+void CPointerTypeInfo::BeginTypes(CChildrenTypesIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+void CPointerTypeInfo::Begin(CConstChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+void CPointerTypeInfo::Begin(CChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+bool CPointerTypeInfo::ValidTypes(const CChildrenTypesIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0;
+}
+
+bool CPointerTypeInfo::Valid(const CConstChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0 &&
+        GetObjectPointer(cc.GetParent().GetObjectPtr()) != 0;
+}
+
+bool CPointerTypeInfo::Valid(const CChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0 &&
+        GetObjectPointer(cc.GetParent().GetObjectPtr()) != 0;
+}
+
+TTypeInfo CPointerTypeInfo::GetChildType(const CChildrenTypesIterator& /*cc*/) const
+{
+    return GetDataTypeInfo();
+}
+
+void CPointerTypeInfo::GetChild(const CConstChildrenIterator& cc,
+                                CConstObjectInfo& child) const
+{
+    child.Set(GetObjectPointer(cc.GetParentPtr()), GetDataTypeInfo());
+}
+
+void CPointerTypeInfo::GetChild(const CChildrenIterator& cc,
+                                CObjectInfo& child) const
+{
+    child.Set(GetObjectPointer(cc.GetParentPtr()), GetDataTypeInfo());
+}
+
+void CPointerTypeInfo::NextType(CChildrenTypesIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CPointerTypeInfo::Next(CConstChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CPointerTypeInfo::Next(CChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CPointerTypeInfo::Erase(CChildrenIterator& cc) const
+{
+    SetObjectPointer(cc.GetParentPtr(), 0);
 }
 
 END_NCBI_SCOPE
