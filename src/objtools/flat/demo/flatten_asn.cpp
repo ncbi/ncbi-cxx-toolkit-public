@@ -38,6 +38,7 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <objmgr/gbloader.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
@@ -86,6 +87,11 @@ int CFlatteningApp::Run(void)
     }}
     scope.AddTopLevelSeqEntry(*entry);
 
+    // allow external references
+    objmgr.RegisterDataLoader(*new CGBDataLoader("ID"),
+                              CObjectManager::eDefault);
+    scope.AddDefaults();
+
     auto_ptr<CObjectOStream> oos;
     auto_ptr<IFlatFormatter> formatter;
     {{
@@ -131,6 +137,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/17 20:59:33  ucko
+* Enable the GenBank loader to deal with external references.
+*
 * Revision 1.3  2003/10/08 21:12:04  ucko
 * Support gtf format
 *
