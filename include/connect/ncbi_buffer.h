@@ -36,6 +36,8 @@
  * Functions:
  *   BUF_SetChunkSize
  *   BUF_Size
+ *   BUF_Prepend
+ *   BUF_Append
  *   BUF_Write
  *   BUF_PushBack
  *   BUF_Peek
@@ -68,7 +70,8 @@ struct BUF_tag;
 typedef struct BUF_tag* BUF;  /* handle of a buffer */
 
 
-/* Set minimal size of a buffer memory chunk.
+/*!
+ * Set minimal size of a buffer memory chunk.
  * Return the actually set chunk size on success;  zero on error
  * NOTE:  if "*pBuf" == NULL then create it
  *        if "chunk_size" is passed 0 then set it to BUF_DEF_CHUNK_SIZE
@@ -80,13 +83,43 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_SetChunkSize
  );
 
 
-/* Return the number of bytes stored in "buf".
+/*!
+ * Return the number of bytes stored in "buf".
  * NOTE: return 0 if "buf" == NULL
  */
 extern NCBI_XCONNECT_EXPORT size_t BUF_Size(BUF buf);
 
 
-/* Add new data to the end of "*pBuf" (to be read last).
+/*!
+ * Prepend a block of data (of the specified size) to the
+ * beginning of the buffer (to be read first).  Note that unlike
+ * BUF_Pushback(), in this call the data is not copied into the buffer
+ * but instead is just linked in from the original location.
+ * Return non-zero (true) if succeeded, zero (false) if failed.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Prepend
+(BUF*        pBuf,
+ const void* data,
+ size_t      size
+);
+
+
+/*!
+ * Append a block of data (of the specified size) past the end
+ * of the buffer (to be read last).  Note that unlike
+ * BUF_Write(), in this call the data is not copied to the buffer
+ * but instead is just linked in from the original location.
+ * Return non-zero (true) if succeeded, zero (false) if failed.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
+(BUF*        pBuf,
+ const void* data,
+ size_t      size
+ );
+
+
+/*!
+ * Add new data to the end of "*pBuf" (to be read last).
  * On error (failed memory allocation), return zero value.
  * NOTE:  if "*pBuf" == NULL then create it.
  */
@@ -97,7 +130,8 @@ extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
  );
 
 
-/* Write the data to the very beginning of "*pBuf" (to be read first).
+/*!
+ * Write the data to the very beginning of "*pBuf" (to be read first).
  * On error (failed memory allocation), return zero value.
  * NOTE:  if "*pBuf" == NULL then create it.
  */
@@ -108,7 +142,8 @@ extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_PushBack
  );
 
 
-/* Equivalent to "BUF_PeekAt(buf, 0, data, size)", see description below.
+/*!
+ * Equivalent to "BUF_PeekAt(buf, 0, data, size)", see description below.
  */
 extern NCBI_XCONNECT_EXPORT size_t BUF_Peek
 (BUF         buf,
@@ -117,7 +152,8 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Peek
  );
 
 
-/* Copy up to "size" bytes stored in "buf" (starting at position "pos")
+/*!
+ * Copy up to "size" bytes stored in "buf" (starting at position "pos")
  * to "data".
  * Return the # of copied bytes (can be less than "size").
  * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
@@ -131,7 +167,8 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
  );
 
 
-/* Copy up to "size" bytes stored in "buf" to "data" and remove
+/*!
+ * Copy up to "size" bytes stored in "buf" to "data" and remove
  * copied data from the "buf".
  * Return the # of copied-and/or-removed bytes(can be less than "size")
  * NOTE: if "buf"  == NULL then do nothing and return 0
@@ -144,7 +181,8 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Read
  );
 
 
-/* Destroy all internal data.
+/*!
+ * Destroy all internal data.
  * NOTE: do nothing if "buf" == NULL
  */
 extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
@@ -161,6 +199,9 @@ extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2004/10/27 18:09:57  lavr
+ * +BUF_Prepend(), +BUF_Append()
+ *
  * Revision 6.9  2003/04/10 12:52:15  siyan
  * Changed group name for doxygen
  *

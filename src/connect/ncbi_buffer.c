@@ -51,7 +51,7 @@ typedef struct SBufChunkTag {
     size_t size;       /* of data (including the discarded "n_skip" bytes)  */
     size_t alloc_size; /* maximum available (allocated) size of "data"      */
     size_t n_skip;     /* # of bytes already discarded(read) from the chunk */
-    char   data[1];    /* data stored in this chunk                         */
+    char*  data;       /* data stored in this chunk                         */
 } SBufChunk;
 
 
@@ -98,12 +98,12 @@ extern size_t BUF_Size(BUF buf)
 
 /* Create a new chunk.
  * Allocate at least "chunk_size" bytes, but no less than "size" bytes.
+ * Special case: "size" == 0 results in no data storage allocation.
  */
 static SBufChunk* s_AllocChunk(size_t size, size_t chunk_size)
 {
     size_t alloc_size = ((size + chunk_size - 1) / chunk_size) * chunk_size;
-    SBufChunk* pChunk = (SBufChunk*)
-        malloc((size_t) (&(((SBufChunk*)0)->data)) + alloc_size);
+    SBufChunk* pChunk = (SBufChunk*) malloc(sizeof(*pChunk) + alloc_size);
     if ( !pChunk )
         return 0;
 
@@ -111,19 +111,70 @@ static SBufChunk* s_AllocChunk(size_t size, size_t chunk_size)
     pChunk->size       = 0;
     pChunk->alloc_size = alloc_size;
     pChunk->n_skip     = 0;
+    pChunk->data       = alloc_size ? (char*) pChunk + sizeof(*pChunk) : 0;
     return pChunk;
+}
+
+
+extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
+{
+    SBufChunk* pChunk;
+    if ( !size )
+        return 1/*true*/;
+
+    /* init the buffer internals, if not init'd yet */
+    if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
+        return 0/*false*/;
+
+    pChunk = s_AllocChunk(0, (*pBuf)->chunk_size);
+    if ( !pChunk )
+        return 0/*false*/;
+    pChunk->alloc_size = size;
+    pChunk->size       = size;
+    pChunk->data       = (char*) data;
+
+    if ( (*pBuf)->last )
+        (*pBuf)->last->next = pChunk;
+    else
+        (*pBuf)->list = pChunk;
+    (*pBuf)->last = pChunk;
+    return 1/*true*/;
+}
+
+
+extern int/*bool*/ BUF_Prepend(BUF* pBuf, const void* data, size_t size)
+{
+    SBufChunk* pChunk;
+    if ( !size )
+        return 1/*true*/;
+
+    /* init the buffer internals, if not init'd yet */
+    if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
+        return 0/*false*/;
+
+    pChunk = s_AllocChunk(0, (*pBuf)->chunk_size);
+    if ( !pChunk )
+        return 0/*false*/;
+    pChunk->alloc_size = size;
+    pChunk->size       = size;
+    pChunk->data       = (char*) data;
+
+    if ( (*pBuf)->list )
+        pChunk->next = (*pBuf)->list;
+    (*pBuf)->list = pChunk;
+    return 1/*true*/;
 }
 
 
 extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
 {
-    SBufChunk *pChunk, *pTail;
+    SBufChunk* pChunk, *pTail;
     if ( !size )
-        return 1 /* true */;
+        return 1/*true*/;
 
     /* init the buffer internals, if not init'd yet */
-    if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0) )
-        return 0 /* false */;
+    if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
+        return 0/*false*/;
 
     /* find the last allocated chunk */
     pTail = (*pBuf)->last;
@@ -143,7 +194,7 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
     if ( size ) {
         pChunk = s_AllocChunk(size, (*pBuf)->chunk_size);
         if ( !pChunk )
-            return 0 /* false */;
+            return 0/*false*/;
         pChunk->n_skip = 0;
         pChunk->size   = size;
         memcpy(pChunk->data, data, size);
@@ -155,7 +206,7 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
             (*pBuf)->list = pChunk;
         (*pBuf)->last = pChunk;
     }
-    return 1 /* true */;
+    return 1/*true*/;
 }
 
 
@@ -163,11 +214,11 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
 {
     SBufChunk* pChunk;
     if ( !size )
-        return 1 /* true */;
+        return 1/*true*/;
 
     /* init the buffer internals, if not init'd yet */
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0) )
-        return 0 /* false */;
+        return 0/*false*/;
 
     pChunk = (*pBuf)->list;
 
@@ -175,7 +226,7 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
     if (!pChunk  ||  size > pChunk->n_skip) {
         pChunk = s_AllocChunk(size, (*pBuf)->chunk_size);
         if ( !pChunk )
-            return 0 /* false */;
+            return 0/*false*/;
         pChunk->n_skip = pChunk->size = pChunk->alloc_size;
         pChunk->next  = (*pBuf)->list;
         (*pBuf)->list = pChunk;
@@ -188,7 +239,7 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
     assert(pChunk->n_skip >= size);
     pChunk->n_skip -= size;
     memcpy(pChunk->data + pChunk->n_skip, data, size);
-    return 1 /* true */;
+    return 1/*true*/;
 }
 
 
@@ -296,6 +347,9 @@ extern void BUF_Destroy(BUF buf)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2004/10/27 18:09:58  lavr
+ * +BUF_Prepend(), +BUF_Append()
+ *
  * Revision 6.13  2003/12/05 17:31:04  ucko
  * Add a tail pointer to BUF_struct to avoid having to walk the entire
  * list in BUF_Write.
