@@ -462,6 +462,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_BadProductSeqId",
     "SEQ_FEAT_RnaProductMismatch",
     "SEQ_FEAT_DifferntIdTypesInSeqLoc",
+    "eErr_SEQ_FEAT_MissingCDSproduct",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1111,6 +1112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/05/28 16:22:13  shomrat
+* Added MissingCDSProduct error.
+*
 * Revision 1.23  2003/05/14 20:33:31  shomrat
 * Using CRef instead of auto_ptr
 *
