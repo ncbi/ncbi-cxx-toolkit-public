@@ -48,6 +48,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  CInternalMutex::
 //
@@ -178,7 +179,7 @@ void SSystemMutex::Lock(void)
 
     // Lock the mutex and remember the owner
     m_Mutex.Lock();
-    _ASSERT(m_Count == 0);
+    assert(m_Count == 0);
     m_Owner.Set(owner);
     m_Count = 1;
 }
@@ -196,7 +197,7 @@ bool SSystemMutex::TryLock(void)
 
     // If TryLock is successful, remember the owner
     if ( m_Mutex.TryLock() ) {
-        _ASSERT(m_Count == 0);
+        assert(m_Count == 0);
         m_Owner.Set(owner);
         m_Count = 1;
         return true;
@@ -222,7 +223,7 @@ void SSystemMutex::Unlock(void)
         return;
     }
 
-    _ASSERT(m_Count == 0);
+    assert(m_Count == 0);
     // This was the last lock - clear the owner and unlock the mutex
     m_Mutex.Unlock();
 }
@@ -234,69 +235,41 @@ void SSystemMutex::ThrowNotOwned(void)
                "Mutex is not owned by current thread");
 }
 
-bool CAutoInitializeStaticBase::NeedInitialization(void)
-{
-    TNCBIAtomicValue* pCounter =
-        const_cast<TNCBIAtomicValue*>(&m_InitializeCounter);
-#if defined(NCBI_COUNTER_ADD)
-    TNCBIAtomicValue result = NCBI_COUNTER_ADD(pCounter, 1);
-#else
-# error Recursive use of AtomicCounter and Mutex
-#endif
-    if ( result == 1 ) {
-        return true;
-    }
-    else { // wait until initialization will finish in some other thread
-        // restore counter value
-        (void)NCBI_COUNTER_ADD(pCounter, -1);
-        int wait_counter = 0, spin_counter = 0;
-        while ( m_InitializeCounter <= kMaxUninitialized ) {
-            if ( ++spin_counter >= kSpinCounter ) {
-                spin_counter = 0;
-#if defined(HAVE_SCHED_YIELD)
-                sched_yield(); // Be polite
-#elif defined(NCBI_POSIX_THREADS)
-                pthread_yield();
-#endif
-                if ( ++wait_counter >= kMaxWaitCounter ) {
-                    xncbi_Validate(0,
-                                   "Failed to initialize static mutex. "
-                                   "Probably because it's not static object");
-                }
-            }
-        }
-        return false;
-    }
-}
-
-void CAutoInitializeStaticBase::DoneInitialization(void)
-{
-    TNCBIAtomicValue* pCounter =
-        const_cast<TNCBIAtomicValue*>(&m_InitializeCounter);
-    _ASSERT(m_InitializeCounter > 0 && m_InitializeCounter <= kMaxWaitCounter);
-    (void)NCBI_COUNTER_ADD(pCounter, kMaxWaitCounter);
-}
 
 #if defined(NEED_AUTO_INITIALIZE_MUTEX)
 
+const char* kInitMutexName = "NCBI_CAutoInitializeStaticMutex";
+
 void CAutoInitializeStaticFastMutex::Initialize(void)
 {
-    _ASSERT(m_Mutex.IsUninitialized());
-    if ( NeedInitialization() ) {
-        m_Mutex.InitializeStatic();
-        DoneInitialization();
+    if ( m_Mutex.IsInitialized() ) {
+        return;
     }
-    _ASSERT(m_Mutex.IsInitialized());
+    TSystemMutex init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
+    assert(init_mutex);
+    assert(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
+    if ( !m_Mutex.IsInitialized() ) {
+        m_Mutex.InitializeStatic();
+    }
+    assert(ReleaseMutex(init_mutex));
+    assert(m_Mutex.IsInitialized());
+    CloseHandle(init_mutex);
 }
 
 void CAutoInitializeStaticMutex::Initialize(void)
 {
-    _ASSERT(m_Mutex.IsUninitialized());
-    if ( NeedInitialization() ) {
-        m_Mutex.InitializeStatic();
-        DoneInitialization();
+    if ( m_Mutex.IsInitialized() ) {
+        return;
     }
-    _ASSERT(m_Mutex.IsInitialized());
+    TSystemMutex init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
+    assert(init_mutex);
+    assert(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
+    if ( !m_Mutex.IsInitialized() ) {
+        m_Mutex.InitializeStatic();
+    }
+    assert(ReleaseMutex(init_mutex));
+    assert(m_Mutex.IsInitialized());
+    CloseHandle(init_mutex);
 }
 
 #endif
@@ -309,7 +282,7 @@ const char* CMutexException::GetErrCodeString(void) const
     case eTryLock: return "eTryLock";
     case eOwner:   return "eOwner";
     case eUninitialized:  return "eUninitialized";
-    default:    return CException::GetErrCodeString();
+    default:       return CException::GetErrCodeString();
     }
 }
 
@@ -629,7 +602,7 @@ void CRWLock::WriteLock(void)
     }
 
     // No readers allowed
-    assert(m_Readers.empty());
+    _ASSERT(m_Readers.empty());
 #endif
 }
 
@@ -675,7 +648,7 @@ bool CRWLock::TryWriteLock(void)
     }
 
     // No readers allowed
-    assert(m_Readers.empty());
+    _ASSERT(m_Readers.empty());
 
     return true;
 #endif
@@ -712,7 +685,7 @@ void CRWLock::Unlock(void)
         }
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
-        assert(find(m_Readers.begin(), m_Readers.end(), self_id)
+        _ASSERT(find(m_Readers.begin(), m_Readers.end(), self_id)
                == m_Readers.end());
 #endif
     }
@@ -733,10 +706,10 @@ void CRWLock::Unlock(void)
         // Check if the unlocking thread is in the owners list
         vector<CThreadSystemID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
-        assert(found != m_Readers.end());
+        _ASSERT(found != m_Readers.end());
         m_Readers.erase(found);
         if ( m_Count == 0 ) {
-            assert(m_Readers.empty());
+            _ASSERT(m_Readers.empty());
         }
 #endif
     }
@@ -808,7 +781,7 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 CSemaphore::~CSemaphore(void)
 {
 #if defined(NCBI_POSIX_THREADS)
-    assert(m_Sem->wait_count == 0);
+    _ASSERT(m_Sem->wait_count == 0);
     xncbi_Verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
     xncbi_Verify(pthread_cond_destroy(&m_Sem->cond)  == 0);
 
@@ -895,11 +868,11 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
         // timeout_sec added below to avoid overflow
         timeout.tv_sec  = now.tv_sec;
         timeout.tv_nsec = now.tv_usec * 1000 + timeout_nsec;
-        if (timeout.tv_nsec >= kBillion) {
+        if ((unsigned int)timeout.tv_nsec >= kBillion) {
             timeout.tv_sec  += timeout.tv_nsec / kBillion;
             timeout.tv_nsec %= kBillion;
         }
-        if (timeout_sec > kMax_Int - timeout.tv_sec) {
+        if (timeout_sec > (unsigned int)(kMax_Int - timeout.tv_sec)) {
             // Max out rather than overflowing
             timeout.tv_sec  = kMax_Int;
             timeout.tv_nsec = kBillion - 1;
@@ -974,7 +947,7 @@ void CSemaphore::Post(unsigned int count)
                        "would result in counter > MAX_UINT");
         xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
                        "CSemaphore::Post() - attempt to exceed max_count");
-        assert(0);
+        _TROUBLE;
     }
 
     // Signal some (or all) of the threads waiting on this semaphore
@@ -1027,6 +1000,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/09/29 20:45:54  ivanov
+ * CAutoInitializeStatic[Fast]Mutex:  changed method of initialization for static mutexes on MS Windows (by Eugene Vasilchenko)
+ *
  * Revision 1.14  2003/09/17 17:56:47  vasilche
  * Fixed volatile methods of CThreadSystemID.
  *
