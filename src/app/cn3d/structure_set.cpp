@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/02/16 00:40:01  thiessen
+* remove unused sequences from asn data
+*
 * Revision 1.49  2001/02/13 01:03:57  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -200,6 +203,7 @@
 #include <objects/mmdb3/Chem_graph_pntrs.hpp>
 #include <objects/mmdb3/Residue_pntrs.hpp>
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <connect/ncbi_util.h>
@@ -454,7 +458,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     cddData = cdd;
 
     // read sequences first; these contain links to MMDB id's
-    sequenceSet = new SequenceSet(this, cdd->GetSequences());
+    sequenceSet = new SequenceSet(this, cdd->SetSequences());
 
     // create a list of MMDB ids to try to load
     vector < int > mmdbIDs;
@@ -628,34 +632,70 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     dataChanged |= eStructureAlignmentData;
 }
 
-void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
+void StructureSet::ReplaceAlignmentSetAndSequences(const AlignmentSet *newAlignmentSet)
 {
-    // update the AlignmentSet
-    _RemoveChild(alignmentSet);
-    delete alignmentSet;
-    alignmentSet = newAlignmentSet;
-    dataChanged |= eAlignmentData;
-
-    // update the asn data
+    // find the slot in the asn data for alignments
     SeqAnnotList *seqAnnots = NULL;
     if (mimeData) {
         if (mimeData->IsStrucseqs())
             seqAnnots = &(mimeData->GetStrucseqs().SetSeqalign());
         else if (mimeData->IsAlignstruc())
             seqAnnots = &(mimeData->GetAlignstruc().SetSeqalign());
-    }
-
-    else if (cddData) {
+    } else if (cddData) {
         seqAnnots = &(cddData->SetSeqannot());
     }
-
-    if (seqAnnots) {
-        seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
-        SeqAnnotList::iterator o = seqAnnots->begin();
-        SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
-        for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
-            o->Reset(n->GetPointer());   // copy each Seq-annot CRef
+    if (!seqAnnots) {
+        ERR_POST(Error << "StructureSet::ReplaceAlignmentSet() - "
+            << "can't figure out where in the asn the alignments are to go");
+        return;
     }
+
+    // update the AlignmentSet
+    _RemoveChild(alignmentSet);
+    delete alignmentSet;
+    alignmentSet = newAlignmentSet;
+
+    // update the asn alignments
+    seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
+    SeqAnnotList::iterator o = seqAnnots->begin();
+    SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
+    for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
+        o->Reset(n->GetPointer());   // copy each Seq-annot CRef
+    dataChanged |= eAlignmentData;
+
+    // find the asn sequence list
+    SeqEntryList *seqEntries = NULL;
+    if (mimeData) {
+        if (mimeData->IsStrucseqs())
+            seqEntries = &(mimeData->SetStrucseqs().SetSequences());
+        else if (mimeData->IsAlignstruc())
+            seqEntries = &(mimeData->SetAlignstruc().SetSequences());
+    } else if (cddData) {
+        if (cddData->IsSetSequences() && cddData->GetSequences().IsSet())
+            seqEntries = &(cddData->SetSequences().SetSet().SetSeq_set());
+    }
+    if (!seqEntries) {
+        ERR_POST(Error << "StructureSet::ReplaceAlignmentSet() - "
+            << "can't figure out where in the asn the sequences are to go");
+        return;
+    }
+
+    // update the asn sequences, keeping only those used in this alignment
+    std::map < const CBioseq *, bool > usedSeqs;
+    seqEntries->resize(1);
+    seqEntries->front().Reset(new CSeq_entry);
+    seqEntries->front().GetObject().SetSeq(newAlignmentSet->master->bioseqASN);  // master first
+    usedSeqs[newAlignmentSet->master->bioseqASN.GetPointer()] = true;
+    AlignmentSet::AlignmentList::const_iterator a, ae = newAlignmentSet->alignments.end();
+    for (a=newAlignmentSet->alignments.begin(); a!=ae; a++) {
+        if (usedSeqs.find((*a)->slave->bioseqASN.GetPointer()) == usedSeqs.end()) {
+            seqEntries->resize(seqEntries->size() + 1);
+            seqEntries->back().Reset(new CSeq_entry);
+            seqEntries->back().GetObject().SetSeq((*a)->slave->bioseqASN);
+            usedSeqs[(*a)->slave->bioseqASN.GetPointer()] = true;
+        }
+    }
+    dataChanged |= eSequenceData;
 }
 
 bool StructureSet::SaveASNData(const char *filename, bool doBinary)

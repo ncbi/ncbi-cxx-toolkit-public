@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/02/16 00:36:47  thiessen
+* remove unused sequences from asn data
+*
 * Revision 1.15  2001/02/13 01:03:03  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -104,7 +107,7 @@ class MasterSlaveAlignment;
 class SequenceSet : public StructureBase
 {
 public:
-    SequenceSet(StructureBase *parent, const ncbi::objects::CSeq_entry& seqEntry);
+    SequenceSet(StructureBase *parent, ncbi::objects::CSeq_entry& seqEntry);
     SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
 
     typedef LIST_TYPE < const Sequence * > SequenceList;
@@ -120,7 +123,10 @@ public:
 class Sequence : public StructureBase
 {
 public:
-    Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
+    Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq);
+
+    // keep a reference to the original asn Bioseq
+    const ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
 
     static const int VALUE_NOT_SET;
     int gi, pdbChain, mmdbLink;

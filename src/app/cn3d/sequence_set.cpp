@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/02/16 00:40:01  thiessen
+* remove unused sequences from asn data
+*
 * Revision 1.19  2001/02/13 01:03:57  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -133,7 +136,7 @@ static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSe
                 q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
                 continue;
 
-            const Sequence *sequence = new Sequence(parent, q->GetObject().GetSeq());
+            const Sequence *sequence = new Sequence(parent, q->GetObject().SetSeq());
             seqlist.push_back(sequence);
 
         } else { // Bioseq-set
@@ -142,17 +145,17 @@ static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSe
     }
 }
 
-static void UnpackSeqEntry(const CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
     if (seqEntry.IsSeq()) {
-        const Sequence *sequence = new Sequence(parent, seqEntry.GetSeq());
+        const Sequence *sequence = new Sequence(parent, seqEntry.SetSeq());
         seqlist.push_back(sequence);
     } else { // Bioseq-set
         UnpackSeqSet(seqEntry.GetSet(), parent, seqlist);
     }
 }
 
-SequenceSet::SequenceSet(StructureBase *parent, const CSeq_entry& seqEntry) :
+SequenceSet::SequenceSet(StructureBase *parent, CSeq_entry& seqEntry) :
     StructureBase(parent), master(NULL)
 {
     UnpackSeqEntry(seqEntry, this, sequences);
@@ -229,9 +232,9 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
     }
 }
 
-Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), gi(VALUE_NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(VALUE_NOT_SET),
-    isProtein(false)
+Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
+    StructureBase(parent), bioseqASN(&bioseq),
+    gi(VALUE_NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(VALUE_NOT_SET), isProtein(false)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();

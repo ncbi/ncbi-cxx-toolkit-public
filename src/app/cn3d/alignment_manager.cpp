@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/02/16 00:40:01  thiessen
+* remove unused sequences from asn data
+*
 * Revision 1.38  2001/02/13 01:03:55  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -209,7 +212,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
     AlignmentSet *newAlignmentSet =
         AlignmentSet::CreateFromMultiple(alignmentSet->parentSet, multiple, rowOrder);
     if (newAlignmentSet) {
-        alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
+        alignmentSet->parentSet->ReplaceAlignmentSetAndSequences(newAlignmentSet);
         alignmentSet = newAlignmentSet;
     } else {
         ERR_POST(Error << "Couldn't create pairwise alignments from the current multiple!\n"

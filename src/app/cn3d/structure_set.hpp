@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/02/16 00:36:48  thiessen
+* remove unused sequences from asn data
+*
 * Revision 1.39  2001/02/13 01:03:04  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -236,8 +239,9 @@ public:
 
     // public methods
 
-    // put in new AlignmentSet - e.g. when alignment has been edited
-    void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
+    // put in new AlignmentSet - e.g. when alignment has been edited; this also updates the list
+    // of sequences in the asn (but not in the SequenceSet), to remove any unused sequences
+    void ReplaceAlignmentSetAndSequences(const AlignmentSet *newAlignmentSet);
 
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
@@ -271,8 +275,9 @@ private:
 
     // flags to tell whether various parts of the data have been changed
     enum eDataChanged {
-        eAlignmentData = 0x01,
-        eStructureAlignmentData = 0x02
+        eAlignmentData              = 0x01,
+        eStructureAlignmentData     = 0x02,
+        eSequenceData               = 0x04
     };
     unsigned int dataChanged;
 
