@@ -103,6 +103,10 @@ public:
     void RemapToLoc(TDim row, const CSeq_loc& loc,
                     bool ignore_strand = false);
 
+    // initialize from pairwise alignment transcript
+    void FromTranscript(TSeqPos query_start, ENa_strand query_strand,
+                        TSeqPos subj_start, ENa_strand subj_strand,
+                        const string& transcript );
 
 protected:
     TNumseg x_FindSegment(TDim row, TSignedSeqPos pos) const;
@@ -200,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/10/21 01:37:58  kapustin
+* +FromTranscript
+*
 * Revision 1.11  2004/07/01 20:35:49  todorov
 * + FillUnaligned()
 *

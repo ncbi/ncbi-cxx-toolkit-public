@@ -772,7 +772,167 @@ CRef<CDense_seg> CDense_seg::FillUnaligned()
 
     return new_ds;
 }
+
+
+//-----------------------------------------------------------------------------
+// PRE : RLE alignment transcript and start coordinates
+// POST: Starts, lens and strands. Ids and scores not affected.
+
+// initialize from pairwise alignment transcript
+void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
+                                TSeqPos subj_start, ENa_strand subj_strand,
+                                const string& transcript )
+{
+    // check that strands are specific
+    bool query_strand_specific = 
+        query_strand == eNa_strand_plus || query_strand == eNa_strand_minus;
+    bool subj_strand_specific = 
+        subj_strand == eNa_strand_plus || subj_strand == eNa_strand_minus;
+
+    if(!query_strand_specific || !subj_strand_specific) {
+        NCBI_THROW(CSeqalignException, eInvalidInputData, "Unknown strand");
+    }
+
+    TStarts &starts  = SetStarts();
+    starts.clear();
+    TLens &lens    = SetLens();
+    lens.clear();
+    TStrands &strands = SetStrands();
+    strands.clear();
+
+    SetDim(2);
+
+    // iterate through the transcript
+    size_t seg_count = 0;
+
+    size_t start1 = 0, pos1 = 0; // relative to exon start in mrna
+    size_t start2 = 0, pos2 = 0; // and genomic
+    size_t seg_len = 0;
 	
+    string::const_iterator ib = transcript.begin(),
+        ie = transcript.end(), ii = ib;
+    unsigned char seg_type;
+    const static char badsymerr[] = "Unknown or unsupported transcript symbol";
+    char c = *ii++;
+    if(c == 'M' || c == 'R') {
+        seg_type = 0;
+        ++pos1;
+        ++pos2;
+    }
+    else if (c == 'I') {
+        seg_type = 1;
+        ++pos2;
+    }
+    else if (c == 'D') {
+        seg_type = 2;
+        ++pos1;
+    }
+    else {
+
+        NCBI_THROW(CSeqalignException, eInvalidInputData, badsymerr);
+    }    
+    
+    while(ii < ie) {
+
+        c = *ii;
+        if(isalpha(c)) {
+
+            if(seg_type == 0 && (c == 'M' || c == 'R')) {
+
+                ++pos1;
+                ++pos2;
+                ++ii;
+            }
+            else {
+                
+                // close current seg
+                TSeqPos query_close = query_strand == eNa_strand_plus?
+                    start1: 1 - pos1;
+                starts.push_back(seg_type == 1? -1: query_start + query_close);
+                strands.push_back(query_strand);
+                
+                TSeqPos subj_close = subj_strand == eNa_strand_plus?
+                    start2: 1- pos2;
+                starts.push_back(seg_type == 2? -1: subj_start + subj_close);
+                strands.push_back(subj_strand);
+                
+                switch(seg_type) {
+                case 0: seg_len = pos1 - start1; break;
+                case 1: seg_len = pos2 - start2; break;
+                case 2: seg_len = pos1 - start1; break;
+                }
+                lens.push_back(seg_len);
+                ++seg_count;
+                
+                // start a new seg
+                start1 = pos1;
+                start2 = pos2;
+                
+                if(c == 'M' || c == 'R'){
+                    seg_type = 0; // matches and mismatches
+                    ++pos1;
+                    ++pos2;
+                }
+                else if (c == 'I') {
+                    seg_type = 1;  // inserts
+                    ++pos2;
+                }
+                else  if (c == 'D') {
+                    seg_type = 2;  // dels
+                    ++pos1;
+                }
+                else {
+
+                    NCBI_THROW(CSeqalignException, eInvalidInputData,
+                               badsymerr);
+                }
+                
+                ++ii;
+            }
+        }
+        else {
+
+            if(!isdigit(c)) {
+
+                NCBI_THROW(CSeqalignException, eInvalidInputData,
+                           "Alignment transcript corrupt");
+            }
+
+            size_t len = 0;
+            while(ii < ie && isdigit(*ii)) {
+                len = 10*len + *ii - '0';
+                ++ii;
+            }
+            --len;
+            switch(seg_type) {
+            case 0: pos1 += len; pos2 += len; break;
+            case 1: pos2 += len; break;
+            case 2: pos1 += len; break;
+            }
+        }
+    }
+    
+    TSeqPos query_close = query_strand == eNa_strand_plus? start1: 1 - pos1;
+    starts.push_back(seg_type == 1? -1: query_start + query_close);
+    strands.push_back(query_strand);
+    
+    TSeqPos subj_close = subj_strand? start2: 1 - pos2;
+    starts.push_back(seg_type == 2? -1: subj_start + subj_close);
+    strands.push_back(subj_strand);
+    
+    switch(seg_type) {
+
+    case 0: seg_len = pos1 - start1; break;
+    case 1: seg_len = pos2 - start2; break;
+    case 2: seg_len = pos1 - start1; break;
+    }
+    lens.push_back(seg_len);
+    ++seg_count;
+    
+    SetNumseg(seg_count);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -782,6 +942,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/10/21 01:38:12  kapustin
+* +FromTranscript
+*
 * Revision 1.16  2004/07/01 20:35:59  todorov
 * + FillUnaligned()
 *
