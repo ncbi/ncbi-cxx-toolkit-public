@@ -153,9 +153,11 @@ void CEnvironmentRegistry::x_Enumerate(const string& section,
         return;
     }
 
-    list<string>         l;
-    set<string, PNocase> entry_set;
-    string               parsed_section, parsed_name;
+    typedef set<string, PNocase> TEntrySet;
+
+    list<string> l;
+    TEntrySet    entry_set;
+    string       parsed_section, parsed_name;
 
     ITERATE (TPriorityMap, mapper, m_PriorityMap) {
         m_Env->Enumerate(l, mapper->second->GetPrefix());
@@ -169,7 +171,9 @@ void CEnvironmentRegistry::x_Enumerate(const string& section,
             }
         }
     }
-    entries.assign(entry_set.begin(), entry_set.end());
+    ITERATE (TEntrySet, it, entry_set) {
+        entries.push_back(*it);
+    }
 }
 
 void CEnvironmentRegistry::x_ChildLockAction(FLockAction)
@@ -187,7 +191,8 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
                                  const string& value, TFlags flags,
                                  const string& comment)
 {
-    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+    REV_ITERATE (TPriorityMap, it,
+                 const_cast<const TPriorityMap&>(m_PriorityMap)) {
         string var_name = it->second->RegToEnv(section, name);
         if ( !var_name.empty() ) {
             string cap_name = var_name;
@@ -298,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/14 18:12:20  ucko
+ * Tweak for compatibility with WorkShop's STL implementation.
+ *
  * Revision 1.1  2005/03/14 15:52:09  ucko
  * Support taking settings from the environment.
  *
