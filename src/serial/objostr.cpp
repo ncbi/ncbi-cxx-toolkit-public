@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/06/25 17:49:05  gouriano
+* fixed verification flag initialization, disabled verification
+*
 * Revision 1.83  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -460,8 +463,8 @@ bool CObjectOStream::x_GetVerifyDataDefault(void)
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
                 // change the default here, if you wish
-                ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                //ms_VerifyDataDefault = eSerialVerifyData_No;
+                //ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                ms_VerifyDataDefault = eSerialVerifyData_No;
 
                 const char* str = getenv(SERIAL_VERIFY_DATA_WRITE);
                 if (str) {
@@ -475,8 +478,8 @@ bool CObjectOStream::x_GetVerifyDataDefault(void)
                         ms_VerifyDataDefault = eSerialVerifyData_Always;
                     }
                 }
-                verify = ms_VerifyDataDefault;
             }
+            verify = ms_VerifyDataDefault;
         }
     }
     return verify == eSerialVerifyData_Yes ||

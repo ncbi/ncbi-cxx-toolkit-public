@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/06/25 17:49:05  gouriano
+* fixed verification flag initialization, disabled verification
+*
 * Revision 1.10  2003/06/04 21:23:04  gouriano
 * changed the value of ms_UnassignedStr
 *
@@ -167,8 +170,8 @@ bool CSerialObject::x_GetVerifyData(void)
                         ms_VerifyDataDefault = eSerialVerifyData_Always;
                     }
                 }
-                verify = ms_VerifyDataDefault;
             }
+            verify = ms_VerifyDataDefault;
         }
     }
     return verify == eSerialVerifyData_Yes ||
