@@ -222,9 +222,17 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             buf     += (streamsize) n_read;
             n_total += (streamsize) n_read;
         } else {
+            streamsize n_read = m_Sb->sgetn(buf, m);
+            if ( n_read == 0 )
+                break;
+            m       -= n_read;
+            buf     += n_read;
+            n_total += n_read;
+            /*
             x_FillBuffer();
             if (gptr() >= egptr())
                 break;
+            */
         }
     }
     return n_total;
@@ -459,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.30  2003/11/19 15:41:50  vasilche
+ * Temporary fix for wrong Readsome() after Pushback().
+ *
  * Revision 1.29  2003/11/04 13:39:01  lavr
  * CPushback_Streambuf is conditioanally specially based on MIPSPro
  *
