@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Eugene Vasilchenko
+ * Author:  Anatoliy Kuznetsov
  *
  *
  */
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/02 14:12:51  kuznets
+ * Cosmetics..
+ *
  * Revision 1.2  2004/08/02 14:11:02  kuznets
  * GCC compilation fix (proper use of typename)
  *
