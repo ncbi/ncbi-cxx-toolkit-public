@@ -1284,6 +1284,13 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+# Work around bug in autoconf 2.53
+case "$CONFIG_SHELL" in
+   */bash)
+      CONFIG_SHELL="$CONFIG_SHELL -norc"
+      SHELL="$CONFIG_SHELL"
+   ;;
+esac
 
 
 #############################################################################
