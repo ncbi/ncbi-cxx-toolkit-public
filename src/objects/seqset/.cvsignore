@@ -1,6 +1,7 @@
 .cvsignore
-[A-Z]*_.cpp
 Bioseq_set.hpp
+Bioseq_set_.hpp
+Seq_entry_.hpp
 *__.cpp
 Makefile.in
 Makefile.*.lib
