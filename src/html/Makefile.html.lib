@@ -4,5 +4,5 @@
 #################################
 
 SRC = node html htmlhelper page nodemap pager selection components \
-      jsmenu commentdiag indentstream
+      jsmenu commentdiag indentstream html_exception
 LIB = xhtml
