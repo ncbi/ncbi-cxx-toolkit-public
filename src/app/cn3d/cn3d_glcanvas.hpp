@@ -26,70 +26,68 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*       dialog for CDD splash screen
+*      OpenGL canvas object
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_CDD_SPLASH_DIALOG__HPP
-#define CN3D_CDD_SPLASH_DIALOG__HPP
+#ifndef CN3D_GLCANVAS__HPP
+#define CN3D_GLCANVAS__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistl.hpp>
 
 #ifdef __WXMSW__
 #include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
 #include <wx/wx.h>
+#include <wx/glcanvas.h>
 
 
 BEGIN_SCOPE(Cn3D)
 
-class StructureWindow;
 class StructureSet;
+class OpenGLRenderer;
 
-class CDDSplashDialog : public wxDialog
+class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    CDDSplashDialog(StructureWindow *cn3dFrame, StructureSet *structureSet,
-        CDDSplashDialog **parentHandle,
-        wxWindow* parent, wxWindowID id, const wxString& title,
-        const wxPoint& pos = wxDefaultPosition);
-    ~CDDSplashDialog(void);
+    Cn3DGLCanvas(wxWindow *parent, int *attribList);
+    ~Cn3DGLCanvas(void);
+
+    StructureSet *structureSet;
+    OpenGLRenderer *renderer;
+
+    // font stuff - setup from registry, and measure using currently selected font
+    void SetGLFontFromRegistry(double fontScale = 1.0);
+    bool MeasureText(const std::string& text, int *width, int *height, int *centerX, int *centerY);
+    const wxFont& GetGLFont(void) const { return font; }
+
+    void SuspendRendering(bool suspend);
 
 private:
-    CDDSplashDialog **handle;
-    StructureWindow *structureWindow;
-    StructureSet *sSet;
+    void OnPaint(wxPaintEvent& event);
+    void OnSize(wxSizeEvent& event);
+    void OnEraseBackground(wxEraseEvent& event);
+    void OnMouseEvent(wxMouseEvent& event);
 
-    // event callbacks
-    void OnCloseWindow(wxCloseEvent& event);
-    void OnButton(wxCommandEvent& event);
+    // memoryDC is used for measuring text
+    wxMemoryDC memoryDC;
+    wxBitmap memoryBitmap;
+    wxFont font;
+    bool suspended;
 
     DECLARE_EVENT_TABLE()
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_CDD_SPLASH_DIALOG__HPP
+#endif // CN3D_GLCANVAS__HPP
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.5  2003/03/13 14:26:18  thiessen
+* Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
-*
-* Revision 1.4  2003/02/03 19:20:02  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.3  2002/08/15 22:13:13  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.2  2002/04/09 23:59:09  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.1  2002/04/09 14:38:24  thiessen
-* add cdd splash screen
 *
 */

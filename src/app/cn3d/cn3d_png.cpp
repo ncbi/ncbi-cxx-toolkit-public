@@ -61,7 +61,7 @@
 #endif
 
 #include "cn3d/cn3d_png.hpp"
-#include "cn3d/cn3d_main_wxwin.hpp"
+#include "cn3d/cn3d_glcanvas.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/progress_meter.hpp"
 #include "cn3d/cn3d_tools.hpp"
@@ -877,6 +877,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.15  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -36,20 +36,14 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbireg.hpp>
+
+#include <objects/cn3d/Cn3d_style_settings_set.hpp>
 
 #include <string>
 #include <vector>
 
-
-// diagnostic streams
-#define TRACEMSG(stream) ERR_POST(Trace << stream)
-#define INFOMSG(stream) ERR_POST(Info << stream)
-#define WARNINGMSG(stream) ERR_POST(Warning << stream)
-#define ERRORMSG(stream) ERR_POST(Error << stream)
-#define FATALMSG(stream) ERR_POST(Fatal << stream)
-
 class wxFrame;
+
 
 /////
 ///// Check platform and wx option compatibility
@@ -58,7 +52,7 @@ class wxFrame;
 #include <wx/version.h>
 
 #if !wxCHECK_VERSION(2,3,2)
-#error Cn3D requires at wxWindows version 2.3.2 or higher!
+#error Cn3D requires wxWindows version 2.3.2 or higher!
 #endif
 
 #if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)
@@ -66,18 +60,31 @@ class wxFrame;
 #endif
 
 #if defined(__WXMAC__) && !defined(__DARWIN__)
-#error Cn3D compilation is no longer supported for Mac OS 8/9
+#error Cn3D compilation is no longer supported for Mac OS 8/9 (classic or Carbon)
 #endif
 
 #if !wxUSE_GLCANVAS
 #error Please set wxUSE_GLCANVAS to 1 in <wx/setup.h>
 #endif
 
+#if !wxUSE_STREAMS || !wxUSE_ZIPSTREAM || !wxUSE_ZLIB
+#error Must turn on wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB for the Cn3D help system!
+#endif
+
 
 BEGIN_SCOPE(Cn3D)
 
+// program version number string
+#define CN3D_VERSION_STRING "4.2"
+
+// diagnostic streams
+#define TRACEMSG(stream) ERR_POST(Trace << stream)
+#define INFOMSG(stream) ERR_POST(Info << stream)
+#define WARNINGMSG(stream) ERR_POST(Warning << stream)
+#define ERRORMSG(stream) ERR_POST(Error << stream)
+#define FATALMSG(stream) ERR_POST(Fatal << stream)
+
 // strings for various directories - dirs will include trailing path separator character
-// (implemented in cn3d_main_wxwin.cpp)
 extern const std::string& GetWorkingDir(void);  // current working directory
 extern const std::string& GetUserDir(void);     // directory of latest user-selected file
 extern const std::string& GetProgramDir(void);  // directory where Cn3D executable lives
@@ -85,20 +92,22 @@ extern const std::string& GetDataDir(void);     // 'data' directory with externa
 extern const std::string& GetWorkingFilename(void); // name of current working file
 extern const std::string& GetPrefsDir(void);    // application preferences directory
 
-// get working document title; bring the log window forward (implemented in cn3d_main_wxwin.cpp)
+// get working document title; bring the log window forward
 extern const std::string& GetWorkingTitle(void);
 extern void RaiseLogWindow(void);
 
-// launch web browser on given URL (implemented in sequence_set.cpp)
+// launch web browser on given URL
 extern void LaunchWebPage(const char *url);
 
-// top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)
+// top-level window (the main structure window)
 extern wxFrame * GlobalTopWindow(void);
 
 // return BLOSUM62 score for two residues
 extern int GetBLOSUM62Score(char a, char b);
 
-// global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
+// global program registry manipulation
+extern void LoadRegistry(void);
+extern void SaveRegistry(void);
 extern bool RegistryIsValidInteger(const std::string& section, const std::string& name);
 extern bool RegistryIsValidBoolean(const std::string& section, const std::string& name);
 extern bool RegistryIsValidString(const std::string& section, const std::string& name);
@@ -131,13 +140,6 @@ static const std::string
     // font settings
     REG_OPENGL_FONT_SECTION = "Cn3D-4-Font-OpenGL",
     REG_SEQUENCE_FONT_SECTION = "Cn3D-4-Font-Sequence",
-//    REG_FONT_SIZE = "FontPointSize",
-//    REG_FONT_FAMILY = "FontFamily",
-//    REG_FONT_STYLE = "FontStyle",
-//    REG_FONT_WEIGHT = "FontWeight",
-//    REG_FONT_UNDERLINED = "FontUnderlined",
-//    REG_FONT_FACENAME = "FontFaceName",
-//    FONT_FACENAME_UNKNOWN = "unknown",
     REG_FONT_NATIVE_FONT_INFO = "NativeFontInfo",
     // cache settings
     REG_CACHE_SECTION = "Cn3D-4-Cache",
@@ -200,6 +202,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.26  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

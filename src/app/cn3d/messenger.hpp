@@ -55,7 +55,7 @@ Messenger * GlobalMessenger(void);
 class ViewerBase;
 class BlockMultipleAlignment;
 class Sequence;
-class Cn3DMainFrame;
+class StructureWindow;
 class StructureObject;
 class Molecule;
 class MoleculeIdentifier;
@@ -132,7 +132,7 @@ private:
     typedef std::list < ViewerBase * > SequenceViewerList;
     SequenceViewerList sequenceViewers;
     // currently can only have one structure viewer
-    Cn3DMainFrame * structureWindow;
+    StructureWindow * structureWindow;
 
     // to keep track of messages posted
     typedef std::map < const Molecule *, bool > RedrawMoleculeList; // use map to preclude redundant redraws
@@ -169,15 +169,19 @@ public:
     void AddSequenceViewer(ViewerBase *sequenceViewer)
         { sequenceViewers.push_back(sequenceViewer); }
 
-    void AddStructureWindow(Cn3DMainFrame *window)
+    void AddStructureWindow(StructureWindow *window)
         { structureWindow = window; }
 
     // to unregister viewers
-    void RemoveStructureWindow(const Cn3DMainFrame *structureWindow);
+    void RemoveStructureWindow(const StructureWindow *structureWindow);
     void RemoveSequenceViewer(const ViewerBase *sequenceViewer);
 
     // set window titles
     void SetAllWindowTitles(void) const;
+
+    // for sending messages through file messenger
+    bool IsFileMessengerActive(void) const;
+    void FileMessengerSend(const std::string& toApp, const std::string& command, const std::string& data);
 };
 
 END_SCOPE(Cn3D)
@@ -187,6 +191,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.24  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

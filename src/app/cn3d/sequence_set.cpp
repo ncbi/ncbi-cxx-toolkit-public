@@ -31,20 +31,7 @@
 * ===========================================================================
 */
 
-#if defined(__WXMSW__)
-#include <windows.h>
-#include <shellapi.h>   // for ShellExecute, needed to launch browser
-
-#elif defined(__WXGTK__)
-#include <unistd.h>
-
-#elif defined(__WXMAC__)
-// full paths needed to void having to add -I/Developer/Headers/FlatCarbon to all modules...
-#include "/Developer/Headers/FlatCarbon/Types.h"
-#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
-#endif
-
-#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
 
@@ -401,69 +388,6 @@ int Sequence::GetOrSetMMDBLink(void) const
     return identifier->mmdbID;
 }
 
-
-#ifdef __WXMSW__
-// code borrowed (and modified) from Nlm_MSWin_OpenDocument() in vibutils.c
-static bool MSWin_OpenDocument(const char* doc_name)
-{
-  int status = (int) ShellExecute(0, "open", doc_name, NULL, NULL, SW_SHOWNORMAL);
-  if (status <= 32) {
-    ERRORMSG("Unable to open document \"" << doc_name << "\", error = " << status);
-    return false;
-  }
-  return true;
-}
-#endif
-
-#ifdef __WXMAC__
-OSStatus MacLaunchURL(ConstStr255Param urlStr)
-{
-    OSStatus err;
-    ICInstance inst;
-    SInt32 startSel;
-    SInt32 endSel;
-
-    err = ICStart(&inst, 'Cn3D');
-    if (err == noErr) {
-#if !TARGET_CARBON
-        err = ICFindConfigFile(inst, 0, nil);
-#endif
-        if (err == noErr) {
-            startSel = 0;
-            endSel = StrLen(urlStr);
-            err = ICLaunchURL(inst, "\p", urlStr, endSel, &startSel, &endSel);
-        }
-        ICStop(inst);
-    }
-    return err;
-}
-#endif
-
-// code borrowed (and modified a lot) from Nlm_LaunchWebPage in bspview.c
-void LaunchWebPage(const char *url)
-{
-    if(!url) return;
-    INFOMSG("launching url " << url);
-
-#if defined(__WXMSW__)
-    if (!MSWin_OpenDocument(url)) {
-        ERRORMSG("Unable to launch browser");
-    }
-
-#elif defined(__WXGTK__)
-    string command;
-    RegistryGetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, &command);
-    size_t pos = 0;
-    while ((pos=command.find("<URL>", pos)) != string::npos)
-        command.replace(pos, 5, url);
-    TRACEMSG("launching browser: " << command);
-    system(command.c_str());
-
-#elif defined(__WXMAC__)
-    MacLaunchURL(url);
-#endif
-}
-
 void Sequence::LaunchWebBrowserWithInfo(void) const
 {
     string db = isProtein ? "Protein" : "Nucleotide";
@@ -665,6 +589,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.56  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -771,7 +771,8 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
 
         case StyleSettings::eTemperature:
             atomStyle->color =
-                (coord && coord->averageTemperature != AtomCoord::NO_TEMPERATURE) ?
+                (coord && coord->averageTemperature != AtomCoord::NO_TEMPERATURE &&
+				 object->maxTemperature != object->minTemperature) ?
                     GlobalColors()->Get(Colors::eTemperatureMap,
                         (coord->averageTemperature - object->minTemperature) /
                         (object->maxTemperature - object->minTemperature)) :
@@ -1595,6 +1596,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.73  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *

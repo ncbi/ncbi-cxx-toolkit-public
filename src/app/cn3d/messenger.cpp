@@ -46,7 +46,8 @@
 #include <objects/mmdb1/Residue_id.hpp>
 
 #include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_main_wxwin.hpp"
+#include "cn3d/structure_window.hpp"
+#include "cn3d/cn3d_glcanvas.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/structure_set.hpp"
@@ -158,7 +159,7 @@ void Messenger::ProcessRedraws(void)
     }
 }
 
-void Messenger::RemoveStructureWindow(const Cn3DMainFrame *window)
+void Messenger::RemoveStructureWindow(const StructureWindow *window)
 {
     if (window != structureWindow)
         ERRORMSG("Messenger::RemoveStructureWindow() - window mismatch");
@@ -471,12 +472,26 @@ void Messenger::SetAllWindowTitles(void) const
     if (structureWindow) structureWindow->SetWindowTitle();
 }
 
+bool Messenger::IsFileMessengerActive(void) const
+{
+    return (structureWindow && structureWindow->IsFileMessengerActive());
+}
+
+void Messenger::FileMessengerSend(const std::string& toApp,
+    const std::string& command, const std::string& data)
+{
+    if (structureWindow) structureWindow->SendCommand(toApp, command, data);
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.35  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

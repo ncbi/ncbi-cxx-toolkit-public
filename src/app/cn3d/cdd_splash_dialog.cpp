@@ -47,7 +47,7 @@
 #include <objects/mmdb3/Biostruc_feature.hpp>
 
 #include "cn3d/cdd_splash_dialog.hpp"
-#include "cn3d/cn3d_main_wxwin.hpp"
+#include "cn3d/structure_window.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/chemical_graph.hpp"
@@ -100,7 +100,7 @@ BEGIN_EVENT_TABLE(CDDSplashDialog, wxDialog)
     EVT_BUTTON      (-1,    CDDSplashDialog::OnButton)
 END_EVENT_TABLE()
 
-CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
+CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     StructureSet *structureSet, CDDSplashDialog **parentHandle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
@@ -347,6 +347,9 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/13 14:26:18  thiessen
+* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
+*
 * Revision 1.8  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
