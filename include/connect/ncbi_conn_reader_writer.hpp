@@ -66,20 +66,20 @@ public:
     
 protected:
     CSocket*   m_Sock;
-    EOwnership m_Owned;
-};
+    EOwnership m_IsOwned;
+}; 
 
 
 inline CSocketReaderWriter::CSocketReaderWriter(CSocket*   sock,
                                                 EOwnership if_to_own)
-    : m_Sock(sock), m_Owned(if_to_own)
+    : m_Sock(sock), m_IsOwned(if_to_own)
 {
 }
 
 
 inline CSocketReaderWriter::~CSocketReaderWriter()
 {
-    if (m_Owned) {
+    if (m_IsOwned) {
         delete m_Sock;
     }
 }
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/08 12:30:12  lavr
+ * m_Owned -> m_IsOwned
+ *
  * Revision 1.3  2004/10/01 18:55:19  lavr
  * CSocketReader->CSocketReaderWriter plus .cpp file with bulky methods
  *
