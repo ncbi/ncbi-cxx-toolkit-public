@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/12/20 21:41:46  thiessen
+* create/use user preferences directory
+*
 * Revision 1.13  2001/11/27 16:26:07  thiessen
 * major update to data management system
 *
@@ -88,12 +91,14 @@ class wxFrame;
 
 BEGIN_SCOPE(Cn3D)
 
-// strings for various directories (implemented in cn3d_main_wxwin.cpp)
-extern const std::string& GetWorkingDir(void); // current working directory
-extern const std::string& GetUserDir(void);    // directory of latest user-selected file
-extern const std::string& GetProgramDir(void); // directory where Cn3D executable lives
-extern const std::string& GetDataDir(void);    // 'data' directory with external data files
-extern const std::string& GetWorkingFilename(void); // name of curruent working file
+// strings for various directories - dirs will include trailing path separator character
+// (implemented in cn3d_main_wxwin.cpp)
+extern const std::string& GetWorkingDir(void);  // current working directory
+extern const std::string& GetUserDir(void);     // directory of latest user-selected file
+extern const std::string& GetProgramDir(void);  // directory where Cn3D executable lives
+extern const std::string& GetDataDir(void);     // 'data' directory with external data files
+extern const std::string& GetWorkingFilename(void); // name of current working file
+extern const std::string& GetPrefsDir(void);    // application preferences directory
 
 // bring the log window forward (implemented in cn3d_main_wxwin.cpp)
 extern void RaiseLogWindow(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2001/12/20 21:41:45  thiessen
+* create/use user preferences directory
+*
 * Revision 1.111  2001/12/15 03:15:58  thiessen
 * adjustments for slightly changed object loader Set...() API
 *
@@ -484,12 +487,14 @@ std::string
     userDir,        // directory of latest user-selected file
     programDir,     // directory where Cn3D executable lives
     dataDir,        // 'data' directory with external data files
-    currentFile;    // name of curruent working file
+    currentFile,    // name of curruent working file
+    prefsDir;       // application preferences directory
 const std::string& GetWorkingDir(void) { return workingDir; }
 const std::string& GetUserDir(void) { return userDir; }
 const std::string& GetProgramDir(void) { return programDir; }
 const std::string& GetDataDir(void) { return dataDir; }
 const std::string& GetWorkingFilename(void) { return currentFile; }
+const std::string& GetPrefsDir(void) { return prefsDir; }
 
 // top-level window (the main structure window)
 static wxFrame *topWindow = NULL;
@@ -503,6 +508,9 @@ static bool registryChanged = false;
 // stuff for style favorites
 static CCn3d_style_settings_set favoriteStyles;
 static bool favoriteStylesChanged = false;
+static bool LoadFavorites(void);
+static void SaveFavorites(void);
+static void SetupFavoritesMenu(wxMenu *favoritesMenu);
 
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
@@ -606,67 +614,6 @@ void RaiseLogWindow(void)
 }
 
 
-static wxString GetFavoritesFile(bool forRead)
-{
-    // try to get value from registry
-    wxString file = registry.Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME).c_str();
-
-    // if not set, ask user for a folder, then set in registry
-    if (file.size() == 0) {
-        file = wxFileSelector("Select a file for favorites:",
-            dataDir.c_str(), "Favorites", "", "*.*",
-            forRead ? wxOPEN : wxSAVE | wxOVERWRITE_PROMPT);
-
-        if (file.size() > 0) {
-            if (!registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file.c_str(),
-                    CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate))
-                ERR_POST(Error << "Error setting favorites file in registry");
-            registryChanged = true;
-        }
-    }
-
-    return file;
-}
-
-static bool LoadFavorites(void)
-{
-    std::string favoritesFile = registry.Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME);
-    if (favoritesFile.size() > 0) {
-        favoriteStyles.Reset();
-        if (wxFile::Exists(favoritesFile.c_str())) {
-            TESTMSG("loading favorites from " << favoritesFile);
-            std::string err;
-            if (ReadASNFromFile(favoritesFile.c_str(), &favoriteStyles, false, &err)) {
-                favoriteStylesChanged = false;
-                return true;
-            }
-        } else {
-            ERR_POST(Warning << "Favorites file does not exist: " << favoritesFile);
-            registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
-            registryChanged = true;
-        }
-    }
-    return false;
-}
-
-static void SaveFavorites(void)
-{
-    if (favoriteStylesChanged) {
-        int choice = wxMessageBox("Do you want to save changes to your current Favorites file?",
-            "Save favorites?", wxYES_NO);
-        if (choice == wxYES) {
-            wxString favoritesFile = GetFavoritesFile(false);
-            if (favoritesFile.size() > 0) {
-                std::string err;
-                if (!WriteASNToFile(favoritesFile.c_str(), favoriteStyles, false, &err))
-                    ERR_POST(Error << "Error saving Favorites to " << favoritesFile << '\n' << err);
-                favoriteStylesChanged = false;
-            }
-        }
-    }
-}
-
-
 #ifdef TEST_WXGLAPP
 BEGIN_EVENT_TABLE(Cn3DApp, wxGLApp)
 #else
@@ -700,7 +647,7 @@ void Cn3DApp::InitRegistry(void)
 
     // default animation delay and log window startup
     RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 500);
-    RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, true);
+    RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, false);
 
     // default quality settings
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
@@ -741,11 +688,17 @@ void Cn3DApp::InitRegistry(void)
 
     // default cache settings
     RegistrySetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, true);
-    RegistrySetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, GetProgramDir() + "cache");
+    if (GetPrefsDir().size() > 0)
+        RegistrySetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, GetPrefsDir() + "cache");
+    else
+        RegistrySetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, GetProgramDir() + "cache");
     RegistrySetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, 25);
 
     // load program registry - overriding defaults if present
-    registryFile = wxFileConfig::GetLocalFileName("cn3d");
+    if (GetPrefsDir().size() > 0)
+        registryFile = GetPrefsDir() + "Preferences";
+    else
+        registryFile = GetProgramDir() + "Preferences";
     auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
     if (*iniIn) {
         TESTMSG("loading program registry " << registryFile);
@@ -770,6 +723,29 @@ bool Cn3DApp::OnInit(void)
     workingDir = workingDir + wxFILE_SEP_PATH;
     programDir = programDir + wxFILE_SEP_PATH;
 
+    // find or create preferences folder
+    wxString localDir;
+    wxSplitPath((wxFileConfig::GetLocalFileName("unused")).c_str(), &localDir, NULL, NULL);
+    wxString prefsDirLocal = localDir + wxFILE_SEP_PATH + "Cn3D_User";
+    wxString prefsDirProg = wxString(programDir.c_str()) + wxFILE_SEP_PATH + "Cn3D_User";
+    if (wxDirExists(prefsDirLocal))
+        prefsDir = prefsDirLocal.c_str();
+    else if (wxDirExists(prefsDirProg))
+        prefsDir = prefsDirProg.c_str();
+    else {
+        // try to create the folder
+        if (wxMkdir(prefsDirLocal) && wxDirExists(prefsDirLocal))
+            prefsDir = prefsDirLocal.c_str();
+        else if (wxMkdir(prefsDirProg) && wxDirExists(prefsDirProg))
+            prefsDir = prefsDirProg.c_str();
+    }
+    if (prefsDir.size() == 0)
+        ERR_POST(Warning << "Can't create Cn3D_User folder at either:"
+            << "\n    " << prefsDirLocal
+            << "\nor  " << prefsDirProg);
+    else
+        prefsDir += wxFILE_SEP_PATH;
+
     // set data dir, and register the path in C toolkit registry (mainly for BLAST code)
     dataDir = programDir + "data" + wxFILE_SEP_PATH;
     Nlm_TransientSetAppParam("ncbi", "ncbi", "data", dataDir.c_str());
@@ -777,6 +753,7 @@ bool Cn3DApp::OnInit(void)
     TESTMSG("working dir: " << workingDir.c_str());
     TESTMSG("program dir: " << programDir.c_str());
     TESTMSG("data dir: " << dataDir.c_str());
+    TESTMSG("prefs dir: " << prefsDir.c_str());
 
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
@@ -925,6 +902,80 @@ OSErr Cn3DApp::MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply)
 #endif
 
 
+static wxString GetFavoritesFile(bool forRead)
+{
+    // try to get value from registry
+    wxString file = registry.Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME).c_str();
+
+    // if not set, ask user for a folder, then set in registry
+    if (file.size() == 0) {
+        file = wxFileSelector("Select a file for favorites:",
+            prefsDir.c_str(), "Favorites", "", "*.*",
+            forRead ? wxOPEN : wxSAVE | wxOVERWRITE_PROMPT);
+
+        if (file.size() > 0) {
+            if (!registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file.c_str(),
+                    CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate))
+                ERR_POST(Error << "Error setting favorites file in registry");
+            registryChanged = true;
+        }
+    }
+
+    return file;
+}
+
+static bool LoadFavorites(void)
+{
+    std::string favoritesFile = registry.Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME);
+    if (favoritesFile.size() > 0) {
+        favoriteStyles.Reset();
+        if (wxFile::Exists(favoritesFile.c_str())) {
+            TESTMSG("loading favorites from " << favoritesFile);
+            std::string err;
+            if (ReadASNFromFile(favoritesFile.c_str(), &favoriteStyles, false, &err)) {
+                favoriteStylesChanged = false;
+                return true;
+            }
+        } else {
+            ERR_POST(Warning << "Favorites file does not exist: " << favoritesFile);
+            registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
+            registryChanged = true;
+        }
+    }
+    return false;
+}
+
+static void SaveFavorites(void)
+{
+    if (favoriteStylesChanged) {
+        int choice = wxMessageBox("Do you want to save changes to your current Favorites file?",
+            "Save favorites?", wxYES_NO);
+        if (choice == wxYES) {
+            wxString favoritesFile = GetFavoritesFile(false);
+            if (favoritesFile.size() > 0) {
+                std::string err;
+                if (!WriteASNToFile(favoritesFile.c_str(), favoriteStyles, false, &err))
+                    ERR_POST(Error << "Error saving Favorites to " << favoritesFile << '\n' << err);
+                favoriteStylesChanged = false;
+            }
+        }
+    }
+}
+
+static void SetupFavoritesMenu(wxMenu *favoritesMenu)
+{
+    int i;
+    for (i=Cn3DMainFrame::MID_FAVORITES_BEGIN; i<=Cn3DMainFrame::MID_FAVORITES_END; i++) {
+        wxMenuItem *item = favoritesMenu->FindItem(i);
+        if (item) favoritesMenu->Delete(item);
+    }
+
+    CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
+    for (f=favoriteStyles.Get().begin(), i=0; f!=fe; f++, i++)
+        favoritesMenu->Append(Cn3DMainFrame::MID_FAVORITES_BEGIN + i, (*f)->GetName().c_str());
+}
+
+
 // data and methods for the main program window (a Cn3DMainFrame)
 
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
@@ -947,19 +998,6 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_PLAY, MID_SET_DELAY,                 Cn3DMainFrame::OnAnimate)
     EVT_TIMER     (MID_ANIMATE,                             Cn3DMainFrame::OnTimer)
 END_EVENT_TABLE()
-
-static void SetupFavoritesMenu(wxMenu *favoritesMenu)
-{
-    int i;
-    for (i=Cn3DMainFrame::MID_FAVORITES_BEGIN; i<=Cn3DMainFrame::MID_FAVORITES_END; i++) {
-        wxMenuItem *item = favoritesMenu->FindItem(i);
-        if (item) favoritesMenu->Delete(item);
-    }
-
-    CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
-    for (f=favoriteStyles.Get().begin(), i=0; f!=fe; f++, i++)
-        favoritesMenu->Append(Cn3DMainFrame::MID_FAVORITES_BEGIN + i, (*f)->GetName().c_str());
-}
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
