@@ -149,15 +149,8 @@ public:
     ///
     /// @sa
     ///    operator !()
-    operator bool(void) const;
-
-    // Check if handle does not point to a bioseq-set
-    ///
-    /// @sa
-    ///    operator bool()
-    bool operator!(void) const;
-
-
+    DECLARE_OPERATOR_BOOL_REF(m_Info);
+        
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
 
@@ -467,20 +460,6 @@ const CBioseq_set_Info& CBioseq_set_Handle::x_GetInfo(void) const
 
 
 inline
-CBioseq_set_Handle::operator bool(void) const
-{
-    return m_Info.NotEmpty();
-}
-
-
-inline
-bool CBioseq_set_Handle::operator!(void) const
-{
-    return !m_Info;
-}
-
-
-inline
 bool CBioseq_set_Handle::operator ==(const CBioseq_set_Handle& handle) const
 {
     return m_TSE == handle.m_TSE  &&  m_Info == handle.m_Info;
@@ -546,6 +525,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.14  2005/01/12 17:16:13  vasilche
 * Avoid performance warning on MSVC.
 *

@@ -122,8 +122,7 @@ public:
     bool operator== (const CSeq_id& id) const;
 
     /// Check if the handle is a valid or an empty one
-    operator bool(void) const;
-    bool operator! (void) const;
+    DECLARE_OPERATOR_BOOL_REF(m_Info);
 
     /// Reset the handle (remove seq-id reference)
     void Reset(void);
@@ -227,20 +226,6 @@ CSeq_id_Mapper& CSeq_id_Info::GetMapper(void) const
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_Handle
 /////////////////////////////////////////////////////////////////////////////
-
-
-inline
-CSeq_id_Handle::operator bool (void) const
-{
-    return m_Info.NotEmpty();
-}
-
-
-inline
-bool CSeq_id_Handle::operator!(void) const
-{
-    return !m_Info;
-}
 
 
 inline
@@ -374,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/01/24 17:06:26  vasilche
+* Safe boolean operators.
+*
 * Revision 1.32  2005/01/12 17:01:11  vasilche
 * Avoid performance warning on MSVC.
 *

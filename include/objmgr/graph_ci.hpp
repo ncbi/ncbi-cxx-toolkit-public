@@ -243,7 +243,9 @@ public:
 
     CGraph_CI& operator++ (void);
     CGraph_CI& operator-- (void);
-    operator bool (void) const;
+
+    DECLARE_OPERATOR_BOOL(IsValid());
+
     const CMappedGraph& operator* (void) const;
     const CMappedGraph* operator-> (void) const;
 private:
@@ -361,12 +363,6 @@ CGraph_CI& CGraph_CI::operator-- (void)
     return *this;
 }
 
-inline
-CGraph_CI::operator bool (void) const
-{
-    return IsValid();
-}
-
 
 inline
 const CMappedGraph& CGraph_CI::operator* (void) const
@@ -391,6 +387,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.41  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

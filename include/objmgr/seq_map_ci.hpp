@@ -221,7 +221,9 @@ public:
     ~CSeqMap_CI(void);
 
     bool IsInvalid(void) const;
-    operator bool(void) const;
+    bool IsValid(void) const;
+
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     bool operator==(const CSeqMap_CI& seg) const;
     bool operator!=(const CSeqMap_CI& seg) const;
@@ -518,7 +520,7 @@ bool CSeqMap_CI::IsInvalid(void) const
 
 
 inline
-CSeqMap_CI::operator bool(void) const
+bool CSeqMap_CI::IsValid(void) const
 {
     return !m_Stack.empty()  &&  m_Stack.front().InRange()  &&
         m_Stack.front().GetType() != CSeqMap::eSeqEnd;
@@ -638,6 +640,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.22  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

@@ -121,7 +121,7 @@ public:
     CSeq_id_Handle GetSingleId(void) const;
 
     void Add(const CSeq_id_Handle& id, const COneSeqRange& loc);
-    void Add(int gi, const TRange& range);
+    void Add(const CSeq_id_Handle& id, const TRange& range);
     void Add(const CSeqsRange& seqs_range);
 
     void Add(const CSeq_loc& loc);
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.5  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

@@ -65,17 +65,8 @@ public:
     CSeq_align_Handle(void);
     ~CSeq_align_Handle(void);
 
-    /// Check if handle points to a seq-align
-    ///
-    /// @sa
-    ///    operator !()
-    operator bool(void) const;
 
-    /// Check if handle does not point to a seq-align
-    ///
-    /// @sa
-    ///    operator bool()
-    bool operator !(void) const;
+    DECLARE_OPERATOR_BOOL(m_Annot);
 
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;
@@ -107,20 +98,6 @@ private:
     CSeq_annot_Handle          m_Annot;
     size_t                     m_Index;
 };
-
-
-inline
-CSeq_align_Handle::operator bool(void) const
-{
-    return m_Annot;
-}
-
-
-inline
-bool CSeq_align_Handle::operator !(void) const
-{
-    return !m_Annot;
-}
 
 
 inline
@@ -188,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.6  2004/12/28 18:40:30  vasilche
 * Added GetScope() method.
 *

@@ -107,14 +107,7 @@ private:
 class NCBI_XOBJMGR_EXPORT CInitMutex_Base
 {
 public:
-    operator bool(void) const
-        {
-            return m_Object.NotEmpty();
-        }
-    bool operator!(void) const
-        {
-            return !m_Object;
-        }
+    DECLARE_OPERATOR_BOOL_REF(m_Object);
 
 protected:
     CInitMutex_Base(void)
@@ -253,10 +246,7 @@ public:
         }
 
     // true means that this thread should perform initialization
-    operator bool(void) const
-        {
-            return !m_Init;
-        }
+    DECLARE_OPERATOR_BOOL(!m_Init);
 
 protected:
     typedef CInitMutexPool::TMutex TMutex;
@@ -283,6 +273,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.5  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

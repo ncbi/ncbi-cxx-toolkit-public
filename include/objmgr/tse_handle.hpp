@@ -68,8 +68,8 @@ public:
     CScope& GetScope(void) const;
 
     /// State check
-    operator bool(void) const;
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL(m_TSE);
+
     bool operator==(const CTSE_Handle& tse) const;
     bool operator!=(const CTSE_Handle& tse) const;
     bool operator<(const CTSE_Handle& tse) const;
@@ -141,20 +141,6 @@ inline
 CScope_Impl& CTSE_Handle::x_GetScopeImpl(void) const
 {
     return *m_Scope.GetImpl();
-}
-
-
-inline
-CTSE_Handle::operator bool(void) const
-{
-    return m_TSE;
-}
-
-
-inline
-bool CTSE_Handle::operator!(void) const
-{
-    return !m_TSE;
 }
 
 

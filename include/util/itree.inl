@@ -78,30 +78,9 @@ CIntervalTreeIterator<Traits>::CIntervalTreeIterator(const TNCIterator& iter)
 
 template<typename Traits>
 inline
-bool CIntervalTreeIterator<Traits>::Valid(void) const
-{
-    return m_CurrentMapValue != 0;
-}
-
-template<typename Traits>
-inline
 bool CIntervalTreeIterator<Traits>::InAuxMap(void) const
 {
     return m_SearchLimit > m_SearchX;
-}
-
-template<typename Traits>
-inline
-CIntervalTreeIterator<Traits>::operator bool(void) const
-{
-    return Valid();
-}
-
-template<typename Traits>
-inline
-bool CIntervalTreeIterator<Traits>::operator!(void) const
-{
-    return !Valid();
 }
 
 template<typename Traits>
@@ -372,6 +351,9 @@ void CIntervalTree::Assign(iterator& dst, const iterator& src)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/01/24 17:04:46  vasilche
+* Safe boolean operators.
+*
 * Revision 1.7  2004/11/30 23:41:55  lewisg
 * get rid of dereference in GetValue
 *

@@ -62,18 +62,6 @@ bool CConstObjectInfoEI::Valid(void) const
 }
 
 inline
-CConstObjectInfoEI::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CConstObjectInfoEI::operator!(void) const
-{
-    return !Valid();
-}
-
-inline
 void CConstObjectInfoEI::Next(void)
 {
     _ASSERT(CheckValid());
@@ -131,18 +119,6 @@ bool CObjectInfoEI::Valid(void) const
 {
     _DEBUG_ARG(m_LastCall = eValid);
     return CheckValid();
-}
-
-inline
-CObjectInfoEI::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CObjectInfoEI::operator!(void) const
-{
-    return !Valid();
 }
 
 inline
@@ -269,18 +245,6 @@ bool CObjectTypeInfoII::Valid(void) const
 {
     _DEBUG_ARG(m_LastCall = eValid);
     return CheckValid();
-}
-
-inline
-CObjectTypeInfoII::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CObjectTypeInfoII::operator!(void) const
-{
-    return !Valid();
 }
 
 inline
@@ -653,18 +617,6 @@ bool CObjectTypeInfoCV::Valid(void) const
 }
 
 inline
-CObjectTypeInfoCV::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CObjectTypeInfoCV::operator!(void) const
-{
-    return !Valid();
-}
-
-inline
 void CObjectTypeInfoCV::Init(const CObjectTypeInfo& info)
 {
     m_ChoiceTypeInfo = info.GetChoiceTypeInfo();
@@ -974,6 +926,9 @@ CObjectInfoCV CObjectInfo::GetCurrentChoiceVariant(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.6  2003/07/17 22:49:31  vasilche
 * Added export specifiers.
 * Added missing methods.

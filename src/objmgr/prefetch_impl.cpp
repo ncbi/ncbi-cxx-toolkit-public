@@ -106,7 +106,7 @@ bool CPrefetchToken_Impl::IsEmpty(void) const
 }
 
 
-CPrefetchToken_Impl::operator bool(void) const
+bool CPrefetchToken_Impl::IsValid(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_CurrentId < m_Ids.size();
@@ -253,6 +253,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.7  2004/12/22 15:56:24  vasilche
 * Use typedefs for internal containers.
 * Use SSeqMatch_DS instead of CSeqMatch_Info.

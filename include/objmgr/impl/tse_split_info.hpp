@@ -59,6 +59,7 @@ class NCBI_XOBJMGR_EXPORT CTSE_Split_Info : public CObject
 public:
     typedef CConstRef<CObject>                      TBlobId;
     typedef int                                     TBlobVersion;
+    typedef int                                     TSplitVersion;
     typedef CTSE_Chunk_Info::TChunkId               TChunkId;
     typedef vector<TChunkId>                        TChunkIds;
     typedef vector<CTSE_Info*>                      TTSE_Set;
@@ -78,6 +79,8 @@ public:
     // interface to TSE
     TBlobId GetBlobId(void) const;
     TBlobVersion GetBlobVersion(void) const;
+    TSplitVersion GetSplitVersion(void) const;
+    void SetSplitVersion(TSplitVersion version);
     CInitMutexPool& GetMutexPool(void);
     CDataLoader& GetDataLoader(void);
 
@@ -150,6 +153,7 @@ private:
     CRef<CDataLoader>      m_DataLoader;
     TBlobId                m_BlobId;
     TBlobVersion           m_BlobVersion;
+    TSplitVersion          m_SplitVersion;
 
     // all TSEs using this split info
     TTSE_Set               m_TSE_Set;

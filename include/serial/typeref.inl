@@ -78,24 +78,15 @@ TTypeInfo CTypeRef::Get(void) const
     return ret? ret: m_Getter(*this);
 }
 
-inline
-CTypeRef::operator bool(void) const
-{
-    return m_Getter != sx_GetAbort;
-}
-
-inline
-bool CTypeRef::operator!(void) const
-{
-    return m_Getter == sx_GetAbort;
-}
-
 #endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.6  2002/12/23 18:38:52  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

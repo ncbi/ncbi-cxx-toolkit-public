@@ -128,7 +128,7 @@ public:
     CAlign_CI& operator-- (void);
 
     /// Check if iterator points to an object
-    operator bool (void) const;
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     /// Mapped alignment, not the original one
     const CSeq_align& operator* (void) const;
@@ -227,13 +227,6 @@ CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry,
 }
 
 
-inline
-CAlign_CI::operator bool (void) const
-{
-    return IsValid();
-}
-
-
 /* @} */
 
 
@@ -243,6 +236,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.33  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

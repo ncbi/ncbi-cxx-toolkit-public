@@ -422,15 +422,6 @@ public:
             return m_Ptr != 0;
         }
 
-    /// Operator to test object.
-    ///
-    /// @return
-    ///   TRUE if there is a null pointer to object; FALSE, otherwise.
-    bool operator!(void) const THROWS_NONE
-        {
-            return Empty();
-        }
-
     /// Reset reference object.
     ///
     /// This sets the pointer to object to null, and removes reference
@@ -659,16 +650,6 @@ public:
             return GetNonNullPointer();
         }
 
-    /// Dereference operator returning pointer.
-    ///
-    /// @sa
-    ///   GetPointer()
-    inline
-    operator TObjectType*(void)
-        {
-            return GetPointerOrNull();
-        }
-
     // Const getters.
 
     /// Get pointer value and throw a null pointer exception if pointer
@@ -747,6 +728,16 @@ public:
             return GetNonNullPointer();
         }
 
+    /// Dereference operator returning pointer.
+    ///
+    /// @sa
+    ///   GetPointer()
+    inline
+    operator TObjectType*(void)
+        {
+            return GetPointerOrNull();
+        }
+    
     /// Dereference operator returning pointer -- constant version.
     ///
     /// @sa
@@ -756,7 +747,7 @@ public:
         {
             return GetPointerOrNull();
         }
-
+    
 private:
     TObjectType* AtomicSwap(TObjectType* ptr)
         {
@@ -766,8 +757,14 @@ private:
                                   reinterpret_cast<void**>(&m_Ptr)),
                               ptr));
         }
-
+    
     TObjectType* m_Ptr;             ///< Pointer to object
+    
+private:
+// Hide incorrect operators
+    void operator-(TObjectType*) const;
+    void operator-(int) const;
+    void operator+(int) const;
 };
 
 
@@ -866,15 +863,6 @@ public:
     bool NotNull(void) const THROWS_NONE
         {
             return m_Ptr != 0;
-        }
-
-    /// Operator to test object -- const version.
-    ///
-    /// @return
-    ///   TRUE if there is a null pointer to object; FALSE, otherwise.
-    bool operator!(void) const THROWS_NONE
-        {
-            return Empty();
         }
 
     /// Reset reference object.
@@ -1134,24 +1122,17 @@ private:
         }
 
     TObjectType* m_Ptr;             ///< Pointer to object
+
+private:
+// Hide incorrect operators
+    void operator-(TObjectType*) const;
+    void operator-(int) const;
+    void operator+(int) const;
 };
 
 
-/// Template operator < function for CRef objects.
-template<class T>
-inline
-bool operator< (const CRef<T>& r1, const CRef<T>& r2)
-{
-    return r1.GetPointerOrNull() < r2.GetPointerOrNull();
-}
-
-/// Template operator > function for CRef objects.
-template<class T>
-inline
-bool operator> (const CRef<T>& r1, const CRef<T>& r2)
-{
-    return r1.GetPointerOrNull() > r2.GetPointerOrNull();
-}
+/////////////////////////////////////////////////////////////////////////////
+/// Comparison operators for CRef<> and CConstRef<> with ENull
 
 /// Template operator == function for CRef objects -- rhs is null.
 template<class T>
@@ -1183,22 +1164,6 @@ inline
 bool operator!= (ENull /*null*/, const CRef<T>& r1)
 {
     return !r1.IsNull();
-}
-
-/// Template operator < function for CConstRef objects.
-template<class T>
-inline
-bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
-{
-    return r1.GetPointerOrNull() < r2.GetPointerOrNull();
-}
-
-/// Template operator > function for CConstRef objects.
-template<class T>
-inline
-bool operator> (const CConstRef<T>& r1, const CConstRef<T>& r2)
-{
-    return r1.GetPointerOrNull() > r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CConstRef objects -- rhs is null.
@@ -1233,12 +1198,93 @@ bool operator!= (ENull /*null*/, const CConstRef<T>& r1)
     return !r1.IsNull();
 }
 
+
+#if defined(NCBI_COMPILER_WORKSHOP)
+/// WorkShop fails to compare CRef/CConstRef via operator pointer sometimes.
+/////////////////////////////////////////////////////////////////////////////
+/// Comparison operators for CRef<>
+
+/// Template operator < function for CRef objects.
+template<class T>
+inline
+bool operator< (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointerOrNull() < r2.GetPointerOrNull();
+}
+
+/// Template operator > function for CRef objects.
+template<class T>
+inline
+bool operator> (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointerOrNull() > r2.GetPointerOrNull();
+}
+
+/// Template operator < function for CRef objects.
+template<class T>
+inline
+bool operator<= (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointerOrNull() <= r2.GetPointerOrNull();
+}
+
+/// Template operator > function for CRef objects.
+template<class T>
+inline
+bool operator>= (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointerOrNull() >= r2.GetPointerOrNull();
+}
+
 /// Template operator == function for CRef objects.
 template<class T>
 inline
 bool operator== (const CRef<T>& r1, const CRef<T>& r2)
 {
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
+}
+
+/// Template operator == function for CRef and CRef objects.
+template<class T>
+inline
+bool operator!= (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/// Comparison operators for CConstRef<>
+
+/// Template operator < function for CConstRef objects.
+template<class T>
+inline
+bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointerOrNull() < r2.GetPointerOrNull();
+}
+
+/// Template operator > function for CConstRef objects.
+template<class T>
+inline
+bool operator> (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointerOrNull() > r2.GetPointerOrNull();
+}
+
+/// Template operator < function for CConstRef objects.
+template<class T>
+inline
+bool operator<= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointerOrNull() <= r2.GetPointerOrNull();
+}
+
+/// Template operator > function for CConstRef objects.
+template<class T>
+inline
+bool operator>= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointerOrNull() >= r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CConstRef objects.
@@ -1248,6 +1294,18 @@ bool operator== (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
+
+/// Template operator != function for CConstRef objects.
+template<class T>
+inline
+bool operator!= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// Mixed comparison operators
 
 /// Template operator == function for CConstRef and CRef objects.
 template<class T>
@@ -1265,22 +1323,6 @@ bool operator== (const CRef<T>& r1, const CConstRef<T>& r2)
     return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
-/// Template operator == function for CRef and CRef objects.
-template<class T>
-inline
-bool operator!= (const CRef<T>& r1, const CRef<T>& r2)
-{
-    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
-}
-
-/// Template operator != function for CConstRef objects.
-template<class T>
-inline
-bool operator!= (const CConstRef<T>& r1, const CConstRef<T>& r2)
-{
-    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
-}
-
 /// Template operator != function for CConstRef and CRef objects.
 template<class T>
 inline
@@ -1296,7 +1338,11 @@ bool operator!= (const CRef<T>& r1, const CConstRef<T>& r2)
 {
     return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
+#endif
 
+
+/////////////////////////////////////////////////////////////////////////////
+/// Helper functions to get CRef<> and CConstRef<> objects
 
 /// Template function for conversion of object pointer to CRef
 template<class C>
@@ -1390,6 +1436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/01/24 17:04:23  vasilche
+ * Safe boolean operators.
+ *
  * Revision 1.58  2005/01/12 16:53:03  vasilche
  * Removed operator bool(). Pointer conversion will be used instead.
  *

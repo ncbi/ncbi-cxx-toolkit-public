@@ -80,24 +80,6 @@ void CObjectTypeInfo::SetTypeInfo(TTypeInfo typeinfo)
 }
 
 inline
-bool CObjectTypeInfo::Valid(void) const
-{
-    return m_TypeInfo != 0;
-}
-
-inline
-CObjectTypeInfo::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CObjectTypeInfo::operator!(void) const
-{
-    return !Valid();
-}
-
-inline
 bool CObjectTypeInfo::operator==(const CObjectTypeInfo& type) const
 {
     return GetTypeInfo() == type.GetTypeInfo();
@@ -150,24 +132,6 @@ CConstObjectInfo::CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object)
     : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
       m_Ref(object.second->GetCObjectPtr(object.first))
 {
-}
-
-inline
-bool CConstObjectInfo::Valid(void) const
-{
-    return m_ObjectPtr != 0;
-}
-
-inline
-CConstObjectInfo::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CConstObjectInfo::operator!(void) const
-{
-    return !Valid();
 }
 
 inline
@@ -281,6 +245,9 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.5  2003/11/24 14:10:04  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *

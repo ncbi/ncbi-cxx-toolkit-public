@@ -62,14 +62,7 @@ public:
             return m_Info.get() != 0;
         }
 
-    operator bool(void) const
-        {
-            return Delayed();
-        }
-    bool operator!(void) const
-        {
-            return !Delayed();
-        }
+    DECLARE_OPERATOR_BOOL_PTR(m_Info.get());
 
     void Forget(void);
     
@@ -136,6 +129,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.8  2003/04/15 14:15:07  siyan
 * Added doxygen support
 *

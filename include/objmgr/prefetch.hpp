@@ -89,7 +89,7 @@ public:
     CPrefetchToken(const CPrefetchToken& token);
     CPrefetchToken& operator =(const CPrefetchToken& token);
 
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL(m_Impl  &&  *m_Impl);
 
     /// Get bioseq handle and move to the next requested id
     /// Scope must contain the loader used for prefetching.
@@ -169,15 +169,8 @@ CPrefetchToken& CPrefetchToken::operator =(const CPrefetchToken& token)
 inline
 CBioseq_Handle CPrefetchToken::NextBioseqHandle(CScope& scope)
 {
-    _ASSERT(bool(*this));
+    _ASSERT(*this);
     return m_Impl->NextBioseqHandle(scope);
-}
-
-
-inline
-CPrefetchToken::operator bool(void) const
-{
-    return m_Impl  &&  *m_Impl;
 }
 
 
@@ -190,6 +183,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.8  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

@@ -233,13 +233,6 @@ CSeqdesc_CI& CSeqdesc_CI::operator++(void)
 }
 
 
-CSeqdesc_CI::operator bool(void) const
-{
-    _ASSERT(x_Valid());
-    return m_Entry;
-}
-
-
 const CSeqdesc& CSeqdesc_CI::operator*(void) const
 {
     _ASSERT(x_ValidDesc() && x_RequestedType());
@@ -266,6 +259,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.15  2004/11/22 16:08:15  dicuccio
 * Fix compiler warning in Win32
 *

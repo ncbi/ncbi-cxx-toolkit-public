@@ -139,17 +139,7 @@ public:
 
     // Utility methods/operators
 
-    /// Check if handle points to a seq-entry
-    ///
-    /// @sa
-    ///    operator !()
-    operator bool(void) const;
-
-    // Check if handle does not point to a seq-entry
-    ///
-    /// @sa
-    ///    operator bool()
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL_REF(m_Info);
 
 
     // Get CTSE_Handle of containing TSE
@@ -502,20 +492,6 @@ CScope_Impl& CSeq_entry_Handle::x_GetScopeImpl(void) const
 
 
 inline
-CSeq_entry_Handle::operator bool(void) const
-{
-    return m_Info.NotEmpty();
-}
-
-
-inline
-bool CSeq_entry_Handle::operator!(void) const
-{
-    return !m_Info;
-}
-
-
-inline
 const CSeq_entry_Info& CSeq_entry_Handle::x_GetInfo(void) const
 {
     return reinterpret_cast<const CSeq_entry_Info&>(*m_Info);
@@ -594,6 +570,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.17  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

@@ -228,9 +228,11 @@ public:
                           TTreeNodeP nextNode = 0);
     CIntervalTreeIterator(const TNCIterator& iter);
 
-    bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    bool Valid(void) const
+        {
+            return m_CurrentMapValue != 0;
+        }
+    DECLARE_OPERATOR_BOOL_PTR(m_CurrentMapValue);
 
     void Next(void);
     TThis& operator++(void);
@@ -428,6 +430,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/24 17:04:46  vasilche
+* Safe boolean operators.
+*
 * Revision 1.8  2004/06/30 20:21:41  jcherry
 * Removed qualifiers for the sake of MSVC6.
 *

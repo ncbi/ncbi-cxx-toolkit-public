@@ -131,7 +131,7 @@ public:
     ~CIStreamClassMemberIterator(void);
 
     bool HaveMore(void) const;
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL(HaveMore());
 
     void NextClassMember(void);
     CIStreamClassMemberIterator& operator++(void);
@@ -181,7 +181,7 @@ public:
     const CObjectTypeInfo& GetContainerType(void) const;
 
     bool HaveMore(void) const;
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL(HaveMore());
 
     void NextElement(void);
     CIStreamContainerIterator& operator++(void);
@@ -279,6 +279,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.8  2004/06/08 20:25:42  gouriano
 * Made functions, that are not visible from the outside, protected
 *

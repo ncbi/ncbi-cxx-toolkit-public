@@ -60,14 +60,8 @@ public:
         }
     CTSE_LoadLock& operator=(const CTSE_LoadLock& lock);
 
-    operator bool(void) const
-        {
-            return m_Info.NotEmpty();
-        }
-    bool operator!(void) const
-        {
-            return !m_Info;
-        }
+    DECLARE_OPERATOR_BOOL_REF(m_Info);
+
     CTSE_Info& operator*(void)
         {
             return *m_Info;

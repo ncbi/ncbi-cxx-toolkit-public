@@ -53,8 +53,16 @@ public:
     CConstObjectInfoEI& operator=(const CConstObjectInfo& object);
 
     bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL(Valid());
+
+    bool operator==(const CConstObjectInfoEI& obj) const
+    {
+        return GetElement() == obj.GetElement();
+    }
+    bool operator!=(const CConstObjectInfoEI& obj) const
+    {
+        return GetElement() != obj.GetElement();
+    }
 
     void Next(void);
     CConstObjectInfoEI& operator++(void);
@@ -90,8 +98,16 @@ public:
     CObjectInfoEI& operator=(const CObjectInfo& object);
 
     bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL(Valid());
+
+    bool operator==(const CObjectInfoEI& obj) const
+    {
+        return GetElement() == obj.GetElement();
+    }
+    bool operator!=(const CObjectInfoEI& obj) const
+    {
+        return GetElement() != obj.GetElement();
+    }
 
     void Next(void);
     CObjectInfoEI& operator++(void);
@@ -126,8 +142,7 @@ public:
     const string& GetAlias(void) const;
     
     bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL(Valid());
     
     bool operator==(const CObjectTypeInfoII& iter) const;
     bool operator!=(const CObjectTypeInfoII& iter) const;
@@ -362,8 +377,7 @@ public:
     const string& GetAlias(void) const;
 
     bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL(Valid());
 
     bool operator==(const CObjectTypeInfoCV& iter) const;
     bool operator!=(const CObjectTypeInfoCV& iter) const;
@@ -475,6 +489,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.12  2004/07/27 17:11:48  gouriano
 * Give access to the context of tree iterator
 *

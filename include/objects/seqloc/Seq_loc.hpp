@@ -299,7 +299,7 @@ public:
     CSeq_loc_CI& operator= (const CSeq_loc_CI& iter);
 
     CSeq_loc_CI& operator++ (void);
-    operator bool (void) const;
+    DECLARE_OPERATOR_BOOL(x_IsValid());
 
     typedef CRange<TSeqPos> TRange;
 
@@ -485,12 +485,6 @@ bool CSeq_loc_CI::x_IsValid(void) const
 }
 
 inline
-CSeq_loc_CI::operator bool (void) const
-{
-    return x_IsValid();
-}
-
-inline
 void CSeq_loc_CI::x_CheckNotValid(const char* where) const
 {
     if ( !x_IsValid() )
@@ -595,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/01/24 17:06:26  vasilche
+ * Safe boolean operators.
+ *
  * Revision 1.45  2004/12/07 18:50:37  grichenk
  * +CSeq_loc_CI::Rewind()
  *

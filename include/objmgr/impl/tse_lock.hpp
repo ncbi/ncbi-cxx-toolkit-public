@@ -72,10 +72,6 @@ public:
         {
             return GetPointerOrNull();
         }
-    bool operator!(void) const
-        {
-            return !m_Info;
-        }
 
     bool operator==(const CTSE_Lock& lock) const
         {

@@ -139,7 +139,8 @@ public:
     typedef CPriorityNode::TLeaf TLeaf;
     typedef TLeaf value_type;
 
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL_PTR(m_Node);
+
     value_type& operator*(void) const;
     value_type* operator->(void) const;
 
@@ -232,12 +233,6 @@ bool CPriorityNode::IsEmpty(void) const
 // CPriority_I inline methods
 
 inline
-CPriority_I::operator bool(void) const
-{
-    return m_Node != 0;
-}
-
-inline
 CPriority_I::value_type& CPriority_I::operator*(void) const
 {
     _ASSERT(m_Node  &&  (m_Node->IsTree()  ||  m_Node->IsLeaf()));
@@ -259,6 +254,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.15  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

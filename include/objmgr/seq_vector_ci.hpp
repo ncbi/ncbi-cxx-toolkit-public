@@ -94,7 +94,9 @@ public:
     void SetNoAmbiguities(void);
 
     TResidue operator*(void) const;
-    operator bool(void) const;
+    bool IsValid(void) const;
+
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     /// true if current position of CSeqVector_CI is inside of sequence gap
     bool IsInGap(void) const;
@@ -287,7 +289,7 @@ CSeqVector_CI& CSeqVector_CI::SetPos(TSeqPos pos)
 
 
 inline
-CSeqVector_CI::operator bool(void) const
+bool CSeqVector_CI::IsValid(void) const
 {
     return m_Cache < m_CacheEnd;
 }
@@ -467,6 +469,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.26  2004/12/22 15:56:18  vasilche
 * Added CTSE_Handle.
 * Allow used TSE linking.

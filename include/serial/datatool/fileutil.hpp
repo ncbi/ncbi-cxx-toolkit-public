@@ -92,10 +92,20 @@ struct FileInfo {
         : name(n), type(t)
         { }
 
-    operator bool(void) const
-        { return !name.empty(); }
     operator const string&(void) const
         { return name; }
+
+    DECLARE_OPERATOR_BOOL(!name.empty());
+
+    bool operator==(const FileInfo& info) const
+    {
+        return name == info.name;
+    }
+    bool operator!=(const FileInfo& info) const
+    {
+        return name != info.name;
+    }
+
     string name;
     ESerialDataFormat type;
 };
@@ -149,6 +159,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.15  2004/12/06 18:14:07  gouriano
 * Added MakeAbsolutePath method
 *

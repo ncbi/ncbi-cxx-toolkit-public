@@ -78,7 +78,7 @@ public:
     CSeq_entry_CI(const CBioseq_set_Handle& set);
 
     /// Check if iterator points to an object
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL(m_Current);
 
     bool operator ==(const CSeq_entry_CI& iter) const;
     bool operator !=(const CSeq_entry_CI& iter) const;
@@ -130,7 +130,7 @@ public:
     CSeq_entry_I(const CBioseq_set_EditHandle& set);
 
     /// Check if iterator points to an object
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL(m_Current);
 
     bool operator ==(const CSeq_entry_I& iter) const;
     bool operator !=(const CSeq_entry_I& iter) const;
@@ -165,13 +165,6 @@ private:
 inline
 CSeq_entry_CI::CSeq_entry_CI(void)
 {
-}
-
-
-inline
-CSeq_entry_CI::operator bool(void) const
-{
-    return m_Current;
 }
 
 
@@ -214,13 +207,6 @@ CSeq_entry_I::CSeq_entry_I(void)
 
 
 inline
-CSeq_entry_I::operator bool(void) const
-{
-    return m_Current;
-}
-
-
-inline
 bool CSeq_entry_I::operator ==(const CSeq_entry_I& iter) const
 {
     return m_Current == iter.m_Current;
@@ -257,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.4  2004/10/01 19:47:20  kononenk
 * Fixed typo in doxygen documentation
 *

@@ -57,6 +57,7 @@ BEGIN_SCOPE(objects)
 
 CTSE_Split_Info::CTSE_Split_Info(void)
     : m_BlobVersion(-1),
+      m_SplitVersion(-1),
       m_BioseqChunkId(-1),
       m_SeqIdToChunksSorted(false)
 {
@@ -106,6 +107,21 @@ CTSE_Split_Info::TBlobId CTSE_Split_Info::GetBlobId(void) const
 CTSE_Split_Info::TBlobVersion CTSE_Split_Info::GetBlobVersion(void) const
 {
     return m_BlobVersion;
+}
+
+
+CTSE_Split_Info::TSplitVersion CTSE_Split_Info::GetSplitVersion(void) const
+{
+    _ASSERT(m_SplitVersion >= 0);
+    return m_SplitVersion;
+}
+
+
+void CTSE_Split_Info::SetSplitVersion(TSplitVersion version)
+{
+    _ASSERT(m_SplitVersion < 0);
+    _ASSERT(version >= 0);
+    m_SplitVersion = version;
 }
 
 

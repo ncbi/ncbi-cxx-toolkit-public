@@ -101,7 +101,7 @@ public:
     CAnnot_CI& operator-- (void);
 
     /// Check if iterator points to an object
-    operator bool (void) const;
+    DECLARE_OPERATOR_BOOL(IsValid());
 
     CSeq_annot_Handle& operator*(void) const;
     CSeq_annot_Handle* operator->(void) const;
@@ -140,13 +140,6 @@ CAnnot_CI& CAnnot_CI::operator-- (void)
 
 
 inline
-CAnnot_CI::operator bool (void) const
-{
-    return m_Iterator != m_SeqAnnotSet.end();
-}
-
-
-inline
 CSeq_annot_Handle& CAnnot_CI::operator*(void) const
 {
     _ASSERT(*this);
@@ -172,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.30  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

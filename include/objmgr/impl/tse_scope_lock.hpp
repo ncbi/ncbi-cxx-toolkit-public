@@ -70,14 +70,7 @@ public:
             return *this;
         }
 
-    operator bool(void) const
-        {
-            return m_Object.NotEmpty();
-        }
-    bool operator!(void) const
-        {
-            return !m_Object;
-        }
+    DECLARE_OPERATOR_BOOL_REF(m_Object);
 
     TObject& operator*(void) const
         {
@@ -151,14 +144,7 @@ public:
             return *this;
         }
 
-    operator bool(void) const
-        {
-            return m_Object.NotEmpty();
-        }
-    bool operator!(void) const
-        {
-            return !m_Object;
-        }
+    DECLARE_OPERATOR_BOOL_REF(m_Object);
 
     TObject& operator*(void) const
         {

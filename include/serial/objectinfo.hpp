@@ -93,9 +93,11 @@ public:
 
     ETypeFamily GetTypeFamily(void) const;
 
-    bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    bool CObjectTypeInfo::Valid(void) const
+        {
+            return m_TypeInfo != 0;
+        }
+    DECLARE_OPERATOR_BOOL_PTR(m_TypeInfo);
     
     bool operator==(const CObjectTypeInfo& type) const;
     bool operator!=(const CObjectTypeInfo& type) const;
@@ -214,9 +216,20 @@ public:
     CConstObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
 
     // check if CObjectInfo initialized with valid object
-    bool Valid(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    bool Valid(void) const
+        {
+            return m_ObjectPtr != 0;
+        }
+    DECLARE_OPERATOR_BOOL_PTR(m_ObjectPtr);
+
+    bool operator==(const CConstObjectInfo& obj) const
+    {
+        return m_ObjectPtr == obj.m_ObjectPtr;
+    }
+    bool operator!=(const CConstObjectInfo& obj) const
+    {
+        return m_ObjectPtr != obj.m_ObjectPtr;
+    }
 
     void ResetObjectPtr(void);
 
@@ -348,6 +361,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.10  2004/07/27 15:00:57  ucko
 * Restore (and define) removed SetPrimitiveValueInt variants.
 *

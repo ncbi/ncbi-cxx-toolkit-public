@@ -123,12 +123,6 @@ CSeq_descr_CI& CSeq_descr_CI::operator++(void)
 }
 
 
-CSeq_descr_CI::operator bool(void) const
-{
-    return m_CurrentEntry;
-}
-
-
 const CSeq_descr& CSeq_descr_CI::operator* (void) const
 {
     _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
@@ -155,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.15  2004/12/22 15:56:33  vasilche
 * Use handle Reset() method.
 *

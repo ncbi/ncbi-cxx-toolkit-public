@@ -206,17 +206,7 @@ public:
     /// exception will be thrown.
     virtual bool HasValue(void) const = 0;
 
-    /// Operator () form of HasValue() method.
-    ///
-    /// @sa
-    ///   HasValue()
-    operator bool (void) const { return  HasValue(); }
-
-    /// Operator !() returns the value of !HasValue() method.
-    ///
-    /// @sa
-    ///   HasValue()
-    bool operator!(void) const { return !HasValue(); }
+    DECLARE_OPERATOR_BOOL(HasValue());
 
     /// Get the argument's string value.
     ///
@@ -1200,6 +1190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/01/24 17:04:28  vasilche
+ * Safe boolean operators.
+ *
  * Revision 1.41  2004/12/15 15:30:10  kuznets
  * Implemented constraint invertion (NOT)
  *

@@ -108,7 +108,7 @@ public:
     CBioseq_CI& operator++ (void);
 
     /// Check if iterator points to an object
-    operator bool (void) const;
+    DECLARE_OPERATOR_BOOL(m_CurrentBioseq);
 
     const CBioseq_Handle& operator* (void) const;
     const CBioseq_Handle* operator-> (void) const;
@@ -128,13 +128,6 @@ private:
     TEntryStack         m_EntryStack;
     int                 m_InParts;
 };
-
-
-inline
-CBioseq_CI::operator bool (void) const
-{
-    return m_CurrentBioseq;
-}
 
 
 inline
@@ -167,6 +160,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.19  2005/01/18 14:58:58  grichenk
 * Added constructor accepting CBioseq_set_Handle
 *

@@ -74,17 +74,8 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Handle
 public:
     CSeq_annot_Handle(void);
 
-    /// Check if handle points to a seq-annot
-    ///
-    /// @sa
-    ///    operator !()
-    operator bool(void) const;
 
-    // Check if handle does not point to a seq-annot
-    ///
-    /// @sa
-    ///    operator bool()
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL_REF(m_Info);
 
 
     // Get CTSE_Handle of containing TSE
@@ -228,20 +219,6 @@ const CTSE_Handle& CSeq_annot_Handle::GetTSE_Handle(void) const
 
 
 inline
-CSeq_annot_Handle::operator bool(void) const
-{
-    return m_Info.NotEmpty();
-}
-
-
-inline
-bool CSeq_annot_Handle::operator!(void) const
-{
-    return !m_Info;
-}
-
-
-inline
 CScope& CSeq_annot_Handle::GetScope(void) const
 {
     return m_TSE.GetScope();
@@ -315,6 +292,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.16  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

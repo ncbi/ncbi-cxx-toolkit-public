@@ -105,7 +105,7 @@ public:
     CSeq_annot_CI& operator=(const CSeq_annot_CI& iter);
 
     /// Check if iterator points to an object
-    operator bool(void) const;
+    DECLARE_OPERATOR_BOOL(m_CurrentAnnot);
 
     /// Move to the next object in iterated sequence
     CSeq_annot_CI& operator++(void);
@@ -153,13 +153,6 @@ CScope& CSeq_annot_CI::GetScope(void) const
 
 
 inline
-CSeq_annot_CI::operator bool(void) const
-{
-    return m_CurrentAnnot;
-}
-
-
-inline
 const CSeq_annot_Handle& CSeq_annot_CI::operator*(void) const
 {
     _ASSERT(*this);
@@ -184,6 +177,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.12  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *

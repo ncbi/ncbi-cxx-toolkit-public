@@ -119,14 +119,7 @@ struct SSeqMatch_TSE
     CSeq_id_Handle          m_Seq_id;
     CConstRef<CBioseq_Info> m_Bioseq;
 
-    operator bool(void) const
-        {
-            return m_Bioseq.NotEmpty();
-        }
-    bool operator!(void) const
-        {
-            return !m_Bioseq;
-        }
+    DECLARE_OPERATOR_BOOL_REF(m_Bioseq);
 };
 
 

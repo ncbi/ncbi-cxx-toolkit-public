@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.4  2000/08/25 15:58:47  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -95,11 +98,21 @@ public:
             return s;
         }
 
+    bool IsEmpty(void) const
+        {
+            return m_Namespaces.empty();
+        }
+    DECLARE_OPERATOR_BOOL(!IsEmpty());
+
     bool operator==(const CNamespace& ns) const
         {
             size_t myLevel = GetNamespaceLevel();
             return ns.GetNamespaceLevel() == myLevel &&
                 EqualLevels(ns) == myLevel;
+        }
+    bool operator!=(const CNamespace& ns) const
+        {
+            return !(*this == ns);
         }
 
     static const CNamespace KEmptyNamespace;
@@ -110,10 +123,6 @@ public:
     static const string KNCBINamespaceDefine;
     static const string KSTDNamespaceDefine;
 
-    bool IsEmpty(void) const
-        {
-            return m_Namespaces.empty();
-        }
     bool InNCBI(void) const
         {
             return m_Namespaces.size() > 0 &&
@@ -133,19 +142,6 @@ public:
         {
             return m_Namespaces.size() == 1 &&
                 m_Namespaces[0] == KSTDNamespaceName;
-        }
-
-    operator bool(void) const
-        {
-            return !IsEmpty();
-        }
-    operator bool(void)
-        {
-            return !IsEmpty();
-        }
-    bool operator!(void) const
-        {
-            return IsEmpty();
         }
 
 protected:

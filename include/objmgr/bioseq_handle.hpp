@@ -293,14 +293,7 @@ public:
     ///
     /// @sa
     ///    operator !()
-    operator bool(void)  const;
-
-    // Check if handle does not point to a bioseq
-    ///
-    /// @sa
-    ///    operator bool()
-    bool operator!(void) const;
-
+    DECLARE_OPERATOR_BOOL_REF(m_Info);
 
     // Get CTSE_Handle of containing TSE
     const CTSE_Handle& GetTSE_Handle(void) const;
@@ -547,20 +540,6 @@ const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 
 
 inline
-CBioseq_Handle::operator bool(void)  const
-{
-    return m_Info.NotEmpty();
-}
-
-
-inline
-bool CBioseq_Handle::operator!(void) const
-{
-    return !m_Info;
-}
-
-
-inline
 CScope& CBioseq_Handle::GetScope(void) const 
 {
     return m_TSE.GetScope();
@@ -597,6 +576,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.70  2005/01/12 17:16:13  vasilche
 * Avoid performance warning on MSVC.
 *

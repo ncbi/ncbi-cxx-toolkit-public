@@ -246,17 +246,8 @@ public:
         }
 
     // check whether iterator is not finished
-    operator bool(void) const
-        {
-            _DEBUG_ARG(m_LastCall = eValid);
-            return CheckValid();
-        }
-    // check whether iterator is not finished
-    bool operator!(void) const
-        {
-            _DEBUG_ARG(m_LastCall = eValid);
-            return !CheckValid();
-        }
+    DECLARE_OPERATOR_BOOL(m_CurrentObject);
+
     // go to next object
     TThis& operator++(void)
         {
@@ -994,6 +985,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.34  2004/12/28 18:02:10  gouriano
 * Added context filter
 *

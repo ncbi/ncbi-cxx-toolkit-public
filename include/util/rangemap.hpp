@@ -236,14 +236,7 @@ public:
         {
             return m_SelectIter != m_SelectIterEnd;
         }
-    operator bool(void) const
-        {
-            return Valid();
-        }
-    bool operator!(void) const
-        {
-            return !Valid();
-        }
+    DECLARE_OPERATOR_BOOL(Valid());
 
     bool operator==(const TThisType& iter) const
         {
@@ -669,6 +662,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/01/24 17:04:46  vasilche
+* Safe boolean operators.
+*
 * Revision 1.24  2004/04/26 14:52:03  ucko
 * Add "this->" as needed to accommodate GCC 3.4's stricter treatment of
 * templates.

@@ -101,14 +101,7 @@ public:
     
     CNcbiOstream& Print(CNcbiOstream& out) const;
 
-    operator bool(void) const
-        {
-            return m_Count != 0;
-        }
-    bool operator!(void) const
-        {
-            return m_Count == 0;
-        }
+    DECLARE_OPERATOR_BOOL(m_Count != 0);
 
     bool operator>(const CSize& size) const
         {
@@ -133,6 +126,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.3  2003/11/26 23:05:00  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

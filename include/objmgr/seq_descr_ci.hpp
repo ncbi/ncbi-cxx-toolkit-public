@@ -83,7 +83,7 @@ public:
     CSeq_descr_CI& operator++ (void);
 
     /// Check if iterator points to an object
-    operator bool (void) const;
+    DECLARE_OPERATOR_BOOL(m_CurrentEntry);
 
     const CSeq_descr& operator*  (void) const;
     const CSeq_descr* operator-> (void) const;
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.13  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.

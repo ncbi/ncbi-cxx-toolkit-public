@@ -108,9 +108,9 @@ void CSeqsRange::Add(const CSeq_id_Handle& id, const COneSeqRange& loc)
 }
 
 
-void CSeqsRange::Add(int gi, const TRange& range)
+void CSeqsRange::Add(const CSeq_id_Handle& id, const TRange& range)
 {
-    m_Ranges[CSeq_id_Handle::GetGiHandle(gi)].Add(range);
+    m_Ranges[id].Add(range);
 }
 
 
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/01/24 17:09:36  vasilche
+* Safe boolean operators.
+*
 * Revision 1.7  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

@@ -66,12 +66,6 @@ bool CIStreamClassMemberIterator::HaveMore(void) const
 }
 
 inline
-CIStreamClassMemberIterator::operator bool(void) const
-{
-    return HaveMore();
-}
-
-inline
 CIStreamClassMemberIterator& CIStreamClassMemberIterator::operator++(void)
 {
     NextClassMember();
@@ -90,18 +84,15 @@ bool CIStreamContainerIterator::HaveMore(void) const
     return m_State == eElementBegin;
 }
 
-inline
-CIStreamContainerIterator::operator bool(void) const
-{
-    return HaveMore();
-}
-
 #endif /* def OBJECTIO__HPP  &&  ndef OBJECTIO__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.6  2003/10/24 17:50:27  vasilche
 * CIStreamContainerIterator::operator++() moved to *.cpp file.
 *

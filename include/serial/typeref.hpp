@@ -94,8 +94,16 @@ public:
     ~CTypeRef(void);
 
     TTypeInfo Get(void) const;
-    operator bool(void) const;
-    bool operator!(void) const;
+    DECLARE_OPERATOR_BOOL(m_Getter != sx_GetAbort);
+
+    bool operator==(const CTypeRef& typeRef) const
+    {
+        return Get() == typeRef.Get();
+    }
+    bool operator!=(const CTypeRef& typeRef) const
+    {
+        return Get() != typeRef.Get();
+    }
 
 private:
 
@@ -157,6 +165,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
 * Revision 1.15  2003/04/15 16:19:13  siyan
 * Added doxygen support
 *
