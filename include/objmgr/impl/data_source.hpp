@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/18 15:56:24  gouriano
+* changed TSeqMaps definition
+*
 * Revision 1.1  2002/01/16 16:25:55  gouriano
 * restructured objmgr
 *
@@ -136,7 +139,7 @@ private:
     typedef CAnnot_CI::TRangeMap TRangeMap;
     typedef CAnnot_CI::TAnnotMap TAnnotMap;
     typedef set< CRef<CSeq_entry> >       TEntries;
-    typedef map<CBioseq*, CRef<CSeqMap> > TSeqMaps;
+    typedef map<const CBioseq*, CRef<CSeqMap> > TSeqMaps;
 
     // Process seq-entry recursively
     void x_IndexEntry     (CSeq_entry& entry, CSeq_entry& tse);
@@ -144,7 +147,7 @@ private:
     void x_AddToAnnotMap  (CSeq_entry& entry);
 
     // Create CSeqMap for a bioseq
-    void x_CreateSeqMap(CBioseq& seq);
+    void x_CreateSeqMap(const CBioseq& seq);
     void x_LocToSeqMap(const CSeq_loc& loc, int& pos, CSeqMap& seqmap);
     void x_DataToSeqMap(const CSeq_data& data,
                         int& pos, int len,
@@ -198,7 +201,7 @@ private:
 
     // Replace initial handle range map with the new one, containing duplicate
     // range sets for each synonym of each handle
-    void x_ResloveLocationHandles(CHandleRangeMap& loc);
+    void x_ResolveLocationHandles(CHandleRangeMap& loc);
 
     typedef map<CBioseqHandle::THandle, CRef<SBioseqInfo> > TBioseqMap;
 

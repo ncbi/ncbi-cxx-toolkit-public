@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/18 15:56:23  gouriano
+* changed TSeqMaps definition
+*
 * Revision 1.2  2002/01/16 16:25:57  gouriano
 * restructured objmgr
 *
@@ -89,6 +92,8 @@ BEGIN_SCOPE(objects)
 CDataSource::SBioseqInfo::SBioseqInfo(void)
     : m_Entry(0)
 {
+    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
+        << " created (no entry)" << NcbiEndl;
     return;
 }
 
@@ -96,12 +101,16 @@ CDataSource::SBioseqInfo::SBioseqInfo(void)
 CDataSource::SBioseqInfo::SBioseqInfo(CSeq_entry& entry)
     : m_Entry(&entry)
 {
+    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
+        << " created (entry)" << NcbiEndl;
     return;
 }
 
 
 CDataSource::SBioseqInfo::SBioseqInfo(const SBioseqInfo& info)
 {
+    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
+        << " created (copy)" << NcbiEndl;
     if ( &info != this )
         *this = info;
 }
@@ -109,6 +118,8 @@ CDataSource::SBioseqInfo::SBioseqInfo(const SBioseqInfo& info)
 
 CDataSource::SBioseqInfo::~SBioseqInfo(void)
 {
+    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
+        << " deleted" << NcbiEndl;
     return;
 }
 
@@ -129,6 +140,8 @@ static CMutex s_DataSource_Mutex;
 CDataSource::CDataSource(CDataLoader& loader)
     : m_Loader(&loader), m_pTopEntry(0)
 {
+    NcbiCout << "DataSource " << NStr::PtrToString(this)
+        << " created (loader)" << NcbiEndl;
     m_Loader->SetTargetDataSource(*this);
 }
 
@@ -136,12 +149,16 @@ CDataSource::CDataSource(CDataLoader& loader)
 CDataSource::CDataSource(CSeq_entry& entry)
     : m_Loader(0), m_pTopEntry(&entry)
 {
+    NcbiCout << "DataSource " << NStr::PtrToString(this)
+        << " created (entry)" << NcbiEndl;
     x_AddToBioseqMap(entry);
 }
 
 
 CDataSource::~CDataSource(void)
 {
+    NcbiCout << "DataSource " << NStr::PtrToString(this)
+        << " deleted" << NcbiEndl;
     return;
 }
 
@@ -214,9 +231,8 @@ CBioseqHandle::TBioseqCore CDataSource::GetBioseqCore
     (const CBioseqHandle& handle)
 {
     CMutexGuard guard(s_DataSource_Mutex);
-    TBioseqMap::iterator entry = m_BioseqMap.find(handle.m_Value);
-    _ASSERT(entry != m_BioseqMap.end()  &&  entry->second->m_Entry->IsSeq());
-    const CBioseq* seq = &entry->second->m_Entry->GetSeq();
+    const CBioseq* seq = &GetBioseq(handle);
+
     CBioseq* seq_core = new CBioseq();
     // Assign seq members to seq_core:
     CBioseq::TId& id_list = seq_core->SetId();
@@ -297,9 +313,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseqHandle& handle)
         m_Loader->GetRecords(loc, CDataLoader::eBioseq???);
     }
 */
-    TBioseqMap::iterator entry = m_BioseqMap.find(handle.m_Value);
-    _ASSERT(entry != m_BioseqMap.end()  &&  entry->second->m_Entry->IsSeq());
-    CBioseq& seq = entry->second->m_Entry->GetSeq();
+    const CBioseq& seq = GetBioseq(handle);
     TSeqMaps::iterator found = m_SeqMaps.find(&seq);
     if (found == m_SeqMaps.end()) {
         // Create sequence map
@@ -627,7 +641,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 }
 
 
-void CDataSource::x_CreateSeqMap(CBioseq& seq)
+void CDataSource::x_CreateSeqMap(const CBioseq& seq)
 {
     CSeqMap* seqmap = new CSeqMap;
     int pos = 0;
@@ -881,7 +895,7 @@ CDataSource::x_GetRangeMap(const CBioseqHandle& handle, bool create)
 }
 
 
-void CDataSource::x_ResloveLocationHandles(CHandleRangeMap& loc)
+void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc)
 {
     CMutexGuard guard(s_DataSource_Mutex);
     CHandleRangeMap tmp;
