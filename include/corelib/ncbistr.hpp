@@ -2028,6 +2028,20 @@ bool NStr::EqualNocase(const char* s1, const char* s2)
 }
 
 inline
+bool NStr::EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                     const char* pattern)
+{
+    return NStr::CompareCase(str, pos, n, pattern) == 0;
+}
+
+inline
+bool NStr::EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                     const string& pattern)
+{
+    return NStr::CompareCase(str, pos, n, pattern) == 0;
+}
+
+inline
 bool NStr::Equal(const char* s1, const char* s2, ECase use_case)
 {
     return (use_case == eCase ? EqualCase(s1, s2): EqualNocase(s1, s2)) == 0;
@@ -2064,6 +2078,20 @@ bool NStr::EqualNocase(const string& s1, const string& s2)
 }
 
 inline
+bool NStr::EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                             const char* pattern)
+{
+    return CompareNocase(str, pos, n, pattern) == 0;
+}
+
+inline
+bool NStr::EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                             const string& pattern)
+{
+    return CompareNocase(str, pos, n, pattern) == 0;
+}
+
+inline
 bool NStr::StartsWith(const string& str, const string& start, ECase use_case)
 {
     return str.size() >= start.size()  &&
@@ -2076,7 +2104,6 @@ bool NStr::EndsWith(const string& str, const string& end, ECase use_case)
     return str.size() >= end.size()  &&
         Compare(str, str.size() - end.size(), end.size(), end, use_case) == 0;
 }
-
 
 inline
 SIZE_TYPE NStr::Find(const string& str, const string& pattern,
@@ -2207,6 +2234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2004/03/05 14:21:54  shomrat
+ * added missing definitions
+ *
  * Revision 1.51  2004/03/05 12:28:00  ivanov
  * Moved CDirEntry::MatchesMask() to NStr class.
  *
