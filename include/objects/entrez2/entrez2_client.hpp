@@ -100,7 +100,8 @@ public:
     /// Query a db with a string, returning uids as integers
     void Query(const string& query, const string& db,
                vector<int>& result_uids,
-               size_t start_offs = 0, size_t count = 0);
+               size_t start_offs = 0, size_t count = 0,
+               TReply* reply = 0);
 
     /// Given some uids, a database, and an entrez query string,
     /// determine which of these uids match the query string.
@@ -151,6 +152,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/03/28 16:09:25  jcherry
+* Gave Query method the ability to pass back the CEntrez2_reply
+* from the server
+*
 * Revision 1.9  2005/01/21 14:44:48  dicuccio
 * Added simple API to retrieve docsums for UIDs
 *

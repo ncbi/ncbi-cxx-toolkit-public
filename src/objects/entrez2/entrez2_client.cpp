@@ -150,7 +150,8 @@ CEntrez2Client::GetNeighborCounts(int query_uid,
 /// Query a db with a string, returning uids as integers
 void CEntrez2Client::Query(const string& query, const string& db,
                            vector<int>& result_uids,
-                           size_t start, size_t count)
+                           size_t start, size_t count,
+                           TReply* reply)
 {
     CRef<CEntrez2_boolean_element> bel(new CEntrez2_boolean_element);
     bel->SetStr(query);
@@ -171,15 +172,15 @@ void CEntrez2Client::Query(const string& query, const string& db,
     req.SetReturn_UIDs(true);
     req.SetQuery(bexp);
 
-    CRef<CEntrez2_boolean_reply> reply = AskEval_boolean(req);
+    CRef<CEntrez2_boolean_reply> bool_reply = AskEval_boolean(req, reply);
     
     // now extract the UIDs
-    if (!reply->GetUids().CanGetUids ()) {
+    if (!bool_reply->GetUids().CanGetUids ()) {
         // this happens when no matches were found
         return;
     }
     for (CEntrez2_id_list::TConstUidIterator it
-             = reply->GetUids().GetConstUidIterator();  
+             = bool_reply->GetUids().GetConstUidIterator();  
          !it.AtEnd();  ++it) {
         result_uids.push_back(*it);
     }
@@ -265,6 +266,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/03/28 16:09:25  jcherry
+* Gave Query method the ability to pass back the CEntrez2_reply
+* from the server
+*
 * Revision 1.14  2005/01/21 14:44:48  dicuccio
 * Added simple API to retrieve docsums for UIDs
 *
