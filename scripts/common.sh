@@ -19,9 +19,13 @@ COMMON_AddRunpath()
     export LD_LIBRARY_PATH
 
     case "`uname`" in
-      IRIX*) _RLD_ROOT="/usr"
-      export _RLD_ROOT
-      ;;
+        IRIX*) _RLD_ROOT="/usr"
+        export _RLD_ROOT
+        ;;
+
+        Darwin*) DYLD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+        export DYLD_LIBRARY_PATH
+        ;;
     esac    
 }
 
@@ -54,22 +58,22 @@ COMMON_SetupRunDirCmd()
 
 COMMON_Error()
 {
-   {
-   echo
-   echo  "------------------------------------------------------"
-   echo  "Current dir:  `pwd`"
-   echo
-   echo "[$script_name] FAILED:"
-   err="   $1"
-   shift
-   for arg in "$@" ; do
-      arg=`echo "$arg" | sed "s%'%\\\\\'%g"`
-      err="$err '$arg'"
-   done
-   echo "$err"
-   } 1>&2
+    {
+        echo
+        echo  "------------------------------------------------------"
+        echo  "Current dir:  `pwd`"
+        echo
+        echo "[$script_name] FAILED:"
+        err="   $1"
+        shift
+        for arg in "$@" ; do
+            arg=`echo "$arg" | sed "s%'%\\\\\'%g"`
+            err="$err '$arg'"
+        done
+        echo "$err"
+    } 1>&2
 
-   exit 1
+    exit 1
 }
 
 
@@ -80,9 +84,9 @@ COMMON_Error()
 
 COMMON_Exec()
 {
-   "$@"
+    "$@"
 
-   if test $? -ne 0 ; then
-      COMMON_Error "$@"
-   fi
+    if test $? -ne 0 ; then
+        COMMON_Error "$@"
+    fi
 }

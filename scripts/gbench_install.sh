@@ -57,6 +57,19 @@ MakeDirs()
 }
 
 
+DoCopy()
+{
+    COMMON_Exec $BINCOPY $1 $2
+
+    case `uname` in
+        Darin*)
+        dylib_file=`echo $1 | sed "s,\.so$,.dylib"`
+        COMMON_Exec $BINCOPY $dylib_file $2
+        ;;
+    esac
+}
+
+
 CopyFiles()
 {
     for x in $BINS; do
@@ -65,7 +78,7 @@ CopyFiles()
         if [ -f $src_file ]; then
             mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-            COMMON_Exec $BINCOPY $src_file $target_dir/bin/
+            DoCopy $src_file $target_dir/bin/
         else
             COMMON_Error "File not found: $src_file"
         fi
@@ -76,7 +89,7 @@ CopyFiles()
         src_file=$src_dir/lib/lib$x.so 
         if [ -f $src_file ]; then
             rm -f $target_dir/lib/lib$x.so
-            COMMON_Exec $BINCOPY $src_file $target_dir/lib/ 
+            DoCopy $src_file $target_dir/lib/ 
         else
             COMMON_Error "File not found: $src_file"
         fi
@@ -85,7 +98,7 @@ CopyFiles()
     for x in $PLUGINS; do
         echo copying plugin: $x
         rm -f $target_dir/plugins/libgui_$x.so
-        COMMON_Exec $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/plugins/
+        DoCopy $src_dir/lib/libgui_$x.so $target_dir/plugins/
     done
 
     for x in $src_dir/lib/libdbapi*.so; do
@@ -93,7 +106,7 @@ CopyFiles()
             f=`basename $x`
             echo copying DB interface: $f
             rm -f $target_dir/lib/$f
-            COMMON_Exec $BINCOPY $x $target_dir/lib/
+            DoCopy $x $target_dir/lib/
         fi
     done
 }
@@ -148,6 +161,7 @@ fi
 
 source_dir=`FindDirPath $src_dir /src/gui/gbench`
 source_dir="${source_dir}/src/gui/gbench"
+
 
 
 MakeDirs $target_dir
