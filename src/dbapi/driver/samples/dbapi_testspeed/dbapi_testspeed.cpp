@@ -36,18 +36,20 @@
 USING_NCBI_SCOPE;
 
 const char usage[] =
-  "Run a series of insert/update/select statements,\n"
+  "Run a series of BCP/insert/select commands,\n"
   "measure the time required for their execution. \n"
   "\n"
   "USAGE:   dbapi_testspeed -parameters\n"
   "REQUIRED PARAMETERS:\n"
-  "  -d driver (e.g. ctlib dblib ftds)\n"
+  "  -d driver (e.g. ctlib dblib ftds odbc gateway)\n"
   "  -S server\n"
   "  -r row_count\n"
   "OPTIONAL PARAMETERS:\n"
   "  -b text_blob_size in kilobytes (default is 1 kb)\n"
   "  -c column_count  1..5 (int_val fl_val date_val str_val txt_val)\n"
-  "  -t table name (default is 'TestSpeed')\n"
+  "  -t table_name (default is 'TestSpeed')\n"
+  "  -g sss_server:port for gateway database driver\n"
+  "     (when -g is present, -d becomes optional)\n"
   ;
 
 int Usage()
@@ -56,11 +58,8 @@ int Usage()
   return 1;
 }
 
-// This program will CREATE a table with 5 rows , make BCP,
-// PRINT table on screen (each row will begin with <ROW> and ended by </ROW>)
-// and DELETE table from the database.
-
-//The following function illustrates a dbapi Bulk Copy (BCP)
+// Create a table with 5 columns, (*)fill it using BCP or insert commands,
+// (*)fetch results, delete the table. Execution time is measured for (*) steps.
 
 int main (int argc, char* argv[])
 {
@@ -83,9 +82,6 @@ int main (int argc, char* argv[])
   const char* p = NULL;
 
   // Read required args
-  p= getParam('d', argc, argv);
-  if(p) { driver_name = p; } else return Usage();
-
   p= getParam('S', argc, argv);
   if(p) { server_name = p; } else return Usage();
 
@@ -125,6 +121,27 @@ int main (int argc, char* argv[])
   p= getParam('t', argc, argv);
   if(p) { table_name = p; };
 
+  p= getParam('d', argc, argv);
+  if(p) { driver_name = p; };
+
+  string sss_host, sss_port;
+  p= getParam('g', argc, argv);
+  if(p){
+    sss_host=p;
+    int i=NStr::Find(sss_host, ":");
+    if(i>0) {
+      sss_port = sss_host.substr(i+1);
+      sss_host.resize(i);
+    }
+    if( driver_name.size()==0 ) {
+      driver_name="gateway";
+    }
+  }
+
+  // -d is necessary unless -g is present
+  if( driver_name.size()==0 ) return Usage();
+
+
   // Load the database driver
   C_DriverMgr drv_mgr;
   string err_msg;
@@ -135,6 +152,20 @@ int main (int argc, char* argv[])
     mapDrvAttrib.insert(
       map<string,string>::value_type( string("version"), string("100") )
     );
+  }
+  else{
+    if( sss_port.size() ) {
+      mapDrvAttrib.insert(
+        map<string,string>::value_type( string("port"), sss_port )
+      );
+    }
+    if( sss_host.size() ) {
+      mapDrvAttrib.insert(
+        map<string,string>::value_type( string("host"), sss_host )
+      );
+    }
+  }
+  if( mapDrvAttrib.size() ) {
     my_context = drv_mgr.GetDriverContext(driver_name, &err_msg, &mapDrvAttrib);
   }
   else{
