@@ -31,8 +31,8 @@
  */
 
 #include "ncbi_conn_streambuf.hpp"
-#include <connect/ncbi_conn_exception.hpp>
 #include <corelib/ncbistd.hpp>
+#include <connect/ncbi_conn_exception.hpp>
 #include <memory>
 
 
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2003/09/23 21:05:50  lavr
+ * Rearranged included headers
+ *
  * Revision 6.33  2003/05/31 05:24:43  lavr
  * NOTREACHED added after exception throw
  *
