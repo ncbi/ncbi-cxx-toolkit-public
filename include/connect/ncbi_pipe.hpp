@@ -41,6 +41,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <connect/ncbi_core.h>
 #include <vector>
 
@@ -100,8 +101,10 @@ public:
 ///
 /// CPipe --
 ///
-/// Create a pipe between program and a child process.
+/// Launch child process with pipes connected to its standard I/O.
 ///
+/// Program can read from stdin/stderr and write to stdin of the
+/// executed child process using pipe object functions Read/Write.
 /// Program can read from stdin/stderr and write to stdin of the
 /// executed child process using pipe object functions Read/Write.
 ///
@@ -113,14 +116,23 @@ class NCBI_XCONNECT_EXPORT CPipe
 public:
     /// Flags for creating standard I/O handles of child process.
     ///
-    /// Default is 0 (fStdIn_Open | fStdOut_Open | fStdErr_Close).
+    /// Default is 0 
+    ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
     enum ECreateFlags {
-        fStdIn_Open      =    0,  ///< do     open child stdin (default)
-        fStdIn_Close     = 0x01,  ///< do not open child's stdin
-        fStdOut_Open     =    0,  ///< do     open child stdout (default)
-        fStdOut_Close    = 0x02,  ///< do not open child's stdout
-        fStdErr_Open     = 0x04,  ///< do     open child stderr
-        fStdErr_Close    =    0   ///< do not open child stderr (default)
+        fStdIn_Open    =    0,  ///< Do     open child stdin (default).
+        fStdIn_Close   = 0x01,  ///< Do not open child's stdin.
+        fStdOut_Open   =    0,  ///< Do     open child stdout (default).
+        fStdOut_Close  = 0x02,  ///< Do not open child's stdout.
+        fStdErr_Open   = 0x04,  ///< Do     open child stderr.
+        fStdErr_Close  =    0,  ///< Do not open child stderr (default).
+        fKeepOnClose   = 0x08,  ///< Close(): just return eIO_Timeout on
+                                ///< eIO_Close timeout w/o closing pipe
+                                ///< handles and/or killing child process.
+        fCloseOnClose  =    0,  ///< Close(): always close all pipe handles
+                                ///< but do not send any signal to running
+                                ///< process if eIO_Close timeout expired.
+        fKillOnClose   = 0x10   ///< Close(): kill child process if it didn't
+                                ///< terminate after eIO_Close timeout.
     };
     typedef unsigned int TCreateFlags;  ///< bit-wise OR of "ECreateFlags"
 
@@ -148,7 +160,6 @@ public:
     ///   Specifies the options to be applied when creating the pipe.
     /// @sa
     ///   Open()
-
     CPipe
         (const string&         cmd,
          const vector<string>& args,
@@ -175,7 +186,7 @@ public:
     /// @return 
     ///   Completion status.
     /// @sa
-    ///   Open()
+    ///   Read(), Write(), Close()
     EIO_Status Open
         (const string&         cmd,
          const vector<string>& args,
@@ -193,8 +204,24 @@ public:
     /// @return
     ///   Completion status.
     ///   The returned status eIO_Timeout means that child process is still 
-    ///   running and the pipe was not yet closed. Otherwise, the pipe was
-    ///   actually closed and is not suitable for I/O until reopened.
+    ///   running and the pipe was not yet closed. Any other return status
+    ///   means that the pipe is not suitable for further I/O until reopened.
+    ///
+    ///   eIO_Closed  - pipe was already closed;
+    ///   eIO_Timeout - the eIO_Close timeout expired, child process
+    ///                 is still running and the pipe was not yet closed
+    ///                 (return only if fKeepOnClose create flag was set);
+    ///   eIO_Success - pipe was succesfully closed. The child process
+    ///                 running status depend on the flags:
+    ///       fKeepOnClose  - process is terminated with "exitcode";
+    ///       fCloseOnClose - process is self-terminated if "exitcode" != -1,
+    ///                       or is still running otherwise;
+    ///       fKillOnClose  - process is self-terminated if "exitcode" != -1,
+    ///                       or was forcibly terminated otherwise;
+    ///   Otherwise   - an error was detected;
+    /// @sa
+    ///   Description for flags fKeepOnClose, fCloseOnClose, fKillOnClose.
+    ///   Open()
     EIO_Status Close(int* exitcode = 0);
 
     /// Close specified pipe handle.
@@ -220,11 +247,25 @@ public:
     /// @return
     ///   Always return eIO_Success if some data were read (regardless of pipe
     ///   conditions that may include EOF/error).
-    ///   Return other (error) code only if no data at all could be obtained.
+    ///   Return other (error) status only if no data at all could be obtained.
     /// @sa
     ///   Write(), SetTimeout()
-    EIO_Status Read(void* buf, size_t count, size_t* read = 0,
-                    EChildIOHandle from_handle = eDefault);
+    EIO_Status Read
+        (void*          buf, 
+         size_t         count, 
+         size_t*        read = 0,
+         EChildIOHandle from_handle = eDefault
+        );
+
+    /// Set standard output handle to read data from.
+    ///
+    /// @from_handle
+    ///   Handle which used to read data (eStdOut/eStdErr).
+    /// @return
+    ///   Return eIO_Success if new handler is eStdOut or eStdErr.
+    ///   Return eIO_Unknown otherwise.
+    /// @sa
+    ///   Read()
     EIO_Status SetReadHandle(EChildIOHandle from_handle);
 
     /// Write data to pipe. 
@@ -240,7 +281,11 @@ public:
     ///   Return other (error) code only if no data at all could be written.
     /// @sa
     ///   Read(), SetTimeout()
-    EIO_Status Write(const void* buf, size_t count, size_t* written = 0);
+    EIO_Status Write
+        (const void* buf,
+         size_t      count,
+         size_t*     written = 0
+        );
 
     /// Return a status of the last I/O operation.
     /// 
@@ -248,14 +293,14 @@ public:
     ///   Direction to get status for.
     /// @return
     ///   I/O status for the specified direction.
-    ///   eIO_Closed     -- if the pipe is closed;
-    ///   eIO_Unknown    -- if an error was detected during the last I/O;
-    ///   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write;
-    ///   eIO_Timeout    -- if the timeout was on last I/O;
-    ///   eIO_Success    -- otherwise.
+    ///   eIO_Closed     - if the pipe is closed;
+    ///   eIO_Unknown    - if an error was detected during the last I/O;
+    ///   eIO_InvalidArg - if "direction" is not one of:  eIO_Read, eIO_Write;
+    ///   eIO_Timeout    - if the timeout was on last I/O;
+    ///   eIO_Success    - otherwise.
     /// @sa
     ///   Read(), Write()
-    EIO_Status Status(EIO_Event direction);
+    EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O.
     ///
@@ -284,6 +329,15 @@ public:
     /// @sa
     ///   SetTimeout()
     const STimeout* GetTimeout(EIO_Event event) const;
+
+    /// Get the process handle for the piped child.
+    ///
+    /// @return
+    ///   Returned value greater than 0 is a child process handle.
+    ///   Return 0 if child process is not running.
+    /// @sa
+    ///   Open(), Close(), CProcess
+    TProcessHandle GetProcessHandle(void) const;
 
 protected:
     CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles
@@ -317,6 +371,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/12/04 16:29:50  ivanov
+ * Added new create flags: fKeepOnClose, fCloseOnClose, fKillOnClose.
+ * Added GetProcessHandle(). Comments changes.
+ *
  * Revision 1.19  2003/11/13 17:51:47  lavr
  * -<stdio.h>
  *
