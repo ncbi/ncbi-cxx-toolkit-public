@@ -64,9 +64,9 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 
 // Normal FCGX_Accept ignores interrupts, so alarm() won't do much good
 // unless we use the reentrant version. :-/
-# if defined(NCBI_OS_UNIX) && defined(HAVE_FCGX_ACCEPT_R)
-#  include <signal.h>
-#  define USE_ALARM
+# if defined(NCBI_OS_UNIX)  &&  defined(HAVE_FCGX_ACCEPT_R)
+#   include <signal.h>
+#   define USE_ALARM
 # endif
 
 BEGIN_NCBI_SCOPE
@@ -152,14 +152,17 @@ extern "C" {
         s_AcceptTimedOut = true;
     }
 }
-# endif
+# endif /* USE_ALARM */
 
 
-bool CCgiApplication::x_FCGI_ShouldRestart(CTime& mtime,
-                                           CCgiWatchFile* watcher)
+// Decide if this FastCGI process should be finished prematurely, right now
+// (the criterion being whether the executable or a special watched file
+// has changed since the last iteration)
+static bool s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
 {
     // Check if this CGI executable has been changed
-    CTime mtimeNew = s_GetModTime(GetArguments().GetProgramName());
+    CTime mtimeNew = s_GetModTime
+        (CCgiApplication::Instance()->GetArguments().GetProgramName());
     if (mtimeNew != mtime) {
         _TRACE("CCgiApplication::x_RunFastCGI: "
                "the program modification date has changed");
@@ -179,7 +182,31 @@ bool CCgiApplication::x_FCGI_ShouldRestart(CTime& mtime,
 
 bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 {
-    *result = -100;
+    // Reset the result (which is in fact an error counter here)
+    *result = 0;
+
+    // Registry
+    const CNcbiRegistry& reg = GetConfig();
+
+    // If to run as a standalone server on local port or named socket
+    {{
+        string path;
+        {{
+            const char* p = getenv("FCGI_STANDALONE_SERVER");
+            if (p  &&  *p) {
+                path = p;
+            } else {
+                path = reg.Get("FastCGI", "StandaloneServer");
+            }
+        }}
+        if ( !path.empty() ) {
+            close(0);
+            if (FCGX_OpenSocket(path.c_str(), 10/*max backlog*/) == -1) {
+                ERR_POST("CCgiApplication::x_RunFastCGI:  cannot run as a "
+                         "standalone server at: " << path << "'"); 
+            }
+        }
+    }}
 
     // Is it run as a Fast-CGI or as a plain CGI?
     if ( FCGX_IsCGI() ) {
@@ -187,38 +214,36 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         return false;
     }
 
-    // Registry
-    const CNcbiRegistry& reg = GetConfig();
-
+    // Statistics
     bool is_stat_log = reg.GetBool("CGI", "StatLog", false,
                                    CNcbiRegistry::eReturn);
     auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     // Max. number of the Fast-CGI loop iterations
-    unsigned int iterations;
+    unsigned int max_iterations;
     {{
         int x_iterations =
             reg.GetInt("FastCGI", "Iterations", (int) def_iter,
                        CNcbiRegistry::eErrPost);
 
         if (x_iterations > 0) {
-            iterations = (unsigned int) x_iterations;
+            max_iterations = (unsigned int) x_iterations;
         } else {
             ERR_POST("CCgiApplication::x_RunFastCGI:  invalid "
                      "[FastCGI].Iterations config.parameter value: "
                      << x_iterations);
             _ASSERT(def_iter);
-            iterations = def_iter;
+            max_iterations = def_iter;
         }
 
         _TRACE("CCgiApplication::Run: FastCGI limited to "
-               << iterations << " iterations");
+               << max_iterations << " iterations");
     }}
 
     // Logging options
     ELogOpt logopt = GetLogOpt();
 
-    // Watcher file -- to allow for stopping the Fast-CGI "prematurely"
+    // Watcher file -- to allow for stopping the Fast-CGI loop "prematurely"
     auto_ptr<CCgiWatchFile> watcher(0);
     {{
         const string& filename = reg.Get("FastCGI", "WatchFile.Name");
@@ -232,88 +257,105 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
     }}
 
-# ifdef USE_ALARM
-    int timeout = reg.GetInt("FastCGI", "WatchFile.Timeout", -1, 0,
-                             CNcbiRegistry::eErrPost);
-    struct sigaction old_sa;
-    if (timeout > 0) {
-        struct sigaction sa;
-        memset(&sa, 0, sizeof(sa));
-        sa.sa_handler = s_AlarmHandler;
-        sigaction(SIGALRM, &sa, &old_sa);
+    unsigned int watch_timeout = 0;
+    {{
+        int x_watch_timeout = reg.GetInt("FastCGI", "WatchFile.Timeout",
+                                         0, 0, CNcbiRegistry::eErrPost);
+        if (x_watch_timeout <= 0) {
+            ERR_POST("CCgiApplication::x_RunFastCGI:  non-positive "
+                     "[FastCGI].WatchFile.Timeout conf.param. value ignored: "
+                     << x_watch_timeout);
+        } else {
+            watch_timeout = (unsigned int) x_watch_timeout;
+        }
+    }}
+# ifndef USE_ALARM
+    if (watcher.get()  ||  watch_timeout ) {
+        ERR_POST(Warning <<
+                 "CCgiApplication::x_RunFastCGI:  [FastCGI].WatchFile.*** "
+                 "conf.parameter value(s) specified, but this functionality "
+                 "is not supported");
     }
 # endif
 
-# ifdef HAVE_FCGX_ACCEPT_R
+    // Diag.prefix related preparations
+    const string prefix_pid(NStr::IntToString(getpid()) + "-");
+
     FCGX_Init();
-# endif
 
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
-    for (m_Iteration = 1;  m_Iteration <= iterations;  ++m_Iteration) {
+    for (m_Iteration = 1;  m_Iteration <= max_iterations;  ++m_Iteration) {
+
+        // Make sure to restore old diagnostic state after each iteration
+        CDiagRestorer diag_restorer;
+
+        // Show PID and iteration # in all of the the diagnostics (as prefix)
+        const string prefix(prefix_pid + NStr::IntToString(m_Iteration));
+        PushDiagPostPrefix(prefix.c_str());
 
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
-               << " iteration of " << iterations);
-
-# ifdef USE_ALARM
-        if (timeout > 0) {
-            alarm(timeout);
-        }
-# endif
+               << " iteration of " << max_iterations);
 
         // Accept the next request and obtain its data
         FCGX_Stream *pfin, *pfout, *pferr;
         FCGX_ParamArray penv;
+        int accept_errcode;
 # ifdef HAVE_FCGX_ACCEPT_R
         FCGX_Request request;
         FCGX_InitRequest(&request, 0, FCGI_FAIL_ACCEPT_ON_INTR);
-        if (FCGX_Accept_r(&request) == 0) {
+#   ifdef USE_ALARM
+        struct sigaction old_sa;
+        if ( watch_timeout ) {
+            struct sigaction sa;
+            memset(&sa, 0, sizeof(sa));
+            sa.sa_handler = s_AlarmHandler;
+            sigaction(SIGALRM, &sa, &old_sa);
+            alarm(watch_timeout);
+        }
+#   endif
+        accept_errcode = FCGX_Accept_r(&request); 
+#   ifdef USE_ALARM
+        if ( watch_timeout ) {
+            if ( !s_AcceptTimedOut ) {
+                alarm(0);  // cancel the alarm
+            }
+            sigaction(SIGALRM, &old_sa, NULL);
+            if ( s_AcceptTimedOut ) {
+                _ASSERT(accept_errcode != 0);
+                s_AcceptTimedOut = false;
+                if ( s_ShouldRestart(mtime, watcher.get()) ) {
+                    break;
+                }
+                m_Iteration--;
+                continue;
+            }
+        }
+#   endif
+        if (accept_errcode == 0) {
             pfin  = request.in;
             pfout = request.out;
             pferr = request.err;
             penv  = request.envp;
-        } else {
-#  ifdef USE_ALARM
-            if (s_AcceptTimedOut) {
-                s_AcceptTimedOut = false;
-                if (x_FCGI_ShouldRestart(mtime, watcher.get())) {
-                    break;
-                } else {
-                    continue;
-                }
-            } else if (timeout > 0) {
-                alarm(0); // cancel the alarm!
-            }
-#  endif
-            _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
-            break;
         }
 # else
-        if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
+        accept_errcode = FCGX_Accept(&pfin, &pfout, &pferr, &penv);
+# endif
+        if (accept_errcode != 0) {
             _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
         }
-# endif
-
-# ifdef USE_ALARM
-        if (timeout > 0) {
-            alarm(0); // cancel the alarm!
-        }
-# endif
-
-        // Default exit status (error)
-        *result = -1;
-        FCGX_SetExitStatus(-1, pfout);
-        CTime start_time(CTime::eCurrent);
 
         // Process the request
+        CTime start_time(CTime::eCurrent);
         try {            
             // Initialize CGI context with the new request data
-            CNcbiEnvironment  env(penv);
+            CNcbiEnvironment env(penv);
             if (logopt == eLog) {
                 x_LogPost("CCgiApplication::x_RunFastCGI ",
                           m_Iteration, start_time, &env, fBegin);
             }
+            PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
 
             CCgiObuffer       obuf(pfout, 512);
             CNcbiOstream      ostr(&obuf);
@@ -339,9 +381,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
                 FCGX_Finish();
 # endif
-                if (m_Iteration == 1) {
-                    *result = 0;
-                }
                 break;
             }
 
@@ -351,61 +390,79 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if ( is_debug ) {
                 m_Context->PutMsg
                     ("FastCGI: "      + NStr::IntToString(m_Iteration) +
-                     " iteration of " + NStr::IntToString(iterations) +
+                     " iteration of " + NStr::IntToString(max_iterations) +
                      ", pid "         + NStr::IntToString(getpid()));
             }
 
-            // Restore old diagnostic state when done.
-            CDiagRestorer     diag_restorer;
             ConfigureDiagnostics(*m_Context);
 
             x_AddLBCookie();
 
             // Call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
-            *result = ProcessRequest(*m_Context);
+            int x_result = ProcessRequest(*m_Context);
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
-            _TRACE("CCgiApplication::Run: done, status: " << *result);
-            FCGX_SetExitStatus(*result, pfout);
+            _TRACE("CCgiApplication::Run: done, status: " << x_result);
+            if (x_result != 0)
+                (*result)++;
+            FCGX_SetExitStatus(x_result, pfout);
         }
         catch (exception& e) {
-            string msg = "(FCGI) CCgiApplication::ProcessRequest() failed: ";
-            msg += e.what();
+            // Increment error counter
+            (*result)++;
 
+            // Call the exception handler and set the CGI exit code
+            {{
+                CCgiObuffer  obuf(pfout, 512);
+                CNcbiOstream ostr(&obuf);
+                int exit_code = OnException(e, ostr);
+                FCGX_SetExitStatus(exit_code, pfout);
+            }}
+            
             // Logging
-            if (logopt != eNoLog) {
-                x_LogPost(msg.c_str(), m_Iteration, start_time, 0,
-                          fBegin|fEnd);
-            } else {
-                ERR_POST(msg);  // Post error notification even if no logging
-            }
-            if ( is_stat_log ) {
-                stat->Reset(start_time, *result, &e);
-                msg = stat->Compose();
-                stat->Submit(msg);
-            }
+            {{
+                string msg =
+                    "(FCGI) CCgiApplication::ProcessRequest() failed: ";
+                msg += e.what();
+
+                if (logopt != eNoLog) {
+                    x_LogPost(msg.c_str(), m_Iteration, start_time, 0,
+                              fBegin | fEnd);
+                } else {
+                    ERR_POST(msg);  // Post err notification even if no logging
+                }
+                if ( is_stat_log ) {
+                    stat->Reset(start_time, *result, &e);
+                    msg = stat->Compose();
+                    stat->Submit(msg);
+                }
+            }}
 
             // Exception reporting
-            CException* ex = dynamic_cast<CException*> (&e);
-            if ( ex ) {
-                NCBI_REPORT_EXCEPTION
-                    ("(FastCGI) CCgiApplication::x_RunFastCGI", *ex);
-            }
+            {{
+                CException* ex = dynamic_cast<CException*> (&e);
+                if ( ex ) {
+                    NCBI_REPORT_EXCEPTION
+                        ("(FastCGI) CCgiApplication::x_RunFastCGI", *ex);
+                }
+            }}
 
             // (If to) abrupt the FCGI loop on error
-            bool is_stop_onfail = reg.GetBool("FastCGI", "StopIfFailed",
-                                              false, CNcbiRegistry::eErrPost);
-            if ( is_stop_onfail ) {     // configured to stop on error
-                // close current request
-                _TRACE("CCgiApplication::x_RunFastCGI: FINISHING (forced)");
+            {{
+                bool is_stop_onfail = reg.GetBool
+                    ("FastCGI","StopIfFailed", false, CNcbiRegistry::eErrPost);
+                if ( is_stop_onfail ) {     // configured to stop on error
+                    // close current request
+                    _TRACE("CCgiApplication::x_RunFastCGI: FINISHING(forced)");
 # ifdef HAVE_FCGX_ACCEPT_R
-                FCGX_Finish_r(&request);
+                    FCGX_Finish_r(&request);
 # else
-                FCGX_Finish();
+                    FCGX_Finish();
 # endif
-                break;
-            }
+                    break;
+                }
+            }}
         }
 
         // Close current request
@@ -427,18 +484,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             stat->Submit(msg);
         }
 
-        if (x_FCGI_ShouldRestart(mtime, watcher.get())) {
+        if ( s_ShouldRestart(mtime, watcher.get()) ) {
             break;
         }
     } // Main Fast-CGI loop
 
     // done
     _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI loop finished)");
-# ifdef USE_ALARM
-    if (timeout > 0) {
-        sigaction(SIGALRM, &old_sa, 0);
-    }
-# endif
     return true;
 }
 
@@ -452,6 +504,24 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.32  2003/05/21 17:38:54  vakatov
+ *    CCgiApplication::x_RunFastCGI():  to return the number of HTTP requests
+ * which failed to process properly -- rather than the exit code of last
+ * FastCGI iteration.
+ *    If an exception is thrown while processing the request, then
+ * call OnException() and use its return as the FastCGI iteration exit code
+ * (rather than just always setting it to non-zero).
+ *    Allow running FastCGI as a standalone server on the local port, without
+ * Web server (use $FCGI_STANDALONE_SERVER or '[FastCGI].StandaloneServer').
+ *    Restore diagnostics setting after each FastCGI iteration.
+ *    Prefix all diagnostic messages with process ID and iteration number,
+ * and with the value of env.variable specified by '[CGI].DiagPrefixEnv'.
+ *    Remember to decrement iter.counter after handling SIGALRM.
+ *    Setup and restore SIGALRM handler right before and immediately after
+ * calling FCGX_Accept_r(), respectively -- to avoid interference with user
+ * code.
+ *    Always call FCGX_Init().
+ *
  * Revision 1.31  2003/05/08 21:28:02  vakatov
  * x_RunFastCGI():  Report exception (if any thrown) via the exception
  * reporting mechanism after each iteration.
