@@ -155,9 +155,9 @@ public:
     bool RevokeDataLoader(CDataLoader& loader);
     bool RevokeDataLoader(const string& loader_name);
 
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-    
     typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
+
+    void ReleaseDataSource(TDataSourceLock& data_source);
 
 protected:
     // functions for data loaders
@@ -177,7 +177,6 @@ protected:
     TDataSourceLock AcquireDataLoader(const string& loader_name);
     TDataSourceLock AcquireTopLevelSeqEntry(CSeq_entry& top_entry);
     void AcquireDefaultDataSources(TDataSourcesLock& sources);
-    bool ReleaseDataSource(TDataSourceLock& data_source);
 
 private:
     CObjectManager(void);
@@ -234,6 +233,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/12/22 15:56:10  vasilche
+* ReleaseDataSource made public.
+* Removed obsolete DebugDump.
+*
 * Revision 1.31  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *

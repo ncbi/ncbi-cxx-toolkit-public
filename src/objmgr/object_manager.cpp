@@ -42,6 +42,7 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -336,7 +337,7 @@ CObjectManager::AcquireTopLevelSeqEntry(CSeq_entry& top_entry)
         
         TDataSourceLock source(new CDataSource(top_entry, *this));
         source->DoDeleteThisObject();
-        
+
         TWriteLockGuard wguard(m_OM_Lock);
         lock = m_mapToSource.insert(
             TMapToSource::value_type(&top_entry, source)).first->second;
@@ -418,20 +419,22 @@ CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
     return ret;
 }
 
+
 CDataLoader* CObjectManager::x_GetLoaderByName(const string& name) const
 {
     TMapNameToLoader::const_iterator itMap = m_mapNameToLoader.find(name);
     return itMap == m_mapNameToLoader.end()? 0: itMap->second;
 }
 
-bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
+
+void CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
 {
     CDataSource& ds = *pSource;
     _ASSERT(pSource->Referenced());
     CDataLoader* loader = ds.GetDataLoader();
     if ( loader ) {
         pSource.Reset();
-        return false;
+        return;
     }
 
     CConstRef<CSeq_entry> key = ds.GetTopEntry();
@@ -439,7 +442,7 @@ bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
         ERR_POST("CObjectManager::ReleaseDataSource: "
                  "unknown data source key");
         pSource.Reset();
-        return false;
+        return;
     }
 
     TWriteLockGuard guard(m_OM_Lock);
@@ -449,7 +452,7 @@ bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
         ERR_POST("CObjectManager::ReleaseDataSource: "
                  "unknown data source");
         pSource.Reset();
-        return false;
+        return;
     }
     _ASSERT(pSource == iter->second);
     _ASSERT(ds.Referenced() && !ds.ReferencedOnlyOnce());
@@ -457,40 +460,14 @@ bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
     if ( ds.ReferencedOnlyOnce() ) {
         // Destroy data source if it's linked to an entry and is not
         // referenced by any scope.
-        if ( !ds.GetDataLoader() ) {
-            pSource = iter->second;
-            m_mapToSource.erase(iter);
-            _ASSERT(ds.ReferencedOnlyOnce());
-            guard.Release();
-            pSource.Reset();
-            return true;
-        }
+        pSource = iter->second;
+        m_mapToSource.erase(iter);
+        _ASSERT(ds.ReferencedOnlyOnce());
+        guard.Release();
+        pSource.Reset();
+        return;
     }
-    return false;
-}
-
-
-void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
-{
-    ddc.SetFrame("CObjectManager");
-    CObject::DebugDump( ddc, depth);
-
-    if (depth == 0) {
-        DebugDumpValue(ddc,"m_setDefaultSource.size()", m_setDefaultSource.size());
-        DebugDumpValue(ddc,"m_mapNameToLoader.size()",  m_mapNameToLoader.size());
-        DebugDumpValue(ddc,"m_mapToSource.size()",m_mapToSource.size());
-        DebugDumpValue(ddc,"m_setScope.size()",         m_setScope.size());
-    } else {
-        
-        DebugDumpRangePtr(ddc,"m_setDefaultSource",
-            m_setDefaultSource.begin(), m_setDefaultSource.end(), depth);
-        DebugDumpPairsValuePtr(ddc,"m_mapNameToLoader",
-            m_mapNameToLoader.begin(), m_mapNameToLoader.end(), depth);
-        DebugDumpPairsPtrPtr(ddc,"m_mapToSource",
-            m_mapToSource.begin(), m_mapToSource.end(), depth);
-        DebugDumpRangePtr(ddc,"m_setScope",
-            m_setScope.begin(), m_setScope.end(), depth);
-    }
+    return;
 }
 
 
@@ -500,6 +477,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/12/22 15:56:10  vasilche
+* ReleaseDataSource made public.
+* Removed obsolete DebugDump.
+*
 * Revision 1.44  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *
