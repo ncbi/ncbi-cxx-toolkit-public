@@ -38,6 +38,7 @@
 #include <serial/objostr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <objects/blast/blast__.hpp>
+#include <objects/scoremat/scoremat__.hpp>
 #include <objects/blast/blastclient.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
@@ -279,6 +280,20 @@ setp(list<CRef<CBlast4_parameter> >& l, string n,
 }
 
 static void
+setp(list<CRef<CBlast4_parameter> >& l, string n,
+     CRef<CScore_matrix_parameters> x)
+{
+    CRef<CBlast4_value> v(new CBlast4_value);
+    v->SetMatrix(*x);
+
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
+    p->SetName(n);
+    p->SetValue(*v);
+
+    l.push_back(p);
+}
+
+static void
 finish_params()
 {
     CRef<CBlast4_finish_params_request> q(new CBlast4_finish_params_request);
@@ -287,7 +302,46 @@ finish_params()
 
     CRef<CBlast4_cutoff> cutoff(new CBlast4_cutoff);
     cutoff->SetE_value(10);
+    
+    CRef<CScore_matrix_parameters> smp(new CScore_matrix_parameters);
 
+    CRef<CScore_matrix> matrix(new CScore_matrix);
+    matrix->SetIs_protein(false);
+    
+    CRef<CObject_id> objid(new CObject_id);
+    objid->SetId(42);
+    
+    matrix->SetIdentifier(*objid);
+    matrix->SetComments().push_back("This is unknown DNA");
+    matrix->SetComments().push_back("Das is nicht fur das dumkoffen.");
+    matrix->SetNrows(10);
+    matrix->SetNcolumns(20);
+    matrix->SetRow_labels().push_back("To err is etc.");
+    matrix->SetRow_labels().push_back("Row label");
+    
+    int i = 1;
+    matrix->SetScores().push_back(i += 17);
+    matrix->SetScores().push_back(i += 17);
+    matrix->SetScores().push_back(i += 17);
+    matrix->SetScores().push_back(i += 17);
+    matrix->SetScores().push_back(i += 17);
+    
+    matrix->SetPosFreqs().push_back(1200);
+    matrix->SetPosFreqs().push_back(1300);
+    matrix->SetPosFreqs().push_back(1400);
+    matrix->SetPosFreqs().push_back(1500);
+    
+    smp->SetMatrix(*matrix);
+    
+    CRef<CBlast4_ka_block> ka(new CBlast4_ka_block);
+    ka->SetK(0.112);
+    
+    smp->SetKablk(*ka);
+    
+    list<CRef<CBlast4_parameter> > & l = q->SetParams();
+    
+    setp(l, "matrix", smp);
+    
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetFinish_params(*q);
 
