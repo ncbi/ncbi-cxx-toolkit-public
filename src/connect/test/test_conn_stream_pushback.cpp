@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/12/17 22:18:56  ucko
+ * Make wrapper for read() more robust, and enable it on more platforms.
+ *
  * Revision 1.1  2001/12/07 22:59:38  lavr
  * Initial revision
  *
@@ -56,14 +59,28 @@ static const size_t kBufferSize = 1024*1024;
 
 static size_t s_Read(iostream& ios, char* buffer, size_t size)
 {
-#ifdef NCBI_COMPILER_GCC
+#define NEED_WORKAROUND
+#if defined NCBI_COMPILER_WORKSHOP
+#  if NCBI_COMPILER_VERSION != 530 // Folding this in confuses KCC. :-/
+#    undef NEED_WORKAROUND // Old versions of WorkShop are okay.
+#  endif
+#endif
+#ifdef NEED_WORKAROUND
     size_t read = 0;
     for (;;) {
         ios.read(buffer, size);
         size_t count = ios.gcount();
         read += count;
-        if (count == 0 && ios.eof())
-            return read;
+        if (count == 0 && ios.eof()) {
+            if (read == 0) {
+                // Try again; maybe we switched buffers.
+                ios.clear();
+                ios.read(buffer, size);
+                return read + ios.gcount();
+            } else {
+                return read;
+            }
+        }
         buffer += count;
         size   -= count;
         if (!size)
@@ -135,6 +152,7 @@ int main(void)
         }
         if (j != k)
             LOG_POST("Bytes requested: " << k << ", received: " << j);
+        _ASSERT(j > 0);
         buflen += j;
         k = rand() % j + 1;
         if (k != j || --k) {
