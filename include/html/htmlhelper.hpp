@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/03/15 19:57:55  vasilche
+* CIDs now use set instead of map.
+*
 * Revision 1.3  1999/01/22 17:46:48  vasilche
 * Fixed/cleaned encoding/decoding.
 * Encoded string now shorter.
@@ -53,6 +56,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <map>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -61,7 +65,7 @@ class CHTML_form;
 
 // utility functions
 
-class CIDs : public map<int, int>
+class CIDs : public set<int>
 {
 public:
     CIDs(void);
@@ -102,7 +106,7 @@ public:
     // HTML encodes a string. E.g. &lt;
     static string HTMLEncode(const string &);
 
-    typedef map<int, bool> TIDList;
+    typedef set<int> TIDList;
     typedef multimap<string, string> TCgiEntries;
 
     // load ID list from CGI request

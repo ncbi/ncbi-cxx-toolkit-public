@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/03/15 19:58:35  vasilche
+* CIDs now use set instead of map.
+*
 * Revision 1.5  1999/01/22 17:46:50  vasilche
 * Fixed/cleaned encoding/decoding.
 * Encoded string now shorter.
@@ -114,7 +117,7 @@ string CIDs::Encode(void) const
     string out;
     int idPrev = 0;
     for ( const_iterator i = begin(); i != end(); ++i ) {
-        int id = i->first;
+        int id = *i;
         if ( !out.empty() )
             out += ' ';
         out += NStr::IntToString(id - idPrev);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/03/15 19:57:56  vasilche
+* CIDs now use set instead of map.
+*
 * Revision 1.2  1999/01/15 19:46:18  vasilche
 * Added CIDs class to hold sorted list of IDs.
 *
@@ -57,7 +60,8 @@ inline CIDs::~CIDs(void)
 
 inline bool CIDs::HaveID(int id) const
 {
-    return find(id) != end();
+    // TW_01
+    return const_cast<CIDs&>(*this).find(id) != const_cast<CIDs&>(*this).end();
 }
 
 inline bool CIDs::ExtractID(int id)
@@ -71,7 +75,7 @@ inline bool CIDs::ExtractID(int id)
 
 inline void CIDs::AddID(int id)
 {
-    insert(value_type(id, id));
+    insert(id);
 }
 
 inline void CIDs::RemoveID(int id)
