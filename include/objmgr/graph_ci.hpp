@@ -136,7 +136,7 @@ public:
         {
             return m_Graph->IsSetComp();
         }
-    const TSeqPos& GetComp(void) const
+    TSeqPos GetComp(void) const
         {
             return m_Graph->GetComp();
         }
@@ -145,7 +145,7 @@ public:
         {
             return m_Graph->IsSetA();
         }
-    const double& GetA(void) const
+    double GetA(void) const
         {
             return m_Graph->GetA();
         }
@@ -154,12 +154,12 @@ public:
         {
             return m_Graph->IsSetB();
         }
-    const double& GetB(void) const
+    double GetB(void) const
         {
             return m_Graph->GetB();
         }
 
-    const TSeqPos& GetNumval(void) const
+    TSeqPos GetNumval(void) const
         {
             return m_Graph->GetNumval();
         }
@@ -250,6 +250,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/02/13 14:57:36  dicuccio
+* Changed interface to match new 'dataool'-generated code (built-in types
+* returned by value, not reference).
+*
 * Revision 1.18  2003/02/13 14:34:31  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

@@ -151,7 +151,7 @@ public:
 
     bool IsSetExp_ev(void) const
         { return m_Feat->IsSetExp_ev(); }
-    const CSeq_feat::EExp_ev& GetExp_ev(void) const
+    CSeq_feat::EExp_ev GetExp_ev(void) const
         { return m_Feat->GetExp_ev(); }
 
     bool IsSetXref(void) const
@@ -315,6 +315,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/02/13 14:57:36  dicuccio
+* Changed interface to match new 'dataool'-generated code (built-in types
+* returned by value, not reference).
+*
 * Revision 1.20  2003/02/13 14:34:31  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref
