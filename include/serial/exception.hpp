@@ -84,7 +84,7 @@ private:
     string m_FrameStack;
 };
 
-class NCBI_XSERIAL_EXPORT CUnassignedMember : public CSerialException
+class CUnassignedMember : public CSerialException
 {
 public:
     enum EErrCode {
@@ -135,14 +135,15 @@ protected:
 
 END_NCBI_SCOPE
 
-#endif /* EXCEPTION__HPP */
-
 
 /* @} */
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/08/19 13:09:30  dicuccio
+* Dropped export specifier on inlined exception
+*
 * Revision 1.17  2004/07/04 19:11:23  vakatov
 * Do not use "throw()" specification after constructors and assignment
 * operators of exception classes inherited from "std::exception" -- as it
@@ -212,3 +213,5 @@ END_NCBI_SCOPE
 *
 * ===========================================================================
 */
+
+#endif /* EXCEPTION__HPP */

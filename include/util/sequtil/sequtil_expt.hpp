@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XUTIL_EXPORT CSeqUtilException : public CException
+class CSeqUtilException : public CException
 {
 public:
     enum EErrCode {
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/19 13:11:49  dicuccio
+* Dropped export specifier on inlined exception
+*
 * Revision 1.1  2003/10/08 13:29:12  shomrat
 * Initial version.
 *
