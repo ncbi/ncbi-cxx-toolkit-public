@@ -148,6 +148,9 @@ public:
 
     // Check if there is more results available
     virtual bool HasMoreResults() = 0;
+
+    // Check if the statement failed
+    virtual bool Failed() = 0;
   
     // Check if resultset is not empty
     virtual bool HasRows() = 0;
@@ -324,6 +327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/09/09 20:49:49  kholodov
+ * Added: IStatement::Failed() method
+ *
  * Revision 1.8  2002/08/26 15:37:58  kholodov
  * Added EAllowLog general purpose enum.
  * Modified GetBlobOStream() methods to allow disabling transaction log while updating BLOBs
