@@ -1147,7 +1147,10 @@ void AdjustOffsetsInHSPList(BlastHSPList* hsp_list, Int4 offset)
    }
 }
 
-/** Comparison callback for sorting HSPs by diagonal */
+/** Comparison callback for sorting HSPs by diagonal. Do not compare
+ * diagonals for HSPs from different contexts. The absolute value of the
+ * return is the diagonal difference between the HSPs.
+ */
 static int
 diag_compare_hsps(const void* v1, const void* v2)
 {
@@ -1156,6 +1159,10 @@ diag_compare_hsps(const void* v1, const void* v2)
    h1 = *((BlastHSP**) v1);
    h2 = *((BlastHSP**) v2);
    
+   if (h1->context < h2->context)
+      return INT4_MIN;
+   else if (h1->context > h2->context)
+      return INT4_MAX;
    return (h1->query.offset - h1->subject.offset) - 
       (h2->query.offset - h2->subject.offset);
 }
@@ -1405,9 +1412,7 @@ static Boolean BLASTHspContained(BlastHSP* hsp1, BlastHSP* hsp2)
 {
    Boolean hsp_start_is_contained=FALSE, hsp_end_is_contained=FALSE;
 
-   if (hsp1->score > hsp2->score || 
-       SIGN(hsp2->query.frame) != SIGN(hsp1->query.frame) || 
-       SIGN(hsp2->subject.frame) != SIGN(hsp1->subject.frame))
+   if (hsp1->score > hsp2->score)
       return FALSE;
 
    if (CONTAINED_IN_HSP(hsp2->query.offset, hsp2->query.end, hsp1->query.offset, hsp2->subject.offset, hsp2->subject.end, hsp1->subject.offset) == TRUE) {
@@ -1536,11 +1541,11 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
                    Int4 hsp_num_max, Int4 start, Boolean merge_hsps)
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
-   BlastHSP* hsp,** hspp1,** hspp2;
+   BlastHSP* hsp, *hsp_var;
+   BlastHSP** hspp1,** hspp2;
    Int4 index, index1;
    Int4 hspcnt1, hspcnt2, new_hspcnt = 0;
    BlastHSP** new_hsp_array;
-   Int4* index_array1, *index_array2;
   
    if (!hsp_list || hsp_list->hspcnt == 0)
       return 0;
@@ -1554,65 +1559,67 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
 
    /* Merge the two HSP lists for successive chunks of the subject sequence */
    hspcnt1 = hspcnt2 = 0;
-   hspp1 = (BlastHSP**) 
-      calloc(combined_hsp_list->hspcnt, sizeof(BlastHSP*));
-   hspp2 = (BlastHSP**) calloc(hsp_list->hspcnt, sizeof(BlastHSP*));
-   index_array1 = (Int4*) calloc(combined_hsp_list->hspcnt, sizeof(Int4));
-   index_array2 = (Int4*) calloc(hsp_list->hspcnt, sizeof(Int4));
 
-   for (index=0; index<combined_hsp_list->hspcnt; index++) {
+   /* Put all HSPs that intersect the overlap region at the front of the
+      respective HSP arrays. */
+   for (index = 0; index < combined_hsp_list->hspcnt; index++) {
       hsp = combined_hsp_list->hsp_array[index];
       if (hsp->subject.end > start) {
-         index_array1[hspcnt1] = index;
-         hspp1[hspcnt1++] = hsp;
-      } else
-         new_hspcnt++;
+         /* At least part of this HSP lies in the overlap strip. */
+         hsp_var = combined_hsp_list->hsp_array[hspcnt1];
+         combined_hsp_list->hsp_array[hspcnt1] = hsp;
+         combined_hsp_list->hsp_array[index] = hsp_var;
+         ++hspcnt1;
+      }
    }
-   for (index=0; index<hsp_list->hspcnt; index++) {
+   for (index = 0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
       if (hsp->subject.offset < start + DBSEQ_CHUNK_OVERLAP) {
-         index_array2[hspcnt2] = index;
-         hspp2[hspcnt2++] = hsp;
-      } else
-         new_hspcnt++;
+         /* At least part of this HSP lies in the overlap strip. */
+         hsp_var = hsp_list->hsp_array[hspcnt2];
+         hsp_list->hsp_array[hspcnt2] = hsp;
+         hsp_list->hsp_array[index] = hsp_var;
+         ++hspcnt2;
+      }
    }
 
+   hspp1 = combined_hsp_list->hsp_array;
+   hspp2 = hsp_list->hsp_array;
+   /* Sort HSPs from in the overlap region by diagonal */
    qsort(hspp1, hspcnt1, sizeof(BlastHSP*), diag_compare_hsps);
    qsort(hspp2, hspcnt2, sizeof(BlastHSP*), diag_compare_hsps);
 
    for (index=0; index<hspcnt1; index++) {
-      for (index1=0; index1<hspcnt2; index1++) {
-         if (hspp2[index1] && 
-             hspp1[index]->context == hspp2[index1]->context && 
+      for (index1 = 0; index1<hspcnt2; index1++) {
+         /* Skip already deleted HSPs */
+         if (!hspp2[index1])
+            continue;
+         if (hspp1[index]->context == hspp2[index1]->context && 
              ABS(diag_compare_hsps(&hspp1[index], &hspp2[index1])) < 
              OVERLAP_DIAG_CLOSE) {
             if (merge_hsps) {
                if (BLAST_MergeHsps(hspp1[index], hspp2[index1], start)) {
-                  /* Free the corresponding element of the full second 
-                     HSP array. */
-                  hsp_list->hsp_array[index_array2[index1]] = 
-                     hspp2[index1] = BlastHSPFree(hspp2[index1]);
+                  /* Free the second HSP. */
+                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
                }
             } else { /* No gap information available */
                if (BLASTHspContained(hspp1[index], hspp2[index1])) {
                   sfree(hspp1[index]);
-                  /* Point the corresponding element of the full first HSP
-                     array to the new HSP; free the element of the second
-                     array. */
-                  combined_hsp_list->hsp_array[index_array1[index]] = hspp2[index1];
-                  hsp_list->hsp_array[index_array2[index1]] = 
-                     hspp2[index1] = NULL;
+                  /* Point the first HSP to the new HSP; 
+                     free the second HSP. */
+                  hspp1[index] = hspp2[index1];
+                  hspp2[index1] = NULL;
                   /* This HSP has been removed, so break out of the inner 
                      loop */
                   break;
                } else if (BLASTHspContained(hspp2[index1], hspp1[index])) {
-                  /* Just free the corresponding element of the second 
-                     HSP array */
-                  hsp_list->hsp_array[index_array2[index1]] = 
-                     hspp2[index1] = BlastHSPFree(hspp2[index1]);
+                  /* Just free the second HSP */
+                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
                }
             }
          } else {
+            /* This and remaining HSPs are too far from the one being 
+               checked */
             break;
          }
       }
@@ -1628,11 +1635,6 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    new_hspcnt = 
       MIN(hsp_list->hspcnt + combined_hsp_list->hspcnt, hsp_num_max);
    
-   sfree(hspp1);
-   sfree(hspp2);
-   sfree(index_array1);
-   sfree(index_array2);
-
    if (new_hspcnt >= combined_hsp_list->allocated-1 && 
        combined_hsp_list->do_not_reallocate == FALSE) {
       Int4 new_allocated = MIN(2*new_hspcnt, hsp_num_max);
