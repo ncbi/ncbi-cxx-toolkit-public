@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.134 2002/10/03 20:29:47 ucko Exp $
+#  $Id: configure.ac,v 1.135 2002/10/08 15:07:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -981,6 +981,14 @@ if test "$compiler" = "KCC" ; then
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ -D__STDC__=0 $CPPFLAGS" ;;
    esac
+   # Often hangs for no good reason :-/; limit time to ~17 minutes per instance
+   if test -x scripts/check/check_exec.sh; then
+      wrap="scripts/check/check_exec.sh 999"
+      CC="$wrap $CC"
+      CXX="$wrap $CXX"
+      AR="$wrap $AR"
+      CXXCPP="$CXX -E" # Don't double-wrap...
+   fi
    if test -n "$kcc_license" ; then
       kcc_CC="$CC"
       kcc_CXX="$CXX"
@@ -2701,6 +2709,12 @@ if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
    CXXCPP="$icc_CXX -E"
    CXX="$icc_CXX"
 fi
+
+### Adjust paths to check_exec_guard.sh
+case "$CC"     in scripts/*)     CC="\$(top_srcdir)/$CC"     ;; esac
+case "$CXX"    in scripts/*)    CXX="\$(top_srcdir)/$CXX"    ;; esac
+case "$CXXCPP" in scripts/*) CXXCPP="\$(top_srcdir)/$CXXCPP" ;; esac
+case "$AR"     in scripts/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 
 ### Get Insure++ to honor the top-level .psrc file
 case "$CC" in
