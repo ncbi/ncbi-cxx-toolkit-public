@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/12/20 23:47:48  thiessen
+* load CDD's
+*
 * Revision 1.38  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -274,22 +277,30 @@ void StructureSet::MatchSequencesToMolecules(void)
     }
 }
 
-StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-    StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
-    lastDisplayList(OpenGLRenderer::NO_LIST),
-    isMultipleStructure(mime.IsAlignstruc()),
-    sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    newAlignments(false), colors(new Colors()), nDomains(0)
+void StructureSet::Init(void)
 {
-    StructureObject *object;
+    renderer = NULL;
+    lastAtomName = OpenGLRenderer::NO_NAME;
+    lastDisplayList = OpenGLRenderer::NO_LIST;
+    sequenceSet = NULL;
+    alignmentSet = NULL;
+    alignmentManager = NULL;
+    newAlignments = false;
+    colors = new Colors();
+    nDomains = 0;
     parentSet = this;
     showHideManager = new ShowHideManager();
     styleManager = new StyleManager();
-    if (!showHideManager || !styleManager) {
+    if (!showHideManager || !styleManager)
         ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
-        return;
-    }
     GlobalMessenger()->RemoveAllHighlights(false);
+}
+
+StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
+    StructureBase(NULL), isMultipleStructure(mime.IsAlignstruc())
+{
+    Init();
+    StructureObject *object;
 
     // create StructureObjects from (list of) biostruc
     if (mime.IsStrucseq()) {
@@ -337,6 +348,37 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     } else {
         ERR_POST(Fatal << "Can't (yet) handle that Ncbi-mime-asn1 type");
     }
+
+    VerifyFrameMap();
+    showHideManager->ConstructShowHideArray(this);
+}
+
+StructureSet::StructureSet(const CCdd& cdd) :
+    StructureBase(NULL), isMultipleStructure(false)
+{
+    Init();
+    StructureObject *object;
+
+//        TESTMSG("Master:");
+//        object = new StructureObject(this, mime.GetAlignstruc().GetMaster(), true);
+//        objects.push_back(object);
+//        const CBiostruc_align::TSlaves& slaves = mime.GetAlignstruc().GetSlaves();
+//        CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
+//        for (i=slaves.begin(); i!=e; i++) {
+//            TESTMSG("Slave:");
+//            object = new StructureObject(this, i->GetObject(), false);
+//            if (!object->SetTransformToMaster(
+//                    mime.GetAlignstruc().GetAlignments(),
+//                    objects.front()->mmdbID))
+//                ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
+//                    << " with master " << objects.front()->pdbID);
+//            objects.push_back(object);
+//        }
+    sequenceSet = new SequenceSet(this, cdd.GetSequences());
+    MatchSequencesToMolecules();
+    alignmentSet = new AlignmentSet(this, cdd.GetSeqannot());
+    alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+    styleManager->SetToAlignment(StyleSettings::eAligned);
 
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/12/20 23:47:48  thiessen
+* load CDD's
+*
 * Revision 1.10  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -88,41 +91,51 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static void UnpackSeqSet(const CBioseq_set& set, SequenceSet *parent,
-    SequenceSet::SequenceList& seqlist)
+static void UnpackSeqSet(const CBioseq_set& set, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
-            CBioseq_set::TSeq_set::const_iterator q, qe = set.GetSeq_set().end();
-            for (q=set.GetSeq_set().begin(); q!=qe; q++) {
-                if (q->GetObject().IsSeq()) {
+    CBioseq_set::TSeq_set::const_iterator q, qe = set.GetSeq_set().end();
+    for (q=set.GetSeq_set().begin(); q!=qe; q++) {
+        if (q->GetObject().IsSeq()) {
 
-                    // only store amino acid or nucleotide sequences
-                    if (q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_aa &&
-                        q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_dna &&
-                        q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_rna &&
-                        q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
-                        continue;
+            // only store amino acid or nucleotide sequences
+            if (q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_aa &&
+                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_dna &&
+                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_rna &&
+                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
+                continue;
 
-                    const Sequence *sequence = new Sequence(parent, q->GetObject().GetSeq());
-                    seqlist.push_back(sequence);
+            const Sequence *sequence = new Sequence(parent, q->GetObject().GetSeq());
+            seqlist.push_back(sequence);
 
-                } else { // Bioseq-set
-                    UnpackSeqSet(q->GetObject().GetSet(), parent, seqlist);
-                }
-            }
+        } else { // Bioseq-set
+            UnpackSeqSet(q->GetObject().GetSet(), parent, seqlist);
+        }
+    }
+}
+
+static void UnpackSeqEntry(const CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+{
+    if (seqEntry.IsSeq()) {
+        const Sequence *sequence = new Sequence(parent, seqEntry.GetSeq());
+        seqlist.push_back(sequence);
+    } else { // Bioseq-set
+        UnpackSeqSet(seqEntry.GetSet(), parent, seqlist);
+    }
+}
+
+SequenceSet::SequenceSet(StructureBase *parent, const CSeq_entry& seqEntry) :
+    StructureBase(parent), master(NULL)
+{
+    UnpackSeqEntry(seqEntry, this, sequences);
+    TESTMSG("number of sequences: " << sequences.size());
 }
 
 SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) :
     StructureBase(parent), master(NULL)
 {
     SeqEntryList::const_iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; s++) {
-        if (s->GetObject().IsSeq()) {
-            const Sequence *sequence = new Sequence(this, s->GetObject().GetSeq());
-            sequences.push_back(sequence);
-        } else { // Bioseq-set
-            UnpackSeqSet(s->GetObject().GetSet(), this, sequences);
-        }
-    }
+    for (s=seqEntries.begin(); s!=se; s++)
+        UnpackSeqEntry(s->GetObject(), this, sequences);
     TESTMSG("number of sequences: " << sequences.size());
 }
 

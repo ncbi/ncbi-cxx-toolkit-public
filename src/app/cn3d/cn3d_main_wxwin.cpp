@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/20 23:47:47  thiessen
+* load CDD's
+*
 * Revision 1.17  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -156,6 +159,7 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#include <objects/cdd/Cdd.hpp>
 
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -172,6 +176,8 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
+
+static wxString workingDir, programDir, dataDir;
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
 // into a wxWindow. This log window can be closed anytime, but will be hidden,
@@ -242,8 +248,20 @@ bool Cn3DApp::OnInit(void)
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
 
+    // set up working directories
+    workingDir = dataDir = wxGetCwd();
+    if (wxIsAbsolutePath(argv[0]))
+        programDir = wxPathOnly(argv[0]);
+    else if (wxPathOnly(argv[0]) == "")
+        programDir = workingDir;
+    else
+        programDir = workingDir + wxFILE_SEP_PATH + programDir;
+    TESTMSG("working dir: " << workingDir.c_str());
+    TESTMSG("program dir: " << programDir.c_str());
+
     // read dictionary
-    LoadStandardDictionary();
+    wxString dictFile = programDir + wxFILE_SEP_PATH + "bstdt.val";
+    LoadStandardDictionary(dictFile.c_str());
 
     // create the messenger; tell it about sequence & structure windows
     messenger = new Messenger();
@@ -504,42 +522,6 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
     }
 }
 
-static bool ReadMimeFromFile(const char *filename, CNcbi_mime_asn1& mime)
-{
-    // initialize the binary input stream
-    auto_ptr<CNcbiIstream> inStream;
-    inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
-    if (!(*inStream)) {
-        ERR_POST(Error << "Cannot open file '" << filename << "' for reading");
-        return false;
-    }
-
-    // try to decide if it's binary or ascii
-    static const std::string asciiMimeFirstWord = "Ncbi-mime-asn1";
-    std::string firstWord;
-    *inStream >> firstWord;
-    inStream->seekg(0);
-
-    auto_ptr<CObjectIStream> inObject;
-    if (firstWord == asciiMimeFirstWord) {
-        // Associate ASN.1 text serialization methods with the input
-        inObject.reset(new CObjectIStreamAsn(*inStream));
-    } else {
-        // Associate ASN.1 binary serialization methods with the input
-        inObject.reset(new CObjectIStreamAsnBinary(*inStream));
-    }
-
-    // Read the CNcbi_mime_asn1 data
-    try {
-        *inObject >> mime;
-    } catch (exception& e) {
-        ERR_POST(Error << "Cannot read file '" << filename << "'\nreason: " << e.what());
-        return false;
-    }
-
-    return true;
-}
-
 static bool WriteMimeToFile(const char *filename, CNcbi_mime_asn1& mime, boolean doTextAsn = true)
 {
     // initialize a binary output stream
@@ -584,28 +566,85 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         currentDataFilename.Clear();
     }
 
-    CNcbi_mime_asn1 mime;
-    if (ReadMimeFromFile(filename, mime)) {
-        // Create StructureSet from mime data
-        glCanvas->structureSet = new StructureSet(mime);
-        glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
-        glCanvas->Refresh(false);
-        currentDataFilename = filename;
+    // try to decide if what ASN type this is, and if it's binary or ascii
+    CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
+    if (!inStream) {
+        ERR_POST(Error << "Cannot open file '" << filename << "' for reading");
+        return;
     }
+    std::string firstWord;
+    *inStream >> firstWord;
+    delete inStream;
+
+    static const std::string
+        asciiMimeFirstWord = "Ncbi-mime-asn1",
+        asciiCDDFirstWord = "Cdd";
+    bool isMime = false, isCDD = false, isBinary = true;
+    if (firstWord == asciiMimeFirstWord) {
+        isMime = true;
+        isBinary = false;
+    } else if (firstWord == asciiCDDFirstWord) {
+        isCDD = true;
+        isBinary = false;
+    }
+
+    // try to read the file as various ASN types (if it's not clear from the first ascii word)
+    bool readOK = false;
+    std::string err;
+    if (!isCDD) {
+        TESTMSG("trying to read file '" << filename << "' as " <<
+            ((isBinary) ? "binary" : "ascii") << " mime");
+        CNcbi_mime_asn1 mime;
+        SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+        readOK = ReadASNFromFile(filename, mime, isBinary, err);
+        SetDiagPostLevel(eDiag_Info);
+        if (readOK)
+            glCanvas->structureSet = new StructureSet(mime);
+        else
+            ERR_POST(Warning << "error: " << err);
+    }
+    if (!readOK) {
+        TESTMSG("trying to read file '" << filename << "' as " <<
+            ((isBinary) ? "binary" : "ascii") << " cdd");
+        CCdd cdd;
+        SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+        readOK = ReadASNFromFile(filename, cdd, isBinary, err);
+        SetDiagPostLevel(eDiag_Info);
+        if (readOK)
+            glCanvas->structureSet = new StructureSet(cdd);
+        else
+            ERR_POST(Warning << "error: " << err);
+    }
+    if (!readOK) {
+        ERR_POST(Error << "File is not a recognized data type (Ncbi-mime-asn1 or Cdd)");
+        return;
+    }
+
+    glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
+    glCanvas->Refresh(false);
+    currentDataFilename = filename;
+    if (wxIsAbsolutePath(filename))
+        dataDir = wxPathOnly(filename);
+    else if (wxPathOnly(filename) == "")
+        dataDir = workingDir;
+    else
+        dataDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(filename);
+    TESTMSG("data dir: " << dataDir.c_str());
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 {
-    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open");
+    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", dataDir);
     if (!filestr.IsEmpty())
         LoadFile(filestr.c_str());
 }
 
 void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 {
+/*
     if (!glCanvas->structureSet || currentDataFilename.IsEmpty()) return;
 
-    wxString outputFilename = wxFileSelector("Choose a filename for output", "", "", ".prt", "*.prt", wxSAVE);
+    wxString outputFilename = wxFileSelector("Choose a filename for output", dataDir, "", ".prt", "*.prt", wxSAVE);
     if (!outputFilename.IsEmpty()) {
 
         CNcbi_mime_asn1 mime;
@@ -618,6 +657,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         TESTMSG("writing output file " << outputFilename.c_str());
         WriteMimeToFile(outputFilename.c_str(), mime, true);
     }
+*/
 }
 
 void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)

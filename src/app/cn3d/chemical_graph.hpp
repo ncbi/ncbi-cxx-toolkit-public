@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/12/20 23:47:52  thiessen
+* load CDD's
+*
 * Revision 1.12  2000/11/30 15:49:07  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -87,7 +90,7 @@
 BEGIN_SCOPE(Cn3D)
 
 // to create and delete dictionary - should be called on program init/exit
-void LoadStandardDictionary(void);
+void LoadStandardDictionary(const char *filename);
 void DeleteStandardDictionary(void);
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/12/20 23:47:52  thiessen
+* load CDD's
+*
 * Revision 1.10  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -89,6 +92,7 @@ class MasterSlaveAlignment;
 class SequenceSet : public StructureBase
 {
 public:
+    SequenceSet(StructureBase *parent, const ncbi::objects::CSeq_entry& seqEntry);
     SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
 
     typedef LIST_TYPE < const Sequence * > SequenceList;
