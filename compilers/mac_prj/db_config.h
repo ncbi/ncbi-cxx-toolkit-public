@@ -26,7 +26,7 @@
 /* #undef HAVE_CLOCK_GETTIME */
 
 /* Define to 1 if Berkeley DB release includes strong cryptography. */
-/* #undef HAVE_CRYPTO */
+#define HAVE_CRYPTO 1
 
 /* Define to 1 if you have the `directio' function. */
 /* #undef HAVE_DIRECTIO */
@@ -44,8 +44,14 @@
 /* Define to 1 if fcntl/F_SETFD denies child access to file descriptors. */
 #define HAVE_FCNTL_F_SETFD 1
 
+/* Define to 1 if you have the `fdatasync' function. */
+/* #undef HAVE_FDATASYNC */
+
 /* Define to 1 if allocated filesystem blocks are not zeroed. */
 /* #undef HAVE_FILESYSTEM_NOTZERO */
+
+/* Define to 1 if you have the `ftruncate' function. */
+#define HAVE_FTRUNCATE 1
 
 /* Define to 1 if you have the `getcwd' function. */
 #define HAVE_GETCWD 1
@@ -70,6 +76,9 @@
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 /* #undef HAVE_LIBNSL */
+
+/* Define to 1 if the system has the type `long long'. */
+#define HAVE_LONG_LONG 1
 
 /* Define to 1 if you have the `memcmp' function. */
 #define HAVE_MEMCMP 1
@@ -218,6 +227,9 @@
 /* Define to 1 if you have the `raise' function. */
 #define HAVE_RAISE 1
 
+/* Define to 1 if you have the `rand' function. */
+#define HAVE_RAND 1
+
 /* Define to 1 if building replication support. */
 #define HAVE_REPLICATION 1
 
@@ -230,11 +242,20 @@
 /* Define to 1 if you have the `select' function. */
 #define HAVE_SELECT 1
 
+/* Define to 1 if building sequence support. */
+#define HAVE_SEQUENCE 1
+
 /* Define to 1 if you have the `shmget' function. */
 #define HAVE_SHMGET 1
 
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
+
+/* Define to 1 if you have the `srand' function. */
+#define HAVE_SRAND 1
+
+/* Define to 1 if building statistics support. */
+#define HAVE_STATISTICS 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
@@ -256,6 +277,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
+
+/* Define to 1 if you have the `strtol' function. */
+#define HAVE_STRTOL 1
 
 /* Define to 1 if you have the `strtoul' function. */
 #define HAVE_STRTOUL 1
@@ -295,6 +319,9 @@
 /* Define to 1 if unlink of file with open file descriptors will fail. */
 /* #undef HAVE_UNLINK_WITH_OPEN_FAILURE */
 
+/* Define to 1 if the system has the type `unsigned long long'. */
+#define HAVE_UNSIGNED_LONG_LONG 1
+
 /* Define to 1 if building access method verification support. */
 #define HAVE_VERIFY 1
 
@@ -320,13 +347,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.2.52"
+#define PACKAGE_STRING "Berkeley DB 4.3.27"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.2.52"
+#define PACKAGE_TARNAME "db-4.3.27"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.2.52"
+#define PACKAGE_VERSION "4.3.27"
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
@@ -339,6 +366,9 @@
 
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
+
+/* The size of a `long long', as computed by sizeof. */
+#define SIZEOF_LONG_LONG 8
 
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
@@ -355,6 +385,9 @@
 /* The size of a `unsigned long', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_LONG 4
 
+/* The size of a `unsigned long long', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_LONG_LONG 8
+
 /* The size of a `unsigned short', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_SHORT 2
 
@@ -367,7 +400,7 @@
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
 
-/* Define to 1 to mask harmless unitialized memory read/writes. */
+/* Define to 1 to mask harmless uninitialized memory read/writes. */
 /* #undef UMRW */
 
 /* Number of bits in a file offset, on hosts where this is settable. */
