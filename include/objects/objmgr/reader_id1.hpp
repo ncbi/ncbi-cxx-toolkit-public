@@ -35,12 +35,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <serial/serial.hpp>
-#include <serial/enumvalues.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasnb.hpp>
-#include <serial/iterator.hpp>
-
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -122,6 +116,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.11  2003/02/04 16:02:22  dicuccio
+* Moved headers unecessarily included here into the .cpp file
+*
 * Revision 1.10  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *
