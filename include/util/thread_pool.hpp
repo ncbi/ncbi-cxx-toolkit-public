@@ -76,6 +76,8 @@ public:
         : m_GetSem(0,1), m_PutSem(1,1), m_MaxSize(max_size) {}
 
     void         Put(const TRequest& data); // Throws exception if full
+    // NB: a following call to Put may still throw an exception if another
+    // thread adds a request in between.
     void         WaitForRoom(unsigned int timeout_sec  = kMax_UInt,
                              unsigned int timeout_nsec = 0) const;
     // Blocks politely if empty
@@ -395,6 +397,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/10/18 14:43:19  ucko
+* Add a little more documentation.
+*
 * Revision 1.15  2004/09/08 14:21:04  ucko
 * Rework again to eliminate races in KillAllThreads.
 *
