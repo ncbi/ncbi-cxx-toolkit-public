@@ -277,9 +277,9 @@ const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_pa
     const TPairTree* ptr = &tr;
     const TPairTree* pfnd = 0;
 
-    TPathList::const_iterator last_it = node_path.end();
+    typename TPathList::const_iterator last_it = node_path.end();
     --last_it;
-    typename const TPathList::value_type& last_search_id = *last_it;
+    const typename TPathList::value_type& last_search_id = *last_it;
 
     ITERATE(typename TPathList, sit, node_path) {
         const typename TPairTree::TIdType& search_id = *sit;
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/01/12 21:03:42  ucko
+ * Fix use of typename in PairTreeTraceNode<>, silently added in last revision.
+ *
  * Revision 1.12  2004/01/12 20:09:22  kuznets
  * Renamed CTreeNWay to CTreeNode
  *
