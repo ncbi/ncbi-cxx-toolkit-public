@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/03/01 19:21:00  thiessen
+* add icon to all frames
+*
 * Revision 1.28  2002/03/01 15:47:46  thiessen
 * try tool window style for sequence/log viewers
 *
@@ -128,6 +131,11 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/cn3d_tools.hpp"
 
+// the application icon (under Windows it is in resources)
+#if defined(__WXGTK__) || defined(__WXMAC__)
+    #include "cn3d/cn3d.xpm"
+#endif
+
 USING_NCBI_SCOPE;
 
 
@@ -137,7 +145,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
         const char* title, const wxPoint& pos, const wxSize& size) :
     wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
         wxDEFAULT_FRAME_STYLE
-#if wxVERSION_NUMBER >= 2302
+#if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
             | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
 #endif
         ),
@@ -146,6 +154,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     if (!parentViewer) ERR_POST(Error << "ViewerWindowBase::ViewerWindowBase() - got NULL pointer");
 
     SetSizeHints(200, 150);
+    SetIcon(wxICON(cn3d));
 
     // status bar with two fields - first is for id/loc, second is for general status line
     CreateStatusBar(2);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.125  2002/03/01 19:21:00  thiessen
+* add icon to all frames
+*
 * Revision 1.124  2002/03/01 15:47:46  thiessen
 * try tool window style for sequence/log viewers
 *
@@ -596,11 +599,15 @@ public:
     MsgFrame(const wxString& title,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize) :
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
-            wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT
-#if wxVERSION_NUMBER >= 2302
+            wxDEFAULT_FRAME_STYLE
+#if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
                 | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
 #endif
-            ) { totalChars = 0; }
+            ) 
+    { 
+        totalChars = 0;
+        SetIcon(wxICON(cn3d));
+    }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
 private:
     // need to define a custom close window handler, so that window isn't actually destroyed,
