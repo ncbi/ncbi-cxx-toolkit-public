@@ -598,6 +598,13 @@ static void s_TEST_BDB_BLOB_File(void)
     EBDB_ErrCode ret = blob.Insert(test_data, lob_len);
     assert(ret == eBDB_Ok);
 
+    blob.i1 = 1;
+    blob.i2 = 3;
+
+    ret = blob.Insert(test_data, lob_len);
+    assert(ret == eBDB_Ok);
+
+
     cout << "Testing two-phase read." << endl;
     blob.Reopen(CBDB_LobFile::eReadOnly);
     
@@ -620,6 +627,27 @@ static void s_TEST_BDB_BLOB_File(void)
     }
 
     buf[0] = 0;
+
+    cout << "Testing BLOB based cursor" << endl;
+
+    CBDB_FileCursor cur(blob);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+
+    cur.From << 1;
+
+    while (cur.Fetch() == eBDB_Ok) {
+        char buf[256] = {0,};
+
+        assert(blob.i2 == 2 || blob.i2 == 3);
+        unsigned len = blob.LobSize();
+        ret = blob.GetData(buf, sizeof(buf));
+        assert(ret == eBDB_Ok);
+        if (strcmp(buf, test_data) != 0) {
+            cout << "BLOB content comparison error!" << endl;
+            cout << "BLobData:" << buf << endl;
+            assert(0);
+        }
+    }
 
     cout << "======== BLob file test ok." << endl;
 }
@@ -823,6 +851,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/07 14:13:45  kuznets
+ * + test case for cursor reading of BLOB storage.
+ *
  * Revision 1.5  2003/05/05 20:15:35  kuznets
  * Added CBDB_BLobFile
  *
