@@ -82,7 +82,6 @@ public:
     virtual void  Process(SOCK sock);
     virtual bool ShutdownRequested(void) { return m_Shutdown; }
 
-private:
     typedef enum {
         eError,
         ePut,
@@ -90,6 +89,7 @@ private:
         eShutdown
     } ERequestType;
 
+private:
     struct Request
     {
         ERequestType    req_type;
@@ -756,6 +756,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/10/20 21:21:02  ucko
+ * Make CNetCacheServer::ERequestType public so that struct Request can
+ * make use of it when building with WorkShop.
+ *
  * Revision 1.10  2004/10/20 14:50:22  kuznets
  * Code cleanup
  *
