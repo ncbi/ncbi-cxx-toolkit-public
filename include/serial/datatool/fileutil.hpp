@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/02/02 16:19:55  vasilche
+* Fixed file path processing on Mac
+*
 * Revision 1.8  2000/11/29 17:42:30  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -182,6 +185,8 @@ string BaseName(const string& path);
 
 // return dir name of file
 string DirName(const string& path);
+
+bool IsLocalPath(const string& path);
 
 END_NCBI_SCOPE
 

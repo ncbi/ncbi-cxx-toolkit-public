@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/02/02 16:20:00  vasilche
+* Fixed file path processing on Mac
+*
 * Revision 1.16  2000/11/29 17:42:44  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -179,25 +182,103 @@ DestinationFile::~DestinationFile(void)
     }
 }
 
+#undef DIR_SEPARATOR_CHAR
+#undef DIR_SEPARATOR_CHAR2
+#undef DISK_SEPARATOR_CHAR
+#undef ALL_SEPARATOR_CHARS
+
+#ifdef NCBI_OS_WINDOWS
+#  define DIR_SEPARATOR_CHAR '\\'
+#  define DIR_SEPARATOR_CHAR2 '/'
+#  define DISK_SEPARATOR_CHAR ':'
+#  define ALL_SEPARATOR_CHARS ":/\\"
+#  define PARENT_DIR ".."
+#elifdef NCBI_OS_MAC
+#  define DIR_SEPARATOR_CHAR ':'
+#  define PARENT_DIR ".."
+#else
+#  define DIR_SEPARATOR_CHAR '/'
+#  define PARENT_DIR ".."
+#endif
+
+#ifndef ALL_SEPARATOR_CHARS
+#  define ALL_SEPARATOR_CHARS DIR_SEPARATOR_CHAR
+#endif
+
+inline
+bool IsDiskSeparator(char c)
+{
+#ifdef DISK_SEPARATOR_CHAR
+    if ( c == DISK_SEPARATOR_CHAR )
+        return true;
+#endif
+    return false;
+}
+
+inline
+bool IsDirSeparator(char c)
+{
+#ifdef DISK_SEPARATOR_CHAR
+    if ( c == DISK_SEPARATOR_CHAR )
+        return true;
+#endif
+#ifdef DIR_SEPARATOR_CHAR2
+    if ( c == DIR_SEPARATOR_CHAR2 )
+        return true;
+#endif
+    return c == DIR_SEPARATOR_CHAR;
+}
+
+bool IsLocalPath(const string& path)
+{
+    // determine if path is local to current directory
+    // exclude pathes like:
+    // "../xxx" everywhere
+    // "xxx/../yyy" everywhere
+    // "/xxx/yyy"  on unix
+    // "d:xxx" on windows
+    if ( path.empty() )
+        return false;
+
+    if ( IsDirSeparator(path[0]) )
+        return false;
+
+    SIZE_TYPE pos;
+#ifdef PARENT_DIR
+    SIZE_TYPE parentDirLength = strlen(PARENT_DIR);
+    pos = 0;
+    while ( (pos = path.find(PARENT_DIR, pos)) != NPOS ) {
+        if ( pos == 0 || IsDirSeparator(path[pos - 1]) )
+            return false;
+        SIZE_TYPE end = pos + parentDirLength;
+        if ( end == path.size() || IsDirSeparator(path[end]) )
+            return false;
+        pos = end + 1;
+    }
+#endif
+#ifdef DISK_SEPARATOR_CHAR
+    if ( path.find(DISK_SEPARATOR_CHAR) != NPOS )
+        return false;
+#endif
+    return true;
+}
+
 string Path(const string& dir, const string& file)
 {
     if ( dir.empty() )
         return file;
+    char lastChar = dir[dir.size() - 1];
     if ( file.empty() )
         _TRACE("Path(\"" << dir << "\", \"" << file << "\")");
-    switch ( dir[dir.size() - 1] ) {
-    case '/':
-    case '\\':
-    case ':':
+    if ( IsDirSeparator(lastChar) )
         return dir + file;
-    default:
-        return dir + '/' + file;
-    }
+    else
+        return dir + DIR_SEPARATOR_CHAR + file;
 }
 
 string BaseName(const string& path)
 {
-    SIZE_TYPE dirEnd = path.find_last_of(":/\\");
+    SIZE_TYPE dirEnd = path.find_last_of(ALL_SEPARATOR_CHARS);
     string name;
     if ( dirEnd != NPOS )
         name = path.substr(dirEnd + 1);
@@ -211,12 +292,13 @@ string BaseName(const string& path)
 
 string DirName(const string& path)
 {
-    SIZE_TYPE dirEnd = path.find_last_of(":/\\");
+    SIZE_TYPE dirEnd = path.find_last_of(ALL_SEPARATOR_CHARS);
     if ( dirEnd != NPOS ) {
-        if ( dirEnd == 0 ) // "/" root directory
-            return path.substr(0, 1);
-        else
-            return path.substr(0, dirEnd);
+        if ( dirEnd == 0 /* "/" root directory */ ||
+             IsDiskSeparator(path[dirEnd]) /* disk separator */ ) 
+            ++dirEnd; // include separator
+
+        return path.substr(0, dirEnd);
     }
     else {
         return NcbiEmptyString;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/02/02 16:20:01  vasilche
+* Fixed file path processing on Mac
+*
 * Revision 1.29  2000/11/29 17:42:45  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -195,9 +198,7 @@ string CFileModules::GetFileNamePrefix(void) const
     if ( MakeFileNamePrefixFromSourceFileName() ) {
         if ( m_PrefixFromSourceFileName.empty() ) {
             m_PrefixFromSourceFileName = DirName(m_SourceFileName);
-            if ( m_PrefixFromSourceFileName.empty() ||
-                 m_PrefixFromSourceFileName[0] == '.' ||
-                 m_PrefixFromSourceFileName[0] == '/' ) {
+            if ( !IsLocalPath(m_PrefixFromSourceFileName) ) {
                 // path absent or non local
                 m_PrefixFromSourceFileName.erase();
                 return GetModuleContainer().GetFileNamePrefix();
