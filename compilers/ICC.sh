@@ -21,17 +21,17 @@ ERROR:  cannot find Intel C++ compiler ($CXX)
 HINT:  if you are at NCBI, try to specify the following:
  Linux:
    sh, bash:
-      PATH="/opt/intel/compiler71/ia32/bin:\$PATH"
-      LD_LIBRARY_PATH="/opt/intel/compiler71/ia32/lib:\$LD_LIBRARY_PATH"
+      PATH="/opt/intel/compiler80/ia32/bin:\$PATH"
+      LD_LIBRARY_PATH="/opt/intel/compiler80/ia32/lib:\$LD_LIBRARY_PATH"
       export PATH LD_LIBRARY_PATH
-      IA32ROOT="/opt/intel/compiler71/ia32"
+      IA32ROOT="/opt/intel/compiler80/ia32"
       export IA32ROOT
       INTEL_FLEXLM_LICENSE="/opt/intel/licenses"
       export INTEL_FLEXLM_LICENSE
    tcsh:
-      setenv PATH            /opt/intel/compiler71/ia32/bin:\$PATH
-      setenv LD_LIBRARY_PATH /opt/intel/compiler71/ia32/lib:\$LD_LIBRARY_PATH
-      setenv IA32ROOT        /opt/intel/compiler71/ia32
+      setenv PATH            /opt/intel/compiler80/ia32/bin:\$PATH
+      setenv LD_LIBRARY_PATH /opt/intel/compiler80/ia32/lib:\$LD_LIBRARY_PATH
+      setenv IA32ROOT        /opt/intel/compiler80/ia32
       setenv INTEL_FLEXLM_LICENSE /opt/intel/licenses
 
 EOF
