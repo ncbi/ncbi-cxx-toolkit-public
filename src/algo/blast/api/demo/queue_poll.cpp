@@ -77,10 +77,9 @@ USING_SCOPE(objects);
 typedef list< CRef<CBlast4_error> > TErrorList;
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
+//--------------------------------------------------------------------
 //  Helper Functions
-//
+//--------------------------------------------------------------------
 
 #define BLAST4_POLL_DELAY_SEC 15
 #define BLAST4_IGNORE_ERRS    5
@@ -177,10 +176,9 @@ s_Output(CNcbiOstream & os, CRef<T> t)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
+//--------------------------------------------------------------------
 //  Queueing and Polling
-//
+//--------------------------------------------------------------------
 
 
 static CRef<CBioseq_set>
@@ -548,6 +546,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/03/22 20:46:21  bealer
+ * - Fix non-literate comments to look less like doxygen comments.
+ *
  * Revision 1.2  2004/02/18 20:28:18  bealer
  * - Always call prepare function.
  * - Set verbosity flag earlier.

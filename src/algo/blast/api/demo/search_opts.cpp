@@ -38,10 +38,9 @@ USING_SCOPE(objects);
 
 bool trace_blast_api = false;
 
-/////////////////////////////////////////////////////////////////////////////
-//
+//--------------------------------------------------------------------
 //  Structures and Prototypes
-//
+//--------------------------------------------------------------------
 
 // Functor for option reading
 
@@ -50,7 +49,8 @@ class COptionReader : public COptionWalker
 public:
     COptionReader(const CArgs & args)
         : m_args(args)
-    {}
+    {
+    }
     
     template <class ValueT, class MethodT, class OptsT>
     void Same(ValueT    & valobj,
@@ -79,7 +79,10 @@ public:
     {
     }
     
-    bool NeedRemote(void) { return false; }
+    bool NeedRemote(void)
+    {
+        return false;
+    }
     
 private:
     const CArgs & m_args;
@@ -141,10 +144,9 @@ void CNetblastSearchOpts::x_CreateInterface2(CArgDescriptions & ui)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
+//--------------------------------------------------------------------
 // Helper functions
-//
+//--------------------------------------------------------------------
 
 void CNetblastSearchOpts::CreateInterface(CArgDescriptions & ui)
 {
@@ -226,6 +228,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/03/22 20:46:22  bealer
+ * - Fix non-literate comments to look less like doxygen comments.
+ *
  * Revision 1.2  2004/03/18 13:49:04  camacho
  * Correct use of namespaces
  *

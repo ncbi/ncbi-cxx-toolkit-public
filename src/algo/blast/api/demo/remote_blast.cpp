@@ -36,10 +36,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <corelib/ncbiapp.hpp>
 
-/////////////////////////////////////////////////////////////////////////////
-//
 //  Remote Blast Demo App
-//
 
 USING_NCBI_SCOPE;
 
@@ -236,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/22 20:46:22  bealer
+ * - Fix non-literate comments to look less like doxygen comments.
+ *
  * Revision 1.4  2004/03/18 13:49:04  camacho
  * Correct use of namespaces
  *
