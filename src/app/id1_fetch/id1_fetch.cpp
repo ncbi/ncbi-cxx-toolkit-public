@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2001/09/25 13:26:36  lavr
+ * CConn_ServiceStream() - arguments adjusted
+ *
  * Revision 1.12  2001/09/24 03:22:09  vakatov
  * Un-#include <cstdlib> and <cctype> which break IRIX/MIPSpro compilation and
  * apparently are not needed after all
@@ -340,9 +343,9 @@ int CId1FetchApp::Run(void)
     // Open connections to servers we may need.
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
     m_ID1_Server.reset
-        (new CConn_ServiceStream("ID1",     fSERV_Any, 0, &tmout));
+        (new CConn_ServiceStream("ID1",     fSERV_Any, 0, 0, &tmout));
     m_E2_Server.reset
-        (new CConn_ServiceStream("Entrez2", fSERV_Any, 0, &tmout));
+        (new CConn_ServiceStream("Entrez2", fSERV_Any, 0, 0, &tmout));
 
     // Set up object manager.
     m_Scope = &m_ObjMgr.CreateScope();
