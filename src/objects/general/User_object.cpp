@@ -50,28 +50,138 @@ CUser_object::~CUser_object(void)
 {
 }
 
-void CUser_object::GetLabel(string* label) const
+
+//
+// retrieve a named field.  The named field can recurse, depending
+// on a set of user-defined delimiters
+//
+const CUser_field& CUser_object::GetField(const string& str,
+                                          const string& delim) const
 {
-    // Check the label is not null
-    if (!label) {
-        return;
+    list<string> toks;
+    NStr::Split(str, delim, toks);
+
+    CConstRef<CUser_object> obj_ref(this);
+    CConstRef<CUser_field>  field_ref;
+    ITERATE(list<string>, iter, toks) {
+        if (obj_ref) {
+            ITERATE(TData, field_iter, obj_ref->GetData()) {
+                const CUser_field& field = **field_iter;
+                if (field.IsSetLabel()  &&  field.GetLabel().IsStr()  &&
+                    field.GetLabel().GetStr() == *iter) {
+                    field_ref.Reset(&field);
+                    obj_ref.Reset();
+                    break;
+                }
+            }
+        } else if (field_ref) {
+            switch (field_ref->GetData().Which()) {
+            case CUser_field::TData::e_Object:
+                break;
+            case CUser_field::TData::e_Objects:
+                break;
+            case CUser_field::TData::e_Fields:
+                break;
+            default:
+                throw runtime_error("illegal recursion");
+            }
+        }
     }
-    
-    if (IsSetClass()) {
-        (*label) += GetClass();
-    } else if (GetType().IsStr()) {
-        (*label) += GetType().GetStr();
+
+    if ( field_ref ) {
+        return *field_ref;
     }
+    throw runtime_error("field not found");
+}
+
+
+bool CUser_object::HasField(const string& str,
+                            const string& delim) const
+{
+    list<string> toks;
+    NStr::Split(str, delim, toks);
+
+    CConstRef<CUser_object> obj_ref(this);
+    CConstRef<CUser_field>  field_ref;
+    ITERATE(list<string>, iter, toks) {
+        if (obj_ref) {
+            ITERATE(TData, field_iter, obj_ref->GetData()) {
+                const CUser_field& field = **field_iter;
+                if (field.IsSetLabel()  &&  field.GetLabel().IsStr()  &&
+                    field.GetLabel().GetStr() == *iter) {
+                    field_ref.Reset(&field);
+                    obj_ref.Reset();
+                    break;
+                }
+            }
+        } else if (field_ref) {
+            switch (field_ref->GetData().Which()) {
+            case CUser_field::TData::e_Object:
+                break;
+            case CUser_field::TData::e_Objects:
+                break;
+            case CUser_field::TData::e_Fields:
+                break;
+            default:
+                return false;
+            }
+        }
+    }
+
+    if ( field_ref ) {
+        return true;
+    }
+
+    return false;
+}
+
+
+//
+// retrieve a named field.  The named field can recurse, depending
+// on a set of user-defined delimiters
+//
+CUser_field& CUser_object::SetField(const string& str,
+                                    const string& delim)
+{
+    list<string> toks;
+    NStr::Split(str, delim, toks);
+
+    CRef<CUser_object> obj_ref(this);
+    CRef<CUser_field>  field_ref;
+    ITERATE(list<string>, iter, toks) {
+        // recurse - make our field an object
+        if (field_ref) {
+            obj_ref.Reset(&field_ref->SetData().SetObject());
+        }
+
+        // find the named field at this object's level
+        NON_CONST_ITERATE(TData, field_iter, obj_ref->SetData()) {
+            CUser_field& field = **field_iter;
+            if (field.IsSetLabel()  &&  field.GetLabel().IsStr()  &&
+                field.GetLabel().GetStr() == *iter) {
+                field_ref.Reset(&field);
+                break;
+            }
+        }
+
+        // if we didn't find it, add a new field
+        if ( !field_ref ) {
+            field_ref.Reset(new CUser_field());
+            field_ref->SetLabel().SetStr(*iter);
+            obj_ref->SetData().push_back(field_ref);
+        }
+    }
+
+    return *field_ref;
 }
 
 
 // add a data field to the user object that holds a given value
 CUser_object& CUser_object::AddField(const string& label,
-                                    const string& value)
+                                     const string& value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(1);
     field->SetData().SetStr(value);
 
     SetData().push_back(field);
@@ -80,11 +190,10 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    int           value)
+                                     int           value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(1);
     field->SetData().SetInt(value);
 
     SetData().push_back(field);
@@ -93,11 +202,10 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    double        value)
+                                     double        value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(1);
     field->SetData().SetReal(value);
 
     SetData().push_back(field);
@@ -106,11 +214,10 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    bool          value)
+                                     bool          value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(1);
     field->SetData().SetBool(value);
 
     SetData().push_back(field);
@@ -119,11 +226,10 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    CUser_object& object)
+                                     CUser_object& object)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(1);
     field->SetData().SetObject(object);
 
     SetData().push_back(field);
@@ -132,7 +238,7 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    const vector<string>& value)
+                                     const vector<string>& value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -147,7 +253,7 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    const vector<int>&    value)
+                                     const vector<int>&    value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -162,7 +268,7 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    const vector<double>& value)
+                                     const vector<double>& value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -177,7 +283,7 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                    const list< CRef<CUser_object> >& objects)
+                                     const list< CRef<CUser_object> >& objects)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -185,6 +291,263 @@ CUser_object& CUser_object::AddField(const string& label,
     field->SetData().SetObjects() = objects;
 
     SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                     const list< CRef<CUser_field> >& objects)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(objects.size());
+    field->SetData().SetFields() = objects;
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+
+// static consts here allow us to use reference counting
+static const string s_ncbi("NCBI");
+static const string s_expres("experimental_results");
+static const string s_exp("experiment");
+static const string s_sage("SAGE");
+static const string s_tag("tag");
+static const string s_count("count");
+
+
+// accessors: classify a given user object
+CUser_object::ECategory CUser_object::GetCategory(void) const
+{
+    if (!IsSetClass()  ||
+        GetClass() != s_ncbi) {
+        // we fail to recognize non-NCBI classes of user-objects
+        return eCategory_Unknown;
+    }
+
+    //
+    // experimental results
+    //
+    if (GetType().IsStr()  &&
+        NStr::CompareNocase(GetType().GetStr(), s_expres) == 0  &&
+        GetData().size() == 1) {
+
+        ITERATE (CUser_object::TData, iter, GetData()) {
+            const CUser_field& field       = **iter;
+            const CUser_field::TData& data = field.GetData();
+            if (data.Which() != CUser_field::TData::e_Object  ||
+                !field.IsSetLabel()  ||
+                !field.GetLabel().IsStr()  ||
+                NStr::CompareNocase(field.GetLabel().GetStr(),
+                                    s_exp) != 0) {
+                // poorly formed experiment spec
+                return eCategory_Unknown;
+            }
+        }
+
+        return eCategory_Experiment;
+    }
+
+    //
+    // unrecognized - catch-all
+    //
+    return eCategory_Unknown;
+}
+
+
+// sub-category accessors:
+CUser_object::EExperiment CUser_object::GetExperimentType(void) const
+{
+    // check to see if we have an experiment
+    if ( GetCategory() != eCategory_Experiment) {
+        return eExperiment_Unknown;
+    }
+
+    // we do - so we have one nested user object that contains the
+    // specification of the experimental data
+    const CUser_field& field = *GetData().front();
+    const CUser_object& obj = field.GetData().GetObject();
+    if (obj.GetType().IsStr()  &&
+        NStr::CompareNocase(obj.GetType().GetStr(), s_sage) == 0) {
+        return eExperiment_Sage;
+    }
+
+    //
+    // catch-all
+    //
+    return eExperiment_Unknown;
+}
+
+
+// sub-category accessors:
+const CUser_object& CUser_object::GetExperiment(void) const
+{
+    switch (GetExperimentType()) {
+    case eExperiment_Sage:
+        // we have one nested user object that contains the
+        // specification of the experimental data
+        return GetData().front()->GetData().GetObject();
+        break;
+
+    case eExperiment_Unknown:
+    default:
+        return *this;
+    }
+}
+
+
+//
+// format the type specification fo a given user object
+//
+static string s_GetUserObjectType(const CUser_object& obj)
+{
+    switch (obj.GetCategory()) {
+    case CUser_object::eCategory_Experiment:
+        switch (obj.GetExperimentType()) {
+        case CUser_object::eExperiment_Sage:
+            return "SAGE";
+
+        case CUser_object::eExperiment_Unknown:
+        default:
+            return "Experiment";
+        }
+        break;
+
+    case CUser_object::eCategory_Unknown:
+    default:
+        break;
+    }
+
+    return "User";
+}
+
+
+static string s_GetUserObjectContent(const CUser_object& obj)
+{
+    switch (obj.GetCategory()) {
+    case CUser_object::eCategory_Experiment:
+        switch (obj.GetExperimentType()) {
+        case CUser_object::eExperiment_Sage:
+            {{
+                string label;
+                const CUser_object& nested_obj =
+                    obj.GetData().front()->GetData().GetObject();
+
+                // grab the tag and count fields
+                const CUser_field* tag = NULL;
+                const CUser_field* count = NULL;
+                ITERATE (CUser_object::TData, iter, nested_obj.GetData()) {
+                    const CUser_field& field = **iter;
+                    if (!field.GetLabel().IsStr()) {
+                        continue;
+                    }
+
+                    const string& label = field.GetLabel().GetStr();
+                    if (NStr::CompareNocase(label, s_tag) == 0) {
+                        tag = &field;
+                    } else if (NStr::CompareNocase(label, s_count) == 0) {
+                        count = &field;
+                    }
+                }
+
+                if (tag  &&  tag->GetData().IsStr()) {
+                    if ( !label.empty() ) {
+                        label += " ";
+                    }
+                    label += s_tag + "=" + tag->GetData().GetStr();
+                }
+
+                if (count  &&  count->GetData().IsInt()) {
+                    if ( !label.empty() ) {
+                        label += " ";
+                    }
+                    label += s_count + "=" +
+                        NStr::IntToString(count->GetData().GetInt());
+                }
+
+                return label;
+            }}
+
+        case CUser_object::eExperiment_Unknown:
+        default:
+            return "[experiment]";
+            break;
+        }
+        break;
+
+    case CUser_object::eCategory_Unknown:
+    default:
+        return "[User]";
+        break;
+    }
+}
+
+
+//
+// append a formatted string to a label describing this object
+//
+void CUser_object::GetLabel(string* label, ELabelContent mode) const
+{
+    // Check the label is not null
+    if (!label) {
+        return;
+    }
+
+    switch (mode) {
+    case eType:
+        *label = s_GetUserObjectType(*this);
+        break;
+    case eContent:
+        *label = s_GetUserObjectContent(*this);
+        break;
+    case eBoth:
+        *label = s_GetUserObjectType(*this) + ": " +
+            s_GetUserObjectContent(*this);
+        break;
+    }
+}
+
+
+CUser_object& CUser_object::SetCategory(ECategory category)
+{
+    Reset();
+    SetClass(s_ncbi);
+    switch (category) {
+    case eCategory_Experiment:
+        SetType().SetStr(s_expres);
+        {{
+            CRef<CUser_object> subobj(new CUser_object());
+            AddField(s_exp, *subobj);
+            SetClass(s_ncbi);
+            return *subobj;
+        }}
+        break;
+
+    case eCategory_Unknown:
+    default:
+        break;
+    }
+
+    return *this;
+}
+
+
+CUser_object& CUser_object::SetExperiment(EExperiment category)
+{
+    Reset();
+    SetClass(s_ncbi);
+    switch (category) {
+    case eExperiment_Sage:
+        SetType().SetStr(s_sage);
+        break;
+
+    case eExperiment_Unknown:
+    default:
+        break;
+    }
+
     return *this;
 }
 
@@ -198,6 +561,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2003/09/29 15:57:15  dicuccio
+* Fleshed out CUser_object API.  Added function to retrieve fields based on
+* delimited keys.  Added functions to format a CUser_object as a known category
+* (the only supported category is experiment)
+*
 * Revision 6.2  2003/06/19 01:05:51  dicuccio
 * Added interfaces for adding key/value items to a user object as a nested
 * CUser_field object
