@@ -6,6 +6,8 @@
 # Meta-makefile for the "BDB" lib
 #################################
 
+REQUIRES = BerkeleyDB
+
 LIB_PROJ = bdb
 EXPENDABLE_SUB_PROJ = test demo
 
