@@ -132,6 +132,7 @@ void CDemoApp::Init(void)
                             CArgDescriptions::eString, "");
 
 
+    arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
@@ -275,6 +276,7 @@ int CDemoApp::Run(void)
         }
         exclude_named.insert(names);
     }
+    bool scan_seq_map = args["seq_map"];
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -442,7 +444,7 @@ int CDemoApp::Run(void)
             SleepSec(pause);
         }
 
-        if ( 0 ) {
+        if ( scan_seq_map ) {
             TSeqRange range(0, handle.GetBioseqLength()-1);
             for (size_t levels = 0;  levels < 4;  ++levels) {
                 CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
@@ -750,6 +752,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/01/30 19:18:49  vasilche
+* Added -seq_map flag.
+*
 * Revision 1.55  2004/01/29 20:38:47  vasilche
 * Removed loading of whole sequence by CSeqMap_CI.
 *
