@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/11/07 21:19:35  vakatov
+ * Compilation warning fixed;  plus, some code beautification...
+ *
  * Revision 6.7  2000/10/18 21:15:19  lavr
  * strupr and strlwr added
  *
@@ -75,7 +78,7 @@ extern "C" {
  * Return an identical malloc'ed string, which must be explicitly freed 
  * by free() when no longer needed.
  */
-char *strdup(const char* str);
+extern char* strdup(const char* str);
 
 
 #ifdef strcasecmp
@@ -89,13 +92,13 @@ char *strdup(const char* str);
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-int strcasecmp(const char* s1, const char* s2);
+extern int strcasecmp(const char* s1, const char* s2);
 
 /* Compare not more than "n" characters of "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-int strncasecmp(const char* s1, const char* s2, size_t n);
+extern int strncasecmp(const char* s1, const char* s2, size_t n);
 
 
 #ifdef strupr
@@ -105,17 +108,17 @@ int strncasecmp(const char* s1, const char* s2, size_t n);
 #define strupr NCBI_strupr
 #define strlwr NCBI_strlwr
 
-/* Convert a string to uppercase. This function return pointer to
+/* Convert a string to uppercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-char *strupr(char *s);
+extern char* strupr(char* s);
 
-/* Convert a string to lowercase. This function return pointer to
+/* Convert a string to lowercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-char *strlwr(char *s);
+extern char* strlwr(char* s);
 
 
 #ifdef __cplusplus

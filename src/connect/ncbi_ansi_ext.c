@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/11/07 21:19:38  vakatov
+ * Compilation warning fixed;  plus, some code beautification...
+ *
  * Revision 6.4  2000/10/18 21:15:53  lavr
  * strupr and strlwr added
  *
@@ -51,20 +54,17 @@
 #include <stdlib.h>
 
 
-char *strdup(const char *str)
+extern char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
-    char *newstr = (char *)malloc(size);
-    if (newstr)
-        memcpy(newstr, str, size);
-    return newstr;
+    return memcpy(malloc(size), str, size);
 }
 
 
-int strcasecmp(const char *s1, const char *s2)
+extern int strcasecmp(const char* s1, const char* s2)
 {
-    const unsigned char *p1 = (const unsigned char *)s1;
-    const unsigned char *p2 = (const unsigned char *)s2;
+    const unsigned char* p1 = (const unsigned char*) s1;
+    const unsigned char* p2 = (const unsigned char*) s2;
     unsigned char c1, c2;
 
     if (p1 == p2)
@@ -73,50 +73,53 @@ int strcasecmp(const char *s1, const char *s2)
     do {
         c1 = toupper(*p1++);
         c2 = toupper(*p2++);
-    } while (c1 && c1 == c2);
+    } while (c1  &&  c1 == c2);
 
     return c1 - c2;
 }
 
-int strncasecmp(const char *s1, const char *s2, size_t n)
+
+extern int strncasecmp(const char* s1, const char* s2, size_t n)
 {
-    const unsigned char *p1 = (const unsigned char *)s1;
-    const unsigned char *p2 = (const unsigned char *)s2;
+    const unsigned char* p1 = (const unsigned char*) s1;
+    const unsigned char* p2 = (const unsigned char*) s2;
     unsigned char c1, c2;
 
-    if (p1 == p2 || n == 0)
+    if (p1 == p2  ||  n == 0)
         return 0;
 
     do {
         c1 = toupper(*p1++);
         c2 = toupper(*p2++);
-    } while (--n > 0 && c1 && c1 == c2);
+    } while (--n > 0  &&  c1  &&  c1 == c2);
 
     return c1 - c2;
 }
 
 
-char *strupr(char *t)
+extern char* strupr(char* s)
 {
-    unsigned char *s = t;
+    unsigned char* t = (unsigned char*) s;
 
-    while (*s) {
-        if (islower(*s))
-            *s = toupper(*s);
-        s++;
+    while ( *t ) {
+        if ( islower(*t) ) {
+            *t = toupper(*t);
+        }
+        t++;
     }
-    return t;
+    return s;
 }
 
 
-char *strlwr(char *t)
+extern char* strlwr(char* s)
 {
-    unsigned char *s = t;
+    unsigned char* t = (unsigned char*) s;
 
-    while (*s) {
-        if (isupper(*s))
-            *s = tolower(*s);
-        s++;
+    while ( *t ) {
+        if ( isupper(*t) ) {
+            *t = tolower(*t);
+        }
+        t++;
     }
-    return t;
+    return s;
 }
