@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/11 20:34:51  vasilche
+* File included in all generated headers made lighter.
+* Nonnecessary code moved to serialimpl.hpp.
+*
 * Revision 1.2  2000/07/03 18:42:33  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -124,8 +128,6 @@ protected:
     friend class CClassInfoHelperBase;
 
     void SetCreateFunction(TCreateFunction func);
-    void SetPostReadFunction(TPostReadFunction func);
-    void SetPreWriteFunction(TPreWriteFunction func);
 
     void DoPostRead(TObjectPtr object) const
         {
@@ -154,6 +156,9 @@ public:
         {
             SetIsCObject();
         }
+
+    void SetPostReadFunction(TPostReadFunction func);
+    void SetPreWriteFunction(TPreWriteFunction func);
 
     virtual TObjectPtr Create(void) const;
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/11 20:36:19  vasilche
+* File included in all generated headers made lighter.
+* Nonnecessary code moved to serialimpl.hpp.
+*
 * Revision 1.9  2000/07/03 18:42:47  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -286,40 +290,30 @@ void CClassInfoHelperBase::SetCreateFunction(CClassTypeInfo* info,
     info->SetCreateFunction(func);
 }
 
-void CClassInfoHelperBase::SetPreWriteFunction(CClassTypeInfo* info,
-                                               TPreWriteFunction func)
-{
-    info->SetPreWriteFunction(func);
-}
-
-void CClassInfoHelperBase::SetPostReadFunction(CClassTypeInfo* info,
-                                               TPostReadFunction func)
-{
-    info->SetPostReadFunction(func);
-}
-
-void CClassInfoHelperBase::UpdateCObject(CClassTypeInfo* info,
+void CClassInfoHelperBase::UpdateCObject(CClassTypeInfoBase* info,
                                          const CObject* /*object*/)
 {
     info->SetIsCObject();
 }
 
-void CClassInfoHelperBase::SetPreWriteFunction(CChoiceTypeInfo* info,
-                                               TPreWriteFunction func)
+void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction func)
 {
     info->SetPreWriteFunction(func);
 }
 
-void CClassInfoHelperBase::SetPostReadFunction(CChoiceTypeInfo* info,
-                                               TPostReadFunction func)
+void SetPostRead(CClassTypeInfo* info, TPostReadFunction func)
 {
     info->SetPostReadFunction(func);
 }
 
-void CClassInfoHelperBase::UpdateCObject(CChoiceTypeInfo* info,
-                                         const CObject* /*object*/)
+void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction func)
 {
-    info->SetIsCObject();
+    info->SetPreWriteFunction(func);
+}
+
+void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)
+{
+    info->SetPostReadFunction(func);
 }
 
 END_NCBI_SCOPE

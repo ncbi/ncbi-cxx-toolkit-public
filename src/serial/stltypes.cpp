@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/07/11 20:36:19  vasilche
+* File included in all generated headers made lighter.
+* Nonnecessary code moved to serialimpl.hpp.
+*
 * Revision 1.26  2000/07/03 18:42:47  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -139,7 +143,7 @@
 
 #include <serial/stltypes.hpp>
 #include <serial/classinfo.hpp>
-#include <serial/serialbase.hpp>
+#include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
