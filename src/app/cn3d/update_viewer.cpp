@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/02 13:46:28  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.9  2001/04/20 18:02:41  thiessen
 * don't open update viewer right away
 *
@@ -63,6 +66,11 @@
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
+#include <objects/cdd/Cdd.hpp>
+#include <objects/cdd/Update_align.hpp>
+#include <objects/cdd/Update_comment.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/update_viewer_window.hpp"
 #include "cn3d/messenger.hpp"
@@ -74,6 +82,7 @@
 #include "cn3d/molecule.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -84,9 +93,9 @@ UpdateViewer::UpdateViewer(AlignmentManager *alnMgr) :
     updateWindow(NULL)
 {
     // when first created, start with blank display
-    AlignmentList emptyAlignmentLst;
+    AlignmentList emptyAlignmentList;
     SequenceDisplay *blankDisplay = new SequenceDisplay(true, viewerWindow);
-    InitStacks(&emptyAlignmentLst, blankDisplay);
+    InitStacks(&emptyAlignmentList, blankDisplay);
     PushAlignment();
 }
 
@@ -94,6 +103,17 @@ UpdateViewer::~UpdateViewer(void)
 {
     DestroyGUI();
     ClearStacks();
+}
+
+void UpdateViewer::SetInitialState(void)
+{
+    KeepOnlyStackTop();
+    PushAlignment();
+}
+
+void UpdateViewer::SaveDialog(void)
+{
+    if (updateWindow) updateWindow->SaveDialog(false);
 }
 
 void UpdateViewer::CreateUpdateWindow(void)
@@ -178,6 +198,85 @@ void UpdateViewer::DeleteAlignment(BlockMultipleAlignment *toDelete)
             keepAlignments.push_back((*a)->Clone());
 
     ReplaceAlignments(keepAlignments);
+}
+
+void UpdateViewer::SaveAlignments(void)
+{
+    SetInitialState();
+
+    // construct a new list of ASN Update-aligns
+    CCdd::TPending updates;
+    std::map < CUpdate_align * , bool > usedUpdateAligns;
+
+    AlignmentList::const_iterator a, ae = alignmentStack.back().end();
+    for (a=alignmentStack.back().begin(); a!=ae; a++) {
+
+        // create a Seq-align (with Dense-diags) out of this update
+        if ((*a)->NRows() != 2) {
+            ERR_POST(Error << "CreateSeqAlignFromUpdate() - can only save pairwise updates");
+            continue;
+        }
+        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks((*a)->GetUngappedAlignedBlocks());
+        CSeq_align *newSeqAlign = CreatePairwiseSeqAlignFromMultipleRow(*a, blocks.get(), 1);
+        if (!newSeqAlign) continue;
+
+        // the Update-align and Seq-annot's list of Seq-aligns where this new Seq-align will go
+        CUpdate_align *updateAlign = (*a)->updateOrigin.GetPointer();
+        CSeq_annot::C_Data::TAlign *seqAlignList = NULL;
+
+        // if this alignment came from an existing Update-align, then replace just the Seq-align
+        // so that the rest of the Update-align's comments/annotations are preserved
+        if (updateAlign) {
+            if (!updateAlign->IsSetSeqannot() || !updateAlign->GetSeqannot().GetData().IsAlign()) {
+                ERR_POST(Error << "UpdateViewer::SaveAlignments() - confused by Update-align format");
+                continue;
+            }
+        }
+
+        // if this is a new update, then assume that it comes from user demotion from the multiple;
+        // create a new Update-align and tag it appropriately
+        else {
+            updateAlign = new CUpdate_align();
+
+            // set type field depending on whether demoted sequence has structure
+            updateAlign->SetType((*a)->GetSequenceOfRow(1)->molecule ?
+                CUpdate_align::eType_demoted_3d : CUpdate_align::eType_demoted);
+
+            // add a text comment
+            CUpdate_comment *comment = new CUpdate_comment();
+            comment->SetComment("Demoted from the multiple alignment by Cn3D++");
+            updateAlign->SetDescription().resize(updateAlign->GetDescription().size() + 1);
+            updateAlign->SetDescription().back().Reset(comment);
+
+            // create a new Seq-annot
+            CRef < CSeq_annot > seqAnnotRef(new CSeq_annot());
+            seqAnnotRef->SetData().SetAlign();
+            updateAlign->SetSeqannot(seqAnnotRef);
+        }
+
+        // get Seq-align list
+        if (!updateAlign || !(seqAlignList = &(updateAlign->SetSeqannot().SetData().SetAlign()))) {
+            ERR_POST(Error << "UpdateViewer::SaveAlignments() - can't find Update-align and/or Seq-align list");
+            continue;
+        }
+
+        // if this is the first re-use of this Update-align, then empty out all existing
+        // Seq-aligns and push it onto the new update list
+        if (usedUpdateAligns.find(updateAlign) == usedUpdateAligns.end()) {
+            seqAlignList->clear();
+            updates.resize(updates.size() + 1);
+            updates.back().Reset(updateAlign);
+            usedUpdateAligns[updateAlign] = true;
+        }
+
+        // finally, add the new Seq-align to the list
+        seqAlignList->resize(seqAlignList->size() + 1);
+        seqAlignList->back().Reset(newSeqAlign);
+    }
+
+    // save these changes to the ASN data
+    alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->parentSet->
+        ReplaceUpdates(updates);
 }
 
 END_SCOPE(Cn3D)

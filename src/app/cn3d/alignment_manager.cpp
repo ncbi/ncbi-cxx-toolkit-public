@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2001/05/02 13:46:26  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.54  2001/04/20 18:02:57  thiessen
 * don't open update viewer right away
 *
@@ -213,6 +216,7 @@
 #include "cn3d/sequence_display.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -237,21 +241,34 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
 }
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet,
-    const AlignmentSet *aSet, const AlignmentSet *updates)
+    const AlignmentSet *aSet, const UpdateAlignList& updates)
 {
     Init();
     NewAlignments(sSet, aSet);
 
     // create BlockMultipleAlignments from updates; add to update viewer
-    AlignmentList pairwise(1);
+    PairwiseAlignmentList pairwise(1);
     UpdateViewer::AlignmentList updateAlignments;
-    AlignmentSet::AlignmentList::const_iterator u, ue = updates->alignments.end();
-    for (u=updates->alignments.begin(); u!=ue; u++) {
-        pairwise.front() = *u;
-        BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
-        updateAlignments.push_back(multiple);
+    UpdateAlignList::const_iterator u, ue = updates.end();
+    for (u=updates.begin(); u!=ue; u++) {
+        if (u->GetObject().IsSetSeqannot() && u->GetObject().GetSeqannot().GetData().IsAlign()) {
+            CSeq_annot::C_Data::TAlign::const_iterator
+                s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
+            for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
+                const MasterSlaveAlignment *alignment =
+                    new MasterSlaveAlignment(NULL, aSet->master, s->GetObject(), NULL);
+                pairwise.front() = alignment;
+                BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
+                multiple->updateOrigin = *u;    // to keep track of which Update-align this came from
+                updateAlignments.push_back(multiple);
+                delete alignment;
+            }
+        }
     }
     updateViewer->AddAlignments(updateAlignments);
+
+    // set this set of updates as the initial state of the editor's undo stack
+    updateViewer->SetInitialState();
 }
 
 AlignmentManager::~AlignmentManager(void)
@@ -287,7 +304,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
     AlignmentSet *newAlignmentSet =
         AlignmentSet::CreateFromMultiple(alignmentSet->parentSet, multiple, rowOrder);
     if (newAlignmentSet) {
-        alignmentSet->parentSet->ReplaceAlignmentSetAndSequences(newAlignmentSet);
+        alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
         alignmentSet = newAlignmentSet;
     } else {
         ERR_POST(Error << "Couldn't create pairwise alignments from the current multiple!\n"
@@ -302,9 +319,9 @@ const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(voi
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
-    const AlignmentManager::AlignmentList& alignments)
+    const AlignmentManager::PairwiseAlignmentList& alignments)
 {
-	AlignmentManager::AlignmentList::const_iterator a, ae = alignments.end();
+    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; a++) {
         if ((*a)->masterToSlave[masterResidue] == -1) return false;
     }
@@ -312,9 +329,9 @@ static bool AlignedToAllSlaves(int masterResidue,
 }
 
 static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
-    const AlignmentManager::AlignmentList& alignments)
+    const AlignmentManager::PairwiseAlignmentList& alignments)
 {
-	AlignmentManager::AlignmentList::const_iterator a, ae = alignments.end();
+    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; a++) {
         if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) !=
             (masterTo - masterFrom)) return false;
@@ -323,9 +340,9 @@ static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
 }
 
 static bool NoBlockBoundariesBetween(int masterFrom, int masterTo,
-    const AlignmentManager::AlignmentList& alignments)
+    const AlignmentManager::PairwiseAlignmentList& alignments)
 {
-	AlignmentManager::AlignmentList::const_iterator a, ae = alignments.end();
+    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; a++) {
         if ((*a)->blockStructure[masterTo] != (*a)->blockStructure[masterFrom])
             return false;
@@ -334,9 +351,9 @@ static bool NoBlockBoundariesBetween(int masterFrom, int masterTo,
 }
 
 BlockMultipleAlignment *
-AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments)
+AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments)
 {
-    AlignmentList::const_iterator a, ae = alignments.end();
+    PairwiseAlignmentList::const_iterator a, ae = alignments.end();
 
     // create sequence list; fill with sequences of master + slaves
     BlockMultipleAlignment::SequenceList
@@ -552,7 +569,7 @@ void AlignmentManager::NewMultipleWithRows(const std::vector < bool >& visibilit
     }
 
     // make a multiple from all visible rows
-    AlignmentList alignments;
+    PairwiseAlignmentList alignments;
     AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
     int i = 0;
     for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
@@ -687,6 +704,15 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
 void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)
 {
     threader->CalculateScores(GetCurrentMultipleAlignment(), weightPSSM);
+}
+
+void AlignmentManager::GetUpdateSequences(std::list < const Sequence * > *updateSequences) const
+{
+    updateSequences->clear();
+    const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
+    for (u=currentUpdates->begin(); u!=ue; u++)
+        updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one slave...
 }
 
 END_SCOPE(Cn3D)

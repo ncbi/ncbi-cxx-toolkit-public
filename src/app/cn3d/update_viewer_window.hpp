@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/02 13:46:16  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.6  2001/04/19 12:58:25  thiessen
 * allow merge and delete of individual updates
 *
@@ -73,6 +76,13 @@ public:
     ~UpdateViewerWindow(void);
 
     void EnableDerivedEditorMenuItems(bool enabled);
+
+    // ask if user wants to save edits; return value indicates whether program should
+    // continue after this dialog - i.e., returns false if user hits 'cancel';
+    // program should then abort the operation that engendered this function call.
+    // 'canCancel' tells whether or not a 'cancel' button is even displayed - thus
+    // if 'canCancel' is false, the function will always return true.
+    bool SaveDialog(bool canCancel);
 
 private:
     DECLARE_EVENT_TABLE()

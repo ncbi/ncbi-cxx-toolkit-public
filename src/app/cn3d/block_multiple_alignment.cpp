@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/02 13:46:27  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.15  2001/04/19 14:24:05  thiessen
 * fix row selection bug when alignments are of different size
 *
@@ -80,6 +83,8 @@
 
 #include <corelib/ncbidiag.hpp>
 
+#include <objects/seqalign/Dense_diag.hpp>
+
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
@@ -91,6 +96,7 @@
 #include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -132,6 +138,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     copy->rowDoubles = rowDoubles;
     copy->rowStrings = rowStrings;
     copy->geometryViolations = geometryViolations;
+    copy->updateOrigin = updateOrigin;
 	return copy;
 }
 
@@ -1296,6 +1303,55 @@ void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForR
             for (int l=i->first; l<=i->second; l++)
                 geometryViolations[row][l] = true;
     }
+}
+
+
+CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
+    const BlockMultipleAlignment::UngappedAlignedBlockList *blocks, int slaveRow)
+{
+    if (!multiple || slaveRow < 1 || slaveRow >= multiple->NRows()) {
+        ERR_POST(Error << "CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
+        return NULL;
+    }
+
+    CSeq_align *seqAlign = new CSeq_align();
+    seqAlign->SetType(CSeq_align::eType_partial);
+    seqAlign->SetDim(2);
+
+    CSeq_align::C_Segs::TDendiag& denDiags = seqAlign->SetSegs().SetDendiag();
+    denDiags.resize((blocks->size() > 0) ? blocks->size() : 1);
+
+    CSeq_align::C_Segs::TDendiag::iterator d, de = denDiags.end();
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b = blocks->begin();
+    const Block::Range *range;
+    for (d=denDiags.begin(); d!=de; d++, b++) {
+
+        CDense_diag *denDiag = new CDense_diag();
+        d->Reset(denDiag);
+        denDiag->SetDim(2);
+        denDiag->SetIds().resize(2);
+
+        // master row
+        denDiag->SetIds().front().Reset(multiple->GetSequenceOfRow(0)->CreateSeqId());
+        if (blocks->size() > 0) {
+            range = (*b)->GetRangeOfRow(0);
+            denDiag->SetStarts().push_back(range->from);
+        } else
+            denDiag->SetStarts().push_back(0);
+
+        // slave row
+        denDiag->SetIds().back().Reset(multiple->GetSequenceOfRow(slaveRow)->CreateSeqId());
+        if (blocks->size() > 0) {
+            range = (*b)->GetRangeOfRow(slaveRow);
+            denDiag->SetStarts().push_back(range->from);
+        } else
+            denDiag->SetStarts().push_back(0);
+
+        // block width
+        denDiag->SetLen((blocks->size() > 0) ? (*b)->width : 0);
+    }
+
+    return seqAlign;
 }
 
 

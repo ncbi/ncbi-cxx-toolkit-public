@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/05/02 13:46:28  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.56  2001/04/17 20:15:39  thiessen
 * load 'pending' Cdd alignments into update window
 *
@@ -354,7 +357,7 @@ void StructureSet::Init(void)
     lastAtomName = OpenGLRenderer::NO_NAME;
     lastDisplayList = OpenGLRenderer::NO_LIST;
     sequenceSet = NULL;
-    alignmentSet = updateSet = NULL;
+    alignmentSet = NULL;
     alignmentManager = NULL;
     dataChanged = 0;
     nDomains = 0;
@@ -587,12 +590,11 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
 
     MatchSequencesToMolecules();
     alignmentSet = new AlignmentSet(this, cdd->GetSeqannot());
-    if (cdd->IsSetPending()) {
-        updateSet = new AlignmentSet(this, cdd->GetPending(), alignmentSet->master);
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, updateSet);
-    } else {
+    if (cdd->IsSetPending())
+        // if updates present, alignment manager will load those into update viewer
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, cdd->GetPending());
+    else
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-    }
     styleManager->SetToAlignment(StyleSettings::eAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
@@ -667,7 +669,7 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     dataChanged |= eStructureAlignmentData;
 }
 
-void StructureSet::ReplaceAlignmentSetAndSequences(const AlignmentSet *newAlignmentSet)
+void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
 {
     // find the slot in the asn data for alignments
     SeqAnnotList *seqAnnots = NULL;
@@ -696,8 +698,23 @@ void StructureSet::ReplaceAlignmentSetAndSequences(const AlignmentSet *newAlignm
     SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
     for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
         o->Reset(n->GetPointer());   // copy each Seq-annot CRef
-    dataChanged |= eAlignmentData;
 
+    dataChanged |= eAlignmentData;
+}
+
+void StructureSet::ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates)
+{
+    if (!cddData) {
+        ERR_POST(Error << "StructureSet::ReplaceUpdates() - can only save updates in a CDD");
+        return;
+    }
+
+    cddData->SetPending() = newUpdates;
+    dataChanged |= eUpdateData;
+}
+
+void StructureSet::RemoveUnusedSequences(void)
+{
     // find the asn sequence list
     SeqEntryList *seqEntries = NULL;
     if (mimeData) {
@@ -710,31 +727,49 @@ void StructureSet::ReplaceAlignmentSetAndSequences(const AlignmentSet *newAlignm
             seqEntries = &(cddData->SetSequences().SetSet().SetSeq_set());
     }
     if (!seqEntries) {
-        ERR_POST(Error << "StructureSet::ReplaceAlignmentSet() - "
+        ERR_POST(Error << "StructureSet::RemoveUnusedSequences() - "
             << "can't figure out where in the asn the sequences are to go");
         return;
     }
 
-    // update the asn sequences, keeping only those used in this alignment
+    // update the asn sequences, keeping only those used in the multiple alignment and updates
+    seqEntries->clear();
     std::map < const CBioseq *, bool > usedSeqs;
-    seqEntries->resize(1);
-    seqEntries->front().Reset(new CSeq_entry);
-    seqEntries->front().GetObject().SetSeq(newAlignmentSet->master->bioseqASN);  // master first
-    usedSeqs[newAlignmentSet->master->bioseqASN.GetPointer()] = true;
-    AlignmentSet::AlignmentList::const_iterator a, ae = newAlignmentSet->alignments.end();
-    for (a=newAlignmentSet->alignments.begin(); a!=ae; a++) {
-        if (usedSeqs.find((*a)->slave->bioseqASN.GetPointer()) == usedSeqs.end()) {
-            seqEntries->resize(seqEntries->size() + 1);
-            seqEntries->back().Reset(new CSeq_entry);
-            seqEntries->back().GetObject().SetSeq((*a)->slave->bioseqASN);
-            usedSeqs[(*a)->slave->bioseqASN.GetPointer()] = true;
-        }
-    }
+
+// macro to add the sequence to the list if not already present;
+// if the sequence has structure, always add it, since repeated chains require duplicate Sequences
+#define CONDITIONAL_ADD_SEQENTRY(seq) do { \
+    if ((seq)->molecule || usedSeqs.find((seq)->bioseqASN.GetPointer()) == usedSeqs.end()) { \
+        seqEntries->resize(seqEntries->size() + 1); \
+        seqEntries->back().Reset(new CSeq_entry); \
+        seqEntries->back().GetObject().SetSeq((seq)->bioseqASN); \
+        usedSeqs[(seq)->bioseqASN.GetPointer()] = true; } } while (0)
+
+    // always add master first
+    CONDITIONAL_ADD_SEQENTRY(alignmentSet->master);
+
+    // add from alignmentSet
+    AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
+    for (a=alignmentSet->alignments.begin(); a!=ae; a++)
+        CONDITIONAL_ADD_SEQENTRY((*a)->slave);
+
+    // add from updates
+    typedef std::list < const Sequence * > SequenceList;
+    SequenceList updateSequences;
+    alignmentManager->GetUpdateSequences(&updateSequences);
+    SequenceList::const_iterator s, se = updateSequences.end();
+    for (s=updateSequences.begin(); s!=se; s++)
+        CONDITIONAL_ADD_SEQENTRY((*s));
+
     dataChanged |= eSequenceData;
 }
 
 bool StructureSet::SaveASNData(const char *filename, bool doBinary)
 {
+    // force a save of any edits to alignment and updates first (it's okay if this has already been done)
+    GlobalMessenger()->SequenceWindowsSave();
+    if (dataChanged) RemoveUnusedSequences();
+
     std::string err;
     bool writeOK = false;
     if (mimeData)

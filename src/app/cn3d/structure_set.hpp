@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/05/02 13:46:15  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.43  2001/04/17 20:15:24  thiessen
 * load 'pending' Cdd alignments into update window
 *
@@ -198,6 +201,7 @@ class SequenceViewer;
 class Messenger;
 class Colors;
 class Molecule;
+class BlockMultipleAlignment;
 
 class StructureSet : public StructureBase
 {
@@ -218,7 +222,7 @@ public:
 
     // sequence and alignment information
     const SequenceSet *sequenceSet;
-    const AlignmentSet *alignmentSet, *updateSet;
+    const AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
 
     OpenGLRenderer *renderer;
@@ -246,9 +250,11 @@ public:
 
     // public methods
 
-    // put in new AlignmentSet - e.g. when alignment has been edited; this also updates the list
-    // of sequences in the asn (but not in the SequenceSet), to remove any unused sequences
-    void ReplaceAlignmentSetAndSequences(const AlignmentSet *newAlignmentSet);
+    // put in new AlignmentSet - e.g. when alignment has been edited
+    void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
+
+    // replace the ASN update list with the current updates
+    void ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates);
 
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
@@ -280,11 +286,16 @@ private:
     NameMap nameMap;
     unsigned int lastAtomName;
 
+    // updates sequences in the asn (but not in the SequenceSet), to remove any sequences
+    // that are not used by the current alignmentSet or updates
+    void RemoveUnusedSequences(void);
+
     // flags to tell whether various parts of the data have been changed
     enum eDataChanged {
         eAlignmentData              = 0x01,
         eStructureAlignmentData     = 0x02,
-        eSequenceData               = 0x04
+        eSequenceData               = 0x04,
+        eUpdateData                 = 0x08
     };
     unsigned int dataChanged;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/05/02 13:46:14  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.33  2001/04/19 12:58:25  thiessen
 * allow merge and delete of individual updates
 *
@@ -136,6 +139,7 @@
 #define CN3D_ALIGNMENT_MANAGER__HPP
 
 #include <corelib/ncbistl.hpp>
+#include <objects/cdd/Update_align.hpp>
 
 #include <list>
 #include <vector>
@@ -146,6 +150,8 @@
 
 
 BEGIN_SCOPE(Cn3D)
+
+typedef std::list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
 
 class Sequence;
 class SequenceSet;
@@ -162,7 +168,7 @@ class AlignmentManager : public ShowHideCallbackObject
 {
 public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const AlignmentSet *updates);
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const UpdateAlignList& updates);
     ~AlignmentManager(void);
 
     Threader *threader; // made public so viewers have access to it
@@ -171,9 +177,9 @@ public:
 
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
-    typedef std::list < const MasterSlaveAlignment * > AlignmentList;
+    typedef std::list < const MasterSlaveAlignment * > PairwiseAlignmentList;
     BlockMultipleAlignment *
-		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
+        CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments);
 
     // change the underlying pairwise alignments to match the given multiple and row order
     void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
@@ -213,6 +219,9 @@ public:
 
     // get the working alignment
     const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
+
+    // get a list of (slave) sequences present in the updates
+    void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
 
 private:
     void Init(void);

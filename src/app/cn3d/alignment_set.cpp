@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/02 13:46:27  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.16  2001/04/17 20:15:39  thiessen
 * load 'pending' Cdd alignments into update window
 *
@@ -260,28 +263,6 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
     TESTMSG("number of alignments: " << alignments.size());
 }
 
-AlignmentSet::AlignmentSet(StructureBase *parent, const UpdateAlignList& updates, const Sequence *masterSeq) :
-    StructureBase(parent), master(masterSeq), newAsnAlignmentData(NULL)
-{
-    if (!master) {
-        ERR_POST(Error << "AlignmentSet::AlignmentSet() - got NULL master for updates list");
-        return;
-    }
-
-    UpdateAlignList::const_iterator u, ue = updates.end();
-    for (u=updates.begin(); u!=ue; u++) {
-        if (u->GetObject().IsSetSeqannot() && u->GetObject().GetSeqannot().GetData().IsAlign()) {
-            CSeq_annot::C_Data::TAlign::const_iterator
-                s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
-            for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
-                const MasterSlaveAlignment *alignment =
-                    new MasterSlaveAlignment(this, master, s->GetObject(), NULL);
-                alignments.push_back(alignment);
-            }
-        }
-    }
-}
-
 AlignmentSet::~AlignmentSet(void)
 {
     if (newAsnAlignmentData) delete newAsnAlignmentData;
@@ -308,42 +289,13 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
 
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
-    if (blocks->size() == 0) return NULL;
 
-    // create Seq-aligns, using dendiag storage for BlockMultipleAlignment that uses UngappedAlignedBlock
+    // create Seq-aligns
     int newRow;
     for (int row=1; row<multiple->NRows(); row++, sa++) {
         newRow = rowOrder[row];
-        CSeq_align *seqAlign = new CSeq_align();
+        CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), row);
         sa->Reset(seqAlign);
-
-        seqAlign->SetType(CSeq_align::eType_partial);
-        seqAlign->SetDim(2);
-
-        // create a Dense-diag from each UngappedAlignedBlock
-        CSeq_align::C_Segs::TDendiag& denDiags = seqAlign->SetSegs().SetDendiag();
-        denDiags.resize(blocks->size());
-        CSeq_align::C_Segs::TDendiag::iterator d, de = denDiags.end();
-        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b = blocks->begin();
-        for (d=denDiags.begin(); d!=de; d++, b++) {
-            CDense_diag *denDiag = new CDense_diag();
-            d->Reset(denDiag);
-
-            denDiag->SetDim(2);
-            denDiag->SetIds().resize(2);
-
-            // master row
-            denDiag->SetIds().front().Reset(multiple->GetSequenceOfRow(0)->CreateSeqId());
-            const Block::Range *range = (*b)->GetRangeOfRow(0);
-            denDiag->SetStarts().push_back(range->from);
-
-            // slave row
-            denDiag->SetIds().back().Reset(multiple->GetSequenceOfRow(newRow)->CreateSeqId());
-            range = (*b)->GetRangeOfRow(newRow);
-            denDiag->SetStarts().push_back(range->from);
-
-            denDiag->SetLen((*b)->width);
-        }
     }
 
     auto_ptr<AlignmentSet> newAlignmentSet;
@@ -372,8 +324,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
     blockStructure.resize(master->Length(), -1);
 
     SequenceSet::SequenceList::const_iterator
-        s = parentSet->sequenceSet->sequences.begin(),
-        se = parentSet->sequenceSet->sequences.end();
+        s = master->parentSet->sequenceSet->sequences.begin(),
+        se = master->parentSet->sequenceSet->sequences.end();
 
     // find slave sequence for this alignment, and order (master or slave first)
     const SeqIdList& sids = seqAlign.GetSegs().IsDendiag() ?

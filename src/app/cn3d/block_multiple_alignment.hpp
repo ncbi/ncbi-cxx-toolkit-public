@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/02 13:46:15  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.11  2001/04/05 22:54:50  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -71,6 +74,9 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <objects/cdd/Update_align.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+
 #include <list>
 #include <vector>
 
@@ -99,6 +105,9 @@ public:
 
     const SequenceList *sequences;
     AlignmentManager *alignmentManager;
+
+    // to track the origin of this alignment if it came from an update
+    ncbi::CRef < ncbi::objects::CUpdate_align > updateOrigin;
 
     // add a new aligned block - will be "owned" and deallocated by BlockMultipleAlignment
     bool AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock);
@@ -292,6 +301,11 @@ public:
         }
     }
 };
+
+
+// static function to create Seq-aligns out of multiple
+ncbi::objects::CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
+    const BlockMultipleAlignment::UngappedAlignedBlockList *blocks, int slaveRow);
 
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these

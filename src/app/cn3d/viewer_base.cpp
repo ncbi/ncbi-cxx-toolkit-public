@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/02 13:46:29  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.8  2001/04/05 22:55:36  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -131,7 +134,7 @@ void ViewerBase::PushAlignment(void)
     displayStack.push_back(displayStack.back()->Clone(newAlignmentMap));
     if (*viewerWindow) {
         (*viewerWindow)->UpdateDisplay(displayStack.back());
-        if (displayStack.size() > 2) (*viewerWindow)->EnableUndo(true);
+        (*viewerWindow)->EnableUndo(displayStack.size() > 2);
     }
 
     // trim the stack to some max size; but don't delete the bottom of the stack, which is
@@ -169,8 +172,6 @@ void ViewerBase::PopAlignment(void)
 
     // ... then add a copy of what's underneath, making that copy the current data
     PushAlignment();
-    if (*viewerWindow && displayStack.size() == 2)
-        (*viewerWindow)->EnableUndo(false);
 }
 
 void ViewerBase::ClearStacks(void)

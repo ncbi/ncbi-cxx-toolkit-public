@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/02 13:46:15  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.6  2001/04/19 12:58:25  thiessen
 * allow merge and delete of individual updates
 *
@@ -89,6 +92,14 @@ public:
 
     // delete a single alignment
     void DeleteAlignment(BlockMultipleAlignment *toDelete);
+
+    // turns the current alignments+display into the "initial state" (the bottom) of the undo stack
+    void SetInitialState(void);
+
+    // functions to save edited data
+    void SaveDialog(void);
+    void SaveAlignments(void);
+
 
 private:
 

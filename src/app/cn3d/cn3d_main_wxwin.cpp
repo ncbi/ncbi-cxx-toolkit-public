@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/05/02 13:46:28  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.33  2001/03/30 14:43:40  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -440,8 +443,8 @@ void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
-    GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
-    SaveDialog(false);                          // give structure window a chance to save data
+    GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
+    SaveDialog(false);                              // give structure window a chance to save data
     Destroy();
 }
 
@@ -678,6 +681,9 @@ void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet) return;
+
+    // force a save of any edits to alignment and updates first
+    GlobalMessenger()->SequenceWindowsSave();
 
     wxString outputFilename = wxFileSelector(
         "Choose a filename for output", userDir.c_str(), "",

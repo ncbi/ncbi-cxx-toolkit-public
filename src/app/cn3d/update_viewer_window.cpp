@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/02 13:46:29  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
 * Revision 1.8  2001/04/19 12:58:32  thiessen
 * allow merge and delete of individual updates
 *
@@ -117,6 +120,10 @@ UpdateViewerWindow::~UpdateViewerWindow(void)
 void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
 {
     if (viewer) {
+        if (!SaveDialog(event.CanVeto())) {
+            event.Veto();       // cancelled
+            return;
+        }
         viewer->GUIDestroyed(); // make sure UpdateViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
@@ -175,6 +182,29 @@ void UpdateViewerWindow::OnDeleteAlignment(wxCommandEvent& event)
         SetCursor(*wxCROSS_CURSOR);
     else
        DeleteAlignmentOff();
+}
+
+bool UpdateViewerWindow::SaveDialog(bool canCancel)
+{
+    // quick & dirty check for whether save is necessary, by whether Undo is enabled
+    if (!menuBar->IsEnabled(MID_UNDO)) return true;
+
+    int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
+    if (canCancel) option |= wxCANCEL;
+
+    wxMessageDialog dialog(NULL, "Do you want to keep the changes to these updates?", "", option);
+    option = dialog.ShowModal();
+
+    if (option == wxID_CANCEL) return false; // user cancelled this operation
+
+    if (option == wxID_YES)
+        updateViewer->SaveAlignments();     // save data
+    else {
+        updateViewer->RevertAlignment();    // revert to original
+        updateViewer->PushAlignment();      // but keep undo stack active
+    }
+
+    return true;
 }
 
 
