@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
+class CSubmit_block;
 class CSeq_loc;
 class CSeq_feat;
 class CAuth_list;
@@ -96,6 +96,7 @@ public:
     CReferenceItem(const CSeqdesc&  desc, CBioseqContext& ctx);
     CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx,
         const CSeq_loc* loc = NULL);
+    CReferenceItem(const CSubmit_block&  sub, CBioseqContext& ctx);
     
     /// format
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
@@ -108,32 +109,32 @@ public:
     int               GetSerial    (void) const { return m_Serial;     }
 
     // Date
-    bool              IsSetDate    (void) const { return m_Date.NotEmpty();       }
-    const CDate&      GetDate      (void) const { return *m_Date;       }
+    bool              IsSetDate    (void) const { return m_Date.NotEmpty();    }
+    const CDate&      GetDate      (void) const { return *m_Date;              }
     //Authors
-    bool              IsSetAuthors (void) const { return m_Authors.NotEmpty();    }
-    const CAuth_list& GetAuthors   (void) const { return *m_Authors;   }
+    bool              IsSetAuthors (void) const { return m_Authors.NotEmpty(); }
+    const CAuth_list& GetAuthors   (void) const { return *m_Authors;           }
 
-    bool              IsSetBook    (void) const { return m_Book.NotEmpty();       }
-    const CCit_book&  GetBook      (void) const { return *m_Book;      }
+    bool              IsSetBook    (void) const { return m_Book.NotEmpty();    }
+    const CCit_book&  GetBook      (void) const { return *m_Book;              }
 
-    bool              IsSetPatent  (void) const { return m_Patent.NotEmpty();     }
-    const CCit_pat&   GetPatent    (void) const { return *m_Patent;    }
-    TSeqid            GetPatSeqid  (void) const { return m_PatentId;   }
+    bool              IsSetPatent  (void) const { return m_Patent.NotEmpty();  }
+    const CCit_pat&   GetPatent    (void) const { return *m_Patent;            }
+    TSeqid            GetPatSeqid  (void) const { return m_PatentId;           }
 
-    bool              IsSetGen     (void) const { return m_Gen.NotEmpty();        }
-    const CCit_gen&   GetGen       (void) const { return *m_Gen;       }
+    bool              IsSetGen     (void) const { return m_Gen.NotEmpty();     }
+    const CCit_gen&   GetGen       (void) const { return *m_Gen;               }
 
-    bool              IsSetSub     (void) const { return m_Sub.NotEmpty();        }
-    const CCit_sub&   GetSub       (void) const { return *m_Sub;       }
+    bool              IsSetSub     (void) const { return m_Sub.NotEmpty();     }
+    const CCit_sub&   GetSub       (void) const { return *m_Sub;               }
 
-    bool              IsSetJournal (void) const { return m_Journal.NotEmpty();    }
-    const CCit_jour&  GetJournal   (void) const { return *m_Journal;   }
+    bool              IsSetJournal (void) const { return m_Journal.NotEmpty(); }
+    const CCit_jour&  GetJournal   (void) const { return *m_Journal;           }
 
-    int               GetPMID      (void) const { return m_PMID;       }
-    int               GetMUID      (void) const { return m_MUID;       }
+    int               GetPMID      (void) const { return m_PMID;               }
+    int               GetMUID      (void) const { return m_MUID;               }
 
-    const string&     GetTitle     (void) const { return m_Title;      }
+    const string&     GetTitle     (void) const { return m_Title;              }
     
     const string&     GetUniqueStr (void) const;
 
@@ -221,7 +222,7 @@ const string& CReferenceItem::GetUniqueStr(void) const
 inline
 CReferenceItem::TReftype CReferenceItem::GetReftype(void) const
 {
-    return m_Pubdesc->GetReftype();
+    return (m_Pubdesc.NotEmpty()) ? m_Pubdesc->GetReftype() : CPubdesc::eReftype_seq;
 }
 
 /*
@@ -239,6 +240,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/02/07 14:57:33  shomrat
+* Added support for submissions
+*
 * Revision 1.15  2005/01/12 18:43:30  vasilche
 * Avoid performance warning on MSVC.
 *
