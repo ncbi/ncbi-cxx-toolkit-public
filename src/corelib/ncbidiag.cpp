@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/03 22:57:51  vakatov
+* Use #define'd manipulators(like "NcbiFlush" instead of "flush") to
+* make it compile and work with new(templated) version of C++ streams
+*
 * Revision 1.5  1998/11/03 22:30:20  vakatov
 * cosmetics...
 *
@@ -155,9 +159,9 @@ static void s_ToStream_Handler(EDiagSev    sev,
     CNcbiOstream& os = *x_data->os;
     os << CNcbiDiag::SeverityName(sev) << ": ";
     os.write(message_buf, message_len);
-    os << endl;
+    os << NcbiEndl;
     if ( x_data->quick_flush )
-        os << flush;
+        os << NcbiFlush;
 }
 
 static void s_ToStream_Cleanup(void* data)
