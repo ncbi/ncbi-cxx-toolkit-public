@@ -91,7 +91,7 @@ public:
     virtual ~CHTMLPopupMenu(void);
 
     // Get menu name
-    string GetName(void);
+    string GetName(void) const;
 
     // Add new item to current menu
     void AddItem(const string& title,                  // Text or HTML-code
@@ -171,6 +171,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2002/04/29 15:48:16  ucko
+ * Make CHTMLPopupMenu::GetName const for consistency with CNcbiNode (and
+ * because there's no reason for it not to be const).
+ *
  * Revision 1.6  2002/02/13 20:15:39  ivanov
  * Added support of dynamic popup menus. Changed GetCodeBody().
  *
