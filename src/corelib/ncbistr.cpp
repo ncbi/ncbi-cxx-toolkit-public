@@ -741,14 +741,15 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
 }
 
 
-string NStr::Join(const list<string>& arr, const string& delim)
+template <typename T>
+static string s_Join(const T& arr, const string& delim)
 {
     if (arr.empty()) {
         return kEmptyStr;
     }
 
     string                       result = arr.front();
-    list<string>::const_iterator it     = arr.begin();
+    typename T::const_iterator   it     = arr.begin();
     SIZE_TYPE needed = result.size();
     while (++it != arr.end()) {
         needed += delim.size() + it->size();
@@ -760,6 +761,16 @@ string NStr::Join(const list<string>& arr, const string& delim)
         result += *it;
     }
     return result;
+}
+
+string NStr::Join(const list<string>& arr, const string& delim)
+{
+    return s_Join(arr, delim);
+}
+
+string NStr::Join(const vector<string>& arr, const string& delim)
+{
+    return s_Join(arr, delim);
 }
 
 
@@ -811,6 +822,66 @@ string NStr::PrintableString(const string&      str,
     }
     // all characters are good - return orignal string
     return str;
+}
+
+
+string NStr::ParseEscapes(const string& str)
+{
+    string out;
+    out.reserve(str.size()); // can only be smaller
+    SIZE_TYPE pos = 0;
+    while (pos < str.size()) {
+        SIZE_TYPE pos2 = str.find('\\', pos);
+        if (pos2 == NPOS) {
+            out += str.substr(pos);
+            break;
+        }
+        out += str.substr(pos, pos2 - pos);
+        if (++pos2 == str.size()) {
+            NCBI_THROW2(CStringException, eFormat,
+                        "Unterminated escape sequence", pos2);
+        }
+        switch (str[pos2]) {
+        case 'a':  out += '\a';  break;
+        case 'b':  out += '\b';  break;
+        case 'f':  out += '\f';  break;
+        case 'n':  out += '\n';  break;
+        case 'r':  out += '\r';  break;
+        case 't':  out += '\t';  break;
+        case 'v':  out += '\v';  break;
+        case 'x':
+        {
+            pos = pos2 + 1;
+            while (pos2 <= pos  &&  pos2 + 1 < str.size()
+                   &&  isxdigit(str[pos2 + 1])) {
+                ++pos2;
+            }
+            if (pos2 >= pos) {
+                out += static_cast<char>
+                    (StringToUInt(str.substr(pos, pos2 - pos + 1), 16));
+            } else {
+                NCBI_THROW2(CStringException, eFormat,
+                            "\\x used with no following digits", pos);
+            }
+            break;
+        }
+        case '0':  case '1':  case '2':  case '3':
+        case '4':  case '5':  case '6':  case '7':
+        {
+            pos = pos2;
+            unsigned char c = str[pos2] - '0';
+            while (pos2 < pos + 3  &&  pos2 + 1 < str.size()
+                   &&  str[pos2 + 1] >= '0'  &&  str[pos2 + 1] <= '7') {
+                c = (c << 3) | (str[++pos2] - '0');
+            }
+            out += c;
+        }
+        default:
+            out += str[pos2];
+        }
+        pos = pos2 + 1;
+    }
+    return out;
 }
 
 
@@ -1273,6 +1344,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2003/12/01 20:45:47  ucko
+ * Extend Join to handle vectors as well as lists (common code templatized).
+ * Add ParseEscapes (inverse of PrintableString).
+ *
  * Revision 1.98  2003/10/31 13:15:20  lavr
  * Fix typos in the log of the previous commit :-)
  *
