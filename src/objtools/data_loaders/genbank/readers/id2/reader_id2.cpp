@@ -913,6 +913,12 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
             }
         }}
         ids.AddBlob_id(blob_id, mask);
+        if (errors & fError_warning) {
+            ids->SetState(CBioseq_Handle::fState_other_error);
+        }
+    }
+    else {
+        ids->SetState(CBioseq_Handle::fState_no_data);
     }
     if ( reply.IsSetEnd_of_reply() ) {
         ids.SetLoaded();

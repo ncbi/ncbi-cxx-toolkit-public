@@ -708,7 +708,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
                 continue; // retry
             }
         }
-        if (blobs->GetState() != 0) {
+        if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
             NCBI_THROW2(CBlobStateException, eBlobStateError,
                 "blob state error", blobs->GetState());
         }
