@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/02/24 14:39:04  gouriano
+* Added PreRead/PostWrite hooks
+*
 * Revision 1.27  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -495,6 +498,16 @@ void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction func)
     info->SetPreWriteFunction(func);
 }
 
+void SetPostWrite(CClassTypeInfo* info, TPostWriteFunction func)
+{
+    info->SetPostWriteFunction(func);
+}
+
+void SetPreRead(CClassTypeInfo* info, TPreReadFunction func)
+{
+    info->SetPreReadFunction(func);
+}
+
 void SetPostRead(CClassTypeInfo* info, TPostReadFunction func)
 {
     info->SetPostReadFunction(func);
@@ -503,6 +516,16 @@ void SetPostRead(CClassTypeInfo* info, TPostReadFunction func)
 void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction func)
 {
     info->SetPreWriteFunction(func);
+}
+
+void SetPostWrite(CChoiceTypeInfo* info, TPostWriteFunction func)
+{
+    info->SetPostWriteFunction(func);
+}
+
+void SetPreRead(CChoiceTypeInfo* info, TPreReadFunction func)
+{
+    info->SetPreReadFunction(func);
 }
 
 void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)

@@ -58,11 +58,19 @@ enum EResetVariant {
     eDoNotResetVariant
 };
 
+typedef void (*TPreReadFunction)(const CTypeInfo* info, void* object);
 typedef void (*TPostReadFunction)(const CTypeInfo* info, void* object);
 typedef void (*TPreWriteFunction)(const CTypeInfo* info, const void* object);
+typedef void (*TPostWriteFunction)(const CTypeInfo* info, const void* object);
+
+NCBI_XSERIAL_EXPORT
+void SetPreRead(CClassTypeInfo*  info, TPreReadFunction function);
 
 NCBI_XSERIAL_EXPORT
 void SetPostRead(CClassTypeInfo*  info, TPostReadFunction function);
+
+NCBI_XSERIAL_EXPORT
+void SetPreRead(CChoiceTypeInfo* info, TPreReadFunction function);
 
 NCBI_XSERIAL_EXPORT
 void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction function);
@@ -71,12 +79,22 @@ NCBI_XSERIAL_EXPORT
 void SetPreWrite(CClassTypeInfo*  info, TPreWriteFunction function);
 
 NCBI_XSERIAL_EXPORT
+void SetPostWrite(CClassTypeInfo*  info, TPostWriteFunction function);
+
+NCBI_XSERIAL_EXPORT
 void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction function);
 
+NCBI_XSERIAL_EXPORT
+void SetPostWrite(CChoiceTypeInfo* info, TPostWriteFunction function);
+
 template<class Class>
-class CClassPostReadPreWrite
+class CClassPrePostReadWrite
 {
 public:
+    static void PreRead(const CTypeInfo* /*info*/, void* object)
+        {
+            static_cast<Class*>(object)->PreRead();
+        }
     static void PostRead(const CTypeInfo* /*info*/, void* object)
         {
             static_cast<Class*>(object)->PostRead();
@@ -84,6 +102,10 @@ public:
     static void PreWrite(const CTypeInfo* /*info*/, const void* object)
         {
             static_cast<const Class*>(object)->PreWrite();
+        }
+    static void PostWrite(const CTypeInfo* /*info*/, const void* object)
+        {
+            static_cast<const Class*>(object)->PostWrite();
         }
 };
 
@@ -360,6 +382,12 @@ END_NCBI_SCOPE
 // default functions do nothing
 template<class CInfo>
 inline
+void NCBISERSetPreRead(const void* /*object*/, CInfo* /*info*/)
+{
+}
+
+template<class CInfo>
+inline
 void NCBISERSetPostRead(const void* /*object*/, CInfo* /*info*/)
 {
 }
@@ -370,14 +398,29 @@ void NCBISERSetPreWrite(const void* /*object*/, CInfo* /*info*/)
 {
 }
 
+template<class CInfo>
+inline
+void NCBISERSetPostWrite(const void* /*object*/, CInfo* /*info*/)
+{
+}
+
 // define for declaring specific function
+#define NCBISER_HAVE_PRE_READ(Class) \
+template<class CInfo> \
+inline \
+void NCBISERSetPreRead(const Class* /*object*/, CInfo* info) \
+{ \
+    NCBI_NS_NCBI::SetPreRead \
+        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PreRead);\
+}
+
 #define NCBISER_HAVE_POST_READ(Class) \
 template<class CInfo> \
 inline \
 void NCBISERSetPostRead(const Class* /*object*/, CInfo* info) \
 { \
     NCBI_NS_NCBI::SetPostRead \
-        (info, &NCBI_NS_NCBI::CClassPostReadPreWrite<Class>::PostRead);\
+        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PostRead);\
 }
 
 #define NCBISER_HAVE_PRE_WRITE(Class) \
@@ -386,7 +429,16 @@ inline \
 void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 { \
     NCBI_NS_NCBI::SetPreWrite \
-        (info, &NCBI_NS_NCBI::CClassPostReadPreWrite<Class>::PreWrite);\
+        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PreWrite);\
+}
+
+#define NCBISER_HAVE_POST_WRITE(Class) \
+template<class CInfo> \
+inline \
+void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
+{ \
+    NCBI_NS_NCBI::SetPostWrite \
+        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PostWrite);\
 }
 
 #define DECLARE_INTERNAL_TYPE_INFO() \
@@ -436,6 +488,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/02/24 14:38:44  gouriano
+* Added PreRead/PostWrite hooks
+*
 * Revision 1.36  2004/08/24 16:42:03  vasilche
 * Removed TAB symbols in sources.
 *

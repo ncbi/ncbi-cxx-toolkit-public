@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/02/24 14:39:04  gouriano
+* Added PreRead/PostWrite hooks
+*
 * Revision 1.20  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -367,6 +370,32 @@ bool CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
     return false;
 }
 
+class CPreReadHook : public CReadObjectHook
+{
+    typedef CReadObjectHook CParent;
+public:
+    typedef CClassTypeInfoBase::TPreReadFunction TPreReadFunction;
+
+    CPreReadHook(TPreReadFunction func);
+
+    void ReadObject(CObjectIStream& in, const CObjectInfo& object);
+
+private:
+    TPreReadFunction m_PreRead;
+};
+
+CPreReadHook::CPreReadHook(TPreReadFunction func)
+    : m_PreRead(func)
+{
+}
+
+void CPreReadHook::ReadObject(CObjectIStream& in,
+                               const CObjectInfo& object)
+{
+    m_PreRead(object.GetTypeInfo(), object.GetObjectPtr());
+    object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+}
+
 class CPostReadHook : public CReadObjectHook
 {
     typedef CReadObjectHook CParent;
@@ -419,6 +448,37 @@ void CPreWriteHook::WriteObject(CObjectOStream& out,
     object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
 }
 
+class CPostWriteHook : public CWriteObjectHook
+{
+    typedef CWriteObjectHook CParent;
+public:
+    typedef CClassTypeInfoBase::TPostWriteFunction TPostWriteFunction;
+
+    CPostWriteHook(TPostWriteFunction func);
+
+    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object);
+
+private:
+    TPostWriteFunction m_PostWrite;
+};
+
+CPostWriteHook::CPostWriteHook(TPostWriteFunction func)
+    : m_PostWrite(func)
+{
+}
+
+void CPostWriteHook::WriteObject(CObjectOStream& out,
+                                const CConstObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+    m_PostWrite(object.GetTypeInfo(), object.GetObjectPtr());
+}
+
+void CClassTypeInfoBase::SetPreReadFunction(TPreReadFunction func)
+{
+    SetGlobalReadHook(new CPreReadHook(func));
+}
+
 void CClassTypeInfoBase::SetPostReadFunction(TPostReadFunction func)
 {
     SetGlobalReadHook(new CPostReadHook(func));
@@ -427,6 +487,11 @@ void CClassTypeInfoBase::SetPostReadFunction(TPostReadFunction func)
 void CClassTypeInfoBase::SetPreWriteFunction(TPreWriteFunction func)
 {
     SetGlobalWriteHook(new CPreWriteHook(func));
+}
+
+void CClassTypeInfoBase::SetPostWriteFunction(TPostWriteFunction func)
+{
+    SetGlobalWriteHook(new CPostWriteHook(func));
 }
 
 END_NCBI_SCOPE

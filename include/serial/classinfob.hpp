@@ -84,12 +84,16 @@ public:
 
     const type_info& GetId(void) const;
 
-    // PostRead/PreWrite
+    // PreRead/PostRead/PreWrite/PostWrite
+    typedef void (*TPreReadFunction)(TTypeInfo info, TObjectPtr object);
     typedef void (*TPostReadFunction)(TTypeInfo info, TObjectPtr object);
     typedef void (*TPreWriteFunction)(TTypeInfo info, TConstObjectPtr object);
+    typedef void (*TPostWriteFunction)(TTypeInfo info, TConstObjectPtr object);
 
+    void SetPreReadFunction(TPreReadFunction func);
     void SetPostReadFunction(TPostReadFunction func);
     void SetPreWriteFunction(TPreWriteFunction func);
+    void SetPostWriteFunction(TPostWriteFunction func);
 
 public:
     // finds type info (throws runtime_error if absent)
@@ -153,6 +157,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/02/24 14:38:44  gouriano
+* Added PreRead/PostWrite hooks
+*
 * Revision 1.15  2004/04/30 13:28:39  gouriano
 * Remove obsolete function declarations
 *

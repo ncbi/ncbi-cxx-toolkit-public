@@ -172,14 +172,18 @@ public:
     static void SetReadWriteMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
         {
             const CClassType* object = 0;
+            NCBISERSetPreRead(object, info);
             NCBISERSetPostRead(object, info);
             NCBISERSetPreWrite(object, info);
+            NCBISERSetPostWrite(object, info);
         }
     static void SetReadWriteMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
         {
             const CClassType* object = 0;
+            NCBISERSetPreRead(object, info);
             NCBISERSetPostRead(object, info);
             NCBISERSetPreWrite(object, info);
+            NCBISERSetPostWrite(object, info);
         }
 
     static CClassTypeInfo* CreateAbstractClassInfo(const char* name)
@@ -266,6 +270,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/02/24 14:38:44  gouriano
+* Added PreRead/PostWrite hooks
+*
 * Revision 1.11  2004/05/06 13:26:35  ucko
 * Conditionalize CClassInfoHelper<>::CreateAsnStructInfo on
 * HAVE_NCBI_C, since it otherwise has no base method to call.
