@@ -469,8 +469,9 @@ typedef struct PSIBlastOptions {
      * multiple sequence alignment is built from pairwise alignments. These
      * could go in their own structure in the future. */
 
-    /** Minimum evalue for inclusion in PSSM calculation. Needed for the first
-     * stage of the PSSM calculation algorithm */
+    /** Minimum evalue for inclusion in PSSM calculation. Needed for the
+     * conversion of Seq-align into a multiple sequence alignment and for
+     * composition based statistics */
     double inclusion_ethresh;
 
     /** If set to TRUE, use the best alignment when multiple HSPs are found 
@@ -490,7 +491,7 @@ typedef struct PSIBlastOptions {
      * ignore the query while building the PSSM. It is FALSE by default. */
     Boolean nsg_ignore_consensus;
 
-    /** Percent identity threshold which determines when similar sequences in
+    /** Purge percent identity threshold: determines when similar sequences in
      * the multiple sequence alignment are to be purged before the creation of
      * the PSSM. In the past, this was a constant, but for experimentation 
      * purposes it is being made a variable to allow certain multiple sequence 
@@ -574,7 +575,7 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
  * @param lookup_options Lookup table options - these contain some information
  *                       needed to determine correctness of initial word 
  *                       options [in]
- * @param blast_msg Error message [out]
+ * @param blast_msg Describes any validation problems found [out]
  * @return Validation status
  */
 NCBI_XBLAST_EXPORT
@@ -877,7 +878,7 @@ LookupTableOptionsFree(LookupTableOptions* options);
 /** Validate LookupTableOptions.
  * @param program_number BLAST program [in]
  * @param options The options that have are being returned [in]
- * @param blast_msg The options that have are being returned [out]
+ * @param blast_msg Describes any validation problems found [out]
 */
 NCBI_XBLAST_EXPORT
 Int2
@@ -894,7 +895,7 @@ BlastHitSavingOptionsFree(BlastHitSavingOptions* options);
 /** Validate BlastHitSavingOptions
  * @param program_number BLAST program [in]
  * @param options The options that have are being returned [in]
- * @param blast_msg The options that have are being returned [out]
+ * @param blast_msg Describes any validation problems found [out]
 */
 
 NCBI_XBLAST_EXPORT
@@ -995,11 +996,17 @@ Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number,
         BlastHitSavingParameters* parameters);
 
 /** Initialize default options for PSI BLAST */
-NCBI_XBLAST_EXPORT
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options);
 
+/** Validates the PSI BLAST options so that they have sane values.
+ * @param psi_options structure to validate [in]
+ * @param blast_msg Describes any validation problems found [out]
+ * @return 0 on success 1 on failure
+ */
+Int2 PSIBlastOptionsValidate(const PSIBlastOptions* psi_options,
+                             Blast_Message** blast_msg);
+
 /** Deallocate PSI BLAST options */
-NCBI_XBLAST_EXPORT
 PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options);
 
 /** Allocates the BlastDatabase options structure and sets the default

@@ -1449,6 +1449,38 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    return 0;
 }
 
+Int2 PSIBlastOptionsValidate(const PSIBlastOptions* psi_options,
+                             Blast_Message** blast_msg)
+{
+    Int2 retval = 1;    /* assume failure */
+
+    if ( !psi_options ) {
+        return retval;
+    }
+
+    if (psi_options->nsg_identity_threshold <= 0.0) {
+        Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 0, 0,
+                           "Purge percent identity threshold must be greater "
+                           "than 0");
+        return retval;
+    }
+
+    if (psi_options->pseudo_count <= 0) {
+        Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 0, 0,
+                           "Pseudo count must be greater than 0");
+        return retval;
+    }
+
+    if (psi_options->inclusion_ethresh <= 0.0) {
+        Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 0, 0,
+                           "Inclusion threshold must be greater than 0");
+        return retval;
+    }
+
+    retval = 0;
+    return retval;
+}
+
 PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options)
 {
    sfree(psi_options);
@@ -1457,9 +1489,13 @@ PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options)
 
 Int2 BlastDatabaseOptionsNew(BlastDatabaseOptions** db_options)
 {
-   BlastDatabaseOptions* options = (BlastDatabaseOptions*)
-      calloc(1, sizeof(BlastDatabaseOptions));
+   BlastDatabaseOptions* options = NULL;
 
+   if ( !db_options ) {
+       return 1;
+   }
+
+   options = (BlastDatabaseOptions*) calloc(1, sizeof(BlastDatabaseOptions));
    if ( !options ) {
        return 1;
    }
@@ -1547,6 +1583,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
    if ((status = BlastHitSavingOptionsValidate(program_number, hit_options,
                                                blast_msg)) != 0)
        return status;
+
    return status;
 }
 
@@ -1645,6 +1682,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.145  2004/12/08 14:20:29  camacho
+ * + PSIBlastOptionsValidate
+ *
  * Revision 1.144  2004/12/02 17:22:41  camacho
  * Fix compiler error
  *
