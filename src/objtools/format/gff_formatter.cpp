@@ -35,6 +35,7 @@
 #include <objects/general/Date.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/format/gff_formatter.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -166,8 +167,11 @@ void CGFFFormatter::FormatFeature
         } else if ((m_GFFFlags & fGTFCompat)  &&  !ctx.IsProt()
                    &&  name == "gene") {
             string gene_id = x_GetGeneID(*feat, (*it)->GetValue(), ctx);
-            attr_list.push_front
-                ("transcript_id \"" + gene_id + '.' + m_Date + "\";");
+            if (key != "gene") {
+                string transcript_id = x_GetTranscriptID(*feat, gene_id, ctx);
+                attr_list.push_front
+                    ("transcript_id \"" + transcript_id + "\";");
+            }
             attr_list.push_front("gene_id \"" + gene_id + "\";");
             continue;
         }
@@ -337,21 +341,132 @@ string CGFFFormatter::x_GetGeneID
     CConstRef<CSeq_feat> gene_feat = sequence::GetBestOverlappingFeat
         (seqfeat.GetLocation(), CSeqFeatData::e_Gene,
          sequence::eOverlap_Interval, ctx.GetScope());
-    
-    TFeatVec&                v  = m_Genes[gene_id];
-    TFeatVec::const_iterator it = find(v.begin(), v.end(), gene_feat);
-    int                      n;
-    if (it == v.end()) {
-        n = v.size();
-        v.push_back(gene_feat);
-    } else {
-        n = it - v.begin();
-    }
-    if (n > 0) {
-        gene_id += '.' + NStr::IntToString(n + 1);
-    }
 
     return gene_id;
+}
+
+
+string CGFFFormatter::x_GetTranscriptID
+(const CFlatFeature& feat,
+ const string& gene_id,
+ CBioseqContext& ctx) const
+{
+    const CSeq_feat& seqfeat = feat.GetFeat();
+
+    // if our feature already is an mRNA, we need look no further
+    CConstRef<CSeq_feat> mrna_feat;
+    if (seqfeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        mrna_feat.Reset(&seqfeat);
+    } else {
+
+        // search for a best overlapping mRNA
+        // we start with a scan through the product accessions because we need
+        // to insure that the chosen transcript does indeed match what we want
+
+        if (seqfeat.IsSetProduct()) {
+            try {
+                // this may throw, if the product spans multiple sequences
+                // this would be extremely unlikely, but we catch anyway
+                const CSeq_id& product_id =
+                    sequence::GetId(seqfeat.GetProduct());
+
+                SAnnotSelector sel;
+                sel.SetOverlapIntervals()
+                    .ExcludeNamedAnnots("SNP")
+                    .SetResolveAll()
+                    .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+
+                CFeat_CI feat_iter(ctx.GetScope(), seqfeat.GetLocation(), sel);
+                for ( ;  feat_iter  &&  !mrna_feat;  ++feat_iter) {
+                    // we grab the mRNA product, if available, and scan it for
+                    // a CDS feature.  the CDS feature should point to the same
+                    // product as our current feature.
+                    const CSeq_feat& mrna = feat_iter->GetOriginalFeature();
+                    if ( !mrna.IsSetProduct() ) {
+                        continue;
+                    }
+
+                    // make sure the feature contains our feature of interest
+                    sequence::ECompare comp =
+                        sequence::Compare(mrna.GetLocation(),
+                                          seqfeat.GetLocation());
+                    if (comp != sequence::eContains  &&
+                        comp != sequence::eSame) {
+                        continue;
+                    }
+
+                    CBioseq_Handle handle =
+                        ctx.GetScope().GetBioseqHandle(mrna.GetProduct());
+                    if ( !handle ) {
+                        continue;
+                    }
+
+                    SAnnotSelector cds_sel(sel);
+                    cds_sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+                    CFeat_CI other_iter(ctx.GetScope(),
+                                        mrna.GetProduct(),
+                                        cds_sel);
+                    for ( ;  other_iter  &&  !mrna_feat;  ++other_iter) {
+                        const CSeq_feat& cds = other_iter->GetOriginalFeature();
+                        if ( !cds.IsSetProduct() ) {
+                            continue;
+                        }
+
+                        CBioseq_Handle prot_handle =
+                            ctx.GetScope().GetBioseqHandle(cds.GetProduct());
+                        if ( !prot_handle ) {
+                            continue;
+                        }
+
+                        if (prot_handle.IsSynonym(product_id)) {
+                            // got it!
+                            mrna_feat.Reset(&mrna);
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (...) {
+            }
+        }
+
+        //
+        // try to find the best by overlaps alone
+        //
+
+        if ( !mrna_feat ) {
+            mrna_feat = sequence::GetBestOverlappingFeat
+                (seqfeat.GetLocation(), CSeqFeatData::eSubtype_mRNA,
+                 sequence::eOverlap_CheckIntervals, ctx.GetScope());
+        }
+    }
+
+    //
+    // check if the mRNA feature we found has a product
+    //
+    if (mrna_feat.GetPointer()  &&  mrna_feat->IsSetProduct()) {
+        try {
+            const CSeq_id& id = sequence::GetId(mrna_feat->GetProduct());
+            string transcript_id =
+                ctx.GetPreferredSynonym(id).GetSeqIdString(true);
+            return transcript_id;
+        }
+        catch (...) {
+        }
+    }
+
+    //
+    // nothing found, so fake it
+    //
+
+    // failed to get transcript id, so we fake a globally unique one based
+    // on the gene id
+    m_Transcripts[gene_id].push_back(CConstRef<CSeq_feat>(&seqfeat));
+
+    string transcript_id = gene_id;
+    transcript_id += ":unknown_transcript_";
+    transcript_id += NStr::IntToString(m_Transcripts[gene_id].size());
+    return transcript_id;
 }
 
 
@@ -471,6 +586,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/08 12:12:33  dicuccio
+* Altered handling of transcript_id - make transcript_id globally unique and
+* trackable across CDS features as well as mRNA features
+*
 * Revision 1.5  2004/05/06 17:54:29  shomrat
 * Use CConstRef instead of reference
 *
