@@ -48,11 +48,12 @@ $(XLIB): $(XLIBOBJ)
 	$(BINCOPY) $(XLIB) $(libdir)
 	@$(BINCOPY) $(XLIBDEP) $(libdir)
 	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
-	-$(RM) $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK) >/dev/null 2>&1
-	@(cd $(libdir) && [ -f $(XLIBLINK) ] || $(LN_S) $(XLIB) $(XLIBLINK))
-	@(cd $(libdir) && [ -f $(XLIBDEPLINK) ] || \
-		 $(LN_S) $(XLIBDEP) $(XLIBDEPLINK))
-
+	@if [ -d $(libdir) -a -w $(libdir) ]; then \
+	    cd $(libdir) && \
+	    $(RM) $(XLIBLINK) $(XLIBDEPLINK) && \
+	    $(LN_S) $(XLIB) $(XLIBLINK) && \
+	    $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
+	fi
 
 ### Standard targets
 
@@ -68,4 +69,5 @@ clean:
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
-	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
+	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP) \
+	    $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK)
