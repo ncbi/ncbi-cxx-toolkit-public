@@ -71,16 +71,12 @@ void CThreadedServer::Run(void)
     }
 
     for (;;) {
-#if 0 // will double-close sock
         CSocket    sock;
         EIO_Status status = lsock.Accept(sock);
-#else
-        SOCK       sock;
-        EIO_Status status = LSOCK_Accept(lsock.GetLSOCK(), 0, &sock);
-#endif
+        sock.SetOwnership(eNoOwnership); // Process[Overflow] will close it
         if (status == eIO_Success) {
             try {
-                pool.AcceptRequest(new CSocketRequest(*this, sock));
+                pool.AcceptRequest(new CSocketRequest(*this, sock.GetSOCK()));
                 if (pool.IsFull()  &&  m_TemporarilyStopListening) {
                     lsock.Close();
                     pool.WaitForRoom();
@@ -88,7 +84,7 @@ void CThreadedServer::Run(void)
                 }
             } catch (CBlockingQueueException) {
                 _ASSERT(!m_TemporarilyStopListening);
-                ProcessOverflow(sock);
+                ProcessOverflow(sock.GetSOCK());
             }            
         } else {
             ERR_POST("accept failed: " << IO_StatusStr(status));
@@ -103,6 +99,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.8  2002/09/17 18:42:30  ucko
+* Use CSocket now that SetOwnership exists.
+*
 * Revision 6.7  2002/09/13 17:13:27  ucko
 * Use CListeningSocket instead of LSOCK, but stick with SOCK to avoid
 * double closes.
