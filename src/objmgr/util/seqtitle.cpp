@@ -649,7 +649,11 @@ static string x_TitleFromChromosome(const CBioSource& source,
             return name + ' ' + orgnl + ' ' + plasmid_name + seq_tag;
         }
     } else if ( !orgnl.empty() ) {
-        return name + ' ' + orgnl + gen_tag;
+        if ( chromosome.empty() ) {
+            return name + ' ' + orgnl + gen_tag;
+        } else {
+            return name + ' ' + orgnl + " chromosome " + chromosome + seq_tag;
+        }
     } else if ( !segment.empty() ) {
         if (segment.find("DNA") == NPOS  &&  segment.find("RNA") == NPOS
             &&  segment.find("segment") == NPOS
@@ -920,6 +924,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2004/05/10 21:25:17  ucko
+* x_TitleFromChromosome: handle organelles with multiple chromosomes,
+* such as Guillardia theta nucleomorph (per C toolkit)
+*
 * Revision 1.35  2004/04/21 15:45:11  ucko
 * s_TitleFromSegment: collect strain/clone/isolate information from source
 * to use in lieu of information from a CDS (per C version, as usual).
