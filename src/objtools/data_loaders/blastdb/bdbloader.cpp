@@ -129,7 +129,7 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
             return locks;
         }
         
-        CRef<CBioseq> bsr = m_seqdb->GetBioseq(oid_list[0], false, false);
+        CRef<CBioseq> bsr = m_seqdb->GetBioseq(oid_list[0]);
         list< CRef<CSeq_id> > id_list = m_seqdb->GetSeqIDs(oid_list[0]);
         if(id_list.size() > bsr->SetId().size()){
             bsr->SetId().clear();
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.15  2004/10/28 17:54:52  bealer
+ * - Remove unsupported soon-to-disappear default arguments to GetBioseq().
+ *
  * Revision 1.14  2004/10/21 22:47:21  bealer
  * - Fix compile warning (unused var).
  *
