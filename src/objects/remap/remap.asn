@@ -1,4 +1,4 @@
---$Id: remap.asn,v 1.1 2004/07/22 20:25:26 jcherry Exp $********************************************
+--$Id: remap.asn,v 1.2 2004/07/28 13:43:33 jcherry Exp $********************************************
 --
 --  remap.asn
 --   Version 1
@@ -13,6 +13,7 @@ NCBI-Remap DEFINITIONS ::=
 BEGIN
 
 IMPORTS Seq-loc FROM NCBI-Seqloc;
+
 
 Remap-dt ::= INTEGER                   -- a date/time stamp
 Remap-db-id ::= VisibleString          -- database name
@@ -36,7 +37,8 @@ Remap-request ::= SEQUENCE {           -- a standard request
 RMRequest ::= CHOICE {                   -- request types
   remap Remap-query ,                    -- do the actual remapping
   maps-to-builds VisibleString ,         -- what builds can this be mapped to?
-  maps-from-builds VisibleString }       -- what builds can be mapped to this?
+  maps-from-builds VisibleString ,       -- what builds can be mapped to this?
+  all-builds NULL }                      -- all the builds the server knows of
 
 Remap-query ::= SEQUENCE {
   from-build VisibleString ,             -- build to map from
@@ -50,7 +52,7 @@ Remap-query ::= SEQUENCE {
 
 Remap-reply ::= SEQUENCE {
   reply RMReply ,                       -- the actual reply
-  dt Remap-dt ,                       -- date/time stamp from server
+  dt Remap-dt ,                         -- date/time stamp from server
   server VisibleString ,                -- server version info
   msg VisibleString OPTIONAL }          -- possibly a message to the user
 
@@ -59,8 +61,9 @@ RMReply ::= CHOICE {
   remap Remap-result ,                  -- result of actual remapping
   maps-to-builds SEQUENCE OF VisibleString ,  -- all the builds that the server
                                               -- knows how to map this build to
-  maps-from-builds SEQUENCE OF VisibleString }-- all the builds that the server
+  maps-from-builds SEQUENCE OF VisibleString ,-- all the builds that the server
                                               -- knows how to map to this build
+  all-builds SEQUENCE OF VisibleString } -- all builds that the server knows of
 
 Remap-result ::= SEQUENCE OF Seq-loc  -- remapped locations
 
