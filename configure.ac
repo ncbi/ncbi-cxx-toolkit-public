@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.296 2004/04/27 14:49:07 ucko Exp $
+#  $Id: configure.ac,v 1.297 2004/04/27 20:10:15 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2200,6 +2200,7 @@ dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
 # This logic adapted from Bruno Haible's iconv.m4.
 AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
+   ac_cv_search_iconv=no
    AC_TRY_LINK([#include <stdlib.h>
 #include <iconv.h>],
      [iconv_t cd = iconv_open("","");

@@ -14436,6 +14436,7 @@ if test "${ac_cv_search_iconv+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
+   ac_cv_search_iconv=no
    cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
