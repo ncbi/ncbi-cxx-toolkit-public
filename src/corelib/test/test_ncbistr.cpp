@@ -127,9 +127,18 @@ static const SStrCompare s_StrCompare[] = {
 class CTestApplication : public CNcbiApplication
 {
 public:
-    virtual int Run(void);
+    void Init(void);
+    int Run(void);
 };
 
+
+void CTestApplication::Init(void)
+{
+    // Set err.-posting and tracing to maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
+}
 
 int CTestApplication::Run(void)
 {
@@ -154,6 +163,26 @@ int CTestApplication::Run(void)
     NcbiCout << "Test NCBISTR:" << NcbiEndl;
 
     const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
+
+    //        CExceptionReporterStream reporter(cerr);
+        //        CExceptionReporter::SetDefault(&reporter);
+        //        CExceptionReporter::EnableDefault(false);
+        //        CExceptionReporter::EnableDefault(true);
+    //        CExceptionReporter::SetDefault(0);
+
+    SetupDiag(eDS_ToStdout);
+        /*
+
+        CExceptionReporter::EnableDefault(true);
+        cerr << endl;
+        NCBI_REPORT_EXCEPTION(
+            "****** default reporter (stream) ******",e);
+
+        CExceptionReporter::SetDefault(0);
+        cerr << endl;
+        NCBI_REPORT_EXCEPTION(
+            "****** default reporter (diag) ******",e);
+        */
 
     for (size_t i = 0;  i < count;  ++i) {
         const string& str = s_Strings[i];
@@ -457,6 +486,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/10/17 16:56:02  ivanov
+ * Added tests for 'b' and 'B' time format symbols
+ *
  * Revision 6.7  2002/09/04 19:32:11  vakatov
  * Minor change to reflect the changed handling of '"' by NStr::PrintableString
  *

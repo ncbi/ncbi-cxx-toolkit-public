@@ -225,9 +225,11 @@ static void s_TestFormats(void)
         "YMD   h:sm",
         "yDM   h:ms",
         "yMD   h:ms",
+        "D B Y h:m:s",
+        "D b Y h:m:s",
         "smhyMD",
         "y||||M++++D   h===ms",
-        "   yM[][D   h:,.,.b,bms  ",
+        "   yM[][D   h:,.,.,ms  ",
         "\tkkkMy++D   h:ms\n",
         0
     };
@@ -237,7 +239,7 @@ static void s_TestFormats(void)
     cout << "---------------------------" << endl << endl;
 
     for (const char** fmt = s_Fmt;  *fmt;  fmt++) {
-        CTime t1(2001, 1, 2, 3, 4, 0);
+        CTime t1(2001, 4, 2, 3, 4, 0);
 
         CTime::SetFormat(*fmt);
         string t1_str = t1.AsString();
@@ -597,6 +599,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2002/10/17 16:56:03  ivanov
+ * Added tests for 'b' and 'B' time format symbols
+ *
  * Revision 6.13  2002/07/15 18:17:26  gouriano
  * renamed CNcbiException and its descendents
  *
