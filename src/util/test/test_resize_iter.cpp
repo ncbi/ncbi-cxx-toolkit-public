@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
                  n += count) {
                 for (unsigned int i = 0; i < count; ++i) {
                     int value = *it;
-                    *it2 = value;
+                    *it2 = value; // ignore bogus WorkShop complaints here
                     ++it2;
                     cout << value;
                     if (new_size > 4)
@@ -75,6 +75,9 @@ int main(int argc, char** argv) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/12/30 20:56:51  ucko
+ * Note location of bogus WorkShop warnings.
+ *
  * Revision 1.3  2002/12/30 20:39:11  ucko
  * kBitsPerByte changed to CHAR_BIT; use preincrement rather than post-.
  *
