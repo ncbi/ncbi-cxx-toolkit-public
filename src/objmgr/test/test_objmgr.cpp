@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_annot.hpp>
 
 #include "test_helper.hpp"
+#include <objmgr/seq_vector.hpp>
 
 #include <objects/general/Date.hpp>
 
@@ -170,6 +171,7 @@ int CTestApp::Run(void)
 
     // 1.2.6. Constructed bio sequences
     for (idx = 1; idx <= 1; idx++) {
+        CRef<CSeqVector> vec;
         CScope Scope(*m_ObjMgr);
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope.AddTopLevelSeqEntry(*entry1);
@@ -193,6 +195,9 @@ int CTestApp::Run(void)
                 "TACCGCCAATAACCTCAGCAGCAACAA", "",
                 0, 3, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
+        CBioseq_Handle bh = Scope.GetBioseqHandle(id);
+        _ASSERT(bh);
+        vec = new CSeqVector(bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
     }
 
     // 1.2.7. one entry in two scopes
@@ -257,6 +262,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/01/12 15:20:10  vasilche
+* Added check for removal of scope before CSeqVector.
+*
 * Revision 1.44  2004/09/28 14:30:02  vasilche
 * Implemented CScope::AddSeq_annot().
 *
