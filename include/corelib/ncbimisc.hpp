@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/12/15 15:36:30  vasilche
+* Added header corelib/ncbistr.hpp for all string utility functions.
+* Optimized string utility functions.
+* Added assignment operator to CRef<> and CConstRef<>.
+* Add Upcase() and Locase() methods for automatic conversion.
+*
 * Revision 1.45  2000/12/12 14:20:14  vasilche
 * Added operator bool to CArgValue.
 * Added standard typedef element_type to CRef<> and CConstRef<>.
@@ -173,228 +179,18 @@
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbistr.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiexpt.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
-
-// Empty "C" string (points to a '\0')
-extern const char *const kEmptyCStr;
-#define NcbiEmptyCStr NCBI_NS_NCBI::kEmptyCStr
-
-
-// Empty "C++" string
-class CNcbiEmptyString {
-public:
-    const string& Get(void) {
-        return m_Str ? *m_Str : FirstGet();
-    }
-private:
-    static const string& FirstGet(void);
-    static const string* m_Str;
-};
-#define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString().Get()
-#define kEmptyStr       NcbiEmptyString
-
-
-
-// String-processing utilities
-struct NStr {
-    // conversion functions (throw an exception on the conversion error)
-    static int StringToInt(const string& str, int base = 10);
-    static unsigned int StringToUInt(const string& str, int base = 10);
-    static long StringToLong(const string& str, int base = 10);
-    static unsigned long StringToULong(const string& str, int base = 10);
-    static double StringToDouble(const string& str);
-    static string IntToString(long value, bool sign=false);
-    static string UIntToString(unsigned long value);
-    static string DoubleToString(double value);
-    static string PtrToString(const void* ptr);
-
-    // 'true, 'false'
-    static string BoolToString(bool value);
-    // 'true, 't', 'false', 'f'  (case-insensitive)
-    static bool   StringToBool(const string& str);
-
-    /*  str[pos:pos+n) == pattern  --> return 0
-     *  str[pos:pos+n) <  pattern  --> return negative value
-     *  str[pos:pos+n) >  pattern  --> return positive value
-     */
-    enum ECase {
-        eCase,
-        eNocase  /* ignore character case */
-    };
-    static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const char* pattern);
-    static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const string& pattern);
-    static int CompareCase(const char* s1, const char* s2);
-    static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const char* pattern);
-    static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const string& pattern);
-    static int CompareNocase(const char* s1, const char* s2);
-
-    static inline int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                              const char* pattern, ECase use_case = eCase)
-        {
-            if ( use_case == eCase )
-                return CompareCase(str, pos, n, pattern);
-            else
-                return CompareNocase(str, pos, n, pattern);
-        }
-    static inline int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                              const string& pattern, ECase use_case = eCase)
-        {
-            if ( use_case == eCase )
-                return CompareCase(str, pos, n, pattern);
-            else
-                return CompareNocase(str, pos, n, pattern);
-        }
-    static inline int Compare(const char* s1, const char* s2,
-                              ECase use_case = eCase)
-        {
-            if ( use_case == eCase )
-                return CompareCase(s1, s2);
-            else
-                return CompareNocase(s1, s2);
-        }
-    static inline int Compare(const string& s1, const char* s2,
-                              ECase use_case = eCase)
-        {
-            return Compare(s1, 0, NPOS, s2, use_case);
-        }
-    static inline int Compare(const char* s1, const string& s2,
-                              ECase use_case = eCase)
-        {
-            return Compare(s2, 0, NPOS, s1, use_case);
-        }
-    static inline int Compare(const string& s1, const string& s2,
-                              ECase use_case = eCase)
-        {
-            return Compare(s1, 0, NPOS, s2, use_case);
-        }
-    
-    // these 4 methods change the passed string, then return it
-    static string& ToLower(string& str);
-    static char*   ToLower(char*   str);
-    static string& ToUpper(string& str);
-    static char*   ToUpper(char*   str);
-
-    static inline bool StartsWith(const string& str, const string& start,
-                                  ECase use_case = eCase) {
-        return str.size() >= start.size()  &&
-            Compare(str, 0, start.size(), start, use_case) == 0;
-    }
-    
-    static inline bool EndsWith(const string& str, const string& end,
-                                  ECase use_case = eCase) {
-        return str.size() >= end.size()  &&
-            Compare(str, str.size() - end.size(), end.size(),
-                    end, use_case) == 0;
-    }
-
-    enum ETrunc {
-        eTrunc_Begin,  // truncate leading  spaces only
-        eTrunc_End,    // truncate trailing spaces only
-        eTrunc_Both    // truncate spaces at both begin and end of string
-    };
-    static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
-
-    // starting from position "start_pos", replace no more than "max_replace"
-    // occurencies of substring "search" by string "replace"
-    // if "max_replace" is zero -- then replace all occurences.
-    static string& Replace(const string& src,
-                           const string& search,
-                           const string& replace,
-                           string& dst,
-                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
-
-    // the same as the above Replace(), but return new string
-    static string Replace(const string& src,
-                          const string& search,
-                          const string& replace,
-                          SIZE_TYPE start_pos = 0, size_t max_replace = 0);
-
-    // Make a printable version of "str". The non-printable characters will
-    // be represented as "\r", "\n", "\v", "\t", "\0", "\\", or
-    // "\xDD" where DD is the character's code in hexadecimal.
-    static string PrintableString(const string& str);
-}; // struct NStr
-
-
-// predicates
-
-// case-sensitive string comparison
-struct PCase
-{
-    // return difference
-    int Compare(const string& s1, const string& s2) const
-        {
-            return NStr::Compare(s1, s2, NStr::eCase);
-        }
-
-    // returns true if s1 < s2
-    bool Less(const string& s1, const string& s2) const
-        {
-            return Compare(s1, s2) < 0;
-        }
-
-    // returns true if s1 == s2
-    bool Equals(const string& s1, const string& s2) const
-        {
-            return Compare(s1, s2) == 0;
-        }
-
-    // returns true if s1 < s2
-    bool operator()(const string& s1, const string& s2) const
-        {
-            return Less(s1, s2);
-        }
-};
-
-// case-INsensitive string comparison
-struct PNocase
-{
-    // return difference
-    int Compare(const string& s1, const string& s2) const
-        {
-            return NStr::Compare(s1, s2, NStr::eNocase);
-        }
-
-    // returns true if s1 < s2
-    bool Less(const string& s1, const string& s2) const
-        {
-            return Compare(s1, s2) < 0;
-        }
-
-    // returns true if s1 == s2
-    bool Equals(const string& s1, const string& s2) const
-        {
-            return Compare(s1, s2) == 0;
-        }
-
-    // returns true if s1 < s2 ignoring case
-    bool operator()(const string& s1, const string& s2) const
-        {
-            return Less(s1, s2);
-        }
-};
-
-// algorithms
-
-template<class Pred>
-inline
-bool AStrEquiv( const string& x, const string& y, Pred pr)
-{  
-    return pr.Equals(x, y);
-}
-
+// forward declaration of common classes
 class CTypeInfo;
 class CEnumeratedTypeValues;
 
+// enum for choice classes generated by datatool
 enum EResetVariant {
     eDoResetVariant,
     eDoNotResetVariant

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/12/15 15:36:41  vasilche
+* Added header corelib/ncbistr.hpp for all string utility functions.
+* Optimized string utility functions.
+* Added assignment operator to CRef<> and CConstRef<>.
+* Add Upcase() and Locase() methods for automatic conversion.
+*
 * Revision 1.37  2000/12/12 14:20:36  vasilche
 * Added operator bool to CArgValue.
 * Various NStr::Compare() methods made faster.
@@ -300,18 +306,30 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 
 int NStr::CompareCase(const char* s1, const char* s2)
 {
-    while (*s1  &&  *s1 == *s2) {
-        s1++;  s2++;
+    for ( ;; ) {
+        // get next chars
+        char c1 = *s1, c2 = *s2;
+        // calculate difference
+        int diff = c1 - c2;
+        // if end of string or different
+        if ( !c1 || diff )
+            return diff; // return difference
+        ++s1;  ++s2; // otherwice go to next chars
     }
-    return *s1 - *s2;
 }
 
 int NStr::CompareNocase(const char* s1, const char* s2)
 {
-    while (*s1  &&  toupper(*s1) == toupper(*s2)) {
-        s1++;  s2++;
+    for ( ;; ) {
+        // get next chars
+        char c1 = *s1, c2 = *s2;
+        // calculate difference
+        int diff = toupper(c1) - toupper(c2);
+        // if end of string or different
+        if ( !c1 || diff )
+            return diff; // return difference
+        ++s1;  ++s2; // otherwice go to next chars
     }
-    return toupper(*s1) - toupper(*s2);
 }
 
 char* NStr::ToLower(char* str) {

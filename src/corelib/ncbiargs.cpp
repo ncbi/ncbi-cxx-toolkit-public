@@ -34,6 +34,12 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.28  2000/12/15 15:36:40  vasilche
+ * Added header corelib/ncbistr.hpp for all string utility functions.
+ * Optimized string utility functions.
+ * Added assignment operator to CRef<> and CConstRef<>.
+ * Add Upcase() and Locase() methods for automatic conversion.
+ *
  * Revision 1.27  2000/12/12 14:20:36  vasilche
  * Added operator bool to CArgValue.
  * Various NStr::Compare() methods made faster.
@@ -1005,7 +1011,7 @@ void CArgs::Add(const string& name, CArgValue* arg)
     }
 
     // add
-    m_Args[name] = arg;
+    m_Args[name].Reset(arg);
 }
 
 
@@ -1217,7 +1223,7 @@ void CArgDescriptions::SetConstraint(EConstraint policy, unsigned num_args)
 void CArgDescriptions::SetConstraint(const string& name,
                                      CArgAllow*    constraint)
 {
-    CRef<CArgAllow> safe_delete(constraint);
+    CRef<CArgAllow> safe_delete = constraint;
 
     TArgsI it = m_Args.find(name);
     if (it == m_Args.end()) {

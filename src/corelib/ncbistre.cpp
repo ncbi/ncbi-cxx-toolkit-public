@@ -31,6 +31,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/12/15 15:36:41  vasilche
+* Added header corelib/ncbistr.hpp for all string utility functions.
+* Optimized string utility functions.
+* Added assignment operator to CRef<> and CConstRef<>.
+* Add Upcase() and Locase() methods for automatic conversion.
+*
 * Revision 1.8  2000/12/12 14:39:50  vasilche
 * Added class Locase for printing strings to ostream with automatic conversion.
 *
@@ -117,7 +123,7 @@ CNcbiOstrstreamToString::operator string(void) const
     return string(str, length);
 }
 
-CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s)
+CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
     iterate ( string, c, s.m_String ) {
         out.put(char(toupper(*c)));
@@ -125,9 +131,25 @@ CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s)
     return out;
 }
 
-CNcbiOstream& operator<<(CNcbiOstream& out, Locase s)
+CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s)
 {
     iterate ( string, c, s.m_String ) {
+        out.put(char(tolower(*c)));
+    }
+    return out;
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s)
+{
+    for ( const char* c = s.m_String; *c; ++c ) {
+        out.put(char(toupper(*c)));
+    }
+    return out;
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
+{
+    for ( const char* c = s.m_String; *c; ++c ) {
         out.put(char(tolower(*c)));
     }
     return out;

@@ -34,6 +34,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/15 15:36:30  vasilche
+* Added header corelib/ncbistr.hpp for all string utility functions.
+* Optimized string utility functions.
+* Added assignment operator to CRef<> and CConstRef<>.
+* Add Upcase() and Locase() methods for automatic conversion.
+*
 * Revision 1.19  2000/12/12 14:39:46  vasilche
 * Added class Locase for printing strings to ostream with automatic conversion.
 *
@@ -251,27 +257,79 @@ private:
 // sample usage:
 //    out << "Original:  \"" << str << "\"\n";
 //    out << "Uppercase: \"" << Upcase(str) << "\"\n";
-class Upcase
-{
-public:
-    Upcase(const string& s) : m_String(s) { }
-    const string& m_String;
-};
-
-CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s);
-
 // utility class for automatic conversion of strings to lowercase letters
 // sample usage:
 //    out << "Original:  \"" << str << "\"\n";
 //    out << "Lowercase: \"" << Locase(str) << "\"\n";
-class Locase
+
+class CUpcaseStringConverter
 {
 public:
-    Locase(const string& s) : m_String(s) { }
+    CUpcaseStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
-CNcbiOstream& operator<<(CNcbiOstream& out, Locase s);
+class CUpcaseCharPtrConverter
+{
+public:
+    CUpcaseCharPtrConverter(const char* s) : m_String(s) { }
+    const char* m_String;
+};
+
+class CLocaseStringConverter
+{
+public:
+    CLocaseStringConverter(const string& s) : m_String(s) { }
+    const string& m_String;
+};
+
+class CLocaseCharPtrConverter
+{
+public:
+    CLocaseCharPtrConverter(const char* s) : m_String(s) { }
+    const char* m_String;
+};
+
+inline
+char Upcase(char c)
+{
+    return toupper(c);
+}
+
+inline
+CUpcaseStringConverter Upcase(const string& s)
+{
+    return CUpcaseStringConverter(s);
+}
+
+inline
+CUpcaseCharPtrConverter Upcase(const char* s)
+{
+    return CUpcaseCharPtrConverter(s);
+}
+
+inline
+char Locase(char c)
+{
+    return tolower(c);
+}
+
+inline
+CLocaseStringConverter Locase(const string& s)
+{
+    return CLocaseStringConverter(s);
+}
+
+inline
+CLocaseCharPtrConverter Locase(const char* s)
+{
+    return CLocaseCharPtrConverter(s);
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s);
+CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s);
+CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s);
+CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s);
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

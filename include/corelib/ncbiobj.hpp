@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/12/15 15:36:29  vasilche
+* Added header corelib/ncbistr.hpp for all string utility functions.
+* Optimized string utility functions.
+* Added assignment operator to CRef<> and CConstRef<>.
+* Add Upcase() and Locase() methods for automatic conversion.
+*
 * Revision 1.15  2000/12/12 14:20:14  vasilche
 * Added operator bool to CArgValue.
 * Added standard typedef element_type to CRef<> and CConstRef<>.
@@ -313,7 +319,6 @@ public:
             return *this;
         }
 
-
     // getters
     inline
     TObjectType* GetNonNullPointer(void) const
@@ -487,13 +492,11 @@ public:
             Reset(ref.m_Ptr);
             return *this;
         }
-    // assign
     CConstRef<C>& operator=(const CRef<C>& ref)
         {
             Reset(ref.GetPointerOrNull());
             return *this;
         }
-
 
     // getters
     inline
