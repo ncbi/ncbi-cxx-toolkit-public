@@ -241,9 +241,9 @@ if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
+          cd $$i  &&  if $(RELEVANT_DIR) ; then $(RWL) $(MAKE) $(MFLAGS)
 
-SUB_KET_P = $(SUB_KET)
+SUB_KET_P = ; else true ; fi $(SUB_KET)
 
 all_p:       all_p.needs-reqs
 clean_p:     clean_p.needs-reqs
