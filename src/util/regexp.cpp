@@ -70,7 +70,7 @@ public:
 //
 
 // Macro to check bits
-#define F_ISSET(flags, mask) ((flags & (mask)) == (mask)))
+#define F_ISSET(flags, mask) ((flags & (mask)) == (mask))
 
 // Auxiliary functions to convert CRegexp flags to real flags.
 static int s_GetRealCompileFlags(CRegexp::TCompile compile_flags)
@@ -78,23 +78,23 @@ static int s_GetRealCompileFlags(CRegexp::TCompile compile_flags)
     int flags = 0;
 
     if ( !compile_flags  &&
-         !F_ISSET(compile_flags, CRegexp::fCompile_default ) {
+         !F_ISSET(compile_flags, CRegexp::fCompile_default )) {
         NCBI_THROW(CRegexpException, eBadFlags,
                    "Bad regular expression compilation flags");
     }
-    if ( F_ISSET(compile_flags, CRegexp::fCompile_ignore_case ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_ignore_case) ) {
         flags |= PCRE_CASELESS;
     }
-    if ( F_ISSET(compile_flags, CRegexp::fCompile_dotall ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_dotall) ) {
         flags |= PCRE_DOTALL;
     }
-    if ( F_ISSET(compile_flags, CRegexp::fCompile_newline ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_newline) ) {
         flags |= PCRE_MULTILINE;
     }
-    if ( F_ISSET(compile_flags, CRegexp::fCompile_ungreedy ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_ungreedy) ) {
         flags |= PCRE_UNGREEDY;
     }
-    if ( F_ISSET(compile_flags, CRegexp::fCompile_extended ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_extended) ) {
         flags |= PCRE_EXTENDED;
     }
     return flags;
@@ -105,14 +105,14 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
     int flags = 0;
 
     if ( !match_flags  &&
-         !F_ISSET(match_flags, CRegexp::fMatch_default ) {
+         !F_ISSET(match_flags, CRegexp::fMatch_default) ) {
         NCBI_THROW(CRegexpException, eBadFlags,
                    "Bad regular expression match flags");
     }
-    if ( F_ISSET(match_flags, CRegexp::fMatch_not_begin ) {
+    if ( F_ISSET(match_flags, CRegexp::fMatch_not_begin) ) {
         flags |= PCRE_NOTBOL;
     }
-    if ( F_ISSET(match_flags, CRegexp::fMatch_not_end ) {
+    if ( F_ISSET(match_flags, CRegexp::fMatch_not_end) ) {
         flags |= PCRE_NOTEOL;
     }
     return flags;
@@ -411,6 +411,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/04 16:27:36  ivanov
+ * Fixed number of round brackets in the F_ISSET macro
+ *
  * Revision 1.11  2004/11/22 18:03:01  ivanov
  * Added flag CRegexp::fCompile_extended.
  *
