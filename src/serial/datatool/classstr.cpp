@@ -467,7 +467,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                 "    return "<<i->mName<<"->IsSet"<<i->cName<<"();\n";
                         } else {
                             inlineMethods <<
-                                "    return "<<i->mName<<";\n";
+                                "    return "<<i->mName<<".NotEmpty();\n";
                         }
                     }
                     else {
@@ -1456,6 +1456,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/01/12 15:38:49  vasilche
+* Use CRef<>::NotEmpty() to avoid performance warning on MSVC.
+*
 * Revision 1.65  2004/09/07 14:09:45  grichenk
 * Fixed assignment of default value to aliased types
 *
