@@ -1807,7 +1807,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
         list<string> syn;
         syn.push_back(m_UsageName);
         for (it = args.begin();  it != args.end();  ++it) {
-            if ( s_IsOptional(**it) ) {
+            if ( s_IsOptional(**it) || s_IsFlag(**it) ) {
                 syn.push_back('[' + (*it)->GetUsageSynopsis() + ']');
             } else if ( s_IsPositional(**it) ) {
                 syn.push_back('<' + (*it)->GetUsageSynopsis() + '>');
@@ -2153,6 +2153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2003/05/28 18:01:58  kuznets
+ * Changed program help (usage section). Now prints flags as optional argument in []
+ *
  * Revision 1.45  2003/05/16 16:00:41  vakatov
  * + CArgs::IsEmpty()
  * + CArgDescriptions::PrintUsageIfNoArgs()
