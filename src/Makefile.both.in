@@ -87,13 +87,16 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(XDLLOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
-	@echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP)
-	@[ -r $(XDLLDEP) ]  ||  $(TOUCH) -r $(XDLL) $(XDLLDEP)
+	@if [ ! -r $(XDLLDEP) ]; then \
+	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP); \
+	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
+	fi
 	$(BINCOPY) $(XDLL) $(libdir)
 	@has_dll_loadable@$(BINCOPY) $(XDLL_LOADABLE) $(libdir)
-	@$(BINCOPY) $(XDLLDEP) $(status_dir)
-	@[ -r $(status_dir)/$(XDLLDEP) ]  ||  \
-            $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
+	@if [ ! -r $(status_dir)/$(XDLLDEP) ]; then \
+	    $(BINCOPY) $(XDLLDEP) $(status_dir); \
+	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
+	fi
 
 
 ### Standard targets
