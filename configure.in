@@ -812,6 +812,7 @@ if test "$exec_prefix" = "$srcdir" ; then
 else
    builddir="$exec_prefix/build"
 fi
+status_dir="$exec_prefix/status"
 
 
 #### Create build directories
@@ -2024,6 +2025,7 @@ AC_SUBST(exec_prefix)
 AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
 AC_SUBST(includedir)
+AC_SUBST(status_dir)
 AC_SUBST(builddir)
 AC_SUBST(runpath)
 
@@ -2143,6 +2145,7 @@ ${configurables},
 
 dnl AC_OUTPUT - 2
 dnl restore some variables from the main configure script saved by AC_OUTPUT-3
+status_dir="$SAVE_status_dir"
 builddir="$SAVE_builddir"
 exec_prefix="$SAVE_exec_prefix"
 x_configurables="$SAVE_x_configurables"
@@ -2174,10 +2177,15 @@ done
 
 dnl save status, cache, and log files to the build tree dir "status/"
 if test -f config.status -a -f config.cache -a -f config.log ; then
-   status_dir="$exec_prefix/status"
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
    mv config.status config.cache config.log "$status_dir"/
 fi
+
+dnl Update list of enabled packages
+rm -f "$status_dir"/*.enabled
+for p in $WithPackages $WithProjects; do
+   touch "$status_dir"/$p.enabled
+done
 
 dnl execute extra-action
 if test -n "$with_extra_action" ; then
@@ -2235,6 +2243,7 @@ EOCONF
 
 dnl AC_OUTPUT - 3
 dnl save some variables to use in the AC_OUTPUT-2
+SAVE_status_dir="$status_dir"
 SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
 SAVE_x_configurables="$x_configurables"

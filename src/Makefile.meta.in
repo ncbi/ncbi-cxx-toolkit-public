@@ -33,8 +33,12 @@ if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" ; then \
         x_mfile="Makefile.$$i" ; \
       else x_mfile="$(srcdir)/Makefile.$$i" ; \
       fi ; \
-		$(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+      if $(MAKE) -f "$$x_mfile" status_dir="$(status_dir)" $(MFLAGS) requirements ; then \
+         $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
 USRP_KET = ||  exit 1 ; \
+      else \
+        echo "Skipping $$i due to unmet requirements"; \
+      fi; \
    done ; \
 fi
 
@@ -42,8 +46,12 @@ LIBP_BRA = \
 if test ! -z "$(LIB_PROJ)"  ||  test ! -z "@UNIX_LIB_PROJ@" ; then \
    x_project="$(LIB_PROJ) @UNIX_LIB_PROJ@" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+     if $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS) requirements ; then \
+        $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_KET = ||  exit 2 ; \
+     else \
+       echo "Skipping $$i due to unmet requirements"; \
+     fi; \
    done ; \
 fi
 
@@ -52,8 +60,12 @@ APPP_BRA = \
 if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" ; then \
    x_project="$(APP_PROJ) @UNIX_APP_PROJ@" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
+     if $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS) requirements ; then \
+        $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 APPP_KET = ||  exit 3 ; \
+     else \
+       echo "Skipping $$i due to unmet requirements"; \
+     fi; \
    done ; \
 fi
 
@@ -75,16 +87,16 @@ purge:
 
 SUB_BRA = \
 if test ! -z "$(SUB_PROJ)"  ||  test ! -z "@UNIX_SUB_PROJ@" ; then \
-	x_subproj="$(SUB_PROJ) @UNIX_SUB_PROJ@" ; \
-	for i in $$x_subproj ; do \
-		( if test -d $$i ; then \
+    x_subproj="$(SUB_PROJ) @UNIX_SUB_PROJ@" ; \
+    for i in $$x_subproj ; do \
+        ( if test -d $$i ; then \
           cd $$i  &&  $(MAKE) $(MFLAGS)
 
 SUB_KET = ||  exit 4 ; \
         else \
           echo "Warning:  non-existent sub-project \"$$i\"" ; \
         fi ) ||  exit 5 ; \
-	done ; \
+    done ; \
 fi
 
 all_r: all

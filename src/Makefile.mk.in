@@ -22,6 +22,7 @@
 top_srcdir  = @top_srcdir@
 exec_prefix = @exec_prefix@
 builddir    = @builddir@
+status_dir  = @status_dir@
 
 
 ### Paths
