@@ -39,6 +39,9 @@
 #include <dbapi/driver/util/pointer_pot.hpp>
 #include <map>
 
+#if defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#endif
 
 /** @addtogroup DbInterfaces
  *
@@ -602,8 +605,6 @@ inline int close(int fd)
 {
     return _close(fd);
 }
-#elif defined(NCBI_OS_UNIX)
-#  include <unistd.h>
 #endif
 
 END_NCBI_SCOPE
@@ -615,6 +616,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/02/24 17:17:19  ucko
+ * Whoops, don't #include <unistd.h> within ncbi:: (or any other scope).
+ *
  * Revision 1.30  2005/02/24 15:50:57  ucko
  * Meanwhile, add <unistd.h> on Unix to ensure close() is available there.
  *
