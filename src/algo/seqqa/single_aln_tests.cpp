@@ -90,7 +90,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         = scope.GetBioseqHandle(disc.front()->GetSeq_id(0));
     SAnnotSelector sel;
     sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    sel.SetAdaptiveDepth();
+    sel.SetResolveDepth(0);
     CFeat_CI it(xcript_hand, 0, xcript_hand.GetBioseqLength() - 1, sel);
 
     const CSeq_loc& loc = it->GetLocation();
@@ -451,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/13 15:49:06  jcherry
+ * Use resolve depth of zero rather than adaptive depth
+ *
  * Revision 1.4  2004/10/12 22:10:10  jcherry
  * Don't assume that a CDS location is an interval
  *

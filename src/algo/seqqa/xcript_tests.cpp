@@ -94,7 +94,7 @@ CTestTranscript_CountCdregions::RunTest(const CSerialObject& obj,
 
     SAnnotSelector sel;
     sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    sel.SetAdaptiveDepth();
+    sel.SetResolveDepth(0);
     CSeq_loc loc;
     loc.SetWhole().Assign(*id);
     CFeat_CI feat_iter(ctx->GetScope(), loc, sel);
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/13 15:49:06  jcherry
+ * Use resolve depth of zero rather than adaptive depth
+ *
  * Revision 1.5  2004/10/12 21:50:25  jcherry
  * s_GetCdregionPlusUpstream: don't assume that components of
  * CDS location are intervals
