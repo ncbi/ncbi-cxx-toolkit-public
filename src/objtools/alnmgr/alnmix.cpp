@@ -223,6 +223,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 + NStr::IntToString(dsp->GetWidths().size())
                 + "). Should be equal to its dim ("
                 + NStr::IntToString(dsp->GetDim()) + ").";
+
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
         }
     }
@@ -398,11 +399,15 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
                             //verify that we were able to load all data
                             if (s1.length() != len || s2.length() != len) {
-                                string errstr = string("CAlnMix::Add(): ")
-                                    + "Unable to load data for segment "
-                                    + NStr::IntToString(seg) +
+                                string errstr = string("CAlnMix::Add(): ") +
+                                    "Unable to load data for segment " +
+                                    NStr::IntToString(seg) +
+                                    " of input denseg " +
+                                    NStr::IntToString(m_InputDSs.size()) +
                                     ", rows " + NStr::IntToString(row1) +
-                                    " and " + NStr::IntToString(row2);
+                                    " (" + aln_seq1->m_SeqId->AsFastaString() + ")" +
+                                    " and " + NStr::IntToString(row2) +
+                                    " (" + aln_seq2->m_SeqId->AsFastaString() + ")";
                                 NCBI_THROW(CAlnException, eInvalidSegment,
                                            errstr);
                             }
@@ -2047,6 +2052,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.102  2004/09/01 15:38:05  todorov
+* extended exception msg in case unable to load data for segment
+*
 * Revision 1.101  2004/06/28 20:09:27  todorov
 * Initialize m_DSIndex. Also bug fix when shifting to extra row
 *
