@@ -449,6 +449,7 @@ s_BlastHSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
 	 hsp[i]->context = FrameToContext(hsp[i]->query.frame);
       }
    }
+   Blast_HSPListSortByScore(hsplist);
 }
 
 static Int2
