@@ -91,6 +91,12 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
                    eBadParameter,
                    "NULL sequence pointer(s) passed");
 
+    if(!len1 || !len2)
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eBadParameter,
+                   "Zero length specified for sequence(s)");
+
     size_t iErrPos1 = x_CheckSequence(seq1, len1);
     if(iErrPos1 < len1)
         NCBI_THROW(
@@ -455,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/06 18:04:10  kapustin
+ * CNWAligner: add sequence size verification
+ *
  * Revision 1.3  2002/12/31 13:53:13  kapustin
  * CNWAligner::Format() -- use CNcbiOstrstreamToString
  *
