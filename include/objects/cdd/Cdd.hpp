@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2002/10/21 22:07:49  hurwitz
+ * added check for consensus sequence
+ *
  * Revision 1.11  2002/10/16 23:33:46  hurwitz
  * added functions for curation-status and old-root descriptions
  *
@@ -173,6 +176,7 @@ public:
     void   SetOldRoot(string Accession, int Version);
     bool   GetOldRoot(int Index, string& Accession, int& Version);
     int    GetNumIdsInOldRoot();
+    bool   UsesConsensusSequence();
 
 private:
     // get dense-diag info for one row

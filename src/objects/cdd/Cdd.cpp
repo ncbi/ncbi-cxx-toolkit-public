@@ -1530,6 +1530,26 @@ string CCdd::GetLongDescription() {
 }
 
 
+bool CCdd::UsesConsensusSequence() {
+//-------------------------------------------------------------------------
+// check if this CD uses consensus sequence for master
+//-------------------------------------------------------------------------
+  CRef<CSeq_id>  SeqID;
+
+  if (GetSeqIDFromAlignment(0, SeqID)) {
+    if (SeqID->IsLocal()) {
+      if (SeqID->GetLocal().IsStr()) {
+        if(SeqID->GetLocal().GetStr() == "consensus") {
+          return(true);
+        }
+      }
+    }
+  }
+  return(false);
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -1537,6 +1557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2002/10/21 22:08:41  hurwitz
+ * added check for consensus sequence
+ *
  * Revision 1.19  2002/10/16 23:33:13  hurwitz
  * added functions for curation-status and old-root descriptions
  *
