@@ -1,4 +1,4 @@
-/*  $Id:
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/03/31 14:40:24  shomrat
+* $id: -> $id$
+*
 * Revision 1.4  2003/02/12 17:55:39  shomrat
 * Implemented checks for obsolete, comment and molinfo descriptors
 *
