@@ -411,8 +411,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    BlastHSP* hsp,* hsp1=NULL,* hsp2;
    Uint1* query,* subject,* subject_start = NULL;
    Int4 query_length, query_length_orig;
-   Int4 subject_length, subject_length_orig=0;
-   Int4 max_start = MAX_DBSEQ_LEN / 2, start_shift;
+   Int4 subject_length=0;
    BlastHSP** hsp_array;
    Int4 q_start, s_start, max_offset;
    Boolean keep;
@@ -458,7 +457,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    if (!is_ooframe) {
       if (!translate_subject) {
          subject_start = subject_blk->sequence;
-         subject_length_orig = subject_blk->length;
+         subject_length = subject_blk->length;
       }
    } else {
       /* Out-of-frame gapping: need to use a mixed-frame sequence */
@@ -467,7 +466,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
       } else {
          subject = subject_start = subject_blk->oof_sequence + CODON_LENGTH;
       }
-      subject_length_orig = subject_blk->length;
+      subject_length = subject_blk->length;
    }
    
    for (index=0; index < hsp_list->hspcnt; index++) {
@@ -529,7 +528,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
       if (translate_subject && !is_ooframe) {
          Int2 context = FrameToContext(hsp->subject.frame);
          subject_start = translation_buffer + frame_offsets[context] + 1;
-         subject_length_orig = 
+         subject_length = 
             frame_offsets[context+1] - frame_offsets[context] - 1;
       }
 
@@ -563,17 +562,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             }
          }
          
-         /* Shift the subject sequence if the offset is very large */
-         if (s_start > max_start) {
-            start_shift = (s_start / max_start) * max_start;
-            s_start %= max_start;
-         } else {
-            start_shift = 0;
-         }
-         subject = subject_start + start_shift;
-
-         subject_length = MIN(subject_length_orig - start_shift, 
-                              s_start + hsp->subject.length + max_start);
+         subject = subject_start;
 
          /* Perform the gapped extension with traceback */
          if (phi_align) {
@@ -589,15 +578,11 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
          }
 
          if (gap_align->score >= min_score_to_keep) {
-            hsp->subject.offset = gap_align->subject_start + start_shift;
+            hsp->subject.offset = gap_align->subject_start;
             hsp->query.offset = gap_align->query_start;
-            hsp->subject.end = gap_align->subject_stop + start_shift;
+            hsp->subject.end = gap_align->subject_stop;
             hsp->query.end = gap_align->query_stop;
             
-            if (gap_align->edit_block && start_shift > 0) {
-               gap_align->edit_block->start2 += start_shift;
-               gap_align->edit_block->length2 += start_shift;
-            }
             hsp->query.length = hsp->query.end - hsp->query.offset;
             hsp->subject.length = hsp->subject.end - hsp->subject.offset;
             hsp->score = gap_align->score;
