@@ -38,11 +38,13 @@
 #include <objects/seq/Seq_data.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CRandom;
+
 BEGIN_SCOPE(objects)
 
-
 class CSeqVector;
-
+class CNcbi2naRandomizer;
 
 class NCBI_XOBJMGR_EXPORT CSeqVector_CI
 {
@@ -75,6 +77,11 @@ public:
     TCoding GetCoding(void) const;
     void SetCoding(TCoding coding);
 
+    void SetRandomizeAmbiguities(void);
+    void SetRandomizeAmbiguities(Uint4 seed);
+    void SetRandomizeAmbiguities(CRandom& random_gen);
+    void SetNoAmbiguities(void);
+
     TResidue operator*(void) const;
     operator bool(void) const;
 
@@ -93,6 +100,7 @@ private:
     void x_FillCache(TSeqPos start, TSeqPos count);
     void x_UpdateSeg(TSeqPos pos);
     void x_InitSeg(TSeqPos pos);
+    void x_InitRandomizer(CRandom& random_gen);
 
     void x_NextCacheSeg(void);
     void x_PrevCacheSeg(void);
@@ -115,22 +123,23 @@ private:
     typedef char* TCacheData;
     typedef char* TCache_I;
 
-    CConstRef<CSeqMap>      m_SeqMap;
-    CHeapScope              m_Scope;
-    ENa_strand              m_Strand;
-    TCoding                 m_Coding;
+    CConstRef<CSeqMap>       m_SeqMap;
+    CHeapScope               m_Scope;
+    ENa_strand               m_Strand;
+    TCoding                  m_Coding;
     // Current CSeqMap segment
-    CSeqMap_CI              m_Seg;
+    CSeqMap_CI               m_Seg;
     // Current cache pointer
-    TCache_I                m_Cache;
+    TCache_I                 m_Cache;
     // Current cache
-    TSeqPos                 m_CachePos;
-    TCacheData              m_CacheData;
-    TCache_I                m_CacheEnd;
+    TSeqPos                  m_CachePos;
+    TCacheData               m_CacheData;
+    TCache_I                 m_CacheEnd;
     // Backup cache
-    TSeqPos                 m_BackupPos;
-    TCacheData              m_BackupData;
-    TCache_I                m_BackupEnd;
+    TSeqPos                  m_BackupPos;
+    TCacheData               m_BackupData;
+    TCache_I                 m_BackupEnd;
+    CRef<CNcbi2naRandomizer> m_Randomizer;
 };
 
 
@@ -317,6 +326,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/04/22 18:34:18  grichenk
+* Added optional ambiguity randomizer for ncbi2na coding
+*
 * Revision 1.17  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
