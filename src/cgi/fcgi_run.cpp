@@ -28,52 +28,6 @@
  * File Description:
  *   Fast-CGI loop function -- used in "cgiapp.cpp"::CCgiApplication::Run().
  *   NOTE:  see also a stub function in "cgi_run.cpp".
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.15  2002/07/11 14:22:59  gouriano
- * exceptions replaced by CNcbiException-type ones
- *
- * Revision 1.14  2001/11/19 15:20:17  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- * Revision 1.13  2001/10/29 15:16:12  ucko
- * Preserve default CGI diagnostic settings, even if customized by app.
- *
- * Revision 1.12  2001/10/04 18:41:38  ucko
- * Temporarily revert changes requiring libfcgi 2.2.
- *
- * Revision 1.11  2001/10/04 18:17:53  ucko
- * Accept additional query parameters for more flexible diagnostics.
- * Support checking the readiness of CGI input and output streams.
- *
- * Revision 1.10  2001/07/16 21:18:09  vakatov
- * CAutoCgiContext:: to provide a clean reset of "m_Context" in RunFastCGI()
- *
- * Revision 1.9  2001/07/16 19:28:56  pubmed
- * volodyas fix for contex cleanup
- *
- * Revision 1.8  2001/07/03 18:17:32  ivanov
- * + #include <unistd.h> (need for getpid())
- *
- * Revision 1.7  2001/07/02 13:05:22  golikov
- * +debug
- *
- * Revision 1.6  2001/06/13 21:04:37  vakatov
- * Formal improvements and general beautifications of the CGI lib sources.
- *
- * Revision 1.5  2001/01/12 21:58:44  golikov
- * cgicontext available from cgiapp
- *
- * Revision 1.4  2000/11/01 20:36:31  vasilche
- * Added HTTP_EOL string macro.
- *
- * Revision 1.3  2000/01/20 17:52:53  vakatov
- * Fixes to follow the "CNcbiApplication" and "CCgiContext" change.
- *
- * Revision 1.2  1999/12/17 17:25:15  vakatov
- * Typo fixed
- * ===========================================================================
  */
 
 #include <cgi/cgiapp.hpp>
@@ -126,6 +80,50 @@ private:
 };
 
 
+// Aux. class for noticing changes to a file
+class CCgiWatchFile
+{
+public:
+    // ignores changes after the first LIMIT bytes
+    CCgiWatchFile(const string& filename, int limit = 1024)
+        : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
+        { m_Count = x_Read(m_Buf.get()); }
+
+    bool HasChanged(void);
+
+private:
+    typedef AutoPtr<char, ArrayDeleter<char> > TBuf;
+
+    string m_Filename;
+    int    m_Limit;
+    int    m_Count;
+    TBuf   m_Buf;
+
+    // returns count of bytes read (up to m_Limit), or -1 if opening failed.
+    int x_Read(char* buf);
+};
+
+inline
+bool CCgiWatchFile::HasChanged(void)
+{
+    TBuf buf(new char[m_Limit]);
+    return (x_Read(buf.get()) != m_Count 
+            ||  memcmp(buf.get(), m_Buf.get(), m_Count) != 0);
+}
+
+inline
+int CCgiWatchFile::x_Read(char* buf)
+{
+    CNcbiIfstream in(m_Filename.c_str());
+    if (in) {
+        in.read(buf, m_Limit);
+        return in.gcount();
+    } else {
+        return -1;
+    }
+}
+
+
 bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 {
     *result = -100;
@@ -154,6 +152,18 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
     _TRACE("CCgiApplication::Run: FastCGI limited to "
            << iterations << " iterations");
 
+    auto_ptr<CCgiWatchFile> watcher(0);
+    {{
+        string filename = GetConfig().Get("FastCGI", "WatchFile.Name");
+        int    limit    = NStr::StringToNumeric
+                          (GetConfig().Get("FastCGI", "WatchFile.Limit"));
+        if (limit <= 0) {
+            limit = 1024; // set a reasonable default
+        }
+        if ( !filename.empty() ) {
+            watcher.reset(new CCgiWatchFile(filename, limit));
+        }
+    }}
 
     // Main Fast-CGI loop
     time_t mtime = s_GetModTime( GetArguments().GetProgramName().c_str() );
@@ -240,6 +250,13 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
                    "the program modification date has changed");
             break;
         }
+
+        // check if the file we're watching (if any) has changed
+        // (based on contents, not timestamp!)
+        if (watcher.get()  &&  watcher->HasChanged()) {
+            _TRACE("CCgiApplication::RunFastCGI: the watch file has changed");
+            break;
+        }
     } // Main Fast-CGI loop
 
     // done
@@ -250,3 +267,55 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 #endif /* HAVE_LIBFASTCGI */
 
 END_NCBI_SCOPE
+
+/*
+ *
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.16  2002/12/19 16:13:35  ucko
+ * Support watching an outside file to know when to restart; CVS log to end
+ *
+ * Revision 1.15  2002/07/11 14:22:59  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
+ * Revision 1.14  2001/11/19 15:20:17  ucko
+ * Switch CGI stuff to new diagnostics interface.
+ *
+ * Revision 1.13  2001/10/29 15:16:12  ucko
+ * Preserve default CGI diagnostic settings, even if customized by app.
+ *
+ * Revision 1.12  2001/10/04 18:41:38  ucko
+ * Temporarily revert changes requiring libfcgi 2.2.
+ *
+ * Revision 1.11  2001/10/04 18:17:53  ucko
+ * Accept additional query parameters for more flexible diagnostics.
+ * Support checking the readiness of CGI input and output streams.
+ *
+ * Revision 1.10  2001/07/16 21:18:09  vakatov
+ * CAutoCgiContext:: to provide a clean reset of "m_Context" in RunFastCGI()
+ *
+ * Revision 1.9  2001/07/16 19:28:56  pubmed
+ * volodyas fix for contex cleanup
+ *
+ * Revision 1.8  2001/07/03 18:17:32  ivanov
+ * + #include <unistd.h> (need for getpid())
+ *
+ * Revision 1.7  2001/07/02 13:05:22  golikov
+ * +debug
+ *
+ * Revision 1.6  2001/06/13 21:04:37  vakatov
+ * Formal improvements and general beautifications of the CGI lib sources.
+ *
+ * Revision 1.5  2001/01/12 21:58:44  golikov
+ * cgicontext available from cgiapp
+ *
+ * Revision 1.4  2000/11/01 20:36:31  vasilche
+ * Added HTTP_EOL string macro.
+ *
+ * Revision 1.3  2000/01/20 17:52:53  vakatov
+ * Fixes to follow the "CNcbiApplication" and "CCgiContext" change.
+ *
+ * Revision 1.2  1999/12/17 17:25:15  vakatov
+ * Typo fixed
+ * ===========================================================================
+ */
