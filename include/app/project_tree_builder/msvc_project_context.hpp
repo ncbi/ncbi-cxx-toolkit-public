@@ -37,6 +37,7 @@
 #include <app/project_tree_builder/proj_item.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_makefile.hpp>
+#include <app/project_tree_builder/proj_builder_app.hpp>
 
 #include <corelib/ncbienv.hpp>
 
@@ -93,12 +94,13 @@ public:
     }
     const string& IncludeDirsRoot(void) const
     {
-        return m_IncludeDirsRoot;
+        return GetApp().GetProjectTreeInfo().m_Include;
     }
     const list<string>& IncludeDirsAbs(void) const
     {
         return m_IncludeDirsAbs;
     }
+
 
     const CMsvcProjectMakefile& GetMsvcProjectMakefile(void) const;
 
@@ -127,9 +129,12 @@ private:
     CProjItem::TProjType m_ProjType;
 
     list<string> m_SourcesDirsAbs;
-
-    string       m_IncludeDirsRoot;
     list<string> m_IncludeDirsAbs;
+
+    list<string> m_ProjectIncludeDirs;
+    list<string> m_ProjectLibs;
+
+    void CreateLibsList(list<string>* libs_list) const;
 
     auto_ptr<CMsvcProjectMakefile> m_MsvcProjectMakefile;
 
@@ -480,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/03 17:08:07  gorelenk
+ * Changed declaration of class CMsvcPrjProjectContext.
+ *
  * Revision 1.5  2004/01/28 17:55:06  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
