@@ -60,6 +60,11 @@ public:
     CSeqVector_CI& operator=(const CSeqVector_CI& sv_it);
 
     bool operator==(const CSeqVector_CI& iter) const;
+    bool operator!=(const CSeqVector_CI& iter) const;
+    bool operator<(const CSeqVector_CI& iter) const;
+    bool operator>(const CSeqVector_CI& iter) const;
+    bool operator>=(const CSeqVector_CI& iter) const;
+    bool operator<=(const CSeqVector_CI& iter) const;
 
     // Fill the buffer string with the sequence data for the interval
     // [start, stop).
@@ -84,6 +89,9 @@ public:
 
     TResidue operator*(void) const;
     operator bool(void) const;
+
+    CSeqVector_CI& operator+=(TSeqPos value);
+    CSeqVector_CI& operator-=(TSeqPos value);
 
 private:
     TSeqPos x_GetSize(void) const;
@@ -268,6 +276,41 @@ bool CSeqVector_CI::operator==(const CSeqVector_CI& iter) const
 
 
 inline
+bool CSeqVector_CI::operator!=(const CSeqVector_CI& iter) const
+{
+    return GetPos() != iter.GetPos();
+}
+
+
+inline
+bool CSeqVector_CI::operator<(const CSeqVector_CI& iter) const
+{
+    return GetPos() < iter.GetPos();
+}
+
+
+inline
+bool CSeqVector_CI::operator>(const CSeqVector_CI& iter) const
+{
+    return GetPos() > iter.GetPos();
+}
+
+
+inline
+bool CSeqVector_CI::operator<=(const CSeqVector_CI& iter) const
+{
+    return GetPos() <= iter.GetPos();
+}
+
+
+inline
+bool CSeqVector_CI::operator>=(const CSeqVector_CI& iter) const
+{
+    return GetPos() >= iter.GetPos();
+}
+
+
+inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
     _ASSERT(*this);
@@ -313,6 +356,66 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 
 
 inline
+CSeqVector_CI& CSeqVector_CI::operator+=(TSeqPos value)
+{
+    SetPos(GetPos() + value);
+    return *this;
+}
+
+
+inline
+CSeqVector_CI& CSeqVector_CI::operator-=(TSeqPos value)
+{
+    SetPos(GetPos() - value);
+    return *this;
+}
+
+
+inline
+CSeqVector_CI operator+(const CSeqVector_CI& iter, TSeqPos value)
+{
+    CSeqVector_CI ret(iter);
+    ret += value;
+    return ret;
+}
+
+
+inline
+CSeqVector_CI operator-(const CSeqVector_CI& iter, TSeqPos value)
+{
+    CSeqVector_CI ret(iter);
+    ret -= value;
+    return ret;
+}
+
+
+inline
+CSeqVector_CI operator+(const CSeqVector_CI& iter, TSignedSeqPos value)
+{
+    CSeqVector_CI ret(iter);
+    ret.SetPos(iter.GetPos() + value);
+    return ret;
+}
+
+
+inline
+CSeqVector_CI operator-(const CSeqVector_CI& iter, TSignedSeqPos value)
+{
+    CSeqVector_CI ret(iter);
+    ret.SetPos(iter.GetPos() - value);
+    return ret;
+}
+
+
+inline
+TSignedSeqPos operator-(const CSeqVector_CI& iter1,
+                        const CSeqVector_CI& iter2)
+{
+    return iter1.GetPos() - iter2.GetPos();
+}
+
+
+inline
 CSeqVector_CI::TCoding CSeqVector_CI::x_GetCoding(TCoding cacheCoding,
                                                   TCoding dataCoding) const
 {
@@ -326,6 +429,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/04/26 14:15:00  grichenk
+* Added standard container methods
+*
 * Revision 1.18  2004/04/22 18:34:18  grichenk
 * Added optional ambiguity randomizer for ncbi2na coding
 *
