@@ -1,5 +1,8 @@
--- $Id: geno.asn,v 1.1 2002/08/16 16:31:23 kholodov Exp $
+-- $Id: geno.asn,v 1.2 2002/08/16 16:48:16 kholodov Exp $
 -- $Log: geno.asn,v $
+-- Revision 1.2  2002/08/16 16:48:16  kholodov
+-- Fixed syntax errors, made enums 1 based
+--
 -- Revision 1.1  2002/08/16 16:31:23  kholodov
 -- First commit
 --
@@ -8,7 +11,7 @@
 GENO DEFINITIONS ::=
 BEGIN
 
-EXPORTS GENO-PopSum, GENO-PedList, GENO-Ind, GENO-SnpSum, GENO-Freq,
+EXPORTS GENO-PopSum, GENO-Ped, GENO-Ind, GENO-SnpSum, GENO-Freq,
 	    GENO-IndBySnp, GENO-IndBySnpList, GENO-IndGeno,  
         GENO-SnpByIndList, GENO-SnpByInd, GENO-SnpGeno;
 
@@ -22,7 +25,7 @@ GENO-PopSum ::= SEQUENCE {
 	snp-list SET OF GENO-SnpSum 	 	-- summary of the genotype information for this population 	
 }
 
-GENO-PedList ::= SEQUENCE {
+GENO-Ped ::= SEQUENCE {
 	ped-id INTEGER OPTIONAL,			-- pedigree number all peds within population
 	ind-id INTEGER ,					-- individual id 
 	ma INTEGER ,			        	-- mothers id
@@ -51,30 +54,30 @@ GENO-SnpSum ::= SEQUENCE {
 	chrom INTEGER,						-- chromosome
 	position  INTEGER,					-- chromosome position
 	data-type ENUMERATED{
-		pop (0),						-- constrain geno-freq by a specific population	
-		all (1)							-- geno-freq over all populations.  
+		pop (1),						-- constrain geno-freq by a specific population	
+		all (2)							-- geno-freq over all populations.  
 			},
-    geno-freq SET OF GENO-Freq,			-- genotypes and frequencies for this SNP limited to population
-    allele-freq SET OF GENO-Freq,		-- allele Frequencies for this SNP limited to population
-    est_het REAL,                  		-- estimated heterozygousity
-    obs_het REAL, 						-- observed heterozygousity
+    	geno-freq SET OF GENO-Freq,			-- genotypes and frequencies for this SNP limited to population
+    	allele-freq SET OF GENO-Freq,		-- allele Frequencies for this SNP limited to population
+    	est-het REAL,                  		-- estimated heterozygousity
+    	obs-het REAL, 						-- observed heterozygousity
 	samplesize INTEGER,		 					-- chromosomes genotyped for this snp 
-	hw-prob REAL OPTIONAL,				-- Hardy Weinberg probabliity	----Calculated
-	hw-chi2 REAL OPTIONAL,				-- Hardy Weinberg chi square    ----Calculated
-	hw-df   INTEGER						-- Hardy Weinberg degrees of freedom ----Calculated	 
+	hw-prob REAL OPTIONAL,				-- Hardy Weinberg probabliity	Calculated
+	hw-chi2 REAL OPTIONAL,				-- Hardy Weinberg chi square    Calculated
+	hw-df   INTEGER						-- Hardy Weinberg degrees of freedom Calculated	 
 	
 }
 
 GENO-Freq ::= SEQUENCE {
 	type ENUMERATED{
-		Allele   (0),						
-		Genotype (1)	
+		allele   (1),						
+		genotype (2)	
 		},								-- type (allele or genotype)		
 	frequency REAL OPTIONAL				-- frequency  Calculated
 }
 
 GENO-IndBySnpList ::= SEQUENCE { 	     -- makes the Ind By SNP report
-	snp-list SET OF GENO-IndBySNP
+	snp-list SET OF GENO-IndBySnp
 }
 
 GENO-IndBySnp ::= SEQUENCE {
@@ -96,10 +99,10 @@ GENO-IndGeno ::= SEQUENCE {
 	allele1 VisibleString OPTIONAL,		-- first allele in genotype
 	allele2 VisibleString OPTIONAL,		-- second allele in genotype
 	flag INTEGER{
-		none (0),						-- No known errors	
-		incompatible (1),				-- genotype incompatible
-		inconsistent(2),				-- genotype inconsistent
-		orient (3)		 				-- Orientation of allele not specified
+		none (1),						-- No known errors	
+		incompatible (2),				-- genotype incompatible
+		inconsistent(3),				-- genotype inconsistent
+		orient (4)		 				-- Orientation of allele not specified
 	}		
 }
 
@@ -108,7 +111,7 @@ GENO-SnpByIndList ::= SEQUENCE {
 }
 
 GENO-SnpByInd ::= SEQUENCE {
-	individuals GENO-Ind,		       --population individual info
+	individual GENO-Ind,		       --population individual info
 	genotypes  SET OF GENO-SnpGeno     --genotypes
 }
 
@@ -120,10 +123,10 @@ GENO-SnpGeno ::= SEQUENCE {
 	allele1 VisibleString OPTIONAL,		-- first allele in genotype
 	allele2 VisibleString OPTIONAL,		-- second allele in genotype
 	flag INTEGER {
-		none (0),			-- No known errors	
-		inc (1),			-- genotype inconsitency
-		orient (2),			-- orientation flag
-		incompat (3)			-- genotype incompatible with parent				
+		none (1),			-- No known errors	
+		inc (2),			-- genotype inconsitency
+		orient (3),			-- orientation flag
+		incompat (4)			-- genotype incompatible with parent				
 	} OPTIONAL		
 
 }		
