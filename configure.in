@@ -86,6 +86,8 @@ AC_ARG_WITH(bincopy,
 ## Third-party and system packages
 AC_ARG_WITH(ncbi-c,
    [ --without-ncbi-c        do not use NCBI C Toolkit])
+AC_ARG_WITH(wxwin,
+   [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
 AC_ARG_WITH(sss,
@@ -115,7 +117,7 @@ AC_ARG_WITH(manuals,
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug optimization dll mt 64 exe autodep suffix hostspec execopy bincopy \
-ncbi-c fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
+ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -197,7 +199,7 @@ else
           compiler="WorkShop5"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.0" ;;
-        *Sun*WorkShop*6*5\.1)
+        *Sun*WorkShop*6*5\.1*)
           compiler="WorkShop6"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.1" ;;
@@ -1005,6 +1007,58 @@ fi
 AC_MSG_RESULT([$NCBI_C_PATH])
 
 
+## wxWindows
+AC_MSG_CHECKING(if wxWindows is available)
+if test "$with_wxwin" != "no" ; then
+   if test -n "$NCBI_WXWIN_PATH" ; then
+      NCBI_WXWIN_BINPATH=${NCBI_WXWIN_BINPATH:="$NCBI_WXWIN_PATH/bin"}
+      NCBI_WXWIN_LIBPATH=${NCBI_WXWIN_LIBPATH:="$NCBI_WXWIN_PATH/lib"}
+   else
+      NCBI_WXWIN_PATH="$NCBI/wxwin"
+      if test -z "$NCBI_WXWIN_LIBPATH" ; then
+         NCBI_WXWIN_LIBPATH="$NCBI_WXWIN_PATH/"
+         if test "$compiler" = "GCC" ; then
+            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}GCC-"
+         fi
+         if test "$with_debug" = "no" ; then
+            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}Release"
+            NCBI_WXWIN_GTK="wx_gtk"
+         else
+            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}Debug"
+            NCBI_WXWIN_GTK="wx_gtkd"
+         fi
+         if test "$with_mt" = "yes" ; then
+            NCBI_WXWIN_LIBPATH="${NCBI_WXWIN_LIBPATH}MT"
+         fi
+      fi
+      NCBI_WXWIN_BINPATH=${NCBI_WXWIN_BINPATH:="$NCBI_WXWIN_LIBPATH/bin"}
+      NCBI_WXWIN_LIBPATH="$NCBI_WXWIN_LIBPATH/lib"
+   fi
+
+   NCBI_WXWIN_INCLUDE=`$NCBI_WXWIN_BINPATH/wx-config --cflags`
+   NCBI_WXWIN_LIBS="-L$NCBI_WXWIN_LIBPATH ${CONF_f_runpath}$NCBI_WXWIN_LIBPATH -l${NCBI_WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
+
+   CPPFLAGS="$NCBI_WXWIN_INCLUDE $orig_CPPFLAGS"
+   LIBS="$NCBI_WXWIN_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <wx/wx.h>],
+      [ wxExit(); ],
+      [AC_DEFINE_UNQUOTED(HAVE_WXWINDOWS, 1)],
+      [with_wxwin="no"]
+   )
+fi
+
+if test "$with_wxwin" = "no" ; then
+   NCBI_WXWIN_LIBPATH="No_wxWindows"
+   NCBI_WXWIN_INCLUDE=
+   NCBI_WXWIN_LIBS=
+   WithoutPackages="$WithoutPackages wxWindows"
+else
+   WithPackages="$WithPackages wxWindows"
+fi
+AC_MSG_RESULT([$NCBI_WXWIN_LIBPATH])
+
+
 ## Inhouse Fast-CGI library
 AC_MSG_CHECKING(if Fast-CGI library is available)
 if test "$with_fastcgi" != "no" ; then
@@ -1276,6 +1330,8 @@ AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
+AC_SUBST(NCBI_WXWIN_INCLUDE)
+AC_SUBST(NCBI_WXWIN_LIBS)
 AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
