@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/07/22 16:34:39  shomrat
+ * Added ZFIN to approved DB list
+ *
  * Revision 6.6  2003/06/27 16:22:25  shomrat
  * Changed initialization of kApprovedDbXrefs
  *
@@ -131,6 +134,7 @@ static const string kApprovedDbXrefs[] = {
     "UniSTS",
     "WorfDB",
     "WormBase",
+    "ZFIN",
     "dbEST",
     "dbSNP",
     "dbSTS",
