@@ -94,16 +94,16 @@ class CInterfaceVersion
 };
 
 
-/// Macro to auto-setup the current interface version.
+/// Macro to auto-setup the current interface name and version.
 ///
 /// This macro must be "called" once per interface, usually in the
 /// very header that describes that interface.
 ///
 /// Example:
-///    NCBI_INTERFACE_VERSION(IFooBar, 1, 3, 8);
+///    NCBI_INTERFACE_VERSION(IFooBar, "IFooBar", 1, 3, 8);
 /// @sa CInterfaceVersion
 
-#define NCBI_INTERFACE_VERSION(iface, major, minor, patch_level) \
+#define NCBI_INTERFACE_VERSION(iface, iface_name, major, minor, patch_level) \
 EMPTY_TEMPLATE \
 class CInterfaceVersion<iface> \
 { \
@@ -113,6 +113,7 @@ public: \
         eMinor      = minor, \
         ePatchLevel = patch_level \
     }; \
+    static const char* GetName() { return iface_name; } \
 }
 
 
@@ -165,9 +166,6 @@ public:
                                     ncbi::CInterfaceVersion<TClass>::eMinor,
                                     ncbi::CInterfaceVersion<TClass>::ePatchLevel))
         const = 0;
-
-    // Name of the interface provided by the factory
-    virtual string GetName(void) const = 0;
 
     // Versions of the interface exported by the factory
     virtual void GetDriverVersions(TDriverList& driver_list) const = 0;
@@ -384,8 +382,12 @@ CPluginManager<TClass>::~CPluginManager()
 }
 
 
-/// Entry point implementation
+/// Template implements entry point
 ///
+/// The actual entry point is a C callable exported function 
+///   delegates the functionality to 
+///               CHostEntryPointImpl<>::NCBI_EntryPointImpl()
+
 template<class TClassFactory> struct CHostEntryPointImpl
 {
     typedef typename TClassFactory::TInterface                TInterface;
@@ -397,7 +399,11 @@ template<class TClassFactory> struct CHostEntryPointImpl
     typedef typename 
       CPluginManager<TInterface>::EEntryPointRequest        EEntryPointRequest;
     typedef typename TClassFactory::SDriverInfo             TCFDriverInfo;
-      
+    
+
+    /// Entry point implementation. 
+    ///
+    /// @sa CPluginManager::FNCBI_EntryPoint
     static void NCBI_EntryPointImpl(TDriverInfoList& info_list,
                                     EEntryPointRequest method)
     {
@@ -454,6 +460,67 @@ template<class TClassFactory> struct CHostEntryPointImpl
 
 };
 
+
+/// Template class helps to implement one driver class factory.
+///
+/// Class supports one driver, one version class factory 
+/// (the very basic one)
+/// Template parameters are:
+///   TIClass - interface class 
+///   TDriver - driver class
+
+template <class TIClass, class TDriver>
+class CSimpleClassFactoryImpl : public IClassFactory<TIClass>
+{
+public:
+    /// Construction
+    ///
+    /// @param driver_name
+    ///    Driver name string
+    /// @param patch_level
+    ///    Patch level implemented by the driver. 
+    ///    By default corresponds to interface patch level.
+    CSimpleClassFactoryImpl(const string& driver_name, int patch_level = -1) 
+    : m_DriverVersionInfo(
+         ncbi::CInterfaceVersion<TIClass>::eMajor, 
+         ncbi::CInterfaceVersion<TIClass>::eMinor, 
+         patch_level >= 0 ? patch_level 
+                          : ncbi::CInterfaceVersion<TIClass>::ePatchLevel),
+      m_DriverName(driver_name)
+    {
+        _ASSERT(!m_DriverName.empty());
+    }
+
+    TIClass* CreateInstance(const string&  driver  = kEmptyStr,
+                            CVersionInfo version = 
+                  CVersionInfo(ncbi::CInterfaceVersion<TIClass>::eMajor,
+                               ncbi::CInterfaceVersion<TIClass>::eMinor,
+                               ncbi::CInterfaceVersion<TIClass>::ePatchLevel)
+                            ) const
+
+    {
+        if (driver.empty() || driver == m_DriverName) {
+            CVersionInfo v(ncbi::CInterfaceVersion<TIClass>::eMajor,
+                           ncbi::CInterfaceVersion<TIClass>::eMinor,
+                           ncbi::CInterfaceVersion<TIClass>::ePatchLevel);
+
+            if (version.Match(v) == CVersionInfo::eNonCompatible) {
+                return 0;
+            }
+            return new TDriver();
+        }
+        return 0;
+    }
+
+    void GetDriverVersions(TDriverList& info_list) const
+    {
+        info_list.push_back(SDriverInfo(m_DriverName, m_DriverVersionInfo));
+    }
+
+protected:
+    CVersionInfo  m_DriverVersionInfo;
+    string        m_DriverName;
+};
 
 
 //!!!  The above API is by-and-large worked through, all the rest of
@@ -610,6 +677,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/03 17:52:00  kuznets
+ * Added CSimpleClassFactoryImpl template.
+ * Helps quickly implement basic PM compatible class factory.
+ *
  * Revision 1.7  2003/11/03 16:32:58  kuznets
  * Cleaning the code to be compatible with GCC, WorkShop 53 and MSVC at the
  * same time...
