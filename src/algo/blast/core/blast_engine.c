@@ -579,6 +579,13 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    GetSeqArg seq_arg;
    Int2 status = 0;
 
+   BlastHitSavingOptions *internal_hit_options = 
+				(BlastHitSavingOptions *)hit_options;
+   BlastScoringOptions *internal_score_options = 
+				(BlastScoringOptions *)score_options;
+   PSIBlastOptions *internal_psi_options = 
+				(PSIBlastOptions *)psi_options;
+
    Int8 dbsize;
    Int4 num_db_seqs;
    LookupTable *lookup = (LookupTable *)lookup_wrap->lut;
@@ -595,8 +602,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    if ((status =
        BLAST_SetUpAuxStructures(program_number, seq_src,
-          score_options, eff_len_options, lookup_wrap, word_options,
-          ext_options, hit_options, query, query_info, sbp,
+          internal_score_options, eff_len_options, lookup_wrap, word_options,
+          ext_options, internal_hit_options, query, query_info, sbp,
           0, &gap_align, &word_params, &ext_params,
           &hit_params, &aux_struct)) != 0)
       return status;
@@ -611,7 +618,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    rps_info = lookup->rps_aux_info;
    scale_factor = rps_info->scale_factor;
-   psi_options->scalingFactor = scale_factor;
+   internal_psi_options->scalingFactor = scale_factor;
    lookup->use_pssm = TRUE;
    gap_align->positionBased = TRUE;
    gap_align->rps_blast = TRUE;
@@ -620,11 +627,11 @@ BLAST_RPSSearchEngine(Uint1 program_number,
                                      (double)word_params->cutoff_score);
    word_params->x_dropoff = (Int4)(scale_factor *
                                      (double)word_params->x_dropoff);
-   hit_options->cutoff_score = (Int4)(scale_factor *
-                                     (double)hit_options->cutoff_score);
-   score_options->gap_open = (Int4)(scale_factor *
+   internal_hit_options->cutoff_score = (Int4)(scale_factor *
+                             (double)internal_hit_options->cutoff_score);
+   internal_score_options->gap_open = (Int4)(scale_factor *
                                    (double)rps_info->gap_open_penalty);
-   score_options->gap_extend = (Int4)(scale_factor *
+   internal_score_options->gap_extend = (Int4)(scale_factor *
                                    (double)rps_info->gap_extend_penalty);
    hit_params->cutoff_score = (Int4)(scale_factor *
                                    (double)hit_params->cutoff_score);
@@ -687,8 +694,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       E-values cannot be calculated after hits are found. */
 
    BLAST_SearchEngineCore(program_number, &concat_db, &concat_db_info, query,
-      lookup_wrap, gap_align, score_options, word_params, ext_params,
-      hit_params, psi_options, db_options, return_stats, aux_struct,
+      lookup_wrap, gap_align, internal_score_options, word_params, ext_params,
+      hit_params, internal_psi_options, db_options, return_stats, aux_struct,
       &hsp_list);
 
    /* save the resulting list of HSPs. 'query' and 'subject' are
@@ -699,7 +706,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, &concat_db, query, &prelim_results,
          hsp_list, hit_params, &concat_db_info, gap_align->sbp,
-         score_options, NULL, NULL);
+         internal_score_options, NULL, NULL);
    }
 
    /* Change the results from a single hsplist with many 
@@ -713,8 +720,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    BLAST_RPSTraceback(program_number, results, &concat_db, 
             &concat_db_info, query, query_info, gap_align, 
-            score_options, ext_params, hit_params, db_options, 
-            psi_options, rps_info->karlin_k);
+            internal_score_options, ext_params, hit_params, db_options, 
+            internal_psi_options, rps_info->karlin_k);
 
    /* The traceback calculated the E values, so it's safe
       to sort the results now */
