@@ -70,7 +70,7 @@ BEGIN_SCOPE(blast)
 /// ...
 /// @endcode
 
-class CPssmEngine
+class NCBI_XBLAST_EXPORT CPssmEngine
 {
 public:
     /// Constructor to configure the PSSM engine with a PSSM input data
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2005/03/28 18:27:35  jcherry
+ * Added export specifiers
+ *
  * Revision 1.21  2005/03/22 15:32:22  camacho
  * Minor change
  *

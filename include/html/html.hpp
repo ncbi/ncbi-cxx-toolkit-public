@@ -827,7 +827,7 @@ protected:
 };
 
 
-class CHTML_tc_Cache
+class NCBI_XHTML_EXPORT CHTML_tc_Cache
 {
 public:
     CHTML_tc_Cache(void)
@@ -859,7 +859,7 @@ private:
 };
 
 
-class CHTML_tr_Cache
+class NCBI_XHTML_EXPORT CHTML_tr_Cache
 {
 public:
     typedef CHTML_table::TIndex TIndex;
@@ -911,7 +911,7 @@ private:
 };
 
 
-class CHTML_table_Cache
+class NCBI_XHTML_EXPORT CHTML_table_Cache
 {
 public:
     typedef CHTML_table::TIndex TIndex;
@@ -1599,6 +1599,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2005/03/28 18:29:07  jcherry
+ * Added export specifiers
+ *
  * Revision 1.82  2004/12/27 14:27:32  ivanov
  * CHTML_map:: added AddArea() method
  *

@@ -65,7 +65,7 @@ private:
 };
 
 
-class CRefresher
+class NCBI_XLOADER_GENBANK_EXPORT CRefresher
 {
 public:
     CRefresher(void)
@@ -141,7 +141,7 @@ public:
 };
 
 
-class CGBLGuard
+class NCBI_XLOADER_GENBANK_EXPORT CGBLGuard
 {
 public:
     enum EState
@@ -220,6 +220,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.5  2005/03/28 18:28:31  jcherry
+ * Added export specifiers
+ *
  * Revision 1.4  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *

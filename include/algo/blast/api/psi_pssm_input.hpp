@@ -63,7 +63,7 @@ BEGIN_SCOPE(blast)
 /// implements the traditional PSI-BLAST algorithm for building a multiple
 /// sequence alignment from a list of pairwise alignments using the C++ object
 /// manager.
-class CPsiBlastInputData : public IPssmInputData
+class NCBI_XBLAST_EXPORT CPsiBlastInputData : public IPssmInputData
 {
 public:
     /// Construct a concrete strategy, used to configure the CPssmEngine object
@@ -174,6 +174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/03/28 18:27:35  jcherry
+ * Added export specifiers
+ *
  * Revision 1.10  2005/03/07 17:00:07  camacho
  * Fix includes
  *
