@@ -1456,6 +1456,12 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
 {
 	if (hsp_list && hsp_list->hspcnt > 0)
 	{
+	   Int4 index;
+	   /* Remove any information on number of linked HSPs from previous
+	      linking. */
+	   for (index = 0; index < hsp_list->hspcnt; ++index)
+	      hsp_list->hsp_array[index]->num = 0;
+
       /* Link up the HSP's for this hsp_list. */
       if (link_hsp_params->longest_intron <= 0)
       {
