@@ -32,6 +32,7 @@
  */
 
 #include <connect/ncbi_socket.hpp>
+#include <stdlib.h>                     // for PATH_MAX
 
 
 BEGIN_NCBI_SCOPE
@@ -277,6 +278,14 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
 }
 
 
+string CSocket::GetPeerAddress(void) const
+{
+    char buf[PATH_MAX + 1];
+    if (SOCK_GetPeerAddressString(m_Socket, buf, sizeof(buf)) != 0)
+        return string(buf);
+    return "";
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDatagramSocket::
@@ -503,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/07/15 16:50:57  lavr
+ * Implementation of CSocket::GetPeerAddress(void) added
+ *
  * Revision 6.15  2003/05/14 03:50:54  lavr
  * Match changes in ncbi_socket.hpp
  *
