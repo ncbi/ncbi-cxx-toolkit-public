@@ -39,13 +39,20 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
+#include <objmgr/object_manager.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
+
 #include <algo/blast/api/blast_format.hpp>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/api/blast_seq.hpp>
 #include <algo/blast/api/seqsrc_readdb.h>
 
-CBlastFormatOptions::CBlastFormatOptions(CBlastOption::EProgram program, 
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+USING_SCOPE(blast);
+
+CBlastFormatOptions::CBlastFormatOptions(EProgram program, 
     CNcbiOstream &ostr) THROWS((CBlastException))
         : m_ostr(&ostr)
 {
@@ -62,7 +69,7 @@ CBlastFormatOptions::CBlastFormatOptions(CBlastOption::EProgram program,
    
    m_align_options += TXALIGN_MATRIX_VAL;
    m_align_options += TXALIGN_SHOW_QS;
-   if (program == CBlastOption::eBlastx)
+   if (program == eBlastx)
       m_align_options += TXALIGN_BLASTX_SPECIAL;
    
    m_align_view = BLAST_ALIGN_VIEW;
@@ -72,4 +79,75 @@ CBlastFormatOptions::~CBlastFormatOptions()
 {
 }
 
+static void 
+SetDisplayParameters(CDisplaySeqalign &display, 
+    const CBlastFormatOptions* format_options, EProgram program)
+{
+    bool db_is_na = (program == eBlastn ||
+                     program == eTblastn ||
+                     program == eTblastx);
+    bool query_is_na = (program == eBlastn ||
+                        program == eBlastx ||
+                        program == eTblastx);
+    display.SetDbType(db_is_na);
+    display.SetQueryType(query_is_na);
+    
+    int AlignOption=0;
+    int align_view = format_options->GetAlignView();
 
+    if (align_view == 1 ){
+        AlignOption += CDisplaySeqalign::eMultiAlign;
+        AlignOption += CDisplaySeqalign::eMasterAnchored;
+        AlignOption += CDisplaySeqalign::eShowIdentity;
+    } else if (align_view == 2){
+        AlignOption += CDisplaySeqalign::eMultiAlign;
+        AlignOption += CDisplaySeqalign::eMasterAnchored;
+    } else if (align_view == 3 ) {
+        AlignOption += CDisplaySeqalign::eMultiAlign;
+        AlignOption += CDisplaySeqalign::eShowIdentity;
+    } else if (align_view ==  4) {
+        AlignOption += CDisplaySeqalign::eMultiAlign;
+    }
+
+    if(program == eBlastn){
+        AlignOption += CDisplaySeqalign::eShowBarMiddleLine;
+        display.SetAlignType(CDisplaySeqalign::eNuc);
+    } else {
+        AlignOption += CDisplaySeqalign::eShowCharMiddleLine;
+        display.SetAlignType(CDisplaySeqalign::eProt);
+    }
+    AlignOption += CDisplaySeqalign::eShowBlastInfo;
+    AlignOption += CDisplaySeqalign::eShowBlastStyleId;
+    if(format_options->GetHtml()){
+        AlignOption += CDisplaySeqalign::eHtml;
+    }
+
+    display.SetAlignOption(AlignOption);
+}
+
+int
+BLAST_FormatResults(TSeqAlignVector &seqalignv, 
+    EProgram program, TSeqLocVector &query,
+    BlastMask* filter_loc, const CBlastFormatOptions* format_options, 
+    bool is_ooframe)
+{
+    int index;
+    
+    TSeqLocInfoVector maskv = 
+        BlastMask2CSeqLoc(filter_loc, query, program);
+
+    list <CDisplaySeqalign::FeatureInfo> featureInfo;
+    
+    for (index = 0; index < seqalignv.size(); ++index) {
+        if (!seqalignv[index]->IsSet())
+            continue;
+        
+        query[index].scope->AddDataLoader("BLASTDB");
+        CDisplaySeqalign display(*seqalignv[index], maskv[index], 
+                                 featureInfo, 0, *query[index].scope);
+        SetDisplayParameters(display, format_options, program);
+        display.DisplaySeqalign(*format_options->GetOstream());
+    }
+
+    return 0;
+}
