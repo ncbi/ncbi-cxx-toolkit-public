@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/02/01 19:53:26  vasilche
+* Reading program arguments from file moved to CNcbiApplication::AppMain.
+*
 * Revision 1.27  2000/12/23 05:50:53  vakatov
 * AppMain() -- check m_ArgDesc for NULL
 *
@@ -226,6 +229,41 @@ int CNcbiApplication::AppMain
     // So we turn off sync_with_stdio here:
     IOS_BASE::sync_with_stdio(false);
 
+#if defined(NCBI_OS_MAC)
+    // We don't know standard way of passing arguments to C++ program
+    // so we'll read arguments from special file having extension ".args"
+    // and name equal to name of program (name argument of AppMain).
+#define MAX_ARGC 256
+#define MAX_ARG_LEN 1024
+    if ( argc == 1 ) {
+        string fileName = name;
+        fileName += ".args";
+        CNcbiIfstream in(fileName.c_str());
+        if ( in ) {
+            int c = 1;
+            const char** v = new const char*[MAX_ARGC];
+            v[0] = strdup(name.c_str()); // program name
+            char arg[MAX_ARG_LEN];
+            while ( in.getline(arg, sizeof(arg)) || in.gcount() ) {
+                if ( in.eof() )
+                    ERR_POST(Warning << fileName << ", line " << c << ": " <<
+                             "unfinished last line");
+                else if ( in.fail() )
+                    ERR_POST(Fatal << fileName << ", line " << c << ": " <<
+                             "too long argument: " << arg);
+                if ( c >= MAX_ARGC )
+                    ERR_POST(Fatal << fileName << ", line " << c << ": " <<
+                             "too many arguments");
+                v[c++] = strdup(arg);
+            }
+            argc = c;
+            argv = v;
+        }
+        else {
+            ERR_POST(fileName << ": file not found");
+        }
+    }
+#endif
     // Reset command-line args and application name
     m_Arguments->Reset(argc, argv, name);
 
