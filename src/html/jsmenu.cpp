@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/08/15 19:43:13  ivanov
+ * Added AddMenuItem( node, ...)
+ *
  * Revision 1.2  2001/08/14 16:53:07  ivanov
  * Changed parent class for CHTMLPopupMenu.
  * Changed mean for init JavaScript popup menu & add it to HTML document.
@@ -90,6 +93,22 @@ void CHTMLPopupMenu::AddItem(const string& title,
 {
     SItem item(title, action, color, mouseover, mouseout);
     m_Items.push_back(item);
+}
+
+
+void CHTMLPopupMenu::AddItem(CNCBINode& node,
+                             const string& action, 
+                             const string& color,
+                             const string& mouseover, const string& mouseout)
+{
+    // Convert "node" to string
+    CNcbiOstrstream out;
+    node.Print(out, eHTML);
+    string title = CNcbiOstrstreamToString(out);
+    // Replace " to '
+    title = NStr::Replace(title,"\"","'");
+    // Add menu item
+    AddItem(title, action, color, mouseover, mouseout);
 }
 
 
@@ -239,7 +258,7 @@ string CHTMLPopupMenu::GetCodeBody(void)
     return "<script language=\"JavaScript1.2\">\n" \
         "<!--\nfunction onLoad() {\nwindow.defaultjsmenu = new Menu();\n" \
         "defaultjsmenu.writeMenus();\n}\n" \
-        "//For IE\nif (document.all) onLoad();\n//-->\n</script>\n";
+        "// For IE\nif (document.all) onLoad();\n//-->\n</script>\n";
 }
 
 END_NCBI_SCOPE

@@ -33,9 +33,12 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/08/15 19:43:30  ivanov
+ * Added AddMenuItem( node, ...)
+ *
  * Revision 1.2  2001/08/14 16:52:47  ivanov
  * Changed parent class for CHTMLPopupMenu.
- * Changed mean for init JavaScript popup menu & add it to HTML document.
+ * Changed means for init JavaScript popup menu & add it to HTML document.
  *
  * Revision 1.1  2001/07/16 13:45:33  ivanov
  * Initialization
@@ -105,7 +108,15 @@ public:
     string GetName(void);
 
     // Add new item to current menu
-    void AddItem(const string& title, 
+    void AddItem(const string& title,                  // Text or HTML-code
+                 const string& action    = kEmptyStr,  // JS code
+                 const string& color     = kEmptyStr,
+                 const string& mouseover = kEmptyStr,  // JS code
+                 const string& mouseout  = kEmptyStr); // JS code
+
+    // NOTE: The "node" will convert to string inside this function.
+    //       The Print() method for "node" not must change "node" structure.
+    void AddItem(CNCBINode& node,
                  const string& action    = kEmptyStr,  // JS code
                  const string& color     = kEmptyStr,
                  const string& mouseover = kEmptyStr,  // JS code
