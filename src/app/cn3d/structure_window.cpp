@@ -160,25 +160,25 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
 
     // File menu
     menuBar = new wxMenuBar;
-    wxMenu *menu = new wxMenu;
-    menu->Append(MID_OPEN, "&Open\tCtrl+O");
-    menu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
-    menu->Append(MID_SAVE_AS, "Save &As...");
-    menu->Append(MID_PNG, "&Export PNG");
-    menu->AppendSeparator();
-    menu->Append(MID_REFIT_ALL, "&Realign Structures");
-    menu->AppendSeparator();
-    menu->Append(MID_PREFERENCES, "&Preferences...");
+    fileMenu = new wxMenu;
+    fileMenu->Append(MID_OPEN, "&Open\tCtrl+O");
+    fileMenu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
+    fileMenu->Append(MID_SAVE_AS, "Save &As...");
+    fileMenu->Append(MID_PNG, "&Export PNG");
+    fileMenu->AppendSeparator();
+    fileMenu->Append(MID_REFIT_ALL, "&Realign Structures");
+    fileMenu->AppendSeparator();
+    fileMenu->Append(MID_PREFERENCES, "&Preferences...");
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_OPENGL_FONT, "S&tructure Window");
     subMenu->Append(MID_SEQUENCE_FONT, "Se&quence Windows");
-    menu->Append(MID_FONTS, "Set &Fonts...", subMenu);
-    menu->AppendSeparator();
-    menu->Append(MID_EXIT, "E&xit");
-    menuBar->Append(menu, "&File");
+    fileMenu->Append(MID_FONTS, "Set &Fonts...", subMenu);
+    fileMenu->AppendSeparator();
+    fileMenu->Append(MID_EXIT, "E&xit");
+    menuBar->Append(fileMenu, "&File");
 
     // View menu
-    menu = new wxMenu;
+    wxMenu *menu = new wxMenu;
     menu->Append(MID_ZOOM_IN, "Zoom &In\tz");
     menu->Append(MID_ZOOM_OUT, "Zoom &Out\tx");
     menu->Append(MID_RESTORE, "&Restore");
@@ -1219,10 +1219,15 @@ void StructureWindow::SetColoringMenuFlag(int which)
     menuBar->Check(MID_ELEMENT, (which == MID_ELEMENT));
 }
 
-bool StructureWindow::LoadFile(const char *filename)
+bool StructureWindow::LoadFile(const char *filename, bool force)
 {
     SetCursor(*wxHOURGLASS_CURSOR);
     glCanvas->SetCurrent();
+
+    if (force) {
+        fileMenu->Enable(MID_OPEN, false);
+        fileMenu->Enable(MID_SAVE_AS, false);
+    }
 
     // clear old data
     if (glCanvas->structureSet) {
@@ -1450,6 +1455,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/07/17 18:47:01  thiessen
+* add -f option to force save to same file
+*
 * Revision 1.14  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *

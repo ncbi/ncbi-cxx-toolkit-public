@@ -305,6 +305,8 @@ bool Cn3DApp::OnInit(void)
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
         { wxCMD_LINE_SWITCH, "r", "readonly", "message file is read-only",
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
+        { wxCMD_LINE_SWITCH, "f", "force", "force saves to same file",
+            wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
         { wxCMD_LINE_OPTION, "m", "message", "message file",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
         { wxCMD_LINE_PARAM, NULL, NULL, "input file",
@@ -396,7 +398,7 @@ bool Cn3DApp::OnInit(void)
     // get file name from command line, if present
     if (commandLine.GetParamCount() == 1) {
         INFOMSG("command line file: " << commandLine.GetParam(0).c_str());
-        structureWindow->LoadFile(commandLine.GetParam(0).c_str());
+        structureWindow->LoadFile(commandLine.GetParam(0).c_str(), commandLine.Found("f"));
     } else {
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
     }
@@ -455,6 +457,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/17 18:47:01  thiessen
+* add -f option to force save to same file
+*
 * Revision 1.4  2003/06/21 20:54:03  thiessen
 * explicitly show bottom of log when new text appended
 *

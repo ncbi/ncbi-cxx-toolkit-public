@@ -78,7 +78,7 @@ public:
     void SendCommand(const std::string& toApp, const std::string& command, const std::string& data);
 
     // public methods
-    bool LoadFile(const char *filename);
+    bool LoadFile(const char *filename, bool force = false);
     bool SaveDialog(bool prompt, bool canCancel);
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
@@ -227,7 +227,7 @@ private:
     void OnCDTreeSelect(wxCommandEvent& event);
 
     wxMenuBar *menuBar;
-    wxMenu *favoritesMenu, *windowMenu;
+    wxMenu *fileMenu, *favoritesMenu, *windowMenu;
     void SetupFavoritesMenu(void);
 
     wxTimer animationTimer;
@@ -256,6 +256,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/17 18:47:01  thiessen
+* add -f option to force save to same file
+*
 * Revision 1.4  2003/07/10 18:47:29  thiessen
 * add CDTree->Select command
 *
