@@ -369,7 +369,7 @@ public:
 
     // Clone existing connection. All settings are copied except
     // message handlers
-    virtual IConnection* CloneConnection();
+    virtual IConnection* CloneConnection() = 0;
 
     // Set current database
     virtual void SetDatabase(const string& name) = 0;
@@ -460,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/11/18 17:32:26  ucko
+ * Make IConnection::CloneConnection pure virtual.
+ *
  * Revision 1.24  2003/11/18 17:00:36  kholodov
  * Added: CloneConnection() method to IConnection interface
  *
