@@ -28,14 +28,57 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *   Command-line arguments' processing:
- *      descriptions  -- CArgDescriptions,  CArgDesc
- *      parsed values -- CArgs,             CArgValue
- *      exceptions    -- CArgException,     CArgHelpException
- *      constraints   -- CArgAllow; CArgAllow_{Strings, ..., Integers, Doubles}
  *
  */
+
+/// @file ncbiargs.hpp
+/// Defines command line argument related classes.
+///
+/// The CArgDescriptions and CArgDesc classes are used for describing
+/// unparsed arguments; CArgs and CArgValue for parsed argument values;
+/// CArgException and CArgHelpException for argument exceptions; and CArgAllow, 
+/// CArgAllow_{Strings, ..., Integers, Doubles} for argument constraints.
+///
+/// The following description is included as applies to several classes in
+/// this file:
+///
+/// Parsing and validation of command-line arguments are done according to
+/// user-provided descriptions. The command line has the following syntax:
+///
+/// Command string:
+///
+///    progname  {arg_key, arg_key_opt, arg_key_dflt, arg_flag} [--]
+///              {arg_pos} {arg_pos_opt, arg_pos_dflt}
+///              {arg_extra} {arg_extra_opt}
+///
+/// where:
+///
+///   arg_key        :=  -<key> <value>    -- (mandatory)
+///   arg_key_opt    := [-<key> <value>]   -- (optional, without default value)
+///   arg_key_dflt   := [-<key> <value>]   -- (optional, with default value)
+///   arg_flag       := -<flag>            -- (always optional)
+///   "--" is an optional delimiter to indicate the beginning of pos. args
+///   arg_pos        := <value>            -- (mandatory)
+///   arg_pos_opt    := [<value>]          -- (optional, without default value)
+///   arg_pos_dflt   := [<value>]          -- (optional, with default value)
+///   arg_extra      := <value>            -- (dep. on the constraint policy)
+///   arg_extra_opt  := [<value>]          -- (dep. on the constraint policy)
+///
+/// and:
+///
+///   <key> must be followed by <value>
+///   <flag> and <key> are case-sensitive, and they can contain
+///                    only alphanumeric characters
+///   <value> is an arbitrary string (additional constraints can
+///           be applied in the argument description, see "EType")
+///
+/// {arg_pos***} and {arg_extra***} -- position-dependent arguments, with
+/// no tag preceding them.
+/// {arg_pos***} -- have individual names and descriptions (see methods
+/// AddPositional***).
+/// {arg_extra***} have one description for all (see method AddExtra).
+/// User can apply constraints on the number of mandatory and optional
+/// {arg_extra***} arguments.
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -55,71 +98,40 @@
 BEGIN_NCBI_SCOPE
 
 
-// Some necessary forward declarations
+// Some necessary forward declarations.
 class CNcbiArguments;
 class CArgAllow;
 
 
-
-///////////////////////////////////////////////////////
-//  Parsing and validating command-line arguments according to
-//  user-provided descriptions.
-//
-//  See also in:  "doc/programming_manual/argdescr.html"
-//
-//
-// Command string:
-//    progname  {arg_key, arg_key_opt, arg_key_dflt, arg_flag} [--]
-//              {arg_pos} {arg_pos_opt, arg_pos_dflt}
-//              {arg_extra} {arg_extra_opt}
-//
-// where:
-//    arg_key        :=  -<key> <value>    -- (mandatory)
-//    arg_key_opt    := [-<key> <value>]   -- (optional, without default value)
-//    arg_key_dflt   := [-<key> <value>]   -- (optional, with default value)
-//    arg_flag       := -<flag>            -- (always optional)
-//    "--" is an optional delimiter to indicate the beginning of pos. args
-//    arg_pos        := <value>            -- (mandatory)
-//    arg_pos_opt    := [<value>]          -- (optional, without default value)
-//    arg_pos_dflt   := [<value>]          -- (optional, with default value)
-//    arg_extra      := <value>            -- (dep. on the constraint policy)
-//    arg_extra_opt  := [<value>]          -- (dep. on the constraint policy)
-//
-// and:
-//    <key> must be followed by <value>
-//    <flag> and <key> are case-sensitive, and they can contain
-//                     only alphanumeric characters
-//    <value> is an arbitrary string (additional constraints can
-//            be applied in the argument description, see "EType")
-//
-// {arg_pos***} and {arg_extra***} -- position-dependent arguments, with
-// no tag preceding them.
-// {arg_pos***} -- have individual names and descriptions (see methods
-// AddPositional***).
-// {arg_extra***} have one description for all (see method AddExtra).
-// User can apply constraints on the number of mandatory and optional
-// {arg_extra***} arguments.
-
-
-
-//
-// Exception the CArg* code can throw
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgException --
+///
+/// Define exceptions class for incorrectly formed arguments.
+///
+/// CArgException inherits its basic functionality from CCoreException
+/// and defines additional error codes for malformed arguments.
 
 class NCBI_XNCBI_EXPORT CArgException : public CCoreException
 {
 public:
+    /// Error types for improperly formatted arguments.
+    ///
+    /// These error conditions are checked for and caught when processing
+    /// arguments.
     enum EErrCode {
-        eInvalidArg,
-        eNoValue,
-        eWrongCast,
-        eConvert,
-        eNoFile,
-        eConstraint,
-        eArgType,
-        eNoArg,
-        eSynopsis
+        eInvalidArg,    ///< Invalid argument
+        eNoValue,       ///< Expecting an argument value
+        eWrongCast,     ///< Incorrect cast for an argument
+        eConvert,       ///< Conversion problem
+        eNoFile,        ///< Expecting a file
+        eConstraint,    ///< Argument value outside constraints
+        eArgType,       ///< Wrong argument type
+        eNoArg,         ///< No argument
+        eSynopsis       ///< Synopois error
     };
+
+    /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -135,15 +147,31 @@ public:
         default:    return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CArgException,CCoreException);
+
+    // Standard exception bolier plate code.
+    NCBI_EXCEPTION_DEFAULT(CArgException, CCoreException);
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgHelpException --
+///
+/// Define exception class that gets thrown for Help messages.
+///
+/// CArgException inherits its basic functionality from CArgException
+/// and defines an additional error code for help.
 
 class NCBI_XNCBI_EXPORT CArgHelpException : public CArgException
 {
 public:
+    /// Error type for help exception.
     enum EErrCode {
-        eHelp
+        eHelp           ///< Error code for help message
     };
+
+    /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -151,105 +179,155 @@ public:
         default:    return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CArgHelpException,CArgException);
+
+    // Standard exception bolier plate code.
+    NCBI_EXCEPTION_DEFAULT(CArgHelpException, CArgException);
 };
 
 
-//
-// Generic abstract base class to access arg.value
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgValue --
+///
+/// Generic abstract base class for argument values.
 
 class NCBI_XNCBI_EXPORT CArgValue : public CObject
 {
 public:
-    // Get argument name
+    /// Get argument name.
     const string& GetName(void) const { return m_Name; }
 
-    // Check if the argument holds a value.
-    // Argument does not hold value if it was described as optional argument
-    // without default value, and if it was not passed a value in the command
-    // line.  On attempt to retrieve the value from such "no-value" argument,
-    // exception will be thrown.
+    /// Check if argument holds a value.
+    ///
+    /// Argument does not hold value if it was described as optional argument
+    /// without default value, and if it was not passed a value in the command
+    /// line.  On attempt to retrieve the value from such "no-value" argument,
+    /// exception will be thrown.
     virtual bool HasValue(void) const = 0;
     operator bool (void) const { return  HasValue(); }
     bool operator!(void) const { return !HasValue(); }
 
-    // Get the argument's string value.
-    // (If it is a value of flag argument, then return one of "true", "false".)
+    /// Get the argument's string value.
+    ///
+    /// If it is a value of a flag argument, then return either "true"
+    /// or "false".
+    /// @sa
+    ///  AsInteger(), AsDouble(), AsBoolean()
     virtual const string& AsString(void) const = 0;
 
-    // These functions throw an exception if you requested the wrong
-    // value type (e.g. if called "AsInteger()" for a "boolean" arg).
+    /// Get the argument's integer value.
+    ///
+    /// If you request a wrong value type, such as a call to "AsInteger()"
+    /// for a "boolean" argument, an exception is thrown.
+    /// @sa
+    ///  AsString(), AsDouble, AsBoolean()
     virtual int    AsInteger(void) const = 0;
+
+    /// Get the argument's double value.
+    ///
+    /// If you request a wrong value type, such as a call to "AsDouble()"
+    /// for a "boolean" argument, an exception is thrown.
+    /// @sa
+    ///  AsString(), AsInteger, AsBoolean()
     virtual double AsDouble (void) const = 0;
+
+    /// Get the argument's boolean value.
+    ///
+    /// If you request a wrong value type, such as a call to "AsBoolean()"
+    /// for a "integer" argument, an exception is thrown.
+    /// @sa
+    ///  AsString(), AsInteger, AsDouble()
     virtual bool   AsBoolean(void) const = 0;
 
+    /// Get the argument as an input file stream.
     virtual CNcbiIstream& AsInputFile (void) const = 0;
+
+    /// Get the argument as an output file stream.
     virtual CNcbiOstream& AsOutputFile(void) const = 0;
-    virtual void          CloseFile   (void) const = 0; // safe close&destroy
+
+    /// Close the file.
+    virtual void CloseFile (void) const = 0;
 
 protected:
     friend class CArgs;
 
-    // Prohibit explicit instantiation of "CArg" objects
+    /// Protected constructor and destructor.
+    ///
+    /// Prohibit explicit instantiation of CArgValue with name.
     CArgValue(const string& name);
     virtual ~CArgValue(void);
 
-    string m_Name;
+    string m_Name;          ///< Argument name
 };
 
 
 
-//
-// Argument values -- obtained from the raw cmd.-line arguments
-// (such like in "CNcbiArguments") and then verified and processed
-// according to the arg. descriptions defined by user in "CArgDescriptions".
-//
-// NOTE:  the extra arguments can be accessed using virtual names:
-//           "#1", "#2", "#3", ..., "#<GetNExtra()>"
-//        in the order of insertion (by method Add).
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgs --
+///
+/// Defines parsed arguments.
+///
+/// Argument values are obtained from the unprocessed command-line arguments
+/// (via CNcbiArguments) and then verified and processed according to the
+/// argument descriptions defined by user in "CArgDescriptions".
+///
+/// NOTE:  the extra arguments can be accessed using virtual names:
+///           "#1", "#2", "#3", ..., "#<GetNExtra()>"
+///        in the order of insertion (by method Add).
+///
 
 class NCBI_XNCBI_EXPORT CArgs
 {
 public:
+    /// Constructor.
     CArgs(void);
+
+    /// Destructor.
     ~CArgs(void);
 
-    // Return TRUE if arg "name" was described in the parent CArgDescriptions
+    /// Check existence of argument description.
+    ///
+    /// Return TRUE if arg "name" was described in the parent CArgDescriptions.
     bool Exist(const string& name) const;
 
-    // Get value of any argument by its name.
-    // Throw an exception if such argument does not exist;  see Exist() above.
+    /// Get value of argument by name.
+    ///
+    /// Throw an exception if such argument does not exist.
+    /// @sa
+    ///   Exist() above.
     const CArgValue& operator[] (const string& name) const;
 
-    // Get the number of unnamed positional (a.k.a. extra) args
+    /// Get the number of unnamed positional (a.k.a. extra) args.
     size_t GetNExtra(void) const { return m_nExtra; }
-    // Return N-th extra arg value,  N = 1..GetNExtra()
+
+    /// Return N-th extra arg value,  N = 1 to GetNExtra().
     const CArgValue& operator[] (size_t idx) const;
 
-    // Print (add to the end) all arguments to the string "str". Return "str".
+    /// Print (append) all arguments to the string "str" and return "str".
     string& Print(string& str) const;
 
-    // Add new argument name + value.
-    // Throw an exception if the "name" is not an empty string, and if
-    // there is an argument with this name already.
-    // HINT:  use empty "name" to add extra (unnamed) args, and they will be
-    // automagically assigned with the virtual names: "#1", "#2", "#3", ...
+    /// Add new argument name and value.
+    ///
+    /// Throw an exception if the "name" is not an empty string, and if
+    /// there is an argument with this name already.
+    ///
+    /// HINT: Use empty "name" to add extra (unnamed) args, and they will be
+    /// automagically assigned with the virtual names: "#1", "#2", "#3", etc.
     void Add(CArgValue* arg);
 
-    // If there is no arguments in this container
+    /// Check if there are no arguments in this container.
     bool IsEmpty(void) const;
 
 private:
-    typedef set< CRef<CArgValue> >  TArgs;
-    typedef TArgs::iterator         TArgsI;
-    typedef TArgs::const_iterator   TArgsCI;
+    typedef set< CRef<CArgValue> >  TArgs;   ///< Type for arguments
+    typedef TArgs::iterator         TArgsI;  ///< Type for iterator
+    typedef TArgs::const_iterator   TArgsCI; ///< Type for const iterator
 
-    TArgs  m_Args;    // assoc.map of arguments' name/value
-    size_t m_nExtra;  // cached # of unnamed positional arguments 
+    TArgs  m_Args;    ///< Assoc. map of arguments' name/value
+    size_t m_nExtra;  ///< Cached # of unnamed positional arguments 
 
-    // Find arg.value with name "name"
+    /// Find argument value with name "name".
     TArgsCI x_Find(const string& name) const;
 };
 
@@ -258,204 +336,342 @@ private:
 class CArgDesc;
 
 
-//
-// Container to store the command-line argument descriptions.
-// Provides the means for the parsing and verification of
-// cmd.-line arguments against the contained descriptions, thus
-// e.g. translating "CNcbiArguments" ---> "CArgs".
-// It can also compose and print out the USAGE info.
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgDescriptions --
+///
+/// Description of unparsed arguments.
+///
+/// Container to store the command-line argument descriptions. Provides the
+/// means for the parsing and verification of command-line arguments against
+/// the contained descriptions.
+///
+/// Example: Translating "CNcbiArguments" ---> "CArgs".
+/// Can also be used to compose and print out the USAGE info.
 
 class NCBI_XNCBI_EXPORT CArgDescriptions
 {
 public:
-    // If "auto_help" is passed TRUE, then a special flag "-h"
-    // will be added to the list of accepted arguments. Passing "-h" in
-    // the command line will printout USAGE and ignore all other passed args.
+    /// Constructor.
+    ///
+    /// If "auto_help" is passed TRUE, then a special flag "-h" will be added
+    /// to the list of accepted arguments. Passing "-h" in the command line
+    /// will printout USAGE and ignore all other passed arguments.
     CArgDescriptions(bool auto_help = true);
+
+    /// Destructor.
     virtual ~CArgDescriptions(void);
 
-    // Available argument types
+    /// Available argument types.
     enum EType {
-        eString = 0, // an arbitrary string
-        eBoolean,    // {'true', 't', 'false', 'f'},  case-insensitive
-        eInteger,    // convertible into an integer number (int)
-        eDouble,     // convertible into a floating point number (double)
-        eInputFile,  // name of file (must exist and be readable)
-        eOutputFile, // name of file (must be writeable)
+        eString = 0, ///< An arbitrary string
+        eBoolean,    ///< {'true', 't', 'false', 'f'},  case-insensitive
+        eInteger,    ///< Convertible into an integer number (int)
+        eDouble,     ///< Convertible into a floating point number (double)
+        eInputFile,  ///< Name of file (must exist and be readable)
+        eOutputFile, ///< Name of file (must be writeable)
 
-        // this one is for internal use only:
-        k_EType_Size
+        k_EType_Size ///< For internal use only
     };
-    // Arg.type names
+
+    /// Get argument type's name string.
     static const string& GetTypeName(EType type);
 
-    // Flags (must match the arg.type, or an exception will be thrown)
+    /// File related flags.
+    ///
+    /// Must match the argument type, or an exception will be thrown.
+    /// Used for eInputFile and eOutputFiler argument types.
     enum EFlags {
-        // for "eInputFile" and "eOutputFile"
-        fPreOpen = 0x1,   // open file right away
-        fBinary  = 0x2,   // open as binary file
-        // for "eOutputFile" only
-        fAppend  = 0x10   // write at the end-of-file, do not truncate
+        fPreOpen = 0x1,  ///< Open file right away for eInputFile, eOutputFile
+        fBinary  = 0x2,  ///< Open as binary file for eInputFile, eOutputFile
+        fAppend  = 0x10  ///< Append to end-of-file for eOutputFile only
     };
-    typedef unsigned int TFlags;  // binary OR of "EFlags"
+    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
-    //// AddXXX() -- the methods to add argument description.
-    // They throw exception (CArgException) if:
-    //  - description with name "name" already exists;
-    //  - "name"     contains symbols other than {alnum}
-    //  - "synopsis" contains symbols other than {alnum, '_'}
-    //  - "flags" are inconsistent with "type"
-    // Any argument can be later referenced using his (unique) name "name".
+    /// Add description for mandatory key.
+    ///
+    /// Mandatory key has the syntax:
+    ///
+    ///   arg_key := -<key> <value>
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum}
+    ///  - "synopsis" contains symbols other than {alnum, '_'}
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// Any argument can be later referenced using its unique name "name".
+    void AddKey(const string& name,       ///< Name of argument key
+                const string& synopsis,   ///< Synopis for argument
+                const string& comment,    ///< Argument description
+                EType         type,       ///< Argument type
+                TFlags        flags = 0   ///< Optional file related flags
+               );
 
-    // Mandatory key::   arg_key := -<key> <value>
-    void AddKey(const string& name,     // <key>
-                const string& synopsis,
-                const string& comment,
-                EType         type,
-                TFlags        flags = 0);
+    /// Add description for optional key without default value.
+    ///
+    /// Optional key without default value has the following syntax:
+    ///
+    ///   arg_key_opt := [-<key> <value>]
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum}
+    ///  - "synopsis" contains symbols other than {alnum, '_'}
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// Any argument can be later referenced using its unique name "name".
+    void AddOptionalKey(const string& name,     ///< Name of argument key 
+                        const string& synopsis, ///< Synopis for argument
+                        const string& comment,  ///< Argument description
+                        EType         type,     ///< Argument type
+                        TFlags        flags = 0 ///< Optional file flags
+                       );
 
-    // Optional key without default value::   arg_key_opt := [-<key> <value>]
-    void AddOptionalKey(const string& name,     // <key>
-                        const string& synopsis,
-                        const string& comment,
-                        EType         type,
-                        TFlags        flags = 0);
+    /// Add description for optional key with default value.
+    ///
+    /// Optional key with default value has the following syntax:
+    ///
+    ///   arg_key_dflt := [-<key> <value>]
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum}
+    ///  - "synopsis" contains symbols other than {alnum, '_'}
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// Any argument can be later referenced using its unique name "name".
+    void AddDefaultKey(const string& name,          ///< Name of argument key 
+                       const string& synopsis,      ///< Synopis for argument
+                       const string& comment,       ///< Argument description
+                       EType         type,          ///< Argument type
+                       const string& default_value, ///< Default value
+                       TFlags        flags = 0      ///< Optional file flags
+                      );
 
-    // Optional key with default value::   arg_key_dflt := [-<key> <value>]
-    void AddDefaultKey(const string& name,     // <key>
-                       const string& synopsis,
-                       const string& comment,
-                       EType         type,
-                       const string& default_value,
-                       TFlags        flags = 0);
+    /// Add description for flag argument.
+    ///
+    /// Flag argument has the following syntax:
+    ///
+    ///  arg_flag  := -<flag>,     <flag> := "name"
+    ///
+    /// If argument "set_value" is TRUE, then:
+    ///    - if the flag is provided (in the command-line), then the resultant
+    ///      CArgValue::HasValue() will be TRUE;
+    ///    - else it will be FALSE.
+    ///
+    /// Setting argument "set_value" to FALSE will reverse the above meaning.
+    ///
+    /// NOTE: If CArgValue::HasValue() is TRUE, then AsBoolean() is
+    /// always TRUE.
+    void AddFlag(const string& name,            ///< Name of argument
+                 const string& comment,         ///< Argument description
+                 bool          set_value = true ///< Is value set or not?
+                );
 
-    /////  arg_flag  := -<flag>,     <flag> := "name"
-    // If "set_value" is TRUE, then:
-    //   if the flag is provided (in the command-line), then the resultant
-    //   CArgValue::HasValue() will be TRUE; else it will be FALSE.
-    // Setting "set_value" to FALSE will reverse the situation.
-    // NOTE:  if CArgValue::HasValue() is TRUE, then AsBoolean() always TRUE.
-    void AddFlag(const string& name,
-                 const string& comment,
-                 bool          set_value = true);
+    /// Add description for mandatory postional argument.
+    ///
+    /// Mandatory positional argument has the following syntax:
+    ///
+    ///   arg_pos := <value>
+    ///
+    /// NOTE: For all types of positional arguments:
+    /// - The order is important! That is, the N-th positional argument passed
+    ///   in the cmd.-line will be matched against (and processed according to)
+    ///   the N-th added named positional argument description.
+    /// - Mandatory positional args always go first.
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum}
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// Any argument can be later referenced using its unique name "name".
+    void AddPositional(const string& name,     ///< Name of argument
+                       const string& comment,  ///< Argument description
+                       EType         type,     ///< Argument type
+                       TFlags        flags = 0 ///< Optional file flags
+                      );
 
-    // Mandatory positional::   arg_pos := <value>
-    // NOTE:  (for all types of positional arguments)
-    // The order is important! -- the N-th positional argument passed in
-    // the cmd.-line will be matched against (and processed according to)
-    // the N-th added named positional arg. description.
-    // NOTE 2:  mandatory positional args always go first.
-    void AddPositional(const string& name,
-                       const string& comment,
-                       EType         type,
-                       TFlags        flags = 0);
+    /// Add description for optional positional argument without default
+    /// value.
+    ///
+    /// Optional positional argument, without default value has the following
+    /// syntax:
+    ///
+    ///  arg_pos_opt := [<value>]
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum}
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// Any argument can be later referenced using its unique name "name".
+    /// @sa
+    ///   NOTE for AddPositional()
+    void AddOptionalPositional(const string& name,     ///< Name of argument
+                               const string& comment,  ///< Argument descr.
+                               EType         type,     ///< Argument type
+                               TFlags        flags = 0 ///< Optional file flgs
+                              );
 
-    // Optional positional, without default value::   arg_pos_opt := [<value>]
-    // NOTE:  see NOTE for AddPositional() above.
-    void AddOptionalPositional(const string& name,
-                               const string& comment,
-                               EType         type,
-                               TFlags        flags = 0);
+    /// Add description for optional positional argument with default value.
+    ///
+    /// Optional positional argument with default value has the following
+    /// syntax:
+    ///
+    ///  arg_pos_dflt := [<value>]
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum}
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// @sa
+    ///   NOTE for AddPositional()
+    void AddDefaultPositional(const string& name,   ///< Name of argument
+                              const string& comment,///< Argument description
+                              EType         type,   ///< Argument type
+                              const string& default_value, ///< Default value
+                              TFlags        flags = 0 ///< Optional file flags
+                             );
 
-    // Optional positional, with default value::   arg_pos_dflt := [<value>]
-    // NOTE:  see NOTE for AddPositional() above.
-    void AddDefaultPositional(const string& name,
-                              const string& comment,
-                              EType         type,
-                              const string& default_value,
-                              TFlags        flags = 0);
+    /// Add description for extra unnamed positional arguments.
+    ///
+    /// Provide description for the extra unnamed positional arguments.
+    /// By default, no extra args are allowed.
+    /// The name of this description is always an empty string.
+    /// Names of the resulting arg.values will be:  "#1", "#2", ...
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "flags" are inconsistent with "type"
+    void AddExtra(unsigned      n_mandatory, ///< Number of mandatory args.
+                  unsigned      n_optional,  ///< Number of optional args.
+                  const string& comment,     ///< Argument description
+                  EType         type,        ///< Argument type
+                  TFlags        flags = 0    ///< Optional file flags
+                 );
 
-    // Provide description for the extra (unnamed positional) args.
-    // By default, no extra args are allowed.
-    // The name of this description is always empty string.
-    // Names of the resulting arg.values will be:  "#1", "#2", ...
-    // Throw an exception if the extra arg. description already exists.
-    void AddExtra(unsigned      n_mandatory,
-                  unsigned      n_optional,
-                  const string& comment,
-                  EType         type,
-                  TFlags        flags = 0);
-
-    // Impose an additional (user-defined) restriction on the argument value.
-    // NOTE: "constraint" must be allocated by "new", and it must NOT be
-    //       freed by "delete" after it has been passed to CArgDescriptions!
-    // See "CArgAllow_***" classes below for some pre-defined constraints.
+    /// Set additional user defined constraint on argument value.
+    ///
+    /// Constraint is defined by CArgAllow and its derived classes.
+    /// The constraint object must be allocated by "new", and it must NOT be
+    /// freed by "delete" after it has been passed to CArgDescriptions!
+    /// @sa
+    ///   See "CArgAllow_***" classes for some pre-defined constraints
     void SetConstraint(const string& name, CArgAllow* constraint);
 
-    // Check if there is already a description with name "name".
+    /// Check if there is already an argument description with specified name.
     bool Exist(const string& name) const;
 
-    // Delete description with name "name".
-    // Throw an exception if cannot find one.
+    /// Delete description with name "name".
+    ///
+    /// Throw the CArgException (eSynposis error code) exception if the
+    /// specified name cannot be found.
     void Delete(const string& name);
 
-    // Set extra info to use by PrintUsage()
-    void SetUsageContext(const string& usage_name,
-                         const string& usage_description,
-                         bool          usage_sort_args = false,
-                         SIZE_TYPE     usage_width = 78);
+    /// Set extra info to be used by PrintUsage().
+    void SetUsageContext(const string& usage_name,           ///< Program name  
+                         const string& usage_description,    ///< Usage descr.
+                         bool          usage_sort_args = false,///< Sort args.
+                         SIZE_TYPE     usage_width = 78);    ///< Format width
 
-    // Force to print USAGE unconditionally (and then exit) if no cmd.-line
-    // args are present.
+    /// Print usage and exit.
+    ///
+    /// Force to print USAGE unconditionally (and then exit) if no
+    /// command-line args are present.
     void PrintUsageIfNoArgs(bool do_print = true);
 
-    // Printout (add to the end of) USAGE to the string "str" using
-    // provided arg. descriptions and usage context. Return "str".
+    /// Print usage message to end of specified string.
+    ///
+    /// Printout USAGE and append to the string "str" using  provided
+    /// argument descriptions and usage context.
+    /// @return
+    ///   Appended "str"
     virtual string& PrintUsage(string& str) const;
 
-    // Check if the "name" is spelled correctly: it can contain only
-    // alphanumeric characters and underscore ('_'), or be empty.
+    /// Verify if argument "name" is spelled correctly.
+    ///
+    /// Argument name can contain only  alphanumeric characters and
+    /// underscore ('_'), or be empty.
     static bool VerifyName(const string& name, bool extended = false);
 
-
 private:
-    typedef set< AutoPtr<CArgDesc> >  TArgs;
-    typedef TArgs::iterator           TArgsI;
-    typedef TArgs::const_iterator     TArgsCI;
-    typedef /*deque*/vector<string>   TPosArgs;
-    typedef list<string>              TKeyFlagArgs;
+    typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
+    typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
+    typedef TArgs::const_iterator     TArgsCI;  ///< Const arguments iterator
+    typedef /*deque*/vector<string>   TPosArgs; ///< Positional arg. vector
+    typedef list<string>              TKeyFlagArgs; ///< List of flag arguments
 
-    TArgs        m_Args;        // assoc.map of arguments' name/descr
-    TPosArgs     m_PosArgs;     // pos. args, ordered by position in cmd.-line
-    TKeyFlagArgs m_KeyFlagArgs; // key/flag args, ordered in order of insertion
-    unsigned     m_nExtra;      // # of mandatory extra args
-    unsigned     m_nExtraOpt;   // # of optional  extra args
+    TArgs        m_Args;      ///< Assoc.map of arguments' name/descr
+    TPosArgs     m_PosArgs;   ///< Pos. args, ordered by position in cmd.-line
+    TKeyFlagArgs m_KeyFlagArgs; ///< Key/flag args, in order of insertion
+    unsigned     m_nExtra;    ///> # of mandatory extra args
+    unsigned     m_nExtraOpt; ///< # of optional  extra args
 
-    // extra USAGE info
-    string    m_UsageName;         // program name
-    string    m_UsageDescription;  // program description
-    bool      m_UsageSortArgs;     // sort alphabetically on usage printout
-    SIZE_TYPE m_UsageWidth;        // max. length of a usage line
-    bool      m_AutoHelp;          // special flag "-h" activated
-    bool      m_UsageIfNoArgs;     // print usage and exit if no args passed
+    // Extra USAGE info
+    string    m_UsageName;         ///< Program name
+    string    m_UsageDescription;  ///< Program description
+    bool      m_UsageSortArgs;     ///< Sort alphabetically on usage printout
+    SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
+    bool      m_AutoHelp;          ///< Special flag "-h" activated
+    bool      m_UsageIfNoArgs;     ///< Print usage and exit if no args passed
 
-    // internal methods
+    // Internal methods
+
+    /// Helper method to find named parameter.
     TArgsI  x_Find(const string& name);
+
+    /// Helper method to find named parameter -- const version.
     TArgsCI x_Find(const string& name) const;
-    void    x_AddDesc(CArgDesc& arg);
-    void    x_PreCheck(void) const;
-    void    x_CheckAutoHelp(const string& arg) const;
-    bool    x_CreateArg(const string& arg1, bool have_arg2, const string& arg2,
-                       unsigned* n_plain, CArgs& args) const;
+
+    // Helper method for adding description.
+    void x_AddDesc(CArgDesc& arg); 
+
+    /// Helper method for doing pre-processing consistency checks.
+    void x_PreCheck(void) const; 
+
+    /// Helper method for checking if auto help requested and throw
+    /// CArgHelpException if help requested.
+    void x_CheckAutoHelp(const string& arg) const;
+
+    /// Process arguments.
+    ///
+    /// Helper method to process arguments and build a CArgs object that is
+    /// passed as the args parameter.
+    /// @return
+    ///   TRUE if specified "arg2" was used.
+    bool    x_CreateArg(const string& arg1, ///< Argument to process 
+                        bool have_arg2, ///< Is there an arg. that follows?
+                        const string& arg2, ///< Following argument
+                        unsigned* n_plain,  ///< Indicates number of args 
+                        CArgs& args         ///< Contains processed args
+                       ) const;
+
+    /// Helper method for doing post-processing consistency checks.
     void    x_PostCheck(CArgs& args, unsigned n_plain) const;
 
 public:
-    //
-    // Parse cmd.-line arguments, and to create "CArgs" out
-    // of the passed cmd.-line arguments "argc" and "argv".
-    // Throw an exception on error.
-    // Throw CArgHelpException if USAGE printout was requested ("-h" flag).
-    // NOTE:  you can deallocate the resulting "CArgs" object using 'delete'.
-    //
-    // Examples:
-    // (1) int main(int argc, const char* argv[]) {
-    //         CreateArgs(desc, argc, argv);
-    //     }
-    //
-    // (2) CNcbiArguments ncbi_args;
-    //     CreateArgs(desc, ncbi_args.Size(), ncbi_args);
-    //
+    /// Create parsed arguments in CArgs object.
+    ///
+    /// Parse command-line arguments, and create "CArgs" args object 
+    /// from the passed command-line arguments "argc" and "argv".
+    ///
+    /// Throw 
+    ///  - CArgException on error
+    ///  - CArgHelpException if USAGE printout was requested ("-h" flag)
+    ///
+    /// NOTE: You can deallocate the resulting "CArgs" object using 'delete'.
+    ///
+    /// Examples:
+    ///
+    /// (1) int main(int argc, const char* argv[]) {
+    ///         CreateArgs(desc, argc, argv);
+    ///     }
+    ///
+    /// (2) CNcbiArguments ncbi_args;
+    ///     CreateArgs(desc, ncbi_args.Size(), ncbi_args);
     template<class TSize, class TArray>
     CArgs* CreateArgs(TSize argc, TArray argv) const
     {
@@ -495,183 +711,291 @@ public:
 
 
 
-
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-// Classes to describe additional (user-defined) constraints
-// to impose upon the argument value.
-//
-//  CArgAllow -- abstract base class
-//
-//  CArgAllow_Symbols  -- symbol from a set of allowed symbols
-//  CArgAllow_String   -- string to contain only allowed symbols 
-//  CArgAllow_Strings  -- string from a set of allowed strings
-//  CArgAllow_Integers -- integer value to fall within a given interval
-//  CArgAllow_Doubles  -- floating-point value to fall within a given interval
-//
-
-
-// Abstract base class
-//
+///
+/// CArgAllow --
+///
+/// Abstract base class for defining argument constraints.
+///
+/// Other user defined constraints are defined by deriving from this abstract
+/// base class:
+///
+///  - CArgAllow_Symbols  -- symbol from a set of allowed symbols
+///  - CArgAllow_String   -- string to contain only allowed symbols 
+///  - CArgAllow_Strings  -- string from a set of allowed strings
+///  - CArgAllow_Integers -- integer value to fall within a given interval
+///  - CArgAllow_Doubles  -- floating-point value to fall in a given interval
 
 class NCBI_XNCBI_EXPORT CArgAllow : public CObject
 {
 public:
-    virtual bool   Verify(const string &value) const = 0;
+    /// Verify if specified value is allowed.
+    virtual bool Verify(const string &value) const = 0;
+
+    /// Get usage information.
     virtual string GetUsage(void) const = 0;
+
 protected:
-    // prohibit from the allocation in stack or in the static data segment,
-    // and from the explicit deallocation by "delete"
+    /// Protected destructor.
+    ///
+    /// Prohibit from the allocation on stack or in the static data segment,
+    /// and from the explicit deallocation by "delete".
     virtual ~CArgAllow(void);
 };
 
 
 
-// CArgAllow_Symbols::
-// Argument to be exactly one symbol, and of the specified set of symbols.
-//
-// To allow only symbols 'a', 'b' and 'Z' for argument "MyArg":
-//   SetConstraint("MyArg", new CArgAllow_Symbols("abZ"))
-// To allow only printable symbols (according to "isprint()" from <ctype.h>):
-//   SetConstraint("MyArg", new CArgAllow_Symbols(CArgAllow_Symbols::ePrint))
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgAllow_Symbols --
+///
+/// Define constraint to describe exactly one symbol.
+///
+/// Argument to be exactly one symbol from the specified set of symbols.
+///
+/// Examples:
+/// - To allow only symbols 'a', 'b' and 'Z' for argument "MyArg":
+///   SetConstraint("MyArg", new CArgAllow_Symbols("abZ"))
+/// - To allow only printable symbols (according to "isprint()" from <ctype.h>):
+///   SetConstraint("MyArg", new CArgAllow_Symbols(CArgAllow_Symbols::ePrint))
 
 class NCBI_XNCBI_EXPORT CArgAllow_Symbols : public CArgAllow
 {
 public:
+    /// Symbol class for defining sets of characters.
+    ///
+    /// Symbol character classes patterned after those defined in <ctype.h>.
     enum ESymbolClass {
         // Standard character class from <ctype.h>:  isalpha(), isdigit(), etc.
-        eAlnum, eAlpha, eCntrl, eDigit, eGraph,
-        eLower, ePrint, ePunct, eSpace, eUpper,
-        eXdigit,
-        // As specified by user (using constructor with "string&")
-        eUser
+        eAlnum,  ///< Alphanumeric characters
+        eAlpha,  ///< Alphabet characters
+        eCntrl,  ///< Control characters
+        eDigit,  ///< Digit characters
+        eGraph,  ///< Graphical characters
+        eLower,  ///< Lowercase characters
+        ePrint,  ///< Printable characters
+        ePunct,  ///< Punctuation characters
+        eSpace,  ///< Space characters
+        eUpper,  ///< Uppercase characters
+        eXdigit, ///< Hexadecimal characters
+        eUser    ///< User defined characters using constructor with string&
     };
+
+    /// Constructor.
     CArgAllow_Symbols(ESymbolClass symbol_class);
-    CArgAllow_Symbols(const string& symbol_set);  // set eUser, use symbol_set
+
+    /// Constructor for user defined eUser class.
+    CArgAllow_Symbols(const string& symbol_set);
+
 protected:
-    virtual bool   Verify(const string& value) const;
+    /// Verify if specified value is allowed.
+    virtual bool Verify(const string& value) const;
+
+    /// Get usage information.
     virtual string GetUsage(void) const;
+
+    /// Protected destructor.
     virtual ~CArgAllow_Symbols(void);
 
-    ESymbolClass m_SymbolClass;
-    string       m_SymbolSet;  // to use if  m_SymbolSet == eUser
+    ESymbolClass m_SymbolClass; ///< Symbol class for constraint
+    string       m_SymbolSet;   ///< Use if  m_SymbolClass == eUser
 };
 
 
 
-// CArgAllow_String::
-// Argument to be a string containing only allowed symbols.
-//
-// To allow string containing only symbols 'a', 'b' and 'Z' for arg "MyArg":
-//   SetConstraint("MyArg", new CArgAllow_String("abZ"))
-// To allow only numeric symbols (according to "isdigit()" from <ctype.h>):
-//   SetConstraint("MyArg", new CArgAllow_String(CArgAllow_String::eDigit))
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgAllow_String --
+///
+/// Define constraint to describe string argument.
+///
+/// Argument to be a string containing only allowed symbols.
+///
+/// Examples:
+/// - To allow string containing only symbols 'a', 'b' and 'Z' for arg MyArg:
+///   SetConstraint("MyArg", new CArgAllow_String("abZ"))
+/// - To allow only numeric symbols (according to "isdigit()" from <ctype.h>):
+///   SetConstraint("MyArg", new CArgAllow_String(CArgAllow_String::eDigit))
 
 class NCBI_XNCBI_EXPORT CArgAllow_String : public CArgAllow_Symbols
 {
 public:
+    /// Constructor.
     CArgAllow_String(ESymbolClass symbol_class);
-    CArgAllow_String(const string& symbol_set);  // set eUser, use symbol_set
+
+    /// Constructor for user defined eUser class.
+    CArgAllow_String(const string& symbol_set);
+
 protected:
+    /// Verify if specified value is allowed.
     virtual bool Verify(const string& value) const;
+
+    /// Get usage information.
     virtual string GetUsage(void) const;
 };
 
 
 
-// CArgAllow_Strings::
-// Allow argument to have only particular string values.
-//
-// Use "Allow()" to add the allowed string values, can daisy-chain it:
-//   SetConstraint("a", (new CArgAllow_Strings)->
-//                       Allow("foo")->Allow("bar")->Allow("etc"))
-// Use "operator,()" to shorten the notation:
-//   SetConstraint("b", &(*new CArgAllow_Strings, "foo", "bar", "etc"))
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgAllow_Strings --
+///
+/// Define constraint to describe set of string values.
+///
+/// Argument to have only particular string values. Use the Allow() method to
+/// add the allowed string values, which can be daisy-chained.
+///
+/// Examples:
+/// - SetConstraint("a", (new CArgAllow_Strings)->
+///                  Allow("foo")->Allow("bar")->Allow("etc"))
+/// - You can use "operator,()" to shorten the notation:
+///   SetConstraint("b", &(*new CArgAllow_Strings, "foo", "bar", "etc"))
 
 class NCBI_XNCBI_EXPORT CArgAllow_Strings : public CArgAllow
 {
 public:
+    /// Constructor.
     CArgAllow_Strings(void);
+
+    /// Add allowed string values.
     CArgAllow_Strings* Allow(const string& value);
+
+    /// Short notation operator for adding allowed string values.
+    /// @sa
+    ///   Allow()
     CArgAllow_Strings& operator,(const string& value) { return *Allow(value); }
+
 protected:
+    /// Verify if specified value is allowed.
     virtual bool   Verify(const string& value) const;
+
+    /// Get usage information.
     virtual string GetUsage(void) const;
+
+    /// Protected destructor.
     virtual ~CArgAllow_Strings(void);
 private:
-    set<string> m_Strings;
+    set<string> m_Strings;  ///< Set of allowed string values
 };
 
 
 
-// CArgAllow_Integers::
-// Allow argument to have only integer values falling within given interval.
-//
-// Example:  SetConstraint("a2", new CArgAllow_Integers(-3, 34))
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgAllow_Integers --
+///
+/// Define constraint to describe range of integer values.
+///
+/// Argument to have only integer values falling within given interval.
+///
+/// Example:
+/// - SetConstraint("a2", new CArgAllow_Integers(-3, 34))
 
 class NCBI_XNCBI_EXPORT CArgAllow_Integers : public CArgAllow
 {
 public:
+    /// Constructor specifying range of allowed integer values.
     CArgAllow_Integers(int x_min, int x_max);
+
 protected:
+    /// Verify if specified value is allowed.
     virtual bool   Verify(const string& value) const;
+
+    /// Get usage information.
     virtual string GetUsage(void) const;
+
 private:
-    int m_Min;
-    int m_Max;
+    int m_Min;  ///< Minimum value of range
+    int m_Max;  ///< Maximum value of range 
 };
 
 
 
-// CArgAllow_Doubles::
-// Allow argument to have only integer values falling within given interval.
-//
-// Example:  SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgAllow_Doubles --
+///
+/// Define constraint to describe range of double values.
+///
+/// Argument to have only double values falling within given interval.
+///
+/// Example:
+/// - SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
 
 class NCBI_XNCBI_EXPORT CArgAllow_Doubles : public CArgAllow
 {
 public:
+    /// Constructor specifying range of allowed double values.
     CArgAllow_Doubles(double x_min, double x_max);
+
 protected:
+    /// Verify if specified value is allowed.
     virtual bool   Verify(const string& value) const;
+
+    /// Get usage information.
     virtual string GetUsage(void) const;
+
 private:
-    double m_Min;
-    double m_Max;
+    double m_Min;   ///< Minimum value of range
+    double m_Max;   ///< Maximum value of range 
 };
 
 
-//
-// Base class for the description of various types of argument
-// This was a pre-declaration; in MSVC, a predeclaration here causes a heap
-// corruption on termination because this class's virtual destructor isn't
-// defined at the moment the compiler instantiates the destructor of
-// AutoPtr<CArgDesc>
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CArgDesc --
+///
+/// Base class for the description of various types of argument.
+///
+/// This was a pre-declaration; in MSVC, a predeclaration here causes a heap
+/// corruption on termination because this class's virtual destructor isn't
+/// defined at the moment the compiler instantiates the destructor of
+/// AutoPtr<CArgDesc>.
 
 class CArgDesc
 {
 public:
-    CArgDesc(const string& name, const string& comment);
+    /// Constructor.
+    CArgDesc(const string& name,    ///< Argument name
+             const string& comment  ///< Argument description
+            );
+
+    /// Destructor.
     virtual ~CArgDesc(void);
 
+    /// Get argument name.
     const string& GetName   (void) const { return m_Name; }
+
+    /// Get arument description.
     const string& GetComment(void) const { return m_Comment; }
 
+    /// Get usage synopis.
     virtual string GetUsageSynopsis(bool name_only = false) const = 0;
+
+    /// Get usage comment attribute.
     virtual string GetUsageCommentAttr(void) const = 0;
 
+    /// Process argument with specified value.
     virtual CArgValue* ProcessArgument(const string& value) const = 0;
-    virtual CArgValue* ProcessDefault(void) const = 0;
-    virtual void       VerifyDefault (void) const;
 
-    virtual void             SetConstraint(CArgAllow* constraint);
+    /// Process argument default.
+    virtual CArgValue* ProcessDefault(void) const = 0;
+
+    /// Verify argument default value.
+    virtual void VerifyDefault (void) const;
+
+    /// Set argument constraint.
+    virtual void SetConstraint(CArgAllow* constraint);
+
+    /// Get argument constraint.
     virtual const CArgAllow* GetConstraint(void) const;
-    string                   GetUsageConstraint(void) const;
+
+    /// Get usage constraint.
+    string GetUsageConstraint(void) const;
 
 private:
-    string m_Name;
-    string m_Comment;
+    string m_Name;      ///< Argument name
+    string m_Comment;   ///< Argument description
 };
 
 
@@ -684,6 +1008,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/07/10 14:59:09  siyan
+ * Documentation changes.
+ *
  * Revision 1.30  2003/05/28 18:00:11  kuznets
  * CArgDescription::PrintUsage declared virtual to enable custom help screens
  *
