@@ -126,7 +126,8 @@ CHTMLPage::CHTMLPage(const string& title, const istream& template_stream)
 }
 
 
-CHTMLPage::CHTMLPage(const string& title, const void* template_buffer, size_t size)
+CHTMLPage::CHTMLPage(const string& /*title*/,
+                     const void* template_buffer, size_t size)
 {
     Init();
     SetTemplateBuffer(template_buffer, size);
@@ -319,6 +320,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/09/16 22:24:52  vakatov
+* Formal fix to get rid of an "unused func arg" warning
+*
 * Revision 1.29  2002/09/11 16:09:27  dicuccio
 * fixed memory leak in CreateTemplate(): added x_CreateTemplate() to get
 * around heap allocation of stream.
