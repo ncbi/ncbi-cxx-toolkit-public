@@ -210,15 +210,7 @@ BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt)
 	return index1;
 }
 
-/** Calculate number of identities in an HSP.
- * @param query The query sequence [in]
- * @param subject The uncompressed subject sequence [in]
- * @param hsp All information about the HSP [in]
- * @param is_gapped Is this a gapped search? [in]
- * @param num_ident_ptr Number of identities [out]
- * @param align_length_ptr The alignment length, including gaps [out]
- */
-static Int2
+Int2
 BlastHSPGetNumIdentical(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Boolean is_gapped, Int4* num_ident_ptr, 
    Int4* align_length_ptr)
@@ -280,6 +272,75 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject,
    *align_length_ptr = align_length;
    *num_ident_ptr = num_ident;
    return 0;
+}
+
+Int2
+BlastOOFGetNumIdentical(Uint1* query, Uint1* subject, 
+   BlastHSP* hsp, Uint1 program, 
+   Int4* num_ident_ptr, Int4* align_length_ptr)
+{
+   Int4 i, num_ident, align_length;
+   Uint1* q,* s;
+   GapEditScript* esp;
+
+   if (!hsp->gap_info || !subject || !query)
+      return -1;
+
+
+   if (program == blast_type_tblastn) {
+       q = &query[hsp->query.offset];
+       s = &subject[hsp->subject.offset];
+   } else {
+       s = &query[hsp->query.offset];
+       q = &subject[hsp->subject.offset];
+   }
+   num_ident = 0;
+   align_length = 0;
+
+
+   for (esp = hsp->gap_info->esp; esp; esp = esp->next) {
+      switch (esp->op_type) {
+      case 3: /* Substitution */
+         align_length += esp->num;
+         for (i=0; i<esp->num; i++) {
+            if (*q == *s)
+               num_ident++;
+            ++q;
+            s += CODON_LENGTH;
+         }
+         break;
+      case 6: /* Insertion */
+         align_length += esp->num;
+         s += esp->num * CODON_LENGTH;
+         break;
+      case 0: /* Deletion */
+         align_length += esp->num;
+         q += esp->num;
+         break;
+      case 1: /* Gap of two nucleotides. */
+         s -= 2;
+         break;
+      case 2: /* Gap of one nucleotide. */
+         s -= 1;
+         break;
+      case 4: /* Insertion of one nucleotide. */
+         s += 1;
+         break;
+      case 5: /* Insertion of two nucleotides. */
+         s += 2;
+         break;
+      default: 
+         s += esp->num * CODON_LENGTH;
+         q += esp->num;
+         break;
+      }
+   }
+
+   *align_length_ptr = align_length;
+   *num_ident_ptr = num_ident;
+   return 0;
+
+
 }
 
 /** Comparison callback function for sorting HSPs by e-value */
