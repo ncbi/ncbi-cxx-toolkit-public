@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/30 23:23:24  vakatov
+ * + CORE_SetLOGFILE_NAME()
+ *
  * Revision 6.3  2000/04/07 19:56:06  vakatov
  * Get rid of <errno.h>
  *
@@ -99,6 +102,14 @@ extern LOG  CORE_GetLOG(void);
 extern void CORE_SetLOGFILE
 (FILE*       fp,         /* the file stream to log to */
  int/*bool*/ auto_close  /* do "fclose(fp)" when the LOG is reset/destroyed */
+ );
+
+
+/* CORE_SetLOGFILE(fopen(filename, "a+"), TRUE)
+ * Return zero on error, non-zero on success
+ */
+extern int/*bool*/ CORE_SetLOGFILE_NAME
+(const char* filename  /* log.-file name */
  );
 
 

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/30 23:23:26  vakatov
+ * + CORE_SetLOGFILE_NAME()
+ *
  * Revision 6.3  2000/03/31 17:19:11  kans
  * added continue statement to for loop to suppress missing body warning
  *
@@ -48,6 +51,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 
 /* Static function pre-declarations to avoid C++ compiler warnings
@@ -109,6 +113,19 @@ extern void CORE_SetLOGFILE
     LOG lg = LOG_Create(0, 0, 0, 0);
     LOG_ToFILE(lg, stderr, auto_close);
     CORE_SetLOG(lg);
+}
+
+
+extern int/*bool*/ CORE_SetLOGFILE_NAME(const char* filename)
+{
+    FILE* fp = fopen(filename, "a+");
+    if ( !fp ) {
+        CORE_LOG_SYS_ERRNO(eLOG_Error, filename);
+        return 0/*false*/;
+    }
+
+    CORE_SetLOGFILE(fp, 1/*true*/);
+    return 1/*true*/;
 }
 
 
