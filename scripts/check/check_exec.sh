@@ -31,6 +31,9 @@ script_dir=`(cd "$script_dir"; pwd)`
 timestamp_file="/tmp/check_exec_timestamp.$$"
 touch timestamp_file
 
+# Reinforce timeout
+ulimit -t $timeout
+
 # Run command
 "$@" &
 pid=$!
