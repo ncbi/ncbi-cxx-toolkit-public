@@ -3,6 +3,8 @@
 ALL_SUB_PROJ = $(SUB_PROJ) $(POTENTIAL_SUB_PROJ) $(EXPENDABLE_SUB_PROJ)
 LOCAL_CONFIGURABLES = Makefile $(ALL_SUB_PROJ:%=%/Makefile) $(EXTRA_CONFIGURABLES)
 
+SUB_MF_IN = $(ALL_SUB_PROJ:%=$(srcdir)/%/Makefile.in)
+
 # XXX - we have to wildcard under $(builddir) rather than
 # $(top_srcdir), so explicitly list any new root configurables to
 # ensure they get picked up properly.
@@ -28,6 +30,12 @@ Makefile: $(srcdir)/Makefile.in $(config_status)
 %/Makefile: $(srcdir)/%/Makefile.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
+$(SUB_MF_IN):
+	echo $@
+	-cd $(srcdir)  &&  cvs upd -ld `basename \`dirname $@\``
+	mkdir -p `dirname $@`
+	touch $@
+
 $(builddir)/%: $(top_srcdir)/src/%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
@@ -35,7 +43,7 @@ $(config_status): $(top_srcdir)/configure $(top_srcdir)/config.h.in
 	$(top_srcdir)/scripts/maybe_reconfigure.sh $(builddir)
 
 .PHONY: configurables
-.PRECIOUS: $(CONFIGURABLES)
+.PRECIOUS: $(CONFIGURABLES) $(SUB_MF_IN)
 # .SUFFIXES: .in
 
 # Necessary to keep Solaris make from trying to rebuild everything for
