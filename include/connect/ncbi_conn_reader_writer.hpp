@@ -46,16 +46,11 @@
 BEGIN_NCBI_SCOPE
 
 
-/* CSocket must live longer than CSocketReader created
- * on top of that socket.  CSocketReader does NOT own CSocket.
- */
-
-
-class NCBI_XCONNECT_EXPORT CSocketReader : public IReader
+class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public IReaderWriter
 {
 public:
-    CSocketReader(CSocket* sock, EOwnership if_to_own = eNoOwnership);
-    virtual ~CSocketReader();
+    CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership);
+    virtual ~CSocketReaderWriter();
 
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
@@ -63,61 +58,31 @@ public:
 
     virtual ERW_Result PendingCount(size_t* count);
 
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written = 0);
+
+    virtual ERW_Result Flush(void) { return eRW_NotImplemented; };
+    
 protected:
     CSocket*   m_Sock;
     EOwnership m_Owned;
 };
 
 
-inline CSocketReader::CSocketReader(CSocket* sock, EOwnership if_to_own)
+inline CSocketReaderWriter::CSocketReaderWriter(CSocket*   sock,
+                                                EOwnership if_to_own)
     : m_Sock(sock), m_Owned(if_to_own)
 {
 }
 
 
-inline CSocketReader::~CSocketReader()
+inline CSocketReaderWriter::~CSocketReaderWriter()
 {
     if (m_Owned) {
         delete m_Sock;
     }
 }
-
-
-inline ERW_Result CSocketReader::PendingCount(size_t* count)
-{
-    if (!m_Sock) {
-        return eRW_Error;
-    }
-    STimeout zero = {0, 0}, tmo = *m_Sock->GetTimeout(eIO_Read);
-    if (m_Sock->SetTimeout(eIO_Read, &zero) != eIO_Success) {
-        return eRW_Error;
-    }
-    char c;
-    EIO_Status status = m_Sock->Read(&c, sizeof(c), count, eIO_ReadPeek);
-    if (m_Sock->SetTimeout(eIO_Read, &tmo) != eIO_Success) {
-        return eRW_Error;
-    }
-    return status == eIO_Success ? eRW_Success : eRW_Error;
-}
-
-
-inline ERW_Result CSocketReader::Read(void* buf, size_t count, size_t* n_read)
-{
-    if (!m_Sock)
-        return eRW_Error;
-    switch (m_Sock->Read(buf, count, n_read, eIO_ReadPlain)) {
-    case eIO_Timeout:
-        return eRW_Timeout;
-    case eIO_Success:
-        return eRW_Success;
-    case eIO_Closed:
-        return eRW_Eof;
-    default:
-        break;
-    }
-    return eRW_Error;
-}
-
 
 
 END_NCBI_SCOPE
@@ -129,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/01 18:55:19  lavr
+ * CSocketReader->CSocketReaderWriter plus .cpp file with bulky methods
+ *
  * Revision 1.2  2004/10/01 18:36:04  lavr
  * Fix compilation errors
  *
