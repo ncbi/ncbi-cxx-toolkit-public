@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/26 00:03:52  vakatov
+* [_DEBUG] Do not catch OS exceptions in debug mode
+*
 * Revision 1.4  1998/11/24 17:51:46  vakatov
 * + CParseException
 * Removed "Ncbi" sub-prefix from the NCBI exception class names
@@ -86,7 +89,7 @@ static string s_ComposeParse(const string& what, SIZE_TYPE pos)
     ::sprintf(s, "%ld", (long)pos);
     string str;
     str.reserve(256);
-    return str.append("[").append(s).append("] ").append(what);
+    return str.append("{").append(s).append("} ").append(what);
 }
 
 CParseException::CParseException(const string& what, SIZE_TYPE pos)
@@ -106,6 +109,7 @@ static void s_UnexpectedHandler(void) THROWS((bad_exception)) {
     throw bad_exception();
 }
 
+#  if !defined(_DEBUG)
 extern "C" void s_DefSignalHandler(int sig, siginfo_t*, void*)
     THROWS((COSException))
 {
@@ -123,11 +127,13 @@ extern "C" void s_DefSignalHandler(int sig, siginfo_t*, void*)
       // throw CSystemException(msg);
   }
 }
+#  endif /* ndef _DEBUG */
 
 
 void COSException::Initialize(void)
     THROWS((runtime_error))
 {
+#  if !defined(_DEBUG)
     // set DefSignalHandler() as signal handler for sync signals
     // set sigmask to allow delivery only sync signals for current thread
     //   (the signal mask of the thread is inherited)
@@ -161,12 +167,14 @@ void COSException::Initialize(void)
 
     if (sigprocmask(SIG_UNBLOCK, &sigset, 0) != 0)
         throw CErrnoException("COSException:: unblocking sig.-mask");
+#  endif /* ndef _DEBUG */
 
     set_unexpected(s_UnexpectedHandler);
 }
 
 #elif defined(NCBI_OS_MSWIN)
 
+#  if !defined(_DEBUG)
 static void s_DefSEHandler(unsigned int sig, struct _EXCEPTION_POINTERS*)
 	THROWS((COSException))
 {
@@ -189,14 +197,17 @@ static void s_DefSEHandler(unsigned int sig, struct _EXCEPTION_POINTERS*)
         throw CSystemException(msg);
     }
 }
+#  endif /* ndef _DEBUG */
 
 
 void COSException::Initialize(void)
     THROWS((runtime_error)) {
+#  if !defined(_DEBUG)
         _set_se_translator(s_DefSEHandler);
+#  endif /* ndef _DEBUG */
 }
 
-#endif
+#endif /* NCBI_OS_UNIX else NCBI_OS_MSWIN */
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
