@@ -1200,19 +1200,22 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
 
     if (remap_subject || q_shift > 0 || s_shift > 0) {
         for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
+            const vector<ENa_strand> strands = itr->GetStrands();
             // Create temporary CSeq_locs with strands either matching 
             // (for query and for subject if it is not on a minus strand),
             // or opposite to those in the segment, to force RemapToLoc to 
             // behave in the correct way.
-            CSeq_loc q_seqloc, s_seqloc;
-            const vector<ENa_strand> strands = itr->GetStrands();
-            ENa_strand q_strand = strands[0];
-            q_seqloc.SetInt().SetFrom(q_shift);
-            q_seqloc.SetInt().SetTo(query->seqloc->GetInt().GetTo());
-            q_seqloc.SetInt().SetStrand(q_strand);
-            q_seqloc.SetInt().SetId().Assign(sequence::GetId(*query->seqloc, query->scope));
-            itr->RemapToLoc(query_dimension, q_seqloc);
-            if (subject) {
+            if (q_shift > 0) {
+                CSeq_loc q_seqloc;
+                ENa_strand q_strand = strands[0];
+                q_seqloc.SetInt().SetFrom(q_shift);
+                q_seqloc.SetInt().SetTo(query->seqloc->GetInt().GetTo());
+                q_seqloc.SetInt().SetStrand(q_strand);
+                q_seqloc.SetInt().SetId().Assign(sequence::GetId(*query->seqloc, query->scope));
+                itr->RemapToLoc(query_dimension, q_seqloc);
+            }
+            if (remap_subject || s_shift > 0) {
+                CSeq_loc s_seqloc;
                 ENa_strand s_strand;
                 if (remap_subject) {
                     s_strand = ((strands[1] == eNa_strand_plus) ? 
@@ -1405,6 +1408,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/05/05 14:42:25  dondosha
+* Correction in x_RemapAlignmentCoordinates for whole vs. interval Seq-locs
+*
 * Revision 1.39  2004/04/28 19:40:45  dondosha
 * Fixed x_RemapAlignmentCoordinates function to work correctly with all strand combinations
 *
