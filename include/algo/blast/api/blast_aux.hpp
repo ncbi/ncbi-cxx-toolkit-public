@@ -98,25 +98,6 @@ NCBI_XBLAST_EXPORT
 BlastSeqLoc*
 CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp);
 
-/** Convert coordinates in masking locations for one sequence from DNA to 
- * protein, creating mask locations for each of the 6 translation frames.
- * @param dna_seqloc BlastSeqLoc masking data of DNA [in]
- * @param mask Pointer to masking locations structure [in] [out]
- * @param start first offset in seqloc_array to use [in]
- * @param seqloc DNA sequence data [in]
- * @param scope Which scope this sequence belongs to? [in]
- */
-void BlastMaskLocDNAToProtein(BlastSeqLoc* dna_seqloc, BlastMaskLoc* mask, 
-         Int4 start, const objects::CSeq_loc &seqloc, objects::CScope* scope);
-
-/** Convert coordinates in masking locations for a set of sequences from
- * protein to DNA.
- * @param mask Pointer to masking locations for all frames of a set 
- *            of translated sequences [in] [out]
- * @param slp Vector of DNA sequence data [in]
- */
-void BlastMaskLocProteinToDNA(BlastMaskLoc** mask, TSeqLocVector &slp);
-
 /** Retrieves the requested genetic code in Ncbistdaa format. 
  * @param genetic_code numeric identifier for genetic code requested [in]
  * @return NULL if memory allocation failure, otherwise genetic code string.
@@ -222,6 +203,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2005/01/10 18:34:40  dondosha
+* BlastMaskLocDNAToProtein and BlastMaskLocProteinToDNA moved to core with changed signatures
+*
 * Revision 1.52  2004/12/29 15:11:24  camacho
 * Add Release method to C structure RAII wrapper classes
 *

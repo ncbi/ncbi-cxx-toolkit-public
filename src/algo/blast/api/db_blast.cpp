@@ -415,12 +415,12 @@ void CDbBlast::SetupSearch()
             m_ivErrors.push_back(blast_message);
         }
         
-	/* If query is translated, the filtering locations are returned in 
-	   protein scale; convert them back to nucleotide scale here. */
+        /* If query is translated, the filtering locations are returned in 
+           protein scale; convert them back to nucleotide scale here. */
         if (x_eProgram == eBlastTypeBlastx || 
-	    x_eProgram == eBlastTypeTblastx ||
-	    x_eProgram == eBlastTypeRpsTblastn) {
-            BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
+            x_eProgram == eBlastTypeTblastx ||
+            x_eProgram == eBlastTypeRpsTblastn) {
+            BlastMaskLocProteinToDNA(m_ipFilteredRegions, m_iclsQueryInfo);
         }
 
         if (!m_ibTracebackOnly) {
@@ -681,6 +681,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2005/01/10 18:35:07  dondosha
+ * BlastMaskLocDNAToProtein and BlastMaskLocProteinToDNA moved to core with changed signatures
+ *
  * Revision 1.49  2005/01/06 15:42:02  camacho
  * Make use of modified signature to SetupQueries
  *
