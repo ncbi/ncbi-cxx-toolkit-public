@@ -37,8 +37,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimtx.hpp>
 
-#ifdef HAVE_SCHED_YIELD
+#if defined(HAVE_SCHED_YIELD) && !defined(NCBI_NO_THREADS)
 #  include <sched.h>
 #endif
 
@@ -62,7 +63,11 @@
 #  define NCBI_COUNTER_ASM_OK
 #endif
 
-#if defined(NCBI_COUNTER_ASM_OK) && defined(__sparc) && !defined(__sparcv9)
+#ifdef NCBI_NO_THREADS
+   typedef unsigned int TNCBIAtomicValue;
+#  define NCBI_COUNTER_UNSIGNED 1
+#  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
+#elif defined(NCBI_COUNTER_ASM_OK) && defined(__sparc) && !defined(__sparcv9)
 // Always use our own code on pre-V9 SPARC; GCC 3's implementation
 // uses a global lock.
    typedef unsigned int TNCBIAtomicValue;
@@ -109,7 +114,6 @@
 #  if defined (NCBI_COUNTER_ASM_OK) && (defined(__i386) || defined(__sparc))
 #    define NCBI_COUNTER_USE_ASM 1
 #  else
-#    include <corelib/ncbimtx.hpp>
 #    define NCBI_COUNTER_NEED_MUTEX 1
 #  endif
 #endif
@@ -273,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/05/24 18:43:34  ucko
+* Use trivial implementation for single-threaded builds.
+*
 * Revision 1.3  2002/05/24 18:06:55  ucko
 * Inline assembly leads to ICC compiler errors in some cases, so stop
 * defining NCBI_COUNTER_ASM_OK for ICC.
