@@ -30,8 +30,8 @@
  */
 
 #include <dbapi/driver/exception.hpp>
-#include <interfaces.hpp> // the one from rdblib (../cli/)
-#include "dbapi_driver_samples.hpp" // the one from rdblib (.)
+#include <dbapi/driver/gateway/interfaces.hpp>
+#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -53,7 +53,7 @@ int main()
             return 1;
         }
 
-        CRemoteDBContext my_context(sssConnection);
+        CGWContext my_context(sssConnection);
 
         SampleDBAPI_Lang(my_context, "NLMSQL");
     } catch (CDB_Exception& e) {
@@ -74,6 +74,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/03/15 22:01:46  sapojnik
+ * more methods and classes
+ *
  * Revision 1.1  2002/03/14 20:00:42  sapojnik
  * A driver that communicates with a dbapi driver on another machine via CompactProtocol(aka ssssrv)
  *

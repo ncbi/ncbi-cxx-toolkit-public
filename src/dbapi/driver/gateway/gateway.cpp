@@ -107,21 +107,133 @@ CDB_LangCmd* CGW_Connection::LangCmd( const string& lang_query, unsigned int nof
   }
 }
 
-CDB_Result* CGW_RPCCmd::Result()
+CDB_BCPInCmd* CGW_Connection::BCPIn(const string&  table_name, unsigned int   nof_columns)
 {
-  int remoteResult = comprot_int( "GWLib:RPCCmd:Result", remoteObj );
-  if(remoteResult) {
-    CGW_Result* p = new CGW_Result(remoteResult);
-    return Create_Result( *p );
+  int cmdObj = comprot_int2(
+    "GWLib:Connection:BCPIn", remoteObj,
+    "table_name", table_name.c_str(),
+    "nof_columns", (int*)&nof_columns);
+
+  if(cmdObj) {
+    CGW_BCPInCmd* p = new CGW_BCPInCmd(this, cmdObj);
+    return Create_BCPInCmd( *p );
   }
-  else {
+  else{
     return NULL;
   }
 }
 
-CDB_Result* CGW_LangCmd::Result()
+CDB_CursorCmd* CGW_Connection::Cursor( const string& cursor_name, const string& query,
+  unsigned int nof_params, unsigned int batch_size)
 {
-  int remoteResult = comprot_int( "GWLib:LangCmd:Result", remoteObj );
+  IGate* pGate = conn->getProtocol();
+  pGate->set_RPC_call  ( "GWLib:Connection:Cursor" );
+  pGate->set_output_arg( "object"    , &remoteObj        );
+  pGate->set_output_arg( "query"     , query.c_str()     );
+  pGate->set_output_arg( "nof_params", (int*)&nof_params );
+  pGate->set_output_arg( "batch_size", (int*)&batch_size );
+  pGate->send_data();
+
+  int res;
+  if( pGate->get_input_arg("result", &res) != IGate::eGood ) {
+    comprot_errmsg();
+    return NULL;
+  }
+
+  if(res) {
+    CGW_CursorCmd* p = new CGW_CursorCmd(this,res);
+    return Create_CursorCmd( *p );
+  }
+  else{
+    return NULL;
+  }
+
+}
+
+CDB_SendDataCmd* CGW_Connection::SendDataCmd(
+  I_ITDescriptor& desc, size_t data_size, bool log_it)
+{
+  IGate* pGate = conn->getProtocol();
+  pGate->set_RPC_call  ( "GWLib::Connection:SendDataCmd" );
+  pGate->set_output_arg( "object"    , &remoteObj        );
+  CGW_ITDescriptor* gwDesc = dynamic_cast<CGW_ITDescriptor*>(&desc);
+  if(gwDesc==NULL) {
+    cerr << "Error: dynamic_cast<CGW_ITDescriptor*> returns NULL\n";
+    return NULL;
+  }
+  int i = gwDesc->getRemoteObj();
+  pGate->set_output_arg( "desc"      , &i               );
+  pGate->set_output_arg( "data_size" , (int*)&data_size );
+  pGate->set_output_arg( "log_it"    , (int*)&log_it    );
+  pGate->send_data();
+
+  int res;
+  if( pGate->get_input_arg("result", &res) != IGate::eGood ) {
+    comprot_errmsg();
+    return NULL;
+  }
+
+  if(res) {
+    CGW_SendDataCmd* p = new CGW_SendDataCmd(this,res);
+    return Create_SendDataCmd( *p );
+  }
+  else{
+    return NULL;
+  }
+}
+
+const string& CGW_Connection::ServerName() const
+{
+  char buf[1024];
+  char* p = comprot_chars(
+      "GWLib:Connection:ServerName", remoteObj,
+      buf, sizeof(buf)-1 );
+  vars->m_Server = p?p:"";
+  return vars->m_Server;
+}
+const string& CGW_Connection::UserName()   const
+{
+  char buf[1024];
+  char* p = comprot_chars(
+      "GWLib:Connection:UserName", remoteObj,
+      buf, sizeof(buf)-1 );
+  vars->m_User =  p?p:"";
+  return vars->m_User;
+}
+const string& CGW_Connection::Password()   const
+{
+  char buf[1024];
+  char* p = comprot_chars(
+      "GWLib:Connection:Password", remoteObj,
+      buf, sizeof(buf)-1 );
+  vars->m_Password =  p?p:"";
+  return vars->m_Password;
+}
+const string& CGW_Connection::PoolName()   const
+{
+  char buf[1024];
+  char* p = comprot_chars(
+      "GWLib:Connection:PoolName", remoteObj,
+      buf, sizeof(buf)-1 );
+  vars->m_PoolName =  p?p:"";
+  return vars->m_PoolName;
+}
+
+void CGW_Connection::DropCmd(CDB_BaseEnt& cmd)
+{
+  CGW_Base* p = dynamic_cast<CGW_Base*>(&cmd);
+  if(p==NULL) {
+    cerr << "Error: dynamic_cast<CGW_Base*> returns NULL\n";
+    return;
+  }
+
+  comprot_void("GWLib:Connection:DropCmd",p->remoteObj);
+  // << also delete local proxy object?? >>
+}
+
+CDB_Result* CGW_BaseCmd::Result()
+{
+  int remoteResult = comprot_int( "GWLib:BaseCmd:Result", remoteObj );
   if(remoteResult) {
     CGW_Result* p = new CGW_Result(remoteResult);
     return Create_Result( *p );
@@ -450,6 +562,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/03/15 22:01:45  sapojnik
+ * more methods and classes
+ *
  * Revision 1.2  2002/03/14 22:53:22  sapojnik
  * Inheriting from I_ interfaces instead of CDB_ classes from driver/public.hpp
  *
