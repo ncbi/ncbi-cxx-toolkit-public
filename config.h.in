@@ -6,6 +6,9 @@
 /* Define to 1 if you have the <fstream.h> header file. */
 #undef HAVE_FSTREAM_H
 
+/* Define to 1 if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
 /* If gethostbyaddr_r exists, define to the number of arguments it takes
    (normally 7 or 8). */
 #undef HAVE_GETHOSTBYADDR_R
@@ -16,6 +19,9 @@
 
 /* Define to 1 if getloadavg exists. */
 #undef HAVE_GETLOADAVG
+
+/* Define to 1 if you have the `getnameinfo' function. */
+#undef HAVE_GETNAMEINFO
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.72 2002/05/09 20:01:07 kimelman Exp $
+#  $Id: configure.ac,v 1.73 2002/05/13 19:08:46 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1484,6 +1484,11 @@ if test -z "${NETWORK_LIBS+set}"; then
    AC_CHECK_LIB(socket, connect, [NETWORK_LIBS="-lsocket $libnsl"],
       [NETWORK_LIBS=$libnsl])
 fi
+
+orig_LIBS=$LIBS
+LIBS="$NETWORK_LIBS $orig_LIBS"
+AC_CHECK_FUNCS(getaddrinfo getnameinfo)
+LIBS=$orig_LIBS
 
 MATH_LIBS=${MATH_LIBS:="-lm"}
 
