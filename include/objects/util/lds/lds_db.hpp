@@ -38,7 +38,7 @@ BEGIN_SCOPE(objects)
 
 
 
-struct SLS_FileDB : public CBDB_File
+struct SLDS_FileDB : public CBDB_File
 {
     CBDB_FieldInt4     file_id;
     CBDB_FieldString   file_name;
@@ -47,23 +47,32 @@ struct SLS_FileDB : public CBDB_File
     CBDB_FieldInt4     CRC;
     CBDB_FieldInt4     file_size;   
 
-    SLS_FileDB();
+    SLDS_FileDB();
 };
 
 
 
-struct SLS_AnnotDB : public CBDB_File
+struct SLDS_AnnotDB : public CBDB_File
 {
     CBDB_FieldInt4    annot_id;
     CBDB_FieldInt4    file_id;
     CBDB_FieldInt4    annot_type;
     CBDB_FieldInt4    file_offset;
 
-    SLS_AnnotDB();
+    SLDS_AnnotDB();
 };
 
 
-struct SLS_ObjectDB : public CBDB_File
+struct SLDS_ObjectTypeDB : public CBDB_File
+{
+    CBDB_FieldInt4    object_type;
+    CBDB_FieldString  type_name;
+
+    SLDS_ObjectTypeDB();
+};
+
+
+struct SLDS_ObjectDB : public CBDB_File
 {
     CBDB_FieldInt4    object_id;
 
@@ -76,20 +85,20 @@ struct SLS_ObjectDB : public CBDB_File
     CBDB_FieldInt4    parent_object_id;  // Parent SeqEntry object id
 
 
-    SLS_ObjectDB();
+    SLDS_ObjectDB();
 };
 
 
-struct SLS_Annot2ObjectDB : public CBDB_File
+struct SLDS_Annot2ObjectDB : public CBDB_File
 {
     CBDB_FieldInt4  object_id;
     CBDB_FieldInt4  annot_id;
 
-    SLS_Annot2ObjectDB();
+    SLDS_Annot2ObjectDB();
 };
 
 
-struct SLS_ObjectAttrDB : public CBDB_File
+struct SLDS_ObjectAttrDB : public CBDB_File
 {
     CBDB_FieldInt4    object_attr_id;
 
@@ -97,7 +106,7 @@ struct SLS_ObjectAttrDB : public CBDB_File
     CBDB_FieldString  organism;
     CBDB_FieldString  keywords;
 
-    SLS_ObjectAttrDB();
+    SLDS_ObjectAttrDB();
 };
 
 
@@ -109,7 +118,7 @@ struct SLS_ObjectAttrDB : public CBDB_File
 
 
 
-inline SLS_FileDB::SLS_FileDB()
+inline SLDS_FileDB::SLDS_FileDB()
 {
     BindKey("file_id", &file_id);
 
@@ -121,7 +130,7 @@ inline SLS_FileDB::SLS_FileDB()
 }
 
 
-inline SLS_AnnotDB::SLS_AnnotDB()
+inline SLDS_AnnotDB::SLDS_AnnotDB()
 {
     BindKey("annot_id", &annot_id);
 
@@ -131,7 +140,15 @@ inline SLS_AnnotDB::SLS_AnnotDB()
 }
 
 
-inline SLS_ObjectDB::SLS_ObjectDB()
+inline SLDS_ObjectTypeDB::SLDS_ObjectTypeDB()
+{
+    BindKey("object_type", &object_type);
+
+    BindData("type_name",  &type_name);
+}
+
+
+inline SLDS_ObjectDB::SLDS_ObjectDB()
 {
     BindKey("object_id", &object_id);
 
@@ -145,7 +162,7 @@ inline SLS_ObjectDB::SLS_ObjectDB()
 }
 
 
-inline SLS_ObjectAttrDB::SLS_ObjectAttrDB()
+inline SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
 {
     BindKey("object_attr_id", &object_attr_id);
 
@@ -156,7 +173,7 @@ inline SLS_ObjectAttrDB::SLS_ObjectAttrDB()
 
 
 
-inline SLS_Annot2ObjectDB::SLS_Annot2ObjectDB()
+inline SLDS_Annot2ObjectDB::SLDS_Annot2ObjectDB()
 {
     BindKey("object_id", &object_id);
     BindKey("annot_id", &annot_id);
@@ -169,6 +186,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2003/05/22 19:11:35  kuznets
+* +SLDS_ObjectTypeDB
+*
 * Revision 1.1  2003/05/22 13:24:45  kuznets
 * Initial revision
 *
