@@ -34,12 +34,20 @@ include ./Makefile.meta
 # and move aside internal libraries we plan to stop installing altogether
 #
 
+apps_to_drop = $(top_srcdir)/scripts/internal/projects/apps_to_drop
 libs_to_drop = $(top_srcdir)/scripts/internal/projects/libs_to_drop
+dbindir = $(bindir)/.DEATH-ROW
 dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
 	test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" || \
 	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
-	@test -f "$(libs_to_drop)" && \
+	@test \! -f "$(apps_to_drop)" || \
+	  while read app; do \
+	    test -f "$(bindir)/$$app" && mkdir -p $(dbindir) && \
+	      echo mv .../bin/$$app .../bin/.DEATH-ROW && \
+	      mv $(bindir)/$$app $(dbindir); \
+	  done < "$(apps_to_drop)"
+	@test \! -f "$(libs_to_drop)" || \
 	  while read lib; do \
 	    test -f "$(status_dir)/.$$lib.dep" && mkdir -p $(dlibdir) && \
 	      echo mv .../lib/lib$$lib.\* .../lib/.DEATH-ROW && \
