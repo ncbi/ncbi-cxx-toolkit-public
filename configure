@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS7_INCLUDE FTDS7_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -6264,7 +6264,7 @@ main ()
          void*                dummy = (void*) &gethostbyname_r;
          int                  err;
          struct hostent*      hp = 0;
-	 struct hostent_data* hdp = 0;
+         struct hostent_data* hdp = 0;
          err = gethostbyname_r("", hp, hdp);
 
   ;
@@ -6439,7 +6439,7 @@ main ()
          int                  err;
          unsigned int         host;
          struct hostent*      hp = 0;
-	 struct hostent_data* hdp = 0;
+         struct hostent_data* hdp = 0;
          int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
                                    hp, hdp);
 
@@ -6598,7 +6598,7 @@ main ()
          void*                dummy = (void*) &getservbyname_r;
          int                  err;
          struct servent*      sp = 0;
-	 struct servent_data* sdp = 0;
+         struct servent_data* sdp = 0;
          err = getservbyname_r("", "", sp, sdp);
 
   ;
@@ -9262,19 +9262,34 @@ SYBASE_LIBPATH=
 freetds=
 if test "$with_ftds" != "no" ; then
    if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
-      FTDS_LOCAL_PATH="dbapi/driver/ftds/freetds"
-      if test -f ${srcdir}/src/$FTDS_LOCAL_PATH/Makefile.in ; then
-         FTDS_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
-         FTDS_PATH="<$FTDS_LOCAL_PATH>"
-         FTDS_INCLUDE="-I\$(includedir)/$FTDS_LOCAL_PATH -I\$(includedir0)/$FTDS_LOCAL_PATH"
-         freetds="freetds"
-         { echo "$as_me:$LINENO: Using bundled FreeTDS from $FTDS_PATH" >&5
-echo "$as_me: Using bundled FreeTDS from $FTDS_PATH" >&6;}
+      with_ftds=7
+   fi
+   if test "$with_ftds" = 7 -o "$with_ftds" = 8 ; then
+      FTDS7_LOCAL_PATH="dbapi/driver/ftds/freetds"
+      if test -f ${srcdir}/src/$FTDS7_LOCAL_PATH/Makefile.in ; then
+         FTDS7_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
+         FTDS7_PATH="<$FTDS7_LOCAL_PATH>"
+         FTDS7_INCLUDE="-I\$(includedir)/$FTDS7_LOCAL_PATH -I\$(includedir0)/$FTDS7_LOCAL_PATH"
       fi
+      FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
+      if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
+         FTDS8_LIBS="-lsybdb_ftds8-static -ltds_ftds8-static"
+         FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
+         FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
+      fi
+      case "$with_ftds" in
+      7) test -n "$FTDS7_PATH" && FTDS_PATH=$FTDS7_PATH && freetds="freetds" ;;
+      8) test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds" ;;
+      esac
    else
       FTDS_PATH="$with_ftds"
    fi
-   if test -z "$freetds" ; then
+   if test -n "$freetds" ; then
+      FTDS_LIBS="\$(FTDS${with_ftds}_LIBS)"
+      FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
+      { echo "$as_me:$LINENO: Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH" >&5
+echo "$as_me: Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH" >&6;}
+   else
       FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
       FTDS_LIBS=${FTDS_LIBS:="-lsybdb -ltds"}
       FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
@@ -9337,6 +9352,11 @@ echo "$as_me:$LINENO: result: $ncbi_cv_lib_freetds" >&5
 echo "${ECHO_T}$ncbi_cv_lib_freetds" >&6
       if test "$ncbi_cv_lib_freetds" = "no"; then
          with_ftds=no
+      else
+         FTDS7_INCLUDE=$FTDS_INCLUDE
+         FTDS7_LIBS=$FTDS_LIBS
+         FTDS8_INCLUDE=$FTDS_INCLUDE
+         FTDS8_LIBS=$FTDS_LIBS
       fi
    fi
 fi
@@ -9344,6 +9364,10 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
+   FTDS7_INCLUDE=
+   FTDS7_LIBS=
+   FTDS8_INCLUDE=
+   FTDS8_LIBS=
    freetds=
    WithoutPackages="$WithoutPackages FreeTDS"
 else
@@ -9354,6 +9378,10 @@ _ACEOF
 
    WithPackages="$WithPackages FreeTDS"
 fi
+
+
+
+
 
 
 
@@ -17218,6 +17246,10 @@ s,@LORDER@,$LORDER,;t t
 s,@TSORT@,$TSORT,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@FTDS7_INCLUDE@,$FTDS7_INCLUDE,;t t
+s,@FTDS7_LIBS@,$FTDS7_LIBS,;t t
+s,@FTDS8_INCLUDE@,$FTDS8_INCLUDE,;t t
+s,@FTDS8_LIBS@,$FTDS8_LIBS,;t t
 s,@FTDS_INCLUDE@,$FTDS_INCLUDE,;t t
 s,@FTDS_LIBS@,$FTDS_LIBS,;t t
 s,@freetds@,$freetds,;t t

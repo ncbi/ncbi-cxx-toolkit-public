@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.151 2002/12/06 18:25:03 ucko Exp $
+#  $Id: configure.ac,v 1.152 2002/12/11 18:15:09 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1375,7 +1375,7 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
          void*                dummy = (void*) &gethostbyname_r;
          int                  err;
          struct hostent*      hp = 0;
-	 struct hostent_data* hdp = 0;
+         struct hostent_data* hdp = 0;
          err = gethostbyname_r("", hp, hdp);
        ]])],
        [
@@ -1448,7 +1448,7 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
          int                  err;
          unsigned int         host;
          struct hostent*      hp = 0;
-	 struct hostent_data* hdp = 0;
+         struct hostent_data* hdp = 0;
          int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
                                    hp, hdp);
        ]])],
@@ -1505,7 +1505,7 @@ AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
          void*                dummy = (void*) &getservbyname_r;
          int                  err;
          struct servent*      sp = 0;
-	 struct servent_data* sdp = 0;
+         struct servent_data* sdp = 0;
          err = getservbyname_r("", "", sp, sdp);
        ]])],
        [
@@ -1954,18 +1954,33 @@ SYBASE_LIBPATH=
 freetds=
 if test "$with_ftds" != "no" ; then
    if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
-      FTDS_LOCAL_PATH="dbapi/driver/ftds/freetds"
-      if test -f ${srcdir}/src/$FTDS_LOCAL_PATH/Makefile.in ; then
-         FTDS_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
-         FTDS_PATH="<$FTDS_LOCAL_PATH>"
-         FTDS_INCLUDE="-I\$(includedir)/$FTDS_LOCAL_PATH -I\$(includedir0)/$FTDS_LOCAL_PATH"
-         freetds="freetds"
-         AC_MSG_NOTICE([Using bundled FreeTDS from $FTDS_PATH])
+      with_ftds=7
+   fi
+   if test "$with_ftds" = 7 -o "$with_ftds" = 8 ; then
+      FTDS7_LOCAL_PATH="dbapi/driver/ftds/freetds"
+      if test -f ${srcdir}/src/$FTDS7_LOCAL_PATH/Makefile.in ; then
+         FTDS7_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
+         FTDS7_PATH="<$FTDS7_LOCAL_PATH>"
+         FTDS7_INCLUDE="-I\$(includedir)/$FTDS7_LOCAL_PATH -I\$(includedir0)/$FTDS7_LOCAL_PATH"
       fi
+      FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
+      if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
+         FTDS8_LIBS="-lsybdb_ftds8-static -ltds_ftds8-static"
+         FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
+         FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
+      fi
+      case "$with_ftds" in
+      7) test -n "$FTDS7_PATH" && FTDS_PATH=$FTDS7_PATH && freetds="freetds" ;;
+      8) test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds" ;;
+      esac
    else
       FTDS_PATH="$with_ftds"
    fi
-   if test -z "$freetds" ; then
+   if test -n "$freetds" ; then
+      FTDS_LIBS="\$(FTDS${with_ftds}_LIBS)"
+      FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
+      AC_MSG_NOTICE([Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH])
+   else
       FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
       FTDS_LIBS=${FTDS_LIBS:="-lsybdb -ltds"}
       FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
@@ -1989,6 +2004,11 @@ if test "$with_ftds" != "no" ; then
             [ncbi_cv_lib_freetds=yes], [ncbi_cv_lib_freetds=no])])
       if test "$ncbi_cv_lib_freetds" = "no"; then
          with_ftds=no
+      else
+         FTDS7_INCLUDE=$FTDS_INCLUDE
+         FTDS7_LIBS=$FTDS_LIBS
+         FTDS8_INCLUDE=$FTDS_INCLUDE
+         FTDS8_LIBS=$FTDS_LIBS
       fi
    fi
 fi
@@ -1996,6 +2016,10 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
+   FTDS7_INCLUDE=
+   FTDS7_LIBS=
+   FTDS8_INCLUDE=
+   FTDS8_LIBS=
    freetds=
    WithoutPackages="$WithoutPackages FreeTDS"
 else
@@ -2003,6 +2027,10 @@ else
              [Define to 1 if FreeTDS libraries are available.])
    WithPackages="$WithPackages FreeTDS"
 fi
+AC_SUBST(FTDS7_INCLUDE)
+AC_SUBST(FTDS7_LIBS)
+AC_SUBST(FTDS8_INCLUDE)
+AC_SUBST(FTDS8_LIBS)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(freetds)
