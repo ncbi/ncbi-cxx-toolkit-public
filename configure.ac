@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.199 2003/06/18 20:43:59 ucko Exp $
+#  $Id: configure.ac,v 1.200 2003/06/19 17:49:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -158,6 +158,8 @@ AC_ARG_WITH(fltk2,
    [ --with-fltk=DIR         use FLTK installation in DIR])
 AC_ARG_WITH(opengl,
    [ --without-opengl        do not use OpenGL])
+AC_ARG_WITH(opengl2,
+   [ --with-opengl=DIR       use OpenGL installation in DIR])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
@@ -273,7 +275,7 @@ for x_arg in "$@" ; do
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
-      | --with-png=* | --with-tiff=* | --with-xpm=* \
+      | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -2394,22 +2396,36 @@ if test "$with_opengl" != "no"; then
          AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
             [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-         # Kludge for in-house 64-bit Solaris installations; I don't know why I
-         # have to specify /sparcv9 expliclitly.
-         ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
-         if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
-            X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
-         elif test "$OSTYPE:$host_cpu" = "solaris:i386" -a \
-            -d /usr/ncbi/include/GL; then
-            X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
-            X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
+         ogl_lib_sfx=
+         case "${with_opengl:=yes}" in
+            yes)
+               # Check for NCBI's oddly located in-house installations.
+               case "$OSTYPE:$host_cpu:$bit64_sfx" in
+                  solaris:sparc:64)
+                     with_opengl=/usr/ncbi/lib/OpenGL64/openwin
+                     ogl_lib_sfx=/sparcv9
+                     ;;
+                  solaris:i386:) with_opengl=/usr/ncbi ;;
+               esac
+               ;;
+         esac
+         if test -d "$with_opengl/include/GL"; then
+            X_CFLAGS="-I$with_opengl/include $X_CFLAGS"
+         fi
+         if test -d "$with_opengl/lib$ogl_lib_sfx"; then
+            l=$with_opengl/lib$ogl_lib_sfx
+            X_LIBS="-L$l ${CONF_f_runpath}$l $X_CFLAGS"
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
          OPENGL_LIBS="$X_LIBS -lGLU -lGL $X_ALL_LIBS"
          ;;
    esac
-   AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
+   case "${with_opengl}" in
+      */*) where=" in $with_opengl" ;;
+      *  ) where= ;;
+   esac
+   AC_CACHE_CHECK([for OpenGL$where], ncbi_cv_lib_opengl,
       [CPPFLAGS="$orig_CPPFLAGS $OPENGL_INCLUDE"
        LIBS="$OPENGL_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
