@@ -1366,11 +1366,6 @@ private:
 // CDirEntry
 
 #ifndef NCBI_OS_MAC
-inline
-void CDirEntry::Reset(const string& path)
-{
-    m_Path = path;
-}
 
 inline
 string CDirEntry::GetPath(void) const
@@ -1572,6 +1567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/10/08 12:43:45  ivanov
+ * Moved CDirEntry::Reset() to .cpp file
+ *
  * Revision 1.49  2004/10/06 18:19:53  ivanov
  * Removed deleting trailing path separator from the CDirEntry::Reset(),
  * because in this case CDirEntry works incorrectly with root directories
