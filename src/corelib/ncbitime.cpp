@@ -71,12 +71,13 @@ static MyTZDLS sTZDLS = MyReadLocation();
 #elif defined(__CYGWIN__)
 #  define TimeZone() _timezone
 #  define Daylight() _daylight
-#elif defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
-#  define TimeZone()  0
-#  define Daylight()  0
 #else
 #  define TimeZone()  timezone
 #  define Daylight()  daylight
+#endif
+
+#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+#  define TIMEZONE_IS_UNDEFINED  1
 #endif
 
 
@@ -257,8 +258,10 @@ void CTime::x_Init(const string& str, const string& fmt)
     
     const char* fff;
     const char* sss = str.c_str();
+#if ! defined(TIMEZONE_IS_UNDEFINED)
     bool  adjust_needed = false;
     long  adjust_tz     = 0;
+#endif
 
     int weekday = -1;
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
@@ -322,6 +325,9 @@ void CTime::x_Init(const string& str, const string& fmt)
 
         // Timezone (local time in format GMT+HHMM)
         if (*fff == 'z') {
+#if defined(TIMEZONE_IS_UNDEFINED)
+            ERR_POST("Format symbol 'z' is unsupported on this platform");
+#else
             m_Tz = eLocal;
             if (strncmp(sss, "GMT", 3) == 0) {
                 sss += 3;
@@ -365,6 +371,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             }
             adjust_needed = true;
             adjust_tz = sign * (x_hour * 60 + x_min) * 60;
+#endif
             continue;
         }
 
@@ -426,10 +433,12 @@ void CTime::x_Init(const string& str, const string& fmt)
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
+#if ! defined(TIMEZONE_IS_UNDEFINED)
     // Adjust time for current timezone
     if ( adjust_needed  &&  adjust_tz != -TimeZone() ) {
         AddSecond(-TimeZone() - adjust_tz);
     }
+#endif
 }
 
 
@@ -732,10 +741,16 @@ string CTime::AsString(const string& fmt, long out_tz) const
     const CTime* t = this;
     CTime* t_out = 0;
     // Adjust time for output timezone
-    if (out_tz != eCurrentTimeZone  &&  out_tz != TimeZone()) {
-        t_out = new CTime(*this);
-        t_out->AddSecond(TimeZone() - out_tz);
-        t = t_out;
+    if (out_tz != eCurrentTimeZone) {
+#if defined(TIMEZONE_IS_UNDEFINED)
+	    ERR_POST("Output timezone is unsupported on this platform");
+#else
+        if (out_tz != TimeZone()) {
+            t_out = new CTime(*this);
+            t_out->AddSecond(TimeZone() - out_tz);
+            t = t_out;
+        }
+#endif
     }
     
     string str;
@@ -752,6 +767,9 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 's': s_AddZeroPadInt(str, t->Second());        break;
         case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
         case 'z': {
+#if defined(TIMEZONE_IS_UNDEFINED)
+		              ERR_POST("Format symbol 'z' is unsupported on this platform");
+#else
                       str += "GMT";
                       if (IsGmtTime()) {
                           break;
@@ -763,6 +781,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
                       int tzh = tz / 3600;
                       s_AddZeroPadInt(str, tzh);
                       s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
+#endif
                       break;
                   }
         case 'Z': if (IsGmtTime()) str += "GMT";            break;
@@ -1545,6 +1564,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/03/26 16:05:29  ivanov
+ * Format symbol 'z' and output time zone for AsString are unsupported
+ * on NCBI_OS_DARWIN and NCBI_OS_BSD (problems with determinition daylight
+ * flag for specified time).
+ *
  * Revision 1.47  2004/03/25 13:03:31  ivanov
  * Temporary fix for NCBI_OS_DARWIN and NCBI_OS_BSD
  *
