@@ -26,7 +26,7 @@ BEGIN_CLASS_INFO(CSerialObject)
     ADD_M(m_Names, STL_map, (STD, (long), STD, (string)));
     ADD_M(m_Next, POINTER, (CLASS, (CSerialObject)))->SetOptional();
 #if HAVE_NCBI_C
-    ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, "Web-Env", WebEnv)->SetOptional();
+    ADD_NAMED_OLD_ASN_MEMBER("webEnv", m_WebEnv, "Web-Env", WebEnv)->SetOptional();
 #endif
 
     ADD_SUB_CLASS(CSerialObject2);

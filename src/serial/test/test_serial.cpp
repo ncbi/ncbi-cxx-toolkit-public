@@ -157,7 +157,7 @@ int CTestSerial::Run(void)
         }
 
         {
-            for ( CObjectsConstIterator oi = ConstBegin(cwrite); oi; ++oi ) {
+            for ( CObjectConstIterator oi = ConstBegin(cwrite); oi; ++oi ) {
                 const CObject& obj = *oi;
                 NcbiCerr <<"CObject: @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
             }
