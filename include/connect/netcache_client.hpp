@@ -47,62 +47,6 @@ BEGIN_NCBI_SCOPE
 
 class CSocket;
 
-/// NetCache internal exception
-///
-class CNetCacheException : public CException
-{
-public:
-    enum EErrCode {
-        eTimeout,
-        eCommunicationError,
-        eKeyFormatError
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        case eKeyFormatError:     return "eKeyFormatError";
-        default:                  return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
-};
-
-/// Meaningful information encoded in the NetCache key
-///
-/// @sa CNetCache_ParseBlobKey
-///
-struct CNetCache_Key
-{
-    string       prefix;    ///< Key prefix
-    unsigned     version;   ///< Key version
-    unsigned     id;        ///< BLOB id
-    string       hostname;  ///< server name
-    unsigned     port;      ///< TCP/IP port number
-};
-
-/// Parse blob key string into a CNetCache_Key structure
-extern NCBI_XCONNECT_EXPORT
-void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str);
-
-/// Generate blob key string
-///
-/// Please note that "id" is an integer issued by the netcache server.
-/// Clients should not use this function with custom ids. 
-/// Otherwise it may disrupt the interserver communication.
-///
-extern NCBI_XCONNECT_EXPORT
-void CNetCache_GenerateBlobKey(string*        key, 
-                               unsigned       id, 
-                               const string&  host, 
-                               unsigned short port);
-
-
-
 
 /// Client API for NetCache server
 ///
@@ -230,12 +174,71 @@ private:
 };
 
 
+/// NetCache internal exception
+///
+class CNetCacheException : public CException
+{
+public:
+    enum EErrCode {
+        eTimeout,
+        eCommunicationError,
+        eKeyFormatError
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eTimeout:            return "eTimeout";
+        case eCommunicationError: return "eCommunicationError";
+        case eKeyFormatError:     return "eKeyFormatError";
+        default:                  return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
+};
+
+/// Meaningful information encoded in the NetCache key
+///
+/// @sa CNetCache_ParseBlobKey
+///
+struct CNetCache_Key
+{
+    string       prefix;    ///< Key prefix
+    unsigned     version;   ///< Key version
+    unsigned     id;        ///< BLOB id
+    string       hostname;  ///< server name
+    unsigned     port;      ///< TCP/IP port number
+};
+
+/// Parse blob key string into a CNetCache_Key structure
+extern NCBI_XCONNECT_EXPORT
+void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str);
+
+/// Generate blob key string
+///
+/// Please note that "id" is an integer issued by the netcache server.
+/// Clients should not use this function with custom ids. 
+/// Otherwise it may disrupt the interserver communication.
+///
+extern NCBI_XCONNECT_EXPORT
+void CNetCache_GenerateBlobKey(string*        key, 
+                               unsigned       id, 
+                               const string&  host, 
+                               unsigned short port);
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/12/15 19:04:40  kuznets
+ * Code cleanup
+ *
  * Revision 1.13  2004/11/16 19:26:39  kuznets
  * Improved documentation
  *
