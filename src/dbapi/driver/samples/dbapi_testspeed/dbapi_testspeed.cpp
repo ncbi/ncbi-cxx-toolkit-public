@@ -463,7 +463,6 @@ CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
 
                 for ( unsigned int j = 0;  j < r->NofItems(); j++ ) {
                     EDB_Type rt = r->ItemDataType(j);
-                    const char* iname= r->ItemName(j);
 
                     if ( readItems && rt == eDB_Text ) {
                         bool isNull=false;
@@ -551,7 +550,7 @@ CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
                         bool isNull;
                         char buf[1024];
                         int sz=0;
-                        while ( j == r->CurrentItemNo() ) {
+                        while ( j == abs(r->CurrentItemNo()) ) {
                             sz += r->ReadItem(buf, sizeof(buf), &isNull);
                         }
                         continue;
@@ -627,6 +626,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/21 23:17:43  ssikorsk
+ * Fixes warnings in dbapi_testspeed.cpp
+ *
  * Revision 1.15  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *
