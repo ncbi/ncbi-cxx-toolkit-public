@@ -253,7 +253,7 @@ RunTest() {
    cd "\$x_path"
 
    # Run check
-   check_exec=\${NCBI:-/netopt/ncbi_tools}/c++/scripts/check/check_exec.sh
+   check_exec="$x_root_dir/scripts/check/check_exec.sh"
    test -x \$check_exec  ||  check_exec="$x_build_dir/check_exec.sh"
    \$check_exec "\$x_timeout" "\$x_run" >> \$x_test_out 2>&1
    result=\$?
@@ -283,7 +283,8 @@ saved_path="\$PATH"
 for x_conf in \$configurations; do
 
 # Restore saved PATH environment variable
-PATH="$x_build_dir/bin/\$x_conf:\$saved_path"
+PATH=".:$x_build_dir/bin/\$x_conf:\$saved_path"
+export PATH
 
 EOF
 

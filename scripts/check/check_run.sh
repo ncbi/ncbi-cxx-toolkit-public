@@ -18,7 +18,9 @@
 
 
 cmd=$*
-make_check_script="`dirname $0`/check_make_unix.sh"
+script_dir=`dirname $0`
+script_dir=`(cd "$script_dir"; pwd)`
+make_check_script="$script_dir/check_make_unix.sh"
 
 # Define name for the check script file
 script_name="check.sh"
