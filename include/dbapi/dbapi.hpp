@@ -381,6 +381,16 @@ public:
                                           unsigned int nof_cols) = 0;
     // Close connection
     virtual void Close() = 0;
+
+    // If enabled, redirects all error messages 
+    // to CDB_MultiEx object (see below)
+    virtual void MsgToEx(bool v) = 0;
+
+    // Returns all error messages as a CDB_MultiEx object
+    virtual CDB_MultiEx* GetErrorAsEx() = 0;
+
+    // Returns all error messages as a single string
+    virtual string GetErrorInfo() = 0;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -400,15 +410,16 @@ public:
     virtual IConnection* CreateConnection() = 0;
 
     virtual void SetLoginTimeout(unsigned int i) = 0;
+
     // Set the output stream for server messages.
     // Set it to zero to disable any output and collect
     // messages in CDB_MultiEx (see below)
     virtual void SetLogStream(ostream* out) = 0;
 
-    // Returns all server messages as CDB_MultiEx object
+    // Returns all server messages as a CDB_MultiEx object
     virtual CDB_MultiEx* GetErrorAsEx() = 0;
 
-    // Returns all server messages as single string
+    // Returns all server messages as a single string
     virtual string GetErrorInfo() = 0;
 
     // Returns the pointer to the general driver interface
@@ -422,6 +433,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/11/27 17:21:30  kholodov
+ * Added: Error output redirection to CToMultiExHandler object
+ * in IConnection interface.
+ *
  * Revision 1.16  2002/10/31 22:37:12  kholodov
  * Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
  *
