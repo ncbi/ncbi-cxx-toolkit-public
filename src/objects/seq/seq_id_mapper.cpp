@@ -31,7 +31,6 @@
 */
 
 #include "seq_id_mapper.hpp"
-//#include <objects/objmgr1/om_defs.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/biblio/Id_pat.hpp>
@@ -618,10 +617,8 @@ const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
     case CSeq_id::e_Ddbj:
         return id.GetDdbj();
     default:
-        //OM_THROW_TRACE(
         THROW1_TRACE(runtime_error,
-                     "CSeq_id_GB_Tree::x_Get()"
-                     "Invalid seq-id type");
+            "CSeq_id_GB_Tree::x_Get() -- Invalid seq-id type");
     }
 }
 
@@ -910,10 +907,9 @@ void CSeq_id_Local_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
         m_ById[id.GetLocal().GetId()] = handle;
     }
     else {
-        //OM_THROW_TRACE(
         THROW1_TRACE(runtime_error,
-                     "CSeq_id_Local_Tree::AddSeq_idMapping()"
-                     "Can not create index for an empty local seq-id");
+            "CSeq_id_Local_Tree::AddSeq_idMapping() -- "
+            "Can not create index for an empty local seq-id");
     }
     x_AddToKeyMap(handle);
 }
@@ -1053,10 +1049,9 @@ void CSeq_id_General_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
         tm.m_ById[id.GetGeneral().GetTag().GetId()] = handle;
     }
     else {
-        //OM_THROW_TRACE(
         THROW1_TRACE(runtime_error,
-                     "CSeq_id_General_Tree::AddSeq_idMapping()"
-                     "Can not create index for an empty db-tag");
+            "CSeq_id_General_Tree::AddSeq_idMapping() -- "
+            "Can not create index for an empty db-tag");
     }
     x_AddToKeyMap(handle);
 }
@@ -1598,10 +1593,9 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                         TSeq_id_HandleSet& h_set)
 {
     if (sid.find('|') != string::npos) {
-        //OM_THROW_TRACE(
         THROW1_TRACE(runtime_error,
-                     "CSeq_id_Mapper::GetMatchingHandlesStr()"
-                     "Symbol \'|\' is not supported here");
+            "CSeq_id_Mapper::GetMatchingHandlesStr() -- "
+            "Symbol \'|\' is not supported here");
     }
 
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
@@ -1695,10 +1689,9 @@ TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
     }
     if (next_seg >= kKeyUsageTableSize) {
         // No free segments found
-        //OM_THROW_TRACE(
         THROW1_TRACE(runtime_error,
-                     "CSeq_id_Mapper::GetNextKey()"
-                     "Can not find free seq-id key");
+            "CSeq_id_Mapper::GetNextKey() -- "
+            "Can not find free seq-id key");
     }
     // Found a free segment
     m_KeyUsageTable[next_seg] = 0;
@@ -1732,6 +1725,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/05/03 13:18:44  grichenk
+* OM_THROW_TRACE -> THROW1_TRACE
+*
 * Revision 1.13  2002/05/03 03:15:24  vakatov
 * Temp. fix for the missing header <objects/objmgr1/om_defs.hpp>
 *
