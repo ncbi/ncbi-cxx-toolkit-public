@@ -83,6 +83,7 @@ public:
 
 private:
     string x_GetGeneID(const CFlatFeature& feat, const string& gene_name, CBioseqContext& ctx) const;
+    string x_GetTranscriptID(const CFlatFeature& feat, const string& gene_id, CBioseqContext& ctx) const;
     string x_GetSourceName(CBioseqContext& ctx) const;
     void   x_AddFeature(list<string>& l, const CSeq_loc& loc,
                         const string& source, const string& key,
@@ -100,6 +101,7 @@ private:
 
     typedef vector<CConstRef<CSeq_feat> > TFeatVec;
     mutable map<string, TFeatVec>  m_Genes;
+    mutable map<string, TFeatVec>  m_Transcripts;
 };
 
 
@@ -114,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/08 12:13:56  dicuccio
+* Added x_GetTranscripID() for handling transcript IDs
+*
 * Revision 1.2  2004/04/22 15:45:57  shomrat
 * Changes in context
 *
