@@ -1048,13 +1048,21 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
          rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.CanGetAnticodon () ) {
-            ECompare comp = sequence::Compare(trna.GetAnticodon(), 
-                                              feat.GetLocation());
-            if ( comp != eContained  &&  comp != eSame ) {
+            const CSeq_loc& trna_loc = trna.GetAnticodon();
+            size_t anticodon_len = 0;
+            bool bad_anticodon = false;
+            for ( CSeq_loc_CI it(trna_loc); it; ++it ) {
+                anticodon_len += GetLength(trna_loc, m_Scope);
+                ECompare comp = sequence::Compare(trna_loc, feat.GetLocation());
+                if ( comp != eContained  &&  comp != eSame ) {
+                    bad_anticodon = true;
+                }
+            }
+            if ( bad_anticodon ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_Range,
                     "Anticodon location not in tRNA", feat);
             }
-            if ( GetLength( trna.GetAnticodon (), m_Scope ) != 3 ) {
+            if ( anticodon_len != 3 ) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_Range,
                     "Anticodon is not 3 bases in length", feat);
             }
@@ -2737,6 +2745,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/07/07 13:22:47  shomrat
+* allow multi-interval anticodons
+*
 * Revision 1.58  2004/06/25 14:58:46  shomrat
 * fixes and enhancements to Cdregion validation
 *
