@@ -131,8 +131,6 @@ public:
     /// in the Seq-align form. Assumes that preliminary search has already been
     /// done, and its results are available from the HSP stream.
     virtual TSeqAlignVector RunTraceback(); 
-    /// Remove extra results if a limit is provided on total number of HSPs
-    void TrimBlastHSPResults();
 
     /// Retrieves regions filtered on the query/queries
     // const TSeqLocVector& GetFilteredQueryRegions() const;
@@ -318,6 +316,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/01/11 17:50:19  dondosha
+* Removed TrimBlastHSPResults method: will be a static function in blastsrv4.REAL code
+*
 * Revision 1.29  2005/01/06 15:40:30  camacho
 * Add comments to GetErrorMessage
 *

@@ -470,25 +470,6 @@ CDbBlast::Run()
     return x_Results2SeqAlign();
 }
 
-/** Comparison function for sorting HSP lists in increasing order of the 
- * number of HSPs in a hit. Needed for TrimBlastHSPResults below. 
- * @param v1 Pointer to the first HSP list [in]
- * @param v2 Pointer to the second HSP list [in]
- */
-extern "C" int
-s_CompareHsplistHspcnt(const void* v1, const void* v2)
-{
-   BlastHSPList* r1 = *((BlastHSPList**) v1);
-   BlastHSPList* r2 = *((BlastHSPList**) v2);
-
-   if (r1->hspcnt < r2->hspcnt)
-      return -1;
-   else if (r1->hspcnt > r2->hspcnt)
-      return 1;
-   else
-      return 0;
-}
-
 BlastHSPResults* 
 CDbBlast::GetResults()
 {
@@ -505,71 +486,6 @@ CDbBlast::GetResults()
         }
     }
     return m_ipResults;
-}
-
-
-/** Removes extra results if a limit is imposed on the total number of HSPs
- * returned. Makes sure that at least 1 HSP is still returned for each
- * database sequence hit. 
- */
-void 
-CDbBlast::TrimBlastHSPResults()
-{
-    int total_hsp_limit = GetOptions().GetTotalHspLimit();
-
-    if (total_hsp_limit == 0)
-        return;
-
-    // Retrieve results from the HSP stream, if it has not been done yet, e.g.
-    // if this method is called after a preliminary search.
-    if (!m_ipResults)
-        GetResults();
-
-    bool hsp_limit_exceeded = false;
-    
-    for (int query_index = 0; query_index < m_ipResults->num_queries; 
-         ++query_index) {
-        BlastHitList* hit_list;
-        if (!(hit_list = m_ipResults->hitlist_array[query_index]))
-            continue;
-        /* The count of HSPs is separate for each query. */
-        Int4 total_hsps = 0;
-        Int4 hsplist_count = hit_list->hsplist_count;
-        BlastHSPList** hsplist_array = (BlastHSPList**) 
-            malloc(hsplist_count*sizeof(BlastHSPList*));
-        
-        for (int subject_index = 0; subject_index < hsplist_count; 
-             ++subject_index) {
-            hsplist_array[subject_index] = 
-                hit_list->hsplist_array[subject_index];
-        }
- 
-        qsort((void*)hsplist_array, hsplist_count,
-              sizeof(BlastHSPList*), s_CompareHsplistHspcnt);
-        
-        for (int subject_index = 0; subject_index < hsplist_count; 
-             ++subject_index) {
-            Int4 allowed_hsp_num = 
-                ((subject_index+1)*total_hsp_limit)/hsplist_count - total_hsps;
-            BlastHSPList* hsp_list = hsplist_array[subject_index];
-            if (hsp_list->hspcnt > allowed_hsp_num) {
-                hsp_limit_exceeded = true;
-                /* Free the extra HSPs */
-                for (int hsp_index = allowed_hsp_num; 
-                     hsp_index < hsp_list->hspcnt; ++hsp_index)
-                    Blast_HSPFree(hsp_list->hsp_array[hsp_index]);
-                hsp_list->hspcnt = allowed_hsp_num;
-            }
-            total_hsps += hsp_list->hspcnt;
-        }
-        sfree(hsplist_array);
-    }
-    if (hsp_limit_exceeded) {
-        Blast_Message* blast_message = NULL;
-        Blast_MessageWrite(&blast_message, BLAST_SEV_INFO, 0, 0, 
-                           "Too many HSPs to save all");
-        m_ivErrors.push_back(blast_message);
-    }
 }
 
 void CDbBlast::RunPreliminarySearch()
@@ -607,10 +523,6 @@ void CDbBlast::RunPreliminarySearch()
             NCBI_THROW(CBlastException, eOutOfMemory, 
                        "Preliminary search failed");
     }
-
-    /* If a limit is provided for number of HSPs to return, trim the extra
-       HSPs here */
-    TrimBlastHSPResults();
 }
 
 TSeqAlignVector 
@@ -642,9 +554,6 @@ void CDbBlast::x_RunTracebackSearch()
              m_ipScoreBlock, m_pHspStream, m_ipRpsInfo, &m_ipResults)) != 0)
         NCBI_THROW(CBlastException, eInternal, "Traceback failed"); 
 
-    /* If a limit is provided for number of HSPs to return, trim the extra
-       HSPs here */
-    TrimBlastHSPResults();
     return;
 }
 
@@ -681,6 +590,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2005/01/11 17:50:44  dondosha
+ * Removed TrimBlastHSPResults method: will be a static function in blastsrv4.REAL code
+ *
  * Revision 1.50  2005/01/10 18:35:07  dondosha
  * BlastMaskLocDNAToProtein and BlastMaskLocProteinToDNA moved to core with changed signatures
  *
