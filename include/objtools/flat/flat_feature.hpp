@@ -121,6 +121,9 @@ public:
     void Format(IFlatFormatter& f) const { f.FormatFeature(*this); }
     bool operator<(const IFlattishFeature& f2) const 
         { return m_Feat->Compare(*f2.m_Feat, *m_Loc, *f2.m_Loc) < 0; }
+    string GetKey(void) const
+        { return m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank); }
+    const CSeq_loc& GetLoc(void) const { return *m_Loc; }
 
 protected:
     IFlattishFeature(const CSeq_feat& feat, CFlatContext& ctx,
@@ -134,9 +137,8 @@ protected:
 
     CConstRef<CSeq_feat>        m_Feat;
     mutable CRef<CFlatContext>  m_Context;
-    // below fields populated on demand
     mutable CConstRef<CSeq_loc> m_Loc;
-    mutable CRef<CFlatFeature>  m_FF; // cached here
+    mutable CRef<CFlatFeature>  m_FF; ///< populated on demand then cached here
 };
 
 
@@ -283,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/10/08 21:10:47  ucko
+* Add a couple of accessors to IFlattishFeature for the GFF/GTF formatter.
+*
 * Revision 1.4  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

@@ -56,9 +56,8 @@ CRef<CFlatFeature> IFlattishFeature::Format(void) const
         return m_FF;
     }
 
-    m_FF.Reset(new CFlatFeature
-               (m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank),
-                *new CFlatLoc(*m_Loc, *m_Context), *m_Feat));
+    m_FF.Reset(new CFlatFeature(GetKey(),
+                                *new CFlatLoc(*m_Loc, *m_Context), *m_Feat));
     x_AddQuals();
     x_FormatQuals();
     return m_FF;
@@ -757,6 +756,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/10/08 21:11:12  ucko
+* Add a couple of accessors to IFlattishFeature for the GFF/GTF formatter.
+*
 * Revision 1.7  2003/07/22 18:04:13  dicuccio
 * Fixed access of unset optional variables
 *
