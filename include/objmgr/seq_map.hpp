@@ -79,6 +79,7 @@ class CSegmentPtr;
 class CSeqMap_CI;
 class CSeqMap_CI_SegmentInfo;
 class CSeqMap_Delta_seqs;
+struct SSeqMapSelector;
 
 class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 {
@@ -173,6 +174,8 @@ public:
     CSeqMap_CI BeginResolved(CScope* scope,
                              size_t maxResolveCount = size_t(-1),
                              TFlags flags = fDefaultFlags) const;
+    CSeqMap_CI FindResolved(CScope* scope,
+                            SSeqMapSelector& selector) const;
     CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
                             size_t maxResolveCount = size_t(-1),
                             TFlags flags = fDefaultFlags) const;
@@ -309,6 +312,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/09/27 14:29:20  grichenk
+* Added FindResolved() with selector
+*
 * Revision 1.48  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *

@@ -430,6 +430,13 @@ CSeqMap_CI CSeqMap::EndResolved(CScope* scope,
 }
 
 
+CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
+                                 SSeqMapSelector& selector) const
+{
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, selector);
+}
+
+
 CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
                                  CScope* scope,
                                  size_t maxResolveCount,
@@ -848,6 +855,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/09/27 14:29:20  grichenk
+* Added FindResolved() with selector
+*
 * Revision 1.59  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *
