@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/04/13 17:30:37  vasilche
+* Avoid INTERNAL COMPILER ERROR on MSVC.
+* Problem is in "static inline" function which cannot be expanded inline.
+*
 * Revision 1.30  2000/04/13 14:50:36  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -188,7 +192,7 @@ static TObject LoadValue(CFileSet& types, const FileInfo& file,
                          const string& typeName);
 static void StoreValue(const TObject& object, const FileInfo& file);
 
-static inline
+static
 ESerialOpenFlags FileType(const char* arg,
                           ESerialOpenFlags defType = eSerial_AsnText)
 {
