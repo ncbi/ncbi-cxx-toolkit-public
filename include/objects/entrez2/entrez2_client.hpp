@@ -96,7 +96,8 @@ public:
 
     /// Query a db with a string, returning uids as integers
     void Query(const string& query, const string& db,
-               vector<int>& result_uids);
+               vector<int>& result_uids,
+               size_t start_offs = 0, size_t count = 0);
 
     /// Given some uids, a database, and an entrez query string,
     /// determine which of these uids match the query string
@@ -137,6 +138,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/06/16 11:55:52  dicuccio
+* Altered Query() API - added default arguments for starting offset and length of
+* UID list to retrieve
+*
 * Revision 1.6  2004/03/11 17:25:05  dicuccio
 * Added API to retrieve neighbors for multiple UIDs at once
 *
