@@ -105,10 +105,6 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 Int2 BLAST_QueryInfoInit(const Uint1 program_number, 
         Int4 num_queries, BlastQueryInfoPtr *query_info_ptr);
 
-#ifndef CODON_LENGTH
-#define CODON_LENGTH 3
-#endif
-
 /** GetTranslation to get the translation of the nucl. sequence in the
  * appropriate frame and with the appropriate GeneticCode.
  * The function return an allocated CharPtr, the caller must delete this.
