@@ -152,6 +152,7 @@ CBl2Seq::x_ResetQueryDs()
     // should be changed if derived classes are created
     mi_clsQueries.Reset(NULL);
     mi_clsQueryInfo.Reset(NULL);
+    mi_clsBlastMessage.Reset(NULL);
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
     mi_pLookupSegments = BlastSeqLocFree(mi_pLookupSegments);
@@ -173,7 +174,7 @@ CBl2Seq::x_ResetSubjectDs()
 }
 
 TSeqAlignVector
-CBl2Seq::Run() THROWS((CBlastException))
+CBl2Seq::Run()
 {
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     SetupSearch();
@@ -183,7 +184,7 @@ CBl2Seq::Run() THROWS((CBlastException))
 }
 
 void
-CBl2Seq::PartialRun() THROWS((CBlastException))
+CBl2Seq::PartialRun()
 {
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     SetupSearch();
@@ -199,7 +200,7 @@ CBl2Seq::SetupSearch()
         x_ResetQueryDs();
         SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), &mi_clsQueryInfo);
         SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), mi_clsQueryInfo, 
-                     &mi_clsQueries);
+                     &mi_clsQueries, &mi_clsBlastMessage);
 
         // FIXME
         BlastMaskInformation maskInfo;
@@ -345,6 +346,19 @@ CBl2Seq::x_Results2SeqAlign()
     return retval;
 }
 
+Blast_Message* 
+CBl2Seq::GetErrorMessage() const
+{
+    Blast_Message* retval = NULL;
+    if (((Blast_Message*)mi_clsBlastMessage) != NULL) {
+        int unused_fields = 0;  // code and subcode are not used
+        Blast_MessageWrite(&retval, mi_clsBlastMessage->severity,
+                           unused_fields, unused_fields,
+                           mi_clsBlastMessage->message);
+    }
+    return retval;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -354,6 +368,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.66  2005/01/06 15:42:01  camacho
+ * Make use of modified signature to SetupQueries
+ *
  * Revision 1.65  2004/12/21 17:18:04  dondosha
  * BLAST_SearchEngine renamed to Blast_RunFullSearch
  *

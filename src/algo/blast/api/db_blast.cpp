@@ -373,8 +373,13 @@ void CDbBlast::SetupSearch()
 
         SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), 
                        &m_iclsQueryInfo);
+        Blast_Message* blast_message = NULL;
         SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), 
-                     m_iclsQueryInfo, &m_iclsQueries);
+                     m_iclsQueryInfo, &m_iclsQueries, &blast_message);
+        if (blast_message) {
+            m_ivErrors.push_back(blast_message);
+            blast_message = NULL;
+        }
 
         m_ipScoreBlock = 0;
 
@@ -384,7 +389,6 @@ void CDbBlast::SetupSearch()
         else
             scale_factor = 1.0;
 
-        Blast_Message* blast_message = NULL;
         BlastMaskInformation maskInfo;
 
         status = 
@@ -405,6 +409,7 @@ void CDbBlast::SetupSearch()
                 "BLAST_MainSetUp failed";
             Blast_MessageFree(blast_message);
             NCBI_THROW(CBlastException, eInternal, msg.c_str());
+            // FIXME: shouldn't the error/warning also be saved in m_ivErrors?
         } else if (blast_message) {
             // Non-fatal error message; just save it.
             m_ivErrors.push_back(blast_message);
@@ -676,6 +681,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2005/01/06 15:42:02  camacho
+ * Make use of modified signature to SetupQueries
+ *
  * Revision 1.48  2005/01/04 16:55:51  dondosha
  * Adjusted TrimBlastHSPResults so it can be called after preliminary search
  *
