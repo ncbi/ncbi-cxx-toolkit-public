@@ -180,7 +180,7 @@ CBioseq_Base_Info& CTSE_Chunk_Info::x_GetBase(const TPlace& place)
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   CRef<CSeq_annot_Info> annot)
 {
-    x_GetBase(place).x_AttachAnnot(annot);
+    x_GetBase(place).AddAnnot(annot);
     GetTSE_Info().UpdateAnnotIndex(*annot);
 }
 
@@ -191,6 +191,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/03/26 19:42:04  vasilche
+* Fixed premature deletion of SNP annot info object.
+* Removed obsolete references to chunk info.
+*
 * Revision 1.7  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

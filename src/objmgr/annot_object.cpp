@@ -63,67 +63,72 @@ BEGIN_SCOPE(objects)
 
 
 CAnnotObject_Info::CAnnotObject_Info(void)
-    : m_Object(0),
+    : m_Annot_Info(0),
+      m_Object(0),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_not_set)
 {
-    m_Annot_Info = 0;
-    m_Chunk_Info = 0;
-    _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
-    : m_Object(&feat),
+    : m_Annot_Info(&annot),
+      m_Object(&feat),
       m_FeatSubtype(feat.GetData().GetSubtype()),
       m_FeatType(feat.GetData().Which()),
       m_AnnotType(CSeq_annot::C_Data::e_Ftable)
 {
-    m_Annot_Info = &annot;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
                                      CSeq_annot_Info& annot)
-    : m_Object(&align),
+    : m_Annot_Info(&annot),
+      m_Object(&align),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_Align)
 {
-    m_Annot_Info = &annot;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
-    : m_Object(&graph),
+    : m_Annot_Info(&annot),
+      m_Object(&graph),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_Graph)
 {
-    m_Annot_Info = &annot;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                                      const SAnnotTypeSelector& sel)
-    : m_Object(0),
+    : m_Annot_Info(0),
+      m_Object(&chunk_info),
       m_FeatSubtype(sel.GetFeatSubtype()),
       m_FeatType(sel.GetFeatType()),
       m_AnnotType(sel.GetAnnotType())
 {
-    m_Chunk_Info = &chunk_info;
     _ASSERT(IsChunkStub());
 }
 
 
 CAnnotObject_Info::~CAnnotObject_Info(void)
 {
+}
+
+
+const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
+{
+    _ASSERT(IsChunkStub());
+    return *static_cast<const CTSE_Chunk_Info*>(m_Object.GetPointer());
 }
 
 
@@ -410,6 +415,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/03/26 19:42:04  vasilche
+* Fixed premature deletion of SNP annot info object.
+* Removed obsolete references to chunk info.
+*
 * Revision 1.33  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

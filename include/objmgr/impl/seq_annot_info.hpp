@@ -52,7 +52,6 @@ class CDataSource;
 class CSeq_annot;
 class CSeq_entry;
 class CTSE_Info;
-class CTSE_Chunk_Info;
 class CBioseq_Base_Info;
 class CAnnotObject_Info;
 struct SAnnotObject_Key;
@@ -64,11 +63,8 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 public:
     explicit CSeq_annot_Info(const CSeq_annot& annot);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
-    CSeq_annot_Info(CTSE_Chunk_Info& chunk_info, const CAnnotName& name);
     explicit CSeq_annot_Info(const CSeq_annot_Info&);
     ~CSeq_annot_Info(void);
-
-    CTSE_Chunk_Info& GetTSE_Chunk_Info(void) const;
 
     const CBioseq_Base_Info& GetParentBioseq_Base_Info(void) const;
     CBioseq_Base_Info& GetParentBioseq_Base_Info(void);
@@ -115,7 +111,6 @@ public:
 protected:
     friend class CDataSource;
     friend class CTSE_Info;
-    friend class CTSE_Chunk_Info;
     friend class CSeq_entry_Info;
     friend class CAnnotTypes_CI;
 
@@ -148,9 +143,6 @@ protected:
 
     // SNP annotation table
     CRef<CSeq_annot_SNP_Info> m_SNP_Info;
-
-    // Split Chunk info
-    CTSE_Chunk_Info*        m_Chunk_Info;
 };
 
 
@@ -196,6 +188,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/26 19:42:03  vasilche
+* Fixed premature deletion of SNP annot info object.
+* Removed obsolete references to chunk info.
+*
 * Revision 1.11  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

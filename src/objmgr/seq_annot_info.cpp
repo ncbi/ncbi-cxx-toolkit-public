@@ -51,30 +51,18 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot& annot)
-    : m_Chunk_Info(0)
 {
     x_SetObject(annot);
 }
 
 
 CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
-    : m_Chunk_Info(0)
 {
     x_SetSNP_annot_Info(snp_annot);
 }
 
 
-CSeq_annot_Info::CSeq_annot_Info(CTSE_Chunk_Info& chunk_info,
-                                 const CAnnotName& name)
-    : m_Name(name),
-      m_Chunk_Info(&chunk_info)      
-{
-    x_TSEAttach(chunk_info.GetTSE_Info());
-}
-
-
 CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info)
-    : m_Chunk_Info(0)
 {
     x_SetObject(info);
 }
@@ -118,12 +106,6 @@ void CSeq_annot_Info::x_ParentAttach(CBioseq_Base_Info& parent)
 void CSeq_annot_Info::x_ParentDetach(CBioseq_Base_Info& parent)
 {
     x_BaseParentDetach(parent);
-}
-
-
-CTSE_Chunk_Info& CSeq_annot_Info::GetTSE_Chunk_Info(void) const
-{
-    return *m_Chunk_Info;
 }
 
 
@@ -446,6 +428,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/03/26 19:42:04  vasilche
+ * Fixed premature deletion of SNP annot info object.
+ * Removed obsolete references to chunk info.
+ *
  * Revision 1.14  2004/03/24 18:30:30  vasilche
  * Fixed edit API.
  * Every *_Info object has its own shallow copy of original object.

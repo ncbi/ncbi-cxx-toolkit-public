@@ -126,10 +126,7 @@ private:
 
     void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
 
-    union { // container annot or chunk
-        CSeq_annot_Info*         m_Annot_Info;
-        CTSE_Chunk_Info*         m_Chunk_Info;
-    };
+    CSeq_annot_Info*             m_Annot_Info;
     CConstRef<CObject>           m_Object;         // annot object itself
     Uint2                        m_FeatSubtype;    // feature subtype
     Uint1                        m_FeatType;       // feature type or e_not_set
@@ -175,7 +172,7 @@ CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
 inline
 bool CAnnotObject_Info::IsChunkStub(void) const
 {
-    return !m_Object;
+    return !m_Annot_Info;
 }
 
 
@@ -254,20 +251,16 @@ CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void)
 }
 
 
-inline
-const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
-{
-    _ASSERT(IsChunkStub());
-    return *m_Chunk_Info;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/03/26 19:42:03  vasilche
+* Fixed premature deletion of SNP annot info object.
+* Removed obsolete references to chunk info.
+*
 * Revision 1.15  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
