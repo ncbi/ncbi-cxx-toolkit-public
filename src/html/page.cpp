@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/02/13 20:16:45  ivanov
+* Added support of dynamic popup menus. Changed EnablePopupMenu().
+*
 * Revision 1.25  2001/08/14 16:56:42  ivanov
 * Added support for work HTML templates with JavaScript popup menu.
 * Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
@@ -173,8 +176,7 @@ template struct TagMapper<CHTMLPage>;
 
 CHTMLPage::CHTMLPage(const string& title, const string& template_file)
     : m_Title(title),
-      m_TemplateFile(template_file),
-      m_PopupMenuLibUrl(kEmptyStr)
+      m_TemplateFile(template_file)
 {
     Init();
 }
@@ -190,6 +192,11 @@ CHTMLPage::CHTMLPage(CCgiApplication* application, int style,
 
 void CHTMLPage::Init(void)
 {
+    // Init popup menu variables
+    m_UsePopupMenu = false;
+    m_UsePopupMenuDynamic = false;
+    m_PopupMenuLibUrl = kEmptyStr;
+
     AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
     AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
 }
@@ -232,7 +239,7 @@ CHTMLPage::CreateTemplate():  error reading template file" + m_TemplateFile);
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
-    if ( GetStyle() & fUsePopupMenu ) {
+    if ( m_UsePopupMenu ) {
         string strl = str;
         NStr::ToLower(strl);
         // Search </HEAD> tag
@@ -251,7 +258,7 @@ CHTMLPage::CreateTemplate():  error reading template file" + m_TemplateFile);
         pos = strl.rfind("<", pos);
         if ( pos == NPOS) goto done;
         // Insert code for init popup menus
-        script = CHTMLPopupMenu::GetCodeBody();
+        script = CHTMLPopupMenu::GetCodeBody(m_UsePopupMenuDynamic);
         str.insert(pos+length, script);
     }
 done:
@@ -273,12 +280,12 @@ CNCBINode* CHTMLPage::CreateView(void)
 }
 
 
-void CHTMLPage::EnablePopupMenu(const string& menu_script_url)
+void CHTMLPage::EnablePopupMenu(const string& menu_script_url,
+                                bool use_dynamic_menu)
 {
-    SetStyle(GetStyle() | fUsePopupMenu);
-    if ( !menu_script_url.empty() ) {
-        m_PopupMenuLibUrl = menu_script_url;
-    }
+    m_UsePopupMenu = true;
+    m_PopupMenuLibUrl = menu_script_url;
+    m_UsePopupMenuDynamic = use_dynamic_menu;
 }
 
 
@@ -305,10 +312,9 @@ void CHTMLPage::AddTagMap(const string& name, CNCBINode* node)
     CParent::AddTagMap(name, node);
 
     // If already defined usage popup menus
-    if ( GetStyle() & fUsePopupMenu ) {
+    if ( m_UsePopupMenu ) {
         return;
     }
-
     // If "node" contains popup menu, then automaticly enable it
     if ( s_CheckUsePopupMenus(node) ) {
         EnablePopupMenu();

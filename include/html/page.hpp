@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/02/13 20:17:06  ivanov
+* Added support of dynamic popup menus. Changed EnablePopupMenu().
+*
 * Revision 1.21  2001/08/14 16:57:14  ivanov
 * Added support for work HTML templates with JavaScript popup menu.
 * Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
@@ -159,8 +162,7 @@ public:
     enum EFlags {
         fNoTITLE      = 0x1,
         fNoVIEW       = 0x2,
-        fNoTEMPLATE   = 0x4,
-        fUsePopupMenu = 0x8
+        fNoTEMPLATE   = 0x4
     };
     typedef int TFlags;  // binary AND of "EFlags"
 
@@ -187,13 +189,20 @@ public:
     void SetTitle       (const string& title);
     void SetTemplateFile(const string& template_file);
 
-    // Enable using popup menus.
-    // Set (if "menu_lib_url" is defined) URL of the popup menu library;
-    // if "menu_lib_url" is not defined, then use default URL.
+    // Enable using popup menus, set URL for popup menu library.
+    // If "menu_lib_url" is not defined, then using default URL.
+    // use_dynamic_menu - enable/disable using dynamic popup menus 
+    // (default it is disabled).
+    // NOTE: 1) If we not change value "menu_script_url", namely use default
+    //          value for it, then we can skip call this function.
+    //       2) Dynamic menu work only in new browsers. They use one container
+    //          for all menus instead of separately container for each menu in 
+    //          nondynamic mode.
     // In most cases (except if popup menus are defined only in the page
     // template or printed by non-CNCBINode tag mapper), you can omit this
     // function call.
-    void EnablePopupMenu(const string& menu_script_url = kEmptyStr);
+    void EnablePopupMenu(const string& menu_script_url = kEmptyStr,
+                         bool use_dynamic_menu = false);
 
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode* node);
@@ -203,7 +212,11 @@ private:
 
     string m_Title;
     string m_TemplateFile;
+
+    // Popup menu variables
     string m_PopupMenuLibUrl;
+    bool   m_UsePopupMenu;
+    bool   m_UsePopupMenuDynamic;
 };
 
 

@@ -536,14 +536,17 @@ CHTML_html::~CHTML_html(void)
 void CHTML_html::Init(void)
 {
     m_UsePopupMenu = false;
+    m_UsePopupMenuDynamic = false;
     m_PopupMenuLibUrl = kEmptyStr;
 }
 
 
-void CHTML_html::EnablePopupMenu(const string& menu_script_url)
+void CHTML_html::EnablePopupMenu(const string& menu_script_url,
+                                 bool use_dynamic_menu)
 {
     m_UsePopupMenu = true;
     m_PopupMenuLibUrl = menu_script_url;
+    m_UsePopupMenuDynamic = use_dynamic_menu;
 }
 
 
@@ -580,11 +583,11 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
 
         if ( dynamic_cast<CHTML_head*>(Node(i)) ) {
             Node(i)->AppendChild(new CHTMLText(
-                                               CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl)));
+                     CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl)));
         } else {
             if ( dynamic_cast<CHTML_body*>(Node(i)) ) {
                 Node(i)->AppendChild(new CHTMLText(
-                                                   CHTMLPopupMenu::GetCodeBody()));
+                         CHTMLPopupMenu::GetCodeBody(m_UsePopupMenuDynamic)));
             }
         }
     }
@@ -1988,6 +1991,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2002/02/13 20:16:44  ivanov
+ * Added support of dynamic popup menus. Changed EnablePopupMenu().
+ *
  * Revision 1.73  2002/01/30 19:54:51  ivanov
  * CHTML_table::PrintBegin - determination length of prior table's separator
  * as length of first none empty table's row. Added new line at printing

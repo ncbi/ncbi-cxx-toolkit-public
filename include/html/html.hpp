@@ -488,10 +488,15 @@ class CHTML_html : public CHTMLElement
    
     // Enable using popup menus, set URL for popup menu library.
     // If "menu_lib_url" is not defined, then using default URL.
-    // NOTE: If we not change value "menu_script_url", namely use default
-    //       value for it, then we can skip call this function.
-    void EnablePopupMenu(const string& menu_script_url = kEmptyStr);
-
+    // use_dynamic_menu - enable/disable using dynamic popup menus 
+    // (default it is disabled).
+    // NOTE: 1) If we not change value "menu_script_url", namely use default
+    //          value for it, then we can skip call this function.
+    //       2) Dynamic menu work only in new browsers. They use one container
+    //          for all menus instead of separately container for each menu in 
+    //          nondynamic mode.
+    void EnablePopupMenu(const string& menu_script_url = kEmptyStr,
+                         bool use_dynamic_menu = false);
 
 private:
     // Init members
@@ -504,6 +509,7 @@ private:
     // Popup menu variables
     string m_PopupMenuLibUrl;
     bool   m_UsePopupMenu;
+    bool   m_UsePopupMenuDynamic;
 };
 
 
@@ -1226,6 +1232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2002/02/13 20:17:06  ivanov
+ * Added support of dynamic popup menus. Changed EnablePopupMenu().
+ *
  * Revision 1.57  2002/01/29 20:00:18  ivanov
  * (plain text) CHTML_table:: set def. medium sep. to " " instead of "\t"
  *
