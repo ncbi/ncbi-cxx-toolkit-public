@@ -354,7 +354,7 @@ void CAlnMix::x_Merge()
         m_SingleRefseq = false;
         m_IndependentDSs = m_InputDSs.size() > 1;
 
-        int ds_cnt;
+        unsigned int ds_cnt;
         NON_CONST_ITERATE (TSeqs, it, m_Seqs){
             ds_cnt = (*it)->m_DS_Count;
             if (ds_cnt > 1) {
@@ -1394,6 +1394,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2003/06/03 14:38:26  todorov
+* warning fixed
+*
 * Revision 1.51  2003/06/02 17:39:40  todorov
 * Changes in rev 1.49 were lost. Reapplying them
 *
