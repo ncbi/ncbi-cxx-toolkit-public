@@ -1824,86 +1824,91 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             }
             break;
         case CSeq_loc::e_Int:
-            if (slp->GetInt().IsSetFuzz_from()) {
-                const CInt_fuzz& fuzz = slp->GetInt().GetFuzz_from();
-                if (fuzz.Which() == CInt_fuzz::e_Lim) {
-                    CInt_fuzz::ELim lim = fuzz.GetLim();
-                    if (lim == CInt_fuzz::eLim_gt) {
-                        retval |= eSeqlocPartial_Limwrong;
-                    } else if (lim == CInt_fuzz::eLim_lt  ||
-                        lim == CInt_fuzz::eLim_unk) {
-                        if (slp->GetInt().IsSetStrand()  &&
-                            slp->GetInt().GetStrand() == eNa_strand_minus) {
-                            if (slp == last) {
-                                retval |= eSeqlocPartial_Stop;
-                            } else {
-                                retval |= eSeqlocPartial_Internal;
-                            }
-                            if (slp->GetInt().GetFrom() != 0) {
+            {
+                const CSeq_interval& itv = slp->GetInt();
+                if (itv.IsSetFuzz_from()) {
+                    const CInt_fuzz& fuzz = itv.GetFuzz_from();
+                    if (fuzz.Which() == CInt_fuzz::e_Lim) {
+                        CInt_fuzz::ELim lim = fuzz.GetLim();
+                        if (lim == CInt_fuzz::eLim_gt) {
+                            retval |= eSeqlocPartial_Limwrong;
+                        } else if (lim == CInt_fuzz::eLim_lt  ||
+                            lim == CInt_fuzz::eLim_unk) {
+                            if (itv.IsSetStrand()  &&
+                                itv.GetStrand() == eNa_strand_minus) {
                                 if (slp == last) {
-                                    retval |= eSeqlocPartial_Nostop;
+                                    retval |= eSeqlocPartial_Stop;
                                 } else {
-                                    retval |= eSeqlocPartial_Nointernal;
+                                    retval |= eSeqlocPartial_Internal;
                                 }
-                            }
-                        } else {
-                            if (slp == first) {
-                                retval |= eSeqlocPartial_Start;
+                                if (itv.GetFrom() != 0) {
+                                    if (slp == last) {
+                                        retval |= eSeqlocPartial_Nostop;
+                                    } else {
+                                        retval |= eSeqlocPartial_Nointernal;
+                                    }
+                                }
                             } else {
-                                retval |= eSeqlocPartial_Internal;
-                            }
-                            if (slp->GetInt().GetFrom() != 0) {
                                 if (slp == first) {
-                                    retval |= eSeqlocPartial_Nostart;
+                                    retval |= eSeqlocPartial_Start;
                                 } else {
-                                    retval |= eSeqlocPartial_Nointernal;
+                                    retval |= eSeqlocPartial_Internal;
+                                }
+                                if (itv.GetFrom() != 0) {
+                                    if (slp == first) {
+                                        retval |= eSeqlocPartial_Nostart;
+                                    } else {
+                                        retval |= eSeqlocPartial_Nointernal;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-
-            if (slp->GetInt().IsSetFuzz_to()) {
-                const CInt_fuzz& fuzz = slp->GetInt().GetFuzz_to();
-                CInt_fuzz::ELim lim = fuzz.GetLim();
-                if (lim == CInt_fuzz::eLim_lt) {
-                    retval |= eSeqlocPartial_Limwrong;
-                } else if (lim == CInt_fuzz::eLim_gt  ||
-                    lim == CInt_fuzz::eLim_unk) {
-                    CBioseq_Handle hnd =
-                        scope->GetBioseqHandle(slp->GetInt().GetId());
-                    CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
-                    bool miss_end = false;
-                    const CSeq_interval& itv = slp->GetInt();
-                    if (itv.GetTo() != bc->GetInst().GetLength() - 1) {
-                        miss_end = true;
-                    }
-                    if (itv.IsSetStrand()  &&
-                        itv.GetStrand() == eNa_strand_minus) {
-                        if (slp == first) {
-                            retval |= eSeqlocPartial_Start;
-                        } else {
-                            retval |= eSeqlocPartial_Internal;
-                        }
-                        if (miss_end) {
-                            if (slp == first /* was last */) {
-                                retval |= eSeqlocPartial_Nostart;
-                            } else {
-                                retval |= eSeqlocPartial_Nointernal;
+                
+                if (itv.IsSetFuzz_to()) {
+                    const CInt_fuzz& fuzz = itv.GetFuzz_to();
+                    CInt_fuzz::ELim lim = fuzz.GetLim();
+                    if (lim == CInt_fuzz::eLim_lt) {
+                        retval |= eSeqlocPartial_Limwrong;
+                    } else if (lim == CInt_fuzz::eLim_gt  ||
+                        lim == CInt_fuzz::eLim_unk) {
+                        CBioseq_Handle hnd =
+                            scope->GetBioseqHandle(itv.GetId());
+                        bool miss_end = false;
+                        if ( hnd ) {
+                            CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
+                            
+                            if (itv.GetTo() != bc->GetInst().GetLength() - 1) {
+                                miss_end = true;
                             }
                         }
-                    } else {
-                        if (slp == last) {
-                            retval |= eSeqlocPartial_Stop;
-                        } else {
-                            retval |= eSeqlocPartial_Internal;
-                        }
-                        if (miss_end) {
-                            if (slp == last) {
-                                retval |= eSeqlocPartial_Nostop;
+                        if (itv.IsSetStrand()  &&
+                            itv.GetStrand() == eNa_strand_minus) {
+                            if (slp == first) {
+                                retval |= eSeqlocPartial_Start;
                             } else {
-                                retval |= eSeqlocPartial_Nointernal;
+                                retval |= eSeqlocPartial_Internal;
+                            }
+                            if (miss_end) {
+                                if (slp == first /* was last */) {
+                                    retval |= eSeqlocPartial_Nostart;
+                                } else {
+                                    retval |= eSeqlocPartial_Nointernal;
+                                }
+                            }
+                        } else {
+                            if (slp == last) {
+                                retval |= eSeqlocPartial_Stop;
+                            } else {
+                                retval |= eSeqlocPartial_Internal;
+                            }
+                            if (miss_end) {
+                                if (slp == last) {
+                                    retval |= eSeqlocPartial_Nostop;
+                                } else {
+                                    retval |= eSeqlocPartial_Nointernal;
+                                }
                             }
                         }
                     }
@@ -2826,6 +2831,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.38  2003/02/14 15:41:00  shomrat
+* Minor implementation changes in SeqLocPartialTest
+*
 * Revision 1.37  2003/02/13 14:35:40  grichenk
 * + eOverlap_Contains
 *
