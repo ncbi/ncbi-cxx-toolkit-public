@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2001/09/10 21:19:48  lavr
+ * SERV_Print():  Client version tag added
+ * SERV_OpenEx(): Firewall type handling
+ *
  * Revision 6.25  2001/08/20 21:58:19  lavr
  * Parameter change for clarity: info -> net_info if type is SConnNetInfo
  *
@@ -205,13 +209,15 @@ SERV_ITER SERV_OpenEx(const char* service,
     } else {
         if (net_info->stateless)
             iter->type |= fSERV_StatelessOnly;
+        if (net_info->firewall)
+            iter->type |= fSERV_Firewall;
         if ((net_info->lb_disable || !(op = SERV_LBSMD_Open(iter))) &&
             !(op = SERV_DISPD_Open(iter, net_info))) {
             SERV_Close(iter);
             return 0;
         }
     }
-    
+
     assert(op != 0);
     iter->op = op;
     return iter;
@@ -298,38 +304,50 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 
 char* SERV_Print(SERV_ITER iter)
 {
+    static const char revision[] = "$Revision$";
+    static const char client_version[] = "Client-Version:";
     static const char accepted_types[] = "Accepted-Server-Types:";
     TSERV_Type type = (TSERV_Type) (iter->type & ~fSERV_StatelessOnly);
     char buffer[128], *str;
     size_t buflen, i;
     TSERV_Type t;
     BUF buf = 0;
-    
-    /* Form accepted server types (as customized header) */
-    strcpy(buffer, accepted_types);
+
+    /* Put client version number */
+    buflen = sizeof(client_version) - 1;
+    memcpy(buffer, client_version, buflen);
+    for (i = 0; revision[i]; i++)
+        if (isspace((unsigned char) revision[i]))
+            break;
+    while (revision[i] && buflen + 2 < sizeof(buffer)) {
+        if (revision[i] == '$')
+            break;
+        else
+            buffer[buflen++] = revision[i++];
+    }
+    strcpy(&buffer[buflen], "\r\n");
+    assert(strlen(buffer) == buflen + 2 && buflen + 2 < sizeof(buffer));
+    if (!BUF_Write(&buf, buffer, buflen + 2)) {
+        BUF_Destroy(buf);
+        return 0;
+    }
+    /* Form accepted server types */
     buflen = sizeof(accepted_types) - 1;
+    memcpy(buffer, accepted_types, buflen);
     for (t = 1; t; t <<= 1) {
         if (type & t) {
-            const char *name = SERV_TypeStr((ESERV_Type) t);
+            const char* name = SERV_TypeStr((ESERV_Type) t);
             size_t namelen = strlen(name);
-
-            if (namelen) {
-                if (buflen + 1 + namelen < sizeof(buffer)) {
-                    buffer[buflen++] = ' ';
-                    strcpy(&buffer[buflen], name);
-                    buflen += namelen;
-                } else
-                    return 0;
-            } else
+            if (!namelen || buflen + 1 + namelen + 2 >= sizeof(buffer))
                 break;
+            buffer[buflen++] = ' ';
+            strcpy(&buffer[buflen], name);
+            buflen += namelen;
         }
     }
-    assert(buflen < sizeof(buffer));
     if (buffer[buflen - 1] != ':') {
-        if (sizeof(buffer) < buflen + 2)
-            return 0;
         strcpy(&buffer[buflen], "\r\n");
-        assert(strlen(buffer) == buflen + 2);
+        assert(strlen(buffer) == buflen + 2 && buflen + 2 < sizeof(buffer));
         if (!BUF_Write(&buf, buffer, buflen + 2)) {
             BUF_Destroy(buf);
             return 0;
