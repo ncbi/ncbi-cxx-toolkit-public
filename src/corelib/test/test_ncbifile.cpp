@@ -35,11 +35,23 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <stdio.h>
+#include <limits.h>
 
 #include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
+
+
+// Create test file 
+static void s_CreateTestFile(const string& file)
+{
+    CNcbiOfstream fs(file.c_str(), ios::out | ios::trunc | ios::binary);
+    assert(fs.good());
+    fs << "test data";
+    assert(fs.good());
+    fs.close();
+}
 
 
 /////////////////////////////////
@@ -97,20 +109,6 @@ static void s_TEST_SplitPath(void)
     assert( CFile::AddTrailingPathSeparator("dir/") == "dir/");
     assert( CFile::DeleteTrailingPathSeparator("dir/path////")=="dir/path");
 
-#elif defined(NCBI_OS_MAC)
-	CFile::SplitPath("Hard Disk:Folder:1984.mov", &dir, &title, &ext);
-    assert( dir  == "Hard Disk:Folder:" );
-    assert( title == "1984" );
-    assert( ext  == ".mov" );
-    
-    path = CFile::MakePath("Hard Disk:Folder:",  "file", "ext");
-    assert( path == "Hard Disk:Folder:file.ext" );
-    path = CFile::MakePath("Hard Disk:Folder",   "file", "ext");
-    assert( path == "Hard Disk:Folder:file.ext" );
-
-    assert( CFile::AddTrailingPathSeparator("dir")  == "dir:");
-    assert( CFile::AddTrailingPathSeparator("dir:") == "dir:");
-    assert( CFile::DeleteTrailingPathSeparator("dir:path:::") == "dir:path");
 #endif
 
     CFile::SplitPath("name", &dir, &title, &ext);
@@ -159,12 +157,6 @@ static void s_TEST_CheckPath(void)
     assert(!d.IsAbsolutePath("./file") );
     assert(!d.IsAbsolutePath("../file") );
     assert(!d.IsAbsolutePath("dir/file") );
-#elif defined(NCBI_OS_MAC)
-    assert( d.IsAbsolutePath("HD:") );
-    assert( d.IsAbsolutePath("HD:file") );
-    assert(!d.IsAbsolutePath("file") );
-    assert(!d.IsAbsolutePath(":file") );
-    assert(!d.IsAbsolutePath(":file:file") );
 #endif
 
     // Convert path to OS dependent test
@@ -193,15 +185,6 @@ static void s_TEST_CheckPath(void)
     assert( d.ConvertToOSPath(".\\dir\\file")   == "dir/file" );
     assert( d.ConvertToOSPath("..\\file")       == "../file" );
     assert( d.ConvertToOSPath("..\\..\\file")   == "../../file" );
-#elif defined(NCBI_OS_MAC)
-    assert( d.ConvertToOSPath("dir")            == ":dir" );
-    assert( d.ConvertToOSPath("dir\\file")      == ":dir:file" );
-    assert( d.ConvertToOSPath("dir/file")       == ":dir:file" );
-    assert( d.ConvertToOSPath(":dir:file")      == ":dir:file" );
-    assert( d.ConvertToOSPath("./dir/file")     == ":dir:file" );
-    assert( d.ConvertToOSPath("../file")        == "::file" );
-    assert( d.ConvertToOSPath("../../file")     == ":::file" );
-    assert( d.ConvertToOSPath("../.././../file")== "::::file" );
 #endif
 
     // ConcatPath() test
@@ -223,16 +206,6 @@ static void s_TEST_CheckPath(void)
     assert( d.ConcatPath("", "file")            == "file" );
     assert( d.ConcatPath("dir", "")             == "dir/" );
     assert( d.ConcatPath("", "")                == "" );
-#elif defined(NCBI_OS_MAC)
-    assert( d.ConcatPath("HD", "dir")           == "HD:dir" );
-    assert( d.ConcatPath(":dir", "file")        == ":dir:file" );
-    assert( d.ConcatPath("dir:", "file")        == "dir:file" );
-    assert( d.ConcatPath("dir", ":file")        == "dir:file" );
-    assert( d.ConcatPath("dir::", "file")       == "dir::file" );
-    assert( d.ConcatPath("dir", "::file")       == "dir::file" );
-    assert( d.ConcatPath("", "file")            == ":file" );
-    assert( d.ConcatPath(":file", "")           == ":file:" );
-    assert( d.ConcatPath("", "")                == ":" );
 #endif
     // Concat any OS paths
     assert( d.ConcatPathEx("dir/", "file")      == "dir/file" );
@@ -288,9 +261,6 @@ static void s_TEST_CheckPath(void)
     assert( d.NormalizePath("/")                == "/" );
     assert( d.NormalizePath("/./")              == "/" );
     assert( d.NormalizePath("/../")             == "/" );
-
-#elif defined(NCBI_OS_MAC)
-    // NOT implemented!
 #endif
 }
 
@@ -307,6 +277,8 @@ static void s_TEST_MatchesMask(void)
     assert( d.MatchesMask("file"    , "*"));
     assert(!d.MatchesMask("file"    , "*.*"));
     assert( d.MatchesMask("file.cpp", "*.cpp"));
+    assert(!d.MatchesMask("file.cpp", "*.CPP"));
+    assert( d.MatchesMask("file.cpp", "*.CPP", NStr::eNocase));
     assert( d.MatchesMask("file.cpp", "*.c*"));
     assert( d.MatchesMask("file"    , "file*"));
     assert( d.MatchesMask("file"    , "f*"));
@@ -354,24 +326,60 @@ static void s_TEST_File(void)
 {
     {{
         // Create test file 
-        FILE* file = fopen("file_1", "w+");
-        assert( file );
-        fputs("test data", file);
-        fclose(file);
-    
-        CFile f("file_1");
+        s_CreateTestFile("file1");
+	
+        CFile f("file1");
+        CFile f1 = f;
+        CFile f2("file2");
+        CFile f3("file3");
 
         // Get file size
-        assert( f.GetLength() == 9);
-        CFile("file_2").Remove();
-        assert( CFile("file_2").GetLength() == -1);
-
-        // Check the file exists
         assert( f.Exists() );
-        assert( !CFile("file_2").Exists() );
+        assert( f.GetLength() == 9);
+        f2.Remove();
+        assert( f2.GetLength() == -1);
 
-        // Rename the file
-        assert( f.Rename("file_2") );
+        // Copy/rename/backup and other file operations
+
+        assert( !f2.Exists() );
+        assert( f1.Copy(f2.GetPath()) );
+        assert( f2.Exists() );
+        assert( f1.Compare(f2.GetPath()) );
+
+        assert( !f3.Exists() );
+        assert( f1.Copy(f3.GetPath(), CFile::fCF_PreserveAll) );
+        assert( f3.Exists() );
+
+        assert( f1.Backup() );
+        assert( CFile("file1").Exists() );
+        assert( CFile("file1.bak").Exists() );
+        assert( CFile("file1.bak").Remove() );
+        assert( !CFile("file1.bak").Exists() );
+
+        assert( f1.Backup(".bak", CFile::eBackup_Rename) );
+        assert( !CFile("file1").Exists() );
+        assert( CFile("file1.bak").Exists() );
+        assert( f1.Rename(f.GetPath()) );
+
+        assert( !f1.Rename(f2.GetPath()) );
+        assert( CFile("file1").Exists() );
+        assert( f2.Exists() );
+
+        assert( f1.Rename(f2.GetPath(), CFile::fRF_Overwrite) );
+        assert( !CFile("file1").Exists() );
+        assert( f1.Exists() );
+        assert( f2.Exists() );
+
+        assert( f2.Rename(f3.GetPath(), CFile::fRF_Backup |
+	                                CFile::fRF_Overwrite) );
+        assert( f2.Exists() );
+        assert( f3.Exists() );
+        assert( CFile("file3" + f3.GetBackupSuffix()).Exists() );
+        assert( CFile("file3" + f3.GetBackupSuffix()).Remove() );
+
+        f = f3;
+        assert( f.Exists() );
+        assert( f.GetPath() == f3.GetPath() );
 
         // Status
         CDirEntry::EType file_type;
@@ -391,6 +399,9 @@ static void s_TEST_File(void)
              << ((other & CDirEntry::fWrite)   ? "w" : "-")
              << ((other & CDirEntry::fExecute) ? "x" : "-")
              << endl;
+        string owner_name, group_name;
+        assert( f.GetOwner(&owner_name, &group_name) );
+        cout << "File owner: " << owner_name << ":" << group_name << endl;
 
         // Get/set file modification time
         CTime::SetFormat("M/D/Y h:m:s Z");
@@ -411,10 +422,7 @@ static void s_TEST_File(void)
 
         // Remove the file
         assert( f.Remove() );
-
-        // Check the file exists
-        assert( !CFile("file_1").Exists() );
-        assert( !CFile("file_2").Exists() );
+        assert( !f.Exists() );
     }}
     
     {{
@@ -472,56 +480,63 @@ static void s_TEST_File(void)
 // Work with directories
 //
 
-#if defined(NCBI_OS_MAC)
-#   define REL ":"
-#   define SEP ":"
-#   define CWD ":"
-#else
-#   define REL ""
-#   define SEP "/"
-#   define CWD "."
-#endif
-
 static void s_TEST_Dir(void)
 {
     // Delete the directory if it exists before we start testing
-    CDirEntry("dir_1").Remove();
+    CDirEntry("dir1").Remove();
     
     // Create directory
-    assert( CDir("dir_1").Create() );
+    assert( CDir("dir1").Create() );
     // Try to create it second time -- should be OK
-    assert( CDir("dir_1").Create() );
+    assert( CDir("dir1").Create() );
 
     // Create file in the directory
-    FILE* file = fopen(REL "dir_1" SEP "file_1", "w+");
-    assert( file );
-    fclose(file);
+    s_CreateTestFile("dir1/file1");
 
     // Check the directory exists
-    assert( CDir("dir_1").Exists() );
-    assert( !CDir("dir_2").Exists() );
-    assert( CDirEntry("dir_1").Exists() );
-    assert( CDirEntry(REL"dir_1" SEP "file_1").Exists() );
+    assert( CDir("dir1").Exists() );
+    assert( !CDir("dir2").Exists() );
+    assert( CDirEntry("dir1").Exists() );
+    assert( CDirEntry("dir1/file1").Exists() );
 
     // Check entry type
-    assert( CDirEntry("dir_1").IsDir() );
-    assert( !CDirEntry("dir_1").IsFile() );
-    assert( CDirEntry(REL "dir_1" SEP "file_1").IsFile() );
-    assert( !CDirEntry(REL "dir_1" SEP "file_1").IsDir() );
-    
+    assert( CDirEntry("dir1").IsDir() );
+    assert( !CDirEntry("dir1").IsFile() );
+    assert( CDirEntry("dir1/file1").IsFile() );
+    assert( !CDirEntry("dir1/file1").IsDir() );
+
+    // Copy the directory
+    assert( CDir("dir1").Copy("dir3") );
+    assert( !CDir("dir1").Copy("dir3") );
+    assert( CDir("dir1").Copy("dir3", CDir::fCF_Overwrite) );
+
+    assert( CDir("dir1").Copy("dir3", CDir::fCF_Backup) );
+    assert( CFile("dir3/file1.bak").Exists() );
+    assert( !CDir("dir3.bak").Exists() );
+    assert( CDir("dir1").Copy("dir3", CDir::fCF_Backup | CDir::fCF_TopDirOnly) );
+    assert( !CFile("dir3/file1.bak").Exists() );
+    assert( CDir("dir3.bak").Exists() );
+    assert( CDir("dir3.bak").Remove() );
+
+    assert( CDir("dir1").CopyToDir("dir3") );
+    assert( CDir("dir3/dir1").Exists() );
+    assert( CFile("dir3/dir1/file1").Exists() );
+
     // Rename the directory
-    assert( CDir("dir_1").Rename("dir_2") );
+    assert( CDir("dir1").Rename("dir2") );
 
     // Remove the directory
-    assert( !CDirEntry("dir_2").Remove(CDirEntry::eOnlyEmpty) );
-    assert( CFile(REL "dir_2" SEP "file_1").Remove() );
-    assert( CDir("dir_2").Remove(CDir::eOnlyEmpty) );
+    assert( !CDirEntry("dir2").Remove(CDirEntry::eOnlyEmpty) );
+    assert( CFile("dir2/file1").Remove() );
+    assert( CDir("dir2").Remove(CDir::eOnlyEmpty) );
+    assert( CDir("dir3").Remove() );
 
     // Check the directory exists
-    assert( !CDir("dir_1").Exists() );
-    assert( !CDir("dir_2").Exists() );
+    assert( !CDir("dir1").Exists() );
+    assert( !CDir("dir2").Exists() );
+    assert( !CDir("dir3").Exists() );
 
-    CDir dir(CWD);
+    CDir dir(".");
 
     // Current directory list
     {{
@@ -569,27 +584,23 @@ static void s_TEST_Dir(void)
 
     // Create directory structure for deletion
     {{
-        assert( CDir("dir_3").Create() );
-        assert( CDir(REL "dir_3" SEP "subdir_1").Create() );
-        assert( CDir(REL "dir_3" SEP "subdir_2").Create() );
+        assert( CDir("dir3").Create() );
+        assert( CDir("dir3/subdir1").Create() );
+        assert( CDir("dir3/subdir2").Create() );
         
-        file = fopen(REL "dir_3" SEP "file", "w+");
-        assert( file );
-        fclose(file);
-        file = fopen(REL "dir_3" SEP "subdir_1" SEP "file", "w+");
-        assert( file );
-        fclose(file);
-
+	s_CreateTestFile("dir3/file");
+	s_CreateTestFile("dir3/subdir1/file");
+	
         // Delete dir
-        dir.Reset("dir_3");
+        dir.Reset("dir3");
         assert( !dir.Remove(CDir::eOnlyEmpty) );
         assert( dir.Exists() );
 
         assert( !dir.Remove(CDir::eNonRecursive) );
         assert( dir.Exists() );
-        assert( CDir(REL "dir_3" SEP "subdir_1").Exists() );
-        assert( CFile(REL "dir_3" SEP "subdir_1" SEP "file").Exists() );
-        assert( !CFile(REL "dir_3" SEP "file").Exists() );
+        assert( CDir("dir3/subdir1").Exists() );
+        assert( CFile("dir3/subdir1/file").Exists() );
+        assert( !CFile("dir3/file").Exists() );
 
         assert( dir.Remove(CDir::eRecursive) );
         assert( !dir.Exists() );
@@ -599,14 +610,14 @@ static void s_TEST_Dir(void)
     {{
         string homedir = CDir::GetHome();
         assert ( !homedir.empty() );
-        cout << homedir << endl;
+        cout << "Home dir: " << homedir << endl;
     }}
 
     // Creation of relative path from 2 absolute pathes:
     {{
         string rel_path;
 
-#  if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
         assert( CDirEntry::CreateRelativePath(
                 "C:\\x\\y\\z\\",
                 "C:\\x\\a\\b\\") == "..\\..\\a\\b\\" );
@@ -627,16 +638,83 @@ static void s_TEST_Dir(void)
                 "\\x\\y\\z\\", 
                 "\\x\\y\\") == "..\\" );
 
-#  elif defined(NCBI_OS_UNIX )
+#elif defined(NCBI_OS_UNIX)
         assert( CDirEntry::CreateRelativePath(
                 "/usr/bin/", "/usr/" ) == "../" );
         assert( CDirEntry::CreateRelativePath(
                 "/usr/bin/", "/etc/" ) == "../../etc/" );
-
-#  elif defined(NCBI_OS_MAC)
-        // NOT implemented!
-#  endif
+#endif
     }}
+}
+
+
+/////////////////////////////////
+// Work with symbolic links
+//
+
+static void s_TEST_Link(void)
+{
+#if defined(NCBI_OS_UNIX)
+    CDir dir("dir1");
+    assert( !dir.Exists() );
+    assert( dir.Create() );
+    assert( dir.Exists() );
+    
+    // Create link
+    CSymLink link("link1");
+    assert( !link.Exists() );
+    assert( link.Create("dir1") );
+    assert( link.Exists() );
+    
+    // Check link
+    assert( link.IsDir() );
+    assert( link.IsDir(eFollowLinks) );
+    assert( !link.IsDir(eIgnoreLinks) );
+    assert( link.GetType(eIgnoreLinks) == CDirEntry::eLink );
+    assert( link.IsLink() );
+    assert( link.LookupLink() == "dir1");
+
+    // Copy link with fCF_FollowLinks flag, set by default
+    CDir dir2("dir2");
+    assert( link.Copy("dir2") );
+    assert( dir2.IsDir() );
+    assert( dir2.Remove() );
+    assert( !dir2.Exists() );
+
+    // Copy only link
+    CSymLink link2("link2");
+    assert( !link2.Exists() );
+    assert( link.Copy("link2", CDirEntry::fCF_Overwrite) );
+    assert( link2.Exists() );
+    assert( link2.IsLink() );
+    assert( link2.LookupLink() == "dir1");
+    assert( link2.Remove() );
+    assert( !link2.Exists() );
+    assert( dir.Exists() );
+    
+    // Create link to link
+    assert( link2.Create("link1") );
+    assert( link2.Exists() );
+
+    // Dereference nested link   
+    CDirEntry e = link2;
+    assert( e.IsLink() );
+    assert( e.LookupLink() == "link1");
+    e.DereferenceLink();
+    assert( e.IsDir() );
+    assert( e.GetPath() == "dir1");
+    
+    // Remove
+    assert( link2.Remove() );
+    assert( !link2.Exists() );
+    assert( link.Exists() );
+    assert( link.Remove() );
+    assert( !link.Exists() );
+    assert( dir.Exists() );
+    assert( e.Remove() );
+    assert( !dir.Exists() );
+    
+#endif
 }
 
 
@@ -882,6 +960,8 @@ int CTest::Run(void)
     s_TEST_File();
     // CDir
     s_TEST_Dir();
+    // CSymLink
+    s_TEST_Link();
 
     // CMemoryFile
     s_TEST_MemoryFile();
@@ -906,6 +986,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/03/22 14:22:32  ivanov
+ * Added CSymLink test. Added tests for Copy/Rename methods.
+ * Dropped MacOS 9 support.
+ *
  * Revision 1.44  2005/01/31 11:50:29  ivanov
  * Added tests for CMaskFileName. Some cosmetics.
  *
