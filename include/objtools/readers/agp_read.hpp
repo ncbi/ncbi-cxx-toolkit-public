@@ -39,17 +39,28 @@
 
 BEGIN_NCBI_SCOPE
 
+enum EAgpRead_IdRule
+{
+    eAgpRead_ParseId,         // Try to parse, but make local if this fails
+    eAgpRead_ForceLocalId     // Always make a local id
+};
+
 /// Read an agp file from a stream, constructing delta sequences
 NCBI_XOBJREAD_EXPORT
-void AgpRead(CNcbiIstream& is, vector<CRef<objects::CBioseq> >& bioseqs);
+void AgpRead(CNcbiIstream& is,
+             vector<CRef<objects::CBioseq> >& bioseqs,
+             EAgpRead_IdRule component_id_rule = eAgpRead_ParseId);
 
 /// Same thing, but wrap bioseqs in Seq-entry's.
 NCBI_XOBJREAD_EXPORT
-void AgpRead(CNcbiIstream& is, vector<CRef<objects::CSeq_entry> >& entries);
+void AgpRead(CNcbiIstream& is,
+             vector<CRef<objects::CSeq_entry> >& entries,
+             EAgpRead_IdRule component_id_rule = eAgpRead_ParseId);
 
 /// Return a Bioseq-set containing everything.
 NCBI_XOBJREAD_EXPORT
-CRef<objects::CBioseq_set> AgpRead(CNcbiIstream& is);
+CRef<objects::CBioseq_set>
+AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule = eAgpRead_ParseId);
 
 END_NCBI_SCOPE
 
@@ -58,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * =========================================================================
  * $Log$
+ * Revision 1.3  2005/01/26 20:58:48  jcherry
+ * More robust and controllable handling of component ids
+ *
  * Revision 1.2  2004/08/19 13:07:53  dicuccio
  * Repositioned export specifier to precede function declaration's return value
  *

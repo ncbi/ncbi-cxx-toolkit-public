@@ -47,10 +47,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-CRef<CBioseq_set> AgpRead(CNcbiIstream& is)
+CRef<CBioseq_set> AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule)
 {
     vector<CRef<CSeq_entry> > entries;
-    AgpRead(is, entries);
+    AgpRead(is, entries, component_id_rule);
     CRef<CBioseq_set> bioseq_set(new CBioseq_set);
     ITERATE (vector<CRef<CSeq_entry> >, iter, entries) {
         bioseq_set->SetSeq_set().push_back(*iter);
@@ -59,10 +59,12 @@ CRef<CBioseq_set> AgpRead(CNcbiIstream& is)
 }
 
 
-void AgpRead(CNcbiIstream& is, vector<CRef<CSeq_entry> >& entries)
+void AgpRead(CNcbiIstream& is,
+             vector<CRef<CSeq_entry> >& entries,
+             EAgpRead_IdRule component_id_rule)
 {
     vector<CRef<CBioseq> > bioseqs;
-    AgpRead(is, bioseqs);
+    AgpRead(is, bioseqs, component_id_rule);
     NON_CONST_ITERATE (vector<CRef<CBioseq> >, bioseq, bioseqs) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSeq(**bioseq);
@@ -71,7 +73,9 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CSeq_entry> >& entries)
 }
 
 
-void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
+void AgpRead(CNcbiIstream& is,
+             vector<CRef<CBioseq> >& bioseqs,
+             EAgpRead_IdRule component_id_rule)
 {
     string line;
     vector<string> fields;
@@ -185,12 +189,23 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
         } else if (fields[4].size() == 1 && 
                    fields[4].find_first_of("ADFGPOW") == 0) {
             CSeq_loc& loc = delta_seq->SetLoc();
-            CRef<CSeq_id> comp_id(new CSeq_id(fields[5]));
+
+            // Component ID
+            CRef<CSeq_id> comp_id;
+            if (component_id_rule != eAgpRead_ForceLocalId) {
+                try {
+                    comp_id.Reset(new CSeq_id(fields[5]));
+                }
+                catch (invalid_argument& e) {
+                    comp_id.Reset(new CSeq_id);
+                }
+            }
             if (comp_id->Which() == CSeq_id::e_not_set) {
-                // not a recognized format; force a local id
+                // not a recognized format, or request to force a local id
                 comp_id->SetLocal().SetStr(fields[5]);
             }
             loc.SetInt().SetId(*comp_id);
+
             loc.SetInt().SetFrom(NStr::StringToInt(fields[6]) - 1);
             loc.SetInt().SetTo  (NStr::StringToInt(fields[7]) - 1);
             length += loc.GetInt().GetTo() - loc.GetInt().GetFrom() + 1;
@@ -234,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.10  2005/01/26 20:58:48  jcherry
+ * More robust and controllable handling of component ids
+ *
  * Revision 1.9  2004/07/08 14:22:19  jcherry
  * Handle Seq-ids of unrecognized format as local ids
  *
