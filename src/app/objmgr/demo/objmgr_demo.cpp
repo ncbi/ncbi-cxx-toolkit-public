@@ -63,6 +63,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/seqref.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
@@ -134,6 +135,7 @@ void CDemoApp::Init(void)
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
+    arg_desc->AddFlag("print_descr", "print all found descriptors");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
@@ -242,6 +244,7 @@ int CDemoApp::Run(void)
     int pause = args["pause"].AsInteger();
     bool only_features = args["only_features"];
     bool print_tse = args["print_tse"];
+    bool print_descr = args["print_descr"];
     bool print_features = args["print_features"];
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
@@ -527,8 +530,9 @@ int CDemoApp::Run(void)
             // top-level seq-entry.
             count = 0;
             for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                NcbiCout << "\n" <<
-                    MSerial_AsnText << *desc_it;
+                if ( print_descr ) {
+                    NcbiCout << "\n" << MSerial_AsnText << *desc_it;
+                }
                 count++;
             }
             cout << "\n";
@@ -776,6 +780,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/05/13 19:33:15  vasilche
+* Added option for printing descriptors.
+*
 * Revision 1.65  2004/04/27 19:00:08  kuznets
 * Commented out old cache modes
 *
