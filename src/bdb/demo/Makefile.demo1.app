@@ -1,6 +1,6 @@
 # $Id$
 
-APP = demo1
+APP = bdb_demo1
 SRC = demo1
 LIB = bdb xncbi xutil
 LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
