@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/01/08 22:48:00  lavr
+ * Double return 0 in GetNextInfo removed:
+ * 0 now indicates an error unconditionally
+ *
  * Revision 6.10  2000/12/29 17:40:30  lavr
  * Pretty printed; Double 0 return added to SERV_GetNextInfo
  *
@@ -113,9 +117,7 @@ SERV_ITER SERV_OpenEx
 /* Get the next server meta-address.
  * Note that the application program should NOT destroy returned server info:
  * it will be freed automatically upon iterator destruction.
- * Return 0 if the requested service cannot be found without additional
- * data exchange, further call initiates data exchange and may be
- * successful. Double return of 0 signals an error.
+ * Return 0 if no more servers were found for the service requested.
  */
 const SSERV_Info* SERV_GetNextInfo
 (SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
