@@ -57,7 +57,8 @@ public:
     // this must be kept in sync with the (private) list in Dbtag.cpp!
     enum EDbtagType {
         eDbtagType_bad,
-
+        
+        eDbtagType_ASAP,
         eDbtagType_ATCC,
         eDbtagType_ATCC_dna,
         eDbtagType_ATCC_in_host,
@@ -92,6 +93,7 @@ public:
         eDbtagType_MIM,
         eDbtagType_MaizeDB,
         eDbtagType_NextDB,
+        eDbtagType_PGN,
         eDbtagType_PID,
         eDbtagType_PIDd,
         eDbtagType_PIDe,
@@ -99,15 +101,15 @@ public:
         eDbtagType_PIR,
         eDbtagType_PSEUDO,
         eDbtagType_RATMAP,
-        eDbtagType_REMTREMBL,
         eDbtagType_RGD,
         eDbtagType_RZPD,
         eDbtagType_RiceGenes,
         eDbtagType_SGD,
-        eDbtagType_SPTREMBL,
-        eDbtagType_SWISS_PROT,
         eDbtagType_SoyBase,
+        eDbtagType_SubtiList,
         eDbtagType_UniGene,
+        eDbtagType_UniProt_SwissProt,
+        eDbtagType_UniProt_TrEMBL,
         eDbtagType_UniSTS,
         eDbtagType_WorfDB,
         eDbtagType_WormBase,
@@ -115,6 +117,7 @@ public:
         eDbtagType_dbEST,
         eDbtagType_dbSNP,
         eDbtagType_dbSTS,
+        eDbtagType_dictyBase,
         eDbtagType_niaEST,
         eDbtagType_taxon,
 
@@ -122,7 +125,9 @@ public:
         eDbtagType_GenBank,
         eDbtagType_EMBL,
         eDbtagType_DDBJ,
-        eDbtagType_REBASE
+        eDbtagType_REBASE,
+        eDbtagType_CloneID,
+        eDbtagType_IMGT_GENEDB
     };
 
     // constructor
@@ -183,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/10/22 15:18:26  shomrat
+ * Updated DB list
+ *
  * Revision 1.9  2004/08/30 13:23:53  shomrat
  * + eDbtagType_H_InvDB
  *

@@ -54,6 +54,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
+    TDbxrefPair("ASAP", CDbtag::eDbtagType_ASAP),
     TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
     TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
     TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
@@ -79,8 +80,8 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
     TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
     TDbxrefPair("ISFinder", CDbtag::eDbtagType_ISFinder),
+    TDbxrefPair("InterPro", CDbtag::eDbtagType_Interpro),
     TDbxrefPair("InterimID", CDbtag::eDbtagType_InterimID),
-    TDbxrefPair("Interpro", CDbtag::eDbtagType_Interpro),
     TDbxrefPair("JCM", CDbtag::eDbtagType_JCM),
     TDbxrefPair("LocusID", CDbtag::eDbtagType_LocusID),
     TDbxrefPair("MGD", CDbtag::eDbtagType_MGD),
@@ -88,6 +89,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("MIM", CDbtag::eDbtagType_MIM),
     TDbxrefPair("MaizeDB", CDbtag::eDbtagType_MaizeDB),
     TDbxrefPair("NextDB", CDbtag::eDbtagType_NextDB),
+    TDbxrefPair("PGN", CDbtag::eDbtagType_PGN),
     TDbxrefPair("PID", CDbtag::eDbtagType_PID),
     TDbxrefPair("PIDd", CDbtag::eDbtagType_PIDd),
     TDbxrefPair("PIDe", CDbtag::eDbtagType_PIDe),
@@ -95,15 +97,15 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("PIR", CDbtag::eDbtagType_PIR),
     TDbxrefPair("PSEUDO", CDbtag::eDbtagType_PSEUDO),
     TDbxrefPair("RATMAP", CDbtag::eDbtagType_RATMAP),
-    TDbxrefPair("REMTREMBL", CDbtag::eDbtagType_REMTREMBL),
     TDbxrefPair("RGD", CDbtag::eDbtagType_RGD),
     TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
     TDbxrefPair("RiceGenes", CDbtag::eDbtagType_RiceGenes),
     TDbxrefPair("SGD", CDbtag::eDbtagType_SGD),
     TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
-    TDbxrefPair("Swiss-Prot", CDbtag::eDbtagType_SWISS_PROT),
-    TDbxrefPair("TrEMBL", CDbtag::eDbtagType_SPTREMBL),
+    TDbxrefPair("SubtiList", CDbtag::eDbtagType_SubtiList),
     TDbxrefPair("UniGene", CDbtag::eDbtagType_UniGene),
+    TDbxrefPair("UniProt/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt),
+    TDbxrefPair("UniProt/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL),
     TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
@@ -111,14 +113,17 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("dbEST", CDbtag::eDbtagType_dbEST),
     TDbxrefPair("dbSNP", CDbtag::eDbtagType_dbSNP),
     TDbxrefPair("dbSTS", CDbtag::eDbtagType_dbSTS),
+    TDbxrefPair("dictyBase", CDbtag::eDbtagType_dictyBase),
     TDbxrefPair("niaEST", CDbtag::eDbtagType_niaEST),
     TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
+    TDbxrefPair("CloneID", CDbtag::eDbtagType_CloneID),
     TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
     TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
     TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
+    TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE)
 };
 
@@ -250,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2004/10/22 15:19:11  shomrat
+ * Updated DB list
+ *
  * Revision 6.17  2004/08/30 13:24:23  shomrat
  * + eDbtagType_H_InvDB
  *
