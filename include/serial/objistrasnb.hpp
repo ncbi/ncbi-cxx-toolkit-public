@@ -61,6 +61,8 @@ public:
     CObjectIStreamAsnBinary(CNcbiIstream& in,
                             bool deleteIn,
                             EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsnBinary(CByteSourceReader& reader,
+                            EFixNonPrint how = eFNP_Default);
 
     ESerialDataFormat GetDataFormat(void) const;
 
@@ -245,6 +247,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/10/15 18:00:32  vasilche
+* Fixed integer overflow in asn binary input stream after 2GB.
+* Added constructor of CObjectIStreamAsnBinary() from CByteSourceReader.
+*
 * Revision 1.41  2003/08/19 18:32:37  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.
