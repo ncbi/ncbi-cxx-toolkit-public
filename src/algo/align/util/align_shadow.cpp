@@ -31,9 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-
 #include "messages.hpp"
-
 #include <algo/align/util/align_shadow.hpp>
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -43,7 +41,6 @@
 #include <numeric>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(AlgoAlignUtil);
 USING_SCOPE(objects);
 
 
@@ -61,7 +58,7 @@ template<class TId>
 CAlignShadow<TId>::CAlignShadow(const CSeq_align& seq_align)
 {
     NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-               g_msg_ImproperTemplateArgument);
+               STATIC_MSG(eImproperTemplateArgument));
 }
 
 
@@ -71,8 +68,8 @@ CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const CSeq_align& seq_align)
 {
     if (seq_align.CheckNumRows() != 2) {
 
-        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_IncorrectSeqAlignDim);
+        NCBI_THROW( CAlgoAlignUtilException, eBadParameter,
+                    STATIC_MSG(eIncorrectSeqAlignDim) );
     }
 
     m_Id[0].Reset(&seq_align.GetSeq_id(0));
@@ -85,7 +82,7 @@ CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const CSeq_align& seq_align)
 
     if (!seq_align.GetSegs().IsDenseg()) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_IncorrectSeqAlignType);
+                   STATIC_MSG(eIncorrectSeqAlignDim) );
     }
 
     const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
@@ -100,7 +97,7 @@ CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const CSeq_align& seq_align)
     }
     else {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_UnexpectedStrand);
+                   STATIC_MSG(eUnexpectedStrand));
     }
 
     if( strands[1] == eNa_strand_plus) {
@@ -111,7 +108,7 @@ CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const CSeq_align& seq_align)
     }
     else {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_UnexpectedStrand);
+                   STATIC_MSG(eUnexpectedStrand));
     }
 
     m_Length = accumulate(lens.begin(), lens.end(), 0);
@@ -216,10 +213,9 @@ void CAlignShadow<TId>::x_InitFromString(const char* str)
     }
     else {
         
-        //string err_msg ( g_msg_StrInitFailed  );
-        //err_msg += str;
-
-        NCBI_THROW(CAlgoAlignUtilException, eFormat, "");
+        string err_msg (STATIC_MSG(eFailedToInitFromString));
+        err_msg += str;
+        NCBI_THROW(CAlgoAlignUtilException, eFormat, err_msg.c_str());
     }
 }
 
@@ -232,7 +228,7 @@ const TId& CAlignShadow<TId>::GetId(unsigned char where) const
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     return m_Id[where];
 }
@@ -257,7 +253,7 @@ void CAlignShadow<TId>::SetId(unsigned char where, const TId& id)
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     m_Id[where] = id;
 }
@@ -282,7 +278,7 @@ bool  CAlignShadow<TId>::GetStrand(unsigned char where) const
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     return m_Strand[where];
 }
@@ -307,7 +303,7 @@ void CAlignShadow<TId>::SetStrand(unsigned char where, bool strand)
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     m_Strand[where] = strand;
 }
@@ -339,7 +335,7 @@ Uint4 CAlignShadow<TId>::GetMin(unsigned char where) const
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     return m_Box[where << 1];
 }
@@ -350,7 +346,7 @@ Uint4 CAlignShadow<TId>::GetMax(unsigned char where) const
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     return m_Box[(where << 1) | 1];
 }
@@ -396,7 +392,7 @@ void CAlignShadow<TId>::SetMax(unsigned char where, Uint4 val)
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     m_Box[(where << 1) | 1] = val;
 }
@@ -407,7 +403,7 @@ void CAlignShadow<TId>::SetMin(unsigned char where, Uint4 val)
 {
     if(0 != where && where != 1) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   g_msg_ArgOutOfRange);
+                   STATIC_MSG(eArgOutOfRange));
     }
     m_Box[where << 1] = val;
 }
@@ -582,6 +578,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.6  2004/12/22 22:14:18  kapustin
+ * Move static messages to CSimpleMessager to satisfy Solaris/forte6u2
+ *
  * Revision 1.5  2004/12/22 21:33:22  kapustin
  * Uncomment AlgoAlignUtil scope
  *

@@ -35,31 +35,62 @@
 
 #include <corelib/ncbistd.hpp>
 
-BEGIN_SCOPE(AlgoAlignUtil)
+BEGIN_NCBI_SCOPE
 
-const char g_msg_FailedToInitFromString [] =
-    "Failed to init CAlignShadow from the string: ";
+class CSimpleMessager 
+{
+public:
 
-const char g_msg_IncorrectSeqAlignDim [] =
-    "CAlignShadow::CAlignShadow passed seq-align of dimension != 2";
+    enum EMsgCode {
+        eFailedToInitFromString,
+        eIncorrectSeqAlignDim,
+        eIncorrectSeqAlignType,
+        eUnexpectedStrand,
+        eImproperTemplateArgument,
+        eArgOutOfRange
+    };
 
-const char g_msg_IncorrectSeqAlignType [] = 
-    "CAlignShadow::SAlignShadow passed a seq-align that isn't a dense-seg";
+    static const char* s_GetMsg (EMsgCode code) {
 
-const char g_msg_UnexpectedStrand [] =
-    "Unexpected query strand reported to "
-    "CAlignShadow::CAlignShadow(CSeq_align)";
+        switch(code) {
 
-const char g_msg_ImproperTemplateArgument [] =
-    "Invoked with improper template argument";
+            case eFailedToInitFromString:
+                return "Failed to init CAlignShadow from the string: ";
 
-const char g_msg_ArgOutOfRange [] =
-    "Argument out of range";
+            case eIncorrectSeqAlignDim:
+                return "Incorrect seq-align dimension";
 
-END_SCOPE(AlgoAlignUtil)
+            case eIncorrectSeqAlignType:
+                return "Incorrect seq-align type (dense-seg expected)";
+
+            case eUnexpectedStrand:
+                return "Unexpected strand reported";
+
+            case eImproperTemplateArgument:
+                return "Invoked with improper template argument";
+
+            case eArgOutOfRange:
+                return "ArgumentOutOfRange";
+
+            default:
+                return "";
+        };
+    }
+};
+
+
+
+#define STATIC_MSG(Choice) \
+        CSimpleMessager::s_GetMsg(CSimpleMessager::Choice)
+
+
+END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2004/12/22 22:14:18  kapustin
+ * Move static messages to CSimpleMessager to satisfy Solaris/forte6u2
+ *
  * Revision 1.1  2004/12/21 20:07:47  kapustin
  * Initial revision
  *
