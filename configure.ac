@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.352 2005/03/03 19:35:14 ucko Exp $
+#  $Id: configure.ac,v 1.353 2005/03/07 18:52:36 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -793,7 +793,7 @@ case "$host_os:$compiler" in
       # Suppress warnings about potential changes in the size of long double;
       # our ABI isn't too stable yet anyway.
       CFLAGS="-Wno-long-double $CFLAGS"
-      CXXFLAGS="-Wno-long-double $CXXFLAGS"
+      CXXFLAGS="-Wno-long-double -fno-permissive $CXXFLAGS"
    fi
    if test -f /usr/include/dlfcn.h; then
       # may be able to do without /sw, so ignore it by default
