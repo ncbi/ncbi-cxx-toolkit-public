@@ -175,6 +175,10 @@ public:
         msg += "\n";
 
         m_Log << msg;
+
+        if (stat.req_code == 'V') {
+            m_Log << NcbiFlush;
+        }
     }
 private:
     CRotatingLogStream m_Log;
@@ -403,6 +407,13 @@ void CNetCacheServer::Process(SOCK sock)
             stat.blob_size = 0;
             stat.comm_elapsed = 0;
             stat.peer_address = socket.GetPeerAddress();
+                       
+            // get only host name
+            string::size_type offs = stat.peer_address.find_first_of(":");
+            if (offs != string::npos) {
+                stat.peer_address.erase(offs, stat.peer_address.length());
+            }
+
             sw.Start();
         }
 
@@ -1211,6 +1222,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/02/07 18:55:40  kuznets
+ * REmoved port number from the connection log
+ *
  * Revision 1.37  2005/02/07 13:06:37  kuznets
  * Logging improvements
  *
