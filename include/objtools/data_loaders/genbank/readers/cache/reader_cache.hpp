@@ -50,7 +50,7 @@ class CID2_Reply_Data;
 class CLoadLockSeq_ids;
 
 /// structure for common cache reader&writer implementation
-struct SCacheInfo
+struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
 {
     typedef vector<int> TIdCacheData;
 
@@ -60,18 +60,6 @@ struct SCacheInfo
 
     //////////////////////////////////////////////////////////////////
     // Keys manipulation methods:
-
-    /// Return BLOB cache key string based on Sat() and SatKey()
-    static string GetBlobKey(const CBlob_id& blob_id);
-
-    /// BLOB cache subkeys:
-    static const char* GetBlobSubkey(void);
-    static const char* GetSeqEntrySubkey(void);
-    static const char* GetSeqEntryWithSNPSubkey(void);
-    static const char* GetSNPTableSubkey(void);
-    static const char* GetSkeletonSubkey(void);
-    static const char* GetSplitInfoSubkey(void);
-    static string GetChunkSubkey(int chunk_id);
 
     /// Return Id cache key string based on CSeq_id of gi
     static string GetIdKey(const CSeq_id& id);
@@ -87,11 +75,20 @@ struct SCacheInfo
     static const char* GetSeq_idsSubkey(void);
     // blob_id -> blob version (1 int)
     static const char* GetBlobVersionSubkey(void);
+
+    /// Return BLOB cache key string based on Sat() and SatKey()
+    static string GetBlobKey(const CBlob_id& blob_id);
+
+    /// BLOB cache subkeys:
+    enum {
+        kMain_ChunkId = -1
+    };
+    static string GetBlobSubkey(int chunk_id = kMain_ChunkId);
+
 };
 
 
-class NCBI_XREADER_CACHE_EXPORT CCacheReader : public CReader,
-                                               public SCacheInfo
+class NCBI_XREADER_CACHE_EXPORT CCacheHolder
 {
 public:
     enum EOwnership {
@@ -102,18 +99,35 @@ public:
     };
     typedef int TOwnership;     // bitwise OR of EOwnership
 
+    CCacheHolder(ICache* blob_cache = 0,
+                 ICache* id_cache = 0,
+                 TOwnership own = fOwnNone);
+    ~CCacheHolder(void);
+    
+    void SetBlobCache(ICache* blob_cache, TOwnership = fOwnNone);
+    void SetIdCache(ICache* id_cache, TOwnership = fOwnNone);
+    
+protected:
+    ICache* m_BlobCache;
+    ICache* m_IdCache;
+    TOwnership m_Own;
+    
+private:
+    // to prevent copying
+    CCacheHolder(const CCacheHolder&);
+    void operator=(const CCacheHolder&);
+};
+
+
+class NCBI_XREADER_CACHE_EXPORT CCacheReader : public CReader,
+                                               public CCacheHolder,
+                                               public SCacheInfo
+{
+public:
     CCacheReader(ICache* blob_cache = 0,
                  ICache* id_cache = 0,
                  TOwnership own = fOwnNone);
-    ~CCacheReader();
-
-
-    //////////////////////////////////////////////////////////////////
-    // Setup methods:
-
-    void SetBlobCache(ICache* blob_cache);
-    void SetIdCache(ICache* id_cache);
-
+    
     //////////////////////////////////////////////////////////////////
     // Overloaded loading methods:
     bool LoadStringSeq_ids(CReaderRequestResult& result,
@@ -145,18 +159,7 @@ protected:
     bool x_LoadIdCache(const string& key,
                        const string& subkey,
                        TIdCacheData& data);
-
-private:
-    ICache* m_BlobCache;
-    ICache* m_IdCache;
-    TOwnership m_Own;
-
-private:
-    // to prevent copying
-    CCacheReader(const CCacheReader& );
-    CCacheReader& operator=(const CCacheReader&);
 };
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -56,7 +56,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 const int    SCacheInfo::IDS_MAGIC = 0x32fd0104;
 const size_t SCacheInfo::IDS_HSIZE  = 2;
 const size_t SCacheInfo::IDS_SIZE  = 4;
@@ -115,46 +114,57 @@ const char* SCacheInfo::GetBlobVersionSubkey(void)
 }
 
 
-const char* SCacheInfo::GetBlobSubkey(void)
+string SCacheInfo::GetBlobSubkey(int chunk_id)
 {
-    return "blob";
+    if ( chunk_id == kMain_ChunkId )
+        return kEmptyStr;
+    else
+        return NStr::IntToString(chunk_id);
 }
 
 
-const char* SCacheInfo::GetSeqEntrySubkey(void)
+/////////////////////////////////////////////////////////////////////////////
+// CCacheHolder
+/////////////////////////////////////////////////////////////////////////////
+
+CCacheHolder::CCacheHolder(ICache* blob_cache,
+                           ICache* id_cache,
+                           TOwnership own)
+    : m_BlobCache(blob_cache), m_IdCache(id_cache), m_Own(own)
 {
-    return "Seq-entry";
 }
 
 
-const char* SCacheInfo::GetSeqEntryWithSNPSubkey(void)
+CCacheHolder::~CCacheHolder(void)
 {
-    return "Seq-entry+SNP";
+    SetIdCache(0);
+    SetBlobCache(0);
 }
 
 
-const char* SCacheInfo::GetSNPTableSubkey(void)
+void CCacheHolder::SetIdCache(ICache* id_cache, TOwnership own)
 {
-    return "SNP table";
+    if ( m_Own & fOwnIdCache ) {
+        delete m_IdCache;
+        m_Own &= ~fOwnIdCache;
+    }
+
+    m_IdCache = id_cache;
+    m_Own |= (own & fOwnIdCache);
 }
 
 
-const char* SCacheInfo::GetSkeletonSubkey(void)
+void CCacheHolder::SetBlobCache(ICache* blob_cache, TOwnership own)
 {
-    return "Skeleton";
+    if ( m_Own & fOwnBlobCache ) {
+        delete m_BlobCache;
+        m_Own &= ~fOwnBlobCache;
+    }
+
+    m_BlobCache = blob_cache;
+    m_Own |= (own & fOwnBlobCache);
 }
 
-
-const char* SCacheInfo::GetSplitInfoSubkey(void)
-{
-    return "ID2S-Split-Info";
-}
-
-
-string SCacheInfo::GetChunkSubkey(int chunk_id)
-{
-    return "ID2S-Chunk "+NStr::IntToString(chunk_id);
-}
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -162,20 +172,9 @@ string SCacheInfo::GetChunkSubkey(int chunk_id)
 CCacheReader::CCacheReader(ICache* blob_cache,
                            ICache* id_cache,
                            TOwnership own)
-    : m_BlobCache(blob_cache), m_IdCache(id_cache), m_Own(own)
+    : CCacheHolder(blob_cache, id_cache, own)
 {
     SetMaximumConnections(1);
-}
-
-
-CCacheReader::~CCacheReader()
-{
-    if ( m_Own & fOwnIdCache ) {
-        delete m_IdCache;
-    }
-    if ( m_Own & fOwnBlobCache ) {
-        delete m_BlobCache;
-    }
 }
 
 
@@ -186,8 +185,8 @@ void CCacheReader::x_Connect(TConn /*conn*/)
 
 void CCacheReader::x_Disconnect(TConn /*conn*/)
 {
-    m_IdCache = 0;
-    m_BlobCache = 0;
+    SetIdCache(0);
+    SetBlobCache(0);
 }
 
 
@@ -207,19 +206,6 @@ int CCacheReader::GetMaximumConnectionsLimit(void) const
 {
     return 1;
 }
-
-
-void CCacheReader::SetBlobCache(ICache* blob_cache)
-{
-    m_BlobCache = blob_cache;
-}
-
-
-void CCacheReader::SetIdCache(ICache* id_cache)
-{
-    m_IdCache = id_cache;
-}
-
 
 
 //////////////////////////////////////////////////////////////////
@@ -373,53 +359,7 @@ bool CCacheReader::LoadBlobVersion(CReaderRequestResult& result,
 bool CCacheReader::LoadBlob(CReaderRequestResult& result,
                             const TBlobId& blob_id)
 {
-    TChunkId chunk_id = CProcessor::kMain_ChunkId;
-    if ( !m_BlobCache ) {
-        return false;
-    }
- 
-    CLoadLockBlob blob(result, blob_id);
-    if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
-        return true;
-    }
-
-    if ( !blob.IsSetBlobVersion() ) {
-        if ( !m_BlobCache->HasBlobs(GetBlobKey(blob_id), GetBlobSubkey()) ) {
-            return false;
-        }
-        m_Dispatcher->LoadBlobVersion(result, blob_id);
-        if ( !blob.IsSetBlobVersion() ) {
-            return false;
-        }
-    }
-    
-    string key = GetBlobKey(blob_id);
-    TBlobVersion version = blob.GetBlobVersion();
-
-    auto_ptr<IReader> reader(
-        m_BlobCache->GetReadStream(key, version, GetBlobSubkey()));
-    if ( !reader.get() ) {
-        return false;
-    }
-    
-    CRStream stream(reader.get());
-    int processor_type = ReadInt(stream);
-    const CProcessor& processor =
-        m_Dispatcher->GetProcessor(CProcessor::EType(processor_type));
-    if ( processor_type != processor.GetType() ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "invalid processor type: "+
-                   NStr::IntToString(processor_type));
-    }
-    int processor_magic = ReadInt(stream);
-    if ( processor_magic != int(processor.GetMagic()) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "invalid processor magic number: "+
-                   NStr::IntToString(processor_magic));
-    }
-    processor.ProcessStream(result, blob_id, chunk_id, stream);
-    _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
-    return true;
+    return LoadChunk(result, blob_id, CProcessor::kMain_ChunkId);
 }
 
 
@@ -432,21 +372,24 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     }
  
     CLoadLockBlob blob(result, blob_id);
-    if ( !blob.IsLoaded() ) {
-        return false;
-    }
-
-    CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
-    if ( chunk_info.IsLoaded() ) {
+    if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
         return true;
     }
 
     string key = GetBlobKey(blob_id);
+    string subkey = GetBlobSubkey(chunk_id);
+    if ( !blob.IsSetBlobVersion() ) {
+        if ( !m_BlobCache->HasBlobs(key, subkey) ) {
+            return false;
+        }
+        m_Dispatcher->LoadBlobVersion(result, blob_id);
+        if ( !blob.IsSetBlobVersion() ) {
+            return false;
+        }
+    }
     TBlobVersion version = blob.GetBlobVersion();
-    string subkey = GetChunkSubkey(chunk_id);
 
-    auto_ptr<IReader> reader(
-        m_BlobCache->GetReadStream(key, version, subkey));
+    auto_ptr<IReader> reader(m_BlobCache->GetReadStream(key, version, subkey));
     if ( !reader.get() ) {
         return false;
     }
@@ -469,7 +412,6 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     processor.ProcessStream(result, blob_id, chunk_id, stream);
     return true;
 }
-
 
 END_SCOPE(objects)
 
@@ -484,12 +426,12 @@ void GenBankReaders_Register_Cache(void)
 ///
 /// @internal
 ///
-class CCacheReaderCF : 
+class CCacheReaderCF :
     public CSimpleClassFactoryImpl<objects::CReader, objects::CCacheReader>
 {
 public:
-    typedef 
-      CSimpleClassFactoryImpl<objects::CReader, objects::CCacheReader> TParent;
+    typedef objects::CCacheReader TReader;
+    typedef CSimpleClassFactoryImpl<objects::CReader, TReader> TParent;
 public:
     CCacheReaderCF()
         : TParent(NCBI_GBLOADER_READER_CACHE_DRIVER_NAME, 0) {}
@@ -527,9 +469,9 @@ public:
                 (CreateCache(params,
                              NCBI_GBLOADER_READER_CACHE_PARAM_BLOB_SECTION));
             if ( blob_cache.get()  ||  id_cache.get() ) 
-                return new objects::CCacheReader(blob_cache.release(),
-                                                 id_cache.release(),
-                                                 objects::CCacheReader::fOwnAll);
+                return new TReader(blob_cache.release(),
+                                   id_cache.release(),
+                                   TReader::fOwnAll);
         }
         return 0;
     }
