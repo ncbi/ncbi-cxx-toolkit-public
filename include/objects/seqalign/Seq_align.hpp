@@ -88,7 +88,7 @@ public:
     // to compare id1 and id2, and if both resolve to the same sequence 
     // and id2 is preferred, to SerialAssign it to id1. Otherwise, again,
     // an exception should be thrown.
-    struct SSeqIdChooser
+    struct SSeqIdChooser : CObject
     {
         virtual void ChooseSeqId(CSeq_id& id1, const CSeq_id& id2) = 0;
     };
@@ -130,6 +130,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/15 17:42:29  todorov
+* Derive SSeqIdChooser from CObject to avoid possible multiple inheritance in
+* the client. Workshop has problems with it (missplaced vtable).
+*
 * Revision 1.9  2004/03/09 17:14:17  todorov
 * changed the C-style callback to a functor
 *
