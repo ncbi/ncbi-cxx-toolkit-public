@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/02/15 20:35:38  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -45,10 +49,9 @@
 * ===========================================================================
 */
 
-
-#include <corelib/ncbiobj.hpp>
 #include "handle_range.hpp"
-
+#include <corelib/ncbiobj.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

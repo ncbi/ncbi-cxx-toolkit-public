@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.5  2002/02/01 21:49:38  gouriano
 * minor changes to make it compilable and run on Solaris Workshop
 *
@@ -52,20 +55,11 @@
 * ===========================================================================
 */
 
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbithr.hpp>
-#include <algorithm>
-
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_inst.hpp>
-
-#include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/seq_map.hpp>
-#include <objects/objmgr1/seq_id_handle.hpp>
 #include "seq_id_mapper.hpp"
-
-
+#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

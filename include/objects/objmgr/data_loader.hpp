@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.1  2002/01/11 19:04:00  gouriano
 * restructured objmgr
 *
@@ -84,7 +88,7 @@ public:
     // Request from a datasource for data specified in "choice".
     // The data loaded will be sent back to the datasource through
     // CDataSource::AppendXXX() methods.
-    virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
+    //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
 
     // Request from a datasource using handles and ranges instead of seq-loc
     virtual bool GetRecords(const CHandleRangeMap& hrmap, EChoice choice) = 0;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/21 19:27:01  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.1  2002/01/11 19:04:04  gouriano
 * restructured objmgr
 *
@@ -42,6 +46,8 @@
 
 
 #include <objects/objmgr1/desc_ci.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

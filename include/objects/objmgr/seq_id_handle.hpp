@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/02/12 19:41:40  grichenk
 * Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
 *
@@ -47,9 +51,9 @@
 */
 
 
-#include <corelib/ncbiobj.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -88,6 +92,9 @@ public:
 
     // Reset the handle (remove seq-id reference)
     void Reset(void);
+
+    // True if "this" is a better bioseq than "h".
+    bool IsBetter(const CSeq_id_Handle& h) const;
 
 private:
     // This constructor should be used by mappers only
@@ -157,7 +164,6 @@ bool CSeq_id_Handle::operator! (void) const
 {
     return m_SeqId.Empty();
 }
-
 
 
 END_SCOPE(objects)

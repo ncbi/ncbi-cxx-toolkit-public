@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.1  2002/02/07 21:25:05  grichenk
 * Initial revision
 *
@@ -38,10 +42,9 @@
 */
 
 
-#include <corelib/ncbistd.hpp>
+#include "tse_info.hpp"
 
 #include "annot_object.hpp"
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,6 +59,8 @@ BEGIN_SCOPE(objects)
 
 
 CTSE_Info::CTSE_Info(void)
+    : m_Dead(false),
+      m_LockCount(0)
 {
 }
 
@@ -63,6 +68,7 @@ CTSE_Info::CTSE_Info(void)
 CTSE_Info::~CTSE_Info(void)
 {
 }
+
 
 
 END_SCOPE(objects)

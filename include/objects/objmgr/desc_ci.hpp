@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/01/23 21:59:29  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -46,11 +50,8 @@
 * ===========================================================================
 */
 
-
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seqdesc.hpp>
 #include <objects/objmgr1/bioseq_handle.hpp>
-
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

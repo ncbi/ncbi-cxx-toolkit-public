@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/21 19:27:07  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.1  2002/02/07 21:25:06  grichenk
 * Initial revision
 *
@@ -41,14 +45,11 @@
 */
 
 
-#include <corelib/ncbiobj.hpp>
-
-#include <objects/objmgr1/seq_id_handle.hpp>
-//#include <objects/objmgr1/annot_ci.hpp>
 #include "bioseq_info.hpp"
-
+#include <objects/seqset/Seq_entry.hpp>
+#include <util/rangemap.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <map>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -74,8 +75,13 @@ public:
     // 'ctors
     CTSE_Info(void);
     virtual ~CTSE_Info(void);
-//### Add copy constructor and operator!!!
 
+    void Lock(void) const;
+    void Unlock(void) const;
+    bool Locked(void) const;
+
+    bool operator< (const CTSE_Info& info) const;
+    bool operator== (const CTSE_Info& info) const;
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >                 TBioseqMap;
     typedef CRange<int>                                              TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
@@ -87,6 +93,13 @@ public:
     bool m_Dead;
     TBioseqMap m_BioseqMap;
     TAnnotMap  m_AnnotMap;
+
+private:
+    // Hide copy methods
+    CTSE_Info(const CTSE_Info& info);
+    CTSE_Info& operator= (const CTSE_Info& info);
+
+    mutable int m_LockCount;
 };
 
 
@@ -96,6 +109,41 @@ public:
 //  Inline methods
 //
 /////////////////////////////////////////////////////////////////////
+
+
+inline
+void CTSE_Info::Lock(void) const
+{
+    m_LockCount++;
+}
+
+inline
+void CTSE_Info::Unlock(void) const
+{
+    if (m_LockCount > 0)
+        m_LockCount--;
+    else
+        throw runtime_error(
+        "CTSE_Info: can not Unlock() -- the TSE is not locked");
+}
+
+inline
+bool CTSE_Info::Locked(void) const
+{
+    return m_LockCount > 0;
+}
+
+inline
+bool CTSE_Info::operator< (const CTSE_Info& info) const
+{
+    return m_TSE < info.m_TSE;
+}
+
+inline
+bool CTSE_Info::operator== (const CTSE_Info& info) const
+{
+    return m_TSE == info.m_TSE;
+}
 
 
 END_SCOPE(objects)

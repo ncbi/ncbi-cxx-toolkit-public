@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -30,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/02/15 20:35:38  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -43,17 +46,13 @@
 * ===========================================================================
 */
 
+#include "handle_range_map.hpp"
+#include "seq_id_mapper.hpp"
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
-#include <objects/objmgr1/seq_id_handle.hpp>
-#include "seq_id_mapper.hpp"
-
-
-#include "handle_range_map.hpp"
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

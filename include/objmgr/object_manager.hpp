@@ -38,6 +38,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/01/23 21:59:29  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -51,28 +55,21 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-
-#include <map>
-#include <set>
-
-#include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/data_loader.hpp>
-#include <objects/objmgr1/seq_vector.hpp>
-#include <objects/objmgr1/seq_map.hpp>
-#include <objects/objmgr1/desc_ci.hpp>
-#include <objects/objmgr1/feat_ci.hpp>
-#include <objects/objmgr1/graph_ci.hpp>
-#include <objects/objmgr1/align_ci.hpp>
 
+#include <corelib/ncbiobj.hpp>
+#include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 class CDataSource;
+class CBioseq;
+class CSeq_id;
+class CScope;
+class CSeq_id_Mapper;
 
 
 /////////////////////////////////////////////////////////////////////////////

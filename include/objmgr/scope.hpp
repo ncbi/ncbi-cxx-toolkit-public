@@ -39,6 +39,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.8  2002/02/07 21:27:33  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -67,21 +71,12 @@
 * ===========================================================================
 */
 
-
-#include <corelib/ncbistd.hpp>
+#include <objects/objmgr1/annot_types_ci.hpp>
+#include <objects/objmgr1/seq_map.hpp>
+#include <objects/objmgr1/seqmatch_info.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr.hpp>
-#include <set>
-
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seq/Seq_data.hpp>
-
-#include <objects/objmgr1/seq_vector.hpp>
-#include <objects/objmgr1/annot_types_ci.hpp>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -91,6 +86,7 @@ BEGIN_SCOPE(objects)
 class CObjectManager;
 class CDataLoader;
 class CDataSource;
+class CTSE_Info;
 
 
 class CScope : public CObject
@@ -98,8 +94,6 @@ class CScope : public CObject
 public:
     CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
-
-public:
 
     // Add default data loaders and seq_entries from object manager
     void AddDefaults(void);
@@ -109,13 +103,13 @@ public:
     // Add seq_entry
     void AddTopLevelSeqEntry(CSeq_entry& top_entry);
 
-    void DropTopLevelSeqEntry(CSeq_entry& top_entry);
+    //### TSEs should be dropped from CScope dectructor.
+    //### This function is obsolete.
+    //### void DropTopLevelSeqEntry(CSeq_entry& top_entry);
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
 
-
-public:
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
     virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
@@ -135,7 +129,17 @@ public:
     };
     virtual void SetFindMode(EFindMode mode);
 
+    // History of requests
+    typedef set< CConstRef<CTSE_Info> > TRequestHistory;
+
 private:
+    // Get requests history (used by data sources to process requests)
+    const TRequestHistory& x_GetHistory(void);
+    // Add an entry to the requests history
+    void x_AddToHistory(const CTSE_Info& tse);
+
+    // Find the best possible resolution for the Seq-id
+    CSeqMatch_Info x_BestResolve(const CSeq_id& id);
 
     // Get TSEs containing annotations for the given location
     void x_PopulateTSESet(CHandleRangeMap& loc,
@@ -152,12 +156,23 @@ private:
                        TSeqPosition point,
                        SSeqData* seq_piece);
 
-    CSeq_id_Mapper& x_GetIdMapper(void);
+    CSeq_id_Mapper& x_GetIdMapper(void) const;
+
+    // Conflict reporting function
+    enum EConflict {
+        eConflict_History,
+        eConflict_Live
+    };
+    void x_ThrowConflict(EConflict conflict_type,
+                         const CSeqMatch_Info& info1,
+                         const CSeqMatch_Info& info2) const;
 
     CRef<CObjectManager> m_pObjMgr;
     set<CDataSource*>    m_setDataSrc;
 
     EFindMode m_FindMode;
+
+    TRequestHistory m_History;
 
     static CMutex sm_Scope_Mutex;
 

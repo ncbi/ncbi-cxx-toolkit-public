@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/21 19:27:08  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.4  2002/01/29 18:21:07  grichenk
 * CScope::GetTitle() -> CBioseq_Handle::GetTitle()
 *
@@ -65,6 +69,8 @@
 
 #include <objects/objmgr1/reader_id1.hpp>
 #include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr1/bioseq_handle.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

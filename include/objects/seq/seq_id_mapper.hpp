@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/02/12 19:41:42  grichenk
 * Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
 *
@@ -43,10 +47,8 @@
 * ===========================================================================
 */
 
-
-#include <corelib/ncbiobj.hpp>
 #include <objects/objmgr1/seq_id_handle.hpp>
-
+#include <corelib/ncbiobj.hpp>
 #include <map>
 #include <set>
 
@@ -102,6 +104,7 @@ private:
     // releases in the destructor.
     void AddHandleReference(const CSeq_id_Handle& handle);
     void ReleaseHandleReference(const CSeq_id_Handle& handle);
+    bool IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
     friend class CSeq_id_Handle;
 
     // Hide copy constructor and operator
@@ -122,6 +125,7 @@ private:
     // Some map entries may point to the same subtree (e.g. gb, dbj, emb).
     typedef map<CSeq_id::E_Choice, CRef<CSeq_id_Which_Tree> > TIdMap;
     TIdMap m_IdMap;
+    CFastMutex m_IdMapMutex;
 };
 
 

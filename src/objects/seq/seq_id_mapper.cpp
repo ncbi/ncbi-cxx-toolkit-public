@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.5  2002/02/12 19:41:42  grichenk
 * Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
 *
@@ -49,21 +53,19 @@
 * ===========================================================================
 */
 
-
 #include "seq_id_mapper.hpp"
-#include <corelib/ncbi_limits.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/serialbase.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seqloc/Giimport_id.hpp>
-#include <objects/seqloc/Patent_seq_id.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqloc/PDB_mol_id.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
 #include <objects/general/Date.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/biblio/Id_pat.hpp>
-
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/seqloc/Giimport_id.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
+#include <serial/serialbase.hpp>
+#include <serial/typeinfo.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -110,8 +112,13 @@ public:
     // Map new seq-id
     virtual void AddSeq_idMapping(CSeq_id_Handle& handle) = 0;
 
+    virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
+                                 const CSeq_id_Handle& h2) const;
+
     // Remove mapping for a given keys range
     void DropKeysRange(TSeq_id_Key first, TSeq_id_Key last);
+
+    mutable CFastMutex m_TreeMutex; // Locked by CSeq_id_Mapper
 
 protected:
     const CSeq_id& x_GetSeq_id(const CSeq_id_Handle& handle) const;
@@ -130,6 +137,13 @@ protected:
     typedef map<TSeq_id_Key, CSeq_id_Handle> TKeyMap;
     TKeyMap m_KeyMap;
 };
+
+
+bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& h1,
+                                         const CSeq_id_Handle& h2) const
+{
+    return false; // No id version by default
+}
 
 
 inline
@@ -363,6 +377,8 @@ public:
                               TSeq_id_MatchList& id_list) const;
     virtual void AddSeq_idMapping(CSeq_id_Handle& handle);
 
+    virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
+                                 const CSeq_id_Handle& h2) const;
 protected:
     virtual void x_DropHandle(const CSeq_id_Handle& handle);
 
@@ -518,6 +534,27 @@ void CSeq_id_Textseq_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
         ver.push_back(handle);
     }
     x_AddToKeyMap(handle);
+}
+
+
+bool CSeq_id_Textseq_Tree::IsBetterVersion(const CSeq_id_Handle& h1,
+                                           const CSeq_id_Handle& h2) const
+{
+    const CSeq_id& id1 = x_GetSeq_id(h1);
+    x_Check(id1);
+    const CSeq_id& id2 = x_GetSeq_id(h2);
+    x_Check(id2);
+    const CTextseq_id& tid1 = x_Get(id1);
+    const CTextseq_id& tid2 = x_Get(id2);
+    // Compare versions. If only one of the two ids has version,
+    // consider it is better.
+    if ( tid1.IsSetVersion() ) {
+        if ( tid2.IsSetVersion() )
+            return tid1.GetVersion() > tid2.GetVersion();
+        else
+            return true; // Only h1 has version
+    }
+    return false; // h1 has no version, so it can not be better than h2
 }
 
 
@@ -1456,6 +1493,7 @@ const size_t kKeyUsageTableSegmentSize =
 
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
+    CFastMutexGuard guard(m_IdMapMutex);
     while (m_IdMap.size() > 0) {
         // Prevent premature tree destruction
         CRef<CSeq_id_Which_Tree> keep_tree = m_IdMap.begin()->second;
@@ -1522,6 +1560,7 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
 {
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
+    CFastMutexGuard guard(map_it->second->m_TreeMutex);
     TSeq_id_Info info = map_it->second->FindEqual(id);
     // If found, return valid handle
     if ( !info.first.Empty() )
@@ -1541,6 +1580,7 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
+    CFastMutexGuard guard(map_it->second->m_TreeMutex);
     map_it->second->FindMatch(id, m_list);
     iterate(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
         h_set.insert(CSeq_id_Handle(*this, *it->first, it->second));
@@ -1556,10 +1596,13 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
             "CSeq_id_Mapper::GetMatchingHandlesStr() -- symbol \'|\'"
             " is not supported here");
     }
+
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
     iterate(TIdMap, map_it, m_IdMap) {
+        CFastMutexGuard guard(map_it->second->m_TreeMutex);
         map_it->second->FindMatchStr(sid, m_list);
     }
+
     iterate(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
         h_set.insert(CSeq_id_Handle(*this, *it->first, it->second));
     }
@@ -1574,12 +1617,14 @@ const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& handle)
 
 void CSeq_id_Mapper::AddHandleReference(const CSeq_id_Handle& handle)
 {
+    CFastMutexGuard guard(m_IdMapMutex);
     m_KeyUsageTable[handle.m_Value / kKeyUsageTableSegmentSize]++;
 }
 
 
 void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
 {
+    CFastMutexGuard guard(m_IdMapMutex);
     TSeq_id_Key seg = handle.m_Value / kKeyUsageTableSegmentSize;
     _ASSERT(m_KeyUsageTable[seg] > 0);
     if (--m_KeyUsageTable[seg] == 0) {
@@ -1594,6 +1639,7 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
 
 TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
 {
+    CFastMutexGuard guard(m_IdMapMutex);
     if (m_NextKey < kKeyUsageTableSegmentSize*kKeyUsageTableSize)
         m_NextKey++;
     else
@@ -1614,6 +1660,22 @@ TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
         "CSeq_id_Mapper::GetNextKey() -- can not find free seq-id key");
 }
 
+
+bool CSeq_id_Mapper::IsBetter(const CSeq_id_Handle& h1,
+                              const CSeq_id_Handle& h2) const
+{
+    _ASSERT(h1.m_Mapper == this  &&  h2.m_Mapper == this);
+    TIdMap::const_iterator it1 = m_IdMap.find(h1.m_SeqId->Which());
+    _ASSERT(it1 != m_IdMap.end()  &&  it1->second.GetPointer());
+    TIdMap::const_iterator it2 = m_IdMap.find(h2.m_SeqId->Which());
+    _ASSERT(it2 != m_IdMap.end()  &&  it2->second.GetPointer());
+    if (it1->second != it2->second)
+        return false;
+    CConstRef<CSeq_id_Which_Tree> wtree = it1->second;
+    CFastMutexGuard guard(wtree->m_TreeMutex);
+    // Compare versions if any
+    return wtree->IsBetterVersion(h1, h2);
+}
 
 
 END_SCOPE(objects)

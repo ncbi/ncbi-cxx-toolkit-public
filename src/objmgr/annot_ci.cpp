@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -31,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/21 19:27:04  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.4  2002/02/15 20:35:38  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -47,10 +50,10 @@
 * ===========================================================================
 */
 
-
 #include <objects/objmgr1/annot_ci.hpp>
 #include "annot_object.hpp"
-
+#include "handle_range_map.hpp"
+#include "tse_info.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

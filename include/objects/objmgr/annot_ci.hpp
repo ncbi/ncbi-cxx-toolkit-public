@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.5  2002/02/15 20:36:29  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -53,12 +57,12 @@
 */
 
 
+#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <util/rangemap.hpp>
-
-#include <objects/objmgr1/seq_id_handle.hpp>
-
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

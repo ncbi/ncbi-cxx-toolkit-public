@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.4  2002/02/15 20:36:29  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -49,16 +53,17 @@
 * ===========================================================================
 */
 
-
 #include <objects/objmgr1/annot_ci.hpp>
 #include <set>
+#include <memory>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CScope;
-class CAnnot_CI;
 class CTSE_Info;
+class CSeq_loc;
 
 
 // Base class for specific annotation iterators

@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -32,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.1  2002/01/28 19:44:49  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -53,11 +56,10 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
+#include <objects/objmgr1/seqdesc_ci.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
 #include <objects/objmgr1/scope.hpp>
-
 #include <serial/iterator.hpp>
-
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -84,9 +86,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-
-#include <objects/objmgr1/seqdesc_ci.hpp>
-#include <objects/objmgr1/feat_ci.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -30,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/21 19:27:04  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.3  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -43,17 +46,15 @@
 * ===========================================================================
 */
 
-#include <objects/seqloc/Seq_loc.hpp>
+#include "annot_object.hpp"
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <serial/iterator.hpp>
-
-#include "annot_object.hpp"
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

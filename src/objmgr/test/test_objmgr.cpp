@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/02/21 19:27:09  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.12  2002/02/07 21:27:36  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -113,6 +117,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
@@ -122,6 +127,12 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr1/desc_ci.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
+#include <objects/objmgr1/align_ci.hpp>
 
 #include <objects/seq/seqport_util.hpp>
 
@@ -688,7 +699,6 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     CConstRef<CBioseq> bioseq = &(handle.GetBioseq());
 
     int count = 0;
-
     // Test CSeq_descr iterator
     for (CDesc_CI desc_it(handle);
         desc_it;  ++desc_it) {
@@ -795,11 +805,10 @@ int CTestApp::Run(void)
         }
     }
     
-    CScope* pScope;
     for (int idx = 1; idx <= 1; idx++) {
+        CRef<CScope> pScope(new CScope(*m_ObjMgr));
         CRef<CSeq_entry> entry1 = CreateTestEntry1(idx);
         CRef<CSeq_entry> entry2 = CreateTestEntry2(idx);
-        pScope = new CScope(*m_ObjMgr);
         pScope->AddTopLevelSeqEntry(*entry1);
         pScope->AddTopLevelSeqEntry(*entry2);
 
@@ -829,13 +838,6 @@ int CTestApp::Run(void)
             "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
             "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
             0, 0, 0, 0, 0);
-
-        pScope->DropTopLevelSeqEntry(*entry1);
-        pScope->DropTopLevelSeqEntry(*entry2);
-
-        // Test local scope
-        pScope->AddTopLevelSeqEntry(*entry1);
-        pScope->AddTopLevelSeqEntry(*entry2);
 
         CRef<CSeq_annot> annot(new CSeq_annot);
         list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
@@ -869,7 +871,7 @@ int CTestApp::Run(void)
             1, 3, 2, 1, 1);
         id.SetGi(21+idx*1000);
         ProcessBioseq(*pScope, id,
-            22, 62,
+            62, 62,
             "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
             "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
             1, 1, 1, 0, 0);
@@ -899,14 +901,13 @@ int CTestApp::Run(void)
             int_ref->SetTo(20);
             int_list.push_back(int_ref);
 
-            CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
+            CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed1"));
             CRef<CSeq_entry> constr_entry(new CSeq_entry);
             constr_entry->SetSeq(*constr_seq);
             pScope->AddTopLevelSeqEntry(*constr_entry);
-            id.SetLocal().SetStr("constructed");
+            id.SetLocal().SetStr("constructed1");
             ProcessBioseq(*pScope, id,
                 27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-            pScope->DropTopLevelSeqEntry(*constr_entry);
         }}
         {{
             CSeq_loc constr_loc;
@@ -925,42 +926,44 @@ int CTestApp::Run(void)
             int_ref->SetTo(20);
             int_list.push_back(int_ref);
 
-            CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
+            CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed2"));
             CRef<CSeq_entry> constr_entry(new CSeq_entry);
             constr_entry->SetSeq(*constr_seq);
             pScope->AddTopLevelSeqEntry(*constr_entry);
-            id.SetLocal().SetStr("constructed");
+            id.SetLocal().SetStr("constructed2");
             ProcessBioseq(*pScope, id,
                 27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-            pScope->DropTopLevelSeqEntry(*constr_entry);
         }}
 
-        // Drop entry 1 and re-process entry 2
-        pScope->DropTopLevelSeqEntry(*entry1);
         CRef<CScope> pScope2 = new CScope(*m_ObjMgr);
-        pScope2->AddTopLevelSeqEntry(*entry2); // to drop entry2 later
+        pScope2->AddTopLevelSeqEntry(*entry2);
         id.SetGi(21+idx*1000);
-        ProcessBioseq(*pScope, id,
+        // Test with unresolved references
+        ProcessBioseq(*pScope2, id,
             62, 62,
             "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
             "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
             1, 1, 1, 0, 0);
 
-        // Testing one seq-entry in multiple scopes
         CRef<CSeq_entry> entry1a = CreateTestEntry1a(idx);
-        pScope->AddTopLevelSeqEntry(*entry1a);
-        pScope->AddTopLevelSeqEntry(*entry2);
+        pScope2->AddTopLevelSeqEntry(*entry1a);
         id.SetGi(21+idx*1000);
-        ProcessBioseq(*pScope, id,
+        // Test with resolved references
+        ProcessBioseq(*pScope2, id,
             62, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
             1, 1, 1, 0, 0);
-
-        pScope->DropTopLevelSeqEntry(*entry1a);
-        pScope->DropTopLevelSeqEntry(*entry2);
-        pScope2->DropTopLevelSeqEntry(*entry2);
-        delete pScope;
+        // Test scope history
+        CRef<CSeq_entry> entry1b = CreateTestEntry1(idx);
+        pScope2->AddTopLevelSeqEntry(*entry1b);
+        id.SetLocal().SetStr("seq"+NStr::IntToString(11+idx*1000));
+        // gi|11 from entry1a must be selected
+        ProcessBioseq(*pScope2, id,
+            40, 40,
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+            0, 4, 2, 1, 0);
     }
 
     NcbiCout << " Passed" << NcbiEndl << NcbiEndl;

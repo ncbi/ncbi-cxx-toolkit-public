@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.13  2002/02/20 20:23:27  gouriano
 * corrected FilterSeqid()
 *
@@ -74,9 +78,11 @@
 */
 
 
+#include "data_source.hpp"
+
+#include "annot_object.hpp"
+#include "handle_range_map.hpp"
 #include <objects/general/Int_fuzz.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_hist.hpp>
@@ -91,29 +97,10 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <objects/seqloc/Packed_seqint.hpp>
-#include <objects/seqloc/Packed_seqpnt.hpp>
-#include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
-#include <objects/seqloc/Seq_bond.hpp>
-#include <objects/seqalign/Dense_diag.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-#include <objects/seqalign/Std_seg.hpp>
-#include <objects/seqalign/Packed_seg.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <serial/iterator.hpp>
-
-#include <objects/objmgr1/scope.hpp>
-#include "seq_id_mapper.hpp"
-#include "data_source.hpp"
-#include "annot_object.hpp"
-#include "handle_range_map.hpp"
-
-#include <corelib/ncbithr.hpp>
-
-#include <algorithm>
-
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -139,6 +126,7 @@ CDataSource::~CDataSource(void)
 {
     // Find and drop each TSE
     while (m_Entries.size() > 0) {
+        _ASSERT( !m_Entries.begin()->second->Locked() );
         DropTSE(*(m_Entries.begin()->second->m_TSE));
     }
 }
@@ -158,6 +146,7 @@ CSeq_entry* CDataSource::GetTopEntry(void)
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
 {
+//### Check versions if any, select the best one.
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
     if ( tse_set == m_TSE_seq.end() )
         return 0;
@@ -176,12 +165,21 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
 
 CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
 {
+    CSeqMatch_Info info = BestResolve(id);
+    if ( !info )
+        return CBioseq_Handle();
+    CSeq_id_Handle idh = info.m_Handle;
+    CBioseq_Handle h(idh);
+    CRef<CTSE_Info> tse = info.m_TSE;
+    CMutexGuard guard(s_DataSource_Mutex);
+/*
     if ( m_Loader ) {
         // Send request to the loader
         CSeq_loc loc;
         SerialAssign<CSeq_id>(loc.SetWhole(), id);
-        if ( !m_Loader->GetRecords(loc, CDataLoader::eBioseqCore) )
-            return CBioseq_Handle();
+        CHandleRangeMap hrm(GetIdMapper());
+        hrm.AddLocation(loc);
+        m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore);
     }
     CSeq_id_Handle idh = GetIdMapper().GetHandle(id, false);
     // Do not even try to find the bioseq handle if there is no id handle
@@ -192,10 +190,12 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
     CRef<CTSE_Info> tse = x_FindBestTSE(idh);
     if ( !tse )
         return CBioseq_Handle();
+*/
     TBioseqMap::iterator found = tse->m_BioseqMap.find(idh);
     _ASSERT(found != tse->m_BioseqMap.end());
     h.x_ResolveTo(scope, *this,
         *found->second->m_Entry, *tse->m_TSE);
+    scope.x_AddToHistory(*tse);
     return h;
 }
 
@@ -203,19 +203,15 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
 void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
                               TSeq_id_HandleSet& setSource) const
 {
+    _ASSERT(&setResult != &setSource);
     // for each handle
     TSeq_id_HandleSet::iterator itHandle;
     for( itHandle = setSource.begin(); itHandle != setSource.end(); ) {
-        _ASSERT(&setResult != &setSource);
         // if it is in my map
         if (m_TSE_seq.find(*itHandle) != m_TSE_seq.end()) {
-            // move it from source to result
-            setResult.insert( *itHandle);
-            itHandle = setSource.erase(itHandle);
+            setResult.insert(*itHandle);
         }
-        else {
-            ++itHandle;
-        }
+        ++itHandle;
     }
 }
 
@@ -223,16 +219,16 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
 const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
 {
     // Bioseq core and TSE must be loaded if there exists a handle
-    //### Loader may be called to load descriptions (not included in core)
-/*
+    // Loader may be called to load descriptions (not included in core)
     if ( m_Loader ) {
         // Send request to the loader
+        CHandleRangeMap hrm(GetIdMapper());
         CSeq_loc loc;
-        CRef<CSeq_id> id = CSeqIdMapper::HandleToSeqId(handle.m_Value);
+        CConstRef<CSeq_id> id = handle.GetSeqId();
         SerialAssign<CSeq_id>(loc.SetWhole(), *id);
-        m_Loader->GetRecords(loc, CDataLoader::eBioseq);
+        hrm.AddLocation(loc);
+        m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
-*/
     CMutexGuard guard(s_DataSource_Mutex);
     // the handle must be resolved to this data source
     _ASSERT(handle.m_DataSource == this);
@@ -324,16 +320,17 @@ const CSeqMap& CDataSource::GetSeqMap(const CBioseq_Handle& handle)
 
 CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 {
-/*
-    //### Call loader first
+    // Call loader first
     if ( m_Loader ) {
         // Send request to the loader
         CSeq_loc loc;
-        CRef<CSeq_id> id = CSeqIdMapper::HandleToSeqId(handle.m_Value);
+        CConstRef<CSeq_id> id = handle.GetSeqId();
         SerialAssign<CSeq_id>(loc.SetWhole(), *id);
-        m_Loader->GetRecords(loc, CDataLoader::eBioseq???);
+        CHandleRangeMap hrm(GetIdMapper());
+        hrm.AddLocation(loc);
+        m_Loader->GetRecords(hrm, CDataLoader::eBioseq); //### or eCore???
     }
-*/
+
     _ASSERT(handle.m_DataSource == this);
     const CBioseq& seq = GetBioseq(handle);
     TSeqMaps::iterator found = m_SeqMaps.find(&seq);
@@ -359,16 +356,17 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                               SSeqData* seq_piece,
                               CScope& scope)
 {
-/*
-    //### Call loader first
+    // Call loader first
     if ( m_Loader ) {
         // Send request to the loader
         CSeq_loc loc;
-        CRef<CSeq_id> id = CSeqIdMapper::HandleToSeqId(handle.m_Value);
-        ???interval SerialAssign<CSeq_id>(loc.SetWhole(), *id);
-        m_Loader->GetRecords(loc, CDataLoader::eSequence);
+        CConstRef<CSeq_id> id = handle.GetSeqId();
+        //### Whole, or Interval, or Point?
+        SerialAssign<CSeq_id>(loc.SetWhole(), *id);
+        CHandleRangeMap hrm(GetIdMapper());
+        hrm.AddLocation(loc);
+        m_Loader->GetRecords(hrm, CDataLoader::eSequence);
     }
-*/
     CMutexGuard guard(s_DataSource_Mutex);
     if (handle.m_DataSource != this  &&  handle.m_DataSource != 0) {
         // Resolved to a different data source
@@ -951,25 +949,78 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph, CTSE_Info& tse)
 
 
 void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
-                                 TTSESet& tse_set) const
+                                 TTSESet& tse_set,
+                                 const CScope::TRequestHistory& history) const
 {
+/*
+Iterate each id from "loc". Find all TSEs with references to the id.
+Put TSEs, containing the sequence itself to "selected_with_seq" and
+TSEs without the sequence to "selected_with_ref". In "selected_with_seq"
+try to find TSE, referenced by the history (if more than one found, report
+error), if not found, search for a live TSE (if more than one found,
+report error), if not found, check if there is only one dead TSE in the set.
+Otherwise report error.
+From "selected_with_ref" select only live TSEs and dead TSEs, referenced by
+the history.
+The resulting set will contain 0 or 1 TSE with the sequence, all live TSEs
+without the sequence but with references to the id and all dead TSEs
+(with references and without the sequence), referenced by the history.
+*/
     x_ResolveLocationHandles(loc);
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
         TTSEMap::const_iterator tse_it = m_TSE_ref.find(hit->first);
         if (tse_it == m_TSE_ref.end())
-            continue; // No this seq-id in the datasource
+            continue; // No this seq-id in the TSE
         _ASSERT(tse_it->second.size() > 0);
-        TTSESet unfiltered;
-        const CTSE_Info* live = 0;
+        TTSESet selected_with_ref;
+        TTSESet selected_with_seq;
         iterate(TTSESet, tse, tse_it->second) {
-            unfiltered.insert(*tse);
-            if ( !(*tse)->m_Dead )
-                live = tse->GetPointer();
+            if ((*tse)->m_BioseqMap.find(hit->first) !=
+                (*tse)->m_BioseqMap.end()) {
+                selected_with_seq.insert(*tse); // with sequence
+            }
+            else
+                selected_with_ref.insert(*tse); // with reference
         }
-        iterate(TTSESet, tse, unfiltered) {
-            //### Apply TSE filtering rules for annotations
-            tse_set.insert(*tse);
+
+        CRef<CTSE_Info> unique_from_history;
+        CRef<CTSE_Info> unique_live;
+        iterate (TTSESet, with_seq, selected_with_seq) {
+            if (history.find(*with_seq) != history.end()) {
+                if ( unique_from_history )
+                    throw runtime_error(
+                    "CDataSource: ambiguous request -- multiple history matches");
+                unique_from_history = *with_seq;
+            }
+            else if ( !unique_from_history ) {
+                if ((*with_seq)->m_Dead)
+                    continue;
+                if ( unique_live )
+                    throw runtime_error(
+                    "CDataSource: ambiguous request -- multiple live TSEs");
+                unique_live = *with_seq;
+            }
+        }
+        if ( unique_from_history ) {
+            tse_set.insert(unique_from_history);
+        }
+        else if ( unique_live ) {
+            tse_set.insert(unique_live);
+        }
+        else if (selected_with_seq.size() == 1) {
+            tse_set.insert(*selected_with_seq.begin());
+        }
+        else if (selected_with_seq.size() > 1) {
+            throw runtime_error(
+                "CDataSource: ambigous request -- multiple TSEs found, "
+                "can not select the best one");
+        }
+        iterate(TTSESet, tse, selected_with_ref) {
+            if ( !(*tse)->m_Dead  ||  history.find(*tse) != history.end()) {
+                // Select only TSEs present in the history and live TSEs
+                tse_set.insert(*tse);
+            }
         }
     }
 }
@@ -1011,10 +1062,15 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
     // Allow to drop top-level seq-entries only
     _ASSERT(tse.GetParentEntry() == 0);
 
-    CSeq_entry* entry = x_FindEntry(tse);
-    if ( !entry )
+    CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&tse));
+    TEntries::iterator found = m_Entries.find(ref);
+    if (found == m_Entries.end())
         return false;
-    x_DropEntry(*entry);
+    if ( found->second->Locked() )
+        return true; // Not really dropped, but found
+    x_DropEntry(*found->first);
+    if ( m_Loader )
+        m_Loader->DropTSE(found->first);
     return true;
 }
 
@@ -1239,6 +1295,36 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph)
     }
 }
 
+
+CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id)
+{
+    if ( m_Loader ) {
+        // Send request to the loader
+        CSeq_loc loc;
+        SerialAssign<CSeq_id>(loc.SetWhole(), id);
+        CHandleRangeMap hrm(GetIdMapper());
+        hrm.AddLocation(loc);
+        m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore);
+    }
+    CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
+    CMutexGuard guard(s_DataSource_Mutex);
+    CTSE_Info* tse = x_FindBestTSE(idh);
+    if (tse) {
+        return (CSeqMatch_Info(idh, *tse, *this));
+    }
+    else {
+        return CSeqMatch_Info();
+    }
+}
+
+
+string CDataSource::GetName(void) const
+{
+    if ( m_Loader )
+        return m_Loader->GetName();
+    else
+        return "";
+}
 
 
 END_SCOPE(objects)

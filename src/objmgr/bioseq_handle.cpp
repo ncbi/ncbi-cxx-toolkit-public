@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -30,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.4  2002/01/28 19:44:49  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -46,10 +49,9 @@
 * ===========================================================================
 */
 
-
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include "data_source.hpp"
-
+#include <objects/objmgr1/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

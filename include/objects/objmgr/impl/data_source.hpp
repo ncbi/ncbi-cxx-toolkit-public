@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.8  2002/02/07 21:27:35  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -64,22 +68,14 @@
 * ===========================================================================
 */
 
-
-#include <corelib/ncbiobj.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seqloc/Na_strand.hpp>
-#include <vector>
-#include <set>
-
-#include <objects/objmgr1/bioseq_handle.hpp>
-#include <objects/objmgr1/seq_id_handle.hpp>
-#include <objects/objmgr1/data_loader.hpp>
-#include <objects/objmgr1/seq_map.hpp>
-#include <objects/objmgr1/object_manager.hpp>
 #include "tse_info.hpp"
 #include "seq_id_mapper.hpp"
-
+#include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr1/seq_map.hpp>
+#include <objects/objmgr1/data_loader.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -110,7 +106,7 @@ public:
     /// Return FALSE and do nothing if "bioseq" is not a node in an
     /// existing TSE tree of this data-source, or if "bioseq" is not a Bioseq.
     bool AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
-                    TSeqPosition start, TSeqLength length);
+                       TSeqPosition start, TSeqLength length);
 
     /// Add annotations to a Seq-entry.
     /// Return FALSE and do nothing if "parent" is not a node in an
@@ -175,7 +171,12 @@ public:
 
     // Get TSEs containing annotations for the given location
     void PopulateTSESet(CHandleRangeMap& loc,
-                        TTSESet& tse_set) const;
+                        TTSESet& tse_set,
+                        const CScope::TRequestHistory& history) const;
+
+    CSeqMatch_Info BestResolve(const CSeq_id& id);
+
+    string GetName(void) const;
 
 private:
     // Process seq-entry recursively
@@ -230,6 +231,7 @@ private:
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI;
 };
+
 
 
 inline

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.2  2002/02/12 19:41:42  grichenk
 * Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
 *
@@ -40,11 +44,9 @@
 * ===========================================================================
 */
 
-
 #include <objects/objmgr1/seq_id_handle.hpp>
-#include <serial/typeinfo.hpp>
 #include "seq_id_mapper.hpp"
-
+#include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -129,6 +131,13 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
     return m_SeqId->Match(*handle.m_SeqId);
 }
 
+
+bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
+{
+    if (m_Mapper != h.m_Mapper  ||  !m_Mapper)
+        return false;
+    return m_Mapper->IsBetter(*this, h);
+}
 
 
 END_SCOPE(objects)

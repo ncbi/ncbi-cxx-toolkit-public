@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.7  2002/02/07 21:27:33  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -57,13 +61,15 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-
+/*
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+*/
 #include <objects/objmgr1/seq_id_handle.hpp>
 
+#include <objects/seq/Bioseq.hpp>
+
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

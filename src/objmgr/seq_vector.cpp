@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -31,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.5  2002/02/15 20:35:38  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -51,25 +54,20 @@
 */
 
 
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/IUPACna.hpp>
-#include <objects/seq/IUPACaa.hpp>
-#include <objects/seq/NCBI2na.hpp>
-#include <objects/seq/NCBI4na.hpp>
-#include <objects/seq/NCBI8na.hpp>
-#include <objects/seq/NCBIeaa.hpp>
-#include <objects/seq/NCBIpna.hpp>
+#include <objects/objmgr1/seq_vector.hpp>
+#include "data_source.hpp"
 #include <objects/seq/NCBI8aa.hpp>
 #include <objects/seq/NCBIpaa.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
-#include <objects/seq/seqport_util.hpp>
+#include <objects/seq/NCBIeaa.hpp>
+#include <objects/seq/NCBIpna.hpp>
+#include <objects/seq/NCBI8na.hpp>
+#include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI2na.hpp>
+#include <objects/seq/IUPACaa.hpp>
+#include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seq_inst.hpp>
-
-#include <objects/objmgr1/seq_vector.hpp>
-#include <objects/objmgr1/scope.hpp>
-#include "seq_id_mapper.hpp"
-#include "data_source.hpp"
-
+#include <objects/seq/seqport_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -36,6 +35,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
 * Revision 1.5  2002/01/29 17:45:21  grichenk
 * Removed debug output
 *
@@ -55,11 +58,10 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbithr.hpp>
-#include <objects/seq/Bioseq.hpp>
 #include <objects/objmgr1/object_manager.hpp>
-#include "seq_id_mapper.hpp"
 #include "data_source.hpp"
+#include <objects/objmgr1/scope.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -350,6 +352,11 @@ void CObjectManager::RemoveTopLevelSeqEntry(
     CMutexGuard guard(s_OM_Mutex);
     if (m_mapEntryToSource.find(&top_entry) != m_mapEntryToSource.end()) {
         CDataSource* source = m_mapEntryToSource[ &top_entry];
+
+        // Do not destroy datasource if it's not empty
+        if ( !source->IsEmpty() )
+            return;
+
         if (sources.find(source) != sources.end()) {
             sources.erase(source);
             x_ReleaseDataSource(source);
