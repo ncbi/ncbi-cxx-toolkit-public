@@ -61,12 +61,12 @@ public:
 
     static bool IsPagerCommand(const CCgiRequest& request);
 
-    int CPager::GetItemCount(void) const
+    int GetItemCount(void) const
     {
         return m_ItemCount;
     }
 
-    bool CPager::PageChanged(void) const
+    bool PageChanged(void) const
     {
         return m_PageChanged;
     }
