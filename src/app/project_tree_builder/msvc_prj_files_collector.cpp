@@ -276,6 +276,22 @@ CMsvcPrjFilesCollector::CollectResources
             CDirEntry::CreateRelativePath(context.ProjectDir(), 
                                           abs_path));
     }
+
+    string default_rc;
+    if (project.m_ProjType == CProjKey::eApp) {
+        default_rc = GetApp().GetSite().GetAppDefaultResource();
+    }
+    if ( !default_rc.empty() ) {
+        string abs_path = GetApp().GetProjectTreeInfo().m_Compilers;
+        abs_path = 
+            CDirEntry::ConcatPath(abs_path, 
+                                  GetApp().GetRegSettings().m_CompilersSubdir);
+        abs_path = CDirEntry::ConcatPath(abs_path, default_rc);
+        abs_path = CDirEntry::NormalizePath(abs_path);
+        rel_pathes->push_back(
+            CDirEntry::CreateRelativePath(context.ProjectDir(), 
+                                          abs_path));
+    }
 }
 
 
@@ -317,6 +333,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 14:38:39  gorelenk
+ * Changed CMsvcPrjFilesCollector::CollectResources - implemented addition of
+ * default resource to 'app' projects.
+ *
  * Revision 1.3  2004/05/10 19:54:34  gorelenk
  * Changed s_CollectRelPathes .
  *
