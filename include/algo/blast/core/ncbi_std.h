@@ -57,7 +57,11 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901
+/* For some reason, ICC claims a suitable __STDC_VERSION__ but then
+   barfs on restrict. */
+#ifdef __ICC
+#define NCBI_RESTRICT __restrict
+#elif __STDC_VERSION__ >= 199901
 #define NCBI_RESTRICT restrict
 #else
 #define NCBI_RESTRICT
