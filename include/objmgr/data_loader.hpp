@@ -46,6 +46,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/** @addtogroup ObjectManagerCore
+ *
+ * @{
+ */
+
 
 // fwd decl
 class CSeq_loc;
@@ -154,9 +159,11 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////
-//
-//  CDataLoader::
-//
+///
+///  CDataLoader --
+///
+///  Load data from different sources
+///
 
 
 class NCBI_XOBJMGR_EXPORT CDataLoader : public CObject
@@ -172,20 +179,20 @@ public:
     // main blob is blob with sequence
     // all other blobs are external and contain external annotations
     enum EChoice {
-        eBlob,        // whole main
-        eBioseq,      // main blob with complete bioseq
-        eCore,        // ?only seq-entry core?
-        eBioseqCore,  // main blob with bioseq core (no seqdata and annots)
-        eSequence,    // seq data 
-        eFeatures,    // features from main blob
-        eGraph,       // graph annotations from main blob
-        eAlign,       // aligns from main blob
-        eAnnot,       // all annotations from main blob
-        eExtFeatures, // external features
-        eExtGraph,    // external graph annotations
-        eExtAlign,    // external aligns
-        eExtAnnot,    // all external annotations
-        eAll          // all blobs (main and external)
+        eBlob,        //< whole main
+        eBioseq,      //< main blob with complete bioseq
+        eCore,        //< ?only seq-entry core?
+        eBioseqCore,  //< main blob with bioseq core (no seqdata and annots)
+        eSequence,    //< seq data 
+        eFeatures,    //< features from main blob
+        eGraph,       //< graph annotations from main blob
+        eAlign,       //< aligns from main blob
+        eAnnot,       //< all annotations from main blob
+        eExtFeatures, //< external features
+        eExtGraph,    //< external graph annotations
+        eExtAlign,    //< external aligns
+        eExtAnnot,    //< all external annotations
+        eAll          //< all blobs (main and external)
     };
     
     // Request from a datasource for data specified in "choice".
@@ -197,10 +204,13 @@ public:
     typedef CRef<CTSE_Chunk_Info>   TChunk;
     typedef vector<TChunk>          TChunkSet;
 
-    // Request from a datasource using handles and ranges instead of seq-loc
-    // The TSEs loaded in this call will be added to the tse_set.
+    /// Request from a datasource using handles and ranges instead of seq-loc
+    /// The TSEs loaded in this call will be added to the tse_set.
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
+
+    /// Request from a datasource using handles and ranges instead of seq-loc
+    /// The TSEs loaded in this call will be added to the tse_set.
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     const SRequestDetails& details);
 
@@ -226,23 +236,23 @@ public:
     // 
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
     
-    // Specify datasource to send loaded data to.
+    /// Specify datasource to send loaded data to.
     void SetTargetDataSource(CDataSource& data_source);
     
     string GetName(void) const;
     
-    // Resolve TSE conflict
-    // *select the best TSE from the set of dead TSEs.
-    // *select the live TSE from the list of live TSEs
-    //  and mark the others one as dead.
+    /// Resolve TSE conflict
+    /// *select the best TSE from the set of dead TSEs.
+    /// *select the live TSE from the list of live TSEs
+    ///  and mark the others one as dead.
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& id,
                                       const TTSE_LockSet& tse_set);
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
 protected:
-    // register the loader only if the name is not yet
-    // registered in the object manager
+    /// Register the loader only if the name is not yet
+    /// registered in the object manager
     static void RegisterInObjectManager(
         CObjectManager&            om,
         CLoaderMaker_Base&         loader_maker,
@@ -265,6 +275,9 @@ private:
 };
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 
 NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 1, 0, 0);
@@ -276,6 +289,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/09/27 14:13:50  kononenk
+* Added doxygen formating
+*
 * Revision 1.34  2004/08/31 21:03:48  grichenk
 * Added GetIds()
 *
