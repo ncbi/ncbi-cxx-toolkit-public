@@ -98,7 +98,7 @@ static const char k_IdentityChar = '.';
 static const int k_NumFrame = 6;
 static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
 static const int k_GetSubseqThreshhold = 10000;
-static const int k_ColorMismatchIdentity = 98;  /*threshhold to color mismatch.  98 means 98% */
+static const int k_ColorMismatchIdentity = 0;  /*threshhold to color mismatch.  98 means 98% */
 static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
 
@@ -1920,6 +1920,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.23  2003/12/16 19:21:23  jianye
+*Set k_ColorMismatchIdentity to 0
+*
 *Revision 1.22  2003/12/11 22:27:18  jianye
 *Use toolkit blosum matrix
 *
