@@ -121,28 +121,30 @@ void CCachedId1Reader::SetIdCache(IIntCache* id_cache)
 }
 
 
-IWriter* CCachedId1Reader::OpenBlobWriter(const CSeqref& seqref)
+void CCachedId1Reader::PurgeSeqrefs(const TSeqrefs& srs,
+                                    const CSeq_id& /*id*/)
 {
-    if (!m_BlobCache) 
-        return 0;
-
-    string blob_key = x_GetBlobKey(seqref);
-
-    IWriter* writer = m_BlobCache->GetWriteStream(blob_key,
-                                                  seqref.GetVersion());
-    
-    if (writer) {
-        _TRACE("Writing cache BLOB. key = " << blob_key);
+    if ( !m_IdCache ) {
+        return;
     }
 
-    return writer;    
+    int gi = -1;
+    ITERATE ( TSeqrefs, it, srs ) {
+        const CSeqref& sr = **it;
+        if ( gi != sr.GetGi() ) {
+            gi = sr.GetGi();
+            m_IdCache->Remove(gi, 0);
+            m_IdCache->Remove(gi, 1);
+        }
+    }
 }
 
 
 bool CCachedId1Reader::GetBlobInfo(int gi, TSeqrefs& srs)
 {
-    if (!m_IdCache) 
+    if (!m_IdCache) {
         return false;
+    }
 
     CStopWatch sw;
     if ( CollectStatistics() ) {
@@ -584,6 +586,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.14  2003/10/27 15:05:41  vasilche
+ * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+ * Added recognition of ID1 error codes: private, etc.
+ * Some formatting of old code.
+ *
  * Revision 1.13  2003/10/24 15:36:46  vasilche
  * Fixed incorrect order of objects' destruction - IWriter before object stream.
  *

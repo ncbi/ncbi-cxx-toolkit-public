@@ -159,9 +159,10 @@ public:
 
     typedef vector< CRef<CSeqref> > TSeqrefs;
 
-    virtual void RetrieveSeqrefs(TSeqrefs& sr,
+    virtual void RetrieveSeqrefs(TSeqrefs& srs,
                                  const CSeq_id& seqId,
                                  TConn conn) = 0;
+    virtual void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& seqId);
 
     virtual CRef<CTSE_Info> GetBlob(const CSeqref& seqref,
                                     TConn conn,
@@ -217,6 +218,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.31  2003/10/27 15:05:41  vasilche
+* Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+* Added recognition of ID1 error codes: private, etc.
+* Some formatting of old code.
+*
 * Revision 1.30  2003/10/08 14:16:12  vasilche
 * Added version of blobs loaded from ID1.
 *

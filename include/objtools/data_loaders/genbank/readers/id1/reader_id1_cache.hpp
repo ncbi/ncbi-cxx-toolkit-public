@@ -54,6 +54,8 @@ public:
     void SetBlobCache(IBLOB_Cache* blob_cache);
     void SetIdCache(IIntCache* id_cache);
 
+    void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id);
+
 protected:
     
     void PrintStatistics(void) const;
@@ -71,25 +73,10 @@ protected:
     void x_ReadBlob(CID1server_back& id1_reply,
                     const CSeqref&   seqref,
                     CNcbiIstream&    stream);
-    /*
-    void x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
-                        const CSeqref& seqref,
-                        CByteSourceReader&  reader);
-    */
 
     /// Return BLOB key string based on CSeqref Sat() and SatKey()
     /// @sa CSeqref::Sat(), CSeqref::SatKey()
     string x_GetBlobKey(const CSeqref& seqref);
-
-    /// Return IReader interface if BLOB described by the seqref 
-    /// exists in cache. If IBLOB_Cache is not set or 
-    /// BLOB does not exist function returns NULL
-    IReader* OpenBlobReader(const CSeqref& seqref);
-
-    /// Return IWriter interface to store BLOB described by the seqref
-    /// Function returns NULL if IBLOB_Cache interface is not set.
-    IWriter* OpenBlobWriter(const CSeqref& seqref);
-
 
     bool GetBlobInfo(int gi, TSeqrefs& sr);
     void StoreBlobInfo(int gi, const TSeqrefs& sr);
@@ -121,6 +108,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.9  2003/10/27 15:05:41  vasilche
+* Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+* Added recognition of ID1 error codes: private, etc.
+* Some formatting of old code.
+*
 * Revision 1.8  2003/10/21 16:32:50  vasilche
 * Cleaned ID1 statistics messages.
 * Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.

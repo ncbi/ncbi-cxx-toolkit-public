@@ -220,6 +220,12 @@ void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
 }
 
 
+void CReader::PurgeSeqrefs(const TSeqrefs& /*srs*/,
+                           const CSeq_id& /*id*/)
+{
+}
+
+
 CRef<CTSE_Info> CReader::GetBlob(const CSeqref& seqref,
                                  TConn conn,
                                  CTSE_Chunk_Info* chunk_info)
@@ -314,6 +320,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.25  2003/10/27 15:05:41  vasilche
+ * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+ * Added recognition of ID1 error codes: private, etc.
+ * Some formatting of old code.
+ *
  * Revision 1.24  2003/10/08 14:16:13  vasilche
  * Added version of blobs loaded from ID1.
  *

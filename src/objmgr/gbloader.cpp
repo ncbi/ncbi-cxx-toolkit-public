@@ -315,7 +315,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
     CRef<SSeqrefs> sr;
     CConstRef<CTSE_Info> best;
     {
-        int cnt = 20;
+        int cnt = 5;
         while ( !(sr = x_ResolveHandle(handle))  && cnt>0 )
             cnt --;
         if ( !sr )
@@ -611,131 +611,99 @@ CGBDataLoader::x_Request2SeqrefMask(const CSeq_annot::C_Data::E_Choice choice)
 void CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                                  TMask sr_mask)
 {
-    CRef<SSeqrefs>    sr = x_ResolveHandle(sih);
-    _ASSERT(sr);
-  
-    if( sr->m_Sr.empty() ) // no data for given seqid
-        return;
-  
-    //GBLOG_POST( "x_GetRecords-Seqref_iterate" );
-    ITERATE (SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
-        // skip TSE which doesn't contain requested type of info
-        if( ((*srp)->GetFlags() & sr_mask) == 0 )
-            continue;
-
-        // find TSE info for each seqref
-        TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find((*srp)->GetKeyByTSE());
-        CRef<STSEinfo> tse;
-        if (tsep != m_Sr2TseInfo.end()) {
-            tse = tsep->second;
-        }
-        else {
-            tse.Reset(new STSEinfo());
-            tse->seqref = *srp;
-            tse->key = tse->seqref->GetKeyByTSE();
-            m_Sr2TseInfo[tse->key] = tse;
-            x_AppendToDropList(tse.GetPointer());
-            GBLOG_POST( "x_GetRecords-newTSE(" << tse << ") ");
-        }
-
-        CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_GetRecords");
-        g.Lock(&*tse);
-        tse->locked++;
-        {{ // make sure we have reverse reference to handle
-            STSEinfo::TSeqids &sid = tse->m_SeqIds;
-            if (sid.find(sih) == sid.end())
-                sid.insert(sih);
-        }}
-
-        //GBLOG_POST( "x_GetRecords-range_0" );
-        // check Data
-        //GBLOG_POST( "x_GetRecords-range_0" );
-        if( !x_NeedMoreData(*tse) )
-            continue;
-        
-        _ASSERT(tse->m_LoadState != STSEinfo::eLoadStateDone);
-        
-        //GBLOG_POST( "x_GetRecords-range_1" );
-        // need update
-        g.Local();
-        
-        int try_cnt = 3;
-        while( x_NeedMoreData(*tse) && try_cnt-- > 0 ) {
-            CReader::TConn conn = m_Locks.m_Pool.Select(&*tse);
-            try {
-                x_GetData(tse, conn);
-                _ASSERT(!x_NeedMoreData(*tse));
-                break;
-            }
-            catch ( CLoaderException& e ) {
-                if ( e.GetErrCode() == CLoaderException::ePrivateData ) {
-                    LOG_POST("GI(" << tse->seqref->GetGi() <<") is private");
-                    tse->m_LoadState   = STSEinfo::eLoadStateDone;
-                    _ASSERT(!x_NeedMoreData(*tse));
+    int attempt_count = 3, attempt;
+    for ( attempt = 0; attempt < attempt_count; ++attempt ) {
+        CRef<SSeqrefs> sr = x_ResolveHandle(sih);
+        _ASSERT(sr);
+        try {
+            ITERATE ( SSeqrefs::TSeqrefs, srp, sr->m_Sr ) {
+                // skip TSE which doesn't contain requested type of info
+                if( ((*srp)->GetFlags() & sr_mask) == 0 )
+                    continue;
+                
+                // find TSE info for each seqref
+                TSr2TSEinfo::iterator tsep =
+                    m_Sr2TseInfo.find((*srp)->GetKeyByTSE());
+                CRef<STSEinfo> tse;
+                if (tsep != m_Sr2TseInfo.end()) {
+                    tse = tsep->second;
                 }
-                else if ( e.GetErrCode() == CLoaderException::eNoData ) {
-                    if ( (tse->seqref->GetFlags()&CSeqref::fPossible) == 0 ) {
-                        // TODO log message
-                        LOG_POST("ERROR: can not retrive sequence: "<<
-                                 TSE(*tse));
-                    }
-                    tse->m_LoadState   = STSEinfo::eLoadStateDone;
-                    _ASSERT(!x_NeedMoreData(*tse));
+                else {
+                    tse.Reset(new STSEinfo());
+                    tse->seqref = *srp;
+                    tse->key = tse->seqref->GetKeyByTSE();
+                    m_Sr2TseInfo[tse->key] = tse;
+                    x_AppendToDropList(tse.GetPointer());
+                    GBLOG_POST("x_GetRecords-newTSE(" << tse << ")");
                 }
-                else if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                
+                CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_GetRecords");
+                g.Lock(&*tse);
+                {{ // make sure we have reverse reference to handle
+                    STSEinfo::TSeqids &sid = tse->m_SeqIds;
+                    if (sid.find(sih) == sid.end())
+                        sid.insert(sih);
+                }}
+                
+                if( !x_NeedMoreData(*tse) )
+                    continue;
+                // need update
+                _ASSERT(tse->m_LoadState != STSEinfo::eLoadStateDone);
+                tse->locked++;
+                g.Local();
+
+                CReader::TConn conn = m_Locks.m_Pool.Select(&*tse);
+                try {
+                    x_GetData(tse, conn);
+                }
+                catch ( ... ) {
                     g.Lock();
                     g.Lock(&*tse);
                     tse->locked--;
                     x_UpdateDropList(&*tse); // move up as just checked
+                    m_Driver->Reconnect(conn);
                     throw;
                 }
-                else {
-                    LOG_POST(e.what());
-                    LOG_POST("GenBank connection failed: Reconnecting....");
-                    m_Driver->Reconnect(conn);
-                }
-            }
-            catch(const CIOException &e) {
-                LOG_POST(e.what());
-                LOG_POST("GenBank connection failed: Reconnecting....");
-                m_Driver->Reconnect(conn);
-            }
-            catch(const CDB_Exception &e) {
-                LOG_POST(e.what());
-                LOG_POST("GenBank connection failed: Reconnecting....");
-                m_Driver->Reconnect(conn);
-            }
-            catch(const exception &e) {
-                LOG_POST(e.what());
-                LOG_POST("GenBank connection failed: Reconnecting....");
-                m_Driver->Reconnect(conn);
-            }
-            catch (...) {
-                LOG_POST(CThread::GetSelf()<<":: Data request failed....");
+                _ASSERT(!x_NeedMoreData(*tse));
                 g.Lock();
                 g.Lock(&*tse);
                 tse->locked--;
                 x_UpdateDropList(&*tse); // move up as just checked
+
+                x_Check(&*tse);
+                x_Check();
+            }
+            // everything is loaded, break the attempt loop
+            break;
+        }
+        catch ( CLoaderException& e ) {
+            ERR_POST(e.what());
+            if ( e.GetErrCode() == e.eNoConnection ) {
                 throw;
             }
         }
-        if ( x_NeedMoreData(*tse) ) {
-            ERR_POST("CGBLoader:GetData: data request failed: "
-                     "exceeded maximum attempts count");
-            g.Lock();
-            g.Lock(&*tse);
-            tse->locked--;
-            x_UpdateDropList(&*tse); // move up as just checked
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Multiple attempts to retrieve data failed");
+        catch ( exception& e ) {
+            ERR_POST(e.what());
         }
-        g.Lock();
-        g.Lock(&*tse);
-        tse->locked--;
-        x_UpdateDropList(&*tse);
-        x_Check(&*tse);
-        x_Check();
-    } // iterate seqrefs
+        catch ( ... ) {
+            ERR_POST(CThread::GetSelf()<<":: Data request failed....");
+            throw;
+        }
+        // something is not loaded
+        ERR_POST("GenBank connection failed: Reconnecting...");
+        // in case of any error we'll force reloading seqrefs
+        
+        CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_ResolveHandle");
+        g.Lock(&*sr);
+        sr->m_Timer.Reset();
+        m_Driver->PurgeSeqrefs(sr->m_Sr, *sih.GetSeqId());
+    }
+    if ( attempt >= attempt_count ) {
+        ERR_POST("CGBLoader:GetData: data request failed: "
+                 "exceeded maximum attempts count");
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Multiple attempts to retrieve data failed");
+    }
 }
 
 
@@ -819,9 +787,19 @@ class CTimerGuard
     CTimer *t;
     bool    calibrating;
 public:
-    CTimerGuard(CTimer& x) : t(&x)
-        { calibrating=t->NeedCalibration(); if(calibrating) t->Start(); }
-    ~CTimerGuard() { if(calibrating) t->Stop(); }
+    CTimerGuard(CTimer& x)
+        : t(&x), calibrating(x.NeedCalibration())
+        {
+            if ( calibrating ) {
+                t->Start();
+            }
+        }
+    ~CTimerGuard(void)
+        {
+            if ( calibrating ) {
+                t->Stop();
+            }
+        }
 };
 
 
@@ -855,30 +833,19 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
             osr.clear();
             m_Driver->RetrieveSeqrefs(osr, *h.GetSeqId(), conn);
             got = true;
+            break;
         }
         catch ( CLoaderException& e ) {
             if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                 throw;
             }
             LOG_POST(e.what());
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
-        }
-        catch(const CIOException &e) {
-            LOG_POST(e.what());
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
-        }
-        catch(const CDB_Exception &e) {
-            LOG_POST(e.what());
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
         }
         catch(const exception &e) {
             LOG_POST(e.what());
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
         }
+        LOG_POST("GenBank connection failed: Reconnecting....");
+        m_Driver->Reconnect(conn);
     }
     if ( !got ) {
         ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve request failed: "
@@ -896,7 +863,7 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     ITERATE(SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
         GBLOG_POST( (*srp)->print());
     }
-  
+    
     if ( !osr.empty() ) {
         bsit = m_Bs2Sr.find(h);
         // make sure we are not deleted in the unlocked time 
@@ -905,28 +872,34 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
           
             // catch dissolving TSE and mark them dead
             //GBLOG_POST( "old seqrefs");
-            ITERATE(SSeqrefs::TSeqrefs,srp,osr) {
+            ITERATE ( SSeqrefs::TSeqrefs, srp, osr ) {
                 //(*srp)->print(); cout);
                 bool found=false;
-                ITERATE(SSeqrefs::TSeqrefs,nsrp,nsr) {
+                ITERATE ( SSeqrefs::TSeqrefs, nsrp, nsr ) {
                     if( (*srp)->SameTSE(**nsrp) ) {
                         found=true;
                         break;
                     }
                 }
-                if(found) continue;
+                if ( found ) {
+                    continue;
+                }
                 TSr2TSEinfo::iterator tsep =
                     m_Sr2TseInfo.find((*srp)->GetKeyByTSE());
-                if (tsep == m_Sr2TseInfo.end()) continue;
+                if (tsep == m_Sr2TseInfo.end()) {
+                    continue;
+                }
               
                 // update TSE info 
                 CRef<STSEinfo> tse = tsep->second;
                 g.Lock(&*tse);
                 bool mark_dead  = tse->mode.test(STSEinfo::eDead);
-                if(mark_dead) tse->mode.set(STSEinfo::eDead);
+                if ( mark_dead ) {
+                    tse->mode.set(STSEinfo::eDead);
+                }
                 tse->m_SeqIds.erase(h); // drop h as refewrenced seqid
                 g.Unlock(&*tse);
-                if(mark_dead && tse->tseinfop) {
+                if ( mark_dead && tse->tseinfop ) {
                     // inform data_source :: make sure to avoid deadlocks
                     tse->tseinfop->SetDead(true);
                 }
@@ -954,24 +927,42 @@ bool CGBDataLoader::x_NeedMoreData(const STSEinfo& tse)
 void CGBDataLoader::x_GetData(CRef<STSEinfo> tse,
                               CReader::TConn conn)
 {
-    if ( !x_NeedMoreData(*tse) )
-        return;
-
-    GBLOG_POST("GetBlob("<<TSE(*tse)<<") "<<":="<<tse->m_LoadState);
-  
-    _ASSERT(tse->m_LoadState != STSEinfo::eLoadStateDone);
-    if (tse->m_LoadState == STSEinfo::eLoadStateNone) {
-        CRef<CTSE_Info> tse_info =
-            m_Driver->GetBlob(*tse->seqref, conn);
-        GBLOG_POST("GetBlob("<<TSE(*tse)<<")");
-        m_InvokeGC=true;
-        _ASSERT(tse_info);
-        tse->m_LoadState   = STSEinfo::eLoadStateDone;
-        tse_info->SetBlobId(tse);
-        GetDataSource()->AddTSE(tse_info);
-        tse->tseinfop = tse_info.GetPointer();
-        _TRACE("GetBlob("<<DUMP(*tse)<<") - whole blob retrieved");
+    try {
+        if ( x_NeedMoreData(*tse) ) {
+            GBLOG_POST("GetBlob("<<TSE(*tse)<<") "<<":="<<tse->m_LoadState);
+            
+            _ASSERT(tse->m_LoadState != STSEinfo::eLoadStateDone);
+            if (tse->m_LoadState == STSEinfo::eLoadStateNone) {
+                CRef<CTSE_Info> tse_info =
+                    m_Driver->GetBlob(*tse->seqref, conn);
+                GBLOG_POST("GetBlob("<<TSE(*tse)<<")");
+                m_InvokeGC=true;
+                _ASSERT(tse_info);
+                tse->m_LoadState   = STSEinfo::eLoadStateDone;
+                tse_info->SetBlobId(tse);
+                GetDataSource()->AddTSE(tse_info);
+                tse->tseinfop = tse_info.GetPointer();
+                _TRACE("GetBlob("<<DUMP(*tse)<<") - whole blob retrieved");
+            }
+        }
     }
+    catch ( CLoaderException& e ) {
+        if ( e.GetErrCode() == e.ePrivateData ) {
+            LOG_POST("GI("<<tse->seqref->GetGi()<<") is private");
+            tse->m_LoadState = STSEinfo::eLoadStateDone;
+        }
+        else if ( e.GetErrCode() == e.eNoData ) {
+            if ( !(tse->seqref->GetFlags() & CSeqref::fPossible) ) {
+                // TODO log message
+                LOG_POST("ERROR: can not retrive sequence: "<<TSE(*tse));
+            }
+            tse->m_LoadState   = STSEinfo::eLoadStateDone;
+        }
+        else {
+            throw;
+        }
+    }
+    _ASSERT(!x_NeedMoreData(*tse));
 }
 
 
@@ -1009,6 +1000,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2003/10/27 15:05:41  vasilche
+* Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+* Added recognition of ID1 error codes: private, etc.
+* Some formatting of old code.
+*
 * Revision 1.87  2003/10/22 16:12:37  vasilche
 * Added CLoaderException::eNoConnection.
 * Added check for 'fail' state of ID1 connection stream.

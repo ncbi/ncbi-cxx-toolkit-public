@@ -468,18 +468,35 @@ CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
     x_GetBlob(id1_reply, seqref, conn);
 
     CRef<CSeq_entry> seq_entry;
-    if ( id1_reply.IsGotseqentry() ) {
+    bool dead = false;
+    switch ( id1_reply.Which() ) {
+    case CID1server_back::e_Gotseqentry:
         seq_entry.Reset(&id1_reply.SetGotseqentry());
-    }
-    else if (id1_reply.IsGotdeadseqentry()) {
+        break;
+    case CID1server_back::e_Gotdeadseqentry:
+        dead = true;
         seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
-    }
-    else {
+        break;
+    case CID1server_back::e_Error:
+        switch ( id1_reply.GetError() ) {
+        case 1:
+            NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
+        }
+        ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<
+                 id1_reply.GetError());
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "ID1server-back.error");
+        break;
+    default:
         // no data
-        NCBI_THROW(CLoaderException, eNoData, "no data");
+    {{
+        CObjectOStreamAsn out(NcbiCout);
+        out << id1_reply;
+    }}
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "bad ID1server-back type");
     }
-
-    return Ref(new CTSE_Info(*seq_entry, id1_reply.IsGotdeadseqentry()));
+    return Ref(new CTSE_Info(*seq_entry, dead));
 }
 
 
@@ -519,16 +536,29 @@ void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
         sw.Start();
     }
     
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(seqref, stream, false);
-    x_ReadBlob(id1_reply, seqref, *stream);
-
-    if ( CollectStatistics() ) {
-        double time = sw.Elapsed();
-        LogBlobStat("CId1Reader: read blob", seqref, last_object_bytes, time);
-        main_blob_count++;
-        main_bytes += last_object_bytes;
-        main_time += time;
+    try {
+        CConn_ServiceStream* stream = x_GetConnection(conn);
+        x_SendRequest(seqref, stream, false);
+        x_ReadBlob(id1_reply, seqref, *stream);
+        
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            LogBlobStat("CId1Reader: read blob",
+                        seqref, last_object_bytes, time);
+            main_blob_count++;
+            main_bytes += last_object_bytes;
+            main_time += time;
+        }
+    }
+    catch ( ... ) {
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            LogBlobStat("CId1Reader: read fail blob",
+                        seqref, 0, time);
+            main_blob_count++;
+            main_time += time;
+        }
+        throw;
     }
 }
 
@@ -543,39 +573,52 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         sw.Start();
     }
 
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(seqref, stream, true);
+    try {
+        CConn_ServiceStream* stream = x_GetConnection(conn);
+        x_SendRequest(seqref, stream, true);
 
-    size_t compressed;
-    double decompression_time;
-    double total_read_time;
-    {{
-        const size_t kSkipHeader = 2, kSkipFooter = 2;
+        size_t compressed;
+        double decompression_time;
+        double total_read_time;
+        {{
+            const size_t kSkipHeader = 2, kSkipFooter = 2;
         
-        CStreamByteSourceReader src(0, stream);
+            CStreamByteSourceReader src(0, stream);
         
-        Id1ReaderSkipBytes(src, kSkipHeader);
+            Id1ReaderSkipBytes(src, kSkipHeader);
         
-        CResultZBtSrcRdr src2(&src);
+            CResultZBtSrcRdr src2(&src);
         
-        x_ReadSNPAnnot(snp_info, seqref, src2);
+            x_ReadSNPAnnot(snp_info, seqref, src2);
 
-        compressed = src2.GetCompressedSize();
-        decompression_time = src2.GetDecompressionTime();
-        total_read_time = src2.GetTotalReadTime();
+            compressed = src2.GetCompressedSize();
+            decompression_time = src2.GetDecompressionTime();
+            total_read_time = src2.GetTotalReadTime();
         
-        Id1ReaderSkipBytes(src, kSkipFooter);
-    }}
+            Id1ReaderSkipBytes(src, kSkipFooter);
+        }}
 
-    if ( CollectStatistics() ) {
-        double time = sw.Elapsed();
-        LogBlobStat("CId1Reader: read SNP blob", seqref, compressed, time);
-        snp_blob_count++;
-        snp_compressed += compressed;
-        snp_uncompressed += last_object_bytes;
-        snp_time += time;
-        snp_decompression_time += decompression_time;
-        snp_total_read_time += total_read_time;
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            LogBlobStat("CId1Reader: read SNP blob",
+                        seqref, compressed, time);
+            snp_blob_count++;
+            snp_compressed += compressed;
+            snp_uncompressed += last_object_bytes;
+            snp_time += time;
+            snp_decompression_time += decompression_time;
+            snp_total_read_time += total_read_time;
+        }
+    }
+    catch ( ... ) {
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            LogBlobStat("CId1Reader: read fail SNP blob",
+                        seqref, 0, time);
+            snp_blob_count++;
+            snp_time += time;
+        }
+        throw;
     }
 }
 
@@ -666,6 +709,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.57  2003/10/27 15:05:41  vasilche
+ * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+ * Added recognition of ID1 error codes: private, etc.
+ * Some formatting of old code.
+ *
  * Revision 1.56  2003/10/24 13:27:40  vasilche
  * Cached ID1 reader made more safe. Process errors and exceptions correctly.
  * Cleaned statistics printing methods.

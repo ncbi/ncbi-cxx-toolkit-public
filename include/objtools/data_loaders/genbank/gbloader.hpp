@@ -85,58 +85,95 @@ class CSeq_entry;
 class NCBI_XOBJMGR_EXPORT CTimer
 {
 public:
-  CTimer();
-  time_t Time();
-  void   Start();
-  void   Stop();
-  time_t RetryTime();
-  bool   NeedCalibration();
+    CTimer(void);
+    time_t Time(void);
+    void   Start(void);
+    void   Stop(void);
+    time_t RetryTime(void);
+    bool   NeedCalibration(void);
 private:
-  time_t m_ReasonableRefreshDelay;
-  int    m_RequestsDevider;
-  int    m_Requests;
-  CMutex m_RequestsLock;
-  time_t m_Time;
-  time_t m_LastCalibrated;
+    time_t m_ReasonableRefreshDelay;
+    int    m_RequestsDevider;
+    int    m_Requests;
+    CMutex m_RequestsLock;
+    time_t m_Time;
+    time_t m_LastCalibrated;
   
-  time_t m_StartTime;
-  CMutex m_TimerLock;
+    time_t m_StartTime;
+    CMutex m_TimerLock;
 };
 
 //========================================================================
 class NCBI_XOBJMGR_EXPORT CRefresher
 {
 public:
-  CRefresher() : m_RefreshTime(0) { };
-  bool NeedRefresh(CTimer &timer) { return timer.Time() > m_RefreshTime; };
-  void Reset      (CTimer &timer) { m_RefreshTime = timer.RetryTime();   };
+    CRefresher(void)
+        : m_RefreshTime(0)
+        {
+        }
+
+    void Reset(CTimer &timer)
+        {
+            m_RefreshTime = timer.RetryTime();
+        }
+    void Reset(void)
+        {
+            m_RefreshTime = 0;
+        }
+
+    bool NeedRefresh(CTimer &timer) const
+        {
+            return timer.Time() > m_RefreshTime;
+        }
+
 private:
-  time_t m_RefreshTime;
+    time_t m_RefreshTime;
 };
 
 
 class NCBI_XOBJMGR_EXPORT CMutexPool
 {
 #if defined(NCBI_THREADS)
-  int         m_size;
-  CMutex     *m_Locks;
-  int        *spread;
+    int         m_size;
+    CMutex     *m_Locks;
+    int        *spread;
 #else
-  static CMutex sm_Lock;
+    static CMutex sm_Lock;
 #endif
 public:
 #if defined(NCBI_THREADS)
-  CMutexPool();
-  ~CMutexPool(void);
-  void SetSize(int size);
-  CMutex& GetMutex(int x) { int y=x%m_size; spread[y]++; return m_Locks[y]; }
-  template<class A> int  Select(A *a) { return (((unsigned long) a)/sizeof(A)) % m_size ; }
+    CMutexPool(void);
+    ~CMutexPool(void);
+
+    void SetSize(int size);
+
+    CMutex& GetMutex(int x)
+        {
+            int y=x%m_size; spread[y]++; return m_Locks[y];
+        }
+
+    template<class A> int  Select(A *a)
+        {
+            return (((unsigned long) a)/sizeof(A)) % m_size ;
+        }
 #else
-  CMutexPool() {};
-  ~CMutexPool(void) {};
-  void SetSize(int size) {};
-  CMutex& GetMutex(int x) { return sm_Lock; }
-  template<class A> int  Select(A *a) { return 0;}
+    CMutexPool(void)
+        {
+        }
+    ~CMutexPool(void)
+        {
+        }
+    void SetSize(int size)
+        {
+        }
+    CMutex& GetMutex(int x)
+        {
+            return sm_Lock;
+        }
+    template<class A> int  Select(A *a)
+        {
+            return 0;
+        }
 #endif
 };
 
@@ -264,6 +301,11 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.42  2003/10/27 15:05:41  vasilche
+ * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
+ * Added recognition of ID1 error codes: private, etc.
+ * Some formatting of old code.
+ *
  * Revision 1.41  2003/10/07 13:43:22  vasilche
  * Added proper handling of named Seq-annots.
  * Added feature search from named Seq-annots.
