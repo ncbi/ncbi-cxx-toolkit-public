@@ -125,7 +125,7 @@ _PSICopyMatrix_int(int** dest, int** src,
  * @param dest Destination matrix           [out]
  * @param src Source matrix                 [in]
  * @param ncols Number of columns to copy   [in]
- * @param ncows Number of rows to copy      [in]
+ * @param nrows Number of rows to copy      [in]
  */
 void
 _PSICopyMatrix_double(double** dest, double** src,
@@ -583,6 +583,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2005/02/28 13:40:11  camacho
+ * Minor doxygen fix
+ *
  * Revision 1.24  2005/02/23 17:24:41  camacho
  * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
  * 2. Removed unneeded fields from Kappa_compactSearchItems
