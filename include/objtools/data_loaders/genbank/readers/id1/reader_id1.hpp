@@ -134,9 +134,49 @@ extern NCBI_XREADER_ID1_EXPORT const string kId1ReaderDriverName;
 extern "C" 
 {
 
-void NCBI_XREADER_ID1_EXPORT NCBI_Id1ReaderEntryPoint(
+void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_Id1Reader(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);
+
+inline 
+void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_Reader_Id1(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id1Reader(info_list, method);
+}
+
+inline 
+void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_ncbi_xreader_id1(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id1Reader(info_list, method);
+}
+
+inline 
+void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_Reader_ncbi_xreader_id1(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id1Reader(info_list, method);
+}
+
+inline 
+void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_Reader_Id1_ncbi_xreader_id1(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id1Reader(info_list, method);
+}
+
+inline 
+void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_Id1_ncbi_xreader_id1(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id1Reader(info_list, method);
+}
 
 } // extern C
 
@@ -145,6 +185,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.34  2004/02/04 17:44:01  kuznets
+* Fixed naming of DLL entry points.
+*
 * Revision 1.33  2004/01/22 20:10:34  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
