@@ -743,6 +743,24 @@
 #endif
 
 /*
+ * Export specifier for library gui_widgets_aln
+ */
+#ifdef NCBI_GUIWIDGETSALN_EXPORTS
+#  define NCBI_GUIWIDGETSALN_EXPORT    __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETSALN_EXPORT    __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library gui_widgets_seq
+ */
+#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
+#  define NCBI_GUIWIDGETSSEQ_EXPORT    __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETSSEQ_EXPORT    __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library objects_validator
  */
 #ifdef NCBI_VALIDATOR_EXPORTS
@@ -868,6 +886,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.36  2003/09/12 12:56:52  dicuccio
+ * Added new export specifiers for gui_widgets_seq, gui_widgets_aln
+ *
  * Revision 1.35  2003/09/09 18:53:44  grichenk
  * +ID2
  *
