@@ -488,15 +488,17 @@ DBT* CBDB_File::CloneDBT_Key()
     // Clone the "data" area (needs to be properly deleted!)
     if (m_DBT_Key->size) {
         dbt->size = m_DBT_Key->size;
-        dbt->data = new unsigned char(dbt->size);
-        ::memcpy(dbt->data, m_DBT_Key->data, dbt->size);
+        unsigned char* p = (unsigned char*)malloc(dbt->size);
+        ::memcpy(p, m_DBT_Key->data, m_DBT_Key->size);
+        dbt->data = p;
     }
     return dbt;
 }
 
 void CBDB_File::DestroyDBT_Clone(DBT* dbt)
 {
-    delete [] dbt->data;
+    unsigned char* p = (unsigned char*)dbt->data;
+    free(p);
     delete dbt;
 }
 
@@ -686,6 +688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/09/17 18:18:21  kuznets
+ * Fixed some memory allocation bug in key cloning.
+ *
  * Revision 1.23  2003/09/16 20:17:40  kuznets
  * CBDB_File: added methods to clone (and then destroy) DBT Key.
  *
