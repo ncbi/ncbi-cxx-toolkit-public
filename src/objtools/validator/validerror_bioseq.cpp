@@ -2886,8 +2886,8 @@ void CValidError_bioseq::ValidateGraphValues
         ACGTs_without_score = 0,
         vals_below_min = 0,
         vals_above_max = 0;
-    TSeqPos first_N = numeric_limits<TSeqPos>::min(),
-        first_ACGT = numeric_limits<TSeqPos>::min();
+    int first_N = -1,
+        first_ACGT = -1;
 
     const CByte_graph& bg = graph.GetGraph().GetByte();
     int min = bg.GetMin();
@@ -2901,11 +2901,9 @@ void CValidError_bioseq::ValidateGraphValues
                                          GetStrand(gloc, m_Scope));
     vec.SetCoding(CSeq_data::e_Ncbi4na);
 
-    string sequence;
-    vec.GetSeqData(0, vec.size(), sequence);
-    string::const_iterator seq_iter = sequence.begin();
-    string::const_iterator seq_begin = sequence.begin();
-    string::const_iterator seq_end = sequence.end();
+    CSeqVector::const_iterator seq_begin = vec.begin();
+    CSeqVector::const_iterator seq_end   = vec.end();
+    CSeqVector::const_iterator seq_iter  = seq_begin;
 
     const CByte_graph::TValues& values = bg.GetValues();
     CByte_graph::TValues::const_iterator val_iter = values.begin();
@@ -2936,8 +2934,8 @@ void CValidError_bioseq::ValidateGraphValues
             case 8:     // T
                 if ( val == 0 ) {
                     ACGTs_without_score++;
-                    if ( first_ACGT == numeric_limits<TSeqPos>::min() ) {
-                        first_ACGT = seq_iter - seq_begin;
+                    if ( first_ACGT == -1 ) {
+                        first_ACGT = seq_iter.GetPos();
                     }
                 }
                 break;
@@ -2945,8 +2943,8 @@ void CValidError_bioseq::ValidateGraphValues
             case 15:    // N
                 if ( val > 0 ) {
                     Ns_with_score++;
-                    if ( first_N == numeric_limits<TSeqPos>::min() ) {
-                        first_N = seq_iter - seq_begin;
+                    if ( first_N == -1 ) {
+                        first_N = seq_iter.GetPos();
                     }
                 }
                 break;
@@ -3221,6 +3219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/09/04 13:45:58  shomrat
+* Changed ValidateGraphValues to work with CSeqVector_CI
+*
 * Revision 1.44  2003/08/06 15:06:08  shomrat
 * Added test for adjacent Ns in Seq-literal
 *
