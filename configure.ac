@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.238 2003/11/25 18:20:45 ucko Exp $
+#  $Id: configure.ac,v 1.239 2003/11/26 16:00:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2919,6 +2919,10 @@ else
    LIBGEODB="-lgeodb"
 
    # We have to be careful here, since GEO uses our libxncbi...
+   # We can't reasonably test *at all* on WorkShop, so just assume success.
+   case "$compiler" in
+      WorkShop*) ncbi_cv_lib_geodb=yes ;;
+   esac
    AC_CACHE_CHECK([for the NCBI GEO DB library], ncbi_cv_lib_geodb,
      [CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$srcdir/include $orig_CPPFLAGS"
       LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"

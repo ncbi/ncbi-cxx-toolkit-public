@@ -17045,6 +17045,10 @@ else
    LIBGEODB="-lgeodb"
 
    # We have to be careful here, since GEO uses our libxncbi...
+   # We can't reasonably test *at all* on WorkShop, so just assume success.
+   case "$compiler" in
+      WorkShop*) ncbi_cv_lib_geodb=yes ;;
+   esac
    echo "$as_me:$LINENO: checking for the NCBI GEO DB library" >&5
 echo $ECHO_N "checking for the NCBI GEO DB library... $ECHO_C" >&6
 if test "${ncbi_cv_lib_geodb+set}" = set; then
