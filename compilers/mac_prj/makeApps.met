@@ -2,13 +2,13 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "Users:rsmith:fltk" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- do test/demo applications
-property pBuildDemos : true
+property pBuildDemos : false
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -306,6 +306,7 @@ on SetProjectData()
 	
 	if pBuildDemos then
 		---- DEMO ---
+		AddAppProjectList("glsysinfo", {"fltk", "images", "cmdline"}, "gui:widgets:fl:demo", {"system_test.cpp"}, {"w_fltk", "gui_opengl", "gui_print", "gui_utils", "gui_math", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
 		
 		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
 		
@@ -318,21 +319,10 @@ on SetProjectData()
 		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
-		AddAppProject("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"test_config_dlg.cpp"}, {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
+		AddAppProjectList("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"test_config_dlg.cpp"}, {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
 		
 		AddAppProjectList("demo_timer", {"fltk", "images"}, "gui:widgets:fl:demo", {"timer_demo.cpp", "timer_demo_ui.cpp"}, {"gui_opengl", "gui_print", "w_fltk", "fltk", "gui_utils", "ximage", "xconnect", "xutil", "xncbi"} & CompressLibs, {})
-		(*
-		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
-			{"gui_dlg_registry", "gui_utils", "w_flu", "w_fltk", "w_fltable", "xncbi", "fltk"}, {})
 		
-		AddAppProjectList("demo_treebrowser", {"fltk"}, "gui:widgets:fl:demo", {"test_treebrowser"}, Â
-			{"w_flu", "xncbi", "w_fltk", "fltk"}, {})
-		*)
-		
-		(* -- experimental
-		AddAppProject("featgroup_config_dlg", {"fltk"}, "gui:config:featgroup", Â
-			{"gui_config", "w_config", "gui_utils", "w_flu", "w_fltk", "fltk", "gui_opengl", "xncbi", "xser", "xutil", "seq", "xobjmgr", "general", "pub", "medline", "biblio", "id1"}, {})
-		*)
 	end if
 	
 end SetProjectData
