@@ -324,7 +324,9 @@ void CResizingIterator<TSeq, TVal>::operator=(TVal value)
 
     tmp = StoreBits<TRawIterator, TVal, TRawValue>(it, offset, m_NewSize, *it,
                                                    value);
-    *it = tmp;
+    if (offset > 0) {
+        *it = tmp;
+    }
 }
 
 
@@ -345,6 +347,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/14 19:00:18  ucko
+* CResizingIterator::operator =: don't store empty partial elements (led
+* to off-by-one errors in some cases)
+*
 * Revision 1.3  2003/04/17 17:50:28  siyan
 * Added doxygen support
 *
