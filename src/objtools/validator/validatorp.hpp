@@ -253,6 +253,7 @@ enum EErrType {
     eErr_SEQ_FEAT_MissingCDSproduct,
     eErr_SEQ_FEAT_MissingLocation,
     eErr_SEQ_FEAT_OnlyGeneXrefs,
+    eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -896,6 +897,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/10/27 14:53:57  shomrat
+* added eErr_SEQ_FEAT_UTRdoesNotAbutCDS
+*
 * Revision 1.46  2003/10/27 14:14:11  shomrat
 * added eErr_SEQ_INST_SeqLitGapLength0
 *
