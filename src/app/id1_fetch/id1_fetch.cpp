@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.29  2002/03/11 21:52:05  lavr
+ * Print complete debug and trace information when compiled with _DEBUG
+ *
  * Revision 1.28  2002/01/16 22:14:00  ucko
  * Removed CRef<> argument from choice variant setter, updated sources to
  * use references instead of CRef<>s
@@ -351,9 +354,11 @@ int CId1FetchApp::Run(void)
     if ( args["log"] ) {
         SetDiagStream( &args["log"].AsOutputFile() );
     }
-    // SetDiagTrace(eDT_Enable);
-    // SetDiagPostLevel(eDiag_Info);
-    // SetDiagPostFlag(eDPF_All);
+#ifdef _DEBUG
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_All);
+#endif
 
     // Make sure the combination of arguments is valid
     {{

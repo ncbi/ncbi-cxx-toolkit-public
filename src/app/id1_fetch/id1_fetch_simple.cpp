@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/03/11 21:52:05  lavr
+ * Print complete debug and trace information when compiled with _DEBUG
+ *
  * Revision 1.9  2002/01/17 17:22:21  vakatov
  * It should be okay to use "CObjectIStreamAsnBinary" instead of
  * CObjectIStream::Open() for non-blocking streams now (so rollback R1.4)
@@ -162,9 +165,11 @@ int CId1FetchApp::Run(void)
     if ( args["log"] ) {
         SetDiagStream( &args["log"].AsOutputFile() );
     }
-    // SetDiagTrace(eDT_Enable);
-    // SetDiagPostLevel(eDiag_Info);
-    // SetDiagPostFlag(eDPF_All);
+#ifdef _DEBUG
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_All);
+#endif
 
     // Setup application registry and logs for CONNECT library
     CORE_SetLOG(LOG_cxx2c());
