@@ -47,6 +47,8 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <objects/general/Int_fuzz.hpp>
+
 //
 #include <util/range.hpp>
 #include <vector>
@@ -103,7 +105,8 @@ public:
     bool IsPartialRight (void) const;
 
     // set the 'id' field in all parts of this location
-    void SetId(CSeq_id& id);
+    void SetId(CSeq_id& id); // stores id
+    void SetId(const CSeq_id& id); // stores a new copy of id
 
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
@@ -160,6 +163,10 @@ public:
     // Get seq-loc for the current interval
     const CSeq_loc& GetSeq_loc(void) const;
 
+    // Return null if non-fuzzy 
+    const CInt_fuzz* GetFuzzFrom(void) const;
+    const CInt_fuzz* GetFuzzTo  (void) const;
+
     // True if the current location is a whole sequence
     bool           IsWhole(void) const;
     // True if the current location is empty
@@ -186,6 +193,7 @@ private:
         ENa_strand          m_Strand;
         // The original seq-loc for the interval
         CConstRef<CSeq_loc> m_Loc;
+        CConstRef<CInt_fuzz> m_Fuzz[2];
     };
 
     typedef list<SLoc_Info> TLocList;
@@ -239,6 +247,15 @@ CSeq_loc::TRange CSeq_loc::GetTotalRangeCheckId(const CSeq_id*& id) const
     if ( m_IdCache )
         x_UpdateId(id, *m_IdCache);
     return range;
+}
+
+
+inline
+void CSeq_loc::SetId(const CSeq_id& id)
+{
+    CRef<CSeq_id> nc_id(new CSeq_id);
+    nc_id->Assign(id);
+    SetId(*nc_id);
 }
 
 
@@ -314,6 +331,20 @@ const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
 }
 
 inline
+const CInt_fuzz* CSeq_loc_CI::GetFuzzFrom(void) const
+{
+    x_CheckNotValid("GetFuzzFrom()");
+    return m_CurLoc->m_Fuzz[0];
+}
+
+inline
+const CInt_fuzz* CSeq_loc_CI::GetFuzzTo(void) const
+{
+    x_CheckNotValid("GetFuzzTo()");
+    return m_CurLoc->m_Fuzz[1];
+}
+
+inline
 bool CSeq_loc_CI::IsWhole(void) const
 {
     x_CheckNotValid("IsWhole()");
@@ -343,6 +374,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/10/15 15:50:21  ucko
+ * CSeq_loc::SetId: add a version that takes a const ID and stores a new copy.
+ * CSeq_loc_CI: expose fuzz (if present).
+ *
  * Revision 1.28  2003/10/14 16:49:53  dicuccio
  * Added SetId()
  *
