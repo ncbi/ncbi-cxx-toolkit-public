@@ -79,8 +79,8 @@ public:
         fSkipUnalignedGaps   = 0x08,
         fSkipDeletions       = 0x10,
         fSkipAllGaps         = fSkipUnalignedGaps | fSkipDeletions,
-        fSkipInserts         = 0x12,
-        fSkipAlnSeq          = 0x14,
+        fSkipInserts         = 0x20,
+        fSkipAlnSeq          = 0x40,
         fSeqOnly             = fSkipAllGaps | fSkipInserts,
         fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq
     };
@@ -544,6 +544,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/01/07 23:02:48  todorov
+* Fixed EGetChunkFlags
+*
 * Revision 1.13  2002/12/26 12:38:08  dicuccio
 * Added Win32 export specifiers
 *
