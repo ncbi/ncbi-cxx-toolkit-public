@@ -78,7 +78,7 @@ public:
 
     /// Obtain the name of the underlying matrix to use when building the PSSM
     virtual const char* GetMatrixName() {
-        return "BLOSUM62";
+        return BLAST_DEFAULT_MATRIX; // BLOSUM62
     }
 
     /// Obtain the diagnostics data that is requested from the PSSM engine
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/02/10 16:10:27  dondosha
+ * Use BLAST_DEFAULT_MATRIX macro instead of "BLOSUM62" when appropriate
+ *
  * Revision 1.7  2004/10/13 20:48:50  camacho
  * + support for requesting diagnostics information and specifying underlying matrix
  *
