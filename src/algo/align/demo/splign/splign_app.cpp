@@ -423,7 +423,7 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.16  2004/04/23 14:09:40  kapustin
+ * Revision 1.17  2004/04/23 14:33:32  kapustin
  * *** empty log message ***
  *
  * Revision 1.15  2004/02/19 22:57:55  ucko

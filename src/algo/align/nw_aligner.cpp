@@ -297,18 +297,13 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 CNWAligner::TScore CNWAligner::Run()
 {
     if(!m_Seq1 || !m_Seq2) {
-        NCBI_THROW(
-		   CAlgoAlignException,
-		   eNoData,
-		   "Sequence data not available for one or both sequences");
+        NCBI_THROW( CAlgoAlignException,
+		    eNoData,
+		    "Sequence data not available for one or both sequences");
     }
 
     if(!x_CheckMemoryLimit()) {
-
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eMemoryLimit,
-                   "Memory limit exceeded");
+        NCBI_THROW( CAlgoAlignException, eMemoryLimit, "Out of space");
     }
 
     m_score = x_Run();
@@ -589,30 +584,35 @@ CNWAligner::TScore CNWAligner::GetScore() const
 
 bool CNWAligner::x_CheckMemoryLimit()
 {
+    const size_t elem_size = GetElemSize();
     const size_t gdim = m_guides.size();
+    const size_t max_mem = kMax_UInt / 2;
     if(gdim) {
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
-	const size_t elem_size = GetElemSize();
-        if(double(dim1)*dim2*elem_size >= kMax_UInt) {
+        double mem = double(dim1)*dim2*elem_size;
+        if(mem >= max_mem) {
             return false;
         }
         for(size_t i = 4; i < gdim; i += 4) {
             dim1 = m_guides[i] - m_guides[i-3] + 1;
             dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
-            if(double(dim1)*dim2*elem_size >= kMax_UInt) {
+            mem = double(dim1)*dim2*elem_size;
+            if(mem >= max_mem) {
                 return false;
             }
         }
         dim1 = m_SeqLen1 - m_guides[gdim-3];
         dim2 = m_SeqLen2 - m_guides[gdim-1];
-        if(double(dim1)*dim2*elem_size >= kMax_UInt) {
+        mem = double(dim1)*dim2*elem_size;
+        if(mem >= max_mem) {
             return false;
         }
 
         return true;
     }
     else {
-        return double(m_SeqLen1 + 1)*(m_SeqLen2 + 1) < kMax_UInt;
+        double mem = double(m_SeqLen1 + 1)*(m_SeqLen2 + 1)*elem_size;
+        return mem < max_mem;
     }
 }
 
@@ -992,6 +992,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/04/23 14:33:31  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.42  2003/12/29 13:03:48  kapustin
  * Return string from GetTranscriptString().
  *

@@ -56,8 +56,22 @@ CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
 
 void CSplicedAligner::SetWi  (unsigned char splice_type, TScore value)
 {
-    if(splice_type < x_GetSpliceTypeCount()) {
+    if(splice_type < GetSpliceTypeCount()) {
         x_GetSpliceScores()[splice_type]  = value;
+    }
+    else 
+    {
+        NCBI_THROW(CAlgoAlignException,
+                   eInvalidSpliceTypeIndex,
+                   "Invalid splice type index");
+    }
+}
+
+
+CSplicedAligner::TScore CSplicedAligner::GetWi  (unsigned char splice_type)
+{
+    if(splice_type < GetSpliceTypeCount()) {
+        return x_GetSpliceScores()[splice_type];
     }
     else 
     {
@@ -238,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/23 14:33:31  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.4  2003/10/27 21:00:17  kapustin
  * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.
  *

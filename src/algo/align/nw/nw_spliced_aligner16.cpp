@@ -70,10 +70,10 @@ CNWAligner::TScore CSplicedAligner16::GetDefaultWi(unsigned char splice_type)
 {
 
    switch(splice_type) {
-        case 0: return -10; // GT/AG
-        case 1: return -15; // GC/AG
-        case 2: return -18; // AT/AC
-        case 3: return -25; // ??/??
+        case 0: return -8;  // GT/AG
+        case 1: return -12; // GC/AG
+        case 2: return -14; // AT/AC
+        case 3: return -18; // ??/??
         default: {
             NCBI_THROW(CAlgoAlignException,
                        eInvalidSpliceTypeIndex,
@@ -534,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/04/23 14:33:31  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.8  2003/11/20 17:54:23  kapustin
  * Alternative conventional splice penalty adjusted
  *
@@ -541,10 +544,12 @@ END_NCBI_SCOPE
  * Get rid of some WS and GCC complains
  *
  * Revision 1.6  2003/10/27 21:00:17  kapustin
- * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.
+ * Set intron penalty defaults differently for 16- and 32-bit versions according
+ * to the expected quality of sequences those variants are supposed to be used with.
  *
  * Revision 1.5  2003/10/14 19:29:24  kapustin
- * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespaces are not everywhere supported
+ * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespaces
+ * are not everywhere supported
  *
  * Revision 1.4  2003/09/30 19:50:04  kapustin
  * Make use of standard score matrix interface

@@ -121,9 +121,9 @@ CSplicedAligner32::CSplicedAligner32(const char* seq1, size_t len1,
 CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
 {
     switch(splice_type) {
-        case 0: return -30; // GT/AG
-        case 1: return -35; // GC/AG
-        case 2: return -38; // AT/AC
+        case 0: return -15; // GT/AG
+        case 1: return -18; // GC/AG
+        case 2: return -21; // AT/AC
         default: {
             NCBI_THROW(CAlgoAlignException,
                        eInvalidSpliceTypeIndex,
@@ -606,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/23 14:33:31  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.10  2003/11/20 17:54:23  kapustin
  * Alternative conventional splice penalty adjusted
  *

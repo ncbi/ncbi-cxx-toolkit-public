@@ -69,7 +69,7 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.5  2004/04/23 14:09:40  kapustin
+ * Revision 1.6  2004/04/23 14:33:32  kapustin
  * *** empty log message ***
  *
  * Revision 1.4  2003/12/03 19:45:33  kapustin
