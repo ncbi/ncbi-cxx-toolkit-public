@@ -32,7 +32,7 @@
  */
 
 
-#include <objects/util/obj_sniff.hpp>
+#include <objmgr/util/obj_sniff.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/03 14:07:46  kuznets
+ * Include paths changed to reflect the new directory structure
+ *
  * Revision 1.4  2003/05/30 20:31:51  kuznets
  * Added SObjectDetails::ext_id (database id)
  *

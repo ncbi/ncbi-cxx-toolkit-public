@@ -34,10 +34,10 @@
 #include <corelib/ncbistd.hpp>
 #include <util/format_guess.hpp>
 
-#include <objects/util/lds/lds_db.hpp>
-#include <objects/util/lds/lds_set.hpp>
-#include <objects/util/lds/lds_expt.hpp>
-#include <objects/util/lds/lds_coreobjreader.hpp>
+#include <objtools/lds/lds_db.hpp>
+#include <objtools/lds/lds_set.hpp>
+#include <objtools/lds/lds_expt.hpp>
+#include <objtools/lds/lds_coreobjreader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,7 +55,8 @@ public:
     // Delete all objects living in the specified set of files.
     // All deleted ids are added to deleted set.
     void DeleteCascadeFiles(const CLDS_Set& file_ids, 
-                            CLDS_Set* objects_deleted);
+                            CLDS_Set* objects_deleted,
+                            CLDS_Set* annotations_deleted);
 
     // Reload all objects in given set of files
     void UpdateCascadeFiles(const CLDS_Set& file_ids);
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/03 14:07:46  kuznets
+ * Include paths changed to reflect the new directory structure
+ *
  * Revision 1.3  2003/05/30 20:29:39  kuznets
  * Implemented annotations loading
  *

@@ -31,9 +31,9 @@
  *
  */
 
-#include <objects/util/lds/lds_db.hpp>
-#include <objects/util/lds/lds_expt.hpp>
-#include <objects/util/lds/lds_files.hpp>
+#include <objtools/lds/lds_db.hpp>
+#include <objtools/lds/lds_expt.hpp>
+#include <objtools/lds/lds_files.hpp>
 
 #include <map>
 
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/03 14:07:46  kuznets
+ * Include paths changed to reflect the new directory structure
+ *
  * Revision 1.3  2003/05/23 20:33:33  kuznets
  * Bulk changes in lds library, code reorganizations, implemented top level
  * objects read, metainformation persistance implemented for top level objects...
