@@ -860,12 +860,39 @@ static void s_FormatPatent
 }
 
 
+static bool s_StrictIsoJta(CBioseqContext& ctx)
+{
+    if (!ctx.Config().CitArtIsoJta()) {
+        return false;
+    }
+
+    bool strict = false;
+    ITERATE (CBioseq_Handle::TId, it, ctx.GetHandle().GetId()) {
+        switch (it->Which()) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                strict = true;
+                break;
+            default:
+                break;
+        }
+    }
+    return strict;
+}
+
+
 static void s_FormatJournal
 (const CReferenceItem& ref,
  string& journal,
- const CFlatFileConfig& cfg)
+ CBioseqContext& ctx)
 {
     _ASSERT(ref.IsSetJournal());
+
+    const CFlatFileConfig& cfg = ctx.Config();
 
     journal.erase();
 
@@ -896,26 +923,21 @@ static void s_FormatJournal
     }
 
     // always use iso_jta title if present
-    const CTitle::C_E* iso_jta = NULL;
-    const CTitle::C_E* name = NULL;
+    string title;
     ITERATE (CTitle::Tdata, it, ttl.Get()) {
         if ((*it)->IsIso_jta()) {
-            iso_jta = *it;
-        } else if ((*it)->IsName()) {
-            name = *it;
+            title = (*it)->GetIso_jta();
         }
     }
 
-    string title;
-    if (iso_jta != NULL) {
-        title = iso_jta->GetIso_jta();
-    } else if (name != NULL) {
-        title = name->GetName();
-    }
-
-    if (iso_jta == NULL  &&  cfg.CitArtIsoJta()  &&  !ref.IsElectronic()) {
+    if (NStr::IsBlank(title)  &&  s_StrictIsoJta(ctx)  &&  !ref.IsElectronic()) {
         return;
     }
+
+    if (NStr::IsBlank(title)) {
+        title = ttl.GetTitle();
+    }
+
     if (title.length() < 3) {
         journal = '.';
         return;
@@ -984,8 +1006,10 @@ static void s_FormatJournal
 void CFlatItemFormatter::x_FormatRefJournal
 (const CReferenceItem& ref,
  string& journal,
- const CFlatFileConfig& cfg) const
+ CBioseqContext& ctx) const
 {
+    const CFlatFileConfig& cfg = ctx.Config();
+
     journal.erase();
     
     switch (ref.GetPubType()) {
@@ -1003,7 +1027,7 @@ void CFlatItemFormatter::x_FormatRefJournal
 
         case CReferenceItem::ePub_jour:
             if (ref.IsSetJournal()) {
-                s_FormatJournal(ref, journal, cfg);
+                s_FormatJournal(ref, journal, ctx);
             }
             break;
 
@@ -1063,6 +1087,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/02/09 14:59:12  shomrat
+* Relax requirement for iso_jta journal
+*
 * Revision 1.20  2005/02/07 15:00:31  shomrat
 * initial support for HTML format
 *
