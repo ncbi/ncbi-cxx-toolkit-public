@@ -151,6 +151,10 @@ public:
     string            m_Encoding;
     string            m_CompilersSubdir;
     string            m_MakefilesExt;
+    string            m_MetaMakefile;
+    list<string>      m_NotProvidedRequests;
+    string            m_ConfigureDefines;
+    list<string>      m_Configure;
 
 private:
     CMsvc7RegSettings(const CMsvc7RegSettings&);
@@ -201,11 +205,18 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
                                 const list<SConfigInfo> configs,
                                 const SCustomBuildInfo& build_info);
 
+/// Get components from site
+void GetComponents(const string& entry, list<string>* components);
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/03 17:09:46  gorelenk
+ * Changed declaration of class CMsvc7RegSettings.
+ * Added declaration of function GetComponents.
+ *
  * Revision 1.5  2004/01/28 17:55:05  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
