@@ -625,10 +625,13 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
         }
         return false;
     } else {
-        if (&reg == m_Config) {
+        if (&reg == m_Config  &&  reg.Empty()) {
+            if (m_OwnsConfig) {
+                delete m_Config;
+            }
             m_Config     = entry.registry;
             m_OwnsConfig = false;
-        } else { // can this happen?
+        } else {
             // copy into reg
             CNcbiStrstream str;
             entry.registry->Write(str);
@@ -775,6 +778,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2003/08/06 14:31:55  ucko
+ * LoadConfig: Only replace m_Config if it was empty, and remember to
+ * delete the old object if we owned it.
+ *
  * Revision 1.64  2003/08/05 20:00:36  ucko
  * Completely rewrite LoadConfig to use CMetaRegistry; properly handle
  * only sometimes owning m_Config.
