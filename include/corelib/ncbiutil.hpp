@@ -142,7 +142,7 @@ inline string GetMapString(const map<Key, string>& m, const Key& key)
     return string();
 }
 
-/// Get string map element or "" if absent.
+/// Set string map element -- if data is null erase the existing key.
 template<class Key>
 inline void SetMapString(map<Key, string>& m,
                          const Key& key, const string& data)
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/01/29 12:59:57  siyan
+ * Fixed error in doc on SetMapString().
+ *
  * Revision 1.34  2003/12/03 20:54:49  ucko
  * +PPtrLess, for using (smart) pointers as keys.
  *
