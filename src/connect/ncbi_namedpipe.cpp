@@ -616,7 +616,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     FD_ZERO(&efds);
                     FD_SET(sock, &wfds);
                     FD_SET(sock, &efds);
-                    int n = select(sock + 1, 0, &wfds, &efds, &tm);
+                    n = select(sock + 1, 0, &wfds, &efds, &tm);
                     if (n < 0 || FD_ISSET(sock, &efds)) {
                         if (errno == EINTR) {
                             continue;
@@ -1137,6 +1137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/20 14:22:20  ivanov
+ * Get read of warning -- double variable declaration
+ *
  * Revision 1.6  2003/08/19 21:02:12  ivanov
  * Other fix for error messages and comments.
  *
