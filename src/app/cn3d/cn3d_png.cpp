@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/10/24 22:02:02  thiessen
+* fix wxGTK concurrent rendering problem
+*
 * Revision 1.4  2001/10/24 17:07:30  thiessen
 * add PNG output for wxGTK
 *
@@ -397,6 +400,11 @@ static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
 
 bool ExportPNG(Cn3DGLCanvas *glCanvas)
 {
+    if (!glCanvas || !glCanvas->renderer) {
+        ERR_POST(Error << "ExportPNG() - bad glCanvas parameter");
+        return false;
+    }
+
     bool success = false, shareDisplayLists = true, interlaced = true;
     int outputWidth, outputHeight, bufferHeight, bytesPerPixel = 3, nChunks = 1;
     wxString filename;
@@ -425,16 +433,13 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     GLXDrawable currentXdrw = 0;
     Display *display;
     int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
+    
+    glCanvas->SuspendRendering(true);
 
 #else
     ERR_POST("PNG export not (yet) implemented on this platform");
     return false;
 #endif
-
-    if (!glCanvas || !glCanvas->renderer) {
-        ERR_POST(Error << "ExportPNG() - bad glCanvas parameter");
-        return false;
-    }
 
     outputWidth = glCanvas->GetClientSize().GetWidth();		// initial size
     outputHeight = glCanvas->GetClientSize().GetHeight();
@@ -712,6 +717,8 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     if (localVI && visinfo) XFree(visinfo);
     if (gotAnXError) ERR_POST(Warning << "Got an X error destroying GLXPixmap context");
     XSetErrorHandler(currentXErrHandler);
+    
+    glCanvas->SuspendRendering(false);
 #endif
 
     // reset font after "regular" context restore

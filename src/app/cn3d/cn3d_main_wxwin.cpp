@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2001/10/24 22:02:02  thiessen
+* fix wxGTK concurrent rendering problem
+*
 * Revision 1.100  2001/10/23 20:10:23  thiessen
 * fix scaling of fonts in high-res PNG output
 *
@@ -1629,7 +1632,7 @@ END_EVENT_TABLE()
 
 Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
-    structureSet(NULL)
+    structureSet(NULL), suspended(false)
 {
     renderer = new OpenGLRenderer(this);
 }
@@ -1638,6 +1641,15 @@ Cn3DGLCanvas::~Cn3DGLCanvas(void)
 {
     if (structureSet) delete structureSet;
     delete renderer;
+}
+
+void Cn3DGLCanvas::SuspendRendering(bool suspend)
+{
+    suspended = suspend;
+    if (!suspend) {
+        wxSizeEvent resize(GetSize());
+        OnSize(resize);
+    }
 }
 
 void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
@@ -1738,7 +1750,7 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
     // OnPaint handlers must always create a wxPaintDC.
     wxPaintDC dc(this);
 
-    if (!GetContext() || !renderer) return;
+    if (!GetContext() || !renderer || suspended) return;
     SetCurrent();
     renderer->Display();
     SwapBuffers();
@@ -1746,6 +1758,8 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
 
 void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
+    if (suspended) return;
+    SetCurrent();
     wxGLCanvas::OnSize(event);
     renderer->NewView();
 #ifdef __WXMAC__
@@ -1759,7 +1773,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     static bool dragging = false;
     static long last_x, last_y;
 
-    if (!GetContext() || !renderer) return;
+    if (!GetContext() || !renderer || suspended) return;
     SetCurrent();
 
 // in wxGTK >= 2.3.2, this causes a system crash on some Solaris machines...

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/10/24 22:02:02  thiessen
+* fix wxGTK concurrent rendering problem
+*
 * Revision 1.51  2001/10/23 20:10:23  thiessen
 * fix scaling of fonts in high-res PNG output
 *
@@ -432,6 +435,8 @@ public:
     void SetGLFontFromRegistry(double fontScale = 1.0);
     bool MeasureText(const std::string& text, int *width, int *height, int *centerX, int *centerY);
     const wxFont& GetGLFont(void) const { return font; }
+    
+    void SuspendRendering(bool suspend);
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -443,6 +448,7 @@ private:
     wxMemoryDC memoryDC;
     wxBitmap memoryBitmap;
     wxFont font;
+    bool suspended;
 
     DECLARE_EVENT_TABLE()
 };
