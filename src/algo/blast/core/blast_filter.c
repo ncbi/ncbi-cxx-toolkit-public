@@ -41,7 +41,9 @@ Contents: All code related to query sequence masking/filtering for BLAST
 #include <blast_filter.h>
 #include <blast_dust.h>
 #include <blast_seg.h>
+#if CC_FILTER_ALLOWED
 #include <urkpcc.h>
+#endif
 
 /* The following function will replace BlastSetUp_CreateDoubleInt */
 
@@ -552,7 +554,9 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	Int4 window_cc, linker_cc, window_dust, level_dust, minwin_dust, linker_dust;
    BlastSeqLocPtr dust_loc = NULL, seg_loc = NULL;
    BlastSeqLocPtr cc_loc = NULL, vs_loc = NULL, repeat_loc = NULL;
+#if CC_FILTER_ALLOWED
 	PccDatPtr pccp;
+#endif
 	Nlm_FloatHi cutoff_cc;
 	SegParametersPtr sparamsp=NULL;
 #ifdef TEMP_BLAST_OPTIONS
@@ -692,16 +696,16 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 		}
 		if (do_coil_coil)
 		{
+#if CC_FILTER_ALLOWED
 			pccp = PccDatNew ();
 			pccp->window = window_cc;
 			ReadPccData (pccp);
-#if CC_FILTER_ALLOWED
 			scores = PredictCCSeqLoc(slp, pccp);
 			cc_slp = FilterCC(scores, cutoff_cc, length, linker_cc,
                                           SeqIdDup(sip), FALSE);
 			MemFree(scores);
-#endif
 			PccDatFree (pccp);
+#endif
 			seqloc_num++;
 		}
 	}
