@@ -62,6 +62,7 @@ public:
     };
 
     virtual size_t Read(char* buffer, size_t bufferLength);
+    virtual bool Pushback(const char* data, size_t size);
 
     size_t GetCompressedSize(void) const;
     double GetDecompressionTime(void) const;
@@ -91,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/09 15:59:07  vasilche
+ * Implemented CNlmZipBtRdr::Pushback() for uncompressed data.
+ *
  * Revision 1.2  2004/04/07 16:12:00  ivanov
  * Cosmeic changes. Fixed header and footer.
  *

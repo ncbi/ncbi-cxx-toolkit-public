@@ -148,6 +148,15 @@ size_t CNlmZipBtRdr::Read(char* buffer, size_t buffer_length)
 }
 
 
+bool CNlmZipBtRdr::Pushback(const char* data, size_t size)
+{
+    if ( m_Type == eType_plain ) {
+        return m_Src->Pushback(data, size);
+    }
+    return CByteSourceReader::Pushback(data, size);
+}
+
+
 size_t CNlmZipBtRdr::GetCompressedSize(void) const
 {
     return m_Decompressor.get()? m_Decompressor->GetCompressedSize(): 0;
@@ -261,6 +270,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/09 15:59:07  vasilche
+ * Implemented CNlmZipBtRdr::Pushback() for uncompressed data.
+ *
  * Revision 1.4  2004/05/17 21:07:25  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
