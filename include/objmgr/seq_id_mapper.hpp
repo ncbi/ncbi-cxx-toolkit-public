@@ -56,6 +56,9 @@ class CSeq_id;
 //
 
 
+typedef pair< CConstRef<CSeq_id>, TSeq_id_Key > TSeq_id_Info;
+
+
 // Base class for seq-id type-specific trees
 class CSeq_id_Which_Tree : public CObject
 {
@@ -115,7 +118,6 @@ protected:
 //
 
 
-typedef pair< CConstRef<CSeq_id>, TSeq_id_Key > TSeq_id_Info;
 typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 
 
@@ -185,6 +187,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/10/03 01:58:27  ucko
+* Move the definition of TSeq_id_Info above the declaration of
+* CSeq_id_Which_Tree, which uses it.
+*
 * Revision 1.10  2002/10/02 21:26:53  ivanov
 * A CSeq_id_Which_Tree class declaration moved from .cpp to .hpp to make
 * KCC happy
