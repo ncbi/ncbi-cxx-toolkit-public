@@ -5260,35 +5260,68 @@ void CValidError_impl::CheckForCodeBreakNotOnCodon
 {
     TSeqPos len = GetLength(loc, m_Scope);
 
-    CSeq_loc::TRange range;
     iterate( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
-        SRelLoc rl(loc, (*cbr)->GetLoc(), m_Scope);
-        CRef<CSeq_loc> rel_loc = rl.Resolve(m_Scope);
-        range += rel_loc->GetTotalRange();
-    }
-
-    TSeqPos codon_length = range.GetLength();
-
-    // check for code break not on a codon
-    if ( codon_length == 2  ||
-         ((codon_length == 0 || codon_length == 1)  && 
-            range.GetTo() == len - 1) ) {
-        switch ( cdregion.GetFrame() ) {
-        case CCdregion::eFrame_two:
-            codon_length = 1;
-            break;
-        case CCdregion::eFrame_three:
-            codon_length = 2;
-            break;
-        default:
-            codon_length = 0;
-            break;
+        size_t codon_length = GetLength((*cbr)->GetLoc(), m_Scope);
+        TSeqPos from = LocationOffset(loc, (*cbr)->GetLoc(), 
+            eOffset_FromStart, m_Scope);
+        TSeqPos to = from + codon_length - 1;
+        
+        // check for code break not on a codon
+        if ( codon_length == 3  ||
+            ((codon_length == 1 || codon_length == 2)  && 
+            to == len - 1) ) {
+            size_t start_pos;
+            switch ( cdregion.GetFrame() ) {
+            case CCdregion::eFrame_two:
+                start_pos = 1;
+                break;
+            case CCdregion::eFrame_three:
+                start_pos = 2;
+                break;
+            default:
+                start_pos = 0;
+                break;
+            }
+            if ( (from % 3) != start_pos ) {
+                ValidErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptPhase,
+                    "transl_except qual out of frame.", feat);
+            }
         }
-        if ( (range.GetFrom() % codon_length) != codon_length ) {
-            ValidErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptPhase,
-                "transl_except qual out of frame.", feat);
-        }
     }
+}
+
+
+// Map 'pos' on 'product' to a position on the feature
+static string s_MapToNTCoords
+(const CSeq_feat& feat,
+ const CSeq_loc& product,
+ TSeqPos pos, 
+ CScope* scope)
+{
+    string result;
+
+    CSeq_point pnt;
+    pnt.SetPoint(pos);
+    pnt.SetStrand( GetStrand(product, scope) );
+
+    try {
+        pnt.SetId().Assign(GetId(product, scope));
+    } catch (CNotUnique) {}
+
+    CSeq_loc tmp;
+    tmp.SetPnt(pnt);
+    CRef<CSeq_loc> loc = ProductToSource(feat, tmp, 0, scope);
+    
+    loc->GetLabel(&result);
+
+    return result;
+}
+
+
+inline
+static s_Residue(char res)
+{
+    return res == 255 ? '?' : res;
 }
 
 
@@ -5324,7 +5357,7 @@ void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
     
     int gc = 0;
     if ( cdregion.IsSetCode() ) {
-        // We assume that the id is set for all Genetic_code, if in the 
+        // We assume that the id is set for all Genetic_code
         gc = cdregion.GetCode().GetId();
     }
     string gccode = NStr::IntToString(gc);
@@ -5471,67 +5504,82 @@ void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
             break;
         }
     }
-    int mismatch = 0;
-    
-    if ( len == prot_len )  {                // could be identical
-        for ( int i = 0; i < len; ++i ) {
-            char residue1 = transl_prot[i];
-            char residue2 = prot_vec[i];
-            
-            if ( residue1 != residue2 ) {
-                prot_ok = false;
-                
-                if ( residue2 == 255 ) {
-                    residue2 = '?';
-                }
-                
-                if ( mismatch == 10 ) {
-                    ValidErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, 
-                        "More than 10 mismatches. Genetic code [" + gccode + "]",
-                        feat);
-                    break;
-                } else if ( i == 0 ) {
-                    if ( feat.GetPartial() && (!no_beg) && (!no_end)) {
-                        // ok, it's partial
-                        ValidErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
-                            "Start of location should probably be partial",
-                            feat);
-                    } else if ( residue1 == '-' ) {
-                        ValidErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                            "Illegal start codon used. Wrong genetic code [" +
-                            gccode + "] or protein should be partial", feat);
-                    } else {
-                        CRef<CSeq_loc> loc = ProductToSource(feat, product, 0,
-                            m_Scope);
 
-                        string nuclocstr;
-                        loc->GetLabel(&nuclocstr);
-                        
-                        if ( !nuclocstr.empty() ) {
-                            ValidErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA,
-                                "Residue " + NStr::IntToString(i + 1) + " in protein [" +
-                                residue2 +"] != translation [" + residue1 + "] at " +
-                                nuclocstr, feat);
-                        } else {
-                            ValidErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA,
-                                "Residue " + NStr::IntToString(i + 1) + 
-                                " in protein [" + residue2 + 
-                                "] != translation [" +
-                                residue1 + "]", feat);
-                        }
-                    }
-                } 
-                ++mismatch;
+    vector<TSeqPos> mismatches;
+    if ( len == prot_len )  {                // could be identical
+        for ( TSeqPos i = 0; i < len; ++i ) {
+            if ( transl_prot[i] != prot_vec[i] ) {
+                mismatches.push_back(i);
+                prot_ok = false;
             }
-        } // end of for loop
+        }
     } else {
         ValidErr(eDiag_Error, eErr_SEQ_FEAT_TransLen,
             "Given protein length [" + NStr::IntToString(prot_len) + 
             "] does not match translation length [" + 
             NStr::IntToString(len) + "]", feat);
     }
+    
+    // Mismatch on first residue
+    string msg;
+    if ( !mismatches.empty() && mismatches.front() == 0 ) {
+        if ( feat.GetPartial() && (!no_beg) && (!no_end)) {
+            ValidErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
+                "Start of location should probably be partial",
+                feat);
+        } else if ( transl_prot[mismatches.front()] == '-' ) {
+            ValidErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                "Illegal start codon used. Wrong genetic code [" +
+                gccode + "] or protein should be partial", feat);
+        }
+    }
 
-    if ( feat.GetPartial()  && !mismatch ) {
+    char prot_res, transl_res;
+    string nuclocstr;
+    if ( mismatches.size() > 10 ) {
+        // report total number of mismatches and the details of the 
+        // first and last.
+        nuclocstr = s_MapToNTCoords(feat, product, mismatches.front(), m_Scope);
+        prot_res = prot_vec[mismatches.front()];
+        transl_res = s_Residue(transl_prot[mismatches.front()]);
+        msg = 
+            NStr::IntToString(mismatches.size()) + "mismatches found. " +
+            "First mismatch at " + NStr::IntToString(mismatches.front() + 1) +
+            ", residue in protein [" + prot_res + "]" +
+            " != translation [" + transl_res + "]";
+        if ( !nuclocstr.empty() ) {
+            msg += " at " + nuclocstr;
+        }
+        nuclocstr = s_MapToNTCoords(feat, product, mismatches.back(), m_Scope);
+        prot_res = prot_vec[mismatches.back()];
+        transl_res = s_Residue(transl_prot[mismatches.back()]);
+        msg += 
+            ". Last mismatch at " + NStr::IntToString(mismatches.back() + 1) +
+            ", residue in protein [" + prot_res + "]" +
+            " != translation [" + transl_res + "]";
+        if ( !nuclocstr.empty() ) {
+            msg += " at " + nuclocstr;
+        }
+        msg += ". Genetic code [" + gccode + "]";
+        ValidErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+    } else {
+        // report individual mismatches
+        for ( int i = 0; i < mismatches.size(); ++i ) {
+            nuclocstr = s_MapToNTCoords(feat, product, mismatches[i], m_Scope);
+            prot_res = prot_vec[mismatches[i]];
+            transl_res = s_Residue(transl_prot[mismatches[i]]);
+            msg += 
+                "Residue " + NStr::IntToString(mismatches[i] + 1) + 
+                " in protein [" + prot_res + "]" +
+                " != translation [" + transl_res + "]";
+            if ( !nuclocstr.empty() ) {
+                msg += " at " + nuclocstr;
+            }
+            ValidErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+        }
+    }
+
+    if ( feat.GetPartial()  && mismatches.empty() ) {
         if ( !no_beg  && !no_end ) {
             if ( !got_stop ) {
                 ValidErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
@@ -6359,6 +6407,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2002/12/11 18:55:33  shomrat
+* Bug fixes for CdTransCheck and CheckForCodeBreakNotOnCodon
+*
 * Revision 1.31  2002/12/04 19:21:26  shomrat
 * Add CdTrandCheck; minor bug and style fixes
 *
