@@ -252,7 +252,7 @@ void CValidError_bioseq::ValidateSeqIds
                             num_digits++;
                         } else if ( acc[i] == '_' ) {
                             num_underscores++;
-                            if ( num_digits > 0  ||  num_letters > 1 ) {
+                            if ( num_digits > 0  ||  num_underscores > 1 ) {
                                 letter_after_digit = true;
                             }
                         } else {
@@ -1826,8 +1826,8 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
         prev_subtype = prev->GetData().GetSubtype();
 
         // if same location, subtype and strand
-        if ( Compare(*curr_location, *prev_location, m_Scope) == eSame  &&
-             curr_subtype == prev_subtype ) {
+        if ( curr_subtype == prev_subtype  &&
+             Compare(*curr_location, *prev_location, m_Scope) == eSame) {
 
             curr_strand = GetStrand(*curr_location, m_Scope);
             prev_strand = GetStrand(*prev_location, m_Scope);
@@ -1933,8 +1933,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                 }
             }
         }
-
-        prev = curr; 
+        ++prev; 
         ++curr;
     }  // end of while loop
 }
@@ -1985,11 +1984,7 @@ class CNoCaseCompare
 public:
     bool operator ()(const string& s1, const string& s2) const
     {
-        if (NStr::CompareNocase(s1, s2) < 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return NStr::CompareNocase(s1, s2) == 0 ? true : false;
     }
 };
 
@@ -2057,6 +2052,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/01/28 15:38:35  shomrat
+* Bug fix in ValidateSeqIds; Performance improvments in ValidateDupOrOverlapFeats
+*
 * Revision 1.7  2003/01/24 20:41:15  shomrat
 * Added ValidateHistory and more checks in ValidateSeqIds
 *
