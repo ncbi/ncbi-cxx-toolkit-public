@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/09/29 20:26:01  vakatov
+* Redesigning #1
+*
 * Revision 1.4  1998/09/25 22:58:01  vakatov
 * *** empty log message ***
 *
@@ -55,13 +58,52 @@ namespace ncbi_err {
     } EErrSeverity;
 
 
-    class CError {
+    class CErr {
     public:
-        CError(void)  { m_Severity = eE_Error; }
-        CError(EErrSeverity sev, const char* message, bool flush=true);
-        ~CError(void) { f_Flush(); }
+        CErr(EErrSeverity sev=eE_Error, const char* message=0,
+             bool flush=false);
+        ~CErr(void);
 
-        template<class X> CError& operator << (X& x);  // formatted output
+        template<class X> CErr& operator << (X& x);  // formatted output
+
+        // write the error diagnostics to output stream "os"
+        static void f_SetStream(ostream& os=cerr);
+        // do not post messages which severity is less than "min_sev"
+        static void f_SetPostLevel(EErrSeverity min_sev=eE_Error);
+        // abrupt the application if severity is >= "max_sev"
+        static void f_SetDieLevel(EErrSeverity max_sev=eE_Fatal);
+
+        // (for the error stream manipulators)
+        CErr& operator << (CErr& (*f)(CErr&)) { return f(*this); }
+        
+        EErrSeverity f_GetSeverity(void);
+
+    private:
+        EErrSeverity m_Severity;  // severity level for the current message
+        CErrBuffer&  m_Buffer;    // this thread's error message buffer
+    };
+
+    // Set of output manipulators for CErr
+    //
+    inline CErr& Reset  (CErr& e);  // reset the content of current message
+    inline CErr& EndMess(CErr& e);  // write out current message, start new one
+
+    inline CErr& Info   (CErr& e);  ///  these 4 manipulators first do a flush 
+    inline CErr& Warning(CErr& e);  ///  and then set severity for the next
+    inline CErr& Error  (CErr& e);  ///  message
+    inline CErr& Fatal  (CErr& e);  ///
+
+
+    //////////////////////////////////////////////////////////////////
+    //
+    class CErrBuffer {
+        friend class CErr;
+    public:
+        CErrBuffer(void);
+        CErrBuffer(EErrSeverity sev, const char* message, bool flush=true);
+        ~CErrBuffer(void);
+
+        template<class X> CErrBuffer& operator << (X& x);  // formatted output
         void f_Clear(void);  // reset current message
         void f_Flush(void);  // flush out current message
         // flush curr. message;  then start new one with the specified severity
@@ -75,20 +117,12 @@ namespace ncbi_err {
         extern void f_SetDieLevel(EErrSeverity max_sev=eE_Fatal);
 
         // (for the error stream manipulators)
-        CError& operator << (CError& (*f)(CError&)) { return f(*this); }
+        CErrBuffer& operator << (CErrBuffer& (*f)(CErrBuffer&)) { return f(*this); }
 
     private:
-        EErrSeverity m_Severity;  // severity level for the current message
-        ostrstream   m_Buffer;    // content of the current message
+        const CErr* m_Err;     // 
+        ostrstream  m_Stream;  // content of the current message
     };
-
-    // Set of output manipulators for CError
-    //
-    inline CError& Flush  (CError& e)  { e.f_Flush(err);  return e; }
-    inline CError& Info   (CError& e)  { e.f_Severity(eE_Info);     return e; }
-    inline CError& Warning(CError& e)  { e.f_Severity(eE_Warning);  return e; }
-    inline CError& Error  (CError& e)  { e.f_Severity(eE_Error);    return e; }
-    inline CError& Fatal  (CError& e)  { e.f_Severity(eE_Fatal);    return e; }
 
 
 
@@ -99,7 +133,7 @@ namespace ncbi_err {
     ////////////////////////////////////////////////////////////////////
 
 
-    // Type of the callback for "CError::f_Flush()"
+    // Type of the callback for "CErrBuffer::f_Flush()"
     // Return "true" if succeeded
     typedef bool (*FFlushHook)(EErrSeverity severity, const char* message,
                                void* data);
@@ -120,7 +154,7 @@ namespace ncbi_err {
     };
 
     // Set new hook function&data to be called whenever the "f_Flush()"
-    // method gets called for any instance of "CError" in the current
+    // method gets called for any instance of "CErrBuffer" in the current
     // thread
     // NOTE:  "f_Done()" will be called for the replaced hook(if any)
     extern void g_SetFlushHook(const SFlushHook& hook);

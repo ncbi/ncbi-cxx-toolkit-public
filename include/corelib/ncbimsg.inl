@@ -33,17 +33,74 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/09/25 22:58:01  vakatov
-* *** empty log message ***
+* Revision 1.5  1998/09/29 20:26:02  vakatov
+* Redesigning #1
 *
 * ==========================================================================
 */
 
 
 ///////////////////////////////////////////////////////
-//  CError::
+//  CErr::
 
-CError::CError(EErrSeverity sev, const char* message, bool flush) {
+inline CErr::CErr(EErrSeverity sev, const char* message, bool flush)
+ : m_Buffer(g_GetErrBuffer())
+{
+    m_Severity = sev;
+    m_Active = false;
+    if ( message )
+        (*this) << message;
+    if ( flush )
+        (*this) << Flush;
+}
+
+inline CErr::~CErr(void) {
+    err.m_Buffer.f_Detach(this);
+}
+
+inline EErrSeverity CErr::f_GetSeverity(void) {
+    return m_Severity;
+}
+
+template<class X> CErr& CErr::operator << (X& x) {
+    m_Buffer.f_Put(*this, x);
+    return *this;
+}
+
+inline CErr& EndMess(CErr& err)  {
+    err.m_Buffer.f_Flush(err);
+    return err;
+}
+
+inline CErr& Info(CErr& err)  {
+    err.m_Buffer.f_Severity(err);
+    return err;
+}
+inline CErr& Warning(CErr& err)  {
+    err.m_Buffer.f_Severity(err);
+    return err;
+}
+inline CErr& Error(CErr& err)  {
+    err.m_Buffer.f_Severity(err);
+    return err;
+}
+inline CErr& Fatal(CErr& err)  {
+    err.m_Buffer.f_Severity(err);
+    return err;
+}
+
+inline CErr& Reset(CErr& err)  {
+    err.m_Buffer.f_Reset(err);
+    return err;
+}
+
+
+
+
+///////////////////////////////////////////////////////
+//  CErrBuffer::
+
+CErrBuffer::CErrBuffer(void) {
     m_Severity = sev;
     if ( message )
         m_Buffer << sev;
@@ -51,16 +108,16 @@ CError::CError(EErrSeverity sev, const char* message, bool flush) {
         f_Flush();
 }
 
-template<class X> CError& CError::operator << (X& x) {
+template<class X> CErrBuffer& CErrBuffer::operator << (X& x) {
     m_Buffer << x;
     return *this;
 }
 
-CError& CError::f_Clear(void) {
+CErrBuffer& CErrBuffer::f_Clear(void) {
     VERIFY( !m_Buffer.rdbuf()->seekpos(0); );
 };
 
-CError& CError::f_Flush(void) {
+CErrBuffer& CErrBuffer::f_Flush(void) {
     if ( m_Buffer.pcount() ) {
         VERIFY( f_FlushHook(m_Severity, m_Buffer.str(), m_Buffer.pcount()) );
         m_Buffer.freeze(false);
@@ -70,7 +127,7 @@ CError& CError::f_Flush(void) {
         abort();
 }
 
-CError& CError::f_Severity(EErrSeverity sev) {
+CErrBuffer& CErrBuffer::f_Severity(EErrSeverity sev) {
     f_Flush();
     m_Severity = sev;
 }
