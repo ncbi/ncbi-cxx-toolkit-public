@@ -2,21 +2,21 @@
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<h1>An example of the NCBI C++ makefile hierarchy(<i>"corelib/"</i>)</h1>
+<h1>An example of the NCBI C++ makefile hierarchy (<span class="ncbi_dir">"corelib/"</span>)</h1>
 
 <p>
 See also the <a href="src_tree.gif">source</a> and
 <a href="bld_tree.gif">build</a> hierarchy charts.
 
 <p>
->>>>>>>>>> c++/src/Makefile.in: <br>
+>>>>>>>>>> <span class="ncbi_file">c++/src/Makefile.in</span>: <br>
 
 <p>
 SUB_PROJ = corelib cgi html @serial@ @internal@  <br>
 include @builddir@/Makefile.meta  <br>
 
 <p>
->>>>>>>>>> c++/src/corelib/Makefile.in:  <br>
+>>>>>>>>>> <span class="ncbi_file">c++/src/corelib/Makefile.in</span>:  <br>
 
 <p>
 LIB_PROJ = corelib  <br>
@@ -25,14 +25,14 @@ srcdir = @srcdir@  <br>
 include @builddir@/Makefile.meta  <br>
 
 <p>
->>>>>>>>>> c++/src/corelib/Makefile.corelib.lib:  <br>
+>>>>>>>>>> <span class="ncbi_file">c++/src/corelib/Makefile.corelib.lib</span>:  <br>
 
 <p>
 SRC = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd <br>
 LIB = xncbi <br>
 
 <p>
->>>>>>>>>> c++/src/corelib/test/Makefile.in:  <br>
+>>>>>>>>>> <span class="ncbi_file">c++/src/corelib/test/Makefile.in</span>:  <br>
 
 <p>
 APP_PROJ = coretest  <br>
@@ -46,8 +46,8 @@ include @builddir@/Makefile.meta  <br>
 <td align=left><address>
   <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

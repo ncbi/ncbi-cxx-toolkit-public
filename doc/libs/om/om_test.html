@@ -1,9 +1,9 @@
-        <!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
+<!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
 <div align="Center">
-<h1>Object Manager.</h1>
+<h1>Object Manager</h1>
 </div>
 
 <ul>
@@ -49,7 +49,7 @@
 <hr>
 
 
-<h2>Testing.</h2>
+<h2>Testing</h2>
 <p>
 The whole point of testing is to assure software quality. "Quality"
 is   highly subjective term - it depends on who the customer is and their
@@ -62,7 +62,7 @@ should.
 </p>
 
 
-<h2>1.<a name="White_box_testing"></a>White box testing.</h2>
+<h2>1.<a name="White_box_testing"></a>White box testing</h2>
 <p>
 White box testing is based on knowledge of the internal logic of
 a  system's    code. Tests are based on coverage of code statements, branches,
@@ -72,7 +72,7 @@ test  programs.
 </p>
 
 
-<h2>2.<a name="Black_box_testing"></a>Black box testing.</h2>
+<h2>2.<a name="Black_box_testing"></a>Black box testing</h2>
 <p>
 Black box testing is not based on any knowledge of internal design
 or  code.  Tests are based on requirements and functionality. Test cases
@@ -88,9 +88,9 @@ include.
 </ul>
 
 
-<h2>Test cases.</h2>
+<h2>Test cases</h2>
 
-<h3>1.1. <a name="Basic_tests"></a>Basic tests.</h3>
+<h3>1.1. <a name="Basic_tests"></a>Basic tests</h3>
 <p>
 No real bio sequence data.<br>
 Assumptions:
@@ -105,7 +105,7 @@ Assumptions:
   <li>CSeq_entry object must be created on the heap as a referenced object.</li>
 </ul>
 
-<h4>1.1.1 Creating CScope.</h4>
+<h4>1.1.1 Creating CScope</h4>
 <p>
 Create data loader 1 and register it with the object manager  as
 a  non-default    one.<br>
@@ -128,7 +128,7 @@ Object manager goes out of scope - both data loaders are deleted.
 </p>
 
 
-<h4>1.1.2. Adding Seq_entry to the scope.</h4>
+<h4>1.1.2. Adding Seq_entry to the scope</h4>
 <p>
 Create 3 scope objects, using three described methods.<br>
 Create seq_entry object.<br>
@@ -141,7 +141,7 @@ are   deleted.
 </p>
 
 
-<h4>1.1.3. Handling Data loader.</h4>
+<h4>1.1.3. Handling Data loader</h4>
 <p>
 Create data loader 1.<br>
 Create scope and add default data loaders to it - nothing is added.<br>
@@ -160,14 +160,14 @@ saying  that such data loader was not registered.<br>
 
 
 <h3>1.2 <a name="Bio_sequence_data_handling"></a>
-Bio sequence data handling tests.</h3>
+Bio sequence data handling tests</h3>
 <p>
 Artificially created bio sequences.<br>
 This includes existing testobjmgr1.cpp and testobjmgr1_mt.cpp programs.
 </p>
 
 
-<h4>1.2.1. Bio sequences for testing.</h4>
+<h4>1.2.1. Bio sequences for testing</h4>
 <p>
 1.2.1.1. Create one top-level Seq_entry with 2 sub-entries. Top-level entry
 has one description. Each sub-entry two Seq_ids - local and GI, one description,
@@ -187,7 +187,7 @@ references to other sequences - from 1.2.1.1.<br>
 </p>
 
 
-<h4>1.2.2. Test bio sequence data.</h4>
+<h4>1.2.2. Test bio sequence data</h4>
 <p>
 Input: Scope and seq_id.<br>
 Operations:
@@ -204,7 +204,7 @@ Operations:
 </ul>
 
 
-<h4>1.2.3. Scope as an object on the stack.</h4>
+<h4>1.2.3. Scope as an object on the stack</h4>
 <p>
 Create scope on the stack.<br>
 Create Seq_entries 1.2.1.1 and 1.2.1.3.<br>
@@ -212,7 +212,7 @@ Run test 1.2.2 against each bio sequence.<br>
 </p>
 
 
-<h4>1.2.4. Scope as an object on the heap.</h4>
+<h4>1.2.4. Scope as an object on the heap</h4>
 <p>
 Create scope on the heap.<br>
 Create Seq_entries 1.2.1.1 and 1.2.1.3.<br>
@@ -220,7 +220,7 @@ Run test 1.2.2 against each bio sequence.
 </p>
 
 
-<h4>1.2.5. Adding annotations.</h4>
+<h4>1.2.5. Adding annotations</h4>
 <p>
 Create Seq_entries 1.2.1.1 and 1.2.1.3.<br>
 Add annotation to one sub-entry.<br>
@@ -229,7 +229,7 @@ changed.
 </p>
 
 
-<h4>1.2.6. Constructed bio sequences.</h4>
+<h4>1.2.6. Constructed bio sequences</h4>
 <p>
 Create Seq_entries 1.2.1.1 and 1.2.1.4 (the latter contains only references
 to 1.2.1.1).<br>
@@ -237,7 +237,7 @@ Run test 1.2.2 against each constructed bio sequence.
 </p>
 
 
-<h4>1.2.7. One entry in two scopes.</h4>
+<h4>1.2.7. One entry in two scopes</h4>
 <p>
 Add Seq_entries 1.2.1.1 and 1.2.1.3 in Scope1 and only 1.2.1.3 (which contains
 references to 1.2.1.1) in another scope - Scope2.<br>
@@ -249,14 +249,14 @@ and resolved properly.
 </p>
 
 
-<h4>1.2.8. Scope history.</h4>
+<h4>1.2.8. Scope history</h4>
 
 
 <h3>2.1 <a name="Functional_tests"></a>Functional tests</h3>
 
 
 <h4>2.1.1 Modify existing test program
-(<a href="#Bio_sequence_data_handling"> 1.2</a>).</h4>
+(<a href="#Bio_sequence_data_handling"> 1.2</a>)</h4>
 <p>
 2.1.1.1. Modify existing bio sequence data handling test program to work
 with real data from one of NCBI databases. Make sure it gives "reasonable"
@@ -267,7 +267,7 @@ format.Compare it with the production FASTA generator.
 </p>
 
 
-<h4>2.1.2 Modify existing id1_fetch application.</h4>
+<h4>2.1.2 Modify existing id1_fetch application</h4>
 <p>
 Modify existing
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/id1_fetch/id1_fetch.html">id1_fetch</a>
@@ -286,7 +286,7 @@ be  able to download data pointed to by an external link.
 </p>
 
 
-<h4>2.1.3. Working with annotations.</h4>
+<h4>2.1.3. Working with annotations</h4>
 <p>
 2.1.3.1. Same activity in multiple threads.<br>
 2.1.3.2. Slightly different activity in different threads.

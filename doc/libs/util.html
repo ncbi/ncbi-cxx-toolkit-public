@@ -112,6 +112,7 @@ CIOException</li>
 CEofException</li>
 </ul>
 
+<p>&nbsp;</p>
 <h1>
 Container descriptions</h1>
 
@@ -119,64 +120,68 @@ Container descriptions</h1>
 <h2>
 <a NAME="CWeakMapKey"></a>template&lt;typename Object> class CWeakMapKey</h2>
 
-<pre>&nbsp;&nbsp;&nbsp; #include &lt;util/weakmap.hpp></pre>
+<pre class="ncbi_code">    #include &lt;util/weakmap.hpp></pre>
 This class is used in conjunction with <a href="#CWeakMap">CWeakMap</a>.
 <br>
 <hr WIDTH="100%">
 <h2>
 <a NAME="CWeakMap"></a>template&lt;typename Object> class CWeakMap</h2>
 
-<pre>&nbsp;&nbsp;&nbsp; #include &lt;util/weakmap.hpp></pre>
+<pre class="ncbi_code">    #include &lt;util/weakmap.hpp></pre>
 This class is used in conjunction with <a href="#CWeakMapKey">CWeakMapKey</a>.
 <br>It is extension for regular maps with additional feature: it automatically
 removes elements from map when corresponding key is destructed.
 <br>Key is of type <a href="#CWeakMapKey">CWeakMapKey&lt;Object></a>.
-<p>//&nbsp;&nbsp; Generic example of usage of these templates:
-<p>#include &lt;util/weakmap.hpp>
-<p>class CKey
-<br>{
-<br>public:
-<br>&nbsp;&nbsp;&nbsp; CWeakMapKey&lt;string> m_MapKey;
-<br>};
-<p>void Test(void)
-<br>{
-<br>&nbsp;&nbsp;&nbsp; // declare map object
-<br>&nbsp;&nbsp;&nbsp; CWeakMap&lt;string> map;
-<br>&nbsp;&nbsp;&nbsp; {
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // declare temporary key
-object
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CKey key;
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // insert string value
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; map.insert(key.m_MapKey,
-"value");
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.size();
-// == 1
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.empty();
-// == false
-<br>&nbsp;&nbsp;&nbsp; } // end of block: key object is destructed and
-map forgets about value
-<br>&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.size(); // == 0
-<br>&nbsp;&nbsp;&nbsp; cout &lt;&lt; map.empty(); // == true
-<br>};
-<br>&nbsp;
-<h3>
-typedefs</h3>
+<blockquote>
+<pre class="ncbi_code">
+//  Generic example of usage of these templates:
+#include &lt;util/weakmap.hpp>
+
+class CKey
+{
+public:
+    CWeakMapKey&lt;string> m_MapKey;
+};
+
+void Test(void)
+{
+    // declare map object
+    CWeakMap&lt;string> map;
+    {
+        // declare temporary key object
+        CKey key;
+        // insert string value
+        map.insert(key.m_MapKey, "value");
+        cout &lt;&lt; map.size();
+        // == 1
+        cout &lt;&lt; map.empty();
+        // == false
+    } // end of block: key object is destructed and map forgets about value
+    cout &lt;&lt; map.size(); // == 0
+    cout &lt;&lt; map.empty(); // == true
+};
+</pre>
+</blockquote>
+
+<h3>typedefs</h3>
 
 <blockquote>
-<pre>key_type
+<pre class="ncbi_code">
+key_type
 mapped_type
 value_type
 iterator
-const_iterator</pre>
+const_iterator
+</pre>
 
-<blockquote>are the same as in standard C++ template map&lt;>.</blockquote>
+are the same as in standard C++ template map&lt;>.
 </blockquote>
 
-<h3>
-methods</h3>
+<h3>methods</h3>
 
 <blockquote>
-<pre>size_t size() const;
+<pre class="ncbi_code">
+size_t size() const;
 bool empty() const;
 
 const_iterator begin() const;
@@ -185,18 +190,20 @@ const_iterator find() const;
 
 iterator begin();
 iterator end();
-iterator find();</pre>
+iterator find();
+</pre>
 
-<blockquote>are the same as in standard C++ template map&lt;>.</blockquote>
+are the same as in standard C++ template map&lt;>.
 </blockquote>
 
 <blockquote>
-<pre>void insert(key_type&amp; key, const mapped_type&amp; value);
+<pre class="ncbi_code">
+void insert(key_type&amp; key, const mapped_type&amp; value);
 void erase(key_type&amp; key);</pre>
 
-<blockquote>do the same as corresponding methods of standard C++ template
+do the same as corresponding methods of standard C++ template
 map&lt;>.
-<br>They differ only in return type.</blockquote>
+<br>They differ only in return type.
 </blockquote>
 
 <hr WIDTH="100%">
@@ -209,75 +216,79 @@ Class for storing information about some interval (from:to).
 typedefs</h3>
 
 <blockquote>
-<pre>position_type</pre>
+<pre class="ncbi_code">position_type</pre>
 
-<blockquote>synonym of Coordinate.</blockquote>
+synonym of Coordinate.
 </blockquote>
 
 <h3>
 methods</h3>
 
 <blockquote>
-<pre>CRange();
+<pre class="ncbi_code">CRange();
 CRange(position_type from, position_type to);</pre>
 
-<blockquote>constructors</blockquote>
+constructors
 
-<pre>static position_type GetEmptyFrom();
+<pre class="ncbi_code">
+static position_type GetEmptyFrom();
 static position_type GetEmptyTo();
 static position_type GetWholeFrom();
 static position_type GetWholeTo();</pre>
 
-<blockquote>get special coordinate values</blockquote>
+get special coordinate values
 
-<pre>static CRange&lt;position_type> GetEmpty();
+<pre class="ncbi_code">
+static CRange&lt;position_type> GetEmpty();
 static CRange&lt;position_type> GetWhole();</pre>
 
-<blockquote>get special interval objects</blockquote>
+get special interval objects
 
-<pre>bool HaveEmptyBound() const;</pre>
+<pre class="ncbi_code">bool HaveEmptyBound() const;</pre>
 
-<blockquote>check if any bound have special 'empty' value</blockquote>
+check if any bound have special 'empty' value
 
-<pre>bool HaveInfiniteBound() const;</pre>
+<pre class="ncbi_code">bool HaveInfiniteBound() const;</pre>
 
-<blockquote>check if any bound have special 'whole' value</blockquote>
+check if any bound have special 'whole' value
 
-<pre>bool Empty() const;</pre>
+<pre class="ncbi_code">bool Empty() const;</pre>
 
-<blockquote>check if interval is empty (any bound have special 'empty'
-value or left bound greater then right bound)</blockquote>
+check if interval is empty (any bound have special 'empty'
+value or left bound greater then right bound)
 
-<pre>bool Regular() const;</pre>
+<pre class="ncbi_code">bool Regular() const;</pre>
 
-<blockquote>check if interval's bounds are not special and length is positive</blockquote>
+check if interval's bounds are not special and length is positive
 
-<pre>position_type GetFrom() const;
+<pre class="ncbi_code">
+position_type GetFrom() const;
 position_type GetTo() const;
 position_type GetLength() const;</pre>
 
-<blockquote>get parameters of interval</blockquote>
+get parameters of interval
 
-<pre>CRange&lt;position_type>&amp; SetFrom();
+<pre class="ncbi_code">
+CRange&lt;position_type>&amp; SetFrom();
 CRange&lt;position_type>&amp; SetTo();</pre>
 
-<blockquote>set bounds of interval</blockquote>
+set bounds of interval
 
-<pre>CRange&lt;position_type>&amp; SetLength();</pre>
+<pre class="ncbi_code">CRange&lt;position_type>&amp; SetLength();</pre>
 
-<blockquote>set length of interval leaving left bound (from) unchanged</blockquote>
+set length of interval leaving left bound (from) unchanged
 
-<pre>CRange&lt;position_type>&amp; SetLengthDown();</pre>
+<pre class="ncbi_code">CRange&lt;position_type>&amp; SetLengthDown();</pre>
 
-<blockquote>set length of interval leaving right bound (to) unchanged</blockquote>
+set length of interval leaving right bound (to) unchanged
 
-<pre>bool IntersectingWith(CRange&lt;position_type> range) const;</pre>
+<pre class="ncbi_code">bool IntersectingWith(CRange&lt;position_type> range) const;</pre>
 
-<blockquote>check if non empty intervals intersect</blockquote>
+check if non empty intervals intersect
 
-<pre>bool IntersectingWithPossiblyEmpty(CRange&lt;position_type> range) const;</pre>
+<pre class="ncbi_code">bool IntersectingWithPossiblyEmpty(CRange&lt;position_type> range) const;</pre>
 
-<blockquote>check if intervals intersect</blockquote>
+check if intervals intersect
 </blockquote>
 
 <hr WIDTH="100%">
@@ -285,11 +296,11 @@ CRange&lt;position_type>&amp; SetTo();</pre>
 <a NAME="CRangeMap"></a>template&lt;typename Object, typename Coordinate
 = int> class CRangeMap</h2>
 Class for storing and retrieving data using interval as key.
-<br>Also allows efficient iteration over intervals intersecting with specified
+Also allows efficient iteration over intervals intersecting with specified
 interval.
-<br>Time of iteration is proportional to amount of intervals produced by
+Time of iteration is proportional to amount of intervals produced by
 iterator.
-<br>In some cases, algorithm is not so efficient and may slowdown.
+In some cases, algorithm is not so efficient and may slowdown.
 <br>
 <hr WIDTH="100%">
 <h2>
@@ -303,10 +314,10 @@ values have the same key interval.
 <a NAME="CIntervalTree"></a>class CIntervalTree</h2>
 Class with the same functionality as <a href="#CRangeMap">CRangeMap</a>
 but using different algorithm.
-<br>It is faster and its speed is not affected by type of data but it uses
+It is faster and its speed is not affected by type of data but it uses
 more memory (triple as <a href="#CRangeMap">CRangeMap</a>) and, as a result,
 less efficient when amount of interval in set is quite big.
-<br>It uses about 140 bytes per interval for 64 bit program so you can
+It uses about 140 bytes per interval for 64 bit program so you can
 calculate if CIntervalTree is acceptable. For example, it becomes less
 efficient than <a href="#CRangeMap">CRangeMap</a> when total memory becomes
 greater than processor cache.
@@ -331,7 +342,7 @@ use this class internally to manage requests.
 </h2>
 Abstract class, derived from <a href="../lxr/ident?i=CObject&d=C">CObject</a>,
 encapsulating requests to a <a href="#CStdPoolOfThreads">CStdPoolOfThreads</a>.
-The pure virtual method <tt>void Process(void)</tt> gets called when a
+The pure virtual method <span class="ncbi_func">void Process(void)</span> gets called when a
 thread handles the request.
 <hr WIDTH="100%">
 <h2>
@@ -340,24 +351,23 @@ thread handles the request.
 </h2>
 Abstract class, derived from <a href="../lxr/ident?i=CThread&d=C">CThread</a>,
 for the threads in a pool.  Three virtual methods control its behavior:
-<font size="-1">
-<pre>
-    virtual void Init(void) {} // called at beginning of Main()
+<blockquote>
+<pre class="ncbi_code">
+virtual void Init(void) {} // called at beginning of Main()
 
-    // Called from Main() for each request this thread handles
-    virtual void ProcessRequest(const TRequest& req) = 0;
+// Called from Main() for each request this thread handles
+virtual void ProcessRequest(const TRequest& req) = 0;
 
-    virtual void x_OnExit(void) {} // called by OnExit()
-</pre>
-</font>
+virtual void x_OnExit(void) {} // called by OnExit()
+</pre></blockquote>
+
 <hr WIDTH="100%">
 <h2>
   <a name="CStdThreadInPool"></a>class
   <a href="../lxr/ident?i=CStdThreadInPool&d=C">CStdThreadInPool</a>
 </h2>
-A specialization of CThreadInPool for
-CRef&lt;<a href="#CStdRequest">CStdRequest</a>>, which simply
-processes each request by calling its <tt>Process</tt> method.
+A specialization of <span class="ncbi_class">CThreadInPool</span> for CRef&lt;<a href="#CStdRequest">CStdRequest</a>>, which simply
+processes each request by calling its <span class="ncbi_func">Process()</span> method.
 <hr WIDTH="100%">
 <h2>
   <a name="CPoolOfThreads"></a>template &lt;typename TRequest> class
@@ -370,19 +380,19 @@ threshold (compared to the difference between the number of unfinished
 requests and the number of threads in the pool) indicating when to
 create another thread automatically.  Due to some limitations of C++,
 the constructor does not create any threads itself; you have to call
-<tt>Spawn</tt> for that.  In addition, <tt>AcceptRequest</tt> passes
+<span class="ncbi_func">Spawn()</span> for that.  In addition, <span class="ncbi_func">AcceptRequest()</span> passes
 requests to the pool, and the protected pure virtual function
-<tt>NewThread</tt> creates the actual threads.
+<span class="ncbi_func">NewThread()</span> creates the actual threads.
 <hr WIDTH="100%">
 <h2>
   <a name="CStdPoolOfThreads"></a>class
   <a href="../lxr/ident?i=CStdPoolOfThreads&d=C">CStdPoolOfThreads</a>
 </h2>
-A specialization of CPoolOfThreads for
+A specialization of <span class="ncbi_class">CPoolOfThreads</span> for
 CRef&lt;<a href="#CStdRequest">CStdRequest</a>>; its
-<tt>NewThread</tt> method creates objects of class <a
+<span class="ncbi_func">NewThread()</span> method creates objects of class <a
 href="#CStdThreadInPool">CStdThreadInPool</a>.  It also introduces a
-new method: <tt>KillAllThreads</tt>, which causes all the threads in
+new method: <span class="ncbi_func">KillAllThreads()</span>, which causes all the threads in
 the pool to exit cleanly after finishing all pending requests, and
 takes an argument indicating whether to return immediately or to wait
 for them to finish.
@@ -402,7 +412,8 @@ destruction by some other mechanism.
 It compares first by string length, then by string contents, so here is
 an example of sorted data:
 <blockquote>
-<pre>"a"
+<pre class="ncbi_output">
+"a"
 "z"
 "aa"
 "az"
@@ -411,7 +422,8 @@ an example of sorted data:
 </blockquote>
 which, if sorted by standard comparison will look like:
 <blockquote>
-<pre>"a"
+<pre class="ncbi_output">
+"a"
 "aa"
 "aaa"
 "az"

@@ -7,11 +7,9 @@
 This manual assumes that the UNIX-like environment is used to prepare
 and manage MSVC++ project files, which in turn can be used to build NCBI
 C++ Toolkit by MSVC++ Developer Studio. The following tools must be available in order for
-the conversion scripts to work: <b>cat</b>, <b>cp</b>, <b>diff</b>, <b>echo</b>,
-<b>egrep</b>, <b>expr</b>, <b>find</b>, <b>grep</b>,<b> head</b>, <b>mv</b>,<b> rm</b>,
-<b>sh</b>, <b>tail</b>, <b>test</b>, <b>touch</b>, and <b>tr</b>. In the examples of command
-sequences below, a prompt of the operating system is shown as <b><tt><font color="#CC33CC">$</font></tt></b>,
-and the user input is rendered <tt><font color="#009900">like this</font></tt>.
+the conversion scripts to work: <span class="ncbi_util">cat</span>, <span class="ncbi_util">cp</span>, <span class="ncbi_util">diff</span>, <span class="ncbi_util">echo</span>,
+<span class="ncbi_util">egrep</span>, <span class="ncbi_util">expr</span>, <span class="ncbi_util">find</span>, <span class="ncbi_util">grep</span>,<span class="ncbi_util"> head</span>, <span class="ncbi_util">mv</span>,<span class="ncbi_util"> rm</span>,
+<span class="ncbi_util">sh</span>, <span class="ncbi_util">tail</span>, <span class="ncbi_util">test</span>, <span class="ncbi_util">touch</span>, and <span class="ncbi_util">tr</span>. 
 <br>
 <hr WIDTH="100%">
 <br>The idea behind the automatic project file conversion is that usually developer
@@ -25,14 +23,14 @@ can be generated automatically from that fixed (template) configuration.
 There are some limitations to the above scheme:
 <ul>
 <li>The per configuration dependencies are not supported, they are ignored and excluded from the resulting project file,
-	with warning printed.</li>
+    with warning printed.</li>
 <li>If libraries or object files are explicitly included in the project file list,
-	they usually refer to fixed file placements (e.g. <tt><font color="navy">src\connect\DebugMT\ncbi_socket.obj</font></tt>),
-	i.e. bound to the particular configuration it was built with. Therefore, you must <i><b>never</b></i> use the explicit
-	inclusion of this kind when creating your single-configuration (template) project files.
-	Instead, use workspace file (<tt><font color="navy">.dsw</font></tt>) <i>dependency mechanism</i>
-	to link with such libraries and object files, and use linker options (<a href="config.html#ref_MsvcProjCXX">library list</a>)
-	without explicit paths.</li>
+    they usually refer to fixed file placements (e.g. <span class="ncbi_file">src\connect\DebugMT\ncbi_socket.obj</span>),
+    i.e. bound to the particular configuration it was built with. Therefore, you must <em>never</em> use the explicit
+    inclusion of this kind when creating your single-configuration (template) project files.
+    Instead, use workspace file (<span class="ncbi_file">.dsw</span>) <span class="ncbi_term">dependency mechanism</span>
+    to link with such libraries and object files, and use linker options (<a href="config.html#ref_MsvcProjCXX">library list</a>)
+    without explicit paths.</li>
 </ul>
 
 <p>
@@ -41,7 +39,7 @@ following shell <a name="scripts"></a>scripts:
 
 <ul>
 <li>
-<a name="all2one_sh"></a><i><tt><font color="navy">all2one.sh</font></tt></i> - looks through the given project
+<a name="all2one_sh"></a><span class="ncbi_script">all2one.sh</span> - looks through the given project
 file, prints out available configurations, and allows to extract any of
 those. If there is only one configuration, the script does nothing. Special
 care is taken to first check the project file consistency to avoid corrupting
@@ -52,209 +50,197 @@ way, and thus ignored. Input file can be in either DOS or UNIX text file format
 line ends). Output file is always in UNIX text file format, which is suitable for
 CVS repository.</li>
 <br>
-<u>Note</u>: Aside the project file name, the second argument can be given to the script. This argument
+<span class="ncbi_note">Note:</span> Aside the project file name, the second argument can be given to the script. This argument
 is used as a name of configuration to extract without interactive inquiry. If the specified configuration
 is not found, the script aborts with an error message.
 
-<li>
-<a name="one2all_sh"></a><i><tt><font color="navy">one2all.sh</font></tt></i> - takes a single-configuration
-project file (perhaps the one created by <tt><font color="navy">all2one.sh</font></tt>)
+<p><li>
+<a name="one2all_sh"></a><span class="ncbi_script">one2all.sh</span> - takes a single-configuration
+project file (perhaps the one created by <span class="ncbi_script">all2one.sh</span>
 and derives multi-configuration project file containing 3 production configurations:
-<tt>Release</tt>, <tt>ReleaseMT</tt>, and <tt>ReleaseDLL</tt>; and 3 debug configurations: <tt>Debug</tt>,
-<tt>DebugMT</tt>, and <tt>DebugDLL</tt>. One option, <i><tt><font color="navy">--without-dizzy</font></tt></i>,
+<span class="ncbi_config">Release</span>, <span class="ncbi_config">ReleaseMT</span>, and <span class="ncbi_config">ReleaseDLL</span>; and 3 debug configurations: <span class="ncbi_config">Debug</span>,
+<span class="ncbi_config">DebugMT</span>, and <span class="ncbi_config">DebugDLL</span>. One option, <span class="ncbi_script_a">--without-dizzy</span>,
 can precede the file name. If specified, then the C compiler, resource compiler and linker options,
-which refer to additional paths, involving <tt><font color="navy">\\DIZZY\</font></tt>, are removed.
+which refer to additional paths, involving <span class="ncbi_dir">\\DIZZY\</span>, are removed.
 Output file is always produced in DOS text file format (that is suitable
 for immediate consumption by MSVC++), whereas input file can be in either UNIX or DOS format.</li>
 <br>
-<u>Note</u>: There is one additional argument, which is reserved for internal use only.
-When given as <tt>2</tt>, only <tt>DebugDLL</tt> and <tt>ReleaseDLL</tt> configurations
-are placed to the output file. When given as <tt>4</tt>, only the following four configurations
-appear: <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>Release</tt>, and <tt>ReleaseMT</tt>.
+<span class="ncbi_note">Note:</span> There is one additional argument, which is reserved for internal use only.
+When given as <span class="ncbi_value">2</span>, only <span class="ncbi_config">DebugDLL</span> and <span class="ncbi_config">ReleaseDLL</span> configurations
+are placed to the output file. When given as <span class="ncbi_value">4</span>, only the following four configurations
+appear: <span class="ncbi_config">Debug</span>, <span class="ncbi_config">DebugMT</span>, <span class="ncbi_config">Release</span>, and <span class="ncbi_config">ReleaseMT</span>.
 
-<li>
-<a name="one2one_sh"></a><i><tt><font color="navy">one2one.sh</font></tt></i> - takes two arguments:
+<p><li>
+<a name="one2one_sh"></a><span class="ncbi_script">one2one.sh</span> - takes two arguments:
 single-configuration project file name and one of standard configuration names
-(<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>) and replaces
+(<span class="ncbi_config">Debug</span>, <span class="ncbi_config">DebugMT</span>, <span class="ncbi_config">DebugDLL</span>, <span class="ncbi_config">Release</span>, <span class="ncbi_config">ReleaseMT</span>, <span class="ncbi_config">ReleaseDLL</span>) and replaces
 the given project file with a new one, having the requested configuration. In case of non-standard configuration name,
-an error results. Being an 'interface' script to both <tt><font color="navy">all2one.sh</font></tt> and
-<tt><font color="navy">one2all.sh</font></tt>, this scipt can accept one option,
-<tt><font color="navy">--without-dizzy</font></tt>, as described above.
+an error results. Being an 'interface' script to both <span class="ncbi_script">all2one.sh</span> and
+<span class="ncbi_script">one2all.sh</span>, this scipt can accept one option,
+<span class="ncbi_script_a">--without-dizzy</span>, as described above.
 Output file is created in UNIX text file format.</li>
 
-<li>
-<a name="include_sh"></a><i><tt><font color="navy">include.sh</font></tt></i> - takes an optional argument list, each
+<p><li>
+<a name="include_sh"></a><span class="ncbi_script">include.sh</span> - takes an optional argument list, each
 entry of which is a relative path to include file directory (default is the standard NCBI C++ Toolkit include
 directory). The script then recursively looks through all project files, and tries to update compiler
 switches with the given directory list. Directories, already specified in project files, are either replaced
 (when the new directory resembles the old one), or added to the current list of include directories.
 The main purpose of the script is to eliminate "global" configuration through "Tool/Options",
 which is otherwise required to specify include file directories. Generated paths to include files are
-always relative to the project file. The script is to be used from the <tt><font color="navy">msvc_prj</font></tt>
+always relative to the project file. The script is to be used from the <span class="ncbi_dir">msvc_prj</span>
 directory each time, when the project file subtree is a kind rearranged and must be updated in the CVS.
 Therefore, the project files are always produced in UNIX text file format.</li>
 
-<li>
-<a name="commit_sh"></a><i><tt><font color="navy">commit.sh</font></tt></i> -
+<p><li>
+<a name="commit_sh"></a><span class="ncbi_script">commit.sh</span> -
 control script for use from inside the CVS upon each commit to ensure
-that the project being checked in contains one fixed configuration only (namely, <tt>DebugMT</tt>).
+that the project being checked in contains one fixed configuration only (namely, <span class="ncbi_config">DebugMT</span>).
 This script as well checks that the file being committed is in UNIX text file format, and rejects if not.
-The extensions (and only in directories specified in <tt><font color="navy">DIRLIST</font></tt>
-parameter, as described below) checked are: <tt><font color="navy">.dsw</font></tt>,
-<tt><font color="navy">.dsp</font></tt>, <tt><font color="navy">.bat</font></tt>.</li>
+The extensions (and only in directories specified in <span class="ncbi_script_a">DIRLIST</span>
+parameter, as described below) checked are: <span class="ncbi_file">.dsw</span>,
+<span class="ncbi_file">.dsp</span>, <span class="ncbi_">.bat</span>.</li>
 No explicit call to this script is ever necessary: it is entirely internal to CVS and transparent for the user.
 
 <br>
-<b><i>Additional</i></b> functionality has been added to this script: if it detects that the file being committed
+<em>Additional</em> functionality has been added to this script: if it detects that the file being committed
 contains paths either to standard NCBI C Toolkit include files/libraries, or wxWindows include files/libraries,
 then the paths are expanded to specify both relative (i.e. local) and absolute (i.e. via
-<tt><font color="navy">\\DIZZY\public\ncbi</font></tt>) locations, thus making possible to build
-the project using either local or pre-built libraries. We require that if a toolkit is used locally (i.e. <b><i>not</i></b> via
-<tt><font color="navy">\\DIZZY\public\ncbi</font></tt>), then the upper-level directory of the toolkit has to be placed
-at the same level as the NCBI C++ Toolkit top-level directory. We reserve that <tt>wxwin</tt> and <tt>ncbi</tt> subdirectories, when appear in the same parent directory as <tt>cxx</tt>, contain wxWindows and NCBI C Toolkit correspondingly.
+<span class="ncbi_dir">\\DIZZY\public\ncbi</span>) locations, thus making possible to build
+the project using either local or pre-built libraries. We require that if a toolkit is used locally (i.e. <em>not</em> via
+<span class="ncbi_dir">\\DIZZY\public\ncbi</span>), then the upper-level directory of the toolkit has to be placed
+at the same level as the NCBI C++ Toolkit top-level directory. We reserve that <span class="ncbi_dir">wxwin</span> and <span class="ncbi_dir">ncbi</span> subdirectories, when appear in the same parent directory as <span class="ncbi_dir">cxx</span>, contain wxWindows and NCBI C Toolkit correspondingly.
 Click <a href="config.html#ref_MsvcProjWxwin">here</a> to know how to use the wxWindows package in these requirements.
-One can later remove absolute references to <tt><font color="navy">\\DIZZY\</font></tt> using option
-<tt><font color="navy">--without-dizzy</font></tt> with either
-<a href="#one2all_sh"><tt>one2all.sh</tt></a>, or
-<a href="#one2one_sh"><tt>one2one.sh</tt></a>.
+One can later remove absolute references to <span class="ncbi_dir">\\DIZZY\</span> using option
+<span class="ncbi_script_a">--without-dizzy</span> with either
+<a href="#one2all_sh"><span class="ncbi_script">one2all.sh</span></a>, or
+<a href="#one2one_sh"><span class="ncbi_script">one2one.sh</span></a>.
 
 <br>
-<a name="notes"></a><br><b><u>Please note</u></b> that the above tools are <b><i>not</i></b> project file <i>generation</i>
-tools, but rather the project file <i>conversion</i> tools. That is, the resulting project file is correct if and only if the
+<a name="notes"></a><br><span class="ncbi_note">Please note</span> that the above tools are <em>not</em> project file <span class="ncbi_term">generation</span>
+tools, but rather the project file <span class="ncbi_term">conversion</span> tools. That is, the resulting project file is correct if and only if the
 source project file is. When a project file gets converted to a single-configuration template,
 all the compiler switches and definitions, as well as other vital environment, have to be defined in a right way.</ul>
 
 <p>
-DOS batch file <a name="all_bat"></a><i><tt><font color="navy">all.bat</font></tt></i> can
-generate all projects in a batch mode, provided that <tt><font color="navy">msdev.exe</font></tt>
-is in your <tt><font color="navy">PATH</font></tt>.
-As an argument to the batch file you can specify either <tt>ALL</tt> (or no arguments at all),
-or any combination of <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>,
-<tt>ReleaseDLL</tt> to build either all available, or particular configuration(s) respectively.
-You can always use MSVC++ Developer Studio (just load workspace file <tt>ncbi_cpp.dsw</tt>)
+DOS batch file <a name="all_bat"></a><span class="ncbi_script">all.bat</span> can
+generate all projects in a batch mode, provided that <span class="ncbi_util">msdev.exe</span>
+is in your <span class="ncbi_env">PATH</span>.
+As an argument to the batch file you can specify either <span class="ncbi_script_a">ALL</span> (or no arguments at all),
+or any combination of <span class="ncbi_config">Debug</span>, <span class="ncbi_config">DebugMT</span>, <span class="ncbi_config">DebugDLL</span>, <span class="ncbi_config">Release</span>, <span class="ncbi_config">ReleaseMT</span>,
+<span class="ncbi_config">ReleaseDLL</span> to build either all available, or particular configuration(s) respectively.
+You can always use MSVC++ Developer Studio (just load workspace file <span class="ncbi_file">ncbi_cpp.dsw</span>)
 to build the Toolkit in the interactive manner.
 
-<h4>
-Transition to single-configuration project files</h4>
+<h4>Transition to single-configuration project files</h4>
 This step applies only once, when all current project files are converted to single-configuration
 ones, which later can be automatically expanded back to multi-configuration project files,
 as required for (production and/or regular) builds.
 <ol>
 <li>
-Check out the MSVC++ project files and tool scripts from <tt><font color="navy">internal/c++/compilers/msvc_prj</font></tt>
-directory:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/msvc_prj; cd ~/msvc_prj</font></tt></ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs co -d . internal/c++/compilers/msvc_prj</font></tt></ol>
-</ol>
+Check out the MSVC++ project files and tool scripts from <span class="ncbi_dir">internal/c++/compilers/msvc_prj</span>
+directory:
+<pre class="ncbi_cmd">
+$ mkdir ~/msvc_prj; cd ~/msvc_prj
+$ cvs co -d . internal/c++/compilers/msvc_prj
+</pre></li>
 
 <li>
 Apply the following command to convert multi-configuration
-project files to single-configuration project files:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp" -print -exec ./all2one.sh
-{} \;</font></tt></ol>
-</ol>
+project files to single-configuration project files:
+<pre class="ncbi_cmd">
+$ find . -name "*.dsp" -print -exec ./all2one.sh {} \;
+</pre>
 For each project file choose the configuration (among available),
 which was tested, and known to work. Note that many project
 files were created automatically by MSVC++, and contain 2 or more configurations,
-but in most cases only one (notably: <tt>Debug</tt>) was customized to work and
-to build this particular project, the others are just dummies.
+but in most cases only one (notably: <span class="ncbi_config">Debug</span>) was customized to work and
+to build this particular project, the others are just dummies.<p></li>
 
 <li>
-Be sure that the process completed successfully and then delete backup copies:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp.bak" -exec rm -f {}
-\;</font></tt></ol>
-</ol>
+Be sure that the process completed successfully and then delete backup copies:
+<pre class="ncbi_cmd">
+$ find . -name "*.dsp.bak" -exec rm -f {} \;
+</pre></li>
 
 <li>
-You may wish to use the script <a href="#one2one_sh"><i><tt>one2one.sh</tt></i></a>
-for converting all project files to standard single configuration <tt>DebugMT</tt>, if configurations,
-different from <tt>DebugMT</tt>, have been chosen in step 2 above:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp" -print -exec ./one2one.sh
-{} DebugMT \;</font></tt></ol>
-</ol>
+You may wish to use the script <a href="#one2one_sh"><span class="ncbi_script">one2one.sh</span></a>
+for converting all project files to standard single configuration <span class="ncbi_config">DebugMT</span>, if configurations,
+different from <span class="ncbi_config">DebugMT</span>, have been chosen in step 2 above:
+<pre class="ncbi_cmd">
+$ find . -name "*.dsp" -print -exec ./one2one.sh
+{} DebugMT \;
+</pre></li>
 
 <li>
-Check out <tt><font color="navy">CVSROOT</font></tt>
+Check out <span class="ncbi_dir">CVSROOT</span>
 directory (this is an administrative directory used to control the entire
-CVS tree):</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/myCVSROOT; cd ~/myCVSROOT</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs co CVSROOT</font></tt></ol>
-</ol>
+CVS tree):
+<pre class="ncbi_cmd">
+$ mkdir ~/myCVSROOT; cd ~/myCVSROOT
+$ cvs co CVSROOT
+</pre></li>
 
 <li>
-Chdir to the checked out copy of <tt><font color="navy">CVSROOT</font></tt>:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cd CVSROOT</font></tt></ol>
-</ol>
+Chdir to the checked out copy of <span class="ncbi_dir">CVSROOT</span>:
+<pre class="ncbi_cmd">
+$ cd CVSROOT
+</pre></li>
 
 <li>
 Install (by copying and giving execution permissions)
-the following scripts in <tt><font color="navy">CVSROOT</font></tt> directory:</li>
+the following scripts in <span class="ncbi_dir">CVSROOT</span> directory:
 
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> ( cd internal/c++/compilers/msvc_prj; \</font></tt>
-<ol><tt><font color="#009900">cp commit.sh all2one.sh ~/myCVSROOT )</font></tt></ol>
-<tt><b><font color="#CC33CC">$</font></b><font color="#009900"> chmod a+x commit.sh all2one.sh</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cat >> checkoutlist</font></tt>
-<br><tt><font color="#009900">commit.sh</font></tt>
-<br><tt><font color="#009900">all2one.sh</font></tt>
-<br><tt><font color="#009900">&lt;press Ctrl-D></font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cat >> commitinfo</font></tt>
-<br><tt><font color="#009900">ALL $CVSROOT/CVSROOT/commit.sh</font></tt>
-<br><tt><font color="#009900">&lt;press Ctrl-D></font></tt></ol>
-</ol>
+<pre class="ncbi_cmd">
+$ ( cd internal/c++/compilers/msvc_prj; cp commit.sh all2one.sh ~/myCVSROOT )
+$ chmod a+x commit.sh all2one.sh
+$ cat >> checkoutlist
+  commit.sh
+  all2one.sh
+&lt;press Ctrl-D>
+$ cat >> commitinfo
+$ CVSROOT/CVSROOT/commit.sh
+&lt;press Ctrl-D>
+</pre></li>
 
 <li>
-Make sure that the files <tt><font color="navy">checkoutlist</font></tt>
-and <tt><font color="navy">commitinfo</font></tt>
+Make sure that the files <span class="ncbi_file">checkoutlist</span>
+and <span class="ncbi_file">commitinfo</span>
 contain only one entry per each shell script, delete any other entries
-if they exist.</li>
+if they exist.<p></li>
 
 <li>
-Edit script <a href="#commit_sh"><i><tt>commit.sh</tt></i></a>
-so that the line starting from <tt><font color="navy">DIRLIST=</font></tt>
+Edit script <a href="#commit_sh"><span class="ncbi_script">commit.sh</span></a>
+so that the line starting from <span class="ncbi_value">DIRLIST=</span>
 would contain a list of directories, delimited by spaces, relative to CVS
 tree origin, and which must be checked against for having single-configuration
-project files only.</li>
+project files only.<p></li>
 
 <li>
-Now check in the changes made in <tt><font color="navy">CVSROOT</font></tt>
-directory back to the CVS repository:</li>
+Now check in the changes made in <span class="ncbi_dir">CVSROOT</span>
+directory back to the CVS repository:
 
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs add commit.sh all2one.sh</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs commit -m "MSVC++ Project File Control Added" .</font></tt></ol>
-</ol>
+<pre class="ncbi_cmd">
+$ cvs add commit.sh all2one.sh
+$ cvs commit -m "MSVC++ Project File Control Added"
+</pre>
 
 You should see message, saying that the CVS administrative
-directory is being rebuilt. Erase local copy of <tt><font color="navy">CVSROOT</font></tt>
-directory.
+directory is being rebuilt. Erase local copy of <span class="ncbi_dir">CVSROOT</span>
+directory.<p></li>
 
 <li>
-Now chdir back to checked out copy of directory <tt><font color="navy">internal/c++/compilers/msvc_prj</font></tt>,
+Now chdir back to checked out copy of directory <span class="ncbi_dir">internal/c++/compilers/msvc_prj</span>,
 which now should contain single-configuration projects only. You can commit
 the projects back to the CVS. This is a bit tricky, as formerly the project
 files were kept in binary form, and now they have to be stored in a native text file format.
-The easiest way of workaround is to do the following:</li>
+The easiest way of workaround is to do the following:
 
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> ( cd $CVSROOT/internal/c++/compilers; \</font></tt>
-<ol><tt><font color="#009900">mv msvc_prj msvc_prj.old )</font></tt></ol>
-<tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name CVS -exec rm -rf {} \;</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs import -m "New projects" internal/c++/compilers/msvc_prj
-NCBI Exp</font></tt></ol>
-</ol>
+<pre class="ncbi_cmd">
+$ ( cd $CVSROOT/internal/c++/compilers; mv msvc_prj msvc_prj.old )
+$ find . -name CVS -exec rm -rf {} \;
+$ cvs import -m "New projects" internal/c++/compilers/msvc_prj NCBI Exp
+</pre></li>
 
 <li>
 Erase the local copy of project file directory. If
@@ -270,8 +256,8 @@ way.</li>
 <td align=left>
   <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

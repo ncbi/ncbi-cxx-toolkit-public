@@ -7,17 +7,17 @@
 <a name="ref_DumpTop"></a>
 
 <ul>
-<li><a href="#Terminology">Terminology.</a></li>
-<li><a href="#Requirements">Requirements.</a></li>
-<li><a href="#Architecture">Architecture.</a></li>
-<li><a href="#Implementation">Implementation.</a>
+<li><a href="#Terminology">Terminology</a></li>
+<li><a href="#Requirements">Requirements</a></li>
+<li><a href="#Architecture">Architecture</a></li>
+<li><a href="#Implementation">Implementation</a>
   <ul>
     <li><a href="#CDebugDumpable">CDebugDumpable</a></li>
     <li><a href="#CDebugDumpContext">CDebugDumpContext</a></li>
     <li><a href="#CDebugDumpFormatter">CDebugDumpFormatter</a></li>
   </ul>
 </li>
-<li><a href="#Examples">Examples.</a></li>
+<li><a href="#Examples">Examples</a></li>
 </ul>
 <hr>
 
@@ -47,45 +47,43 @@ of an object's state and never alter that data.
 </p>
 
 <p>
-Sure, <var>DebugDump</var> may cause problems by itself, even if everything is "correct".
+Sure, <span class="ncbi_func">DebugDump</span> may cause problems by itself, even if everything is "correct".
 Let us say there are two object, which "know" each other:
-<tt>Object A</tt> refers to <tt>Object B</tt>, while
-<tt>Object B</tt> refers to <tt>Object A</tt> (very common scenario in fact).
-Now dumping contents of <tt>Object A</tt> will cause dumping of <tt>Object B</tt>,
-which in turn will cause dumping of <tt>Object A</tt>,  and so on until the stack is over.
+<span class="ncbi_var">Object A</span> refers to <span class="ncbi_var">Object B</span>, while
+<span class="ncbi_var">Object B</span> refers to <span class="ncbi_var">Object A</span> (very common scenario in fact).
+Now dumping contents of <span class="ncbi_var">Object A</span> will cause dumping of <span class="ncbi_var">Object B</span>,
+which in turn will cause dumping of <span class="ncbi_var">Object A</span>,  and so on until the stack is over.
 </p>
 
 
 
 
-<h2><a name="Terminology"></a>
-Terminology.</h2>
+<h2><a name="Terminology"></a>Terminology</h2>
 <p>
 So, dumping the object contents should look as a single function call, i.e. something like this:
-<pre>
+<pre class="ncbi_code">
     Object name;
     ...
     name.DebugDump(?);
 </pre>
-The packet of information produced by such operation we call <var>bundle</var>.
+The packet of information produced by such operation we call <span class="ncbi_term">bundle</span>.
 <br />
-The class <tt>Object</tt> is most likely derived from other classes. The function should be
+The class <span class="ncbi_class">Object</span> is most likely derived from other classes. The function should be
 called sequentially for each subclass, so it could print its data members.
-The piece of information produced by the subclass we call <var>frame</var>.
+The piece of information produced by the subclass we call <span class="ncbi_term">frame</span>.
 <br />
-The object may refer to other objects. Dumping of such object produces a <var>sub-bundle</var>,
-which consists of its own <var>frames</var>.
+The object may refer to other objects. Dumping of such object produces a <span class="ncbi_term">sub-bundle</span>,
+which consists of its own <span class="ncbi_term">frames</span>.
 <br />
-To help fight cyclicity, we introduce <var>depth</var> of the dump. When an object being dumped
-want to dump other objects it refers to, it should reduce the <var>depth</var> by one.
-If the <var>depth</var> is already zero, other objects should not be dumped.
+To help fight cyclicity, we introduce <span class="ncbi_term">depth</span> of the dump. When an object being dumped
+want to dump other objects it refers to, it should reduce the <span class="ncbi_term">depth</span> by one.
+If the <span class="ncbi_term">depth</span> is already zero, other objects should not be dumped.
 </p>
 
 
 
 
-<h2><a name="Requirements"></a>
-Requirements.</h2>
+<h2><a name="Requirements"></a>Requirements</h2>
 <ul>
   <li>
 The dump data should be separated from its representation. That is, the object should only
@@ -104,32 +102,31 @@ It should be globally configurable as to whether the dump produces any output or
 
 
 
-<h2><a name="Architecture"></a>
-Architecture.</h2>
+<h2><a name="Architecture"></a>Architecture</h2>
 <p>
-Class <var>CDebugDumpable</var> is a special abstract base class. Its purpose is to define
-a virtual function <var>DebugDump</var>, which any derived class should implement.
+Class <span class="ncbi_class">CDebugDumpable</span> is a special abstract base class. Its purpose is to define
+a virtual function <span class="ncbi_func">DebugDump</span>, which any derived class should implement.
 Another purpose is to store any global dump options. Any real dump should be initiated
 through a non-virtual function of this class - so, global option could be applied.
 <br />
-Class <var>CObject</var> is derived from this class. So, any classes based on
-<var>CObject</var> may benefit from this functionality right away. Other classes
+Class <span class="ncbi_class">CObject</span> is derived from this class. So, any classes based on
+<span class="ncbi_class">CObject</span> may benefit from this functionality right away. Other classes
 may use this class as a base later on (e.g. using multiple inheritance).
 </p>
 <p>
-Class <var>CDebugDumpContext</var> provides a generic dump interface for dumpable objects.
+Class <span class="ncbi_class">CDebugDumpContext</span> provides a generic dump interface for dumpable objects.
 The class has nothing to do with data representation. Its purpose is the ability to
 describe the location of where the data comes from, accept it from the object and
 transfer to the data formatter.
 </p>
 <p>
-Class <var>CDebugDumpFormatter</var> defines the dump formatting interface. It is an
+Class <span class="ncbi_class">CDebugDumpFormatter</span> defines the dump formatting interface. It is an
 abstract class.
 </p>
 <p>
-Class <var>CDebugDumpFormatterText</var> is derived from <var>CDebugDumpFormatter</var>.
+Class <span class="ncbi_class">CDebugDumpFormatterText</span> is derived from <span class="ncbi_class">CDebugDumpFormatter</span>.
 Based on incoming data, it generates a human-readable text and passes it into any
-output stream (<tt>ostream</tt>).
+output stream (<span class="ncbi_class">ostream</span>).
 </p>
 <p>
 In general, the system works like this:
@@ -137,20 +134,20 @@ In general, the system works like this:
 <ol>
   <li>
 Client creates DebugDump formatter object (it could be an object of class
-<var>CDebugDumpFormatterText</var> or any other class derived from <var>CDebugDumpFormatter</var>)
+<span class="ncbi_class">CDebugDumpFormatterText</span> or any other class derived from <span class="ncbi_class">CDebugDumpFormatter</span>)
 and passes it to a proper, non-virtual function of the object to be dumped.
 Bundle name is to be defined here - it can be anything,
 but a reasonable guess would be to specify the location of the call and the name of the object
 being dumped.
   </li>
   <li>
-<var>CDebugDumpable</var> analyses global settings, creates <var>CDebugDumpContext</var> object
+<span class="ncbi_class">CDebugDumpable</span> analyses global settings, creates <span class="ncbi_class">CDebugDumpContext</span> object
 and calls virtual DebugDump() function of the object.
   </li>
   <li>
 DebugDump function of each subclass defines a frame name (which must be the type of the subclass),
 calls DebugDump function of a base class and finally logs its own data members.	From within
-the DebugDump(), the object being dumped "sees" only <var>CDebugDumpContext</var>.
+the DebugDump(), the object being dumped "sees" only <span class="ncbi_class">CDebugDumpContext</span>.
 It does not know any specifics about target format in which dump data will be
 eventually represented.
   </li>
@@ -159,15 +156,13 @@ eventually represented.
 
 
 
-<h2><a name="Implementation"></a>
-Implementation.</h2>
+<h2><a name="Implementation"></a>Implementation</h2>
 
-<h3><a name="CDebugDumpable"></a>
-CDebugDumpable.</h3>
+<h3><a name="CDebugDumpable"></a>CDebugDumpable</h3>
 <p>
 The class is an abstract one. Global options are stored as static variable(s).
-<font size="-1">
-<pre>
+<blockquote>
+<pre class="ncbi_code">
 public:
     // Enable/disable debug dump
     static void EnableDebugDump(bool on);
@@ -181,21 +176,20 @@ public:
 
     // Function that does the dump - to be overloaded
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const = 0;
-</pre>
-</font>
+</pre></blockquote>
 Any derived class must impelement a relevant DebugDump function.
 </p>
 
-<h3><a name="CDebugDumpContext"></a>
-CDebugDumpContext.</h3>
+<h3><a name="CDebugDumpContext"></a>CDebugDumpContext</h3>
 <p>
 The class defines a public dump interface for a client object. It receives the data
 from the object and decides when and what functions of dump formatter to call.
 </p>
 <p>
 The dump interface looks like this:
-<font size="-1">
-<pre>
+
+<blockquote>
+<pre class="ncbi_code">
 public:
     CDebugDumpContext(CDebugDumpFormatter&amp; formatter, const string&amp; bundle);
     // This is not exactly a copy constructor -
@@ -219,18 +213,18 @@ public:
     void Log(const string&amp; name, const void* value,   const string&amp; comment = kEmptyStr);
     void Log(const string&amp; name, const CDebugDumpable* value, unsigned int depth);
 </pre>
-</font>
+</blockquote>
 
-A number of overloaded <var>Log</var> functions is
+A number of overloaded <span class="ncbi_func">Log</span> functions is
 provided for convenience only.
 </p>
 
-<h3><a name="CDebugDumpFormatter"></a>
-CDebugDumpFormatter.</h3>
+<h3><a name="CDebugDumpFormatter"></a>CDebugDumpFormatter</h3>
 <p>
 This abstract class defines dump formatting interface:
-<font size="-1">
-<pre>
+
+<blockquote>
+<pre class="ncbi_code">
 public:
     virtual bool StartBundle(unsigned int level, const string& bundle) = 0;
     virtual void EndBundle(  unsigned int level, const string& bundle) = 0;
@@ -242,22 +236,21 @@ public:
                              const string& value, bool is_string,
                              const string& comment) = 0;
 </pre>
-</font>
+</blockquote>
 </p>
 
 
-<h2><a name="Examples"></a>
-Examples.</h2>
+<h2><a name="Examples"></a>Examples</h2>
 <p>
-Supposed that there is an object <tt>m_ccObj</tt> of class <tt>CSomeObject</tt>
-derived from <tt>CObject</tt>.
-In order to dump it into the standard <tt>cerr</tt> stream,
+Supposed that there is an object <span class="ncbi_var">m_ccObj</span> of class <span class="ncbi_class">CSomeObject</span>
+derived from <span class="ncbi_class">CObject</span>.
+In order to dump it into the standard <span class="ncbi_var">cerr</span> stream,
 one should do one of the following:
-<pre>
+<pre class="ncbi_code">
     m_ccObj.DebugDumpText(cerr, "m_ccObj", 0);
 </pre>
 or
-<pre>
+<pre class="ncbi_code">
     {
         CDebugDumpFormatterText ddf(cerr);
         m_ccObj.DebugDumpFormat(ddf, "m_ccObj", 0);
@@ -265,9 +258,10 @@ or
 </pre>
 </p>
 <p>
-The <tt>DebugDump</tt> function should look like this:
-<font size="-1">
-<pre>
+The <span class="ncbi_func">DebugDump</span> function should look like this:
+
+<blockquote>
+<pre class="ncbi_code">
 void CSomeObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CSomeObject");
@@ -277,7 +271,7 @@ void CSomeObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ... etc for each data member
 }
 </pre>
-</font>
+</blockquote>
 </p>
 
 <!--#include virtual="../ssi/navlinks.shtml" -->

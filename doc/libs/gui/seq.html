@@ -3,11 +3,9 @@
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
-<b><font FACE="Arial" SIZE=4><p>Sequence View (SeqView) Control</p>
-</b></font>
-<p>Last Revision: 24 Sep 2002</p>
+<h2>Sequence View (SeqView) Control</h2>
 
-<p>&nbsp;</p>
+<p>Last Revision: 24 Sep 2002</p>
 
 
 <ul>
@@ -44,7 +42,7 @@
 
    <li><a href="#keyboard">Handling keyboard and mouse events</a>
    	<ul>
-	  <li><a href="#key_events">Keyboad events</a></li>
+	  <li><a href="#key_events">Keyboard events</a></li>
 	  <li><a href="#clipboard">Cut/Copy/Paste events</a></li>
 	  <li><a href="#double_click">Double-click event</a></li>
 	</ul>
@@ -66,21 +64,21 @@
 
 
 <p>&nbsp;</p>
-<a name="overview"></a><b>Overview</b>
+<a name="overview"></a><h3>Overview</h4>
 <p>The NCBI GUI SEQ library describes and implements a set of objects needed to display and navigate molecule sequences and features. The basic functionality allows to display a molecule sequence and features, use mouse or keyboard to select parts of the sequence, get feature information, change features shape, change various interface colors. The main advantage of using the SeqView is that you can have multiple sequence data sources and can easily and fast switch between them.</p>
 <img src="seq_view.gif" alt="" width="851" height="389">
 
 
 <p>&nbsp;</p>
-<a name="architecture"></a><b>The SeqView architecture.</b>
+<a name="architecture"></a><h3>The SeqView architecture.</h3>
 <p>
 <p>The Sequence View relies on two external components: OpenGL and FLTK. OpenGL is used for all drawing, FLTK is used to layout and display GUI elements.</p>
 
 
-<a name="class_overview"></a><b>Classes overview.</b>
+<a name="class_overview"></a><h4>Classes overview.</h4>
 <p>
-The SeqView consists of a three classes:
-<table border="1">
+The SeqView consists of a three classes:</p>
+<table border="1" cellspacing="0" cellpadding="3">
 	<tr>
 		<td>CSeqPanel</td>
 		<td>OpenGL panel inherited from Fl_Gl_Window. Actual drawing is done here.</td>
@@ -96,7 +94,7 @@ The SeqView consists of a three classes:
 </table>
 
 <p>&nbsp;</p>
-<a name="setting_seqview"></a><b>Setting up the Sequence View</b>
+<a name="setting_seqview"></a><h3>Setting up the Sequence View</h3>
 <p>
 These three steps are required to use SeqView in your code:
 <p>
@@ -106,32 +104,32 @@ These three steps are required to use SeqView in your code:
 	<li>Register the data source with Sequence View.</li>
 </ol>
 
-<a name="setting_fluid"></a><b>Setting up SeqView with FLUID</b>
+<a name="setting_fluid"></a><h4>Setting up SeqView with FLUID</h4>
 <p>The easiest way to setup a Sequence View is to use FLUID - FLTK interface designer:</p>
 <ol>
-	<li>Add new Fl_Group (New->group->Group in FLUID menu) to your window.</li>
+	<li>Add new Fl_Group (<span class="ncbi_menu">New->group->Group</span> in FLUID menu) to your window.</li>
 	<li>Enter CSeqView as a class name in the C++ tab of the Property dialog.</li>
 	<li>Enter m_SeqView as a member name.</li>
-	<li>Enter <code>#include "gui/seq/view.hpp"</code> in the "extra code" field below</li>
+	<li>Enter <span class="ncbi_ccode">#include "gui/seq/view.hpp"</span> in the "extra code" field below</li>
 		<p><img src="seq_fluid.gif" alt="" width="420" height="395"></p>
 	<li>FLUID will generate code to create an instance of CSeqView and to add it to your window.</li>
 </ol>
 
 <p>&nbsp;</p>
-<a name="setting_manually"></a><b>Setting up SeqView manually</b>
+<a name="setting_manually"></a><h4>Setting up SeqView manually</h4>
 <p>To setup Sequence View manually use the standard FLTK widgets constructor. Something like:</p>
-<code>CSeqView* m_SeqView = new CSeqView(10, 40, 850, 390);</code>
+<pre class="ncbi_code">CSeqView* m_SeqView = new CSeqView(10, 40, 850, 390);</pre>
 
 <p>&nbsp;</p>
-<a name="datasource"></a><b>Sequence View Data Source</b>
-<a name="creating_ds"></a><p><b>Creating a data source</b></p>
+<a name="datasource"></a><h3>Sequence View Data Source</h3>
+<a name="creating_ds"></a><h4>Creating a data source</h4>
 <p>The data source is required to provide Sequence View with the actual sequence data to display. To create a data source:</p>
 
 <ol>
 	<li>Inherit your data source from CSeqDataSource</li>
 	<li>Implement the 4 required methods</li>
-		<table border="1">
-			<tr>
+        <table border="1" cellspacing="0" cellpadding="3">
+            <tr>
 				<td>TSeqPos GetSequenceLength()</td>
 				<td>to return the sequence length</td>
 			</tr>
@@ -148,11 +146,11 @@ These three steps are required to use SeqView in your code:
 	<li>Register your data source with Sequence View by calling SetDataSource() method of the Sequence View.</li>
 </ol>
 
-<p>&nbsp;</p>
-<a name="features"></a><b>Displaying molecule features</b>
+<p><br>
+<a name="features"></a><h4>Displaying molecule features</h4>
 <p>Sequence View is capable of displaying four different kinds of feature shapes. These shapes are defined in the CVisibleFeature class.</p>
 
-<pre>enum EType {
+<pre class="ncbi_code">enum EType {
        	eBox,        // a rectangle
         eRightArrow, // a right facing arrow
         eLeftArrow,  // a left facing arrow
@@ -160,7 +158,7 @@ These three steps are required to use SeqView in your code:
 };</pre>
 
 <p>Each feature has the following attributes:</p>
-<table border="1">
+<table border="1" cellspacing="0" cellpadding="3">
 	<tr>
 		<td>string m_Id</td>
 		<td>Unique ID to identify feature</td>
@@ -187,16 +185,16 @@ These three steps are required to use SeqView in your code:
 	</tr>
 	<tr>
 		<td>vector< CVisibleFeature > m_SubIntervals</td>
-		<td>Define sub-intervals for multi features (<b>eMulti</b> type). For all other feature types this will be ignored.</td>
+		<td>Define sub-intervals for multi features (<span class="ncbi_var">eMulti</span> type). For all other feature types this will be ignored.</td>
 	</tr>
 </table>
 
 
 <p>The following table demonstrates various kinds of shapes, height and colors to customize feature display.</p>
-<table border="1">
+<table border="1" cellspacing="0" cellpadding="3">
 	<tr>
-		<td><b>Type</b></td>
-		<td><b>Appearance (Heights from 1 to 5)</b></td>
+		<th>Type</th>
+		<th>Appearance (Heights from 1 to 5)</b></th>
 	</tr>
 	<tr>
 		<td>eBox</td>
@@ -218,22 +216,22 @@ These three steps are required to use SeqView in your code:
 
 
 <p>&nbsp;</p>
-<a name="obj_manager"></a><b>Using NCBI C++ Toolkit Object Manager to implement data source</b>
+<a name="obj_manager"></a><h3>Using NCBI C++ Toolkit Object Manager to implement data source</h3>
 <p>The NCBI C++ Toolkit Object Manager is ideally suited for use in the Sequence View data sources.</p>
 
-<a name="get_length"></a><b>Implementing GetSequenceLength with Object Manager</b>
+<a name="get_length"></a><h4>Implementing GetSequenceLength with Object Manager</h4>
 
-<pre>TSeqPos GetSequenceLength()
+<pre class="ncbi_code">TSeqPos GetSequenceLength()
 CSeqVector seq_vect = bioseq_handle.GetSeqVector(EVectorCoding ::eCoding_Iupac, EVectorStrand::eStrand_Plus);
 return seq_vect.size();</pre>
 
-<a name="get_seq"></a><b>Implementing GetSequence with Object Manager</b>
-<pre>void GetSequence(TSeqPos from, TSeqPos to, string& buffer)
+<a name="get_seq"></a><h4>Implementing GetSequence with Object Manager</h4>
+<pre class="ncbi_code">void GetSequence(TSeqPos from, TSeqPos to, string& buffer)
 seq_vect.GetSeqData (from, to, buffer);</pre>
 
-<a name="get_feat"></a><b>Implementing GetFeatures with Object Manager</b>
+<a name="get_feat"></a><h4>Implementing GetFeatures with Object Manager</h4>
 
-<pre>void GetFeatures(TSeqPos from, TSeqPos to, vector<CVisibleFeature>& vec)
+<pre class="ncbi_code">void GetFeatures(TSeqPos from, TSeqPos to, vector<CVisibleFeature>& vec)
 
 for (CFeat_CI feat_it(bioseq_handle, from, to, CSeqFeatData::e_Genes);  feat_it;  ++feat_it) {
         const CSeq_feat& feat = *feat_it;
@@ -248,89 +246,89 @@ for (CFeat_CI feat_it(bioseq_handle, from, to, CSeqFeatData::e_Genes);  feat_it;
         vec.push_back(vf);
 }</pre>
 
-<p>Features will be shown in the Sequence View in the exact order of features in "<b>vec</b>" vector. The best way to group features by type is to iterate through one kind of feature after another in the order you would like them to appear in the Sequence View.</p>
+<p>Features will be shown in the Sequence View in the exact order of features in "<span class="ncbi_var">vec</span>" vector. The best way to group features by type is to iterate through one kind of feature after another in the order you would like them to appear in the Sequence View.</p>
 
 
 <p>&nbsp;</p>
-<a name="keyboard"></a><b>Handling keyboard and mouse events.</b>
+<a name="keyboard"></a><h3>Handling keyboard and mouse events.</h3>
 
 <p>The support for keyboard and mouse events is implemented in the Sequence View data source. One can override any of the following virtual functions and implement its own handlers for these events, which are:</p>
 <p>KeyPressed, Cut, Copy, Paste, DoubleClick</p>
 
-<pre>enum ERedraw {
+<pre class="ncbi_code">enum ERedraw {
 	eRedraw, - Redraw the view after event
 	eNoRedraw - Do not redraw the view after event
 }</pre>
 
-<p>If a method modifies the data it should return an "<b>eRedraw</b>" – a notice to Sequence View to redraw itself. eNoRedraw indicates that no changes to the data was made and therefore redraw is not necessary.</p>
+<p>If a method modifies the data it should return an "<span class="ncbi_var">eRedraw</span>" – a notice to Sequence View to redraw itself. eNoRedraw indicates that no changes to the data was made and therefore redraw is not necessary.</p>
 
-<a name="key_events"></a><p><b>Keyboad events</b></p>
+<a name="key_events"></a><h4>Keyboard events</h4>
 <p>The KeyPressed method will be called each time a key is pressed in the Sequence View.</p>
 
-<pre>ERedraw KeyPressed(TKey key, TKeyState key_state, TSeqPos cursor);</pre>
+<pre class="ncbi_code">ERedraw KeyPressed(TKey key, TKeyState key_state, TSeqPos cursor);</pre>
 
-<p>In this call "<b><i>key</i></b>" is FLTK definition for a key pressed and "<b><i>key_state</i></b>" contains keyboard states for Shift, Control, Alt and some other keys.  Please refer to FL/Enumerations.H in FLTK for complete list of keys and keystate definitions. The "<b><i>cursor</i></b>" contains current position of a Sequence Cursor in the view.</p>
+<p>In this call "<span class="ncbi_var">key</span>" is FLTK definition for a key pressed and "<span class="ncbi_var">key_state</span>" contains keyboard states for Shift, Control, Alt and some other keys.  Please refer to FL/Enumerations.H in FLTK for complete list of keys and keystate definitions. The "<span class="ncbi_var">cursor</span>" contains current position of a Sequence Cursor in the view.</p>
 
 <p>One of possible uses of this method is to implement an "inline" editing of a molecule sequence.</p>
 
-<a name="clipboard"></a><p><b>Cut/Copy/Paste events</b></p>
+<a name="clipboard"></a><h4>Cut/Copy/Paste events</h4>
 <p>Separately from the keyboard events handler, methods for clipboard shortcuts are implemented. These methods will be called each time a Cut, Copy or Paste key combination is pressed in the Sequence View.  These key combinations are platform-dependent and handled by FLTK engine. (For example: Ctrl-C, for Copy on Windows and Option-C on Mac).</p>
 
-<pre>ERedraw Cut  (TSeqPos from, TSeqPos to, TSeqPos cursor);
+<pre class="ncbi_code">ERedraw Cut  (TSeqPos from, TSeqPos to, TSeqPos cursor);
 ERedraw Copy (TSeqPos from, TSeqPos to, TSeqPos cursor);
 ERedraw Paste(TSeqPos from, TSeqPos to, TSeqPos cursor);</pre>
 
-<p>In these calls "<b><i>from</i></b>" and "<b><i>to</i></b>" define the position of the sequence selection in the View and "<b><i>cursor</i></b>" is a current cursor position. Don’t forget to return eRedraw if the sequence data is modified by those methods.</p>
+<p>In these calls "<span class="ncbi_var">from</span>" and "<span class="ncbi_var">to</span>" define the position of the sequence selection in the View and "<span class="ncbi_var">cursor</span>" is a current cursor position. Don’t forget to return eRedraw if the sequence data is modified by those methods.</p>
 
-<a name="double_click"></a><p><b>Double-click event</b></p>
+<a name="double_click"></a><h4>Double-click event</h4>
 
 <p>DoubleClick method is called each time when double-click event occurs in the valid area of the Sequence View. </p>
 
-<pre>ERedraw DoubleClick(TSeqPos at, const string& feature_id);</pre>
+<pre class="ncbi_code">ERedraw DoubleClick(TSeqPos at, const string& feature_id);</pre>
 
-<p>In this call "<b><i>at</i></b>" is a sequence position of the double click and "<b><i>feature_id</i></b>" contains the ID of a feature if feature was clicked on.</p>
+<p>In this call "<span class="ncbi_var">at</span>" is a sequence position of the double click and "<span class="ncbi_var">feature_id</span>" contains the ID of a feature if feature was clicked on.</p>
 
 
 <p>&nbsp;</p>
-<a name="seq_view"></a><p><b>Sequence View Methods</b></p>
+<a name="seq_view"></a><h3>Sequence View Methods</h3>
 <p>The following ten methods are available in Sequence View:</p>
 <p>SetDataSource, ShowFeatures, HideFeatures, SetSelection, GetSelectionStart, GetSelectionFinish, SetCursor, GetCursor, SetColor and GetColor.</p>
 
-<a name="sv_ds"></a><p><b>Setting up a data source</b></p>
+<a name="sv_ds"></a><h4>Setting up a data source</h4>
 <p>Use SetDataSource method to register a new DataSource with Sequence View.</p>
 
-<pre>void SetDataSource(CSeqDataSource* ds)</pre>
+<pre class="ncbi_code">void SetDataSource(CSeqDataSource* ds)</pre>
 
-<p>In this call “ds” is a user data source inherited from CSeqDataSource.</p>
+<p>In this call "<span class="ncbi_var">ds</span>" is a user data source inherited from CSeqDataSource.</p>
 
-<a name="sv_feat"></a><p><b>Feature display</b></p>
+<a name="sv_feat"></a><h4>Feature display</h4>
 <p>To enable or disable display of a sequence features use the following pair of Sequence View methods.</p>
 
-<pre>void ShowFeatures() – to enable features display.
+<pre class="ncbi_code">void ShowFeatures() – to enable features display.
 void HideFeatures() – to disable features display.</pre>
 
 <p>By default, features are not shown.</p>
 
-<a name="sv_sel"></a><p><b>Sequence Selection</b></p>
+<a name="sv_sel"></a><h4>Sequence Selection</h4>
 <p>Region of the sequence can be selected programmatically using:</p>
 
-<pre>void SetSelection(TSeqPos start, TSeqPos finish)</pre>
+<pre class="ncbi_code">void SetSelection(TSeqPos start, TSeqPos finish)</pre>
 
 <p>To obtain the current sequence selection region, use the following pair of methods:</p>
 
-<pre>TSeqPos GetSelectionStart() - get start of  selected region
+<pre class="ncbi_code">TSeqPos GetSelectionStart() - get start of  selected region
 TSeqPos GetSelectionFinish() - get finish of  selected region</pre>
 
-<a name="sv_cursor"></a><p><b>Sequence Cursor</b></p>
+<a name="sv_cursor"></a><h4>Sequence Cursor</h4>
 <p>Position of the cursor in the sequence can be set or retrieved using:</p>
 
-<pre>void SetCursor(TSeqPos pos)
+<pre class="ncbi_code">void SetCursor(TSeqPos pos)
 TSeqPos GetCursor()</pre>
 
-<a name="sv_colors"></a><p><b>Sequence View Colors</b></p>
+<a name="sv_colors"></a><h4>Sequence View Colors</h4>
 <p>Sequence view allows customizing the color of the following display elements:</p>
 
-<pre>enum EDisplayElement {
+<pre class="ncbi_code">enum EDisplayElement {
   eBackground, // the Sequence View background color. The default is FL_BLACK.
   eGrid,       // the color of grid lines. The default is FL_GRAY.
   eNumbers,    // the color of sequence numbers. The default is FL_YELLOW.
@@ -339,19 +337,19 @@ TSeqPos GetCursor()</pre>
   eCursor      // the color of sequence cursor. The default is FL_GREEN.
 };</pre>
 
-<p>Please refer to FLTK documentation for a complete list of fixed color definitions or use <code>fl_rgb_color()</code> call to create your own color:</p>
+<p>Please refer to FLTK documentation for a complete list of fixed color definitions or use <span class="ncbi_func">fl_rgb_color()</span> call to create your own color:</p>
 
-<pre>Fl_Color c = fl_rgb_color(85, 170, 255);</pre>
+<pre class="ncbi_code">Fl_Color c = fl_rgb_color(85, 170, 255);</pre>
 
 
 <p>The following pair of methods allows setting and retrieving the color of a particular display element of a Sequence View.</p>
 
-<pre>void SetColor(EDisplayElement elem, TColor color)
+<pre class="ncbi_code">void SetColor(EDisplayElement elem, TColor color)
 TColor GetColor(EDisplayElement elem)</pre>
 
 
 <p>&nbsp;</p>
-<a name="demo"></a><b>Sequence View Demo Application</b>
+<a name="demo"></a><h3>Sequence View Demo Application</h3>
 <p>Demo View is small application to demonstrate the basics of the Sequence View.</p>
 
 <p>demo_view.cpp - code generated by FLUID (Fast Light User Interface Designer). Please use FLUID to open demo_view.fl template file.</p>
@@ -359,9 +357,7 @@ TColor GetColor(EDisplayElement elem)</pre>
 <p>CSeqViewTestDS - is a sample data source that uses NCBI C++ Toolkit Object Manager to get real molecules from DB.</p>
 
 <p>The demo data source also implements a sample Cut/Copy/Paste operations and double-click handling.</p>
-
-
-
+<p><br>
 
 
 <!--#include virtual="../../ssi/navlinks.shtml" -->

@@ -2,12 +2,12 @@
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
-<h1>Load-Balancing Service Mapping Daemon (<tt>LBSMD</tt>)</h1>
+<h1>Load-Balancing Service Mapping Daemon (<span class="ncbi_app">LBSMD</span>)</h1>
 
-<font size=1><u><b>Note</b></u>: Due to security issues, not all links in the public version
+<font size=1><span class="ncbi_note">Note</span>: Due to security issues, not all links in the public version
 of this file could be accessible by outside NCBI users. Unrestricted version of this document is available to
 inside NCBI users at:
-<a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html">http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html</a>.
+<a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html" class="ncbi_url">>http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html</a>.
 </font>
 
 <h2>Contents</h2>
@@ -15,9 +15,9 @@ inside NCBI users at:
 <ol>
 <ul>
     <li> <a href="#ref_Overview">Overview</a>
-    <li> <a href="#ref_Details"><tt>LBSMD</tt> in Details</a>
+    <li> <a href="#ref_Details"><span class="ncbi_app">LBSMD</span> in Details</a>
     <li> <a href="#ref_Example">Example of Configuration File</a>
-    <li> <a href="#ref_Client">Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</a>
+    <li> <a href="#ref_Client">Load-Balancing Service Mapping Client (<span class="ncbi_app">LBSMC</span>)</a>
     <li> <a href="#ref_Penalizer">Server Penalizer</a>
 </ul>
 </ol>
@@ -27,35 +27,35 @@ inside NCBI users at:
 
 <a name="ref_Overview"></a><h2>Overview</h2>
 
-In general, <tt>LBSMD</tt> should be run at NCBI site on every host that carries either public
+In general, <span class="ncbi_app">LBSMD</span> should be run at NCBI site on every host that carries either public
 or private servers implementing NCBI service(s) (see however discussion about
-<a href="#ref_Static"><i>static</i></a> servers). The services include CGI programs or standalone servers
-to access NCBI data. Each service has a name assigned to it, <tt>TaxServer</tt>
-for instance. The name uniquely identifies the service, and - <u>most importantly</u> -
-the protocol used for data exchange, i.e. any client connecting to service <tt>TaxServer</tt>
+<a href="#ref_Static"><span class="ncbi_term">static</span></a> servers). The services include CGI programs or standalone servers
+to access NCBI data. Each service has a name assigned to it, <span class="ncbi_interface">TaxServer</span>
+for instance. The name uniquely identifies the service, and - <em>most importantly</em> -
+the protocol used for data exchange, i.e. any client connecting to service <span class="ncbi_interface">TaxServer</span>
 knows how to communicate with that service, whereas the service can be
 implemented in various ways on hosts across NCBI.
 That is, the service could be implemented as a standalone server on
-a host <tt>X</tt>, and as a CGI program on the same or another host <tt>Y</tt>.
-(Note however, that on a certain host there should <i>not</i> be more than one
+a host <span class="ncbi_value">X</span>, and as a CGI program on the same or another host <span class="ncbi_value">Y</span>.
+(Note however, that on a certain host there should <em>not</em> be more than one
 server of the same <a href="#ref_ServerType">type</a> for the same service.)
 Moreover, the same server can implement several services, that is
 services with different names. For example, one service (like
-<tt>Entrez2</tt>) can accept binary data only, and another one
-(say <tt>Entrez2Text</tt>) can accept data only in text format.
+<span class="ncbi_interface">Entrez2</span>) can accept binary data only, and another one
+(say <span class="ncbi_interface">Entrez2Text</span>) can accept data only in text format.
 For the server, the distinction between those two could be in this case
 made by using a <a href="#ref_ContentType">content type specifier</a>.
 
 <p>
-The goal of <tt>LBSMD</tt> is to maintain a table of all services
-available at NCBI at the moment. In addition, <tt>LBSMD</tt> keeps track of
+The goal of <span class="ncbi_app">LBSMD</span> is to maintain a table of all services
+available at NCBI at the moment. In addition, <span class="ncbi_app">LBSMD</span> keeps track of
 servers, which are found non-functional (dead servers), and
 it is also responsible for propagating trouble reports,
 obtained back from the applications about their experience with
 advertized servers (e.g. an advertized server is not
 technically dead, but generates sort of garbage when accessed).
 Further in this document the latter kind of feedback is called a
-<i>penalty</i>.
+<span class="ncbi_term">penalty</span>.
 
 <p>
 The principle of load-balancing is simple: each server implementing
@@ -69,17 +69,17 @@ It is not obvious that the load-balancing daemon does not calculate the rates of
 Instead, its primary goal is to collect all necessary information for that. The server
 calculates two parameters, normal host status and so called BLAST host status (based on the
 instant load of the system). These parameters are then used to calculate the
-rate of all (non-<a href="#ref_Static"><i>static</i></a>) servers on that host as
-shown in <a href="../../lxr/source/src/connect/ncbi_lbsm.c"><b><i>connect/ncbi_lbsm.c</i></b></a>
-(which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>, not <tt>LBSMD</tt>).
+rate of all (non-<a href="#ref_Static"><span class="ncbi_term">static</span></a>) servers on that host as
+shown in <a href="../../lxr/source/src/connect/ncbi_lbsm.c"><span class="ncbi_file">connect/ncbi_lbsm.c</span></a>
+(which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>, not <span class="ncbi_app">LBSMD</span>).
 
 <p><hr><p>
 
 
-<a name="ref_Details"></a><h2><tt>LBSMD</tt> in Details</h2>
+<a name="ref_Details"></a><h2><span class="ncbi_app">LBSMD</span> in Details</h2>
 
-<tt>LBSMD</tt> is configured by means of a configuration file (default name <tt>servrc.cfg</tt>),
-which is also shared with <a href="DISPD.html#ref_NCBID">NCBI CGI engine</a>, <tt>NCBID.CGI</tt>.
+<span class="ncbi_app">LBSMD</span> is configured by means of a configuration file (default name <span class="ncbi_file">servrc.cfg</span>),
+which is also shared with <a href="DISPD.html#ref_NCBID">NCBI CGI engine</a>, <span class="ncbi_cgi">NCBID.CGI</span>.
 Each line in the file either defines a service, or is a part of the host environment,
 or is an include directive, or, finally, is an empty line (the one entirely blank or containing
 a comment only). Empty lines are all ignored in the file.
@@ -89,210 +89,203 @@ A comment is introduced by the hash symbol (#).
 
 <p>
 <a name="ref_HostEnvironment"></a>A configuration line of the form
-<pre>
-<font color="#009900">name=value</font>
-</pre>
-places itself in the <i>host environment</i>. The host environment can be accessed by
+<pre class="ncbi_code">name=value</pre>
+
+places itself in the host environment. The host environment can be accessed by
 clients when they make the service name resolution. Initially, the host environment
 was designed to help the client know about limitations/options, which the host has,
 and based on this additional information the client can make a decision whether the server
 (despite that it is implementing the service) is suitable for carrying out client's request.
 For example, the host environment can give the client an idea about what are the databases
 available on the host. The host environment is not interpreted or used in any way both by the daemon and
-by the load-balancing algorithm, except for that <tt>name</tt> must be a valid identifier.
-The <tt>value</tt> may be practically anything, even empty.
+by the load-balancing algorithm, except for that <span class="ncbi_var">name</span> must be a valid identifier.
+The <span class="ncbi_value">value</span> may be practically anything, even empty.
 It is left solely to the client to parse the environment and to look for the information in interest.
 The host environment can be obtained from the service iterator via call to
-<a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
+<a href="../../lxr/ident?i=SERV_GetNextInfoEx"><span class="ncbi_func">SERV_GetNextInfoEx()</span></a>,
 which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>.<br>
-<u>Note</u>: White characters surrounding <tt>name</tt> are not preserved, but they are
-preserved in <tt>value</tt>, i.e. when appear after the assignment sign.
+<span class="ncbi_note">Note</span>: White characters surrounding <span class="ncbi_var">name</span> are not preserved, but they are
+preserved in <span class="ncbi_value">value</span>, i.e. when appear after the assignment sign.
 
 <p>
 <a name="ref_Include"></a>A configuration line of the form
-<pre>
-<font color="#009900">%include filename</font>
-</pre>
-causes the named file <tt>filename</tt> to be read at this point of the surrounding configuration
+<pre class="ncbi_code">%include filename</pre>
+causes the named file <span class="ncbi_var">filename</span> to be read at this point of the surrounding configuration
 file. The daemon always assumes that relative file names (those which names do not start with
 the slash character (/)) are looked for with the daemon startup directory as a base.
 This is true for any level of nesting.
 
 <p>
-Once started the daemon first assignes the top configuration file as <tt>/var/etc/lbsm/servrc.cfg</tt>,
+Once started the daemon first assignes the top configuration file as <span class="ncbi_file">/var/etc/lbsm/servrc.cfg</span>,
 then tries to read it. If the file is not found (or is not readable), the daemon looks for the configuration
-file <tt>servrc.cfg</tt> in the directory, from which it has been started. If found, that file is assigned
+file <span class="ncbi_file">servrc.cfg</span> in the directory, from which it has been started. If found, that file is assigned
 as the top configuration file. This fallback machanism is not used when the configuration
 file name is explicitly stated in the command line. When running, the daemon periodically
 checks the top configuration file and all its descendants and reloads (discards) their contents
 if some of the files have been either updated, (re-)moved, or added.
 
 <p>
-<a name="ref_Service"></a>A <i>service</i> is defined by a line of the form
-<pre>
-<font color="#009900">service_name [check_time] server_descriptor [| launcher_info ]</font>
-</pre>
+<a name="ref_Service"></a>A <span class="ncbi_var">service</span> is defined by a line of the form
+<pre class="ncbi_code">service_name [check_time] server_descriptor [| launcher_info ]</pre>
 <ul>
-<li><font color="#CC33CC"><tt>service_name</tt></font> names the service, for instance
-<tt>TaxServer</tt>.
-<li><font color="#CC33CC"><tt>[check_time]</tt></font> is an optional parameter (if omitted,
+<li><span class="ncbi_var">service_name</span> names the service, for instance
+<span class="ncbi_interface">TaxServer</span>.
+<li><span class="ncbi_var">[check_time]</span> is an optional parameter (if omitted,
 the surrounding square brackets must go, too),
 which specifies the number of seconds for periodic checkups.
-For example, <tt>[120]</tt> means to check the server once
+For example, <span class="ncbi_value">[120]</span> means to check the server once
 every 2 minutes. Note the square brackets - they are required. Checkups can only be done for
 servers running locally, that is specifying a check timeout for any server located outside
 the local machine causes a warning printed and the timeout ignored.
-<li><font color="#CC33CC"><tt>server_descriptor</tt></font> specifies address of the server and
+<li><span class="ncbi_var">server_descriptor</span> specifies address of the server and
 supplies additional information, which is described in details later in this document.
-An example of the <tt>server_descriptor</tt>:
-<pre>
-<font color="navy">STANDALONE somehost:1234 R=3000 L=yes S=yes B=-20</font>
-</pre>
-<li><font color="#CC33CC"><tt>launcher_info</tt></font> is basically a command line
-preceded by a pipe symbol (<tt>|</tt>), delimiting from <tt>server_descriptor</tt>.
-It is only required for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>,
+An example of the <span class="ncbi_var">server_descriptor</span>:
+<pre class="ncbi_code">STANDALONE somehost:1234 R=3000 L=yes S=yes B=-20</pre>
+<li><span class="ncbi_var">launcher_info</span> is basically a command line
+preceded by a pipe symbol ( | ), delimiting from <span class="ncbi_var">server_descriptor</span>.
+It is only required for <a href="#ref_ServerType">servers of type</a> <span class="ncbi_app">NCBID</span>,
 which are configured on the local host.
 </ul>
 
 <p>
-<tt>Server_descriptor</tt>, also detailed in
-<a href="../../lxr/source/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>,
+<span class="ncbi_var">Server_descriptor</span>, also detailed in
+<a href="../../lxr/source/include/connect/ncbi_server_info.h"><span class="ncbi_file">connect/ncbi_server_info.h</span></a>,
 consists of the following fields
 <ol>
-<font color="#009900"><tt>server_type [host][:port] [arguments] [flags]</tt><br></font>
+<span class="ncbi_code">server_type [host][:port] [arguments] [flags]</span><br>
 where:
 <ul type=square>
-<li><a name="ref_ServerType"></a><font color="#009900"><tt>server_type</tt></font> is one of the following keywords (see also
+<li><a name="ref_ServerType"></a><span class="ncbi_var">server_type</span> is one of the following keywords (see also
   <a href="../../libs/conn.html#ref_ServerTypes">here</a>):<br>
   <ul compact type=bullet>
-  <li><font color="#CC33CC"><tt>NCBID</tt></font> for servers launched by <a href="DISPD.html#ref_NCBID"><tt>ncbid.cgi</tt></a>;
-  <li><font color="#CC33CC"><tt>STANDALONE</tt></font> for standalone servers listening on dedicated ports;
-  <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> for servers, which are the CGI programs accepting only <i>GET</i> request method;
-  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting only <i>POST</i> request method;
-  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting both of either <i>GET</i> or <i>POST</i> request methods;
-  <li><font color="#CC33CC"><tt>DNS</tt></font> for introduction of a name (fake service), which can be later used in
+  <li><span class="ncbi_app">NCBID</span> for servers launched by <a href="DISPD.html#ref_NCBID"><span class="ncbi_cgi">ncbid.cgi</span></a>;
+  <li><span class="ncbi_type">STANDALONE</span> for standalone servers listening on dedicated ports;
+  <li><span class="ncbi_type">HTTP_GET</span> for servers, which are the CGI programs accepting only <span class="ncbi_interface">GET</span> request method;
+  <li><span class="ncbi_type">HTTP_POST</span> for servers, which are the CGI programs accepting only <span class="ncbi_interface">POST</span> request method;
+  <li><span class="ncbi_type">HTTP_POST</span> for servers, which are the CGI programs accepting both of either <span class="ncbi_interface">GET</span> or <span class="ncbi_interface">POST</span> request methods;
+  <li><span class="ncbi_type">DNS</span> for introduction of a name (fake service), which can be later used in
   load-balancing domain name resolution;<br>
-  <li><font color="#CC33CC"><tt>NAMEHOLD</tt></font> for declaration of service names that cannot be defined in any other configuration
+  <li><span class="ncbi_type">NAMEHOLD</span> for declaration of service names that cannot be defined in any other configuration
   files except for the current configuration file.<br>
-  <u>Note</u>: <tt>FIREWALL</tt> server specification may not be used in configuration file (i.e. may neither be declared as
+  <span class="ncbi_note">Note</span>: <span class="ncbi_type">FIREWALL</span> server specification may not be used in configuration file (i.e. may neither be declared as
   services nor as service name holders).
   </ul>
-<li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host
-and port 80 except for <tt>STANDALONE</tt> and <tt>DNS</tt> servers, which <i>do not have</i> a default port value.</br>
-<a name="ref_Static"></a>If <tt>host</tt> <b><u>is specified</u></b> (by either of the following:
-keyword <tt>localhost</tt>, localhost IP address <tt>127.0.0.1</tt>, real host name or IP address)
+<li>Both <span class="ncbi_var">host</span> and <span class="ncbi_dir">port</span> parameters are optional. Defaults are local host
+and port 80 except for <span class="ncbi_type">STANDALONE</span> and <span class="ncbi_type">DNS</span> servers, which <em>do not have</em> a default port value.</br>
+<a name="ref_Static"></a>If <span class="ncbi_var">host</span> <em>is specified</em> (by either of the following:
+keyword <span class="ncbi_keyword">localhost</span>, localhost IP address <span class="ncbi_url">127.0.0.1</span>, real host name or IP address)
 then the described server is not a subject for variable load-balancing, but is a so-called
-<i>static</i> server. Such a server always has a constant rate, independent of any host load.
-<li><font color="#009900"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must specify
+<span class="ncbi_term">static</span> server. Such a server always has a constant rate, independent of any host load.
+<li><span class="ncbi_var">arguments</span> are required for HTTP* servers, and must specify
 local part of URL of the CGI program and optionally parameters, like:
 <ol>
-<font color="navy"><tt>/somepath/somecgi.cgi?param1&amp;param2=value2&amp;param3=value3</tt></font>
+<span class="ncbi_cmd">/somepath/somecgi.cgi?param1&amp;param2=value2&amp;param3=value3</span>
 </ol>
 If no parameters are to be supplied then the question mark (?) must be omitted, too.<br>
-For <tt>NCBID</tt> servers, <tt>arguments</tt> are parameters to
+For <span class="ncbi_app">NCBID</span> servers, <span class="ncbi_var">arguments</span> are parameters to
 pass to the server and are formed as arguments for CGI programs, i.e.
 <ol>
-<font color="navy"><tt>param1&amp;param2&amp;param3=value</tt></font>
+<span class="ncbi_cmd">param1&amp;param2&amp;param3=value</span>
 </ol>
-As a special rule, <font color="navy"><tt>''</tt></font> (two single quotes) may be used to denote an empty argument for <tt>NCBID</tt> server.<br>
-<tt>STANDALONE</tt> and <tt>DNS</tt> servers do <i>not</i> take any <tt>arguments</tt>.
-<li><font color="#009900"><tt>flags</tt></font> can come in no specific order (but no more than one instance of a flag is allowed),
+As a special rule, '' (two single quotes) may be used to denote an empty argument for <span class="ncbi_app">NCBID</span> server.<br>
+<span class="ncbi_type">STANDALONE</span> and <span class="ncbi_type">DNS</span> servers do <em>not</em> take any <span class="ncbi_var">arguments</span>.
+<li><span class="ncbi_var">flags</span> can come in no specific order (but no more than one instance of a flag is allowed),
 and essentially are the optional modifiers of values used by default. The following flags are
 recognized:
 <ul type=circle>
   <li>load calculation keyword:
   <ul type=bullet>
-    <li><font color="#CC33CC"><tt>Blast</tt></font> to use special algorithm for rate calculation acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
+    <li><span class="ncbi_app_a">Blast</span> to use special algorithm for rate calculation acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
 	applications. The algorithm uses instant values of the host load, and thus is less conservative and more
 	reactive than the ordinary one;
-    <li><font color="#CC33CC"><tt>Regular</tt></font> to use an ordinary rate calculation (default, and the only load calculation
-    option allowed for <a href="#ref_Static"><i>static</i></a> servers).
+    <li><span class="ncbi_app_a">Regular</span> to use an ordinary rate calculation (default, and the only load calculation
+    option allowed for <a href="#ref_Static"><span class="ncbi_term">static</span></a> servers).
   </ul>
   <li>base rate:
   <ul type=bullet>
-  <li><font color="#CC33CC"><tt>R=value</tt></font> sets base server reachability rate (as a floating point number),
+  <li><span class="ncbi_app_a">R=value</span> sets base server reachability rate (as a floating point number),
   default is 1000. Any negative value makes the server unreachable, and a value of&nbsp;0 uses the default.
   The maximal allowed base rate is 100000.
   </ul>
   <li><a name="ref_Local"></a>locality markers:
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>.
-     Default is <tt>no</tt>.
-     <a href="../../libs/conn.html#ref_ServiceAPI">Service mapping API</a> returns <i>local only</i> servers
-     in the case of mapping with the use of <tt>LBSMD</tt> running on the same - local - host (direct mapping),
+     <li><span class="ncbi_app_a">L={yes|no}</span> sets (if <span class="ncbi_value">yes</span>) the server to be <span class="ncbi_term">local only</span>.
+     Default is <span class="ncbi_value">no</span>.
+     <a href="../../libs/conn.html#ref_ServiceAPI">Service mapping API</a> returns <span class="ncbi_term">local only</span> servers
+     in the case of mapping with the use of <span class="ncbi_app">LBSMD</span> running on the same - local - host (direct mapping),
      or if the dispatching (indirect mapping) occurs within the NCBI Intranet. Otherwise, if service mapping
-     occurs using non-local network (certainly indirectly, via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>)
-     then <i>local only</i> servers are not seen.
+     occurs using non-local network (certainly indirectly, via exchange with <a href="DISPD.html"><span class="ncbi_cgi">dispd.cgi</span></a>)
+     then <span class="ncbi_term">local only</span> servers are not seen.
   </ul>
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>P={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>private</i>.
-     Default is <tt>no</tt>.
-     Private servers are not seen by the outside users (exactly like <a href="#ref_Local"><i>local</i></a> servers),
+     <li><span class="ncbi_app_a">P={yes|no}</span> sets (if <span class="ncbi_value">yes</span>) the server to be <span class="ncbi_term">private</span>.
+     Default is <span class="ncbi_value">no</span>.
+     Private servers are not seen by the outside users (exactly like <a href="#ref_Local"><span class="ncbi_term">local</span></a> servers),
      but in addition these servers are not seen from the NCBI Intranet if requested from a host, which is different
-     from one where the private server runs. This flag cannot be used for <tt>DNS</tt> servers.
+     from one where the private server runs. This flag cannot be used for <span class="ncbi_type">DNS</span> servers.
   </ul>
-  <u>Note</u>: If necessary, both <tt>L</tt> and <tt>P</tt> markers can be combined in a particular service definition.
+  <span class="ncbi_note">Note</span>: If necessary, both <span class="ncbi_app_a">L</span> and <span class="ncbi_app_a">P</span> markers can be combined in a particular service definition.
   <li><a name="ref_Stateful"></a>stateful server:
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>S={yes|no}</tt></font> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
-     and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Such a server can only be
+     <li><span class="ncbi_app_a">S={yes|no}</span> sets (if <span class="ncbi_value">yes</span>) that the server can only accept dedicated connections,
+     and is not capable of doing <span class="ncbi_term">stateless</span> (HTTP-like) data exchange. Such a server can only be
      accessed by creating a stream connection to it, and the entire data transfer is to happen
-     while the connection is alive. Default is <tt>no</tt>. This flag <i>cannot</i> be specified for <tt>HTTP*</tt> servers,
-     and is silently ignored for <tt>DNS</tt> servers.<br>
-     <u>Note</u>: Due to mutual incompatibility, Web-browsers <i>cannot</i> directly connect to <i>stateful</i> servers of
+     while the connection is alive. Default is <span class="ncbi_value">no</span>. This flag <em>cannot</em> be specified for HTTP* servers,
+     and is silently ignored for <span class="ncbi_type">DNS</span> servers.<br>
+     <span class="ncbi_note">Note</span>: Due to mutual incompatibility, Web-browsers <i>cannot</i> directly connect to <span class="ncbi_term">stateful</span> servers of
      any type.
   </ul>
   <li><a name="ref_ContentType"></a>content type specifier:
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>C=type/subtype</tt></font> specifies what is the data type that the server expects.
+     <li><span class="ncbi_app_a">C=type/subtype</span> specifies what is the data type that the server expects.
      This content type is to be used by a client, which wants to connect to the
-     server. There is no default value for this flag, and the flag cannot be used for <tt>DNS</tt>servers.
+     server. There is no default value for this flag, and the flag cannot be used for <span class="ncbi_type">DNS</span>servers.
   </ul>
   <li><a name="ref_Bonus"></a>local bonus coefficient:
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>B=value</tt></font>. The interpretation of this flag depends on the sign of <tt>value</tt>. When positive,
-     <tt>value</tt> specifies a multiplier, which applies to the server rate when the server is locally run.
-     When zero (default), the slight default rate increase takes effect for locally run servers. When <tt>value</tt> is negative, the
+     <li><span class="ncbi_app_a">B=value</span>. The interpretation of this flag depends on the sign of <span class="ncbi_value">value</span>. When positive,
+     <span class="ncbi_value">value</span> specifies a multiplier, which applies to the server rate when the server is locally run.
+     When zero (default), the slight default rate increase takes effect for locally run servers. When <span class="ncbi_value">value</span> is negative, the
      locally run server overrides those even having higher rates and preceding the local one, but only if the local server has
-     a rate, which is not in the percentile (expressed by the absolute <tt>value</tt>) of average remaining rate of all other servers,
+     a rate, which is not in the percentile (expressed by the absolute <span class="ncbi_value">value</span>) of average remaining rate of all other servers,
      implementing the service.<br>
-     For example, a server on a <u>local</u> host <tt>Z</tt> configured with <tt>B=-5</tt> (and currently having rate of 100)
-     will be chosen by the <u>local</u> load-balancer even if there were servers on hosts <tt>X</tt> and <tt>Y</tt> having rates
+     For example, a server on a <span class="ncbi_term">local</span> host <span class="ncbi_dir">Z</span> configured with <span class="ncbi_app_a">B=-5</span> (and currently having rate of 100)
+     will be chosen by the <span class="ncbi_term">local</span> load-balancer even if there were servers on hosts <span class="ncbi_dir">X</span> and <span class="ncbi_dir">Y</span> having rates
      1000 and 2000, respectively, because 100 is more than 5% of (1000 + 2000)/2 = 1500, which is 75.</br>
-     <u>Note</u> again that for this coefficient to play, <i>both</i> server <i>and</i> mapping must be on the same host.
+     <span class="ncbi_note">Note</span> again that for this coefficient to play, <em>both</em> server and mapping must be on the same host.
   </ul>
   <li><a name="ref_Backup"></a>backup quorum:
   <ul type=bullet>
-     <li><font color="#CC33CC"><tt>Q={value|yes|no}</tt></font>. Server specifications having this flag set define
+     <li><span class="ncbi_app_a">Q={value|yes|no}</span>. Server specifications having this flag set define
      so-called backup configuration, and must have host distinct from the local host. Also, this flag cannot apply
-     to <tt>NAMEHOLD</tt> specifications. In a simple case <tt>Q=yes</tt> defines a backup entry, which gets activated
+     to <span class="ncbi_type">NAMEHOLD</span> specifications. In a simple case <span class="ncbi_app_a">Q=yes</span> defines a backup entry, which gets activated
      when number of dynamic entries (which came from other hosts) for particular service becomes less than the number
      of the service's backup lines defined in the entire configuration (i.e. counting all files). The order in which
      backup entries are then chosen is defined by their order of appearance in configuration. In a more complex case,
-     <tt>Q=value</tt> can be provided with the value corresponding to the minimal requirement on the number of
+     <span class="ncbi_app_a">Q=value</span> can be provided with the value corresponding to the minimal requirement on the number of
      active dynamic entries, regardless of the number of backup entries in configuraiton. When this quorum is
      met, no backup entries are being activated (or will be deactivated and put back pending).<br>
-     <u>Note</u>: If several configuration lines for a partical service have <tt>Q=value</tt> flag then the quorum is the
-     minimal value among specified. <tt>Q=no</tt> or <tt>Q=0</tt> defines an active service entry (as if <tt>Q</tt> flag
+     <span class="ncbi_note">Note</span>: If several configuration lines for a partical service have <span class="ncbi_app_a">Q=value</span> flag then the quorum is the
+     minimal value among specified. <span class="ncbi_app_a">Q=no</span> or <span class="ncbi_app_a">Q=0</span> defines an active service entry (as if <span class="ncbi_app_a">Q</span> flag
      were not specified at all).
   </ul>
 </ul>
 </ul>
-  Server descriptors of type <tt>NAMEHOLD</tt> are special. As <tt>arguments</tt> they have only server type keyword.
+<p>
+  Server descriptors of type <span class="ncbi_type">NAMEHOLD</span> are special. As <span class="ncbi_var">arguments</span> they have only server type keyword.
   Namehold specification tells to the daemon that service of this name and type is not to be defined later
   in any configuration file except for the current. Also, if host is specified then this protection only works
   for the service name on the particular host. Port number is ignored (if specified).<br>
-  <u>Note</u>: it is recommended to always put a dummy port number (like :0) in namehold specifications to avoid
+  <span class="ncbi_note">Note</span>: it is recommended to always put a dummy port number (like :0) in namehold specifications to avoid
   ambiguities with treating server type as a host name.<br>
-  The followin example disables <tt>TestService</tt> of type <tt>DNS</tt> to be defined in all other configuration
-  files included later, and <tt>TestService2</tt> to be defined as a <tt>NCBID</tt> service on host <tt>foo</tt>:
-  <pre>
-    TestService  NAMEHOLD    :0 DNS
-    TestService2 NAMEHOLD foo:0 NCBID
-  </pre>
+  The followin example disables <span class="ncbi_var">TestService</span> of type <span class="ncbi_type">DNS</span> to be defined in all other configuration
+  files included later, and <span class="ncbi_var">TestService2</span> to be defined as a <span class="ncbi_app">NCBID</span> service on host <span class="ncbi_dir">foo</span>:
+<pre class="ncbi_code">
+TestService  NAMEHOLD    :0 DNS
+TestService2 NAMEHOLD foo:0 NCBID</pre>
 </ol>
 
-<p>
+
 The main loop of the daemon comprises periodic checks of configuration file and reloads of the configuration if
 necessary, checks and processings of incoming messages from load-balancing daemons running on
 other hosts, generation and brodacast of the messages to other hosts about the load of the system and
@@ -304,28 +297,28 @@ that actually use the server.
 
 <p>
 The daemon can be configured by a dozen of switches, which modify certain
-parameters from their default values. To see all command-line switches, switch <tt>-h</tt> may be used,
-or NCBI Intranet users <i>only</i> can click <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi">here</a>.
-Also, daemon reacts on <tt>HUP</tt> signal to reload its configuration,
-and both <tt>INT</tt> and <tt>TERM</tt> signals to gracefully quit. Despite very high stability, usually
-the daemon is forcedly started from <tt>crontab</tt> each every few minutes on all production hosts to ensure
+parameters from their default values. To see all command-line switches, switch <span class="ncbi_app_a">-h</span> may be used,
+or NCBI Intranet users <em>only</em> can click <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi">here</a>.
+Also, daemon reacts on <span class="ncbi_var">HUP</span> signal to reload its configuration,
+and both <span class="ncbi_var">INT</span> and <span class="ncbi_var">TERM</span> signals to gracefully quit. Despite very high stability, usually
+the daemon is forcedly started from <span class="ncbi_util">crontab</span> each every few minutes on all production hosts to ensure
 that the daemon is always running. This technique is safe, because no more than one instance of the daemon
 is permitted on a certain host, and any attempt to start more than one is rejected.
 
 <p>
-<tt>LBSMD</tt> can generate output to the logfile, which can be limited in size to prevent
-disk from flooding with messages. NCBI Intranet users <i>only</i>
+<span class="ncbi_app">LBSMD</span> can generate output to the logfile, which can be limited in size to prevent
+disk from flooding with messages. NCBI Intranet users <em>only</em>
 <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi?log">can take a look</a>
-at (no more than 100) recent lines of the logfile on host <tt>ray</tt>.
-Signal <tt>USR1</tt> can be used to toggle verbosity level between less verbose (default) and
+at (no more than 100) recent lines of the logfile on host <span class="ncbi_dir">ray</span>.
+Signal <span class="ncbi_var">USR1</span> can be used to toggle verbosity level between less verbose (default) and
 more verbose (when every warning generated is stored) modes.
 
 <p>
-Logfile size can be controlled by <tt>-s</tt> switch. By default <tt>-s&nbsp;0</tt> is the
+Logfile size can be controlled by <span class="ncbi_app_a">-s</span> switch. By default <span class="ncbi_app_a">-s&nbsp;0</span> is the
 active flag, which means to create (if necessary) and to append messages to the logfile with
-no limitation on the file size whatsoever. <tt>-s&nbsp;-1</tt> instructs indefinite appending
+no limitation on the file size whatsoever. <span class="ncbi_app_a">-s&nbsp;-1</span> instructs indefinite appending
 to the logfile, which has however to exist. Otherwise, log messages are not stored.
-<tt>-s&nbsp;<i>positive_number</i></tt> restricts to create (if necessary) and to append to the logfile
+<span class="ncbi_app_a">-s positive_number</span> restricts to create (if necessary) and to append to the logfile
 until the file reaches the specified size in kilobytes. After that, the message logging is suspended,
 and subsequent messages are discarded. Note that the limiting file size is only approximate,
 and sometimes the logfile can grow slightly bigger. The daemon keeps track of logfiles and leaves
@@ -338,10 +331,10 @@ moved or removed or when the file size has reached its limit.
 <a name="ref_Example"></a><h2>Example of Configuration File</h2>
 
 Below is an excerpt from sample configuration file, which declares some of the host environment,
-advertizes one standalone stateful server, and one <tt>NCBID</tt> service, both implementing the same
+advertizes one standalone stateful server, and one <span class="ncbi_app">NCBID</span> service, both implementing the same
 service, and one local HTTP service.
 
-<pre>
+<pre class="ncbi_code">
 #
 #    This is a configuration file of new NCBI service dispatcher
 #
@@ -388,21 +381,21 @@ PrivateService HTTP /cgi-bin/privsrv.cgi?arg=val R=2000.0
 # end of configuration
 </pre>
 
-NCBI Intranet users <i>only</i> can take a look at a real configuration file on the host <tt>ray</tt>
+NCBI Intranet users <em>only</em> can take a look at a real configuration file on the host <span class="ncbi_dir">ray</span>
 by clicking <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
 
 <p><hr><p>
 
 
-<a name="ref_Client"></a><h2>Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</h2>
+<a name="ref_Client"></a><h2>Load-Balancing Service Mapping Client (<span class="ncbi_app">LBSMC</span>)</h2>
 
 This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program</a>, which repeatedly
 dumps onto the screen a table representing current contents of shared memory segment, where the daemon
 collects all information about hosts and services. The client's output can be controlled by a number
-of switches, full list of which can be obtained via switch <tt>-h</tt> alone, or NCBI Intranet users can click
+of switches, full list of which can be obtained via switch <span class="ncbi_app_a">-h</span> alone, or NCBI Intranet users can click
 <a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
 the hosts currently running the daemon one can use the following command:
-<pre>
+<pre class="ncbi_cmd">
 >./lbsmc -s none 0
 08/23/01 11:36:35 ================== sampson ===================================
 Hostname/IPaddr Task/CPU LoadAv LoadBl   Status   StatBl n1 n2 n3 n4 n5 q1 q2 q3
@@ -417,7 +410,8 @@ schroeder         60/8     0.45   0.00   285.72  8000.00  0  0  0  0  0  0  0  0
 
 08/23/01 11:36:35 LBSMD PID was detected as 9733
 </pre>
-For NCBI Intranet users <i>only</i> the following live lists are available for browsing:
+
+For NCBI Intranet users <em>only</em> the following live lists are available for browsing:
 <ul type=circle>
 <li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-s_none_-w">Currently running hosts</a>;
 <li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
@@ -425,17 +419,17 @@ For NCBI Intranet users <i>only</i> the following live lists are available for b
 </ul>
 
 <p>Some explanation to the client's output. The output usually contains 2 parts:
-first comes the host table, followed by the service table. If <tt>-f</tt> switch
+first comes the host table, followed by the service table. If <span class="ncbi_app_a">-f</span> switch
 was specified, then the host table is prepended by raw heap printout, which shows
 the data exactly in the order they appear in the shared memory. The output goes
-in either long or short format depending on whether <tt>-w</tt> was specified
+in either long or short format depending on whether <span class="ncbi_app_a">-w</span> was specified
 on the command line (the switch requests the long (wide) output). Wide output occupies
 about 130 columns, while the short (normal) output takes 80 - the standard
 terminal size. In cases when the service name is more than the allowed number
 of characters to display, the trailing character will be shown as '>'.
 When there is more information to display about host/service, a '+' characters
 is set beside the host/service name (this additional information can be requested
-by switch <tt>-i</tt>). When both '+' and '>' are to be shown,
+by switch <span class="ncbi_app_a">-i</span>). When both '+' and '>' are to be shown,
 they are replaced with '*'. In the wide output format, '#' shown in the
 service line tells that there is no host information available for
 the service (like for static servers). '!' character in the service
@@ -453,9 +447,9 @@ to the past year(s).
 <a name="ref_Penalizer"></a><h2>Server Penalizer</h2>
 
 There is a means for application to report problems of accessing a certain server back to
-the load-balancing daemon, in the form of the penalty, a value in the range <tt>[0..100]</tt>,
+the load-balancing daemon, in the form of the penalty, a value in the range <span class="ncbi_value">[0..100]</span>,
 showing in percents how bad the server is. The value&nbsp;0 means the server is completely okay,
-while&nbsp;100 means the server (is misbehaving and) should <i>not</i> be used at all. The penalty is
+while&nbsp;100 means the server (is misbehaving and) should <em>not</em> be used at all. The penalty is
 not a constant value: once set it starts to decrease in time first slowly, then faster and
 faster until reaches zero. This way, if a server was penalized for some reason beyond its control
 but afterwards the reason has gone, then the server becomes gradually available as its penalty
@@ -466,22 +460,22 @@ Technically, the penalty is maintained by a daemon, which has the server configu
 That is, received by a certain host, which may be different from the one where the
 server was put into configuration file, the penalty first migrates to that host,
 and then the daemon on that host announces that the server was penalized.</br>
-<u>Note</u>: Once the daemon is restarted, the penalty information is lost.
+<span class="ncbi_note">Note</span>: Once the daemon is restarted, the penalty information is lost.
 
 <p>
 <a href="../../libs/conn.html#ref_ServiceAPI">Service mapping API</a> has a call
-<a href="../../lxr/ident?i=SERV_Penalize"><b><i>SERV_Penalize()</i></b></a>
-declared in <a href="../../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>,
+<a href="../../lxr/ident?i=SERV_Penalize"><span class="ncbi_func">SERV_Penalize()</span></a>
+declared in <a href="../../lxr/source/include/connect/ncbi_service.h"><span class="ncbi_file">connect/ncbi_service.h</span></a>,
 which can be used to set the penalty for the last server obtained from the mapping iterator.
 
 <p>
 For script files (like ones used to start/stop servers) there is a dedicated utility program called
-<a href="../../lxr/source/src/connect/daemons/lbsm_penalize.c"><tt>lbsm_penalize</tt></a>,
+<a href="../../lxr/source/src/connect/daemons/lbsm_penalize.c"><span class="ncbi_app">lbsm_penalize</span></a>,
 which sets penalty from command line. Because of intervening the load-balancing
 mechanism substantially this command should be used with extreme care.
 
 <p>
-<tt>lbsm_penalize</tt> is now a part of LBSM set of tools installed on all hosts that run <tt>LBSMD</tt>.
+<span class="ncbi_app">lbsm_penalize</span> is now a part of LBSM set of tools installed on all hosts that run <span class="ncbi_app">LBSMD</span>.
 As explained above, penalizing means making a server less favorable for choosing by load-balancing
 mechanism. Because of the fact that the full penalty of&nbsp;100% makes a server unavailable for clients at all,
 at the time when the server is about to shut down (restart) it is wise to increase the server penalty
@@ -489,30 +483,30 @@ to the maximal value, thus excluding the server from the service mapping. (Other
 might not immediately notice that the server is down and continue dispatching to that server.)
 Usually penalty takes at most 5 seconds to propagate to all participating network hosts.
 That is, before an actual server shutdown the following sequence of commands can be used:
-<pre>
-<font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 100 host 120'
+<pre class="ncbi_cmd">
+&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 100 host 120'
 &gt; sleep 5
-&gt; <i>shutdown the server</i></font>
+&gt; <em>shutdown the server</em>
 </pre>
 
-The effect of the above is to set the maximal penalty&nbsp;<tt>100</tt> for the service <tt>Servicename</tt> (of type
-<tt>STANDALONE</tt>) running on host <tt>host</tt> for at least <tt>120</tt> seconds - note the last numeric value.
+The effect of the above is to set the maximal penalty&nbsp;<span class="ncbi_value">100</span> for the service <span class="ncbi_interface">Servicename</span> (of type
+<span class="ncbi_type">STANDALONE</span>) running on host <span class="ncbi_var">host</span> for at least <span class="ncbi_value">120</span> seconds - note the last numeric value.
 (After&nbsp;120 seconds the normal behavior of the penalty occurs, i.e. automatical decreasing in time if not reset again
 to a different value with optional hold time.) Default hold time equals&nbsp;0.
-In order for penalty to be realized by all hosts of the subnet, <tt>sleep 5</tt> precedes the server shutdown.
+In order for penalty to be realized by all hosts of the subnet, <span class="ncbi_cmd">sleep 5</span> precedes the server shutdown.
 Please note single quotes surrounding penalty specification: they are required in a command shell because
-<tt>lbsm_penalize</tt> takes only one argument, the entire penalty specification.
+<span class="ncbi_app">lbsm_penalize</span> takes only one argument, the entire penalty specification.
 
 <p>
-As soon as the server is down, <tt>LBSMD</tt> detects it in the matter of several seconds
+As soon as the server is down, <span class="ncbi_app">LBSMD</span> detects it in the matter of several seconds
 (if not instructed otherwise via configuration file) and then never dispatches to the server until it is up.
 
 In some circumstances the following command may come handy:
-<pre>
-<font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'</font>
+<pre class="ncbi_cmd">
+&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'
 </pre>
 it resets the penalty to&nbsp;0 (no penalty) and is useful when, e.g. as for the previous example, the server is restarted
-and ready in less than 120 seconds but the penalty is still held high by <tt>LBSMD</tt>.
+and ready in less than 120 seconds but the penalty is still held high by <span class="ncbi_app">LBSMD</span>.
 
 <!--#include virtual="../../ssi/navlinks.shtml" -->
 
@@ -521,8 +515,8 @@ and ready in less than 120 seconds but the penalty is still held high by <tt>LBS
 <td align=left>
   <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

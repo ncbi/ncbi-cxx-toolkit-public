@@ -2,23 +2,51 @@
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<h2>wxWindows setup changes</h2>
+<h2>wxWindows setup changes (foe wxWindows version 2.3.3)</h2>
 
-We made the following changes in the master setup file <b>include\wx\msw\setup.h</b> of wxWindows library:
+We made the following changes in the master setup file <span class="ncbi_file">include\wx\msw\setup.h</span> of wxWindows library:
 <ul>
-	<li><tt>#define wxUSE_SOCKETS 0</tt> to exclude (not to double) the network stuff, which is normally supported
-	in the standard core library, therefore <tt>class wxSocket</tt> disabled.</li>
-	<li><tt>#define wxUSE_THREADS 0</tt> as the multi-thread support is weak in the wxWindows library.</li>
-	<li><tt>#define wxUSE_IOSTREAMH 0</tt> to eliminate conflicts with the rest of the C++ Toolkit,
-	which uses new <tt>&lt;iostream&gt;</tt> library.</li>
-	<li><tt>#define wxUSE_GLCANVAS 1</tt> to enable GUI applications to use OpenGL library.</li>
-	<li><tt>#define wxUSE_STD_IOSTREAM 0</tt> fallback to default.</li><br>
-	Lately we used to have <tt>#define wxUSE_STD_IOSTREAM 1</tt> to use standard C++ I/O streams wherever appropriate
+    <li><span class="ncbi_ccode">#define wxUSE_SOCKETS 0</span> to exclude (not to double) the network stuff, which is normally supported
+    in the standard core library, therefore class <span class="ncbi_class">wxSocket</span> disabled.</li>
+    <li><span class="ncbi_ccode">#define wxUSE_THREADS 0</span> as the multi-thread support is weak in the wxWindows library.</li>
+    <li><span class="ncbi_ccode">#define wxUSE_IOSTREAMH 0</span> to eliminate conflicts with the rest of the C++ Toolkit,
+    which uses new <span class="ncbi_lib">&lt;iostream&gt;</span> library.</li>
+    <li><span class="ncbi_ccode">#define wxUSE_GLCANVAS 1</span> to enable GUI applications to use OpenGL library.</li>
+    <li><span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 0</span> fallback to default.</li><br>
+    Lately we used to have <span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 1</span> to use standard C++ I/O streams wherever appropriate
         instead of home-made I/O streams supplied with wxWindows
-	distribution, but this configuration appeared to be broken (esp. with wxWindows 2.2.7), and wxWindows
-	developers admitted this: clash in namespaces (namespace std:: was open in one of wxWindows header files) has generated
-	lots of errors. The problem is to be fixed in upcoming version 3.
+    distribution, but this configuration appeared to be broken (esp. with wxWindows 2.2.7), and wxWindows
+    developers admitted this: clash in namespaces (namespace std:: was open in one of wxWindows header files) has generated
+    lots of errors. The problem is to be fixed in upcoming version 3.
 </ul>
+
+If you use old version of wxWindows (2.2.7, 2.2.9, ...) also change:
+
+<ul>
+    <li><span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 0</span> fallback to default.</li><br>
+    Lately we used to have <span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 1</span> to use standard C++ I/O streams
+     wherever appropriate instead of home-made I/O streams supplied with wxWindows
+    distribution, but this configuration appeared to be broken (esp. with wxWindows 2.2.7), and wxWindows
+    developers admitted this: clash in namespaces (namespace std:: was open in one of wxWindows header files) has generated
+    lots of errors. The problem is to be fixed in upcoming version 3.
+</ul>
+
+
+Also we advise to turn off some debug features:
+
+<ul>
+    <li><span class="ncbi_ccode">#define wxUSE_DEBUG_CONTEXT 0</span>
+        to disable debug code inside wxWindows.</li>
+    <li><span class="ncbi_ccode">#define wxUSE_MEMORY_TRACING 0</span>
+        to disable debugging versions of wxObject::new and wxObject::delete.</li>
+    <li><span class="ncbi_ccode">#define wxUSE_GLOBAL_MEMORY_OPERATORS 0</span>
+        </li>
+    <li><span class="ncbi_ccode">#define wxUSE_DEBUG_NEW_ALWAYS 0</span>
+        </li>
+</ul>
+
+
+After don't forget to copy the file <span class="ncbi_file">include\wx\msw\setup.h</span> to <span class="ncbi_file">include\wx\setup.h</span>
 
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
@@ -28,8 +56,8 @@ We made the following changes in the master setup file <b>include\wx\msw\setup.h
 <td align=left>
   <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 </table>
 

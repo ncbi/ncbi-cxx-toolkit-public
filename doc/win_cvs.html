@@ -2,80 +2,80 @@
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-	 <h1>Using CVS on MS Windows in NCBI</h1>
+<h1>Using CVS on MS Windows in NCBI</h1>
 
-	 <ol>
-		<li>
-      You can have a pre-installed CVS executable on your PC,
-      for example in <i><b>C:\WINNT\System32\cvs.exe</b></i>.
-		If not, then download it from <i><b>\\Basie\IEB\cvs.exe</b></i>
-      (you also can find it at
-		<a href="http://www.cyclic.com/">http://www.cyclic.com/</a>)
-		and copy to <i><b>C:\WINNT\System32\cvs.exe</b></i>.
-                <p>
+<ol>
+  <li>
+    You can have a pre-installed CVS executable on your PC,
+    for example in <span class="ncbi_util">C:\WINNT\System32\cvs.exe</span>.
+    If not, then download it from <span class="ncbi_util">\\Basie\IEB\cvs.exe</span>
+    (you also can find it at
+    <a href="http://www.cyclic.com/" class="ncbi_url">http://www.cyclic.com/</a>)
+    and copy to <span class="ncbi_file">C:\WINNT\System32\cvs.exe</span>.
+    <p>
 
-		<li>
-		Create environment variable <tt>CVSROOT</tt>:<p>
-	 <ul>
-		<li>
-		Click the right mouse button on the icon of your PC "<i>My Computer</i>"
-		(it is usually situated in the upper left corner of the desktop),
-		and then select "<i>Properties</i>" from the popup menu.<p>
-		<li>
-		Form "<i>System Properties</i>" shows up. Here, choose tab
-		"<i>Advanced</i>" and then press the button "<i>Environment
-                Variables</i>" (users of older NT systems may instead want to choose
-                tab "<i>Environment</i>"). Locate the part of the window titled
-      "<i>User Variables for <tt>Yourname</tt></i>", and then click at the end of the
-                list the line containing variable <tt>TEMP</tt>.<p>
-                <li>
-                Press button "<i>New...</i>".<p>
-		<li>
-		Now, type <tt>CVSROOT</tt> in the text field "<i>Variable Name</i>",
-                then type <b>:pserver:<i>yourlogname</i>@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</b>
-                in the text field "<i>Variable Value</i>". Here, the <b><i>yourlogname</i></b> stands
-                for your NCBI account name with all letter lowercased. For example,<br>
-      <b>:pserver:vakatov@cvsvault:/src/NCBI/vault.ncbi</b><p>
-		<li>
-		Press the button "<i>OK</i>" (or "<i>Set</i>"). The new variable
-                <tt>CVSROOT</tt> and its value should appear in the pane
-                "<i>User Variables for <tt>Yourname</tt></i>".<p>
-		<li>
-		Apply the changes pressing "<i>OK</i>", "<i>Apply</i>", etc
-                buttons until all popup windows open in the previous steps
-                closed.<p>
-		<li>
-		Logout, then login to your PC again.<p>
-	 </ul>
-	   <li> Execute exactly once the following command (you can do so
-           by selecting "<i>Run...</i>" from the main menu): <b>cvs login</b><br>
-         You will be asked for a password, and you have to enter the word
-         <b>allowed</b> as a reply.
-         <br>
-         This command creates the file named <tt>.cvspass</tt> in your
-         "home" directory, as defined by the value of the environment variable
-         <tt>HOMEPATH</tt>, which should be pre-assigned for you.
-         <p>
     <li>
-         After logging in, you can use all usual CVS commands.
-    </ol>
+    Create environment variable <span class="ncbi_env">CVSROOT</span>:<p>
+    <ul>
+      <li>
+      Click the right mouse button on the icon of your PC "<span class="ncbi_menu">My Computer</span>"
+      (it is usually situated in the upper left corner of the desktop),
+      and then select "<span class="ncbi_menu">Properties</span>" from the popup menu.<p>
+      <li>
+      Form "<span class="ncbi_menu">System Properties</span>" shows up. Here, choose tab
+      "<span class="ncbi_menu">Advanced</span>" and then press the button "<span class="ncbi_menu">Environment
+      Variables</span>" (users of older NT systems may instead want to choose
+      tab "<span class="ncbi_menu">Environment</span>"). Locate the part of the window titled
+      "<span class="ncbi_menu">User Variables for <span class="ncbi_value">Yourname</span></span>", and then click at the end of the
+      list the line containing variable <span class="ncbi_env">TEMP</span>.<p>
+      <li>
+      Press button "<span class="ncbi_menu">New...</span>".<p>
+      <li>
+      Now, type <span class="ncbi_env">CVSROOT</span> in the text field "<span class="ncbi_menu">Variable Name</span>",
+      then type <span class="ncbi_value">:pserver:yourlogname@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</span>
+      in the text field "<span class="ncbi_menu">Variable Value</span>". Here, the <span class="ncbi_value">yourlogname</span> stands
+      for your NCBI account name with all letter lowercased. For example,<br>
+      <span class="ncbi_value">:pserver:vakatov@cvsvault:/src/NCBI/vault.ncbi</span><p>
+      <li>
+      Press the button "<span class="ncbi_menu">OK</span>" (or "<span class="ncbi_menu">Set</span>"). The new variable
+      <span class="ncbi_env">CVSROOT</span> and its value should appear in the pane
+      "<span class="ncbi_menu">User Variables for <span class="ncbi_value">Yourname</span></span>".<p>
+      <li>
+      Apply the changes pressing "<span class="ncbi_menu">OK</span>", "<span class="ncbi_menu">Apply</span>", etc
+      buttons until all popup windows open in the previous steps
+      closed.<p>
+      <li>
+      Logout, then login to your PC again.<p>
+  </ul>
+  <li> Execute exactly once the following command (you can do so
+    by selecting "<span class="ncbi_menu">Run...</span>" from the main menu): <span class="ncbi_cmd">cvs login</span><br>
+    You will be asked for a password, and you have to enter the word
+    <em>allowed</em> as a reply.
+    <br>
+    This command creates the file named <span class="ncbi_file">.cvspass</span> in your
+    "home" directory, as defined by the value of the environment variable
+    <span class="ncbi_env">HOMEPATH</span>, which should be pre-assigned for you.
+    <p>
+  <li>
+  After logging in, you can use all usual CVS commands.
+</ol>
 
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address>
-				<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a>
-			 </address></td>
-		  <td align=right><i>$Date$</i></td></tr>
-		<tr>
-		  <td><address>
-				<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a>
-			 </address></td></tr>
-		  <td><address>
-				<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Dmitriy  Beloslyudtsev</a>
-			 </address></td></tr>
-	 </table>
+<table border=0 width="100%" cellspacing=0>
+   <tr>
+<td><address>
+ <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a>
+   </address></td>
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td></tr>
+   <tr>
+<td><address>
+ <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a>
+   </address></td></tr>
+<td><address>
+ <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Dmitriy  Beloslyudtsev</a>
+   </address></td></tr>
+</table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

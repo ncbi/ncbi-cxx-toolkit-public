@@ -4,224 +4,220 @@
 
 <h1>Naming conventions, Indentation and Bracing</h1>
 
-<i>
+<cite>
 "In My Egotistical Opinion, most people's C programs should be indented
  six feet downward and covered with dirt."
-</i>
--- Blair P. Houghton
+</cite> -- Blair P. Houghton
 
-	 <p>
-		Nevertheless, here goes:
+<p>Nevertheless, here goes:
 
-	 <ul>
-		<li> <a href="#ref_Naming">Naming conventions</a>
-	 <ul>
-		<li> <a href="#ref_NamingTypes">Type Names</a>
-		<li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
-		<li> <a href="#ref_NamingFuncArg">Function arguments</a>
-		<li> <a href="#ref_NamingConst">Constants</a>
-		<li> <a href="#ref_NamingCVar">Class member variables</a>
-		<li> <a href="#ref_NamingCFunc">Class member functions</a>
-		<li> <a href="#ref_NamingStatic">Module static functions and data</a>
-		<li> <a href="#ref_NamingGlobal">
-				  Global (<i>"extern"</i>) functions and data</a>
-	 </ul>
-	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
-	 <li> <a href="#ref_Scope">Use of the NCBI name scope</a>
-	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
-	 <li> <a href="#ref_Class">Class declaration</a>
-	 <li> <a href="#ref_FunctionDecl">Function declaration</a>
-	 <li> <a href="#ref_FunctionDef">Function definition</a>
-	 <li> <a href="#ref_Whitespace">Use of whitespace</a>
+<ul>
+    <li> <a href="#ref_Naming">Naming conventions</a>
+    <ul>
+        <li> <a href="#ref_NamingTypes">Type Names</a>
+        <li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
+        <li> <a href="#ref_NamingFuncArg">Function arguments</a>
+        <li> <a href="#ref_NamingConst">Constants</a>
+        <li> <a href="#ref_NamingCVar">Class member variables</a>
+        <li> <a href="#ref_NamingCFunc">Class member functions</a>
+        <li> <a href="#ref_NamingStatic">Module static functions and data</a>
+        <li> <a href="#ref_NamingGlobal">
+                  Global ("extern") functions and data</a>
      </ul>
+     <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
+     <li> <a href="#ref_Scope">Use of the NCBI name scope</a>
+     <li> <a href="#ref_Indent">Code indentation and bracing</a>
+     <li> <a href="#ref_Class">Class declaration</a>
+     <li> <a href="#ref_FunctionDecl">Function declaration</a>
+     <li> <a href="#ref_FunctionDef">Function definition</a>
+     <li> <a href="#ref_Whitespace">Use of whitespace</a>
+</ul>
 
 
-	 <br><br>
+<br>
 
-	 <a name="ref_Naming"></a>
-     <h2> Naming conventions </h2>
+<a name="ref_Naming"></a>
+<h2> Naming conventions </h2>
 
-     <table border=1 cellspacing=0>
+<table border=1 cellspacing=0>
 
-      <tr><th>Synopsis</th><th>Example</th></tr>
+  <tr height=40><th>Synopsis</th><th>Example</th></tr>
 
-	  <a name="ref_NamingTypes"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Type Names</th></tr>
-      <tr><td><i><b>C</b>ClassTypeName</i></td><td><tt>
-				class CMyClass { ..... };</tt></td></tr>
-      <tr><td><i><b>I</b>InterfaceName</i></td><td><tt>
-				class IMyInterface { ..... };</tt></td></tr>
-      <tr><td><i><b>S</b>StructTypeName</i></td><td><tt>
-				struct SMyStruct { ..... };</tt></td></tr>
-      <tr><td><i><b>U</b>UnionTypeName</i></td><td><tt>
-				union UMyUnion { ..... };</tt></td></tr>
-      <tr><td><i><b>E</b>EnumTypeName</i></td><td><tt>
-				enum EMyEnum { ..... };</tt></td></tr>
-      <tr><td><i><b>F</b>FunctionTypeName</i></td><td><tt>
-				typedef int (*FMyFunc)(void);</tt></td></tr>
-      <tr><td><i><b>P</b>PredicateName</i></td><td><tt>
-				struct PMyPred { bool operator() (..... , .....); };</tt></td></tr>
-      <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td>
-			 <td><tt>typedef map&lt;int,string&gt; TMapIntStr;</tt></td></tr>
-      <tr><td><i><b>T</b>Iterator<b>_I</b></i></td>
-			 <td><tt>typedef list&lt;int&gt;::iterator TList_I;</tt></td></tr>
-      <tr><td><i><b>T</b>ConstIterator<b>_CI</b></i></td>
-			 <td><tt>typedef set&lt;string&gt;::const_iterator TSet_CI;</tt></td></tr>
-      <tr><td><i><b>N</b>Namespace <a href="#ref_Prefix">(see also)</a></i></td><td><tt>
-				namespace NMyNamespace { ..... } </tt></td></tr>
+  <a name="ref_NamingTypes"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Type Names</th></tr>
+  <tr><td><i><b>C</b>ClassTypeName</i></td><td><span class="ncbi_ccode">
+      class CMyClass { ..... };</span></td></tr>
+  <tr><td><i><b>I</b>InterfaceName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      class IMyInterface { ..... };</span></td></tr>
+  <tr><td><i><b>S</b>StructTypeName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      struct SMyStruct { ..... };</span></td></tr>
+  <tr><td><i><b>U</b>UnionTypeName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      union UMyUnion { ..... };</span></td></tr>
+  <tr><td><i><b>E</b>EnumTypeName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      enum EMyEnum { ..... };</span></td></tr>
+  <tr><td><i><b>F</b>FunctionTypeName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      typedef int (*FMyFunc)(void);</span></td></tr>
+  <tr><td><i><b>P</b>PredicateName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      struct PMyPred { bool operator() (..... , .....); };</span></td></tr>
+  <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i><!--NCBI_MARK--></td>
+     <td><span class="ncbi_ccode">typedef map&lt;int,string&gt; TMapIntStr;</span></td></tr>
+  <tr><td><i><b>T</b>Iterator<b>_I</b></i><!--NCBI_MARK--></td>
+      <td><span class="ncbi_ccode">typedef list&lt;int&gt;::iterator TList_I;</span></td></tr>
+  <tr><td><i><b>T</b>ConstIterator<b>_CI</b></i><!--NCBI_MARK--></td>
+      <td><span class="ncbi_ccode">typedef set&lt;string&gt;::const_iterator TSet_CI;</span></td></tr>
+  <tr><td><i><b>N</b>Namespace <a href="#ref_Prefix">(see also)</a></i><!--NCBI_MARK--></td><td>
+      <span class="ncbi_ccode">namespace NMyNamespace { ..... } </span></td></tr>
 
-	  <a name="ref_NamingCPP"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Preprocessor Define/Macro</th></tr>
-      <tr><td><i>MACRO_NAME</i></td><td><tt>#define MY_DEFINE 12345</td></tr>
-      <tr><td><i>macro_arg_name</i></td><td><tt>#define MY_MACRO(x, y) (((x) + 1) < (y))</td></tr>
+  <a name="ref_NamingCPP"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Preprocessor Define/Macro</th></tr>
+  <tr><td><i>MACRO_NAME</i></td><td><span class="ncbi_ccode">#define MY_DEFINE 12345</span></td></tr>
+  <tr><td><i>macro_arg_name</i></td><td><span class="ncbi_ccode">#define MY_MACRO(x, y) (((x) + 1) < (y))</span></td></tr>
 
-	  <a name="ref_NamingFuncArg"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Function arguments and local variables</th></tr>
-      <tr><td><i>func_local_name</i></td><td><tt>void MyFunc(int foo_bar, CMyClass& some_class) <br>
+  <a name="ref_NamingFuncArg"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Function arguments and local variables</th></tr>
+  <tr><td><i>func_local_name</i></td><td><span class="ncbi_ccode">void MyFunc(int foo_bar, CMyClass& some_class) <br>
 { <br>
 &nbsp;&nbsp;&nbsp;&nbsp; size_t&nbsp;foo_size; <br>
 &nbsp;&nbsp;&nbsp;&nbsp; long&nbsp;&nbsp;&nbsp;bar_offset;
-      </tt></td></tr>
+</span></td></tr>
 
- 	  <a name="ref_NamingConst"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Constants</th></tr>
-      <tr><td><i><b>k</b>ConstantName</i></td><td>
-				<tt>const int kMyConst = 123;</tt></td></tr>
-      <tr><td><i><b>e</b>EnumConstantName</i></td>
-			 <td><tt>enum EMyEnum { <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_1 = 11, <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_2 = 22, <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_3 = 33 <br>
-				};</tt></td></tr>
+  <a name="ref_NamingConst"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Constants</th></tr>
+  <tr><td><i><b>k</b>ConstantName</i><!--NCBI_MARK--></td><td>
+      <span class="ncbi_ccode">const int kMyConst = 123;</span></td></tr>
+  <tr><td><i><b>e</b>EnumConstantName</i><!--NCBI_MARK--></td>
+      <td><span class="ncbi_ccode">enum EMyEnum { <br>
+          &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_1 = 11, <br>
+          &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_2 = 22, <br>
+          &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_3 = 33 <br>
+          };</span></td></tr>
 
-      <tr><td><i><b>f</b>FlagConstantName</i></td>
-			 <td><tt>enum EMyFlags { <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_1 = 0x1, <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_2 = 0x2 <br>
-				}; <br>
-				typedef int TMyFlags;  // holds a binary OR of "EMyFlags"
-			 </tt></td></tr>
+  <tr><td><i><b>f</b>FlagConstantName</i><!--NCBI_MARK--></td>
+      <td><span class="ncbi_ccode">enum EMyFlags { <br>
+          &nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_1 = 0x1, <br>
+          &nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_2 = 0x2 <br>
+          }; <br>
+          typedef int TMyFlags;  // holds a binary OR of "EMyFlags"
+          </tt><!--NCBI_MARK--></td></tr>
 
-	  <a name="ref_NamingCVar"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Class member variables</th></tr>
-      <tr><td><i><b>m_</b>ClassMemberName</i></td><td><tt>
-				class C { short m_MyClassData; }</tt></td></tr>
-      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td><tt>
-				class C { static double sm_MyClassStaticData; }</tt></td></tr>
+  <a name="ref_NamingCVar"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Class member variables</th></tr>
+  <tr><td><i><b>m_</b>ClassMemberName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      class C { short m_MyClassData; }</span></td></tr>
+  <tr><td><i><b>sm_</b>ClassStaticMemberName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      class C { static double sm_MyClassStaticData; }</span></td></tr>
 
-	  <a name="ref_NamingCFunc"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Class member functions</th></tr>
-      <tr><td><i>Func</i></td><td><tt>bool MyFunc(void);</tt></td></tr>
+  <a name="ref_NamingCFunc"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Class member functions</th></tr>
+  <tr><td><i>Func</i></td><td><span class="ncbi_ccode">bool MyFunc(void);</span></td></tr>
+  
+  <a name="ref_NamingStatic"></a>
+  <tr><th colspan=2 align=left>
+      &nbsp;&nbsp;&nbsp;Module static functions and data</th></tr>
+  <tr><td><i><b>s_</b>StaticFunc</b></td><td><span class="ncbi_ccode">
+      static char s_MyStaticFunc(void);</span></td></tr>
+  <tr><td><i><b>s_</b>StaticVar</b></td><td><span class="ncbi_ccode">
+      static int s_MyStaticVar;</span></td></tr>
 
-	  <a name="ref_NamingStatic"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Module static functions and data</th></tr>
-      <tr><td><i><b>s_</b>StaticFunc</b></td><td><tt>
-				static char s_MyStaticFunc(void);</tt></td></tr>
-      <tr><td><i><b>s_</b>StaticVar</b></td><td><tt>
-				static int s_MyStaticVar;</tt></td></tr>
+  <a name="ref_NamingGlobal"></a>
+  <tr><th colspan=2 align=left height=40>
+      &nbsp;&nbsp;&nbsp;Global (<i>"extern"</i><!--NCBI_MARK-->) functions and data
+      </th></tr>
+  <tr><td><i>GlobalFunc</i></td><td><span class="ncbi_ccode">double MyGlobalFunc(void);</span></td></tr>
+  <tr><td><i><b>g_</b>GlobalVar</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">short g_MyGlobalVar;</span></td></tr>
 
-	   <a name="ref_NamingGlobal"></a>
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Global (<i>"extern"</i>) functions and data
-			 </th></tr>
-      <tr><td><i>GlobalFunc</i></td><td><tt>double MyGlobalFunc(void);</tt></td></tr>
-      <tr><td><i><b>g_</b>GlobalVar</i></td><td><tt>short g_MyGlobalVar;</tt></td></tr>
+</table>
 
-	 </table>
+<a name="ref_AuxType"></a>
 
-	 <a name="ref_AuxType"></a>
-
-	 <p>
-	 (*) The auxiliary typedefs(like <i><b>T</b>AuxiliaryTypedef</i>) are usually
-	 used for an ad-hoc type mappings(especially when using templates) and
-	 not when a real type definition takes place.
-
-
-	 <br><br> <br><br>
-
-	 <a name="ref_Prefix"></a>
-     <h2>Name prefixing and/or the use of namespaces</h2>
-
-	 In addition to the above naming conventions that highlights the
-	 nature and/or the scope of things, one should also consider the use
-	 of prefixes (or namespaces) in order to:
-	 <ul>
-		<li> avoid name conflicts
-		<li> indicate the package which the thing belongs to
-	 </ul>
-	 E.g. it will always be a good idea to name your new base
-	 class(for some package <i>"Foo"</i>) <i>"C<b>Foo</b>Object"</i> rather
-	 than just <i>"CObject"</i>. -- And the same is true for all other
-	 things from this package, so name the constants <i>"k<b>Foo</b>Someconst"</i>,
-	 types <i>"T<b>Foo</b>Sometype"</i>, etc.
-
-	 <p>
-	 It is decided that we usually do not use C++ namespaces (other than
-    the NCBI-wide namespace "ncbi::") in NCBI.
-	 <p>
-	 One can emulate a sort of namespace by putting the things into a
-	 structure or class scope, like
-    <i>"struct N<b>Foo</b>Globals { .....;  void SomeFunc(int); ... };"</i>.
-	 Then just use an explicit prefix when referencing these things, e.g. call
-    <i>"N<b>Foo</b>Globals::SomeFunc(5)"</i>.
-	 This approach can be useful to group and prefix a set of global functions.
-	 As for classes, etc. it is still better to use simple prefixes
-	 (as described above) instead.
+<p>
+(*) The auxiliary typedefs(like <span class="ncbi_type"><b>T</b>AuxiliaryTypedef</span>) are usually
+used for an ad-hoc type mappings(especially when using templates) and
+not when a real type definition takes place.
 
 
-	 <br><br><br><br>
+<br><br><br>
 
-	 <a name="ref_Scope"></a>
-    <h2>Use of the NCBI name scope</h2>
+<a name="ref_Prefix"></a>
+<h2>Name prefixing and/or the use of namespaces</h2>
 
-	 <i>&lt;ncbistl.hpp&gt;</i>
+In addition to the above naming conventions that highlights the
+nature and/or the scope of things, one should also consider the use
+of prefixes (or namespaces) in order to:
+<ul>
+    <li> avoid name conflicts
+    <li> indicate the package which the thing belongs to
+</ul>
+E.g. it will always be a good idea to name your new base
+class (for some package "<span class="ncbi_proj">Fo"</span>") "<span class="ncbi_class">C<b>Foo</b>Object</span>" rather
+than just "<span class="ncbi_class">CObject</span>". -- And the same is true for all other
+things from this package, so name the constants "<span class="ncbi_var">k<b>Foo</b>Someconst</span>",
+types "<span class="ncbi_type">T<b>Foo</b>Sometype</span>", etc.
 
-	 <p>
-	 All NCBI-made API must be put into the single namespace.
-	 For this reason, there are two preprocessor macros,
-	 <i>BEGIN_NCBI_SCOPE</i> and <i>END_NCBI_SCOPE</i>,
-	 that must embrace <b>all</b> NCBI C++ API code -- both declarations
-	 and definitions(see <a href="new_mod.html">examples </a>).
-	 Inside these "brackets", all <i>"std::"</i> and <i>"ncbi::"</i> scope prefixes
-	 can(and must!) be omitted. Safely.
+<p>
+It is decided that we usually do not use C++ namespaces (other than
+the NCBI-wide namespace "<span class="ncbi_ccode">ncbi::</span>") in NCBI.
 
-	 <p>
-	 For the code that does not define new API but merely <b>uses</b>
-	 NCBI C++ API, there is a macro <i>USING_NCBI_SCOPE</i>
-	 (semicolon-terminated) that makes all <b>"std"</b>- and
-	 <b>"ncbi"</b>-related types and protos be visible by default,
-	 without the explicit scope specification
-	 (<i>"std::"</i> and <i>"ncbi::"</i> prefixes, respectively).
-
-	 <p>
-	 Use macro <i>NCBI_USING_NAMESPACE_STD</i>(semicolon-terminated)
-	 if you want make visible only <b>"std"</b>-related code, without the
-	 <b>"ncbi"</b>-related one.
+<p>
+One can emulate a sort of namespace by putting the things into a
+structure or class scope, like
+"<span class="ncbi_ccode">struct N<b>Foo</b>Globals { .....;  void SomeFunc(int); ... };</span>".
+Then just use an explicit prefix when referencing these things, e.g. call
+<span class="ncbi_funk">"N<b>Foo</b>Globals::SomeFunc(5)"</span>.
+This approach can be useful to group and prefix a set of global functions.
+As for classes, etc. it is still better to use simple prefixes
+(as described above) instead.
 
 
-	 <br><br><br><br>
+<br><br><br>
 
-	 <a name="ref_Indent"></a>
-    <h2>Code indentation and bracing </h2>
+<a name="ref_Scope"></a>
+<h2>Use of the NCBI name scope</h2>
 
-		  <b>4-space indentation only</b>!
-		  Tabulation symbol <b>must not</b> be used for indentation.
+<span class="ncbi_code">&lt;ncbistl.hpp&gt;</span>
 
-	 <p>
-		Try not to cross the "standard page boundary" of <b>80</b>
-		symbols.
+<p>
+All NCBI-made API must be put into the single namespace.
+For this reason, there are two preprocessor macros,
+<span class="ncbi_macro">BEGIN_NCBI_SCOPE</span> and <span class="ncbi_macro">END_NCBI_SCOPE</span>,
+that must embrace <em>all</em> NCBI C++ API code -- both declarations
+and definitions (see <a href="new_mod.html">examples </a>).
+Inside these "brackets", all <span class="ncbi_ccode">"std::"</span> and <span class="ncbi_ccode">"ncbi::"</span> scope prefixes
+can(and must!) be omitted. Safely.
 
-	 <p>
-		In <i>if, for, while, do, switch, case</i>, etc. and
-		type definition statements:
-    <pre>
+<p>
+For the code that does not define new API but merely <em>uses</em>
+NCBI C++ API, there is a macro <span class="ncbi_macro">USING_NCBI_SCOPE</span>
+(semicolon-terminated) that makes all "std"- and
+"ncbi"-related types and protos be visible by default,
+without the explicit scope specification
+(<span class="ncbi_ccode">"std::"</span> and <span class="ncbi_ccode">"ncbi::"</span> prefixes, respectively).
+
+<p>
+Use macro <span class="ncbi_macro">NCBI_USING_NAMESPACE_STD</span> (semicolon-terminated)
+if you want make visible only "std"-related code, without the "ncbi"-related one.
+
+
+<br><br><br>
+
+<a name="ref_Indent"></a>
+<h2>Code indentation and bracing </h2>
+
+<em>4-space indentation only</em>!
+Tabulation symbol <em>must not</em> be used for indentation.
+
+<p>Try not to cross the "standard page boundary" of <em>80</em> symbols.
+
+<p>In <span class="ncbi_keyword">if, for, while, do, switch, case</span>, etc. and
+type definition statements:
+
+<pre class="ncbi_code">
 if (...) {
     .....;
 } else if (...) {
@@ -268,10 +264,10 @@ catch (exception& e) {
 
 
 
-	 <a name="ref_Class"></a>
-    <h2>Class declaration</h2>
+<a name="ref_Class"></a>
+<h2>Class declaration</h2>
 
-	 <pre>
+<pre class="ncbi_code">
 class CFooClass
 {
 public:
@@ -305,13 +301,13 @@ private:
     CFooClass(const CFooClass&);
     CFooClass& operator= (const CFooClass&);
 };
-	 </pre>
+     </pre>
 
 
-	 <a name="ref_FunctionDecl"></a>
-    <h2>Function declaration</h2>
+<a name="ref_FunctionDecl"></a>
+<h2>Function declaration</h2>
 
-	 <pre>
+<pre class="ncbi_code">
 // Explain here what MyFunc1() does, and what it returns
 int MyFunc1(void);
 
@@ -321,13 +317,13 @@ bool MyFunc2
  string& arg2,      // short description of "arg2"
  long    arg3 = 12  // short description of "arg3"
  );
-	 </pre>
+     </pre>
 
 
-	 <a name="ref_FunctionDef"></a>
+     <a name="ref_FunctionDef"></a>
     <h2>Function definition</h2>
 
-	 <pre>
+<pre class="ncbi_code">
 bool MyFunc2
 (double  arg1,
  string& arg2,
@@ -347,38 +343,40 @@ static long s_MyFunc3(void)
     .......
     .......
 }
-	 </pre>
+</pre>
 
 
-	 <a name="ref_Whitespace"></a>
-    <h2>Use of whitespace</h2>
-    As the above examples do not make all of our policies on
-    whitespace clear, here are some explicit guidelines:
-    <ul>
-      <li> When reasonably possible, use spaces to align corresponding
-           elements vertically.  (This overrides most of the rules
-           below.) 
-      <li> Leave one space on either side of most binary operators,
-           and two spaces on either side of boolean <tt>&amp;&amp</tt>
-           and <tt>||</tt>.
-      <li> Put one space between the names of flow-control keywords
-           and macros and their arguments, but no space after the
-           names of functions except when necessary for alignment.
-      <li> Leave two spaces after the semicolons in
-           <tt>for(...;&nbsp;&nbsp;...;&nbsp;&nbsp;...)</tt>.
-      <li> Leave whitespace around negated conditions so that the
-           <tt>!</tt> stands out better.
-      <li> Leave two blank lines between function definitions.
-    </ul>
+<a name="ref_Whitespace"></a>
+<h2>Use of whitespace</h2>
+
+As the above examples do not make all of our policies on
+whitespace clear, here are some explicit guidelines:
+
+<ul>
+  <li> When reasonably possible, use spaces to align corresponding
+       elements vertically.  (This overrides most of the rules
+       below.) 
+  <li> Leave one space on either side of most binary operators,
+       and two spaces on either side of boolean <span class="ncbi_ccode">&amp;&amp</span>
+       and <span class="ncbi_ccode">||</span>.
+  <li> Put one space between the names of flow-control keywords
+       and macros and their arguments, but no space after the
+       names of functions except when necessary for alignment.
+  <li> Leave two spaces after the semicolons in
+       <span class="ncbi_ccode">for(...;&nbsp;&nbsp;...;&nbsp;&nbsp;...)</span>.
+  <li> Leave whitespace around negated conditions so that the
+      <span class="ncbi_ccode">!</span> stands out better.
+  <li> Leave two blank lines between function definitions.
+</ul>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-		<tr>
-	 </table>
+<table border=0 width="100%" cellspacing=0>
+  <tr>
+    <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+    <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+  </tr>
+</table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

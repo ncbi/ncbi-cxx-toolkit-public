@@ -8,69 +8,69 @@
 
 <p>
 This page describes how to get the NCBI C++ sources, and how to
-configure/deploy a build directory with the <i>ncbiconf.h</i> header and
+configure/deploy a build directory with the <span class="ncbi_file">ncbiconf.h</span> header and
 all makefiles configured to work on the specified platform with
 the specified compiler (and other tools) and flags.  For a basic discussion
-of these issues, consult the <a href="get_started.html#ref_InstBasics"><i>Getting Started</i></a> page.
+of these issues, consult the <a href="get_started.html#ref_InstBasics">Getting Started</a> page.
 <p>
 
 <ul>
   <li> <a href="#ref_Source">
        NCBI C++ source code repository</a>
   <li> <a href="#ref_Configure">
-       Configuration and installation script <b><i>configure</i></b></a>
+       Configuration and installation script <span class="ncbi_script">configure</span></a>
   <li> <a href="#ref_Build">
-		  Structure of the <i>build tree</i> produced by <b><i>configure</i></b></a>
+          Structure of the build <span class="ncbi_term">tree</span> produced by <span class="ncbi_script">configure</span></a>
   <p>
 
   <li> <a href="#ref_Running">
-       Running the <b><i>configure</i></b> script</a>
-		 <ul>
-		   <li> <a href="#ref_GetHelp">
-			Getting synopsis of available configuration options</a>
-		   <li> <a href="#ref_DebugVsRelease">
-			<i>Debug</i> vs. <i>Release</i> configuration</a>
-		   <li> <a href="#ref_DLL">
-			Building shared libraries (DLLs)</a>
-		   <li> <a href="#ref_DLL_OK">
-			Supported Platforms for DLL Builds</a>
-		   <li> <a href="#ref_RunPath">
-			Hard-coding run-time DLL path into the executables and DLLs</a>
-		   <li> <a href="#ref_MT">
-			Multi-Thread safe compilation, and linking with MT libraries</a>
-		   <li> <a href="#ref_64">
-			Building in 64-bit mode</a>
-		   <li> <a href="#ref_GnuMakeAutodep">
-			Automatic generation of dependencies (for GNU <i>make</i> only)</a>
-		   <li> <a href="#ref_NamingBuildTree">
-			Naming the <i>build tree</i></a>
-		   <li> <a href="#ref_AfterConf">
-			After-configure user callback script</a>
-		   <li> <a href="#ref_ToolsAndFlags">
-			Tools and Flags</a>
+       Running the <span class="ncbi_script">configure</span> script</a>
+         <ul>
+           <li> <a href="#ref_GetHelp">
+            Getting synopsis of available configuration options</a>
+           <li> <a href="#ref_DebugVsRelease">
+            Debug vs. Release configuration</a>
+           <li> <a href="#ref_DLL">
+            Building shared libraries (DLLs)</a>
+           <li> <a href="#ref_DLL_OK">
+            Supported Platforms for DLL Builds</a>
+           <li> <a href="#ref_RunPath">
+            Hard-coding run-time DLL path into the executables and DLLs</a>
+           <li> <a href="#ref_MT">
+            Multi-Thread safe compilation, and linking with MT libraries</a>
+           <li> <a href="#ref_64">
+            Building in 64-bit mode</a>
+           <li> <a href="#ref_GnuMakeAutodep">
+            Automatic generation of dependencies (for GNU <span class="ncbi_util">make</span> only)</a>
+           <li> <a href="#ref_NamingBuildTree">
+            Naming the <span class="ncbi_term">build tree</span></a>
+           <li> <a href="#ref_AfterConf">
+            After-configure user callback script</a>
+           <li> <a href="#ref_ToolsAndFlags">
+            Tools and Flags</a>
          <li> <a href="#ref_Localization">
          Localization for the system and third-party packages</a>
          <li> <a href="#ref_ProhibitPackage">
          Prohibiting the use of some of the system and third-party packages</a>
          <li> <a href="#ref_Optional">
          Optional projects</a>
-		 <li> <a href="#ref_ProjectList">
-         Finer-grained control of projects: <i>--with-projects</i></a>
+         <li> <a href="#ref_ProjectList">
+         Finer-grained control of projects: <span class="ncbi_conf_flag">--with-projects</span></a>
          <li> <a href="#ref_Misc">
-         Miscellaneous: <i>--without-exe, --without-execopy,
-	 --with-lib-rebuilds(=ask)</i></a>
+         Miscellaneous: <span class="ncbi_conf_flag">--without-exe, --without-execopy,
+     --with-lib-rebuilds(=ask)</span></a>
          <li> <a href="#ref_Wrappers">
-         Compiler-specific <b><i>configure</i></b> wrappers
-         (<i>compilers/*.sh</i>) </a>
+         Compiler-specific <span class="ncbi_script">configure</span> wrappers
+         (<span class="ncbi_file">compilers/*.sh</span>) </a>
          <li> <a href="#ref_PreBuiltHeaders">
          Pre-built configuration headers
-         (<i>compilers/ncbiconf.*</i>) </a>
-		 </ul>
+         (<span class="ncbi_file">compilers/ncbiconf.*</span>) </a>
+         </ul>
   <p>
 
   <li> <a href="#ref_Reconf">
        Quick reconfiguration</a>
-	 </a>
+     </a>
   <li> <a href="#ref_Example">
        An example of configuration, installation and build</a>
   <li> <a href="#ref_Compilers">
@@ -79,46 +79,46 @@ of these issues, consult the <a href="get_started.html#ref_InstBasics"><i>Gettin
 
   <li> <a href="#ref_AdHoc">
        Ad-hoc installations</a>
-	 <ul>
-		<li> <a href="#ref_MsvcProj">
-		  MS Visual C++</a>
-	   <ul>
-		  <li> <a href="#ref_MsvcProjDownload">
-		    Getting the Toolkit sources</a>
-		  <li> <a href="#ref_MsvcProjFiles">
-		    Working with project files</a>
-		  <li> <a href="#ref_MsvcProjTree">
-		    Building the whole NCBI C++ tree locally</a>
-		  <li> <a href="#ref_MsvcProjCXX">
-		    Using pre-built NCBI C++ Toolkit in your projects</a>
-		  <li> <a href="#ref_MsvcProjWxwin">
-		    Using wxWindows</a>
-		  <li> <a href="#ref_MsvcProjFltk">
-		    Using FLTK</a></li>
-		  <li> <a href="#ref_MsvcProjC">
-		    Using NCBI C Toolkit</a>
-		  <li> <a href="#ref_MsvcProjSettings">
-		    Mandatory project settings (RTTI, MT-safety)</a>
-	   </ul>
+     <ul>
+        <li> <a href="#ref_MsvcProj">
+          MS Visual C++</a>
+       <ul>
+          <li> <a href="#ref_MsvcProjDownload">
+            Getting the Toolkit sources</a>
+          <li> <a href="#ref_MsvcProjFiles">
+            Working with project files</a>
+          <li> <a href="#ref_MsvcProjTree">
+            Building the whole NCBI C++ tree locally</a>
+          <li> <a href="#ref_MsvcProjCXX">
+            Using pre-built NCBI C++ Toolkit in your projects</a>
+          <li> <a href="#ref_MsvcProjWxwin">
+            Using wxWindows</a>
+          <li> <a href="#ref_MsvcProjFltk">
+            Using FLTK</a></li>
+          <li> <a href="#ref_MsvcProjC">
+            Using NCBI C Toolkit</a>
+          <li> <a href="#ref_MsvcProjSettings">
+            Mandatory project settings (RTTI, MT-safety)</a>
+       </ul>
       </li>
-		<li> <a href="#ref_Mac">
-		  Macintosh</a>
-	   <ul>
-		  <li> <a href="#ref_MacProjDownload">
-		    Getting the Toolkit sources</a>
-		  <li> <a href="#ref_MacProjTree">
-		    Building the whole NCBI C++ tree locally</a>
-	   </ul>
+        <li> <a href="#ref_Mac">
+          Macintosh</a>
+       <ul>
+          <li> <a href="#ref_MacProjDownload">
+            Getting the Toolkit sources</a>
+          <li> <a href="#ref_MacProjTree">
+            Building the whole NCBI C++ tree locally</a>
+       </ul>
       </li>
 
-		<li> <a href="config_darwin.html">
-		  Mac OS X (Darwin)</a>
-	   <ul>
-		  <li> <a href="config_darwin.html">
-		    Building the whole NCBI C++ tree locally</a>
-	   </ul>
+        <li> <a href="config_darwin.html">
+          Mac OS X (Darwin)</a>
+       <ul>
+          <li> <a href="config_darwin.html">
+            Building the whole NCBI C++ tree locally</a>
+       </ul>
       </li>
-	 </ul>
+     </ul>
 </ul>
 
 <hr>
@@ -129,127 +129,128 @@ of these issues, consult the <a href="get_started.html#ref_InstBasics"><i>Gettin
 <p>
 The NCBI C++ Toolkit sources and data can be
 <a href="new_proj.html#ref_Checkout">retrieved</a> from the internal NCBI
-CVS tree -- either directly from <i><b>"$CVSROOT/internal/c++/"</b></i>, or using
-auxiliary scripts <b><i>scripts/cvs_core.sh</i></b></a> and
-<b><i>scripts/cvs_core_msvc.bat</i></b>.
+CVS tree -- either directly from <span class="ncbi_cvs_path">"$CVSROOT/internal/c++/"</span>, or using
+auxiliary scripts <span class="ncbi_script">scripts/cvs_core.sh</span></a> and
+<span class="ncbi_script">scripts/cvs_core_msvc.bat</span>.
 
-The resultant <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> will contain:
+The resultant <a href="src_tree.gif">NCBI C++  source tree</a> will contain:
 <ul>
   <li> set of files needed for the platform-specific
-		 <a href="#ref_Running">configuration and installation</a>:
+       <a href="#ref_Running">configuration and installation</a>:
        <ul>
-         <li>  <i><b>configure</b></i> -- a multi-platform configuration shell
-               script (generated from template <i>configure.ac</i> using
+         <li>  <span class="ncbi_script">configure</span> -- a multi-platform configuration shell
+               script (generated from template <span class="ncbi_file">configure.ac</span> using
                <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
-               autoconf</a>)
+               <span class="ncbi_util">autoconf</span></a>)
          <li>  various scripts and template files used by
-               <i><b>configure</b></i>,
+               <span class="ncbi_script">configure</span>,
                <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
-               autoconf</a> and
-               <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Invoking_autoheader.html"> autoheader</a>
-         <li>  <i><b>compilers/</b></i> -- directory containing
+               <span class="ncbi_util">autoconf</span></a> and
+               <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Invoking_autoheader.html">
+               <span class="ncbi_util">autoheader</span></a>
+         <li>  <span class="ncbi_dir">compilers/</span> -- directory containing
                <a href="#ref_Wrappers">
-               compiler-specific <b><i>configure</i></b> wrappers</a>
-               (<i>*.sh</i>) and
+               compiler-specific configure wrappers</a>
+               (<span class="ncbi_file">*.sh</span>) and
                <a href="#ref_PreBuiltHeaders">
                pre-built configuration headers</a>
-               (<i>ncbiconf.*</i>) for some platforms
+               (<span class="ncbi_file">ncbiconf.*</span>) for some platforms
        </ul>
 
-  <li> <i><b>doc/</b></i> -- NCBI C++ documentation, manuals (including
-       this one, <i>doc/config.html</i>) and guidelines
-       for <b>everybody</b> writing on C++ in NCBI SWG
+  <li> <span class="ncbi_dir">doc/</span> -- NCBI C++ documentation, manuals (including
+       this one, <span class="ncbi_file">doc/config.html</span>) and guidelines
+       for <em>everybody</em> writing on C++ in NCBI SWG
 
-  <li> <i><b>scripts/</b></i> -- auxiliary scripts, such as
-		  <a href="cvs.html#ref_Import_Project">
-			 <b><i>import_project.sh</i></b></a>,
-		  <a href="cvs.html#ref_New_Project">
-			 <b><i>new_project.sh</i></b></a>,
-		  <a href="cvs.html#ref_CVS_Core">
-			 <b><i>cvs_core.sh</i></b></a>,
+  <li> <span class="ncbi_dir">scripts/</span> -- auxiliary scripts, such as
+          <a href="cvs.html#ref_Import_Project">
+             <span class="ncbi_script">import_project.sh</span></a>,
+          <a href="cvs.html#ref_New_Project">
+             <span class="ncbi_script">new_project.sh</span></a>,
+          <a href="cvs.html#ref_CVS_Core">
+             <span class="ncbi_script">cvs_core.sh</span></a>,
         etc.
 
-  <li> <i><b>src/</b></i> -- a hierarchical directory tree of
+  <li> <span class="ncbi_dir">src/</span> -- a hierarchical directory tree of
        NCBI C++ projects. Here go
-       all source files (<i>*.cpp, *.c</i>), private header and inline files
-       (<i>*.hpp, *.inl, *.h</i>), makefiles (<i>Makefile.*</i>, including
-       <a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>),
-       scripts (<i>*.sh</i>), and maybe some project-specific data
+       all source files (<span class="ncbi_file">*.cpp, *.c</span>), private header and inline files
+       (<span class="ncbi_file">*.hpp, *.inl, *.h</span>), makefiles (<span class="ncbi_file">Makefile.*</span>, including
+       <a href="makefiles.html#ref_MakeProjMk"><span class="ncbi_file">Makefile.mk</span></a>),
+       scripts (<span class="ncbi_file">*.sh</span>), and maybe some project-specific data
 
-  <li> <i><b>include/</b></i> -- a hierarchical directory tree whose
-       structure mirrors the <i><b>src/</b></i> directory tree. It
-       contains only public header and inline files (<i>*.hpp, *.inl, *.h</i>).
-       <br><i>Example:</i> <i><b>include/corelib/</b></i> contains public headers for the sources
-       located in <i><b>src/corelib/</b></i>
+  <li> <span class="ncbi_dir">include/</span> -- a hierarchical directory tree whose
+       structure mirrors the <span class="ncbi_dir">src/</span> directory tree. It
+       contains only public header and inline files (<span class="ncbi_file">*.hpp, *.inl, *.h</span>).
+       <br><span class="ncbi_note">Example</span>: <span class="ncbi_dir">include/corelib/</span> contains public headers for the sources
+       located in <span class="ncbi_dir">src/corelib/</span>
 </ul>
 
 <hr>
 
 <a name="ref_Configure"></a>
-<h2>Configuration and installation script <b><i>configure</i></b> <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
+<h2>Configuration and installation script <span class="ncbi_script">configure</span> <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 Different compilers compile C++ (and even C!) code differently --
 they may vary in the OS standard libraries and header files,
 completeness of the C++ implementation, and... in compiler bugs.
-There are also different <b>make</b> and other tools and
+There are also different <span class="ncbi_util">make</span> and other tools and
 file naming conventions on different platforms.
 
 <p>
 Thus, a configuration is needed to encounter the platform-
 and compiler-specific features.
 For this purpose, we are using the GNU
-<a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a>
+<a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html"><span class="ncbi_util">autoconf</span></a>
 utility to automatically generate compiler-specific header file
-<i>ncbiconf.h</i> and makefiles that would work for the given platform.
+<span class="ncbi_file">ncbiconf.h</span> and makefiles that would work for the given platform.
 
 <p>
 User performs both configuration and installation by merely running
-platform-independent(<i>sh, bash</i>) shell script
-<b><i>configure</i></b> (we pre-generate it in-house from template
-<i>configure.ac</i> using
+platform-independent(<span class="ncbi_util">sh, bash</span>) shell script
+<span class="ncbi_script">configure</span> (we pre-generate it in-house from template
+<span class="ncbi_file">configure.ac</span> using
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
-autoconf</a>).
+<span class="ncbi_util">autoconf</span></a>).
 
 <p>
 During the configuration process, many compiler features are tested,
 and the results of this testing are recorded in the configuration header
-<i>ncbiconf.h</i> by the means of C preprocessor variables. E.g., the
-preprocessor variable <i>"NO_INCLASS_TMPL"</i> indicates whether the
+<span class="ncbi_file">ncbiconf.h</span> by the means of C preprocessor variables. E.g., the
+preprocessor variable <span class="ncbi_var">NO_INCLASS_TMPL</span> indicates whether the
 compiler supports template class methods; another example of the information
-contained in <i>ncbiconf.h</i> are preprocessor variables used to
+contained in <span class="ncbi_file">ncbiconf.h</span> are preprocessor variables used to
 define <a href="types.html#ref_IntFixed">sized integer</a> and
-<a href="types.html#ref_BigScalar"><i>BigScalar</i></a> types.
+<a href="types.html#ref_BigScalar">BigScalar</a> types.
 
 <p>
-The <b><i>configure</i></b> script will create so-called
-<a href="bld_tree.gif"><i>build tree</i></a>
+The <span class="ncbi_script">configure</span> script will create so-called
+<a href="bld_tree.gif"><span class="ncbi_term">build tree</span></a>
 -- a hierarchy of directories where
 object modules, libraries and executables are to be built.
 <br>
-It will also configure all <i>*.in</i> template files located
-in the NCBI C++  source tree(<b><i>src/</i></b>) and deploy
+It will also configure all <span class="ncbi_file">*.in</span> template files located
+in the NCBI C++  source tree(<span class="ncbi_dir">src/</span>) and deploy
 the resultant configured files in the relevant places of the
-<a href="bld_tree.gif"><i>build tree</i></a>.
+<a href="bld_tree.gif"><span class="ncbi_term">build tree</span></a>.
 
 This way, all platform- and compiler-specific tools and flags will be "frozen"
 inside the configured makefiles in the
-<a href="bld_tree.gif"><i>build tree</i></a>.
-And, the <i>ncbiconf.h</i> (described above, also configured for
-the given compiler), will be put to the <b><i>inc/</i></b> sub-directory
+<a href="bld_tree.gif"><span class="ncbi_term">build tree</span></a>.
+And, the <span class="ncbi_file">ncbiconf.h</span> (described above, also configured for
+the given compiler), will be put to the <span class="ncbi_dir">inc/</span> sub-directory
 of the resultant
-<a href="bld_tree.gif"><i>build tree</i></a>.
+<a href="bld_tree.gif"><span class="ncbi_term">build tree</span></a>.
 
 <p>
-User can create as many such build trees as he needs.  All these
+User can create as many such <span class="ncbi_term">build trees</span> as he needs.  All these
 trees would refer to just the same (origin) NCBI C++
-<a href="src_tree.gif"><i>source tree</i></a> and <i>include tree</i>,
+<a href="src_tree.gif">source tree</a> and include tree,
 while each
-<a href="bld_tree.gif"><i>build tree</i></a>
+<a href="bld_tree.gif"><span class="ncbi_term">build tree</span></a>
 can contain its own (platform/compiler-specific)
-<i>ncbiconf.h</i> header, and/or different set of compilation/linking/etc.
+<span class="ncbi_file">ncbiconf.h</span> header, and/or different set of compilation/linking/etc.
 flags and tools ("frozen" in the makefiles, especially in
-<a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>).
+<a href="makefiles.html#ref_MakeProjMk"><span class="ncbi_file">Makefile.mk</span></a>).
 This is to allow one to build
 libraries and executables using different compilers and/or flags, yet from
 the same sources, and in a uniform way.
@@ -258,28 +259,28 @@ the same sources, and in a uniform way.
 <hr>
 
 <a name="ref_Build"></a>
-<h2>Structure of the <i>build tree</i> produced by <i>configure</i> <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
+<h2>Structure of the build tree  produced by <span class="ncbi_script">configure</span> <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
-Each configuration process results in a new <i>build tree</i>.
+Each configuration process results in a new <span class="ncbi_term">build tree</span>.
 The structure of the tree is as follows (see also in
 <a href="bld_tree.gif">chart</a>):
 <ul>
-  <li> <i><b>inc/</b></i> -- contains
-       <i>ncbiconf.h</i> configuration header generated by the
-       <b><i>configure</i></b> script.
-  <li> <i><b>build/</b></i> -- contains a hierarchy of directories that
-       correspond to those in the <i><b>src/</b></i> (in NCBI C++ original
-       sources). These directories will contain makefiles (<i>Makefile.*</i>)
-       generated by the <b><i>configure</i></b> script from the makefile
-       templates (<i>Makefile.*.in</i>) of corresponding project located in the
-		 <i>source tree</i>.
+  <li> <span class="ncbi_dir">inc/</span> -- contains
+       <span class="ncbi_file">ncbiconf.h</span> configuration header generated by the
+       <span class="ncbi_script">configure</span> script.
+  <li> <span class="ncbi_dir">build/</span> -- contains a hierarchy of directories that
+       correspond to those in the <span class="ncbi_dir">src/</span> (in NCBI C++ original
+       sources). These directories will contain makefiles (<span class="ncbi_file">Makefile.*</span>)
+       generated by the <span class="ncbi_script">configure</span> script from the makefile
+       templates (<span class="ncbi_file">Makefile.*.in</span>) of corresponding project located in the
+       source tree.
        <br>
        The resultant scripts and makefile will keep referencies
        to the original NCBI C++ source directories.
        <br>
        There is a "very special" file
-       <a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
+       <a href="makefiles.html#ref_MakeProjMk"><span class="ncbi_file">Makefile.mk</span></a>
        that contains all configured
        <a href="#ref_ToolsAndFlags">tools, flags</a>
        and
@@ -288,24 +289,24 @@ The structure of the tree is as follows (see also in
        <br>
        Later, all build results (object modules, libraries and executables
        as well as any auxiliary files and directories created during the build)
-       will go exclusively into the <i>build tree</i>, and not
+       will go exclusively into the <span class="ncbi_term">build tree</span>, and not
        to the original NCBI C++ source directories. This allows one to
-       have several <i>build trees</i> that use just the same sources, but
+       have several build trees that use just the same sources, but
        compile and link them with different flags and/or compilers.
-  <li> <i><b>lib/</b></i> -- here go all public libraries built by the
-       <i><b>build/</b></i>-located projects.
-  <li> <i><b>bin/</b></i> -- here go all public executables built by the
-       <i><b>build/</b></i>-located projects.
-  <li> <i><b>status/</b></i> -- contains cache (<i>config.cache</i>),
-       log file (<i>config.log</i>), and secondary configuration script
-       (<i>config.status</i>) produced by <b><i>configure</i></b> during
+  <li> <span class="ncbi_dir">lib/</span> -- here go all public libraries built by the
+       <span class="ncbi_dir">build/</span>-located projects.
+  <li> <span class="ncbi_dir">bin/</span> -- here go all public executables built by the
+       <span class="ncbi_dir">build/</span>-located projects.
+  <li> <span class="ncbi_dir">status/</span> -- contains cache (<span class="ncbi_file">config.cache</span>),
+       log file (<span class="ncbi_file">config.log</span>), and secondary configuration script
+       (<span class="ncbi_file">config.status</span>) produced by <span class="ncbi_script">configure</span> during
        the configuration process.
 </ul>
 
 <hr>
 
 <a name="ref_Running"></a>
-<h2>Running the <b><i>configure</i></b> script <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
+<h2>Running the <span class="ncbi_script">configure</span> script <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 <a name="ref_GetHelp"></a>
@@ -315,41 +316,41 @@ The structure of the tree is as follows (see also in
     <dt>
     <dd>
 To get the list of <a href="configure_options.txt">available configuration options</a>, just run
-<i><b>configure --help</b></i>.
+<span class="ncbi_cmd">configure --help</span>.
 You can see the NCBI-specific options at the very end of the printout.
 <br>
-<i>NOTE:</i> Do not use the "standard" <i><b>configure</b></i> options listed
-in the <i>"Directory and file names:"</i> section of the help printout (such as
-<i><b>--prefix=, --bindir=</b></i>, etc.), as they are not used by the NCBI
-<i><b>configure</b></i> script.
+<span class="ncbi_note">NOTE:</span> Do not use the "standard" configure options listed
+in the <span class="ncbi_menu">"Directory and file names:"</span> section of the help printout (such as
+<span class="ncbi_conf_flag">--prefix=, --bindir=</span>, etc.), as they are not used by the NCBI
+<span class="ncbi_script">configure</span> script.
 </dl>
 
 <p>
 <a name="ref_DebugVsRelease"></a>
-<h4><i>Debug</i> vs. <i>Release</i> configuration</h4>
+<h4><span class="ncbi_dir">Debug</span> vs. <span class="ncbi_dir">Release</span> configuration</h4>
 
 <dl>
     <dt>
     <dd>
-The following two <i><b>configure</b></i> flags control whether to target for
-the <i>Debug</i> or <i>Release</i> version. These options (default is
-<i><b>--with-debug</b></i>) control the appearance of preprocessor
-flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
-<b>-g</b> and <b>-O</b>, respectively:
+The following two <span class="ncbi_script">configure</span> flags control whether to target for
+the <span class="ncbi_dir">Debug</span> or <span class="ncbi_dir">Release</span> version. These options (default is
+<span class="ncbi_conf_flag">--with-debug</span>) control the appearance of preprocessor
+flags <span class="ncbi_make_flag">-D_DEBUG</span> and <span class="ncbi_make_flag">-DNDEBUG</span>, and compiler/linker flags
+<span class="ncbi_make_flag">-g</span> and <span class="ncbi_make_flag">-O</span>, respectively:
 <ul>
-  <li> <i><b>--with-debug</b></i> --
-       engage <b>-D_DEBUG</b> and <b>-g</b>,
-       <br>strip <b>-DNDEBUG</b> and <b>-O</b>
-       (if not <i><b>--with-optimization</b></i>)
-  <li> <i><b>--without-debug</b></i> --
-       strip <b>-D_DEBUG</b> and <b>-g</b>,
-       <br>engage <b>-DNDEBUG</b> and <b>-O</b>
-		 (if not <i><b>--without-optimization</b></i>)
-  <li> <i><b>--with-optimization</b></i> --
-       unconditionally engage <b>-DNDEBUG</b> and <b>-O</b>
-  <li> <i><b>--without-optimization</b></i> --
-       unconditionally strip <b>-DNDEBUG</b> and <b>-O</b>
-  <li> default: <i><b>--with-debug --without-optimization</b></i>
+  <li> <span class="ncbi_conf_flag">--with-debug</span> --
+       engage <span class="ncbi_make_flag">-D_DEBUG</span> and <span class="ncbi_make_flag">-g</span>,
+       <br>strip <span class="ncbi_make_flag">-DNDEBUG</span> and <span class="ncbi_make_flag">-O</span>
+       (if not <span class="ncbi_conf_flag">--with-optimization</span>)
+  <li> <span class="ncbi_conf_flag">--without-debug</span> --
+       strip <span class="ncbi_make_flag">-D_DEBUG</span> and <span class="ncbi_make_flag">-g</span>,
+       <br>engage <span class="ncbi_make_flag">-DNDEBUG</span> and <span class="ncbi_make_flag">-O</span>
+         (if not <span class="ncbi_conf_flag">--without-optimization</span>)
+  <li> <span class="ncbi_conf_flag">--with-optimization</span> --
+       unconditionally engage <span class="ncbi_make_flag">-DNDEBUG</span> and <span class="ncbi_make_flag">-O</span>
+  <li> <span class="ncbi_conf_flag">--without-optimization</span> --
+       unconditionally strip <span class="ncbi_make_flag">-DNDEBUG</span> and <span class="ncbi_make_flag">-O</span>
+  <li> default: <span class="ncbi_conf_flag">--with-debug --without-optimization</span>
 </ul>
 </dl>
 
@@ -360,32 +361,32 @@ flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
 <dl>
     <dt>
     <dd>
-On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
+On the capable platforms, you can build libraries as <span class="ncbi_term">shared (dynamic)</span>.
 <ul>
-  <li> <i><b>--with-dll --with-static</b></i> --
-       build libraries as both <i>dynamic</i> and <i>static</i>; <br>
-		 however, if the library project makefile specifies
-		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = lib</i></a>,
-       then build the library as <i>static</i> only, and if the
+  <li> <span class="ncbi_conf_flag">--with-dll --with-static</span> --
+       build libraries as both <span class="ncbi_term">dynamic</span> and <span class="ncbi_term">static</span>; <br>
+         however, if the library project makefile specifies
+         <a href="new_proj.html#ref_MakeProjLib"><span class="ncbi_make_var">LIB_OR_DLL = lib</span></a>,
+       then build the library as <span class="ncbi_term">static</span> only, and if the
        library project makefile specifies
-		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>
-       then build the library as <i>dynamic</i> only. <br>
+         <a href="new_proj.html#ref_MakeProjLib"><span class="ncbi_make_var">LIB_OR_DLL = dll</span></a>
+       then build the library as <span class="ncbi_term">dynamic</span> only. <br>
        Note that the resulting static libraries consist of
        position-independent objects.
-  <li> <i><b>--with-dll</b></i> --
-       build libraries as <i>dynamic</i>; <br>
-		 however, if the library project makefile specifies
-		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = lib</i></a>,
-       then build the library as <i>static</i>
-  <li> <i><b>--without-dll</b></i> --
-       always build <i>static</i> libraries, <br>
-		 even if the library project makefile specifies
-		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>
+  <li> <span class="ncbi_conf_flag">--with-dll</span> --
+       build libraries as <span class="ncbi_term">dynamic</span>; <br>
+         however, if the library project makefile specifies
+         <a href="new_proj.html#ref_MakeProjLib"><span class="ncbi_make_var">LIB_OR_DLL = lib</span></a>,
+       then build the library as <span class="ncbi_term">static</span>
+  <li> <span class="ncbi_conf_flag">--without-dll</span> --
+       always build <span class="ncbi_term">static</span> libraries, <br>
+         even if the library project makefile specifies
+         <a href="new_proj.html#ref_MakeProjLib"><span class="ncbi_make_var">LIB_OR_DLL = dll</span></a>
   <li> default:
-       build libraries as <i>static</i>; <br>
-		 however, if the library project makefile specifies
-		  <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>,
-       then build the library as <i>dynamic</i>
+       build libraries as <span class="ncbi_term">static</span>; <br>
+         however, if the library project makefile specifies
+          <a href="new_proj.html#ref_MakeProjLib"><span class="ncbi_make_var">LIB_OR_DLL = dll</span></a>,
+       then build the library as <span class="ncbi_term">dynamic</span>
 </ul>
 </dl>
 
@@ -400,55 +401,55 @@ We have succeeded in building NCBI C++ Toolkit libs as DLLs on at least
 the following platforms:
 <ul>
   <li> <a href="http://gcc.gnu.org/">
-       <b>GCC 2.95.[1,2]</b></a>
+       <span class="ncbi_compiler">GCC 2.95.[1,2]</span></a>
     <ul>
-      <li> Linux RedHat 5.2 and higher --- <i>PC-Intel</i> </li>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i> </li>
-      <li> Solaris 2.6, 2.7, 2.8 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
-           (requires <i><b>libstd++.so</b></i>!) </li>
+      <li> Linux RedHat 5.2 and higher --- <span class="ncbi_platform">PC-Intel</span> </li>
+      <li> IRIX64 6.5 --- <span class="ncbi_platform">SGI-Mips</span> </li>
+      <li> Solaris 2.6, 2.7, 2.8 --- <span class="ncbi_platform">SUN-Sparc</span> and <span class="ncbi_platform">PC-Intel</span>
+           (requires <span class="ncbi_lib">libstd++.so</span>!) </li>
     </ul>
-		</li>
+        </li>
 
   <li> <a href="http://gcc.gnu.org/">
-       <b>GCC 3.0.1</b></a>
+       <span class="ncbi_compiler">GCC 3.0.1</span></a>
     <ul>
-      <li> Linux RedHat 6.2 and higher --- <i>PC-Intel</i> </li>
-      <li> Solaris 2.8 and higher --- <i>SUN-Sparc</i> </li>
+      <li> Linux RedHat 6.2 and higher --- <span class="ncbi_platform">PC-Intel</span> </li>
+      <li> Solaris 2.8 and higher --- <span class="ncbi_platform">SUN-Sparc</span> </li>
     </ul>
-		</li>
+        </li>
 
   <li> <a href="http://www.sun.com/workshop/visual/">
-       <b>Sun WorkShop 5.1, 5.2 and 5.3</b></a>
+       <span class="ncbi_compiler">Sun WorkShop 5.1, 5.2 and 5.3</span></a>
     <ul>
-      <li> <i>All configurations listed in the <a href="#ref_Compilers">List of supported compilers</a>
-				(see below)</i> </li>
+      <li>All configurations listed in the <a href="#ref_Compilers">List of supported compilers</a>
+                (see below)</li>
     </ul>
   </li>
 
-  <li> <u><b>MIPSpro 7.3.1.1m, 7.3.1.2m (-n32)</b></u>
+  <li> <u><span class="ncbi_compiler">MIPSpro 7.3.1.1m, 7.3.1.2m (-n32)</span></u>
     <ul>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i> </li>
+      <li> IRIX64 6.5 --- <span class="ncbi_platform">SGI-Mips</span> </li>
     </ul>
   </li>
 
   <li> <a href="http://www.kai.com/C_plus_plus/">
-       <b>KAI C++ (KCC) 4.0</b></a>
+       <span class="ncbi_compiler">KAI C++ (KCC) 4.0</span></a>
     <ul>
-      <li> Solaris 2.7 and higher --- <i>SUN-Sparc</i> </li>
-      <li> Linux RedHat 6.2 --- <i>PC-Intel</i></li>
+      <li> Solaris 2.7 and higher --- <span class="ncbi_platform">SUN-Sparc</span> </li>
+      <li> Linux RedHat 6.2 --- <span class="ncbi_platform">PC-Intel</span></li>
     </ul>
 
   <li> <a href="http://developer.intel.com/software/products/compilers/c50/linux/">
-       <b>IntelC++ (ICC) 5.0 (beta)</b></a>
+       <span class="ncbi_compiler">IntelC++ (ICC) 5.0 (beta)</span></a>
     <ul>
-      <li> Linux RedHat 6.2 and higher --- <i>PC-Intel</i></li>
+      <li> Linux RedHat 6.2 and higher --- <span class="ncbi_platform">PC-Intel</span></li>
     </ul>
   </li>
 </ul>
 
-On any other platform, the <i><b>--without-dll</b></i> scenario will be
+On any other platform, the <span class="ncbi_conf_flag">--without-dll</span> scenario will be
 enforced unconditionally (even if you explicitly specified
-<i><b>--with-dll</b></i>).
+<span class="ncbi_conf_flag">--with-dll</span>).
 </dl>
 
 <p>
@@ -458,57 +459,55 @@ enforced unconditionally (even if you explicitly specified
 <dl>
     <dt>
     <dd>
-In order to be able to <i>run</i> executables linked against
+In order to be able to run executables linked against
 dynamic libraries (DLLs), you have to specify these DLLs' location
-(<i>runpath</i>). It can be done by hard-coding (using linker flags like
-<b>-R.....</b>) the <i>runpath</i> into the executables.
+(runpath). It can be done by hard-coding (using linker flags like
+<span class="ncbi_make_flag">-R.....</span>) the <span class="ncbi_term">runpath</span> into the executables.
 <ul>
-  <li><i><b>--with-runpath</b></i> --
-    hard-code the path to the <i><b>lib/</b></i> dir
-    of the Toolkit <i>build tree</i>
+  <li><span class="ncbi_conf_flag">--with-runpath</span> --
+    hard-code the path to the <span class="ncbi_dir">lib/</span> dir
+    of the Toolkit <span class="ncbi_term">build tree</span>
   </li>
-  <li><i><b>--with-runpath=</b>/foo/bar</i> --
-    hard-code the path to the user-defined <i><b>/foo/bar</b></i> dir
+  <li><span class="ncbi_conf_flag">--with-runpath=/foo/bar</span> --
+    hard-code the path to the user-defined <span class="ncbi_dir">/foo/bar</span> dir
   </li>
-  <li><i><b>--without-runpath</b></i> --
-    do not hard-code any <i>runpath</i>
+  <li><span class="ncbi_conf_flag">--without-runpath</span> --
+    do not hard-code any <span class="ncbi_term">runpath</span>
   </li>
   <li>default:
-    if <i><b>--without-dll</b></i> flag is specified, then
-    act as if <i><b>--without-runpath</b></i> was specified;
-    otherwise engage the <i><b>--with-runpath</b></i> scenario.
+    if <span class="ncbi_conf_flag">--without-dll</span> flag is specified, then
+    act as if <span class="ncbi_conf_flag">--without-runpath</span> was specified;
+    otherwise engage the <span class="ncbi_conf_flag">--with-runpath</span> scenario.
   </li>
 </ul>
-<p>The preprocessor macro NCBI_RUNPATH will be set to the resulting
+<p>The preprocessor macro <span class="ncbi_macro">NCBI_RUNPATH</span> will be set to the resulting
 runpath, if any, as a (possibly empty) string.
 
-<p><b>NOTE:</b>
-You also can use environment variable <i>$LD_LIBRARY_PATH</i> to specify
-the <i>runpath</i>, like this:
-<font size="-1">
-<pre>
+<p><span class="ncbi_note">NOTE:</span>
+You also can use environment variable <span class="ncbi_env">$LD_LIBRARY_PATH</span> to specify
+the runpath, like this:
+<pre class="ncbi_cmd">
 setenv LD_LIBRARY_PATH "/home/USERNAME/c++/WorkShop6-ReleaseDLL/lib"
 /home/USERNAME/c++/WorkShop6-ReleaseDLL/bin/coretest
 </pre>
-</font>
 
-<b>HINT:</b>
-The <i><b>--with-runpath=</b>....</i> option can be useful for the
+<span class="ncbi_note">HINT:</span>
+The <span class="ncbi_conf_flag">--with-runpath=....</span> option can be useful for the
 building of production DLLs and executables, which are meant to use
-production DLLs. The latter are usually installed <b>not</b> in the
-<b><i>lib/</i></b> dir of your development tree (<i>build tree</i>),
+production DLLs. The latter are usually installed not in the
+<span class="ncbi_dir">lib/</span> dir of your development tree (<span class="ncbi_term">build tree</span>),
 but at some well-known dir of your production site.<br>
 
 Thus, you can do the development in a "regular" manner (i.e.
-in a <i>build tree</i> configured using just <i><b>--with-runpath</b></i>),
+in a <span class="ncbi_term">build tree</span> configured using just <span class="ncbi_conf_flag">--with-runpath</span>),
 and then when you want to build a production version (which is to use lets say
 DLLs installed in "/some_path/foo/") you must re-configure your
 C++ build tree with just the same options as before, plus
-"<i><b>--with-runpath=</b>/some_path/foo</i>", then re-build the DLLs and
+<span class="ncbi_conf_flag">"--with-runpath=/some_path/foo"</span>, then re-build the DLLs and
 executables and install them into production. <br>
 
-Then you can re-re-configure your build tree back with its original flags
-(without the "<i><b>--with-runpath=</b>/some_path/foo</i>"), and continue with
+Then you can re-re-configure your <span class="ncbi_term">build tree</span> back with its original flags
+(without the "<span class="ncbi_conf_flag">--with-runpath=/some_path/foo"</span>), and continue with
 your development cycle, again using local in-tree DLLs.
 </dl>
 
@@ -518,12 +517,12 @@ your development cycle, again using local in-tree DLLs.
 <h4>Multi-Thread safe compilation, and linking with MT libraries</h4>
 
 <ul>
-  <li> <i><b>--with-mt</b></i> --
-		  compile all code in an MT-safe manner; link with
+  <li> <span class="ncbi_conf_flag">--with-mt</span> --
+          compile all code in an MT-safe manner; link with
         the system thread library
-  <li> <i><b>--without-mt</b></i> --
-		  compile with no regard to the MT-safety
-  <li> default: <i><b>--without-mt</b></i>
+  <li> <span class="ncbi_conf_flag">--without-mt</span> --
+          compile with no regard to the MT-safety
+  <li> default: <span class="ncbi_conf_flag">--without-mt</span>
 </ul>
 <dl>
     <dt>
@@ -537,9 +536,9 @@ your development cycle, again using local in-tree DLLs.
 <h4>Building in 64-bit mode</h4>
 
 <ul>
-  <li> <i><b>--with-64</b></i> --
-		  compile all code and build executables in 64-bit mode
-  <li> default: <i><b>--without-64</b></i>
+  <li> <span class="ncbi_conf_flag">--with-64</span> --
+          compile all code and build executables in 64-bit mode
+  <li> default: <span class="ncbi_conf_flag">--without-64</span>
 </ul>
 <dl>
     <dt>
@@ -549,17 +548,17 @@ your development cycle, again using local in-tree DLLs.
 
 <p>
 <a name="ref_GnuMakeAutodep"></a>
-<h4>Automatic generation of dependencies (for GNU <i>make</i> only)</h4>
+<h4>Automatic generation of dependencies (for GNU <span class="ncbi_util">make</span> only)</h4>
 
 <ul>
-  <li> <i><b>--with-autodep</b></i> --
-		  add build rules to automagically generate dependencies for the
-		  compiled C/C++ sources
-  <li> <i><b>--without-autodep</b></i> --
-		  do not add these rules
-  <li>  default:  detect if the <i>make</i> command actually calls
-		  GNU <i>make</i>;  if it does, then <i><b>--with-autodep</b></i>, else
-		  <i><b>--with-autodep</b></i>
+  <li> <span class="ncbi_conf_flag">--with-autodep</span> --
+          add build rules to automagically generate dependencies for the
+          compiled C/C++ sources
+  <li> <span class="ncbi_conf_flag">--without-autodep</span> --
+          do not add these rules
+  <li>  default:  detect if the <span class="ncbi_util">make</span> command actually calls
+          GNU <span class="ncbi_util">make</span>;  if it does, then <span class="ncbi_conf_flag">--with-autodep</span>, else
+          <span class="ncbi_conf_flag">--with-autodep</span>
 </ul>
 
 <dl>
@@ -567,58 +566,58 @@ your development cycle, again using local in-tree DLLs.
     <dd>
 Also, you can always switch between these two variants "manually", after
 the configuration is done, by setting the value of variable
-<i><b>Rules</b></i> in
-<a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
-to either <i><b>rules</b></i> or <i><b>rules_with_autodep</b></i>.
+<span class="ncbi_make_var">Rules</span> in
+<a href="makefiles.html#ref_MakeProjMk"><span class="ncbi_file">Makefile.mk</span></a>
+to either <span class="ncbi_term">rules</span> or <span class="ncbi_make_var">rules_with_autodep</span>.
 
 <p>
-NOTE: You <b>must</b> use GNU <i>make</i> if you configured with
-<i><b>--with-autodep</b></i>, as in this case the makefiles would use
-very specific GNU <i>make</i> features!
+<span class="ncbi_note">NOTE:</span> You <em>must</em> use GNU <span class="ncbi_util">make</span> if you configured with
+<span class="ncbi_conf_flag">--with-autodep</span>, as in this case the makefiles would use
+very specific GNU <span class="ncbi_util">make</span> features!
 </dl>
 
 
 <p>
 <a name="ref_NamingBuildTree"></a>
-<h4>Naming the <i>build tree</i></h4>
+<h4>Naming the <span class="ncbi_term">build tree</span></h4>
 
 <dl>
     <dt>
     <dd>
-The configuration process will produce the new <i>build tree</i>
+The configuration process will produce the new <span class="ncbi_term">build tree</span>
 in some default subdirectory of the root source directory, and the base name
-of this subdirectory will reflect the compiler name and a <i>Release/Debug</i>
-suffix, e.g.:  <i><b>GCC-Release/</b></i>. The default <i>build tree</i>
+of this subdirectory will reflect the compiler name and a <span class="ncbi_dir">Release/Debug</span>
+suffix, e.g.:  <span class="ncbi_dir">GCC-Release/</span>. The default <span class="ncbi_term">build tree</span>
 name can be alternated by passing the following flags to the
-<i><b>configure</b></i> script:
+<span class="ncbi_script">configure</span> script:
 <ul>
-  <li> <i><b>--without-suffix</b></i> --
-       do not add <i>Release/Debug</i>, <i>MT</i>, and/or <i>DLL</i> suffix(es)
-       to the <i>build tree</i> name
-       <br><i>Example:</i>
-       <i><b>GCC/</b></i> instead of <i><b>GCC-ReleaseMT/</b></i>
-  <li> <i><b>--with-hostspec</b></i> --
-       add full host specs to the <i>build tree</i> name
-       <br><i>Example:</i> <i><b>GCC-Debug--i586-pc-linux-gnu/</b></i>
-  <li> <i><b>--with-build-root=</b>/home/foo/bar</i> --
-       specify your own <i>build tree</i> path and name
+  <li> <span class="ncbi_conf_flag">--without-suffix</span> --
+       do not add <span class="ncbi_dir">Release/Debug</span>, <em>MT</em>, and/or <em>DLL</em> suffix(es)
+       to the <span class="ncbi_term">build tree</span> name
+       <br><span class="ncbi_note">Example:</span>
+       <span class="ncbi_dir">GCC/</span> instead of <span class="ncbi_dir">GCC-ReleaseMT/</span>
+  <li> <span class="ncbi_conf_flag">--with-hostspec</span> --
+       add full host specs to the <span class="ncbi_term">build tree</span> name
+       <br><span class="ncbi_note">Example:</span><span class="ncbi_dir">GCC-Debug--i586-pc-linux-gnu/</span>
+  <li> <span class="ncbi_conf_flag">--with-build-root=/home/foo/bar</span> --
+       specify your own <span class="ncbi_term">build tree</span> path and name
 </ul>
 
-With <i><b>--with-build-root=</b></i> you still can explicitly use
-<i><b>--with-suffix</b></i> and <i><b>--with-hostspec</b></i>
-to add suffix(es) to your <i>build tree</i> name in a manner described above.
-<br><i>Example:</i>
-<i><b>--with-build-root=</b>/home/foo/bar</i>
-<i><b>--with-mt </b></i>
-<i><b>--with-suffix</b></i>
-would deploy the new <i>build tree</i> in
-<i><b>/home/foo/bar-DebugMT</b></i>.
+With <span class="ncbi_conf_flag">--with-build-root=</span> you still can explicitly use
+<span class="ncbi_conf_flag">--with-suffix</span> and <span class="ncbi_conf_flag">--with-hostspec</span>
+to add suffix(es) to your <span class="ncbi_term">build tree</span> name in a manner described above.
+<br><span class="ncbi_note">Example:</span>
+<span class="ncbi_conf_flag">--with-build-root=/home/foo/bar</span>
+<span class="ncbi_conf_flag">--with-mt </span>
+<span class="ncbi_conf_flag">--with-suffix</span>
+would deploy the new <span class="ncbi_term">build tree</span> in
+<span class="ncbi_dir">/home/foo/bar-DebugMT</span>.
 
 <p>
-There is also a special case with "<i><b>--with-build-root=</b>.</i>"
+There is also a special case with "<span class="ncbi_conf_flag">--with-build-root=."</span>
 for those who prefer to put object files, libraries and executables to where
 the sources are located. But be advised that this will disallow you
-to configure for other <i>build trees</i>.
+to configure for other <span class="ncbi_term">build trees</span>.
 </dl>
 
 <p>
@@ -628,23 +627,23 @@ to configure for other <i>build trees</i>.
 <dl>
     <dt>
     <dd>
-You can specify your own script to call from the <i>configure</i>
+You can specify your own script to call from the <span class="ncbi_script">configure</span>
 script after the configuration is complete:
 <ul>
-  <li> <i><b>--with-extra-action=</b>"&lt;some_action&gt;"</i>
+  <li> <span class="ncbi_conf_flag">--with-extra-action="&lt;some_action&gt;"</span>
 </ul>
 
 <p>
-where <i>&lt;some_action&gt;</i> can be some script with parameters.
-The trick here is that in the &lt;some_action&gt; string, all
-occurrences of "<i>{}</i>" will be replaced by the build dir name.
+where <span class="ncbi_value">&lt;some_action&gt;</span> can be some script with parameters.
+The trick here is that in the <span class="ncbi_value">&lt;some_action&gt;</span> string, all
+occurrences of "<span class="ncbi_note">{}</span>" will be replaced by the build dir name.
 
 <p>
-<i>Example:</i>
-<p>&nbsp;&nbsp;&nbsp;<i>configure <b>--with-extra-action=</b>"echo foobar {}"</i>
+<span class="ncbi_note">Example:</span>
+<p class="ncbi_cmd">&nbsp;&nbsp;&nbsp;configure --with-extra-action="echo foobar {}"</p>
 
 <p>will execute (after the configuration is done):
-<p>&nbsp;&nbsp;&nbsp;<i>echo foobar /home/user/c++/GCC-Debug</i>.
+<p class="ncbi_cmd">&nbsp;&nbsp;&nbsp;echo foobar /home/user/c++/GCC-Debug</p>
 </dl>
 
 
@@ -657,97 +656,95 @@ occurrences of "<i>{}</i>" will be replaced by the build dir name.
     <dd>
 There is a predefined set of tools and flags used in the build process.
 User can alternate these tools and flags by setting the following
-environment variables for the <b><i>configure</i></b> script.
+environment variables for the <span class="ncbi_script">configure</span> script.
 In particular, if you intend to debug the toolkit with Insure++, you
-should run <b><i>configure</i></b> with <b>CC</b> and <b>CXX</b> set
-to <b>insure</b>.
+should run <span class="ncbi_script">configure</span> with <span class="ncbi_env">CC</span> and <span class="ncbi_env">CXX</span> set to <span class="ncbi_value">insure</span>.
 
-<br></br>
+<br><br>
 <a name="ref_TableToolsAndFlags"></a>
 <table border=1 cellspacing=0>
   <tr>
-	 <th>Name</th>
-	 <th>Default</th>
-	 <th>Synopsis</th>
+     <th>Name</th>
+     <th>Default</th>
+     <th>Synopsis</th>
   </tr>
 
   <tr>
-	 <td><b>CC</b></td>
-	 <td><i>gcc, cc</i></td>
-	 <td>C compiler</td>
+     <td><span class="ncbi_env">CC</span></td>
+     <td><span class="ncbi_util">gcc, cc</span></td>
+     <td>C compiler</td>
   </tr>
 
   <tr>
-	 <td><b>CXX</b></td>
-	 <td><i>c++, g++, gcc, CC, cxx, cc++</i></td>
-	 <td>C++ compiler, also being used as a linker</td>
+     <td><span class="ncbi_env">CXX</span></td>
+     <td><span class="ncbi_util">c++, g++, gcc, CC, cxx, cc++</span></td>
+     <td>C++ compiler, also being used as a linker</td>
   </tr>
 
   <tr>
-	 <td><b>CPP</b></td>
-	 <td><i>$CC -E</i></td>
-	 <td>C preprocessor</td>
+     <td><span class="ncbi_env">CPP</span></td>
+     <td>$CC -E</td>
+     <td>C preprocessor</td>
   </tr>
 
   <tr>
-	 <td><b>CXXCPP</b></td>
-	 <td><i>$CXX -E</i></td>
-	 <td>C++ preprocessor</td>
+     <td><span class="ncbi_env">CXXCPP</span></td>
+     <td>$CXX -E</td>
+     <td>C++ preprocessor</td>
   </tr>
 
   <tr>
-	 <td><b>AR</b></td>
-	 <td><i>ar cru</i></td>
-	 <td>Librarian</td>
+     <td><span class="ncbi_env">AR</span></td>
+     <td>ar cru</td>
+     <td>Librarian</td>
   </tr>
 
   <tr>
-	 <td><b>STRIP</b></td>
-	 <td><i>strip</i></td>
-	 <td>To discard symbolic info</td>
+     <td><span class="ncbi_env">STRIP</span></td>
+     <td>strip</td>
+     <td>To discard symbolic info</td>
   </tr>
 
   <tr>
-	 <td><b>CFLAGS</b></td>
-	 <td><i>-g</i>
-    <a href="#ref_DebugVsRelease">or/and/nor</a>
-	 <i>-O</i></td>
-	 <td>C compiler flags</td>
+     <td><span class="ncbi_env">CFLAGS</span></td>
+     <td>-g
+     <a href="#ref_DebugVsRelease">or/and/nor</a>
+     -O</td>
+     <td>C compiler flags</td>
   </tr>
 
   <tr>
-	 <td><b>CXXFLAGS</b></td>
-	 <td><i>-g</i>
-    <a href="#ref_DebugVsRelease">or/and/nor</a>
-	 <i>-O</i></td>
-	 <td>C++ compiler flags</td>
+     <td><span class="ncbi_env">CXXFLAGS</span></td>
+     <td>-g
+     <a href="#ref_DebugVsRelease">or/and/nor</a>
+     -O</td>
+     <td>C++ compiler flags</td>
   </tr>
 
   <tr>
-	 <td><b>CPPFLAGS</b></td>
-	 <td><i>-D_DEBUG</i>
-    <a href="#ref_DebugVsRelease">or/and/nor</a>
-    <i>-DNDEBUG</i></td>
-	 <td>C/C++ preprocessor flags</td>
+     <td><span class="ncbi_env">CPPFLAGS</span></td>
+     <td>-D_DEBUG
+     <a href="#ref_DebugVsRelease">or/and/nor</a>-DNDEBUG</td>
+     <td>C/C++ preprocessor flags</td>
   </tr>
 
   <tr>
-	 <td><b>LDFLAGS</b></td>
-	 <td>none</td>
-	 <td>Linker flags</td>
+     <td><span class="ncbi_env">LDFLAGS</span></td>
+     <td>none</td>
+     <td>Linker flags</td>
   </tr>
 
   <tr>
-	 <td><b>LIBS</b></td>
-	 <td>none</td>
-	 <td>Libraries to link to every executable</td>
+     <td><span class="ncbi_env">LIBS</span></td>
+     <td>none</td>
+     <td>Libraries to link to every executable</td>
   </tr>
 
   <tr>
-	 <td><b>CONFIG_SHELL</b></td>
-	 <td><i>/bin/sh</i></td>
-	 <td>Command interpreter to use in the configuration scripts and makefiles
-	     (it must be compatible with <b>sh</b>)</td>
+     <td><span class="ncbi_env">CONFIG_SHELL</span></td>
+     <td><span class="ncbi_util">/bin/sh</span></td>
+     <td>Command interpreter to use in the configuration scripts and makefiles
+         (it must be compatible with <span class="ncbi_util">sh</span>)</td>
   </tr>
 </table>
 
@@ -757,21 +754,20 @@ be engaged in the makefiles:
 <a name="ref_StdBuildRules"></a>
 <ul>
   <li> To compile C sources:
-    <br> <b><i>$(CC) -c $(CFLAGS) $(CPPFLAGS) .....</i></b>
+    <br> <span class="ncbi_cmd">$(CC) -c $(CFLAGS) $(CPPFLAGS) .....</span>
   <li> To compile C++ sources:
-    <br> <b><i>$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) .....</i></b>
+    <br> <span class="ncbi_cmd">$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) .....</span>
   <li> To compose a library:
-    <br> <b><i> $(AR)     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i>
-	 <br> <b><i> $(RANLIB) </i></b> <i>libXXX.a</i>
-</i></b>
+    <br> <span class="ncbi_cmd"> $(AR)     libXXX.a xxx1.o xxx2.o xxx3.o .....</span>
+    <br> <span class="ncbi_cmd"> $(RANLIB) libXXX.a</span>
   <li> To link an executable:
-    <br> <b><i>$(LINK) $(LDFLAGS) ..... $(LIBS)</i></b>
+    <br> <span class="ncbi_cmd">$(LINK) $(LDFLAGS) ..... $(LIBS)</span>
 </ul>
 
 For more info on these and other variables see in the
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html">autoconf documentation</a>.
 The specified tools and flags will then be "frozen" inside the makefiles of
-<i>build tree</i> produced by this <b><i>configure</i></b> run.
+<span class="ncbi_term">build tree</span> produced by this <span class="ncbi_script">configure</span> run.
 </dl>
 
 <p>
@@ -788,141 +784,141 @@ the given local host's working environment.
 The following localization environment variables can be set in addition
 to the "generic" ones
 <a href="#ref_ToolsAndFlags">
-<b>(CC, CXX, CPP, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS)
-</b></a>:
+<span class="ncbi_env">(CC, CXX, CPP, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS)
+</span></a>:
 
 <br></br>
 <a name="ref_TableLocalization"></a>
 <table border=1 cellspacing=0>
   <caption>User-defined localization variables</caption>
   <tr>
-	 <th>Name</th>
-	 <th>Default</th>
-	 <th>Synopsis</th>
+     <th>Name</th>
+     <th>Default</th>
+     <th>Synopsis</th>
   </tr>
 
   <tr>
-	 <td><b>THREAD_LIBS</b></td>
-	 <td><i>-lpthread</i></td>
-	 <td>System thread library</td>
+     <td><span class="ncbi_env">THREAD_LIBS</span></td>
+     <td><span class="ncbi_make_flag">-lpthread</span></td>
+     <td>System thread library</td>
   </tr>
 
   <tr>
-	 <td><b>NETWORK_LIBS</b></td>
-	 <td><i>-lsocket -lnsl</i></td>
-	 <td>System network libraries</td>
+     <td><span class="ncbi_env">NETWORK_LIBS</span></td>
+     <td><span class="ncbi_make_flag">-lsocket -lnsl</span></td>
+     <td>System network libraries</td>
   </tr>
 
   <tr>
-	 <td><b>MATH_LIBS</b></td>
-	 <td><i>-lm</i></td>
-	 <td>System math library</td>
+     <td><span class="ncbi_env">MATH_LIBS</span></td>
+     <td><span class="ncbi_make_flag">-lm</span></td>
+     <td>System math library</td>
   </tr>
 
   <tr>
-	 <td><b>KSTAT_LIBS</b></td>
-	 <td><i>-lkstat</i></td>
-	 <td>System kernel statistics library</td>
+     <td><span class="ncbi_env">KSTAT_LIBS</span></td>
+     <td><span class="ncbi_make_flag">-lkstat</span></td>
+     <td>System kernel statistics library</td>
   </tr>
 
   <tr>
-	 <td><b>RPCSVC_LIBS</b></td>
-	 <td><i>-lrpcsvc</i></td>
-	 <td>System RPC services library</td>
+     <td><span class="ncbi_env">RPCSVC_LIBS</span></td>
+     <td><span class="ncbi_make_flag">-lrpcsvc</span></td>
+     <td>System RPC services library</td>
   </tr>
 
   <tr>
-	 <td><b>CRYPT_LIBS</b></td>
-	 <td><i>-lcrypt[_i]</i></td>
-	 <td>System encrypting library</td>
+     <td><span class="ncbi_env">CRYPT_LIBS</span></td>
+     <td><span class="ncbi_make_flag">-lcrypt[_i]</span></td>
+     <td>System encrypting library</td>
   </tr>
 
   <tr>
-	 <td><b>SYBASE_PATH</b></td>
-	 <td><i>/netopt/Sybase/clients/current</i></td>
-	 <td>Path to Sybase package
-	 (but see <a name="ref_Sybase_NOTE">note</a> below)</td>
+     <td><span class="ncbi_env">SYBASE_PATH</span></td>
+     <td><span class="ncbi_dir">/netopt/Sybase/clients/current</span></td>
+     <td>Path to Sybase package
+     (but see <a name="ref_Sybase_NOTE">note</a> below)</td>
   </tr>
 
   <tr>
-	 <td><b>FTDS_PATH</b></td>
-	 <td><i>/netopt/Sybase/clients-mssql/current</i></td>
-	 <td>Path to FreeTDS package</td>
+     <td><span class="ncbi_env">FTDS_PATH</span></td>
+     <td><span class="ncbi_dir">/netopt/Sybase/clients-mssql/current</span></td>
+     <td>Path to FreeTDS package</td>
   </tr>
 
   <tr>
-	 <td><b>FASTCGI_PATH<br></b></td>
-	 <td><i>$NCBI/fcgi-current</i></td>
-	 <td>Path to the in-house Fast-CGI client lib</td>
+     <td><span class="ncbi_env">FASTCGI_PATH<br></span></td>
+     <td><span class="ncbi_dir">$NCBI/fcgi-current</span></td>
+     <td>Path to the in-house Fast-CGI client lib</td>
   </tr>
 
   <tr>
-	 <td><b>FLTK_PATH<br></b></td>
-	 <td><i>$NCBI/fltk</i></td>
-	 <td>Path to the FLTK package</td>
+     <td><span class="ncbi_env">FLTK_PATH<br></span></td>
+     <td><span class="ncbi_dir">$NCBI/fltk</span></td>
+     <td>Path to the FLTK package</td>
   </tr>
 
   <tr>
-	 <td><b>WXWIN_PATH<br></b></td>
-	 <td><i>$NCBI/wxwin</i></td>
-	 <td>Path to the wxWindows package</td>
+     <td><span class="ncbi_env">WXWIN_PATH<br></span></td>
+     <td><span class="ncbi_dir">$NCBI/wxwin</span></td>
+     <td>Path to the wxWindows package</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_C_PATH</b></td>
-	 <td><i>$NCBI</i></td>
-	 <td>Path to the NCBI C Toolkit</td>
+     <td><span class="ncbi_env">NCBI_C_PATH</span></td>
+     <td><span class="ncbi_dir">$NCBI</span></td>
+     <td>Path to the NCBI C Toolkit</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_SSS_PATH</b></td>
-	 <td><i>$NCBI/sss/BUILD</i></td>
-	 <td>Path to the NCBI SSS package</td>
+     <td><span class="ncbi_env">NCBI_SSS_PATH</span></td>
+     <td><span class="ncbi_dir">$NCBI/sss/BUILD</span></td>
+     <td>Path to the NCBI SSS package</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_GEO_PATH</b></td>
-	 <td><i>$NCBI/geo</i></td>
-	 <td>Path to the NCBI GEO package</td>
+     <td><span class="ncbi_env">NCBI_GEO_PATH</span></td>
+     <td><span class="ncbi_dir">$NCBI/geo</span></td>
+     <td>Path to the NCBI GEO package</td>
   </tr>
 
   <tr>
-	 <td><b>SP_PATH</b></td>
-	 <td><i>$NCBI/SP</i></td>
-	 <td>Path to the SP package</td>
+     <td><span class="ncbi_env">SP_PATH</span></td>
+     <td><span class="ncbi_dir">$NCBI/SP</span></td>
+     <td>Path to the SP package</td>
   </tr>
 
   <tr>
-	 <td><b>NCBI_PM_PATH</b></td>
-	 <td><i>$NCBI/pubmed[64]</i></td>
-	 <td>Path to the NCBI PubMed package</td>
+     <td><span class="ncbi_env">NCBI_PM_PATH</span></td>
+     <td><span class="ncbi_dir">$NCBI/pubmed[64]</span></td>
+     <td>Path to the NCBI PubMed package</td>
   </tr>
 
   <tr>
-	 <td><b>ORBACUS_PATH</b></td>
-	 <td><i>$NCBI/corba/OB-4.0.1</i></td>
-	 <td>Path to the ORBacus CORBA package</td>
+     <td><span class="ncbi_env">ORBACUS_PATH</span></td>
+     <td><span class="ncbi_dir">$NCBI/corba/OB-4.0.1</span></td>
+     <td>Path to the ORBacus CORBA package</td>
   </tr>
 
 </table>
 
 <p>
 <a name="ref_Sybase_NOTE"></a>
-<b>Note:</b> It is also possible to make <b><i>configure</i></b> look
-elsewhere for Sybase by means of <b><i>--with-sybase-local[=DIR]</i></b>.
-If you specify a directory, it will override <b>SYBASE_PATH</b>;
+<span class="ncbi_note">Note:</span> It is also possible to make <span class="ncbi_script">configure</span> look
+elsewhere for Sybase by means of <span class="ncbi_conf_flag">--with-sybase-local[=DIR]</span>.
+If you specify a directory, it will override <span class="ncbi_env">SYBASE_PATH</span>;
 otherwise, the default will change to
-<i>/export/home/sybase/clients/current</i>, but <b>SYBASE_PATH</b>
+<span class="ncbi_dir">/export/home/sybase/clients/current</span>, but <span class="ncbi_env">SYBASE_PATH</span>
 will still take priority.  Also, the option
-<b><i>--with-sybase-new</i></b> will change the default version of
+<span class="ncbi_conf_flag">--with-sybase-new</span> will change the default version of
 Sybase from 12.0 to 12.5 and adapt to its layout.
 <p>
-It is also possible to override <b>WXWIN_PATH</b> by
-<b><i>--with-wxwin=DIR</i></b>, <b>FLTK_PATH</b> by -->
---<b><i>--with-fltk=DIR</i></b>, and <b>ORBACUS_PATH</b> by
-<b><i>--with-orbacus=DIR</i></b>.
+It is also possible to override <span class="ncbi_env">WXWIN_PATH</span> by
+<span class="ncbi_conf_flag">--with-wxwin=DIR</span>, <span class="ncbi_env">FLTK_PATH</span> by -->
+<span class="ncbi_conf_flag">--with-fltk=DIR</span>, and <span class="ncbi_env">ORBACUS_PATH</span> by
+<span class="ncbi_conf_flag">--with-orbacus=DIR</span>.
 <p>
-Based on the above, <b><i>configure</i></b> will derive the following variables
+Based on the above, <span class="ncbi_script">configure</span> will derive the following variables
 to use in the generated makefiles:
 
 <br></br>
@@ -930,213 +926,213 @@ to use in the generated makefiles:
 <table border=1 cellspacing=0>
   <caption>Derived localization variables for makefiles</caption>
   <tr>
-	 <th>Name</th>
-	 <th>Value</th>
-	 <th>Used to...</th>
+     <th>Name</th>
+     <th>Value</th>
+     <th>Used to...</th>
   </tr>
 
   <tr>
-	 <td><i><b>THREAD_LIBS</b></i></td>
-	 <td>$THREAD_LIBS</td>
-	 <td>link with system thread lib</td>
+     <td><span class="ncbi_make_var">THREAD_LIBS</span></td>
+     <td>$THREAD_LIBS</td>
+     <td>link with system thread lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>NETWORK_LIBS</b></i></td>
-	 <td>$NETWORK_LIBS</td>
-	 <td>link with system network libs</td>
+     <td><span class="ncbi_make_var">NETWORK_LIBS</span></td>
+     <td>$NETWORK_LIBS</td>
+     <td>link with system network libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>MATH_LIBS</b></i></td>
-	 <td>$MATH_LIBS</td>
-	 <td>link with system math lib</td>
+     <td><span class="ncbi_make_var">MATH_LIBS</span></td>
+     <td>$MATH_LIBS</td>
+     <td>link with system math lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>KSTAT_LIBS</b></i></td>
-	 <td>$KSTAT_LIBS</td>
-	 <td>link with system kernel stat lib</td>
+     <td><span class="ncbi_make_var">KSTAT_LIBS</span></td>
+     <td>$KSTAT_LIBS</td>
+     <td>link with system kernel stat lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>RPCSVC_LIBS</b></i></td>
-	 <td>$RPCSVC_LIBS</td>
-	 <td>link with system RPC lib</td>
+     <td><span class="ncbi_make_var">RPCSVC_LIBS</span></td>
+     <td>$RPCSVC_LIBS</td>
+     <td>link with system RPC lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>CRYPT_LIBS</b></i></td>
-	 <td>$CRYPT_LIBS</td>
-	 <td>link with system encrypting lib</td>
+     <td><span class="ncbi_make_var">CRYPT_LIBS</span></td>
+     <td>$CRYPT_LIBS</td>
+     <td>link with system encrypting lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>SYBASE_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$SYBASE_PATH<i>/include</i></td>
-	 <td><i>#include</i> Sybase headers</td>
+     <td><span class="ncbi_make_var">SYBASE_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$SYBASE_PATH/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> Sybase headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>SYBASE_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$SYBASE_PATH<i>/lib[64] <br>
-       <b>-l</b>blk[_r][64] <b>-l</b>ct[_r][64] <b>-l</b>cs[_r][64] <br>
-       <b>-l</b>tcl[_r][64] <b>-l</b>comn[_r][64] <b>-l</b>intl[_r][64]
-    </i></td>
-	 <td>link with Sybase libs</td>
+     <td><span class="ncbi_make_var">SYBASE_LIBS</span></td>
+     <td>-L<span class="ncbi_dir">$SYBASE_PATH/lib[64]</span> <br>
+       -lblk[_r][64] -lct[_r][64] -lcs[_r][64] <br>
+       -ltcl[_r][64] -lcomn[_r][64] -lintl[_r][64]
+     </td>
+     <td>link with Sybase libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>SYBASE_DLLS</b></i></td>
-	 <td><i><b>-l</b>tli[_r][64]</i></td>
-	 <td>Sybase DLL-only libs</td>
+     <td><span class="ncbi_make_var">SYBASE_DLLS</span></td>
+     <td>-ltli[_r][64]</td>
+     <td>Sybase DLL-only libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>SYBASE_DBLIBS</b></i></td>
-	 <td><i><b>-L</b></i>$SYBASE_PATH<i>/lib[64] <br>
-       <b>-l</b>sybdb[64]
-		</i></td>
-	 <td>link with Sybase DB Lib API</td>
+     <td><span class="ncbi_make_var">SYBASE_DBLIBS</span></td>
+     <td>-L<span class="ncbi_dir">$SYBASE_PATH/lib[64]</span> <br>
+       -lsybdb[64]
+     </td>
+     <td>link with Sybase DB Lib API</td>
   </tr>
 
   <tr>
-	 <td><i><b>FTDS_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$FTDS_PATH<i>/include</i></td>
-	 <td><i>#include</i> FreeTDS headers</td>
+     <td><span class="ncbi_make_var">FTDS_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$FTDS_PATH/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> FreeTDS headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>FTDS_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$FTDS_PATH<i>/lib <br>
-       <b>-l</b>sybdb <b>-l</b>tds
-		</i></td>
-	 <td>link with the FreeTDS API</td>
+     <td><span class="ncbi_make_var">FTDS_LIBS</span></td>
+     <td>-L<span class="ncbi_dir">$FTDS_PATH/lib</span> <br>
+       -lsybdb -ltds
+     </td>
+     <td>link with the FreeTDS API</td>
   </tr>
 
   <tr>
-	 <td><i><b>FASTCGI_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$FASTCGI_PATH<i>/include[64]</i></td>
-	 <td><i>#include</i> Fast-CGI headers</td>
+     <td><span class="ncbi_make_var">FASTCGI_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$FASTCGI_PATH/include[64]</span></td>
+     <td><span class="ncbi_ccode">#include</span> Fast-CGI headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>FASTCGI_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$FASTCGI_PATH<i>/lib[64] <b>-l</b>fcgi</i>
+     <td><span class="ncbi_make_var">FASTCGI_LIBS</span></td>
+     <td>-L<span class="ncbi_dir">$FASTCGI_PATH/lib[64]</span> -lfcgi
         <br> or <br>
-        <i><b>-L</b></i>$FASTCGI_PATH<i>/altlib[64] <b>-l</b>fcgi</i> </td>
-	 <td>link with Fast-CGI lib</td>
+        -L<span class="ncbi_dir">$FASTCGI_PATH/altlib[64]</span> -lfcgi </td>
+     <td>link with Fast-CGI lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>FLTK_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$FLTK_PATH<i>/include</i></td>
-	 <td><i>#include</i> FLTK headers</td>
+     <td><span class="ncbi_make_var">FLTK_INCLUDE</span></td>
+     <td>-I$FLTK_PATH<span class="ncbi_dir">/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> FLTK headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>FLTK_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$FLTK_PATH<i>/[GCC-]{Release|Debug}[MT][64]/lib <br>
-        <b>-l</b>fltk ... <b>-l</b>Xext <b>-l</b>X11 ...</i>
+     <td><span class="ncbi_make_var">FLTK_LIBS</span></td>
+     <td>-L<span class="ncbi_dir">$FLTK_PATH/[GCC-]{Release|Debug}[MT][64]/lib</span> <br>
+        -lfltk ... -lXext -lX11 ...
         <br> or <br>
-        <i><b>-L</b></i>$FLTK_PATH<i>/lib ..... </td>
-	 <td>link with FLTK libs</td>
+        -L<span class="ncbi_dir">$FLTK_PATH/lib</span> ..... </td>
+     <td>link with FLTK libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>WXWIN_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$WXWIN_PATH<i>/include</i></td>
-	 <td><i>#include</i> wxWindows headers</td>
+     <td><span class="ncbi_make_var">WXWIN_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$WXWIN_PATH/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> wxWindows headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>WXWIN_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$WXWIN_PATH<i>/[GCC-]{Release|Debug}/lib <br>
-        <b>-l</b>wx_gtk[d]  <b>-l</b>gtk  <b>-l</b>gdk  <b>-l</b>gmodule  <b>-l</b>glib</i>
+     <td><span class="ncbi_make_var">WXWIN_LIBS</span></td>
+     <td>-L<span class="ncbi_dir">$WXWIN_PATH/[GCC-]{Release|Debug}/lib</span> <br>
+        -lwx_gtk[d]  -lgtk  -lgdk  -lgmodule  -lglib
         <br> or <br>
-        <i><b>-L</b></i>$WXWIN_PATH<i>/lib</i> ..... </td>
-	 <td>link with wxWindows libs</td>
+        -L<span class="ncbi_dir">$WXWIN_PATH/lib</span> ..... </td>
+     <td>link with wxWindows libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_C_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_C_PATH<i>/include[64]</i></td>
-	 <td><i>#include</i> NCBI C Toolkit headers</td>
+     <td><span class="ncbi_make_var">NCBI_C_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$NCBI_C_PATH/include[64]</span></td>
+     <td><span class="ncbi_ccode">#include</span> NCBI C Toolkit headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_C_LIBPATH</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_C_PATH<i>/lib[64]</i>
+     <td><span class="ncbi_make_var">NCBI_C_LIBPATH</span></td>
+     <td>-L<span class="ncbi_dir">$NCBI_C_PATH/lib[64]</span>
         <br> or <br>
-        <i><b>-L</b></i>$NCBI_C_PATH<i>/altlib[64]</i></td>
-	 <td>path to NCBI C Toolkit libs</td>
+        -L<span class="ncbi_dir">$NCBI_C_PATH/altlib[64]</span></td>
+     <td>path to NCBI C Toolkit libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_C_ncbi</b></i></td>
-	 <td><i><b>-l</b>ncbi</i></td>
-	 <td>NCBI C Toolkit CoreLib</td>
+     <td><span class="ncbi_make_var">NCBI_C_ncbi</span></td>
+     <td>-lncbi</td>
+     <td>NCBI C Toolkit CoreLib</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_SSS_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_SSS_PATH<i>/include</i></td>
-	 <td><i>#include</i> NCBI SSS headers</td>
+     <td><span class="ncbi_make_var">NCBI_SSS_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$NCBI_SSS_PATH/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> NCBI SSS headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_SSS_LIBPATH</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/lib/.... <br>
-					 ....{Release|Debug}[GNU][64][mt]</i>
+     <td><span class="ncbi_make_var">NCBI_SSS_LIBPATH</span></td>
+     <td>-L<span class="ncbi_dir">$NCBI_SSS_PATH/lib/.... <br>
+                     ....{Release|Debug}[GNU][64][mt]</span>
     </td>
-	 <td>link with NCBI SSS libs</td>
+     <td>link with NCBI SSS libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_GEO_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_GEO_PATH<i>/include</i></td>
-	 <td><i>#include</i> NCBI GEO headers</td>
+     <td><span class="ncbi_make_var">NCBI_GEO_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$NCBI_GEO_PATH/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> NCBI GEO headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_GEO_LIBPATH</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_GEO_PATH<i>/lib/.... <br>
-					 ...[GCC-|KCC-|ICC-]{Release|Debug}[64]</i>
+     <td><span class="ncbi_make_var">NCBI_GEO_LIBPATH</span></td>
+     <td>-L<span class="ncbi_dir">$NCBI_GEO_PATH/lib/.... <br>
+                     ...[GCC-|KCC-|ICC-]{Release|Debug}[64]</span>
     </td>
-	 <td>link with NCBI GEO libs</td>
+     <td>link with NCBI GEO libs</td>
   </tr>
 
   <tr>
-	 <td><i><b>SP_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$SP_PATH<i>/include</i></td>
-	 <td><i>#include</i> SP headers</td>
+     <td><span class="ncbi_make_var">SP_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$SP_PATH/include</span></td>
+     <td><span class="ncbi_ccode">#include</span> SP headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>SP_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$SP_PATH<i>/{Release|Debug}[MT][64] <br>
-           <b>-l</b>sp</i></td>
-	 <td>link with the SP lib</td>
+     <td><span class="ncbi_make_var">SP_LIBS</span></td>
+     <td>-L<span class="ncbi_dir">$SP_PATH/{Release|Debug}[MT][64]</span> <br>
+         -lsp</td>
+     <td>link with the SP lib</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_PM_PATH</b></i></td>
-	 <td>$NCBI_PM_PATH</td>
-	 <td>path to the PubMed package</td>
+     <td><span class="ncbi_make_var">NCBI_PM_PATH</span></td>
+     <td>$NCBI_PM_PATH</td>
+     <td>path to the PubMed package</td>
   </tr>
 
   <tr>
-	 <td><i><b>ORBACUS_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$ORBACUS_PATH<i>/include</i><br>
-         <i><b>-I</b></i>$ORBACUS_PATH<i>/{Release|Debug}[MT][64]/inc</i></td>
-	 <td><i>#include</i> ORBacus CORBA headers</td>
+     <td><span class="ncbi_make_var">ORBACUS_INCLUDE</span></td>
+     <td>-I<span class="ncbi_dir">$ORBACUS_PATH/include</span><br>
+         -I<span class="ncbi_dir">$ORBACUS_PATH/{Release|Debug}[MT][64]/inc</span></td>
+     <td><span class="ncbi_ccode">#include</span> ORBacus CORBA headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>ORBACUS_LIBPATH</b></i></td>
-	 <td><i><b>-L</b></i>$ORBACUS_PATH<i>/{Release|Debug}[MT][64]/lib</i>
+     <td><span class="ncbi_make_var">ORBACUS_LIBPATH</span></td>
+     <td>-L<span class="ncbi_dir">$ORBACUS_PATH/{Release|Debug}[MT][64]/lib</span>
     </td>
-	 <td>link with ORBacus CORBA libs</td>
+     <td>link with ORBacus CORBA libs</td>
   </tr>
 
 </table>
@@ -1151,24 +1147,24 @@ to use in the generated makefiles:
     <dt>
     <dd>
 Some of the above system and third-party packages can
-be prohibited to use -- using the following <b><i>configure</i></b>
+be prohibited to use -- using the following <span class="ncbi_script">configure</span>
 flags:
 
 <ul>
-  <li> <i><b>--without-sybase</b></i> (Sybase) </li>
-  <li> <i><b>--without-ftds</b></i> (FreeTDS) </li>
-  <li> <i><b>--without-fastcgi</b></i> (Fast-CGI) </li>
-  <li> <i><b>--without-fltk</b></i> (FLTK) </li>
-  <li> <i><b>--without-wxwin</b></i> (wxWindows) </li>
-  <li> <i><b>--without-ncbi-c</b></i> (NCBI C Toolkit) </li>
-  <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB) </li>
-  <li> <i><b>--without-sssutils</b></i> (NCBI SSS UTILS) </li>
-  <li> <i><b>--without-sss</b></i>
-		  (both <i><b>--without-sssdb</b></i> and <i><b>--without-sssutils</b></i>) </li>
-  <li> <i><b>--without-geo</b></i> (NCBI GEO) </li>
-  <li> <i><b>--without-sp</b></i> (NCBI SP) </li>
-  <li> <i><b>--without-pubmed</b></i> (NCBI PubMed) </li>
-  <li> <i><b>--without-orbacus</b></i> (ORBacus CORBA) </li>
+  <li> <span class="ncbi_conf_flag">--without-sybase</span> (Sybase) </li>
+  <li> <span class="ncbi_conf_flag">--without-ftds</span> (FreeTDS) </li>
+  <li> <span class="ncbi_conf_flag">--without-fastcgi</span> (Fast-CGI) </li>
+  <li> <span class="ncbi_conf_flag">--without-fltk</span> (FLTK) </li>
+  <li> <span class="ncbi_conf_flag">--without-wxwin</span> (wxWindows) </li>
+  <li> <span class="ncbi_conf_flag">--without-ncbi-c</span> (NCBI C Toolkit) </li>
+  <li> <span class="ncbi_conf_flag">--without-sssdb</span> (NCBI SSS DB) </li>
+  <li> <span class="ncbi_conf_flag">--without-sssutils</span> (NCBI SSS UTILS) </li>
+  <li> <span class="ncbi_conf_flag">--without-sss</span>
+          (both <span class="ncbi_conf_flag">--without-sssdb</span> and <span class="ncbi_conf_flag">--without-sssutils</span>) </li>
+  <li> <span class="ncbi_conf_flag">--without-geo</span> (NCBI GEO) </li>
+  <li> <span class="ncbi_conf_flag">--without-sp</span> (NCBI SP) </li>
+  <li> <span class="ncbi_conf_flag">--without-pubmed</span> (NCBI PubMed) </li>
+  <li> <span class="ncbi_conf_flag">--without-orbacus</span> (ORBacus CORBA) </li>
 </ul>
 </dl>
 
@@ -1180,51 +1176,51 @@ flags:
     <dt>
     <dd>
 You can control whether to build the following core packages
-using the following <b><i>configure</i></b> flags:
+using the following <span class="ncbi_script">configure</span> flags:
 <ul>
-  <li> <i><b>--without-serial</b></i> --
-		  do not build C++ ASN.1 serialization library and
-		  <a href="tools/datatool/datatool.html">datatool</a>;
-		  <br> see in <i><b>internal/c++/{
-				<a href="lxr/source/src/serial">src</a>
-				|
-				<a href="lxr/source/include/serial">include</a>
-				}/serial</b></i> directories
+  <li> <span class="ncbi_conf_flag">--without-serial</span> --
+          do not build C++ ASN.1 serialization library and
+          <a href="tools/datatool/datatool.html">datatool</a>;
+          <br> see in <span class="ncbi_dir">internal/c++/{
+                <a href="lxr/source/src/serial">src</a>
+                |
+                <a href="lxr/source/include/serial">include</a>
+                }/serial</span> directories
   </li>
-  <li> <i><b>--without-ctools</b></i> --
-		  do not build projects that use NCBI C Toolkit
-		  <br> see in <i><b>internal/c++/{
-				<a href="lxr/source/src/ctools">src</a>
-				|
-				<a href="lxr/source/include/ctools">include</a>
-				}/ctools</b></i> directories
+  <li> <span class="ncbi_conf_flag">--without-ctools</span> --
+          do not build projects that use NCBI C Toolkit
+          <br> see in <span class="ncbi_dir">internal/c++/{
+                <a href="lxr/source/src/ctools">src</a>
+                |
+                <a href="lxr/source/include/ctools">include</a>
+                }/ctools</span> directories
   </li>
-  <li> <i><b>--without-gui</b></i> --
-		  do not build projects that use wxWindows GUI package
-		  <br> see in <i><b>internal/c++/{
-				<a href="lxr/source/src/gui">src</a>
-				|
-				<a href="lxr/source/include/gui">include</a>
-				}/gui</b></i> directories
+  <li> <span class="ncbi_conf_flag">--without-gui</span> --
+          do not build projects that use wxWindows GUI package
+          <br> see in <span class="ncbi_dir">internal/c++/{
+                <a href="lxr/source/src/gui">src</a>
+                |
+                <a href="lxr/source/include/gui">include</a>
+                }/gui</span> directories
   </li>
 </ul>
 
 <ul>
-  <li> <i><b>--with-objects</b></i> --
-		  generate and build libraries to serialize ASN.1 objects;
-		  <br> see in <i><b>internal/c++/{
-				<a href="lxr/source/src/objects">src</a>
-				|
-				<a href="lxr/source/include/objects">include</a>
-				}/objects</b></i> directories
+  <li> <span class="ncbi_conf_flag">--with-objects</span> --
+          generate and build libraries to serialize ASN.1 objects;
+          <br> see in <span class="ncbi_dir">internal/c++/{
+                <a href="lxr/source/src/objects">src</a>
+                |
+                <a href="lxr/source/include/objects">include</a>
+                }/objects</span> directories
   </li>
-  <li> <i><b>--with-internal</b></i> --
-		  build of internal projects is by default disabled on most platforms;
-		  <br> see in <i><b>internal/c++/{
-				<a href="lxr/source/src/internal">src</a>
-				|
-				<a href="lxr/source/include/internal">include</a>
-				}/internal</b></i> directories
+  <li> <span class="ncbi_conf_flag">--with-internal</span> --
+          build of internal projects is by default disabled on most platforms;
+          <br> see in <span class="ncbi_dir">internal/c++/{
+                <a href="lxr/source/src/internal">src</a>
+                |
+                <a href="lxr/source/include/internal">include</a>
+                }/internal</span> directories
   </li>
 </ul>
 </dl>
@@ -1232,59 +1228,59 @@ using the following <b><i>configure</i></b> flags:
 
 <p>
 <a name="ref_ProjectList"></a>
-<h4>Finer-grained control of projects: <i>--with-projects</i></h4>
+<h4>Finer-grained control of projects: <span class="ncbi_conf_flag">--with-projects</span></h4>
 
 <dl>
     <dt>
     <dd>
 If the above options aren't specific enough for you, you can also tell
-<tt>configure</tt> which projects you want to build by passing the
-flag <i><b>--with-projects=FILE</b></i>, where <b>FILE</b> contains a
+<span class="ncbi_script">configure</span> which projects you want to build by passing the
+flag <span class="ncbi_conf_flag">--with-projects=FILE</span>, where <span class="ncbi_value">FILE</span> contains a
 list of
-<a href="http://www.ciser.cornell.edu/info/regex.html"><i>extended
-regular expressions</i></a> indicating which directories to build in.
-With this option, the <tt>make</tt> target <tt>all_p</tt> will build
+<a href="http://www.ciser.cornell.edu/info/regex.html"><span class="ncbi_term">extended
+regular expressions</span></a> indicating which directories to build in.
+With this option, the <span class="ncbi_util">make</span> target <span class="ncbi_make_flag">all_p</span> will build
 all selected projects under the current directory.  If there is a
 project you want to keep track of but not automatically build, you can
-follow its name with "&nbsp;update-only".  To <b>exclude</b> projects
+follow its name with "&nbsp;update-only". To <em>exclude</em> projects
 that would otherwise match, list them explicitly with an initial
-hyphen.  (Exclusions can also be regular expressions rather than simple
+hyphen. (Exclusions can also be regular expressions rather than simple
 project names.)
 <p>
-For instance, a file containing the lines <pre>
-corelib$
+For instance, a file containing the lines 
+<pre class="ncbi_code">corelib$
 util
 serial
 -serial/test
 test update-only
 </pre>
-would request a non-recursive build in <tt>corelib</tt> and a recursive build
-in <tt>util</tt>, and a recursive build in <tt>serial</tt> that
-skipped <tt>serial/test</tt>.  It would also request keeping the
-<tt>test</tt> project up-to-date (for the benefit of the programs in
-<tt>util/test</tt>).
+would request a non-recursive build in <span class="ncbi_dir">corelib</span> and a recursive build
+in <span class="ncbi_dir">util</span>, and a recursive build in <span class="ncbi_dir">serial</span> that
+skipped <span class="ncbi_dir">serial/test</span>.  It would also request keeping the
+<span class="ncbi_dir">test</span> project up-to-date (for the benefit of the programs in
+<span class="ncbi_dir">util/test</span>).
 <p>
-<b>NOTE:</b> The flags listed <a href="#ref_Optional">above</a> still
-apply; for instance, you still need <i><b>--with-internal</b></i> to
+<span class="ncbi_note">NOTE:</span> The flags listed <a href="#ref_Optional">above</a> still
+apply; for instance, you still need <span class="ncbi_conf_flag">--with-internal</span> to
 enable internal projects.  However,
-<a href="cvs.html#ref_Update_Projects"><tt>update_projects.sh</tt></a> can
+<a href="cvs.html#ref_Update_Projects"><span class="ncbi_script">update_projects.sh</span></a> can
 automatically take care of these for you; it will also take any lines
 starting with two hyphens as explicit options.
 </dl>
 
 <p>
 <a name="ref_Misc"></a>
-<h4>Miscellaneous: <i>--without-exe, --without-execopy, --with-lib-rebuilds(=ask)</i></h4>
+<h4>Miscellaneous: <span class="ncbi_conf_flag">--without-exe, --without-execopy, --with-lib-rebuilds(=ask)</span></h4>
 
 <ul>
-  <li> <i><b>--without-exe</b></i> --
-		  do not build the executables enlisted in the <i>APP_PROJ</i>
-  <li> <i><b>--without-execopy</b></i> --
-		  do not copy (yet build) the executables enlisted in the <i>APP_PROJ</i>
-  <li> <i><b>--with-lib-rebuilds</b></i> --
+  <li> <span class="ncbi_conf_flag">--without-exe</span> --
+          do not build the executables enlisted in the <span class="ncbi_make_var">APP_PROJ</span>
+  <li> <span class="ncbi_conf_flag">--without-execopy</span> --
+          do not copy (yet build) the executables enlisted in the <span class="ncbi_make_var">APP_PROJ</span>
+  <li> <span class="ncbi_conf_flag">--with-lib-rebuilds</span> --
           When building an application, attempt to rebuild all of the
           libraries it uses in case they are out of date.
-  <li> <i><b>--with-lib-rebuilds=ask</b></i> --
+  <li> <span class="ncbi_conf_flag">--with-lib-rebuilds=ask</span> --
           As above, but prompt before any needed rebuilds.  (Do not
           prompt for libraries that are up-to-date.)
 </ul>
@@ -1294,13 +1290,13 @@ starting with two hyphens as explicit options.
 
 <p>
 Here's a more detailed explanation of
-<i><b>--with-lib-rebuilds</b></i>:  There are three modes of operation.
+<span class="ncbi_conf_flag">--with-lib-rebuilds</span>:  There are three modes of operation.
 <ul>
-<li> In the default mode (<i><b>--without-lib-rebuilds</b></i>),
+<li> In the default mode (<span class="ncbi_conf_flag">--without-lib-rebuilds</span>),
   starting a build from within a subtree (such as internal) will not
   attempt to build anything outside of that subtree.
 
-<li> In the unconditional mode (<i><b>--with-lib-rebuilds</b></i>),
+<li> In the unconditional mode (<span class="ncbi_conf_flag">--with-lib-rebuilds</span>),
   building an application will make the system rebuild any libraries
   it requires that are older than their sources.  This can be useful
   if you have made a change that affects everything under objects but
@@ -1308,7 +1304,7 @@ Here's a more detailed explanation of
   can save time by starting the build in your project's directory
   rather than at the top level.
 
-<li> The conditional mode (<i><b>--with-lib-rebuilds=ask</b></i>) is like the
+<li> The conditional mode (<span class="ncbi_conf_flag">--with-lib-rebuilds=ask</span>) is like the
   unconditional mode, except that when the system discovers that a
   needed library is out of date, it asks you about it.  You can then
   choose between keeping your current version (because you prefer it
@@ -1320,7 +1316,7 @@ Here's a more detailed explanation of
 
 <p>
 <a name="ref_Wrappers"></a>
-<h4>Compiler-specific <b><i>configure</i></b> wrappers</h4>
+<h4>Compiler-specific <span class="ncbi_script">configure</span> wrappers</h4>
 
 <dl>
     <dt>
@@ -1330,25 +1326,25 @@ mandatory flags to compile and link C++ code properly. That's why we
 have to have special scripts that perform the required non-standard
 compiler-specific pre-initialization for the used
 <a href="#ref_ToolsAndFlags">tools and flags</a> before running
-<b><i>configure</i></b>.
+<span class="ncbi_script">configure</span>.
 
 <p>
-These wrapper scripts are located in the <i><b>compilers/</b></i>
-directory, and now we have such wrappers for SUN WorkShop (5.0, 5.1 and 5.2)
-MIPSpro 7.3, GCC/Cygwin-NT, KCC, and MSVC++ compilers:
+These wrapper scripts are located in the <span class="ncbi_dir">compilers/</span>
+directory, and now we have such wrappers for <span class="ncbi_compiler">SUN WorkShop (5.0, 5.1 and 5.2),
+MIPSpro 7.3, GCC/Cygwin-NT, KCC</span>, and <span class="ncbi_compiler">MSVC++</span> compilers:
   <ul>
-    <li> <i><b>WorkShop.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>WorkShop5.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>WorkShop6.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>WorkShop52.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>MIPSpro73.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>KCC.sh</b></i> {32|64} [build_dir] [--configure-flags]
-    <li> <i><b>ICC.sh</b></i> [build_dir] [--configure-flags]
-    <li> <i><b>gcc_nt.bash</b></i> [--configure-flags]
-    <li> <i><b>msvc_nt.bash</b></i> [--configure-flags]
+    <li> <span class="ncbi_script">WorkShop.sh</span> {32|64} [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">WorkShop5.sh</span> {32|64} [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">WorkShop6.sh</span> {32|64} [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">WorkShop52.sh</span> {32|64} [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">MIPSpro73.sh</span> {32|64} [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">KCC.sh</span> {32|64} [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">ICC.sh</span> [build_dir] [--configure-flags]
+    <li> <span class="ncbi_script">gcc_nt.bash</span> [--configure-flags]
+    <li> <span class="ncbi_script">msvc_nt.bash</span> [--configure-flags]
   </ul>
-Note, that these scripts accept all regular <b><i>configure</i></b> flags
-and then pass them to the <b><i>configure</i></b> script.
+Note, that these scripts accept all regular <span class="ncbi_script">configure</span> flags
+and then pass them to the <span class="ncbi_script">configure</span> script.
 </dl>
 
 <p>
@@ -1358,28 +1354,28 @@ and then pass them to the <b><i>configure</i></b> script.
 <dl>
     <dt>
     <dd>
-Although it is possible to run <b><i>configure</i></b> under Windows NT,
+Although it is possible to run <span class="ncbi_script">configure</span> under Windows NT,
 (as we do for the MSVC++ compiler), however it requires having a
-<i>sh</i>-compatible command interpreter installed on your PC.
-In-house, we run <i><b>msvc_nt.bash</b></i> using
+<span class="ncbi_util">sh</span>-compatible command interpreter installed on your PC.
+In-house, we run <span class="ncbi_script">msvc_nt.bash</span> using
 <a href="http://www.lns.cornell.edu/public/COMP/info/bash/bashref_toc.html">
-<i>bash</i></a> in the
+<span class="ncbi_util">bash</span></a> in the
 <a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a>
 environment.
 
 <p>
 As soon as most of NT users do not usually "play" with the extensions
-like <i>bash/CYGWIN</i> on their PCs but just want to use MSVC++
+like <span class="ncbi_util">bash/CYGWIN</span> on their PCs but just want to use MSVC++
 Development Studio, so there is a pre-build configuration header
 for MSVC++ 6.0:
-<i><b>compilers/ncbiconf.ms6</b></i>.
+<span class="ncbi_file">compilers/ncbiconf.ms6</span>.
 
 MSVC++ users can use this header and a ready-to-use hierarchy of
 <a href="#ref_MsvcProj">projects for the MS Visual C++ Studio</a>.
 
 <p>
 The same is for Mac Metrowerks CodeWarrior on PowerPC --
-we have a manually maintained <i><b>compilers/ncbiconf.mac</b></i>
+we have a manually maintained <span class="ncbi_file">compilers/ncbiconf.mac</span>
 (however we dont have a ready-to-use Mac-specific project tree).
 </dl>
 
@@ -1391,50 +1387,50 @@ we have a manually maintained <i><b>compilers/ncbiconf.mac</b></i>
 
 
 <p>
-Sometimes, you change or add <i>configurables</i> (<i><b>*.in</b></i>
-files, such as <i><b>Makefile.in</i></b> meta-makefiles) in the <i>source tree</i>.
+Sometimes, you change or add configurables (<span class="ncbi_file">*.in</span>
+files, such as <span class="ncbi_file">Makefile.in</span> meta-makefiles) in the <span class="ncbi_term">source tree</span>.
 
 <p>
-For the <i>build tree</i> to pick up these changes,
-go to the appropriate build directory and run script <i><b>reconfigure.sh</i></b>.
+For the <span class="ncbi_term">build tree</span> to pick up these changes,
+go to the appropriate build directory and run script <span class="ncbi_script">reconfigure.sh</span>.
 It will automagically use just the same command-line arguments that you
-used for the original configuration of that <i>build tree</i>.
+used for the original configuration of that <span class="ncbi_term">build tree</span>.
 
 <p>
-Run <i><b>reconfigure.sh</i></b> with argument:
+Run <span class="ncbi_script">reconfigure.sh</span> with argument:
 <ul>
-		<li> <b>update</b> --
-		  if you did not add or remove any <i>configurables</i> in the
-		  <i>source tree</i>, but only modified some of them.
-		</li>
+        <li> <span class="ncbi_script_a">update</span> --
+          if you did not add or remove any <span class="ncbi_term">configurables</span> in the
+          <span class="ncbi_term">source tree</span>, but only modified some of them.
+        </li>
 
-		<li> <b>reconf</b> --
-		  if you changed, added, and/or removed any <i>configurables</i> in
-        the <i>source tree</i>.
-		</li>
+        <li> <span class="ncbi_script_a">reconf</span> --
+          if you changed, added, and/or removed any <span class="ncbi_term">configurables</span> in
+        the <span class="ncbi_term">source tree</span>.
+        </li>
 
-		<li> <b>recheck</b> --
-		  if you also suspect that your working environment (compiler features,
-		  accessibility of 3rd-party packages, etc.) might have changed since
-		  your last (re)configuration of the <i>build tree</i>, and therefore you
-		  do not want to use cached check results obtained during the last
-		  (re)configuration.
-		</li>
-		<li> <i><b>without arguments</b></i> --
-			 printout script usage info.
-		</li>
+        <li> <span class="ncbi_script_a">recheck</span> --
+          if you also suspect that your working environment (compiler features,
+          accessibility of 3rd-party packages, etc.) might have changed since
+          your last (re)configuration of the <span class="ncbi_term">build tree</span>, and therefore you
+          do not want to use cached check results obtained during the last
+          (re)configuration.
+        </li>
+        <li> <em>without arguments</em> --
+             printout script usage info.
+        </li>
 </ul>
 
 <p>
-Example:
-<pre>
+<span class="ncbi_note">Example:</span>
+<pre class="ncbi_cmd">
     cd /home/foobar/c++/GCC-Debug/build
     ./reconfigure.sh reconf
 </pre>
 
-Naturally, <b>update</b> is the fastest of these methods,
-<b>reconf</b> is slower, and <b>recheck</b> (which is an exact equivalent
-of re-running <b><i>configure</i></b> script with the same command-line
+Naturally, <span class="ncbi_script_a">update</span> is the fastest of these methods,
+<span class="ncbi_make_flag">reconf</span> is slower, and <span class="ncbi_make_flag">recheck</span> (which is an exact equivalent
+of re-running <span class="ncbi_script">configure</span> script with the same command-line
 arguments as were provided during the original configuration) is the slowest.
 
 
@@ -1447,7 +1443,7 @@ arguments as were provided during the original configuration) is the slowest.
 
 To retrieve, configure, install and build all available NCBI C++ projects:
 
-<pre>
+<pre class="ncbi_cmd">
 # Retrieve NCBI C++ sources from the NCBI CVS tree
 # (e.g. to "cpp_foo/" dir)
 cvs checkout -d ~/cpp_foo internal/c++
@@ -1470,7 +1466,6 @@ make all_r
 </pre>
 
 
-<br>
 <hr>
 
 <a name="ref_Compilers"></a>
@@ -1482,75 +1477,75 @@ As for now, at least the following compilers give enough support
 libraries and tools:
 <ul>
   <li> <a href="http://gcc.gnu.org/">
-       <b>GCC 3.0.[1,2,3,4]</b></a>
+       <span class="ncbi_compiler">GCC 3.0.[1,2,3,4]</span></a>
     <ul>
-      <li> Linux RedHat 6.2 and higher --- <i>PC-Intel</i> </li>
-      <li> Solaris 2.8 and higher --- <i>SUN-Sparc</i> </li>
+      <li> Linux RedHat 6.2 and higher --- <span class="ncbi_platform">PC-Intel</span> </li>
+      <li> Solaris 2.8 and higher --- <span class="ncbi_platform">SUN-Sparc</span> </li>
     </ul>
-		</li>
+        </li>
 
   <li> <a href="http://gcc.gnu.org/">
-       <b>GCC 2.95.[1,2,3]</b></a>
+       <span class="ncbi_compiler">GCC 2.95.[1,2,3]</span></a>
     <ul>
-      <li> Solaris 2.7, 2.8 --- <i>SUN-Sparc</i> and <i>PC-Intel</i></li>
-      <li> Linux RedHat 5.2 and higher --- <i>PC-Intel</i></li>
-      <li> FreeBSD 4.1-RELEASE --- <i>PC-Intel</i></li>
-      <li> OSF1 Compaq Tru64 UNIX V5.1 --- <i>DEC-Alpha</i></li>
-      <li> IRIX64 6.5 --- <i>SGI-Mips</i></li>
+      <li> Solaris 2.7, 2.8 --- <span class="ncbi_platform">SUN-Sparc</span> and <span class="ncbi_platform">PC-Intel</span></li>
+      <li> Linux RedHat 5.2 and higher --- <span class="ncbi_platform">PC-Intel</span></li>
+      <li> FreeBSD 4.1-RELEASE --- <span class="ncbi_platform">PC-Intel</span></li>
+      <li> OSF1 Compaq Tru64 UNIX V5.1 --- <span class="ncbi_platform">DEC-Alpha</span></li>
+      <li> IRIX64 6.5 --- <span class="ncbi_platform">SGI-Mips</span></li>
     </ul>
   </li>
 
   <li> <a href="ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/cygwin/gcc-2.95/">
-       <b>GCC 2.95</b></a>
+       <span class="ncbi_compiler">GCC 2.95</span></a>
     <ul>
       <li>
       Windows NT 4.0
-      with <a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a> Beta 20.1 --- <i>PC-Intel</i> <br>
-				<i>(Note:  has not been built for a long long time)</i>
+      with <a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a> Beta 20.1 --- <span class="ncbi_platform">PC-Intel</span> <br>
+                (<span class="ncbi_note">Note:</span>  has not been built for a long long time)
       </li>
     </ul>
   </li>
 
   <li> <a href="http://www.sun.com/workshop/visual/">
-       <b>Sun WorkShop 5.1 (Forte 6), 5.2, 5.3 </b></a>
+       <span class="ncbi_compiler">Sun WorkShop 5.1 (Forte 6), 5.2, 5.3 </span></a>
     <ul>
-      <li> 32/64-bit: Solaris 2.7, 2.8 --- <i>SUN-Sparc</i> <br>
-				<i>(Note:  <b>ld</b> crashes on huge ~30M static executables in 64-bit Debug mode)</i> </li>
-      <li> 32-bit: Solaris 2.7 --- <i>PC-Intel</i> </li>
+      <li> 32/64-bit: Solaris 2.7, 2.8 --- <span class="ncbi_platform">SUN-Sparc</span> <br>
+           (<span class="ncbi_note">Note:</span>  <span class="ncbi_util">ld</span> crashes on huge ~30M static executables in 64-bit Debug mode)</li>
+      <li> 32-bit: Solaris 2.7 --- <span class="ncbi_platform">PC-Intel</span> </li>
     </ul>
   </li>
 
-  <li> <u><b>MSVC++ 6.0 (SP3)</b></u>
+  <li> <u><span class="ncbi_compiler">MSVC++ 6.0 (SP3)</span></u>
     <ul>
-      <li> Windows NT 4.0  --- <i>PC-Intel</i> </li>
+      <li> Windows NT 4.0  --- <span class="ncbi_platform">PC-Intel</span> </li>
     </ul>
   </li>
 
-  <li> <u><b>MIPSpro 7.3.1.1m, 7.3.1.2m</b></u>
+  <li> <u><span class="ncbi_compiler">MIPSpro 7.3.1.1m, 7.3.1.2m</span></u>
     <ul>
-      <li> 32-bit (-n32): IRIX64 6.5 --- <i>SGI-Mips</i> </li>
-      <li> 64-bit:  IRIX64 6.5 --- <i>SGI-Mips</i> </li>
+      <li> 32-bit (-n32): IRIX64 6.5 --- <span class="ncbi_platform">SGI-Mips</span> </li>
+      <li> 64-bit:  IRIX64 6.5 --- <span class="ncbi_platform">SGI-Mips</span> </li>
     </ul>
   </li>
 
-  <li> <u><b>Metrowerks CodeWarrior</b></u>
+  <li> <u><span class="ncbi_compiler">Metrowerks CodeWarrior</span></u>
     <ul>
-      <li> MacOS -- <i>PowerPC</i> </li>
+      <li> MacOS -- <span class="ncbi_platform">PowerPC</span> </li>
     </ul>
   </li>
 
   <li> <a href="http://www.kai.com/C_plus_plus/">
-       <b>KAI C++ (KCC) 4.0</b></a>
+       <span class="ncbi_compiler">KAI C++ (KCC) 4.0</span></a>
     <ul>
-      <li> Solaris 2.7 and higher --- <i>SUN-Sparc</i> </li>
-      <li> Linux RedHat 6.2 --- <i>PC-Intel</i></li>
+      <li> Solaris 2.7 and higher --- <span class="ncbi_platform">SUN-Sparc</span> </li>
+      <li> Linux RedHat 6.2 --- <span class="ncbi_platform">PC-Intel</span></li>
     </ul>
   </li>
 
   <li> <a href="http://developer.intel.com/software/products/compilers/c50/linux/">
-       <b>IntelC++ (ICC) 5.0 (beta)</b></a>
+       <span class="ncbi_compiler">IntelC++ (ICC) 5.0 (beta)</span></a>
     <ul>
-      <li> Linux RedHat 6.2 and higher --- <i>PC-Intel</i></li>
+      <li> Linux RedHat 6.2 and higher --- <span class="ncbi_platform">PC-Intel</span></li>
     </ul>
   </li>
 </ul>
@@ -1558,7 +1553,7 @@ libraries and tools:
 NOTE: Some projects are very platform-specific, and they cannot
 be built for all of the supported platforms.
 Most of such projects are located under the
-<i><b>internal/c++/{src|include}/internal/</b></i>
+<span class="ncbi_dir">internal/c++/{src|include}/internal/</span>
 directories.
 
 
@@ -1581,20 +1576,20 @@ directories.
     <dt>
     <dd>
 Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
-<i><b>C:\cxx</b></i>. You can do it one of the following ways:
+<span class="ncbi_dir">C:\cxx</span>. You can do it one of the following ways:
 <ul>
-		<li> do <a href="win_cvs.html">CVS checkout</a> of
-		  <i><b>internal/c++</b></i>. This can be done right on your
-		  PC, if you have installed CVS client there:
-		  <br> <i>cvs checkout -d cxx internal/c++</i></li>
-		<li> checkout only the core sources on your UNIX workstation by running (<a href="cvs_core_msvc.html">notes here</a>)
-		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --msvc --without-cvs --with-objects</i>
-		  <br> and then copy the whole resultant directory
-		  <i><b>cxx</b></i> to your PC directory <i><b>C:\cxx</b></i></li>
-		<li> if you have the Toolkit sources in the publicly distributed
-		  self-extracting archive, then just expand the archive, and you are ready
-		  to build any (or all) of MSVC++ project configurations.
-		  The archive also contains pre-generated ASN classes.</li>
+        <li> do <a href="win_cvs.html">CVS checkout</a> of
+          <span class="ncbi_dir">internal/c++</span>. This can be done right on your
+          PC, if you have installed CVS client there:
+          <br> <span class="ncbi_cmd">cvs checkout -d cxx internal/c++</span></li>
+        <li> checkout only the core sources on your UNIX workstation by running (<a href="cvs_core_msvc.html">notes here</a>)
+          <br> <span class="ncbi_cmd">$NCBI/c++/scripts/cvs_core.sh cxx --msvc --without-cvs --with-objects</span>
+          <br> and then copy the whole resultant directory
+          <span class="ncbi_dir">cxx</span> to your PC directory <span class="ncbi_dir">C:\cxx</span></li>
+        <li> if you have the Toolkit sources in the publicly distributed
+          self-extracting archive, then just expand the archive, and you are ready
+          to build any (or all) of MSVC++ project configurations.
+          The archive also contains pre-generated ASN classes.</li>
 </ul>
 </dl>
 
@@ -1611,18 +1606,18 @@ which are kept in the CVS repository. Click <a href="msvc_prj.html">here</a> to 
 if you wish to modify and/or add the NCBI C++ Toolkit project files.
 There is a short summary:
 <ul>
-	<li>All project files in the CVS repository contain a single (<tt>DebugMT</tt>) configuration. This way, you can directly use
-	<b><tt>cvs.exe</tt></b> on your PC and have project files checked out and in, just <a href="#ref_MsvcProjSettings">make
-	sure</a> you work with single-configuration project files in <tt>DebugMT</tt> mode.</li>
-	<li>The checked out project files can be checked in back to the CVS only if they contain exactly one configuration
-		(<tt>DebugMT</tt>).</li>
-	<li>Use script <a href="msvc_prj.html#all2one_sh"><i>all2one.sh</i></a> to convert any multi-configuration
-	project file to a single configuration one.</li>
-	<li>Use script <a href="msvc_prj.html#one2one_sh"><i>one2one.sh</i></a> to change configuration in any
-	single-configuration project file (e.g. from <tt>ReleaseDLL</tt> to <tt>DebugMT</tt>).</li>
-	<li>Use script <a href="msvc_prj.html#one2all_sh"><i>one2all.sh</i></a> to convert a single configuration
-	(template) project file to the multi-configuration one (containing all of the following configurations:
-	<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>).</li>
+    <li>All project files in the CVS repository contain a single (<span class="ncbi_dir">DebugMT</span>) configuration. This way, you can directly use
+    <span class="ncbi_util">cvs.exe</span> on your PC and have project files checked out and in, just <a href="#ref_MsvcProjSettings">make
+    sure</a> you work with single-configuration project files in <span class="ncbi_dir">DebugMT</span> mode.</li>
+    <li>The checked out project files can be checked in back to the CVS only if they contain exactly one configuration
+        (<span class="ncbi_dir">DebugMT</span>).</li>
+    <li>Use script <a href="msvc_prj.html#all2one_sh"><span class="ncbi_script">all2one.sh</span></a> to convert any multi-configuration
+    project file to a single configuration one.</li>
+    <li>Use script <a href="msvc_prj.html#one2one_sh"><span class="ncbi_script">one2one.sh</span></a> to change configuration in any
+    single-configuration project file (e.g. from <span class="ncbi_dir">ReleaseDLL</span> to <span class="ncbi_dir">DebugMT</span>).</li>
+    <li>Use script <a href="msvc_prj.html#one2all_sh"><span class="ncbi_script">one2all.sh</span></a> to convert a single configuration
+    (template) project file to the multi-configuration one (containing all of the following configurations:
+    <span class="ncbi_dir">Debug</span>, <span class="ncbi_dir">DebugMT</span>, <span class="ncbi_dir">DebugDLL</span>, <span class="ncbi_dir">Release</span>, <span class="ncbi_dir">ReleaseMT</span>, <span class="ncbi_dir">ReleaseDLL</span>).</li>
 </ul>
 </dl>
 
@@ -1637,9 +1632,9 @@ Now, if you want to use MS Visual C++ IDE to work with these sources, then you h
 <p>
 <ul>
   <li>
-  Go to directory <i><b>compilers</b></i> and run script <i><b>msvc_nt.bat</b></i>.
+  Go to directory <span class="ncbi_dir">compilers</span> and run script <span class="ncbi_script">msvc_nt.bat</span>.
   (You can skip this step if you obtained your sources from the distributed
-   self-extracting archive, or by <i>$NCBI/c++/scripts/cvs_core.sh cxx --msvc .....</i>)
+   self-extracting archive, or by <span class="ncbi_cmd">$NCBI/c++/scripts/cvs_core.sh cxx --msvc .....</span>)
   </li>
   <li>All MSVC++ project files are already adjusted to contain proper information about include file directories
   (using relative paths), thus no additional configuration required (<a href="old_msvc_ide_cnf.html">the old way</a> of
@@ -1649,33 +1644,33 @@ Now, if you want to use MS Visual C++ IDE to work with these sources, then you h
 <p>
 After the installation is complete you can build the Toolkit projects in two different ways:
 <ul>
-	<li>Build the entire Toolkit from command line in batch mode: <i>chdir</i> to <i><b>compilers/msvc_prj</i></b>, and run batch
-	file <a href="msvc_prj.html#all_bat"><i><b>all.bat</b></i></a> there (provided that <b><i>msdev.exe</i></b>
-	is in your <tt>PATH</tt>).
-	When run without arguments, it builds all available configurations of all available projects. Or,
-	you can pass any combination of <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>,
-	<tt>ReleaseDLL</tt> as batch file argument(s)
-	to build all projects in the specified configurations only.</li>
-	<li>Open Microsoft Developer Studio with workspace <i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i>, and build the
-		following projects:
-	<ul>
-  		<li> <b>all</b> -- everything
-  		<li> <b>all_core</b> -- all basic libraries and test applications
-  		<li> <b>all_core_libs</b> -- all basic libraries
-  		<li> <b>all_objects</b> -- all serialization libraries (as of now,
-		  	providing for the serialization of NCBI ASN.1 objects), and their test applications
-  		<li> <b>all_objects_libs</b> -- serialization libraries only
-  		<li> <b>all_gui</b> -- all GUI stuff (libraries plus applications)
-  		<li> <b>all_gui_libs</b> -- GUI libraries only
-  		<li> <b>all_tools</b> -- non-graphics tools and their related libraries
-  		<li> <b>all_tools_libs</b> -- non-graphics libraries only
-  		<li> any single library and/or application -- other projects in this workspace</li>
-   	</ul>
-    	You can build <i>any</i> project in any of Debug and/or Release versions. To switch among Debug or
-		Release configurations, use <i>"Build"/"Set active configuration..."</i> menu.
-		<br>If the Toolkit tree was extracted by the script <i>cvs_core.sh</i> with option <i>--without-objects</i>,
-		then the target <b>all</b> is made nearly equivalent to <b>all_core</b> because almost every other project requires
-		serialization libraries (<i>objects</i>) to be present.
+    <li>Build the entire Toolkit from command line in batch mode: <span class="ncbi_util">chdir</span> to <span class="ncbi_dir">compilers/msvc_prj</span>, and run batch
+    file <a href="msvc_prj.html#all_bat"><span class="ncbi_script">all.bat</span></a> there (provided that <span class="ncbi_util">msdev.exe</span>
+    is in your <span class="ncbi_env">PATH</span>).
+    When run without arguments, it builds all available configurations of all available projects. Or,
+    you can pass any combination of <span class="ncbi_dir">Debug</span>, <span class="ncbi_dir">DebugMT</span>, <span class="ncbi_dir">DebugDLL</span>, <span class="ncbi_dir">Release</span>, <span class="ncbi_dir">ReleaseMT</span>,
+    <span class="ncbi_dir">ReleaseDLL</span> as batch file argument(s)
+    to build all projects in the specified configurations only.</li>
+    <li>Open Microsoft Developer Studio with workspace <span class="ncbi_file">compilers/msvc_prj/ncbi_cpp.dsw</span>, and build the
+        following projects:
+    <ul>
+        <li> <span class="ncbi_proj">all</span> -- everything
+        <li> <span class="ncbi_proj">all_core</span> -- all basic libraries and test applications
+        <li> <span class="ncbi_proj">all_core_libs</span> -- all basic libraries
+        <li> <span class="ncbi_proj">all_objects</span> -- all serialization libraries (as of now,
+            providing for the serialization of NCBI ASN.1 objects), and their test applications
+        <li> <span class="ncbi_proj">all_objects_libs</span> -- serialization libraries only
+        <li> <span class="ncbi_proj">all_gui</span> -- all GUI stuff (libraries plus applications)
+        <li> <span class="ncbi_proj">all_gui_libs</span> -- GUI libraries only
+        <li> <span class="ncbi_proj">all_tools</span> -- non-graphics tools and their related libraries
+        <li> <span class="ncbi_proj">all_tools_libs</span> -- non-graphics libraries only
+        <li> any single library and/or application -- other projects in this workspace</li>
+    </ul>
+        You can build <em>any</em> project in any of Debug and/or Release versions. To switch among Debug or
+        Release configurations, use <span class="ncbi_menu">"Build"/"Set active configuration..."</span> menu.
+        <br>If the Toolkit tree was extracted by the script <span class="ncbi_script">cvs_core.sh</span> with option <span class="ncbi_conf_flag">--without-objects</span>,
+        then the target <span class="ncbi_proj">all</span> is made nearly equivalent to <span class="ncbi_proj">all_core</span> because almost every other project requires
+        serialization libraries (<span class="ncbi_lib">objects</span>) to be present.
 </ul>
 </dl>
 
@@ -1687,45 +1682,45 @@ After the installation is complete you can build the Toolkit projects in two dif
     <dt>
     <dd>
 If you don't want to build the whole NCBI C++ tree, but just
-need to <i>use</i> the NCBI C++ Toolkit functionality in your own, separate projects,
+need to <em>use</em> the NCBI C++ Toolkit functionality in your own, separate projects,
 there are pre-built libraries located at:
 <ul>
-	<li> <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i> -- statically linked against standard Microsoft run-time library,
-	MT-safe versions
-	<li> <i>\\dizzy\public\cxx\<b>Release</b></i> -- statically linked against standard Microsoft run-time library,
-	<emph>not</emph> MT-safe versions
-	<li> <i>\\dizzy\public\cxx\<b>DebugMT</b></i> -- statically linked against standard Microsoft run-time library,
-	MT-safe versions with debug information preserved
-	<li> <i>\\dizzy\public\cxx\<b>Debug</b></i> -- statically linked against standard Microsoft run-time library,
-	<emph>not</emph> MT-safe versions with debug information preserved
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>ReleaseMT</em></span> -- statically linked against standard Microsoft run-time library,
+    MT-safe versions
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>Release</em></span> -- statically linked against standard Microsoft run-time library,
+    <emph>not</emph> MT-safe versions
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>DebugMT</em></span> -- statically linked against standard Microsoft run-time library,
+    MT-safe versions with debug information preserved
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>Debug</em></span> -- statically linked against standard Microsoft run-time library,
+    <emph>not</emph> MT-safe versions with debug information preserved
 </ul>
 along with the header and source files at:
 <ul>
-  <li> <i>\\dizzy\public\cxx\<b>include</b></i>
-  <li> <i>\\dizzy\public\cxx\<b>src</b></i>
+  <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>include</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>src</em></span>
 </ul>
-There is a "one-blob" Toolkit source directory, <i>\\dizzy\public\cxx\<b>altsrc</b></i>, which is primarily
+There is a "one-blob" Toolkit source directory, <span class="ncbi_dir">\\dizzy\public\cxx\<em>altsrc</em></span>, which is primarily
 needed for debugging a program linked against pre-compiled Toolkit libraries.
 <p>
 
-The recommended way to refer to the include file directory is to put <i>\\dizzy\public\cxx\<b>include</b></i>
-in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor",
-</i>list <i>"Additional include directories"</i>.
+The recommended way to refer to the include file directory is to put <span class="ncbi_dir">\\dizzy\public\cxx\<em>include</em></span>
+in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"C/C++"</span>, category <span class="ncbi_menu">"Preprocessor",
+</span>list <span class="ncbi_menu">"Additional include directories"</span>.
 <p>
-You have to specify the used library name(s) in <i>"Project"/"Settings..."</i>, tab <i>"Link"</i>,
-category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
+You have to specify the used library name(s) in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"Link"</span>,
+category <span class="ncbi_menu">"Input"</span>, list <span class="ncbi_menu">"Object/Library modules"</span>.
 <br>
-You also have to put the correct path to the libraries (either <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i>,
-<i>\\dizzy\public\cxx\<b>DebugMT</b></i> etc, according to the configuration you are tuning)
-in the field <i>"Additional library path"</i>.
+You also have to put the correct path to the libraries (either <span class="ncbi_dir">\\dizzy\public\cxx\<em>ReleaseMT</em></span>,
+<span class="ncbi_dir">\\dizzy\public\cxx\<em>DebugMT</em></span> etc, according to the configuration you are tuning)
+in the field <span class="ncbi_menu">"Additional library path"</span>.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
 Moreover, if one of <a href="msvc_prj.html#scripts">conversion scripts</a> is then applied to your project file, then
 the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
 <p>
 If, however, you need to trace through the library source code, then you have to put
-<i>\\dizzy\public\cxx\<b>src</b></i>, or sometimes <i>\\dizzy\public\cxx\<b>altsrc</b></i> to
-<i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, list <i>"Source files"</i>.
+<span class="ncbi_dir">\\dizzy\public\cxx\<em>src</em></span>, or sometimes <span class="ncbi_dir">\\dizzy\public\cxx\<em>altsrc</em></span> to
+<span class="ncbi_menu">"Tools"/"Options..."</span>, tab <span class="ncbi_menu">"Directories"</span>, list <span class="ncbi_menu">"Source files"</span>.
 <p>
 In either case, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
 to make sure that it is built compatible with the chosen NCBI C++ libraries.
@@ -1742,89 +1737,89 @@ The pre-built versions of this library (<a href="wxwin_setup.html">modified</a> 
 along with include files, sources, documentation and project files,
 which we provide, are all put to:
 <ul>
-  <li> <i>\\dizzy\public\wxwin\<b>Debug</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>DebugDLL</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>Release</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>ReleaseDLL</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>include</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>src</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>docs</b></i>
-  <li> <i>\\dizzy\public\wxwin\<b>wxwin_prj</b></i>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>Debug</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>DebugMT</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>DebugDLL</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>Release</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>ReleaseMT</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>ReleaseDLL</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>include</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>src</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>docs</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\wxwin\<em>wxwin_prj</em></span>
 </ul>
-Your project has to specify all the library names (<b>tiff.lib jpeg.lib pnm.lib xpm.lib zlib.lib wx.lib</b>) in <i>"Project"/"Settings..."</i>, tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
+Your project has to specify all the library names (<span class="ncbi_lib">tiff.lib jpeg.lib pnm.lib xpm.lib zlib.lib wx.lib</span>) in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"Link"</span>, category <span class="ncbi_menu">"Input"</span>, list <span class="ncbi_menu">"Object/Library modules"</span>.
 Please note that although the wxWindows documentation instructs you to use *.lib in Release mode and *d.lib in Debug mode,
 we renamed the libraries to have the same names in any configuration, but we keep them in separate directories.
-Also note that in both <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations, only one library
-<b>wx.lib</b> is required to link your program dynamically with <b>wx.dll</b>. If <a href="msvc_prj.html#scripts">conversion
+Also note that in both <span class="ncbi_dir">ReleaseDLL</span> and <span class="ncbi_dir">DebugDLL</span> configurations, only one library
+<span class="ncbi_lib">wx.lib</span> is required to link your program dynamically with <span class="ncbi_lib">wx.dll</span>. If <a href="msvc_prj.html#scripts">conversion
 scripts</a> are later applied to your project file, then the proper set of the libraries is chosen automatically.
 <br>
-You also have to specify the correct path to the libraries (<i>\\dizzy\public\wxwin\</i><tt>[Debug|Release]*</tt>),
-according to the configuration you are adjusting, in the field <i>"Additional library path"</i>.
+You also have to specify the correct path to the libraries (<span class="ncbi_dir">\\dizzy\public\wxwin\</span><span class="ncbi_dir">[Debug|Release]*</span>),
+according to the configuration you are adjusting, in the field <span class="ncbi_menu">"Additional library path"</span>.
 <p>
 Note that many programs that use wxWindows may require additional system libraries.
 The list of known libraries includes (but not limited to) the following:
-<b>advapi32.lib</b>, <b>comctl32.lib</b>, <b>comdlg32.lib</b>, <b>gdi32.lib</b>,
-<b>ole32.lib</b>, <b>shell32.lib</b>, <b>user32.lib</b>, <b>winmm.lib</b>, <b>wsock32.lib</b>. And if the program
-uses OpenGL graphics, the following two libraries definitely come in addition: <b>glu32.lib</b> and
-<b>opengl32.lib</b>. All those libraries have to be listed in <i>"Objects/Library modules"</i> of
+<span class="ncbi_lib">advapi32.lib</span>, <span class="ncbi_lib">comctl32.lib</span>, <span class="ncbi_lib">comdlg32.lib</span>, <span class="ncbi_lib">gdi32.lib</span>,
+<span class="ncbi_lib">ole32.lib</span>, <span class="ncbi_lib">shell32.lib</span>, <span class="ncbi_lib">user32.lib</span>, <span class="ncbi_lib">winmm.lib</span>, <span class="ncbi_lib">wsock32.lib</span>. And if the program
+uses OpenGL graphics, the following two libraries definitely come in addition: <span class="ncbi_lib">glu32.lib</span> and
+<span class="ncbi_lib">opengl32.lib</span>. All those libraries have to be listed in <span class="ncbi_menu">"Objects/Library modules"</span> of
 linker settings (as described earlier for wxWindows libraries).
 
 <p>
-We recommend that you put the include file directory <i>\\dizzy\public\wxwin\<b>include</b></i>
-in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor"</i>,
-list <i>"Additional include directories"</i>. You have to define all wxWindows-related preprocessor
-symbols as required by wxWindows documentation (using <i>"Project"/"Settings..."</i>,  tab <i>"C/C++"</i>,
-category <i>"General"</i>, list <i>"Preprocessor definitions"</i>). In particular <tt>__WXDEBUG__</tt> must be
-defined in Debug configurations, and <tt>WXUSINGDLL</tt> - in DLL configurations.
+We recommend that you put the include file directory <span class="ncbi_dir">\\dizzy\public\wxwin\<em>include</em></span>
+in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"C/C++"</span>, category <span class="ncbi_menu">"Preprocessor"</span>,
+list <span class="ncbi_menu">"Additional include directories"</span>. You have to define all wxWindows-related preprocessor
+symbols as required by wxWindows documentation (using <span class="ncbi_menu">"Project"/"Settings..."</span>,  tab <span class="ncbi_menu">"C/C++"</span>,
+category <span class="ncbi_menu">"General"</span>, list <span class="ncbi_menu">"Preprocessor definitions"</span>). In particular <span class="ncbi_macro">__WXDEBUG__</span> must be
+defined in Debug configurations, and <span class="ncbi_macro">WXUSINGDLL</span> - in DLL configurations.
 The <a href="msvc_prj.html#scripts">conversion scripts</a> are aware of these symbols, and they make all necessary adjustments to keep these symbols consistent -- whenever you convert your project file(s).
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
 Moreover, if one of <a href="msvc_prj.html#scripts">conversion scripts</a> is then applied to your project,
 the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
 <p>
-If, however, you need to trace through the library source code, you have to put <i>\\dizzy\public\wxwin\<b>src</b></i>
-to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, list <i>"Source files"</i>.
+If, however, you need to trace through the library source code, you have to put <span class="ncbi_dir">\\dizzy\public\wxwin\<em>src</em></span>
+to <span class="ncbi_menu">"Tools"/"Options..."</span>, tab <span class="ncbi_menu">"Directories"</span>, list <span class="ncbi_menu">"Source files"</span>.
 <p>
 You may have a local copy of wxWindows package, which has to be installed in directory
-<tt>wxwin</tt> at exactly the same level where the NCBI C++ Toolkit is installed (that is, their upper level
-directories <tt>wxwin</tt> and <tt>cxx</tt> should appear in the same parent directory).
-When using local copy of the wxWindows for <i>your</i> projects, you have to specify <i>relative</i> paths to include files,
+<span class="ncbi_dir">wxwin</span> at exactly the same level where the NCBI C++ Toolkit is installed (that is, their upper level
+directories <span class="ncbi_dir">wxwin</span> and <span class="ncbi_dir">cxx</span> should appear in the same parent directory).
+When using local copy of the wxWindows for your  projects, you have to specify <span class="ncbi_term">relative</span> paths to include files,
 libraries and sources instead of absolute paths, but exactly the same way as described above.
 Do not use the "native" (shipped with wxWindows) project files to build the wxWindows libraries - they are not consistent with our projects.
 Instead,
 <ol>
-	<li>Create directory <tt>wxwin/wxwin_prj</tt> and copy there
+    <li>Create directory <span class="ncbi_dir">wxwin/wxwin_prj</span> and copy there
        (preserving the file layout) the contents of directory
-       <i><b>wxwin_prj</b></i>. You can get this directory either
-       from <i>\\dizzy\public\wxwin\<b>wxwin_prj</b></i> (NCBI network), or from
-       <i>cxx\compilers\<b>wxwin_prj</b></i> (C++ Toolkit).
+       <span class="ncbi_dir">wxwin_prj</span>. You can get this directory either
+       from <span class="ncbi_dir">\\dizzy\public\wxwin\<em>wxwin_prj</em></span> (NCBI network), or from
+       <span class="ncbi_dir">cxx\compilers\<em>wxwin_prj</em></span> (C++ Toolkit).
    </li>
-	<li>Make sure that <tt>msdev.exe</tt> is in you <tt>PATH</tt>, then change directory to <tt>wxwin/wxwin_prj</tt>
-	and start batch file <tt>wxwin.bat</tt> there. This script accepts one of the following arguments, <tt>DLL</tt>,
-	<tt>LIB</tt>, or <tt>ALL</tt>:</li>
-	<ul>
-		<li><tt>DLL</tt>: build DLL versions of wxWindows libraries, and store them in <tt>wxwin/ReleaseDLL</tt>
-			and <tt>wxwin/DebugDLL</tt> directories (for <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations
-			respectively).</li>
-		<li><tt>LIB</tt>: build static versions of wxWindows libraries, and store them in directories
-			<tt>wxwin/Debug</tt>, <tt>wxwin/DebugMT</tt>, <tt>wxwin/Release</tt>, and <tt>wxwin/ReleaseMT</tt>.</li>
-		<li><tt>ALL</tt>: build everything listed above.</li>
-		<br>
-		Note that with both <tt>DLL</tt> and <tt>LIB</tt> options you may limit the build to be done only for
-		certain configurations by listing the configuration names in the command line after the option.
-	</ul>
-	That is, the batch file builds libraries in the directories where <i>our</i> project files
-	<a href="#refWxwinPaths">expect</a> to locate them when using local copies of the Toolkit libraries.
-	<li>To get rid of the intermediate files created during wxWindows compilation and no longer needed,
-		you can just remove the entire subtree <tt>wxwin/wxwin_prj</tt>.
+    <li>Make sure that <span class="ncbi_util">msdev.exe</span> is in you <span class="ncbi_env">PATH</span>, then change directory to <span class="ncbi_dir">wxwin/wxwin_prj</span>
+    and start batch file <span class="ncbi_script">wxwin.bat</span> there. This script accepts one of the following arguments, <span class="ncbi_script_a">DLL</span>,
+    <span class="ncbi_script_a">LIB</span>, or <span class="ncbi_script_a">ALL</span>:</li>
+    <ul>
+        <li><span class="ncbi_script_a">DLL</span>: build DLL versions of wxWindows libraries, and store them in <span class="ncbi_dir">wxwin/ReleaseDLL</span>
+            and <span class="ncbi_dir">wxwin/DebugDLL</span> directories (for <span class="ncbi_dir">ReleaseDLL</span> and <span class="ncbi_dir">DebugDLL</span> configurations
+            respectively).</li>
+        <li><span class="ncbi_script_a">LIB</span>: build static versions of wxWindows libraries, and store them in directories
+            <span class="ncbi_dir">wxwin/Debug</span>, <span class="ncbi_dir">wxwin/DebugMT</span>, <span class="ncbi_dir">wxwin/Release</span>, and <span class="ncbi_dir">wxwin/ReleaseMT</span>.</li>
+        <li><span class="ncbi_script_a">ALL</span>: build everything listed above.</li>
+        <br>
+        Note that with both <span class="ncbi_script_a">DLL</span> and <span class="ncbi_script_a">LIB</span> options you may limit the build to be done only for
+        certain configurations by listing the configuration names in the command line after the option.
+    </ul>
+    That is, the batch file builds libraries in the directories where <em>our</em> project files
+    <a href="#refWxwinPaths">expect</a> to locate them when using local copies of the Toolkit libraries.
+    <li>To get rid of the intermediate files created during wxWindows compilation and no longer needed,
+        you can just remove the entire subtree <span class="ncbi_dir">wxwin/wxwin_prj</span>.
 </ol>
 
 <p>
-<a name="refWxwinPaths"></a>All <i>our</i> project files (which are provided for the projects
+<a name="refWxwinPaths"></a>All <em>our</em> project files (which are provided for the projects
 using wxWindows) contain both relative and absolute paths to, correspondingly, both local
-(installed by you, as described above) and pre-built (<tt>\\DIZZY\public\wxwin</tt>) versions of libraries and
+(installed by you, as described above) and pre-built (<span class="ncbi_dir">\\DIZZY\public\wxwin</span>) versions of libraries and
 include files, in this order, i.e. the local copy (if any) takes precedence.
 Moreover, if a project file is being commited to the CVS, and it has been
 <a href="msvc_prj.html#commit_sh">detected</a> that the project refers to wxWindows library, then the paths
@@ -1844,22 +1839,22 @@ to make sure that it is built compatible with the chosen libraries.
 <p>
 <a href="http://www.fltk.org">FLTK</a> is a portable C++ graphical user interface toolkit for X
 (UNIX&reg;), MacOS&reg;, and Microsoft&reg; Windows&reg;, which supports 3D graphics with OpenGL&reg;.
-The pre-built libraries of this toolkit (version 1.1.0rc6)  are installed in <i>\\dizzy\public\fltk</i>.
+The pre-built libraries of this toolkit (version 1.1.0rc6)  are installed in <span class="ncbi_dir">\\dizzy\public\fltk</span>.
 The installation includes:
 <ul>
-  <li>Sources (<i>\\dizzy\public\fltk\src</i>),</li>
-  <li>Include files (<i>\\dizzy\public\fltk\include</i>),</li>
-  <li>Documentation (<i>\\dizzy\public\fltk\documentation</i>),</li>
-  <li>Samples (<i>\\dizzy\public\fltk\test</i>),</li>
-  <li>Project files for Microsoft Visual C++ v.6.0 (<i>\\dizzy\public\fltk\visualc</i>).</li>
+  <li>Sources (<span class="ncbi_dir">\\dizzy\public\fltk\src</span>),</li>
+  <li>Include files (<span class="ncbi_dir">\\dizzy\public\fltk\include</span>),</li>
+  <li>Documentation (<span class="ncbi_dir">\\dizzy\public\fltk\documentation</span>),</li>
+  <li>Samples (<span class="ncbi_dir">\\dizzy\public\fltk\test</span>),</li>
+  <li>Project files for Microsoft Visual C++ v.6.0 (<span class="ncbi_dir">\\dizzy\public\fltk\visualc</span>).</li>
 </ul>
 There are few changes in the build procedure as compared to the "standard" (recommended by authors) one:
 <ul>
   <li>Libraries built in debug mode do not have "d" suffix - they are placed in different directories instead,</li>
-  <li>Static libraries are built using <tt>Single-Threaded</tt> or <tt>Multithreaded</tt> run-time libraries
-  (instead of <tt>Multithreaded DLL</tt> ones).
-  The only library which requires <tt>Multithreaded DLL</tt> run-time libraries is the DLL version of
-  FLTK - <var>fltkdll</var>.</li>
+  <li>Static libraries are built using <span class="ncbi_term">Single-Threaded</span> or <span class="ncbi_term">Multithreaded</span> run-time libraries
+  (instead of <span class="ncbi_term">Multithreaded DLL</span> ones).
+  The only library which requires <span class="ncbi_term">Multithreaded DLL</span> run-time libraries is the DLL version of
+  FLTK - <span class="ncbi_lib">fltkdll</span>.</li>
 </ul>
 </p>
     </dd>
@@ -1873,44 +1868,44 @@ There are few changes in the build procedure as compared to the "standard" (reco
 <dl>
     <dt>
     <dd>
-There are projects (such as <b>ctools</b>, <b>xasn</b> etc) that engage the
+There are projects (such as <span class="ncbi_proj">ctools</span>, <span class="ncbi_proj">xasn</span> etc) that engage the
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">NCBI C Toolkit</a>.
 To build these, you have to have the NCBI C Toolkit libraries and
 header files accessible from your PC, and you must specify path to them:
 <ol>
 <li>For libraries:</li>
-<br><i>"Project"/"Settings..."</i>, tab <i>"Link"</i>, category <i>"Input"</i>, fields <i>"Object/Library modules"</i> and
-<i>"Additional library path"</i>.
+<br><span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"Link"</span>, category <span class="ncbi_menu">"Input"</span>, fields <span class="ncbi_menu">"Object/Library modules"</span> and
+<span class="ncbi_menu">"Additional library path"</span>.
 <li>For include files:</li>
-<br><i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor"</i>,
-list <i>"Additional include directories"</i>.
+<br><span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"C/C++"</span>, category <span class="ncbi_menu">"Preprocessor"</span>,
+list <span class="ncbi_menu">"Additional include directories"</span>.
 </ol>
 For example, here are the paths to the automatically built C Toolkit:
 <ul>
-  <li> <i>\\dizzy\public\ncbi\<b>include</b></i>
-  <li> <i>\\dizzy\public\ncbi\<b>altsrc</b></i>
-  <li> <i>\\dizzy\public\ncbi\<b>ReleaseMT</b></i>
-  <li> <i>\\dizzy\public\ncbi\<b>Release</b></i>
-  <li> <i>\\dizzy\public\ncbi\<b>DebugMT</b></i>
-  <li> <i>\\dizzy\public\ncbi\<b>Debug</b></i>
-  <li> <i>\\dizzy\public\ncbi\<b>src</b></i>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>include</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>altsrc</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>ReleaseMT</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>Release</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>DebugMT</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>Debug</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>src</em></span>
 </ul>
 
-For backward compatibility we maintain copies of production MT-safe libraries (<b>ReleaseMT</b>) in <i>\\dizzy\public\<b>lib</b></i>,
-and copies of MT-safe debug libraries (<b>DebugMT</b>) in <i>\\dizzy\public\<b>dbglib</b></i>. The use of there
+For backward compatibility we maintain copies of production MT-safe libraries (<span class="ncbi_dir">ReleaseMT</span>) in <span class="ncbi_dir">\\dizzy\public\<em>lib</em></span>,
+and copies of MT-safe debug libraries (<span class="ncbi_dir">DebugMT</span>) in <span class="ncbi_dir">\\dizzy\public\<em>dbglib</em></span>. The use of there
 "historically kept" directories is deprecated, and all new projects have to refer to the new names from the list
 above precisely the same way, as explained earlier in <a href="#ref_MsvcProjCXX">"How to use pre-built NCBI C++ libraries"</a>.
-For convenience and uniformity, a copy of the source code directory (<b>altsrc</b>) is now maintained in
-<i>\\dizzy\public\<b>src</b></i>.
+For convenience and uniformity, a copy of the source code directory (<span class="ncbi_dir">altsrc</span>) is now maintained in
+<span class="ncbi_dir">\\dizzy\public\<em>src</em></span>.
 <p>
 As in case with <a href="#refWxwinPaths">wxWindows</a> library, if the project that we provide
 is using the NCBI C Toolkit, then the include files and libraries are referred by means of both
 relative and absolute paths. If you are going to use your local copy of the NCBI C Toolkit, then
-place it in directory <tt>ncbi</tt>, which must reside in the same directory, where the C++ Toolkit does
-(i.e. <tt>ncbi</tt> and <tt>cxx</tt> subdirectories must appear in the same parent directory). Then, you have to copy the C Toolkit
-libraries to one of <tt>ncbi/ReleaseMT</tt>, <tt>ncbi/DebugMT</tt> etc subdirectories (according to the configuration used).
+place it in directory <span class="ncbi_dir">ncbi</span>, which must reside in the same directory, where the C++ Toolkit does
+(i.e. <span class="ncbi_dir">ncbi</span> and <span class="ncbi_dir">cxx</span> subdirectories must appear in the same parent directory). Then, you have to copy the C Toolkit
+libraries to one of <span class="ncbi_dir">ncbi/ReleaseMT</span>, <span class="ncbi_dir">ncbi/DebugMT</span> etc subdirectories (according to the configuration used).
 Again, if a project file is being commited to the CVS and found to use the NCBI C Toolkit (either
-locally, or via <tt>\\DIZZY\</tt>), then the project <a href="msvc_prj.html#commit_sh">automatically</a> gets
+locally, or via <span class="ncbi_dir">\\DIZZY\</span>), then the project <a href="msvc_prj.html#commit_sh">automatically</a> gets
 both paths (relative and absolute) for both include files and libraries.
 <p>
 Please refer to the following section for mandatory project settings.
@@ -1924,16 +1919,16 @@ Please refer to the following section for mandatory project settings.
     <dt>
     <dd>
 When you compose your own, out-of-the-tree projects, which use pre-built C/C++ Toolkit or wxWindows
-libraries (which are built in <b><i>MT-safe</i></b> mode, with <b>/MT</b> flag),
+libraries (which are built in <em>MT-safe</em> mode, with <span class="ncbi_make_flag">/MT</span> flag),
 you have to make sure that your projects are built in MT-safe mode as well.
-<br>In addition, many C++ projects use <i>Run-Time Type Info</i>.
-<br>To meet these requirements, you must do the following in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>:
+<br>In addition, many C++ projects use <span class="ncbi_term">Run-Time Type Info</span>.
+<br>To meet these requirements, you must do the following in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"C/C++"</span>:
 <ul>
-  <li> Category <i>"C++ Language"</i>: Enable RTTI
-  <li> Category <i>"Code generation"</i>:  Use run-time library:
+  <li> Category <span class="ncbi_menu">"C++ Language"</span>: Enable RTTI
+  <li> Category <span class="ncbi_menu">"Code generation"</span>:  Use run-time library:
     <ul>
-      <li> <i>"Multithreaded"</i> for the <b>ReleaseMT</b> configuration
-      <li> <i>"Debug Multithreaded"</i> for the <b>DebugMT</b> configuration
+      <li> <span class="ncbi_menu">"Multithreaded"</span> for the ReleaseMT configuration
+      <li> <span class="ncbi_menu">"Debug Multithreaded"</span> for the DebugMT configuration
     </ul>
 </ul>
 </dl>
@@ -1952,20 +1947,20 @@ you have to make sure that your projects are built in MT-safe mode as well.
     <dt>
     <dd>
 Suppose you need to deploy the NCBI C++ tree to your local Mac, in directory
-<i><b>cxx</b></i>. You can do it one of the following ways:
+<span class="ncbi_dir">cxx</span>. You can do it one of the following ways:
 <ul>
-		<li> do <a href="mac_cvs.html">CVS checkout</a> of
-		  <i><b>internal/c++</b></i>. This can be done right on your
-		  Mac, if you have installed CVS client there:
-		  <br> <i>cvs checkout -d cxx internal/c++</i></li>
-		<li> checkout only the core sources on your UNIX workstation by running
-		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --mac --without-cvs --with-objects</i>
-		  <br> and then copy the whole resultant directory
-		  <i><b>cxx</b></i> to your local Mac directory <i><b>cxx</b></i></li>
-		<li> if you have the Toolkit sources in the publicly distributed
-		  self-extracting archive, then just expand the archive, and you are
-        ready to build any (or all) of the Mac project configurations.
-		  The archive also contains pre-generated ASN classes.</li>
+  <li> do <a href="mac_cvs.html">CVS checkout</a> of
+       <span class="ncbi_dir">internal/c++</span>. This can be done right on your
+       Mac, if you have installed CVS client there:
+       <br> <span class="ncbi_cmd">cvs checkout -d cxx internal/c++</span></li>
+  <li> checkout only the core sources on your UNIX workstation by running
+       <br> <span class="ncbi_cmd">$NCBI/c++/scripts/cvs_core.sh cxx --mac --without-cvs --with-objects</span>
+       <br> and then copy the whole resultant directory
+       <span class="ncbi_dir">cxx</span> to your local Mac directory <span class="ncbi_dir">cxx</span></li>
+  <li> if you have the Toolkit sources in the publicly distributed
+       self-extracting archive, then just expand the archive, and you are
+       ready to build any (or all) of the Mac project configurations.
+       The archive also contains pre-generated ASN classes.</li>
 </ul>
 </dl>
 

@@ -3,36 +3,35 @@
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
+Usually, each C++ module consists of 2 files (follow links for templates):
+<ul>
+  <li>
+    <a href="framewrk.hpp">Header file (*.hpp)</a> --
+    API for the external users.  Ideally, this file contains only
+    declarations of things (to be well commented!) that are exposed
+    to external users.  No less, and no more.  Inline functions are to be defined here.
+    This file is placed in the <span class="ncbi_dir">$NCBI/c++/include</span> directory.
+  <li>
+    <a href="framewrk.cpp">Source file (*.cpp)</a> --
+    Definitions of non-inline functions and internally used things that
+    should not be included to other modules.  This file is placed in
+    the <span class="ncbi_dir">$NCBI/c++/src</span> directory.
+</ul>
 
-    Usually, each C++ module consists of 2 files (follow links for templates):
-    <ul>
-      <li>
-		<a href="framewrk.hpp">Header file(*.hpp)</a> --
-		API for the external users.  Ideally, this file contains only
-		declarations of things (to be well commented!) that are exposed
-		to external users.  No less, and no more.  Inline functions are to be defined here.
-        This file is placed in the $NCBI/<tt>c++/include</tt> directory.
-      <li>
-		<a href="framewrk.cpp">Source file(*.cpp)</a> --
-		Definitions of non-inline functions and internally used things that
-		should not be included to other modules.  This file is placed in
-        the $NCBI/<tt>c++/src</tt> directory.
-    </ul>
+On occasion, a second private header file is required for good encapsulation.
+Such second headers should be placed in the <span class="ncbi_dir">$NCBI/c++/src</span> directory along
+with its including source file.
 
-    On occasion, a second <i>private</i> header file is required for good encapsulation.
-    Such second headers should be placed in the $NCBI/<tt>c++/src</tt> directory along
-    with its including source file.
+<p></p>
+Each and every source file must include NCBI disclamer and (preferably)
+CVS info using CVS keywords.  Then, the header file must be protected from double-include,
+and it must define any inlined functions, if any.
 
-    <p></p>
-    Each and every source file must include NCBI disclamer and (preferably)
-    CVS info using CVS keywords.  Then, the header file must be protected from double-include,
-	and it must define any inlined functions, if any.
-
-    <p></p>
-    The above examples contain a standard startup framework so
-    that one could just cut-and-paste one of them to start a new C++ file
-    (just dont forget to replace the <i>"framewrk"</i> stubs by your new module
-    name).
+<p></p>
+The above examples contain a standard startup framework so
+that one could just cut-and-paste one of them to start a new C++ file
+(just dont forget to replace the "framewrk" stubs by your new module
+name).
 
 
 <!--#include virtual="./ssi/navlinks.shtml" -->

@@ -4,8 +4,9 @@
 //         and that will print the table containing author names so it's not
 //         needed in each doc page
 
-function print(t) { document.write(t); }
+function print(t)   { document.write(t); }
 function printbr(t) { document.write(t, "<br>"); }
+
 function print_author(username, realname, datestr, hostname)
 {
     var host='ncbi.nlm.nih.gov';

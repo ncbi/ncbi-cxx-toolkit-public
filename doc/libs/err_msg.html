@@ -2,172 +2,166 @@
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
 
-	 <h1>NCBI C++ error handling and diagnostics</h1>
+<h1>NCBI C++ error handling and diagnostics</h1>
 
-	 <ul>
-		<li> <a href="#ref_Assert">
-		  Debug-mode(internal use) checks and diagnostics</a>
+<ul>
 
-		<li> <a href="#ref_Exception">
-		  C++ exceptions</a>
-		  <ul>
-			 <li> <a href="#ref_ExceptionStd">
-				  Standard C++ exception classes; NCBI exception
-				  classes (<i>CErrnoException, CParseException</i>) </a>
-			 <li> <a href="#ref_ExceptionCatch">
-				  Using <i><b>STD_CATCH*(...)</b></i>
-				  to <i>catch</i> and report exceptions </a>
-			 <li> <a href="#ref_ExceptionThrow">
-				  Using <i><b>THROW*_TRACE(...)</b></i>
-				  to <i>throw</i> exceptions </a>
-				<ul>
-				  <li> <a href="#ref_ExceptionThrowTrace">
-						Trace the exception at the <i>throw</i> </a>
-				  <li> <a href="#ref_ExceptionThrowAbort">
-						Abort the program at the <i>throw</i> </a>
-				</ul>
-			 <li> <a href="#ref_ExceptionSpec">
-				  <i><b>THROWS*(...)</b></i> -- exception specification
-				</a>
-		  </ul>
+<li>
+<a href="#ref_Assert">
+Debug-mode(internal use) checks and diagnostics</a>
+<li> <a href="#ref_Exception">
+C++ exceptions</a>
+  <ul>
+    <li> <a href="#ref_ExceptionStd">
+    Standard C++ exception classes; NCBI exception
+    classes (CErrnoException, CParseException) </a>
+    <li> <a href="#ref_ExceptionCatch">
+    Using STD_CATCH*(...) to catch and report exceptions </a>
+    <li> <a href="#ref_ExceptionThrow">
+    Using THROW*_TRACE(...) to throw exceptions </a>
+    <ul>
+      <li> <a href="#ref_ExceptionThrowTrace">
+      Trace the exception at the throw </a>
+      <li> <a href="#ref_ExceptionThrowAbort">
+      Abort the program at the throw </a>
+    </ul>
+    <li> <a href="#ref_ExceptionSpec">
+    THROWS*(...) -- exception specification</a>
+    </ul>
 
-		<li> <a href="#ref_Message">
-			 Standard NCBI C++ message posting</a>
-		  <ul>
-			 <li> <a href="#ref_Manipulators">
-				  <i>Manipulators</i></a>
-			 <li> <a href="#ref_ERR_POST">
-				  <i><b>ERR_POST(message)</i></b> macro</a>
-			 <li> <a href="#ref_Tracing">
-				  <i>Turn on the tracing (as per <b>_TRACE, eDiag_Trace</b></i>)</a>
-		  </ul>
-	 </ul>
+   <li> <a href="#ref_Message">
+   Standard NCBI C++ message posting</a>
+  <ul>
+    <li> <a href="#ref_Manipulators">
+    Manipulators</a>
+    <li> <a href="#ref_ERR_POST">
+    ERR_POST(message) macro</a>
+    <li> <a href="#ref_Tracing">
+    Turn on the tracing (as per _TRACE, eDiag_Trace)</a>
+  </ul>
+</ul>
 
+<br>
+<a name="ref_Assert"></a>
+<h2>Debug-mode(internal use) checks and diagnostics</h2>
 
-	 <br></br>
-	 <a name="ref_Assert"><h2>Debug-mode(internal use) checks and diagnostics</h2></a>
+<p><span class="ncbi_code">#include &lt;corelib/ncbidbg.hpp&gt;</span> &nbsp;&nbsp;[also included in &lt;corelib/ncbistd.hpp&gt;]
+</p>
 
-	 <p> <i>#include &lt;corelib/ncbidbg.hpp&gt;</i>
-       &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
+<p>
+There are 4 preprocessor macros
+(<span class="ncbi_macro">_TROUBLE</span>, <span class="ncbi_macro">_ASSERT</span>, <span class="ncbi_macro">_VERIFY</span> and <span class="ncbi_macro">_TRACE</span>)
+to help the developer to catch some (logical) errors on the
+early stages of code development and to hardcode some
+assertions on the code and data behaviour for internal use.
+All these macros gets disabled in the non-debug versions lest
+to affect the application performance and functionality;  to
+turn them on, one must <span class="ncbi_ccode">#define</span> the <span class="ncbi_macro">_DEBUG</span> preprocessor
+variable. Developer must be careful and do not use
+any code with side effects in <span class="ncbi_macro">_ASSERT</span> or <span class="ncbi_macro">_TRACE</span>
+as this will cause a discrepancy in functionality between debug
+and non-debug code. For example, <span class="ncbi_macro">_ASSERT(a++)</span> and
+<span class="ncbi_ccode">_TRACE("a++ = " &lt;&lt; a++)</span> would increment <span class="ncbi_var">"a"</span>
+in the debug version but do nothing in the non-debug one).
+<ul>
+<li> <span class="ncbi_macro">_TROUBLE</span> --
+Has absolutely no effect if <span class="ncbi_macro">_DEBUG</span> is not defined;
+otherwise, unconditionally halt the application.
+<li> <span class="ncbi_macro">_ASSERT(expr)</span> --
+Has absolutely no effect if <span class="ncbi_macro">_DEBUG</span> is not defined;
+otherwise, evaluate expression <span class="ncbi_var">expr</span> and halt the
+application if <span class="ncbi_var">expr</span> resulted in zero(or <span class="ncbi_value">"false"</span>).
 
-	 <p>
-	 There are 4 preprocessor macros
-	 (<i>_TROUBLE</i>, <i>_ASSERT</i>, <i>_VERIFY</i> and <i>_TRACE</i>)
-	 to help the developer to catch some (logical) errors on the
-	 early stages of code development and to hardcode some
-	 assertions on the code and data behaviour for internal use.
-	 All these macros gets disabled in the non-debug versions lest
-	 to affect the application performance and functionality;  to
-	 turn them on, one must <i>#define</i> the <i>"_DEBUG"</i> preprocessor
-	 variable. Developer must be careful and do not use
-	 any code with side effects in <i>_ASSERT</i> or <i>_TRACE</i>
-	 as this will cause a discrepancy in functionality between debug
-	 and non-debug code. For example, <i>_ASSERT(a++)</i> and
-	 <i>_TRACE("a++ = " &lt;&lt; a++)</i> would increment <i>"a"</i>
-	 in the debug version but do nothing in the non-debug one).
-	 <ul>
-		<li> <b><i>_TROUBLE</i></b> --
-		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
-		otherwise, unconditionally halt the application.
+<li> <span class="ncbi_macro">_VERIFY(expr)</span> --
+Evaluate expression <span class="ncbi_var">expr</span>; if <span class="ncbi_macro">_DEBUG</span> is defined
+and <span class="ncbi_var">expr</span> resulted in zero(or <span class="ncbi_value">"false"</span>) then halt the
+application.
 
-		<li> <b><i>_ASSERT(expr)</i></b> --
-		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
-		otherwise, evaluate expression <b><i>expr</i></b> and halt the
-		application if <b><i>expr</i></b> resulted in zero(or <i>"false"</i>).
+<li> <span class="ncbi_macro">_TRACE(message)</span> --
+Has absolutely no effect if <span class="ncbi_macro">_DEBUG</span> is not defined;
+otherwise, it outputs the <span class="ncbi_var">message</span> using
+<a href="#ref_Message">Standard NCBI C++ message posting</a>.
+NOTE: as a matter of fact, the tracing is turned off by default,
+even if <span class="ncbi_macro">_DEBUG</span> is defined, and you still have to do
+<a href="#ref_Tracing">a special configuration</a> to
+really turn it on.
+</ul> </ul>
 
-		<li> <b><i>_VERIFY(expr)</i></b> --
-		Evaluate expression <b><i>expr</i></b>; if <i>"_DEBUG"</i> is defined
-		and <b><i>expr</i></b> resulted in zero(or <i>"false"</i>) then halt the
-		application.
-
-		<li> <b><i>_TRACE(message)</i></b> --
-		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
-		otherwise, it outputs the <b><i>message</i></b> using
-		<a href="#ref_Message">Standard NCBI C++ message posting</a>.
-		NOTE: as a matter of fact, the tracing is turned off by default,
-      even if <i>"_DEBUG"</i> is defined, and you still have to do
-		<a href="#ref_Tracing">a special configuration</a> to
-      really turn it on.
-	 </ul> </ul>
-
-	 All these macros automatically report the file name and line
-	 number to the diagnostics. For example, this code located in file
-	 <i>"somefile.cpp"</i> at line 333:
-<pre>
+All these macros automatically report the file name and line
+number to the diagnostics. For example, this code located in file
+<span class="ncbi_file">"somefile.cpp"</span> at line 333:
+<pre class="ncbi_code">
 int x = 100;
 _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 will output:
-<pre>
+<pre class="ncbi_code">
 "somefile.cpp", line 333: Trace:  x + 5 = 105
 </pre>
 
 
-	 <br></br>
-	 <a name="ref_Exception"><h2>C++ exceptions</h2></a>
+<br></br>
+<a name="ref_Exception"></a>
+<h2>C++ exceptions</h2>
 
-	 <p> <i>#include &lt;corelib/ncbiexpt.hpp&gt;</i>
-       &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
+<p> <span class="ncbi_code">#include &lt;corelib/ncbiexpt.hpp&gt;</span>
+    &nbsp;&nbsp;[also included in &lt;corelib/ncbistd.hpp&gt;]
 
-	 <p>
-	 <a name="ref_ExceptionStd">
-		  <h4>Standard C++ exception classes, and two useful NCBI exception
-			 classes (
-		<a href="../docxx/CErrnoException.html"> CErrnoException </a>
-		,
-		<a href="../docxx/CParseException.html"> CParseException </a>
-		)
-	 </h4>
-	 </a>
-
-	 One must use
-	 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-diagnostics.html#lib.std.exceptions">standard C++ exceptions</a>
-	 as much as possible. There is also a couple of auxiliary exception
-	 classes derived from <i>std::runtime_error</i>:
-	 <ul>
-		<li> <a href="../docxx/CErrnoException.html"> CErrnoException </a>
-		  -- to report failure in a standard C library
-		  function; it automatically appends to the user message a
-		  system-specific description reported by <b>errno</b>
-		<li> <a href="../docxx/CParseException.html"> CParseException </a>
-		  -- to report an erroneous position (passed in
-		  the additional constructor parameter) along with the user message
-	 </ul>
-
-	 <p>
-	 Then, it is <b>strictly recommended</b> that when the basic functionality
-	 provided by standard C++ exceptions is unsufficient for some reason,
-	 one must derive the new ad hoc exception classes from one of the
-	 standard exception classes.	-- This is to provide a more uniform way
-	 of exceprion handling, for we could smartly catch/handle most of
-	 thrown exceptions using <b><i>STD_CATCH(message)</i></b> and
-	 <b><i>STD_CATCH_ALL(message)</i></b> preprocessor macros.
-
-	 <p>
-	 <a name="ref_ExceptionCatch">
-		  <h4>
-			 Using <i><b>STD_CATCH*(...)</b></i> to <i>catch</i> and report exceptions
-		  </h4>
-		</a>
-
-	 <p>
-	 You can use <b><i>STD_CATCH(message)</i></b> macro to catch an exception
-    derived from the standard exception class (<i>std::exception</i>) --
-    when all you want to do about this exception is just to print out
-    the "message" along with the info passed with the <i>std::exception::what()</i>.
-	 <b><i>STD_CATCH_ALL(message)</i></b> first tries to catch a
-	 <i>std::exception</i>-derived exception (with <b><i>STD_CATCH(message)</i></b>); and
-	 if the thrown exception is not "standard" then it posts the "message".
-
-	 <p>
-	 The "message" argument can be of any form acceptable by the
-	 <a href="#ref_Message">diagnostic class <i>CNcbiDiag</i></a>.
+<p>
+<a name="ref_ExceptionStd"></a>
+<h4>Standard C++ exception classes, and two useful NCBI exception
+classes (
+<a href="../docxx/CErrnoException.html"> CErrnoException </a>,
+<a href="../docxx/CParseException.html"> CParseException </a>)</h4>
 
 
-	 <p>
-	 This way, the easy way of dealing with exception in the NCBI C++
-	 code will be like:
-<font size="-1">
-     <pre>
+ One must use
+<a href="http://www.cygnus.com/misc/wp/dec96pub/lib-diagnostics.html#lib.std.exceptions">standard C++ exceptions</a>
+as much as possible. There is also a couple of auxiliary exception
+classes derived from <span class="ncbi_class">std::runtime_error</span>:
+<ul>
+<li> <a href="../docxx/CErrnoException.html"> CErrnoException </a>
+  -- to report failure in a standard C library
+  function; it automatically appends to the user message a
+  system-specific description reported by <span class="ncbi_var">errno</span>
+<li> <a href="../docxx/CParseException.html"> CParseException </a>
+  -- to report an erroneous position (passed in
+  the additional constructor parameter) along with the user message
+</ul>
+
+<p>
+Then, it is <em>strictly recommended</em> that when the basic functionality
+provided by standard C++ exceptions is unsufficient for some reason,
+one must derive the new ad hoc exception classes from one of the
+standard exception classes.	-- This is to provide a more uniform way
+of exceprion handling, for we could smartly catch/handle most of
+thrown exceptions using <span class="ncbi_macro">STD_CATCH(message)</span> and
+<span class="ncbi_macro">STD_CATCH_ALL(message)</span> preprocessor macros.
+
+<p>
+<a name="ref_ExceptionCatch"></a>
+<h4>
+	 Using <span class="ncbi_macro">STD_CATCH*(...)</span> to <span class="ncbi_term">catch</span> and report exceptions
+</h4>
+
+
+<p>
+You can use <span class="ncbi_macro">STD_CATCH(message)</span> macro to catch an exception
+derived from the standard exception class (<span class="ncbi_class">std::exception</span>) --
+when all you want to do about this exception is just to print out
+the "message" along with the info passed with the <span class="ncbi_func">std::exception::what()</span>.
+<span class="ncbi_macro">STD_CATCH_ALL(message)</span> first tries to catch a
+<span class="ncbi_class">std::exception</span>-derived exception (with <span class="ncbi_macro">STD_CATCH(message)</span>); and
+if the thrown exception is not "standard" then it posts the "message".
+
+<p>
+The "message" argument can be of any form acceptable by the
+<a href="#ref_Message">diagnostic class <span class="ncbi_class">CNcbiDiag</span></a>.
+
+<p>
+This way, the easy way of dealing with exception in the NCBI C++
+code will be like:
+
+<pre class="ncbi_code">
 class foreign_exception { ..... };
 class exception_derived_user : public exception { ..... };
 ...........
@@ -184,35 +178,32 @@ try {
 }
 // handle all the rest "standard" exceptions in a uniform way
 STD_CATCH ( "in SomeFunc(" << arg1 << "," << arg2 << ")" ); </pre>
-</font>
 
-	 <p>
-	 Here, if <i>SomeFunc</i> do <i>throw std::runtime_error("Invalid Arg2");</i>
-	 then the application will print out (to its diagnostic stream)
-	 something like:
-	 <pre>
+<p>
+Here, if <span class="ncbi_func">SomeFunc</span> do <span class="ncbi_ccode">throw std::runtime_error("Invalid Arg2");</span>
+then the application will print out (to its diagnostic stream)
+something like:
+<pre class="ncbi_code">
 Error: [in SomeFunc(qqq,888)] Exception: Invalid Arg2
-	 </pre>
+</pre>
+<p>
+<a name="ref_ExceptionThrow"></a>
+<h4>
+Using <span class="ncbi_macro">THROW*_TRACE(...)</span> to <span class="ncbi_term">throw</span> exceptions
+</h4>
 
-	 <p>
-	 <a name="ref_ExceptionThrow">
-		  <h4>
-			 Using <i><b>THROW*_TRACE(...)</b></i> to <i>throw</i> exceptions
-		  </h4>
-		</a>
 
-		If you use one of <i><b>THROW*_TRACE(...)</b></i> macros to <i>throw</i>
-		an exception, and the source was compiled in a debug mode
-		(i.e. with the preprocessor <i>"_DEBUG"</i> defined), then
-		you can turn on the following features that proved to be very useful
-		for debugging:
-	 <ul>
-		<li> <a name="ref_ExceptionThrowTrace"> </a>
-		  If the <a href="#ref_Tracing">tracing is on</a>, then the location
-		  of the <i>throw</i> in the source code and the thrown exception will
-		  be printed out to the current diagnostic stream, e.g.:
-<font size="-1">
-            <pre>
+If you use one of <span class="ncbi_macro">THROW*_TRACE(...)</span> macros to <span class="ncbi_term">throw</span>
+an exception, and the source was compiled in a debug mode
+(i.e. with the preprocessor <span class="ncbi_macro">_DEBUG</span> defined), then
+you can turn on the following features that proved to be very useful
+for debugging:
+<ul>
+<li> <a name="ref_ExceptionThrowTrace"> </a>
+  If the <a href="#ref_Tracing">tracing is on</a>, then the location
+  of the <span class="ncbi_term">throw</span> in the source code and the thrown exception will
+  be printed out to the current diagnostic stream, e.g.:
+<pre class="ncbi_code">
 THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
 
 "coretest.cpp", line 708: Trace: CParseException: {123}
@@ -226,86 +217,83 @@ THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
 "coretest.cpp", line 718: Trace: CErrnoException:
 Failed strtod('1e-999999', 0): Result too large
 </pre>
-</font>
 
 
-		<li> <a name="ref_ExceptionThrowAbort"> </a>
-		  Sometimes, it can be convenient to just abort the program execution
-		  at the place where you throw an exception, e.g. in order to examine
-		  the program stack and overall state that led to this <i>throw</i>.
+<li> <a name="ref_ExceptionThrowAbort"> </a>
+  Sometimes, it can be convenient to just abort the program execution
+  at the place where you throw an exception, e.g. in order to examine
+  the program stack and overall state that led to this <span class="ncbi_term">throw</span>.
 
-		  By default, this feature is not activated. You can turn it on
-		  for your whole application by either setting the environment
-		  variable <b><i>$ABORT_ON_THROW</i></b> to an arbitrary non-empty
-		  string, or by setting the application's registry entry
-		  <b><i>ABORT_ON_THROW</i></b> (in the <b><i>[DEBUG]</i></b> section)
-		  to an arbitrary non-empty value.
+  By default, this feature is not activated. You can turn it on
+  for your whole application by either setting the environment
+  variable <span class="ncbi_env">$ABORT_ON_THROW</span> to an arbitrary non-empty
+  string, or by setting the application's registry entry
+  <span class="ncbi_reg_var">ABORT_ON_THROW</span> (in the <span class="ncbi_reg">[DEBUG]</span> section)
+  to an arbitrary non-empty value.
+  You also can turn it on and off in your program code, calling
+  function <a href="../docxx/General.html#SetThrowTraceAbort">SetThrowTraceAbort()</a>.
+</ul>
 
-		  You also can turn it on and off in your program code, calling
-		  function <a href="../docxx/General.html#SetThrowTraceAbort">SetThrowTraceAbort()</a>.
-	 </ul>
+NOTE: if the source was not compiled in the debug mode, then the
+<span class="ncbi_macro">THROW*_TRACE(...)</span> would just <span class="ncbi_term">throw</span> the specified
+exception, without doing any of the "fancy stuff" we just described.
 
-	 NOTE: if the source was not compiled in the debug mode, then the
-	 <i><b>THROW*_TRACE(...)</b></i> would just <i>throw</i> the specified
-	 exception, without doing any of the "fancy stuff" we just described.
+<p>
+<a name="ref_ExceptionSpec"></a>
+<h4>
+	 <span class="ncbi_macro">THROWS*(...)</span> -- exception specification
+</h4>
 
-	 <p>
-	 <a name="ref_ExceptionSpec">
-		  <h4>
-			 <i><b>THROWS*(...)</b></i> -- exception specification
-		  </h4>
-		</a>
+<p>
+One is encouraged to write
+<a href="http://www.cygnus.com/misc/wp/dec96pub/except.html#except.spec">
+exception specifications</a>
+for NCBI C++ functions. However, due to some discrepancy in how different
+compilers handle <span class="ncbi_term">unexpected</span> exception events we decided to use
+<span class="ncbi_macro">THROWS_NONE</span> and <span class="ncbi_macro">THROWS()</span> preprocessor macros for the case
+of "poor" compilers.
 
-	 <p>
-	 One is encouraged to write
-	 <a href="http://www.cygnus.com/misc/wp/dec96pub/except.html#except.spec">
-		exception specifications</a>
-	 for NCBI C++ functions. However, due to some discrepancy in how different
-	 compilers handle <i>unexpected</i> exception events we decided to use
-	 <i>THROWS_NONE</i> and <i>THROWS()</i> preprocessor macros for the case
-	 of "poor" compilers.
+<p>
+Thus, you must use:
 
-	 <p>
-	 Thus, you must use:
-	 <pre>
+<pre class="ncbi_code">
 void f1(int i) THROWS_NONE;
 int  f2(void) THROWS((e0));
 int  f3(long) THROWS((e1,e2)); </pre>
 	 in the place of:
-	 <pre>
+<pre class="ncbi_code">
 void f1(int i) throw();
 int  f2(void)  throw(e0);
 int  f3(long)  throw(e1,e2); </pre>
-	 respectively. -- Please note the double parenthesis for <i>THROWS()</i>.
+	 respectively. -- Please note the double parenthesis for <span class="ncbi_macro">THROWS()</span>.
 
 
+<br></br>
+<br></br>
+<a name="ref_Message"></a><h2>Standard NCBI C++ message posting</h2>
 
-	 <br></br>
-	 <br></br>
-	 <a name="ref_Message"><h2>Standard NCBI C++ message posting</h2></a>
+<p> <span class="ncbi_code">#include &lt;corelib/ncbidiag.hpp&gt;</span>
+   &nbsp;&nbsp;[also included in &lt;corelib/ncbistd.hpp&gt;]
 
-	 <p> <i>#include &lt;corelib/ncbidiag.hpp&gt;</i>
-       &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
+<p>
+Standard diagnostics is provided with the <span class="ncbi_class">CNcbiDiag</span> class.
+Given application can have as many objects of this class as
+needed. The trick is that each instance of the <span class="ncbi_class">CNcbiDiag</span> class
+actually stores (and allows to append to) only one message at a
+time. When the message controlled by an instance of <span class="ncbi_class">CNcbiDiag</span>
+is complete, <span class="ncbi_class">CNcbiDiag</span> invokes the
+<span class="ncbi_func">Post()</span> method of a global handler object
+(of type <span class="ncbi_class">CDiagHandler</span>) and pass the message (along with its
+severity level) as the method's argument.
 
-	 <p>
-	 Standard diagnostics is provided with the <b><i>CNcbiDiag</i></b> class.
-	 Given application can have as many objects of this class as
-	 needed. The trick is that each instance of the <b><i>CNcbiDiag</i></b> class
-	 actually stores (and allows to append to) only one message at a
-	 time. When the message controlled by an instance of <b><i>CNcbiDiag</i></b>
-	 is complete, <b><i>CNcbiDiag</i></b> invokes the
-	 <b><i>Post()</i></b> method of a global handler object
-	 (of type <b><i>CDiagHandler</i></b>) and pass the message (along with its
-	 severity level) as the method's argument.
+<p>
+Usually, this global object would merely dump the message to
+a diagnostic stream, and there is an auxiliary function
+<span class="ncbi_func">SetDiagStream()</span> to specify output stream for the diagnostics
+(one can call <span class="ncbi_func">SetDiagStream(&amp;NcbiCerr)</span> to dump the diagnostics
+to the standard error output stream):
 
-	 <p>
-	 Usually, this global object would merely dump the message to
-	 a diagnostic stream, and there is an auxiliary function
-	 <b><i>SetDiagStream()</i></b> to specify output stream for the diagnostics
-	 (one can call <b><i>SetDiagStream(&amp;NcbiCerr)</i></b> to dump the diagnostics
-    to the standard error output stream):
-<font size="-1">
-<pre>
+<pre class="ncbi_code">
 extern void SetDiagStream
 (CNcbiOstream* os,
  bool          quick_flush  = true,// do stream flush after every message
@@ -313,15 +301,14 @@ extern void SetDiagStream
  void*         cleanup_data = 0    // stream is changed (see SetDiagHandler)
  );
 </pre>
-</font>
 
-	 Using <b><i>SetDiagHandler()</i></b>, one can install his own
-	 handler object of type <b><i>CDiagHandler</i></b> to process
-	 messages posted via <b><i>CNcbiDiag</i></b>.
-	 The implementation of the <b><i>CStreamDiagHandler</i></b> in <i>"ncbidiag.cpp"</i>
-	 is a good example of how to do this.
-<font size="-1">
-<pre>
+Using <span class="ncbi_func">SetDiagHandler()</span>, one can install his own
+handler object of type <span class="ncbi_class">CDiagHandler</span> to process
+messages posted via <span class="ncbi_class">CNcbiDiag</span>.
+The implementation of the <span class="ncbi_class">CStreamDiagHandler</span> in <span class="ncbi_file">"ncbidiag.cpp"</span>
+is a good example of how to do this.
+
+<pre class="ncbi_code">
 class CDiagHandler
 {
 public:
@@ -333,11 +320,9 @@ extern void          SetDiagHandler(CDiagHandler* handler,
                                     bool can_delete = true);
 extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
 </pre>
-</font>
 
-	 where:
-<font size="-1">
-<pre>
+where:
+<pre class="ncbi_code">
 struct SDiagMessage {
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
@@ -356,33 +341,31 @@ struct SDiagMessage {
     const char*    m_ErrText; // sometimes 'error' has no numeric code,
                               // still it can be represented as text
 };
-	 </pre>
-</font>
+</pre>
 
-	 Installing a new handler typically destroys the previous handler,
-	 which can be a problem if you need to keep the old handler around
-	 for some reason.  There are two ways to address this issue:
-     <ul>
-	   <li> Declare an object of class <b><i>CDiagRestorer</i></b> at
-	   the top of the block of code in which you will be using your
-	   new handler.  This will protect the old handler from
-	   destruction, and automatically restore it -- along with any
-	   other diagnostic settings -- when the block exits in any
-	   fashion.  As such, you can safely use the result of calling
-	   <b><i>GetDiagHandler()</i></b> at the beginning of the block
-	   even if you have changed the handler within the block.</li>
+Installing a new handler typically destroys the previous handler,
+which can be a problem if you need to keep the old handler around
+for some reason.  There are two ways to address this issue:
+<ul>
+<li> Declare an object of class <span class="ncbi_class">CDiagRestorer</span> at
+  the top of the block of code in which you will be using your
+  new handler.  This will protect the old handler from
+  destruction, and automatically restore it -- along with any
+  other diagnostic settings -- when the block exits in any
+  fashion.  As such, you can safely use the result of calling
+  <span class="ncbi_func">GetDiagHandler()</span> at the beginning of the block
+  even if you have changed the handler within the block.</li>
 
-	   <li> Call <b><i>GetDiagHandler(true)</i></b> and then destroy
-	   the old handler yourself when done with it.  This works in some
-	   circumstances in which <b><i>CDiagRestorer</i></b> is
-	   unsuitable, but places much more responsibility on your code.</li>
-     </ul>
+  <li> Call <span class="ncbi_func">GetDiagHandler(true)</span> and then destroy
+  the old handler yourself when done with it.  This works in some
+  circumstances in which <span class="ncbi_class">CDiagRestorer</span> is
+  unsuitable, but places much more responsibility on your code.</li>
+</ul>
 
-	 <p>
-     For compatibility with older code, the diagnostic system also
-     supports specifying simple callbacks:
-<font size="-1">
-     <pre>
+<p>
+  For compatibility with older code, the diagnostic system also
+  supports specifying simple callbacks:
+<pre class="ncbi_code">
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 
 typedef void (*FDiagCleanup)(void* data);
@@ -391,40 +374,39 @@ extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);
 </pre>
-</font>
-     However, it is better to use the object-based interface for new code.
 
-	 <p></p>
-	 <a name="ref_Manipulators"><h4>Formatting and manipulators</h4></a>
+However, it is better to use the object-based interface for new code.
 
-	 <p>
-	 To compose a diagnostic message with <b><i>CNcbiDiag</i></b> you can
-	 use the formatting operator "<b><<</b>". It works practically the same
-	 way as operator "<b><<</b>" for standard C++ output streams.
-	 <b><i>CNcbiDiag</i></b> class also has some <b><i>CNcbiDiag</i></b>-specific
-	 <i>manipulators</i> to control the message severity level:
-	 <ul>
-		<li> <i>Info</i> -- set severity level to <i>eDiag_Info</i>
-		<li> <i>Warning</i> -- set severity level to <i>eDiag_Warning</i>
-		<li> <i>Error</i> -- set severity level to <i>eDiag_Error</i> [default]
-		<li> <i>Fatal</i> -- set severity level to <i>eDiag_Fatal</i>
-		<li> <i>Trace</i> -- set severity level to <i>eDiag_Trace</i>
-	 </ul>
-	 NOTE: whenever the severity level is changed, <b><i>CNcbiDiag</i></b>
-	 also automatically executes the following two <i>manipulators</i>:
-	 <ul>
-		<li> <i>Endm</i> -- means that the message is complete and to be
-		flushed(via the global callback as described above)
-		<li> <i>Reset</i> -- directs to discard the content of presently
-		composed message
-	 </ul>
-	 The <i>Endm</i> manipulator also gets executed on the
-	 <b><i>CNcbiDiag</i></b> object destruction.
+<p>
+<a name="ref_Manipulators"></a><h4>Formatting and manipulators</h4>
 
-	 <p>
-	 For example, this code:
-<font size="-1">
-     <pre>
+<p>
+To compose a diagnostic message with <span class="ncbi_class">CNcbiDiag</span> you can
+use the formatting operator "<span class="ncbi_ccode"><<</span>". It works practically the same
+way as operator "<span class="ncbi_ccode"><<</span>" for standard C++ output streams.
+<span class="ncbi_class">CNcbiDiag</span> class also has some <span class="ncbi_class">CNcbiDiag</span>-specific
+<span class="ncbi_term">manipulators</span> to control the message severity level:
+<ul>
+<li> <span class="ncbi_class">Info</span> -- set severity level to <span class="ncbi_var">eDiag_Info</span>
+<li> <span class="ncbi_class">Warning</span> -- set severity level to <span class="ncbi_var">eDiag_Warning</span>
+<li> <span class="ncbi_class">Error</span> -- set severity level to <span class="ncbi_var">eDiag_Error</span> [default]
+<li> <span class="ncbi_class">Fatal</span> -- set severity level to <span class="ncbi_var">eDiag_Fatal</span>
+<li> <span class="ncbi_class">Trace</span> -- set severity level to <span class="ncbi_var">eDiag_Trace</span>
+</ul>
+NOTE: whenever the severity level is changed, <span class="ncbi_class">CNcbiDiag</span>
+also automatically executes the following two <span class="ncbi_term">manipulators</span>:
+<ul>
+<li> <span class="ncbi_class">Endm</span> -- means that the message is complete and to be
+flushed(via the global callback as described above)
+<li> <span class="ncbi_class">Reset</span> -- directs to discard the content of presently
+composed message
+</ul>
+The <span class="ncbi_class">Endm</span> manipulator also gets executed on the
+<span class="ncbi_class">CNcbiDiag</span> object destruction.
+<p>
+For example, this code:
+
+<pre class="ncbi_code">
 int iii = 1234;
 CNcbiDiag diag1;
 
@@ -438,67 +420,69 @@ diag1 << "Message1_1";  // will be flushed by the following "Warning"
 diag1 << Warning << "Discard this warning" << ++iii << Reset;
          // message discarded
 diag1 << "This is a warning " << iii;
-diag1 << Endm; </pre>
-</font>
-     will write to the diagnostic stream(if the latter was set with
-	 <b><i>SetDiagStream()</i></b>):
-	 <pre>
+diag1 << Endm;
+</pre>
+
+will write to the diagnostic stream(if the latter was set with
+<span class="ncbi_func">SetDiagStream()</span>):
+
+<pre class="ncbi_code">
 Error: Message1_Start 1234
 Info: Message2
 Error: Message1_End
 Error: Message1_1
 Warning: This is a warning 1235
-	 </pre>
+</pre>
 
 
-	 <a name="ref_ERR_POST"><h4>ERR_POST macro</h4></a>
+<a name="ref_ERR_POST"></a><h4>ERR_POST macro</h4>
 
-	 There is an <b><i>ERR_POST(message)</i></b> macro that can be used to
-	 shorten the error posting code. This macro implicitly creates a temporary
-	 <b><i>CNcbiDiag</i></b> object and put the passed "message" into it.
-	 The default severity for the posted message is <i>eDiag_Trace</i> but it
-	 can be easily overwritten using the
-	 <a href="#ref_Manipulators"><i>manipulators</i></a>
-	 (see the 2nd example below).  For example:
+There is an <span class="ncbi_macro">ERR_POST(message)</span> macro that can be used to
+shorten the error posting code. This macro implicitly creates a temporary
+<span class="ncbi_class">CNcbiDiag</span> object and put the passed "message" into it.
+The default severity for the posted message is <span class="ncbi_var">eDiag_Trace</span> but it
+can be easily overwritten using the
+<a href="#ref_Manipulators"><span class="ncbi_term">manipulators</span></a>
+(see the 2nd example below).  For example:
 
-	 <pre>
+<pre class="ncbi_code">
 long lll = 345;
 ERR_POST("My ERR_POST message, print long: " << lll); </pre>
 	 would write to the diagnostic stream something like:
-	 <pre>
+<pre class="ncbi_code">
 "somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345 </pre>
 
-	 and:
+and:
 
-	 <pre>
+<pre class="ncbi_code">
 double ddd = 123.345;
 ERR_POST(Warning << "...print double: " << ddd); </pre>
 	 would write to the diagnostic stream something like:
-	 <pre>
+<pre class="ncbi_code">
 "somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
 
-	 <a name="ref_Tracing"><h4>Turn on the tracing</h4></a>
+<a name="ref_Tracing"></a><h4>Turn on the tracing</h4>
 
-	 The tracing (messages with severity level <i>eDiag_Trace</i>) is considered
-    to be a special, debug-oriented feature, and therefore it is not
-    affected by <i>SetDiagPostLevel()</i> and <i>SetDiagDieLevel()</i>.
-	 To turn the tracing on or off in your code you can use function
-    <a href="../docxx/General.html#SetDiagTrace">SetDiagTrace()</a>.
+The tracing (messages with severity level <span class="ncbi_var">eDiag_Trace</span>) is considered
+to be a special, debug-oriented feature, and therefore it is not
+affected by <span class="ncbi_func">SetDiagPostLevel()</span> and <span class="ncbi_func">SetDiagDieLevel()</span>.
+To turn the tracing on or off in your code you can use function
+<a href="../docxx/General.html#SetDiagTrace">SetDiagTrace()</a>.
 
-	 <p>
-	 By default, the tracing is off -- unless you assign environment
-    variable <b><i>$DIAG_TRACE</i></b> to an arbitrary non-empty string
-    (or, alternatively, you can set <b><i>DIAG_TRACE</i></b> entry in the
-    <b><i>[DEBUG]</i></b> section of your registry to any non-empty value).
+<p>
+By default, the tracing is off -- unless you assign environment
+variable <span class="ncbi_env">$DIAG_TRACE</span> to an arbitrary non-empty string
+(or, alternatively, you can set <span class="ncbi_reg_var">DIAG_TRACE</span> entry in the
+<span class="ncbi_reg">[DEBUG]</span> section of your registry to any non-empty value).
 
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-    <td align=right>($Date$)</td></tr>
-	 </table>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+  <td align=right>($Date$)</td></tr>
+</table>
 
 <!--#include virtual="../ssi/footer.shtml" -->

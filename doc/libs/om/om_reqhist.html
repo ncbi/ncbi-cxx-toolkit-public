@@ -1,4 +1,4 @@
-        <!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
+<!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
@@ -6,11 +6,11 @@
 
 
 <div align="Center">
-<h1>Object Manager.</h1>
+<h1>Object Manager</h1>
 </div>
 
 
-<h2>Request history and conflict resolution.</h2>
+<h2>Request history and conflict resolution</h2>
 
 
 <p>
@@ -28,7 +28,7 @@ There are several points of potential ambiguity:
 
 
 
-<h3>Incomplete Seq-id.</h3>
+<h3>Incomplete Seq-id</h3>
 <p>
 Biological sequence id
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq-id</a>)
@@ -54,7 +54,7 @@ The returned Seq-id differs from the one provided initially by the client.
 </p>
 
 
-<h3>History of requests.</h3>
+<h3>History of requests</h3>
 <p>
 Once the Seq.id has been resolved into a specific Seq.entry, the Object Manager
 keeps track of all data requests to this sequence in order to maintain consistency.
@@ -68,12 +68,12 @@ then in 5 minutes it also has to have 5 of them.
 By "session" we mean here the same Scope of resolution. That is, as long as
 the data are requested through the same Scope, it is consistent. In another Scope
 the data could potentially be different. Another way to make the Scope forget about
-previous requests is calling its <tt>ResetHistory</tt> method.
+previous requests is calling its <span class="ncbi_func">ResetHistory</span> method.
 </p>
 
 
 
-<h3>Ambiguous requests.</h3>
+<h3>Ambiguous requests</h3>
 <p>
 It is possible that there are several Seq-entries which contain requested
 information. In this case the processing depends on what is actually requested:
@@ -83,7 +83,7 @@ source, while annotations - from all of them.
 
 
 
-<h4>Request for seq.data (Bioseq).</h4>
+<h4>Request for seq.data (Bioseq)</h4>
 <p>
 Examining all its Data Sources, the Scope creates a list of Seq.entries,
 which could contain requested data. If the list contains more than one element,
@@ -114,7 +114,7 @@ the history of requests:
 </p>
 
 
-<h4>Request for seq.annotations.</h4>
+<h4>Request for seq.annotations</h4>
 <p>
 Annotation iterator starts with examining all Data Sources in the Scope
 in order to find all top-level seq.entries, which contain annotations

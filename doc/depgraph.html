@@ -6,16 +6,16 @@
 
 This graph was obtained by building the full toolkit and then
 running the following commands:
-<pre>
+<pre class="ncbi_cmd">
 .../bin/depgraph .../lib/lib* > depgraph.out
 .../bin/depgraph2dot -simplify -in depgraph.out -out depgraph.dot
 dot -Tps -o depgraph.ps depgraph.dot
 convert -density 100 depgraph.ps PPM:- | ppmtogif > depgraph.gif
 </pre>
-where <tt>dot</tt> comes from AT&amp;T's
+where <span class="ncbi_util">dot</span> comes from AT&amp;T's
 <a href="http://www.research.att.com/sw/tools/graphviz/">Graphviz</a>
 package.  If you are at NCBI, you can find the source to
-<tt>depgraph</tt> and <tt>depgraph2dot</tt>
+<span class="ncbi_app">depgraph</span> and <span class="ncbi_app">depgraph2dot</span>
 <a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/source/src/internal/util/depgraph/">here.</a>
 Dashed lines represent containment.
 <p>

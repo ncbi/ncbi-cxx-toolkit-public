@@ -4,14 +4,14 @@
 
 <a name="ref_MacProjTree"></a><h2>Mac OS X (Darwin):  Building the whole NCBI C++ tree locally</h2>
 
-<p>We have build NCBI C++ Toolkit using the prerelease GCC 3.1 compiler from the April 2002 Preview of Apple Developers Tools.</p>
+<p>We have build NCBI C++ Toolkit using the prerelease <span class="ncbi_compiler">GCC 3.1</span> compiler from the April 2002 Preview of Apple Developers Tools.</p>
 
 
-<p>There are a few extra steps one have to follow before building the Toolkit on Mac OS X version 10.1. The future (10.2) version does not require these steps.</p>
+<p>There are a few extra steps one have to follow before building the Toolkit on <span class="ncbi_os">Mac OS X</span> version 10.1. The future (10.2) version does not require these steps.</p>
 <ul>
-	<li>Download dlCompat library patch from (http://prdownloads.sourceforge.net/gnu-darwin). Copy the <b>dlfcn.h</b> include file into /usr/include directory. Copy <b>libdl.dylib</b> and <b>libdl.a</b> libraries into /usr/lib directory.
-   	<li>Select GCC 3.1 as a primary compiler (run "gcc_select 3").
-	<li>Apply patch for C++ exceptions handling bug (Apple Radar bug <a href="http://web.mit.edu/darwin/src/modules/Csu/notes">#2466821</a>). Replace crt1.o in /usr/lib with the latest version. The source code of <b>crt1</b> (the Csu project) is avaliable from the Apple CVS. Please visit <a href="http://developer.apple.com/darwin/tools/cvs/read-only.html">Apple Developer's page</a> for information on how to obtaing Darwin source code from CVS. The <b>indr</b> utility is required for Csu build and is avaliable as a part of <b>cctools</b> project in Darwin CVS repository.
+    <li>Download dlCompat library patch from (<span class="ncbi_url">http://prdownloads.sourceforge.net/gnu-darwin</span>). Copy the <span class="ncbi_file">dlfcn.h</span> include file into <span class="ncbi_dir">/usr/include</span> directory. Copy <span class="ncbi_file">libdl.dylib</span> and <span class="ncbi_file">libdl.a</span> libraries into<span class="ncbi_dir">/usr/lib</span> directory.
+    <li>Select <span class="ncbi_compiler">GCC 3.1</span> as a primary compiler (run "<span class="ncbi_cmd">gcc_select 3</span>").
+    <li>Apply patch for C++ exceptions handling bug (Apple Radar bug <a href="http://web.mit.edu/darwin/src/modules/Csu/notes">#2466821</a>). Replace <span class="ncbi_file">crt1.o</span> in <span class="ncbi_dir">/usr/lib</span> with the latest version. The source code of <span class="ncbi_proj">crt1</span> (the Csu project) is avaliable from the Apple CVS. Please visit <a href="http://developer.apple.com/darwin/tools/cvs/read-only.html">Apple Developer's page</a> for information on how to obtaing Darwin source code from CVS. The <span class="ncbi_util">indr</span> utility is required for Csu build and is avaliable as a part of <span class="ncbi_proj">cctools</span> project in Darwin CVS repository.
 </ul>
 
 <p>After these steps the procedure of configuring and building NCBI C++ Toolkit is the same as destribed in "Building NCBI C++ Toolkit: Running the configure script".</p>
@@ -25,9 +25,9 @@
 <td align=left>
   <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Vlad Lebedev</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
 
-<td align=right><i>$Date$</i></td>
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 <!--
 <tr>

@@ -3,14 +3,12 @@
 <!--#include virtual="../../ssi/header.shtml" -->
 
 
-
 <div align="Center">
-<h1>Object Manager.</h1>
+<h1>Object Manager</h1>
 </div>
 
 
-
-<h2>Internal classes - definition.</h2>
+<h2>Internal classes - definition</h2>
 <p>
 Here we define Object Manager's internal classes and their behavior. Internal
 classes should never be used by a client program directly.
@@ -30,7 +28,7 @@ classes should never be used by a client program directly.
 
 
 
-<h3><a name="Seq_id_Handle"></a>Seq_id handle.</h3>
+<h3><a name="Seq_id_Handle"></a>Seq_id handle</h3>
 <p>
 Seq_id handle is an internal object, which is used as an alias (or substitute)
 to
@@ -40,7 +38,7 @@ Due to complex nature of Seq_id, it is replaced by this lightweight object.
 
 
 
-<h3><a name="Seq_id_Mapper"></a>Seq_id mapper.</h3>
+<h3><a name="Seq_id_Mapper"></a>Seq_id mapper</h3>
 <p>
 Seq_id mapper maps Seq_id to Seq_id handle, back and forth. Such map is
 unique for each Object Manager - hence it is created and maintained by it.
@@ -51,7 +49,7 @@ the handle if necessary.
 
 
 
-<h3><a name="Bioseq_Info"></a>Bioseq info.</h3>
+<h3><a name="Bioseq_Info"></a>Bioseq info</h3>
 <p>
 Bioseq info object stores the set of &nbsp;Seq_id handles which identify
 the biological sequence, as well as a reference to the
@@ -62,7 +60,7 @@ same bio sequence, they are called synonyms here.
 
 
 
-<h3><a name="TSE_Info"></a>Top-level seq entry info.</h3>
+<h3><a name="TSE_Info"></a>Top-level seq entry info</h3>
 <p>
 Top-level seq entry (TSE) info object stores a map of Seq_id handles to
 corresponding Bioseq info objects as well as a reference to the TSE which
@@ -72,7 +70,7 @@ to annotation maps which list all annotation objects for the sequence.
 
 
 
-<h3><a name="AnnotObject"></a>Annotation object.</h3>
+<h3><a name="AnnotObject"></a>Annotation object</h3>
 <p>
 Annotation object is a substitute to
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Seq_annot</a>.
@@ -82,7 +80,7 @@ location on the sequence.
 
 
 
-<h3><a name="Annot_CI"></a>Annotation iterator (TSE).</h3>
+<h3><a name="Annot_CI"></a>Annotation iterator (TSE)</h3>
 <p>
  While "regular" annotation iterator enumerates all annotations for a given
 sequence in the Scope, this iterator traverses only annotations within a given
@@ -91,7 +89,7 @@ top-level Seq_entry. In fact "regular" iterator uses this one in its work.
 
 
 
-<h3><a name="HandleRange"></a>Handle range.</h3>
+<h3><a name="HandleRange"></a>Handle range</h3>
 <p>
 Handle range contains list of ranges
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CRange">CRange</a>)
@@ -101,13 +99,14 @@ on the bio sequence.
 
 
 
-<h3><a name="HandleRangeMap"></a>Handle range map.</h3>
+<h3><a name="HandleRangeMap"></a>Handle range map</h3>
 <p>
 Handle range map maps Bioseq handle to Handle range. It serves as a substitution
 for
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq_loc</a>
 and is used by annotation iterators
 </p>
+
 
 <!--#include virtual="../../ssi/navlinks.shtml" -->
 <!--#include virtual="../../ssi/footer.shtml" -->

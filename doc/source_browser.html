@@ -33,18 +33,18 @@
 <td><input type="SUBMIT" value="  Identifier Search "></td>
 <td><input name="i" value="" size="45">
   <select name="d">
-	<option value=""     >All
-	<option value="smart">Any first entry
-	<option value="C"    >Class
-	<option value="S"    >Struct type
-	<option value="E"    >Enum type
-	<option value="U"    >Union type
-	<option value="T"    >Type
-	<option value="f"    >Function prototype
-	<option value="F"    >Function
-	<option value="c"    >Class (forwarded)
-	<option value="M"    >Macro
-	<option value="V"    >Variable
+    <option value=""     >All
+    <option value="smart">Any first entry
+    <option value="C"    >Class
+    <option value="S"    >Struct type
+    <option value="E"    >Enum type
+    <option value="U"    >Union type
+    <option value="T"    >Type
+    <option value="f"    >Function prototype
+    <option value="F"    >Function
+    <option value="c"    >Class (forwarded)
+    <option value="M"    >Macro
+    <option value="V"    >Variable
   </select>
 </td>
 </tr>
@@ -71,7 +71,7 @@
 <a name="ref_docxx"></a>
 <h3>DOC++ Browser <font size=-2>[<a href="#ref_SBAboutDoc++">Usage Hints</a>]</font></h3>
 <ul>
-	<li><a href="docxx/index.html">Entity Index</a> <font size=-1>(alphabetical list)</font></li>
+    <li><a href="docxx/index.html">Entity Index</a> <font size=-1>(alphabetical list)</font></li>
     <li><a href="docxx/HIER.html"> Class Relationships</a> <font size=-1>(alphabetical ordering)</font></li>
 </ul>
 
@@ -101,7 +101,7 @@ to identify all occurences in the Toolkit where an identifier, file name, or spe
 respectively, are found.
 
 <p></p>
-An <i>identifier</i> in an LXR search is the name of a class,
+An <span class="ncbi_term">identifier</span> in an LXR search is the name of a class,
 function, variable, macro, typedef, or other named entity within the Toolkit source.
 This search can be especially handy when attempting to determine, for example,
 which header has been left out when a symbol reference cannot be found.
@@ -113,18 +113,18 @@ Some hints for using LXR:
     <li> For freetext LXR searches, patterns, wild cards, and regular expression syntax are allowed.
         See the <a href="lxr/search_help.html">search help page</a> for details.
         </li>
-    <li> The identifier ("ident") and file ("find") LXR search modes attempt an <i>exact</i> and
-        <i>case-sensitive</i> match to your query.
+    <li> The identifier ("ident") and file ("find") LXR search modes attempt an <em>exact</em> and
+        <em>case-sensitive</em> match to your query.
         </li>
-    <li> LXR indexes files from a root of $NCBI<tt>/c++</tt>, matches will be found not only
-        in <tt>src</tt> and <tt>include</tt>, but any resident build tree and the <tt>compilers</tt>
-        and <tt>scripts</tt> directories as well.
+    <li> LXR indexes files from a root of <span class="ncbi_dir">$NCBI/c++</span>, matches will be found not only
+        in <span class="ncbi_dir">src</span> and <span class="ncbi_dir">include</span>, but any resident build tree and the <span class="ncbi_dir">compilers</span>
+        and <span class="ncbi_dir">scripts</span> directories as well.
         </li>
-    <li> <b>NB</b>:  The documentation itself is not searched by LXR.
+    <li> <span class="ncbi_note">NB</span>:  The documentation itself is not searched by LXR.
         </li>
 </ul>
 
-<p></p>
+<p></p><br>
 <a name="ref_SBAboutDoc++"></a>
 <h4>DOC++</h4>
 A second web-based browser, <a href="http://docpp.sourceforge.net/">DOC++</a>, presents a

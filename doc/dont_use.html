@@ -2,127 +2,133 @@
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-	 <h1>C++/STL pit-falls and discouraged/prohibited features</h1>
+<h1>C++/STL pit-falls and discouraged/prohibited features</h1>
 
-	 <ul>
-		<li> <a href="#ref_STL">STL and standard C++ library's bad guys</a>
-	 <ul>
-		<li> <a href="#ref_STL_Stream">Old vs. new stream classes</a>
-		<li> <a href="#ref_STL_NonStd">Non-standard classes</a>
-	 </ul>
-		<li> <a href="#ref_CPP">C++ bad guys</a>
-	 <ul>
-		<li> <a href="#ref_CPP_OpOverload">Operation overload</a>
-		<li> <a href="#ref_CPP_OpAssignment">Assignment and copy constructor overload</a>
-		<li> <a href="#ref_CPP_Namespace">Namespaces</a>
-		<li> <a href="#ref_CPP_NoArg">Omitting <i>"void"</i> in a no-arg function proto</a>
-		<li> <a href="#ref_CPP_Malloc">Do not mix malloc and new</a>
-	 </ul> </ul>
+<ul>
+  <li> <a href="#ref_STL">STL and standard C++ library's bad guys</a>
+  <ul>
+    <li> <a href="#ref_STL_Stream">Old vs. new stream classes</a>
+    <li> <a href="#ref_STL_NonStd">Non-standard classes</a>
+  </ul>
+  <li> <a href="#ref_CPP">C++ bad guys</a>
+  <ul>
+    <li> <a href="#ref_CPP_OpOverload">Operation overload</a>
+    <li> <a href="#ref_CPP_OpAssignment">Assignment and copy constructor overload</a>
+    <li> <a href="#ref_CPP_Namespace">Namespaces</a>
+    <li> <a href="#ref_CPP_NoArg">Omitting "void" in a no-arg function proto</a>
+    <li> <a href="#ref_CPP_Malloc">Do not mix malloc and new</a>
+  </ul>
+</ul>
 
-	 <br>
+<br>
 
-	 <a name="ref_STL"></a>
-	 <h2>STL and standard C++ library's bad guys</h2>
+<a name="ref_STL"></a>
+<h2>STL and standard C++ library's bad guys</h2>
 
-	 <br>
-	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3>
+<br>
+<a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3>
 
-	 <p>
-	 <p> <i>#include &lt;corelib/ncbistre.hpp&gt;</i>
-       &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
-
-	 <p>
-	 Do not use the new iostream library included with Sunpro C++ 5.0 early
-	 access release refresh. It is extremely buggy. Instead we will use the
-	 older version of iostream.h by default.
 <p>
-	 It was a big question if we should use "old-fashioned" C++ stream
-	 classes(from <i>#include &lt;iostream.h&gt;, etc.</i>) or
-	 "templated" ones(from <i>#include &lt;iostream&gt;, etc.</i>).
-	 Some platforms do not support "new" streams yet; and although
-	 there is a way to import most STL classes and string template class
-	 using package like <a href="tips.html#ref_STL">STLport</a>, however
-	 C++ stream classes usually cannot be implemented formally(yet in full)
-	 by a third party because of their close interaction with the underlying
-	 file system.
+<p> <span class="ncbi_ccode">#include &lt;corelib/ncbistre.hpp&gt;</span>
+ &nbsp;&nbsp;[also included in &lt;<span class="ncbi_file">corelib/ncbistd.hpp</span>&gt;]
 
-	 <p>
-	 The solution is to use an "<b>intersection</b>" between the new and old
-	 stream functionality, and thus allow one to use either
-	 old or new streams depending on whether the given platform supports
-	 new streams or not. Thus, for the reason of the "old/new streams"
-	 portability, one <b>must</b> use:
-	 <ul>
-		<li> <i>#include &lt;corelib/ncbistre.hpp&gt;</i>
-		  &nbsp;&nbsp;[also included in <i>&lt;corelib/ncbistd.hpp&gt;</i>]
-	 </ul>
-	 and <b>must never</b> do directly:
-	 <ul>
-		<li> <i>#include &lt;iostream&gt;, etc.</i>
-		<li> <i>#include &lt;iostream.h&gt;, etc.</i>
-	 </ul>
+<p>
+Do not use the new iostream library included with Sunpro C++ 5.0 early
+access release refresh. It is extremely buggy. Instead we will use the
+older version of iostream.h by default.
 
-	 Then, <b>always</b> use:
-	 <ul>
-		<li> <i>"CNcbiIstream", "CNcbiOstream", etc.</i>
-	 </ul>
-	 and <b>never</b> use:
-	 <ul>
-		<li> <i>"istream", "ostream", etc.</i> or even
-		<li> <i>"::istream", "::ostream", etc.</i> or <i>"std::istream", "std::ostream", etc.</i>
-	 </ul>
-	 and, of course, the use of stream iterators and
-	 "<i>stringstream</i>"-related classes (from <i>&lt;sstream&gt;</i>)
-	 is not allowed as well.
+<p>
+It was a big question if we should use "old-fashioned" C++ stream
+classes(from <span class="ncbi_ccode">#include &lt;iostream.h&gt;</span>, etc.) or
+"templated" ones(from <span class="ncbi_ccode">#include &lt;iostream&gt;</span>, etc.).
+Some platforms do not support "new" streams yet; and although
+there is a way to import most STL classes and string template class
+using package like <a href="tips.html#ref_STL">STLport</a>, however
+C++ stream classes usually cannot be implemented formally(yet in full)
+by a third party because of their close interaction with the underlying
+file system.
 
-	 <p>
-	 By following this approach, we should be able to use both "new" and "old"
-	 stream libs now "for free". The needed code discipline will be maintained
-	 "automagically" as any "old streams"-only and "new streams"-only code
-	 would not compile immediately. On the other hand, we reserve a possibility
-	 to replace "<i>typedef</i>"s by derived classes with added functionality
-	 (e.g. in order to extend the new/old stream API intersection area, or to
-	 add some features like overridden <i>overflow()</i>/<i>underflow()</i> callbacks).
+<p>
+The solution is to use an <span class="ncbi_term">"intersection"</span> between the new and old
+stream functionality, and thus allow one to use either
+old or new streams depending on whether the given platform supports
+new streams or not. Thus, for the reason of the "old/new streams"
+portability, one <em>must</em> use:
 
-	 <p>
-	 If compiler supports both "old" and "new" C++ streams then
-	 "old-fashioned" C++ libs will be engaged by default.
-	 This can be alternated by <i>#defin</i>'ing preprocessor variable
-	 "<i>NCBI_USE_NEW_IOSTREAM</i>".
+<ul>
+  <li> <span class="ncbi_ccode">#include &lt;corelib/ncbistre.hpp&gt;</span>
+       &nbsp;&nbsp;[also included in &lt<span class="ncbi_file">;corelib/ncbistd.hpp</span>&gt;]
+</ul>
 
+and <em>must never</em> do directly:
 
-	 <br>
-	 <br>
-	 <a name="ref_STL_NonStd"></a> <h3>Non-standard STL classes</h3> <p>
-	 Don't use <i>hash</i> or the <i>rope</i> classes from
-	 some versions of the STL.
-	 These are non-standard additions. If you have questions about what
-	 is/isn't in the standard library, consult the
-	 <a href="http://www.cygnus.com/misc/wp/">C++ standards</a>.</p>
+<ul>
+  <li> <span class="ncbi_ccode">#include &lt;iostream&gt;</span>, etc.
+  <li> <span class="ncbi_ccode">#include &lt;iostream.h&gt;</span>, etc.
+</ul>
 
+Then, <em>always</em> use:
 
-	 <br>
-	 <a name="ref_CPP"></a>
-	 <h2>C++ bad guys</h2><br>
+<ul>
+  <li> <span class="ncbi_class">"CNcbiIstream", "CNcbiOstream"</span>, etc.
+</ul>
 
-	 <a name="ref_CPP_OpOverload"></a> <h3>Operation overload</h3> <p>
-	 Do not use operator overloading for the objects where
-    they have unnatural or ambiguous meaning. E.g. the defining of operation
-	 "==" for your class <i>"CFoo"</i> so that there exist { CFoo a,b,c; } such
-	 that <i>(a == b)</i> and  <i>(b == c)</i> are <i>true</i>
-	 while <i>(a == c)</i> is <i>false</i> would be a very bad idea.
-	 It turns out that otherwise, especially in large projects, people have
-	 different ideas of what an overloaded operator means, leading to all
-	 sorts of bugs.
+and <em>never</em> use:
 
-	 <a name="ref_CPP_OpAssignment"></a> <h3>Assignment and copy constructor overload</h3> <p>
-	 Be advised that the default initialization
-	 <i>{CFoo foo = bar;}</i> and assignment<i>{CFoo foo; ...; foo = bar;}</i>
-	 do a member-by-member copying. This is not suitable and can be dangerous
-	 sometimes. And if you decide overwrite this default behaviour by your own
-	 code like:
+<ul>
+  <li> <span class="ncbi_class">"istream", "ostream"</span>, etc. or even
+  <li> <span class="ncbi_ccode">"::istream", "::ostream"</span>, etc. or <span class="ncbi_ccode">"std::istream", "std::ostream"</span>, etc.
+</ul>
 
-<pre>
+and, of course, the use of stream iterators and
+"<span class="ncbi_class">stringstream</span>"-related classes (from <span class="ncbi_class">&lt;sstream&gt;</span>)
+is not allowed as well.
+
+<p>
+By following this approach, we should be able to use both "new" and "old"
+stream libs now "for free". The needed code discipline will be maintained
+"automagically" as any "old streams"-only and "new streams"-only code
+would not compile immediately. On the other hand, we reserve a possibility
+to replace "<span class="ncbi_keyword">typedef</span>"s by derived classes with added functionality
+(e.g. in order to extend the new/old stream API intersection area, or to
+add some features like overridden <span class="ncbi_func">overflow()</span>/<span class="ncbi_func">underflow()</span> callbacks).
+
+<p>
+If compiler supports both "old" and "new" C++ streams then
+"old-fashioned" C++ libs will be engaged by default.
+This can be alternated by <span class="ncbi_ccode">#defin</span>'ing preprocessor variable
+"<span class="ncbi_var">NCBI_USE_NEW_IOSTREAM</span>".
+
+<br><br>
+<a name="ref_STL_NonStd"></a> <h3>Non-standard STL classes</h3> <p>
+Don't use <span class="ncbi_class">hash</span> or the <span class="ncbi_class">rope</span> classes from
+some versions of the STL.
+These are non-standard additions. If you have questions about what
+is/isn't in the standard library, consult the
+<a href="http://www.cygnus.com/misc/wp/">C++ standards</a>.</p>
+
+<br>
+<a name="ref_CPP"></a>
+<h2>C++ bad guys</h2><br>
+
+<a name="ref_CPP_OpOverload"></a> <h3>Operation overload</h3> <p>
+Do not use operator overloading for the objects where
+they have unnatural or ambiguous meaning. E.g. the defining of operation
+"==" for your class <span class="ncbi_class">"CFoo"</span> so that there exist { CFoo a,b,c; } such
+that <span class="ncbi_ccode">(a == b)</span> and  <span class="ncbi_ccode">(b == c)</span> are <span class="ncbi_value">true</span>
+while <span class="ncbi_ccode">(a == c)</span> is <span class="ncbi_value">false</span> would be a very bad idea.
+It turns out that otherwise, especially in large projects, people have
+different ideas of what an overloaded operator means, leading to all
+sorts of bugs.
+
+<a name="ref_CPP_OpAssignment"></a> <h3>Assignment and copy constructor overload</h3> <p>
+Be advised that the default initialization
+<span class="ncbi_ccode">{CFoo foo = bar;}</span> and assignment<span class="ncbi_ccode">{CFoo foo; ...; foo = bar;}</span>
+do a member-by-member copying. This is not suitable and can be dangerous
+sometimes. And if you decide overwrite this default behaviour by your own
+code like:
+
+<pre class="ncbi_code">
 class CFoo {
     // a copy constructor for initialization
     CFoo(const CFoo& bar) { ... }
@@ -131,19 +137,20 @@ class CFoo {
 };
 </pre>
 
-it is <b>extremely important</b> that:
-	 <ul>
-		<li> <b>both</b> copy constructor and overloaded assignment be defined
-		<li> they have <b>just the same</b> meaning that is
-		<i>{CFoo foo = bar;}</i> is equivalent to <i>{CFoo foo;  foo = bar;}</i>
-		<li> there is a check for a <b>self-assignment</b> case in your
-		overloaded assignment operation
-	 </ul>
+it is <em>extremely important</em> that:
 
-	 In many cases when you dont want to have the assignment and copy
-	 constructor at all, just add to your class something like:
+<ul>
+  <li> <em>both</em> copy constructor and overloaded assignment be defined
+  <li> they have <em>just the same</em> meaning that is
+       <span class="ncbi_ccode">{CFoo foo = bar;}</span> is equivalent to <span class="ncbi_ccode">{CFoo foo;  foo = bar;}</span>
+  <li> there is a check for a self-assignment case in your
+       overloaded assignment operation
+</ul>
 
-<pre>
+In many cases when you dont want to have the assignment and copy
+constructor at all, just add to your class something like:
+
+<pre class="ncbi_code">
 class CFoo {
    .............................
 private:
@@ -153,39 +160,39 @@ private:
 };
 </pre>
 
-	 <br>
-	 <a name="ref_CPP_Namespace"></a> <h3>Namespaces</h3> <p>
-	 Do not define your own namespaces at all.
-	 Instead, if you want to ensure that you will not get into a name conflict,
-	 see the workaround (<a href="style.html#ref_Prefix">quasi-namespace</a>)
-	 technique.
-	 Do not engage foreign namespaces (with <i>"using namespace XXX;"</i>)
-	 unless this is practically unavoidable.
-	 For the use of standard C++ template classes(including STL) and/or
-	 NCBI namespaces
-	 <a href="style.html#ref_Scope">click here</a>.
+<br>
+<a name="ref_CPP_Namespace"></a> <h3>Namespaces</h3> <p>
+Do not define your own namespaces at all.
+Instead, if you want to ensure that you will not get into a name conflict,
+see the workaround (<a href="style.html#ref_Prefix">quasi-namespace</a>)
+technique.
+Do not engage foreign namespaces (with <span class="ncbi_ccode">"using namespace XXX;"</span>)
+unless this is practically unavoidable.
+For the use of standard C++ template classes(including STL) and/or
+NCBI namespaces
+<a href="style.html#ref_Scope">click here</a>.
 
-	 <a name="ref_CPP_NoArg"></a> <h3>Omitting <i>"void"</i> in a no-arg function proto</h3> <p>
-	 Do not omit <i>"void"</i> in prototype of a function without arguments
-	 (e.g. always write <i>"int f(<b>void</b>)"</i>
-	 rather than just <i>"int f()"</i>).
+<a name="ref_CPP_NoArg"></a> <h3>Omitting <span class="ncbi_keyword">"void"</span> in a no-arg function proto</h3> <p>
+Do not omit <span class="ncbi_keyword">"void"</span> in prototype of a function without arguments
+(e.g. always write <span class="ncbi_func">"int f(<em>void</em>)"</span>
+rather than just <span class="ncbi_func">"int f()"</span>).
 
-	 <a name="ref_CPP_Malloc"></a> <h3>Do not mix malloc and new</h3> <p>
-	 On some platforms, malloc and new may use completely different memory
-	 managers, so never "free()" what you created using "new" and never "delete"
-	 what you created using "malloc()".  Also, when calling C code from C++
-	 <b>always</b> allocate any structs or other items using "malloc()".
-	 The C routine may use "realloc()" or "free()" on the items, which can cause
-	 memory corruption if you allocated using "new."
+<a name="ref_CPP_Malloc"></a> <h3>Do not mix malloc and new</h3> <p>
+On some platforms, malloc and new may use completely different memory
+managers, so never "free()" what you created using "new" and never "delete"
+what you created using "malloc()".  Also, when calling C code from C++
+<em>always</em> allocate any structs or other items using "malloc()".
+The C routine may use "realloc()" or "free()" on the items, which can cause
+memory corruption if you allocated using "new."
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
-		  <td align=right>($Revision$)</td></tr>
-		<tr>
-		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
-	 </table>
+<table border=0 width="100%" cellspacing=0>
+  <tr>
+    <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
+    <td align=right>($Revision$)</td></tr>
+  <tr>
+    <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
+</table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

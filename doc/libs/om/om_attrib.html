@@ -4,10 +4,10 @@
 
 
 <div align="Center">
-<h1>Object Manager.</h1>
+<h1>Object Manager</h1>
 </div>
 
-<h2>Classes - attributes and operations.</h2>
+<h2>Classes - attributes and operations</h2>
 
 <ul>
   <li><a href="#Object_manager">Object manager</a></li>
@@ -25,7 +25,7 @@
 <hr>
 
 
-<h3><a name="Object_manager"></a>Object manager.</h3>
+<h3><a name="Object_manager"></a>Object manager</h3>
 <p>
 Before being able to use any Scopes, a client must
 create and initialize Object Manager
@@ -42,7 +42,7 @@ a default  data object.
 </p>
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // register existing data loader.
     // data loader must be created in the heap (ie using operator new)
     void RegisterDataLoader(CDataLoader&amp; loader, EIsDefault is_default=eNonDefault);
@@ -58,7 +58,7 @@ a default  data object.
 </pre>
 
 
-<h3><a name="Scope"></a>Scope.</h3>
+<h3><a name="Scope"></a>Scope</h3>
 <p>
 Scope
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CScope">CScope</a>)
@@ -77,7 +77,7 @@ good  reason is impractical in most cases.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Constructor:
     CScope( CObjectManager&amp; ObjMgr);
 
@@ -103,7 +103,7 @@ good  reason is impractical in most cases.
 </pre>
 
 
-<h3><a name="Bioseq_handle"></a>Bioseq handle.</h3>
+<h3><a name="Bioseq_handle"></a>Bioseq handle</h3>
 <p>
 When a client wants to access a bio sequence data, it asks
 the Scope for a Bioseq handle
@@ -116,7 +116,7 @@ to compare Bioseq   handles created by different Scopes.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // public constructors
     CBioseq_Handle(const CBioseq_Handle&amp; h);
     CBioseq_Handle&amp; operator= (const CBioseq_Handle&amp; h);
@@ -177,22 +177,22 @@ to compare Bioseq   handles created by different Scopes.
 There are also some external utility functions which accept Bioseq
 handles; in particular,
 <a href="../../lxr/source/include/objects/util/sequence.hpp">&lt;objects/util/sequence.hpp&gt;</a>
-declares (within namespace <tt>ncbi::objects::sequence::</tt>)
+declares (within namespace <span class="ncbi_ccode">ncbi::objects::sequence::</span>)
 </p>
-<pre>
-// Get sequence's title (used in various flat-file formats.)
-enum EGetTitleFlags {
-    fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
-    fGetTitle_Organism    = 0x2  // append [organism]
-};
-typedef int TGetTitleFlags;
-string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
+<pre class="ncbi_code">
+    // Get sequence's title (used in various flat-file formats.)
+    enum EGetTitleFlags {
+        fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
+        fGetTitle_Organism    = 0x2  // append [organism]
+    };
+    typedef int TGetTitleFlags;
+    string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 </pre>
 <p>
-This function is available in the <tt>xobjutil</tt> library.
+This function is available in the <span class="ncbi_proj">xobjutil</span> library.
 </p>
 
-<h3><a name="Seq_vector"></a>Seq vector.</h3>
+<h3><a name="Seq_vector"></a>Seq vector</h3>
 <p>
 SeqVector
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqVector">CSeqVector</a>)
@@ -205,7 +205,7 @@ the same   Scope. It may not access other Scopes.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // public constructors
     CSeqVector(const CSeqVector&amp; vec);
     CSeqVector&amp; operator= (const CSeqVector&amp; vec);
@@ -229,7 +229,7 @@ the same   Scope. It may not access other Scopes.
 </pre>
 
 
-<h3><a name="Seq_map"></a>Seq map.</h3>
+<h3><a name="Seq_map"></a>Seq map</h3>
 <p>
 Seqmap
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqMap">CSeqMap</a>)
@@ -240,7 +240,7 @@ by   a Bioseq handle.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // public constructors
     CSeqMap(const CSeqMap&amp; another);
     CSeqMap&amp; operator=(const CSeqMap&amp; another);
@@ -251,7 +251,7 @@ by   a Bioseq handle.
 </pre>
 
 <h4>CSeqMap::CSegmentInfo object methods:</h4>
-<pre>
+<pre class="ncbi_code">
      // public constructors
     CSegmentInfo(const CSegmentInfo&amp; seg);
     CSegmentInfo&amp; operator= (const CSegmentInfo&amp; seg);
@@ -267,13 +267,13 @@ by   a Bioseq handle.
 </pre>
 
 
-<h3><a name="Data_loader"></a>Data loader.</h3>
+<h3><a name="Data_loader"></a>Data loader</h3>
 <p>
 Data loader is never used by a client application directly.
 </p>
 
 
-<h3><a name="Description_iterator"></a>Description iterator.</h3>
+<h3><a name="Description_iterator"></a>Description iterator</h3>
 <p>
 Description iterator
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CDesc_CI">CDesc_CI</a>)
@@ -285,7 +285,7 @@ data objects the sequence refers to.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Constructors
     CDesc_CI(const CBioseq_Handle&amp; handle);
     CDesc_CI(const CDesc_CI&amp; iter);
@@ -310,7 +310,7 @@ objects, it would be more convenient to enumerate the latters directly.
 </p>
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Constructors
     CSeqdesc_CI(const CDesc_CI&amp; desc_it,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set);
@@ -327,7 +327,7 @@ objects, it would be more convenient to enumerate the latters directly.
 </pre>
 
 
-<h3><a name="Annotation_iterator"></a>Annotation iterator.</h3>
+<h3><a name="Annotation_iterator"></a>Annotation iterator</h3>
 <p>
 Any annotation iterator
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CAnnotTypes_CI">CAnnotTypes_CI</a>)
@@ -341,7 +341,7 @@ graph and alignment) - it is not used directly.
 </p>
 
 
-<h3><a name="Feature_iterator"></a>Feature iterator.</h3>
+<h3><a name="Feature_iterator"></a>Feature iterator</h3>
 <p>
 Feature iterator
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CFeat_CI">CFeat_CI</a>)
@@ -352,7 +352,7 @@ data objects the sequence refers to.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Constructors
     // Search all TSEs in all datasources, by default do not get
     // annotations defined for segmented bioseq parts.
@@ -388,7 +388,7 @@ data objects the sequence refers to.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Constructors
     // Search all TSEs in all datasources, by default do not get
     // annotations defined for segmented bioseq parts.
@@ -410,7 +410,7 @@ data objects the sequence refers to.
 </pre>
 
 
-<h3><a name="Alignment_iterator"></a>Alignment iterator.</h3>
+<h3><a name="Alignment_iterator"></a>Alignment iterator</h3>
 <p>
 Alignment iterator
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CAlign_CI">CAlign_CI</a>)
@@ -421,7 +421,7 @@ data objects the sequence refers to.
 
 
 <h4>Object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Constructors
     // Search all TSEs in all datasources, by default do not get
     // annotations defined for segmented bioseq parts.

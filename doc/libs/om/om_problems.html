@@ -5,11 +5,11 @@
 
 
 <div align="Center">
-<h1>Object Manager.</h1>
+<h1>Object Manager</h1>
 </div>
 
 
-<h2>Common problems.</h2>
+<h2>Common problems</h2>
 <hr>
 
 <ol>
@@ -56,19 +56,19 @@ accession should be fetched.
 <h4>How to use CSeqMap?</h4>
 <p>
 There are two methods in CBioseq_Handle, which return CSeqMap object:
-<pre>
+<pre class="ncbi_code">
     const CSeqMap&amp; GetSeqMap(void) const;
     const CSeqMap&amp; GetResolvedSeqMap(void) const;
 </pre>
 What is the difference? The point is that a sequence can refer to other sequences,
-which in turn to others etc. etc. <var>Object Manager</var> does not resolve this
+which in turn to others etc. etc. <span class="ncbi_term">Object Manager</span> does not resolve this
 references until a client needs it. So, the contents of SeqMap object returned by
-<tt>GetSeqMap</tt> depends on a history of previous calls. From the other side,
-<tt>GetResolvedSeqMap</tt> returns completely resolved map, that is map, which
+<span class="ncbi_func">GetSeqMap</span> depends on a history of previous calls. From the other side,
+<span class="ncbi_func">GetResolvedSeqMap</span> returns completely resolved map, that is map, which
 does not contain references to references, nor references to gaps - only either data,
 or references to data, or gaps.
 <br>
-Please note, the last element of CSeqMap is always of type <tt>eSeqEnd</tt>.
+Please note, the last element of CSeqMap is always of type <span class="ncbi_var">eSeqEnd</span>.
 Its length is zero. It does not mean much - just "the end of the map".
 </p>
 
@@ -78,7 +78,7 @@ Its length is zero. It does not mean much - just "the end of the map".
 <a name="seqvector"></a>
 <h4>What is the format of data CSeqVector returns?</h4>
 <p>
-CSeqVector object has a <tt>SetCoding</tt> method, which defines the format
+CSeqVector object has a <span class="ncbi_func">SetCoding</span> method, which defines the format
 of the data it should return. In case this function was never called
 CSeqVector does not perform any conversion, returning the data
 in the original format (in which it receives it from the database).
@@ -110,12 +110,12 @@ CSeqVector returns symbol N in this case.
 
 <hr>
 <a name="largeseq"></a>
-<h4>Sequence gi=18565551.</h4>
+<h4>Sequence gi=18565551</h4>
 <p>
 This is a huge (8 megabases) segmented sequence with CDS features defined on the sequence
 itself and its parts, which are also huge. When trying to get all of them, you can
 run out of your computer resources. We are looking for some
-solution to this problem. Probably, in some cases the <var>Object Manager</var>
+solution to this problem. Probably, in some cases the <span class="ncbi_term">Object Manager</span>
 does not need to retrieve all features for all bioseq segments, but we
 are not sure how to filter them out.
 </p>
@@ -130,14 +130,14 @@ are not sure how to filter them out.
 <a name="fileentry"></a>
 <h4>How to load sequence data from a file?</h4>
 <p>
-It is possible to load into <var>Object Manager</var>  &nbsp;"manually" created sequence entry -
-using <tt>AddTopLevelSeqEntry</tt> method of CScope object.
+It is possible to load into <span class="ncbi_term">Object Manager</span>  &nbsp;"manually" created sequence entry -
+using <span class="ncbi_func">AddTopLevelSeqEntry</span> method of CScope object.
 Such an entry can be loaded, for example, from a file in ASN format (file.asn):
-<pre>
-#include &lt;serial/serial.hpp&gt;
-#include &lt;serial/objistr.hpp&gt;
-#include &lt;serial/objostr.hpp&gt;
-...
+<pre class="ncbi_code">
+    #include &lt;serial/serial.hpp&gt;
+    #include &lt;serial/objistr.hpp&gt;
+    #include &lt;serial/objostr.hpp&gt;
+    ...
     // Use CRef&lt;&gt; to store the object. Use "new" to allocate it.
     // This will allow the Object Manager to work with the object
     // even if you delete the reference.
@@ -152,7 +152,7 @@ Such an entry can be loaded, for example, from a file in ASN format (file.asn):
     is.Close();
 </pre>
 To store sequence entry in an ASN file, use the following code:
-<pre>
+<pre class="ncbi_code">
     // Open serial output stream (dump ASN.1 text to stdout)
     CObjectOStream&amp; os = *CObjectOStream::Open(eSerial_AsnText, NcbiCout);
     os &lt;&lt; *entry;
@@ -163,20 +163,20 @@ To store sequence entry in an ASN file, use the following code:
 
 <hr>
 <a name="other"></a>
-<h4>Other suggestions.</h4>
+<h4>Other suggestions</h4>
 <ol>
   <li>
     CBioseq needs an additional function - one that has been called
-    <tt>GetBestId</tt> in the old toolkit (the best id is actually 'GI').
+    <span class="ncbi_func">GetBestId</span> in the old toolkit (the best id is actually 'GI').
 	If there is no GI there are priorities defined in the old toolkit.
-    The construction <tt>GetId().begin()</tt>, one has to use instead,
+    The construction <span class="ncbi_ccode">GetId().begin()</span>, one has to use instead,
 	is not quite proper.
   </li>
   <li>
     CSeqMap can specify that a segment was a reference to another sequence. Still,
-	there is no way to learn to <b>what</b> sequence it refers to.
+	there is no way to learn to <em>what</em> sequence it refers to.
 <blockquote>
-Done. See <tt>CSeqMap::CSegmentInfo::GetRefSeqid</tt> method.
+Done. See <span class="ncbi_func">CSeqMap::CSegmentInfo::GetRefSeqid</span> method.
 </blockquote>
   </li>
   <li>
@@ -189,35 +189,35 @@ Done. See <tt>CSeqMap::CSegmentInfo::GetRefSeqid</tt> method.
 	CSeq_loc_CI class was added to the xutil library.
 
 <blockquote>
-CSeq_loc_CI object has been added to the <tt>seqloc</tt> library.
-The object is defined in in the <tt>Seq_loc.hpp</tt>.
+CSeq_loc_CI object has been added to the <span class="ncbi_lib">seqloc</span> library.
+The object is defined in in the <span class="ncbi_file">Seq_loc.hpp</span>.
 
 The iterator goes through all intervals of a Seq-loc
 keeping the correct order of the intervals. Points
 are shown as intervals of length 1 (it is also possible
-to use IsPoint() method). Locations of <tt>whole</tt> type
-are shown with special values <tt>CRange&lt;int&gt;::GetWholeFrom()</tt>
-and <tt>CRange&lt;int&gt;::GetWholeTo()</tt>. Another way to find a
-whole location is to use <tt>CSeq_loc_CI::IsWhole()</tt>.
+to use IsPoint() method). Locations of <em>whole</em> type
+are shown with special values <span class="ncbi_func">CRange&lt;int&gt;::GetWholeFrom()</span>
+and <span class="ncbi_func">CRange&lt;int&gt;::GetWholeTo()</span>. Another way to find a
+whole location is to use <span class="ncbi_func">CSeq_loc_CI::IsWhole()</span>.
 <br>
 A brief example of using the iterator (assuming we
 have a CSeq_loc object "loc"):
 
-<pre>
-for (CSeq_loc_CI loc_it(loc); loc_it; loc_it++) {
-  // Check seq-id
-  if ( loc_it.GetSeq_id().IsGi()  &&  loc_it.GetSeq_id().GetGi() == 2) {
-    int from = loc_it.GetRange().GetFrom();
-    int to = loc_it.GetRange().GetTo();
-    ...
-  }
-}
+<pre class="ncbi_code">
+    for (CSeq_loc_CI loc_it(loc); loc_it; loc_it++) {
+        // Check seq-id
+        if ( loc_it.GetSeq_id().IsGi()  &&  loc_it.GetSeq_id().GetGi() == 2) {
+            int from = loc_it.GetRange().GetFrom();
+            int to = loc_it.GetRange().GetTo();
+            ...
+        }
+    }
 </pre>
 </blockquote>
 
   </li>
   <li>
-  Method <tt>CSeq_loc::GetTotalRange</tt> returns incorrect data in case of Seq_loc
+  Method <span class="ncbi_func">CSeq_loc::GetTotalRange</span> returns incorrect data in case of Seq_loc
   being a mix.
 <blockquote>
 Fixed.

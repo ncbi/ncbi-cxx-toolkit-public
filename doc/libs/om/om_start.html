@@ -4,49 +4,49 @@
 
 
 <div align="Center">
-<h1>Setup the framework for the C++ <i>Object Manager</i> learning task</h1>
+<h1>Setup the framework for the C++ Object Manager learning task</h1>
 </div>
 
 <h2>Starting point (UNIX)</h2>
 <p>
 To jump-start your first project utilizing the new C++
-<var>Object Manager </var> in the C++ Toolkit framework on a UNIX platform,
-we suggest using <tt>new_project.sh</tt> shell script, which creates
+<span class="ncbi_term">Object Manager </span> in the C++ Toolkit framework on a UNIX platform,
+we suggest using <span class="ncbi_script">new_project.sh</span> shell script, which creates
 a sample application and a makefile:
 </p>
 
 <ol>
 <li>
-  Create a new project called <i>task</i> in the folder <i>task</i>
-  using <tt>new_project.sh</tt> shell script (this will create the folder, the source file and the makefile):
-  <pre>
-  $NCBI/c++/scripts/new_project.sh <i>task</i> app/objmgr
-  </pre>
-</li>
-<li>
-  Build the sample project and run the application:
-  <pre>
-  cd <i>task</i>
-  make -f Makefile.<i>task</i>_app
-  ./<i>task</i> -gi 333
-  </pre>
-The output should look like this:
-<pre>
-  First ID:  emb|CAA23443.1|
-  Sequence:  length=263,  data=MARFLGLCTW
-  # of descriptions:  2
-  # of features:
-     [whole]           Any:    2
-     [whole]           Genes:  0
-     [0..9]            Any:    2
-     [0..9, TSE-only]  Any:    2
-  # of alignments:
-     [whole]           Any:    0
-  Done
+  Create a new project called <span class="ncbi_proj">task</span> in the folder <span class="ncbi_dir">task</span>
+  using <span class="ncbi_script">new_project.sh</span> shell script (this will create the folder, the source file and the makefile):
+<pre class="ncbi_cmd">
+    $NCBI/c++/scripts/new_project.sh <em>task</em> app/objmgr
 </pre>
 </li>
 <li>
-Now you can go ahead and convert the sample code in the <tt>task.cpp</tt>
+  Build the sample project and run the application:
+<pre class="ncbi_cmd">
+    cd <em>task</em>
+    make -f Makefile.<em>task</em>_app
+    ./<em>task</em> -gi 333
+</pre>
+The output should look like this:
+<pre class="ncbi_output">
+    First ID:  emb|CAA23443.1|
+    Sequence:  length=263,  data=MARFLGLCTW
+    # of descriptions:  2
+    # of features:
+       [whole]           Any:    2
+       [whole]           Genes:  0
+       [0..9]            Any:    2
+       [0..9, TSE-only]  Any:    2
+    # of alignments:
+       [whole]           Any:    0
+    Done
+</pre>
+</li>
+<li>
+Now you can go ahead and convert the sample code in the <span class="ncbi_file">task.cpp</span>
 into  the code that performs your learning task.
 </li>
 </ol>
@@ -54,7 +54,7 @@ into  the code that performs your learning task.
 
 <h2>Starting point (MS Windows)</h2>
 <p>
-To create a project, which utilizes the C++ <var>Object Manager </var>
+To create a project, which utilizes the C++ <span class="ncbi_term">Object Manager </span>
 in the C++ Toolkit framework on Microsoft Windows platform, do the following:
 </p>
 <ol>
@@ -62,31 +62,31 @@ in the C++ Toolkit framework on Microsoft Windows platform, do the following:
   choose "Win32 Console Application", then "Empty project".
   </li>
   <li>
-  Copy the source file (<tt>src\app\sample\objmgr\objmgr_sample.cpp</tt>) into
+  Copy the source file (<span class="ncbi_file">src\app\sample\objmgr\objmgr_sample.cpp</span>) into
   the project directory, then add it to the project.
   </li>
   <li>
   Modify the project settings:
     <ul>
-	  <li>Enable Run-time type information (in <tt>C/C++ - C++ language</tt>)
+	  <li>Enable Run-time type information (in <span class="ncbi_menu">"C/C++"->"C++ Language"</span>)
 	  </li>
-	  <li>Disable using precompiled headers (in <tt>C/C++ - Precompiled headers</tt>)
+	  <li>Disable using precompiled headers (in <span class="ncbi_menu">"C/C++"->"Precompiled Headers"</span>)
 	  </li>
-	  <li>Add additional include directory (in <tt>C/C++ - Preprocessor</tt>).
-	  Here, at NCBI, it should be <tt>\\Dizzy\public\cxx\include</tt>,
+	  <li>Add additional include directory (in <span class="ncbi_menu">"C/C++"->"Preprocessor"</span>).
+	  Here, at NCBI, it should be <span class="ncbi_dir">\\Dizzy\public\cxx\include</span>,
       that is, the "root" of all includes.
 	  </li>
-	  <li>Add additional library path (<tt>Link-Input</tt>).
-      Here, at NCBI it may be <tt>\\Dizzy\public\cxx\Debug</tt>. Please note,
+	  <li>Add additional library path (<span class="ncbi_menu">"Link"->"Input"</span>).
+      Here, at NCBI it may be <span class="ncbi_dir">\\Dizzy\public\cxx\Debug</span>. Please note,
 	  this library path is configuration-dependent, that is it must be
 	  different for each configuration you are going to build the project in.
 	  </li>
-	  <li>Remove all "standard" libraries in <tt>Link-Input-Object/library modules</tt>.
+	  <li>Remove all "standard" libraries in <span class="ncbi_menu">"Link"->"Input"->"Object/library modules"</span>.
 	  </li>
-	  <li>Add socket library there: <tt>wsock32.lib</tt>
+	  <li>Add socket library there: <span class="ncbi_lib">wsock32.lib</span>
 	  </li>
 	  <li>Add NCBI libraries to the project:
-	    <pre>
+<pre class="ncbi_code">
     objects_biblio.lib,
     objects_general.lib,
     objects_id1.lib,
@@ -105,7 +105,7 @@ in the C++ Toolkit framework on Microsoft Windows platform, do the following:
     xconnect.lib,
     xserial.lib,
     xutil.lib.
-	    </pre>
+</pre>
 	  </li>
 	</ul>
   </li>
@@ -124,43 +124,43 @@ In order to do this:
 </p>
 <ol>
   <li>
-  Create copy of the source (<i>task.cpp</i>) and makefile (<i>Makefile.task_app</i>)
-  <pre>
-  cp task.cpp <b>task_cgi.cpp</b>
-  cp Makefile.task_app <b>Makefile.task_cgiapp</b>
-  </pre>
+  Create copy of the source (<span class="ncbi_file">task.cpp</span>) and makefile (<span class="ncbi_file">Makefile.task_app</span>)
+<pre class="ncbi_cmd">
+    cp task.cpp task_cgi.cpp
+    cp Makefile.task_app Makefile.task_cgiapp
+</pre>
   </li>
   <li>
-  Edit the makefile for the CGI application (<i>Makefile.task_cgiapp</i>):
-  change application name, name of the source file,  add <tt>cgi</tt> libraries:
-  <pre>
-  APP = <b>task.cgi</b>
-  SRC = <b>task_cgi</b>
-  LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      xser <b>xhtml xcgi</b> xutil xconnect xncbi
-  LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) <b>$(FASTCGI_LIBS)</b> $(NETWORK_LIBS) $(ORIG_LIBS)
-  </pre>
+  Edit the makefile for the CGI application (<span class="ncbi_file">Makefile.task_cgiapp</span>):
+  change application name, name of the source file,  add cgi libraries:
+<pre class="ncbi_code">
+    APP = <em>task.cgi</em>
+    SRC = <em>task_cgi</em>
+    LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
+        xser <em>xhtml xcgi</em> xutil xconnect xncbi
+    LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) <em>$(FASTCGI_LIBS)</em> $(NETWORK_LIBS) $(ORIG_LIBS)
+</pre>
   </li>
   <li>
   Build the project (at this time it is not a CGI application yet):
-  <pre>
-  make -f Makefile.<i>task_cgiapp</i>
-  </pre>
+<pre class="ncbi_cmd">
+    make -f Makefile.task_cgiapp
+</pre>
   </li>
   <li>
-  Convert <i>task_cgi.cpp</i> into a CGI application.
+  Convert <span class="ncbi_file">task_cgi.cpp</span> into a CGI application.
   </li>
 </ol>
 
 
 <h2>How to convert CGI application into Fast-CGI one?</h2>
 <p>
-In the <tt>LIB=...</tt> section of <i>Makefile.task_cgiapp</i>, just
-replace <tt>xcgi</tt> library by <tt>xfcgi</tt>:
-  <pre>
-  LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      xser xhtml <b>xfcgi</b> xutil xconnect xncbi
-  </pre>
+In the <span class="ncbi_make_var">LIB=...</span> section of <span class="ncbi_file">Makefile.task_cgiapp</span>, just
+replace <span class="ncbi_lib">xcgi</span> library by <span class="ncbi_lib">xfcgi</span>:
+<pre class="ncbi_cmd">
+    LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
+        xser xhtml <em>xfcgi</em> xutil xconnect xncbi
+</pre>
 </p>
 
 <!--#include virtual="../../ssi/navlinks.shtml" -->

@@ -3,15 +3,13 @@
 <!--#include virtual="../../ssi/header.shtml" -->
 
 
-
 <div align="Center">
 <h1>Object Manager.</h1>
 </div>
 
 
 
-
-<h2>Internal classes - attributes and operations.</h2>
+<h2>Internal classes - attributes and operations</h2>
 <ul>
   <li><a href="#Indexing">Indexing.</a></li>
   <li><a href="#Seq_id_Handle">Seq_id_Handle and Seq_id_Mapper.</a></li>
@@ -19,9 +17,7 @@
 <hr>
 
 
-
-
-<h3><a name="Indexing"></a>Indexing.</h3>
+<h3><a name="Indexing"></a>Indexing</h3>
 <p>
 In order to facilitate the data search, Object Manager's objects
 create and maintain a number of  internal indices.
@@ -29,7 +25,7 @@ create and maintain a number of  internal indices.
 
 
 
-<h4>Data source.</h4>
+<h4>Data source</h4>
 <p>
 Data source
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CDataSource">CDataSource</a>)
@@ -42,28 +38,28 @@ be Top level  ones. It contains the following indices:
   <li>a map of known to this Data source Seq_entries and corresponding Top-level
     seq.entry info - here several seq entries may be mapped to a single
     top-level seq entry info (
-	<code>map&lt;CRef&lt;CSeq_entry&gt;,CRef&lt;CTSE_Info&gt;&gt; m_Entries</code>
+	<span class="ncbi_ccode">map&lt;CRef&lt;CSeq_entry&gt;,CRef&lt;CTSE_Info&gt;&gt; m_Entries</span>
 	),</li>
 
   <li>a map of Seq_ids to the set of top level Seq_entries which contain bio
     sequence with this Seq_id (
-	<code>map&lt;CSeq_id_Handle,set&lt;CRef&lt;CTSE_Info&gt;&gt; m_TSE_seq</code>
+	<span class="ncbi_ccode">map&lt;CSeq_id_Handle,set&lt;CRef&lt;CTSE_Info&gt;&gt; m_TSE_seq</span>
 	),</li>
 
   <li>a map of Seq_ids to the set of top level Seq_entries which reference
     bio sequence with this Seq_id in annotations or sequence data (
-	<code>map&lt;CSeq_id_Handle,set&lt;CRef&lt;CTSE_Info&gt;&gt; m_TSE_ref</code>
+	<span class="ncbi_ccode">map&lt;CSeq_id_Handle,set&lt;CRef&lt;CTSE_Info&gt;&gt; m_TSE_ref</span>
     ),</li>
 
   <li>a map of CBioseq's pointer to corresponding SeqMap (
-    <code>map&lt;const CBioseq*,CRef&lt;CSeqMap&gt;&gt; m_SeqMaps</code>
+    <span class="ncbi_ccode">map&lt;const CBioseq*,CRef&lt;CSeqMap&gt;&gt; m_SeqMaps</span>
 	)</li>
 </ul>
 
 
 
 
-<h4>Top-level seq entry info (TSE info).</h4>
+<h4>Top-level seq entry info (TSE info)</h4>
 <p>
 TSE_info
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CTSE_Info">CTSE_Info</a>)
@@ -73,46 +69,46 @@ a given Data source. It contains:
 
 <ul>
   <li>a map of Seq_ids to corresponding Bioseq_info data objects (
-    <code>map&lt;CSeq_id_Handle,CRef&lt;CBioseq_Info&gt;&gt; m_BioseqMap</code>
+    <span class="ncbi_ccode">map&lt;CSeq_id_Handle,CRef&lt;CBioseq_Info&gt;&gt; m_BioseqMap</span>
 	),</li>
 
   <li>a map of Seq_ids to a data structure which describes position (in terms
     of ranges) of annotation  objects on  the sequence (
-	<code>map&lt;CSeq_id_Handle,CRangeMultimap&lt;CRef&lt;CAnnotObject&gt;,CRange&lt;int&gt;::position_type&gt;&gt; m_AnnotMap</code>
+	<span class="ncbi_ccode">map&lt;CSeq_id_Handle,CRangeMultimap&lt;CRef&lt;CAnnotObject&gt;,CRange&lt;int&gt;::position_type&gt;&gt; m_AnnotMap</span>
 	).</li>
 </ul>
 
 
 
 
-<h4>Bioseq info.</h4>
+<h4>Bioseq info</h4>
 <p>
 Bioseq_info
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBioseq_Info"> CBioseq_Info</a>)
 contains a set of Seq_ids (Seq_id_Handles) which identify a
 given Seq_entry (
-<code>set&lt;CSeq_id_Handle&gt; m_Synonyms</code>).
+<span class="ncbi_ccode">set&lt;CSeq_id_Handle&gt; m_Synonyms</span>).
 </p>
 
 
 
-<h4>Handle range map.</h4>
+<h4>Handle range map</h4>
 <p>
 This object
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHandleRangeMap">CHandleRangeMap</a>)
 contains a map of Bioseq handle to Handle range (
-<code>map&lt;CBioseq_Handle,CHandleRange&gt; m_LocMap</code>
+<span class="ncbi_ccode">map&lt;CBioseq_Handle,CHandleRange&gt; m_LocMap</span>
 ).
 </p>
 
 
 
-<h4>Handle range.</h4>
+<h4>Handle range</h4>
 <p>
 The object
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHandleRange"> CHandleRange</a>)
 contains a list of locations for a particular bio sequence (
-<code>list&lt;pair&lt;CRange&lt;int&gt;,ENa_strand&gt;&gt; m_Ranges</code>
+<span class="ncbi_ccode">list&lt;pair&lt;CRange&lt;int&gt;,ENa_strand&gt;&gt; m_Ranges</span>
 ).
 </p>
 
@@ -122,7 +118,7 @@ contains a list of locations for a particular bio sequence (
 
 
 
-<h3><a name="Seq_id_Handle"></a>Seq_id_Handle and Seq_id_Mapper.</h3>
+<h3><a name="Seq_id_Handle"></a>Seq_id_Handle and Seq_id_Mapper</h3>
 <p>
 Seq_id_Handle
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_id_Handle">CSeq_id_Handle</a>)
@@ -143,16 +139,16 @@ are  not aware of bio sequences  or other ways of Seq_id usage.
 
 
 <h4>CSeq_id_Handle  object methods:</h4>
-<pre>
-  // copy (assignment) operator
-  CSeq_id_Handle&amp; operator= (const CSeq_id_Handle&amp; handle);
-  // comparison
-  bool operator== (const CSeq_id_Handle&amp; handle) const;
-  bool operator&lt;  (const CSeq_id_Handle&amp; handle) const;
-  // Check if the handle is a valid or an empty one
-  operator bool(void) const;
-  // Reset the handle (remove seq-id reference)
-  void Reset(void);
+<pre class="ncbi_code">
+    // copy (assignment) operator
+    CSeq_id_Handle&amp; operator= (const CSeq_id_Handle&amp; handle);
+    // comparison
+    bool operator== (const CSeq_id_Handle&amp; handle) const;
+    bool operator&lt;  (const CSeq_id_Handle&amp; handle) const;
+    // Check if the handle is a valid or an empty one
+    operator bool(void) const;
+    // Reset the handle (remove seq-id reference)
+    void Reset(void);
 </pre>
 
 <p>
@@ -166,7 +162,7 @@ true, while an unassigned  one will return false.
 
 
 <h4>CSeq_id_Mapper  object methods:</h4>
-<pre>
+<pre class="ncbi_code">
     // Get seq-id handle. Create new handle if not found and
     // do_not_create is false. Get only the exactly equal seq-id handle.
     CSeq_id_Handle GetHandle(const CSeq_id&amp; id, bool do_not_create=false);
@@ -182,7 +178,7 @@ true, while an unassigned  one will return false.
 </pre>
 
 <p>
-<code>GetMatchingHandles</code>
+<span class="ncbi_func">GetMatchingHandles</span>
 method populates the "h_set" container with handles for
 all   seq-ids     matching to the "id". E.g. if "id" contains accession "A"
  without   version     information, the set may be populated with all of
@@ -192,7 +188,7 @@ are searched together).   No new   handles are created for the "id".
 </p>
 
 <p>
-<code>GetMatchingHandlesStr</code>
+<span class="ncbi_func">GetMatchingHandlesStr</span>
 method populates the "h_set" with handles for all seq-ids,
 containing "sid" string in their key fields (accession, name, integer
 id corresponding  to the string value etc.).

@@ -2,7 +2,7 @@
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
-<h1>NCBI Firewall Daemon (<tt>FWDaemon</tt>)</h1>
+<h1>NCBI Firewall Daemon (<span class="ncbi_app">FWDaemon</span>)</h1>
 
 So-called "NCBI Firewall Daemon" (FD) is essentially a network
 multiplexer listening at an advertised network address.
@@ -24,14 +24,15 @@ FD addresses (on front-end NCBI machines):
 <!--   130.14.22.2,  port 5859 SERVER RETIRED -->
 <!--   130.14.22.8,  port 5840 SERVER RETIRED -->
 <!--   130.14.22.30, port 5810 SERVER RETIRED -->
-<pre>
-   130.14.22.31, port 5812
-   130.14.22.32, port 5811
+<blockquote><pre class="ncbi_code">
+130.14.22.31, port 5812
+130.14.22.32, port 5811
 </pre>
+</blockquote>
 
-NOTE: One FD can simultaneously serve many client/server pairs.
+<span class="ncbi_note">NOTE</span>: One FD can simultaneously serve many client/server pairs.
 
-
+<p><br>
 <h2>Using FD to connect from behind a "regular" firewall</h2>
 
 
@@ -42,9 +43,10 @@ your network client can use NCBI network services in a usual way
 (as if there were no firewall at all).
 
 
+<p><br>
 <h2>Using FD to connect from behind a "non-transparent" firewall</h2>
 
-NOTE:  If your firewall is "non-transparent" (it is extremely rare case),
+<span class="ncbi_note">NOTE</span>:  If your firewall is "non-transparent" (it is extremely rare case),
 then your system administrator must "map" the corresponding ports on
 your firewall server to the advertised FD addresses (shown above).
 In this case, you will have to specify the address of your firewall server
@@ -57,26 +59,28 @@ The mapping on your non-transparent firewall server should look like this:
 <!-- CONN_PROXY_HOST:5859    --&gt;    130.14.22.2:5859  SERVER RETIRED -->
 <!-- CONN_PROXY_HOST:5840    --&gt;    130.14.22.8:5840  SERVER RETIRED -->
 <!-- CONN_PROXY_HOST:5810    --&gt;    130.14.22.30:5810 SERVER RETIRED -->
-<pre>
- CONN_PROXY_HOST:5812    --&gt;    130.14.22.31:5812
- CONN_PROXY_HOST:5811    --&gt;    130.14.22.32:5811
+<blockquote><pre class="ncbi_code">
+CONN_PROXY_HOST:5812    --&gt;    130.14.22.31:5812
+CONN_PROXY_HOST:5811    --&gt;    130.14.22.32:5811
 </pre>
+</blockquote>
 
-
+<p><br>
 <h2>Troubleshooting</h2>
 
 You can test if the FD ports are accessible from your host by just running,
 for example:
 
-<pre>
-  telnet 130.14.22.31 5812
+<blockquote><pre class="ncbi_cmd">
+telnet 130.14.22.31 5812
 </pre>
+</blockquote>
 
 and entering a line of arbitrary text in the TELNET session.
 If everything is fine, your TELNET session will look as follows
 (the line "test" is your input here):
 
-<pre>
+<blockquote><pre class="ncbi_cmd">
 &gt; telnet 130.14.22.31 5812
 Trying 130.14.22.31...
 Connected to 130.14.22.31.
@@ -86,15 +90,17 @@ NCBI Firewall Daemon:  Invalid ticket. Connection closed.
 See <a href="http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html">http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html</a>.
 Connection closed by foreign host.
 </pre>
+</blockquote>
+
 
 <p>
 There is also an auxiliary UNIX shell script
-`<a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.sh">fwd_check.sh</a>'
-to check the <u>accessibility</u> of all of the above FD addresses.
+<a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.sh" class="ncbi_script">fwd_check.sh</a>
+to check the <span class="ncbi_term">accessibility</span> of all of the above FD addresses.
 
 <p>
 The following dynamic <a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.cgi">Web page</a>
-checks whether the FD is <u>running</u> on all hosts mentioned above.
+checks whether the FD is <em>running</em> on all hosts mentioned above.
 
 
 <!--#include virtual="../../ssi/navlinks.shtml" -->
@@ -104,8 +110,8 @@ checks whether the FD is <u>running</u> on all hosts mentioned above.
 <td align=left>
   <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
 </tr>
 <tr>
 <td align=left>

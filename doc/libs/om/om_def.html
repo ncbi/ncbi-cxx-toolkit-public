@@ -4,12 +4,12 @@
 
 
 <div align="Center">
-<h1>Object Manager.</h1>
+<h1>Object Manager</h1>
 </div>
 
 
 
-<h2>Classes - definition.</h2>
+<h2>Classes - definition</h2>
 <p>
 Here we define Object Manager's key classes and their behavior:
 </p>
@@ -30,7 +30,7 @@ Here we define Object Manager's key classes and their behavior:
 
 
 
-<h3><a name="Object_manager"></a>Object manager.</h3>
+<h3><a name="Object_manager"></a>Object manager</h3>
 <p>
 Object manager manages data objects, provides them to Scopes when
 needed. It knows all existing Data sources and Data loaders. When a Scope
@@ -42,7 +42,7 @@ Scopes to communicate.  This is a barely visible entity.
 
 
 
-<h3><a name="Scope"></a>Scope.</h3>
+<h3><a name="Scope"></a>Scope</h3>
 <p>
 Scope is a top-level object available to a client. Its purpose is
 to  define  a scope of visibility and reference resolution and provide access
@@ -51,7 +51,7 @@ to the  bio sequence data.
 
 
 
-<h3><a name="Data_loader"></a>Data loader.</h3>
+<h3><a name="Data_loader"></a>Data loader</h3>
 <p>
 Data loader is a link between in-process data storage and remote,
 out-of process data source. Its purpose is to communicate with a remote
@@ -62,7 +62,7 @@ references that data in  the Data source.
 </p>
 
 
-<h3><a name="Data_source"></a>Data source.</h3>
+<h3><a name="Data_source"></a>Data source</h3>
 <p>
 Data source stores bio sequence data locally. Scope communicates with
 this  object to obtain any sequence data. Data source creates and maintains
@@ -78,7 +78,7 @@ retrieved  by that loader.
 
 
 
-<h3><a name="Bioseq_handle"></a>Bioseq handle.</h3>
+<h3><a name="Bioseq_handle"></a>Bioseq handle</h3>
 <p>
 Bioseq handle is a kind of
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Bioseq</a>
@@ -89,25 +89,25 @@ from the Scope.
 
 
 
-<h3><a name="Bioseq_core"></a>Bioseq core.</h3>
+<h3><a name="Bioseq_core"></a>Bioseq core</h3>
 Bioseq core is partially populated Bioseq, or, better say, Bioseq
 as  it  is loaded at the moment.
 
 
-<h3><a name="Seq_map"></a>Seq map.</h3>
+<h3><a name="Seq_map"></a>Seq map</h3>
 <p>
 Seq map contains a general information about the sequence &#8211; location
 and   type of data only.
 </p>
 
 
-<h3><a name="Seq_vector"></a>Seq vector.</h3>
+<h3><a name="Seq_vector"></a>Seq vector</h3>
 <p>
 Seq vector contains sequence data only.
 </p>
 
 
-<h3><a name="Description_iterator"></a>Description iterator.</h3>
+<h3><a name="Description_iterator"></a>Description iterator</h3>
 <p>
 Description iterator traverses bio sequence descriptions
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Seq_descr</a>)
@@ -123,7 +123,7 @@ on the tree.
 
 
 
-<h3><a name="Annotation_iterator"></a>Annotation iterator.</h3>
+<h3><a name="Annotation_iterator"></a>Annotation iterator</h3>
 <p>
 Annotation iterators are utility classes for traversing sequence annotation
 data. Each annotation contains a reference to one or more regions on one

@@ -4,10 +4,10 @@
 
 
 <div align="Center">
-<H1>Object Manager.</H1>
+<H1>Object Manager</H1>
 </div>
 <div align="Left">
-<H2>How to use it.</H2>
+<H2>How to use it</H2>
 </div>
 
 <HR>
@@ -16,20 +16,20 @@
 
 <LI>
 <A HREF="#start">
-Start working with the <VAR>Object Manager</VAR>.
+Start working with the <span class="ncbi_term">Object Manager</span>.
 </A>
 </LI>
 
 <LI>
 <A HREF="#add_tse">
-Add externally created top-level Seq_entry to the <VAR>Scope</VAR>.
+Add externally created top-level Seq_entry to the <span class="ncbi_term">Scope</span>.
 </A>
 </LI>
 
 
 <LI>
 <A HREF="#add_data_loader">
-Add a data loader to the <VAR>Scope</VAR>.
+Add a data loader to the <span class="ncbi_term">Scope</span>.
 </A>
 </LI>
 
@@ -74,14 +74,11 @@ Enumerate sequence annotations.
 
 <HR>
 <!-- =================== start =============================== -->
-<H4>
-<A NAME="start">
-Start working with the <VAR>Object Manager</VAR>.
-</A>
-</H4>
+<A NAME="start"></a>
+<H4>Start working with the <span class="ncbi_term">Object Manager</span></H4>
 <P>
 Include the necessary headers:
-<PRE>
+<pre class="ncbi_code">
 #include &lt;objects/objmgr/object_manager.hpp&gt;
 #include &lt;objects/objmgr/scope.hpp&gt;
 #include &lt;objects/objmgr/bioseq_handle.hpp&gt;
@@ -90,15 +87,15 @@ Include the necessary headers:
 #include &lt;objects/objmgr/feat_ci.hpp&gt;
 #include &lt;objects/objmgr/align_ci.hpp&gt;
 </PRE>
-Create <VAR>Object Manager</VAR> as a referenced object on the heap:
-<PRE>
+Create <span class="ncbi_term">Object Manager</span> as a referenced object on the heap:
+<pre class="ncbi_code">
     CRef&lt;CObjectManager&gt; obj_mgr = new CObjectManager;
 </PRE>
-Create a <VAR>Scope</VAR> of reference resolution. There is a lot
-of freedom in how the <VAR>Scope</VAR>
+Create a <span class="ncbi_term">Scope</span> of reference resolution. There is a lot
+of freedom in how the <span class="ncbi_term">Scope</span>
 can be created: either as an object on the stack, or on the heap, either as
 a referenced or non-referenced object:
-<PRE>
+<pre class="ncbi_code">
     CRef&lt;CScope&gt; scope1 = new CScope(*obj_mgr);
     CScope scope2(*obj_mgr);
     CScope* scope3 = new CScope(*obj_mgr);
@@ -108,15 +105,14 @@ a referenced or non-referenced object:
 
 <HR>
 <!-- =================== add_tse =============================== -->
+<A NAME="add_tse"></a>
 <H4>
-<A NAME="add_tse">
-Add externally created top-level Seq_entry to the <VAR>Scope</VAR>.
-</A>
+Add externally created top-level Seq_entry to the <span class="ncbi_term">Scope</span>.
 </H4>
 <P>
 Once there is a Seq_entry created somehow, it can be added to the
-<VAR>Scope</VAR> using the following:
-<PRE>
+<span class="ncbi_term">Scope</span> using the following:
+<pre class="ncbi_code">
     CSeq_entry* entry = ...;
     scope.AddTopLevelSeqEntry(*entry);
 </PRE>
@@ -126,34 +122,31 @@ Once there is a Seq_entry created somehow, it can be added to the
 
 <HR>
 <!-- =================== add_data_loader =============================== -->
-<H4>
-<A NAME="add_data_loader">
-Add a data loader to the <VAR>Scope</VAR>.
-</A>
-</H4>
+<A NAME="add_data_loader"></a>
+<H4>Add a data loader to the <span class="ncbi_term">Scope</span>.</H4>
 <P>
-<VAR>Data loader</VAR> is designed to be a replaceable object.
+<span class="ncbi_term">Data loader</span> is designed to be a replaceable object.
 There can be a variety of data loaders, each of which would load bio sequence data
 from different databases, flat files, etc. Data loader must be created by the
-client and registered with the <VAR>Object Manager</VAR>.
+client and registered with the <span class="ncbi_term">Object Manager</span>.
 One distinguishes them later by their names.
 At present there is only one data loader implemented - the one that
 loads data from the GenBank. Here is how to create and register it:
-<PRE>
-#include &lt;objects/objmgr/gbloader.hpp&gt;
-#include &lt;objects/objmgr/reader_id1.hpp&gt;
-...
+<pre class="ncbi_code">
+    #include &lt;objects/objmgr/gbloader.hpp&gt;
+    #include &lt;objects/objmgr/reader_id1.hpp&gt;
+    ...
     obj_mgr->RegisterDataLoader(*(new CGBDataLoader("GENBANK")),
                                 CObjectManager::eDefault);
-</PRE>
+</pre>
 There are default and non-default data loaders.
-A <VAR>Scope</VAR> can request a data loader from the
-<VAR>Object Manager</VAR> either one at a time - by name:
-<PRE>
+A <span class="ncbi_term">Scope</span> can request a data loader from the
+<span class="ncbi_term">Object Manager</span> either one at a time - by name:
+<pre class="ncbi_code">
     scope.AddDataLoader("GENBANK");
 </PRE>
 or all default data loaders at once:
-<PRE>
+<pre class="ncbi_code">
     scope.AddDefaults();
 </PRE>
 </P>
@@ -162,14 +155,11 @@ or all default data loaders at once:
 
 <HR>
 <!-- =================== add_annot =============================== -->
-<H4>
-<A NAME="add_annot">
-Modify Seq_entry data.
-</A>
-</H4>
+<A NAME="add_annot"></a>
+<H4>Modify Seq_entry data.</H4>
 <P>
-One can modify the Seq_entry data using the following interface of the <VAR>Scope</VAR> object:
-<PRE>
+One can modify the Seq_entry data using the following interface of the <span class="ncbi_term">Scope</span> object:
+<pre class="ncbi_code">
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
     // Add new sub-entry to the existing tree if it is in this scope
@@ -180,10 +170,10 @@ One can modify the Seq_entry data using the following interface of the <VAR>Scop
     bool AttachSeqData(const CSeq_entry& entry, CSeq_data& seq,
                        TSeqPosition start, TSeqLength length);
 </PRE>
-Once the entry is modified in one <VAR>Scope</VAR>, the changes become visible in
-other <VAR>Scopes</VAR> as well, provided all the <VAR>Scopes</VAR> belong to the same
-<VAR>Object Manager</VAR> of course.
-Please note, all the changes is being made <EM>locally</EM>.
+Once the entry is modified in one <span class="ncbi_term">Scope</span>, the changes become visible in
+other <<span class="ncbi_term">Scopes</span> as well, provided all the <span class="ncbi_term">Scopes</span> belong to the same
+<span class="ncbi_term">Object Manager</span> of course.
+Please note, all the changes is being made <em>locally</em>.
 There is no way this modifications can be uploaded to the source database.
 </P>
 
@@ -191,22 +181,19 @@ There is no way this modifications can be uploaded to the source database.
 
 <HR>
 <!-- =================== find_tse =============================== -->
-<H4>
-<A NAME="find_tse">
-Start working with a Seq_entry (bio.sequence), load entry if necessary.
-</A>
-</H4>
+<A NAME="find_tse"></a>
+<H4>Start working with a Seq_entry (bio.sequence), load entry if necessary.</H4>
 <P>
 In order to be able to access bio.sequence data, one has to obtain a
-<VAR>Bioseq handle</VAR> from the Scope, based on a known Seq_id:
-<PRE>
+<span class="ncbi_term">Bioseq handle</span> from the Scope, based on a known Seq_id:
+<pre class="ncbi_code">
     CSeq_id seqid;
     seqid.SetGi(3);
     CBioseq_Handle handle = scope.GetBioseqHandle(seqid);
 </PRE>
 It is possible then to get direct access to the sequence data or Seq_entry
 by calling either one of these functions:
-<PRE>
+<pre class="ncbi_code">
     const CBioseq&   bioseq = handle.GetBioseq();
     const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
 </PRE>
@@ -216,19 +203,16 @@ by calling either one of these functions:
 
 <HR>
 <!-- =================== seq_vector =============================== -->
-<H4>
-<A NAME="seq_vector">
-Access bio sequence data.
-</A>
-</H4>
+<A NAME="seq_vector"></a>
+<H4>Access bio sequence data.</H4>
 <P>
-The access to the sequence data is provided through the <VAR>Sequence vector</VAR> object,
-which is created by <VAR>Bioseq handle</VAR>:
-<PRE>
+The access to the sequence data is provided through the <span class="ncbi_term">Sequence vector</span> object,
+which is created by <span class="ncbi_term">Bioseq handle</span>:
+<pre class="ncbi_code">
     CSeqVector seq_vec = handle.GetSeqVector();
 </PRE>
 There are basically three functions available:
-<PRE>
+<pre class="ncbi_code">
     // Target sequence coding.
     void SetCoding(TCoding coding);
     // length of the sequence
@@ -237,27 +221,27 @@ There are basically three functions available:
     TResidue operator[] (int pos);
 </PRE>
 For example:
-<PRE>
+<pre class="ncbi_code">
     CSeqVector seq_vec = handle.GetSeqVector();
     string sout;
     for (size_t i = 0; i < seq_vec.size(); i++) {
         sout += seq_vec[i];
     }
 </PRE>
-<VAR>Sequence vector</VAR> is much more than the plain data storage.
+<span class="ncbi_term">Sequence vector</span> is much more than the plain data storage.
 It rather "knows where to find" the data. As a result of a query, it may initiate
 reference resolution process, send requests to the source database for more data etc.
 </P>
 <P>
-There is another useful object, which describes sequence data - <VAR>Sequence map</VAR>.
-It is a collection of <VAR>segments</VAR>, which describe sequence parts in general -
+There is another useful object, which describes sequence data - <span class="ncbi_term">Sequence map</span>.
+It is a collection of <span class="ncbi_term">segments</span>, which describe sequence parts in general -
 location and type only, without providing any real data.
-To obtain <VAR>Sequence map</VAR> from a <VAR>Bioseq handle</VAR>:
-<PRE>
+To obtain <span class="ncbi_term">Sequence map</span> from a <span class="ncbi_term">Bioseq handle</span>:
+<pre class="ncbi_code">
     const CSeqMap& seqmap = handle.GetSeqMap();
 </PRE>
 It is possible then to enumerate all the segments in the map asking their type, length or position:
-<PRE>
+<pre class="ncbi_code">
     const CSeqMap& seqmap = handle.GetSeqMap();
     int len = 0;
     for (size_t i = 0; i < seq_map.size(); i++) {
@@ -282,15 +266,12 @@ It is possible then to enumerate all the segments in the map asking their type, 
 
 <HR>
 <!-- =================== descriptions =============================== -->
-<H4>
-<A NAME="descriptions">
-Enumerate sequence descriptions.
-</A>
-</H4>
+<A NAME="descriptions"></a>
+<H4>Enumerate sequence descriptions.</H4>
 <P>
-Description iterator uses <VAR>Bioseq handle</VAR> to access the sequence data.
+Description iterator uses <span class="ncbi_term">Bioseq handle</span> to access the sequence data.
 It makes it possible to enumerate all CSeq_descr data objects the sequence refers to:
-<PRE>
+<pre class="ncbi_code">
     CDesc_CI(const CBioseq_Handle& handle);
     for (CDesc_CI desc_it(handle); desc_it; ++desc_it) {
         const CSeq_descr& descr = *desc_it;
@@ -304,18 +285,15 @@ It makes it possible to enumerate all CSeq_descr data objects the sequence refer
 
 <HR>
 <!-- =================== annotations =============================== -->
-<H4>
-<A NAME="annotations">
-Enumerate sequence annotations.
-</A>
-</H4>
+<A NAME="annotations"></a>
+<H4>Enumerate sequence annotations.</H4>
 <P>
 It is possible to search either all top-level seq. entries in the Scope, or only one of them.
 Accordingly, there are two types of constructors of annotation iterator, one may wish to use:
 <BR>
 <BR>
 Feature iterator:
-<PRE>
+<pre class="ncbi_code">
     // Search all TSEs in the Scope
     CFeat_CI(CScope& scope, const CSeq_loc& loc,
              SAnnotSelector::TFeatChoice feat_choice);
@@ -324,21 +302,21 @@ Feature iterator:
              SAnnotSelector::TFeatChoice feat_choice);
 </PRE>
 Alignment data iterator:
-<PRE>
+<pre class="ncbi_code">
     CAlign_CI(CScope& scope, const CSeq_loc& loc);
     CAlign_CI(CBioseq_Handle& handle, int start, int stop);
 </PRE>
 Graph data iterator:
-<PRE>
+<pre class="ncbi_code">
     CGraph_CI(CScope& scope, const CSeq_loc& loc);
     CGraph_CI(CBioseq_Handle& handle, int start, int stop);
 </PRE>
-<VAR>Start</VAR> and <VAR>stop</VAR> parameters are used here instead of Seq_loc
+<span class="ncbi_var">Start</span> and <span class="ncbi_var">stop</span> parameters are used here instead of Seq_loc
 to describe a continuous interval on the bio sequence.
 <BR>
 <BR>
 Example of usage:
-<PRE>
+<pre class="ncbi_code">
     for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
          feat_it;  ++feat_it) {
          const CSeq_feat& feat = *feat_it;
