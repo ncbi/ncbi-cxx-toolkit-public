@@ -46,11 +46,21 @@
 
 BEGIN_NCBI_SCOPE
 
-// define cut-off strategy at the terminii
-static const size_t kMinTermExonSize = 55; // strategy applies below this limit
-static const double kMinTermExonIdty = 0.95; 
-static const size_t kIntronPerTermExon = 300;
+// define cut-off strategy at the terminii:
 
+// (1) - pre-processing
+// For non-covered ends longer than kNonCoveredEndThreshold use
+// m_max_genomic_ext. For shorter ends use kSubjPerQuery * length of
+// the non-covered end.
+
+static const size_t kNonCoveredEndThreshold = 55;
+static const size_t kSubjPerQuery = 300;
+
+// (2) - post-processing
+// exons shorter than kMinTermExonSize with identity lower than
+// kMinTermExonIdty will be converted to gaps
+static const size_t kMinTermExonSize = 20;
+static const double kMinTermExonIdty = 0.90;
 
 CSplign::CSplign( void )
 {
@@ -581,11 +591,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     --qmin; --qmax; --smin; --smax;
     
     // select terminal genomic extents based on uncovered end sizes
-    size_t extent_left = (qmin >= kMinTermExonSize)? m_max_genomic_ext:
-        (kIntronPerTermExon + 1)* qmin;
+    size_t extent_left = (qmin >= kNonCoveredEndThreshold)? m_max_genomic_ext:
+        (kSubjPerQuery + 1)* qmin;
     size_t qspace = m_mrna.size() - qmax + 1;
-    size_t extent_right = (qspace >= kMinTermExonSize)? m_max_genomic_ext:
-        (kIntronPerTermExon + 1)* qspace;
+    size_t extent_right = (qspace >= kNonCoveredEndThreshold)?
+        m_max_genomic_ext: (kSubjPerQuery + 1)* qspace;
 
     if((*hits)[0].IsStraight()) {
         smin = max(0, int(smin - extent_left));
@@ -1360,6 +1370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/09/21 16:39:47  kapustin
+ * Use separate constants to specify min term exon length and the min non-covered query space
+ *
  * Revision 1.20  2004/09/09 21:23:41  kapustin
  * Adjust min term exon sizeto use with fixed genomic extent
  *
