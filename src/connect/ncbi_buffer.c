@@ -129,6 +129,8 @@ extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
     pChunk = s_AllocChunk(0, (*pBuf)->chunk_size);
     if ( !pChunk )
         return 0/*false*/;
+
+    assert( !pChunk->data );
     pChunk->alloc_size = size;
     pChunk->size       = size;
     pChunk->data       = (char*) data;
@@ -155,6 +157,8 @@ extern int/*bool*/ BUF_Prepend(BUF* pBuf, const void* data, size_t size)
     pChunk = s_AllocChunk(0, (*pBuf)->chunk_size);
     if ( !pChunk )
         return 0/*false*/;
+
+    assert( !pChunk->data );
     pChunk->alloc_size = size;
     pChunk->size       = size;
     pChunk->data       = (char*) data;
@@ -355,6 +359,9 @@ extern void BUF_Destroy(BUF buf)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2004/11/17 20:44:32  lavr
+ * Slight source code formatting change
+ *
  * Revision 6.15  2004/10/27 18:43:50  lavr
  * +BUF_Erase()
  *
