@@ -32,6 +32,7 @@
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/reader_exception.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -61,10 +62,12 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
     if (get_lcase_mask) {
         if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter, 
                                      &lcase_mask)))
-            throw runtime_error("Could not retrieve seq entry");
+            NCBI_THROW(CObjReaderException, eInvalid, 
+                       "Could not retrieve seq entry");
     } else {
         if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter)))
-            throw runtime_error("Could not retrieve seq entry");
+            NCBI_THROW(CObjReaderException, eInvalid, 
+                       "Could not retrieve seq entry");
     }
 
     int index = 0;
