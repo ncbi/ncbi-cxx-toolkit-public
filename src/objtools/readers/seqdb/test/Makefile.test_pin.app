@@ -1,6 +1,6 @@
 APP = test_pin
 SRC = test_pin
-LIB = seqdb xobjutil xobjread $(OBJMGR_LIBS)
+LIB = seqdb xobjutil blastdb $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
