@@ -50,8 +50,11 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Include definitions from the objects namespace.
 USING_SCOPE(objects);
 
+/// Forward declaration of CSeqDB class
+class CSeqDB;
 
 /// CSeqDBIter
 /// 
@@ -59,8 +62,6 @@ USING_SCOPE(objects);
 /// 
 /// This serves something of the same role for a CSeqDB object that a
 /// vector iterator might serve in the standard template library.
-
-class CSeqDB;
 
 class NCBI_XOBJREAD_EXPORT CSeqDBIter {
 public:
@@ -116,14 +117,22 @@ private:
     /// Release hold on current sequence.
     inline void x_RetSeq(void);
     
+    /// CSeqDB is a friend so it alone can create objects of this type.
     friend class CSeqDB;
     
     /// Build an iterator (called only from CSeqDB).
     CSeqDBIter(const CSeqDB *, TOID oid);
     
+    /// The CSeqDB object which this object iterates over.
     const CSeqDB     * m_DB;
+    
+    /// The OID this iterator is currently accessing.
     TOID               m_OID;
+    
+    /// The sequence data for this OID.
     const char       * m_Data;
+    
+    /// The length of this OID.
     Uint4              m_Length;
 };
 
@@ -256,7 +265,7 @@ public:
     ///   Address of a char pointer to access the sequence data.
     /// @param nucl_code
     ///   The NA encoding, kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8.
-    /// @param alloc_strategy
+    /// @param strategy
     ///   Indicate which allocation strategy to use.
     Uint4 GetAmbigSeqAlloc(TOID               oid,
                            char            ** buffer,
@@ -492,8 +501,13 @@ private:
     /// Prevent copy.
     CSeqDBSequence & operator=(const CSeqDBSequence &);
     
+    /// The CSeqDB object this sequence is from.
     CRef<CSeqDB> m_DB;
+    
+    /// The sequence data for this sequence.
     const char * m_Data;
+    
+    /// The length of this sequence.
     Uint4        m_Length;
 };
 
