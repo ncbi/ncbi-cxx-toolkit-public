@@ -37,6 +37,7 @@
 
 #include <corelib/ncbidiag.hpp>
 #include <errno.h>
+#include <string.h>
 #include <string>
 #include <stdexcept>
 #include <typeinfo>
@@ -839,6 +840,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2003/05/27 15:19:55  kuznets
+ * Included <string.h> (declaration of 'strerror')
+ *
  * Revision 1.45  2003/04/29 19:47:02  ucko
  * KLUDGE: avoid inlining CStrErrAdapt::strerror with GCC 2.95 on OSF/1,
  * due to a weird, apparently platform-specific, bug.
