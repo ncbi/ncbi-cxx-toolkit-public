@@ -951,6 +951,22 @@ static void s_TestTimeSpan(void)
             assert(t1_str.compare(t2_str) == 0);
         }
     }}
+    cout << endl;
+
+    // Smart string
+    {{
+        for (int prec = CTimeSpan::eSSP_Year;
+            prec <= CTimeSpan::eSSP_Precision7;     
+            prec++) 
+        {
+            CTimeSpan diff(559, 29, 59, 41, 17000000);
+            string str;
+            str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eTrunc);
+            cout << str.c_str() << endl;
+            str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eRound);
+            cout << str.c_str() << endl;
+        }
+    }}
 
     cout << endl;
 }
@@ -985,6 +1001,24 @@ static void s_DemoStopWatch(void)
 
 int main()
 {
+
+//        CTimeSpan diff(59, 23, 59, 59, 17000000);
+//        CTimeSpan diff(59, 0, 1, 41, 17000000);
+        CTimeSpan diff(0, 0, 1, 41, 17000000);
+        string str;
+/*
+        int prec = CTimeSpan::eSSP_Year;
+        //int prec = CTimeSpan::eSSP_Precision3;
+
+        str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eTrunc, CTimeSpan::eSSZ_NoSkipZero);
+        cout << str.c_str() << endl;
+        str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eRound, CTimeSpan::eSSZ_NoSkipZero);
+        cout << str.c_str() << endl;
+*/
+
+//        return 0;
+
+
     // Set err.-posting and tracing to maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
@@ -1012,6 +1046,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.26  2004/09/27 13:54:22  ivanov
+ * Added tests for CTimeSpan::AsSmartString
+ *
  * Revision 6.25  2004/09/20 16:27:26  ivanov
  * CTime:: Added milliseconds, microseconds and AM/PM to string time format.
  *
