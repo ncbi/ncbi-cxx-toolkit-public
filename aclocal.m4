@@ -43,6 +43,72 @@ ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
 ])# _AC_SRCPATHS
 
 
+# Copied from autoconf 2.53, but rearranged to make bash a last resort
+# due to issues with sourcing .bashrc.
+m4_define([_AS_LINENO_PREPARE],
+[_AS_LINENO_WORKS || {
+  # Find who we are.  Look in the path if we contain no path at all
+  # relative or not.
+  case $[0] in
+    *[[\\/]]* ) as_myself=$[0] ;;
+    *) _AS_PATH_WALK([],
+                   [test -r "$as_dir/$[0]" && as_myself=$as_dir/$[0] && break])
+       ;;
+  esac
+  # We did not find ourselves, most probably we were run as `sh COMMAND'
+  # in which case we are not to be found in the path.
+  if test "x$as_myself" = x; then
+    as_myself=$[0]
+  fi
+  if test ! -f "$as_myself"; then
+    AS_ERROR([cannot find myself; rerun with an absolute path])
+  fi
+  case $CONFIG_SHELL in
+  '')
+    for as_base in sh ksh sh5 bash; do
+      _AS_PATH_WALK([/bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH],
+	 [case $as_dir in
+	 /*)
+	   if ("$as_dir/$as_base" -c '_AS_LINENO_WORKS') 2>/dev/null; then
+	     CONFIG_SHELL=$as_dir/$as_base
+	     export CONFIG_SHELL
+	     exec "$CONFIG_SHELL" "$[0]" ${1+"$[@]"}
+	   fi;;
+	 esac
+       done]);;
+  esac
+
+  # Create $as_me.lineno as a copy of $as_myself, but with $LINENO
+  # uniformly replaced by the line number.  The first 'sed' inserts a
+  # line-number line before each line; the second 'sed' does the real
+  # work.  The second script uses 'N' to pair each line-number line
+  # with the numbered line, and appends trailing '-' during
+  # substitution so that $LINENO is not a special case at line end.
+  # (Raja R Harinath suggested sed '=', and Paul Eggert wrote the
+  # second 'sed' script.  Blame Lee E. McMahon for sed's syntax.  :-)
+  sed '=' <$as_myself |
+    sed '
+      N
+      s,$,-,
+      : loop
+      s,^\([['$as_cr_digits']]*\)\(.*\)[[$]]LINENO\([[^'$as_cr_alnum'_]]\),\1\2\1\3,
+      t loop
+      s,-$,,
+      s,^[['$as_cr_digits']]*\n,,
+    ' >$as_me.lineno &&
+  chmod +x $as_me.lineno ||
+    AS_ERROR([cannot create $as_me.lineno; rerun with a POSIX shell])
+
+  # Don't try to exec as it changes $[0], causing all sort of problems
+  # (the dirname of $[0] is not the place where we might find the
+  # original and so on.  Autoconf is especially sensible to this).
+  . ./$as_me.lineno
+  # Exit status is that of the last command.
+  exit
+}
+])# _AS_LINENO_PREPARE
+
+
 # Arguments:
 # 1. library name (turned into environment/make variable)
 # 2. values to check

@@ -126,13 +126,13 @@ done
   fi
   case $CONFIG_SHELL in
   '')
-    as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+    for as_base in sh ksh sh5 bash; do
+      as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in /bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
-  for as_base in sh bash ksh sh5; do
-	 case $as_dir in
+  case $as_dir in
 	 /*)
 	   if ("$as_dir/$as_base" -c '
   as_lineno_1=$LINENO
@@ -12314,13 +12314,13 @@ echo "$as_me: error: cannot find myself; rerun with an absolute path" >&2;}
   fi
   case $CONFIG_SHELL in
   '')
-    as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+    for as_base in sh ksh sh5 bash; do
+      as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in /bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
-  for as_base in sh bash ksh sh5; do
-	 case $as_dir in
+  case $as_dir in
 	 /*)
 	   if ("$as_dir/$as_base" -c '
   as_lineno_1=$LINENO
