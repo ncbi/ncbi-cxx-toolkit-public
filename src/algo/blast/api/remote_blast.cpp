@@ -246,6 +246,8 @@ bool CRemoteBlast::SubmitSync(int seconds)
     case eWait:
         x_PollUntilDone(immed, seconds);
         break;
+    default:
+        break;
     }
     
     return (x_GetState() == eDone);
@@ -263,6 +265,7 @@ bool CRemoteBlast::Submit(void)
     switch(x_GetState()) {
     case eStart:
         x_SubmitSearch();
+    default: break;
     }
     
     return m_Errs.empty();
@@ -808,6 +811,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/07/07 21:07:25  dondosha
+* Added default cases in switches to eliminate compiler warnings
+*
 * Revision 1.16  2004/06/21 16:34:09  bealer
 * - Make scope usage more consistent for doxygen's sake.
 *
