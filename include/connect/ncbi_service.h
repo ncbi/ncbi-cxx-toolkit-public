@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/07/18 17:39:56  lavr
+ * Comment added for SERV_OpenSimple() to note about absence of preferred host
+ *
  * Revision 6.18  2001/06/25 15:32:06  lavr
  * Added function: SERV_GetNextInfoEx
  * SERV_Open and SERV_GetNextInfo made macros for faster access
@@ -121,6 +124,7 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * found in registry and environment variables (implicit parameter
  * 'info', found in two subsequent variations of this call, is filled out
  * by ConnNetInfo_Create(service) and then used automatically).
+ * NOTE that no preferred host (0) is set in the resultant iterator.
  */
 SERV_ITER SERV_OpenSimple
 (const char*         service        /* service name                          */
