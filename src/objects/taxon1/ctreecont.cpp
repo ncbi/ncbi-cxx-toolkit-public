@@ -571,107 +571,107 @@ bool CTreeConstIterator::GoAncestor(const CTreeContNodeBase* node)
     return true;
 }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachDownward(C4Each& cb)
-{
-    switch( cb.Execute(m_node) ) {
-    default:
-    case eCont:
-        if(!m_node->IsTerminal()) {
-            switch( cb.LevelBegin(m_node) ) {
-            case eStop: return eStop;
-            default:
-            case eCont:
-                if(GoChild()) {
-                    do {
-                        if(ForEachDownward(cb)==eStop) return eStop;
-                    } while(GoSibling());
-                }
-            case eSkip: // Means skip this level
-                break;
-            }
-            GoParent();
-            if( cb.LevelEnd(m_node) == eStop )
-                return eStop;
-        }
-    case eSkip:	break;
-    case eStop: return eStop;
-    }
-    return eCont;
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachDownward(C4Each& cb)
+// {
+//     switch( cb.Execute(m_node) ) {
+//     default:
+//     case eCont:
+//         if(!m_node->IsTerminal()) {
+//             switch( cb.LevelBegin(m_node) ) {
+//             case eStop: return eStop;
+//             default:
+//             case eCont:
+//                 if(GoChild()) {
+//                     do {
+//                         if(ForEachDownward(cb)==eStop) return eStop;
+//                     } while(GoSibling());
+//                 }
+//             case eSkip: // Means skip this level
+//                 break;
+//             }
+//             GoParent();
+//             if( cb.LevelEnd(m_node) == eStop )
+//                 return eStop;
+//         }
+//     case eSkip:	break;
+//     case eStop: return eStop;
+//     }
+//     return eCont;
+// }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachDownward(ForEachFunc ucb, void* user_data)
-{
-    switch( (*ucb)(m_node, user_data) ) {
-    default:
-    case eCont:
-        if(GoChild()) {
-            do {
-                if(ForEachDownward(ucb, user_data)==eStop) return eStop;
-            } while(GoSibling());
-            GoParent();
-        }
-    case eSkip:	break;
-    case eStop: return eStop;
-    }
-    return eCont;
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachDownward(ForEachFunc ucb, void* user_data)
+// {
+//     switch( (*ucb)(m_node, user_data) ) {
+//     default:
+//     case eCont:
+//         if(GoChild()) {
+//             do {
+//                 if(ForEachDownward(ucb, user_data)==eStop) return eStop;
+//             } while(GoSibling());
+//             GoParent();
+//         }
+//     case eSkip:	break;
+//     case eStop: return eStop;
+//     }
+//     return eCont;
+// }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachDownwardLimited(C4Each& cb, int levels)
-{
-    if(levels > 0) {
-        switch( cb.Execute(m_node) ) {
-        default:
-        case eCont:
-            if(!m_node->IsTerminal()) {
-                switch( cb.LevelBegin(m_node) ) {
-                case eStop: return eStop;
-                default:
-                case eCont:
-                    if(GoChild()) {
-                        do {
-                            if(ForEachDownwardLimited(cb, levels-1)==eStop)
-                                return eStop;
-                        } while(GoSibling());
-                    }
-                case eSkip: // Means skip this level
-                    break;
-                }
-                GoParent();
-                if( cb.LevelEnd(m_node) == eStop )
-                    return eStop;
-            }
-        case eSkip: break;
-        case eStop: return eStop;
-        }
-    }
-    return eCont;
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachDownwardLimited(C4Each& cb, int levels)
+// {
+//     if(levels > 0) {
+//         switch( cb.Execute(m_node) ) {
+//         default:
+//         case eCont:
+//             if(!m_node->IsTerminal()) {
+//                 switch( cb.LevelBegin(m_node) ) {
+//                 case eStop: return eStop;
+//                 default:
+//                 case eCont:
+//                     if(GoChild()) {
+//                         do {
+//                             if(ForEachDownwardLimited(cb, levels-1)==eStop)
+//                                 return eStop;
+//                         } while(GoSibling());
+//                     }
+//                 case eSkip: // Means skip this level
+//                     break;
+//                 }
+//                 GoParent();
+//                 if( cb.LevelEnd(m_node) == eStop )
+//                     return eStop;
+//             }
+//         case eSkip: break;
+//         case eStop: return eStop;
+//         }
+//     }
+//     return eCont;
+// }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachDownwardLimited( ForEachFunc ucb,
-                                            void* user_data, int levels)
-{
-    if(levels > 0) {
-        switch( (*ucb)(m_node, user_data) ) {
-        default:
-        case eCont:
-            if(GoChild()) {
-                do {
-                    if(ForEachDownwardLimited(ucb, user_data,
-                                              levels-1)==eStop)
-                        return eStop;
-                } while(GoSibling());
-                GoParent();
-            }
-        case eSkip: break;
-        case eStop: return eStop;
-        }
-    }
-    return eCont;
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachDownwardLimited( ForEachFunc ucb,
+//                                             void* user_data, int levels)
+// {
+//     if(levels > 0) {
+//         switch( (*ucb)(m_node, user_data) ) {
+//         default:
+//         case eCont:
+//             if(GoChild()) {
+//                 do {
+//                     if(ForEachDownwardLimited(ucb, user_data,
+//                                               levels-1)==eStop)
+//                         return eStop;
+//                 } while(GoSibling());
+//                 GoParent();
+//             }
+//         case eSkip: break;
+//         case eStop: return eStop;
+//         }
+//     }
+//     return eCont;
+// }
 
 // add child preserving the sorting order
 bool CTreeIterator::AddChild(CTreeContNodeBase* new_node, 
@@ -854,87 +854,87 @@ CTreeIterator::ForEachUpwardLimited(ForEachFunc ucb, void* user_data,
     return eCont;
 }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachUpward(C4Each& cb)
-{
-    if(!m_node->IsTerminal()) {
-        switch( cb.LevelBegin(m_node) ) {
-        case eStop: return eStop;
-        default:
-        case eCont:
-            if(GoChild()) {
-                do {
-                    if(ForEachUpward(cb)==eStop)
-                        return eStop;
-                } while(GoSibling());
-            }
-        case eSkip: // Means skip this level
-            break;
-        }
-        GoParent();
-        if( cb.LevelEnd(m_node) == eStop )
-            return eStop;
-    }
-    return cb.Execute(m_node);
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachUpward(C4Each& cb)
+// {
+//     if(!m_node->IsTerminal()) {
+//         switch( cb.LevelBegin(m_node) ) {
+//         case eStop: return eStop;
+//         default:
+//         case eCont:
+//             if(GoChild()) {
+//                 do {
+//                     if(ForEachUpward(cb)==eStop)
+//                         return eStop;
+//                 } while(GoSibling());
+//             }
+//         case eSkip: // Means skip this level
+//             break;
+//         }
+//         GoParent();
+//         if( cb.LevelEnd(m_node) == eStop )
+//             return eStop;
+//     }
+//     return cb.Execute(m_node);
+// }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachUpward(ForEachFunc ucb, void* user_data)
-{
-    if(GoChild()) {
-        do {
-            if(ForEachUpward(ucb, user_data)==eStop)
-                return eStop;
-        } while(GoSibling());
-        GoParent();
-    }
-    return (*ucb)(m_node, user_data);
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachUpward(ForEachFunc ucb, void* user_data)
+// {
+//     if(GoChild()) {
+//         do {
+//             if(ForEachUpward(ucb, user_data)==eStop)
+//                 return eStop;
+//         } while(GoSibling());
+//         GoParent();
+//     }
+//     return (*ucb)(m_node, user_data);
+// }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachUpwardLimited(C4Each& cb, int levels)
-{
-    if(levels > 0) {
-        if(!m_node->IsTerminal()) {
-            switch( cb.LevelBegin(m_node) ) {
-            case eStop: return eStop;
-            default:
-            case eCont:
-                if(GoChild()) {
-                    do {
-                        if(ForEachUpwardLimited(cb, levels-1)==eStop)
-                            return eStop;
-                    } while(GoSibling());
-                }
-            case eSkip: // Means skip this level
-                break;
-            }
-            GoParent();
-            if( cb.LevelEnd(m_node) == eStop )
-                return eStop;
-        }
-        return cb.Execute(m_node);
-    }
-    return eCont;
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachUpwardLimited(C4Each& cb, int levels)
+// {
+//     if(levels > 0) {
+//         if(!m_node->IsTerminal()) {
+//             switch( cb.LevelBegin(m_node) ) {
+//             case eStop: return eStop;
+//             default:
+//             case eCont:
+//                 if(GoChild()) {
+//                     do {
+//                         if(ForEachUpwardLimited(cb, levels-1)==eStop)
+//                             return eStop;
+//                     } while(GoSibling());
+//                 }
+//             case eSkip: // Means skip this level
+//                 break;
+//             }
+//             GoParent();
+//             if( cb.LevelEnd(m_node) == eStop )
+//                 return eStop;
+//         }
+//         return cb.Execute(m_node);
+//     }
+//     return eCont;
+// }
 
-CTreeConstIterator::EAction
-CTreeConstIterator::ForEachUpwardLimited(ForEachFunc ucb, void* user_data,
-                                         int levels)
-{
-    if(levels > 0) {
-        if(GoChild()) {
-            do {
-                if(ForEachUpwardLimited(ucb, user_data,
-                                        levels-1)==eStop)
-                    return eStop;
-            } while(GoSibling());
-            GoParent();
-        }
-        return (*ucb)(m_node, user_data);
-    }
-    return eCont;
-}
+// CTreeConstIterator::EAction
+// CTreeConstIterator::ForEachUpwardLimited(ForEachFunc ucb, void* user_data,
+//                                          int levels)
+// {
+//     if(levels > 0) {
+//         if(GoChild()) {
+//             do {
+//                 if(ForEachUpwardLimited(ucb, user_data,
+//                                         levels-1)==eStop)
+//                     return eStop;
+//             } while(GoSibling());
+//             GoParent();
+//         }
+//         return (*ucb)(m_node, user_data);
+//     }
+//     return eCont;
+// }
 
 
 END_objects_SCOPE
@@ -944,6 +944,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.4  2003/05/06 19:53:53  domrach
+ * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
+ *
  * Revision 6.3  2002/10/22 22:15:41  vakatov
  * Get rid of a compilation warning
  *

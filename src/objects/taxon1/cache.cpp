@@ -70,12 +70,27 @@ COrgRefCache::Init( unsigned nCapacity )
     pNode->SetTaxid( 1 );
     pNode->SetOname().assign("root");
     pNode->SetCde( 0x40000000 ); // Gene bank hidden
-    m_tPartTree.SetRoot(new CTaxon1Node
-                        (CRef<CTaxon1_name>(pNode)));
+    CTaxon1Node* pRoot = new CTaxon1Node( CRef<CTaxon1_name>(pNode) );
+    m_tPartTree.SetRoot( pRoot );
+    SetIndexEntry( 1, pRoot );
+
     if( nCapacity != 0 ) {
 	m_nCacheCapacity = nCapacity;
     }
+    InitRanks();
+    InitDivisions();
     return true;
+}
+
+bool
+COrgRefCache::Lookup( int tax_id, CTaxon1Node** ppNode )
+{
+    if( (unsigned)tax_id < m_nMaxTaxId ) {
+        *ppNode = m_ppEntries[tax_id];
+    } else {
+	*ppNode = NULL;
+    }
+    return *ppNode != NULL;
 }
 
 bool
@@ -232,7 +247,7 @@ s_BuildLineage( string& str, CTaxon1Node* pNode, unsigned sz, int sp_rank )
             s_BuildLineage( str, pNode->GetParent(), 0, sp_rank );
             return false;
         } else {
-            if( pNode->IsGBHidden() ) {
+            if( pNode->IsGenBankHidden() ) {
                 return s_BuildLineage( str, pNode->GetParent(), sz, sp_rank );
             }
             bool bCont;
@@ -955,6 +970,17 @@ COrgRefCache::GetDivisionCode( short div_id ) const
     return NULL;
 }
 
+const char*
+COrgRefCache::GetDivisionName( short div_id ) const
+{
+    TDivisionMapCI ci( m_divStorage.find( div_id ) );
+    if( ci != m_divStorage.end() ) {
+        return ci->second.m_sName.c_str();
+    }
+    return NULL;
+}
+
+
 bool
 COrgRefCache::InitDivisions()
 {
@@ -1014,6 +1040,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.16  2003/05/06 19:53:53  domrach
+ * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
+ *
  * Revision 6.15  2003/03/06 16:13:14  domrach
  * Typo fix
  *

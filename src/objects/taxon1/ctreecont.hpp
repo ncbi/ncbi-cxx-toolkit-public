@@ -34,6 +34,7 @@
 *
 */
 #include <corelib/ncbistl.hpp>
+#include <objects/taxon1/taxon1.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -47,7 +48,7 @@ class CTreeIterator;
 class CTreeConstIterator;
 class CTreeCont;
 
-class CTreeContNodeBase {
+class CTreeContNodeBase  {
     friend class CTreeIterator;
     friend class CTreeConstIterator;
     friend class CTreeCont;
@@ -76,8 +77,7 @@ public:
 	return ((m_parent == 0) || (m_parent->m_child == this));
     }
 
-    virtual void Merge( CTreeContNodeBase* ) {}
-
+    void Merge( CTreeContNodeBase* ) {}
 protected:
     const CTreeContNodeBase* Parent() const  { return m_parent;  }
     const CTreeContNodeBase* Sibling() const { return m_sibling; }
@@ -85,7 +85,7 @@ protected:
     CTreeContNodeBase*       Parent()        { return m_parent;  }
     CTreeContNodeBase*       Sibling()       { return m_sibling; }
     CTreeContNodeBase*       Child()         { return m_child;   }
-    virtual ~CTreeContNodeBase(){};
+    ~CTreeContNodeBase(){};
 private:
     CTreeContNodeBase* m_parent;
     CTreeContNodeBase* m_sibling;
@@ -273,7 +273,6 @@ private:
 
 class CTreeConstIterator {
 public:
-
     // navigation
     void GoRoot() {// move cursor to the root node
 	m_node= m_tree->m_root;
@@ -299,7 +298,9 @@ public:
 	}
 	return false;
     }
-    bool GoNode(const CTreeContNodeBase* node) { // move cursor to the node with given node_id
+    bool GoNode(const CTreeContNodeBase* pNode) {
+	const CTreeContNodeBase* node =
+	    dynamic_cast<const CTreeContNodeBase*>(pNode);
 	if(node) {
 	    m_node= node;
 	    return true;
@@ -310,49 +311,9 @@ public:
     bool GoAncestor(const CTreeContNodeBase* node); // move cursor to the nearest common ancestor
                                      // between node pointed by cursor and the node
                                      // with given node_id
-
-    // callback for ForEachNodeInSubtree method
-    // this function should return false if it wants to abandon the nodes scanning
-    enum EAction {
-	eCont,   // Continue scan
-	eStop,   // Stop scanning, exit immediately
-	eSkip   // Skip current node's subree and continue scanning
-    };
-    typedef EAction (*ForEachFunc)(const CTreeContNodeBase* pNode, void* user_data);
-    // "Callback" class for traversing the tree.
-    // For 'downward' traverse node (nodes that closer to root processed first)
-    // order of execution is: execute(), levelBegin(), and levelEnd(). Latter
-    // two functions are called only when node has children.
-    // For 'upward' traverse node (nodes that closer to leaves processed first)
-    // order of execution is: levelBegin(), levelEnd(), and execute(). Former
-    // two functions are called only when node has children.
-    class C4Each {
-    public:
-	virtual EAction LevelBegin(const CTreeContNodeBase* /*pParent*/)
-	{ return eCont; }
-	virtual EAction Execute(const CTreeContNodeBase* pNode)= 0;
-	virtual EAction LevelEnd(const CTreeContNodeBase* /*pParent*/)
-	{ return eCont; }
-    };
-    // iterator through subtree.
-    // it calls the ucb function one time for each node in given subtree
-    // (including subtree root)
-    // to abandon scanning ucb should return eStop.
-    // (the iterator will stay on node which returns this code)
-
-    // 'Downward' traverse functions (nodes that closer to root processed first)
-    EAction ForEachDownward(ForEachFunc ucb, void* user_data);
-    EAction ForEachDownward(C4Each&);
-    EAction ForEachDownwardLimited(ForEachFunc ucb, void* user_data, int levels);
-    EAction ForEachDownwardLimited(C4Each&, int levels);
-    // 'Upward' traverse node (nodes that closer to leaves processed first)
-    EAction ForEachUpward(ForEachFunc ucb, void* user_data);
-    EAction ForEachUpward(C4Each&);
-    EAction ForEachUpwardLimited(ForEachFunc ucb, void* user_data, int levels);
-    EAction ForEachUpwardLimited(C4Each&, int levels);
-
     // retrieval
-    const CTreeContNodeBase* GetNode() const {return m_node;}
+    const CTreeContNodeBase* GetNode() const
+    {return m_node;}
     // check if node pointed by cursor
     // is belong to subtree wich root node
     // has given node_id
@@ -367,7 +328,7 @@ public:
 	//goRoot();
     }
 
-    ~CTreeConstIterator() {
+    virtual ~CTreeConstIterator() {
 	//m_tree->m_cursorPot.remove((PotItem)this);
     }
 
@@ -385,6 +346,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.3  2003/05/06 19:53:53  domrach
+ * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
+ *
  * Revision 6.2  2003/01/21 19:37:19  domrach
  * GetRoot method added to CTreeCont class.
  *

@@ -53,7 +53,8 @@ class CConn_ServiceStream;
 BEGIN_objects_SCOPE
 
 class COrgRefCache;
-
+class ITaxon1Node;
+class ITreeIterator;
 
 class CTaxon1 {
 public:
@@ -189,6 +190,16 @@ public:
     bool GetGCName(short gc_id, string& gc_name_out );
 
     //---------------------------------------------
+    // Get taxonomic rank name by rank id
+    ///
+    bool GetRankName(short rank_id, string& rank_name_out );
+
+    //---------------------------------------------
+    // Get taxonomic division name by division id
+    ///
+    bool GetDivisionName(short div_id, string& div_name_out );
+
+    //---------------------------------------------
     // Get the nearest common ancestor for two nodes
     // Returns: id of this ancestor (id == 1 means that root node only is
     // ancestor)
@@ -238,13 +249,53 @@ public:
     const string& GetLastError() const { return m_sLastError; }
 
     //--------------------------------------------------
-    // This function constructs minimal common tree from the gived tax id
+    // This function constructs minimal common tree from the given tax id
     // set (ids_in) treated as tree's leaves. It then returns a residue of 
     // this tree node set and the given tax id set in ids_out.
     // Returns: false if some error
     //          true  if Ok
     ///
     bool GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out );
+
+    //--------------------------------------------------
+    // This function updates cached partial tree and insures that node
+    // with given tax_id and all its ancestors will present in this tree.
+    // Returns: false if error
+    //          true  if Ok
+    ///
+    bool LoadNode( int tax_id )     { return LoadSubtreeEx( tax_id, 0 ); }
+
+    //--------------------------------------------------
+    // This function updates cached partial tree and insures that node
+    // with given tax_id and all its ancestors and immediate children (if any)
+    // will present in this tree.
+    // Returns: false if error
+    //          true  if Ok
+    ///
+    bool LoadChildren( int tax_id ) { return LoadSubtreeEx( tax_id, 1 ); }
+
+    //--------------------------------------------------
+    // This function updates cached partial tree and insures that all nodes
+    // from subtree with given tax_id as a root will present in this tree.
+    // Returns: false if error
+    //          true  if Ok
+    ///
+    bool LoadSubtree( int tax_id )  { return LoadSubtreeEx( tax_id, -1 );}
+
+    //--------------------------------------------------
+    // This function returnes an iterator of a cached partial tree positioned
+    // at the tree root. Please note that the tree is PARTIAL. To traverse the
+    // full taxonomy tree invoke LoadSubtree(1) first.
+    // Returns: NULL if error
+    ///
+    CRef< ITreeIterator > GetTreeIterator();
+
+    //--------------------------------------------------
+    // This function returnes an iterator of a cached partial tree positioned
+    // at the tree node with tax_id.
+    // Returns: NULL if node doesn't exist or some other error occured
+    ///
+    CRef< ITreeIterator > GetTreeIterator( int tax_id );
 
 private:
     friend class COrgRefCache;
@@ -278,6 +329,232 @@ private:
     void             OrgRefAdjust( COrg_ref& inp_orgRef,
 				   const COrg_ref& db_orgRef,
 				   int tax_id );
+    bool             LoadSubtreeEx( int tax_id, int type );
+};
+
+//-------------------------------------------------
+// This interface class represents a Taxonomy Tree node
+class ITaxon1Node {
+public:
+    //-------------------------------------------------
+    // Returns: taxonomy id of the node
+    virtual int              GetTaxId() const = 0;
+
+    //-------------------------------------------------
+    // Returns: scientific name of the node. This name is NOT unique
+    // To get unique name take the first one from the list after calling
+    // CTaxon1::GetAllNames() with parameter unique==true.
+    virtual const string&    GetName() const = 0;
+
+    //-------------------------------------------------
+    // Returns: blast name of the node if assigned or empty string otherwise.
+    virtual const string&    GetBlastName() const = 0;
+
+    //-------------------------------------------------
+    // Returns: taxonomic rank id of the node
+    virtual short            GetRank() const = 0;
+
+    //-------------------------------------------------
+    // Returns: taxonomic division id of the node
+    virtual short            GetDivision() const = 0;
+
+    //-------------------------------------------------
+    // Returns: genetic code for the node
+    virtual short            GetGC() const = 0;
+
+    //-------------------------------------------------
+    // Returns: mitochondrial genetic code for the node
+    virtual short            GetMGC() const = 0;
+                       
+    //-------------------------------------------------
+    // Returns: true if node is terminal,
+    //          false otherwise
+    // NOTE: Although node is terminal in the partial tree
+    // build by CTaxon object it might be NOT a terminal node
+    // in the full taxonomic tree !
+    virtual bool             IsTerminal() const = 0;
+
+    //-------------------------------------------------
+    // Returns: true if node is uncultured,
+    //          false otherwise
+    virtual bool             IsUncultured() const = 0;
+
+    //-------------------------------------------------
+    // Returns: true if node is root
+    //          false otherwise
+    virtual bool             IsRoot() const = 0;
+
+    //-------------------------------------------------
+    // Returns: true if node is last child in this partial tree,
+    //          false otherwise
+    virtual bool             IsLastChild() const = 0;
+
+    //-------------------------------------------------
+    // Returns: true if node is last child in this partial tree,
+    //          false otherwise
+    virtual bool             IsFirstChild() const = 0;
+};
+
+//-------------------------------------------------
+// This interface class represents an iterator to traverse the
+// partial taxonomy tree build by CTaxon1 object.
+class ITreeIterator : public CObject {
+public:
+    //-------------------------------------------------
+    // Get node pointed by this iterator
+    // Returns: pointer to node
+    //          or NULL if error
+    virtual const ITaxon1Node* GetNode() const = 0;
+    const ITaxon1Node* operator->() const { return GetNode(); }
+
+    //-------------------------------------------------
+    // Move iterator to tree root
+    // Returns: true if move is sucessful,
+    //          false otherwise (e.g. node is root)
+    virtual void GoRoot() = 0;
+
+    //-------------------------------------------------
+    // Move iterator to parent node
+    // Returns: true if move is sucessful,
+    //          false otherwise (e.g. node is root)
+    virtual bool GoParent() = 0;
+
+    //-------------------------------------------------
+    // Move iterator to first child
+    // Returns: true if move is sucessful,
+    //          false otherwise (e.g. no children)
+    virtual bool GoChild() = 0;
+
+    //-------------------------------------------------
+    // Move iterator to sibling
+    // Returns: true if move is sucessful,
+    //          false otherwise (e.g. last child)
+    virtual bool GoSibling() = 0;
+
+    //-------------------------------------------------
+    // Move iterator to given node. Node MUST be previously obtained
+    // using GetNode().
+    // Returns: true if move is sucessful,
+    //          false otherwise
+    virtual bool GoNode(const ITaxon1Node* pNode) = 0;
+
+    //-------------------------------------------------
+    // Move iterator to the nearest common ancestor of the node pointed
+    // by iterator and given node
+    // Returns: true if move sucessful,
+    //          false otherwise
+    virtual bool GoAncestor(const ITaxon1Node* pNode) = 0; 
+
+    enum EAction {
+	eOk,   // Ok - Continue traversing
+	eStop, // Stop traversing, exit immediately
+	       // (the iterator will stay on node which returns this code)
+	eSkip  // Skip current node's subree and continue traversing
+    };
+
+    //-------------------------------------------------
+    // "Callback" class for traversing the tree.
+    // It features 3 virtual member functions: Execute(), LevelBegin(),
+    // and LevelEnd(). Execute() is called with pointer of a node
+    // to process it. LevelBegin() and LevelEnd() functions are called 
+    // before and after processing of the children nodes respectively with
+    // to-be-processed subtree root as an argument. They are called only
+    // when the node has children. The order of execution of 3 functions
+    // may differ but LevelBegin() always precedes LevelEnd().
+    class I4Each {
+    public:
+	virtual EAction LevelBegin(const ITaxon1Node* /*pParent*/)
+	{ return eOk; }
+	virtual EAction Execute(const ITaxon1Node* pNode)= 0;
+	virtual EAction LevelEnd(const ITaxon1Node* /*pParent*/)
+	{ return eOk; }
+    };
+    
+    //--------------------------------------------------
+    // Here's a tree A drawing that will be used to explain trversing modes
+    //              /| 
+    //             B C
+    //            /| 
+    //           D E
+    //
+    // This function arranges 'downward' traverse mode when higher nodes are
+    // processed first. The sequence of calls to I4Each functions for
+    // iterator at the node A whould be:
+    //   Execute( A ), LevelBegin( A )
+    //     Execute( B ), LevelBegin( B )
+    //       Execute( D ), Execute( E )
+    //     LevelEnd( B )
+    //     Execute( C )
+    //   LevelEnd( A )
+    // The 'levels' parameter specifies the depth of traversing the tree.
+    // Nodes that are 'levels' levels below subtree root are considered
+    // terminal nodes.
+    // Returns: Action code (see EAction description)
+    EAction TraverseDownward(I4Each&,
+			     unsigned levels=numeric_limits<unsigned>::max());
+
+    //--------------------------------------------------
+    // This function arranges 'upward' traverse mode when lower nodes are
+    // processed first. The sequence of calls to I4Each functions for
+    // iterator at the node A whould be:
+    //   LevelBegin( A )
+    //     LevelBegin( B )
+    //       Execute( D ), Execute( E )
+    //     LevelEnd( B ), Execute( B )
+    //     Execute( C )
+    //   LevelEnd( A ), Execute( A )
+    // The 'levels' parameter specifies the depth of traversing the tree.
+    // Nodes that are 'levels' levels below subtree root are considered
+    // terminal nodes.
+    // Returns: Action code (see EAction description)
+    EAction TraverseUpward(I4Each&,
+			   unsigned levels=numeric_limits<unsigned>::max());
+
+    //--------------------------------------------------
+    // This function arranges 'level by level' traverse mode when nodes are 
+    // guarantied to be processed after its parent and all of its 'uncles'.
+    // The sequence of calls to I4Each functions for iterator at the node A
+    // whould be:
+    //   Execute( A ), LevelBegin( A )
+    //     Execute( B ), Execute( C )
+    //       LevelBegin( B )
+    //         Execute( D ), Execute( E )
+    //       LevelEnd( B )
+    //   LevelEnd( A )
+    // The 'levels' parameter specifies the depth of traversing the tree.
+    // Nodes that are 'levels' levels below subtree root are considered
+    // terminal nodes.
+    // Returns: Action code (see EAction description)
+    EAction TraverseLevelByLevel(I4Each&,
+				 unsigned levels =
+				 numeric_limits<unsigned>::max());
+
+    //--------------------------------------------------
+    // This function arranges traverse of all ancestors of the node in  
+    // ascending order starting from its parent (if there is one).
+    // The sequence of calls to I4Each functions for iterator at the node D
+    // whould be:
+    //   Execute( B )
+    //   Execute( A )
+    // Note: The are NO LevelBegin(), levelEnd() calls performed.
+    EAction TraverseAncestors(I4Each&);
+
+    //--------------------------------------------------
+    // Checks if node is belonging to subtree with subtree_root
+    // Returns: true if it does,
+    //          false otherwise
+    virtual bool BelongSubtree(const ITaxon1Node* subtree_root) const = 0;
+
+    //--------------------------------------------------
+    // Checks if the given node belongs to subtree which root is 
+    // pointed by iterator
+    // Returns: true if it does,
+    //          false otherwise
+    virtual bool AboveNode(const ITaxon1Node* node) const = 0;
+
+private:
+    EAction TraverseLevelByLevelInternal(I4Each& cb, unsigned levels,
+					 vector< const ITaxon1Node* >& skp);
 };
 
 
@@ -288,6 +565,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.8  2003/05/06 19:54:18  domrach
+// New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
+//
 // Revision 1.7  2003/03/05 21:32:02  domrach
 // Enhanced orgref processing. Orgref cache capacity control added.
 //

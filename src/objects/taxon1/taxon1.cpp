@@ -30,6 +30,7 @@
  *
  */
 #include <algorithm>
+#include <corelib/ncbistr.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -948,18 +949,52 @@ CTaxon1::GetGCName(short gc_id, string& gc_name_out )
     }
 }
 
+//---------------------------------------------
+// Get taxonomic rank name by rank id
+///
+bool
+CTaxon1::GetRankName(short rank_id, string& rank_name_out )
+{
+    SetLastError( NULL );
+    const char* pchName = m_plCache->GetRankName( rank_id );
+    if( pchName ) {
+	rank_name_out.assign( pchName );
+	return true;
+    } else {
+	SetLastError( "ERROR: GetRankName(): Rank not found" );
+	return false;
+    }
+}
+
+//---------------------------------------------
+// Get taxonomic division name by division id
+///
+bool
+CTaxon1::GetDivisionName(short div_id, string& div_name_out )
+{
+    SetLastError( NULL );
+    const char* pchName = m_plCache->GetDivisionName( div_id );
+    if( pchName ) {
+	div_name_out.assign( pchName );
+	return true;
+    } else {
+	SetLastError( "ERROR: GetDivisionName(): Division not found" );
+	return false;
+    }
+}
+
 int
 CTaxon1::Join(int taxid1, int taxid2)
 {
-    int tax_id( 0 );
+    int tax_id = 0;
     CTaxon1Node *pNode1, *pNode2;
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( taxid1, &pNode1 ) && pNode1
         && m_plCache->LookupAndAdd( taxid2, &pNode2 ) && pNode2 ) {
-        CTreeConstIterator* pIt = m_plCache->GetTree().GetConstIterator();
+        CRef< ITreeIterator > pIt( GetTreeIterator() );
         pIt->GoNode( pNode1 );
         pIt->GoAncestor( pNode2 );
-        tax_id = static_cast<const CTaxon1Node*>(pIt->GetNode())->GetTaxId();
+        tax_id = pIt->GetNode()->GetTaxId();
     }
     return tax_id;
 }
@@ -1166,7 +1201,7 @@ CTaxon1::SetLastError( const char* pchErr )
 static void s_StoreResidueTaxid( CTreeIterator* pIt, CTaxon1::TTaxIdList& lTo )
 {
     CTaxon1Node* pNode =  static_cast<CTaxon1Node*>( pIt->GetNode() );
-    if( !pNode->IsTerminal() ) {
+    if( !pNode->IsJoinTerminal() ) {
 	lTo.push_back( pNode->GetTaxId() );
     }
     if( pIt->GoChild() ) {
@@ -1215,7 +1250,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 			vLin.clear();
 			pParent = pNode->GetParent();
 			pNode = new CTaxon1Node( *pNode );
-			pNode->SetTerminal();
+			pNode->SetJoinTerminal();
 			vLin.push_back( pNode );
 			while( pParent &&
 			       ((nmi=nodeMap.find(pParent->GetTaxId()))
@@ -1245,7 +1280,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 		    //return false;
 		}
 	    } else { // Node is already here
-		nmi->second->SetTerminal();
+		nmi->second->SetJoinTerminal();
 	    }
 	}
 	// Partial tree is build, make a residue
@@ -1254,7 +1289,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 	if( pIt->GoChild() ) {
 	    while( !pIt->GoSibling() ) {
 		pNode = static_cast<CTaxon1Node*>( pIt->GetNode() );
-		if( pNode->IsTerminal() || !pIt->GoChild() ) {
+		if( pNode->IsJoinTerminal() || !pIt->GoChild() ) {
 		    bHasSiblings = false;
 		    break;
 		}
@@ -1268,6 +1303,256 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
     return true;
 }
 
+//-----------------------------------
+//  Tree-related functions
+bool
+CTaxon1::LoadSubtreeEx( int tax_id, int levels )
+{
+    CTaxon1Node* pNode = 0;
+    SetLastError(NULL);
+    if( m_plCache->LookupAndAdd( tax_id, &pNode )
+        && pNode ) {
+
+	if( pNode->IsSubtreeLoaded() ) {
+	    return true;
+	}
+
+	if( levels == 0 ) {
+	    return true;
+	}
+
+        CTaxon1_req  req;
+        CTaxon1_resp resp;
+	
+	if( levels < 0 ) {
+	    tax_id = -tax_id;
+	}
+        req.SetTaxachildren( tax_id );
+	
+        if( SendRequest( req, resp ) ) {
+            if( resp.IsTaxachildren() ) {
+                // Correct response, return object
+                list< CRef< CTaxon1_name > >& lNm = resp.SetTaxachildren();
+                // Fill in the list
+                CTreeIterator* pIt = m_plCache->GetTree().GetIterator();
+                pIt->GoNode( pNode );
+                for( list< CRef< CTaxon1_name > >::const_iterator
+                         i = lNm.begin();
+                     i != lNm.end(); ++i ) {
+		    if( (*i)->GetCde() == 0 ) { // Change parent node
+			if( m_plCache->LookupAndAdd( (*i)->GetTaxid(), &pNode )
+			    && pNode ) { 
+			    pIt->GoNode( pNode );
+			} else { // Invalid parent specified
+			    SetLastError( ("Invalid parent taxid "
+					  + NStr::IntToString((*i)->GetTaxid())
+					  ).c_str() );
+			    return false;
+			}
+		    } else { // Add node to the partial tree
+			if( !m_plCache->Lookup((*i)->GetTaxid(), &pNode) ) {
+			    pNode = new CTaxon1Node(*i);
+			    m_plCache->SetIndexEntry(pNode->GetTaxId(), pNode);
+			    pIt->AddChild( pNode );
+			}
+		    }
+		    pNode->SetSubtreeLoaded( pNode->IsSubtreeLoaded() ||
+					     (levels < 0) );
+                }
+		return true;
+            } else { // Internal: wrong respond type
+                SetLastError( "Response type is not Taxachildren" );
+                return false;
+            }
+        } 
+    }
+    return false;
+}
+
+CRef< ITreeIterator >
+CTaxon1::GetTreeIterator()
+{
+    CRef< ITreeIterator > pIt( new CTaxTreeConstIterator
+			       (m_plCache->GetTree().GetConstIterator()) );
+    SetLastError(NULL);
+    return pIt;
+}
+
+CRef< ITreeIterator >
+CTaxon1::GetTreeIterator( int tax_id )
+{
+    CRef< ITreeIterator > pIt;
+    CTaxon1Node* pData = 0;
+    SetLastError(NULL);
+    if( m_plCache->LookupAndAdd( tax_id, &pData ) ) {
+	pIt.Reset( new CTaxTreeConstIterator
+		   ( m_plCache->GetTree().GetConstIterator() ) );
+	pIt->GoNode( pData );
+    }
+    return pIt;
+}
+
+//-----------------------------------
+//  Iterator stuff
+//
+// 'Downward' traverse mode (nodes that closer to root processed first)
+ITreeIterator::EAction 
+ITreeIterator::TraverseDownward(I4Each& cb, unsigned levels)
+{
+    if( levels ) {
+        switch( cb.Execute(GetNode()) ) {
+        default:
+        case eOk:
+            if(!GetNode()->IsTerminal()) {
+                switch( cb.LevelBegin(GetNode()) ) {
+                case eStop: return eStop;
+                default:
+                case eOk:
+                    if(GoChild()) {
+                        do {
+                            if(TraverseDownward(cb, levels-1)==eStop)
+                                return eStop;
+                        } while(GoSibling());
+                    }
+                case eSkip: // Means skip this level
+                    break;
+                }
+                GoParent();
+                if( cb.LevelEnd(GetNode()) == eStop )
+                    return eStop;
+            }
+        case eSkip: break;
+        case eStop: return eStop;
+        }
+    }
+    return eOk;
+}
+
+// 'Upward' traverse mode (nodes that closer to leaves processed first)
+ITreeIterator::EAction
+ITreeIterator::TraverseUpward(I4Each& cb, unsigned levels)
+{
+    if( levels > 0 ) {
+        if(!GetNode()->IsTerminal()) {
+            switch( cb.LevelBegin(GetNode()) ) {
+            case eStop: return eStop;
+            default:
+            case eOk:
+                if(GoChild()) {
+                    do {
+                        if( TraverseUpward(cb, levels-1) == eStop )
+                            return eStop;
+                    } while(GoSibling());
+                }
+            case eSkip: // Means skip this level
+                break;
+            }
+            GoParent();
+            if( cb.LevelEnd(GetNode()) == eStop )
+                return eStop;
+        }
+        return cb.Execute(GetNode());
+    }
+    return eOk;
+}
+
+// 'LevelByLevel' traverse (nodes that closer to root processed first)
+ITreeIterator::EAction
+ITreeIterator::TraverseLevelByLevel(I4Each& cb, unsigned levels)
+{
+    switch( cb.Execute( GetNode() ) ) {
+    case eStop:
+	return eStop;
+    case eSkip:
+	return eSkip;
+    case eOk:
+    default:
+	break;
+    }
+    if(!GetNode()->IsTerminal()) {
+	vector< const ITaxon1Node* > skippedNodes;
+	return TraverseLevelByLevelInternal(cb, levels, skippedNodes);
+    }
+    return eOk;
+}
+
+ITreeIterator::EAction
+ITreeIterator::TraverseLevelByLevelInternal(I4Each& cb, unsigned levels,
+					    vector< const ITaxon1Node* >& skp)
+{
+    size_t skp_start = skp.size();
+    if( levels > 1 ) {
+	if(!GetNode()->IsTerminal()) {
+	    switch( cb.LevelBegin(GetNode()) ) {
+	    case eStop: return eStop;
+	    default:
+	    case eOk:
+		if(GoChild()) {
+		    // First pass - call Execute for all children
+		    do {
+			switch( cb.Execute(GetNode()) ) {
+			default:
+			case eOk:
+			    break;
+			case eSkip: // Means skip this node
+			    skp.push_back( GetNode() );
+			    break;
+			case eStop: return eStop;
+			}
+		    } while( GoSibling() );
+		    GoParent();
+		    // Start second pass
+		    size_t skp_cur = skp_start;
+		    GoChild();
+		    do {
+			if( skp.size() == skp_start ||
+			    skp[skp_cur] != GetNode() ) {
+			    if(TraverseLevelByLevelInternal(cb, levels-1, skp)
+			       == eStop ) {
+				return eStop;
+			    }
+			} else {
+			    ++skp_cur;
+			}
+		    } while(GoSibling());
+		    GoParent();
+		}
+		if( cb.LevelEnd( GetNode() ) == eStop )
+		    return eStop;
+		break;
+	    case eSkip:
+		break;
+	    }
+	}
+    }
+    skp.resize( skp_start );
+    return eOk;
+}
+
+// Scans all the ancestors starting from immediate parent up to the root
+// (no levelBegin, levelEnd calls performed)
+ITreeIterator::EAction
+ITreeIterator::TraverseAncestors(I4Each& cb)
+{
+    const ITaxon1Node* pNode = GetNode();
+    EAction stat = eOk;
+    while( GoParent() ) {
+	stat = cb.Execute(GetNode());
+	switch( stat ) {
+	case eStop: return eStop; // Stop scan, some error occured
+	default:
+	case eOk:
+	case eSkip: // Means skip further scan, no error generated
+	    break;
+	}
+	if( stat == eSkip ) {
+	    break;
+	}
+    }
+    GoNode( pNode );
+    return stat;
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE
 
@@ -1275,6 +1560,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.15  2003/05/06 19:53:54  domrach
+ * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
+ *
  * Revision 6.14  2003/03/10 20:59:37  ucko
  * ThrowError1 -> ThrowError, per the recent change to <serial/objostr.hpp>.
  * Explicitly cast ints to COrgMod::TSubtype when setting OrgMod.subtype.

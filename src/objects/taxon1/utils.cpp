@@ -85,7 +85,7 @@ CTaxon1Node::IsUncultured() const
 }
 
 bool
-CTaxon1Node::IsGBHidden() const
+CTaxon1Node::IsGenBankHidden() const
 {
     return m_ref->GetCde() & TXC_GBHIDE ? true : false;
 }

@@ -54,6 +54,7 @@ public:
 
     bool Init( unsigned nCapacity = 10 );
 
+    bool Lookup( int tax_id, CTaxon1Node** ppNode );
     bool LookupAndAdd( int tax_id, CTaxon1Node** ppData );
     bool LookupAndInsert( int tax_id, CTaxon1_data** ppData );
     bool LookupAndInsert( int tax_id, CTaxon2_data** ppData );
@@ -184,42 +185,99 @@ private:
 };
 
 
-
-class CTaxon1Node : public CTreeContNodeBase
-{
+class CTaxon1Node : public CTreeContNodeBase, public ITaxon1Node {
 public:
     CTaxon1Node( const CRef< CTaxon1_name >& ref )
-        : m_ref( ref ), m_cacheEntry( NULL ), m_bTerm( false ) {}
+        : m_ref( ref ), m_cacheEntry( NULL ), m_flags( 0 ) {}
     explicit CTaxon1Node( const CTaxon1Node& node )
         : CTreeContNodeBase(), m_ref( node.m_ref ),
-	  m_cacheEntry( NULL ), m_bTerm( false ) {}
+	  m_cacheEntry( NULL ), m_flags( 0 ) {}
+    virtual ~CTaxon1Node() {}
 
-    int                GetTaxId() const { return m_ref->GetTaxid(); }
-    const string&      GetName() const { return m_ref->GetOname(); }
-    const string&      GetBlastName() const{ return m_ref->GetUname(); }
-    short              GetRank() const;
-    short              GetDivision() const;
-    short              GetGC() const;
-    short              GetMGC() const;
+    virtual int           GetTaxId() const { return m_ref->GetTaxid(); }
+    virtual const string& GetName() const { return m_ref->GetOname(); }
+    virtual const string& GetBlastName() const{ return m_ref->GetUname(); }
+    virtual short         GetRank() const;
+    virtual short         GetDivision() const;
+    virtual short         GetGC() const;
+    virtual short         GetMGC() const;
                        
-    bool               IsUncultured() const;
-    bool               IsGBHidden() const;
+    virtual bool          IsUncultured() const;
+    virtual bool          IsGenBankHidden() const;
+
+    virtual bool          IsRoot() const
+    { return CTreeContNodeBase::IsRoot(); }
+    virtual bool          IsLastChild() const
+    { return CTreeContNodeBase::IsLastChild(); }
+    virtual bool          IsFirstChild() const
+    { return CTreeContNodeBase::IsFirstChild(); }
+    virtual bool          IsTerminal() const
+    { return CTreeContNodeBase::IsTerminal(); }
 
     COrgRefCache::SCacheEntry* GetEntry() { return m_cacheEntry; }
 
-    bool               IsTerminal() const { return m_bTerm; }
-    void               SetTerminal() { m_bTerm = true; }
+    bool                  IsJoinTerminal() const { return m_flags&mJoinTerm; }
+    void                  SetJoinTerminal() { m_flags |= mJoinTerm; }
+    bool                  IsSubtreeLoaded() const
+    { return m_flags&mSubtreeLoaded; }
+    void                  SetSubtreeLoaded( bool b )
+    { if( b ) m_flags |= mSubtreeLoaded; else m_flags &= ~mSubtreeLoaded; }
 
-    CTaxon1Node*       GetParent()
+    CTaxon1Node*          GetParent()
     { return static_cast<CTaxon1Node*>(Parent()); }
 private:
     friend class COrgRefCache;
+    enum EFlags {
+	mJoinTerm      = 0x1,
+	mSubtreeLoaded = 0x2
+    };
+
     CRef< CTaxon1_name >       m_ref;
 
     COrgRefCache::SCacheEntry* m_cacheEntry;
-    bool                       m_bTerm;
+    unsigned                   m_flags;
 };
 
+class CTaxTreeConstIterator : public ITreeIterator {
+public:
+    CTaxTreeConstIterator( CTreeConstIterator* pIt ) : m_it( pIt ) {}
+    virtual ~CTaxTreeConstIterator() {
+	delete m_it;
+    }
+
+    virtual const ITaxon1Node* GetNode() const
+    { return CastCI(m_it->GetNode()); }
+    const ITaxon1Node* operator->() const { return GetNode(); }
+    // Navigation
+    virtual void GoRoot() { m_it->GoRoot(); }
+    virtual bool GoParent() { return m_it->GoParent(); }
+    virtual bool GoChild() { return m_it->GoChild(); }
+    virtual bool GoSibling() { return m_it->GoSibling(); }
+    virtual bool GoNode(const ITaxon1Node* pNode)
+    { return m_it->GoNode(CastIC(pNode)); }
+    // move cursor to the nearest common ancestor
+    // between node pointed by cursor and the node
+    // with given node_id
+    virtual bool GoAncestor(const ITaxon1Node* pNode)
+    { return m_it->GoAncestor(CastIC(pNode)); }
+    // check if node pointed by cursor
+    // is belong to subtree wich root node
+    // has given node_id
+    virtual bool BelongSubtree(const ITaxon1Node* subtree_root) const
+    { return m_it->BelongSubtree(CastIC(subtree_root)); }	
+    // check if node with given node_id belongs
+    // to subtree pointed by cursor
+    virtual bool AboveNode(const ITaxon1Node* node) const
+    { return m_it->AboveNode(CastIC(node)); }
+private:
+    const ITaxon1Node* CastCI( const CTreeContNodeBase* p ) const
+    { return static_cast<const ITaxon1Node*>
+	  (static_cast<const CTaxon1Node*>(p)); }
+    const CTreeContNodeBase* CastIC( const ITaxon1Node* p ) const
+    { return static_cast<const CTreeContNodeBase*>
+	  (static_cast<const CTaxon1Node*>(p)); }
+    CTreeConstIterator* m_it;
+};
 
 END_objects_SCOPE
 END_NCBI_SCOPE
@@ -228,6 +286,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.9  2003/05/06 19:53:53  domrach
+ * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
+ *
  * Revision 6.8  2003/03/05 21:33:52  domrach
  * Enhanced orgref processing. Orgref cache capacity control added.
  *
