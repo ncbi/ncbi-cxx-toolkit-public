@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.28  2002/01/16 22:14:00  ucko
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
  * Revision 1.27  2001/12/07 21:15:16  ucko
  * Remove duplicate includes.
  *
@@ -543,7 +547,7 @@ bool CId1FetchApp::LookUpGI(int gi)
             params->SetEnt(args["ent"].AsInteger());
         if (args["db"])
             params->SetSat(args["db"].AsString());
-        id1_request.SetGetsefromgi(params);
+        id1_request.SetGetsefromgi(*params);
     } else if (lt == "state") {
         id1_request.SetGetgistate(gi);
     } else if (lt == "ids") {
