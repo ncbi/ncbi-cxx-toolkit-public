@@ -581,6 +581,9 @@ const string CValidErrItem::sm_Terse [] = {
     "TranslExceptAndRnaEditing",
     "NoNameForProtein",
     "TaxonDbxrefOnFeature",
+    "MultipleBioseqs",
+    "CDSmRNAmismatch",
+    "UnnecessaryException",
     END(SEQ_FEAT),
 
     BEGIN(SEQ_ALIGN),
@@ -1209,10 +1212,18 @@ editing indicates post-transcriptional changes prior to translation.  Use \
 other nonsense suppressors.",
 //  SEQ_FEAT_NoNameForProtein
 "A protein feature has a description, but no product name.",
-//  TaxonDbxrefOnFeature
+//  SEQ_FEAT_TaxonDbxrefOnFeature
 "A BioSource feature has a taxonID database identifier in the db_xref area \
 common to all features.  This db_xref should only exist within the separate \
 BioSource xref list.",
+//  SEQ_FEAT_MultipleBioseqs
+"Feature location refers to multiple near non-part bioseqs.",
+//  SEQ_FEAT_CDSmRNAmismatch
+"There should usually be a one-to-one correspondence between mRNA and CDS \
+under a given gene.",
+//  SEQ_FEAT_UnnecessaryException
+"The feature is marked with an exception qualifier, but the validator does \
+not detect an error that needs to be suppressed.",
 
 END(SEQ_FEAT),
 
@@ -1326,6 +1337,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/09/21 15:54:07  shomrat
+* + SEQ_FEAT_CDSmRNAmismatch, SEQ_FEAT_UnnecessaryException
+*
 * Revision 1.53  2004/08/09 14:54:10  shomrat
 * Added eErr_SEQ_INST_CompleteTitleProblem and eErr_SEQ_INST_CompleteCircleProblem
 *

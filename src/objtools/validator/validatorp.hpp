@@ -290,6 +290,9 @@ enum EErrType {
     eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
     eErr_SEQ_FEAT_NoNameForProtein,
     eErr_SEQ_FEAT_TaxonDbxrefOnFeature,
+    eErr_SEQ_FEAT_MultipleBioseqs,
+    eErr_SEQ_FEAT_CDSmRNAmismatch,
+    eErr_SEQ_FEAT_UnnecessaryException,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN),
@@ -417,16 +420,18 @@ public:
     inline CScope* GetScope(void) { return m_Scope; }
 
     // flags derived from options parameter
-    inline bool IsNonASCII(void) const { return m_NonASCII; }
-    inline bool IsSuppressContext(void) const { return m_SuppressContext; }
-    inline bool IsValidateAlignments(void) const { return m_ValidateAlignments; }
-    inline bool IsValidateExons(void) const { return m_ValidateExons; }
-    inline bool IsSpliceErr(void) const { return m_SpliceErr; }
-    inline bool IsOvlPepErr(void) const { return m_OvlPepErr; }
-    inline bool IsRequireTaxonID(void) const { return m_RequireTaxonID; }
-    inline bool IsRequireISOJTA(void) const { return m_RequireISOJTA; }
-    inline bool IsValidateIdSet(void) const { return m_ValidateIdSet; }
-    inline bool IsRemoteFetch(void) const { return m_RemoteFetch; }
+    bool IsNonASCII(void)             const { return m_NonASCII; }
+    bool IsSuppressContext(void)      const { return m_SuppressContext; }
+    bool IsValidateAlignments(void)   const { return m_ValidateAlignments; }
+    bool IsValidateExons(void)        const { return m_ValidateExons; }
+    bool IsSpliceErr(void)            const { return m_SpliceErr; }
+    bool IsOvlPepErr(void)            const { return m_OvlPepErr; }
+    bool IsRequireTaxonID(void)       const { return m_RequireTaxonID; }
+    bool IsRequireISOJTA(void)        const { return m_RequireISOJTA; }
+    bool IsValidateIdSet(void)        const { return m_ValidateIdSet; }
+    bool IsRemoteFetch(void)          const { return m_RemoteFetch; }
+    bool IsFarFetchMRNAproducts(void) const { return m_FarFetchMRNAproducts; }
+    bool IsFarFetchCDSproducts(void)  const { return m_FarFetchCDSproducts; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -496,6 +501,7 @@ private:
 
     void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
     void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj);
+    void x_ValidatePages(const string& pages, const CSerialObject& obj);
     void ValidateEtAl(const CPubdesc& pubdesc, const CSerialObject& obj);
     
     bool HasName(const list< CRef< CAuthor > >& authors);
@@ -510,16 +516,18 @@ private:
     CValidError*       m_ErrRepository;
 
     // flags derived from options parameter
-    bool m_NonASCII;            // User sets if Non ASCII char found
-    bool m_SuppressContext;     // Include context in errors if true
-    bool m_ValidateAlignments;  // Validate Alignments if true
-    bool m_ValidateExons;       // Check exon feature splice sites
-    bool m_SpliceErr;           // Bad splice site error if true, else warn
-    bool m_OvlPepErr;           // Peptide overlap error if true, else warn
-    bool m_RequireTaxonID;      // BioSource requires taxonID dbxref
-    bool m_RequireISOJTA;       // Journal requires ISO JTA
-    bool m_ValidateIdSet;       // validate update against ID set in database
-    bool m_RemoteFetch;         // Remote fetch enabled?
+    bool m_NonASCII;             // User sets if Non ASCII char found
+    bool m_SuppressContext;      // Include context in errors if true
+    bool m_ValidateAlignments;   // Validate Alignments if true
+    bool m_ValidateExons;        // Check exon feature splice sites
+    bool m_SpliceErr;            // Bad splice site error if true, else warn
+    bool m_OvlPepErr;            // Peptide overlap error if true, else warn
+    bool m_RequireTaxonID;       // BioSource requires taxonID dbxref
+    bool m_RequireISOJTA;        // Journal requires ISO JTA
+    bool m_ValidateIdSet;        // validate update against ID set in database
+    bool m_RemoteFetch;          // Remote fetch enabled?
+    bool m_FarFetchMRNAproducts; // Remote fetch mRNA products
+    bool m_FarFetchCDSproducts;  // Remote fetch proteins
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -689,6 +697,7 @@ private:
     void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     void x_ValidateAbuttingCDSGroup(const TMappedFeatVec& cds_group, bool minus);
+    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
@@ -768,6 +777,7 @@ public:
     size_t GetNumGeneXrefs(void) const { return m_NumGeneXrefs; }
 
 private:
+    void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
@@ -779,15 +789,16 @@ private:
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
     void ReportCdTransErrors(const CSeq_feat& feat,
-        bool show_stop, bool got_stop, bool no_end, int ragged);
+        bool show_stop, bool got_stop, bool no_end, int ragged,
+        bool report_errors, bool& has_errors);
     void ValidateSplice(const CSeq_feat& feat, bool check_all);
     void ValidateBothStrands(const CSeq_feat& feat);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
     void ValidateBadMRNAOverlap(const CSeq_feat& feat);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void ValidateCDSPartial(const CSeq_feat& feat);
-    void ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
-                                     const CCdregion& cdregion);
+    bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
+        const CCdregion& cdregion, bool report_erros);
     void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSerialObject& obj);
@@ -965,6 +976,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2004/09/21 15:54:57  shomrat
+* + SEQ_FEAT_CDSmRNAmismatch, SEQ_FEAT_UnnecessaryException
+*
 * Revision 1.74  2004/08/09 14:53:55  shomrat
 * Added eErr_SEQ_INST_CompleteTitleProblem and eErr_SEQ_INST_CompleteCircleProblem
 *
