@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/09 20:27:07  vasilche
+* Fixed some bugs
+*
 * Revision 1.16  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -645,7 +648,8 @@ void CObjectIStreamBinary::Begin(ByteBlock& block)
 	SetBlockLength(block, ReadSize());
 }
 
-size_t CObjectIStreamBinary::ReadBytes(const ByteBlock& block, char* dst, size_t length)
+size_t CObjectIStreamBinary::ReadBytes(const ByteBlock& ,
+                                       char* dst, size_t length)
 {
 	ReadBytes(dst, length);
 	return length;

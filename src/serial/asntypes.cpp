@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/09 20:27:05  vasilche
+* Fixed some bugs
+*
 * Revision 1.7  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -64,6 +67,46 @@
 
 BEGIN_NCBI_SCOPE
 
+class BytestorePtr {
+public:
+    BytestorePtr(const bytestore* bs)
+        : unit(bs->chain), pos(0)
+        {
+        }
+
+    bool End(void) const
+        {
+            return unit == 0;
+        }
+
+    void* Ptr(void) const
+        {
+            return static_cast<char*>(unit->str) + pos;
+        }
+
+    size_t Available(void) const
+        {
+            return unit->len - pos;
+        }
+
+    void Next(void)
+        {
+            _ASSERT(Available() == 0);
+            unit = unit->next;
+            pos = 0;
+        }
+
+    void operator+=(size_t skip)
+        {
+            _ASSERT(skip < Available());
+            pos += skip;
+        }
+
+private:
+    bsunit* unit;
+    size_t pos;
+};
+
 static inline
 void* Alloc(size_t size)
 {
@@ -77,6 +120,7 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
+#ifndef BSNew
 static inline
 bsunit* BSUnitNew(size_t size)
 {
@@ -118,7 +162,8 @@ bytestore* BSDup(const bytestore* bs)
 	bytestore* copy = BSNew(0);
 	size_t totlen = copy->totlen = bs->totlen;
 	bsunit** unitPtr = &copy->chain;
-	for ( const bsunit* unit; unit; unit = unit->next, unitPtr = &(*unitPtr)->next ) {
+	for ( const bsunit* unit = bs->chain; unit;
+          unit = unit->next, unitPtr = &(*unitPtr)->next ) {
 		size_t len = unit->len;
 		*unitPtr = BSUnitNew(len);
 		(*unitPtr)->len = len;
@@ -165,6 +210,7 @@ void BSWrite(bytestore* bs, char* data, size_t length)
 		length -= count;
 	}
 }
+#endif
 
 CSequenceTypeInfo::CSequenceTypeInfo(const CTypeRef& typeRef)
     : m_DataType(typeRef)
@@ -518,9 +564,38 @@ TConstObjectPtr COctetStringTypeInfo::GetDefault(void) const
 	return &zeroPointer;
 }
 
-bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const
+bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
+                                  TConstObjectPtr obj2) const
 {
-	return false;
+    bytestore* bs1 = Get(obj1);
+    bytestore* bs2 = Get(obj2);
+    if ( bs1 == 0 || bs2 == 0 ) {
+        THROW1_TRACE(runtime_error, "null bytestore pointer");
+    }
+
+    if ( bs1->totlen != bs2->totlen )
+        return false;
+    
+    BytestorePtr p1(bs1), p2(bs2);
+    while ( !p1.End() ) {
+        size_t c1 = p1.Available();
+        if ( c1 == 0 ) {
+            p1.Next();
+            continue;
+        }
+        size_t c2 = p2.Available();
+        if ( c2 == 0 ) {
+            p2.Next();
+            continue;
+        }
+        size_t count = min(c1, c2);
+        if ( memcmp(p1.Ptr(), p2.Ptr(), count) != 0 )
+            return false;
+        p1 += count;
+        p2 += count;
+    }
+    _ASSERT(p2.End());
+	return true;
 }
 
 void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
@@ -531,11 +606,13 @@ void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 	Get(dst) = BSDup(Get(src));
 }
 
-void COctetStringTypeInfo::CollectExternalObjects(COObjectList& l, TConstObjectPtr object) const
+void COctetStringTypeInfo::CollectExternalObjects(COObjectList& ,
+                                                  TConstObjectPtr ) const
 {
 }
 
-void COctetStringTypeInfo::WriteData(CObjectOStream& out, TConstObjectPtr object) const
+void COctetStringTypeInfo::WriteData(CObjectOStream& out,
+                                     TConstObjectPtr object) const
 {
 	const bytestore* bs = Get(object);
 	if ( bs == 0 )

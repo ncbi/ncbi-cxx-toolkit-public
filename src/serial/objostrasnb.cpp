@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/09 20:27:08  vasilche
+* Fixed some bugs
+*
 * Revision 1.6  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -398,7 +401,8 @@ void CObjectOStreamAsnBinary::Begin(const ByteBlock& block)
 	WriteLength(block.GetLength());
 }
 
-void CObjectOStreamAsnBinary::WriteBytes(const ByteBlock& block, const char* bytes, size_t length)
+void CObjectOStreamAsnBinary::WriteBytes(const ByteBlock& ,
+                                         const char* bytes, size_t length)
 {
 	WriteBytes(bytes, length);
 }

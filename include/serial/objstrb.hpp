@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/09 20:27:02  vasilche
+* Fixed some bugs
+*
 * Revision 1.5  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -77,7 +80,7 @@ namespace CObjectStreamBinaryDefs
         eEndOfElements,
 		eBytes
     };
-};
+}
 
 //#include <objstrb.inl>
 
