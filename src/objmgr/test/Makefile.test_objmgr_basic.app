@@ -10,4 +10,4 @@ LIB = $(SOBJMGR_LIBS)
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = ./test_objmgr_basic
+CHECK_CMD = test_objmgr_basic

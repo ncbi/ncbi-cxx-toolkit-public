@@ -14,4 +14,4 @@ LIB = test_mt $(SOBJMGR_LIBS)
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = ./test_objmgr_mt
+CHECK_CMD = test_objmgr_mt
