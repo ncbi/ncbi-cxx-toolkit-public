@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/02/24 16:50:42  grichenk
+ * Removed Pub.hpp
+ *
  * Revision 1.4  2004/02/24 15:53:43  grichenk
  * Redesigned GetLabel(), moved most functionality from pub to biblio
  *
@@ -58,7 +61,6 @@
 
 // generated includes
 #include <objects/biblio/Cit_proc_.hpp>
-#include <objects/pub/Pub.hpp>
 
 // generated classes
 
