@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/10/18 20:33:54  thiessen
+* workaround for linux/Mesa bug
+*
 * Revision 1.12  2002/10/18 15:42:59  thiessen
 * work around png header issue for linux
 *
@@ -593,17 +596,21 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (gotAnXError) throw "Got an X error creating GLXPixmap";
 
         // try to share display lists with "regular" context
-        glCtx = glXCreateContext(display, visinfo, currentCtx, GL_FALSE);
+#ifndef __LINUX__
+	// seems to crash Mesa...
+        glCtx = glXCreateContext(display, visinfo, currentCtx, False);
+#endif
         if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
             ERR_POST(Warning << "failed to make GLXPixmap rendering context with shared display lists");
             shareDisplayLists = false;
             if (glCtx) glXDestroyContext(display, glCtx);
 
             // try to create context without shared lists
-            glCtx = glXCreateContext(display, visinfo, NULL, GL_FALSE);
+            glCtx = glXCreateContext(display, visinfo, NULL, False);
             if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx))
                 throw "failed to make GLXPixmap rendering context without shared display lists";
         }
+        if (gotAnXError) throw "Got an X error setting GLX context";
 
 #elif defined(__WXMAC__)
     	currentCtx = aglGetCurrentContext();
@@ -752,9 +759,9 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         success = true;
 
     } catch (const char *err) {
-        ERR_POST("Error creating PNG: " << err);
+        ERR_POST(Error << "Error creating PNG: " << err);
     } catch (exception& e) {
-        ERR_POST("Uncaught exception while creating PNG: " << e.what());
+        ERR_POST(Error << "Uncaught exception while creating PNG: " << e.what());
     }
 
     // general cleanup
