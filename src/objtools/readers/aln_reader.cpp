@@ -79,7 +79,7 @@ static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
         msg += err_ptr->message;
     }
 
-    NCBI_THROW2(CObjReaderParseException, eFormat, msg, err_ptr->line_num);
+    LOG_POST(Error << msg);
 }
 
 
@@ -109,7 +109,7 @@ void CAlnReader::Read()
                             s_ReportError, 0, &info);
     if (!afp) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
-                   "Error reading alignment: no alignments found", 0);
+                   "Error reading alignment", 0);
     }
 
     // build the CAlignment
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/02 20:18:50  jcherry
+ * Don't throw in callback called by C code
+ *
  * Revision 1.7  2004/03/01 15:26:33  dicuccio
  * Code clean-up.  Added enum for standard alphabets.  Added new APIs to set
  * standard parameters for other alignment types (implemented with unclear details
