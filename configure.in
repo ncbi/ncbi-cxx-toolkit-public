@@ -47,7 +47,7 @@ AC_CONFIG_HEADER(config.h:config.h.in)
 
 #### Check if "${exec_prefix}" dir is defined
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
-  exec_prefix="${srcdir}/exec"
+   exec_prefix="${srcdir}/exec"
 fi
 
 #### Check if there is "${exec_prefix}" dir
@@ -57,37 +57,49 @@ fi
 
 #### Make "exec_prefix" absolute
 case "${exec_prefix}" in
-  /* ) ;;
-  . )
-    CDPATH=
-    if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
-    then
-      exec_prefix="$PWD"
-    else
-      exec_prefix="`(cd ${exec_prefix}; pwd)`"
-    fi
-  ;;
-  *  ) exec_prefix="`(cd ${exec_prefix}; pwd)`" ;;
+   /* ) ;;
+   . )
+      CDPATH=
+      if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
+      then
+         exec_prefix="$PWD"
+      else
+         exec_prefix="`(cd ${exec_prefix}; pwd)`"
+      fi
+   ;;
+   *  ) exec_prefix="`(cd ${exec_prefix}; pwd)`" ;;
 esac
 
 #### Make "srcdir" absolute
 case "${srcdir}" in
-  /* ) ;;
-  . )
-    CDPATH=
-    if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
-    then
-      srcdir="$PWD"
-    else
-      srcdir="`(cd ${srcdir}; pwd)`"
-    fi
-  ;;
-  *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
+   /* ) ;;
+   . )
+      CDPATH=
+      if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
+      then
+        srcdir="$PWD"
+      else
+        srcdir="`(cd ${srcdir}; pwd)`"
+      fi
+   ;;
+   *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
 esac
+
+#### Specify(derive) $includedir, $incdir, $libdir, $bindir and $builddir
+includedir="$srcdir/src/include"
+incdir="$exec_prefix/inc"
+libdir="$exec_prefix/lib"
+bindir="$exec_prefix/bin"
+if test "$exec_prefix" = "$srcdir" ; then
+   builddir="$srcdir/src"
+else
+   builddir="$exec_prefix/build"
+fi
+
 
 #### Check if the source directory already has a configured system in it.
 if test -f "${srcdir}/config.h" ; then
-  AC_MSG_ERROR([There is already a built "${srcdir}/config.h"!])
+   AC_MSG_ERROR([There is already a built "${srcdir}/config.h"!])
 fi
 
 AC_CANONICAL_HOST
@@ -193,8 +205,11 @@ AC_SUBST(exec_prefix)
 
 AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
-AC_SUBST(bindir)
+AC_SUBST(includedir)
+AC_SUBST(incdir)
 AC_SUBST(libdir)
+AC_SUBST(bindir)
+AC_SUBST(builddir)
 
 AC_SUBST(CC)
 AC_SUBST(CXX)
@@ -218,19 +233,16 @@ ${makefiles},
 
 ### Create and render the "$exec_prefix" directory
 set -x
-exec_prefix="$SAVE_exec_prefix"
 
-libdir="$exec_prefix/lib"
-bindir="$exec_prefix/bin"
-incdir="$exec_prefix/include"
+incdir="$SAVE_incdir"
+libdir="$SAVE_libdir"
+bindir="$SAVE_bindir"
 
 mkdir -p "$libdir" "$bindir" "$incdir"
 cp -p "$top_srcdir/config.h" "$incdir/ncbiconf.h"
 
-if test "$exec_prefix" = "$top_srcdir" ; then
-   builddir="$top_srcdir/src"
-else
-   builddir="$exec_prefix/build"
+if test "$exec_prefix" != "$top_srcdir" ; then
+   builddir="$SAVE_builddir"
    if test ! -d  "$builddir" ; then
       mkdir -p "$builddir"
    fi
@@ -247,5 +259,8 @@ else
    done
 fi,
 
-SAVE_exec_prefix="$exec_prefix"
+SAVE_incdir="$incdir"
+SAVE_libdir="$libdir"
+SAVE_bindir="$bindir"
+SAVE_builddir="$builddir"
 )

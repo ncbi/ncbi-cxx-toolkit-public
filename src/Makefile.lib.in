@@ -10,11 +10,11 @@
 # SUBPROJ = app sub_proj1 sub_proj2
 #
 # srcdir = @srcdir@
-# include @exec_prefix@/Makefile.mk
+# include @builddir@/Makefile.mk
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 # .....
-# include @exec_prefix@/Makefile.lib
+# include @builddir@/Makefile.lib
 #################################
 
 

@@ -7,7 +7,7 @@
 # of all underlying configurable NCBI project makefiles exactly this way:
 #
 # srcdir = @srcdir@
-# include @exec_prefix@/Makefile.mk
+# include @builddir@/Makefile.mk
 #
 #################################
 
@@ -21,11 +21,12 @@ SHELL = /bin/sh
 
 exec_prefix = @exec_prefix@
 top_srcdir  = @top_srcdir@
-includedir  = $(top_srcdir)/include
+includedir  = @includedir@
+incdir      = @incdir@
 libdir      = @libdir@
 bindir      = @bindir@
 
-INCLUDE = -I$(exec_prefix)/include -I$(srcdir) -I$(includedir) 
+INCLUDE = -I$(incdir) -I$(srcdir) -I$(includedir) 
 
 
 ### Auxiliary commands
