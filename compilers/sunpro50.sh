@@ -26,17 +26,19 @@ DEF_BUILD_DIR="."
 
 MT_FLAGS="-mt"
 
+CPATH="/netopt/SUNWspro6/bin"
+NCBI_C_PATH="$NCBI/ver0.0/ncbi"
+NCBI_SSS_PATH="/net/neptune/pubmed1/sss/db"
+
 set -a
 
-CPATH="/netopt/SUNWspro6/bin"
+SYBASE_PATH="/netopt/Sybase/clients/11.1.0"
 PM_PATH="/net/neptune/pubmed1/Cvs5"
-NCBI_C_PATH="$NCBI/ver0.0/ncbi"
-
 
 CC="$CPATH/cc"
 CFLAGS="${MT_FLAGS}"
 CXX="$CPATH/CC"
-CXXFLAGS="+w +w2 -DNCBI_USE_NEW_HEADERS ${MT_FLAGS}"
+CXXFLAGS="+w +w2 -DNCBI_USE_NEW_HEADERS $MT_FLAGS"
 AR="$CXX -xar -o"
 RANLIB=":"
 LDFLAGS="-xildoff"
@@ -45,6 +47,10 @@ LIBS="-Bstatic -L$CPATH/../SC5.0/lib -lm -Bdynamic -ldl"
 NCBI_C_INCLUDE="$NCBI_C_PATH/include"
 NCBI_C_DEBUG_LIB="$NCBI_C_PATH/altlib"
 NCBI_C_RELEASE_LIB="$NCBI_C_PATH/lib"
+
+NCBI_SSS_INCLUDE="$NCBI_SSS_PATH"
+NCBI_SSS_DEBUG_LIB="$NCBI_SSS_PATH/Debug"
+NCBI_SSS_RELEASE_LIB="$NCBI_SSS_PATH/Release"
 
 THREAD_LIBS="-lthread -lpthread"
 NETWORK_LIBS="-lsocket -lnsl"

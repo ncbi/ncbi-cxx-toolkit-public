@@ -122,10 +122,14 @@ AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR)
 
 #### Paths to another packages
 
+SYBASE_PATH=${SYBASE_PATH:=No_SybasePath}
 PM_PATH=${PM_PATH:=No_PmPath}
 
 NCBI_C_INCLUDE=${NCBI_C_INCLUDE:=No_NcbiCInclude}
 NCBI_C_LIB=${NCBI_C_LIB:=No_NcbiCLib}
+
+NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:=No_SssDbInclude}
+NCBI_SSS_LIB=${NCBI_SSS_LIB:=No_SssDbLib}
 
 
 #### Turn on compilation warnings and adjust
@@ -165,6 +169,7 @@ changequote(, )dnl
 if test "$msvc" != "yes" ; then
    if test "$with_debug" = "no" ; then
       NCBI_C_LIB="$NCBI_C_RELEASE_LIB"
+      NCBI_SSS_LIB="$NCBI_SSS_RELEASE_LIB"
 
       CFLAGS=`echo $CFLAGS     | sed 's/-g[0-9]*//g'`" -DNDEBUG"
       if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
@@ -177,6 +182,7 @@ if test "$msvc" != "yes" ; then
          LDFLAGS="$LDFLAGS -O"   ; fi
    else
       NCBI_C_LIB="$NCBI_C_DEBUG_LIB"
+      NCBI_SSS_LIB="$NCBI_SSS_DEBUG_LIB"
 
       CFLAGS=`echo $CFLAGS     | sed 's/-O[0-9]*//g'`" -D_DEBUG"
       if echo "$CFLAGS"   |grep -v >/dev/null '\-g' ; then
@@ -382,8 +388,12 @@ AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
 
 AC_SUBST(PM_PATH)
+AC_SUBST(SYBASE_PATH)
+
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIB)
+AC_SUBST(NCBI_SSS_INCLUDE)
+AC_SUBST(NCBI_SSS_LIB)
 
 AC_SUBST(KeepStateTarget)
 
