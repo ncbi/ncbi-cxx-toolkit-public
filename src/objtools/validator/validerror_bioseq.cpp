@@ -1594,13 +1594,33 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
         switch ( (**sg).Which() ) {
         case CDelta_seq::e_Loc:
+        {
+            const CSeq_loc& loc = (**sg).GetLoc(); 
             try {
-                len += GetLength((**sg).GetLoc(), m_Scope);
+                size_t loc_len = GetLength(loc, m_Scope);
+                len += loc_len;
+                if ( loc_len <= 10 ) {
+                    string loc_str;
+                    loc.GetLabel(&loc_str);
+                    if ( loc_str.empty() ) {
+                        loc_str = "?";
+                    }
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLocLength,
+                        "Short length (" + NStr::IntToString(loc_len) + 
+                        ") on seq-loc (" + loc_str + ") of delta seq_ext", seq);
+                }
             } catch (const CNoLength&) {
+                string loc_str;
+                loc.GetLabel(&loc_str);
+                if ( loc_str.empty() ) {
+                    loc_str = "?";
+                }
                 PostErr(eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
-                    "No length for Seq-loc of delta seq-ext", seq);
+                    "No length for Seq-loc (" + loc_str + ") of delta seq-ext",
+                    seq);
             }
             break;
+        }
         case CDelta_seq::e_Literal:
         {
             // The C toolkit code checks for valid alphabet here
@@ -3387,6 +3407,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2003/12/16 17:36:27  shomrat
+* implemented ERR_SEQ_INST_SeqLocLength test
+*
 * Revision 1.58  2003/12/15 21:08:16  shomrat
 * artificial, mutagenized, or synthetic suppress other-genetic message
 *
