@@ -440,21 +440,36 @@ void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
 
         // Bind childs standard I/O file handlers to pipe
         if ( mode_stdin != CPipe::eDoNotUse ) {
-            if ( dup2(fd_pipe_in[0], fileno(stdin)) < 0) {
+#ifdef NCBI_COMPILER_MW_MSL  // Codewarrior's MSL library does not have fileno().
+            if ( dup2(fd_pipe_in[0], 0) < 0)
+#else
+            if ( dup2(fd_pipe_in[0], fileno(stdin)) < 0)
+#endif
+            {
                 _exit(status);
             }
             close(fd_pipe_in[0]);
             close(fd_pipe_in[1]);
         }
         if ( mode_stdout != CPipe::eDoNotUse ) {
-            if ( dup2(fd_pipe_out[1], fileno(stdout)) < 0) {
+#ifdef NCBI_COMPILER_MW_MSL 
+            if ( dup2(fd_pipe_out[1], 1) < 0)
+#else
+            if ( dup2(fd_pipe_out[1], fileno(stdout)) < 0)
+#endif
+            {
                 _exit(status);
             }
             close(fd_pipe_out[0]);
             close(fd_pipe_out[1]);
         }
         if ( mode_stderr != CPipe::eDoNotUse ) {
-            if ( dup2(fd_pipe_err[1], fileno(stderr)) < 0) {
+#ifdef NCBI_COMPILER_MW_MSL 
+            if ( dup2(fd_pipe_err[1], 2) < 0)
+#else
+            if ( dup2(fd_pipe_err[1], fileno(stderr)) < 0)
+#endif
+            {
                 _exit(status);
             }
             close(fd_pipe_err[0]);
@@ -824,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/06/18 18:59:33  rsmith
+ * put in 0,1,2 for fileno(stdin/out/err) for library that does not have fileno().
+ *
  * Revision 1.20  2003/05/19 21:21:38  vakatov
  * Get rid of unnecessary unreached statement
  *
