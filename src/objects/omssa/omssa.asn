@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.4 2003/12/04 23:39:07 lewisg Exp $
+-- $Id: omssa.asn,v 1.5 2004/03/01 18:23:19 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -36,31 +36,33 @@ MSSpectrumset ::= SEQUENCE OF MSSpectrum
 -- enumerate enzymes
 
 MSEnzymes ::= INTEGER {
-	trypsin (1),
-	argc (2),
-	aspn (3),
-	chymotrypsin (4),
-	formicacid (5),
-	lysc (6),
-	lyscp (7),
-	pepsina (8),
-	tryp-cnbr (9),
-	trychymo (10),
-	trypsinp (11),
-	v8de (12),
-	v8e (13),
-	none (14)  -- always highest bound
+	trypsin (0),
+	argc (1),
+	aspn (2),
+	chymotrypsin (3),
+	formicacid (4),
+	lysc (5),
+	lyscp (6),
+	pepsina (7),
+	tryp-cnbr (8),
+	trychymo (9),
+	trypsinp (10),
+	v8de (11),
+	v8e (12),
+	none (255)
 	}
 
 
 -- enumerate modifications
 
 MSMod ::= INTEGER {
-    ntermacetyl (1),  -- n term acetylation
-    moxy (2),         -- oxidation of methionine
-    mcleave (3),      -- cleave n-term methionine
-	none(4)           -- always highest bound
-	}
+    ntermacetyl (0),  -- n term acetylation
+    moxy (1),         -- oxidation of methionine
+    mcleave (2),      -- cleave n-term methionine
+    mcarbamidomethyl(3), -- carbamidomethyl methionine
+    deamidation (4),
+    none(255)
+    }
 
 
 -- How is charge to be handled?  Some input files are not clear
@@ -68,8 +70,14 @@ MSMod ::= INTEGER {
 -- even though the charge is not really known.
 
 MSChargeHandle ::= INTEGER {
-	calculate (1),  -- guess the charge(s) from the data
-	usefile (2)     -- use what the input file says
+	calculate (0),  -- guess the charge(s) from the data
+	usefile (1)     -- use what the input file says
+	}
+
+-- Search type
+MSSearchType ::= INTEGER {
+	monoisotopic(0),
+	average(1)
 	}
 
 
@@ -77,6 +85,7 @@ MSChargeHandle ::= INTEGER {
 
 MSRequest ::= SEQUENCE {
 	spectra MSSpectrumset,
+	searchtype MSSearchType,  -- average or monoisotopic?
 	peptol REAL,  -- peptide mass tolerance
 	msmstol REAL, -- msms mass tolerance
           -- next 3 fields define intensity fraction below
@@ -105,12 +114,12 @@ MSRequest ::= SEQUENCE {
 -- enumeration of ion types
 
 MSIonType ::= INTEGER {
-	a (1),
-	b (2),
-        c (3),
-	x (4),
-	y (5),
-	z (6)
+	a (0),
+	b (1),
+        c (2),
+	x (3),
+	y (4),
+	z (5)
 	}
 	
 
