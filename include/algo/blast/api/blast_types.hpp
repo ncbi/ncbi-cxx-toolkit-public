@@ -46,6 +46,8 @@ BEGIN_SCOPE(blast)
 /// This enumeration is to evolve into a task/program specific list that 
 /// specifies sets of default parameters to easily conduct searches using
 /// BLAST.
+/// @todo EProgram needs to be renamed to denote a task (similar to those
+/// exposed by the BLAST web page) rather than a program type
 /// N.B.: When making changes to this enumeration, please update 
 /// blast::ProgramNameToEnum (blast_aux.[ch]pp), blast::GetNumberOfFrames
 /// (blast_setup_cxx.cpp) and BlastNumber2Program and BlastProgram2Number
@@ -104,6 +106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/03/29 19:50:39  camacho
+* doxygen comments
+*
 * Revision 1.17  2004/12/03 22:24:08  camacho
 * Updated documentation
 *
