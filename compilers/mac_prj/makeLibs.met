@@ -3,6 +3,8 @@
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
+
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
 -- false if we want to stop on an error.
@@ -50,6 +52,8 @@ global gRsrcsDir
 global gMakeDir
 global gLibsDir
 global gFLTKRootFolder
+global gBdbRootFolder
+
 
 global gProjectData
 
@@ -226,7 +230,36 @@ on SetProjectData()
 		AddSimpleProjectExceptFiles("xser", {}, "serial", Â
 			{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"})
 		AddSimpleProject("xutil", {}, "util")
+		AddSimpleProject("regexp", {}, "util:regexp")
 		AddSimpleProject("ximage", {}, "util:image")
+		AddSimpleProject("bdb", {"bdb"}, "bdb")
+		
+		set libdbFiles to {Â
+			mkFileData(gBdbRootFolder & "btree"), Â
+			mkFileDataExceptFiles(gBdbRootFolder & "common", {"util_arg.c"}), Â
+			mkFileData(gBdbRootFolder & "crypto"), Â
+			mkFileData(gBdbRootFolder & "crypto:mersenne"), Â
+			mkFileData(gBdbRootFolder & "crypto:rijndael"), Â
+			mkFileData(gBdbRootFolder & "db"), Â
+			mkFileData(gBdbRootFolder & "dbm"), Â
+			mkFileData(gBdbRootFolder & "dbreg"), Â
+			mkFileData(gBdbRootFolder & "env"), Â
+			mkFileData(gBdbRootFolder & "fileops"), Â
+			mkFileData(gBdbRootFolder & "hash"), Â
+			mkFileData(gBdbRootFolder & "hmac"), Â
+			mkFileData(gBdbRootFolder & "hsearch"), Â
+			mkFileData(gBdbRootFolder & "lock"), Â
+			mkFileData(gBdbRootFolder & "log"), Â
+			mkFileData(gBdbRootFolder & "mp"), Â
+			mkFileDataListFiles(gBdbRootFolder & "mutex", {"mutex.c", "mut_pthread.c"}), Â
+			mkFileData(gBdbRootFolder & "os"), Â
+			mkFileData(gBdbRootFolder & "qam"), Â
+			mkFileData(gBdbRootFolder & "rep"), Â
+			mkFileData(gBdbRootFolder & "txn"), Â
+			mkFileData(gBdbRootFolder & "xa")}
+		AddProject(ProjectData("libdb", {"bdblib"}, libdbFiles))
+		
+		
 	end if
 	
 	if pCreateObjectLibs then
@@ -289,7 +322,8 @@ on SetProjectData()
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
 		AddSimpleProject("xflat", {}, "objtools:flat")
-		--  AddSimpleProject("lds", {}, "objtools:lds") -- no bdb on Mac.
+		AddSimpleProject("lds", {}, "objtools:lds")
+		AddSimpleProject("lds_admin", {}, "objtools:lds:admin")
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
 	end if
@@ -340,7 +374,8 @@ on SetProjectData()
 		set SomeObjects to {"biblio", "general", "medline", "pub"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
-		set XUtils to {"xconnect", "xncbi", "xser", "xutil"}
+		set XUtils to {"xconnect", "xncbi", "xser", "xutil", "regexp"}
+		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		set UsualStatics to MostObjects & XUtils
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
@@ -351,16 +386,14 @@ on SetProjectData()
 		AddProject(DataPlusLibs(gui_core_data, UsualStatics & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
 		
 		-- PLUGINS --
-		-- AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {})
 		
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", {"xalgoseq"})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
-		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		
-		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", {"submit", "xobjread"})
+		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", {"submit", "xobjread"} & LdsLibs)
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
@@ -374,6 +407,9 @@ on SetProjectData()
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xalnmgr", "xflat"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xalnmgr", "xvalidate"})
+		
+		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {}) -- empty
+		AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {})
 		
 		
 	end if
@@ -421,40 +457,45 @@ on ModuleRoot()
 	return modRoot
 end ModuleRoot
 
-on IsFltkFolder(aFolder, findit)
+-- number of directories in a Posix path.
+on PathLength(aPath)
+	set {stid, text item delimiters of AppleScript} to {text item delimiters of AppleScript, "/"}
+	set n to length of (text items of aPath)
+	set text item delimiters of AppleScript to stid
+	return n
+end PathLength
+
+on IsSpecialFolder(aFolder, findit, filePattern)
 	set aFolder to ResolveAlias(aFolder)
 	if aFolder is "" then return ""
 	set pfolder to POSIX path of aFolder
 	if findit then
-		set aFltkRoot to do shell script ("ls -1r " & pfolder & "*/src/Fl.cxx | head -1")
+		set aRootFolder to do shell script ("ls -1r " & pfolder & "*/" & filePattern & " | head -1")
 	else
-		set aFltkRoot to do shell script ("ls -1r " & pfolder & "src/Fl.cxx | head -1")
+		set aRootFolder to do shell script ("ls -1r " & pfolder & filePattern & " | head -1")
 	end if
-	if aFltkRoot is "" then return ""
-	set aFltkRoot to (POSIX file aFltkRoot) as string
+	if aRootFolder is "" then return ""
+	set aRootFolder to (POSIX file aRootFolder) as string
+	set lastDirIndex to (PathLength(filePattern) + 1)
 	set text item delimiters of AppleScript to ":"
-	set aFltkRoot to (text items 1 thru -3 of aFltkRoot) as string
+	set aRootFolder to (text items 1 thru -lastDirIndex of aRootFolder) as string
 	set text item delimiters of AppleScript to ""
-	return aFltkRoot & ":"
-end IsFltkFolder
+	return aRootFolder & ":"
+end IsSpecialFolder
 
-on FLTKRoot()
+on FindSpecialFolder(default, pattern)
 	-- look where specified.
-	set aFltkRoot to IsFltkFolder(pFLTKRootFolder, false)
-	if aFltkRoot is "" then
+	set aSpecialFolder to IsSpecialFolder(default, false, pattern)
+	if aSpecialFolder is "" then
 		-- look next to the C++ toolkit directory.
-		set aFltkRoot to IsFltkFolder(pRootFolderPath, true)
-		if aFltkRoot is "" then
+		set aSpecialFolder to IsSpecialFolder(pRootFolderPath, true, pattern)
+		if aSpecialFolder is "" then
 			-- look in our home directory.
-			set aFltkRoot to IsFltkFolder(gHomeDir, true)
+			set aSpecialFolder to IsSpecialFolder(gHomeDir, true, pattern)
 		end if
 	end if
-	if aFltkRoot is "" and pCreateGuiLibs then
-		set pCreateGuiLibs to false
-		display dialog "Warning: Can't find FLTK. Not creating Gui libraries." with icon caution
-	end if
-	return aFltkRoot
-end FLTKRoot
+	return aSpecialFolder
+end FindSpecialFolder
 
 on GetMyPath()
 	set myPath to path to me as string
@@ -485,7 +526,17 @@ on SetGlobals()
 		set gLibsDir to gProjectsDir
 		set gRsrcsDir to gDistribRoot & "compilers:mac_prj:"
 		set gMakeDir to my GetMyPath()
-		set gFLTKRootFolder to my FLTKRoot()
+		set gFLTKRootFolder to my FindSpecialFolder(pFLTKRootFolder, "src/Fl.cxx")
+		if gFLTKRootFolder is "" and pCreateGuiLibs then
+			set pCreateGuiLibs to false
+			set pCreatePluginLibs to false
+			display dialog "Warning: Can't find FLTK. (download from www.fltk.org into your home directory). Not creating Gui libraries." with icon caution
+		end if
+		set gBdbRootFolder to my FindSpecialFolder(pBdbRootFolder, "dbinc/db_int.in")
+		if gBdbRootFolder is "" then
+			display dialog "Can't find bdb. (download from http://www.sleepycat.com/ into your home directory). Some libraries will fail to build." with icon caution
+			
+		end if
 	end tell
 end SetGlobals
 
@@ -552,6 +603,10 @@ on CopyHeaders()
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
 		
+		my UpdateHeader("db.h", prefixFolder)
+		my UpdateHeader("db_int.h", prefixFolder)
+		my UpdateHeader("db_config.h", prefixFolder)
+		
 		my UpdateHeader("debug.pfx", prefixFolder)
 		my UpdateHeader("release.pfx", prefixFolder)
 		my UpdateHeader("Carbon-debug.pfx", prefixFolder)
@@ -563,7 +618,7 @@ on CopyHeaders()
 	end tell
 end CopyHeaders
 
-on SetAccessPath(aPath, isRecursive, isUserPath)
+on AppendAccessPath(aPath, isRecursive, isUserPath)
 	tell application "CodeWarrior IDE"
 		if (aPath does not end with ":") then set aPath to aPath & ":"
 		
@@ -575,7 +630,27 @@ on SetAccessPath(aPath, isRecursive, isUserPath)
 			Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		end if
 	end tell
-end SetAccessPath
+end AppendAccessPath
+
+on PushAccessPath(aPath, isRecursive, isUserPath)
+	tell application "CodeWarrior IDE"
+		if (aPath does not end with ":") then set aPath to aPath & ":"
+		
+		set aPath to POSIX path of aPath
+		set pathToAdd to {name:aPath, recursive:isRecursive, origin:root relative, root:"OS X Volume", format:Unix Path}
+		if isUserPath then
+			set newPaths to Get Preferences of {User Paths} from panel "Access Paths"
+			copy pathToAdd to beginning of User Paths of newPaths
+			Set Preferences of panel "Access Paths" to {User Paths:{}}
+			Set Preferences of panel "Access Paths" to newPaths
+		else
+			set newPaths to Get Preferences of {System Paths} from panel "Access Paths"
+			copy pathToAdd to beginning of System Paths of newPaths
+			Set Preferences of panel "Access Paths" to {System Paths:{}}
+			Set Preferences of panel "Access Paths" to newPaths
+		end if
+	end tell
+end PushAccessPath
 
 on SetupTarget(proj, targetIndex)
 	tell application "CodeWarrior IDE"
@@ -673,8 +748,15 @@ on SetupTarget(proj, targetIndex)
 		end if
 		
 		if projFeatures contains "fltk" or projFeatures contains "fltklib" then
-			my SetAccessPath(gFLTKRootFolder & "FL:", false, true)
-			my SetAccessPath(gFLTKRootFolder, false, false)
+			my AppendAccessPath(gFLTKRootFolder & "FL:", false, true)
+			my AppendAccessPath(gFLTKRootFolder, false, false)
+		end if
+		if projFeatures contains "bdblib" then
+			my AppendAccessPath(gDistribRoot & "include:", false, true)
+			my AppendAccessPath(gBdbRootFolder, true, true)
+		end if
+		if projFeatures contains "bdb" then
+			my PushAccessPath(gDistribRoot & "include:", false, false)
 		end if
 		
 		-- Are we assuming a .c or a .cpp extension?
@@ -689,7 +771,7 @@ on SetupTarget(proj, targetIndex)
 	-- Add source files
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
-		my SetAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
+		my AppendAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
 		
 		set fileList to group's fileList
 		
@@ -713,7 +795,7 @@ on SetupTarget(proj, targetIndex)
 		end tell
 	end repeat
 	
-	my SetAccessPath(gDistribRoot & "include:", true, false)
+	my AppendAccessPath(gDistribRoot & "include:", true, false)
 	
 	tell application "CodeWarrior IDE"
 		
@@ -737,7 +819,7 @@ on SetupTarget(proj, targetIndex)
 		end repeat
 		
 		if projFeatures contains "libdl" then
-			my SetAccessPath("sw:lib", false, false)
+			my AppendAccessPath("sw:lib", false, false)
 			copy "/sw/lib/libdl.a" to end of filesToAdd
 		end if
 		
