@@ -1254,7 +1254,7 @@ public:
     /// @param where
     ///   Which end of the string to truncate space from. Default is to
     ///   truncate space from both ends (eTrunc_Both).
-    static void TruncateSpaces(string& str, ETrunc where=eTrunc_Both);
+    static void TruncateSpacesInPlace(string& str, ETrunc where=eTrunc_Both);
     
     /// Replace occurrences of a substring within a string.
     ///
@@ -2456,6 +2456,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.67  2004/10/05 16:34:10  shomrat
+ * in place TruncateSpaces changed to TruncateSpacesInPlace
+ *
  * Revision 1.66  2004/10/05 16:12:58  shomrat
  * + in place TruncateSpaces
  *

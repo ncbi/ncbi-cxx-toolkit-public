@@ -878,7 +878,7 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
 }
 
 
-void NStr::TruncateSpaces(string& str, ETrunc where)
+void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
 {
     if (str.empty()) return;
 
@@ -1634,6 +1634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.122  2004/10/05 16:35:51  shomrat
+ * in place TruncateSpaces changed to TruncateSpacesInPlace
+ *
  * Revision 1.121  2004/10/05 16:13:19  shomrat
  * + in place TruncateSpaces
  *
