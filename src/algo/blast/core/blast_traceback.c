@@ -779,7 +779,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
-        BlastExtensionParameters* ext_params,
+        const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options)
 {
@@ -827,7 +827,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
 
             BlastHSPListGetTraceback(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
-               ext_params, hit_params, db_options);
+               ext_params->options, hit_params, db_options);
          }
       }
    }
