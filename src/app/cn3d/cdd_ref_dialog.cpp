@@ -64,6 +64,8 @@
 #define ID_B_EDIT 10003
 #define ID_B_DELETE 10004
 #define ID_B_DONE 10005
+#define ID_B_UP 10006
+#define ID_B_DOWN 10007
 wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +92,7 @@ END_EVENT_TABLE()
 CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
-        sSet(structureSet), dialogHandle(handle)
+        sSet(structureSet), dialogHandle(handle), selectItem(0)
 {
     if (!structureSet || !(descrSet = structureSet->GetCDDDescrSet())) {
         ERRORMSG("CDDRefDialog::CDDRefDialog() - error getting descr set data");
@@ -110,9 +112,13 @@ CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAdd, ID_B_ADD, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEdit, ID_B_EDIT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bUp, ID_B_UP, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDown, ID_B_DOWN, wxButton)
     bAdd->Enable(!readOnly);
     bEdit->Enable(!readOnly);
     bDelete->Enable(!readOnly);
+    bUp->Enable(!readOnly);
+    bDown->Enable(!readOnly);
 
     // call sizer stuff
     topSizer->Fit(this);
@@ -138,9 +144,10 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     // get listbox and descr from selected item
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_L_REFS, wxListBox)
     CCdd_descr *descr = NULL;
-    if (listbox->GetSelection() >= 0 && listbox->GetSelection() < listbox->GetCount())
+    selectItem = listbox->GetSelection();
+    if (selectItem >= 0 && selectItem < listbox->GetCount())
         descr = dynamic_cast<CCdd_descr*>(
-            reinterpret_cast<CObject*>(listbox->GetClientData(listbox->GetSelection())));
+            reinterpret_cast<CObject*>(listbox->GetClientData(selectItem)));
 
     // launch URL given PMID
     if (event.GetId() == ID_B_LAUNCH && descr) {
@@ -160,6 +167,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             ref->SetReference().SetPmid().Set((int) pmidVal);
             descrSet->Set().push_back(ref);
             sSet->SetDataChanged(StructureSet::eCDDData);
+            selectItem = listbox->GetCount();
             ResetListBox();
         }
     }
@@ -189,6 +197,34 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             }
         }
     }
+    
+    else if ((event.GetId() == ID_B_UP || event.GetId() == ID_B_DOWN) && descr) {
+        CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end(), p = descrSet->Set().end(), n;
+        for (d=descrSet->Set().begin(); d!=de; d++) {
+            if (d->GetPointer() == descr) {
+                CRef < CCdd_descr > tmp(*d);
+                n = d;
+                do {        // find next pmid ref
+                    n++;
+                } while (n != descrSet->Set().end() && !((*n)->IsReference() && (*n)->GetReference().IsPmid()));
+                if (event.GetId() == ID_B_DOWN && n != descrSet->Set().end()) {
+                    *d = *n;
+                    *n = tmp;
+                    selectItem++;
+                } else if (event.GetId() == ID_B_UP && p != descrSet->Set().end()) {
+                    *d = *p;
+                    *p = tmp;
+                    selectItem--;
+                } else
+                    break;
+                sSet->SetDataChanged(StructureSet::eCDDData);
+                ResetListBox();
+                break;
+            }
+            if ((*d)->IsReference() && (*d)->GetReference().IsPmid())
+                p = d;      // keep prev pmid ref
+        }
+    }
 
     else if (event.GetId() == ID_B_DONE) {
         Destroy();
@@ -209,6 +245,8 @@ void CDDRefDialog::ResetListBox(void)
             listbox->Append(title, d->GetPointer());
         }
     }
+    if (selectItem >= 0 && selectItem < listbox->GetCount())
+        listbox->SetSelection(selectItem, true);
 }
 
 END_SCOPE(Cn3D)
@@ -245,6 +283,12 @@ wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxButton *item9 = new wxButton( parent, ID_B_DELETE, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
 
+    wxButton *item12 = new wxButton( parent, ID_B_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item13 = new wxButton( parent, ID_B_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
+
     item3->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item1->Add( item3, 0, wxALIGN_CENTRE, 5 );
@@ -276,6 +320,9 @@ wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/06/13 19:12:58  thiessen
+* add move up/down buttons, selection control
+*
 * Revision 1.7  2003/02/03 19:20:01  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

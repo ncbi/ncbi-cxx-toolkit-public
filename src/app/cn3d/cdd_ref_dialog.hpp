@@ -62,6 +62,7 @@ private:
     StructureSet *sSet;
     CDDRefDialog **dialogHandle;
     ncbi::objects::CCdd_descr_set *descrSet;
+    int selectItem;
 
     void ResetListBox(void);
 
@@ -79,6 +80,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/06/13 19:12:58  thiessen
+* add move up/down buttons, selection control
+*
 * Revision 1.4  2003/02/03 19:20:01  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
