@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/12/05 17:16:56  thiessen
+* fix row insert bug
+*
 * Revision 1.36  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -802,18 +805,23 @@ void SequenceDisplay::AddBlockBoundaryRows(void)
     if (!IsEditable()) return;
 
     // find alignment master rows
-    RowVector::iterator r, ri, re = rows.end();
-    for (r=rows.begin(); r!=re; r++) {
-        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(*r);
-        if (!alnRow || alnRow->row != 0 || !alnRow->alignment) continue;
+    int i = 0;
+    std::map < const BlockMultipleAlignment * , bool > doneForAlignment;
+    do {
+        RowVector::iterator r;
+        for (r=rows.begin(), i=0; i<rows.size(); r++, i++) {
+            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(*r);
+            if (!alnRow || alnRow->row != 0 || !alnRow->alignment ||
+                doneForAlignment.find(alnRow->alignment) != doneForAlignment.end()) continue;
 
-        // insert block row there - and increment r a second time, since this is a vector
-        DisplayRowFromString *blockBoundaryRow = CreateBlockBoundaryRow(alnRow->alignment);
-        ri = r;
-        rows.insert(ri, blockBoundaryRow);
-        r++;
-        UpdateBlockBoundaryRow(blockBoundaryRow);
-    }
+            // insert block row before each master row
+            DisplayRowFromString *blockBoundaryRow = CreateBlockBoundaryRow(alnRow->alignment);
+            UpdateBlockBoundaryRow(blockBoundaryRow);
+            rows.insert(r, blockBoundaryRow);
+            doneForAlignment[alnRow->alignment] = true;
+            break;  // insert on vector can cause invalidation of iterators, so start over
+        }
+    } while (i < rows.size());
 
     if (*viewerWindow) (*viewerWindow)->UpdateDisplay(this);
 }
