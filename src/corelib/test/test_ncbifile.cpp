@@ -289,10 +289,10 @@ static void s_TEST_File(void)
          << ((other & CDirEntry::fWrite)   ? "w" : "-")
          << ((other & CDirEntry::fExecute) ? "x" : "-")
          << endl;
-    time_t ftime;
+    CTime ftime;
     assert( f.GetTime(&ftime) );
-    CTime ft(ftime);
-    cout << "File creation time : " << ft.AsString("M/D/Y h:m:s Z") << endl;
+    cout << "File modification time : " << 
+        ftime.AsString("M/D/Y h:m:s Z") << endl;
     
     // Remove the file
     assert( f.Remove() );
@@ -518,6 +518,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/06/07 16:11:38  ivanov
+ * Chenget GetTime() -- using CTime instead time_t, modification time by default
+ *
  * Revision 1.15  2002/06/07 15:21:33  ivanov
  * Added CDirEntry::GetTime() test example
  *

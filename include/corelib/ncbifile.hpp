@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
 #include <vector>
 
 
@@ -172,8 +173,11 @@ public:
     EType GetType(void) const;
 
     // Get time of entry. Returns TRUE if time was acquired or FALSE otherwise.
-    bool GetTime(time_t *creation, time_t *modification = 0, 
-                 time_t *last_access = 0) const;
+    // NOTE: "creation" time under MS windows is actual creation time of the
+    //       entry. Under UNIX "creation" time is a time of last entry status
+    //       change.
+    bool GetTime(CTime *modification, CTime *creation = 0, 
+                 CTime *last_access = 0) const;
 
     //
     // Access permissions
@@ -519,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/06/07 16:11:09  ivanov
+ * Chenget GetTime() -- using CTime instead time_t, modification time by default
+ *
  * Revision 1.12  2002/06/07 15:20:41  ivanov
  * Added CDirEntry::GetTime()
  *

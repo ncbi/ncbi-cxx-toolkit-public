@@ -693,8 +693,8 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 }
 
 
-bool CDirEntry::GetTime(time_t *creation, time_t *modification,
-                        time_t *last_access) const
+bool CDirEntry::GetTime(CTime *modification,
+                        CTime *creation, CTime *last_access) const
 {
 #if defined(NCBI_OS_MAC)
     ???
@@ -703,14 +703,14 @@ bool CDirEntry::GetTime(time_t *creation, time_t *modification,
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
     }
-    if (creation) {
-        *creation = st.st_ctime; 
-    }
     if (modification) {
-        *modification = st.st_mtime; 
+        modification->SetTimeT(st.st_mtime);
+    }
+    if (creation) {
+        creation->SetTimeT(st.st_ctime);
     }
     if (last_access) {
-        *last_access = st.st_atime; 
+        last_access->SetTimeT(st.st_atime);
     }
 #  endif
     return true;
@@ -1341,6 +1341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/06/07 16:11:37  ivanov
+ * Chenget GetTime() -- using CTime instead time_t, modification time by default
+ *
  * Revision 1.23  2002/06/07 15:21:06  ivanov
  * Added CDirEntry::GetTime()
  *
