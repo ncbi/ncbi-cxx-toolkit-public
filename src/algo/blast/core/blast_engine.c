@@ -377,7 +377,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
 {
-   double alpha, beta; /*alpha and beta for new scoring system */
+   double alpha=0, beta=0; /*alpha and beta for new scoring system */
    Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
    Int4 index;		/* loop index. */
    Int4	db_num_seqs;	/* number of sequences in database. */
