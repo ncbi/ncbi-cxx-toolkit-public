@@ -113,7 +113,8 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 			  CMSMod &FixedMods,
 			  const char **Site,
 			  int *DeltaMass,
-			  const int *IntCalcMass  // array of int AA masses
+			  const int *IntCalcMass,  // array of int AA masses
+              int *ModEnum       // the mod type at each site
 			  )
 {
     char SeqChar;
@@ -125,21 +126,21 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 
 	// check for mods that are type AA only
 	CheckAAMods(eModAA, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
-		    DeltaMass, *PepStart);
+		    DeltaMass, *PepStart, ModEnum);
 
 
 	// n terminus
 	if(*PepStart == SeqStart) {
 	    // check non-specific mods
 	    CheckNonSpecificMods(eModN, VariableMods, NumMod, MaxNumMod, Site,
-				 DeltaMass, *PepStart);
+				 DeltaMass, *PepStart, ModEnum);
 	    // todo: treat n-term fixed mods as true fixed mods
 	    CheckNonSpecificMods(eModN, FixedMods, NumMod, MaxNumMod, Site,
-				 DeltaMass, *PepStart);
+				 DeltaMass, *PepStart, ModEnum);
 
 	    // check specific mods
 	    CheckAAMods(eModNAA, VariableMods, NumMod, SeqChar, MaxNumMod,
-			Site, DeltaMass, *PepStart);
+			Site, DeltaMass, *PepStart, ModEnum);
 	}
 
 	CalcMass(SeqChar, Masses, IntCalcMass);
@@ -498,6 +499,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.10  2004/07/22 22:22:58  lewisg
+  output mods
+
   Revision 1.9  2004/06/23 22:34:36  lewisg
   add multiple enzymes
 

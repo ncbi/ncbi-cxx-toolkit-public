@@ -54,6 +54,8 @@ BEGIN_SCOPE(omssa)
 // maximum number of calculable ladders
 #define MAXMOD2 64
 
+// max length of sequence accession
+const int kAccLen = 20;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -130,6 +132,16 @@ public:
     double CalcNormalTopHit(double Mean, double TopHitProb);
     double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
 
+	///
+	///  Adds modification information to hitset
+	///
+	void AddModsToHit(CMSHits *Hit, CMSHit *MSHit);
+
+	///
+	///  Makes a string hashed out of the sequence plus mods
+	///
+	void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
+
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		   double ThreshStart, double ThreshEnd,
@@ -149,7 +161,9 @@ public:
 			  const char *Site[][MAXMOD],
 			  int DeltaMass[][MAXMOD],
 			  int Masses[],
-			  int EndMasses[]);
+			  int EndMasses[],
+            int ModEnum[][MAXMOD]
+            );
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
 			       const char *PepStart[],
@@ -241,6 +255,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.14  2004/07/22 22:22:58  lewisg
+  output mods
+
   Revision 1.13  2004/07/06 22:38:05  lewisg
   tax list input and user settable modmax
 

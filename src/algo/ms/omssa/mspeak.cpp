@@ -70,6 +70,9 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
 		SetHitInfo(iHitInfo).SetIon() = (char) Ladder.GetType();
 		SetHitInfo(iHitInfo).SetNumber() = (short) i;
 		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
+		//  for poisson test
+		SetHitInfo(iHitInfo).SetMz() = Ladder[i];
+		//
 		iHitInfo++;
 	    }
 	}
@@ -80,29 +83,86 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
 
 }
 
+
+///
+///  Count Modifications in Mask
+///
+
+int CMSHit::CountMods(unsigned ModMask, int NumMod)
+{
+	int i, retval(0);
+	for(i = 0; i < NumMod; i++)
+		if(ModMask & (1 << i)) retval++;
+	return retval;
+}
+
+
+///
+///  Record the modifications used in the hit
+///
+
+void CMSHit::RecordModInfo(unsigned ModMask,
+						   const char **Site,
+						   int *ModEnum,
+						   int NumMod,
+						   const char *PepStart
+						   )
+{
+	int i, j(0);
+	for(i = 0; i < NumMod; i++) {
+		if(ModMask & (1 << i)) {
+			SetModInfo(j).SetModEnum() = ModEnum[i];
+			SetModInfo(j).SetSite() = Site[i] - PepStart ;
+			j++;
+		}
+	}
+}
+
+
 // make a record of the ions hit
-void CMSHit::RecordMatches(CLadder& BLadder, CLadder& YLadder,
-			   CLadder& B2Ladder,
-			   CLadder& Y2Ladder, CMSPeak *Peaks)
+void CMSHit::RecordMatches(CLadder& BLadder, 
+						   CLadder& YLadder,
+						   CLadder& B2Ladder,
+						   CLadder& Y2Ladder,
+						   CMSPeak *Peaks,
+						   unsigned ModMask,
+						   const char **Site,
+						   int *ModEnum,
+						   int NumMod,
+						   const char *PepStart
+						   )
 {
     // create hitlist.  note that this is deleted in the copy operator
     HitInfo.reset(new CMSHitInfo[Hits]);
+
+	// need to calculate the number of mods from mask and NumMod(?)
+	NumModInfo = CountMods(ModMask,NumMod);
+	ModInfo.reset(new CMSModInfo[NumModInfo]);
+
+
     // increment thru hithist
     int iHitInfo(0); 
     int Which = Peaks->GetWhich(Charge);
 
     // scan thru each ladder
     if(Charge >= kConsiderMult) {
-	RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
-	RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
-	RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which);
-	RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which);
     }
     else {
-	RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
-	RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
+		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
     }
 
+	// need to make function to save the info in ModInfo
+	RecordModInfo(ModMask,
+				  Site,
+				  ModEnum,
+				  NumMod,
+				  PepStart
+				  );
 }
 
 // return number of hits above threshold
@@ -116,7 +176,23 @@ int CMSHit::GetHits(double Threshold, int MaxI)
     return retval;
 }
 
+  // for poisson test
+// return number of hits above threshold scaled by m/z positions
+int CMSHit::GetHits(double Threshold, int MaxI, int High)
+{
+    int i ;
+    float retval(0);
 
+    for(i = 0; i < Hits; i++)
+      if(SetHitInfo(i).GetIntensity() > MaxI*Threshold) {
+	if (SetHitInfo(i).GetMz() > High/2)
+	  retval += 0.5 + 2.0*(High - SetHitInfo(i).GetMz())/(float)High;
+	else
+	  retval += 1.5 - 2.0*SetHitInfo(i).GetMz()/(float)High;
+      }
+    return (int)(retval+0.5);
+}
+  //
 
 /////////////////////////////////////////////////////////////////////////////
 //

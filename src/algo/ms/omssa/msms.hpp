@@ -194,7 +194,8 @@ public:
 			    CMSMod &FixedMods,
 			    const char **Site,
 			    int *DeltaMass,
-			    const int *IntCalcMass  // array of int AA masses
+			    const int *IntCalcMass,  // array of int AA masses
+                int *ModEnum     // the mod type at each site
 		    );
 
     ///
@@ -223,7 +224,9 @@ public:
 			      int MaxNumMod,  // maximum mods for a peptide
 			      const char **Site,  // list of mod sites
 			      int *DeltaMass, // mass of mod
-			      const char *iPepStart);  // position in protein
+			      const char *iPepStart, // position in protein
+                  int *ModEnum   // enum of mod
+                   ); 
 
     ///
     /// looks for amino acid specific ptms
@@ -235,8 +238,9 @@ public:
 		     int MaxNumMod,  // maximum mods for a peptide
 		     const char **Site,  // list of mod sites
 		     int *DeltaMass, // mass of mod
-		     const char *iPepStart);  // position in protein
-
+		     const char *iPepStart,  // position in protein
+             int *ModEnum   // enum of mod
+             );
 protected:
     int ProtonMass; // mass of the proton
     int TermMass;  // mass of h2o
@@ -278,7 +282,8 @@ void CCleave::EndMass( int *EndMasses
 inline
 void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
 			 char SeqChar, int MaxNumMod, const char **Site,
-			 int *DeltaMass, const char *iPepStart)
+			 int *DeltaMass, const char *iPepStart,
+        int *ModEnum)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -290,6 +295,7 @@ void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
 	    if (SeqChar == ModChar[iChar][*iMods] && NumMod < MaxNumMod) {
 		Site[NumMod] = iPepStart;
 		DeltaMass[NumMod] = ModMass[*iMods];
+        ModEnum[NumMod] = *iMods;
 		NumMod++; 
 	    }
 	}
@@ -301,7 +307,8 @@ inline
 void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 				   int& NumMod, int MaxNumMod,
 				   const char **Site,
-				   int *DeltaMass, const char *iPepStart)
+				   int *DeltaMass, const char *iPepStart,
+        int *ModEnum )
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -311,6 +318,7 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 	if (NumMod < MaxNumMod) {
 	    Site[NumMod] = iPepStart;
 	    DeltaMass[NumMod] = ModMass[*iMods];
+        ModEnum[NumMod] = *iMods;
 	    NumMod++; 
 	}
     }
@@ -450,6 +458,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.10  2004/07/22 22:22:58  lewisg
+  output mods
+
   Revision 1.9  2004/06/23 22:34:36  lewisg
   add multiple enzymes
 

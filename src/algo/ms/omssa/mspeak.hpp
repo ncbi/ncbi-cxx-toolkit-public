@@ -72,16 +72,77 @@ public:
     const char GetIon(void) { return Ion; }
     short int& SetNumber(void) { return Number; }
     const short  GetNumber(void) { return Number; }
-    short int& SetMod(void) { return Mod; }
-    const short GetMod(void) { return Mod; }
     unsigned& SetIntensity(void) { return Intensity; }
     const unsigned GetIntensity(void) { return Intensity; }
-    
+
+  // for poisson test
+    int& SetMz(void) { return mz; }
+    const int GetMz(void) { return mz; }
+  //
+
 private:
     char Charge, Ion;
-    short Number, Mod;
+    short Number;
     unsigned Intensity;
+  // for poisson test
+  int mz;
+  //
 };
+
+
+///
+///  Class to hold mod information for a hit
+///
+
+class NCBI_XOMSSA_EXPORT CMSModInfo {
+public:
+	const int GetModEnum(void) const;
+	int& SetModEnum(void);
+
+	const int GetSite(void) const;
+	int& SetSite(void);
+
+private:
+	// the mod type
+	int ModEnum;
+	// the position in the peptide
+	int Site;
+};
+
+
+///////////////////  CMSModInfo inline methods
+
+inline
+const int CMSModInfo::GetModEnum(void) const
+{
+	return ModEnum;
+}
+
+inline
+int& CMSModInfo::SetModEnum(void)
+{
+	return ModEnum;
+}
+
+inline
+const int CMSModInfo::GetSite(void) const
+{
+	return Site;
+}
+
+inline
+int& CMSModInfo::SetSite(void)
+{
+	return Site;
+}
+
+
+///////////////////  end CMSModInfo inline methods
+
+
+
+// typedef for holding hit information
+typedef AutoPtr <CMSModInfo, ArrayDeleter<CMSModInfo> > TModInfo;
 
 // typedef for holding hit information
 typedef AutoPtr <CMSHitInfo, ArrayDeleter<CMSHitInfo> > THitInfo;
@@ -97,28 +158,68 @@ public:
     ~CMSHit();
 
     // getter-setters
-    int GetStart(void);
+    const int GetStart(void) const;
     void SetStart(int StartIn);
-    int GetStop(void);
+    const int GetStop(void) const;
     void SetStop(int StopIn);
-    int GetSeqIndex(void);
+    const int GetSeqIndex(void) const;
     void SetSeqIndex(int IndexIn);
-    int GetMass(void);
+    const int GetMass(void) const;
     void SetMass(int MassIn);
-    int GetHits(void);
+    const int GetHits(void) const;
     void SetHits(int HitsIn);
-    int GetCharge(void);
+    const int GetCharge(void) const;
     void SetCharge(int ChargeIn);
     CMSHitInfo& SetHitInfo(int n);
+	const CMSModInfo& GetModInfo(int n) const;
+	const int GetNumModInfo(void) const;
+	CMSModInfo& SetModInfo(int n);
 
     // return number of hits above threshold
     int GetHits(double Threshold, int MaxI);
 
-    // make a record of the ions hit
-    void RecordMatches(CLadder& BLadder, CLadder& YLadder, CLadder& B2Ladder,
-		       CLadder& Y2Ladder, CMSPeak *Peaks);
+  // for poisson test
+// return number of hits above threshold scaled by m/z positions
+    int GetHits(double Threshold, int MaxI, int High);
 
-    // copy operator
+    // make a record of the ions hit
+    void RecordMatches(CLadder& BLadder,
+					   CLadder& YLadder, 
+					   CLadder& B2Ladder,
+					   CLadder& Y2Ladder,
+					   CMSPeak *Peaks,
+					   unsigned ModMask,
+					   const char **Site,
+					   int *ModEnum,
+					   int NumMod,
+					   const char *PepStart
+						);
+
+
+	///
+	///  Count Modifications in Mask
+	///
+	
+	int CountMods(unsigned ModMask, int NumMod);
+
+
+	///
+	///  Record the modifications used in the hit
+	///
+
+
+	void RecordModInfo(unsigned ModMask,
+							   const char **Site,
+							   int *DeltaMass,
+							   int NumMod,
+							   const char *PepStart
+							   );
+
+
+	///
+    /// copy operator
+	///
+
     CMSHit& operator= (CMSHit& in);
 
 protected:
@@ -133,95 +234,133 @@ private:
     int Hits;  // number of peaks hit
     int Charge;  // the charge of the hit
     THitInfo HitInfo;
+	TModInfo ModInfo;
+	int NumModInfo;
 };
 
 
 /////////////////// CMSHit inline methods
 
-inline CMSHit::CMSHit(void): Hits(0)
+inline 
+CMSHit::CMSHit(void): Hits(0)
 {}
 
-inline CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn):
+inline 
+CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn):
     Start(StartIn), Stop(StopIn), Index(IndexIn), Hits(0)
 {}
 
-inline CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn, int MassIn, int HitsIn,
+inline 
+CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn, int MassIn, int HitsIn,
 		      int ChargeIn):
     Start(StartIn), Stop(StopIn), Index(IndexIn), Mass(MassIn),
     Hits(HitsIn), Charge(ChargeIn)
 {}
 
-inline CMSHit::~CMSHit() 
+inline 
+CMSHit::~CMSHit() 
 { 
     //    delete [] HitInfo; 
 }
 
-inline int CMSHit::GetStart(void) 
+inline 
+const int CMSHit::GetStart(void) const
 { 
     return Start;
 }
 
-inline void CMSHit::SetStart(int StartIn) 
+inline 
+void CMSHit::SetStart(int StartIn) 
 { 
     Start = StartIn;
 }
 
-inline int CMSHit::GetStop(void) 
+inline 
+const int CMSHit::GetStop(void) const
 { 
     return Stop; 
 }
 
-inline void CMSHit::SetStop(int StopIn) 
+inline 
+void CMSHit::SetStop(int StopIn) 
 { 
     Stop = StopIn; 
 }
 
-inline int CMSHit::GetSeqIndex(void) 
+inline 
+const int CMSHit::GetSeqIndex(void) const
 { 
     return Index; 
 }
 
-inline void CMSHit::SetSeqIndex(int IndexIn) 
+inline 
+void CMSHit::SetSeqIndex(int IndexIn) 
 { 
     Index = IndexIn; 
 }
 
-inline int CMSHit::GetMass(void) 
+inline 
+const int CMSHit::GetMass(void) const
 { 
     return Mass; 
 }
 
-inline void CMSHit::SetMass(int MassIn) 
+inline 
+void CMSHit::SetMass(int MassIn) 
 { 
     Mass = MassIn; 
 }
 
-inline int CMSHit::GetHits(void) 
+inline 
+const int CMSHit::GetHits(void) const
 {
     return Hits;
 }
 
-inline void CMSHit::SetHits(int HitsIn) 
+inline 
+void CMSHit::SetHits(int HitsIn) 
 { 
     Hits = HitsIn;
 }
 
-inline int CMSHit::GetCharge(void)
+inline 
+const int CMSHit::GetCharge(void) const
 {
     return Charge;
 }
 
-inline void CMSHit::SetCharge(int ChargeIn)
+inline 
+void CMSHit::SetCharge(int ChargeIn)
 {
     Charge = ChargeIn;
 }
 
-inline CMSHitInfo& CMSHit::SetHitInfo(int n)
+inline 
+CMSHitInfo& CMSHit::SetHitInfo(int n)
 {
     return *(HitInfo.get() + n);
 }
 
-inline CMSHit& CMSHit::operator= (CMSHit& in) 
+inline 
+CMSModInfo& CMSHit::SetModInfo(int n)
+{
+    return *(ModInfo.get() + n);
+}
+
+inline 
+const CMSModInfo& CMSHit::GetModInfo(int n) const
+{
+    return *(ModInfo.get() + n);
+}
+
+inline 
+const int CMSHit::GetNumModInfo(void) const
+{
+	return NumModInfo;
+}
+
+inline 
+CMSHit& CMSHit::operator= (CMSHit& in) 
 { 
     Start = in.Start; 
     Stop = in.Stop;
@@ -733,6 +872,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.16  2004/07/22 22:22:58  lewisg
+  output mods
+
   Revision 1.15  2004/06/08 19:46:21  lewisg
   input validation, additional user settable parameters
 
