@@ -113,15 +113,16 @@ void CPubseqReader::SetParalellLevel(unsigned size)
 
 CDB_Connection *CPubseqReader::NewConn()
 {
-  C_DriverMgr drvMgr;
-  FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib");
-  if(! createContextFunc)
-    throw runtime_error("No ctlib available");
-
   if(m_Context.get() == NULL)
-    m_Context.reset((*createContextFunc)(0));
+  {
+    C_DriverMgr drvMgr;
+    FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib");
+    if(! createContextFunc)
+      throw runtime_error("No ctlib available");
 
-  return m_Context->Connect(m_Server,m_User,m_Password, 0);
+    m_Context.reset((*createContextFunc)(0));
+  }
+  return m_Context->Connect(m_Server, m_User, m_Password, 0);
 }
 
 void CPubseqReader::Reconnect(unsigned conn)
@@ -371,6 +372,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2002/04/12 14:52:34  butanaev
+* Typos fixed, code cleanup.
+*
 * Revision 1.6  2002/04/11 20:03:26  kimelman
 * switch to pubseq
 *

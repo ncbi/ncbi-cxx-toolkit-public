@@ -40,9 +40,9 @@ using namespace std;
 
 int main()
 {
-  for(int i = 0; i < 10; ++i)
+  for(int k = 0; k < 10; ++k)
   {
-    cout << "K: " << i << "\n";
+    cout << "K: " << k << endl;
 
     CPubseqReader reader;
     CSeq_id seqId;
@@ -60,9 +60,11 @@ int main()
         cout << "Class=" << blob->Class() << " Descr=" << blob->Descr() << endl;
         {
           ofstream ofs("/dev/null");
-          CObjectOStreamAsn oAsnOut(cout);
-          oAsnOut << *blob->Seq_entry();
-          ofs << endl;
+          //ostream &o = ofs;
+          ostream &o = cout;
+          CObjectOStreamAsn oos(o);
+          oos << *blob->Seq_entry();
+          o << endl;
         }
       }
     }
@@ -72,6 +74,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.2  2002/04/12 14:52:34  butanaev
+* Typos fixed, code cleanup.
+*
 * Revision 1.1  2002/04/08 21:45:58  butanaev
 * Added test for pubseq reader.
 *
