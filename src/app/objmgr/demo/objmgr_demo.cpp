@@ -510,8 +510,8 @@ int CDemoApp::Run(void)
                     size_t size = seq_vect.size();
                     seq_vect.GetSeqData(0, size, sout);
                     NcbiCout << " data["<<size<<"] = ";
-                    size_t start = min(size, 10u);
-                    size_t end = min(size-start, 10u);
+                    size_t start = min(size, size_t(10));
+                    size_t end = min(size-start, size_t(10));
                     NcbiCout << NStr::PrintableString(sout.substr(0, start));
                     if ( start + end != size )
                         NcbiCout << "..";
@@ -806,6 +806,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/07/12 19:21:14  ucko
+* Don't assume that size_t == unsigned.
+*
 * Revision 1.70  2004/07/12 17:08:01  vasilche
 * Allow limited processing to have benefits from split blobs.
 *
