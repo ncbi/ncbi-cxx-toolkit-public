@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/09/06 20:45:27  ucko
+ * Fix scope of i_out (caught by gcc 3.0.1).
+ *
  * Revision 6.1  2001/08/24 00:32:45  vakatov
  * Initial revision
  *
@@ -181,136 +184,138 @@ void CGencode::x_Translate
     if((uLength % 3) != 0)
         out_seq_data[out_seq_data.size()-1] = 'X';
 
-    // Declare iterator for out_seq_data
-    string::iterator i_out;
+    {{
+	// Declare iterator for out_seq_data
+	string::iterator i_out;
 
-    // Get just before beginning of out_seq_data.
-    // i_out is incremented by one below before first use.
-    i_out = out_seq_data.begin()-1;
+	// Get just before beginning of out_seq_data.
+	// i_out is incremented by one below before first use.
+	i_out = out_seq_data.begin()-1;
 
-    // Translate.
-    // m_AaIdx is used to calculate an index for gc (genetic code in
-    // Ncbieaa) and sc (start codon string in Sncbieaa). The index to gc
-    // and sc are determined from a triplet of na residues. m_Tran and
-    // m_CTran are used to determine an index from an na
-    // residue. This index is used in the second dimension of m_AaIdx.
-    // The indices are: 0=T, 1=C; 2=A, 3=G, and 4=X.
-    // The first dimension to m_AaIdx correspondes to the na residue
-    // position in a triplet (0, 1, or 2). m_Tran is used for the
-    // plus strand, and m_CTran is used for the minus strand (reverse
-    // complement of in_seq_data. The 3 values determined from m_AaIdx
-    // are bitwise ORed together to create an index into gc/sc.
-    if (eStrand == eNa_strand_plus) {
-        // Declare forward iterators
-        string::const_iterator i_in;
-        string::const_iterator i_in_begin;
-        string::const_iterator i_in_end;
+	// Translate.
+	// m_AaIdx is used to calculate an index for gc (genetic code in
+	// Ncbieaa) and sc (start codon string in Sncbieaa). The index to gc
+	// and sc are determined from a triplet of na residues. m_Tran and
+	// m_CTran are used to determine an index from an na
+	// residue. This index is used in the second dimension of m_AaIdx.
+	// The indices are: 0=T, 1=C; 2=A, 3=G, and 4=X.
+	// The first dimension to m_AaIdx correspondes to the na residue
+	// position in a triplet (0, 1, or 2). m_Tran is used for the
+	// plus strand, and m_CTran is used for the minus strand (reverse
+	// complement of in_seq_data. The 3 values determined from m_AaIdx
+	// are bitwise ORed together to create an index into gc/sc.
+	if (eStrand == eNa_strand_plus) {
+	    // Declare forward iterators
+	    string::const_iterator i_in;
+	    string::const_iterator i_in_begin;
+	    string::const_iterator i_in_end;
 
-        // Get iterator, begin, and end for in_seq
-        i_in_begin = in_seq_data.begin() + uBeginIdx;
-        i_in_end   = i_in_begin + uLenMod3;
+	    // Get iterator, begin, and end for in_seq
+	    i_in_begin = in_seq_data.begin() + uBeginIdx;
+	    i_in_end   = i_in_begin + uLenMod3;
 
-        // Translate in_seq as is
-        if (bStop) {
-            // Variable to track output sequence size
-            int nSize = 0;
+	    // Translate in_seq as is
+	    if (bStop) {
+		// Variable to track output sequence size
+		int nSize = 0;
 
-            // Check for stop codon, and quit if found
-            for (i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
-                char aa =
-                    gc[
-                       m_AaIdx[0]
-                       [m_Tran[static_cast<unsigned char>(*i_in)]] |
-                       m_AaIdx[1]
-                       [m_Tran[static_cast<unsigned char>(*(i_in+1))]]  |
-                       m_AaIdx[2]
-                       [m_Tran[static_cast<unsigned char>(*(i_in+2))]]
-                    ];
+		// Check for stop codon, and quit if found
+		for (i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
+		    char aa =
+			gc[
+			   m_AaIdx[0]
+			   [m_Tran[static_cast<unsigned char>(*i_in)]] |
+			   m_AaIdx[1]
+			   [m_Tran[static_cast<unsigned char>(*(i_in+1))]]  |
+			   m_AaIdx[2]
+			   [m_Tran[static_cast<unsigned char>(*(i_in+2))]]
+			];
 
-                if(aa == '*') {
-                    break;
-                } else {
-                    *(++i_out) = aa;
-                    nSize++;
-                }
-            }
+		    if(aa == '*') {
+			break;
+		    } else {
+			*(++i_out) = aa;
+			nSize++;
+		    }
+		}
 
-            // Shrink out_seq_data in case stop codon found
-            // before uLenMod3 na residues were decoded.
-            out_seq_data.resize(nSize);
+		// Shrink out_seq_data in case stop codon found
+		// before uLenMod3 na residues were decoded.
+		out_seq_data.resize(nSize);
 
-        }
-        else { // !bStop
-            // Translate through stop codons
-            for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
-                *(++i_out) =
-                    gc[
-                       m_AaIdx[0]
-                       [m_Tran[static_cast<unsigned char>(*i_in)]]  |
-                       m_AaIdx[1]
-                       [m_Tran[static_cast<unsigned char>(*(i_in+1))]]  |
-                       m_AaIdx[2]
-                       [m_Tran[static_cast<unsigned char>(*(i_in+2))]]
-                    ];
-            }
-        }
-    }
-    else { // eStrand == eNa_strand_minus
-        // Declare reverse iterators
-        string::const_reverse_iterator i_in;
-        string::const_reverse_iterator i_in_begin;
-        string::const_reverse_iterator i_in_end;
+	    }
+	    else { // !bStop
+		// Translate through stop codons
+		for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
+		    *(++i_out) =
+			gc[
+			   m_AaIdx[0]
+			   [m_Tran[static_cast<unsigned char>(*i_in)]]  |
+			   m_AaIdx[1]
+			   [m_Tran[static_cast<unsigned char>(*(i_in+1))]]  |
+			   m_AaIdx[2]
+			   [m_Tran[static_cast<unsigned char>(*(i_in+2))]]
+			];
+		}
+	    }
+	}
+	else { // eStrand == eNa_strand_minus
+	    // Declare reverse iterators
+	    string::const_reverse_iterator i_in;
+	    string::const_reverse_iterator i_in_begin;
+	    string::const_reverse_iterator i_in_end;
 
-        // Get reverse iterator, begin, and end for in_seq
-        i_in_begin = in_seq_data.rbegin() + in_seq_data.size() -
-            uBeginIdx - uLength;
-        i_in_end = i_in_begin + uLenMod3;
+	    // Get reverse iterator, begin, and end for in_seq
+	    i_in_begin = in_seq_data.rbegin() + in_seq_data.size() -
+		uBeginIdx - uLength;
+	    i_in_end = i_in_begin + uLenMod3;
 
 
-        // Translate on the complementary strand to in_seq
-        if(bStop) {
-            // Variable to track output sequence size
-            int nSize = 0;
+	    // Translate on the complementary strand to in_seq
+	    if(bStop) {
+		// Variable to track output sequence size
+		int nSize = 0;
 
-            // Check for stop codon, and quit if found
-            for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
-                char aa =
-                    gc[
-                       m_AaIdx[0]
-                       [m_CTran[static_cast<unsigned char>(*i_in)]]  |
-                       m_AaIdx[1]
-                       [m_CTran[static_cast<unsigned char>(*(i_in+1))]]  |
-                       m_AaIdx[2]
-                       [m_CTran[static_cast<unsigned char>(*(i_in+2))]]
-                    ];
+		// Check for stop codon, and quit if found
+		for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
+		    char aa =
+			gc[
+			   m_AaIdx[0]
+			   [m_CTran[static_cast<unsigned char>(*i_in)]]  |
+			   m_AaIdx[1]
+			   [m_CTran[static_cast<unsigned char>(*(i_in+1))]]  |
+			   m_AaIdx[2]
+			   [m_CTran[static_cast<unsigned char>(*(i_in+2))]]
+			];
 
-                if (aa == '*') {
-                    break;
-                } else {
-                    *(++i_out) = aa;
-                    nSize++;
-                }
-            }
+		    if (aa == '*') {
+			break;
+		    } else {
+			*(++i_out) = aa;
+			nSize++;
+		    }
+		}
 
-            // Shrink out_seq_data in case stop codon found
-            // before uLenMod3 na residues were decoded.
-            out_seq_data.resize(nSize);
-        }
-        else {  // !bStop
-            // Translate through stop codons.
-            for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
-                *(++i_out) =
-                    gc[
-                       m_AaIdx[0]
-                       [m_CTran[static_cast<unsigned char>(*i_in)]]  |
-                       m_AaIdx[1]
-                       [m_CTran[static_cast<unsigned char>(*(i_in+1))]]  |
-                       m_AaIdx[2]
-                       [m_CTran[static_cast<unsigned char>(*(i_in+2))]]
-                    ];
-            }
-        }
-    }
+		// Shrink out_seq_data in case stop codon found
+		// before uLenMod3 na residues were decoded.
+		out_seq_data.resize(nSize);
+	    }
+	    else {  // !bStop
+		// Translate through stop codons.
+		for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
+		    *(++i_out) =
+			gc[
+			   m_AaIdx[0]
+			   [m_CTran[static_cast<unsigned char>(*i_in)]]  |
+			   m_AaIdx[1]
+			   [m_CTran[static_cast<unsigned char>(*(i_in+1))]]  |
+			   m_AaIdx[2]
+			   [m_CTran[static_cast<unsigned char>(*(i_in+2))]]
+			];
+		}
+	    }
+	}
+    }}
 
  SpecialHandling: ;
 
