@@ -37,6 +37,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+#if !defined(NDEBUG) && defined(DEBUG_SYNC)
+// for GBLOG_POST()
+# include <corelib/ncbithr.hpp>
+#endif
 
 #include <map>
 #include <time.h>
@@ -247,6 +251,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.33  2003/05/13 18:32:10  vasilche
+ * Fixed GBLOG_POST() macro.
+ *
  * Revision 1.32  2003/04/29 19:51:12  vasilche
  * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
  * Made some typedefs more consistent.
