@@ -69,6 +69,7 @@
  *  SOCK_Write
  *  SOCK_Abort
  *  SOCK_GetPeerAddress
+ *  SOCK_GetPeerAddressString
  *
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
@@ -633,9 +634,21 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
 (SOCK            sock,
- unsigned int*   host,               /* [out] the peer's host (can be NULL) */
- unsigned short* port,               /* [out] the peer's port (can be NULL) */
- ENH_ByteOrder   byte_order          /* [in]  host/port byte order          */
+ unsigned int*   host,                /* [out] the peer's host (can be NULL) */
+ unsigned short* port,                /* [out] the peer's port (can be NULL) */
+ ENH_ByteOrder   byte_order           /* [in]  host/port byte order          */
+ );
+
+
+/* Get textual representation of the socket's peer.
+ * For INET domain sockets, the result is of the form "aaa.bbb.ccc.ddd:ppppp";
+ * for UNIX domain socket, the result is the name of the socket's file.
+ * On success, return its "buf" argument; return 0 on error.
+ */
+extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
+(SOCK   sock,
+ char*  buf,        /* [out] pointer to provided buffer to store the text to */
+ size_t buflen      /* [in]  usable size of the buffer above                 */
  );
 
 
@@ -878,6 +891,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2003/07/15 16:42:09  lavr
+ * +SOCK_GetPeerAddressString()
+ *
  * Revision 6.39  2003/06/12 13:21:21  lavr
  * Added eIO_Timeout as a return code for SOCK_Status()
  *
