@@ -270,10 +270,9 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     }
 
     // Obtain the matrix path from the ncbi configuration file
-    CMetaRegistry& mr = CMetaRegistry::Instance();
     CMetaRegistry::SEntry sentry;
-    sentry = mr.Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    string path = sentry.registry->Get("NCBI", "Data");
+    sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    string path = sentry.registry ? sentry.registry->Get("NCBI", "Data") : "";
 
     full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
@@ -361,6 +360,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/19 17:39:07  camacho
+* Minor fix to use of metaregistry class
+*
 * Revision 1.14  2003/08/18 20:58:57  camacho
 * Added blast namespace, removed *__.hpp includes
 *
