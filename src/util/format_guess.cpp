@@ -100,7 +100,7 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 {
     EFormat format = eUnknown;
 
-    int orig_pos = input.tellg();
+    CT_POS_TYPE orig_pos = input.tellg();
 
     unsigned char buf[1024];
 
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/03/24 20:35:34  ucko
+ * Use the correct type (CT_POS_TYPE rather than int) for tellg's return value.
+ *
  * Revision 1.14  2004/03/23 23:04:23  jcherry
  * clear() stream after reading; seekg() in just one place
  *
