@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2001/07/23 15:24:06  ivanov
+* Fixed bug in Get/Set times in DB-format (1 day difference)
+*
 * Revision 6.2  2001/07/02 21:33:09  vakatov
 * Fixed against SIGXCPU during the signal handling.
 * Increase the amount of reserved memory for the memory limit handler
@@ -55,6 +58,23 @@ USING_NCBI_SCOPE;
 
 
 /////////////////////////////////
+// User defined dump print handler
+//
+
+int s_PrintParameter = 0;
+
+static void PrintHandler (ELimitsExitCode code, size_t limit, CTime& time, 
+                   TLimitsPrintParameter param) 
+{
+    cout << "Type          : " << 
+        (code == eLEC_Memory ? "Memory limit" : "CPU limit") << endl;
+    cout << "Limit value   : " << limit << endl;
+    cout << "Set time      : " << time.AsString() << endl;
+    cout << "Our parameter : " << (param ? *(int*)param : 0) << endl;
+}
+
+
+/////////////////////////////////
 // Memory limits
 //
 
@@ -64,9 +84,10 @@ static void Test_MemLimit(void)
 
     const size_t kHeapLimit = 100000;
 
-    _VERIFY( SetHeapLimit(kHeapLimit) );
+    _VERIFY( SetHeapLimit(kHeapLimit, PrintHandler, &s_PrintParameter) );
     
     for (size_t i = 0;  i <= kHeapLimit/10;  i++) {
+        s_PrintParameter++;
         int* pi = new int[10];
         _ASSERT(pi);
     }

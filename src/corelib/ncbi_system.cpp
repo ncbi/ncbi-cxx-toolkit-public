@@ -33,6 +33,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/07/23 15:23:58  ivanov
+* Fixed bug in Get/Set times in DB-format (1 day difference)
+*
 * Revision 1.6  2001/07/05 22:09:07  vakatov
 * s_ExitHandler() -- do not printout the final statistics if the process
 * has terminated "normally"
@@ -61,9 +64,8 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_system.hpp>
 
 
 #ifdef NCBI_OS_UNIX
@@ -103,20 +105,15 @@ extern "C" {
 
 #ifdef NCBI_OS_UNIX
 
-enum EExitCode {
-    eEC_None,
-    eEC_Memory,
-    eEC_Cpu
-};
-
-
-static CFastMutex s_ExitHandler_Mutex;
-static bool       s_ExitHandlerIsSet = false;
-static EExitCode  s_ExitCode         = eEC_None;
-static CTime      s_TimeSet;
-static size_t     s_HeapLimit        = 0;
-static size_t     s_CpuTimeLimit     = 0;
-static char*      s_ReserveMemory    = 0;
+static CFastMutex            s_ExitHandler_Mutex;
+static bool                  s_ExitHandlerIsSet  = false;
+static ELimitsExitCode       s_ExitCode          = eLEC_None;
+static CTime                 s_TimeSet;
+static size_t                s_HeapLimit         = 0;
+static size_t                s_CpuTimeLimit      = 0;
+static char*                 s_ReserveMemory     = 0;
+static TLimitsPrintHandler   s_PrintHandler      = 0;
+static TLimitsPrintParameter s_PrintHandlerParam = 0;
 
 
 /* Routine to be called at the exit from application
@@ -131,16 +128,39 @@ static void s_ExitHandler(void)
         s_ReserveMemory = 0;
     }
 
+    // User defined dump
+    if ( s_PrintHandler ) {
+        size_t limit_size; 
+
+        switch ( s_ExitCode ) {
+        case eLEC_Memory: {
+                limit_size = s_HeapLimit;
+                break;
+            }
+        case eLEC_Cpu: {
+                limit_size = s_CpuTimeLimit;
+                break;
+            }
+        default:
+            return;
+        }
+        // Call user's print handler
+        (*s_PrintHandler)(s_ExitCode, limit_size, s_TimeSet, 
+                          s_PrintHandlerParam);
+        return;
+    }
+
+    // Standard dump
     switch ( s_ExitCode ) {
 
-    case eEC_Memory:
+    case eLEC_Memory:
         {
             ERR_POST("Memory heap limit exceeded in allocating memory " \
                      "with operator new (" << s_HeapLimit << " bytes)");
             break;
         }
 
-    case eEC_Cpu: 
+    case eLEC_Cpu: 
         {
             ERR_POST("CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
             tms buffer;
@@ -175,7 +195,9 @@ static void s_ExitHandler(void)
 
 /* Set routine to be called at the exit from application
  */
-static bool s_SetExitHandler()
+static bool s_SetExitHandler(TLimitsPrintHandler handler, 
+                             TLimitsPrintParameter parameter)
+
 {
     // Set exit routine if it not set yet
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
@@ -185,6 +207,11 @@ static bool s_SetExitHandler()
         }
         s_ExitHandlerIsSet = true;
         s_TimeSet.SetCurrent();
+
+        // Store print handler and parameter
+        s_PrintHandler = handler;
+        s_PrintHandlerParam = parameter;
+
         // Reserve some memory (10Kb)
         s_ReserveMemory = new char[10000];
     }
@@ -206,17 +233,19 @@ static bool s_SetExitHandler()
 // Handler for operator new
 static void s_NewHandler(void)
 {
-    s_ExitCode = eEC_Memory;
+    s_ExitCode = eLEC_Memory;
     exit(-1);
 }
 
 
-bool SetHeapLimit(size_t max_heap_size)
+bool SetHeapLimit(size_t max_heap_size,
+                  TLimitsPrintHandler handler, 
+                  TLimitsPrintParameter parameter)
 {
     if (s_HeapLimit == max_heap_size) 
         return true;
     
-    if ( !s_SetExitHandler() )
+    if ( !s_SetExitHandler(handler, parameter) )
         return false;
 
     // Set new heap limit
@@ -241,7 +270,9 @@ bool SetHeapLimit(size_t max_heap_size)
 
 #else
 
-bool SetHeapLimit(size_t max_heap_size)
+bool SetHeapLimit(size_t max_heap_size, 
+                  TLimitsPrintHandler handler, 
+                  TLimitsPrintParameter parameter);
 {
   return false;
 }
@@ -264,17 +295,19 @@ static void s_SignalHandler(int sig)
 
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
 
-    s_ExitCode = eEC_Cpu;
+    s_ExitCode = eLEC_Cpu;
     exit(-1);
 }
 
 
-bool SetCpuTimeLimit(size_t max_cpu_time)
+bool SetCpuTimeLimit(size_t max_cpu_time,
+                     TLimitsPrintHandler handler, 
+                     TLimitsPrintParameter parameter)
 {
     if (s_CpuTimeLimit == max_cpu_time) 
         return true;
     
-    if ( !s_SetExitHandler() )
+    if ( !s_SetExitHandler(handler, parameter) )
         return false;
     
     // Set new CPU time limit
@@ -304,7 +337,10 @@ bool SetCpuTimeLimit(size_t max_cpu_time)
 
 #else
 
-bool SetCpuTimeLimit(size_t max_cpu_time)
+bool SetCpuTimeLimit(size_t max_cpu_time,
+                  TLimitsPrintHandler handler, 
+                  TLimitsPrintParameter parameter);
+
 {
     return false;
 }
