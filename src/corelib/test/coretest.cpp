@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2000/04/17 04:16:25  vakatov
+* Added tests for NStr::Compare() and NStr::ToLower/ToUpper()
+*
 * Revision 1.58  2000/04/04 22:34:32  vakatov
 * Checks for the NStr:: for "long", and for the debug tracing
 *
@@ -233,8 +236,8 @@
 
 // Workaround for non-Debug compilation
 #ifndef _DEBUG
-#undef _ASSERT
-#define _ASSERT(expr) ((void)(expr))
+#  undef  _ASSERT
+#  define _ASSERT(expr) ((void)(expr))
 #endif
 
 
@@ -723,6 +726,79 @@ static void TestException(void)
 // Utilities
 //
 
+
+static void TestUtilities_StrCompare(int expr_res, int valid_res)
+{
+    int res = expr_res > 0 ? 1 :
+        expr_res == 0 ? 0 : -1;
+    _ASSERT(res == valid_res);
+}
+
+
+typedef struct {
+    const char* s1;
+    const char* s2;
+
+    int case_res;    /* -1, 0, 1 */
+    int nocase_res;  /* -1, 0, 1 */
+
+    SIZE_TYPE n; 
+    int n_case_res;    /* -1, 0, 1 */
+    int n_nocase_res;  /* -1, 0, 1 */
+} SStrCompare;
+
+
+static const SStrCompare s_StrCompare[] = {
+    { "", "",  0, 0,  0,     0, 0 },
+    { "", "",  0, 0,  NPOS,  0, 0 },
+    { "", "",  0, 0,  10,    0, 0 },
+    { "", "",  0, 0,  1,     0, 0 },
+
+    { "a", "",  1, 1,  0,     0, 0 },
+    { "a", "",  1, 1,  1,     1, 1 },
+    { "a", "",  1, 1,  2,     1, 1 },
+    { "a", "",  1, 1,  NPOS,  1, 1 },
+
+    { "", "bb",  -1, -1,  0,     -1, -1 },
+    { "", "bb",  -1, -1,  1,     -1, -1 },
+    { "", "bb",  -1, -1,  2,     -1, -1 },
+    { "", "bb",  -1, -1,  3,     -1, -1 },
+    { "", "bb",  -1, -1,  NPOS,  -1, -1 },
+
+    { "ba", "bb",  -1, -1,  0,     -1, -1 },
+    { "ba", "bb",  -1, -1,  1,     -1, -1 },
+    { "ba", "b",    1,  1,  1,      0,  0 },
+    { "ba", "bb",  -1, -1,  2,     -1, -1 },
+    { "ba", "bb",  -1, -1,  3,     -1, -1 },
+    { "ba", "bb",  -1, -1,  NPOS,  -1, -1 },
+
+    { "a", "A",  1, 0,  0,    -1, -1 },
+    { "a", "A",  1, 0,  1,     1,  0 },
+    { "a", "A",  1, 0,  2,     1,  0 },
+    { "a", "A",  1, 0,  NPOS,  1,  0 },
+
+    { "A", "a",  -1, 0,  0,     -1, -1 },
+    { "A", "a",  -1, 0,  1,     -1,  0 },
+    { "A", "a",  -1, 0,  2,     -1,  0 },
+    { "A", "a",  -1, 0,  NPOS,  -1,  0 },
+
+    { "ba", "ba1",  -1, -1,  0,     -1, -1 },
+    { "ba", "ba1",  -1, -1,  1,     -1, -1 },
+    { "ba", "ba1",  -1, -1,  2,     -1, -1 },
+    { "bA", "ba",   -1,  0,  2,     -1,  0 },
+    { "ba", "ba1",  -1, -1,  3,     -1, -1 },
+    { "ba", "ba1",  -1, -1,  NPOS,  -1, -1 },
+
+    { "ba1", "ba",  1, 1,  0,    -1, -1 },
+    { "ba1", "ba",  1, 1,  1,    -1, -1 },
+    { "ba1", "ba",  1, 1,  2,     0,  0 },
+    { "ba",  "bA",  1, 0,  2,     1,  0 },
+    { "ba1", "ba",  1, 1,  3,     1,  1 },
+    { "ba1", "ba",  1, 1,  NPOS,  1,  1 },
+    { "ba1", "ba",  1, 1,  NPOS,  1,  1 }
+};
+
+
 static void TestUtilities(void)
 {
     static const string s_Strings[] = {
@@ -820,8 +896,122 @@ static void TestUtilities(void)
 
     NcbiCout << " completed successfully!" << NcbiEndl << NcbiEndl;
 
+
+    NcbiCout << NcbiEndl << "NStr::Compare() tests..." << NcbiEndl;
+
+    size_t j;
+    const SStrCompare* rec;
+    string s1, s2;
+
+    for (j = 0;  j < sizeof(s_StrCompare) / sizeof(s_StrCompare[0]);  j++) {
+        rec = &s_StrCompare[j];
+        s1 = rec->s1;
+
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, rec->s2, NStr::eCase), rec->case_res);
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, rec->s2, NStr::eNocase), rec->nocase_res);
+
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eCase),
+             rec->n_case_res);
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eNocase),
+             rec->n_nocase_res);
+
+        s2 = rec->s2;
+
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, s2, NStr::eCase), rec->case_res);
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, s2, NStr::eNocase), rec->nocase_res);
+
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, 0, rec->n, s2, NStr::eCase),
+             rec->n_case_res);
+        TestUtilities_StrCompare
+            (NStr::Compare(s1, 0, rec->n, s2, NStr::eNocase),
+             rec->n_nocase_res);
+    }
+
+
+    NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests..." << NcbiEndl;
+
+    static const struct {
+        const char* orig;
+        const char* x_lower;
+        const char* x_upper;
+    } s_Tri[] = {
+        { "", "", "" },
+        { "a", "a", "A" },
+        { "4", "4", "4" },
+        { "B5a", "b5a", "B5A" },
+        { "baObaB", "baobab", "BAOBAB" },
+        { "B", "b", "B" },
+        { "B", "b", "B" }
+    };
+
+    static const char s_Indiff[] =
+        "#@+_)(*&^%/?\"':;~`'\\!\v|=-0123456789.,><{}[]\t\n\r";
+    {{
+        char indiff[sizeof(s_Indiff) + 1];
+        ::strcpy(indiff, s_Indiff);
+        _ASSERT(NStr::Compare(s_Indiff, indiff) == 0);
+        _ASSERT(NStr::Compare(s_Indiff, NStr::ToLower(indiff)) == 0);
+        ::strcpy(indiff, s_Indiff);
+        _ASSERT(NStr::Compare(s_Indiff, NStr::ToUpper(indiff)) == 0);
+        _ASSERT(NStr::Compare(s_Indiff, NStr::ToLower(indiff)) == 0);
+    }}
+
+    {{
+        string indiff;
+        indiff = s_Indiff;
+        _ASSERT(NStr::Compare(s_Indiff, indiff) == 0);
+        _ASSERT(NStr::Compare(s_Indiff, NStr::ToLower(indiff)) == 0);
+        indiff = s_Indiff;
+        _ASSERT(NStr::Compare(s_Indiff, NStr::ToUpper(indiff)) == 0);
+        _ASSERT(NStr::Compare(s_Indiff, NStr::ToLower(indiff)) == 0);
+    }}
+
+
+    for (j = 0;  j < sizeof(s_Tri) / sizeof(s_Tri[0]);  j++) {
+        _ASSERT(NStr::Compare(s_Tri[j].orig, s_Tri[j].x_lower, NStr::eNocase)
+                == 0);
+        _ASSERT(NStr::Compare(s_Tri[j].orig, s_Tri[j].x_upper, NStr::eNocase)
+                == 0);
+
+        string orig = s_Tri[j].orig;
+        _ASSERT(NStr::Compare(orig, s_Tri[j].x_lower, NStr::eNocase)
+                == 0);
+        _ASSERT(NStr::Compare(orig, s_Tri[j].x_upper, NStr::eNocase)
+                == 0);
+
+        string x_lower = s_Tri[j].x_lower;
+
+        {{
+            char x_str[16];
+            ::strcpy(x_str, s_Tri[j].orig);
+            _ASSERT(::strlen(x_str) < sizeof(x_str));
+            _ASSERT(NStr::Compare(NStr::ToLower(x_str), x_lower) == 0);
+            ::strcpy(x_str, s_Tri[j].orig);
+            _ASSERT(NStr::Compare(NStr::ToUpper(x_str), s_Tri[j].x_upper) ==0);
+            _ASSERT(NStr::Compare(x_lower, NStr::ToLower(x_str)) == 0);
+        }}
+
+        {{
+            string x_str;
+            x_lower = s_Tri[j].x_lower;
+            x_str = s_Tri[j].orig;
+            _ASSERT(NStr::Compare(NStr::ToLower(x_str), x_lower) == 0);
+            x_str = s_Tri[j].orig;
+            _ASSERT(NStr::Compare(NStr::ToUpper(x_str), s_Tri[j].x_upper) ==0);
+            _ASSERT(NStr::Compare(x_lower, NStr::ToLower(x_str)) == 0);
+        }}
+    }
+
     NcbiCout << "TestUtilities finished" << NcbiEndl;
 }
+
 
 static void TestThrowTrace(void)
 {
