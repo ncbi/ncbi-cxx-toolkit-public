@@ -58,7 +58,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             LOG_POST(Info << "Configuration "
                           << cfg_info.m_Name
                           << " disabled in project "
-                          << project_context.ProjectId());
+                          << project_context.ProjectId().Id());
             continue;
         }
 
@@ -603,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/03/08 23:35:04  gorelenk
+ * Changed implementation of CMsvcProjectGenerator::Generate.
+ *
  * Revision 1.24  2004/03/05 20:31:54  gorelenk
  * Files collecting functionality was moved to separate class :
  * CMsvcPrjFilesCollector.
