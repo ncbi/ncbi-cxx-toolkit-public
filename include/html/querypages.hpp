@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/04/15 22:08:00  vakatov
+* CPmDocSumPage:: use "enum { kNo..., };" rather than "static const int kNo...;"
+*
 * Revision 1.8  1998/12/28 23:29:04  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -89,9 +92,11 @@ class CPmDocSumPage: public CHTMLPage
 public:
     CPmDocSumPage();
 
-    static const int kNoQUERYBOX = 0x8;
-    // only one pager for now until I make copy constructor.
-    static const int kNoPAGER = 0x16;
+    enum flags {
+        kNoQUERYBOX = 0x8,
+        // only one pager for now until I make copy constructor.
+        kNoPAGER    = 0x10
+    };
 
     virtual CNCBINode* CreateView(void);
     virtual CNCBINode* CreatePager(void);
