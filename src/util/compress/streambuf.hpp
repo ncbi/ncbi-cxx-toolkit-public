@@ -32,8 +32,10 @@
  *
  */
 
-#include <util/compress/compress.hpp>
 #include <util/compress/stream.hpp>
+
+
+BEGIN_NCBI_SCOPE
 
 
 /** @addtogroup CompressionStreams
@@ -41,15 +43,13 @@
  * @{
  */
 
-BEGIN_NCBI_SCOPE
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
 // CCompression based streambuf class
 //
 
-class NCBI_XUTIL_EXPORT CCompressionStreambuf : public streambuf
+class NCBI_XUTIL_EXPORT CCompressionStreambuf : public CNcbiStreambuf
 {
 public:
     // 'ctors
@@ -91,7 +91,7 @@ protected:
          CCompressionStream::EDirection dir) const;
 
     // Get stream processor's status
-    bool IsStreamProcessorOkey(
+    bool IsStreamProcessorOkay(
          CCompressionStream::EDirection dir) const;
 
     // Sync I/O buffers for the specified direction.
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/20 20:38:14  lavr
+ * Proper Doxygen vs ncbi namespace group nesting
+ *
  * Revision 1.5  2004/01/06 18:59:39  ivanov
  * Removed the extra semicolon
  *
