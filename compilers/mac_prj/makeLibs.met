@@ -1,3 +1,4 @@
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -400,14 +401,11 @@ on SetProjectData()
 		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
 			{GuiFileDataExcept("widgets:aln_multiple", {"alnmultib.cpp"})} Â
 				))
+		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
 		
 		
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
 		AddGuiProject("w_flek", {}, "widgets:Flek")
-		(*
-		AddProject(ProjectData("w_flek", {"fltk"}, {GuiFileDataList("widgets:Flek", Â
-			{"Fl_Toggle_Node", "Fl_Toggle_Tree"})}))
-		*)
 		AddGuiProject("w_seq", {}, "widgets:seq")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
 		AddGuiProject("w_seq_icon", {}, "widgets:seq_icon")
@@ -456,7 +454,7 @@ on SetProjectData()
 		
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
-			{"xalgoseq", "gui_multi_col_dlg", "w_fltable"})
+			{"xalgoseq", "gui_multi_col_dlg", "w_fltable", "w_table"})
 		AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
@@ -465,15 +463,18 @@ on SetProjectData()
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"w_fltable", "entrez2", "entrez2cli"})
+			{"w_fltable", "entrez2", "entrez2cli", "w_table"})
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "gui_graph"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table"})
+		
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic", "w_fltable"})
+		
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
 			{"w_seq", "w_seq_icon", "w_seq_info"})
+		
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
 			{"w_flek", "w_table", "w_fltable"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
