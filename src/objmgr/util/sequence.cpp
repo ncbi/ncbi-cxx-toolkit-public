@@ -74,6 +74,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <util/strsearch.hpp>
 
@@ -115,6 +116,54 @@ int GetTaxId(const CBioseq_Handle& handle)
     }
 }
 
+
+CBioseq_Handle GetBioseqFromSeqLoc
+(const CSeq_loc& loc,
+ CScope& scope,
+ CScope::EGetBioseqFlag flag)
+{
+    CBioseq_Handle retval;
+
+    try {
+        if (IsOneBioseq(loc, &scope)) {
+            return scope.GetBioseqHandle(GetId(loc, &scope), flag);
+        } 
+
+        // assuming location is annotated on parts of a segmented bioseq
+        for (CSeq_loc_CI it(loc); it; ++it) {
+            CBioseq_Handle part = scope.GetBioseqHandle(it.GetSeq_id(), flag);
+            if (part) {
+                retval = GetParentForPart(part);
+            }
+            break;  // check only the first part
+        }
+
+        // if multiple intervals and not parts, look for the first loaded bioseq
+        if (!retval) {
+            for (CSeq_loc_CI it(loc); it; ++it) {
+                retval = 
+                    scope.GetBioseqHandle(it.GetSeq_id_Handle(), CScope::eGetBioseq_Loaded);
+                if (retval) {
+                    break;
+                }
+            }
+        }
+
+        if (!retval  &&  flag == CScope::eGetBioseq_All) {
+            for (CSeq_loc_CI it(loc); it; ++it) {
+                retval = 
+                    scope.GetBioseqHandle(it.GetSeq_id_Handle(), flag);
+                if (retval) {
+                    break;
+                }
+            }
+        }
+    } catch (CException&) {
+        retval.Reset();
+    }
+
+    return retval;
+}
 
 
 class CSeqIdFromHandleException : EXCEPTION_VIRTUAL_BASE public CException
@@ -174,7 +223,6 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
                 return best;
             }
         }}
-        break;
 
     case eGetId_Best:
         {{
@@ -182,7 +230,6 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
             CSeq_id_Handle idh = FindBestChoice(ids, ScoreSeqIdHandle);
             return *idh.GetSeqId();
         }}
-        break;
 
     default:
         return id;
@@ -454,7 +501,7 @@ CConstRef<CSeq_feat> x_GetBestOverlapForSNP
         eOverlap_Contains,
         scope);
 
-    if (!overlap)
+    if (search_both_strands  &&  !overlap)
     {
         CRef<CSeq_loc> loc(new CSeq_loc);
         loc->Assign(snp_feat.GetLocation());
@@ -850,9 +897,6 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                 continue;
             }
 
-            string ref_str;
-            ref->GetLabel(&ref_str);
-
             const CGene_ref& other_ref = feat_it->GetData().GetGene();
             string other_ref_str;
             other_ref.GetLabel(&other_ref_str);
@@ -1203,7 +1247,7 @@ CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& bsh)
 {
     // If protein use CDS to get to the encoding Nucleotide.
     // if nucleotide (cDNA) use mRNA feature.
-    const CSeq_feat* sfp = bsh.GetBioseqMolType() == CSeq_inst::eMol_aa ?
+    const CSeq_feat* sfp = bsh.GetInst().IsAa() ?
         GetCDSForProduct(bsh) : GetmRNAForProduct(bsh);
 
     CBioseq_Handle ret;
@@ -1211,6 +1255,27 @@ CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& bsh)
         ret = bsh.GetScope().GetBioseqHandle(sfp->GetLocation());
     }
     return ret;
+}
+
+
+CBioseq_Handle GetParentForPart(const CBioseq_Handle& part)
+{
+    CBioseq_Handle seg;
+
+    if (part) {
+        CSeq_entry_Handle segset =
+            part.GetExactComplexityLevel(CBioseq_set::eClass_segset);
+        if (segset) {
+            for (CSeq_entry_CI it(segset); it; ++it) {
+                if (it->IsSeq()) {
+                    seg = it->GetSeq();
+                    break;
+                }
+            }
+        }
+    }
+
+    return seg;
 }
 
 
@@ -2365,6 +2430,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.107  2004/12/06 15:05:11  shomrat
+* Added GetParentForPart and GetBioseqFromSeqLoc
+*
 * Revision 1.106  2004/11/22 16:09:14  dicuccio
 * Revert to standard GetBestOverlappingFeat() in GetMrnasForGene() and
 * GetCdssForGene() if no closely linked feature is found

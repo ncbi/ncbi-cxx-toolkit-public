@@ -45,6 +45,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <util/strsearch.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -55,7 +56,6 @@ class CSeq_id;
 class CSeq_loc_mix;
 class CSeq_point;
 class CPacked_seqpnt;
-class CScope;
 class CBioseq_Handle;
 class CSeqVector;
 class CCdregion;
@@ -309,6 +309,9 @@ const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& product);
 
+/// Get the parent bioseq for a part of a segmented bioseq
+NCBI_XOBJUTIL_EXPORT
+CBioseq_Handle GetParentForPart(const CBioseq_Handle& part);
 
 /// Return the org-ref associated with a given sequence.  This will throw
 /// a CException if there is no org-ref associated with the sequence
@@ -319,6 +322,17 @@ const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle);
 /// if no tax-id can be found.
 NCBI_XOBJUTIL_EXPORT
 int GetTaxId(const CBioseq_Handle& handle);
+
+/// Retrieve the Bioseq Handle from a location.
+/// location refers to a single bioseq:
+///   return the bioseq
+/// location referes to multiple bioseqs:
+///   if parts of a segmentd bioseq, returns the segmentd bioseq.
+///   otherwise, return the first bioseq that could be found (first localy then,
+///   if flag is eGetBioseq_All, remote)
+NCBI_XOBJUTIL_EXPORT
+CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
+    CScope::EGetBioseqFlag flag = CScope::eGetBioseq_Loaded);
 
 /* @} */
 
@@ -594,6 +608,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.54  2004/12/06 15:04:50  shomrat
+* Added GetParentForPart and GetBioseqFromSeqLoc
+*
 * Revision 1.53  2004/11/22 16:04:07  grichenk
 * Fixed/added doxygen comments
 *
