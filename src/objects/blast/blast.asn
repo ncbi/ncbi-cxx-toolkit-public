@@ -81,6 +81,19 @@ Blast4-get-sequences-request ::= SEQUENCE {
     seq-ids                 SEQUENCE OF Seq-id
 }
 
+-- If a PSSM is used (ie. for PSI-Blast), it must contain a "query"
+-- for formatting purposes.  Bioseq-set may contain any number of
+-- queries, specified as data.  Seq-loc-list may contain only the
+-- "whole" or "interval" types.  In the case of "whole", any number of
+-- queries may be used; in the case of "interval", there should be
+-- exactly one query.  (This is limited by the BlastObject.)
+
+Blast4-queries ::= CHOICE {
+    pssm                    Score-matrix-parameters,
+    seq-loc-list            SEQUENCE OF Seq-loc,
+    bioseq-set              Bioseq-set
+}
+
 -- Options have been broken down into two groups as part of the BLAST
 -- API work.  The algorithm options essentially correspond to those
 -- options available via the CBlastOptions class.
@@ -90,7 +103,7 @@ Blast4-get-sequences-request ::= SEQUENCE {
 Blast4-queue-search-request ::= SEQUENCE {
     program                 VisibleString,
     service                 VisibleString,
-    queries                 Bioseq-set,
+    queries                 Blast4-queries,
     subject                 Blast4-subject,
     paramset                VisibleString OPTIONAL,
     algorithm-options       Blast4-parameters OPTIONAL,
@@ -137,7 +150,8 @@ Blast4-get-search-results-reply ::= SEQUENCE {
     phi-alignments          Blast4-phi-alignments OPTIONAL,
     mask                    Blast4-mask OPTIONAL,
     ka-blocks               SEQUENCE OF Blast4-ka-block OPTIONAL,
-    search-stats            SEQUENCE OF VisibleString OPTIONAL
+    search-stats            SEQUENCE OF VisibleString OPTIONAL,
+    pssm                    Score-matrix-parameters OPTIONAL
 }
 
 Blast4-get-sequences-reply ::= SEQUENCE OF Bioseq
@@ -191,12 +205,41 @@ Blast4-database ::= SEQUENCE {
     type                    Blast4-residue-type
 }
 
+-- Borrowed from seq.asn
+
+Blast4-seqtech ::= INTEGER {
+        unknown (0) ,
+        standard (1) ,          -- standard sequencing
+        est (2) ,               -- Expressed Sequence Tag
+        sts (3) ,               -- Sequence Tagged Site
+        survey (4) ,            -- one-pass genomic sequence
+        genemap (5) ,           -- from genetic mapping techniques
+        physmap (6) ,           -- from physical mapping techniques
+        derived (7) ,           -- derived from other data, not a primary entity
+        concept-trans (8) ,     -- conceptual translation
+        seq-pept (9) ,          -- peptide was sequenced
+        both (10) ,             -- concept transl. w/ partial pept. seq.
+        seq-pept-overlap (11) , -- sequenced peptide, ordered by overlap
+        seq-pept-homol (12) ,   -- sequenced peptide, ordered by homology
+        concept-trans-a (13) ,  -- conceptual transl. supplied by author
+        htgs-1 (14) ,           -- unordered High Throughput sequence contig
+        htgs-2 (15) ,           -- ordered High Throughput sequence contig
+        htgs-3 (16) ,           -- finished High Throughput sequence
+        fli-cdna (17) ,         -- full length insert cDNA
+        htgs-0 (18) ,           -- single genomic reads for coordination
+        htc (19) ,              -- high throughput cDNA
+        wgs (20) ,              -- whole genome shotgun sequencing
+        other (255)             -- use Source.techexp
+}
+
 Blast4-database-info ::= SEQUENCE {
     database                Blast4-database,
     description             VisibleString,
     last-updated            VisibleString,
     total-length            BigInt,
-    num-sequences           BigInt
+    num-sequences           BigInt,
+    seqtech                 Blast4-seqtech,
+    taxid                   INTEGER
 }
 
 Blast4-frame-type ::= ENUMERATED {
