@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.290 2004/04/16 15:22:02 ucko Exp $
+#  $Id: configure.ac,v 1.291 2004/04/19 14:43:26 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -228,6 +228,10 @@ AC_ARG_WITH(sablot,
    [ --with-sablot=DIR       use Sablotron installation in DIR])
 AC_ARG_WITH(sablot2,
    [ --without-sablot,       do not use Sablotron])
+AC_ARG_WITH(libxml,
+   [ --with-libxml=DIR       use libxml2 installation in DIR])
+AC_ARG_WITH(libxml_,
+   [ --without-libxml        do not use libxml2])
 AC_ARG_WITH(oechem,
    [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
 AC_ARG_WITH(oechem2,
@@ -287,7 +291,7 @@ ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc sqlite \
-expat sablot oechem gif jpeg tiff png xpm \
+expat sablot libxml oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -325,10 +329,10 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-pcre=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-oechem=* \
+      | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
-      | --with-mesa=* | --with-glut=* \
+      | --with-mesa=* | --with-glut=* | --with-oechem=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -3329,6 +3333,10 @@ NCBI_CHECK_THIRD_PARTY_LIB(sablot,
  $EXPAT_LIBS)
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
+: ${LIBXML_PATH=$NCBI/libxml}
+NCBI_CHECK_THIRD_PARTY_LIB_(libxml, LIBXML, xml2,
+ AC_LANG_PROGRAM([#include <libxml/parser.h>],
+    [xmlDocPtr doc = xmlParseFile("foo.xml");]))
 
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite}

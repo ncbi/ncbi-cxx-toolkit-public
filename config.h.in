@@ -165,6 +165,9 @@
 /* Define to 1 if libungif is available. */
 #undef HAVE_LIBUNGIF
 
+/* Define to 1 if libxml2 is available. */
+#undef HAVE_LIBXML
+
 /* Define to 1 if libXpm is available. */
 #undef HAVE_LIBXPM
 
