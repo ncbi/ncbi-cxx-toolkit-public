@@ -43,6 +43,13 @@
 #include <serial/objhook.hpp>
 #include <serial/hookdatakey.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 struct asnio;
 
 BEGIN_NCBI_SCOPE
@@ -536,6 +543,9 @@ char& ReplaceVisibleChar(char& c,
                          size_t at_line);
 
 
+/* @} */
+
+
 #include <serial/objistr.inl>
 
 END_NCBI_SCOPE
@@ -546,6 +556,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/04/15 16:18:20  siyan
+* Added doxygen support
+*
 * Revision 1.80  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

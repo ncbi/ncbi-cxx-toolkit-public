@@ -34,6 +34,13 @@
 
 #include <corelib/ncbistd.hpp>
 
+
+/** @addtogroup SerialDef
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -83,9 +90,14 @@ END_NCBI_SCOPE
 #endif  /* SERIALIZABLE__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/15 16:18:53  siyan
+* Added doxygen support
+*
 * Revision 1.5  2003/03/26 16:13:33  vasilche
 * Removed TAB symbols. Some formatting.
 *

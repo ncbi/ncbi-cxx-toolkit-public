@@ -40,6 +40,13 @@
 #include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CContainerTypeInfo;
@@ -112,6 +119,10 @@ public:
     CHookDataKey<CCopyChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
+
+/* @ */
+
+
 #include <serial/objcopy.inl>
 
 END_NCBI_SCOPE
@@ -122,6 +133,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/15 16:18:10  siyan
+* Added doxygen support
+*
 * Revision 1.9  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

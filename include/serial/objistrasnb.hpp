@@ -37,6 +37,13 @@
 #include <serial/objstrasnb.hpp>
 #include <stack>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectOStreamAsnBinary;
@@ -218,6 +225,10 @@ private:
     friend class CObjectOStreamAsnBinary;
 };
 
+
+/* @} */
+
+
 #include <serial/objistrasnb.inl>
 
 END_NCBI_SCOPE
@@ -228,6 +239,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/04/15 16:18:23  siyan
+* Added doxygen support
+*
 * Revision 1.37  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

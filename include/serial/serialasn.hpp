@@ -40,6 +40,13 @@
 #include <serial/serialimpl.hpp>
 #include <serial/serialasndef.hpp>
 
+
+/** @addtogroup TypeInfoC
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // ASN
@@ -164,3 +171,6 @@ END_NCBI_SCOPE
 #endif /* HAVE_NCBI_C */
 
 #endif
+
+
+/* @} */

@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CObjectOStreamAsn : public CObjectOStream
@@ -150,6 +157,10 @@ private:
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
+
+/* @} */
+
+
 //#include <serial/objostrasn.inl>
 
 END_NCBI_SCOPE
@@ -160,6 +171,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/04/15 16:18:29  siyan
+* Added doxygen support
+*
 * Revision 1.43  2003/03/26 16:13:33  vasilche
 * Removed TAB symbols. Some formatting.
 *

@@ -37,6 +37,13 @@
 #include <serial/exception.hpp>
 #include <typeinfo>
 
+
+/** @addtogroup GenClassSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CTypeInfo;
@@ -213,9 +220,14 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 #endif  /* SERIALBASE__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/04/15 16:18:48  siyan
+* Added doxygen support
+*
 * Revision 1.17  2003/03/28 18:52:04  dicuccio
 * Added Win32 exports for postread/postwrite set hooks
 *

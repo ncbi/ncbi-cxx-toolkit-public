@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CObjectOStreamXml : public CObjectOStream
@@ -245,6 +252,10 @@ private:
     ERealValueFormat m_RealFmt;
 };
 
+
+/* @} */
+
+
 #include <serial/objostrxml.inl>
 
 END_NCBI_SCOPE
@@ -255,6 +266,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/04/15 16:18:32  siyan
+* Added doxygen support
+*
 * Revision 1.29  2003/03/26 16:13:33  vasilche
 * Removed TAB symbols. Some formatting.
 *

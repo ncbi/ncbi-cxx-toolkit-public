@@ -46,6 +46,13 @@
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectStack;
@@ -193,9 +200,14 @@ END_NCBI_SCOPE
 #endif  /* OBJSTACK__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/04/15 16:18:33  siyan
+* Added doxygen support
+*
 * Revision 1.18  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

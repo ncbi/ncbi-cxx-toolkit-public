@@ -40,6 +40,13 @@
 #include <serial/serial.hpp>
 #include <serial/stdtypesimpl.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 const string kSerialTimeFormat = "M/D/Y h:m:s.S Z";
@@ -129,6 +136,9 @@ private:
 };
 
 
+/* @} */
+
+
 inline
 CTimeTypeInfo::CTimeTypeInfo(void)
 {
@@ -157,6 +167,12 @@ void CTimeTypeInfo::SetValueString(TObjectPtr object,
 }
 
 
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 EMPTY_TEMPLATE
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<CTime>
 {
@@ -164,6 +180,9 @@ public:
     static TTypeInfo GetTypeInfo(void);
     static CTypeInfo* CreateTypeInfo(void);
 };
+
+
+/* @} */
 
 
 inline
@@ -196,6 +215,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/04/15 16:19:05  siyan
+* Added doxygen support
+*
 * Revision 1.2  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

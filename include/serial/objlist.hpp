@@ -39,6 +39,13 @@
 #include <map>
 #include <vector>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CMemberId;
@@ -154,6 +161,10 @@ private:
     TObjectsByPtr m_ObjectsByPtr; // registered objects by pointer
 };
 
+
+/* @} */
+
+
 #include <serial/objlist.inl>
 
 END_NCBI_SCOPE
@@ -164,6 +175,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/04/15 16:18:26  siyan
+* Added doxygen support
+*
 * Revision 1.16  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

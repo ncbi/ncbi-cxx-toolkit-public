@@ -36,6 +36,13 @@
 #include <serial/typeinfo.hpp>
 #include <vector>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfo : public CTypeInfo
@@ -317,6 +324,10 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
+
+/* @} */
+
+
 #include <serial/stdtypes.inl>
 
 END_NCBI_SCOPE
@@ -327,6 +338,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/04/15 16:18:57  siyan
+* Added doxygen support
+*
 * Revision 1.27  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <typeinfo>
 
+
+/** @addtogroup UserCodeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // this structure is used for sorting C++ standard type_info class by pointer
@@ -57,6 +64,10 @@ struct CLessTypeInfo
         }
 };
 
+
+/* @} */
+
+
 //#include <serial/stdtypeinfo.inl>
 
 END_NCBI_SCOPE
@@ -67,6 +78,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/04/15 16:18:56  siyan
+* Added doxygen support
+*
 * Revision 1.3  2003/03/26 16:13:33  vasilche
 * Removed TAB symbols. Some formatting.
 *

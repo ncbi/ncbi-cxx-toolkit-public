@@ -36,6 +36,13 @@
 #include <serial/objistr.hpp>
 #include <util/lightstr.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CObjectIStreamAsn : public CObjectIStream
@@ -185,6 +192,10 @@ private:
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
+
+/* @} */
+
+
 //#include <objistrb.inl>
 
 END_NCBI_SCOPE
@@ -195,6 +206,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/04/15 16:18:21  siyan
+* Added doxygen support
+*
 * Revision 1.54  2003/03/26 16:13:33  vasilche
 * Removed TAB symbols. Some formatting.
 *

@@ -49,6 +49,13 @@
 #include <serial/exception.hpp>
 #include <serial/classinfohelper.hpp>
 
+
+/** @addtogroup GenClassSupport
+ *
+ * @{
+ */
+
+
 struct valnode;
 
 BEGIN_NCBI_SCOPE
@@ -674,5 +681,9 @@ CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
 // end of internal methods
 
 END_NCBI_SCOPE
+
+
+/* @} */
+
 
 #endif

@@ -35,6 +35,13 @@
 #include <serial/serialdef.hpp>
 #include <corelib/ncbicntr.hpp>
 
+
+/** @addtogroup GenClassSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CTypeRef;
@@ -136,6 +143,10 @@ private:
     CTypeRef m_Argument2;
 };
 
+
+/* @} */
+
+
 #include <serial/typeref.inl>
 
 END_NCBI_SCOPE
@@ -146,6 +157,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/15 16:19:13  siyan
+* Added doxygen support
+*
 * Revision 1.14  2003/02/12 16:43:47  vasilche
 * Use CTypeRef instead of TTypeInfo.
 *

@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 
+
+/** @addtogroup TypeLookup
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CTypeInfoMapData;
@@ -73,9 +80,14 @@ END_NCBI_SCOPE
 #endif  /* TYPEMAP__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/15 16:19:09  siyan
+* Added doxygen support
+*
 * Revision 1.4  2002/12/23 18:38:52  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

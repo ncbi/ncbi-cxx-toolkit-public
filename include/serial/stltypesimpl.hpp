@@ -38,6 +38,13 @@
 #include <serial/continfo.hpp>
 #include <serial/memberid.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CStlClassInfoUtil
@@ -138,9 +145,14 @@ END_NCBI_SCOPE
 #endif  /* STLTYPESIMPL__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/15 16:19:04  siyan
+* Added doxygen support
+*
 * Revision 1.5  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

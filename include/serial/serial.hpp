@@ -34,6 +34,13 @@
 
 #include <serial/typeref.hpp>
 
+
+/** @addtogroup UserCodeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectOStream;
@@ -107,6 +114,10 @@ CObjectIStream& operator>>(CObjectIStream& in, T& object)
     return Read(in, object);
 }
 
+
+/* @} */
+
+
 //#include <serial/serial.inl>
 
 END_NCBI_SCOPE
@@ -117,6 +128,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/04/15 16:18:44  siyan
+* Added doxygen support
+*
 * Revision 1.45  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

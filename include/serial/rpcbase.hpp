@@ -39,6 +39,13 @@
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 
+
+/** @addtogroup UserCodeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // CRPCClient -- prototype client for ASN.1/XML-based RPC.
@@ -158,10 +165,17 @@ void CRPCClient<TRequest, TReply>::x_SetStream(CNcbiIostream* stream)
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/15 16:18:43  siyan
+* Added doxygen support
+*
 * Revision 1.1  2002/11/13 00:46:05  ucko
 * Add RPC client generator; CVS logs to end in generate.?pp
 *

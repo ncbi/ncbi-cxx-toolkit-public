@@ -37,6 +37,13 @@
 #include <serial/objstrasnb.hpp>
 #include <stack>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStreamAsnBinary;
@@ -187,6 +194,10 @@ private:
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
+
+/* @} */
+
+
 #include <serial/objostrasnb.inl>
 
 END_NCBI_SCOPE
@@ -197,6 +208,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/04/15 16:18:31  siyan
+* Added doxygen support
+*
 * Revision 1.39  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

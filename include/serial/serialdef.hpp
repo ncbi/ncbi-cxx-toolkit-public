@@ -34,6 +34,13 @@
 
 #include <corelib/ncbistd.hpp>
 
+
+/** @addtogroup SerialDef
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // forward declaration of two main classes
@@ -141,6 +148,10 @@ const TMemberIndex kInvalidMember = kFirstMemberIndex - 1;
 // special value for marking empty choice
 const TMemberIndex kEmptyChoice = kInvalidMember;
 
+
+/* @} */
+
+
 //#include <serial/serialdef.inl>
 
 END_NCBI_SCOPE
@@ -151,6 +162,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/04/15 16:18:51  siyan
+* Added doxygen support
+*
 * Revision 1.20  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

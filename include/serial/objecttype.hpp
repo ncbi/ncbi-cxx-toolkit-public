@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objectinfo.hpp>
 
+
+/** @addtogroup UserCodeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // forward declaration of object tree iterator templates
@@ -181,6 +188,10 @@ pair<TConstObjectPtr, TTypeInfo> ConstRefChoiceInfo(const CRef<C>& obj)
     return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
 }
 
+
+/* @} */
+
+
 //#include <serial/objecttype.inl>
 
 END_NCBI_SCOPE
@@ -191,6 +202,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/15 16:18:16  siyan
+* Added doxygen support
+*
 * Revision 1.5  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

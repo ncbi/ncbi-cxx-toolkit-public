@@ -39,6 +39,13 @@
 #include <serial/objcopy.hpp>
 #include <serial/serialutil.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // throw various exceptions
@@ -239,6 +246,10 @@ public:
                              const vector<char>& value) const;
 };
 
+
+/* @} */
+
+
 //#include <serial/stdtypesimpl.inl>
 
 END_NCBI_SCOPE
@@ -249,6 +260,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/15 16:18:59  siyan
+* Added doxygen support
+*
 * Revision 1.9  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -36,6 +36,13 @@
 #include <serial/objistr.hpp>
 #include <util/lightstr.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CItemsInfo;
@@ -212,6 +219,10 @@ private:
     string m_LastPrimitive;
 };
 
+
+/* @} */
+
+
 #include <serial/objistrxml.inl>
 
 END_NCBI_SCOPE
@@ -222,6 +233,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/04/15 16:18:25  siyan
+* Added doxygen support
+*
 * Revision 1.23  2003/02/05 17:08:51  gouriano
 * added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
 *

@@ -45,6 +45,13 @@
 #include <vector>
 #include <memory>
 
+
+/** @addtogroup UserCodeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectTypeInfo;
@@ -318,6 +325,10 @@ public:
     void ReadContainer(CObjectIStream& in, CReadContainerElementHook& hook);
 };
 
+
+/* @} */
+
+
 #include <serial/objectinfo.inl>
 
 END_NCBI_SCOPE
@@ -328,6 +339,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/15 16:18:11  siyan
+* Added doxygen support
+*
 * Revision 1.5  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

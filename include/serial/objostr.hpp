@@ -44,6 +44,13 @@
 #include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
 
+
+/** @addtogroup ObjStreamSupport
+ *
+ * @{
+ */
+
+
 struct asnio;
 
 BEGIN_NCBI_SCOPE
@@ -459,6 +466,10 @@ public:
     CHookDataKey<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
+
+/* @} */
+
+
 #include <serial/objostr.inl>
 
 END_NCBI_SCOPE
@@ -469,6 +480,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/04/15 16:18:28  siyan
+* Added doxygen support
+*
 * Revision 1.71  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

@@ -44,6 +44,13 @@
 #include <serial/stltypesimpl.hpp>
 #include <serial/ptrinfo.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 template<typename Data>
@@ -632,9 +639,14 @@ END_NCBI_SCOPE
 #endif  /* STLTYPES__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/04/15 16:19:03  siyan
+* Added doxygen support
+*
 * Revision 1.62  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
