@@ -694,6 +694,69 @@ extern void SequenceInfoFree (TSequenceInfoPtr sip)
 }
 
 
+/* This function creates and sends an error message regarding an unused line.
+ */
+static void 
+s_ReportUnusedLine
+(int                  line_num_start,
+ int                  line_num_stop,
+ TLineInfoPtr         line_val,
+ FReportErrorFunction errfunc,
+ void *               errdata)
+{
+    TErrorInfoPtr eip;
+    const char * errformat1 = "Line %d could not be assigned to an interleaved block";
+    const char * errformat2 = "Lines %d through %d could not be assigned to an interleaved block";
+    const char * errformat3 = "Contents of unused line: %s";
+    int skip;
+
+    if (errfunc == NULL  ||  line_val == NULL) {
+        return;
+    }
+
+    eip = ErrorInfoNew (NULL);
+    if (eip != NULL) {
+        eip->category = eAlnErr_BadFormat;
+        eip->line_num = line_num_start;
+        if (line_num_start == line_num_stop) {
+              eip->message = (char *) malloc (strlen (errformat1)
+                                            + kMaxPrintedIntLen + 1);
+            if (eip->message != NULL) {
+                sprintf (eip->message, errformat1, line_num_start);
+            }
+        } else {
+            eip->message = (char *) malloc (strlen (errformat2)
+                                            + 2 * kMaxPrintedIntLen + 1);
+            if (eip->message != NULL) {
+                sprintf (eip->message, errformat2, line_num_start,
+                         line_num_stop);
+            }
+        }
+        errfunc (eip, errdata);
+    }
+    /* report contents of unused lines */
+    for (skip = line_num_start;
+         skip < line_num_stop + 1  &&  line_val != NULL;
+         skip++) {
+        if (line_val->data == NULL) {
+            continue;
+        }
+        eip = ErrorInfoNew (NULL);
+        if (eip != NULL) {
+            eip->category = eAlnErr_BadFormat;
+            eip->line_num = skip;
+            eip->message = (char *) malloc (strlen (errformat3)
+                                            + strlen (line_val->data) + 1);
+            if (eip->message != NULL) {
+                sprintf (eip->message, errformat3, line_val->data);
+            }
+            errfunc (eip, errdata);
+        }
+        line_val = line_val->next;
+    }
+}
+
+
 /* The following functions are used to manage a linked list of integer
  * values.
  */
@@ -2034,6 +2097,8 @@ static EBool s_SkippableString (char * str)
 {
     if (str == NULL
         ||  s_StringNICmp (str, "matrix", 6) == 0
+        ||  s_StringNICmp (str, "#NEXUS", 6) == 0
+        ||  s_StringNICmp (str, "CLUSTAL W", 8) == 0
         ||  s_SkippableNexusComment (str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
         ||  s_IsConsensusLine (str)
@@ -2150,6 +2215,12 @@ static void s_RemoveCommentFromLine (char * linestring)
     if ( linestring [0] == '>'  &&  linestring [1] == 0) {
         linestring [0] = 0;
     }
+
+    /* if the line now contains only space, truncate it */
+    if (strspn (linestring, " \t\r") == strlen (linestring)) {
+        linestring [0] = 0;
+    }
+    
 }
 
 
@@ -2747,6 +2818,73 @@ s_AugmentBlockPatternOffsetList
 }
 
 
+/* This function looks for lines that could not be assigned to an interleaved
+ * block.  It returns eTrue if it finds any such lines after the first offset,
+ * eFalse otherwise, and reports all instances of unused lines as errors.
+ */
+static EBool
+s_FindUnusedLines 
+(SLengthListPtr pattern_list,
+ SAlignRawFilePtr afrp)
+{
+    TIntLinkPtr    offset;
+    SLengthListPtr llp;
+    int            line_counter;
+    int            block_line_counter;
+    EBool          rval = eFalse;
+    TLineInfoPtr   line_val;
+    int            skip;
+
+    if (pattern_list == NULL  ||  afrp == NULL
+        ||  afrp->offset_list == NULL  ||  afrp->block_size < 2) {
+        return eFalse;
+    }
+    
+    offset = afrp->offset_list;
+    llp = pattern_list;
+    line_counter = 0;
+    line_val = afrp->line_list;
+ 
+    while (llp != NULL  &&  line_val != NULL) {
+        while (llp != NULL  &&  line_val != NULL
+               &&  (offset == NULL  ||  line_counter < offset->ival)) {
+            if (llp->lengthrepeats != NULL) {
+                s_ReportUnusedLine (line_counter,
+                                    line_counter + llp->num_appearances - 1,
+                                    line_val,
+                                    afrp->report_error,
+                                    afrp->report_error_userdata);
+                if (offset != afrp->offset_list) {
+                    rval = eTrue;
+                }
+            }
+            line_counter += llp->num_appearances;
+            for (skip = 0;
+                 skip < llp->num_appearances  &&  line_val != NULL;
+                 skip++) {
+                line_val = line_val->next;
+            }
+            llp = llp->next;
+        }
+        block_line_counter = 0;
+        while (block_line_counter < afrp->block_size  &&  llp != NULL) {
+            block_line_counter += llp->num_appearances;
+            line_counter += llp->num_appearances;
+            for (skip = 0;
+                 skip < llp->num_appearances  &&  line_val != NULL;
+                 skip++) {
+                line_val = line_val->next;
+            }
+            llp = llp->next;
+        }
+        if (offset != NULL) {
+            offset = offset->next;
+        }
+    }
+    return rval;
+}
+
+
 /* This function examines a list of line lengths, looking for interleaved
  * blocks.  If it finds them, it will set the SAlignRawFileData offset_list
  * member variable to point to a list of locations for the blocks.
@@ -2791,6 +2929,11 @@ s_FindInterleavedBlocks
         afrp->offset_list = s_AugmentBlockPatternOffsetList (pattern_list,
                                                            afrp->offset_list, 
                                                            afrp->block_size);
+    }
+    if (s_FindUnusedLines (pattern_list, afrp)) {
+        s_IntLinkFree (afrp->offset_list);
+        afrp->offset_list = NULL;
+        afrp->block_size = 0;
     }
     s_SizeInfoFree (size_list);
     
@@ -4988,6 +5131,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/10 16:15:13  bollin
+ * now checks for unused lines when finding interleaved blocks, will reject and try other methods if unused lines found after first block found.
+ *
  * Revision 1.3  2004/02/05 16:29:32  bollin
  * smarter function for skipping NEXUS comment lines
  *
