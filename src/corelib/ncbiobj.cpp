@@ -113,6 +113,12 @@ const char* CNullPointerError::what() const
 
 CFastMutex CObject::sm_ObjectMutex;
 
+#ifdef NCBI_COUNTER_NEED_MUTEX
+// CAtomicCounter doesn't normally have a .cpp file of its own, so this
+// goes here instead.
+CFastMutex CAtomicCounter::sm_Mutex;
+#endif
+
 #if USE_HEAPOBJ_LIST
 static CSafeStaticPtr< list<const void*> > s_heap_obj;
 #endif
@@ -377,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2002/05/24 14:12:10  ucko
+ * Provide CAtomicCounter::sm_Mutex if necessary.
+ *
  * Revision 1.25  2002/05/23 22:24:23  ucko
  * Use low-level atomic operations for reference counts
  *
