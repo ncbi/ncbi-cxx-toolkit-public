@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2000/10/30 22:26:29  vakatov
+ * Get rid of "s_IsAvailableExtra()" -- not used anymore
+ *
  * Revision 1.16  2000/10/20 22:33:37  vakatov
  * CArgAllow_Integers, CArgAllow_Doubles:  swap min/max, if necessary
  *
@@ -1409,18 +1412,6 @@ inline bool s_IsOptionalPlain
          constraint == CArgDescriptions::eLessOrEqual  ||
          (constraint == CArgDescriptions::eMoreOrEqual  &&
           n_constraint != 0  &&  n >= n_constraint));
-}
-
-
-inline bool s_IsAvailableExtra
-(unsigned                      n,
- CArgDescriptions::EConstraint constraint,
- unsigned                      n_constraint)
-{
-    return
-        (constraint != CArgDescriptions::eLessOrEqual  &&
-         constraint != CArgDescriptions::eEqual)  ||
-        (n_constraint == 0  &&  n < n_constraint);
 }
 
 
