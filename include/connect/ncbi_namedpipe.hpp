@@ -42,7 +42,6 @@
 
 #include <connect/ncbi_core.h>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <vector>
 
 #if defined(NCBI_OS_MSWIN)
