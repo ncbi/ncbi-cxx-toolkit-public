@@ -39,14 +39,14 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
-    class CScope;
+    class CObjectManager;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
 
 TSeqLocVector
-BLASTGetSeqLocFromStream(CNcbiIstream& in, objects::CScope* scope, 
+BLASTGetSeqLocFromStream(CNcbiIstream& in, objects::CObjectManager& objmgr, 
                          objects::ENa_strand strand,
                          TSeqPos from, TSeqPos to, int* counter,
                          bool get_lcase_mask = FALSE);

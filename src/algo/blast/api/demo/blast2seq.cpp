@@ -83,7 +83,7 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
-    void InitScope(void);
+    void InitObjMgr(void);
     EProgram GetBlastProgramNum(const string& prog);
     void ProcessCommandLineArgs(CBlastOptions& opt);
 
@@ -224,17 +224,10 @@ void CBlast2seqApplication::Init(void)
 }
 
 void 
-CBlast2seqApplication::InitScope(void)
+CBlast2seqApplication::InitObjMgr(void)
 {
-    if (m_Scope.Empty()) {
-        m_ObjMgr.Reset(new CObjectManager());
-        m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                CObjectManager::eDefault);
-
-        m_Scope.Reset(new CScope(*m_ObjMgr));
-        m_Scope->AddDefaults();
-        _TRACE("Blast2seqApp: Initializing scope");
-    }
+    m_ObjMgr.Reset(new CObjectManager);
+    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader, CObjectManager::eDefault);
 }
 
 EProgram
@@ -402,8 +395,7 @@ CBlast2seqApplication::GetOutputFilePtr(void)
 
 int CBlast2seqApplication::Run(void)
 {
-    CStopWatch sw;
-    InitScope();
+    InitObjMgr();
     CArgs args = GetArgs();
     if (args["trace"])
         SetDiagTrace(eDT_Enable);
@@ -412,17 +404,17 @@ int CBlast2seqApplication::Run(void)
 
     // Retrieve input sequences
     TSeqLocVector query_loc = 
-        BLASTGetSeqLocFromStream(args["query"].AsInputFile(), m_Scope,
+        BLASTGetSeqLocFromStream(args["query"].AsInputFile(), *m_ObjMgr,
           eNa_strand_unknown, 0, 0, &counter, args["lcase"].AsBoolean());
 
     TSeqLocVector subject_loc = 
-        BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), m_Scope,
+        BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), *m_ObjMgr,
           eNa_strand_unknown, 0, 0, &counter);
 
     // Get program name
-    EProgram prog =
-        GetBlastProgramNum(args["program"].AsString());
+    EProgram prog = GetBlastProgramNum(args["program"].AsString());
 
+    CStopWatch sw;
     sw.Start();
     CBl2Seq blaster(query_loc, subject_loc, prog);
     ProcessCommandLineArgs(blaster.SetOptions());
@@ -533,6 +525,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/12/09 15:13:58  camacho
+ * Use difference scopes for queries and subjects
+ *
  * Revision 1.32  2003/12/04 17:07:51  camacho
  * Remove yet another unused variable
  *

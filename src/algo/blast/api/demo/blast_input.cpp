@@ -48,14 +48,15 @@ BEGIN_SCOPE(blast)
 
 
 TSeqLocVector
-BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
+BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
     ENa_strand strand, TSeqPos from, TSeqPos to, int *counter, 
     bool get_lcase_mask)
 {
-    _ASSERT(scope);
     TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
     vector<CConstRef<CSeq_loc> > lcase_mask;
+    CScope* scope = new CScope(objmgr);
+    scope->AddDefaults();
 
     if (get_lcase_mask) {
         if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter, 
@@ -84,14 +85,11 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
         } else {
             seqloc->SetWhole().Assign(*itr->GetId().front());
         }
-        CRef<CScope> s(scope);
-        SSeqLoc *slp;
+        //CRef<CScope> s(scope);
+        SSeqLoc *slp = new SSeqLoc(seqloc, scope);
 
         if (get_lcase_mask) {
-            slp = new SSeqLoc(seqloc, s, lcase_mask[index]);
-            ++index;
-        } else {
-            slp = new SSeqLoc (seqloc, s);
+            slp->mask.Reset(lcase_mask[index++]);
         }
         retval.push_back(*slp);
     }
