@@ -112,11 +112,19 @@ public:
         eDefault
     };
 
+    /// Type of locking when fetching records
+    enum ECursorUpdateType {
+        eReadUpdate,        ///< Default mode: optional update after read
+        eReadModifyUpdate   ///< Use DB_RMW (write locking) on fetch
+    };
+
     typedef unsigned long TRecordCount;
     
 public:
-    CBDB_FileCursor(CBDB_File& dbf);
-    CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans);
+    CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype = eReadUpdate);
+    CBDB_FileCursor(CBDB_File& dbf, 
+                    CBDB_Transaction& trans, 
+                    ECursorUpdateType utype = eReadUpdate);
 
     ~CBDB_FileCursor();
 
@@ -181,6 +189,8 @@ private:
     EFetchDirection        m_FetchDirection;
     /// Flag if FetchFirst is already been done
     bool                   m_FirstFetched;
+    /// Type of locking (conventional or RMW)
+    unsigned int           m_FetchFlags;
 
     friend class CBDB_FC_Condition;
 };
@@ -240,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/01 16:54:45  kuznets
+ * Added support for RMW locks
+ *
  * Revision 1.12  2004/07/12 18:56:05  kuznets
  * + comment on CBDB_FileCursor::SetCondition
  *

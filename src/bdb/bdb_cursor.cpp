@@ -31,7 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_env.hpp>
 #include <db.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -156,7 +158,7 @@ CBDB_ConditionHandle::~CBDB_ConditionHandle()
 
 
 
-CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
+CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
 : m_Dbf(dbf),
   From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
   To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
@@ -164,12 +166,19 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
   m_CondFrom(eFirst),
   m_CondTo(eLast),
   m_FetchDirection(eForward),
-  m_FirstFetched(false)
+  m_FirstFetched(false),
+  m_FetchFlags(0)
 {
     m_DBC = m_Dbf.CreateCursor();
+    CBDB_Env* env = m_Dbf.GetEnv();
+    if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
+        m_FetchFlags = DB_RMW;
+    }
 }
 
-CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans)
+CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
+                                 CBDB_Transaction&  trans,
+                                 ECursorUpdateType  utype)
 : m_Dbf(dbf),
   From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
   To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
@@ -177,9 +186,14 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans)
   m_CondFrom(eFirst),
   m_CondTo(eLast),
   m_FetchDirection(eForward),
-  m_FirstFetched(false)
+  m_FirstFetched(false),
+  m_FetchFlags(0)
 {
     m_DBC = m_Dbf.CreateCursor(&trans);
+    CBDB_Env* env = m_Dbf.GetEnv();
+    if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
+        m_FetchFlags = DB_RMW;
+    }
 }
 
 
@@ -310,7 +324,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
             BDB_THROW(eIdxSearch, "Invalid FROM condition type");
     }
 
-    EBDB_ErrCode ret = m_Dbf.ReadCursor(m_DBC, flag);
+    EBDB_ErrCode ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags);
     if (ret != eBDB_Ok)
         return ret;
 
@@ -318,7 +332,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     // up or down to reach the interval criteria.
     if (m_CondFrom == eGT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT);
+            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags);
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -326,7 +340,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV);
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -362,7 +376,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     EBDB_ErrCode ret;
 
     while (1) {
-        ret = m_Dbf.ReadCursor(m_DBC, flag);
+        ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags);
         if (ret != eBDB_Ok) {
             ret = eBDB_NotFound;
             break;
@@ -485,6 +499,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/11/01 16:54:53  kuznets
+ * Added support for RMW locks
+ *
  * Revision 1.13  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
