@@ -814,8 +814,8 @@ template<class TId, class TValue>
 const CTreePairNode<TId, TValue>*
 CTreePairNode<TId, TValue>::FindSubNode(const TId& id) const
 {
-    TNodeList_CI it = SubNodeBegin();
-    TNodeList_CI it_end = SubNodeEnd();
+    typename TParent::TNodeList_CI it = this->SubNodeBegin();
+    typename TParent::TNodeList_CI it_end = this->SubNodeEnd();
 
     for(; it != it_end; ++it) {
         const TTreeValueType& v = (*it)->GetValue();
@@ -835,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/07/22 17:20:20  ucko
+ * Qualify dependent names in FindSubNode to fix GCC 3.4 build.
+ *
  * Revision 1.35  2004/07/22 16:30:38  kuznets
  * +CTreePairNode::FindSubNode
  *
