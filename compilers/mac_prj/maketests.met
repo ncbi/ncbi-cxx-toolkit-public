@@ -1,12 +1,4 @@
-(* ================================================================================
-	C++ tests
-
-	An AppleScript to compile some NCBI C++ Toolkit test applications with
-	Metrowerks CodeWarrior.
-
-	$Id: maketests.met,v 1.18 2002/01/31 21:05:16 kans Exp $
-	
-   ================================================================================ *)
+-- C++ libs --
 
 --
 -- Properties
@@ -19,9 +11,6 @@ property pCPlusPlusExtension : ".cpp"
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
 
--- Whether to compile everything.
-property pShouldBuild : true
-
 -- Which targets to create.
 -- If these are changed you must recreate the project files.  There is no direct effect on building.
 property pCreateBlueTargets : true -- 'Blue' was codename for System 7, here it means pre-Carbon.
@@ -29,8 +18,8 @@ property pCreateCarbonTargets : true
 property pCreateDebugTargets : true
 property pCreateOptimizedTargets : true
 
--- Putting a project tree inside a tool tree is evil.
-property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
+-- Whether to compile everything.
+property pShouldBuild : true
 
 property pDirsToCreate : {{relPath:"compilers:mac_prj", name:"bin"}}
 
@@ -49,6 +38,9 @@ global SOURCEFILES
 global INCLUDEFILES
 global LIBRARIES
 global BINARIES
+
+global gCDistribPresent
+global gCDistribRoot
 
 --
 -- Routines specific to this project
@@ -72,7 +64,7 @@ on SimpleProjectData(projName, section, features)
 		set projName to characters 1 through 18 of projName as string
 	end if
 	
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		if features does not contain "C" and features does not contain "C++" then
 			error "Project " & projName & "'s default language (a feature) must be C or C++."
@@ -108,7 +100,7 @@ on DataPlusPathAndSources(dataRec, newPath, newSources)
 end DataPlusPathAndSources
 
 on SetProjectData()
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		set corelib to "corelib"
 		set connect to "connect"
@@ -146,7 +138,7 @@ on SetProjectData()
 	AddSimpleProject("test_ncbi_limits", corelib, {"C++"})
 	AddSimpleProject("test_ncbi_core", connect, {"C"})
 	AddSimpleProject("test_ncbi_buffer", connect, {"C"})
-	AddSimpleProject("test_ncbi_socket_", connect, {"C", "sockets"})
+	AddSimpleProject("test_ncbi_socket", connect, {"C", "sockets"})
 	AddSimpleProject("test_ncbi_heapmgr", connect, {"C"})
 	AddSimpleProject("test_ncbi_connutil_hit", connect, {"C", "sockets"})
 	AddSimpleProject("test_ncbi_connutil_misc", connect, {"C"})
@@ -174,6 +166,22 @@ on SetProjectData()
 		{"corelib"}))
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", ¬
 		{"C++", "sockets"}), commonObjLibs), {"object_id1", "connect"}))
+	AddSimpleProject("http_connector_hit", connect, {"C"})
+	AddSimpleProject("test_ncbi_http_connector", connect, {"C"})
+	AddSimpleProject("test_ncbi_socket_connector", connect, {"C"})
+	AddSimpleProject("test_fw", connect, {"C"})
+	AddSimpleProject("test_ncbi_service_connector", connect, {"C"})
+	AddSimpleProject("test_ncbi_sendmail", connect, {"C"})
+	AddSimpleProject("test_ncbi_disp", connect, {"C"})
+	AddSimpleProject("test_ncbi_http_get", connect, {"C"})
+	AddSimpleProject("test_conn_stream_pushback", connect, {"C++"})
+	AddSimpleProject("test_ncbistr", corelib, {"C++"})
+	AddSimpleProject("test_ncbiutil", corelib, {"C++"})
+	AddSimpleProject("test_ncbifile", corelib, {"C++"})
+	AddSimpleProject("test_seqport", "objects:seq:test", {"C++"})
+	AddSimpleProject("test_utf8", util, {"C++"})
+	AddSimpleProject("test_resize_iter", util, {"C++"})
+	AddSimpleProject("test_fstream_pushback", util, {"C++"})
 	
 end SetProjectData
 
@@ -183,6 +191,7 @@ end SetProjectData
 
 global gStartupDisk
 global gHomeDir
+global gDevDir
 global gMWroot
 global gMWCWfolder
 global gMacLibs
@@ -367,6 +376,9 @@ on SetGlobals()
 		set gOpenGLdir to my FindOpenGL()
 		set gOpenGLpresent to (gOpenGLdir is not "")
 		
+		set gCDistribRoot to my CToolkitRoot()
+		set gCDistribPresent to (gCDistribRoot is not "")
+		
 		if pLinkExecutables then
 			set gProjectsDir to gOutputDir
 		else
@@ -377,7 +389,7 @@ on SetGlobals()
 end SetGlobals
 
 on SetDebugSettings(shouldDebug)
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		if shouldDebug then
 			(* ===== Panel PPC Global Optimizer =====  *)
@@ -411,7 +423,7 @@ on SetDebugSettings(shouldDebug)
 end SetDebugSettings
 
 on SetPreferences()
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		(* ===== Section "Target" ===== *)
 		
@@ -506,7 +518,7 @@ on SetPreferences()
 end SetPreferences
 
 on SetPaths1()
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		(* ===== Panel Access Paths ===== *)
 		-- We need to be able to move the default system compiler folder to the end of the list
@@ -520,7 +532,7 @@ on SetPaths1()
 end SetPaths1
 
 on SetPaths2()
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		-- Add recursive include dir AFTER source dirs to avoid major performance hit
 		set pathsToAdd to {}
@@ -530,6 +542,11 @@ on SetPaths2()
 		end repeat
 		if not pUsingCPlusPlus then
 			copy {name:gDistribRoot & "link:macmet:", recursive:true, origin:absolute} to end of pathsToAdd
+		end if
+		if pUsingCPlusPlus then
+			if gCDistribPresent then
+				copy {name:gCDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
+			end if
 		end if
 		Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		
@@ -556,7 +573,7 @@ on SetPaths2()
 end SetPaths2
 
 on SetWeakLink(libName)
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		set the weak link of ¬
 			every target file of target (count targets of project document 1) of project document 1 ¬
@@ -567,7 +584,7 @@ on SetWeakLink(libName)
 end SetWeakLink
 
 on AddBlueLibs()
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		set libsToAdd to {¬
 			gMSLPPCLibs & "MSL C.PPC.Lib", ¬
@@ -597,7 +614,7 @@ on AddBlueLibs()
 end AddBlueLibs
 
 on AddCarbonLibs()
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		set libsToAdd to {¬
 			gMSLPPCLibs & "MSL C.Carbon.Lib", ¬
@@ -617,7 +634,7 @@ on AddCarbonLibs()
 end AddCarbonLibs
 
 on AddFeatures(features, flags)
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		if features contains "BNDL" then
 			Set Preferences of panel "Output Flags" to {Has Bundle:true}
@@ -646,7 +663,7 @@ on AddFeatures(features, flags)
 end AddFeatures
 
 on SetupTarget(proj, flags)
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		-- initialize variables
 		set projRsrcs to {}
@@ -812,7 +829,7 @@ on CreateFolders()
 end CreateFolders
 
 on CreateProject(proj)
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		
 		-- This statement doesn't work, because AppleScript is broken.
 		if proj is {} then return
@@ -867,7 +884,7 @@ on CreateAllProjects()
 end CreateAllProjects
 
 on BuildProject(projName)
-	tell application "CodeWarrior IDE 4.2.5"
+	tell application "CodeWarrior IDE 4.2.6"
 		open (gProjectsDir & projName & pProjectFileExtension)
 		repeat with i from 2 to (count targets of project document 1)
 			set the current target of project document 1 to target i of project document 1
@@ -908,11 +925,7 @@ end BuildAllProjects
 
 on SignalCompletion()
 	
-	try
-		say "Make complete."
-	on error
-		beep
-	end try
+	beep
 	
 end SignalCompletion
 
@@ -924,7 +937,7 @@ with timeout of 60000 seconds
 	
 	CreateFolders()
 	
-	tell application "CodeWarrior IDE 4.2.5" to activate
+	tell application "CodeWarrior IDE 4.2.6" to activate
 	
 	CreateAllProjects()
 	
