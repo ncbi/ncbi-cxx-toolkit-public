@@ -392,7 +392,7 @@ public:
     
     void SetMemoryBound(Uint8 mb, Uint8 ss);
     
-    void PossiblyGarbageCollect(Uint8 space_needed, const char * msg);
+    void PossiblyGarbageCollect(Uint8 space_needed);
     
     Uint8 GetLargeSliceSize()
     {
