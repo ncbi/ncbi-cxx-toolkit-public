@@ -5230,6 +5230,7 @@ s_FindBadDataCharsInSequence
 (TAlignRawSeqPtr      arsp,
  TAlignRawSeqPtr      master_arsp,
  TSequenceInfoPtr     sip,
+ int                  num_segments,
  FReportErrorFunction report_error,
  void *               report_error_userdata)
 {
@@ -5319,10 +5320,18 @@ s_FindBadDataCharsInSequence
     }
 
     if (! found_middle_start) {
-        s_ReportMissingSequenceData (arsp->id,
+        if (num_segments > 1)
+        {
+            return eFalse;
+        }
+        else
+        {
+            s_ReportMissingSequenceData (arsp->id,
                                    report_error, report_error_userdata);
-        s_LineInfoReaderFree (lirp);
-        return eTrue;
+            s_LineInfoReaderFree (lirp);
+            return eTrue;
+          
+        }
     }
 
     /* Now complain about bad middle characters */
@@ -5414,6 +5423,7 @@ s_s_FindBadDataCharsInSequenceList
     }
     for (arsp = afrp->sequences; arsp != NULL; arsp = arsp->next) {
         if (s_FindBadDataCharsInSequence (arsp, afrp->sequences, sip,
+                                        afrp->num_segments,
                                         afrp->report_error,
                                         afrp->report_error_userdata)) {
             rval = eTrue;
@@ -5734,6 +5744,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/09/17 12:21:48  bollin
+ * allow all-gap segments in segmented alignments
+ *
  * Revision 1.11  2004/08/11 15:23:07  vakatov
  * Compilation warning fix (unused static func)
  *
