@@ -258,23 +258,18 @@ extern NCBI_DBAPI_EXPORT const string kDBAPI_BlobCacheDriverName;
 extern "C" 
 {
 
-void NCBI_DBAPI_EXPORT NCBI_EntryPoint_DBAPI_BlobCache(
+NCBI_DBAPI_EXPORT
+void NCBI_EntryPoint_DBAPI_BlobCache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
 
-inline 
-void NCBI_DBAPI_EXPORT NCBI_EntryPoint_ICache_ncbi_dbapi(
+NCBI_DBAPI_EXPORT
+void NCBI_EntryPoint_ICache_ncbi_dbapi(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
-     CPluginManager<ICache>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_DBAPI_BlobCache(info_list, method);
-}
-
-
+     CPluginManager<ICache>::EEntryPointRequest method);
 
 } // extern C
-
 
 
 END_NCBI_SCOPE
@@ -282,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/10 16:56:10  grichenk
+ * Fixed dll export declarations, moved entry points to cpp.
+ *
  * Revision 1.7  2004/07/29 16:45:11  kuznets
  * Removed conflicting entry point
  *

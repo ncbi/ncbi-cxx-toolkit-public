@@ -524,11 +524,21 @@ public:
     }
 };
 
+
 void NCBI_EntryPoint_ReaderPubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CPubseqReaderCF>::NCBI_EntryPointImpl(info_list, method);
+    CHostEntryPointImpl<CPubseqReaderCF>::
+        NCBI_EntryPointImpl(info_list, method);
+}
+
+
+void NCBI_EntryPoint_xreader_pubseqos(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
 }
 
 

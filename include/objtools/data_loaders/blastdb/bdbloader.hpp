@@ -112,18 +112,15 @@ extern NCBI_XLOADER_BLASTDB_EXPORT const string kDataLoader_BlastDb_DriverName;
 extern "C"
 {
 
-void NCBI_XLOADER_BLASTDB_EXPORT NCBI_EntryPoint_DataLoader_BlastDb(
+NCBI_XLOADER_BLASTDB_EXPORT
+void NCBI_EntryPoint_DataLoader_BlastDb(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
-inline 
-void NCBI_XLOADER_BLASTDB_EXPORT
-NCBI_EntryPoint_xloader_blastdb(
+NCBI_XLOADER_BLASTDB_EXPORT
+void NCBI_EntryPoint_xloader_blastdb(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
-    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_DataLoader_BlastDb(info_list, method);
-}
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
 } // extern C
 
@@ -133,6 +130,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.9  2004/08/10 16:56:10  grichenk
+ * Fixed dll export declarations, moved entry points to cpp.
+ *
  * Revision 1.8  2004/08/04 19:35:08  grichenk
  * Renamed entry points to be found by dll resolver.
  * GB loader uses CPluginManagerStore to get/put

@@ -961,4 +961,12 @@ void NCBI_EntryPoint_Id1Reader(
 }
 
 
+void NCBI_EntryPoint_xreader_id1(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id1Reader(info_list, method);
+}
+
+
 END_NCBI_SCOPE

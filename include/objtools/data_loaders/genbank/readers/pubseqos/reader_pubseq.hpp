@@ -100,17 +100,15 @@ extern NCBI_XREADER_PUBSEQOS_EXPORT const string kPubseqReaderDriverName;
 extern "C" 
 {
 
-void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_ReaderPubseqos(
+NCBI_XREADER_PUBSEQOS_EXPORT
+void NCBI_EntryPoint_ReaderPubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);
 
-inline void 
-NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_xreader_pubseqos(
+NCBI_XREADER_PUBSEQOS_EXPORT
+void NCBI_EntryPoint_xreader_pubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
-}
+     CPluginManager<objects::CReader>::EEntryPointRequest method);
 
 } // extern C
 

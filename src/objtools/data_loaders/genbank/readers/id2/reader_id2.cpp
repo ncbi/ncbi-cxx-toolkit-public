@@ -1292,6 +1292,7 @@ public:
     }
 };
 
+
 void NCBI_EntryPoint_Id2Reader(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
@@ -1299,6 +1300,13 @@ void NCBI_EntryPoint_Id2Reader(
     CHostEntryPointImpl<CId2ReaderCF>::NCBI_EntryPointImpl(info_list, method);
 }
 
+
+void NCBI_EntryPoint_xreader_id2(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_Id2Reader(info_list, method);
+}
 
 
 END_NCBI_SCOPE

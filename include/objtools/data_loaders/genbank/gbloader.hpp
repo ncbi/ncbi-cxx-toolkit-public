@@ -271,18 +271,15 @@ extern NCBI_XLOADER_GENBANK_EXPORT const string kDataLoader_GB_DriverName;
 extern "C"
 {
 
-void NCBI_XLOADER_GENBANK_EXPORT NCBI_EntryPoint_DataLoader_GB(
+NCBI_XLOADER_GENBANK_EXPORT
+void NCBI_EntryPoint_DataLoader_GB(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
-inline 
-void NCBI_XLOADER_GENBANK_EXPORT
-NCBI_EntryPoint_xloader_genbank(
+NCBI_XLOADER_GENBANK_EXPORT
+void NCBI_EntryPoint_xloader_genbank(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
-    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_DataLoader_GB(info_list, method);
-}
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
 } // extern C
 

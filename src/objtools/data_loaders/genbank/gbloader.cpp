@@ -1190,9 +1190,6 @@ CDataLoader* CGB_DataLoaderCF::CreateAndRegister(
 }
 
 
-extern "C"
-{
-
 void NCBI_EntryPoint_DataLoader_GB(
     CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<CDataLoader>::EEntryPointRequest method)
@@ -1200,6 +1197,11 @@ void NCBI_EntryPoint_DataLoader_GB(
     CHostEntryPointImpl<CGB_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
 }
 
+void NCBI_EntryPoint_xloader_genbank(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_GB(info_list, method);
 }
 
 

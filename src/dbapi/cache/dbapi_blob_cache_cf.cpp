@@ -164,7 +164,6 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
 }
 
 
-
 void NCBI_EntryPoint_DBAPI_BlobCache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method)
@@ -174,6 +173,15 @@ void NCBI_EntryPoint_DBAPI_BlobCache(
                                                             method);
 }
 
+
+void NCBI_EntryPoint_ICache_ncbi_dbapi(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DBAPI_BlobCache(info_list, method);
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -181,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/08/10 16:56:11  grichenk
+ * Fixed dll export declarations, moved entry points to cpp.
+ *
  * Revision 1.3  2004/07/27 13:55:09  kuznets
  * Improved parameters recognition in CF
  *

@@ -94,18 +94,15 @@ extern NCBI_XLOADER_TRACE_EXPORT const string kDataLoader_Trace_DriverName;
 extern "C"
 {
 
-void NCBI_XLOADER_TRACE_EXPORT NCBI_EntryPoint_DataLoader_Trace(
+NCBI_XLOADER_TRACE_EXPORT
+void NCBI_EntryPoint_DataLoader_Trace(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
-inline
-void NCBI_XLOADER_TRACE_EXPORT
-NCBI_EntryPoint_xloader_trace(
+NCBI_XLOADER_TRACE_EXPORT
+void NCBI_EntryPoint_xloader_trace(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
-    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_DataLoader_Trace(info_list, method);
-}
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
 } // extern C
 
@@ -116,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/10 16:56:11  grichenk
+ * Fixed dll export declarations, moved entry points to cpp.
+ *
  * Revision 1.7  2004/08/04 19:35:09  grichenk
  * Renamed entry points to be found by dll resolver.
  * GB loader uses CPluginManagerStore to get/put

@@ -161,17 +161,15 @@ extern NCBI_XREADER_ID1_EXPORT const string kId1ReaderDriverName;
 extern "C" 
 {
 
-void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_Id1Reader(
+NCBI_XREADER_ID1_EXPORT
+void NCBI_EntryPoint_Id1Reader(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);
 
-inline 
-void NCBI_XREADER_ID1_EXPORT NCBI_EntryPoint_xreader_id1(
+NCBI_XREADER_ID1_EXPORT
+void NCBI_EntryPoint_xreader_id1(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_Id1Reader(info_list, method);
-}
+     CPluginManager<objects::CReader>::EEntryPointRequest method);
 
 } // extern C
 

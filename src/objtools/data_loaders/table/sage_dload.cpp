@@ -384,9 +384,6 @@ CDataLoader* CSage_DataLoaderCF::CreateAndRegister(
 }
 
 
-extern "C"
-{
-
 void NCBI_EntryPoint_DataLoader_Sage(
     CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<CDataLoader>::EEntryPointRequest method)
@@ -394,6 +391,12 @@ void NCBI_EntryPoint_DataLoader_Sage(
     CHostEntryPointImpl<CSage_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
 }
 
+
+void NCBI_EntryPoint_xloader_sage(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_Sage(info_list, method);
 }
 
 
@@ -403,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/10 16:56:11  grichenk
+ * Fixed dll export declarations, moved entry points to cpp.
+ *
  * Revision 1.10  2004/08/04 14:56:35  vasilche
  * Updated to changes in TSE locking scheme.
  *
