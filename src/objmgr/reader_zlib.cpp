@@ -219,8 +219,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2003/10/14 22:36:08  ucko
+* Fix typo in last log message
+*
 * Revision 1.7  2003/10/14 22:35:51  ucko
-* Remove initialization of CResultZBtSrcRdr::GetCompressedSize (neither
+* Remove initialization of CResultZBtSrcRdr::m_CompressedSize (neither
 * declared nor used anywhere)
 *
 * Revision 1.6  2003/10/14 21:06:25  vasilche
