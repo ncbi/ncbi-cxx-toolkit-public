@@ -49,6 +49,7 @@ class CBlastDbTest;
 class CBlastTraceBackTest; 
 class CScoreBlkTest; 
 class CRPSTest; 
+class CBlastRedoAlignmentTest; 
 
 /** @addtogroup AlgoBlast
  *
@@ -1685,6 +1686,7 @@ public:
     friend class ::CBlastTraceBackTest;  // unit test class
     friend class ::CScoreBlkTest;        // unit test class
     friend class ::CRPSTest;        // unit test class
+    friend class ::CBlastRedoAlignmentTest;        // unit test class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -2466,6 +2468,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/05/18 13:20:35  madden
+* Add CBlastRedoAlignmentTest as friend class
+*
 * Revision 1.59  2004/05/18 12:48:24  madden
 * Add setter and getter for GapTracebackAlgorithm (EBlastTbackExt)
 *
