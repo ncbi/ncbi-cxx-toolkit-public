@@ -116,6 +116,17 @@ bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me);
 
 const char* GetAAName(unsigned char aa, bool is_ascii);
 
+template <typename T>
+void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
+{
+    if (!html) {
+        os << id;
+    } else {
+        os << "<a href=http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val="
+           << id << '>' << id << "</a>";
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -125,6 +136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/02/09 15:00:10  shomrat
+* Added NcbiId
+*
 * Revision 1.15  2005/01/31 16:31:59  shomrat
 * Added validation of accession.version
 *
