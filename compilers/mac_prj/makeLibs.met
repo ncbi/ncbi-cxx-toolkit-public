@@ -23,11 +23,12 @@ property pCreateProfiledTargets : false
 property pShouldBuild : true
 
 -- Whether to create projects in the specified category.
-property pCreateCoreLibs : true
-property pCreateObjectLibs : true (* whether to create/compile object libraries *)
-property pCreateObjToolsLibs : true
-property pCreateSocketLibs : true (* whether to create/compile socket libs *)
+property pCreateCoreLibs : false
+property pCreateObjectLibs : false (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : false
+property pCreateSocketLibs : false (* whether to create/compile socket libs *)
 property pCreateGuiLibs : true
+property pCreatePluginLibs : true
 
 property pStationeryName : "LibraryStationery"
 property pPluginStationeryName : "PluginStationery"
@@ -156,9 +157,6 @@ on AddPlugin(projName, features, section, staticLibs)
 	if features does not contain "plugin" then set features to features & {"plugin"}
 	if features does not contain "libdl" then set features to features & {"libdl"}
 	set projData to GuiProjectData(projName, features, section)
-	if features contains "fltk" then
-		set staticLibs to staticLibs & "fltk"
-	end if
 	AddProject(DataPlusLibs(projData, staticLibs, {"gui_core"}))
 end AddPlugin
 
@@ -217,7 +215,8 @@ on SetProjectData()
 	
 	if pCreateCoreLibs then
 		AddSimpleProjectExceptFiles("xncbi", {}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
-		AddSimpleProject("xalgo", {}, "algo")
+		AddSimpleProject("xalgoalign", {}, "algo:align")
+		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
 		AddSimpleProject("dbapi", {}, "dbapi")
 		AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
@@ -298,7 +297,7 @@ on SetProjectData()
 	if pCreateGuiLibs then
 		-- GuiProject's automatically have 'fltk' feature.
 		
-		AddSimpleProject("gui_utils", {"fltk"}, "gui:utils")
+		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_feature", {}, "dialogs:feature")
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
@@ -329,10 +328,14 @@ on SetProjectData()
 				"fl_set_gray.cxx", "Fl_Sys_Menu_Bar.cxx", "Fl_win32.cxx", "scandir_win32.c"})}))
 		set pCPlusPlusExt to saveCppExt
 		
+	end if
+	
+	if pCreatePluginLibs then
+		
 		-- Plugin's automatically have fltk and plugin features.
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
-		set SeqObjects to {"seq", "seqalign", "seqblock", "seqcode", "seqfeat", "seqloc", "seqres", "seqset"}
+		set SeqObjects to {"seq", "seqcode", "seqset"}
 		set SomeObjects to {"biblio", "general", "medline", "pub"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
@@ -346,40 +349,30 @@ on SetProjectData()
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		AddProject(DataPlusLibs(gui_core_data, UsualStatics & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
 		
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", Â
-			UsualStatics & {"xalgo"})
-		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
-			UsualStatics)
-		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
-			UsualStatics & {"scoremat", "xalgo", "xnetblast", "xnetblastcli"})
-		AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", Â
-			{})
-		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", Â
-			UsualStatics & {"xvalidate"})
+		-- PLUGINS --
+		-- AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {})
 		
-		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			UsualStatics & {"submit", "xobjread"})
-		AddPlugin("gui_doc_table", {}, "plugins:doc:table", Â
-			UsualStatics)
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
+		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", {})
+		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
+			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
+		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {})
+		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
+		
+		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", {"submit", "xobjread"})
+		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			UsualStatics & Â
-			{"gui_opengl", "ximage", "gui_utils", "w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "xalnmgr"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "xalnmgr"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			UsualStatics & Â
-			{"gui_dlg_feature", "gui_opengl", "ximage", "gui_utils", "submit", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic"})
+			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic"})
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
-			UsualStatics & Â
-			{"gui_opengl", "ximage", "gui_utils", "submit", "w_seq", "w_seq_icon", "w_seq_info"})
+			{"w_seq", "w_seq_icon", "w_seq_info"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
-			UsualStatics & Â
-			{"gui_utils", "w_flek", "w_table"})
+			{"w_flek", "w_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			UsualStatics & Â
-			{"gbseq", "gui_dlg_entry_form", "xalnmgr", "xflat"})
-		AddPlugin("gui_view_validator", {}, "plugins:view:validator", Â
-			UsualStatics & Â
-			{"gbseq", "gui_dlg_entry_form", "xalnmgr", "xvalidate"})
+			{"gbseq", "xalnmgr", "xflat"})
+		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xalnmgr", "xvalidate"})
 		
 		
 	end if
@@ -907,7 +900,7 @@ on BuildProject(projName, targetSpecs)
 						Make Project
 					on error errmsg number errnum
 						if (errnum = 5) then
-							set errFileName to (gProjectsDir & projName & thisTarget & ".errs")
+							set errFileName to (gProjectsDir & projName & "-" & i & ".errs")
 							Save Error Window As (file errFileName)
 							close first window
 						else
