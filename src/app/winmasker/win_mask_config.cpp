@@ -50,12 +50,12 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
           ( !args["output"].AsString().empty() 
             ? new CNcbiOfstream( args["output"].AsString().c_str() )
             : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
-      lstat_name( args["lstat"].AsString() ),
+      lstat_name( args["ustat"].AsString() ),
       textend( args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
       cutoff_score( args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
       max_score( args["t_high"] ? args["t_high"].AsInteger() : 0 ),
       min_score( args["t_low"] ? args["t_low"].AsInteger() : 0 ),
-      window_size( args["window"].AsInteger() ),
+      window_size( args["window"] ? args["window"].AsInteger() : 0 ),
       // merge_pass( args["mpass"].AsBoolean() ),
       // merge_cutoff_score( args["mscore"].AsInteger() ),
       // abs_merge_cutoff_dist( args["mabs"].AsInteger() ),
@@ -193,6 +193,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/11 15:08:22  morgulis
+ * 1. Made -window parameter optional and be default equal to unit_size + 4;
+ * 2. Changed the name of -lstat parameter to -ustat.
+ * 3. Added README file.
+ *
  * Revision 1.3  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

@@ -74,8 +74,8 @@ void CWinMaskApplication::Init(void)
                                USAGE_LINE );
 
     // Adding command line arguments descriptions
-    arg_desc->AddDefaultKey( "lstat", "length_statistics_file",
-                             "relative unit frequencies "
+    arg_desc->AddDefaultKey( "ustat", "unit_counts",
+                             "file with unit counts"
                              "(required if -mk_counts is false)",
                              CArgDescriptions::eString, "" );
     arg_desc->AddDefaultKey( "input", "input_file_name",
@@ -88,8 +88,8 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "checkdup", "check_duplicates",
                              "check for duplicate sequences",
                              CArgDescriptions::eBoolean, "false" );
-    arg_desc->AddDefaultKey( "window", "window_size", "window size",
-                             CArgDescriptions::eInteger, "19" );
+    arg_desc->AddOptionalKey( "window", "window_size", "window size",
+                              CArgDescriptions::eInteger );
 #if 0
     arg_desc->AddDefaultKey( "wstep", "window_step", "window step",
                              CArgDescriptions::eInteger, "1" );
@@ -381,6 +381,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/11 15:08:22  morgulis
+ * 1. Made -window parameter optional and be default equal to unit_size + 4;
+ * 2. Changed the name of -lstat parameter to -ustat.
+ * 3. Added README file.
+ *
  * Revision 1.2  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

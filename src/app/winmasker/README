@@ -1,9 +1,525 @@
 ABSTRACT
 
-    windowmasker is a program that identifies and masks out highly 
+    WindowMasker is a program that identifies and masks out highly 
     repetitive DNA sequences and DNA sequences with low complexity 
     in a genome using only the sequence of the genome itself.
 
+
 SYNOPSIS
 
-    windowmasker 
+    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size]
+
+    windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list]
+
+
+DESCRIPTION
+
+    WindowMasker uses two methods for masking DNA sequences. WinMask
+    module is used to mask potentially repetitive sequences by 
+    counting the number of times different n-mers (units) occur in
+    the genome. DUST module is used to identify and mask low 
+    complexity regions.
+
+    WinMask module works in two stages. During Stage 1 unit counts
+    are collected and stored in a separate database. During Stage 2
+    that database is used to mask the input sequences. Usually the
+    unit counts database is created once per genome and then used
+    multiple times for masking.
+
+    Stage 1 is selected with -mk_counts true command line option
+    (this option is set to false by default). Stage one processes
+    input data in up to 4 passes.
+
+        Pass 1 (optional). Checking for large duplicate sequences
+        in the input. This pass is made when -checkdup true is
+        selected.
+
+        Pass 2 (optional). Compute the total size of the genome.
+        This pass is made when neither unit length (-unit) nor
+        the genome size (-genome_size) are given on the command
+        line. Knowledge of genome size is necessary to compute
+        the unit length automatically.
+
+        Pass 3 (optional). Compute unit score thresholds 
+        T_threshold, T_extend, T_low, and T_high. In particular
+        the value of T_low is necessary for the final pass to
+        only save the counts for the units with score above
+        T_low. This pass can be avoided by using -t_low command
+        line option which explicitly sets the value of T_low.
+
+        Pass 4. Generate the file containing the unit length, 
+        significant (score above T_low) unit counts, and threshold 
+        values.
+        
+    Stage 2 corresponds to -mk_counts false, which is the default.
+    WindowMasker reads the data generated in Stage 1 and a set of
+    input DNA sequences to produce as its output information about
+    masked subintervals. If -dust true is specified DUST module
+    is applied to the input sequences in addition to window based
+    masking and the results of DUST and WinMask modules are merged
+    together.
+
+
+OPTIONS
+
+    In this section command line options to WindowMasker are
+    explained. There are two subsections for Stage 1 options
+    and Stage 2 options. Some options are applicable in both
+    modes but could have somewhat different meaning.
+
+    -mk_counts true/false
+
+        Default: false
+
+        Select the mode of operation of WindowMasker. The value
+        of true selects Stage 1 processing, e.g. creation
+        of unit counts and computation of threshold parameters.
+        The value of false (default) selects Stage 2 processing,
+        e.g. sequence masking.
+
+Stage 1 Options
+
+    -checkdup true/false
+
+        default: false
+
+        If the value is true, then an additional pass is made to 
+        check the input for long duplicate sequences. The algorithm
+        is heuristic. For a pair of sequences a match is reported
+        if at least 5 100 bp segments approximately 10000 bp apart
+        match exactly. "Approximately" above means that some 
+        fuzziness is allowed in the distance between consecutive
+        100 bp segments.
+
+    -fa_list true/false
+
+        default: false
+
+        If the value of this parameter is true, then -input option
+        specifies a file containing a list of pathnames (one pathname
+        per line) to the FASTA formatted files that will be used
+        as input. Otherwise -input option specifies a single FASTA
+        formatted file.
+
+    -genome_size genome_size
+
+        default: <empty>
+
+        Explicitly specify the genome length in number of bases. 
+        If this parameter is not used then the genome length is 
+        computed as the sum of lengths of all input sequences.
+        This parameter does not have any effect if -unit option 
+        is specified. Otherwise it is used to compute the unit 
+        length.
+
+    -input input_file_name
+
+        default: <empty>
+
+        The location of the input file. The contents of the input 
+        file depends on the value of -fa_list option. If -fa_list 
+        false is specified, input file is a single fasta file. Unit 
+        counts will be generated based on the sequences in that file. 
+        If -fa_list true is specified, then input file contains a 
+        list of pathnames (one per line) of FASTA formatted files 
+        that form the genome. In this case unit counts will be 
+        generated based on all the sequences contained in the listed 
+        files.
+
+    -mem available_memory
+
+        default: 1536
+
+        Assume that this much RAM is available. The value is in
+        megabytes. Depending on the amount of available memory
+        passes 3 and 4 of stage 2 could contain additional subpasses.
+        This is especially true for large (>=14) values of unit
+        length.
+
+    -output output_file_name
+
+        default: <use stdout>
+
+        The location of the output file. This parameter is optional
+        and standard output is used if it is not specified. Please,
+        see section FILES for the description of format of the file.
+
+    -t_low T_low
+
+        default: <empty>
+        
+        Only save information about units with counts equal or bigger
+        than T_low. If -t_low is not specified on command line, then
+        its value is computed so that 90% of all units present in
+        the genome have counts below T_low.
+
+    -unit unit_length
+
+        default: <empty>
+
+        Specifies the unit length to use. The value is an integer 
+        between 1 and 16. If this parameter is not specified then
+        unit length is computed automatically from the length of
+        the genome L as the smallest number N such that L/4^N > 5.
+
+Stage 2 Options
+
+    -dust true/false
+
+        default: false
+
+        Use DUST module in addition to WinMask module to mask out
+        low complexity regions.
+
+    -exclude_ids exclude_id_list
+
+        default: <empty>
+
+        The name of the file containing the list of sequence ids 
+        (one per line) in the input that should not be processed.
+        See section FILES for an example. This option and -ids
+        are mutually exclusive.
+
+    -ids id_list
+
+        default: <empty>
+
+        The name of the file containing the list of sequence ids
+        (one per line) in the input that should be processed. See
+        section FILES for an example. This option an -exclude_ids
+        are mutually exclusive.
+
+    -input input_file_name
+
+        default: <use stdin>
+
+        Specifies the input file. WindowMasker accepts input in
+        FASTA format. If this option is skipped, then the standard
+        input will be used.
+
+    -oformat output_format
+
+        default: interval
+
+        The possible values are interval and fasta. If the fasta 
+        format is selected the output is a fasta file with masked
+        regions in lower case letters. If the interval format is
+        selected the output is a file containing, for each processed
+        sequence, a sorted set of continuous masked subsequences.
+        For the format of the intervals file see section FILES.
+
+    -output output_file_name
+
+        default: <use stdout>
+
+        Specifies the output file. The output file format depends on
+        the value of -oformat option. If this option is skipped,
+        then the standard output will be used.
+
+    -set_t_high score
+
+        default: T_high
+
+        The score value for units with unit count above T_high;
+
+    -set_t_low score
+
+        default: (T_low + 1)/2
+
+        The score value for units with unit count below T_low.
+
+    -t_extend T_extend
+
+        default: <use the value from unit counts file>
+
+        This parameter defines whether the interval between two
+        windows with score higher than T_threshold is masked. The
+        interval will be masked if every base of the interval 
+        lies within a window of score greater or equal than T_extend.
+        For the definition of the window score see description of 
+        -window_size option. This parameters overrides the value
+        contained in the unit counts file.
+
+    -t_high T_high
+
+        default: <use the value from unit counts file>
+
+        This parameter overrides the value contained in the unit
+        counts file. Units with counts greater than T_high will
+        not be read from the unit_counts file and the value of
+        -set_t_high will be used as the result of unit count lookup.
+
+    -t_low T_low
+
+        default: <use the value from unit counts file>
+
+        This parameter overrides the value contained in the unit
+        counts file. Since the unit counts file does not keep scores
+        of the units with scores lower than T_low it only makes
+        sense to specify T_low value that is greater than the one
+        in the file. In that case unit scores that are less than
+        T_low will not be read from the unit counts file and the
+        value of -set_t_low option will be used as the result of unit
+        count lookup.
+
+    -t_thres T_threshold
+
+        default: <use the value from unit counts file>
+
+        All windows with score above T_threshold are masked. For
+        definition of the window score see description of 
+        -window_size option. This parameters overrides the value
+        contained in the unit counts file.
+
+    -ustat unit_counts
+
+        This option is required for Stage 2 processing. It specifies
+        the name of the file containing the unit counts for the
+        genome in use. Unit counts are typically created during
+        Stage 1 of WindowMasker processing.
+
+    -window window_size
+
+        default <use unit_size + 4>
+
+        WinMask module works by tracking the score of a sliding
+        window which is defined as average of all units within
+        the window. This parameter defines the size of the sliding
+        window. By default the value unit_size + 4 is used so
+        there are 5 units in a window.
+
+FILES
+
+    This section describes the file formats that are used by
+    WindowMasker and provides some examples (FASTA file format
+    is not described here).
+
+
+    Genome in multiple FASTA files.
+
+    If the genome data is contained in multiple FASTA formatted
+    files, then -fa_list true should be used and the value
+    of -input option should name the file containing
+    the list of the required FASTA files, one file per line. For
+    example, for human genome build 34, one could have one fasta
+    file per chromosome named chrX.fa, chrY.fa, chr1.fa, chr2.fa,
+    ..., chr22.fa located in /human34 directory. Then the file
+    given to -input option should look like this:
+
+---------------------------------
+/human34/chr1.fa
+/human34/chr2.fa
+...
+/human34/chr22.fa
+/human34/chrX.fa
+/human34/chrY.fa
+---------------------------------
+
+    NOTE: Empty lines are ignored.
+
+
+    Unit Counts
+
+    This file is the output of WindowMasker Stage 1 processing.
+    The file is an ASCII text file. It also serves as input
+    for Stage 2 processing. When WindowMasker reads the unit
+    counts file during Stage 2 empty lines and lines starting
+    with '#' character are ignored. This way comments could be
+    introduced into the unit counts file.
+
+    The first line of the file contains one integer number which
+    is the unit size.
+
+    Then come the lines containing counts for the units which
+    appeared more than T_low times in the genome (and its
+    reverse complement). These are ordered by the unit numerical
+    value. Each line has the following structure:
+
+UNIT_VALUE COUNT
+
+    where UNIT_VALUE is an integer in hexadecimal format and 
+    COUNT is a decimal integer.
+
+    The last section of the file contains the computed values
+    for T_threshold, T_extend, T_low, and T_high, each on a
+    separate line with the following structure:
+
+>PARAM_NAME VALUE
+
+    where PARAM_NAME is one of t_low, t_extend, t_threshold, 
+    t_high and VALUE is the integer value of the corresponding
+    parameter.
+
+    For example the unit counts file for human build 34 looks
+    like this (only 20 lines in the beginning and 5 lines 
+    in the end are shown):
+
+
+---------------------------------
+15
+0 2389786
+1 65535
+2 300282
+3 124840
+4 38729
+5 21522
+6 2808
+7 18814
+8 193471
+9 38161
+a 57691
+b 55942
+c 30053
+d 31367
+e 19223
+f 68769
+10 27888
+11 7764
+12 9890
+<...>
+
+>t_low       16
+>t_extend    57
+>t_threshold 86
+>t_high      154
+---------------------------------
+
+
+    List of Sequence Ids to Process
+    List of Sequence Ids to Exclude from Processing
+
+    Both files have identical format. WindowMasker uses
+    the first word of the sequence FASTA title (with or without
+    the leading '>' character) as the sequence id. There should 
+    be one sequence id per line. Below is the example of such
+    a file.
+
+---------------------------------
+gi|20349357|ref|NT_033777.1|
+>gi|20340552|ref|NT_033778.1|
+---------------------------------
+
+
+    WindowMasker Interval Output Format
+
+    By default the output of WindowMasker Stage 2 is in Interval
+    format (-oformat interval). The file is an ASCII text file
+    consisting of blocks of information for each input sequence
+    in the order those sequences appear in the input FASTA file.
+    Each block starts with the FASTA title of the sequence
+    followed by the description of masked intervals, one interval
+    per line. The intervals do not overlap and are sorted
+    by their start position. (NOTE: the positions are numbered 
+    starting at 0.) Each line describing a masked interval has
+    the following structure:
+
+START - END
+
+    where START and END are decimal integers representing the
+    endpoints of the masked interval. Below is sample part of
+    WindowMasker output in interval format:
+
+---------------------------------
+>AC084726.10.8677.10816
+2 - 27
+45 - 63
+75 - 103
+144 - 191
+201 - 222
+266 - 308
+324 - 355
+398 - 426
+446 - 468
+569 - 628
+647 - 676
+711 - 774
+815 - 865
+897 - 924
+961 - 1004
+1039 - 1126
+1212 - 1261
+1285 - 1310
+1367 - 1473
+1479 - 1509
+1521 - 1600
+1626 - 1673
+1683 - 1757
+1766 - 1809
+1817 - 1948
+1956 - 2013
+2026 - 2052
+2082 - 2139
+>AC084726.10.16360.16465
+>AC084726.10.17911.20089
+10 - 147
+240 - 293
+365 - 444
+460 - 589
+627 - 654
+682 - 712
+756 - 786
+827 - 845
+903 - 928
+950 - 978
+1060 - 1199
+1225 - 1340
+1369 - 1397
+1443 - 1464
+1482 - 1600
+1703 - 1726
+1747 - 1775
+1823 - 1872
+1904 - 1974
+1982 - 2006
+2064 - 2084
+2099 - 2167
+---------------------------------
+
+
+SAMPLE WINDOWMASKER SESSION
+
+    Assuming the list of genome files for human build 34 are
+    in the file ./fa_list the following command will run the
+    first stage of WindowMasker. Checking for duplicates
+    is requested, so all candidates for duplicates will be
+    reported on the standard error. During Stage 1 WindowMasker
+    also shows the progress by printing dots to the standard
+    error.
+
+---------------------------------
+bash-2.05b$ ./windowmasker -mk_counts true -fa_list true -input fa_list -checkdup true -output ustat.15
+Possible duplication of sequences:
+subject: lcl|Hs1_27103_34 and query: lcl|Hs1_33153_34
+at intervals
+subject: 5539 --- 35539
+query  : 36748455 --- 36778455
+
+Possible duplication of sequences:
+subject: lcl|Hs1_78005_34 and query: lcl|Hs1_78000_34
+at intervals
+subject: 173111 --- 233111
+query  : 26192 --- 86192
+
+<...MANY MESSAGES SKIPPED...>
+
+Computing the genome length........................done.
+Pass 1................................................................................................
+Pass 2................................................................................................
+bash-2.05b$
+---------------------------------
+    
+    At this point file ustat.15 contains the unit counts
+    that can be used in Stage 2.
+
+    To mask the first human chromosome applying both WinMask
+    and DUST the following command can be used assuming chr1.fa
+    is in the current directory. [Note that during Stage 2 no 
+    progress information is printed on the standard error.]
+
+---------------------------------
+bash-2.05b$ ./windowmasker -ustat ustat.15 -input chr1.fa -output chr1.wm
+bash-2.05b$
+---------------------------------
+
+    The output in the interval format is written to chr1.wm.
+

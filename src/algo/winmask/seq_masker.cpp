@@ -83,6 +83,9 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                : eTrigger_Min ),
       discontig( arg_discontig ), pattern( arg_pattern )
 {
+    if( window_size == 0 )
+        window_size = lstat.UnitSize() + 4;
+
     trigger_score = score = new CSeqMaskerScoreMean( lstat );
 
     if( trigger == eTrigger_Min )
@@ -638,6 +641,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/03/11 15:08:22  morgulis
+ * 1. Made -window parameter optional and be default equal to unit_size + 4;
+ * 2. Changed the name of -lstat parameter to -ustat.
+ * 3. Added README file.
+ *
  * Revision 1.7  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.
