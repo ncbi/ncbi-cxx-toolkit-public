@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/11/18 20:20:24  vakatov
+* Added "inline" to OverflowError() to fix CodeWarrior(MAC) C++ warning
+*
 * Revision 1.32  1999/10/19 15:41:04  vasilche
 * Fixed reference to IOS_BASE
 *
@@ -174,8 +177,8 @@ void CObjectIStreamBinary::SkipBytes(size_t count)
 
 typedef unsigned char TByte;
 
-runtime_error OverflowError(const type_info& type, bool sign, 
-                             const string& bytes)
+inline runtime_error OverflowError(const type_info& type, bool sign, 
+                                   const string& bytes)
 {
     ERR_POST((sign? "": "un") << "signed number too big to fit in " <<
              type.name() << " bytes: " << bytes);
