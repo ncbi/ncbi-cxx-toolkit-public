@@ -5,6 +5,8 @@
 [A-Z]*.cpp
 mla__.cpp
 mla___.cpp
+client.cpp
+client_.cpp
 .cvsignore
 Makefile.*.lib
 Makefile.in

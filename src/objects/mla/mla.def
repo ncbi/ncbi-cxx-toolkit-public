@@ -1,0 +1,18 @@
+[client]
+class              = CMLAClient
+service            = MedArch
+request            = Mla-request
+reply              = Mla-back
+reply.getmriuids   = getuids
+reply.getaccuids   = getuids
+reply.uidtopmid    = outpmid
+reply.pmidtouid    = outuid
+reply.getmlepmid   = getpme
+reply.getpubpmid   = getpub
+reply.citmatchpmid = outpmid
+reply.getmripmids  = getpmids
+reply.getaccpmids  = getpmids
+reply.citlstpmids  = getpmids
+reply.getmleuid    = getpme
+reply.getmlrpmid   = getmlr
+reply.getmlruid    = getmlr

@@ -1,2 +1,2 @@
 LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ mla
+SRC = $(LIB)__ $(LIB)___ client client_
