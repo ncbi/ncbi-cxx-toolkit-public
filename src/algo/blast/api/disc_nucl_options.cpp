@@ -59,6 +59,7 @@ CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetTemplateType(0);
     SetTemplateLength(21);
     SetWordSize(BLAST_WORDSIZE_NUCL);
+    SetScanStep(4);
 }
 
 void
@@ -78,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/03 18:36:10  dondosha
+ * Reset the stride to 4 in SetMBLookupTableDefaults
+ *
  * Revision 1.2  2004/01/16 21:54:52  bealer
  * - Blast4 API changes.
  *
