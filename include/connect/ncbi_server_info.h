@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/12 21:42:11  lavr
+ * SSERV_Info::  use ESERV_Type, ESERV_Flags instead of TSERV_Type, TSERV_Flags
+ *
  * Revision 6.3  2000/05/12 18:31:48  lavr
  * First working revision
  *
@@ -123,10 +126,10 @@ typedef union {
 } USERV_Info;
 
 typedef struct {
-    TSERV_Type     type;
+    ESERV_Type     type;
     unsigned int   host;
     unsigned short port;
-    TSERV_Flags    flag;
+    ESERV_Flags    flag;
     time_t         time;
     USERV_Info     u;
 } SSERV_Info;
