@@ -566,6 +566,8 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
     TSeqPos buflen;             // length of buffer allocated
     TSeqPos i;                  // loop index of original sequence
     Uint1 sentinel;             // sentinel byte
+    AutoPtr<Uint1, CDeleter<Uint1> > safe_buf; // contains buf to ensure 
+                                               // exception safety
 
     CBioseq_Handle handle = scope->GetBioseqHandle(sl); // might throw exception
 
@@ -581,6 +583,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
+        safe_buf.reset(buf);
         *buf_var++ = sentinel;
         for (i = 0; i < sv.size(); i++)
             *buf_var++ = sv[i];
@@ -594,6 +597,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         buflen = CalculateSeqBufferLength(sv.size(), NCBI4NA_ENCODING,
                                           strand, add_nucl_sentinel);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
+        safe_buf.reset(buf);
         if (add_nucl_sentinel)
             *buf_var++ = sentinel;
 
@@ -642,6 +646,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
                                           eNa_strand_plus, add_nucl_sentinel);
         buf = (Uint1*) malloc(sizeof(Uint1)*buflen);
+        safe_buf.reset(buf);
         CompressDNA(sv, buf, buflen);
         break;
 
@@ -649,7 +654,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return make_pair(AutoPtr<Uint1, CDeleter<Uint1> >(buf), buflen);
+    return make_pair(safe_buf, buflen);
 }
 
 #if 0
@@ -842,6 +847,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2003/12/15 19:55:14  camacho
+* Minor fix to ensure exception safety
+*
 * Revision 1.52  2003/12/03 16:43:47  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
 *
