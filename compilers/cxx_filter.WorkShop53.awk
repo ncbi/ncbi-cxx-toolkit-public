@@ -75,6 +75,7 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector", line (147|156|161|268|273|310|318|399|463|472|483|513|1020|1025|1046|1052|1058|1064|1077|1146|1154|1220|1274|1284): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector.cc", line 113: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
+      m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: Comparing different enum types "enum" and "enum"\./ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: FX.+ hides the function FX/ ||
       m ~ /^".*\/include\/fox\/FXObject\.h".+two consecutive underbars in "__FXMETACLASSINITIALIZER__"\./ ||
       m ~ /^".*\/include\/html\/jsmenu\.hpp", line [0-9]+: Warning: ncbi::CHTMLPopupMenu::SetAttribute hides the function ncbi::CNCBINode::SetAttribute/ ||
