@@ -5,7 +5,7 @@
 
 APP = test_objstore
 SRC = test_objstore
-LIB = xutil xncbi
+LIB = xncbi
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
