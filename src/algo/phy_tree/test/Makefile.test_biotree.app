@@ -3,8 +3,6 @@
 # Author:  Anatoliy Kuznetsov
 #################################
 
-# Build object manager test application "test_objmgr"
-#################################
 
 REQUIRES = objects 
 
@@ -12,7 +10,7 @@ APP = test_biotree
 SRC = test_biotree
 LIB = $(OBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(ORIG_LIBS) taxon1
 
-#CHECK_CMD = test_seqvector_ci
+#CHECK_CMD = test_biotree
 #CHECK_TIMEOUT = 500
