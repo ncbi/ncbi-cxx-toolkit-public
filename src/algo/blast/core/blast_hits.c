@@ -449,6 +449,102 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
    return 0;
 }
 
+void 
+Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
+                           Int4* gaps_out, Int4* gap_opens_out)
+{
+   Int4 length = hsp->query.length;
+   Int4 gap_opens = 0, gaps = 0;
+
+   if (hsp->gap_info) {
+      GapEditScript* esp = hsp->gap_info->esp;
+      for ( ; esp; esp = esp->next) {
+         if (esp->op_type == eGapAlignDel) {
+            length += esp->num;
+            gaps += esp->num;
+            ++gap_opens;
+         } else if (esp->op_type == eGapAlignIns) {
+            ++gap_opens;
+            gaps += esp->num;
+         }
+      }
+   } else if (hsp->subject.length > length) {
+      length = hsp->subject.length;
+   }
+
+   *length_out = length;
+   *gap_opens_out = gap_opens;
+   *gaps_out = gaps;
+}
+
+/** Adjust start and end of an HSP in a translated sequence segment.
+ * @param segment BlastSeg structure (part of BlastHSP) [in]
+ * @param seq_length Length of the full sequence [in]
+ * @param start Start of the alignment in this segment in nucleotide 
+ *              coordinates, 1-offset [out]
+ * @param end End of the alignment in this segment in nucleotide 
+ *            coordinates, 1-offset [out]
+ */
+static void 
+Blast_SegGetTranslatedOffsets(BlastSeg* segment, Int4 seq_length, 
+                              Int4* start, Int4* end)
+{
+   if (segment->frame < 0)	{
+      *start = seq_length - CODON_LENGTH*segment->offset
+         + segment->frame;
+      *end = seq_length
+         - CODON_LENGTH*(segment->offset+segment->length)
+         + segment->frame + 1;
+   } else if (segment->frame > 0)	{
+      *start = CODON_LENGTH*(segment->offset) + segment->frame - 1;
+      *end = CODON_LENGTH*(segment->offset+segment->length)
+         + segment->frame - 2;
+   } else {
+      *start = segment->offset + 1;
+      *end = segment->offset + segment->length;
+   }
+}
+
+void 
+Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
+                            Int4* s_start, Int4* s_end)
+{
+   Int4 query_length, subject_length;
+
+   if (!hsp->gap_info) {
+      *q_start = hsp->query.offset + 1;
+      *q_end = hsp->query.offset + hsp->query.length;
+      *s_start = hsp->subject.offset + 1;
+      *s_end = hsp->subject.offset + hsp->subject.length;
+      return;
+   }
+
+   /* Non-translated lengths are stored in the GapEditBlock */
+   query_length = hsp->gap_info->original_length1;
+   subject_length = hsp->gap_info->original_length2;
+   
+   if (!hsp->gap_info->translate1 && !hsp->gap_info->translate2) {
+      if (hsp->query.frame != hsp->subject.frame) {
+         /* Blastn: if different strands, flip offsets in query; leave 
+            offsets in subject as they are, but change order for correct
+            correspondence. */
+         *q_end = query_length - hsp->query.offset;
+         *q_start = *q_end - hsp->query.length + 1;
+         *s_end = hsp->subject.offset + 1;
+         *s_start = hsp->subject.offset + hsp->subject.length;
+      } else {
+         *q_start = hsp->query.offset + 1;
+         *q_end = hsp->query.offset + hsp->query.length;
+         *s_start = hsp->subject.offset + 1;
+         *s_end = hsp->subject.offset + hsp->subject.length;
+      }
+   } else {
+      Blast_SegGetTranslatedOffsets(&hsp->query, query_length, q_start, q_end);
+      Blast_SegGetTranslatedOffsets(&hsp->subject, subject_length, 
+                                    q_start, s_end);
+   }
+}
+
 /** TRUE if c is between a and b; f between d and f. Determines if the
  * coordinates are already in an HSP that has been evaluated. 
  */
@@ -1817,7 +1913,7 @@ static Int2 Blast_HitListPurgeNullHSPLists(BlastHitList* hit_list)
 
    index1 = 0;
    for (index=0; index<hsplist_count; index++) {
-      if (hsplist_array[index] != NULL) {
+      if (hsplist_array[index]) {
          hsplist_array[index1] = hsplist_array[index];
          index1++;
       }
@@ -1947,9 +2043,11 @@ Int2 Blast_HSPResultsSaveRPSHSPList(Uint1 program, BlastHSPResults* results,
       option. */
    for (index = hit_options->prelim_hitlist_size; 
         index < hit_list->hsplist_count; ++index) {
-      Blast_HSPListFree(hit_list->hsplist_array[index]);
+      hit_list->hsplist_array[index] = 
+         Blast_HSPListFree(hit_list->hsplist_array[index]);
    }
-   hit_list->hsplist_count = MIN(hit_list->hsplist_count, index);
+   hit_list->hsplist_count = 
+      MIN(hit_list->hsplist_count, hit_options->prelim_hitlist_size);
 
    /* All HSPs from the input HSP list have been moved to the results 
       structure, so make sure there is no attempt to free them now. */
