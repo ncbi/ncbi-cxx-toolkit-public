@@ -52,38 +52,58 @@ class CScope;
 
 BEGIN_SCOPE(validator)
 
+class CValidError;
 
 class NCBI_VALIDATOR_EXPORT CValidErrItem : public CObject 
 {
 public:
-    // constructor
-    CValidErrItem(EDiagSev             sev,    // severity
-                  unsigned int         ec,     // error code
-                  const string&        msg,    // message
-                  const CSerialObject& obj);   // offending object
+    
 
     // destructor
     ~CValidErrItem(void);
 
-    // access functions
+    // Severity of error
     EDiagSev                GetSeverity (void) const;
-    const string&           GetSevAsStr (void) const;
-    const string&           GetMsg      (void) const;
+    // Error code
     const string&           GetErrCode  (void) const;
+    // Error group (SEQ_FEAT, SEQ_INST etc.)
+    const string&           GetErrGroup (void) const;
+    // Error message
+    const string&           GetMsg      (void) const;
+    // Verbose message
     const string&           GetVerbose  (void) const;
+    // Offending ovject description
+    const string&           GetObjDesc  (void) const;
+    // Offending object
     const CSerialObject&    GetObject   (void) const;
 
+    // Convert Severity from enum to a string representation
+    static const string& ConvertSeverity(EDiagSev sev);
+
 private:
+    friend class CValidError;
+
     typedef CConstRef<CSerialObject>    TObject;
+
+    // constructor
+    CValidErrItem(EDiagSev             sev,       // severity
+                  unsigned int         ec,        // error code
+                  const string&        msg,       // message
+                  const string&        obj_desc,  // object description
+                  const CSerialObject& obj);      // offending object
+    
+    CValidErrItem(void);
+    CValidErrItem(const CValidErrItem&);
+
     // member data values
     EDiagSev      m_Severity;   // severity level
     unsigned int  m_ErrIndex;   // error code index
     string        m_Message;    // specific error message
+    string        m_Desc;       // offending object's description
     TObject       m_Object;     // offending object
-    
-    // internal string arrays
-    static const string sm_Terse [];
-    static const string sm_Verbose [];
+
+    static const string sm_Terse[];
+    static const string sm_Verbose[];
 };
 
 
@@ -96,6 +116,7 @@ public:
     void AddValidErrItem(EDiagSev             sev,   // severity
                          unsigned int         ec,    // error code
                          const string&        msg,   // specific error message
+                         const string&        desc,  // offending object's description
                          const CSerialObject& obj);  // offending object
 
     // Statistics
@@ -321,6 +342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/07/29 16:06:44  shomrat
+* Separated error message from offending object's description
+*
 * Revision 1.14  2004/06/25 14:54:27  shomrat
 * minor changes to CValidErrItem and CValidError APIs
 *
