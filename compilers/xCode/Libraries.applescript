@@ -164,7 +164,7 @@ property xreader_pubseqos : {name:"xreader_pubseqos", path:"objtools:data_loader
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp", "ProjectDescr.cpp"}}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true}
@@ -329,6 +329,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/25 17:56:53  lebedev
+ * Exclude gui/core/ProjectDescr.cpp from the build
+ *
  * Revision 1.3  2004/06/25 15:15:38  lebedev
  * Some unnessesary debug traces removed
  *
