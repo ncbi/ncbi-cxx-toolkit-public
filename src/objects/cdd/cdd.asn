@@ -1,4 +1,4 @@
---$Revision: 1.13 $
+--$Revision: 1.14 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -112,16 +112,20 @@ Cdd-descr ::= CHOICE {
   source-id     Cdd-id-set,                   -- for linking back to source db
   repeats       Cdd-repeat,                   -- to record repeat counts
   old-root      Cdd-id-set,                   -- to record short-term history
-  curation-status INTEGER { unassigned(0),
-                            prein (1),
-			    ofc (2),
-			    iac (3),
+  curation-status INTEGER { unassigned(0),    -- to record curation status
+                            prein (1),        -- when CD is checked out from
+			    ofc (2),          -- the tracking database, for 
+			    iac (3),          -- use within curation software
 			    ofv1 (4),
 			    iav1 (5),
 			    ofv2 (6),
 			    iav2 (7),
 			    postin (8),
-                            other (255) }
+                            other (255) },
+  readonly-status INTEGER { unassigned(0),    -- to record read-only status
+                            readonly (1),     -- when CD is checked out from
+			    readwrite (2),    -- the tracking database, for
+			    other (255) }     -- use within curation software
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
