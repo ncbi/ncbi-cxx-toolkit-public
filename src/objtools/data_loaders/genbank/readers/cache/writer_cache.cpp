@@ -35,7 +35,6 @@
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
 #include <util/cache/icache.hpp>
-
 #include <util/rwstream.hpp>
 
 #include <serial/objostrasnb.hpp>
@@ -52,31 +51,8 @@ BEGIN_SCOPE(objects)
 CCacheWriter::CCacheWriter(ICache* blob_cache,
                            ICache* id_cache,
                            TOwnership own)
-    : m_BlobCache(blob_cache), m_IdCache(id_cache), m_Own(own)
+    : CCacheHolder(blob_cache, id_cache, own)
 {
-}
-
-
-CCacheWriter::~CCacheWriter(void)
-{
-    if ( m_Own & fOwnIdCache ) {
-        delete m_IdCache;
-    }
-    if ( m_Own & fOwnBlobCache ) {
-        delete m_BlobCache;
-    }
-}
-
-
-void CCacheWriter::SetBlobCache(ICache* blob_cache)
-{
-    m_BlobCache = blob_cache;
-}
-
-
-void CCacheWriter::SetIdCache(ICache* id_cache)
-{
-    m_IdCache = id_cache;
 }
 
 
@@ -216,7 +192,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
-void CCacheWriter::SaveBlobVersion(CReaderRequestResult& result,
+void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
                                    const TBlobId& blob_id,
                                    TBlobVersion version)
 {
@@ -237,18 +213,25 @@ class CCacheBlobStream : public CWriter::CBlobStream
 public:
     typedef int TVersion;
 
-    CCacheBlobStream(IWriter* writer,
-                     ICache* cache, const string& key,
-                     TVersion version = 0, const string& subkey = kEmptyStr)
-        : m_Writer(writer), m_Stream(new CWStream(writer)),
-          m_Cache(cache), m_Key(key), m_Version(version), m_Subkey(subkey)
+    CCacheBlobStream(ICache* cache, const string& key,
+                     TVersion version, const string& subkey)
+        : m_Cache(cache), m_Key(key), m_Version(version), m_Subkey(subkey),
+          m_Writer(cache->GetWriteStream(key, version, subkey))
         {
+            if ( m_Writer.get() ) {
+                m_Stream.reset(new CWStream(m_Writer.get()));
+            }
         }
     ~CCacheBlobStream(void)
         {
             if ( m_Stream.get() ) {
                 Abort();
             }
+        }
+
+    bool CanWrite(void) const
+        {
+            return m_Stream.get();
         }
     
     CNcbiOstream& operator*(void)
@@ -278,264 +261,40 @@ public:
 
     void Remove(void)
         {
-            if ( m_Version == 0 && m_Subkey.empty() ) {
-                m_Cache->Remove(m_Key);
-            }
-            else {
-                m_Cache->Remove(m_Key, m_Version, m_Subkey);
-            }
+            m_Cache->Remove(m_Key, m_Version, m_Subkey);
         }
     
 private:
-    auto_ptr<IWriter>   m_Writer;
-    auto_ptr<CWStream>  m_Stream;
     ICache*             m_Cache;
     string              m_Key;
     TVersion            m_Version;
     string              m_Subkey;
+    auto_ptr<IWriter>   m_Writer;
+    auto_ptr<CWStream>  m_Stream;
 };
 
 
 CRef<CWriter::CBlobStream>
 CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
                              const TBlobId& blob_id,
+                             TChunkId chunk_id, 
                              const CProcessor& processor)
 {
     if( !m_BlobCache ) {
         return null;
     }
 
-    string key = GetBlobKey(blob_id);
     CLoadLockBlob blob(result, blob_id);
-    TBlobVersion version = blob.GetBlobVersion();
-
-    auto_ptr<IWriter> writer
-        (m_BlobCache->GetWriteStream(key, version, GetBlobSubkey()));
-    if ( !writer.get() ) {
+    CRef<CBlobStream> stream
+        (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
+                              blob.GetBlobVersion(),
+                              GetBlobSubkey(chunk_id)));
+    if ( !stream->CanWrite() ) {
         return null;
     }
 
-    CRef<CBlobStream> stream(new CCacheBlobStream(writer.release(),
-                                                  m_BlobCache, key));
     WriteProcessorTag(**stream, processor);
     return stream;
-}
-
-
-CRef<CWriter::CBlobStream>
-CCacheWriter::OpenChunkStream(CReaderRequestResult& result,
-                              const TBlobId& blob_id,
-                              TChunkId chunk_id,
-                              const CProcessor& processor)
-{
-    if( !m_BlobCache ) {
-        return null;
-    }
-
-    CLoadLockBlob blob(result, blob_id);
-    string key = GetBlobKey(blob_id);
-    TBlobVersion version = blob.GetBlobVersion();
-    string subkey = GetChunkSubkey(chunk_id);
-
-    auto_ptr<IWriter> writer
-        (m_BlobCache->GetWriteStream(key, version, subkey));
-    if ( !writer.get() ) {
-        return null;
-    }
-
-    CRef<CBlobStream> stream(new CCacheBlobStream(writer.release(),
-                                                  m_BlobCache, key,
-                                                  version, subkey));
-    WriteProcessorTag(**stream, processor);
-    return stream;
-}
-
-
-void CCacheWriter::SaveBlob(CReaderRequestResult& result,
-                            const TBlobId& blob_id,
-                            const CProcessor& processor,
-                            CRef<CByteSource> byte_source)
-{
-    if( !m_BlobCache ) {
-        return;
-    }
-
-    _ASSERT(byte_source);
-
-    string key = GetBlobKey(blob_id);
-    CLoadLockBlob blob(result, blob_id);
-    TBlobVersion version = blob.GetBlobVersion();
-
-    try {
-        auto_ptr<IWriter> writer(
-            m_BlobCache->GetWriteStream(key, version, GetBlobSubkey()));
-        if ( !writer.get() ) {
-            return;
-        }
-
-        {{
-            CWStream stream(writer.get());
-            WriteProcessorTag(stream, processor);
-            WriteBytes(stream, byte_source);
-        }}
-
-        writer.reset();
-        
-        // everything is fine
-        return;
-    }
-    catch ( ... ) {
-        // In case of an error we need to remove incomplete BLOB
-        // from the cache.
-        try {
-            m_BlobCache->Remove(key);
-        }
-        catch ( exception& /*exc*/ ) {
-            // ignored
-        }
-        // ignore cache write error - it doesn't affect application
-    }
-    
-}
-
-
-void CCacheWriter::SaveStateAndBlob(CReaderRequestResult& result,
-                                    const TBlobId& blob_id,
-                                    const CProcessor& processor,
-                                    CRef<CByteSource> byte_source)
-{
-    if( !m_BlobCache ) {
-        return;
-    }
-
-    string key = GetBlobKey(blob_id);
-    CLoadLockBlob blob(result, blob_id);
-    TBlobState blob_state = blob.GetBlobState();
-    TBlobVersion version = blob.GetBlobVersion();
-
-    _ASSERT((blob_state&CBioseq_Handle::fState_no_data) && !byte_source ||
-            !(blob_state&CBioseq_Handle::fState_no_data) && byte_source);
-
-    try {
-        auto_ptr<IWriter> writer(
-            m_BlobCache->GetWriteStream(key, version, GetBlobSubkey()));
-        if ( !writer.get() ) {
-            return;
-        }
-
-        {{
-            CWStream stream(writer.get());
-            WriteProcessorTag(stream, processor);
-            WriteInt(stream, blob_state);
-            if ( byte_source ) {
-                WriteBytes(stream, byte_source);
-            }
-        }}
-
-        writer.reset();
-        
-        // everything is fine
-        return;
-    }
-    catch ( ... ) {
-        // In case of an error we need to remove incomplete BLOB
-        // from the cache.
-        try {
-            m_BlobCache->Remove(key);
-        }
-        catch ( exception& /*exc*/ ) {
-            // ignored
-        }
-        // ignore cache write error - it doesn't affect application
-    }
-    
-}
-
-
-void CCacheWriter::SaveSNPBlob(CReaderRequestResult& result,
-                               const TBlobId& blob_id,
-                               const CConstObjectInfo& root,
-                               const TSNP_InfoMap& snps)
-{
-    if( !m_BlobCache ) 
-        return;
-
-    string key = GetBlobKey(blob_id);
-    CLoadLockBlob blob(result, blob_id);
-    TBlobVersion version = blob.GetBlobVersion();
-
-    try {
-        auto_ptr<IWriter> writer
-            (m_BlobCache->GetWriteStream(key, version,
-                                         GetSeqEntryWithSNPSubkey()));
-        if ( !writer.get() ) {
-            return;
-        }
-
-        {{
-            CWStream stream(writer.get());
-            CSeq_annot_SNP_Info_Reader::Write(stream, root, snps);
-        }}
-        writer.reset();
-        // everything is fine
-        return;
-    }
-    catch ( ... ) {
-        // In case of an error we need to remove incomplete BLOB
-        // from the cache.
-        try {
-            m_BlobCache->Remove(key);
-        }
-        catch ( exception& /*exc*/ ) {
-            // ignored
-        }
-    }
-}
-
-
-void CCacheWriter::SaveSNPTable(CReaderRequestResult& result,
-                                const TBlobId& blob_id,
-                                const CSeq_annot_SNP_Info& snp_info)
-{
-    if( !m_BlobCache ) {
-        return;
-    }
-
-    cout << "CCacheWriter::SaveSNPTable()" << endl;
-
-    string key = GetBlobKey(blob_id);
-    CLoadLockBlob blob(result, blob_id);
-    TBlobVersion version = blob.GetBlobVersion();
-
-    try {
-        auto_ptr<IWriter> writer
-            (m_BlobCache->GetWriteStream(key, version, GetSNPTableSubkey()));
-        if ( !writer.get() ) {
-            return;
-        }
-        {{
-            CWStream stream(writer.get());
-            CSeq_annot_SNP_Info_Reader::Write(stream, snp_info);
-        }}
-        writer.reset();
-    }
-    catch ( exception& exc ) {
-        ERR_POST("CId1Cache:StoreSNPTable: "
-                 "Exception: "<< key << ": " << exc.what());
-        try {
-            m_BlobCache->Remove(key);
-        }
-        catch ( exception& /*exc*/ ) {
-            // ignored
-        }
-
-    }
-}
-
-void CCacheWriter::SaveChunk(CReaderRequestResult& result,
-                             const TBlobId& blob_id, 
-                             TChunkId chunk_id)
-{
 }
 
 
@@ -558,17 +317,16 @@ void GenBankWriters_Register_Cache(void)
 ///
 /// @internal
 ///
-class CCacheWriterCF : 
+class CCacheWriterCF :
     public CSimpleClassFactoryImpl<objects::CWriter, objects::CCacheWriter>
 {
 public:
-    typedef 
-      CSimpleClassFactoryImpl<objects::CWriter, objects::CCacheWriter> TParent;
+    typedef objects::CCacheWriter TWriter;
+    typedef CSimpleClassFactoryImpl<objects::CWriter, TWriter> TParent;
 public:
     CCacheWriterCF()
         : TParent(NCBI_GBLOADER_WRITER_CACHE_DRIVER_NAME, 0) {}
     ~CCacheWriterCF() {}
-
 
     ICache* CreateCache(const TPluginManagerParamTree* params,
                         const string& section) const
@@ -602,9 +360,9 @@ public:
                 (CreateCache(params,
                              NCBI_GBLOADER_WRITER_CACHE_PARAM_BLOB_SECTION));
             if ( blob_cache.get()  ||  id_cache.get() ) 
-                return new objects::CCacheWriter(blob_cache.release(),
-                                                 id_cache.release(),
-                                                 objects::CCacheWriter::fOwnAll);
+                return new TWriter(blob_cache.release(),
+                                   id_cache.release(),
+                                   TWriter::fOwnAll);
         }
         return 0;
     }
