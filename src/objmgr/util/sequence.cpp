@@ -3003,7 +3003,7 @@ const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope)
         return 0;
     }
     CBioseq_Handle bsh = GetNucleotideParent(scope->GetBioseqHandle(product));
-    return bsh ? bsh.GetCompleteBioseq() : 0;
+    return bsh ? bsh.GetCompleteBioseq() : reinterpret_cast<const CBioseq*>(0);
 }
 
 CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& bsh)
@@ -4174,6 +4174,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.94  2004/10/07 16:01:22  ucko
+* Fix "invalid conversion" error brought on by last commit.
+*
 * Revision 1.93  2004/10/07 15:55:28  ucko
 * Eliminate more uses of GetBioseq(Core).
 *
