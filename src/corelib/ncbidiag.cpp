@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/07/25 19:13:55  lavr
+* Added date/time stamp for message logging
+*
 * Revision 1.31  2001/06/13 23:19:38  vakatov
 * Revamped previous revision (prefix and error codes)
 *
@@ -141,6 +144,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <stdlib.h>
+#include <time.h>
 
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
@@ -159,7 +163,7 @@ EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
 #endif /* else!NDEBUG */
 
 unsigned int CDiagBuffer::sm_PostFlags      =
-eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
+eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode | eDPF_DateTime;
 
 EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
 
@@ -309,6 +313,21 @@ void SDiagMessage::Write(string& str) const
 
 CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 {
+    // Date & time
+    if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
+        time_t t = time(0);
+        char datetime[32];
+        struct tm* tm;
+#ifdef HAVE_LOCALTIME_R
+        struct tm temp;
+        localtime_r(&t, &temp);
+        tm = &temp;
+#else
+        tm = localtime(&t);
+#endif /*HAVE_LOCALTIME_R*/
+        strftime(datetime, sizeof(datetime), "%D %T ", tm);
+        os << datetime;
+    }
     // "<file>"
     bool print_file = (m_File  &&  *m_File  &&
                        IsSetDiagPostFlag(eDPF_File, m_Flags));

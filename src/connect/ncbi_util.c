@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/07/25 19:12:57  lavr
+ * Added date/time stamp for message logging
+ *
  * Revision 6.9  2001/04/24 21:24:59  lavr
  * Make log flush in DEBUG mode
  *
@@ -63,11 +66,15 @@
  */
 
 #include "ncbi_priv.h"
+#ifndef NCBI_CXX_TOOLKIT
+#include <ncbitime.h>
+#endif
 
-#include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 
 /* Static function pre-declarations to avoid C++ compiler warnings
@@ -154,9 +161,10 @@ extern char* LOG_ComposeMessage
     static const char s_RawData_End[] =
         "\n#################### [END] Raw Data\n";
 
-    char* str;
+    char* str, datetime[32];
 
     /* Calculated length of ... */
+    size_t datetime_len  = 0;
     size_t level_len     = 0;
     size_t file_line_len = 0;
     size_t module_len    = 0;
@@ -168,7 +176,7 @@ extern char* LOG_ComposeMessage
     if (call_data->level == eLOG_Trace) {
         format_flags = fLOG_Full;
     } else if (format_flags == fLOG_Default) {
-#if defined(NDEBUG)
+#ifdef NDEBUG
         format_flags = fLOG_Short;
 #else
         format_flags = fLOG_Full;
@@ -176,6 +184,24 @@ extern char* LOG_ComposeMessage
     }
 
     /* Pre-calculate total message length */
+    if ((format_flags & fLOG_DateTime) != 0) {
+        struct tm* tm;
+#ifdef NCBI_CXX_TOOLKIT
+        time_t t = time(0);
+#  ifdef HAVE_LOCALTIME_R
+        struct tm temp;
+        localtime_r(&t, &temp);
+        tm = &temp;
+#  else /*HAVE_LOCALTIME_R*/
+        tm = localtime(&t);
+#  endif/*HAVE_LOCALTIME_R*/
+#else /*NCBI_CXX_TOOLKIT*/
+        struct tm temp;
+        GetDayTime(&temp);
+        tm = &temp;
+#endif/*NCBI_CXX_TOOLKIT*/
+        datetime_len = strftime(datetime, sizeof(datetime), "%D %T ", tm);
+    }
     if ((format_flags & fLOG_Level) != 0) {
         level_len = strlen(LOG_LevelStr(call_data->level)) + 2;
     }
@@ -206,8 +232,8 @@ extern char* LOG_ComposeMessage
     }
 
     /* Allocate memory for the resulting message */
-    total_len =
-        file_line_len + module_len + level_len + message_len + data_len;
+    total_len = datetime_len + file_line_len + module_len + level_len +
+        message_len + data_len;
     str = (char*) malloc(total_len + 1);
     if ( !str ) {
         assert(0);
@@ -216,8 +242,11 @@ extern char* LOG_ComposeMessage
 
     /* Compose the message */
     str[0] = '\0';
+    if ( datetime_len ) {
+        strcpy(str, datetime);
+    }
     if ( file_line_len ) {
-        sprintf(str, "\"%s\", line %d: ",
+        sprintf(str + strlen(str), "\"%s\", line %d: ",
                 call_data->file, (int) call_data->line);
     }
     if ( module_len ) {

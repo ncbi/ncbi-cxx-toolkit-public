@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/07/25 19:12:31  lavr
+ * Added date/time stamp for message logging
+ *
  * Revision 6.7  2001/05/17 18:10:22  vakatov
  * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
  * Logging::  always call the logger if severity is eLOG_Fatal.
@@ -159,7 +162,7 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME
 
 /* Compose message using the "call_data" info.
  * Full format:
- *     "<file>", line <line>: [<module>] <level>: <message>
+ *     mm/dd/yy HH:MM:SS "<file>", line <line>: [<module>] <level>: <message>
  *     \n----- [BEGIN] Raw Data (<raw_size> bytes) -----\n
  *     <raw_data>
  *     \n----- [END] Raw Data -----\n
@@ -167,16 +170,17 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME
  *
  * NOTE:  the returned string must be deallocated using "free()".
  */
-typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags" */
 typedef enum {
-    fLOG_Default = 0x0,  /* "fLOG_Short" if NDEBUG, else "fLOG_Full" */
-    fLOG_Short   = 0x1,
-    fLOG_Full    = 0x7,
+    fLOG_Default  = 0x0, /* "fLOG_Short" if NDEBUG, else "fLOG_Full"        */
 
     fLOG_Level    = 0x1,
     fLOG_Module   = 0x2,
-    fLOG_FileLine = 0x4  /* (must always be printed for "eLOG_Trace" level) */
+    fLOG_FileLine = 0x4, /* (must always be printed for "eLOG_Trace" level) */
+    fLOG_DateTime = 0x8
 } ELOG_Format;
+typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
+#define fLOG_Short  (fLOG_Level | fLOG_DateTime)
+#define fLOG_Full   (fLOG_Level | fLOG_Module | fLOG_FileLine | fLOG_DateTime)
 
 extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/07/25 19:12:41  lavr
+* Added date/time stamp for message logging
+*
 * Revision 1.27  2001/06/14 03:37:28  vakatov
 * For the ErrCode manipulator, use CNcbiDiag:: method rather than a friend
 *
@@ -182,11 +185,12 @@ enum EDiagPostFlag {
     eDPF_Severity     = 0x10, // set by default (always)
     eDPF_ErrCode      = 0x20, // set by default (always)
     eDPF_ErrSubCode   = 0x40, // set by default (always)
+    eDPF_DateTime     = 0x80, // set by default (always)
 
     // set all flags
     eDPF_All          = 0x7FFF,
     // set all flags for using with __FILE__ and __LINE__
-    eDPF_Trace        = 0x1f,
+    eDPF_Trace        = 0x9f,
     // print the posted message only;  without severity, location, prefix, etc.
     eDPF_Log          = 0x0,
     // ignore all other flags, use global flags
