@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/08 21:49:29  ostell
+ * changed MakeString to AsString and to use ostream instead of string
+ *
  * Revision 6.2  2000/12/08 19:53:15  ostell
  * added MakeString()
  *
@@ -86,21 +89,21 @@ bool CObject_id::Match(const CObject_id& oid2) const
 	return false;
 }
 
-    // format contents into a string
-void CObject_id::MakeString(string &s) const
+    // format contents into a stream
+ostream& CObject_id::AsString(ostream &s) const
 {
 	switch (Which())
 	{
 		case e_Id:
-			s += NStr::IntToString(GetId());
+			s << GetId();
 			break;
 		case e_Str:
-			s += GetStr();
+			s << GetStr();
 			break;
 		default:
 			break;
 	}
-	return;
+	return s;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/12/08 21:49:14  ostell
+ * changed MakeString to AsString and to use ostream instead of string
+ *
  * Revision 1.2  2000/12/08 19:53:00  ostell
  * added MakeString()
  *
@@ -70,8 +73,8 @@ public:
     // identical ids?
     bool Match(const CObject_id& oid2) const;
 
-    // format contents into a string
-    void MakeString(string &s) const;
+    // format contents into a stream
+    ostream& AsString(ostream &s) const;
 };
 
 
