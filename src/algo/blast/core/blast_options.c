@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.32  2003/06/26 20:24:06  camacho
+ * Do not free options structure in BlastExtensionParametersFree
+ *
  * Revision 1.31  2003/06/23 21:49:11  dondosha
  * Possibility of linking HSPs for tblastn activated
  *
@@ -480,7 +483,8 @@ BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr
 
 	if (options->program_number != blast_type_blastn)
 	{
-		if (options->algorithm_type == EXTEND_GREEDY || options->algorithm_type == EXTEND_GREEDY_NO_TRACEBACK)
+		if (options->algorithm_type == EXTEND_GREEDY || 
+            	options->algorithm_type == EXTEND_GREEDY_NO_TRACEBACK)
 		{
 			Int4 code=2;
 			Int4 subcode=1;
@@ -531,7 +535,6 @@ Int2 BlastExtensionParametersNew(const Uint1 blast_program,
 BlastExtensionParametersPtr
 BlastExtensionParametersFree(BlastExtensionParametersPtr parameters)
 {
-   BlastExtensionOptionsFree(parameters->options);
    return MemFree(parameters);
 }
 
