@@ -150,15 +150,15 @@ private:
 };
 
 
-
-
 CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db)
- : m_LDS_db(lds_db),
+ : CDataLoader("LDS_dataloader"),
+   m_LDS_db(lds_db),
    m_OwnDatabase(false)
 {}
 
 CLDS_DataLoader::CLDS_DataLoader(const string& db_path)
- : m_LDS_db(*(new CLDS_Database(db_path))),
+ : CDataLoader("LDS_dataloader"),
+   m_LDS_db(*(new CLDS_Database(db_path))),
    m_OwnDatabase(true)
 {
     try {
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/19 14:21:24  kuznets
+ * +name("LDS_dataloader") for the dataloader class
+ *
  * Revision 1.5  2003/07/30 19:52:15  kuznets
  * Cleaned compilation warnings
  *
