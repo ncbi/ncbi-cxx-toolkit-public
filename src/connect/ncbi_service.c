@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/03/20 22:03:32  lavr
+ * BUGFIX in SERV_Print (miscalculation of buflen for accepted server types)
+ *
  * Revision 6.16  2001/03/06 23:55:25  lavr
  * SOCK_gethostaddr -> SOCK_gethostbyname
  *
@@ -276,7 +279,7 @@ char* SERV_Print(SERV_ITER iter)
             size_t namelen = strlen(name);
 
             if (namelen) {
-                if (buflen + namelen < sizeof(buffer) - 1) {
+                if (buflen + 1 + namelen < sizeof(buffer)) {
                     buffer[buflen++] = ' ';
                     strcpy(&buffer[buflen], name);
                     buflen += namelen;
@@ -288,10 +291,11 @@ char* SERV_Print(SERV_ITER iter)
     }
     assert(buflen < sizeof(buffer));
     if (buffer[buflen - 1] != ':') {
-        if (buflen >= sizeof(buffer) - 2)
+        if (sizeof(buffer) < buflen + 2)
             return 0;
-        strcpy(&buffer[buflen - 1], "\r\n");
-        if (!BUF_Write(&buf, buffer, strlen(buffer))) {
+        strcpy(&buffer[buflen], "\r\n");
+        assert(strlen(buffer) == buflen + 2);
+        if (!BUF_Write(&buf, buffer, buflen + 2)) {
             BUF_Destroy(buf);
             return 0;
         }
