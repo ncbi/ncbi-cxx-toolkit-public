@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/10/24 17:13:46  thiessen
+* skip style annotation if structure not loaded
+*
 * Revision 1.55  2001/10/17 17:46:22  thiessen
 * save camera setup and rotation center in files
 *
@@ -1657,8 +1660,9 @@ static bool ExtractObjectLocation(
             // get identifier for this molecule
             const MoleculeIdentifier *identifier = MoleculeIdentifier::FindIdentifier(mmdbID, moleculeID);
             if (!identifier) {
-                ERR_POST(Error << "ExtractObjectLocation() - can't find identifier for molecule location");
-                return false;
+                ERR_POST(Warning << "ExtractObjectLocation() - can't find identifier for molecule location");
+                ERR_POST(Warning << "structure MMDB ID " << mmdbID << " not loaded?");
+                continue;
             }
             std::vector < bool >& residueFlags = (*residueMap)[identifier];
             residueFlags.resize(identifier->nResidues, false);
