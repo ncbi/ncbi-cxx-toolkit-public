@@ -41,6 +41,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/04/06 15:45:26  grichenk
+ * Modified SelfCleanup() methods for more safety
+ *
  * Revision 1.3  2001/03/30 23:10:10  grichenk
  * Protected from double initializations and deadlocks in multithread
  * environment
@@ -163,8 +166,9 @@ private:
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
     {
-        delete static_cast<T*> (*ptr);
+        T* tmp = static_cast<T*> (*ptr);
         *ptr = 0;
+        delete tmp;
     }
 };
 
@@ -223,8 +227,9 @@ private:
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
     {
-        delete static_cast< CRef<T>* > (*ptr);
+        CRef<T>* tmp = static_cast< CRef<T>* > (*ptr);
         *ptr = 0;
+        delete tmp;
     }
 };
 
