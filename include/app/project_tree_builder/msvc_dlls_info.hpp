@@ -30,17 +30,51 @@
  *
  */
 
+#include <corelib/ncbireg.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
-// TODO
+class CMsvcDllsInfo
+{
+public:
+    CMsvcDllsInfo(const string& file_path);
+    ~CMsvcDllsInfo(void);
+    
+    void GetDllsList(list<string>* dlls_ids) const;
+
+    struct SDllInfo
+    {
+        list<string> m_Hosting;
+        list<string> m_ExportDefines;
+        list<string> m_Depends;
+
+        bool IsEmpty(void) const;
+        void Clear  (void);
+    };
+
+    void GelDllInfo(const string& dll_id, SDllInfo* dll_info) const;
+
+
+private:
+    CNcbiRegistry m_Registry;
+
+    //no value-type semantics
+    CMsvcDllsInfo(void);
+    CMsvcDllsInfo(const CMsvcDllsInfo&);
+    CMsvcDllsInfo& operator= (const CMsvcDllsInfo&);
+
+};
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/03 22:17:33  gorelenk
+ * Added declaration of class CMsvcDllsInfo.
+ *
  * Revision 1.1  2004/03/03 17:08:32  gorelenk
  * Initial revision.
  *
