@@ -102,6 +102,10 @@ public:
 private:
     string x_FixString(const string &) const;
     
+    Uint4 x_GetNumSeqs(void) const;
+    
+    Uint8 x_GetTotalLength(void) const;
+    
     mutable CSeqDBAtlas   m_Atlas;
     string                m_DBNames;
     CSeqDBAliasFile       m_Aliases;
@@ -111,6 +115,9 @@ private:
     Uint4                 m_RestrictEnd;
     CFastMutex            m_OIDLock;
     Uint4                 m_NextChunkOID;
+    
+    Uint4                 m_NumSeqs;
+    Uint8                 m_TotalLength;
 };
 
 END_NCBI_SCOPE

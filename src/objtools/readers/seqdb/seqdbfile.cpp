@@ -250,7 +250,12 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     
     m_HdrRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off1, off2, locked);
     m_SeqRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off2, off3, locked);
-    m_AmbRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off3, offend, locked);
+    
+    if (db_seqtype == kSeqTypeNucl) {
+        m_AmbRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off3, offend, locked);
+    } else {
+        m_AmbRegion = 0;
+    }
 }
 
 END_NCBI_SCOPE

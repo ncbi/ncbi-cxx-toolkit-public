@@ -230,7 +230,12 @@ public:
         
         m_Atlas.RetRegion((const char *) m_HdrRegion, locked);
         m_Atlas.RetRegion((const char *) m_SeqRegion, locked);
-        m_Atlas.RetRegion((const char *) m_AmbRegion, locked);
+        
+        _ASSERT((m_AmbRegion == 0) == (m_ProtNucl == kSeqTypeProt));
+        
+        if (m_AmbRegion) {
+            m_Atlas.RetRegion((const char *) m_AmbRegion, locked);
+        }
     }
     
     inline bool

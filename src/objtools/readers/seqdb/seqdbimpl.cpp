@@ -44,7 +44,9 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl),
       m_RestrictBegin(oid_begin),
       m_RestrictEnd  (oid_end),
-      m_NextChunkOID (0)
+      m_NextChunkOID (0),
+      m_NumSeqs      (0),
+      m_TotalLength  (0)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -62,6 +64,9 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
             m_RestrictBegin = m_RestrictEnd;
         }
     }
+    
+    m_NumSeqs     = x_GetNumSeqs();
+    m_TotalLength = x_GetTotalLength();
 }
 
 CSeqDBImpl::~CSeqDBImpl(void)
@@ -272,10 +277,20 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
 
 Uint4 CSeqDBImpl::GetNumSeqs(void) const
 {
-    return m_Aliases.GetNumSeqs(m_VolSet);
+    return m_NumSeqs;
 }
 
 Uint8 CSeqDBImpl::GetTotalLength(void) const
+{
+    return m_TotalLength;
+}
+
+Uint4 CSeqDBImpl::x_GetNumSeqs(void) const
+{
+    return m_Aliases.GetNumSeqs(m_VolSet);
+}
+
+Uint8 CSeqDBImpl::x_GetTotalLength(void) const
 {
     return m_Aliases.GetTotalLength(m_VolSet);
 }
