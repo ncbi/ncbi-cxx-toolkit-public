@@ -1216,21 +1216,23 @@ void CAlnMix::x_CreateSegmentsVector()
 
     if (m_MergeFlags & fFillUnalignedRegions) {
         vector<TSignedSeqPos> starts;
+        vector<TSeqPos> lens;
         starts.resize(m_Rows.size(), -1);
+        lens.resize(m_Rows.size(), 0);
 
-        TSeqPos len = 0, prev_len = 0;
+        TSeqPos len = 0;
 
         TSegments::iterator seg_i = m_Segments.begin();
         while (seg_i != m_Segments.end()) {
             CAlnMap::TNumrow numrow = 0;
-            prev_len = len;
             len = (*seg_i)->m_Len;
             ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
                      (*seg_i)->m_StartIts) {
                 CAlnMixSeq * row = start_its_i->first;
                 TSignedSeqPos& prev_start = starts[numrow];
+                TSeqPos& prev_len = lens[numrow];
                 TSeqPos start = start_its_i->second->first;
-                if (prev_start >= 0) {
+                if (prev_start >= 0  &&  start >= 0) {
                     if (row->m_PositiveStrand  &&  
                         prev_start + prev_len < start  ||
                         !row->m_PositiveStrand  &&
@@ -1256,8 +1258,10 @@ void CAlnMix::x_CreateSegmentsVector()
                         seg_i = m_Segments.insert(seg_i, seg);
                         seg_i++;
                     }
-                } else {
+                }
+                if (start >= 0) {
                     prev_start = start;
+                    prev_len = len;
                 }
                 numrow++;
             }
@@ -1593,6 +1597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2003/07/01 17:40:20  todorov
+* fFillUnaligned bug fix
+*
 * Revision 1.60  2003/06/26 21:35:48  todorov
 * + fFillUnalignedRegions
 *
