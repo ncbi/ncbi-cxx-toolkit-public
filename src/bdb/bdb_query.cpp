@@ -31,7 +31,10 @@
 
 #include <bdb/bdb_query.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_util.hpp>
+
 #include <util/resource_pool.hpp>
+#include <util/strsearch.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -265,6 +268,7 @@ private:
 
 /// Base class for functions of the evaluation engine
 ///
+/// @internal
 class CScannerFunctor
 {
 public:
@@ -280,34 +284,75 @@ protected:
     CQueryExecEnv&               m_QueryEnv;
 };
 
-/// Base class for 2 argument functions
-class CScannerFunctorArg2 : public CScannerFunctor
+/// Base class for N argument functions
+///
+/// @internal
+class CScannerFunctorArgN : public CScannerFunctor
 {
 public:
-    CScannerFunctorArg2(CQueryExecEnv& env)
-     : CScannerFunctor(env),
-       m_Arg1(0),
-       m_Arg2(0),
-       m_ArgValue1(0),
-       m_ArgValue2(0)
+    /// Enum indicates how to interpret the plain value
+    /// tree elements. It can be takes as is (eNoCheck) or
+    /// converted to a "in any field" variant of check
+    /// (similar to what PubMed does)
+    enum EAllFieldsCheck 
+    {
+        eNoCheck,
+        eCheckAll
+    };
+
+    /// Vector of strings borrowed from the query environment
+    /// pool to keep temporary values during the query execution
+    typedef vector<string*>       TArgValueVector;
+    
+    /// Vector of arguments, elements can point on values from 
+    /// TArgValueVector or variables located in the query tree itself
+    typedef vector<const string*> TArgVector;
+
+    /// String matchers used for substring search
+    typedef vector<CBoyerMooreMatcher*> TStringMatcherVector;
+
+public:
+    CScannerFunctorArgN(CQueryExecEnv& env)
+     : CScannerFunctor(env)
     {}
 
-    ~CScannerFunctorArg2()
+    ~CScannerFunctorArgN()
     {
         CResourcePool<string>& str_pool = m_QueryEnv.GetStrPool();
-        if (m_ArgValue1) {
-            str_pool.Return(m_ArgValue1);
-        }
-        if (m_ArgValue2) {
-            str_pool.Return(m_ArgValue2);
+
+        unsigned int size = m_ArgValueVector.size();
+        for (unsigned int i = 0; i < size; ++i) {
+            string* str = m_ArgValueVector[i];
+            if (str) {
+                str_pool.Return(str);
+            }
+            CBoyerMooreMatcher* matcher = m_MatcherVector[i];
+            delete matcher;
         }
     }
 
-    /// Extract function arguments from the parsing tree
-    void GetArguments(CTreeNode<CBDB_QueryNode>& tr)
+    /// Checks if value is equal to any field in the database
+    bool IsAnyField(CBDB_File& dbf, 
+                    const string& search_value,
+                    unsigned int arg_idx)
     {
-        m_Arg1 = m_Arg2 = 0;
+        CBoyerMooreMatcher* matcher = m_MatcherVector[arg_idx];
+        if (!matcher) {
+            m_MatcherVector[arg_idx] = matcher = 
+                new CBoyerMooreMatcher(search_value,
+                                       NStr::eNocase,
+                                       CBoyerMooreMatcher::ePrefixMatch);
+            matcher->InitCommonDelimiters();
+        }
+        CBDB_File::TUnifiedFieldIndex fidx = BDB_find_field(dbf, *matcher);
+        
+        return (fidx != 0);
+    }
 
+    /// Extract function arguments from the parsing tree
+    void GetArguments(CTreeNode<CBDB_QueryNode>& tr, 
+                      EAllFieldsCheck            check_mode = eNoCheck)
+    {
         CBDB_File& db_file = m_QueryEnv.GetFile();
         CResourcePool<string>& str_pool = m_QueryEnv.GetStrPool();
 
@@ -315,58 +360,100 @@ public:
         TTree::TNodeList_CI it = tr.SubNodeBegin();
         TTree::TNodeList_CI it_end = tr.SubNodeEnd();
 
-        for (; it != it_end; ++it) {
+
+        for (unsigned i = 0; it != it_end; ++it, ++i) {
             const TTree* t = *it;
             const CBDB_QueryNode& qnode = t->GetValue();
+
+            ResizeVectors(i + 1);
 
             // Check if the argument should be taken from the
             // db field
             if (qnode.GetType() == CBDB_QueryNode::eDBField) {
+
                 int fidx = qnode.GetFiledIdx();
                 const CBDB_Field& fld = db_file.GetField(fidx);
-                if (m_Arg1 == 0) {
-                    if (m_ArgValue1 == 0) {
-                        m_ArgValue1 = str_pool.Get();
-                    }
-                    *m_ArgValue1 = fld.GetString();
-                    m_Arg1 = m_ArgValue1;
-                } else {
-                    if (m_ArgValue2 == 0) {
-                        m_ArgValue2 = str_pool.Get();
-                    }
-                    *m_ArgValue2 = fld.GetString();
-                    m_Arg2 = m_ArgValue2;
+                
+                SyncArgValue(i, str_pool);
+
+                fld.ToString(*m_ArgValueVector[i]);
+
+                continue;
+            }
+
+            // field value check mode
+            // eCheckAll is coming from logical functions if they
+            // support "value AND anothervalue" notation
+            // (search services work like that)
+            if ((check_mode == eCheckAll) && 
+                (qnode.GetType() == CBDB_QueryNode::eValue)) {
+
+                const string& v = qnode.GetValue();
+                const char* sz = "0";
+                if (IsAnyField(db_file, v, i)) {
+                    sz = "1";
                 }
+
+                SyncArgValue(i, str_pool);
+
+                *m_ArgValueVector[i] = sz;
+
                 continue;
             }
 
             // Get constant value or return type of the subnodes
 
             const string& str = qnode.GetValue();
+            m_ArgVector[i] = &str;
 
-            if (m_Arg1 == 0) {
-                m_Arg1 = &str;
-            } else {
-                _ASSERT(m_Arg2 == 0);
-                m_Arg2 = &str;
-            }
         } // for 
     }
 
+    const string* GetArg(unsigned int idx) const
+    {
+        _ASSERT(idx < m_ArgVector.size());
+        return m_ArgVector[idx];
+    }
+
+private:
+
+    /// Syncronously resize all arguments vectors
+    void ResizeVectors(unsigned int new_size)
+    {
+        TArgVector::size_type old_size = m_ArgVector.size();
+        _ASSERT(new_size <= old_size + 1);  // 1 increments only
+        if (new_size > old_size) {
+            m_ArgVector.push_back(0);
+            m_ArgValueVector.push_back(0);
+            m_MatcherVector.push_back(0);
+        }
+    }
+
+    /// m_ArgVector[idx] = m_ArgValueVector[idx] 
+    void SyncArgValue(unsigned int idx, CResourcePool<string>& str_pool)
+    {
+        if (m_ArgValueVector[idx] == 0) {
+            m_ArgValueVector[idx] = str_pool.Get();
+        }
+
+        m_ArgVector[idx] = m_ArgValueVector[idx];
+    }
+
 protected:
-    const string*  m_Arg1;
-    const string*  m_Arg2;
-    string*        m_ArgValue1;
-    string*        m_ArgValue2;
+    TArgVector            m_ArgVector;
+    TArgValueVector       m_ArgValueVector;
+    TStringMatcherVector  m_MatcherVector;
 };
 
 
 /// EQ function 
-class CScannerFunctorEQ : public CScannerFunctorArg2
+///
+/// @internal
+class CScannerFunctorEQ : public CScannerFunctorArgN
 {
 public:
     CScannerFunctorEQ(CQueryExecEnv& env)
-     : CScannerFunctorArg2(env)
+     : CScannerFunctorArgN(env)
     {}
 
     void Eval(CTreeNode<CBDB_QueryNode>& tr)
@@ -375,7 +462,10 @@ public:
 
         CBDB_QueryNode& qnode = tr.GetValue();
 
-        if (*m_Arg1 == *m_Arg2) {
+        const string* arg0 = GetArg(0);
+        const string* arg1 = GetArg(1);
+
+        if (*arg0 == *arg1) {
             qnode.SetValue("1");
         } else {
             qnode.SetValue("0");
@@ -385,48 +475,66 @@ public:
 
 
 /// AND function 
-class CScannerFunctorAND : public CScannerFunctorArg2
+///
+/// @internal
+class CScannerFunctorAND : public CScannerFunctorArgN
 {
 public:
     CScannerFunctorAND(CQueryExecEnv& env)
-     : CScannerFunctorArg2(env)
+     : CScannerFunctorArgN(env)
     {}
 
     void Eval(CTreeNode<CBDB_QueryNode>& tr)
     {
-        GetArguments(tr);
+        GetArguments(tr, eCheckAll);
 
         CBDB_QueryNode& qnode = tr.GetValue();
 
-        if (*m_Arg1 != "0" && *m_Arg2 != "0") {
-            qnode.SetValue("1");
-        } else {
-            qnode.SetValue("0");
+        unsigned int size = m_ArgVector.size();
+        _ASSERT(size);
+
+        for (unsigned int i = 0; i < size; ++i) {
+            const string* arg = GetArg(i);
+            if (*arg == "0") {
+                qnode.SetValue("0");
+                return;
+            }
         }
+
+        qnode.SetValue("1");
     }
 };
 
 
 
 /// OR function 
-class CScannerFunctorOR : public CScannerFunctorArg2
+///
+/// @internal
+class CScannerFunctorOR : public CScannerFunctorArgN
 {
 public:
     CScannerFunctorOR(CQueryExecEnv& env)
-     : CScannerFunctorArg2(env)
+     : CScannerFunctorArgN(env)
     {}
 
     void Eval(CTreeNode<CBDB_QueryNode>& tr)
     {
-        GetArguments(tr);
+        GetArguments(tr, eCheckAll);
 
         CBDB_QueryNode& qnode = tr.GetValue();
 
-        if (*m_Arg1 != "0" || *m_Arg2 != "0") {
-            qnode.SetValue("1");
-        } else {
-            qnode.SetValue("0");
+        unsigned int size = m_ArgVector.size();
+        _ASSERT(size);
+
+        for (unsigned int i = 0; i < size; ++i) {
+            const string* arg = GetArg(i);
+            if (*arg == "1") {
+                qnode.SetValue("1");
+                return;
+            }
         }
+
+        qnode.SetValue("0");
     }
 };
 
@@ -706,6 +814,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/08 13:35:07  kuznets
+ * Modified queries to do full text searches
+ *
  * Revision 1.4  2004/03/01 14:03:57  kuznets
  * CQueryTreeFieldResolveFunc improved to remove string marks
  *
