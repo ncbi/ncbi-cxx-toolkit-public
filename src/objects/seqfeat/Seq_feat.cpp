@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/05/06 03:39:11  vakatov
+ * OM/OM1 renaming
+ *
  * Revision 6.3  2002/01/10 19:53:48  clausen
  * Added GetLabel
  *
@@ -88,8 +91,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 
-#include <objects/objmgr/objmgr.hpp>
-#include <objects/objmgr/seqvector.hpp>
+#include <objects/objmgr_old/objmgr.hpp>
+#include <objects/objmgr_old/seqvector.hpp>
 
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>

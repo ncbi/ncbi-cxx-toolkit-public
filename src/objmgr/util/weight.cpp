@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/06 03:39:13  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.4  2002/05/03 21:28:20  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -47,8 +50,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/objmgr/scopes.hpp>
-#include <objects/objmgr/seqvector.hpp>
+#include <objects/objmgr_old/scopes.hpp>
+#include <objects/objmgr_old/seqvector.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>

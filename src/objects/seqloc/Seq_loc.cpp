@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/05/06 03:39:12  vakatov
+ * OM/OM1 renaming
+ *
  * Revision 6.10  2002/05/03 21:28:18  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -72,7 +75,7 @@
  */
 #include <serial/iterator.hpp>
 
-#include <objects/objmgr/scopes.hpp>
+#include <objects/objmgr_old/scopes.hpp>
 
 #include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>

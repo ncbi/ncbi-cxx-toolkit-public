@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/05/06 03:39:12  vakatov
+ * OM/OM1 renaming
+ *
  * Revision 6.20  2002/05/03 21:28:17  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -122,9 +125,9 @@
 
 // object manager includes
 #include <objects/seq/Bioseq.hpp>
-#include <objects/objmgr/objmgr_base.hpp>
-#include <objects/objmgr/scopes.hpp>
-#include <objects/objmgr/om_iter.hpp>
+#include <objects/objmgr_old/objmgr_base.hpp>
+#include <objects/objmgr_old/scopes.hpp>
+#include <objects/objmgr_old/om_iter.hpp>
 
 #include <string>
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/06 03:40:19  vakatov
+* OM/OM1 renaming
+*
 * Revision 1.6  2001/12/07 18:52:02  grichenk
 * Updated "#include"-s and forward declarations to work with the
 * new datatool version.
@@ -62,7 +65,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr/objmgr.hpp>
+#include <objects/objmgr_old/objmgr.hpp>
 
 
 BEGIN_NCBI_SCOPE
