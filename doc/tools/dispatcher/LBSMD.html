@@ -298,7 +298,7 @@ that actually use the server.
 <p>
 The daemon can be configured by a dozen of switches, which modify certain
 parameters from their default values. To see all command-line switches, switch <span class="ncbi_app_a">-h</span> may be used,
-or NCBI Intranet users <em>only</em> can click <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi">here</a>.
+or NCBI Intranet users <em>only</em> can click <a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmd.cgi">here</a>.
 Also, daemon reacts on <span class="ncbi_var">HUP</span> signal to reload its configuration,
 and both <span class="ncbi_var">INT</span> and <span class="ncbi_var">TERM</span> signals to gracefully quit. Despite very high stability, usually
 the daemon is forcedly started from <span class="ncbi_util">crontab</span> each every few minutes on all production hosts to ensure
@@ -308,8 +308,8 @@ is permitted on a certain host, and any attempt to start more than one is reject
 <p>
 <span class="ncbi_app">LBSMD</span> can generate output to the logfile, which can be limited in size to prevent
 disk from flooding with messages. NCBI Intranet users <em>only</em>
-<a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi?log">can take a look</a>
-at (no more than 100) recent lines of the logfile on host <span class="ncbi_dir">ray</span>.
+<a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmd.cgi?log">can take a look</a>
+at (no more than 100) recent lines of the logfile on host <span class="ncbi_dir">yar</span>.
 Signal <span class="ncbi_var">USR1</span> can be used to toggle verbosity level between less verbose (default) and
 more verbose (when every warning generated is stored) modes.
 
@@ -381,8 +381,8 @@ PrivateService HTTP /cgi-bin/privsrv.cgi?arg=val R=2000.0
 # end of configuration
 </pre>
 
-NCBI Intranet users <em>only</em> can take a look at a real configuration file on the host <span class="ncbi_dir">ray</span>
-by clicking <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
+NCBI Intranet users <em>only</em> can take a look at a real configuration file on the host <span class="ncbi_dir">yar</span>
+by clicking <a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
 
 <p><hr><p>
 
@@ -393,7 +393,7 @@ This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program
 dumps onto the screen a table representing current contents of shared memory segment, where the daemon
 collects all information about hosts and services. The client's output can be controlled by a number
 of switches, full list of which can be obtained via switch <span class="ncbi_app_a">-h</span> alone, or NCBI Intranet users can click
-<a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
+<a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
 the hosts currently running the daemon one can use the following command:
 <pre class="ncbi_cmd">
 >./lbsmc -s none 0
@@ -401,7 +401,7 @@ the hosts currently running the daemon one can use the following command:
 Hostname/IPaddr Task/CPU LoadAv LoadBl   Status   StatBl n1 n2 n3 n4 n5 q1 q2 q3
 iblastd            4/2     2.01   2.00   220.26     0.00  0  0  0  0  0 10 10  0
 muncher        *  11/16    0.01   0.05 14414.42 15950.00  0  0  0  0  0 22 22  0
-ray               29/6     2.71   3.14    75.39  2860.00  0  0  0  0  0  1  1  0
+yar               29/6     2.71   3.14    75.39  2860.00  0  0  0  0  0  1  1  0
 sampson           11/6     0.16   0.17  2173.91  5830.00  0  0  0  0  0  0  0  0
 schroeder         60/8     0.45   0.00   285.72  8000.00  0  0  0  0  0  0  0  0
 --------------------------------------------------------------------------------
@@ -413,9 +413,9 @@ schroeder         60/8     0.45   0.00   285.72  8000.00  0  0  0  0  0  0  0  0
 
 For NCBI Intranet users <em>only</em> the following live lists are available for browsing:
 <ul type=circle>
-<li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-s_none_-w">Currently running hosts</a>;
-<li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
-<li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w_-d">Currently dead servers</a>.
+<li><a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmc.cgi?-s_none_-w">Currently running hosts</a>;
+<li><a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
+<li><a href="http://yar.ncbi.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w_-d">Currently dead servers</a>.
 </ul>
 
 <p>Some explanation to the client's output. The output usually contains 2 parts:
