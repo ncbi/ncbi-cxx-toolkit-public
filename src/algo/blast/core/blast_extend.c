@@ -146,15 +146,8 @@ Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist)
     return TRUE;
 }
 
-/** Allocates memory for the BLAST_DiagTable*. This function also 
- * sets many of the parametes such as diag_array_length etc.
- * @param qlen Length of the query [in]
- * @param multiple_hits Specifies whether multiple hits method is used [in]
- * @param window_size The max. distance between two hits that are extended [in]
- * @return The allocated BLAST_DiagTable structure
-*/
-static BLAST_DiagTable*
-s_BlastDiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
+BLAST_DiagTable*
+BlastDiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 
 {
         BLAST_DiagTable* diag_table;
@@ -233,7 +226,7 @@ Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
       BLAST_DiagTable* diag_table;
 
       ewp->diag_table = diag_table = 
-         s_BlastDiagTableNew(query_length, multiple_hits, 
+         BlastDiagTableNew(query_length, multiple_hits, 
                             word_options->window_size);
       /* Allocate the buffer to be used for diagonal array. */
       if (!is_na || word_options->extension_method == eUpdateDiag) {
@@ -1463,8 +1456,8 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 } 
 
 /** Deallocate memory for the diagonal table structure */
-static BLAST_DiagTable* 
-s_BlastDiagTableFree(BLAST_DiagTable* diag_table)
+BLAST_DiagTable* 
+BlastDiagTableFree(BLAST_DiagTable* diag_table)
 {
    if (diag_table) {
       sfree(diag_table->hit_level_array);
@@ -1501,7 +1494,7 @@ s_BlastStackTableFree(BLAST_StackTable* stack_table)
 
 Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp)
 {
-   s_BlastDiagTableFree(ewp->diag_table);
+   BlastDiagTableFree(ewp->diag_table);
    s_BlastStackTableFree(ewp->stack_table);
    sfree(ewp);
    return NULL;
