@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.125 2002/09/06 19:18:10 ucko Exp $
+#  $Id: configure.ac,v 1.126 2002/09/11 20:26:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -468,6 +468,7 @@ fi
 CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
+C_LINK='$(CC)'
 LINK='$(CXX)'
 
 ### Which of these is better?
@@ -673,7 +674,10 @@ case "$host_os:$compiler" in
 esac
 
 
-#### 32/64-bit compilation, and extra LIBS
+C_LIBS=$LIBS
+
+
+#### 32/64-bit compilation, and extra C++ LIBS
 : ${with_64:="no"}
 if test "$with_64" = "yes" ; then
    bit64_sfx="64"
@@ -724,7 +728,7 @@ else
       ;;
 changequote(, )dnl
     solaris*:WorkShop5[23] )
-      MATH_LIBS=" "
+      # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
       LIBS="-lCstd $LIBS"
@@ -1376,6 +1380,11 @@ fi
 
 AC_CHECK_FUNCS(localtime_r pthread_setconcurrency pthread_atfork)
 
+AC_SEARCH_LIBS(sched_yield, rt,
+    AC_DEFINE(HAVE_SCHED_YIELD, 1,
+              [Define to 1 if you have the \`sched_yield\' function.])
+)
+
 fi
 ### ...reentrant versions of some standard library functions, MT functions
 
@@ -1400,11 +1409,6 @@ fi
 
 # Overkill in some ways...
 AC_FUNC_GETLOADAVG
-
-AC_SEARCH_LIBS(sched_yield, rt,
-    AC_DEFINE(HAVE_SCHED_YIELD, 1,
-              [Define to 1 if you have the \`sched_yield\' function.])
-)
 
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
@@ -1555,6 +1559,7 @@ MATH_LIBS=${MATH_LIBS:="-lm"}
 
 ### Math lib to be always linked in
 LIBS="$MATH_LIBS $LIBS"
+C_LIBS="$MATH_LIBS $C_LIBS"
 
 
 ### Save original compiler/linker flags
@@ -2696,6 +2701,7 @@ AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(STRIP)
 AC_SUBST(LINK)
+AC_SUBST(C_LINK)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(FAST_CFLAGS)
@@ -2707,6 +2713,7 @@ AC_SUBST(DEPFLAGS_POST)
 AC_SUBST(LDFLAGS)
 AC_SUBST(FAST_LDFLAGS)
 AC_SUBST(LIBS)
+AC_SUBST(C_LIBS)
 
 AC_SUBST(D_SFX)
 AC_SUBST(DEBUG_SFX)
