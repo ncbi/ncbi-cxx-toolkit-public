@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.6  2003/09/26 20:39:32  dondosha
+* Rearranged code so it compiles
+*
 * Revision 1.5  2003/09/26 19:01:59  madden
 * Prefix ncbimath functions with BLAST_
 *
@@ -111,31 +114,6 @@ extern char * g_corelib;
 static char * _this_file = __FILE__;
 
 
-#define FACTORIAL_PRECOMPUTED   36
-
-static double BLAST_Factorial(Int4 n)
-{
-        static double      precomputed[FACTORIAL_PRECOMPUTED]
-                = { 1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.};
-        static Int4     nlim = 10;
-        Int4   m;
-        double    x;
-
-        if (n >= 0) {
-                if (n <= nlim)
-                        return precomputed[n];
-                if (n < DIM(precomputed)) {
-                        for (x = precomputed[m = nlim]; m < n; ) {
-                                ++m;
-                                precomputed[m] = (x *= m);
-                        }
-                        nlim = m;
-                        return x;
-                }
-                return exp(LnGamma((double)(n+1)));
-        }
-        return 0.0; /* Undefined! */
-}
 /*
     BLAST_Expm1(x)
     Return values accurate to approx. 16 digits for the quantity exp(x)-1
@@ -334,7 +312,7 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
 }
 
 
-extern double PolyGamma(double x, Int4 order) /* ln(ABS[gamma(x)]) - 10 digits of accuracy */
+static double PolyGamma(double x, Int4 order) /* ln(ABS[gamma(x)]) - 10 digits of accuracy */
 	/* x is and derivatives */
 	/* order is order of the derivative */
 /* order = 0, 1, 2, ...  ln(gamma), digamma, trigamma, ... */
@@ -403,13 +381,37 @@ of order is truly the order of the derivative.  */
 	return value;
 }
 
-extern double LnGamma(double x)               /* ln(ABS[gamma(x)]) - 10 dig
+static double LnGamma(double x)               /* ln(ABS[gamma(x)]) - 10 dig
 its of accuracy */
 {
         return PolyGamma(x, 0);
 }
 
+#define FACTORIAL_PRECOMPUTED   36
 
+extern double BLAST_Factorial(Int4 n)
+{
+        static double      precomputed[FACTORIAL_PRECOMPUTED]
+                = { 1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.};
+        static Int4     nlim = 10;
+        Int4   m;
+        double    x;
+
+        if (n >= 0) {
+                if (n <= nlim)
+                        return precomputed[n];
+                if (n < DIM(precomputed)) {
+                        for (x = precomputed[m = nlim]; m < n; ) {
+                                ++m;
+                                precomputed[m] = (x *= m);
+                        }
+                        nlim = m;
+                        return x;
+                }
+                return exp(LnGamma((double)(n+1)));
+        }
+        return 0.0; /* Undefined! */
+}
 
 /* LnGammaInt(n) -- return log(Gamma(n)) for integral n */
 extern double BLAST_LnGammaInt(Int4 n)
@@ -430,8 +432,6 @@ extern double BLAST_LnGammaInt(Int4 n)
 	}
 	return LnGamma((double)n);
 }
-
-
 
 
 /*
