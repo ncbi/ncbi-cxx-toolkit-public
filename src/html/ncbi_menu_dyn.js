@@ -143,12 +143,12 @@ function getMenuContent(container, index)
         if (item.label) {
             item = item.label;
             childMenu = true;
-        } else if (item.indexOf(".gif") != -1 && item.indexOf("<IMG") == -1) {
-            item = '<IMG SRC="' + item + '" NAME="menuItem'+ id +'Img">';
-            defaultIndent = 0;
-            if (document.layers) {
-                defaultHeight = null;
-            }
+//        } else if (item.indexOf(".gif") != -1 && item.indexOf("<IMG") == -1) {
+//            item = '<IMG SRC="' + item + '" NAME="menuItem'+ id +'Img">';
+//            defaultIndent = 0;
+//            if (document.layers) {
+//                defaultHeight = null;
+//            }
         }
    		proto.menuItemHeight = proto.menuItemHeight || defaultHeight;
 		h4 = proto.menuItemHeight/4;

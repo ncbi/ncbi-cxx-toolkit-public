@@ -18,10 +18,10 @@
 window.useDynamicMenu = false;
 
 // NOTE:
-// By default all menu use one container if "useDynamicMenu == TRUE"
-// Accordingly only a one menu can be shown at a time.
+// By default all menu use a one container if "useDynamicMenu == TRUE"
+// Accordingly only one menu can be shown at a time.
 //
-// Dynamic menus work only in browsers that support property innerHTML
+// Dynamic menu work only in browsers that support property innerHTML
 // (Internet Explorer > 4.x & Netscape Navigator > 6.x) 
 
 
@@ -149,12 +149,12 @@ function getMenuContent(container, index)
         if (item.label) {
             item = item.label;
             childMenu = true;
-        } else if (item.indexOf(".gif") != -1 && item.indexOf("<IMG") == -1) {
-            item = '<IMG SRC="' + item + '" NAME="menuItem'+ id +'Img">';
-            defaultIndent = 0;
-            if (document.layers) {
-                defaultHeight = null;
-            }
+//        } else if (item.indexOf(".gif") != -1 && item.indexOf("<IMG") == -1) {
+//            item = '<IMG SRC="' + item + '" NAME="menuItem'+ id +'Img">';
+//            defaultIndent = 0;
+//            if (document.layers) {
+//                defaultHeight = null;
+//            }
         }
    		proto.menuItemHeight = proto.menuItemHeight || defaultHeight;
 		h4 = proto.menuItemHeight/4;
