@@ -65,7 +65,7 @@ void
 CAlnMapPrinter::PrintId(CAlnMap::TNumrow row) const
 {
     m_Out->width(m_IdFieldLen);
-    m_Out->setf(ios_base::left, ios_base::adjustfield);
+    m_Out->setf(IOS_BASE::left, IOS_BASE::adjustfield);
     *m_Out << GetId(row);
 }
 
@@ -75,7 +75,7 @@ CAlnMapPrinter::PrintNumRow(CAlnMap::TNumrow row) const
 {
     _ASSERT(row <= m_NumRows);
     m_Out->width(m_RowFieldLen);
-    m_Out->setf(ios_base::left, ios_base::adjustfield);
+    m_Out->setf(IOS_BASE::left, IOS_BASE::adjustfield);
     *m_Out << row;
 }
 
@@ -84,7 +84,7 @@ void
 CAlnMapPrinter::PrintSeqPos(TSeqPos pos) const
 {
     m_Out->width(m_SeqPosFieldLen);
-    m_Out->setf(ios_base::left, ios_base::adjustfield);
+    m_Out->setf(IOS_BASE::left, IOS_BASE::adjustfield);
     *m_Out << pos;
 }
 
@@ -195,6 +195,10 @@ void CAlnMapPrinter::Chunks(CAlnMap::TGetChunkFlags flags)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/03/17 16:59:19  ucko
+ * Use our portable IOS_BASE macro rather than hardcoding ios_base,
+ * which GCC 2.95 lacks.
+ *
  * Revision 1.3  2005/03/15 22:16:44  todorov
  * + PrintSeqPos
  *
