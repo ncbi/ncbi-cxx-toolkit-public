@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/09/10 21:25:35  lavr
+ * Unimportant code style compliance change
+ *
  * Revision 6.1  2000/10/06 18:06:03  lavr
  * Initial revision
  *
@@ -38,7 +41,7 @@
 
 #include "ncbi_servicep_lbsmd.h"
 
-const SSERV_VTable *SERV_LBSMD_Open(SERV_ITER iter)
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter)
 {
     return 0;
 }
