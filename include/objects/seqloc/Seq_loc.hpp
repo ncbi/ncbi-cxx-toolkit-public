@@ -33,43 +33,6 @@
  *   using specifications from the ASN data definition file
  *   'seqloc.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.11  2002/09/12 21:16:14  kans
- * added IsPartialLeft and IsPartialRight
- *
- * Revision 1.10  2002/06/07 11:54:34  clausen
- * Added related functions comment
- *
- * Revision 1.9  2002/06/06 20:40:51  clausen
- * Moved methods using object manager to objects/util
- *
- * Revision 1.8  2002/05/03 21:28:04  ucko
- * Introduce T(Signed)SeqPos.
- *
- * Revision 1.7  2002/04/17 15:39:06  grichenk
- * Moved CSeq_loc_CI to the seq-loc library
- *
- * Revision 1.6  2002/01/10 18:20:48  clausen
- * Added IsOneBioseq, GetStart, and GetId
- *
- * Revision 1.5  2001/10/22 11:39:49  clausen
- * Added Compare()
- *
- * Revision 1.4  2001/06/25 18:52:02  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.3  2001/01/05 20:11:41  vasilche
- * CRange, CRangeMap were moved to util.
- *
- * Revision 1.2  2001/01/03 16:38:58  vasilche
- * Added CAbstractObjectManager - stub for object manager.
- * CRange extracted to separate file.
- *
- * Revision 1.1  2000/11/17 21:35:02  vasilche
- * Added GetLength() method to CSeq_loc class.
- *
- *
  * ===========================================================================
  */
 
@@ -86,6 +49,7 @@
 
 //
 #include <util/range.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -113,8 +77,15 @@ public:
     //
 
     typedef CRange<TSeqPos> TRange;
+    
     TRange GetTotalRange(void) const;
 
+    // Appends a label suitable for display (e.g., error messages)
+    // label must point to an existing string object
+    // Method just returns if label is null. Note this label is NOT
+    // GenBank-style.
+    void GetLabel(string* label) const;
+    
     // check left (5') or right (3') end of location for e_Lim fuzz
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
@@ -122,7 +93,7 @@ public:
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
-    CSeq_loc& operator= (const CSeq_loc&);
+    CSeq_loc& operator= (const CSeq_loc&);    
 };
 
 
@@ -159,7 +130,7 @@ public:
     bool           IsEmpty(void) const;
     // True if the current location is a single point
     bool           IsPoint(void) const;
-
+    
 private:
     // Check the iterator position
     bool x_IsValid(void) const;
@@ -198,7 +169,6 @@ private:
 inline
 CSeq_loc::CSeq_loc(void)
 {
-    return;
 }
 
 
@@ -318,5 +288,48 @@ void CSeq_loc_CI::x_ThrowNotValid(string where) const
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.12  2002/10/03 16:37:39  clausen
+ * Added GetLabel()
+ *
+ * Revision 1.11  2002/09/12 21:16:14  kans
+ * added IsPartialLeft and IsPartialRight
+ *
+ * Revision 1.10  2002/06/07 11:54:34  clausen
+ * Added related functions comment
+ *
+ * Revision 1.9  2002/06/06 20:40:51  clausen
+ * Moved methods using object manager to objects/util
+ *
+ * Revision 1.8  2002/05/03 21:28:04  ucko
+ * Introduce T(Signed)SeqPos.
+ *
+ * Revision 1.7  2002/04/17 15:39:06  grichenk
+ * Moved CSeq_loc_CI to the seq-loc library
+ *
+ * Revision 1.6  2002/01/10 18:20:48  clausen
+ * Added IsOneBioseq, GetStart, and GetId
+ *
+ * Revision 1.5  2001/10/22 11:39:49  clausen
+ * Added Compare()
+ *
+ * Revision 1.4  2001/06/25 18:52:02  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
+ * Revision 1.3  2001/01/05 20:11:41  vasilche
+ * CRange, CRangeMap were moved to util.
+ *
+ * Revision 1.2  2001/01/03 16:38:58  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
+ * Revision 1.1  2000/11/17 21:35:02  vasilche
+ * Added GetLength() method to CSeq_loc class.
+ *
+ *
+ * ===========================================================================
+*/
 
 #endif // OBJECTS_SEQLOC_SEQ_LOC_HPP

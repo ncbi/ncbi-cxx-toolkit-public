@@ -33,56 +33,10 @@
  *   using specifications from the ASN data definition file
  *   'seqloc.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.14  2002/09/12 21:19:02  kans
- * added IsPartialLeft and IsPartialRight
- *
- * Revision 6.13  2002/06/06 20:35:28  clausen
- * Moved methods using object manager to objects/util
- *
- * Revision 6.12  2002/05/31 13:33:02  grichenk
- * GetLength() -- return 0 for e_Null locations
- *
- * Revision 6.11  2002/05/06 03:39:12  vakatov
- * OM/OM1 renaming
- *
- * Revision 6.10  2002/05/03 21:28:18  ucko
- * Introduce T(Signed)SeqPos.
- *
- * Revision 6.9  2002/04/22 20:08:31  grichenk
- * Redesigned GetTotalRange() using CSeq_loc_CI
- *
- * Revision 6.8  2002/04/17 15:39:08  grichenk
- * Moved CSeq_loc_CI to the seq-loc library
- *
- * Revision 6.7  2002/01/16 18:56:32  grichenk
- * Removed CRef<> argument from choice variant setter, updated sources to
- * use references instead of CRef<>s
- *
- * Revision 6.6  2002/01/10 18:21:26  clausen
- * Added IsOneBioseq, GetStart, and GetId
- *
- * Revision 6.5  2001/10/22 11:40:32  clausen
- * Added Compare() implementation
- *
- * Revision 6.4  2001/01/03 18:59:09  vasilche
- * Added missing include.
- *
- * Revision 6.3  2001/01/03 16:39:05  vasilche
- * Added CAbstractObjectManager - stub for object manager.
- * CRange extracted to separate file.
- *
- * Revision 6.2  2000/12/26 17:28:55  vasilche
- * Simplified and formatted code.
- *
- * Revision 6.1  2000/11/17 21:35:10  vasilche
- * Added GetLength() method to CSeq_loc class.
- *
- *
  * ===========================================================================
  */
-
+#include <serial/enumvalues.hpp>
+#include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -112,7 +66,6 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 
 
 // CSeq_loc_CI implementation
-
 CSeq_loc_CI::CSeq_loc_CI(void)
     : m_Location(0)
 {
@@ -265,6 +218,210 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
     }
 }
 
+
+// Append a string representation of a CSeq_id to label
+inline
+void s_GetLabel(const CSeq_id& id, string* label)
+{
+    CNcbiOstrstream os;
+    id.WriteAsFasta(os);
+    *label += CNcbiOstrstreamToString(os);
+}
+
+
+// Append to label info for a CSeq_point
+inline 
+const CSeq_id* s_GetLabel
+(const CSeq_point& pnt, 
+ const CSeq_id*    last_id, 
+ string*           label)
+{
+    // If CSeq_id does not match last_id, then append id to label
+    if ( !last_id  ||  !last_id->Match(pnt.GetId()) ) {
+        s_GetLabel(pnt.GetId(), label);
+        *label += ":";
+    }
+    
+    // Add strand info to label
+    *label += GetTypeInfo_enum_ENa_strand()
+        ->FindName(pnt.GetStrand(), true);
+        
+    if (pnt.IsSetFuzz()) {
+        // Append Fuzz info to label
+        pnt.GetFuzz().GetLabel(label, pnt.GetPoint());
+    } else {
+        // Append 1 based point to label
+        *label += NStr::IntToString(pnt.GetPoint()+1);
+    }
+    
+    // update last_id
+    last_id = &pnt.GetId();                
+    return last_id;
+}
+
+
+// Append to label info for CSeq_interval
+inline
+const CSeq_id* s_GetLabel
+(const CSeq_interval& itval, 
+ const CSeq_id*       last_id, 
+ string*              label)
+{
+    if (!last_id || !last_id->Match(itval.GetId())) {
+        s_GetLabel(itval.GetId(), label);
+        *label += ":";
+    }
+    last_id = &itval.GetId();
+    if (itval.IsSetStrand()) {
+        *label += GetTypeInfo_enum_ENa_strand()
+            ->FindName(itval.GetStrand(), true);
+    }
+    if (itval.GetStrand() == eNa_strand_minus || 
+        itval.GetStrand() == eNa_strand_both_rev) {
+        if (itval.IsSetFuzz_to()) {
+            itval.GetFuzz_to().GetLabel(label, itval.GetTo(), false);
+        } else {
+            *label += NStr::IntToString(itval.GetTo()+1);
+        }
+        *label += "-";
+        if (itval.IsSetFuzz_from()) {
+            itval.GetFuzz_from().GetLabel(label, itval.GetFrom());
+        } else {
+            *label += NStr::IntToString(itval.GetFrom()+1);
+        }
+    } else {
+        if (itval.IsSetFuzz_from()) {
+            itval.GetFuzz_from().GetLabel
+                (label, itval.GetFrom(), false);
+        } else {
+            *label += NStr::IntToString(itval.GetFrom()+1);
+        }
+        *label += "-";
+        if (itval.IsSetFuzz_to()) {
+            itval.GetFuzz_to().GetLabel(label, itval.GetTo());
+        } else {
+            *label += NStr::IntToString(itval.GetTo()+1);
+        }
+    }
+    return last_id;
+}
+
+
+// Forward declaration
+const CSeq_id* s_GetLabel
+(const CSeq_loc& loc,
+ const CSeq_id*  last_id,
+ string*         label, 
+ bool            first = false);
+
+
+// Appends to label info for each CSeq_loc in a list of CSeq_locs
+inline
+const CSeq_id* s_GetLabel
+(const list<CRef<CSeq_loc> >&  loc_list,
+ const CSeq_id*                last_id,
+ string*                       label)
+{
+    bool first = true;
+    iterate (list<CRef<CSeq_loc> >, it, loc_list) {
+        
+        // Append to label for each CSeq_loc in list
+        last_id = s_GetLabel(**it, last_id, label, first);
+        first = false;
+    }
+       
+    return last_id;
+}
+
+
+// Builds a label based upon a CSeq_loc and all embedded CSeq_locs
+const CSeq_id* s_GetLabel
+(const CSeq_loc& loc,
+ const CSeq_id*  last_id,
+ string*         label, 
+ bool            first = false)
+{
+    // Ensure label is not null
+    if (!label) {
+        return last_id;
+    }
+    
+    // Put a comma separator if necessary
+    if (!first) {
+        *label += ", ";
+    }
+    
+    // Loop through embedded CSeq_locs and create a label, depending on
+    // type of CSeq_loc
+    switch (loc.Which()) {
+    case CSeq_loc::e_Null:
+        *label += "~";
+        break;
+    case CSeq_loc::e_Empty:
+        *label += "{"; 
+        s_GetLabel(loc.GetEmpty(), label);
+        last_id = &loc.GetEmpty();
+        *label += "}";
+        break;
+    case CSeq_loc::e_Whole:
+        s_GetLabel(loc.GetWhole(), label);
+        last_id = &loc.GetWhole();
+        break;
+    case CSeq_loc::e_Int:
+        last_id = s_GetLabel(loc.GetInt(), last_id, label);
+        break;
+    case CSeq_loc::e_Packed_int:
+    {
+        *label += "(";
+        bool first = true;
+        iterate(list<CRef<CSeq_interval> >, it, loc.GetPacked_int().Get()) {
+            if (!first) {
+                *label += ", ";
+            }
+            first = false;
+            last_id = s_GetLabel(**it, last_id, label);
+        }
+        *label += ")";
+        break;
+    }
+    case CSeq_loc::e_Pnt:
+        last_id = s_GetLabel(loc.GetPnt(), last_id, label);
+        break;
+    case CSeq_loc::e_Packed_pnt:
+        if (!loc.GetPacked_pnt().GetPoints().empty()) {
+            *label += "PackSeqPnt";
+        }
+        last_id = &loc.GetPacked_pnt().GetId();
+        break;
+    case CSeq_loc::e_Mix:
+        *label += "[";
+        last_id = s_GetLabel(loc.GetMix().Get(), last_id, label);
+        *label += "]";
+        break;
+    case CSeq_loc::e_Equiv:
+        *label += "[";
+        last_id = s_GetLabel(loc.GetEquiv().Get(), last_id, label);
+        *label += "]";
+        break;
+    case CSeq_loc::e_Bond:
+        last_id = s_GetLabel(loc.GetBond().GetA(), last_id, label);
+        *label += "=";
+        if (loc.GetBond().IsSetB()) {
+            last_id = s_GetLabel(loc.GetBond().GetB(), last_id, label);
+        } else {
+            *label += "?";
+        }
+        break;
+    case CSeq_loc::e_Feat:
+        *label += "(feat)";
+        break;
+    default:
+        *label += "(??)";
+        break;
+    }
+    return last_id;
+}
+
 bool CSeq_loc::IsPartialLeft (void) const
 
 {
@@ -313,7 +470,68 @@ bool CSeq_loc::IsPartialRight (void) const
     return false;
 }
 
+// Appends a label suitable for display (e.g., error messages)
+// label must point to an existing string object
+// Method just returns if label is null
+void CSeq_loc::GetLabel(string* label) const
+{
+    s_GetLabel(*this, 0, label, true);
+}    
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
+
+/*
+ * =============================================================================
+ * $Log$
+ * Revision 6.15  2002/10/03 16:36:09  clausen
+ * Added GetLabel()
+ *
+ * Revision 6.14  2002/09/12 21:19:02  kans
+ * added IsPartialLeft and IsPartialRight
+ *
+ * Revision 6.13  2002/06/06 20:35:28  clausen
+ * Moved methods using object manager to objects/util
+ *
+ * Revision 6.12  2002/05/31 13:33:02  grichenk
+ * GetLength() -- return 0 for e_Null locations
+ *
+ * Revision 6.11  2002/05/06 03:39:12  vakatov
+ * OM/OM1 renaming
+ *
+ * Revision 6.10  2002/05/03 21:28:18  ucko
+ * Introduce T(Signed)SeqPos.
+ *
+ * Revision 6.9  2002/04/22 20:08:31  grichenk
+ * Redesigned GetTotalRange() using CSeq_loc_CI
+ *
+ * Revision 6.8  2002/04/17 15:39:08  grichenk
+ * Moved CSeq_loc_CI to the seq-loc library
+ *
+ * Revision 6.7  2002/01/16 18:56:32  grichenk
+ * Removed CRef<> argument from choice variant setter, updated sources to
+ * use references instead of CRef<>s
+ *
+ * Revision 6.6  2002/01/10 18:21:26  clausen
+ * Added IsOneBioseq, GetStart, and GetId
+ *
+ * Revision 6.5  2001/10/22 11:40:32  clausen
+ * Added Compare() implementation
+ *
+ * Revision 6.4  2001/01/03 18:59:09  vasilche
+ * Added missing include.
+ *
+ * Revision 6.3  2001/01/03 16:39:05  vasilche
+ * Added CAbstractObjectManager - stub for object manager.
+ * CRange extracted to separate file.
+ *
+ * Revision 6.2  2000/12/26 17:28:55  vasilche
+ * Simplified and formatted code.
+ *
+ * Revision 6.1  2000/11/17 21:35:10  vasilche
+ * Added GetLength() method to CSeq_loc class.
+ *
+ *
+ * ===========================================================================
+*/
