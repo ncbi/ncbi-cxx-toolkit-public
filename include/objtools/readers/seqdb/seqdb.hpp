@@ -135,6 +135,12 @@ public:
     /// Sequence type accepted and returned for OID indexes.
     typedef Uint4 TOID;
     
+    /// Sequence type accepted and returned for OID indexes.
+    typedef Uint4 TPIG;
+    
+    /// Sequence type accepted and returned for OID indexes.
+    typedef Uint4 TGI;
+    
     /// Short Constructor.
     /// 
     /// @param dbname
@@ -360,6 +366,24 @@ public:
     /// Setting this to a very low value will probably cause bad
     /// performance.
     void SetMemoryBound(Uint8 membound, Uint8 slice_size);
+    
+    /// Translate a PIG to an OID.
+    bool PigToOid(TPIG pig, TOID & oid) const;
+    
+    /// Translate a PIG to an OID.
+    bool OidToPig(TOID oid, TPIG & pig) const;
+    
+    /// Translate a GI to an OID.
+    bool OidToGi(TOID oid, TGI & gi) const;
+    
+    /// Translate a GI to an OID.
+    bool GiToOid(TGI gi, TOID & oid) const;
+    
+    /// Translate a GI to a PIG.
+    bool GiToPig(TGI gi, TPIG & pig) const;
+    
+    /// Translate a PIG to a GI.
+    bool PigToGi(TPIG pig, TGI & gi) const;
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
