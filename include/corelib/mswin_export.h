@@ -198,7 +198,7 @@
 /*
  * Export specifier for library objects_medline
  */
-#ifdef NCBI_MEDLINE_EXPORTS 
+#ifdef NCBI_MEDLINE_EXPORTS
 #  define NCBI_MEDLINE_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_MEDLINE_EXPORT       __declspec(dllimport)
@@ -541,6 +541,16 @@
 #endif
 
 /*
+ * Export specifier for library dbapi_driver_mysql
+ */
+#ifdef NCBI_DBAPIDRIVER_MYSQL_EXPORTS
+#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT   __declspec(dllexport)
+#else
+#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT   __declspec(dllimport)
+#endif
+
+
+/*
  * Export specifier for library gui_core
  */
 #ifdef NCBI_GUICORE_EXPORTS
@@ -619,6 +629,7 @@
 #  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
+#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
 #  define NCBI_FEATDEF_EXPORT
@@ -671,6 +682,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.13  2003/02/25 19:34:21  kuznets
+ * Added NCBI_DBAPIDRIVER_MYSQL_EXPORTS
+ *
  * Revision 1.12  2003/02/21 16:42:16  dicuccio
  * Added export specifiers for XALGO, XGBPLUGIN
  *
