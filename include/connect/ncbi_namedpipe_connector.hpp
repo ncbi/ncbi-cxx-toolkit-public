@@ -1,5 +1,5 @@
-#ifndef CONNECT___NCBI_NAMEDPIPE_CONNECTOR__H
-#define CONNECT___NCBI_NAMEDPIPE_CONNECTOR__H
+#ifndef CONNECT___NCBI_NAMEDPIPE_CONNECTOR__HPP
+#define CONNECT___NCBI_NAMEDPIPE_CONNECTOR__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,16 +28,19 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:
- *   Implement CONNECTOR for a named pipe interprocess communication
- *   (based on the NCBI CNamedPipe).
- *
- *   See in "connectr.h" for the detailed specification of the underlying
- *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
  */
 
+/// @file ncbi_namedpipe_connector.hpp
+/// Implement CONNECTOR for a named pipe interprocess communication
+/// (based on the NCBI CNamedPipe).
+///
+/// See in "connectr.h" for the detailed specification of the underlying
+/// connector("CONNECTOR", "SConnectorTag") methods and structures.
+ 
+
 #include <connect/ncbi_connector.h>
+#include <connect/ncbi_namedpipe.hpp>
 
 
 /** @addtogroup Connectors
@@ -45,9 +48,8 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
+BEGIN_NCBI_SCOPE
 
 
 /* Create new CONNECTOR structure to handle a data transfer between two
@@ -55,27 +57,28 @@ extern "C" {
  *
  */
 
+/// Create CNamedPipe-based CONNECTOR.
+///
+/// Create new CONNECTOR structure to handle a data transfer between two
+/// process over nemed pipe. Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
-(const char*  pipename
- );
-
-extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnectorEx
 (const char*  pipename,
- size_t       bufsize
+ size_t       bufsize = CNamedPipe::kDefaultBufferSize
  );
 
 
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
+END_NCBI_SCOPE
 
 
 /* @} */
 
 
 /*
- * --------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/03 13:56:11  ivanov
+ * Renamed to .hpp
+ *
  * Revision 1.2  2003/08/21 20:07:54  ivanov
  * Added NAMEDPIPE_CreateConnectorEx
  *
@@ -85,4 +88,4 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnectorEx
  * ==========================================================================
  */
 
-#endif /* CONNECT___NCBI_NAMEDPIPE_CONNECTOR__H */
+#endif /* CONNECT___NCBI_NAMEDPIPE_CONNECTOR__HPP */
