@@ -131,13 +131,12 @@ void CSeq_id_Which_Tree::x_RemoveFromKeyMap(TSeq_id_Key key)
 
 void CSeq_id_Which_Tree::DropKeysRange(TSeq_id_Key first, TSeq_id_Key last)
 {
-    TKeyMap::iterator it_first = m_KeyMap.lower_bound(first);
-    TKeyMap::iterator it_last = m_KeyMap.upper_bound(last);
-    for (TKeyMap::iterator it = it_first; it != it_last; ++it) {
+    TKeyMap::iterator it = m_KeyMap.lower_bound(first);
+    while (it != m_KeyMap.end()) {
         x_DropHandle(it->second);
-        //x_RemoveFromKeyMap(it->first);
+        m_KeyMap.erase(it);
+        it = m_KeyMap.lower_bound(first);
     }
-    m_KeyMap.erase(it_first, it_last);
 }
 
 
@@ -1647,7 +1646,7 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
     CFastMutexGuard guard(m_IdMapMutex);
     TSeq_id_Key seg = handle.m_Value / kKeyUsageTableSegmentSize;
     TKeyUsageTable::iterator key_grp = m_KeyUsageTable.find(seg);
-    _ASSERT(key_grp != m_KeyUsageTable.end()  && key_grp->second > 0);
+    _ASSERT(key_grp != m_KeyUsageTable.end()  &&  key_grp->second > 0);
     if (--key_grp->second == 0) {
         // Drop the handles segment from the proper seq-id trees
         non_const_iterate(TIdMap, it, m_IdMap) {
@@ -1655,7 +1654,8 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
                 (seg+1)*kKeyUsageTableSegmentSize-1);
         }
         for (size_t i = 0; i < kKeyUsageTableSegmentSize; i++) {
-            TKeyToIdMap::iterator ref = m_KeyMap.find(i);
+            TKeyToIdMap::iterator ref = m_KeyMap.find
+                (i + seg*kKeyUsageTableSegmentSize);
             if (ref != m_KeyMap.end()) {
                 m_KeyMap.erase(ref);
             }
@@ -1671,7 +1671,7 @@ TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
         m_NextKey++;
     }
     else {
-        m_NextKey = 0;
+        m_NextKey = 1;
     }
     // If in an occupied segment - just return the key
     if (m_NextKey % kKeyUsageTableSegmentSize) {
@@ -1695,7 +1695,7 @@ TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
     }
     // Found a free segment
     m_KeyUsageTable[next_seg] = 0;
-    m_NextKey = next_seg*kKeyUsageTableSegmentSize;
+    m_NextKey = next_seg ? next_seg*kKeyUsageTableSegmentSize : 1;
     return m_NextKey;
 }
 
@@ -1725,6 +1725,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/08/30 18:33:27  grichenk
+* Fixed bug in segment releasing code
+*
 * Revision 1.19  2002/08/20 14:27:22  grichenk
 * Fixed the problem with PDB ids
 *
