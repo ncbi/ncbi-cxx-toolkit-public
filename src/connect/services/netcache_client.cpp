@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
@@ -494,12 +495,116 @@ void CNetCacheSock_RW::OwnSocket()
     m_IsOwned = eTakeOwnership; 
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+const char* kNetCacheDriverName = "netcacheclient";
+
+/// @internal
+class CNetCacheClientCF : public IClassFactory<CNetCacheClient>
+{
+public:
+
+    typedef CNetCacheClient                 TDriver;
+    typedef CNetCacheClient                 IFace;
+    typedef IFace                           TInterface;
+    typedef IClassFactory<CNetCacheClient>  TParent;
+    typedef TParent::SDriverInfo   TDriverInfo;
+    typedef TParent::TDriverList   TDriverList;
+
+    /// Construction
+    ///
+    /// @param driver_name
+    ///   Driver name string
+    /// @param patch_level
+    ///   Patch level implemented by the driver.
+    ///   By default corresponds to interface patch level.
+    CNetCacheClientCF(const string& driver_name = kNetCacheDriverName, 
+                      int patch_level = -1)
+        : m_DriverVersionInfo
+        (ncbi::CInterfaceVersion<IFace>::eMajor,
+         ncbi::CInterfaceVersion<IFace>::eMinor,
+         patch_level >= 0 ?
+            patch_level : ncbi::CInterfaceVersion<IFace>::ePatchLevel),
+          m_DriverName(driver_name)
+    {
+        _ASSERT(!m_DriverName.empty());
+    }
+
+    /// Create instance of TDriver
+    virtual TInterface*
+    CreateInstance(const string& driver  = kEmptyStr,
+                   CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
+                   const TPluginManagerParamTree* params = 0) const
+    {
+        TDriver* drv = 0;
+        if (params && (driver.empty() || driver == m_DriverName)) {
+            if (version.Match(NCBI_INTERFACE_VERSION(IFace))
+                                != CVersionInfo::eNonCompatible) {
+
+            CConfig conf(params);
+            const string& client_name = 
+                conf.GetString(m_DriverName, 
+                               "client_name", CConfig::eErr_Throw, "noname");
+            const string& service = 
+                conf.GetString(m_DriverName, 
+                               "service", CConfig::eErr_NoThrow, "");
+            if (!service.empty()) {
+                unsigned int rebalance_time = conf.GetInt(m_DriverName, 
+                                                "rebalance_time",
+                                                CConfig::eErr_NoThrow, 10);
+                unsigned int rebalance_requests = conf.GetInt(m_DriverName,
+                                                "rebalance_requests",
+                                                CConfig::eErr_NoThrow, 100);
+                unsigned int rebalance_bytes = conf.GetInt(m_DriverName,
+                                                "rebalance_bytes",
+                                                CConfig::eErr_NoThrow, 5*1024000);
+                drv = new CNetCacheClient_LB(client_name, service,
+                                             rebalance_time, 
+                                             rebalance_requests,
+                                             rebalance_bytes );
+            } else { // non lb client
+                const string& host = 
+                    conf.GetString(m_DriverName, 
+                                  "host", CConfig::eErr_Throw, "");
+                unsigned int port = conf.GetInt(m_DriverName,
+                                               "port",
+                                               CConfig::eErr_Throw, 9001);
+
+                drv = new CNetCacheClient(host, port, client_name);
+            }
+            }                               
+        }
+        return drv;
+    }
+
+    void GetDriverVersions(TDriverList& info_list) const
+    {
+        info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
+    }
+protected:
+    CVersionInfo  m_DriverVersionInfo;
+    string        m_DriverName;
+
+};
+
+void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcache(
+     CPluginManager<CNetCacheClient>::TDriverInfoList&   info_list,
+     CPluginManager<CNetCacheClient>::EEntryPointRequest method)
+{
+       CHostEntryPointImpl<CNetCacheClientCF>::
+       NCBI_EntryPointImpl(info_list, method);
+
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/03/21 16:46:35  didenko
+ * + creating from PluginManager
+ *
  * Revision 1.34  2005/02/07 13:01:03  kuznets
  * Part of functionality moved to netservice_client.hpp(cpp)
  *
