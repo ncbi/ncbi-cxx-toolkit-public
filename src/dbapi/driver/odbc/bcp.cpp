@@ -202,7 +202,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            r = bcp_colptr(m_Cmd, val.IsNULL()? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
@@ -210,7 +210,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-            r = bcp_colptr(m_Cmd, val.IsNULL()? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
@@ -218,7 +218,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            r = bcp_colptr(m_Cmd, val.IsNULL()? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd,
                            val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
@@ -227,7 +227,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            r = bcp_colptr(m_Cmd, val.IsNULL()? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd,
                            val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
@@ -424,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/09/12 14:14:59  soussov
+ * fixed typo in binding [var]char/binary with NULL value
+ *
  * Revision 1.2  2002/09/11 20:23:54  soussov
  * fixed bug in binding [var]char/binary with NULL value
  *
