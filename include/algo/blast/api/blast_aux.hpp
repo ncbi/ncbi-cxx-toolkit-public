@@ -113,7 +113,7 @@ FindGeneticCode(int genetic_code);
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
 /** Wrapper class for struct_name. */\
 \
-class C##struct_name : public CDebugDumpable \
+class NCBI_XBLAST_EXPORT C##struct_name : public CDebugDumpable \
 { \
 public: \
     C##struct_name() : m_Ptr(NULL) {} \
@@ -192,6 +192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2005/03/28 16:56:04  jcherry
+* Added export specifier to DECLARE_AUTO_CLASS_WRAPPER macro
+*
 * Revision 1.54  2005/01/19 15:46:50  papadopo
 * remove obsolete prototype
 *
