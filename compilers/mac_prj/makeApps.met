@@ -170,14 +170,35 @@ on mkFileDataNoUL(fullPath) -- Get all the files, minus those whose basename end
 	return fileData
 end mkFileDataNoUL
 
+on mkFileDataNoULExcept(fullPath, notFiles) -- Get all the files, minus those whose basename ends with an underscore.
+	set fileData to mkFileDataExceptFiles(fullPath, notFiles)
+	set newFileList to {}
+	repeat with f in fileList of fileData
+		if f does not end with ("_.cpp") then
+			copy f as text to end of newFileList
+		end if
+	end repeat
+	set fileList of fileData to newFileList
+	return fileData
+end mkFileDataNoULExcept
+
 on AppData(projName, features, section, staticLibs, dynamicLibs)
 	set appProjData to ProjectData(projName, features, {mkFileDataNoUL(gSourceDir & section)})
 	return DataPlusLibs(appProjData, staticLibs, dynamicLibs)
 end AppData
 
+on AppDataExcept(projName, features, section, notFiles, staticLibs, dynamicLibs)
+	set appProjData to ProjectData(projName, features, {mkFileDataNoULExcept(gSourceDir & section, notFiles)})
+	return DataPlusLibs(appProjData, staticLibs, dynamicLibs)
+end AppDataExcept
+
 on AddAppProject(projName, features, section, staticLibs, dynamicLibs)
 	AddProject(AppData(projName, features, section, staticLibs, dynamicLibs))
 end AddAppProject
+
+on AddAppProjectExcept(projName, features, section, notFiles, staticLibs, dynamicLibs)
+	AddProject(AppDataExcept(projName, features, section, notFiles, staticLibs, dynamicLibs))
+end AddAppProjectExcept
 
 on DataPlusSources(dataRec, newSrcs)
 	repeat with i in newSrcs
@@ -261,7 +282,7 @@ on SetProjectData()
 	set pCPlusPlusExt to saveCppExt
 	
 	---------- GENOME WORK BENCH ----------
-	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
+	AddAppProjectExcept("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"windows_registry.cpp"}, Â
 		{"w_table", "w_fltable"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
@@ -736,13 +757,13 @@ on SetupTarget(proj, targetIndex)
 			copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
 		end if
 		
-		-- try
-		Add Files filesToAdd
-		-- on error errmsg number errnum
-		-- ignore errors when none of those libraries exist.
-		-- happens when populating a target when we haven't built any of the libraries for that target spec.
-		-- 	if errnum is not 9393 then error errmsg number errnum
-		-- end try
+		try
+			Add Files filesToAdd
+		on error errmsg number errnum
+			-- ignore errors when none of those libraries exist.
+			-- happens when populating a target when we haven't built any of the libraries for that target spec.
+			if errnum is not 9393 then error errmsg number errnum
+		end try
 		
 		-- Add resources.
 		set filesToAdd to {}
