@@ -355,14 +355,14 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #else
     // Try to read data
     streamsize n = is.readsome(buf, buf_size);
-    if (n != 0  ||  is.eof())
-        return n; // success
+    if (n != 0  ||  !is.good())
+        return n;
     // No data found in the buffer, try to read from the real source
     is.read(buf, 1);
     if ( !is.good() )
         return 0;
     if (buf_size == 1)
-        return 1; // Do not need more data
+        return 1; // do not need more data
     // Read more data (up to "buf_size" bytes)
     return is.readsome(buf+1, buf_size-1) + 1;
 #endif
@@ -375,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2003/03/25 22:14:03  lavr
+ * CStreamUtils::Readsome(): Return not only on EOF but on any !good()
+ *
  * Revision 1.16  2003/02/27 15:36:23  lavr
  * Preper indentation for NCBI_THROW
  *
