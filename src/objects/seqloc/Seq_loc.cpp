@@ -575,8 +575,10 @@ const CSeq_id* s_GetLabel
     }
 
     // Add strand info to label
-    *label += GetTypeInfo_enum_ENa_strand()
-        ->FindName(pnt.GetStrand(), true);
+    if (pnt.IsSetStrand()) {
+        *label += GetTypeInfo_enum_ENa_strand()
+            ->FindName(pnt.GetStrand(), true);
+    }
 
     if (pnt.IsSetFuzz()) {
         // Append Fuzz info to label
@@ -608,8 +610,9 @@ const CSeq_id* s_GetLabel
         *label += GetTypeInfo_enum_ENa_strand()
             ->FindName(itval.GetStrand(), true);
     }
-    if (itval.GetStrand() == eNa_strand_minus ||
-        itval.GetStrand() == eNa_strand_both_rev) {
+    if (itval.IsSetStrand() &&
+        (itval.GetStrand() == eNa_strand_minus ||
+         itval.GetStrand() == eNa_strand_both_rev)) {
         if (itval.IsSetFuzz_to()) {
             itval.GetFuzz_to().GetLabel(label, itval.GetTo(), false);
         } else {
@@ -829,6 +832,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.31  2003/07/21 15:32:11  vasilche
+ * Fixed access to uninitialized member.
+ *
  * Revision 6.30  2003/06/18 16:00:07  vasilche
  * Fixed GetTotalRange() in multithreaded app.
  *
