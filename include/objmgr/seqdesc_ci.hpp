@@ -42,6 +42,22 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeqdesc_CI --
+///
+///  Another type of descriptor 
+///  Enumerate individual descriptors (CSeqdesc) rather than sets of them
+///
+///  @sa
+///    CSeq_descr_CI
+
 class NCBI_XOBJMGR_EXPORT CSeqdesc_CI
 {
 public:
@@ -51,20 +67,31 @@ public:
     // Old method, should not be used.
     CSeqdesc_CI(const CSeq_descr_CI& desc_it,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set);
-    // Start searching from a bioseq, limit number of seq-entries
-    // to "search_depth" (0 = unlimited).
+
+    /// Create an iterator that enumerates CSeqdesc objects 
+    /// from a bioseq with limit number of seq-entries
+    /// to "search_depth" (0 = unlimited) for specific type
     CSeqdesc_CI(const CBioseq_Handle& handle,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
                 size_t search_depth = 0);
-    // Start searching from a seq-entry, limit number of seq-entries
-    // to "search_depth" (0 = unlimited).
+
+    /// Create an iterator that enumerates CSeqdesc objects 
+    /// from a seq-entry, limit number of seq-entries
+    /// to "search_depth" (0 = unlimited) for specific type
     CSeqdesc_CI(const CSeq_entry_Handle& entry,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
                 size_t search_depth = 0);
-    // Search a set of types
+
+    /// Create an iterator that enumerates CSeqdesc objects 
+    /// from a bioseq with limit number of seq-entries
+    /// to "search_depth" (0 = unlimited) for set of types
     CSeqdesc_CI(const CBioseq_Handle& handle,
                 const TDescChoices& choices,
                 size_t search_depth = 0);
+
+    /// Create an iterator that enumerates CSeqdesc objects 
+    /// from a seq-entry, limit number of seq-entries
+    /// to "search_depth" (0 = unlimited) for set of types
     CSeqdesc_CI(const CSeq_entry_Handle& entry,
                 const TDescChoices& choices,
                 size_t search_depth = 0);
@@ -74,7 +101,10 @@ public:
 
     CSeqdesc_CI& operator= (const CSeqdesc_CI& iter);
 
+    /// Move to the next object in iterated sequence
     CSeqdesc_CI& operator++ (void); // prefix
+
+    /// Check if iterator points to an object
     operator bool (void) const;
 
     const CSeqdesc& operator*  (void) const;
@@ -97,6 +127,8 @@ private:
 };
 
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -104,6 +136,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/10/01 16:47:00  kononenk
+* Added doxygen formatting
+*
 * Revision 1.10  2004/04/28 14:14:39  grichenk
 * Added filtering by several seqdesc types.
 *
