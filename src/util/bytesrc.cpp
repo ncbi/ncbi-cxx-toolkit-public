@@ -1,97 +1,39 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Eugene Vasilchenko
-*
-* File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.17  2002/11/04 21:29:22  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.16  2002/01/17 17:57:14  vakatov
-* [GCC > 3.0]  CStreamByteSourceReader::Read() -- use "readsome()", thus
-* avoid blocking on timeout at EOF for non-blocking input stream.
-*
-* Revision 1.15  2001/08/15 18:43:34  lavr
-* FIXED CStreamByteSourceReader::Read:
-* ios::clear() has to have no arguments in order to clear EOF state.
-*
-* Revision 1.14  2001/05/30 19:55:35  grichenk
-* Fixed one more non-blocking stream reading bug, added comments
-*
-* Revision 1.13  2001/05/29 19:35:23  grichenk
-* Fixed non-blocking stream reading for GCC
-*
-* Revision 1.12  2001/05/17 15:07:15  lavr
-* Typos corrected
-*
-* Revision 1.11  2001/05/16 17:55:40  grichenk
-* Redesigned support for non-blocking stream read operations
-*
-* Revision 1.10  2001/05/11 20:41:19  grichenk
-* Added support for non-blocking stream reading
-*
-* Revision 1.9  2001/05/11 14:00:21  grichenk
-* CStreamByteSourceReader::Read() -- use readsome() instead of read()
-*
-* Revision 1.8  2001/01/05 20:09:05  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.7  2000/11/01 20:38:37  vasilche
-* Removed ECanDelete enum and related constructors.
-*
-* Revision 1.6  2000/09/01 13:16:14  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.5  2000/07/03 18:42:42  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.4  2000/06/22 16:13:48  thiessen
-* change IFStreamFlags to macro
-*
-* Revision 1.3  2000/05/03 14:38:13  vasilche
-* SERIAL: added support for delayed reading to generated classes.
-* DATATOOL: added code generation for delayed reading.
-*
-* Revision 1.2  2000/04/28 19:14:37  vasilche
-* Fixed stream position and offset typedefs.
-*
-* Revision 1.1  2000/04/28 16:58:11  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Eugene Vasilchenko
+ *
+ * File Description:
+ *   Implementation of CByteSource and CByteSourceReader
+ *   and their specializations'.
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <util/bytesrc.hpp>
+#include <util/stream_utils.hpp>
 #include <algorithm>
 
 
@@ -152,36 +94,7 @@ CRef<CByteSourceReader> CStreamByteSource::Open(void)
 
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
-#ifdef NCBI_COMPILER_GCC
-#  if NCBI_COMPILER_VERSION < 300
-#    define NCBI_NO_READSOME
-#  endif
-#endif
-
-#ifdef NCBI_NO_READSOME
-#undef NCBI_NO_READSOME
-    // Special case: GCC had no readsome() prior to ver 3.0;
-    // read() will set "eof" flag if gcount() < bufferLength
-    m_Stream->read(buffer, bufferLength);
-    size_t count = m_Stream->gcount();
-    // Reset "eof" flag if some data have been read
-    if (count  &&  m_Stream->eof())
-        m_Stream->clear();
-    return count;
-#else
-    // Try to read data
-    size_t n = m_Stream->readsome(buffer, bufferLength);
-    if (n != 0  ||  m_Stream->eof())
-        return n; // success
-    // No data found in the buffer, try to read from the real source
-    m_Stream->read(buffer, 1);
-    if ( !m_Stream->good() )
-        return 0;
-    if (bufferLength == 1)
-        return 1; // Do not need more data
-    // Read more data (up to the bufferLength)
-    return m_Stream->readsome(buffer+1, bufferLength-1) + 1;
-#endif
+    return CStreamUtils::Readsome(*m_Stream, buffer, bufferLength);
 }
 
 
@@ -387,3 +300,70 @@ CRef<CByteSource> CMemorySourceCollector::GetSource(void)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.18  2002/11/27 21:08:52  lavr
+ * Take advantage of CStreamUtils::Readsome() in CStreamByteSource::Read()
+ *
+ * Revision 1.17  2002/11/04 21:29:22  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
+ * Revision 1.16  2002/01/17 17:57:14  vakatov
+ * [GCC > 3.0]  CStreamByteSourceReader::Read() -- use "readsome()", thus
+ * avoid blocking on timeout at EOF for non-blocking input stream.
+ *
+ * Revision 1.15  2001/08/15 18:43:34  lavr
+ * FIXED CStreamByteSourceReader::Read:
+ * ios::clear() has to have no arguments in order to clear EOF state.
+ *
+ * Revision 1.14  2001/05/30 19:55:35  grichenk
+ * Fixed one more non-blocking stream reading bug, added comments
+ *
+ * Revision 1.13  2001/05/29 19:35:23  grichenk
+ * Fixed non-blocking stream reading for GCC
+ *
+ * Revision 1.12  2001/05/17 15:07:15  lavr
+ * Typos corrected
+ *
+ * Revision 1.11  2001/05/16 17:55:40  grichenk
+ * Redesigned support for non-blocking stream read operations
+ *
+ * Revision 1.10  2001/05/11 20:41:19  grichenk
+ * Added support for non-blocking stream reading
+ *
+ * Revision 1.9  2001/05/11 14:00:21  grichenk
+ * CStreamByteSourceReader::Read() -- use readsome() instead of read()
+ *
+ * Revision 1.8  2001/01/05 20:09:05  vasilche
+ * Added util directory for various algorithms and utility classes.
+ *
+ * Revision 1.7  2000/11/01 20:38:37  vasilche
+ * Removed ECanDelete enum and related constructors.
+ *
+ * Revision 1.6  2000/09/01 13:16:14  vasilche
+ * Implemented class/container/choice iterators.
+ * Implemented CObjectStreamCopier for copying data without loading into memory
+ *
+ * Revision 1.5  2000/07/03 18:42:42  vasilche
+ * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+ * Reduced header dependency.
+ *
+ * Revision 1.4  2000/06/22 16:13:48  thiessen
+ * change IFStreamFlags to macro
+ *
+ * Revision 1.3  2000/05/03 14:38:13  vasilche
+ * SERIAL: added support for delayed reading to generated classes.
+ * DATATOOL: added code generation for delayed reading.
+ *
+ * Revision 1.2  2000/04/28 19:14:37  vasilche
+ * Fixed stream position and offset typedefs.
+ *
+ * Revision 1.1  2000/04/28 16:58:11  vasilche
+ * Added classes CByteSource and CByteSourceReader for generic reading.
+ * Added delayed reading of choice variants.
+ *
+ * ===========================================================================
+ */
