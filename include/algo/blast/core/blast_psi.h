@@ -31,7 +31,7 @@
  */
 
 /** @file blast_psi.h
- * High level definitions and declarations for the PSI-BLAST API.
+ * High level definitions and declarations for the PSSM engine of PSI-BLAST.
  */
 
 #include <algo/blast/core/ncbi_std.h>
@@ -46,7 +46,7 @@ extern "C" {
  */
 typedef struct PSIMsaCell {
     Uint1   letter;             /**< Preferred letter at this position */
-    Boolean is_aligned;         /**< Is this letter being used? */
+    Boolean is_aligned;         /**< Is this letter part of the alignment? */
 } PSIMsaCell;
 
 /** Structure representing the dimensions of the multiple sequence alignment
@@ -54,7 +54,7 @@ typedef struct PSIMsaCell {
 typedef struct PSIMsaDimensions {
     Uint4 query_length; /**< Length of the query */
     Uint4 num_seqs;     /**< Number of distinct sequences aligned with the 
-                          query */
+                          query (does not include the query) */
 } PSIMsaDimensions;
 
 /** Multiple sequence alignment (msa) data structure containing the raw data 
@@ -62,7 +62,9 @@ typedef struct PSIMsaDimensions {
  * the data field contains the query sequence */
 typedef struct PSIMsa {
     PSIMsaDimensions*   dimensions; /**< dimensions of the msa */
-    PSIMsaCell**        data;       /**< msa data */
+    PSIMsaCell**        data;       /**< actual data, dimensions are 
+                                     (dimensions->num_seqs+1) by
+                                     (dimensions->query_length) */
 } PSIMsa;
 
 /** Allocates and initializes the multiple sequence alignment data structure
@@ -111,8 +113,8 @@ PSIMatrixFree(PSIMatrix* matrix);
 typedef struct PSIDiagnosticsRequest {
     Boolean information_content;
     Boolean residue_frequencies;
-    Boolean raw_residue_counts;
-    Boolean sequence_weights;
+    Boolean weighted_residue_frequencies;
+    Boolean frequency_ratios;
     Boolean gapless_column_weights;
 } PSIDiagnosticsRequest;
 
@@ -120,22 +122,22 @@ typedef struct PSIDiagnosticsRequest {
  * PSIDiagnosticsRequest structure */
 typedef struct PSIDiagnosticsResponse {
     double* information_content;           /**< position information content
-                                             (dimensions->query_length 
-                                             elements)*/
-    double** residue_frequencies;          /**< PSSM's residue frequencies
-                                             (Dimensions are
-                                             dimensions->query_length by
+                                             (query_length elements)*/
+    Uint4** residue_freqs;                 /**< observed residue frequencies
+                                             per position of the PSSM 
+                                             (Dimensions are query_length by
                                              alphabet_size) */
-    Uint4** raw_residue_counts;            /**< Raw residue counts at each
-                                             position of the query (Dimensions
-                                             are dimensions->query_length by
+    double** weighted_residue_freqs;       /**< Weighted observed residue
+                                             frequencies per position of the
+                                             PSSM. (Dimensions are query_length 
+                                             by alphabet_size) */
+    double** frequency_ratios;             /**< PSSM's frequency ratios
+                                             (Dimensions are query_length by
                                              alphabet_size) */
-    double* sequence_weights;              /**< Normalized sequence weights
-                                             (dimensions->num_seqs+1 elements)*/
     double* gapless_column_weights;        /**< Weights for columns without
-                                             gaps (dimensions->query_length
-                                             elements) */
-    PSIMsaDimensions* dimensions;          /**< Dimensions for matrices */
+                                             gaps (query_length elements) */
+    Uint4 query_length;                    /**< Specifies the number of
+                                             positions in the PSSM */
     Uint4 alphabet_size;                   /**< Specifies length of alphabet */
 } PSIDiagnosticsResponse;
 
@@ -144,15 +146,14 @@ typedef struct PSIDiagnosticsResponse {
  * here for consistency - this does not need to be called by client code of
  * this API, it is called in the PSICreatePssm* functions to allocate the 
  * diagnostics response structure.
- * @param msa_dimensions dimensions of the multiple alignment [in]
+ * @param query_length length of the query sequence [in]
  * @param alphabet_size length of the alphabet [in]
  * @param request diagnostics to retrieve from PSSM engine [in]
  * @return pointer to allocated PSIDiagnosticsResponse or NULL if dimensions or
  * request are NULL
  */
 PSIDiagnosticsResponse*
-PSIDiagnosticsResponseNew(const PSIMsaDimensions* dimensions,
-                          Uint4 alphabet_size, 
+PSIDiagnosticsResponseNew(Uint4 query_length, Uint4 alphabet_size, 
                           const PSIDiagnosticsRequest* request);
 
 /** Deallocates the PSIDiagnosticsResponse structure passed in.
@@ -185,19 +186,19 @@ PSICreatePssm(const PSIMsa* msap,
  * @param sbp BLAST score block structure [in|out]
  * @param request diagnostics information request [in]
  * @param pssm PSSM and statistical information (the latter is also returned 
- * in the sbp->kbp_gap_psi[0]) 
+ * in the sbp->kbp_gap_psi[0]) [out]
  * @param diagnostics diagnostics information response, expects a pointer to an
  * uninitialized structure which will be populated with data requested in
- * requests [in]
+ * requests [in|out]
  * @return 0 on success, else failure (FIXME)
  */
 int
-PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
-                             const PSIBlastOptions* options,        /* [in] */
-                             BlastScoreBlk* sbp,                    /* [in] */
-                             const PSIDiagnosticsRequest* request,  /* [in] */
-                             PSIMatrix** pssm,                      /* [out] */
-                             PSIDiagnosticsResponse** diagnostics); /* [out] */
+PSICreatePssmWithDiagnostics(const PSIMsa* msap,
+                             const PSIBlastOptions* options,
+                             BlastScoreBlk* sbp,
+                             const PSIDiagnosticsRequest* request,
+                             PSIMatrix** pssm,
+                             PSIDiagnosticsResponse** diagnostics);
 #ifdef __cplusplus
 }
 #endif
