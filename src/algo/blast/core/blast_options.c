@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.75  2003/12/31 20:04:47  dondosha
+ * Round best stride to a number divisible by 4 for all values except 6 and 7
+ *
  * Revision 1.74  2003/12/31 16:04:37  coulouri
  * use -1 to disable protein neighboring words
  *
@@ -920,6 +923,8 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
 {
    Int4 lut_width;
    Int4 extra = 1;
+   Uint1 remainder;
+   Int4 stride;
 
    if (lut_type == MB_LOOKUP_TABLE)
       lut_width = 12;
@@ -928,10 +933,18 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
    else
       lut_width = 4;
 
-   if (var_words && ((word_size % COMPRESSION_RATIO) == 0) )
+   remainder = word_size % COMPRESSION_RATIO;
+
+   if (var_words && (remainder == 0) )
       extra = COMPRESSION_RATIO;
 
-   return word_size - lut_width + extra;
+   stride = word_size - lut_width + extra;
+
+   remainder = stride % 4;
+
+   if (stride > 8 || (stride > 4 && remainder == 1) ) 
+      stride -= remainder;
+   return stride;
 }
 
 Int2 
