@@ -72,7 +72,7 @@ private:
 
 
 CResultZBtSrcRdr::CResultZBtSrcRdr(CByteSourceReader* src)
-    : m_Src(src), m_Type(eType_unknown), m_CompressedSize(0)
+    : m_Src(src), m_Type(eType_unknown)
 {
 }
 
@@ -219,6 +219,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2003/10/14 22:35:51  ucko
+* Remove initialization of CResultZBtSrcRdr::GetCompressedSize (neither
+* declared nor used anywhere)
+*
 * Revision 1.6  2003/10/14 21:06:25  vasilche
 * Fixed compression statistics.
 * Disabled caching of SNP blobs.
