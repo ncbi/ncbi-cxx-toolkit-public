@@ -182,6 +182,10 @@ private:
 
     bool     InitDivisions();
     short    FindDivisionByCode( const char* pchCode ) const;
+
+    // forbidden
+    COrgRefCache(const COrgRefCache&);
+    COrgRefCache& operator=(const COrgRefCache&);
 };
 
 
@@ -358,6 +362,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.14  2004/06/16 12:03:04  dicuccio
+ * Disallow copying of COrgRefCache
+ *
  * Revision 6.13  2004/02/04 16:14:44  domrach
  * New iterator types (modes of operation) are introduced. They include:
  * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
