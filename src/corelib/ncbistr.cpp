@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/10/13 16:30:30  vasilche
+* Fixed bug in PNocase which appears under GCC implementation of STL.
+*
 * Revision 1.17  1999/07/08 16:10:14  vakatov
 * Fixed a warning in NStr::StringToUInt()
 *
@@ -200,18 +203,18 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
 // operator() meaning is the same as operator<
 bool PNocase::operator() (const string& x, const string& y) const
 {
-  string::const_iterator p = x.begin();
-  string::const_iterator q = y.begin();
-  
-  while ( p != x.end() && q != y.end() && toupper(*p) == toupper(*q) ) {
-    ++p; ++q;
-  }
-  
-  if( p == x.end() ) {
-    return q != y.end();
-  }
-  
-  return toupper(*p) < toupper(*q);
+    string::const_iterator x_ptr = x.begin();
+    string::const_iterator y_ptr = y.begin();
+    
+    while ( x_ptr != x.end() ) {
+        if ( y_ptr == y.end() )
+            return false;
+        int diff = toupper(*x_ptr) - toupper(*y_ptr);
+        if ( diff != 0 )
+            return diff < 0;
+        ++x_ptr; ++y_ptr;
+    }
+    return y_ptr != y.end();
 }
 
 
