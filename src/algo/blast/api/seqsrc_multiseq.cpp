@@ -363,7 +363,7 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     
     CMultiSeqInfo* seq_info = 
         new CMultiSeqInfo(seqsrc_args->seq_vector, seqsrc_args->program);
-    
+
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
     SetDeleteFnPtr(retval, &MultiSeqSrcFree);
@@ -408,13 +408,11 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
 {
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
-    // FIXME: Why are we using calloc? Why not use operator new?
-    SMultiSeqSrcNewArgs* args =
-        (SMultiSeqSrcNewArgs*) calloc(1, sizeof(SMultiSeqSrcNewArgs));;
+    auto_ptr<SMultiSeqSrcNewArgs> args(new SMultiSeqSrcNewArgs);
     args->seq_vector = (TSeqLocVector) seq_vector;
     args->program = program;
     bssn_info.constructor = &MultiSeqSrcNew;
-    bssn_info.ctor_argument = (void*) args;
+    bssn_info.ctor_argument = (void*) args.get();
 
     seq_src = BlastSeqSrcNew(&bssn_info);
     ListNode* error_wrap = BLASTSeqSrcGetError(seq_src);
@@ -439,6 +437,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/03/23 18:25:33  dondosha
+ * Use auto_ptr and operator new to make sure SMultiSeqSrcNewArgs structure is deleted when no longer needed
+ *
  * Revision 1.8  2004/03/23 14:13:52  camacho
  * Moved doxygen comment to header
  *
