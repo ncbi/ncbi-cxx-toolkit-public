@@ -534,6 +534,18 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
             return 0;
 
+        if (!second_try) {
+            ConnNetInfo_ExtendUserHeader
+                (net_info, "User-Agent: NCBIServiceConnector/"
+                 DISP_PROTOCOL_VERSION
+#ifdef NCBI_CXX_TOOLKIT
+                 " (C++ Toolkit)"
+#else
+                 " (C Toolkit)"
+#endif
+                 "\r\n");
+        }
+
         if ((!info ||
              info->type == fSERV_Firewall || info->type == fSERV_Ncbid) &&
             !net_info->stateless) {
@@ -819,6 +831,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2002/12/10 22:11:50  lavr
+ * Stamp HTTP packets with "User-Agent:" header tag and DISP_PROTOCOL_VERSION
+ *
  * Revision 6.50  2002/11/19 19:23:25  lavr
  * Set MIME type whenever possible; introduce status of last op
  *

@@ -163,6 +163,15 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                                        :"Client-Mode: STATEFUL_CAPABLE\r\n") &&
         ConnNetInfo_OverrideUserHeader(net_info,
                                        "Dispatch-Mode: INFORMATION_ONLY\r\n")){
+        ConnNetInfo_OverrideUserHeader
+            (net_info, "User-Agent: NCBIServiceDispatcher/"
+             DISP_PROTOCOL_VERSION
+#ifdef NCBI_CXX_TOOLKIT
+             " (C++ Toolkit)"
+#else
+             " (C Toolkit)"
+#endif
+             "\r\n");
         /* All the rest in the net_info structure is fine with us */
         conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
                                       0/*adjust*/, iter/*data*/, 0/*cleanup*/);
@@ -373,6 +382,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2002/12/10 22:11:50  lavr
+ * Stamp HTTP packets with "User-Agent:" header tag and DISP_PROTOCOL_VERSION
+ *
  * Revision 6.50  2002/11/19 19:21:40  lavr
  * Use client_host from net_info instead of obtaining it explicitly
  *
