@@ -1,0 +1,9 @@
+# $Id$
+
+# Miscellaneous applications
+#################################
+
+SUB_PROJ = id1_fetch
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
