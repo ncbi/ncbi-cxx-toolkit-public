@@ -54,8 +54,8 @@ Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
    Int4 first_offset = 0;
    Int4 last_offset  = subject->length;
    Int4 hit_index;
-   Uint4* start_offsets = lookup->start_offsets;
-   Uint4* lengths = lookup->lengths;
+   Int4* start_offsets = lookup->start_offsets;
+   Int4* lengths = lookup->lengths;
    Int4 pat_index;
 
    while(first_offset < last_offset)
