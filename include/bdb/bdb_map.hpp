@@ -293,14 +293,14 @@ public:
         const_iterator(map_file_type* db_file)
         : iterator_base(db_file)
         {
-            m_SearchFlag = false;
+            this->m_SearchFlag = false;
         }
 
         const_iterator(map_file_type* db_file, const K& key)
         : iterator_base(db_file)
         {
-            m_SearchFlag = true;
-            m_pair.first = key;
+            this->m_SearchFlag = true;
+            this->m_pair.first = key;
         }
 
         const_iterator& go_end()
@@ -321,39 +321,39 @@ public:
 
         const value_type& operator*() const
         {
-            check_open_cursor();
-            return m_pair;
+            this->check_open_cursor();
+            return this->m_pair;
         }
 
         const value_type* operator->() const
         {
-            check_open_cursor();
-            return &m_pair;
+            this->check_open_cursor();
+            return &this->m_pair;
         }
         
         const_iterator& operator++() 
         { 
-            fetch_next(); 
+            this->fetch_next();
             return *this; 
         }
 
         const_iterator operator++(int) 
         {
             const_iterator tmp(*this);
-            fetch_next(); 
+            this->fetch_next();
             return tmp; 
         }
 
         const_iterator& operator--() 
         { 
-            fetch_prev(); 
+            this->fetch_prev();
             return *this;
         }
 
         const_iterator operator--(int) 
         {
             const_iterator tmp(*this);    
-            fetch_prev(); 
+            this->fetch_prev(); 
             return tmp;
         }
 
@@ -562,10 +562,10 @@ void db_map_base<K, T>::erase(const K& key)
 template<class K, class T>
 bool db_map<K, T>::insert(const value_type& x)
 {
-    m_Dbf.key = x.first;
-    m_Dbf.value = x.second;
+    this->m_Dbf.key = x.first;
+    this->m_Dbf.value = x.second;
 
-    EBDB_ErrCode ret = m_Dbf.Insert();
+    EBDB_ErrCode ret = this->m_Dbf.Insert();
 
     return (ret == eBDB_Ok);
 }
@@ -573,12 +573,12 @@ bool db_map<K, T>::insert(const value_type& x)
 template<class K, class T>
 typename db_map<K, T>::referent_type  db_map<K, T>::operator[](const K& key)
 {
-    m_Dbf.key = key;
-    EBDB_ErrCode ret = m_Dbf.Fetch();
+    this->m_Dbf.key = key;
+    EBDB_ErrCode ret = this->m_Dbf.Fetch();
     if (ret == eBDB_Ok) {
-        return (T) m_Dbf.value;
+        return (T) this->m_Dbf.value;
     }
-    return (T) m_Dbf.value;
+    return (T) this->m_Dbf.value;
 }
 
 
@@ -590,11 +590,11 @@ typename db_map<K, T>::referent_type  db_map<K, T>::operator[](const K& key)
 template<class K, class T>
 void db_multimap<K, T>::insert(const value_type& x)
 {
-    m_Dbf.key = x.first;
-    m_Dbf.value = x.second;
+    this->m_Dbf.key = x.first;
+    this->m_Dbf.value = x.second;
 
-    EBDB_ErrCode ret = m_Dbf.Insert();
-    BDB_CHECK(ret, m_Dbf.GetFileName().c_str());
+    EBDB_ErrCode ret = this->m_Dbf.Insert();
+    BDB_CHECK(ret, this->m_Dbf.GetFileName().c_str());
 }
 
 
@@ -603,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/26 16:43:59  ucko
+ * Qualify inherited dependent names with this-> where needed by GCC 3.4.
+ *
  * Revision 1.10  2004/02/11 17:59:05  kuznets
  * Set legacy strings checking by default
  *

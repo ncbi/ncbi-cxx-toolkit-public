@@ -398,25 +398,28 @@ public:
 
     void Set(T val)
     {
-        if (IsByteSwapped()) {
+        if (this->IsByteSwapped()) {
 
             if (sizeof(T) == 2) {
-                CByteSwap::PutInt2((unsigned char*)GetBuffer(), (Int2) val);
+                CByteSwap::PutInt2((unsigned char*)this->GetBuffer(),
+                                   (Int2) val);
             } else
             if (sizeof(T) == 4) {
-                CByteSwap::PutInt4((unsigned char*)GetBuffer(), (Int4) val);
+                CByteSwap::PutInt4((unsigned char*)this->GetBuffer(),
+                                   (Int4) val);
             } else
             if (sizeof(T) == 8) {
-                CByteSwap::PutInt8((unsigned char*)GetBuffer(), (Int8) val);
+                CByteSwap::PutInt8((unsigned char*)this->GetBuffer(),
+                                   (Int8) val);
             }
             else {
                 _ASSERT(0);
             }
 
         } else {
-            ::memcpy(GetBuffer(), &val, sizeof(T));
+            ::memcpy(this->GetBuffer(), &val, sizeof(T));
         }
-        SetNotNull();
+        this->SetNotNull();
     }
 
     virtual void SetInt    (int          val)  { Set((T) val); }
@@ -471,22 +474,22 @@ public:
 
     void Set(T val)
     {
-        if (IsByteSwapped()) {
+        if (this->IsByteSwapped()) {
 
             if (sizeof(T) == 4) {
-                CByteSwap::PutFloat((unsigned char*)GetBuffer(), val);
+                CByteSwap::PutFloat((unsigned char*)this->GetBuffer(), val);
             } else
             if (sizeof(T) == 8) {
-                CByteSwap::PutDouble((unsigned char*)GetBuffer(), val);
+                CByteSwap::PutDouble((unsigned char*)this->GetBuffer(), val);
             }
             else {
                 _ASSERT(0);
             }
 
         } else {
-            ::memcpy(GetBuffer(), &val, sizeof(T));
+            ::memcpy(this->GetBuffer(), &val, sizeof(T));
         }
-        SetNotNull();
+        this->SetNotNull();
     }
 
     virtual void SetInt    (int          val) { Set((T) val); }
@@ -1764,6 +1767,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/04/26 16:43:59  ucko
+ * Qualify inherited dependent names with this-> where needed by GCC 3.4.
+ *
  * Revision 1.33  2004/03/08 13:30:14  kuznets
  * + ToString method
  *
