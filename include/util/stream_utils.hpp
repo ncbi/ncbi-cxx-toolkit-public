@@ -44,14 +44,6 @@
  */
 
 
-#if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
-#  ifdef HAVE_IOS_XALLOC
-#    undef  HAVE_BUGGY_IOS_CALLBACKS
-#    define HAVE_BUGGY_IOS_CALLBACKS 1
-#  endif
-#endif
-
-
 BEGIN_NCBI_SCOPE
 
 
@@ -142,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2004/01/20 20:33:52  lavr
+ * Remove HAVE_BUGGY_IOS_CALLBACKS from this header
+ *
  * Revision 1.17  2003/12/29 15:15:10  lavr
  * Class CShowmanycStreambuf removed
  *
