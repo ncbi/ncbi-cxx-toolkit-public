@@ -213,6 +213,7 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                        streamsize    /*buf_size*/)
 {
     THROW1_TRACE(runtime_error, "CPushback_Streambuf::setbuf() not allowed");
+    /*NOTREACHED*/
     return this;
 }
 
@@ -333,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/09/17 20:47:05  lavr
+ * Add a comment to unreachable return from CPushback_Streambuf::setbuf()
+ *
  * Revision 1.9  2002/08/16 17:56:44  lavr
  * PUBSYNC, PUBSEEK* moved to <corelib/ncbistre.hpp>
  *
