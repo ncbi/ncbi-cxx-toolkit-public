@@ -51,6 +51,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
 #include <algorithm>
 
@@ -141,17 +142,6 @@ CFlatGatherer::~CFlatGatherer(void)
 // Protected:
 
 
-void CFlatGatherer::x_GatherHeader(CFFContext& ctx, CFlatItemOStream& item_os) const
-{
-    //item_os << new CLocusItem(ctx);
-    //item_os << new CKeywordsItem(ctx);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Private:
-
 void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry& entry) const
 {
     if ( entry.IsSet() ) {
@@ -176,9 +166,31 @@ void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry& entry) const
         CSeq_inst::eMol_not_set,
         CBioseq_CI::eLevel_Mains);
     for ( ; seq_iter; ++seq_iter ) {
-        x_GatherBioseq(seq_iter->GetBioseq());
+        if ( x_DisplayBioseq(entry, seq_iter->GetBioseq()) ) {
+            x_GatherBioseq(seq_iter->GetBioseq());
+        }
     }
 } 
+
+
+bool CFlatGatherer::x_DisplayBioseq
+(const CSeq_entry& entry,
+ const CBioseq& seq) const
+{
+    CFFContext& ctx = Context();
+
+    // always display if an entry consisting of a single bioseq.
+    if ( entry.IsSeq()  &&  &entry.GetSeq() == &seq ) {
+        return true;
+    }
+
+    if ( (seq.IsNa()  &&  ctx.ViewNuc())  ||
+         (seq.IsAa()  &&  ctx.ViewProt()) ) {
+        return true;
+    }
+
+    return false;
+}
 
 
 // a defualt implementation for GenBank /  DDBJ formats
@@ -764,9 +776,11 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
         }
     }
 
-    // if no source found create one (only in FTable format or Dump mode)
-    if ( !ctx.IsFormatFTable()  ||  ctx.IsModeDump() ) {
-        // !!!  
+    // if no source found create one (only if not FTable format or Dump mode)
+    if ( srcs.empty()  &&  !ctx.IsFormatFTable()  ||  ctx.IsModeDump() ) {
+        CRef<CBioSource> bsrc(new CBioSource);
+        CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx));
+        srcs.push_back(sf);
     }
 }
 
@@ -826,6 +840,9 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
     TSourceFeatSet srcs;
     
     x_CollectBioSources(srcs);
+    if ( srcs.empty() ) {
+        return;
+    }
     x_MergeEqualBioSources(srcs);
     
     // sort by type (descriptor / feature) and location
@@ -940,10 +957,9 @@ void CFlatGatherer::x_GatherFeatures(void) const
                             // There is only one CDS on an mRNA
                             CFeat_CI cds(cdna, 0, 0, CSeqFeatData::e_Cdregion);
                             if ( cds ) {
-                                CRef<CSeq_loc> loc = 
-                                    ProductToSource(mrna,
-                                                    cds->GetLocation(),
-                                                    0, &scope);
+                                CSeq_loc_Mapper mapper(mrna,
+                                    CSeq_loc_Mapper::eProductToLocation, &scope);
+                                CRef<CSeq_loc> loc = mapper.Map(cds->GetLocation());
                                 out << new CFeatureItem(
                                     cds->GetOriginalFeature(),
                                     ctx, loc,
@@ -1091,6 +1107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/12 16:57:54  shomrat
+* Filter viewable bioseqs; Use new location mapping
+*
 * Revision 1.8  2004/03/10 16:22:44  shomrat
 * Use reference to object
 *
