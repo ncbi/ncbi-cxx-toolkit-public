@@ -42,6 +42,7 @@
 #include <objects/pub/pub__.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
 
+#include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/util/sequence.hpp>
 
 #include <algorithm>
@@ -640,6 +641,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/03/28 17:46:21  dicuccio
+* Added missing include for CAnnotObject_Info because MSVC gets confused
+* otherwise....
+*
 * Revision 1.5  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.
