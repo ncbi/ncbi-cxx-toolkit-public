@@ -397,52 +397,9 @@ public:
         bool operator < (const CacheKey& cache_key) const;
     };
     
-private:
-    
-    /// @internal
-/*
-    class CMemAttrStorage
-    {
-    public:
-        CMemAttrStorage();
-        void UpdateAccessTime(const CacheKey& cache_key, int timeout)
-        {
-            m_Attr[cache_key] = timeout;
-        }
-        void SetLimit(unsigned limit) { m_Limit = limit; }
-
-        void Remove(const CacheKey& cache_key)
-        {
-            m_Attr.erase(cache_key);
-        }
-
-        /// Save all attributes (non-transactional)
-        void DumpToStorage(CBDB_Cache& cache);
-
-        /// Forget all records
-        void Clear() { m_Attr.clear(); }
-
-        unsigned Size() const { return (unsigned)m_Attr.size(); }
-        unsigned Limit() const { return m_Limit; }
-        /// Return TRUE when storage accumulated above the limits
-        bool IsLimitReached() const { return Size() > Limit(); }
-        /// TRUE if storage was configured to work
-        bool IsActive() const { return Limit() != 0; }
-
-        /// Return access time or 0 if key is not in the storage
-        int GetAccessTime(const CacheKey& cache_key) const;
-
-    private:
-        typedef map<CacheKey, int>  TAttrMap;
-    private:
-        unsigned   m_Limit;    ///< limit for in-memory storage
-        TAttrMap   m_Attr;     ///< in-memory attributes
-    };
-*/
+private:    
     friend class CCacheTransaction;
-//    friend class CMemAttrStorage;
     friend class CBDB_CacheIWriter;
-
 
 private:
     string                  m_Path;         ///< Path to storage
@@ -563,6 +520,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/12/22 19:25:15  kuznets
+ * Code cleanup
+ *
  * Revision 1.42  2004/12/22 14:34:17  kuznets
  * +GetBlobAccess()
  *
