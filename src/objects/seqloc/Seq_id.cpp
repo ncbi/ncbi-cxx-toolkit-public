@@ -1107,9 +1107,11 @@ CSeq_id::CSeq_id( const string& the_id )
         if (dot != NPOS) {
             ver = NStr::StringToNumeric(the_id.substr(dot + 1));
         }
-        if (GetAccType(info) != e_not_set) {
-            x_Init(GetAccType(info), acc_in, kEmptyStr, ver);
+        E_Choice type = GetAccType(info);
+        if (type == e_not_set) {
+            type = e_Local;
         }
+        x_Init(type, acc_in, kEmptyStr, ver);
         return;
     }
 
@@ -1506,6 +1508,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.83  2004/06/07 19:00:34  ucko
+ * CSeq_id::CSeq_id(const string&): if we can't identify the string at
+ * all, turn it into a local ID.
+ *
  * Revision 6.82  2004/06/04 14:09:58  ucko
  * IdentifyAccession: CO now specifically assigned to eAcc_gb_est.
  *
