@@ -283,13 +283,14 @@ public:
     static void ReserveElements(const CContainerTypeInfo*,
                                 TObjectPtr containerPtr, size_t count)
         {
-            TObjectType& container = Get(containerPtr);
+            TObjectType& container = CParent::Get(containerPtr);
             container.reserve(count);
         }
 
     static void SetCountFunctions(CStlOneArgTemplate* info)
         {
-            info->SetCountFunctions(&GetElementCount, &ReserveElements);
+            info->SetCountFunctions(&CParent::GetElementCount,
+                                    &CParent::ReserveElements);
         }
 };
 
@@ -763,6 +764,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/07/27 15:22:02  ucko
+* Fix CStlClassInfoFunctions_vec to satisfy GCC 3.4.
+*
 * Revision 1.70  2004/07/27 15:02:59  ucko
 * Add GetElementCount and ReserveElements operations.
 *
