@@ -201,6 +201,8 @@ typedef struct MBLookupTable {
                               check */
    Uint1 pv_array_bts; /**< The exponent of 2 by which pv_array is smaller than
                           the backbone */
+   Int4 longest_chain; /**< Largest number of query positions for a given 
+                          word */
 } MBLookupTable, PNTR MBLookupTablePtr;
 
 /**
