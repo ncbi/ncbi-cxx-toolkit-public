@@ -263,6 +263,18 @@ member function.  For example, <i>GetProperty(eCgi_HttpCookie)</i> is used to ac
 cookies from the HTTP Header, and <i> GetProperty(eCgi_RequestMethod)</i> is used to
 determine where the query string should be read from. <p>
 
+<font color="red">CAVEAT:</font> 
+
+Setting <i>$QUERY_STRING without</i> also setting <i>$REQUEST_METHOD</i> will result in a
+failure by <i>x_init()</i> to read the input query.
+
+<i>x_init()</i> first looks for the definition of <i>$REQUEST_METHOD</i>, and
+depending on if it is <i>GET</i> or <i>POST</i>, reads the query from the environment or the
+input stream respectively. 
+
+If the environment does not define <i>$REQUEST_METHOD</i>, then <i>x_Init()</i> will
+try to read the query string from the command line only. 
+
 <font color = "#000080"> <pre>
 class CCgiRequest {
 public:
@@ -277,6 +289,8 @@ public:
     static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
 
 private:
+
+    void x_Init(const CNcbiArguments*, const CNcbiEnvironment*, CNcbiIstream*, TFlags);
 
     const CNcbiEnvironment*    m_Env;
     auto_ptr&lt;CNcbiEnvironment> m_OwnEnv;
@@ -297,7 +311,7 @@ As implied by the "T" prefix,
 <i>TCgiEntries</i></a> is a type defintion, and defines <i>m_Entries</i> to be an STL
 multimap of <i>&lt;string,string></i> pairs. The <i>CCgiCookies</i> class (described <a
 href="#cookies"> below</a>) contains an STL set of <a
-href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.
+href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.<p>
 
 <a name="ccgires"> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiResponse.html">
