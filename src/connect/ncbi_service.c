@@ -34,9 +34,7 @@
 #include "ncbi_dispd.h"
 #include "ncbi_lbsmd.h"
 #include "ncbi_priv.h"
-#include "ncbi_servicep.h"
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -483,6 +481,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2003/09/02 21:17:15  lavr
+ * Clean up included headers
+ *
  * Revision 6.48  2003/06/26 15:20:46  lavr
  * Additional parameter "external" in implementation of generic methods
  *
