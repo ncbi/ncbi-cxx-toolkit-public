@@ -36,6 +36,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <list>
 #include <map>
 #include <set>
@@ -277,41 +278,107 @@ enum ECgiProp {
 };  // ECgiProp
 
 
-class CCgiEntry
+class CCgiEntry // copy-on-write semantics
 {
+private:
+    struct SData : public CObject
+    {
+        SData(const string& value, const string& filename)
+            : m_Value(value), m_Filename(filename) { }
+        SData(const SData& data)
+            : m_Value(data.m_Value), m_Filename(data.m_Filename) { }
+        string m_Value, m_Filename;
+    };
+
 public:
     CCgiEntry(const string& value, const string& filename = kEmptyStr)
-        : m_Value(value), m_Filename(filename) { }
+        : m_Data(new SData(value, filename)) { }
     CCgiEntry(const char* value, const string& filename = kEmptyStr)
-        : m_Value(value), m_Filename(filename) { }
-    CCgiEntry(const CCgiEntry& e)
-        : m_Value(e.m_Value), m_Filename(e.m_Filename) { }
+        : m_Data(new SData(value, filename)) { }
+    CCgiEntry(const CCgiEntry& e) : m_Data(e.m_Data) { }
 
-    const string& GetValue()    const { return m_Value; }
-    const string& GetFilename() const { return m_Filename; }
-    
+    const string& GetValue() const
+        { return m_Data->m_Value; }
+          string& SetValue()
+        { x_ForceUnique(); return m_Data->m_Value; }
+          void    SetValue(const string& v)
+        { x_ForceUnique(); m_Data->m_Value = v; }
+
+    const string& GetFilename() const
+        { return m_Data->m_Filename; }
+          string& SetFilename()
+        { x_ForceUnique(); return m_Data->m_Filename; }
+          void    SetFilename(const string& f)
+        { x_ForceUnique(); m_Data->m_Filename = f; }
+
+    operator const string&() const { return GetValue(); }
+    operator       string&()       { return SetValue(); }
+    // commonly-requested string:: operations...
+    bool empty() const             { return GetValue().empty(); }
+    const char* c_str() const      { return GetValue().c_str(); }
+
 private:
-    string m_Value;
-    string m_Filename;
+    void x_ForceUnique()
+        { if (!m_Data->ReferencedOnlyOnce()) { m_Data = new SData(*m_Data); } }
+
+    CRef<SData> m_Data;
 };
 
-inline bool operator != (const CCgiEntry& e1, const CCgiEntry& e2)
+inline
+bool operator ==(const CCgiEntry& e1, const CCgiEntry& e2)
 {
-    return (e1.GetValue() != e2.GetValue() 
-            ||  e1.GetFilename() != e2.GetFilename());
+    return (e1.GetValue() == e2.GetValue() 
+            &&  e1.GetFilename() == e2.GetFilename());
+}
+
+inline
+bool operator !=(const CCgiEntry& e1, const CCgiEntry& e2)
+{
+    return !(e1 == e2);
+}
+
+inline
+bool operator ==(const CCgiEntry& e, const string& s)
+{
+    return e.GetValue() == s;
+}
+
+inline
+bool operator ==(const CCgiEntry& e, const char* s)
+{
+    return e.GetValue() == s;
+}
+
+inline
+string operator +(const CCgiEntry& e, const string& s)
+{
+    return e.GetValue() + s;
+}
+
+inline
+string operator +(const string& s, const CCgiEntry& e)
+{
+    return s + e.GetValue();
+}
+
+inline
+CNcbiOstream& operator <<(CNcbiOstream& o, const CCgiEntry& e)
+{
+    return o << e.GetValue();
+    // filename omitted in case anything depends on just getting the value
 }
 
 
 // Typedefs
-typedef map<string, string>           TCgiProperties;
-typedef multimap<string, string>      TCgiEntries;
-typedef TCgiEntries::iterator         TCgiEntriesI;
-typedef TCgiEntries::const_iterator   TCgiEntriesCI;
-typedef multimap<string, CCgiEntry>   TCgiEntriesEx;
-typedef TCgiEntriesEx::iterator       TCgiEntriesExI;
-typedef TCgiEntriesEx::const_iterator TCgiEntriesExCI;
-typedef list<string>                  TCgiIndexes;
-
+typedef map<string, string>         TCgiProperties;
+typedef multimap<string, CCgiEntry> TCgiEntries;
+typedef TCgiEntries::iterator       TCgiEntriesI;
+typedef TCgiEntries::const_iterator TCgiEntriesCI;
+typedef list<string>                TCgiIndexes;
+// Temporary synonyms
+typedef TCgiEntries   TCgiEntriesEx;
+typedef TCgiEntriesI  TCgiEntriesExI;
+typedef TCgiEntriesCI TCgiEntriesExCI;
 
 // Forward class declarations
 class CNcbiArguments;
@@ -393,12 +460,15 @@ public:
     // NOTE:  There can be more than one entry with the same name;
     //        only one of these entry will be returned.
     // To get all matches, use GetEntries() and "multimap::" member functions.
-    const string& GetEntry(const string& name, bool* is_found = 0) const;
+    const CCgiEntry& GetEntry(const string& name, bool* is_found = 0) const;
 
-    // Extended versions of the above, providing filenames as well as strings
-    const TCgiEntriesEx& GetEntriesEx(void) const;
-    TCgiEntriesEx& GetEntriesEx(void);
-    const CCgiEntry& GetEntryEx(const string& name, bool* is_found = 0) const;
+    // Temporary synonyms
+    const TCgiEntries& GetEntriesEx(void) const
+        { return GetEntries(); }
+    TCgiEntries& GetEntriesEx(void)
+        { return GetEntries(); }
+    const CCgiEntry& GetEntryEx(const string& name, bool* is_found = 0) const
+        { return GetEntry(name, is_found); }
     
 
     // Get a set of indexes(decoded) received from the client.
@@ -442,8 +512,7 @@ private:
     const CNcbiEnvironment*    m_Env;
     auto_ptr<CNcbiEnvironment> m_OwnEnv;
     // set of the request FORM-like entries(already retrieved; cached)
-    TCgiEntries   m_Entries;
-    TCgiEntriesEx m_EntriesEx;
+    TCgiEntries m_Entries;
     // set of the request ISINDEX-like indexes(already retrieved; cached)
     TCgiIndexes m_Indexes;
     // set of the request cookies(already retrieved; cached)
@@ -589,12 +658,6 @@ inline const TCgiEntries& CCgiRequest::GetEntries(void) const {
 inline TCgiEntries& CCgiRequest::GetEntries(void) {
     return m_Entries;
 }
-inline const TCgiEntriesEx& CCgiRequest::GetEntriesEx(void) const {
-    return m_EntriesEx;
-}
-inline TCgiEntriesEx& CCgiRequest::GetEntriesEx(void) {
-    return m_EntriesEx;
-}
 
 
 inline TCgiIndexes& CCgiRequest::GetIndexes(void) {
@@ -618,6 +681,14 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.55  2002/07/10 18:39:12  ucko
+* Tweaked CCgiEntry to allow for more efficient copying on systems
+* without efficient string copying.
+* Made CCgiEntry-based functions the only version; kept "Ex" names as
+* temporary synonyms, to go away in a few days.
+* Added more CCgiEntry operations to make the above change relatively
+* transparent.
+*
 * Revision 1.54  2002/07/05 07:03:29  vakatov
 * CCgiEntry::  added another constructor (for WorkShop)
 *
