@@ -169,14 +169,16 @@ class CArgHelpException : public CArgException
 public:
     /// Error type for help exception.
     enum EErrCode {
-        eHelp           ///< Error code for help message
+        eHelp,          ///< Error code for short help message
+        eHelpFull       ///< Error code for detailed help message
     };
 
     /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eHelp: return "eHelp";
+        case eHelp:     return "eHelp";
+        case eHelpFull: return "eHelpFull";
         default:    return CException::GetErrCodeString();
         }
     }
@@ -669,7 +671,7 @@ public:
     /// argument descriptions and usage context.
     /// @return
     ///   Appended "str"
-    virtual string& PrintUsage(string& str) const;
+    virtual string& PrintUsage(string& str, bool detailed = false) const;
 
     /// Verify if argument "name" is spelled correctly.
     ///
@@ -1190,6 +1192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/02/11 16:02:22  gouriano
+ * Distinguish short and detailed help message
+ *
  * Revision 1.42  2005/01/24 17:04:28  vasilche
  * Safe boolean operators.
  *

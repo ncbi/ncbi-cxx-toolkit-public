@@ -64,6 +64,7 @@ BEGIN_NCBI_SCOPE
 //
 
 static const string s_AutoHelp("h");
+static const string s_AutoHelpFull("help");
 static const string s_ExtraName("....");
 
 
@@ -1264,7 +1265,9 @@ CArgDescriptions::CArgDescriptions(bool auto_help)
     SetUsageContext("NCBI_PROGRAM", kEmptyStr);
     if ( m_AutoHelp ) {
         AddFlag(s_AutoHelp,
-                "Print this USAGE message;  ignore other arguments");
+                "Print USAGE and DESCRIPTION;  ignore other arguments");
+        AddFlag(s_AutoHelpFull,
+                "Print USAGE, DESCRIPTION and ARGUMENTS description;  ignore other arguments");
     }
 }
 
@@ -1598,6 +1601,9 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
     _ASSERT(m_AutoHelp);
     if (arg.compare('-' + s_AutoHelp) == 0) {
         NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
+    }
+    if (arg.compare('-' + s_AutoHelpFull) == 0) {
+        NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
     }
 }
 
@@ -1938,7 +1944,7 @@ static void s_PrintComment(list<string>& arr, const CArgDesc& arg,
 }
 
 
-string& CArgDescriptions::PrintUsage(string& str) const
+string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
 {
     typedef list<const CArgDesc*> TList;
     typedef TList::iterator       TListI;
@@ -1968,7 +1974,8 @@ string& CArgDescriptions::PrintUsage(string& str) const
             } else if (dynamic_cast<const CArgDesc_Key*> (arg)) {
                 args.insert(it_keys, arg);
             } else if (dynamic_cast<const CArgDesc_Flag*> (arg)) {
-                if (s_AutoHelp.compare(arg->GetName()) == 0)
+                if (s_AutoHelp.compare(arg->GetName()) == 0 ||
+                    s_AutoHelpFull.compare(arg->GetName()) == 0)
                     args.push_front(arg);
                 else
                     args.insert(it_flags, arg);
@@ -2059,44 +2066,49 @@ string& CArgDescriptions::PrintUsage(string& str) const
     }
 
     // REQUIRED & OPTIONAL ARGUMENTS
-    list<string> req;
-    list<string> opt;
-    for (it = args.begin();  it != args.end();  ++it) {
-        s_PrintComment((s_IsOptional(**it) || s_IsFlag(**it)) ? opt : req,
-                       **it, m_UsageWidth);
-    }
-    if ( !req.empty() ) {
-        arr.push_back(kEmptyStr);
-        arr.push_back("REQUIRED ARGUMENTS");
-        arr.splice(arr.end(), req);
-    }
-    if ( !m_nExtra  &&  !opt.empty() ) {
-        arr.push_back(kEmptyStr);
-        arr.push_back("OPTIONAL ARGUMENTS");
-        arr.splice(arr.end(), opt);
-    }
+    if (detailed) {
+        list<string> req;
+        list<string> opt;
+        for (it = args.begin();  it != args.end();  ++it) {
+            s_PrintComment((s_IsOptional(**it) || s_IsFlag(**it)) ? opt : req,
+                        **it, m_UsageWidth);
+        }
+        if ( !req.empty() ) {
+            arr.push_back(kEmptyStr);
+            arr.push_back("REQUIRED ARGUMENTS");
+            arr.splice(arr.end(), req);
+        }
+        if ( !m_nExtra  &&  !opt.empty() ) {
+            arr.push_back(kEmptyStr);
+            arr.push_back("OPTIONAL ARGUMENTS");
+            arr.splice(arr.end(), opt);
+        }
 
-    // # of extra arguments
-    if (m_nExtra  ||  (m_nExtraOpt != 0  &&  m_nExtraOpt != kMax_UInt)) {
-        string str_extra = "NOTE:  Specify ";
-        if ( m_nExtra ) {
-            str_extra += "at least ";
-            str_extra += NStr::UIntToString(m_nExtra);
-            if (m_nExtraOpt != kMax_UInt) {
-                str_extra += ", and ";
+        // # of extra arguments
+        if (m_nExtra  ||  (m_nExtraOpt != 0  &&  m_nExtraOpt != kMax_UInt)) {
+            string str_extra = "NOTE:  Specify ";
+            if ( m_nExtra ) {
+                str_extra += "at least ";
+                str_extra += NStr::UIntToString(m_nExtra);
+                if (m_nExtraOpt != kMax_UInt) {
+                    str_extra += ", and ";
+                }
             }
+            if (m_nExtraOpt != kMax_UInt) {
+                str_extra += "no more than ";
+                str_extra += NStr::UIntToString(m_nExtra + m_nExtraOpt);
+            }
+            str_extra += " arguments in \"....\"";
+            s_PrintCommentBody(arr, str_extra, m_UsageWidth);
         }
-        if (m_nExtraOpt != kMax_UInt) {
-            str_extra += "no more than ";
-            str_extra += NStr::UIntToString(m_nExtra + m_nExtraOpt);
+        if ( m_nExtra  &&  !opt.empty() ) {
+            arr.push_back(kEmptyStr);
+            arr.push_back("OPTIONAL ARGUMENTS");
+            arr.splice(arr.end(), opt);
         }
-        str_extra += " arguments in \"....\"";
-        s_PrintCommentBody(arr, str_extra, m_UsageWidth);
-    }
-    if ( m_nExtra  &&  !opt.empty() ) {
+    } else {
         arr.push_back(kEmptyStr);
-        arr.push_back("OPTIONAL ARGUMENTS");
-        arr.splice(arr.end(), opt);
+        arr.push_back("Use '-help' to print detailed descriptions of command line arguments");
     }
 
     str += NStr::Join(arr, "\n");
@@ -2392,6 +2404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/02/11 16:03:31  gouriano
+ * Distinguish short and detailed help message
+ *
  * Revision 1.55  2004/12/15 15:30:45  kuznets
  * Implemented constraint invertion (NOT)
  *
