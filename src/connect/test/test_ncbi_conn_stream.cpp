@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/03/30 03:37:21  lavr
+ * Added test for memory leak in unused connector
+ *
  * Revision 6.18  2002/03/24 16:25:25  lavr
  * Changed "ray" -> "ray.nlm.nih.gov"
  *
@@ -164,6 +167,13 @@ int main(void)
     LOG_POST(Info << "Checking error log setup"); // short explanatory mesg
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
+
+    {{
+        // Test for memory leaks in unused stream
+        CConn_IOStream* s  =
+            new CConn_ServiceStream("ID1", fSERV_Any);
+        delete s;
+    }}
 
     LOG_POST("Test 1 of 3: Big buffer bounce");
     CConn_HttpStream ios(0, "User-Header: My header\r\n",
