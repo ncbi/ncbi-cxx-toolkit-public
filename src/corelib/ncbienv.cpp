@@ -38,11 +38,14 @@
 #include <algorithm>
 
 #ifdef NCBI_OS_LINUX
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #ifdef NCBI_OS_MSWIN
-#include <stdlib.h>
+#  include <stdlib.h>
+#elif defined (NCBI_OS_DARWIN)
+#  include <crt_externs.h>
+#  define environ (*_NSGetEnviron())
 #else
 extern char** environ;
 #endif
@@ -291,6 +294,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/15 15:14:45  ucko
+ * Per Vlad Lebedev's advice, use a more appropriate interface to get at
+ * environ on Darwin.
+ *
  * Revision 1.15  2005/03/14 18:15:19  ucko
  * On Windows, take the declaration of environ from stdlib.h to ensure
  * proper DLL linkage.
