@@ -143,7 +143,11 @@ void CFlatFileGenerator::Generate
     CRef<CSeq_entry> e(submit.SetData().SetEntrys().front());
     if (e.NotEmpty()) {
         // get Seq_entry_Handle from scope
-        CSeq_entry_Handle entry = scope.GetSeq_entryHandle(*e);
+        CSeq_entry_Handle entry;
+        try {
+            entry = scope.GetSeq_entryHandle(*e);
+        } catch (CException&) {}
+
         if (!entry) {  // add to scope if not already in it
             entry = scope.AddTopLevelSeqEntry(*e);
         }
@@ -298,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/03/07 17:19:49  shomrat
+* Protect call to CScope::GetSeq_entryHandle
+*
 * Revision 1.13  2005/03/02 16:28:28  shomrat
 * Added single feature formatting
 *
