@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/04/22 20:03:48  grichenk
+* Redesigned keys usage table to work in 64-bit mode
+*
 * Revision 1.10  2002/04/09 17:49:46  grichenk
 * Fixed signed/unsigned warnings
 *
@@ -78,7 +81,6 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
-#include <corelib/ncbi_limits.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1518,9 +1520,6 @@ void CSeq_id_PDB_Tree::x_DropHandle(const CSeq_id_Handle& handle)
 //
 
 
-const size_t kKeyUsageTableSegmentSize =
-    numeric_limits<TSeq_id_Key>().max() / kKeyUsageTableSize;
-
 
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
@@ -1530,11 +1529,15 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
         // Erase the tree from the map to prevent double-drop of handles
         m_IdMap.erase(m_IdMap.begin());
         // Drop all handles from the tree
-        keep_tree->DropKeysRange(0, numeric_limits<TSeq_id_Key>().max());
+        iterate (TKeyUsageTable, seg_it, m_KeyUsageTable) {
+            size_t seg = seg_it->first;
+            keep_tree->DropKeysRange(seg*kKeyUsageTableSegmentSize,
+                (seg+1)*kKeyUsageTableSegmentSize-1);
+        }
     }
 //### This is for debugging only
-    for (size_t i = 0; i < kKeyUsageTableSize; i++) {
-        _ASSERT(m_KeyUsageTable[i] == 0);
+    iterate(TKeyUsageTable, it, m_KeyUsageTable) {
+        _ASSERT(it->second == 0);
     }
 //###
 }
@@ -1543,8 +1546,6 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
 CSeq_id_Mapper::CSeq_id_Mapper(void)
     : m_NextKey(0)
 {
-    for (size_t i = 0; i < kKeyUsageTableSize; i++)
-        m_KeyUsageTable[i] = 0;
 // same order as in seq-id definition, see seqloc.asn
     m_IdMap[CSeq_id::e_Local] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Local_Tree);
@@ -1601,6 +1602,7 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
     CSeq_id_Handle new_handle(*this, GetNextKey());
     CRef<CSeq_id> id_ref = new CSeq_id;
     SerialAssign<CSeq_id>(*id_ref, id);
+    _ASSERT(id_ref);
     m_KeyMap[new_handle.m_Value] = id_ref;
     map_it->second->AddSeq_idMapping(new_handle);
     return new_handle;
@@ -1661,7 +1663,16 @@ const CSeq_id* CSeq_id_Mapper::x_GetSeq_id(TSeq_id_Key key) const
 void CSeq_id_Mapper::AddHandleReference(const CSeq_id_Handle& handle)
 {
     CFastMutexGuard guard(m_IdMapMutex);
-    m_KeyUsageTable[handle.m_Value / kKeyUsageTableSegmentSize]++;
+    TKeyUsageTable::iterator key_grp = m_KeyUsageTable.find(
+        handle.m_Value / kKeyUsageTableSegmentSize);
+    if ( key_grp != m_KeyUsageTable.end() ) {
+        // Update entry
+        key_grp->second++;
+    }
+    else {
+        // Create entry
+        m_KeyUsageTable[handle.m_Value / kKeyUsageTableSegmentSize] = 1;
+    }
 }
 
 
@@ -1669,8 +1680,9 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
 {
     CFastMutexGuard guard(m_IdMapMutex);
     TSeq_id_Key seg = handle.m_Value / kKeyUsageTableSegmentSize;
-    _ASSERT(m_KeyUsageTable[seg] > 0);
-    if (--m_KeyUsageTable[seg] == 0) {
+    TKeyUsageTable::iterator key_grp = m_KeyUsageTable.find(seg);
+    _ASSERT(key_grp != m_KeyUsageTable.end()  && key_grp->second > 0);
+    if (--key_grp->second == 0) {
         // Drop the handles segment from the proper seq-id trees
         non_const_iterate(TIdMap, it, m_IdMap) {
             it->second->DropKeysRange(seg*kKeyUsageTableSegmentSize,
@@ -1689,24 +1701,35 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
 TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
 {
     CFastMutexGuard guard(m_IdMapMutex);
-    if (m_NextKey < kKeyUsageTableSegmentSize*kKeyUsageTableSize)
+    if (m_NextKey < kKeyUsageTableSegmentSize*kKeyUsageTableSize - 1) {
         m_NextKey++;
-    else
-        m_NextKey = 0;
-    if (m_NextKey % kKeyUsageTableSegmentSize)
-        return m_NextKey;
-    // Crossing segment boundary - check if the segment is free
-    if (m_KeyUsageTable[m_NextKey / kKeyUsageTableSegmentSize] == 0)
-        return m_NextKey; // free segment, start using it
-    // Find the first free segment
-    for (size_t i = 0; i < kKeyUsageTableSize; i++) {
-        if (m_KeyUsageTable[i] == 0) {
-            m_NextKey = i*kKeyUsageTableSegmentSize;
-            return m_NextKey;
-        }
     }
-    throw runtime_error(
-        "CSeq_id_Mapper::GetNextKey() -- can not find free seq-id key");
+    else {
+        m_NextKey = 0;
+    }
+    // If in an occupied segment - just return the key
+    if (m_NextKey % kKeyUsageTableSegmentSize) {
+        return m_NextKey;
+    }
+
+    // Crossing segment boundary - check if the segment is free
+    size_t next_seg = 0;
+    iterate(TKeyUsageTable, seg_it, m_KeyUsageTable) {
+        // Is there a hole between segments?
+        if (seg_it->first != next_seg) {
+            break; // found a hole
+        }
+        next_seg++;
+    }
+    if (next_seg >= kKeyUsageTableSize) {
+        // No free segments found
+        throw runtime_error(
+            "CSeq_id_Mapper::GetNextKey() -- can not find free seq-id key");
+    }
+    // Found a free segment
+    m_KeyUsageTable[next_seg] = 0;
+    m_NextKey = next_seg*kKeyUsageTableSegmentSize;
+    return m_NextKey;
 }
 
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/22 20:03:48  grichenk
+* Redesigned keys usage table to work in 64-bit mode
+*
 * Revision 1.5  2002/03/15 18:10:09  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -54,6 +57,7 @@
 #include <objects/objmgr1/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <map>
 #include <set>
 
@@ -81,7 +85,9 @@ typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 class CSeq_id_Which_Tree;
 
 
-const size_t kKeyUsageTableSize = 65536;
+const size_t kKeyUsageTableSegmentSize = 65536;
+const size_t kKeyUsageTableSize =
+    numeric_limits<TSeq_id_Key>().max() / kKeyUsageTableSegmentSize;
 
 
 class CSeq_id_Mapper : public CObject
@@ -123,7 +129,8 @@ private:
     // Table for id reference counters. The keys are grouped by
     // kKeyUsageTableSize elements. When a group is completely
     // unreferenced, it may be deleted and its keys re-used.
-    size_t m_KeyUsageTable[kKeyUsageTableSize];
+    typedef map<size_t, size_t> TKeyUsageTable;
+    TKeyUsageTable m_KeyUsageTable;
 
     // Next available key value -- must be read through GetNextKey() only.
     TSeq_id_Key m_NextKey;
