@@ -578,7 +578,11 @@ fi
 
 #### KAI compiler::  common flags and definitions
 if test "$compiler" = "KCC" ; then
-   AR=${AR:="$CXX -o"}
+   if test "$with_mt" = "yes" ; then
+      AR=${AR:="$CXX -mt -o"}
+   else
+      AR=${AR:="$CXX -o"}
+   fi
    CFLAGS="--display_error_number --c $CFLAGS"
    CXXFLAGS="--display_error_number --one_instantiation_per_object $CXXFLAGS"
    case "$host_os" in
