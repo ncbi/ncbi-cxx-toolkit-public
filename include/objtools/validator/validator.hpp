@@ -199,6 +199,7 @@ public:
         eVal_remote_fetch            = 0x200,
         eVal_far_fetch_mrna_products = 0x400,
         eVal_far_fetch_cds_products  = 0x800,
+        eVal_locus_tag_general_match = 0x1000,
 
         // !!! For test purposes only {
         eVal_perf_bottlenecks  = 0x10000
@@ -344,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/09/21 20:34:52  ucko
+* initialization for m_LocusTagGeneralMatch
+*
 * Revision 1.16  2004/09/21 15:45:13  shomrat
 * + options: far_fetch_mrna_products, far_fetch_cds_products
 *
