@@ -1,4 +1,4 @@
---$Revision: 6.11 $
+--$Revision: 6.12 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -99,6 +99,7 @@ SeqFeatData ::= CHOICE {
         signal-peptide (23) ,
         transit-peptide (24) ,
         transmembrane-region (25) ,
+        nitrosylation (26) ,
         other (255) } ,
     rsite Rsite-ref ,       -- restriction site  (for maps really)
     user User-object ,      -- user defined structure
