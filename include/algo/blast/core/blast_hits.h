@@ -184,8 +184,6 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
  * @param subject_start Pointer to the start of the subject sequence [in]
  * @param hit_params Hit saving parameters containing score cut-off [in]
  * @param score_params Scoring parameters [in]
- * @param query_info Query information structure, containing effective search
- *                   space(s) [in]
  * @param sbp Score block with Karlin-Altschul parameters [in]
  * @return Should this HSP be deleted after the score reevaluation?
  */
@@ -193,8 +191,7 @@ NCBI_XBLAST_EXPORT
 Boolean 
 Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, Uint1* query_start, 
    Uint1* subject_start, const BlastHitSavingParameters* hit_params, 
-   const BlastScoringParameters* score_params, const BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp);
+   const BlastScoringParameters* score_params, BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score, e-value and percent identity after taking
  * into account the ambiguity information. Used for ungapped searches with 
@@ -204,8 +201,6 @@ Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, Uint1* query_start,
  * @param subject_start Pointer to the start of the subject sequence [in]
  * @param word_params Initial word parameters with ungapped cutoff score [in]
  * @param hit_params Hit saving parameters containing score cut-off [in]
- * @param query_info Query information structure, containing effective search
- *                   space(s) [in]
  * @param sbp Score block with Karlin-Altschul parameters [in]
  * @param translated Are sequences protein (with a translated subject)? [in]
  * @return Should this HSP be deleted after the score reevaluation?
@@ -216,8 +211,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp,
    Uint1* query_start, Uint1* subject_start,
    const BlastInitialWordParameters* word_params, 
    const BlastHitSavingParameters* hit_params, 
-   const BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
-   Boolean translated);
+   BlastScoreBlk* sbp, Boolean translated);
 
 /** Calculate number of identities in an HSP.
  * @param query The query sequence [in]

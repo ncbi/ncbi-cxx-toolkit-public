@@ -127,7 +127,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
-           const BlastQueryInfo* query_info, BlastScoreBlk* sbp)
+           BlastScoreBlk* sbp)
 {
    Int4 sum, score, gap_open, gap_extend;
    GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
@@ -267,7 +267,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
 Boolean 
 Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start, 
    Uint1* subject_start, const BlastInitialWordParameters* word_params,
-   const BlastHitSavingParameters* hit_params, const BlastQueryInfo* query_info,
+   const BlastHitSavingParameters* hit_params,
    BlastScoreBlk* sbp, Boolean translated)
 {
    Int4 sum, score;
@@ -1691,7 +1691,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
             traceback. */
          delete_hsp = 
             Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_start, 
-               subject_start, hit_params, score_params, query_info, sbp);
+               subject_start, hit_params, score_params, sbp);
       } else {
          Int4 start_shift = 0;
          if (kTranslateSubject) {
@@ -1709,8 +1709,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
 
          delete_hsp = 
             Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
-               subject_start, word_params, hit_params, query_info, sbp, 
-               kTranslateSubject);
+               subject_start, word_params, hit_params, sbp, kTranslateSubject);
          /* If partial translation was done and subject sequence was shifted,
             shift back offsets in the HSP structure. */
          Blast_HSPAdjustSubjectOffset(hsp, subject_blk, FALSE, start_shift);
