@@ -36,6 +36,31 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Helper function to translate enumerated type to character.
+///
+/// @param seqtype
+///   The sequence type (eProtein, eNucleotide, or eUnknown).
+/// @return
+///   The sequence type as a char ('p', 'n', or '-').
+
+static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
+{
+    switch(seqtype) {
+    case CSeqDB::eProtein:
+        return 'p';
+    case CSeqDB::eNucleotide:
+        return 'n';
+    case CSeqDB::eUnknown:
+        return '-';
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "Invalid sequence type specified.");
+    
+    return '-';
+}
+
 /// Helper function to build private implementation object.
 ///
 /// This method builds and returns the object which implements the
@@ -98,23 +123,45 @@ s_SeqDBInit(const string & dbname,
     return impl;
 }
 
-CSeqDB::CSeqDB(const string & dbname, char prot_nucl)
+CSeqDB::CSeqDB(const string & dbname, char seqtype)
 {
     m_Impl = s_SeqDBInit(dbname,
-                         prot_nucl,
+                         seqtype,
+                         0,
+                         0,
+                         true);
+}
+
+CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype)
+{
+    m_Impl = s_SeqDBInit(dbname,
+                         s_GetSeqTypeChar(seqtype),
                          0,
                          0,
                          true);
 }
 
 CSeqDB::CSeqDB(const string & dbname,
-               char           prot_nucl,
+               char           seqtype,
                TOID           oid_begin,
                TOID           oid_end,
                bool           use_mmap)
 {
     m_Impl = s_SeqDBInit(dbname,
-                         prot_nucl,
+                         seqtype,
+                         oid_begin,
+                         oid_end,
+                         use_mmap);
+}
+
+CSeqDB::CSeqDB(const string & dbname,
+               ESeqType       seqtype,
+               TOID           oid_begin,
+               TOID           oid_end,
+               bool           use_mmap)
+{
+    m_Impl = s_SeqDBInit(dbname,
+                         s_GetSeqTypeChar(seqtype),
                          oid_begin,
                          oid_end,
                          use_mmap);
@@ -385,13 +432,13 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 
 void
 CSeqDB::FindVolumePaths(const string   & dbname,
-                        char             prot_nucl,
+                        char             seqtype,
                         vector<string> & paths)
 {
     bool done = false;
     
-    if ((prot_nucl == 'p') || (prot_nucl == 'n')) {
-        CSeqDBImpl::FindVolumePaths(dbname, prot_nucl, paths);
+    if ((seqtype == 'p') || (seqtype == 'n')) {
+        CSeqDBImpl::FindVolumePaths(dbname, seqtype, paths);
     } else {
         try {
             CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);

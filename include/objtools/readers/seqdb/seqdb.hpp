@@ -137,7 +137,7 @@ private:
 };
 
 
-/// CSeqDB --
+/// CSeqDB
 ///
 /// User interface class for blast databases.
 ///
@@ -154,6 +154,13 @@ public:
         eOidRange
     };
     
+    /// Sequence types (eUnknown tries protein, then nucleotide).
+    enum ESeqType {
+        eProtein,
+        eNucleotide,
+        eUnknown
+    };
+    
     /// Sequence type accepted and returned for OID indexes.
     typedef Uint4 TOID;
     
@@ -163,25 +170,47 @@ public:
     /// Sequence type accepted and returned for OID indexes.
     typedef Uint4 TGI;
     
-    /// Short Constructor.
+    /// @deprecated
+    /// Short Constructor
+    /// 
+    /// This version of the constructor assumes memory mapping and
+    /// that the entire possible OID range will be included.  [This
+    /// version is obsolete, because the sequence type is specified as
+    /// a character; eventually only the ESeqType version will exist].
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
-    /// @param prot_nucl
+    /// @param seqtype
     ///   Either kSeqTypeProt for a protein database, kSeqTypeNucl for
     ///   nucleotide, or kSeqTypeUnkn to ask CSeqDB to try each one.
     ///   These can also be specified as 'p', 'n', or '-'.
-    CSeqDB(const string & dbname, char prot_nucl);
+    CSeqDB(const string & dbname, char seqtype);
     
+    /// Short Constructor
+    /// 
+    /// This version of the constructor assumes memory mapping and
+    /// that the entire possible OID range will be included.
+    /// 
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces
+    /// @param seqtype
+    ///   Either eProtein, eNucleotide, or eUnknown
+    CSeqDB(const string & dbname, ESeqType seqtype);
+    
+    /// @deprecated
     /// Constructor with MMap Flag and OID Range.
     ///
     /// If the oid_end value is specified as zero, or as a value
     /// larger than the number of OIDs, it will be adjusted to the
-    /// number of OIDs in the database.
+    /// number of OIDs in the database.  Specifying 0,0 for the start
+    /// and end will cause inclusion of the entire database.  [This
+    /// version of the constructor is obsolete because the sequence
+    /// type is specified as a character; eventually only the ESeqType
+    /// version will exist].
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
-    /// @param prot_nucl
+    /// @param seqtype
     ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
     ///   for nucleotide.  These can also be specified as 'p' or 'n'.
     /// @param oid_begin
@@ -195,7 +224,38 @@ public:
     ///   fails, this platform does not support it, the less efficient
     ///   read and write calls are used instead.
     CSeqDB(const string & dbname,
-           char           prot_nucl,
+           char           seqtype,
+           TOID           oid_begin,
+           TOID           oid_end,
+           bool           use_mmap);
+    
+    /// Constructor with MMap Flag and OID Range.
+    ///
+    /// If the oid_end value is specified as zero, or as a value
+    /// larger than the number of OIDs, it will be adjusted to the
+    /// number of OIDs in the database.  Specifying 0,0 for the start
+    /// and end will cause inclusion of the entire database.  This
+    /// version of the constructor is obsolete because the sequence
+    /// type is specified as a character (eventually only the ESeqType
+    /// version will exist).
+    /// 
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces.
+    /// @param seqtype
+    ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
+    ///   for nucleotide.  These can also be specified as 'p' or 'n'.
+    /// @param oid_begin
+    ///   Iterator will skip OIDs less than this value.  Only OIDs
+    ///   found in the OID lists (if any) will be returned.
+    /// @param oid_end
+    ///   Iterator will return up to (but not including) this OID.
+    /// @param use_mmap
+    ///   If kSeqDBMMap is specified (the default), memory mapping is
+    ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
+    ///   fails, this platform does not support it, the less efficient
+    ///   read and write calls are used instead.
+    CSeqDB(const string & dbname,
+           ESeqType       seqtype,
            TOID           oid_begin,
            TOID           oid_end,
            bool           use_mmap);
@@ -541,13 +601,13 @@ public:
     ///
     /// @param dbname
     ///   The input name of the database
-    /// @param prot_nucl
+    /// @param seqtype
     ///   Indicates whether the database is protein or nucleotide
     /// @param paths
     ///   The set of resolved database path names
     static void
     FindVolumePaths(const string   & dbname,
-                    char             prot_nucl,
+                    char             seqtype,
                     vector<string> & paths);
     
     /// Find volume paths

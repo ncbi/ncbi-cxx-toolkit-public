@@ -287,7 +287,7 @@ int test1(int argc, char ** argv)
     bool  x4mutate      = false;
     
     string dbname("nr");
-    char seqtype = kSeqTypeProt;
+    CSeqDB::ESeqType seqtype = CSeqDB::eProtein;
     
     bool failed      = false;
     
@@ -361,8 +361,8 @@ int test1(int argc, char ** argv)
             string pe("BLASTDB=/home/bealer/code/ut/internal/blast/unit_test/data:" + string(ge ? ge : ""));
             putenv((char*)pe.c_str());
             
-            CSeqDB local1("seqp", 'p');
-            CSeqDB local2("seqp", 'p', 0, 0, false);
+            CSeqDB local1("seqp", CSeqDB::eProtein);
+            CSeqDB local2("seqp", CSeqDB::eProtein, 0, 0, false);
             
             Int4 num1 = local1.GetNumSeqs();
             Int4 num2 = local1.GetNumSeqs();
@@ -382,7 +382,7 @@ int test1(int argc, char ** argv)
             // user has databases named "alpha" and "beta" somewhere
             // in their path.
             
-            CSeqDB ab("alpha beta", 'p');
+            CSeqDB ab("alpha beta", CSeqDB::eProtein);
             
             for(Uint4 i = 0; i < ab.GetNumSeqs(); i++) {
                 cout << "-----seq " << i << " length " << ab.GetSeqLength(i) << " ------------" << endl;
@@ -574,7 +574,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-paths | -paths-static | -paths-three]";
         
         if (s == "-here") {
-            CSeqDB nr("tenth", 'p');
+            CSeqDB nr("tenth", CSeqDB::eProtein);
             
             for(int i = 0; i<100; i++) {
                 CRef<CBioseq> bs = nr.GetBioseq(i);
@@ -622,7 +622,7 @@ int test1(int argc, char ** argv)
             string seqdb_bs, readdb_bs;
             
             {
-                CSeqDB db(dbname, is_prot ? 'p' : 'n');
+                CSeqDB db(dbname, is_prot ? CSeqDB::eProtein : CSeqDB::eNucleotide);
                 
                 Uint4 oid(0);
                 
@@ -754,7 +754,7 @@ int test1(int argc, char ** argv)
 #endif
         
         if (s == "-dyn") {
-            CSeqDB db("nr", 'p');
+            CSeqDB db("nr", CSeqDB::eProtein);
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
@@ -792,7 +792,7 @@ int test1(int argc, char ** argv)
             
             CStopWatch sw(true);
             
-            CSeqDB db("nr", 'p');
+            CSeqDB db("nr", CSeqDB::eProtein);
             
             ReadDBFILEPtr rdfp =
                 readdb_new_ex2((char*) "nr",
@@ -827,7 +827,7 @@ int test1(int argc, char ** argv)
                     // Use a seperate object to avoid "internal" caching
                     // interference.
                     
-                    CSeqDB db1("nr", 'p');
+                    CSeqDB db1("nr", CSeqDB::eProtein);
                     
                     CSeqDB & dbx(seperate_caching ? db1 : db);
                     
@@ -928,7 +928,7 @@ int test1(int argc, char ** argv)
         
         
         if (s == "-seqidtrans") {
-            CSeqDB nr("nr", 'p');
+            CSeqDB nr("nr", CSeqDB::eProtein);
             
             string seqid_str("gi|129295");
             
@@ -965,7 +965,7 @@ int test1(int argc, char ** argv)
                 args.pop_front();
             }
             
-            CSeqDB db(dbname, 'p');
+            CSeqDB db(dbname, CSeqDB::eProtein);
             
             while((acc != "QUIT") && cin) {
                 vector<Uint4> oids;
@@ -1212,7 +1212,7 @@ int test1(int argc, char ** argv)
 #endif
         
         if (s == "-xlate4") {
-            CSeqDB db("nr", 'p');
+            CSeqDB db("nr", CSeqDB::eProtein);
             
             CNcbiIfstream idents("stringids.txt");
             
@@ -1319,7 +1319,7 @@ int test1(int argc, char ** argv)
                 args.pop_front();
             }
             
-            CSeqDB db(dbname1, 'p');
+            CSeqDB db(dbname1, CSeqDB::eProtein);
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
@@ -1407,7 +1407,7 @@ int test1(int argc, char ** argv)
                 args.pop_front();
             }
             
-            CSeqDB db(dbname1, 'p');
+            CSeqDB db(dbname1, CSeqDB::eProtein);
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
@@ -1479,7 +1479,7 @@ int test1(int argc, char ** argv)
             {
                 cerr << "Going to construct?" << endl;
                 
-                CSeqDB db("nr", 'p');
+                CSeqDB db("nr", CSeqDB::eProtein);
                 
                 cerr << "Constructor ran?" << endl;
             }
@@ -1488,7 +1488,7 @@ int test1(int argc, char ** argv)
             {
                 cerr << "Going to construct?" << endl;
                 
-                CSeqDB db("nr", 'p');
+                CSeqDB db("nr", CSeqDB::eProtein);
                 
                 cerr << "Constructor ran?" << endl;
                 
@@ -1524,7 +1524,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-atlas]";
         
         if (s == "-atlas2") {
-            CSeqDB db("nr", 'p');
+            CSeqDB db("nr", CSeqDB::eProtein);
             
             for(Uint4 index = 311073; index < 700000; index++) {
                 const char * sq = 0;
@@ -1537,7 +1537,7 @@ int test1(int argc, char ** argv)
         
         if (s == "-limit") {
             {
-                CSeqDB db("/home/bealer/seqdb/tenth", 'p', 10, 20, true);
+                CSeqDB db("/home/bealer/seqdb/tenth", CSeqDB::eProtein, 10, 20, true);
                 
                 cout << "Num oids: " << db.GetNumSeqs() << endl;
                 
@@ -1554,7 +1554,7 @@ int test1(int argc, char ** argv)
                 }
             }
             {
-                CSeqDB db("swissprot", 'p', 135, 175, true);
+                CSeqDB db("swissprot", CSeqDB::eProtein, 135, 175, true);
                 
                 cout << "Num oids: " << db.GetNumSeqs() << endl;
                 
@@ -1575,7 +1575,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-local]";
         
         if (s == "-local") {
-            CSeqDB nr("/home/bealer/seqdb/tenth", 'p');
+            CSeqDB nr("/home/bealer/seqdb/tenth", CSeqDB::eProtein);
             
             for(int i = 0; i<100; i++) {
                 CRef<CBioseq> bs = nr.GetBioseq(i);
@@ -1621,7 +1621,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-get-seqids <gi>]";
         
         if (s == "-seqids") {
-            CSeqDB nr(/*dbpath,*/ "nr", 'p');
+            CSeqDB nr(/*dbpath,*/ "nr", CSeqDB::eProtein);
             
             for(int i = 0; i<100; i++) {
                 list< CRef<CSeq_id> > seqids =
@@ -1648,7 +1648,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-seqids]";
         
         if (s == "-memtest") {
-            CSeqDB nt("nt", 'n', 0, 0, false);
+            CSeqDB nt("nt", CSeqDB::eNucleotide, 0, 0, false);
             
             Uint4 oid = 0;
             
@@ -1729,7 +1729,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-memtest]";
         
         if (s == "-getambig") {
-            CSeqDB nt(/*dbpath,*/ "nt", 'n', 0, 0, false);
+            CSeqDB nt(/*dbpath,*/ "nt", CSeqDB::eNucleotide, 0, 0, false);
             
             Uint4 oid = 0;
             
@@ -1811,7 +1811,7 @@ int test1(int argc, char ** argv)
         
         if (s == "-iter2") {
             {
-                CSeqDB phil(/*dbpath,*/ "swissprot pataa", 'p');
+                CSeqDB phil(/*dbpath,*/ "swissprot pataa", CSeqDB::eProtein);
             
                 {
                     CSeqDBIter skywalk = phil.Begin();
@@ -1835,7 +1835,7 @@ int test1(int argc, char ** argv)
                 }
             }
             {
-                CSeqDB phil(/*dbpath,*/ "pataa swissprot", 'p');
+                CSeqDB phil(/*dbpath,*/ "pataa swissprot", CSeqDB::eProtein);
             
                 {
                     CSeqDBIter skywalk = phil.Begin();
@@ -1863,7 +1863,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-iter2]";
         
         if (s == "-iter") {
-            CSeqDB phil(/*dbpath,*/ "swissprot pdb", 'p');
+            CSeqDB phil(/*dbpath,*/ "swissprot pdb", CSeqDB::eProtein);
             
             {
                 CSeqDBIter skywalk = phil.Begin();
@@ -1906,7 +1906,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-iter]";
         
         if (s == "-iterpdb") {
-            CSeqDB phil(/*dbpath,*/ "pdb", 'p');
+            CSeqDB phil(/*dbpath,*/ "pdb", CSeqDB::eProtein);
             
             {
                 CSeqDBIter skywalk = phil.Begin();
@@ -1931,7 +1931,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-iterpdb]";
         
         if (s == "-itersp") {
-            CSeqDB phil(/*dbpath,*/ "swissprot", 'p');
+            CSeqDB phil(/*dbpath,*/ "swissprot", CSeqDB::eProtein);
             
             {
                 CSeqDBIter skywalk = phil.Begin();
@@ -1956,7 +1956,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-itersp]";
         
         if (s == "-spcount") {
-            CSeqDB phil(/*dbpath,*/ "swissprot", 'p');
+            CSeqDB phil(/*dbpath,*/ "swissprot", CSeqDB::eProtein);
             
             double besht = 100.0;
             double woist = 0.0;
@@ -2004,7 +2004,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-spcount]";
         
         if (s == "-swiss") {
-            CSeqDB phil(/*dbpath,*/ "swissprot", 'p');
+            CSeqDB phil(/*dbpath,*/ "swissprot", CSeqDB::eProtein);
              
             {
                 Uint8 tlen = 0;
@@ -2050,7 +2050,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-swiss]";
         
         if (s == "-bigchunk") {
-            CSeqDB sp("month.wgs", 'n');
+            CSeqDB sp("month.wgs", CSeqDB::eNucleotide);
             
             cout << " num oids " << sp.GetNumSeqs() << endl;
             
@@ -2080,7 +2080,7 @@ int test1(int argc, char ** argv)
             cout << "entered db name: [" << dbname1 << "]" << endl;
             
             //CSeqDB phil(dbname1, 'p', 1000000, 1 << 30, true);
-            CSeqDB phil(dbname1, 'p', 1880000, 1 << 30, true);
+            CSeqDB phil(dbname1, CSeqDB::eProtein, 1880000, 1 << 30, true);
             
             const Uint4 max_oids = 100;
             
@@ -2215,7 +2215,7 @@ int test1(int argc, char ** argv)
             
             cout << "\nConstructing..." << endl;
             
-            CSeqDB db(db_list, kSeqTypeNucl);
+            CSeqDB db(db_list, CSeqDB::eNucleotide);
             
             cout << "\nDone constructing; Getting first OID..." << endl;
             
@@ -2275,7 +2275,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-summary]";
         
         if (s == "-dogs") {
-            CSeqDB al("cfa_genome/cra_dog_assembly", 'n');
+            CSeqDB al("cfa_genome/cra_dog_assembly", CSeqDB::eNucleotide);
             
         } else desc += " [-dogs]";
         
@@ -2287,7 +2287,7 @@ int test1(int argc, char ** argv)
             
             Uint4 i(0);
             while((e2 - e1) < 10.0) {
-                CSeqDB cob("genomes/barley", 'n');
+                CSeqDB cob("genomes/barley", CSeqDB::eNucleotide);
                 i++;
                 e2 = sw.Elapsed();
             }
@@ -2305,7 +2305,7 @@ int test1(int argc, char ** argv)
             CStopWatch sw(true);
             
             xt[xt_iter++] = sw.Elapsed();
-            CSeqDB al("nr", 'p');
+            CSeqDB al("nr", CSeqDB::eProtein);
             xt[xt_iter++] = sw.Elapsed();
             cerr << "hmmmmmm" << endl;
             xt[xt_iter++] = sw.Elapsed();
@@ -2351,7 +2351,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-one]";
         
         if (s == "-overlap") {
-            CSeqDB sp("hoola/Test/pataa_emb", 'p');
+            CSeqDB sp("hoola/Test/pataa_emb", CSeqDB::eProtein);
             
             cout << " num oids " << sp.GetNumSeqs() << endl;
             
@@ -2409,9 +2409,9 @@ int test1(int argc, char ** argv)
             string dbname2("pataa");
             string dbname3(dbname1 + " " + dbname2);
             
-            CSeqDB dbi1(/*dbpath,*/ dbname1, kSeqTypeProt, 0, 0, use_mm);
-            CSeqDB dbi2(/*dbpath,*/ dbname2, kSeqTypeProt, 0, 0, use_mm);
-            CSeqDB dbi3(/*dbpath,*/ dbname3, kSeqTypeProt, 0, 0, use_mm);
+            CSeqDB dbi1(/*dbpath,*/ dbname1, CSeqDB::eNucleotide, 0, 0, use_mm);
+            CSeqDB dbi2(/*dbpath,*/ dbname2, CSeqDB::eNucleotide, 0, 0, use_mm);
+            CSeqDB dbi3(/*dbpath,*/ dbname3, CSeqDB::eNucleotide, 0, 0, use_mm);
             
             cout << "1 " << dbi1.GetTotalLength() << endl;
             cout << "2 " << dbi2.GetTotalLength() << endl;
@@ -2463,9 +2463,9 @@ int test1(int argc, char ** argv)
             
             string dbname3(dbname1 + " " + dbname2);
             
-            CSeqDB dbi1(/*dbpath,*/ dbname1, kSeqTypeNucl, 0, 0, use_mm);
-            CSeqDB dbi2(/*dbpath,*/ dbname2, kSeqTypeNucl, 0, 0, use_mm);
-            CSeqDB dbi3(/*dbpath,*/ dbname3, kSeqTypeNucl, 0, 0, use_mm);
+            CSeqDB dbi1(/*dbpath,*/ dbname1, CSeqDB::eNucleotide, 0, 0, use_mm);
+            CSeqDB dbi2(/*dbpath,*/ dbname2, CSeqDB::eNucleotide, 0, 0, use_mm);
+            CSeqDB dbi3(/*dbpath,*/ dbname3, CSeqDB::eNucleotide, 0, 0, use_mm);
             
             cout << "1 " << dbi1.GetTotalLength() << endl;
             cout << "2 " << dbi2.GetTotalLength() << endl;
@@ -2540,7 +2540,7 @@ int test1(int argc, char ** argv)
         
         if (s == "-nt") {
             dbname = "nt";
-            seqtype = 'n';
+            seqtype = CSeqDB::eNucleotide;
             use_mm = false;
             continue;
         } else desc += " [-nt]";
@@ -2557,12 +2557,12 @@ int test1(int argc, char ** argv)
         } else desc += " [-db]";
         
         if (s == "-nucl") {
-            seqtype = 'n';
+            seqtype = CSeqDB::eNucleotide;
             continue;
         } else desc += " [-nucl]";
         
         if (s == "-prot") {
-            seqtype = 'p';
+            seqtype = CSeqDB::eProtein;
             continue;
         } else desc += " [-prot]";
 
@@ -2602,19 +2602,19 @@ int test1(int argc, char ** argv)
         
         if ((s == "-nt,est,gss") || (s == "-nt,gss,est") || (s == "-est,gss,nt")) {
             dbname = "nt est gss";
-            seqtype = 'n';
+            seqtype = CSeqDB::eNucleotide;
             continue;
         } else desc += " [-nt,est,gss]";
         
         if (s == "-lump") {
             dbname = "../tdata/lump";
-            seqtype = 'n';
+            seqtype = CSeqDB::eNucleotide;
             use_mm = false;
             continue;
         } else desc += " [-lump]";
         
         if (s == "-super_size") {
-            CSeqDB db("nt est", kSeqTypeNucl, 0, 0, use_mm);
+            CSeqDB db("nt est", CSeqDB::eNucleotide, 0, 0, use_mm);
             
             cout << "total length: " << db.GetTotalLength() << endl;
             cout << "number seqs : " << db.GetNumSeqs() << endl;
@@ -2675,7 +2675,7 @@ int test1(int argc, char ** argv)
         
         if (s == "-aliasn") {
             dbname = "month htgs";
-            seqtype = kSeqTypeNucl;
+            seqtype = CSeqDB::eNucleotide;
             continue;
         } else desc += " [-aliasn]";
         
@@ -2771,7 +2771,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-num <seqs to get>]";
         
         if (s == "-oid-at-offset") {
-            CSeqDB db(dbname, '-');
+            CSeqDB db(dbname, CSeqDB::eUnknown);
             
             while(1) {
                 string indx_str;
@@ -2793,14 +2793,14 @@ int test1(int argc, char ** argv)
         
         if ((s == "-splitp") || (s == "-splitn")) {
             string db;
-            char st;
+            CSeqDB::ESeqType st;
             
             if (s == "-splitp") {
                 db = "nr";
-                st = 'p';
+                st = CSeqDB::eProtein;
             } else {
                 db = "nt";
-                st = 'n';
+                st = CSeqDB::eNucleotide;
             }
             
             CSeqDB nr(db.c_str(), st);
