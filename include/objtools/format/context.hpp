@@ -192,6 +192,7 @@ private:
     bool x_IsInGPS(void) const;
     bool x_IsInNucProt(void) const;
     void x_SetLocation(const CSeq_loc* user_loc = 0);
+    void x_SetMapper(const CSeq_loc& loc);
     
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
@@ -244,6 +245,7 @@ private:
     TReferences             m_References;
     CConstRef<CSeq_loc>     m_Location;
     CRef<CSeq_loc_Mapper>   m_Mapper;
+    CBioseq_Handle          m_Virtual;
     CFlatFileContext&       m_FFCtx;
     CRef<CMasterContext>    m_Master;
 };
@@ -536,6 +538,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/03/28 17:04:00  shomrat
+* Support for complex user location
+*
 * Revision 1.24  2005/03/07 17:17:11  shomrat
 * Check if a Bioseq has an operon feature
 *
