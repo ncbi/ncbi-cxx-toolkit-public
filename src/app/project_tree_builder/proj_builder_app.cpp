@@ -29,6 +29,7 @@
 
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
+#include <app/project_tree_builder/proj_tree_builder.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_prj_generator.hpp>
 #include <app/project_tree_builder/msvc_sln_generator.hpp>
@@ -526,6 +527,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/03/02 16:25:41  gorelenk
+ * Added include for proj_tree_builder.hpp.
+ *
  * Revision 1.25  2004/03/01 18:01:19  gorelenk
  * Added processing times reporting to log. Added project tree checking
  * for projects inter-dependencies.
