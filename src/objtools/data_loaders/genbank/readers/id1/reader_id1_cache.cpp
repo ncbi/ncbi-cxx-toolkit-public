@@ -646,7 +646,8 @@ void CCachedId1Reader::GetTSEChunk(const CSeqref& seqref,
         }}
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
-            LogBlobStat("CId1Cache: parse chunk data",
+            LogBlobStat(("CId1Cache: parse chunk data "+
+                         NStr::IntToString(chunk_info.GetChunkId())).c_str(),
                         seqref, size, time);
             chunk_parse_time += time;
         }
@@ -1497,6 +1498,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.28  2004/07/12 16:59:01  vasilche
+ * Report chunk number in detailed loading statistics.
+ *
  * Revision 1.27  2004/06/30 21:02:02  vasilche
  * Added loading of external annotations from 26 satellite.
  *
