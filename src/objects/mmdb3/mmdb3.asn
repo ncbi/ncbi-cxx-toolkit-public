@@ -1,0 +1,149 @@
+
+MMDB-Structural-features DEFINITIONS ::=
+
+BEGIN
+
+EXPORTS Model-feature, Density-coordinate-set, Surface-coordinate-set, RealValue;
+
+IMPORTS Atom-pntr FROM MMDB-Chemical-graph
+	Model-descr, Residue-pntr, Component-pntr FROM MMDB-Structural-model;
+
+-- Named features refer to sets of residues or atoms, or a region in space.
+-- PDB-derived secondary structure defines a single feature, represented as a
+-- sequence of residue motifs.  The contents of PDB SITE and FTNOTE records
+-- define features represented as sequences of atom motifs.  NCBI-assigned core 
+-- substructure descriptions are represented as a sequence of residue motifs,
+-- cited as a data deposition in the feature description.
+
+Model-feature ::= SEQUENCE{
+	description		Model-descr,
+	motif			SEQUENCE OF Structural-motif }
+	
+Structural-motif ::=	CHOICE {
+	residue-motif	Residue-motif,
+	atom-motif	Atom-motif,
+	region-motif	Region-motif } 
+
+
+-- Residue motifs describe secondary structure or other features defined on a 
+-- set of residues.  PDB secondary structure classifications from HELIX, SHEET,
+-- and TURN records appear as residue motifs.  The residue motif name is 
+-- derived from the PDB "identifier" field.
+
+Residue-motif ::= SEQUENCE {
+	description		Model-descr,
+	type			ENUMERATED {
+					helix(1),
+					strand(2),
+					sheet(3),
+					turn(4),
+					other(255) },
+	residue-id		SEQUENCE OF Residue-pntr }
+
+
+-- Atom motifs describe binding sites, catalytic sites, or other features
+-- defined on a set of atoms.  For PDB SITE and FTNOTE records atom motifs
+-- are named according to "site identifier" or "footnote number" fields, and 
+-- their description contains comments extracted from FTNOTE records, and from
+-- REMARK records if these could be linked to a particular SITE record.
+
+Atom-motif ::= SEQUENCE {
+	description		Model-descr,
+	atom-id			SEQUENCE OF Atom-pntr }
+
+
+-- Region motifs describe features of substructures defined by spatial location,
+-- such as the portion of a density grid believed to contain a binding site.
+
+Region-motif ::= SEQUENCE {
+	description		Model-descr,
+	region-boundary		CHOICE {
+					sphere		Sphere,
+					cylinder	Cylinder,
+					brick		Brick,
+					surface		Surface-grid }}
+
+Sphere ::= SEQUENCE { 
+	center			Model-space-point,
+	radius			RealValue }
+
+Cylinder ::= SEQUENCE { 
+	axis-top		Model-space-point,
+	axis-bottom		Model-space-point,
+	radius			RealValue }
+
+
+-- A brick is defined by the coordinates of eight corners.  These are assumed
+-- to appear in the order 000, 001, 010, 011, 100, 101, 110, 111, where the 
+-- digits 0 and 1 refer to respectively to the x, y and z axes of a unit cube.
+-- Opposite edges are assumed to be parallel. 
+
+Brick ::= SEQUENCE {
+	corner-000		Model-space-point,
+	corner-001		Model-space-point,
+	corner-010		Model-space-point,
+	corner-011		Model-space-point,
+	corner-100		Model-space-point,
+	corner-101		Model-space-point,
+	corner-110		Model-space-point,
+	corner-111		Model-space-point}
+
+
+-- A grid boundary is a set of points which are assumed to define a triangle
+-- mesh surface when each is conected to it's 3 nearest neighbors.
+
+Surface-grid ::= SEQUENCE OF Model-space-point
+
+
+-- A point is a single location in the model space.
+
+Model-space-point ::= SEQUENCE {
+	x			RealValue,
+	y			RealValue,
+	z			RealValue } 
+
+
+-- Literal density coordinates define the chemical components whose structure
+-- is described by a density grid, parameters of this grid, and density values.
+-- density values are represented as scaled integers to save space.
+
+Density-coordinate-set ::= SEQUENCE {
+	description		Model-descr,
+	contents		Component-pntr,
+	grid-corners		Brick,
+	grid-steps-x		INTEGER,
+	grid-steps-y		INTEGER,
+	grid-steps-z		INTEGER,
+	fastest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	slowest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	density			SEQUENCE OF INTEGER }
+
+-- Literal surface coordinates define the chemical components whose structure
+-- is described by a surface, and the surface itself.  The surface may be
+-- either a regular geometric solid or a triangle-mesh of arbitrary shape.
+
+Surface-coordinate-set ::= SEQUENCE {
+	description		Model-descr,
+	contents		Component-pntr,
+	surface			CHOICE {
+		sphere		Sphere,
+		cylinder	Cylinder,
+		brick		Brick,
+		surface		Surface-grid } }
+
+
+-- Referenced density or surface coordinates give pointers to the chemical 
+-- components of the present biostruc that are described by a grid or surface,
+-- and pointers to the chemical components of another biostruc for which a 
+-- density grid or surface has been defined.  
+
+RealValue ::= REAL
+
+END
+

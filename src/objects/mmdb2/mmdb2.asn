@@ -1,0 +1,240 @@
+
+MMDB-Structural-model DEFINITIONS ::=
+
+BEGIN
+
+EXPORTS Biostruc-model, Model-descr, Residue-pntr, Component-pntr;
+
+IMPORTS Molecule-id, Residue-id, Atom-id Atom-pntr FROM MMDB-Chemical-graph
+	Model-feature, Density-coordinate-set, Surface-coordinate-set, RealValue FROM MMDB-Structural-features
+	Biostruc-id FROM MMDB
+	Pub-set FROM NCBI-Pub;
+
+-- A structural model maps chemical components into a measured three-
+-- dimensional space and defines named structural features. PDB-derived 
+-- structures are generally represented as a single model.  Their model name 
+-- is assigned "None" unless a model name is assigned explicitly on PDB MODEL 
+-- records. The contents of the PDB "resolution" and "expdata" fields appear 
+-- as tagged comments in the model description, i.e. strings of the form 
+-- "Resolution: 2.5" or "Method: X-ray Crystallography".
+
+Biostruc-model ::= SEQUENCE {
+	description		Model-descr,
+	model-space		Model-space,
+	model-features		SEQUENCE OF Model-feature OPTIONAL,
+	model-coordinates	SEQUENCE OF Model-coordinates OPTIONAL }
+
+Model-descr ::= SEQUENCE {
+	name			VisibleString OPTIONAL,
+	comment			SEQUENCE OF VisibleString OPTIONAL,
+	attribution		Pub-set OPTIONAL }
+
+-- The model space defines measurement units and any external reference frame.
+-- Coordinates refer to a right-handed orthogonal system defined on axes 
+-- tagged x, y and z in the coordinate and feature definitions of a biostruc.
+
+-- Coordinates from PDB-derived structures are reported without change, in
+-- angstrom units.  The units of temperature and occupancy factors are 
+-- inferred from their value range in the PDB entry.  
+
+Model-space ::= SEQUENCE {
+	coordinate-units	ENUMERATED {
+					angstroms(1),
+					nanometers(2),
+					picometers(3),
+					other(4),
+					unkown(255)},
+	thermal-factor-units	ENUMERATED {
+					b(1),
+					u(2),
+					other(3),
+					unkown(255)} OPTIONAL,
+	occupancy-factor-units	ENUMERATED {
+					fractional(1),
+					electrons(2),
+					other(3),
+					unknown(255)} OPTIONAL,
+	density-units		ENUMERATED {
+					electrons-per-unit-volume(1),
+					arbitrary-scale(2),
+					other(3),
+					unknown(255)} OPTIONAL,
+	reference-frame		Reference-frame OPTIONAL }
+
+
+-- An external reference frame is a pointer to another biostruc, with an 
+-- optional operator to rotate and translate coordinates into its model space.
+
+Reference-frame ::= SEQUENCE {
+	biostruc-id		Biostruc-id,
+	rotation-translation	Rot-trans-matrix OPTIONAL }
+	
+
+-- A rotation-translation matrix is defined by 12 numbers.  The first 9 are
+-- a rotation matrix given by rows, that is with column indices varying fastest.
+-- Coordinates, as a matrix with columns x, y, an z, are rotated to the target 
+-- reference frame when post-multiplied by the rotation matrix.  The last 3 
+-- numbers are a translation.  Addition of to the rotated coordinates translates
+-- their origin to that of the reference frame.
+
+Rot-trans-matrix ::= SEQUENCE {
+	rot-11			RealValue,
+	rot-12			RealValue,
+	rot-13			RealValue,
+	rot-21			RealValue,
+	rot-22			RealValue,
+	rot-23			RealValue,
+	rot-31			RealValue,
+	rot-32			RealValue,
+	rot-33			RealValue,
+	tran-1			RealValue,
+	tran-2			RealValue,
+	tran-3			RealValue }
+
+
+-- Atomic coordinates may be assigned literally or by reference. PDB-derived
+-- structures have only literal coordinates.
+
+Model-coordinates ::= SEQUENCE {
+	description		Model-descr,
+	coordinates		CHOICE {
+		literal			Coordinate-values,
+		reference		Coordinate-reference } }
+		
+
+-- Literal coordinates map chemical components into the model space.  Three 
+-- mapping types are allowed, i.e.,
+-- atomic coordinate models, density-grid models,
+-- and surface models.  A model consists of a sequence of such coordinate
+-- sets, and may thus combine different types of model subset, or coordinate
+-- subsets which have a different origin.
+
+Coordinate-values ::= CHOICE {		
+	atomic			SEQUENCE OF Atomic-coordinate-set,
+	density			SEQUENCE OF Density-coordinate-set,
+	surface			SEQUENCE OF Surface-coordinate-set } 
+
+
+-- Literal atomic coordinate values give location, occupancy and order
+-- parameters, and a pointer to a specific atom defined in the molecular graph.
+-- Temperature and occupancy factors have their conventional crystallographic
+-- definitions, using units defined in the model space declaration.  An 
+-- alternate conformantion id is associated with each coordinate,
+-- and each disorder ensemble is defined by a set of alternate conformation
+-- id's for the coordinates included in the ensemble.  Note that correlated
+-- disorder as defined by alternate conformation ensembles is allowed within
+-- an atomic coordinate set, but not between the multiple sets
+-- which may define a model. 
+
+-- PDB-derived structures have only a single coordinate set. Disorder ensembles
+-- are identified from the "alternate conformation" field of ATOM records.  
+-- Coordinates with " " are assumed to be present in all conformers, and those
+-- with other specific values to be present in only that conformer.  It is 
+-- assumed, in other words,  that the alternate conformation field implys 
+-- correlation, such that "A" coordinates are relevant to confomer A, and 
+-- "B" coordinates are relevant to conformer B.  Conformer names within the
+-- conformation ensemble description are assigned from the "alternate
+-- conformation" field.
+
+Atomic-coordinate-set ::= SEQUENCE {
+	description		Model-descr,
+	conformation-ensembles	SEQUENCE OF Conformation-ensemble OPTIONAL,	
+	coordinate-values	Atomic-coordinates }
+
+Conformation-ensemble ::= SEQUENCE {
+	id		SEQUENCE OF Alternate-conformation-id,
+	description	Model-descr }
+
+Alternate-conformation-id ::= INTEGER
+
+
+-- Each component of atomic coordinates is a vector, and elements in the
+-- same position in different components together represent properties of the
+-- same atom.
+
+Atomic-coordinates ::= SEQUENCE {
+	atoms				Atom-pntrs,
+	locations			Model-space-points,
+	temperature-factors		Atomic-temperature-factors OPTIONAL,
+	occupancies			Occupancies OPTIONAL, 
+	alternate-conformation-tags	SEQUENCE OF Alternate-conformation-id OPTIONAL}
+
+Atomic-temperature-factors ::= CHOICE {
+	isotropic		Isotropic-temperature-factors,
+	anisotropic		Anisotropic-temperature-factors }
+
+Isotropic-temperature-factors ::= SEQUENCE {
+	number-of-values	INTEGER,
+	values			SEQUENCE OF INTEGER }
+
+Anisotropic-temperature-factors ::= SEQUENCE {
+	number-of-values        INTEGER,
+	b-11			SEQUENCE OF INTEGER,
+	b-12			SEQUENCE OF INTEGER,
+	b-13			SEQUENCE OF INTEGER,
+	b-22			SEQUENCE OF INTEGER,
+	b-23			SEQUENCE OF INTEGER,
+	b-33			SEQUENCE OF INTEGER }
+
+Occupancies ::= SEQUENCE {
+	number-of-occs		INTEGER,
+	occs			SEQUENCE OF INTEGER }
+
+
+-- Referenced coordinates identify another biostruc, any transformation to be 
+-- applied to coordinates from that biostruc, and a mapping of the chemical
+-- graph of the present biostruc onto that of the referenced biostruc.
+
+Coordinate-reference ::= SEQUENCE {
+	referenced-biostruc	Biostruc-id,
+	transformation		Rot-trans-matrix OPTIONAL,
+	coordinate-type		CHOICE {		
+		atomic			SEQUENCE OF Atom-equivalence,
+		density			Component-equivalence,
+		surface 		Component-equivalence } }
+
+-- Referenced atomic coordinates map individual atoms in the present biostruc 
+-- to atoms in the referenced biostruc.  The atom in the present biostruc 
+-- inherits atom by atom the coordinates of the referenced biostruc.
+
+Atom-equivalence ::= SEQUENCE {
+	atom			Atom-pntr,
+	referenced-atom		Atom-pntr }
+
+
+-- A collection of Model-space-point.  x, y, z values are also represented
+-- as scaled integers to save space.
+
+Model-space-points ::= SEQUENCE {
+	number-of-pnts		INTEGER,
+	x			SEQUENCE OF INTEGER,	
+	y			SEQUENCE OF INTEGER,
+	z			SEQUENCE OF INTEGER } 
+
+
+-- A colleciton of Atom-pntr. 
+
+Atom-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id,
+	residue-ids		SEQUENCE OF Residue-id,
+	atom-ids		SEQUENCE OF Atom-id }
+
+Component-pntr ::= CHOICE {
+	molecules		SEQUENCE OF Molecule-pntr,
+	residues		SEQUENCE OF Residue-pntr,
+	atoms			SEQUENCE OF Atom-pntr}
+
+Component-equivalence ::= SEQUENCE {
+	contents		Component-pntr,
+	referenced-contents	Component-pntr }
+
+
+Residue-pntr ::= SEQUENCE {
+	molecule-id		Molecule-id,
+	residue-id		Residue-id }
+
+Molecule-pntr ::= Molecule-id
+
+END
+
