@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/05/24 20:08:13  vasilche
+* Implemented XML dump.
+*
 * Revision 1.31  2000/05/09 16:38:33  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -201,7 +204,7 @@ protected:
     // action: read ID into local buffer
     // return: ID pointer and length
     // note: it is not zero ended
-    pair<const char*, size_t> ReadId(void);
+    pair<const char*, size_t> ReadId(char firstChar);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -228,16 +231,28 @@ protected:
 #endif
 
 protected:
-    virtual void VBegin(Block& block);
-    virtual bool VNext(const Block& block);
-    virtual void VEnd(const Block& block);
-    virtual void StartMember(Member& member, const CMembers& members);
-    virtual void StartMember(Member& member, const CMemberId& id);
-    virtual void StartMember(Member& member, LastMember& lastMember);
-	virtual void Begin(ByteBlock& block);
+    virtual void BeginArray(CObjectStackArray& array);
+    virtual void EndArray(CObjectStackArray& array);
+    virtual bool BeginArrayElement(CObjectStackArrayElement& e);
+    virtual void ReadArray(CObjectArrayReader& reader,
+                           TTypeInfo arrayType, bool randomOrder,
+                           TTypeInfo elementType);
+
+    virtual void BeginClass(CObjectStackClass& cls);
+    virtual void EndClass(CObjectStackClass& cls);
+    virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
+                                          const CMembers& members);
+    virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
+                                          const CMembers& members,
+                                          CClassMemberPosition& pos);
+
+    virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
+                                            const CMembers& members);
+
+	virtual void BeginBytes(ByteBlock& block);
     int GetHexChar(void);
 	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
-	virtual void End(const ByteBlock& block);
+	virtual void EndBytes(const ByteBlock& block);
 
 private:
     virtual EPointerType ReadPointerType(void);

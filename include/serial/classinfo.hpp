@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/05/24 20:08:11  vasilche
+* Implemented XML dump.
+*
 * Revision 1.28  2000/04/03 18:47:09  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -152,8 +155,6 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/memberlist.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
 #include <map>
 #include <list>
 #include <vector>
@@ -272,12 +273,6 @@ protected:
 
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const;
-
-    void ReadMembers(CObjectIStream& in, CObjectIStream::Block& block,
-                     TObjectPtr object) const;
-    void SkipMembers(CObjectIStream& in, CObjectIStream::Block& block) const;
-    void WriteMembers(CObjectOStream& out, CObjectOStream::Block& block,
-                     TConstObjectPtr object) const;
 
     TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
     TTypeInfo GetParentTypeInfo(void) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/05/24 20:08:12  vasilche
+* Implemented XML dump.
+*
 * Revision 1.10  2000/04/10 21:01:39  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -106,7 +109,6 @@ public:
     typedef int TIndex;
     typedef vector<CMemberId> TMembers;
     typedef map<const char*, TIndex, StrCmp> TMembersByName;
-    typedef vector<TTag> TMemberTags;
     typedef map<TTag, TIndex> TMembersByTag;
 
     CMembers(void);
@@ -135,7 +137,7 @@ public:
         }
     const TMembersByName& GetMembersByName(void) const;
     const TMembersByTag& GetMembersByTag(void) const;
-    const TMemberTags& GetMemberTags(void) const;
+    void UpdateMemberTags(void);
 
     void AddMember(const CMemberId& id);
 
@@ -154,7 +156,6 @@ public:
 private:
     TMembers m_Members;
     mutable auto_ptr<TMembersByName> m_MembersByName;
-    mutable auto_ptr<TMemberTags> m_MemberTags;
     mutable auto_ptr<TMembersByTag> m_MembersByTag;
 
     CMembers(const CMembers&);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/05/24 20:08:47  vasilche
+* Implemented XML dump.
+*
 * Revision 1.50  2000/05/09 16:38:38  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -223,7 +226,7 @@
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/typemapper.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/bytesrc.hpp>
 #if HAVE_WINDOWS_H
@@ -323,7 +326,7 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
 }
 
 CObjectIStream::CObjectIStream(void)
-    : m_Fail(eNotOpen), m_CurrentElement(0), m_TypeMapper(0)
+    : m_Fail(eNotOpen), m_TypeMapper(0)
 {
 }
 
@@ -355,7 +358,6 @@ void CObjectIStream::Close(void)
     m_Input.Close();
     m_Objects.clear();
     m_Fail = eNotOpen;
-    _ASSERT(m_CurrentElement == 0);
 }
 
 unsigned CObjectIStream::SetFailFlags(unsigned flags)
@@ -365,14 +367,69 @@ unsigned CObjectIStream::SetFailFlags(unsigned flags)
     if ( !old && flags ) {
         // first fail
         ERR_POST("CObjectIStream: error at "<<
-                 GetPosition()<<": "<<MemberStack());
+                 GetPosition()<<": "<<GetStackTrace());
     }
     return old;
 }
 
-string CObjectIStream::GetPosition(void) const
+bool CObjectIStream::InGoodState(void)
 {
-    return NcbiEmptyString;
+    if ( fail() ) {
+        // fail flag already set
+        return false;
+    }
+    else if ( uncaught_exception() ) {
+        // exception thrown without setting fail flag
+        SetFailFlags(eFail);
+        return false;
+    }
+    else {
+        // ok
+        _TRACE("CanClose: "<<GetStackTrace());
+        return true;
+    }
+}
+
+void CObjectIStream::UnendedFrame(void)
+{
+    if ( InGoodState() )
+        ThrowError(eFail, "internal error: unended object stack frame");
+}
+
+static
+bool AppendASNStackTo(CObjectStackFrame* top, string& s)
+{
+    if ( !top )
+        return false;
+    CObjectStackFrame* prev = top->GetPrevous();
+    bool haveStack = AppendASNStackTo(prev, s);
+    switch ( top->GetFrameType() ) {
+    case CObjectStackFrame::eFrameNamed:
+        if ( prev )
+            return haveStack; // only top named frame will be displayed
+        break;
+    case CObjectStackFrame::eFrameArray:
+    case CObjectStackFrame::eFrameClass:
+    case CObjectStackFrame::eFrameChoice:
+        // do not display these frames
+        return haveStack;
+    default:
+        break;
+    }
+    if ( !top->HaveName() )
+        return haveStack;
+    if ( haveStack )
+        s += '.';
+    top->AppendTo(s);
+    return true;
+}
+
+string CObjectIStream::GetStackTrace(void) const
+{
+    string stack;
+    if ( !AppendASNStackTo(GetTop(), stack) )
+        stack += '?';
+    return stack;
 }
 
 void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
@@ -459,7 +516,7 @@ const CObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
     try {
-        StackElement m(*this, typeInfo->GetName());
+        CObjectStackNamedFrame m(*this, typeInfo);
         _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
                << typeInfo->GetName() << ")");
         string name = ReadTypeName();
@@ -469,6 +526,7 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
                          typeInfo->GetName());
         RegisterObject(object, typeInfo);
         ReadData(object, typeInfo);
+        m.End();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -504,10 +562,11 @@ CObjectInfo CObjectIStream::ReadObject(void)
 {
     try {
         TTypeInfo typeInfo = MapType(ReadTypeName());
-        StackElement m(*this, typeInfo->GetName());
+        CObjectStackNamedFrame m(*this, typeInfo);
         CObjectInfo object(typeInfo);
         RegisterObject(object.GetObjectPtr(), object.GetTypeInfo());
         ReadData(object.GetObjectPtr(), object.GetTypeInfo());
+        m.End();
         return object;
     }
     catch (...) {
@@ -594,12 +653,13 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             {
                 _TRACE("CObjectIStream::ReadPointer: new...");
                 string className = ReadOtherPointer();
-                StackElement m(*this, className);
                 _TRACE("CObjectIStream::ReadPointer: new " << className);
                 TTypeInfo typeInfo = MapType(className);
+                CObjectStackNamedFrame m(*this, typeInfo);
                 TObjectPtr object = typeInfo->Create();
                 RegisterObject(object, declaredType);
                 ReadData(object, declaredType);
+                m.End();
                 ReadOtherPointerEnd();
                 info = CObjectInfo(object, typeInfo);
                 break;
@@ -653,12 +713,13 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
     case eOtherPointer:
         {
             string className = ReadOtherPointer();
-            StackElement m(*this, className);
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
+            CObjectStackNamedFrame m(*this, typeInfo);
             TObjectPtr object = typeInfo->Create();
             RegisterObject(object, typeInfo);
             ReadData(object, typeInfo);
+            m.End();
             ReadOtherPointerEnd();
             return CObjectInfo(object, typeInfo);
         }
@@ -702,7 +763,7 @@ void CObjectIStream::ReadThisPointerEnd(void)
 void CObjectIStream::Skip(TTypeInfo typeInfo)
 {
     try {
-        StackElement m(*this, typeInfo->GetName());
+        CObjectStackNamedFrame m(*this, typeInfo);
         _TRACE("CObjectIStream::Skip(" << typeInfo->GetName() << ")");
         string name = ReadTypeName();
         if ( !name.empty() && name != typeInfo->GetName() )
@@ -711,6 +772,7 @@ void CObjectIStream::Skip(TTypeInfo typeInfo)
                          typeInfo->GetName());
         RegisterObject(0, typeInfo);
         SkipData(typeInfo);
+        m.End();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -758,11 +820,12 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
             {
                 _TRACE("CObjectIStream::ReadPointer: new...");
                 string className = ReadOtherPointer();
-                StackElement m(*this, className);
                 _TRACE("CObjectIStream::ReadPointer: new " << className);
                 TTypeInfo typeInfo = MapType(className);
+                CObjectStackNamedFrame m(*this, typeInfo);
                 RegisterObject(0, typeInfo);
                 SkipData(typeInfo);
+                m.End();
                 ReadOtherPointerEnd();
                 break;
             }
@@ -791,11 +854,12 @@ void CObjectIStream::SkipObjectInfo(void)
     case eOtherPointer:
         {
             string className = ReadOtherPointer();
-            StackElement m(*this, className);
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
+            CObjectStackNamedFrame m(*this, typeInfo);
             RegisterObject(0, typeInfo);
             SkipData(typeInfo);
+            m.End();
             ReadOtherPointerEnd();
             return;
         }
@@ -813,91 +877,56 @@ void CObjectIStream::SkipValue(void)
     THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
-void CObjectIStream::VBegin(Block& )
+void CObjectIStream::EndArray(CObjectStackArray& array)
 {
+    array.End();
 }
 
-bool CObjectIStream::VNext(const Block& )
+void CObjectIStream::ReadArray(CObjectArrayReader& reader,
+                               TTypeInfo arrayType, bool randomOrder,
+                               TTypeInfo elementType)
 {
-    return false;
-}
-
-void CObjectIStream::VEnd(const Block& )
-{
-}
-
-string CObjectIStream::MemberStack(void) const
-{
-    string stack;
-    if ( !m_CurrentElement->AppendStackTo(stack) )
-        stack = "?";
-    return stack;
-}
-
-bool CObjectIStream::StackElement::AppendStackTo(string& s) const
-{
-    bool haveStack = m_Previous && m_Previous->AppendStackTo(s);
-    if ( m_NameType == eNameEmpty )
-        return haveStack;
-    if ( haveStack )
-        s += '.';
-    switch ( m_NameType ) {
-    case eNameCharPtr:
-        s += m_NameCharPtr;
-        break;
-    case eNameString:
-        s += *m_NameString;
-        break;
-    case eNameId:
-        if ( m_NameId->GetName().empty() ) {
-            s += '[';
-            s += NStr::IntToString(m_NameId->GetTag());
-            s += ']';
-        }
-        else {
-            s += m_NameId->GetName();
-        }
-        break;
+    CObjectStackArray array(*this, arrayType, randomOrder);
+    BeginArray(array);
+    
+    CObjectStackArrayElement e(array, elementType);
+    
+    while ( BeginArrayElement(e) ) {
+        reader.ReadFrom(*this);
+        EndArrayElement(e);
     }
-    return true;
+    
+    EndArray(array);
 }
 
-string CObjectIStream::StackElement::ToString(void) const
+void CObjectIStream::EndArrayElement(CObjectStackArrayElement& e)
 {
-    switch ( m_NameType ) {
-    case eNameEmpty:
-        return NcbiEmptyString;
-    case eNameCharPtr:
-        return m_NameCharPtr;
-    case eNameString:
-        return *m_NameString;
-    case eNameId:
-        return m_NameId->ToString();
-    default:
-        return "?";
-    }
+    e.End();
 }
 
-bool CObjectIStream::StackElement::CanClose(void) const
+void CObjectIStream::BeginNamedType(CObjectStackNamedFrame& /*type*/)
 {
-    if ( GetStream().fail() ) {
-        // fail flag already set
-        return false;
-    }
-    else if ( uncaught_exception() ) {
-        // exception thrown without setting fail flag
-        GetStream().SetFailFlags(eFail);
-        return false;
-    }
-    else {
-        // ok
-        _TRACE("CanClose: "<<GetStream().MemberStack());
-        return true;
-    }
 }
 
-void CObjectIStream::EndMember(const Member& )
+void CObjectIStream::EndNamedType(CObjectStackNamedFrame& type)
 {
+    type.End();
+}
+
+void CObjectIStream::EndClass(CObjectStackClass& cls)
+{
+    cls.End();
+}
+
+void CObjectIStream::EndClassMember(CObjectStackClassMember& m)
+{
+    m.End();
+}
+
+void CObjectIStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
+{
+    v.End();
+    v.GetChoiceFrame().End();
 }
 
 size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
@@ -931,11 +960,7 @@ size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
     return length;
 }
 
-void CObjectIStream::Begin(ByteBlock& )
-{
-}
-
-void CObjectIStream::End(const ByteBlock& )
+void CObjectIStream::EndBytes(const ByteBlock& /*b*/)
 {
 }
 
@@ -1086,7 +1111,7 @@ extern "C" {
 }
 
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
-    : StackElement(in, "ASN"),
+    : m_Stream(in),
       m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
@@ -1095,7 +1120,7 @@ CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
 
 CObjectIStream::AsnIo::~AsnIo(void)
 {
-    if ( CanClose() ) {
+    if ( GetStream().InGoodState() ) {
         AsnIoClose(*this);
         GetStream().AsnClose(*this);
     }
@@ -1120,5 +1145,14 @@ size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
     THROW1_TRACE(runtime_error, "illegal call");
 }
 #endif
+
+CObjectArrayReader::~CObjectArrayReader(void)
+{
+}
+
+void CObjectArraySkipper::ReadFrom(CObjectIStream& in)
+{
+    m_TypeInfo->SkipData(in);
+}
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/05/24 20:08:49  vasilche
+* Implemented XML dump.
+*
 * Revision 1.16  2000/04/06 16:11:01  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -108,8 +111,7 @@ BEGIN_NCBI_SCOPE
 template<> \
 TTypeInfo CStdTypeInfo<T>::GetTypeInfo(void) \
 { \
-    static const TTypeInfo typeInfo = \
-        new CStdTypeInfo<T>(typeid(T).name()); \
+    static const TTypeInfo typeInfo = new CStdTypeInfo<T>; \
     return typeInfo; \
 }
 
@@ -130,12 +132,6 @@ INIT_TYPE_INFO(double)
 
 
 CStdTypeInfo<void>::CStdTypeInfo(void)
-    : CParent("void")
-{
-}
-
-CStdTypeInfo<void>::CStdTypeInfo(const char* typeName)
-    : CParent(typeName)
 {
 }
 
@@ -189,12 +185,6 @@ void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
 }
 
 CStdTypeInfo<string>::CStdTypeInfo(void)
-    : CParent("string")
-{
-}
-
-CStdTypeInfo<string>::CStdTypeInfo(const char* typeName)
-    : CParent(typeName)
 {
 }
 
@@ -256,7 +246,6 @@ void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object
 }
 
 CStringStoreTypeInfo::CStringStoreTypeInfo(void)
-    : CParent("StringStore")
 {
 }
 
@@ -288,7 +277,6 @@ void CStringStoreTypeInfo::WriteData(CObjectOStream& out,
 }
 
 CNullBoolTypeInfo::CNullBoolTypeInfo(void)
-    : CParent("NULL")
 {
 }
 

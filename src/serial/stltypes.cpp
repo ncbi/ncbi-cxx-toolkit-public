@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/05/24 20:08:50  vasilche
+* Implemented XML dump.
+*
 * Revision 1.22  2000/05/09 16:38:40  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -125,18 +128,17 @@
 */
 
 #include <serial/stltypes.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CStlOneArgTemplate::CStlOneArgTemplate(const char* templ, TTypeInfo type)
-    : CParent(string(templ) + "< " + type->GetName() + " >"),
-      m_DataType(type)
+CStlOneArgTemplate::CStlOneArgTemplate(TTypeInfo type)
+    : m_DataType(type)
 {
 }
 
-CStlOneArgTemplate::CStlOneArgTemplate(const char* templ, const CTypeRef& type)
-    : CParent(string(templ) + "< ? >"),
-      m_DataType(type)
+CStlOneArgTemplate::CStlOneArgTemplate(const CTypeRef& type)
+    : m_DataType(type)
 {
 }
 
@@ -180,21 +182,16 @@ void CStlOneArgTemplate::NextType(CChildrenTypesIterator& cc) const
     ++cc.GetIndex().m_Index;
 }
 
-CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
-                                         TTypeInfo keyType,
+CStlTwoArgsTemplate::CStlTwoArgsTemplate(TTypeInfo keyType,
                                          TTypeInfo dataType)
-    : CParent(string(templ) + "< " + keyType->GetName() + ", " +
-              dataType->GetName() + " >"),
-      m_KeyId(1), m_ValueId(2),
+    : m_KeyId(1), m_ValueId(2),
       m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
-CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
-                                         const CTypeRef& keyType,
+CStlTwoArgsTemplate::CStlTwoArgsTemplate(const CTypeRef& keyType,
                                          const CTypeRef& dataType)
-    : CParent(string(templ) + "< ?, ? >"),
-      m_KeyId(1), m_ValueId(2),
+    : m_KeyId(1), m_ValueId(2),
       m_KeyType(keyType), m_ValueType(dataType)
 {
 }
@@ -247,17 +244,15 @@ void CStlTwoArgsTemplate::NextType(CChildrenTypesIterator& cc) const
     ++cc.GetIndex().m_Index;
 }
 
-CStlClassInfoMapImpl::CStlClassInfoMapImpl(const char* templ,
-                                           TTypeInfo keyType,
+CStlClassInfoMapImpl::CStlClassInfoMapImpl(TTypeInfo keyType,
                                            TTypeInfo valueType)
-    : CParent(templ, keyType, valueType)
+    : CParent(keyType, valueType)
 {
 }
 
-CStlClassInfoMapImpl::CStlClassInfoMapImpl(const char* templ,
-                                           const CTypeRef& keyType,
+CStlClassInfoMapImpl::CStlClassInfoMapImpl(const CTypeRef& keyType,
                                            const CTypeRef& valueType)
-    : CParent(templ, keyType, valueType)
+    : CParent(keyType, valueType)
 {
 }
 
@@ -274,66 +269,80 @@ bool CStlClassInfoMapImpl::EqualsKeyValuePair(TConstObjectPtr key1,
         GetValueTypeInfo()->Equals(value1, value2);
 }
 
-void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
-                                             TConstObjectPtr key,
-                                             TConstObjectPtr value) const
+const CClassInfoTmpl* CStlClassInfoMapImpl::GetElementType(void) const
 {
-    CObjectOStream::Block block(out, CObjectOStream::Block::eClass, false);
-    block.Next();
-    {
-        CObjectOStream::Member m(out, GetKeyId());
-        GetKeyTypeInfo()->WriteData(out, key);
+    if ( !m_ElementType ) {
+        CClassInfoTmpl* classInfo =
+            new CClassInfoTmpl("", typeid(void), 0);
+        m_ElementType.reset(classInfo);
+        classInfo->GetMembers().AddMember(GetKeyId(), 0);
+        classInfo->GetMembers().AddMember(GetValueId(), 0);
     }
-    block.Next();
-    {
-        CObjectOStream::Member m(out, GetValueId());
-        GetValueTypeInfo()->WriteData(out, value);
-    }
+    return m_ElementType.get();
 }
 
-void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
-                                            TObjectPtr key,
-                                            TObjectPtr value) const
+void CMapArrayReaderBase::ReadFrom(CObjectIStream& in)
 {
-    CObjectIStream::Block block(in, CObjectIStream::Block::eClass, false);
-    if ( !block.Next() ) {
-        THROW1_TRACE(runtime_error, "map key expected");
-    }
-    {
-        CObjectIStream::Member m(in, GetKeyId());
-        GetKeyTypeInfo()->ReadData(in, key);
-    }
-    if ( !block.Next() ) {
-        THROW1_TRACE(runtime_error, "map value expected");
-    }
-    {
-        CObjectIStream::Member m(in, GetValueId());
-        GetValueTypeInfo()->ReadData(in, value);
-    }
-    if ( block.Next() ) {
-        THROW1_TRACE(runtime_error, "too many elements in map pair");
-    }
+    CObjectStackClass cls(in, m_MapTypeInfo->GetElementType(), false);
+    in.BeginClass(cls);
+    ReadElement(in, cls);
+    in.EndClass(cls);
 }
 
-void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
+void CMapArrayWriterBase::WriteTo(CObjectOStream& out)
 {
-    CObjectIStream::Block block(in, CObjectIStream::Block::eClass, false);
-    if ( !block.Next() ) {
-        THROW1_TRACE(runtime_error, "map key expected");
+    CObjectStackClass cls(out, m_MapTypeInfo->GetElementType(), false);
+    out.BeginClass(cls);
+    WriteElement(out, cls);
+    out.EndClass(cls);
+}
+
+void CStlClassInfoMapImpl::ReadKey(CObjectIStream& in,
+                                   CObjectStackClass& cls,
+                                   TObjectPtr keyPtr) const
+{
+    CObjectStackClassMember m(cls);
+    if ( in.BeginClassMember(m, GetElementType()->GetMembers()) != 0 ) {
+        in.EndClass(cls);
+        in.ThrowError(CObjectIStream::eFormatError, "map key expected");
+    }
+    GetKeyTypeInfo()->ReadData(in, keyPtr);
+    in.EndClassMember(m);
+}
+
+void CStlClassInfoMapImpl::ReadValue(CObjectIStream& in,
+                                     CObjectStackClass& cls,
+                                     TObjectPtr valuePtr) const
+{
+    CObjectStackClassMember m(cls);
+    if ( in.BeginClassMember(m, GetElementType()->GetMembers()) != 1 ) {
+        in.EndClass(cls);
+        in.ThrowError(CObjectIStream::eFormatError, "map value expected");
+    }
+    GetValueTypeInfo()->ReadData(in, valuePtr);
+    in.EndClassMember(m);
+}
+
+void CStlClassInfoMapImpl::WriteKeyAndValue(CObjectOStream& out,
+                                            CObjectStackClass& cls,
+                                            TConstObjectPtr keyPtr,
+                                            TConstObjectPtr valuePtr) const
+{
+    {
+        CObjectStackClassMember m(cls, GetKeyId());
+        out.BeginClassMember(m, GetKeyId());
+        
+        GetKeyTypeInfo()->WriteData(out, keyPtr);
+        
+        out.EndClassMember(m);
     }
     {
-        CObjectIStream::Member m(in, GetKeyId());
-        GetKeyTypeInfo()->SkipData(in);
-    }
-    if ( !block.Next() ) {
-        THROW1_TRACE(runtime_error, "map value expected");
-    }
-    {
-        CObjectIStream::Member m(in, GetValueId());
-        GetValueTypeInfo()->SkipData(in);
-    }
-    if ( block.Next() ) {
-        THROW1_TRACE(runtime_error, "too many elements in map pair");
+        CObjectStackClassMember m(cls, GetValueId());
+        out.BeginClassMember(m, GetValueId());
+
+        GetValueTypeInfo()->WriteData(out, valuePtr);
+
+        out.EndClassMember(m);
     }
 }
 

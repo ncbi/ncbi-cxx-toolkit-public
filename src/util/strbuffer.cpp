@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/05/24 20:08:50  vasilche
+* Implemented XML dump.
+*
 * Revision 1.12  2000/05/03 14:38:14  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -384,8 +387,8 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
       m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
-      m_Line(1),
-      m_LineLength(0)
+      m_Line(1), m_LineLength(0),
+      m_BackLimit(0)
 {
 }
 
@@ -398,14 +401,32 @@ COStreamBuffer::~COStreamBuffer(void)
         delete &m_Output;
 }
 
-void COStreamBuffer::FlushBuffer(void)
+void COStreamBuffer::FlushBuffer(bool fullBuffer)
     THROWS((CSerialIOException))
 {
-    size_t count = m_CurrentPos - m_Buffer;
+    size_t used = GetUsedSpace();
+    size_t count;
+    size_t leave;
+    if ( fullBuffer ) {
+        count = used;
+        leave = 0;
+    }
+    else {
+        leave = m_BackLimit;
+        if ( used < leave )
+            return; // none to flush
+        count = used - leave;
+    }
     if ( count != 0 ) {
-        m_CurrentPos = m_Buffer;
         if ( !m_Output.write(m_Buffer, count) )
             THROW1_TRACE(CSerialIOException, "write fault");
+        if ( leave != 0 ) {
+            memmove(m_Buffer, m_Buffer + count, leave);
+            m_CurrentPos -= count;
+        }
+        else {
+            m_CurrentPos = m_Buffer;
+        }
     }
 }
 
@@ -420,19 +441,30 @@ void COStreamBuffer::Flush(void)
 char* COStreamBuffer::DoReserve(size_t count)
     THROWS((CSerialIOException, bad_alloc))
 {
-    FlushBuffer();
-    _ASSERT(m_CurrentPos == m_Buffer);
+    FlushBuffer(false);
+    size_t usedSize = m_CurrentPos - m_Buffer;
+    size_t needSize = usedSize + count;
     size_t bufferSize = m_BufferEnd - m_Buffer;
-    if ( bufferSize < count ) {
+    if ( bufferSize < needSize ) {
         // realloc too small buffer
-        delete[] m_Buffer;
         do {
             bufferSize = BiggerBufferSize(bufferSize);
-        } while ( bufferSize < count );
-        m_CurrentPos = m_Buffer = new char[bufferSize];
-        m_BufferEnd = m_Buffer + bufferSize;
+        } while ( bufferSize < needSize );
+        if ( usedSize == 0 ) {
+            delete[] m_Buffer;
+            m_CurrentPos = m_Buffer = new char[bufferSize];
+            m_BufferEnd = m_Buffer + bufferSize;
+        }
+        else {
+            char* oldBuffer = m_Buffer;
+            m_Buffer = new char[bufferSize];
+            m_BufferEnd = m_Buffer + bufferSize;
+            memcpy(m_Buffer, oldBuffer, usedSize);
+            delete[] oldBuffer;
+            m_CurrentPos = m_Buffer + usedSize;
+        }
     }
-    return m_Buffer;
+    return m_CurrentPos;
 }
 
 void COStreamBuffer::PutInt(int v)
@@ -589,10 +621,10 @@ void COStreamBuffer::Write(const char* data, size_t dataLength)
     THROWS((CSerialIOException, bad_alloc))
 {
     while ( dataLength > 0 ) {
-        size_t available = m_BufferEnd - m_CurrentPos;
+        size_t available = GetFreeSpace();
         if ( available == 0 ) {
-            FlushBuffer();
-            available = m_BufferEnd - m_CurrentPos;
+            FlushBuffer(false);
+            available = GetFreeSpace();
         }
         if ( available >= dataLength )
             break; // current chunk will fit in buffer
@@ -609,10 +641,10 @@ void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
     THROWS((CSerialIOException, bad_alloc))
 {
     for ( ;; ) {
-        size_t available = m_BufferEnd - m_CurrentPos;
+        size_t available = GetFreeSpace();
         if ( available == 0 ) {
-            FlushBuffer();
-            available = m_BufferEnd - m_CurrentPos;
+            FlushBuffer(false);
+            available = GetFreeSpace();
         }
         size_t count = reader.GetObject().Read(m_CurrentPos, available);
         if ( count == 0 ) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/05/24 20:08:50  vasilche
+* Implemented XML dump.
+*
 * Revision 1.19  2000/03/29 15:55:30  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -108,6 +111,10 @@
 
 BEGIN_NCBI_SCOPE
 
+CTypeInfo::CTypeInfo(void)
+{
+}
+
 CTypeInfo::CTypeInfo(const string& name)
     : m_Name(name)
 {
@@ -146,9 +153,9 @@ TTypeInfo CTypeInfo::GetParentTypeInfo(void) const
     return 0;
 }
 
-bool CTypeInfo::IsPointer(void) const
+TTypeInfo CTypeInfo::GetPointedTypeInfo(void) const
 {
-    return false;
+    return 0;
 }
 
 void CTypeInfo::GetPointedObject(CConstObjectInfo& /*object*/) const

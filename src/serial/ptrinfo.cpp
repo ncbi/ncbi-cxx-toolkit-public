@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/05/24 20:08:49  vasilche
+* Implemented XML dump.
+*
 * Revision 1.20  2000/04/10 21:01:49  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -124,10 +127,11 @@
 BEGIN_NCBI_SCOPE
 
 CPointerTypeInfo::CPointerTypeInfo(TTypeInfo type)
-    : CParent(type->GetName() + '*'), m_DataType(type)
+    : CParent(type->GetName()), m_DataType(type)
 {
 }
 
+#ifdef TYPENAME
 CPointerTypeInfo::CPointerTypeInfo(const string& name, TTypeInfo type)
     : CParent(name), m_DataType(type)
 {
@@ -149,6 +153,7 @@ CPointerTypeInfo::CPointerTypeInfo(const char* templ, const char* arg,
     : CParent(string(templ) + "< " + arg + " >"), m_DataType(type)
 {
 }
+#endif
 
 CPointerTypeInfo::~CPointerTypeInfo(void)
 {
@@ -247,9 +252,9 @@ void CPointerTypeInfo::SkipData(CObjectIStream& in) const
     in.SkipPointer(GetDataTypeInfo());
 }
 
-bool CPointerTypeInfo::IsPointer(void) const
+TTypeInfo CPointerTypeInfo::GetPointedTypeInfo(void) const
 {
-    return true;
+    return GetDataTypeInfo();
 }
 
 void CPointerTypeInfo::GetPointedObject(CConstObjectInfo& object) const

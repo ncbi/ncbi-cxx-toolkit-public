@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/05/24 20:08:12  vasilche
+* Implemented XML dump.
+*
 * Revision 1.4  1999/12/17 19:04:53  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -50,13 +53,13 @@
 
 inline
 CMemberId::CMemberId(void)
-    : m_Tag(-1)
+    : m_MemberList(0), m_ExplicitTag(-1), m_Tag(-1)
 {
 }
 
 inline
 CMemberId::CMemberId(TTag tag)
-    : m_Tag(tag)
+    : m_MemberList(0), m_ExplicitTag(tag), m_Tag(tag)
 {
 }
 
@@ -67,9 +70,9 @@ const string& CMemberId::GetName(void) const
 }
 
 inline
-CMemberId::TTag CMemberId::GetTag(void) const
+CMemberId::TTag CMemberId::GetExplicitTag(void) const
 {
-    return m_Tag;
+    return m_ExplicitTag;
 }
 
 #endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */

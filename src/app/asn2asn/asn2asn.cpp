@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/05/24 20:09:54  vasilche
+* Implemented XML dump.
+*
 * Revision 1.14  2000/04/28 16:59:39  vasilche
 * Fixed call to CObjectIStream::Open().
 *
@@ -149,6 +152,7 @@ void PrintUsage(void)
         "  -S  Skip value in file without reading it in memory (no write after)\n" <<
         "  -o  Filename for asn.1 output\n" <<
         "  -s  Output asnfile in binary mode\n" <<
+        "  -x  Output XML file\n" <<
         "  -l  Log errors to file named\n" <<
         "  -c <number>  Repeat action <number> times\n";
     exit(1);
@@ -213,6 +217,9 @@ int CAsn2Asn::Run(void)
                     break;
                 case 's':
                     outFormat = eSerial_AsnBinary;
+                    break;
+                case 'x':
+                    outFormat = eSerial_Xml;
                     break;
                 case 'S':
                     skip = true;

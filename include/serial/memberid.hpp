@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/24 20:08:12  vasilche
+* Implemented XML dump.
+*
 * Revision 1.7  2000/05/09 16:38:32  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -67,7 +70,9 @@
 
 BEGIN_NCBI_SCOPE
 
-// object of CMemberId class holds information about logical object member access:
+class CMembers;
+
+// CMemberId class holds information about logical object member access:
 //     name and/or tag (ASN.1)
 // default value of name is empty string
 // default value of tag is -1
@@ -76,13 +81,14 @@ public:
     typedef int TTag;
 
     CMemberId(void);
+    CMemberId(TTag tag);
     CMemberId(const string& name);
     CMemberId(const string& name, TTag tag);
     CMemberId(const char* name);
     CMemberId(const char* name, TTag tag);
-    CMemberId(TTag tag);
 
     const string& GetName(void) const;       // ASN.1 tag name
+    TTag GetExplicitTag(void) const;         // ASN.1 explicit binary tag value
     TTag GetTag(void) const;                 // ASN.1 binary tag value
     const string& GetXmlName(void) const;    // XML element name
 
@@ -90,10 +96,16 @@ public:
     string ToString(void) const;
 
 private:
+    CMembers* m_MemberList;
+
     // identification
     string m_Name;
-    AutoPtr<string> m_XmlName;
-    TTag m_Tag;
+    TTag m_ExplicitTag;
+
+    friend class CMembers;
+
+    mutable AutoPtr<string> m_XmlName;
+    mutable TTag m_Tag;
 };
 
 #include <serial/memberid.inl>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/05/24 20:08:14  vasilche
+* Implemented XML dump.
+*
 * Revision 1.20  2000/04/28 16:58:03  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -172,15 +175,26 @@ protected:
     virtual void WriteOther(TConstObjectPtr object,
                             CWriteObjectInfo& info);
 
-    virtual void VBegin(Block& block);
-    virtual void VEnd(const Block& block);
-    virtual void StartMember(Member& member, const CMemberId& id);
-    virtual void StartMember(Member& member,
-                             const CMembers& members, TMemberIndex index);
-    virtual void EndMember(const Member& member);
-	virtual void Begin(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block, const char* bytes,
-                            size_t length);
+    virtual void BeginArray(CObjectStackArray& array);
+    virtual void EndArray(CObjectStackArray& array);
+
+    virtual void WriteArray(CObjectArrayWriter& writer,
+                            TTypeInfo arrayType, bool randomOrder,
+                            TTypeInfo elementType);
+
+    virtual void BeginClass(CObjectStackClass& cls);
+    virtual void EndClass(CObjectStackClass& cls);
+    virtual void BeginClassMember(CObjectStackClassMember& m,
+                                  const CMemberId& id);
+    virtual void EndClassMember(CObjectStackClassMember& m);
+
+    virtual void BeginChoiceVariant(CObjectStackChoiceVariant& v,
+                                    const CMemberId& id);
+    virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
+
+	virtual void BeginBytes(const ByteBlock& block);
+	virtual void WriteBytes(const ByteBlock& block,
+                            const char* bytes, size_t length);
 
 private:
 

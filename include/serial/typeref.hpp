@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/24 20:08:16  vasilche
+* Implemented XML dump.
+*
 * Revision 1.7  1999/12/17 19:04:55  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -109,6 +112,15 @@ public:
     TTypeInfo Get(void) const
         {
             return m_Getter(*this);
+        }
+
+    operator bool(void) const
+        {
+            return m_Getter != sx_Abort;
+        }
+    bool operator!(void) const
+        {
+            return m_Getter == sx_Abort;
         }
 
 private:

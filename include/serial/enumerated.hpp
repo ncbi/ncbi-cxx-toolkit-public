@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/24 20:08:11  vasilche
+* Implemented XML dump.
+*
 * Revision 1.7  2000/03/07 14:05:29  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -70,57 +73,9 @@
 */
 
 #include <serial/stdtypes.hpp>
-#include <memory>
-#include <list>
-#include <map>
+#include <serial/enumvalues.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CEnumeratedTypeValues
-{
-public:
-    typedef list< pair<string, long> > TValues;
-    typedef map<const char*, long, StrCmp> TNameToValue;
-    typedef map<long, string> TValueToName;
-
-    CEnumeratedTypeValues(const string& name, bool isInteger);
-    CEnumeratedTypeValues(const char* name, bool isInteger);
-    ~CEnumeratedTypeValues(void);
-
-    const string& GetName(void) const
-        {
-            return m_Name;
-        }
-    bool IsInteger(void) const
-        {
-            return m_Integer;
-        }
-
-    void AddValue(const string& name, long value);
-    void AddValue(const char* name, long value);
-
-    // returns value of enum element, if found
-    // otherwise, throws exception
-    long FindValue(const string& name) const;
-    long FindValue(const char* name) const;
-
-    // returns name of enum element, if found
-    // otherwise, if (allowBadValue == true) returns empty string,
-    // otherwise, throws exception
-    const string& FindName(long value, bool allowBadValue) const;
-
-    TTypeInfo GetTypeInfoForSize(size_t size, long /* dummy */) const;
-
-    const TNameToValue& NameToValue(void) const;
-    const TValueToName& ValueToName(void) const;
-
-private:
-    string m_Name;
-    bool m_Integer;
-    TValues m_Values;
-    mutable auto_ptr<TNameToValue> m_NameToValue;
-    mutable auto_ptr<TValueToName> m_ValueToName;
-};
 
 template<typename T>
 class CEnumeratedTypeInfoTmpl : public CStdTypeInfo<T>

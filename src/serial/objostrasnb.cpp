@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/05/24 20:08:48  vasilche
+* Implemented XML dump.
+*
 * Revision 1.34  2000/05/09 16:38:39  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -160,7 +163,7 @@
 #include <corelib/ncbistre.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/memberid.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
@@ -683,36 +686,79 @@ void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
     WriteEndOfContent();
 }
 
-void CObjectOStreamAsnBinary::VBegin(Block& block)
+void CObjectOStreamAsnBinary::BeginArray(CObjectStackArray& array)
 {
-    WriteShortTag(eUniversal, true, block.RandomOrder()? eSet: eSequence);
+    WriteShortTag(eUniversal, true, array.RandomOrder()? eSet: eSequence);
     WriteIndefiniteLength();
 }
 
-void CObjectOStreamAsnBinary::VEnd(const Block& )
+void CObjectOStreamAsnBinary::EndArray(CObjectStackArray& array)
 {
     WriteEndOfContent();
+    array.End();
 }
 
-void CObjectOStreamAsnBinary::StartMember(Member& , const CMemberId& id)
+void CObjectOStreamAsnBinary::WriteArray(CObjectArrayWriter& writer,
+                                         TTypeInfo arrayType, bool randomOrder,
+                                         TTypeInfo elementType)
+{
+    CObjectStackArray array(*this, arrayType, randomOrder);
+    WriteShortTag(eUniversal, true, randomOrder? eSet: eSequence);
+    WriteIndefiniteLength();
+    
+    CObjectStackArrayElement element(array, elementType);
+    element.Begin();
+
+    while ( !writer.NoMoreElements() ) {
+        writer.WriteTo(*this);
+    }
+    
+    element.End();
+
+    WriteEndOfContent();
+    array.End();
+}
+
+void CObjectOStreamAsnBinary::BeginClass(CObjectStackClass& cls)
+{
+    WriteShortTag(eUniversal, true, cls.RandomOrder()? eSet: eSequence);
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::EndClass(CObjectStackClass& cls)
+{
+    WriteEndOfContent();
+    cls.End();
+}
+
+void CObjectOStreamAsnBinary::BeginClassMember(CObjectStackClassMember& /*m*/,
+                                               const CMemberId& id)
 {
     WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
 }
 
-void CObjectOStreamAsnBinary::StartMember(Member& , const CMembers& members,
-                                          TMemberIndex index)
+void CObjectOStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
 {
-    WriteTag(eContextSpecific, true, members.GetMemberTags()[index]);
+    WriteEndOfContent();
+    m.End();
+}
+
+void CObjectOStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& ,
+                                                 const CMemberId& id)
+{
+    WriteTag(eContextSpecific, true, id.GetTag());
     WriteIndefiniteLength();
 }
 
-void CObjectOStreamAsnBinary::EndMember(const Member& )
+void CObjectOStreamAsnBinary::EndChoiceVariant(CObjectStackChoiceVariant& v)
 {
     WriteEndOfContent();
+    v.End();
+    v.GetChoiceFrame().End();
 }
 
-void CObjectOStreamAsnBinary::Begin(const ByteBlock& block)
+void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)
 {
 	WriteSysTag(eOctetString);
 	WriteLength(block.GetLength());

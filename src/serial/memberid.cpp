@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/05/24 20:08:46  vasilche
+* Implemented XML dump.
+*
 * Revision 1.6  2000/05/09 16:38:38  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -58,26 +61,27 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/memberid.hpp>
+#include <serial/memberlist.hpp>
 
 BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(const string& name)
-    : m_Name(name), m_Tag(-1)
+    : m_MemberList(0), m_Name(name), m_ExplicitTag(-1), m_Tag(-1)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag)
-    : m_Name(name), m_Tag(tag)
+    : m_MemberList(0), m_Name(name), m_ExplicitTag(tag), m_Tag(tag)
 {
 }
 
 CMemberId::CMemberId(const char* name)
-    : m_Name(name), m_Tag(-1)
+    : m_MemberList(0), m_Name(name), m_ExplicitTag(-1), m_Tag(-1)
 {
 }
 
 CMemberId::CMemberId(const char* name, TTag tag)
-    : m_Name(name), m_Tag(tag)
+    : m_MemberList(0), m_Name(name), m_ExplicitTag(tag), m_Tag(tag)
 {
 }
 
@@ -85,10 +89,24 @@ string CMemberId::ToString(void) const
 {
     if ( !m_Name.empty() )
         return m_Name;
-    else if ( m_Tag >= 0 )
-        return '[' + NStr::IntToString(m_Tag) + ']';
     else
-        return "";
+        return '[' + NStr::IntToString(GetTag()) + ']';
+}
+
+CMemberId::TTag CMemberId::GetTag(void) const
+{
+    TTag tag = m_Tag;
+    if ( tag >= 0 )
+        return tag;
+
+    _ASSERT(m_MemberList != 0);
+    m_MemberList->UpdateMemberTags();
+    return m_Tag;
+}
+
+const string& CMemberId::GetXmlName(void) const
+{
+    return m_Name;
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/05/24 20:08:46  vasilche
+* Implemented XML dump.
+*
 * Revision 1.14  2000/05/09 16:38:38  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -102,14 +105,13 @@
 
 BEGIN_NCBI_SCOPE
 
-//CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo::sm_Map;
-
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo typeInfo)
-    : CPointerTypeInfo(typeInfo->GetName(), typeInfo)
+    : CPointerTypeInfo(typeInfo)
 {
     Init();
 }
 
+#ifdef TYPENAME
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(const string& name,
                                                TTypeInfo typeInfo)
     : CPointerTypeInfo(name, typeInfo)
@@ -123,6 +125,7 @@ CChoicePointerTypeInfo::CChoicePointerTypeInfo(const char* name,
 {
     Init();
 }
+#endif
 
 CChoicePointerTypeInfo::~CChoicePointerTypeInfo(void)
 {
@@ -209,36 +212,49 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
 {
     TConstObjectPtr data = GetObjectPointer(object);
     TIndex index = FindVariant(data);
-    CObjectOStream::Member m(out, m_Variants, index);
+    const CMemberId& id = m_Variants.GetMemberId(index);
+
+    CObjectStackChoice choice(out, this);
+    CObjectStackChoiceVariant variant(choice, id);
+
+    out.BeginChoiceVariant(variant, id);
+
     TTypeInfo dataType = m_VariantTypes[index].Get();
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     out.WriteExternalObject(data, dataType);
+
+    out.EndChoiceVariant(variant);
 }
 
 void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
                                       TObjectPtr object) const
 {
-    CObjectIStream::Member m(in, m_Variants);
-    TTypeInfo dataType = m_VariantTypes[m.GetIndex()].Get();
+    CObjectStackChoice choice(in, this);
+    CObjectStackChoiceVariant v(choice);
+    TMemberIndex index = in.BeginChoiceVariant(v, m_Variants);
+    TTypeInfo dataType = m_VariantTypes[index].Get();
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     TObjectPtr data = dataType->Create();
     SetObjectPointer(object, data);
     in.ReadExternalObject(data, dataType);
+    in.EndChoiceVariant(v);
 }
 
 void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
 {
-    CObjectIStream::Member m(in, m_Variants);
-    TTypeInfo dataType = m_VariantTypes[m.GetIndex()].Get();
+    CObjectStackChoice choice(in, this);
+    CObjectStackChoiceVariant v(choice);
+    TMemberIndex index = in.BeginChoiceVariant(v, m_Variants);
+    TTypeInfo dataType = m_VariantTypes[index].Get();
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     in.SkipExternalObject(dataType);
+    in.EndChoiceVariant(v);
 }
 
 CNullTypeInfo::CNullTypeInfo(void)
-    : CParent("0")
 {
 }
 

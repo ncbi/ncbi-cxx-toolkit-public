@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/05/24 20:08:15  vasilche
+* Implemented XML dump.
+*
 * Revision 1.17  2000/03/07 14:05:32  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -160,11 +163,10 @@ public:
     static TTypeInfo GetTypeInfo(void);
 
 protected:
-    CStdTypeInfo(const string& name)
-        : CParent(name)
+    CStdTypeInfo(void)
         {
         }
-    CStdTypeInfo(const char* name)
+    CStdTypeInfo(const string& name)
         : CParent(name)
         {
         }
@@ -204,7 +206,6 @@ protected:
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
 
     CStdTypeInfo(void);
-    CStdTypeInfo(const char* typeName);
     ~CStdTypeInfo(void);
 };
 
@@ -217,7 +218,6 @@ class CStdTypeInfo<string> : public CTypeInfo
     typedef CType<TObjectType> TType;
 public:
     CStdTypeInfo(void);
-    CStdTypeInfo(const char* typeName);
     ~CStdTypeInfo(void);
 
     static TObjectType& Get(TObjectPtr object)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/05/24 20:08:11  vasilche
+* Implemented XML dump.
+*
 * Revision 1.13  2000/03/29 15:55:18  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -111,12 +114,14 @@ public:
     typedef map<const type_info*, TIndex, CTypeInfoOrder> TVariantsByType;
 
     CChoicePointerTypeInfo(TTypeInfo typeInfo);
+#ifdef TYPENAME
     CChoicePointerTypeInfo(const string& name, TTypeInfo typeInfo);
     CChoicePointerTypeInfo(const char* name, TTypeInfo typeInfo);
     CChoicePointerTypeInfo(const char* name, TTypeInfo arg,
                            TTypeInfo typeInfo);
     CChoicePointerTypeInfo(const char* name, const char* arg,
                            TTypeInfo typeInfo);
+#endif
     ~CChoicePointerTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
@@ -153,7 +158,7 @@ public:
     typedef AutoPtr<TDataType> TObjectType;
 
     CChoiceAutoPtrTypeInfo<Data>(TTypeInfo type)
-        : CParent("AutoPtr", type, type)
+        : CParent(type)
         { }
     
     TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const

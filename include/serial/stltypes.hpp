@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/05/24 20:08:15  vasilche
+* Implemented XML dump.
+*
 * Revision 1.37  2000/05/09 16:38:34  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -180,6 +183,7 @@
 #include <serial/typeinfo.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeref.hpp>
+#include <serial/objstack.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/memberid.hpp>
@@ -193,13 +197,15 @@
 
 BEGIN_NCBI_SCOPE
 
+class CClassInfoTmpl;
+
 class CStlOneArgTemplate : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
 
-    CStlOneArgTemplate(const char* templ, TTypeInfo dataType);
-    CStlOneArgTemplate(const char* templ, const CTypeRef& dataType);
+    CStlOneArgTemplate(TTypeInfo dataType);
+    CStlOneArgTemplate(const CTypeRef& dataType);
     ~CStlOneArgTemplate(void);
 
     const CMemberId& GetDataId(void) const
@@ -230,10 +236,8 @@ class CStlTwoArgsTemplate : public CTypeInfo
     typedef CTypeInfo CParent;
 public:
 
-    CStlTwoArgsTemplate(const char* templ,
-                        TTypeInfo keyType, TTypeInfo valueType);
-    CStlTwoArgsTemplate(const char* templ,
-                        const CTypeRef& keyType, const CTypeRef& valueType);
+    CStlTwoArgsTemplate(TTypeInfo keyType, TTypeInfo valueType);
+    CStlTwoArgsTemplate(const CTypeRef& keyType, const CTypeRef& valueType);
     ~CStlTwoArgsTemplate(void);
 
     const CMemberId& GetKeyId(void) const
@@ -279,10 +283,10 @@ public:
     typedef auto_ptr<TDataType> TObjectType;
 
     CStlClassInfo_auto_ptr(TTypeInfo typeInfo)
-        : CParent("auto_ptr", typeInfo, typeInfo)
+        : CParent(typeInfo)
         { }
     CStlClassInfo_auto_ptr(const CTypeRef& typeRef)
-        : CParent("auto_ptr", "?", typeRef)
+        : CParent(typeRef)
         { }
     
     TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
@@ -315,10 +319,10 @@ public:
     typedef CRef<TDataType> TObjectType;
 
     CRefTypeInfo(TTypeInfo typeInfo)
-        : CParent("CRef", typeInfo, typeInfo)
+        : CParent(typeInfo)
         { }
     CRefTypeInfo(const CTypeRef& typeRef)
-        : CParent("CRef", "?", typeRef)
+        : CParent(typeRef)
         { }
     
     TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
@@ -351,10 +355,10 @@ public:
     typedef auto_ptr<TDataType> TObjectType;
 
     CChoiceStlClassInfo_auto_ptr(TTypeInfo info)
-        : CParent("auto_ptr", info, info)
+        : CParent(info)
         { }
     CChoiceStlClassInfo_auto_ptr(const CTypeRef& type)
-        : CParent("auto_ptr", "?", type)
+        : CParent(type)
         { }
     
     TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
@@ -379,6 +383,69 @@ public:
 };
 
 template<typename List>
+class CListArrayReader : public CObjectArrayReader
+{
+public:
+    CListArrayReader(TTypeInfo dataTypeInfo, List& object)
+        : m_DataTypeInfo(dataTypeInfo), m_Object(object)
+        {
+        }
+
+    virtual void ReadFrom(CObjectIStream& in)
+        {
+            m_Object.push_back(typename List::value_type());
+            m_DataTypeInfo->ReadData(in, &m_Object.back());
+        }
+
+private:
+    TTypeInfo m_DataTypeInfo;
+    List& m_Object;
+};
+
+template<typename List>
+class CListArrayWriter : public CObjectArrayWriter
+{
+public:
+    CListArrayWriter(TTypeInfo dataTypeInfo, const List& object)
+        : CObjectArrayWriter(object.empty()), m_DataTypeInfo(dataTypeInfo),
+          m_Iterator(object.begin()), m_End(object.end())
+        {
+        }
+
+    virtual void WriteTo(CObjectOStream& out)
+        {
+            m_DataTypeInfo->WriteData(out, &*m_Iterator);
+            m_NoMoreElements = ++m_Iterator == m_End;
+        }
+
+private:
+    TTypeInfo m_DataTypeInfo;
+    typename List::const_iterator m_Iterator;
+    typename List::const_iterator m_End;
+};
+
+template<typename Set>
+class CSetArrayReader : public CObjectArrayReader
+{
+public:
+    CSetArrayReader(TTypeInfo dataTypeInfo, Set& object)
+        : m_DataTypeInfo(dataTypeInfo), m_Object(object)
+        {
+        }
+
+    virtual void ReadFrom(CObjectIStream& in)
+        {
+            typename Set::value_type data;
+            m_DataTypeInfo->ReadData(in, &data);
+            m_Object.insert(data);
+        }
+
+private:
+    TTypeInfo m_DataTypeInfo;
+    Set& m_Object;
+};
+
+template<typename List>
 class CStlListTemplateImpl : public CStlOneArgTemplate
 {
     typedef CStlOneArgTemplate CParent;
@@ -386,13 +453,13 @@ public:
     typedef List TObjectType;
     typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlListTemplateImpl(const char* templ, TTypeInfo dataType,
+    CStlListTemplateImpl(TTypeInfo dataType,
                          bool randomOrder = false)
-        : CParent(templ, dataType), m_RandomOrder(randomOrder)
+        : CParent(dataType), m_RandomOrder(randomOrder)
         { }
-    CStlListTemplateImpl(const char* templ, const CTypeRef& dataType,
+    CStlListTemplateImpl(const CTypeRef& dataType,
                          bool randomOrder = false)
-        : CParent(templ, dataType), m_RandomOrder(randomOrder)
+        : CParent(dataType), m_RandomOrder(randomOrder)
         { }
 
     bool RandomOrder(void) const
@@ -475,9 +542,8 @@ public:
             Reserve(dst, from.size());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             size_t index = 0;
-            for ( TConstIterator i = from.begin(); i != from.end();
-                  ++i, ++index ) {
-                dataTypeInfo->Assign(AddEmpty(dst, index), &*i);
+            for ( TConstIterator i = from.begin(); i != from.end(); ++i ) {
+                dataTypeInfo->Assign(AddEmpty(dst, index++), &*i);
             }
         }
 
@@ -528,30 +594,21 @@ public:
 protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
-            const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::Block block(out, RandomOrder());
-            for ( TConstIterator i = l.begin(); i != l.end(); ++i ) {
-                block.Next();
-                dataTypeInfo->WriteData(out, &*i);
-            }
+            CListArrayWriter<List> writer(dataTypeInfo, Get(object));
+            out.WriteArray(writer, this, RandomOrder(), GetDataTypeInfo());
         }
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            CObjectIStream::Block block(in, RandomOrder());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            while ( block.Next() ) {
-                dataTypeInfo->ReadData(in, AddEmpty(object, block.GetIndex()));
-            }
+            CListArrayReader<List> reader(dataTypeInfo, Get(object));
+            in.ReadArray(reader, this, RandomOrder(), dataTypeInfo);
         }
 
     virtual void SkipData(CObjectIStream& in) const
         {
-            CObjectIStream::Block block(in, RandomOrder());
-            TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            while ( block.Next() )
-                dataTypeInfo->SkipData(in);
+            in.SkipArray(this, RandomOrder(), GetDataTypeInfo());
         }
 
     virtual void Reserve(TObjectPtr object, size_t length) const = 0;
@@ -569,10 +626,10 @@ public:
     typedef Data TDataType;
 
     CStlClassInfo_list(TTypeInfo typeInfo, bool randomOrder = false)
-        : CParent("std::list", typeInfo, randomOrder)
+        : CParent(typeInfo, randomOrder)
         { }
     CStlClassInfo_list(const CTypeRef& typeRef, bool randomOrder = false)
-        : CParent("std::list", typeRef, randomOrder)
+        : CParent(typeRef, randomOrder)
         { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo info)
@@ -597,7 +654,7 @@ protected:
             Get(object).clear();
         }
 
-    virtual TObjectPtr AddEmpty(TObjectPtr object, size_t ) const
+    virtual TObjectPtr AddEmpty(TObjectPtr object, size_t /*index*/) const
         {
             TObjectType& l = Get(object);
             l.push_back(TDataType());
@@ -613,10 +670,10 @@ public:
     typedef Data TDataType;
 
     CStlClassInfo_vector(TTypeInfo info)
-        : CParent("std::vector", info)
+        : CParent(info)
         { }
     CStlClassInfo_vector(const CTypeRef& typeRef)
-        : CParent("std::vector", typeRef)
+        : CParent(typeRef)
         { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo info)
@@ -641,7 +698,7 @@ protected:
             TObjectType& l = Get(object);
             if ( index >= l.size() )
                 l.push_back(TDataType());
-            return &(l[index]);
+            return &l[index];
         }
 };
 
@@ -652,12 +709,12 @@ class CStlClassInfoSetBase : public CStlListTemplateImpl<Set>
 public:
     typedef Data TDataType;
 
-    CStlClassInfoSetBase(const char* templ, TTypeInfo type)
-        : CParent(templ, type, true)
+    CStlClassInfoSetBase(TTypeInfo type)
+        : CParent(type, true)
         {
         }
-    CStlClassInfoSetBase(const char* templ, const CTypeRef& typeRef)
-        : CParent(templ, typeRef, true)
+    CStlClassInfoSetBase(const CTypeRef& typeRef)
+        : CParent(typeRef, true)
         {
         }
 
@@ -677,16 +734,12 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            TObjectType& o = Get(object);
-            CObjectIStream::Block block(in, RandomOrder());
-            while ( block.Next() ) {
-                Data data;
-                GetDataTypeInfo()->ReadData(in, &data);
-                o.insert(data);
-            }
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            CSetArrayReader<Set> reader(dataTypeInfo, Get(object));
+            in.ReadArray(reader, this, RandomOrder(), dataTypeInfo);
         }
 
-    virtual TObjectPtr AddEmpty(TObjectPtr , size_t ) const
+    virtual TObjectPtr AddEmpty(TObjectPtr , size_t) const
         {
             return 0;
         }
@@ -699,11 +752,11 @@ class CStlClassInfo_set :
     typedef CStlClassInfoSetBase<set<Data>, Data> CParent;
 public:
     CStlClassInfo_set(TTypeInfo info)
-        : CParent("std::set", info)
+        : CParent(info)
         {
         }
     CStlClassInfo_set(const CTypeRef& typeRef)
-        : CParent("std::set", typeRef)
+        : CParent(typeRef)
         {
         }
 
@@ -720,11 +773,11 @@ class CStlClassInfo_multiset :
     typedef CStlClassInfoSetBase<multiset<Data>, Data> CParent;
 public:
     CStlClassInfo_multiset(TTypeInfo dataType)
-        : CParent("std::multiset", dataType)
+        : CParent(dataType)
         {
         }
     CStlClassInfo_multiset(const CTypeRef& dataType)
-        : CParent("std::multiset", dataType)
+        : CParent(dataType)
         {
         }
 
@@ -739,20 +792,126 @@ class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
     typedef CStlTwoArgsTemplate CParent;
 public:
 
-    CStlClassInfoMapImpl(const char* templ,
-                         TTypeInfo keyType, TTypeInfo valueType);
-    CStlClassInfoMapImpl(const char* templ,
-                         const CTypeRef& keyType, const CTypeRef& valueType);
+    CStlClassInfoMapImpl(TTypeInfo keyType, TTypeInfo valueType);
+    CStlClassInfoMapImpl(const CTypeRef& keyType, const CTypeRef& valueType);
     ~CStlClassInfoMapImpl(void);
 
-protected:
-    void WriteKeyValuePair(CObjectOStream& out,
-                           TConstObjectPtr key, TConstObjectPtr value) const;
-    void ReadKeyValuePair(CObjectIStream& in,
-                          TObjectPtr key, TObjectPtr value) const;
-    void SkipKeyValuePair(CObjectIStream& in) const;
+    const CClassInfoTmpl* GetElementType(void) const;
+
+    void WriteKeyAndValue(CObjectOStream& out, CObjectStackClass& cls,
+                          TConstObjectPtr key, TConstObjectPtr value) const;
+    void ReadKey(CObjectIStream& in, CObjectStackClass& cls,
+                 TObjectPtr keyPtr) const;
+    void ReadValue(CObjectIStream& in, CObjectStackClass& cls,
+                   TObjectPtr valuePtr) const;
     bool EqualsKeyValuePair(TConstObjectPtr key1, TConstObjectPtr key2,
                             TConstObjectPtr value1, TConstObjectPtr value2) const;
+
+private:
+    mutable AutoPtr<const CClassInfoTmpl> m_ElementType;
+};
+
+class CMapArrayWriterBase : public CObjectArrayWriter
+{
+public:
+    CMapArrayWriterBase(const CStlClassInfoMapImpl* mapTypeInfo, bool empty)
+        : CObjectArrayWriter(empty), m_MapTypeInfo(mapTypeInfo)
+        {
+        }
+
+    virtual void WriteTo(CObjectOStream& out);
+
+protected:
+    virtual void WriteElement(CObjectOStream& out, CObjectStackClass& cls) = 0;
+
+    const CStlClassInfoMapImpl* m_MapTypeInfo;
+};
+
+template<typename Map>
+class CMapArrayWriter : public CMapArrayWriterBase
+{
+public:
+    CMapArrayWriter(const CStlClassInfoMapImpl* mapTypeInfo, const Map& object)
+        : CMapArrayWriterBase(mapTypeInfo, object.empty()),
+          m_Iterator(object.begin()), m_End(object.end())
+        {
+        }
+
+protected:
+    virtual void WriteElement(CObjectOStream& out, CObjectStackClass& cls)
+        {
+            m_MapTypeInfo->WriteKeyAndValue(out, cls,
+                                            &m_Iterator->first,
+                                            &m_Iterator->second);
+            m_NoMoreElements = ++m_Iterator == m_End;
+        }
+
+private:
+    typename Map::const_iterator m_Iterator;
+    typename Map::const_iterator m_End;
+};
+
+class CMapArrayReaderBase : public CObjectArrayReader
+{
+public:
+    CMapArrayReaderBase(const CStlClassInfoMapImpl* mapTypeInfo)
+        : m_MapTypeInfo(mapTypeInfo)
+        {
+        }
+
+    virtual void ReadFrom(CObjectIStream& in);
+
+protected:
+    virtual void ReadElement(CObjectIStream& in, CObjectStackClass& cls) = 0;
+
+    const CStlClassInfoMapImpl* m_MapTypeInfo;
+};
+
+template<typename Key, typename Value>
+class CArrayReader_map : public CMapArrayReaderBase
+{
+public:
+    CArrayReader_map(const CStlClassInfoMapImpl* mapTypeInfo,
+                     map<Key, Value>& object)
+        : CMapArrayReaderBase(mapTypeInfo), m_Object(object)
+        {
+        }
+
+protected:
+    virtual void ReadElement(CObjectIStream& in, CObjectStackClass& cls)
+        {
+            Key key;
+            m_MapTypeInfo->ReadKey(in, cls, &key);
+            m_MapTypeInfo->ReadValue(in, cls, &m_Object[key]);
+        }
+
+private:
+    map<Key, Value>& m_Object;
+};
+
+template<typename Key, typename Value>
+class CArrayReader_multimap : public CMapArrayReaderBase
+{
+public:
+    CArrayReader_multimap(const CStlClassInfoMapImpl* mapTypeInfo,
+                          multimap<Key, Value>& object)
+        : CMapArrayReaderBase(mapTypeInfo), m_Object(object)
+        {
+        }
+    
+protected:
+    virtual void ReadElement(CObjectIStream& in, CObjectStackClass& cls)
+        {
+            Key key;
+            m_MapTypeInfo->ReadKey(in, cls, &key);
+            Value value;
+            m_MapTypeInfo->ReadValue(in, cls, &value);
+            m_Object.insert(typename multimap<Key, Value>::value_type(key,
+                                                                      value));
+        }
+
+private:
+    multimap<Key, Value>& m_Object;
 };
 
 template<class Map, typename Key, typename Value>
@@ -766,14 +925,12 @@ public:
     typedef Map TObjectType;
     typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlClassInfoMapBase(const char* templ,
-                         TTypeInfo keyType, TTypeInfo dataType)
-        : CParent(templ, keyType, dataType)
+    CStlClassInfoMapBase(TTypeInfo keyType, TTypeInfo dataType)
+        : CParent(keyType, dataType)
         {
         }
-    CStlClassInfoMapBase(const char* templ,
-                         const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent(templ, keyType, dataType)
+    CStlClassInfoMapBase(const CTypeRef& keyType, const CTypeRef& dataType)
+        : CParent(keyType, dataType)
         {
         }
 
@@ -941,33 +1098,13 @@ public:
 protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
-            const TObjectType& o = Get(object);
-            CObjectOStream::Block block(out, true);
-            for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
-                block.Next();
-                WriteKeyValuePair(out, &i->first, &i->second);
-            }
-        }
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            TObjectType& o = Get(object);
-            CObjectIStream::Block block(in, true);
-            while ( block.Next() ) {
-                TKeyType key;
-                TValueType value;
-                ReadKeyValuePair(in, &key, &value);
-                typename TObjectType::value_type insert(key, value);
-                o.insert(insert);
-            }
+            CMapArrayWriter<Map> writer(this, Get(object));
+            out.WriteArray(writer, this, true, GetElementType());
         }
 
     virtual void SkipData(CObjectIStream& in) const
         {
-            CObjectIStream::Block block(in, true);
-            while ( block.Next() ) {
-                SkipKeyValuePair(in);
-            }
+            in.SkipArray(this, true, GetElementType());
         }
 };
 
@@ -979,17 +1116,24 @@ class CStlClassInfo_map :
 
 public:
     CStlClassInfo_map(TTypeInfo keyType, TTypeInfo dataType)
-        : CParent("std::map", keyType, dataType)
+        : CParent(keyType, dataType)
         {
         }
     CStlClassInfo_map(const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent("std::map", keyType, dataType)
+        : CParent(keyType, dataType)
         {
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo keyInfo, TTypeInfo dataInfo)
         {
             return new CStlClassInfo_map<Key, Value>(keyInfo, dataInfo);
+        }
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            CArrayReader_map<Key, Value> reader(this, Get(object));
+            in.ReadArray(reader, this, true, GetElementType());
         }
 };
 
@@ -1001,17 +1145,24 @@ class CStlClassInfo_multimap :
 
 public:
     CStlClassInfo_multimap(TTypeInfo keyInfo, TTypeInfo dataInfo)
-        : CParent("std::multimap", keyType, dataType)
+        : CParent(keyType, dataType)
         {
         }
     CStlClassInfo_multimap(const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent("std::multimap", keyType, dataType)
+        : CParent(keyType, dataType)
         {
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo keyInfo, TTypeInfo dataInfo)
         {
             return new CStlClassInfo_multimap<Key, Value>(keyInfo, dataInfo);
+        }
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            CArrayReader_multimap<Key, Value> reader(this, Get(object));
+            in.ReadArray(reader, this, true, GetElementType());
         }
 };
 
@@ -1024,7 +1175,6 @@ public:
     typedef Char TChar;
 
     CStlClassInfoChar_vector<Char>(void)
-        : CParent("vector< ? char >")
         {
         }
 
@@ -1095,7 +1245,7 @@ protected:
             }
             else {
                 // length is known -> copy via buffer
-                Char buffer[1024];
+                Char buffer[4096];
                 size_t count;
                 o.clear();
                 while ( (count = block.Read(ToChar(buffer),

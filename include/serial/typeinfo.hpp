@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/05/24 20:08:16  vasilche
+* Implemented XML dump.
+*
 * Revision 1.25  2000/05/09 16:38:34  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -172,6 +175,7 @@ public:
     typedef int TMemberIndex;
 
 protected:
+    CTypeInfo(void);
     CTypeInfo(const string& name);
     CTypeInfo(const char* name);
 public:
@@ -224,7 +228,11 @@ public:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
 
-    virtual bool IsPointer(void) const;
+    virtual TTypeInfo GetPointedTypeInfo(void) const;
+    bool IsPointer(void) const
+        {
+            return GetPointedTypeInfo() != 0;
+        }
     virtual void GetPointedObject(CConstObjectInfo& object) const;
     virtual void GetPointedObject(CObjectInfo& object) const;
 

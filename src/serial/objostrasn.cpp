@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/05/24 20:08:48  vasilche
+* Implemented XML dump.
+*
 * Revision 1.37  2000/05/09 19:04:56  vasilche
 * Fixed bug in storing float point number to text ASN.1 format.
 *
@@ -179,7 +182,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/memberid.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <math.h>
 #if HAVE_WINDOWS_H
@@ -200,11 +203,13 @@ CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out)
     : CObjectOStream(out)
 {
+    m_Output.SetBackLimit(80);
 }
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut)
 {
+    m_Output.SetBackLimit(80);
 }
 
 CObjectOStreamAsn::~CObjectOStreamAsn(void)
@@ -390,38 +395,97 @@ void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
     WriteObject(object, info);
 }
 
-void CObjectOStreamAsn::VBegin(Block& )
+void CObjectOStreamAsn::BeginArray(CObjectStackArray& /*array*/)
 {
     m_Output.PutChar('{');
     m_Output.IncIndentLevel();
 }
 
-void CObjectOStreamAsn::VNext(const Block& block)
-{
-    if ( !block.First() ) {
-        m_Output.PutChar(',');
-    }
-    m_Output.PutEol();
-}
-
-void CObjectOStreamAsn::VEnd(const Block& )
+void CObjectOStreamAsn::EndArray(CObjectStackArray& array)
 {
     m_Output.DecIndentLevel();
     m_Output.PutEol();
     m_Output.PutChar('}');
+    array.End();
 }
 
-void CObjectOStreamAsn::StartMember(Member& , const CMemberId& id)
+void CObjectOStreamAsn::BeginArrayElement(CObjectStackArrayElement& e)
+{
+    if ( e.GetArrayFrame().IsEmpty() )
+        e.GetArrayFrame().SetNonEmpty();
+    else
+        m_Output.PutChar(',');
+    
+    m_Output.PutEol();
+    e.Begin();
+}
+
+void CObjectOStreamAsn::WriteArray(CObjectArrayWriter& writer,
+                                   TTypeInfo arrayType, bool randomOrder,
+                                   TTypeInfo elementType)
+{
+    CObjectStackArray array(*this, arrayType, randomOrder);
+    m_Output.PutChar('{');
+    
+    if ( !writer.NoMoreElements() ) {
+        CObjectStackArrayElement element(array, elementType);
+        element.Begin();
+        
+        m_Output.IncIndentLevel();
+
+        m_Output.PutEol();
+        writer.WriteTo(*this);
+        
+        while ( !writer.NoMoreElements() ) {
+            m_Output.PutChar(',');
+            m_Output.PutEol();
+            writer.WriteTo(*this);
+        }
+        
+        m_Output.DecIndentLevel();
+
+        element.End();
+    }
+    m_Output.PutEol();
+    m_Output.PutChar('}');
+    array.End();
+}
+
+void CObjectOStreamAsn::BeginClass(CObjectStackClass& /*cls*/)
+{
+    m_Output.PutChar('{');
+    m_Output.IncIndentLevel();
+}
+
+void CObjectOStreamAsn::EndClass(CObjectStackClass& cls)
+{
+    m_Output.DecIndentLevel();
+    m_Output.PutEol();
+    m_Output.PutChar('}');
+    cls.End();
+}
+
+void CObjectOStreamAsn::BeginClassMember(CObjectStackClassMember& m,
+                                         const CMemberId& id)
+{
+    if ( m.GetClassFrame().IsEmpty() )
+        m.GetClassFrame().SetNonEmpty();
+    else
+        m_Output.PutChar(',');
+    
+    m_Output.PutEol();
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
+}
+
+void CObjectOStreamAsn::BeginChoiceVariant(CObjectStackChoiceVariant& /*v*/,
+                                           const CMemberId& id)
 {
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
 }
 
-void CObjectOStreamAsn::EndMember(const Member& )
-{
-}
-
-void CObjectOStreamAsn::Begin(const ByteBlock& )
+void CObjectOStreamAsn::BeginBytes(const ByteBlock& )
 {
 	m_Output.PutChar('\'');
 }
@@ -439,7 +503,7 @@ void CObjectOStreamAsn::WriteBytes(const ByteBlock& ,
 	}
 }
 
-void CObjectOStreamAsn::End(const ByteBlock& )
+void CObjectOStreamAsn::EndBytes(const ByteBlock& )
 {
     m_Output.WrapAt(78, false);
 	m_Output.PutString("\'H");

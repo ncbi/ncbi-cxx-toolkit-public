@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/05/24 20:08:13  vasilche
+* Implemented XML dump.
+*
 * Revision 1.37  2000/05/09 16:38:34  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -175,17 +178,37 @@
 #include <serial/objlist.hpp>
 #include <serial/object.hpp>
 #include <serial/strbuffer.hpp>
+#include <serial/memberlist.hpp>
+#include <serial/objstack.hpp>
 #include <map>
 
 struct asnio;
 
 BEGIN_NCBI_SCOPE
 
-class CMembers;
 class CMemberId;
 class CDelayBuffer;
 
-class CObjectOStream
+class CObjectArrayWriter
+{
+public:
+    CObjectArrayWriter(bool empty = true)
+        : m_NoMoreElements(empty)
+        {
+        }
+    virtual ~CObjectArrayWriter(void);
+
+    bool NoMoreElements(void) const
+        {
+            return m_NoMoreElements;
+        }
+    virtual void WriteTo(CObjectOStream& out) = 0;
+
+protected:
+    bool m_NoMoreElements;
+};
+
+class CObjectOStream : public CObjectStack
 {
 public:
     typedef unsigned TIndex;
@@ -305,110 +328,33 @@ public:
 
     virtual bool Write(const CRef<CByteSource>& source);
 
-    class StackElement {
-    public:
-        enum ENameType {
-            eNameEmpty,
-            eNameCharPtr,
-            eNameString,
-            eNameId
-        };
-    public:
-        StackElement(CObjectOStream& s);
-        StackElement(CObjectOStream& s, const string& str);
-        StackElement(CObjectOStream& s, const char* str);
-        StackElement(CObjectOStream& s, const CMemberId& id);
-        ~StackElement(void);
-
-        void SetName(const char* str);
-        void SetName(const string& str);
-        void SetName(const CMemberId& id);
-
-        CObjectOStream& GetStream(void) const;
-        const StackElement* GetPrevous(void) const;
-
-        string ToString(void) const;
-
-        bool CanClose(void) const;
-
-    private:
-        CObjectOStream& m_Stream;
-        friend class CObjectOStream;
-        const StackElement* m_Previous;
-
-    protected:
-        union {
-            const char* m_NameCharPtr;
-            const string* m_NameString;
-            const CMemberId* m_NameId;
-        };
-        char m_NameType;
-
-    private:
-        // to prevent allocation in heap
-        void *operator new(size_t size);
-        void *operator new(size_t size, size_t count);
-        // to prevent copying
-        StackElement(const StackElement&);
-        StackElement& operator=(const StackElement&);
-    };
-    string MemberStack(void) const;
-    class Member : public StackElement
-    {
-    public:
-        Member(CObjectOStream& out, const CMemberId& member);
-        Member(CObjectOStream& out,
-               const CMembers& members, TMemberIndex index);
-        ~Member(void);
-    };
-    // block interface
-    class Block : public StackElement
-    {
-    public:
-        enum EClass {
-            eClass
-        };
-        Block(CObjectOStream& out, bool randomOrder);
-        Block(CObjectOStream& out, EClass isClass, bool randomOrder);
-        ~Block(void);
-
-        void Next(void);
-
-        bool RandomOrder(void) const;
-
-        size_t GetNextIndex(void) const;
-        size_t GetIndex(void) const;
-        bool First(void) const;
-        size_t GetSize(void) const;
-
-    protected:
-        void IncIndex(void);
-
-    private:
-        bool m_RandomOrder;
-        size_t m_NextIndex;
-        size_t m_Size;
-    };
-	class ByteBlock : public StackElement
+	class ByteBlock;
+	friend class ByteBlock;
+	class ByteBlock
     {
 	public:
 		ByteBlock(CObjectOStream& out, size_t length);
 		~ByteBlock(void);
+
+        CObjectOStream& GetStream(void) const;
 
 		size_t GetLength(void) const;
 
 		void Write(const void* bytes, size_t length);
 
 	private:
+        CObjectOStream& m_Stream;
 		size_t m_Length;
 	};
 
 #if HAVE_NCBI_C
-    class AsnIo : public StackElement
+    class AsnIo
     {
     public:
         AsnIo(CObjectOStream& out, const string& rootTypeName);
         ~AsnIo(void);
+
+        CObjectOStream& GetStream(void) const;
 
         void Write(const char* data, size_t length);
 
@@ -417,6 +363,7 @@ public:
         const string& GetRootTypeName(void) const;
 
     private:
+        CObjectOStream& m_Stream;
         string m_RootTypeName;
         asnio* m_AsnIo;
 
@@ -429,28 +376,43 @@ protected:
     virtual void AsnOpen(AsnIo& asn);
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
     virtual void AsnClose(AsnIo& asn);
+
+public:
 #endif
 
-protected:
-    // block interface
-    friend class StackElement;
-    friend class Block;
-    friend class Member;
-	friend class ByteBlock;
-    virtual void VBegin(Block& block);
-    virtual void VNext(const Block& block);
-    virtual void VEnd(const Block& block);
-    // write member name
-    virtual void StartMember(Member& member, const CMemberId& id) = 0;
-    virtual void StartMember(Member& member,
-                             const CMembers& ids, TMemberIndex index);
-    virtual void EndMember(const Member& member);
+    // array interface
+    virtual void BeginArray(CObjectStackArray& array) = 0;
+    virtual void EndArray(CObjectStackArray& array);
+
+    virtual void BeginArrayElement(CObjectStackArrayElement& element);
+    virtual void EndArrayElement(CObjectStackArrayElement& element);
+
+    virtual void WriteArray(CObjectArrayWriter& writer,
+                            TTypeInfo arrayType, bool randomOrder,
+                            TTypeInfo elementType);
+
+    // class interface
+    virtual void BeginNamedType(CObjectStackNamedFrame& namedType);
+    virtual void EndNamedType(CObjectStackNamedFrame& namedType);
+
+    virtual void BeginClass(CObjectStackClass& cls) = 0;
+    virtual void EndClass(CObjectStackClass& cls);
+
+    virtual void BeginClassMember(CObjectStackClassMember& member,
+                                  const CMemberId& id) = 0;
+    virtual void EndClassMember(CObjectStackClassMember& member);
+
+    virtual void BeginChoiceVariant(CObjectStackChoiceVariant& variant,
+                                    const CMemberId& id) = 0;
+    virtual void EndChoiceVariant(CObjectStackChoiceVariant& variant);
+
 	// write byte blocks
-	virtual void Begin(const ByteBlock& block);
+	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length) = 0;
-	virtual void End(const ByteBlock& block);
+	virtual void EndBytes(const ByteBlock& block);
 
+protected:
     // low level writers
     virtual void WritePointer(TConstObjectPtr object,
                               CWriteObjectInfo& info,
@@ -496,9 +458,6 @@ protected:
 
 protected:
     COStreamBuffer m_Output;
-
-private:
-    const StackElement* m_CurrentElement;
 };
 
 #include <serial/objostr.inl>

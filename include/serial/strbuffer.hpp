@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/05/24 20:08:16  vasilche
+* Implemented XML dump.
+*
 * Revision 1.10  2000/05/03 14:38:06  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -235,10 +238,16 @@ public:
         }
     void DecIndentLevel(size_t step = 2) THROWS_NONE
         {
+            _ASSERT(m_IndentLevel >= step);
             m_IndentLevel -= step;
         }
 
-    void FlushBuffer(void) THROWS((CSerialIOException));
+    void SetBackLimit(size_t limit)
+        {
+            m_BackLimit = limit;
+        }
+
+    void FlushBuffer(bool fullBuffer = true) THROWS((CSerialIOException));
     void Flush(void) THROWS((CSerialIOException));
 
 protected:
@@ -297,6 +306,12 @@ public:
         {
             *Skip(1) = c;
         }
+    void BackChar(char _DEBUG_ARG(c))
+        {
+            _ASSERT(m_CurrentPos > m_Buffer);
+            --m_CurrentPos;
+            _ASSERT(*m_CurrentPos == c);
+        }
 
     void PutString(const char* str, size_t length)
         THROWS((CSerialIOException, bad_alloc))
@@ -329,7 +344,7 @@ public:
     void PutEol(bool indent = true)
         THROWS((CSerialIOException, bad_alloc))
         {
-            char* pos = Reserve(81); // EOL + full next line
+            char* pos = Reserve(1);
             *pos = '\n';
             m_CurrentPos = pos + 1;
             ++m_Line;
@@ -373,6 +388,19 @@ private:
     CNcbiOstream& m_Output;
     bool m_DeleteOutput;
 
+    size_t GetUsedSpace(void) const
+        {
+            return m_CurrentPos - m_Buffer;
+        }
+    size_t GetFreeSpace(void) const
+        {
+            return m_BufferEnd - m_CurrentPos;
+        }
+    size_t GetBufferSize(void) const
+        {
+            return m_BufferEnd - m_Buffer;
+        }
+
     size_t m_IndentLevel;
 
     char* m_Buffer;           // buffer pointer
@@ -380,6 +408,7 @@ private:
     char* m_BufferEnd;       // end of valid content in buffer
     size_t m_Line;            // current line counter
     size_t m_LineLength;
+    size_t m_BackLimit;
 };
 
 END_NCBI_SCOPE

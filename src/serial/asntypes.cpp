@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/05/24 20:08:45  vasilche
+* Implemented XML dump.
+*
 * Revision 1.38  2000/05/09 16:38:37  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -180,6 +183,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <serial/objstack.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/classinfo.hpp>
@@ -209,7 +213,7 @@ TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type)
-    : CParent("SEQUENCE OF " + type->GetName()), m_DataType(type)
+    : m_DataType(type)
 {
 	Init();
 }
@@ -369,25 +373,41 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
                                     TConstObjectPtr object) const
 {
-    CObjectOStream::Block block(out, RandomOrder());
     TTypeInfo dataType = GetDataTypeInfo();
+
+    CObjectStackArray array(out, this, RandomOrder());
+    out.BeginArray(array);
+
+    CObjectStackArrayElement element(array, dataType);
+
     for ( object = FirstNode(object); object; object = NextNode(object) ) {
-        block.Next();
+        out.BeginArrayElement(element);
+
         dataType->WriteData(out, Data(object));
+
+        out.EndArrayElement(element);
     }
+
+    out.EndArray(array);
 }
 
 void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::ReadData(" <<
+    TTypeInfo dataType = GetDataTypeInfo();
+    _TRACE("SequenceOf<" << dataType->GetName() << ">::ReadData(" <<
            NStr::PtrToString(object) << ")");
-    CObjectIStream::Block block(in, RandomOrder());
-    if ( !block.Next() ) {
+
+    CObjectStackArray array(in, this, RandomOrder());
+    in.BeginArray(array);
+
+    CObjectStackArrayElement e(array, dataType);
+
+    if ( !in.BeginArrayElement(e) ) {
         FirstNode(object) = 0;
+        in.EndArray(array);
         return;
     }
-    TTypeInfo dataType = GetDataTypeInfo();
 
     TObjectPtr next = FirstNode(object);
     if ( next == 0 ) {
@@ -399,9 +419,9 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     object = next;
 
     dataType->ReadData(in, Data(object));
+    in.EndArrayElement(e);
 
-    while ( block.Next() ) {
-
+    while ( in.BeginArrayElement(e) ) {
         next = NextNode(object);
         if ( next == 0 ) {
             ERR_POST(Warning << "null sequence pointer"); 
@@ -412,17 +432,15 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
         object = next;
 
         dataType->ReadData(in, Data(object));
+        in.EndArrayElement(e);
     }
+
+    in.EndArray(array);
 }
 
 void CSequenceOfTypeInfo::SkipData(CObjectIStream& in) const
 {
-    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::SkipData()");
-    CObjectIStream::Block block(in, RandomOrder());
-    TTypeInfo dataType = GetDataTypeInfo();
-    while ( block.Next() ) {
-        dataType->SkipData(in);
-    }
+    in.SkipArray(this, RandomOrder(), GetDataTypeInfo());
 }
 
 static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
@@ -433,7 +451,7 @@ TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
-    : CParent("SET OF " + type->GetName(), type)
+    : CParent(type)
 {
 }
 

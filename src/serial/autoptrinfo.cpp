@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/24 20:08:46  vasilche
+* Implemented XML dump.
+*
 * Revision 1.7  2000/03/29 15:55:26  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -75,7 +78,7 @@ BEGIN_NCBI_SCOPE
 static CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo_map;
 
 CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
-    : CParent(type->GetName(), type)
+    : CParent(/*type->GetName(), */type)
 {
 }
 

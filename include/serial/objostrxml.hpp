@@ -1,5 +1,5 @@
-#ifndef OBJOSTRASN__HPP
-#define OBJOSTRASN__HPP
+#ifndef OBJOSTRXML__HPP
+#define OBJOSTRXML__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,94 +29,12 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   XML objects output stream
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.23  2000/05/24 20:08:14  vasilche
+* Revision 1.1  2000/05/24 20:08:14  vasilche
 * Implemented XML dump.
-*
-* Revision 1.22  2000/04/28 16:58:03  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* Revision 1.21  2000/04/13 14:50:18  vasilche
-* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
-*
-* Revision 1.20  2000/04/06 16:10:51  vasilche
-* Fixed bug with iterators in choices.
-* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
-* Added output buffering to text ASN.1 data.
-*
-* Revision 1.19  2000/01/10 20:12:37  vasilche
-* Fixed duplicate argument names.
-* Fixed conflict between template and variable name.
-*
-* Revision 1.18  2000/01/10 19:46:32  vasilche
-* Fixed encoding/decoding of REAL type.
-* Fixed encoding/decoding of StringStore.
-* Fixed encoding/decoding of NULL type.
-* Fixed error reporting.
-* Reduced object map (only classes).
-*
-* Revision 1.17  1999/09/24 18:19:14  vasilche
-* Removed dependency on NCBI toolkit.
-*
-* Revision 1.16  1999/09/23 18:56:53  vasilche
-* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
-*
-* Revision 1.15  1999/09/22 20:11:50  vasilche
-* Modified for compilation on IRIX native c++ compiler.
-*
-* Revision 1.14  1999/08/13 15:53:44  vasilche
-* C++ analog of asntool: datatool
-*
-* Revision 1.13  1999/07/22 17:33:44  vasilche
-* Unified reading/writing of objects in all three formats.
-*
-* Revision 1.12  1999/07/21 14:19:59  vasilche
-* Added serialization of bool.
-*
-* Revision 1.11  1999/07/19 15:50:18  vasilche
-* Added interface to old ASN.1 routines.
-* Added naming of key/value in STL map.
-*
-* Revision 1.10  1999/07/14 18:58:04  vasilche
-* Fixed ASN.1 types/field naming.
-*
-* Revision 1.9  1999/07/09 16:32:54  vasilche
-* Added OCTET STRING write/read.
-*
-* Revision 1.8  1999/07/07 21:15:03  vasilche
-* Cleaned processing of string types (string, char*, const char*).
-*
-* Revision 1.7  1999/07/02 21:31:47  vasilche
-* Implemented reading from ASN.1 binary format.
-*
-* Revision 1.6  1999/07/01 17:55:20  vasilche
-* Implemented ASN.1 binary write.
-*
-* Revision 1.5  1999/06/30 16:04:32  vasilche
-* Added support for old ASN.1 structures.
-*
-* Revision 1.4  1999/06/24 14:44:41  vasilche
-* Added binary ASN.1 output.
-*
-* Revision 1.3  1999/06/17 20:42:02  vasilche
-* Fixed storing/loading of pointers.
-*
-* Revision 1.2  1999/06/16 20:35:24  vasilche
-* Cleaned processing of blocks of data.
-* Added input from ASN.1 text format.
-*
-* Revision 1.1  1999/06/15 16:20:04  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.2  1999/06/10 21:06:40  vasilche
-* Working binary output and almost working binary input.
-*
-* Revision 1.1  1999/06/07 19:30:18  vasilche
-* More bug fixes
 *
 * ===========================================================================
 */
@@ -126,14 +44,13 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamAsn : public CObjectOStream
+class CObjectOStreamXml : public CObjectOStream
 {
 public:
     typedef unsigned char TByte;
 
-    CObjectOStreamAsn(CNcbiOstream& out);
-    CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
-    virtual ~CObjectOStreamAsn(void);
+    CObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
+    virtual ~CObjectOStreamXml(void);
 
     ESerialDataFormat GetDataFormat(void) const;
 
@@ -151,35 +68,35 @@ protected:
     virtual void WriteString(const string& str);
     virtual void WriteCString(const char* str);
 
-#if HAVE_NCBI_C
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
-#endif
-
-    virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
     virtual void WriteOther(TConstObjectPtr object,
-                            CWriteObjectInfo& info);
+                            CWriteObjectInfo& typeInfo);
     void WriteId(const string& str);
 
     void WriteNull(void);
+    void WriteEscapedChar(char c);
 
     virtual void BeginArray(CObjectStackArray& array);
     virtual void EndArray(CObjectStackArray& array);
     virtual void BeginArrayElement(CObjectStackArrayElement& e);
+    virtual void EndArrayElement(CObjectStackArrayElement& e);
     virtual void WriteArray(CObjectArrayWriter& writer,
                             TTypeInfo arrayType, bool randomOrder,
                             TTypeInfo elementType);
+
+    virtual void BeginNamedType(CObjectStackNamedFrame& type);
+    virtual void EndNamedType(CObjectStackNamedFrame& type);
 
     virtual void BeginClass(CObjectStackClass& cls);
     virtual void EndClass(CObjectStackClass& cls);
     virtual void BeginClassMember(CObjectStackClassMember& m,
                                   const CMemberId& id);
+    virtual void EndClassMember(CObjectStackClassMember& m);
 
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                     const CMemberId& id);
+    virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
 
 	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,
@@ -188,10 +105,24 @@ protected:
 
 private:
     void WriteString(const char* str, size_t length);
-};
 
-//#include <serial/objostrasn.inl>
+    void OpenTagStart(void);
+    void OpenTagEnd(void);
+    bool CloseTagStart(bool forceEolBefore);
+    void CloseTagEnd(void);
+
+    void OpenTag(const string& name);
+    void CloseTag(const string& name, bool forceEolBefore = false);
+    void OpenTag(const CObjectStackFrame& e);
+    void CloseTag(const CObjectStackFrame& e, bool forceEolBefore = false);
+    enum ETagAction {
+        eTagOpen,
+        eTagClose,
+        eTagSelfClosed
+    };
+    ETagAction m_LastTagAction;
+};
 
 END_NCBI_SCOPE
 
-#endif  /* OBJOSTRASN__HPP */
+#endif

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/05/24 20:08:46  vasilche
+* Implemented XML dump.
+*
 * Revision 1.43  2000/05/09 16:38:38  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -584,12 +587,41 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* info = GetImplicitMember(m_Members);
+        CObjectStackNamedFrame named(out, this);
+        out.BeginNamedType(named);
         info->GetTypeInfo()->WriteData(out, GetMember(info, object));
+        out.EndNamedType(named);
     }
     else {
-        CObjectOStream::Block block(out, CObjectOStream::Block::eClass,
-                                    RandomOrder());
-        WriteMembers(out, block, object);
+        CObjectStackClass cls(out, this, RandomOrder());
+        out.BeginClass(cls);
+
+        if ( m_ParentClassInfo &&
+             m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+            m_ParentClassInfo->WriteData(out, object);
+
+        for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
+            if ( !IsMemberDefault(object, m_Members, i) ) {
+                // write member
+                const CMemberId& id = m_Members.GetMemberId(i);
+                CObjectStackClassMember m(cls, id);
+                out.BeginClassMember(m, id);
+
+                const CMemberInfo* info = m_Members.GetMemberInfo(i);
+                if ( info->CanBeDelayed() &&
+                     info->GetDelayBuffer(object).Write(out) ) {
+                    // copied original delayed read buffer, do nothing
+                }
+                else {
+                    info->GetTypeInfo()->WriteData(out, GetMember(info,
+                                                                  object));
+                }
+
+                out.EndClassMember(m);
+            }
+        }
+
+        out.EndClass(cls);
     }
 }
 
@@ -599,12 +631,73 @@ void CClassInfoTmpl::SkipData(CObjectIStream& in) const
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* info = GetImplicitMember(m_Members);
+        CObjectStackNamedFrame named(in, this);
+        in.BeginNamedType(named);
         info->GetTypeInfo()->SkipData(in);
+        in.EndNamedType(named);
     }
     else {
-        CObjectIStream::Block block(in, CObjectIStream::Block::eClass,
-                                    RandomOrder());
-        SkipMembers(in, block);
+        CObjectStackClass cls(in, this, RandomOrder());
+        in.BeginClass(cls);
+
+        if ( m_ParentClassInfo &&
+             m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+            m_ParentClassInfo->SkipData(in);
+
+        if ( RandomOrder() ) {
+            vector<bool> read(m_Members.GetSize());
+            for ( ;; ) {
+                CObjectStackClassMember m(cls);
+                TMemberIndex index = in.BeginClassMember(m, m_Members);
+                if ( index < 0 )
+                    break;
+
+                // get next member
+                if ( read[index] ) {
+                    in.ThrowError(CObjectIStream::eFormatError,
+                                  "duplicated member: "+
+                                  m_Members.GetMemberId(index).ToString());
+                }
+                read[index] = true;
+                SkipMember(in, m_Members, index);
+
+                in.EndClassMember(m);
+            }
+            // skip all absent members
+            for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
+                if ( !read[i] ) {
+                    // check if this member have defaults
+                    CheckMemberOptional(in, m_Members, i);
+                }
+            }
+        }
+        else {
+            // sequential order
+            CObjectIStream::CClassMemberPosition pos;
+            for ( ;; ) {
+                CObjectStackClassMember m(cls);
+                TMemberIndex index = in.BeginClassMember(m, m_Members, pos);
+                if ( index < 0 )
+                    break;
+
+                // find desired member
+                size_t end = index;
+                for ( size_t i = pos.GetLastIndex() + 1; i < end; ++i ) {
+                    // init missing member
+                    CheckMemberOptional(in, m_Members, i);
+                }
+                SkipMember(in, m_Members, index);
+
+                in.EndClassMember(m);
+            }
+            // init all absent members
+            size_t end = m_Members.GetSize();
+            for ( size_t i = pos.GetLastIndex() + 1; i < end; ++i ) {
+                CheckMemberOptional(in, m_Members, i);
+            }
+        }
+
+        in.EndClass(cls);
     }
 }
 
@@ -614,134 +707,70 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* info = GetImplicitMember(m_Members);
+        CObjectStackNamedFrame named(in, this);
+        in.BeginNamedType(named);
         info->GetTypeInfo()->ReadData(in, GetMember(info, object));
+        in.EndNamedType(named);
     }
     else {
-        CObjectIStream::Block block(in, RandomOrder());
-        ReadMembers(in, block, object);
-    }
-}
+        CObjectStackClass cls(in, this, RandomOrder());
+        in.BeginClass(cls);
 
-void CClassInfoTmpl::WriteMembers(CObjectOStream& out,
-                                  CObjectOStream::Block& block,
-                                  TConstObjectPtr object) const
-{
-    if ( m_ParentClassInfo )
-        m_ParentClassInfo->WriteMembers(out, block, object);
-    for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        if ( !IsMemberDefault(object, m_Members, i) ) {
-            // write member
-            block.Next();
-            CObjectOStream::Member m(out, m_Members, i);
-            const CMemberInfo* info = m_Members.GetMemberInfo(i);
-            if ( info->CanBeDelayed() &&
-                 info->GetDelayBuffer(object).Write(out) ) {
-                // copied original delayed read buffer, do nothing
-            }
-            else {
-                info->GetTypeInfo()->WriteData(out, GetMember(info, object));
-            }
-        }
-    }
-}
+        if ( m_ParentClassInfo &&
+             m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+            m_ParentClassInfo->ReadData(in, object);
 
-void CClassInfoTmpl::SkipMembers(CObjectIStream& in,
-                                 CObjectIStream::Block& block) const
-{
-    if ( m_ParentClassInfo &&
-         m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
-        m_ParentClassInfo->SkipMembers(in, block);
-    if ( RandomOrder() ) {
-        vector<bool> read(m_Members.GetSize());
-        while ( block.Next() ) {
-            // get next member
-            CObjectIStream::Member m(in, m_Members);
-            size_t index = m.GetIndex();
-            if ( read[index] ) {
-                in.ThrowError(in.eFormatError,
-                              "duplicated member: "+m.ToString());
-            }
-            read[index] = true;
-            SkipMember(in, m_Members, index);
-        }
-        // skip all absent members
-        for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
-            if ( !read[i] ) {
-                // check if this member have defaults
-                CheckMemberOptional(in, m_Members, i);
-            }
-        }
-    }
-    else {
-        // sequential order
-        CObjectIStream::LastMember lastMember(m_Members);
-        while ( block.Next() ) {
-            // get next member
-            CObjectIStream::Member m(in, lastMember);
-            // find desired member
-            size_t index = m.GetIndex();
-            for ( size_t i = lastMember.GetIndex() + 1; i < index; ++i ) {
-                // init missing member
-                CheckMemberOptional(in, m_Members, i);
-            }
-            SkipMember(in, m_Members, index);
-        }
-        // init all absent members
-        for ( size_t i = lastMember.GetIndex() + 1, end = m_Members.GetSize();
-              i < end; ++i ) {
-            CheckMemberOptional(in, m_Members, i);
-        }
-    }
-}
+        if ( RandomOrder() ) {
+            vector<bool> read(m_Members.GetSize());
+            for ( ;; ) {
+                CObjectStackClassMember m(cls);
+                TMemberIndex index = in.BeginClassMember(m, m_Members);
+                if ( index < 0 )
+                    break;
 
-void CClassInfoTmpl::ReadMembers(CObjectIStream& in,
-                                 CObjectIStream::Block& block,
-                                 TObjectPtr object) const
-{
-    if ( m_ParentClassInfo &&
-         m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
-        m_ParentClassInfo->ReadMembers(in, block, object);
-    if ( RandomOrder() ) {
-        vector<bool> read(m_Members.GetSize());
-        while ( block.Next() ) {
-            // get next member
-            CObjectIStream::Member m(in, m_Members);
-            size_t index = m.GetIndex();
-            if ( read[index] ) {
-                in.ThrowError(in.eFormatError,
-                              "duplicated member: "+m.ToString());
+                if ( read[index] ) {
+                    in.ThrowError(CObjectIStream::eFormatError,
+                                  "duplicated member: "+
+                                  m_Members.GetMemberId(index).ToString());
+                }
+                read[index] = true;
+                ReadMember(in, object, m_Members, index);
+
+                in.EndClassMember(m);
             }
-            read[index] = true;
-            ReadMember(in, object, m_Members, index);
+            // init all absent members
+            for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
+                if ( !read[i] ) {
+                    // check if this member have defaults
+                    AssignMemberDefault(in, object, m_Members, i);
+                }
+            }
         }
-        // init all absent members
-        for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
-            if ( !read[i] ) {
-                // check if this member have defaults
+        else {
+            CObjectIStream::CClassMemberPosition pos;
+            for ( ;; ) {
+                CObjectStackClassMember m(cls);
+                TMemberIndex index = in.BeginClassMember(m, m_Members, pos);
+                if ( index < 0 )
+                    break;
+
+                size_t end = index;
+                for ( size_t i = pos.GetLastIndex() + 1; i < end; ++i ) {
+                    // init missing member
+                    AssignMemberDefault(in, object, m_Members, i);
+                }
+                ReadMember(in, object, m_Members, index);
+
+                in.EndClassMember(m);
+            }
+            // init all absent members
+            size_t end = m_Members.GetSize();
+            for ( size_t i = pos.GetLastIndex() + 1; i < end; ++i ) {
                 AssignMemberDefault(in, object, m_Members, i);
             }
         }
-    }
-    else {
-        // sequential order
-        size_t currentMember = 0;
-        CObjectIStream::LastMember lastMember(m_Members);
-        while ( block.Next() ) {
-            // get next member
-            CObjectIStream::Member m(in, lastMember);
-            // find desired member
-            size_t fileMember = m.GetIndex();
-            while ( currentMember < fileMember ) {
-                // init missing member
-                AssignMemberDefault(in, object, m_Members, currentMember++);
-            }
-            ReadMember(in, object, m_Members, currentMember++);
-        }
-        // init all absent members
-        size_t memberCount = m_Members.GetSize();
-        while ( currentMember < memberCount ) {
-            AssignMemberDefault(in, object, m_Members, currentMember++);
-        }
+
+        in.EndClass(cls);
     }
 }
 

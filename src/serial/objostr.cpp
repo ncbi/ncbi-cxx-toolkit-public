@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/05/24 20:08:48  vasilche
+* Implemented XML dump.
+*
 * Revision 1.38  2000/05/09 16:38:39  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -178,7 +181,7 @@
 #include <serial/objlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/bytesrc.hpp>
 #if HAVE_NCBI_C
@@ -189,6 +192,7 @@ BEGIN_NCBI_SCOPE
 
 CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& in, bool deleteOut);
 CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& in, bool deleteOut);
+CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& in, bool deleteOut);
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      const string& fileName,
@@ -205,6 +209,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
     else {
         switch ( format ) {
         case eSerial_AsnText:
+        case eSerial_Xml:
             outStream = new CNcbiOfstream(fileName.c_str());
             break;
         case eSerial_AsnBinary:
@@ -234,6 +239,8 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         return OpenObjectOStreamAsn(outStream, deleteStream);
     case eSerial_AsnBinary:
         return OpenObjectOStreamAsnBinary(outStream, deleteStream);
+    case eSerial_Xml:
+        return OpenObjectOStreamXml(outStream, deleteStream);
     default:
         break;
     }
@@ -242,7 +249,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 }
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut), m_CurrentElement(0)
+    : m_Output(out, deleteOut)
 {
 }
 
@@ -261,11 +268,19 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
         THROW1_TRACE(runtime_error,
                      "trying to write already written object");
     }
-    WriteTypeName(typeInfo->GetName());
+#endif
+    TTypeInfo globalType = typeInfo;
+    while ( globalType->GetName().empty() ) {
+        TTypeInfo pointedType = globalType->GetPointedTypeInfo();
+        if ( !pointedType )
+            break;
+        globalType = pointedType;
+    }
+    WriteTypeName(globalType->GetName());
+#if NCBISER_ALLOW_CYCLES
     WriteObject(object, info);
     m_Objects.CheckAllWritten();
 #else
-    WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
 #endif
     FlushBuffer();
@@ -430,79 +445,70 @@ void CObjectOStream::WriteThis(TConstObjectPtr object, CWriteObjectInfo& info)
     WriteObject(object, info);
 }
 
-string CObjectOStream::MemberStack(void) const
+void CObjectOStream::EndArray(CObjectStackArray& array)
 {
-    string stack;
-    for ( const StackElement* m = m_CurrentElement; m; m = m->GetPrevous() ) {
-        if ( !stack.empty() )
-            stack += '.';
-        stack += m->ToString();
+    array.End();
+}
+
+void CObjectOStream::BeginArrayElement(CObjectStackArrayElement& e)
+{
+    e.Begin();
+}
+
+void CObjectOStream::EndArrayElement(CObjectStackArrayElement& e)
+{
+    e.End();
+}
+
+void CObjectOStream::WriteArray(CObjectArrayWriter& writer,
+                                TTypeInfo arrayType, bool randomOrder,
+                                TTypeInfo elementType)
+{
+    CObjectStackArray array(*this, arrayType, randomOrder);
+    BeginArray(array);
+    
+    if ( !writer.NoMoreElements() ) {
+        CObjectStackArrayElement element(array, elementType);
+        do {
+            BeginArrayElement(element);
+            writer.WriteTo(*this);
+            EndArrayElement(element);
+        } while ( !writer.NoMoreElements() );
     }
-    return stack;
+
+    EndArray(array);
 }
 
-string CObjectOStream::StackElement::ToString(void) const
-{
-    switch ( m_NameType ) {
-    case eNameEmpty:
-        return NcbiEmptyString;
-    case eNameCharPtr:
-        return m_NameCharPtr;
-    case eNameString:
-        return *m_NameString;
-    case eNameId:
-        return m_NameId->ToString();
-    default:
-        return "?";
-    }
-}
-
-bool CObjectOStream::StackElement::CanClose(void) const
-{
-    if ( uncaught_exception() ) {
-        // exception thrown without setting fail flag
-        return false;
-    }
-    else {
-        // ok
-        return true;
-    }
-}
-
-CObjectOStream::Member::Member(CObjectOStream& out,
-                               const CMembers& members, TMemberIndex index)
-    : StackElement(out, members.GetMemberId(index))
-{
-    out.StartMember(*this, members, index);
-}
-
-void CObjectOStream::StartMember(Member& m,
-                                 const CMembers& members, TMemberIndex index)
-{
-    StartMember(m, members.GetMemberId(index));
-}
-
-void CObjectOStream::EndMember(const Member& )
+void CObjectOStream::BeginNamedType(CObjectStackNamedFrame& /*type*/)
 {
 }
 
-void CObjectOStream::VBegin(Block& )
+void CObjectOStream::EndNamedType(CObjectStackNamedFrame& type)
+{
+    type.End();
+}
+
+void CObjectOStream::EndClass(CObjectStackClass& cls)
+{
+    cls.End();
+}
+
+void CObjectOStream::EndClassMember(CObjectStackClassMember& m)
+{
+    m.End();
+}
+
+void CObjectOStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
+{
+    v.End();
+    v.GetChoiceFrame().End();
+}
+
+void CObjectOStream::BeginBytes(const ByteBlock& )
 {
 }
 
-void CObjectOStream::VNext(const Block& )
-{
-}
-
-void CObjectOStream::VEnd(const Block& )
-{
-}
-
-void CObjectOStream::Begin(const ByteBlock& )
-{
-}
-
-void CObjectOStream::End(const ByteBlock& )
+void CObjectOStream::EndBytes(const ByteBlock& )
 {
 }
 
@@ -519,7 +525,7 @@ extern "C" {
 }
 
 CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
-    : StackElement(out), m_RootTypeName(rootTypeName), m_Count(0)
+    : m_Stream(out), m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
     out.AsnOpen(*this);
@@ -549,5 +555,9 @@ void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
     THROW1_TRACE(runtime_error, "illegal call");
 }
 #endif
+
+CObjectArrayWriter::~CObjectArrayWriter(void)
+{
+}
 
 END_NCBI_SCOPE

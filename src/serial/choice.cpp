@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/05/24 20:08:46  vasilche
+* Implemented XML dump.
+*
 * Revision 1.13  2000/05/09 16:38:37  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -126,7 +129,7 @@ CChoiceTypeInfoBase::~CChoiceTypeInfoBase(void)
 void CChoiceTypeInfoBase::AddVariant(const CMemberId& id,
                                      const CTypeRef& typeRef)
 {
-    m_Members.AddMember(id, new CRealMemberInfo(0, typeRef.Get()));
+    m_Members.AddMember(id, new CRealMemberInfo(0, typeRef));
 }
 
 void CChoiceTypeInfoBase::AddVariant(const string& name,
@@ -205,7 +208,13 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 {
     TMemberIndex index = GetIndex(object);
     if ( index >= 0 && index < GetVariantsCount() ) {
-        CObjectOStream::Member m(out, GetMembers(), index);
+        const CMemberId& id = GetMembers().GetMemberId(index);
+
+        CObjectStackChoice choice(out, this);
+        CObjectStackChoiceVariant variant(choice, id);
+
+        out.BeginChoiceVariant(variant, id);
+
         const CMemberInfo* memberInfo = m_Members.GetMemberInfo(index);
         if ( memberInfo->CanBeDelayed() &&
              memberInfo->GetDelayBuffer(object).Write(out) ) {
@@ -214,6 +223,8 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
         else {
             memberInfo->GetTypeInfo()->WriteData(out, GetData(object, index));
         }
+
+        out.EndChoiceVariant(variant);
     }
     else {
         THROW1_TRACE(runtime_error, "cannot write unset choice");
@@ -223,8 +234,9 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CObjectIStream::Member m(in, GetMembers());
-    TMemberIndex index = m.GetIndex();
+    CObjectStackChoice choice(in, this);
+    CObjectStackChoiceVariant v(choice);
+    TMemberIndex index = in.BeginChoiceVariant(v, GetMembers());
     const CMemberInfo* memberInfo = m_Members.GetMemberInfo(index);
     bool sameIndex = (index == GetIndex(object));
     if ( sameIndex ) {
@@ -246,13 +258,16 @@ void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
         SetIndex(object, index);
     }
     memberInfo->GetTypeInfo()->ReadData(in, GetData(object, index));
+    in.EndChoiceVariant(v);
 }
 
 void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
 {
-    CObjectIStream::Member m(in, GetMembers());
-    TMemberIndex index = m.GetIndex();
+    CObjectStackChoice choice(in, this);
+    CObjectStackChoiceVariant v(choice);
+    TMemberIndex index = in.BeginChoiceVariant(v, GetMembers());
     GetVariantTypeInfo(index)->SkipData(in);
+    in.EndChoiceVariant(v);
 }
 
 bool CChoiceTypeInfoBase::MayContainType(TTypeInfo typeInfo) const

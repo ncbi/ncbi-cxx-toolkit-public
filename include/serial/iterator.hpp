@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/05/24 20:08:12  vasilche
+* Implemented XML dump.
+*
 * Revision 1.9  2000/05/09 16:38:32  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -562,8 +565,8 @@ public:
         }
 };
 
-typedef CTypeIterator<CObject, CObjectGetTypeInfo> CObjectsIterator;
-typedef CTypeConstIterator<CObject, CObjectGetTypeInfo> CObjectsConstIterator;
+typedef CTypeIterator<CObject, CObjectGetTypeInfo> CObjectIterator;
+typedef CTypeConstIterator<CObject, CObjectGetTypeInfo> CObjectConstIterator;
 
 typedef CTypesIteratorBase<CTreeIterator> CTypesIterator;
 typedef CTypesIteratorBase<CTreeConstIterator> CTypesConstIterator;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/05/24 20:08:47  vasilche
+* Implemented XML dump.
+*
 * Revision 1.11  2000/04/10 21:01:49  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -100,8 +103,8 @@ void CMembers::AddMember(const CMemberId& id)
     // clear cached maps (byname and bytag)
     m_MembersByName.reset(0);
     m_MembersByTag.reset(0);
-    m_MemberTags.reset(0);
     m_Members.push_back(id);
+    m_Members.back().m_MemberList = this;
 }
 
 const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
@@ -153,29 +156,24 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
     return *members;
 }
 
-const CMembers::TMemberTags& CMembers::GetMemberTags(void) const
+void CMembers::UpdateMemberTags(void)
 {
-    TMemberTags* members = m_MemberTags.get();
-    if ( !members ) {
-        m_MemberTags.reset(members = new TMemberTags(m_Members.size()));
-        TTag currentTag = -1;
-        // TMembers is vector so we'll use index access instead iterator
-        // because we need index value to inser in map too
-        for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
-            TTag t = m_Members[i].GetTag();
-            if ( t < 0 ) {
-                if ( i == 0 && m_Members[i].GetName().empty() ) {
-                    // parent class - skip it
-                    (*members)[i] = -1;
-                    continue;
-                }
-                t = currentTag + 1;
+    TTag currentTag = -1;
+    // TMembers is vector so we'll use index access instead iterator
+    // because we need index value to inser in map too
+    non_const_iterate ( TMembers, i, m_Members ) {
+        TTag t = i->GetExplicitTag();
+        if ( t < 0 ) {
+            if ( i == m_Members.begin() && i->GetName().empty() ) {
+                // parent class - skip it
+                i->m_Tag = -1;
+                continue;
             }
-            (*members)[i] = t;
-            currentTag = t;
+            t = currentTag + 1;
         }
+        i->m_Tag = t;
+        currentTag = t;
     }
-    return *members;
 }
 
 CMembers::TIndex CMembers::FindMember(const CMemberId& id) const
@@ -225,9 +223,8 @@ CMembers::TIndex CMembers::FindMember(const pair<const char*, size_t>& name,
 
 CMembers::TIndex CMembers::FindMember(TTag tag, TIndex pos) const
 {
-    const TMemberTags& tags = GetMemberTags();
     for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
-        if ( tags[i] == tag )
+        if ( m_Members[i].GetTag() == tag )
             return i;
     }
     return -1;

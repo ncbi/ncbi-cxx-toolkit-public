@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/05/24 20:08:14  vasilche
+* Implemented XML dump.
+*
 * Revision 1.3  2000/05/09 16:38:34  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -48,170 +51,29 @@
 */
 
 inline
-void CObjectOStream::StackElement::SetName(const char* str)
+CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
+    : m_Stream(out), m_Length(length)
 {
-    m_NameType = eNameCharPtr;
-    m_NameCharPtr = str;
+    out.BeginBytes(*this);
 }
 
 inline
-void CObjectOStream::StackElement::SetName(const string& str)
+CObjectOStream::ByteBlock::~ByteBlock(void)
 {
-    m_NameType = eNameString;
-    m_NameString = &str;
+    _ASSERT(m_Length == 0);
+    GetStream().EndBytes(*this);
 }
 
 inline
-void CObjectOStream::StackElement::SetName(const CMemberId& id)
-{
-    m_NameType = eNameId;
-    m_NameId = &id;
-}
-
-inline
-CObjectOStream::StackElement::StackElement(CObjectOStream& s)
-    : m_Stream(s), m_Previous(s.m_CurrentElement),
-      m_NameType(eNameEmpty)
-{
-    s.m_CurrentElement = this;
-}
-
-inline
-CObjectOStream::StackElement::StackElement(CObjectOStream& s,
-                                           const CMemberId& id)
-    : m_Stream(s), m_Previous(s.m_CurrentElement)
-{
-    SetName(id);
-    s.m_CurrentElement = this;
-}
-
-inline
-CObjectOStream::StackElement::StackElement(CObjectOStream& s,
-                                           const string& str)
-    : m_Stream(s), m_Previous(s.m_CurrentElement)
-{
-    SetName(str);
-    s.m_CurrentElement = this;
-}
-
-inline
-CObjectOStream::StackElement::StackElement(CObjectOStream& s,
-                                           const char* str)
-    : m_Stream(s), m_Previous(s.m_CurrentElement)
-{
-    SetName(str);
-    s.m_CurrentElement = this;
-}
-
-inline
-CObjectOStream::StackElement::~StackElement(void)
-{
-    m_Stream.m_CurrentElement = m_Previous;
-}
-
-inline
-CObjectOStream& CObjectOStream::StackElement::GetStream(void) const
+CObjectOStream& CObjectOStream::ByteBlock::GetStream(void) const
 {
     return m_Stream;
-}
-
-inline
-const CObjectOStream::StackElement*
-CObjectOStream::StackElement::GetPrevous(void) const
-{
-    return m_Previous;
-}
-
-inline
-CObjectOStream::Member::Member(CObjectOStream& out, const CMemberId& member)
-    : StackElement(out, member)
-{
-    out.StartMember(*this, member);
-}
-
-inline
-CObjectOStream::Member::~Member(void)
-{
-    GetStream().EndMember(*this);
-}
-
-inline
-bool CObjectOStream::Block::RandomOrder(void) const
-{
-    return m_RandomOrder;
-}
-
-inline
-size_t CObjectOStream::Block::GetNextIndex(void) const
-{
-    return m_NextIndex;
-}
-
-inline
-size_t CObjectOStream::Block::GetIndex(void) const
-{
-    return GetNextIndex() - 1;
-}
-
-inline
-bool CObjectOStream::Block::First(void) const
-{
-    return GetNextIndex() == 0;
-}
-
-inline
-size_t CObjectOStream::Block::GetSize(void) const
-{
-    return m_Size;
-}
-
-inline
-void CObjectOStream::Block::IncIndex(void)
-{
-    ++m_NextIndex;
-}
-
-inline
-CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder)
-    : StackElement(out, "E"), m_RandomOrder(randomOrder),
-      m_NextIndex(0), m_Size(0)
-{
-    out.VBegin(*this);
-}
-
-inline
-CObjectOStream::Block::Block(CObjectOStream& out, EClass /*isClass*/,
-                             bool randomOrder)
-    : StackElement(out), m_RandomOrder(randomOrder),
-      m_NextIndex(0), m_Size(0)
-{
-    out.VBegin(*this);
-}
-
-inline
-void CObjectOStream::Block::Next(void)
-{
-    GetStream().VNext(*this);
-    IncIndex();
-}
-
-inline
-CObjectOStream::Block::~Block(void)
-{
-    GetStream().VEnd(*this);
 }
 
 inline
 size_t CObjectOStream::ByteBlock::GetLength(void) const
 {
     return m_Length;
-}
-
-inline
-CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
-    : StackElement(out), m_Length(length)
-{
-    out.Begin(*this);
 }
 
 inline
@@ -222,14 +84,13 @@ void CObjectOStream::ByteBlock::Write(const void* bytes, size_t length)
     m_Length -= length;
 }
 
-inline
-CObjectOStream::ByteBlock::~ByteBlock(void)
-{
-    _ASSERT(m_Length == 0);
-    GetStream().End(*this);
-}
-
 #if HAVE_NCBI_C
+
+inline
+CObjectOStream& CObjectOStream::AsnIo::GetStream(void) const
+{
+    return m_Stream;
+}
 
 inline
 CObjectOStream::AsnIo::operator asnio*(void)

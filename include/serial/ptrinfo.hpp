@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/05/24 20:08:15  vasilche
+* Implemented XML dump.
+*
 * Revision 1.18  2000/03/29 15:55:21  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -119,10 +122,12 @@ class CPointerTypeInfo : public CTypeInfo
     typedef CTypeInfo CParent;
 public:
     CPointerTypeInfo(TTypeInfo type);
+#ifdef TYPEINFO
     CPointerTypeInfo(const char* name, TTypeInfo type);
     CPointerTypeInfo(const string& name, TTypeInfo type);
     CPointerTypeInfo(const char* templ, TTypeInfo arg, TTypeInfo type);
     CPointerTypeInfo(const char* templ, const char* arg, TTypeInfo type);
+#endif
     ~CPointerTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
@@ -153,7 +158,7 @@ public:
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    virtual bool IsPointer(void) const;
+    virtual TTypeInfo GetPointedTypeInfo(void) const;
     virtual void GetPointedObject(CConstObjectInfo& object) const;
     virtual void GetPointedObject(CObjectInfo& object) const;
 
