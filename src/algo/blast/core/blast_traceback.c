@@ -118,9 +118,9 @@ s_BlastCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt,
 
 /** Function to check that the highest scoring region in an HSP still gives a 
  * positive score. This value was originally calcualted by 
- * GetStartForGappedAlignment but it may have changed due to the introduction 
- * of ambiguity characters. Such a change can lead to 'strange' results from 
- * ALIGN. 
+ * BlastGetStartForGappedAlignment but it may have changed due to the 
+ * introduction of ambiguity characters. Such a change can lead to 'strange' 
+ * results from ALIGN. 
  * @param hsp An HSP structure [in]
  * @param query Query sequence buffer [in]
  * @param subject Subject sequence buffer [in]
