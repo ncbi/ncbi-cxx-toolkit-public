@@ -383,8 +383,8 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
         return CRef<CDense_seg>();
     }
 
-    int i;
-    int j;
+    size_t i;
+    size_t j;
 
     // temporary storage for our consensus
     vector<string> consens(m_NumSegs);
@@ -422,7 +422,7 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
                         TSeqPos size = seq_vec.size();
                         seq_vec.GetSeqData(size - stop, size - start, segs[i]);
                     }
-                    for (int c = 0;  c < segs[i].length();  ++c) {
+                    for (size_t c = 0;  c < segs[i].length();  ++c) {
                         segs[i][c] = FromIupac(segs[i][c]);
                     }
                 }
@@ -834,6 +834,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/06/16 12:03:26  dicuccio
+* int -> size_t (avoid compiler warning)
+*
 * Revision 1.59  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
