@@ -34,6 +34,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <html/html.hpp>
 #include <html/nodemap.hpp>
 #include <html/jsmenu.hpp>
@@ -167,10 +169,10 @@ private:
     string   m_Title;
 
     // Template sources
-    string      m_TemplateFile;        // file name
-    istream*    m_TemplateStream;      // stream
-    const void* m_TemplateBuffer;      // some buffer...
-    size_t      m_TemplateBufferSize;  // ...and its size
+    string      m_TemplateFile;   // file name
+    istream*    m_TemplateStream; // stream
+    const void* m_TemplateBuffer; // some buffer...
+    size_t      m_TemplateSize;   // size of input, if known (0 otherwise)
 
     // The popup menu info structure
     struct SPopupMenuInfo {
@@ -239,6 +241,16 @@ inline void CHTMLPage::SetTemplateFile(const string& template_file)
     m_TemplateFile   = template_file;
     m_TemplateStream = 0;
     m_TemplateBuffer = 0;
+    {{
+        Int8 size = CFile(template_file).GetLength();
+        if (size >= numeric_limits<size_t>::max()) {
+            NCBI_THROW(CException, eUnknown,
+                       "CHTMLPage: input template " + template_file
+                       + " too big to handle");
+        } else if (size >= 0) {
+            m_TemplateSize = size;
+        }
+    }}
 }
 
 inline void CHTMLPage::SetTemplateStream(const istream& template_stream)
@@ -253,7 +265,7 @@ inline void CHTMLPage::SetTemplateString(const char* template_string)
     m_TemplateFile   = kEmptyStr;
     m_TemplateStream = 0;
     m_TemplateBuffer = template_string;
-    m_TemplateBufferSize = strlen(template_string);
+    m_TemplateSize   = strlen(template_string);
 }
 
 inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer, size_t size)
@@ -261,7 +273,7 @@ inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer, size_t siz
     m_TemplateFile   = kEmptyStr;
     m_TemplateStream = 0;
     m_TemplateBuffer = template_buffer;
-    m_TemplateBufferSize = size;
+    m_TemplateSize   = size;
 }
 
 END_NCBI_SCOPE
@@ -272,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/05/13 15:44:19  ucko
+* Make reading large templates more efficient.
+*
 * Revision 1.26  2003/04/25 13:45:37  siyan
 * Added doxygen groupings
 *

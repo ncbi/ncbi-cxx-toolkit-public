@@ -146,12 +146,12 @@ CHTMLPage::CHTMLPage(CCgiApplication* application, int style,
 void CHTMLPage::Init(void)
 {
     // Template sources
-    m_TemplateFile       = kEmptyStr;
-    m_TemplateStream     = 0;
-    m_TemplateBuffer     = 0;
-    m_TemplateBufferSize = 0;
+    m_TemplateFile   = kEmptyStr;
+    m_TemplateStream = 0;
+    m_TemplateBuffer = 0;
+    m_TemplateSize   = 0;
     
-    m_UsePopupMenus      = false;
+    m_UsePopupMenus  = false;
 
     AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
     AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
@@ -173,7 +173,7 @@ CNCBINode* CHTMLPage::CreateTemplate(void)
     } else if ( m_TemplateStream ) {
         return x_CreateTemplate(*m_TemplateStream);
     } else if ( m_TemplateBuffer ) {
-        CNcbiIstrstream is((char*)m_TemplateBuffer, m_TemplateBufferSize);
+        CNcbiIstrstream is((char*)m_TemplateBuffer, m_TemplateSize);
         return x_CreateTemplate(is);
     } else {
         return new CHTMLText(kEmptyStr);
@@ -196,8 +196,17 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
                      failed to open template");
     }
 
+    if (m_TemplateSize) {
+        str.reserve(m_TemplateSize);
+    }
     while ( is ) {
         is.read(buf, sizeof(buf));
+        if (m_TemplateSize == 0  &&  is.gcount() > 0
+            &&  str.size() == str.capacity()) {
+            // We don't know how big str will need to be, so we grow it
+            // exponentially to avoid O(N^2) behavior from copying.
+            str.reserve(str.size() + max((size_t)is.gcount(), str.size() / 2));
+        }
         str.append(buf, is.gcount());
     }
 
@@ -358,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.33  2003/05/13 15:44:41  ucko
+ * Make reading large templates more efficient.
+ *
  * Revision 1.32  2003/03/11 15:28:57  kuznets
  * iterate -> ITERATE
  *
