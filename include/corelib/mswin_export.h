@@ -119,7 +119,6 @@
 #  define NCBI_XOBJMANIP_EXPORTS
 #  define NCBI_FORMAT_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORTS
-#  define NCBI_XOBJSIMPLE_EXPORTS
 #endif
 
 
@@ -1144,6 +1143,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.89  2004/12/13 20:34:58  jcherry
+ * Moved xobjsimple into its own dll
+ *
  * Revision 1.88  2004/12/13 18:00:08  jcherry
  * Added NCBI_XOBJSIMPLE_EXPORT(S) (under NCBI_SEQEXT_EXPORTS)
  *
