@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/06/07 19:04:50  thiessen
+* functional (although incomplete) render settings panel
+*
 * Revision 1.1  2001/05/31 18:46:28  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -41,6 +44,7 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
 
 #if defined(__WXMSW__)
 #include <wx/msw/winundef.h>
@@ -48,20 +52,83 @@
 
 #include <wx/wx.h>
 
+#include <map>
+#include <string>
+
+#include "cn3d/style_manager.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
 class StyleSettings;
+class StructureSet;
+
+template < class T >
+class TypeStringAssociator
+{
+private:
+    std::map < T , std::string > type2string;
+    std::map < std::string , T > string2type;
+public:
+    void Associate(const T& type, const std::string& name)
+    {
+        type2string[type] = name;
+        string2type[name] = type;
+    }
+    const T * Find(const std::string& name) const
+    {
+        std::map < std::string , T >::const_iterator i = string2type.find(name);
+        return ((i != string2type.end()) ? &(i->second) : NULL);
+    }
+    bool Get(const std::string& name, T *type) const
+    {
+        const T *found = Find(name);
+        if (found) *type = *found;
+        return (found != NULL);
+    }
+    const std::string * Find(const T& type) const
+    {
+        std::map < T , std::string >::const_iterator i = type2string.find(type);
+        return ((i != type2string.end()) ? &(i->second) : NULL);
+    }
+    bool Get(const T& type, std::string *name) const
+    {
+        const std::string *found = Find(type);
+        if (found) *name = *found;
+        return (found != NULL);
+    }
+    int Size(void) const { return type2string.size(); }
+};
 
 class StyleDialog : public wxDialog
 {
 public:
-    StyleDialog(wxWindow* parent, const StyleSettings& initialSettings);
+    StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const StructureSet *set);
 
     // set the StyleSettings from values in the panel; returns true if all values are valid
     bool GetValues(StyleSettings *settings);
 
+    // set the controls according to the given StyleSettings
+    bool SetControls(const StyleSettings& settings);
+
 private:
+
+    StyleSettings *editedSettings;
+    const StyleSettings originalSettings;
+    const StructureSet *structureSet;
+    bool changedSinceApply, changedEver;
+
+    bool HandleColorButton(int bID);
+
+    static TypeStringAssociator < StyleSettings::eBackboneType > BackboneTypeStrings;
+    static TypeStringAssociator < StyleSettings::eDrawingStyle > DrawingStyleStrings;
+    static TypeStringAssociator < StyleSettings::eColorScheme > ColorSchemeStrings;
+
+    static void SetupStyleStrings(void);
+    bool GetBackboneStyle(StyleSettings::BackboneStyle *bbStyle,
+        int showID, int renderID, int colorID, int userID);
+    bool SetBackboneStyle(const StyleSettings::BackboneStyle& bbStyle,
+        int showID, int renderID, int colorID, int userID);
 
     void OnCloseWindow(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);

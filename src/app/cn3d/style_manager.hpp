@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/06/07 19:04:50  thiessen
+* functional (although incomplete) render settings panel
+*
 * Revision 1.24  2001/05/31 18:46:28  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -202,7 +205,12 @@ public:
     void SetToWireframe(void);
     void SetToAlignment(StyleSettings::eColorScheme protBBType);
 
+    // copy settings
+    StyleSettings& operator = (const StyleSettings& v);
+
+    // default and copy constructors
     StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
+    StyleSettings::StyleSettings(const StyleSettings& orig) { *this = orig; }
 };
 
 class StructureSet;
@@ -256,7 +264,8 @@ public:
     bool EditGlobalStyle(wxWindow *parent, const StructureSet *set);
 
     // check style option consistency
-    bool CheckStyleSettings(const StructureSet *set);
+    bool CheckStyleSettings(StyleSettings *settings, const StructureSet *set);
+    bool CheckGlobalStyleSettings(const StructureSet *set);
 
 private:
     StyleSettings globalStyle;
