@@ -47,19 +47,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Encapsulates the arguments needed to initialize multi-sequence source.
-struct SSeqDbSrcNewArgs {
-    char* dbname;     /**< Database name */
-    bool is_protein; /**< Is this database protein? */
-    Int4 first_db_seq; /**< Ordinal id of the first sequence to search */
-    Int4 final_db_seq; /**< Ordinal id of the last sequence to search */
-};
-
 extern "C" {
 
 /** SeqDb sequence source constructor 
  * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
- * @param args Pointer to SSeqDbSrcNewArgs structure above [in]
+ * @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
+ * CSeqDbSrcNewArgs) [in]
  * @return Updated seq_src structure (with all function pointers initialized
  */
 NCBI_XBLAST_EXPORT
@@ -94,8 +87,8 @@ BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src);
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* 
-SeqDbSrcInit(const char* dbname, Boolean is_prot, 
-             int first_seq = 0, int last_seq = 0, void* extra_arg = NULL);
+SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
+                     Uint4 first_seq = 0, Uint4 last_seq = 0, void* extra_arg = NULL);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -105,6 +98,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/17 20:24:27  camacho
+ * 1. Moved and renamed SSeqDbSrcNewArgs to implementation file
+ * 2. Made initialization function name consistent with other BlastSeqSrc
+ *    implementations.
+ *
  * Revision 1.8  2004/10/27 21:12:07  camacho
  * Add default parameters to SeqDbSrcInit for convenience
  *
