@@ -53,7 +53,7 @@
 #include <stddef.h>     /* ...to define "size_t"... */
 
 
-/** @addtogroup BuffServices Buffering Services
+/** @addtogroup BuffServices
  *
  * @{
  */
@@ -161,6 +161,9 @@ extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/04/10 12:52:15  siyan
+ * Changed group name for doxygen
+ *
  * Revision 6.8  2003/04/09 17:58:40  siyan
  * Added doxygen support
  *
