@@ -31,8 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
-#include <connect/email_diag_handler.hpp>
-#include <html/commentdiag.hpp>
 #include <connect/services/grid_default_factories.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
@@ -69,13 +67,6 @@ void CGridCgiApplication::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
-    // Allows CGI client to put the diagnostics to:
-    //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
-    RegisterDiagFactory("comments", new CCommentDiagFactory);
-    //   E-mail -- using CGI arg "&diag-destination=email:user@host"
-    RegisterDiagFactory("email",    new CEmailDiagFactory);
-
-
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
         m_NSClient.reset(cf.CreateInstance());
@@ -91,14 +82,6 @@ void CGridCgiApplication::Init()
 
 int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
-    m_StopJob = false;
-    try{
-    const CArgs& args = GetArgs();
-    if ( args["Stop"] ) 
-        m_StopJob = true;
-    }
-    catch(...) {}
-
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     const CCgiRequest& request  = ctx.GetRequest();
@@ -114,7 +97,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
         return 2;
     }
-    SetDiagNode(page.get());
 
     string message;
     const CCgiCookie* c = req_cookies.Find("job_key", "", "" );
@@ -154,7 +136,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 page->AddTagMap("JSCRIPT", jscript);
             }
              
-            if (m_StopJob)
+            if (JobStopRequested())
                 GetGridClient().CancelJob(job_key);
 
             if (remove_cookie) {
@@ -193,7 +175,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     }
     catch (exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
-        SetDiagNode(NULL);
         return 3;
     }
 
@@ -204,11 +185,9 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
         ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
-        SetDiagNode(NULL);
         return 4;
     }
 
-    SetDiagNode(NULL);
     return 0;
 }
 
@@ -223,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/31 15:51:46  didenko
+ * Code clean up
+ *
  * Revision 1.1  2005/03/30 21:17:05  didenko
  * Initial version
  *
