@@ -1221,26 +1221,26 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        CSeqFeatData::E_Choice feat_type,
                        sequence::EOverlapType overlap_type,
                        CScope& scope,
-                       TBestFeatOpts /* opts */)
+                       TBestFeatOpts opts)
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat_type) {
     case CSeqFeatData::e_Gene:
         feat_ref = GetBestOverlappingFeat(feat,
                                           CSeqFeatData::eSubtype_gene,
-                                          overlap_type, scope);
+                                          overlap_type, scope, opts);
         break;
 
     case CSeqFeatData::e_Rna:
         feat_ref = GetBestOverlappingFeat(feat,
                                           CSeqFeatData::eSubtype_mRNA,
-                                          overlap_type, scope);
+                                          overlap_type, scope, opts);
         break;
 
     case CSeqFeatData::e_Cdregion:
         feat_ref = GetBestOverlappingFeat(feat,
                                           CSeqFeatData::eSubtype_cdregion,
-                                          overlap_type, scope);
+                                          overlap_type, scope, opts);
         break;
 
     default:
@@ -2706,6 +2706,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.125  2005/03/16 21:01:48  dicuccio
+* Honor options provided to GetBestOverlappingFeat()
+*
 * Revision 1.124  2005/03/15 19:25:05  dicuccio
 * Added additional check in GetBestMrnaForCds() and GetBestCdsForMrna(): check
 * the NCBI-supplied build object for pointers to related CDS features (avoids
