@@ -167,7 +167,7 @@ CMappingRange::TRangeFuzz CMappingRange::Map_Fuzz(TRangeFuzz& fuzz) const
             break;
         }
     }
-    if ( fuzz.second ) {
+    if ( res.second ) {
         switch ( res.second->Which() ) {
         case CInt_fuzz::e_Lim:
             {
@@ -1846,6 +1846,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/09/03 16:57:13  dicuccio
+* Fixed type: 'fuzz.second' should be 'res.second' (prevent dereference of a null
+* pointer)
+*
 * Revision 1.23  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *
