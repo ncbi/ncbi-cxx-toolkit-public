@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.209 2003/08/14 17:39:01 ucko Exp $
+#  $Id: configure.ac,v 1.210 2003/08/19 14:59:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1477,7 +1477,8 @@ if test "$ac_cv_type_wstring_linkable" = "yes"; then
       [Define to 1 if the system has the type `wstring'.])
 fi
 
-AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
+AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
+#include <sys/socket.h>])
 AC_CHECK_HEADERS(dlfcn.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.60
 AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
