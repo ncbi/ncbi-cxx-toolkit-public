@@ -43,41 +43,41 @@ include $(builddir)/Makefile.$(Rules)
 
 ### The library build rule
 
-XLIBOBJ       = $(SOURCES:=@obj_ext@)
+XDLLOBJ       = $(SOURCES:=@obj_ext@)
 XOBJ          = $(OBJ:=@obj_ext@)
-XLIB          = $(LIB:%=@lib_pre@%@dll_ext@)
-XLIB_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
-XLIBDEP       = .$(LIB).dep
+XDLL          = $(LIB:%=@lib_pre@%@dll_ext@)
+XDLL_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
+XDLLDEP       = .$(LIB).dep
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
 
-$(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
-	-$(RM) $(XLIB)
-	@has_dll_loadable@-$(RM) $(XLIB_LOADABLE)
-	$(LINK_DLL) $(XLIB) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
-	@has_dll_loadable@$(LINK_LOADABLE) $(XLIB_LOADABLE) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
-	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
-	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
-	$(BINCOPY) $(XLIB) $(libdir)
-	@has_dll_loadable@$(BINCOPY) $(XLIB_LOADABLE) $(libdir)
-	@$(BINCOPY) $(XLIBDEP) $(status_dir)
-	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
+$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
+	-$(RM) $(XDLL)
+	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
+	$(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
+	@has_dll_loadable@$(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
+	@echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP)
+	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
+	$(BINCOPY) $(XDLL) $(libdir)
+	@has_dll_loadable@$(BINCOPY) $(XDLL_LOADABLE) $(libdir)
+	@$(BINCOPY) $(XDLLDEP) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 
 
 ### Standard targets
 
-all: $(XLIB)
+all: $(XDLL)
 
 clean:
 	-$(RMDIR) SunWS_cache
 	-$(RMDIR) ii_files
 	-$(RMDIR) ti_files
 	-$(RM) .make.state
-	-$(RM) $(XLIBOBJ)
-	-$(RM) $(XLIB) $(XLIBDEP)
-	@has_dll_loadable@-$(RM) $(XLIB_LOADABLE)
+	-$(RM) $(XDLLOBJ)
+	-$(RM) $(XDLL) $(XDLLDEP)
+	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
-	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
-	@has_dll_loadable@-$(RM) $(libdir)/$(XLIB_LOADABLE)
+	-$(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
+	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
