@@ -51,7 +51,7 @@ public:
     static int Nmer2Int(const char *seq, int n);
 
     /// Decode an integer representation of an n-mer.
-    static void Int2Nmer(int nmer_int, int nmer_size, char *out);
+    static void Int2Nmer(int nmer_int, int nmer_size, string* out);
 
     /// The number of distinct n-mers (4^n)
     static int NumberOfNmers(int n);
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/28 11:54:02  dicuccio
+ * Changed calling semantics of Int2Nmer to use std::string
+ *
  * Revision 1.3  2003/07/01 19:00:44  ucko
  * Drop gratuitous GUI header inclusion; minor formal cleanups
  *
