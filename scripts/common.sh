@@ -105,7 +105,7 @@ COMMON_ExecRB()
 
     if test $? -ne 0 ; then
         if [ ! -z "$x_common_rb" ]; then
-            "$x_common_rb"
+            $x_common_rb
         fi
         COMMON_Error "$@"
     fi

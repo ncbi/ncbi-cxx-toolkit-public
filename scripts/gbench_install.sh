@@ -80,6 +80,8 @@ CopyFiles()
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
             COMMON_ExecRB $BINCOPY $src_file $target_dir/bin/
         else
+            echo "++++++++ RP proc: $x_common_rb"
+            $x_common_rb
             COMMON_Error "File not found: $src_file"
         fi
     done
@@ -91,6 +93,7 @@ CopyFiles()
             rm -f $target_dir/lib/lib$x.so
             DoCopy $src_file $target_dir/lib/ 
         else
+            $x_common_rb
             COMMON_Error "File not found: $src_file"
         fi
     done
