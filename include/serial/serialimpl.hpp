@@ -222,9 +222,26 @@ CMemberInfo* EnumMember(const T* member, const CEnumeratedTypeValues* enumInfo)
 }
 
 #define DECLARE_BASE_OBJECT(Class) 
-#define BASE_OBJECT() static_cast<const CClass*>(0)
+#define BASE_OBJECT() static_cast<const CClass_Base*>(static_cast<const CClass*>(0))
 #define MEMBER_PTR(Name) &BASE_OBJECT()->Name
 #define CLASS_PTR(Class) static_cast<const Class*>(BASE_OBJECT())
+
+#define BEGIN_BASE_TYPE_INFO(Class, Class_Base, Method, Info, Args) \
+const NCBI_NS_NCBI::CTypeInfo* Method(void) \
+{ \
+    typedef Class CClass; \
+	typedef Class_Base CClass_Base; \
+    static Info* info = 0; \
+    if ( info == 0 ) { \
+        DECLARE_BASE_OBJECT(CClass); \
+        info = new Info Args;
+#define BEGIN_TYPE_INFO(Class, Method, Info, Args) \
+	BEGIN_BASE_TYPE_INFO(Class, Class, Method, Info, Args)
+
+#define END_TYPE_INFO \
+    } \
+    return info; \
+}
 
 #define M(Name,Type,Args) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Ptr(MEMBER_PTR(Name)),\
@@ -344,61 +361,60 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
 }
 
 #endif
-// type info definition
-#define BEGIN_TYPE_INFO(Class, Method, Info, Args) \
-const NCBI_NS_NCBI::CTypeInfo* Method(void) \
-{ \
-    typedef Class CClass; \
-    static Info* info = 0; \
-    if ( info == 0 ) { \
-        DECLARE_BASE_OBJECT(CClass); \
-        info = new Info Args;
 
-#define END_TYPE_INFO \
-    } \
-    return info; \
-}
- 
-#define BEGIN_CLASS_INFO3(Name, Class, OwnerClass) \
-BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Name))
+// type info definition
 #define BEGIN_CLASS_INFO2(Name, Class) \
-BEGIN_CLASS_INFO3(Name, Class, Class)
+	BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, \
+					NCBI_NS_NCBI::CClassInfo<CClass>, (Name))
 #define BEGIN_CLASS_INFO(Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, ())
+	BEGIN_CLASS_INFO2(#Class, Class)
+#define BEGIN_BASE_CLASS_INFO2(Name, Class) \
+	BEGIN_BASE_TYPE_INFO(Class, NCBI_NAME2(Class, _Base), \
+						 NCBI_NAME2(Class, _Base)::GetTypeInfo, \
+						 NCBI_NS_NCBI::CClassInfo<CClass>, (Name))
 
 #define END_CLASS_INFO END_TYPE_INFO
 
-#define BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, OwnerClass) \
-BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, NCBI_NS_NCBI::CAbstractClassInfo<CClass>, (Name))
 #define BEGIN_ABSTRACT_CLASS_INFO2(Name, Class) \
-BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, Class)
+	BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, \
+					NCBI_NS_NCBI::CAbstractClassInfo<CClass>, (Name))
 #define BEGIN_ABSTRACT_CLASS_INFO(Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CAbstractClassInfo<CClass>, ())
+	BEGIN_ABSTRACT_CLASS_INFO2(#Class, Class)
+#define BEGIN_ABSTRACT_BASE_CLASS_INFO2(Name, Class) \
+	BEGIN_BASE_TYPE_INFO(Class, NCBI_NAME2(Class, _Base), \
+						 NCBI_NAME2(Class, _Base)::GetTypeInfo, \
+						 NCBI_NS_NCBI::CAbstractClassInfo<CClass>, (Name))
+
+#define END_ABSTRACT_CLASS_INFO END_TYPE_INFO
+
+// temporary definitions
+#define BEGIN_CLASS_INFO3(Name, Class, Class_Base) BEGIN_BASE_CLASS_INFO2(Name, Class)
+#define BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, Class_Base) BEGIN_ABSTRACT_BASE_CLASS_INFO2(Name, Class)
+
+#define BEGIN_DERIVED_CLASS_INFO2(Name, Class, BaseClass) \
+	BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Name)) \
+    SET_PARENT_CLASS(BaseClass);
+#define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \
+	BEGIN_DERIVED_CLASS_INFO2(#Class, Class, BaseClass)
+
+#define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define SET_PARENT_CLASS(BaseClass) \
     NCBI_NS_NCBI::AddMember(info,"",CLASS_PTR(BaseClass), \
                             &BaseClass::GetTypeInfo)
 
-#define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, ()) \
-    SET_PARENT_CLASS(BaseClass);
-#define END_DERIVED_CLASS_INFO END_TYPE_INFO
-
-#define BEGIN_DERIVED_CLASS_INFO2(Name, Class, BaseClass) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Name)) \
-    SET_PARENT_CLASS(BaseClass);
-#define END_DERIVED_CLASS_INFO END_TYPE_INFO
-
 #define BEGIN_STRUCT_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(NCBI_NAME2(struct_, Class), NCBI_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CStructInfo<CClass>, (Name))
 #define BEGIN_STRUCT_INFO(Class) BEGIN_STRUCT_INFO2(#Class, Class)
+
 #define END_STRUCT_INFO END_TYPE_INFO
 
 #define BEGIN_CHOICE_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(valnode, NCBI_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
+
 #define END_CHOICE_INFO END_TYPE_INFO
 
 #define BEGIN_ENUM_INFO(Method, Enum, IsInteger) \
@@ -484,7 +500,6 @@ const VariantClass* NCBI_NAME2(BaseClass,_Base)::NCBI_NAME2(Get,Name)(void) cons
 { \
     return dynamic_cast<const VariantClass*>(this); \
 }
-
 
 inline
 CMemberInfo*
