@@ -343,9 +343,9 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
 
 DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
-                                            const string&   user_name,
-                                            const string&   passwd,
-                                            TConnectionMode mode)
+					  const string&   user_name,
+					  const string&   passwd,
+					  TConnectionMode mode)
 {
     if (!m_HostName.empty())
         DBSETLHOST(m_Login, (char*) m_HostName.c_str());
@@ -372,11 +372,13 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
+
+
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
 //
 
-I_DriverContext* TDS_CreateContext(map<string,string>* attr = 0)
+I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0)
 {
     DBINT version= DBVERSION_UNKNOWN;
 
@@ -395,17 +397,17 @@ I_DriverContext* TDS_CreateContext(map<string,string>* attr = 0)
     return (I_DriverContext*)(new CTDSContext(version));
 }
 
-void DBAPI_TDS_Register(I_DriverMgr* mgr)
+void DBAPI_FTDS_Register(I_DriverMgr* mgr)
 {
     if(mgr) {
-	mgr->RegisterDriver("tds", TDS_CreateContext);
+	mgr->RegisterDriver("ftds", FTDS_CreateContext);
     }
 }
 
 extern "C" {
-    void* DBAPI_E_tds()
+    void* DBAPI_E_ftds()
     {
-	return (void*)DBAPI_TDS_Register;
+	return (void*)DBAPI_FTDS_Register;
     }
 } 
 
@@ -417,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/01/15 17:13:30  soussov
+ * renaming 'tds' driver to 'ftds' driver
+ *
  * Revision 1.4  2002/01/14 20:38:48  soussov
  * timeout support for tds added
  *

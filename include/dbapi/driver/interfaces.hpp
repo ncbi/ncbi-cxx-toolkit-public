@@ -535,7 +535,7 @@ public:
 
 void DBAPI_CTLIB_Register(I_DriverMgr* mgr);
 void DBAPI_DBLIB_Register(I_DriverMgr* mgr);
-void DBAPI_TDS_Register(I_DriverMgr* mgr);
+void DBAPI_FTDS_Register(I_DriverMgr* mgr);
 
 
 END_NCBI_SCOPE
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/01/15 17:12:40  soussov
+ * renaming 'tds' driver to 'ftds' driver
+ *
  * Revision 1.9  2002/01/11 21:26:16  soussov
  * changes typedef for FDBAPI_CreateContext
  *
