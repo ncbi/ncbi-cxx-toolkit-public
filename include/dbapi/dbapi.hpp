@@ -230,6 +230,11 @@ public:
     // Open cursor and get corresponding resultset
     virtual IResultSet* Open() = 0;
 
+    // Get output stream for BLOB updates, requires BLOB column number
+    virtual ostream& GetBlobOStream(unsigned int col,
+                                    size_t blob_size, 
+                                    size_t buf_size = 1024) = 0;
+
     // Update statement for cursor
     virtual void Update(const string& table, const string& updateSql) = 0;
 
@@ -312,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/08 15:57:53  kholodov
+ * Added: GetBlobOStream() for BLOB updates to ICursor interface
+ *
  * Revision 1.6  2002/04/25 13:35:05  kholodov
  * Added GetDriverContext() returning pointer to underlying I_DriverContext interface
  *
