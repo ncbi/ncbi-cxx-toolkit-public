@@ -166,7 +166,7 @@ private:
     void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddQuals(const CGene_ref& gene, bool& pseudo,
-        CSeqFeatData::ESubtype subtype) const;
+        CSeqFeatData::ESubtype subtype, bool from_overlap) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
@@ -296,6 +296,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/11/19 15:13:03  shomrat
+* Indicate if Gene_ref is from an overlapping feature
+*
 * Revision 1.21  2004/11/15 20:03:21  shomrat
 * Fixed /note qual
 *
