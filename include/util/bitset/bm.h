@@ -3814,16 +3814,20 @@ template<class A, class MS>
 inline bvector<A, MS> operator& (const bvector<A, MS>& v1,
                                  const bvector<A, MS>& v2)
 {
-    return bvector<A, MS>(v1).bit_and(v2);
+    bvector<A, MS> ret(v1);
+    ret.bit_and(v2);
+    return ret;
 }
 
 //---------------------------------------------------------------------
 
 template<class A, class MS> 
-inline bvector<A> operator| (const bvector<A, MS>& v1,
-                             const bvector<A>& v2)
-{
-    return bvector<A, MS>(v1).bit_or(v2);
+inline bvector<A, MS> operator| (const bvector<A, MS>& v1,
+                                 const bvector<A>& v2)
+{   
+    bvector<A, MS> ret(v1);
+    ret.bit_or(v2);
+    return ret;
 }
 
 //---------------------------------------------------------------------
@@ -3832,16 +3836,20 @@ template<class A, class MS>
 inline bvector<A, MS> operator^ (const bvector<A, MS>& v1,
                                  const bvector<A, MS>& v2)
 {
-    return bvector<A, MS>(v1).bit_xor(v2);
+    bvector<A, MS> ret(v1);
+    ret.bit_xor(v2);
+    return ret;
 }
 
 //---------------------------------------------------------------------
 
 template<class A, class MS> 
 inline bvector<A, MS> operator- (const bvector<A, MS>& v1,
-                             const bvector<A, MS>& v2)
+                                 const bvector<A, MS>& v2)
 {
-    return bvector<A, MS>(v1).bit_sub(v2);
+    bvector<A, MS> ret(v1);
+    ret.bit_sub(v2);
+    return ret;
 }
 
 
