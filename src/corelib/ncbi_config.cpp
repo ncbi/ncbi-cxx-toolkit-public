@@ -38,6 +38,7 @@
 #include <corelib/ncbireg.hpp>
 
 #include <algorithm>
+#include <memory>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -273,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/09/22 16:52:58  ucko
+ * +<memory> for auto_ptr<>
+ *
  * Revision 1.2  2004/09/22 15:34:18  kuznets
  * MAGIC: rename ncbi_paramtree->ncbi_config
  *
