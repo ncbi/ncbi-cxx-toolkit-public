@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
 * Revision 1.22  2001/10/01 16:04:24  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -194,6 +197,7 @@ void Messenger::ProcessRedraws(void)
     }
 
     if (redrawAllStructures) {
+        structureWindow->glCanvas->SetCurrent();
 		structureWindow->glCanvas->renderer->Construct();
 		structureWindow->glCanvas->Refresh(false);
 		redrawAllStructures = false;

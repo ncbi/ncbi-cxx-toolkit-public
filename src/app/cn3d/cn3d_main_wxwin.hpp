@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
 * Revision 1.50  2001/10/23 13:53:37  thiessen
 * add PNG export
 *
@@ -427,7 +430,7 @@ public:
 
     // font stuff - setup from registry, and measure using currently selected font
     void SetGLFontFromRegistry(double fontScale = 1.0);
-    bool MeasureText(const std::string& text, int *width, int *height);
+    bool MeasureText(const std::string& text, int *width, int *height, int *centerX, int *centerY);
     const wxFont& GetGLFont(void) const { return font; }
 
 private:
@@ -436,8 +439,9 @@ private:
     void OnEraseBackground(wxEraseEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
-    // memoryDC is used simply to hold a font for dc.GetTextExtent()
+    // memoryDC is used for measuring text
     wxMemoryDC memoryDC;
+    wxBitmap memoryBitmap;
     wxFont font;
 
     DECLARE_EVENT_TABLE()

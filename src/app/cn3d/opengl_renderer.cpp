@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
 * Revision 1.53  2001/10/23 13:53:38  thiessen
 * add PNG export
 *
@@ -1485,18 +1488,16 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 
 void OpenGLRenderer::DrawLabel(const std::string& text, const Vector& center, const Vector& color)
 {
-    int width, height;
+    int width, height, textCenterX = 0, textCenterY = 0;
 
     if (text.empty()) return;
-    if (!glCanvas->MeasureText(text, &width, &height)) {
-        ERR_POST(Error << "MeasureText() failed");
-        return;
-    }
+    if (!glCanvas->MeasureText(text, &width, &height, &textCenterX, &textCenterY))
+        ERR_POST(Warning << "MeasureText() failed");
 
     SetColor(GL_AMBIENT, color[0], color[1], color[2]);
     glListBase(FONT_BASE);
     glRasterPos3d(center.x, center.y, center.z);
-    glBitmap(0, 0, 0.0, 0.0, -0.5 * width, -0.5 * height, NULL);
+    glBitmap(0, 0, 0.0, 0.0, -textCenterX, -textCenterY, NULL);
     glCallLists(text.size(), GL_UNSIGNED_BYTE, text.data());
     glListBase(0);
     displayListEmpty[currentDisplayList] = false;

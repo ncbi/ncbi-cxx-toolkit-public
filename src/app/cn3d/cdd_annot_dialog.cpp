@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/10/23 20:10:22  thiessen
+* fix scaling of fonts in high-res PNG output
+*
 * Revision 1.12  2001/10/16 21:49:06  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -209,10 +212,6 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
     // call sizer stuff
     topSizer->Fit(panel);
     SetClientSize(topSizer->GetMinSize());
-
-    TESTMSG("sizer->GetMinSize(): " << topSizer->GetMinSize().GetWidth() << 'x' << topSizer->GetMinSize().GetHeight());
-    TESTMSG("GetSize(): " << GetSize().GetWidth() << 'x' << GetSize().GetHeight());
-    TESTMSG("GetClientSize(): " << GetClientSize().GetWidth() << 'x' << GetClientSize().GetHeight());
 
     // set initial GUI state
     SetupGUIControls(0, 0);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
 * Revision 1.1  2001/10/23 13:53:38  thiessen
 * add PNG export
 *
@@ -67,6 +70,8 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/progress_meter.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/messenger.hpp"
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // The following is taken unmodified from wxDesigner's C++ code from png_dialog.wdr
@@ -349,6 +354,7 @@ static void writepng_error_handler(png_structp png_ptr, png_const_charp msg)
 // called after each row is written to the file
 static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
 {
+	if (!progressMeter) return;
     int progress = 0;
 
     if (nRows < 0) { /* if negative, then we're doing interlacing */
@@ -361,6 +367,7 @@ static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
             case 5: start = 5;  end = 7;  break;
             case 6: start = 7;  end = 11; break;
             case 7: start = 11; end = 15; break;
+            default: return;    // png lib gives final pass=7,row=0 to signal completion
         }
         progress = (int) (1.0 * PROGRESS_RESOLUTION *
             ((start / 15) + (((double) row) / (-nRows)) * ((end - start) / 15)));
@@ -368,7 +375,7 @@ static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
         progress = (int) (1.0 * PROGRESS_RESOLUTION * row / nRows);
     }
 
-    if (progressMeter && progress > 0) progressMeter->SetValue(progress);
+    progressMeter->SetValue(progress);
 }
 
 bool ExportPNG(Cn3DGLCanvas *glCanvas)
@@ -380,21 +387,6 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     unsigned char *rowStorage = NULL;
     png_structp png_ptr = NULL;
     png_infop info_ptr = NULL;
-
-    if (!glCanvas || !glCanvas->renderer) {
-        ERR_POST(Error << "ExportPNG() - bad glCanvas parameter");
-        return false;
-    }
-
-    outputWidth = glCanvas->GetClientSize().GetWidth();		// initial size
-    outputHeight = glCanvas->GetClientSize().GetHeight();
-    if (!GetOutputParameters(&filename, &outputWidth, &outputHeight, &interlaced))
-        return true; // cancelled
-    TESTMSG("saving PNG file '" << filename.c_str() << "'");
-
-    // adjust structure font to scale with image height if necessary
-    if (outputHeight != glCanvas->GetClientSize().GetHeight())
-        glCanvas->SetGLFontFromRegistry(((double) outputHeight) / glCanvas->GetClientSize().GetHeight());
 
     // platform-specific variables for setting up in-memory rendering context
 #if defined(__WXMSW__)
@@ -410,7 +402,19 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     return false;
 #endif
 
+    if (!glCanvas || !glCanvas->renderer) {
+        ERR_POST(Error << "ExportPNG() - bad glCanvas parameter");
+        return false;
+    }
+
+    outputWidth = glCanvas->GetClientSize().GetWidth();		// initial size
+    outputHeight = glCanvas->GetClientSize().GetHeight();
+    if (!GetOutputParameters(&filename, &outputWidth, &outputHeight, &interlaced))
+        return true; // cancelled
+
     try {
+        TESTMSG("saving PNG file '" << filename.c_str() << "'");
+
         int windowViewport[4];
         glCanvas->renderer->GetViewport(windowViewport);
         TESTMSG("window viewport: x,y: " << windowViewport[0] << ',' << windowViewport[1]
@@ -515,10 +519,11 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         // to retrieve pixel data. It's much easier to use glReadPixels rather than
         // trying to read directly from the off-screen buffer, since GL can do all
         // the potentially tricky work of translating from whatever pixel format
-        // the buffer uses into "regular" RGB byte triples.
-        if (!shareDisplayLists) {
-            glCanvas->renderer->SetGLFont(0, 256, glCanvas->renderer->FONT_BASE);
-            glCanvas->renderer->Construct();  // need to draw structures into this rendering context
+        // the buffer uses into "regular" RGB byte triples. If fonts need scaling,
+        // have to reconstruct lists regardless of whether display lists are shared.
+        if (!shareDisplayLists || outputHeight != glCanvas->GetClientSize().GetHeight()) {
+            glCanvas->SetGLFontFromRegistry(((double) outputHeight) / glCanvas->GetClientSize().GetHeight());
+            glCanvas->renderer->Construct();
         }
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -571,6 +576,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
                 else
                     bufferRowStart = bufferHeight - 1;
 
+                // dump chunk to PNG file
                 for (bufferRow = bufferRowStart; bufferRow >= 0; bufferRow--) {
                     glReadPixels(0, bufferRow, outputWidth, 1, GL_RGB, GL_UNSIGNED_BYTE, rowStorage);
                     png_write_row(png_ptr, rowStorage);
@@ -611,8 +617,12 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 #endif
 
     // reset font after "regular" context restore
-    if (outputHeight != glCanvas->GetClientSize().GetHeight())
+    if (outputHeight != glCanvas->GetClientSize().GetHeight()) {
+        glCanvas->SetCurrent();
         glCanvas->SetGLFontFromRegistry(1.0);
+        if (shareDisplayLists)
+            GlobalMessenger()->PostRedrawAllStructures();
+    }
 
     return success;
 }

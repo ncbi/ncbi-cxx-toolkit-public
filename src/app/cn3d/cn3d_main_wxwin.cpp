@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
 * Revision 1.99  2001/10/23 13:53:37  thiessen
 * add PNG export
 *
@@ -421,6 +424,7 @@
 
 #include <wx/file.h>
 #include <wx/fontdlg.h>
+#include <wx/image.h>
 
 #include <ncbienv.h>
 
@@ -848,7 +852,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     wxMenu *menu = new wxMenu;
     menu->Append(MID_OPEN, "&Open");
     menu->Append(MID_SAVE, "&Save");
-    menu->Append(MID_PNG, "Export &PNG");
+    menu->Append(MID_PNG, "&Export PNG");
     menu->AppendSeparator();
     menu->Append(MID_REFIT_ALL, "&Realign Structures");
     menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
@@ -1000,6 +1004,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     // set initial font
     Show(true); // on X, need to establish gl context first, which requires visible window
+    glCanvas->SetCurrent();
     glCanvas->SetGLFontFromRegistry();
 }
 
@@ -1113,6 +1118,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
         // call font setup
         TESTMSG("setting new font");
         if (event.GetId() == MID_OPENGL_FONT) {
+            glCanvas->SetCurrent();
             glCanvas->SetGLFontFromRegistry();
             GlobalMessenger()->PostRedrawAllStructures();
         } else if (event.GetId() == MID_SEQUENCE_FONT) {
@@ -1659,33 +1665,71 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
 
     // set up font display lists in dc and renderer
     if (!memoryDC.Ok()) {
-        wxBitmap bitmap(1, 1, -1);
-        memoryDC.SelectObject(bitmap);
+        wxBitmap tinyBitmap(1, 1, -1);
+        memoryBitmap = tinyBitmap; // copies by reference
+        memoryDC.SelectObject(memoryBitmap);
     }
     memoryDC.SetFont(font);
 
-    SetCurrent();
     renderer->SetGLFont(0, 256, renderer->FONT_BASE);
 }
 
-bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height)
-{
-    wxCoord w, h, descent, externalLeading;
-    memoryDC.GetTextExtent(text.c_str(), &w, &h, &descent, &externalLeading);
-    *width = w;
-    *height = h;
+#define MYMAX(a, b) (((a) >= (b)) ? (a) : (b))
 
-    // empirical platform-specific tweaks, mainly to get ion labels centered
-#if defined(__WXMSW__)
-    *height *= 0.6;
-#elif defined(__WXGTK__)
-    *height *= 0.6;
-    *width *= 0.8;
-#elif defined(__WXMAC__)
-    *height *= 0.7;
-    *width *= 0.9;
-#endif
-	return true;
+bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height, int *centerX, int *centerY)
+{
+    wxCoord w, h;
+    memoryDC.GetTextExtent(text.c_str(), &w, &h);
+    *width = (int) w;
+    *height = (int) h;
+
+    // GetTextExtent measures text+background when a character is drawn, but for OpenGL, we need
+    // to measure actual character pixels more precisely: render characters into memory bitmap,
+    // then find the minimal rect that contains actual character pixels, not text background
+    if (memoryBitmap.GetWidth() < w || memoryBitmap.GetHeight() < h) {
+        wxBitmap biggerBitmap(MYMAX(memoryBitmap.GetWidth(), w), MYMAX(memoryBitmap.GetHeight(), h), -1);
+        memoryBitmap = biggerBitmap; // copies by reference
+        memoryDC.SelectObject(memoryBitmap);
+    }
+    memoryDC.SetBackground(*wxBLUE_BRUSH);
+    memoryDC.SetBackgroundMode(wxSOLID);
+    memoryDC.SetTextBackground(*wxGREEN);
+    memoryDC.SetTextForeground(*wxRED);
+
+    memoryDC.BeginDrawing();
+    memoryDC.Clear();
+    memoryDC.DrawText(text.c_str(), 0, 0);
+    memoryDC.EndDrawing();
+
+    // then convert bitmap to image so that we can read individual pixels (ugh...)
+    wxImage image(memoryBitmap);
+//    wxInitAllImageHandlers();
+//    image.SaveFile("text.png", wxBITMAP_TYPE_PNG); // for testing
+
+    // now find extent of actual (red) text pixels; wx coords put (0,0) at upper left
+    int x, y, top = image.GetHeight(), left = image.GetWidth(), bottom = -1, right = -1;
+    for (x=0; x<image.GetWidth(); x++) {
+        for (y=0; y<image.GetHeight(); y++) {
+            if (image.GetRed(x, y) == 255) { // character pixel here
+                if (y < top) top = y;
+                if (x < left) left = x;
+                if (y > bottom) bottom = y;
+                if (x > right) right = x;
+            }
+        }
+    }
+    if (bottom < 0 || right < 0) {
+        ERR_POST(Warning << "Cn3DGLCanvas::MeasureText() - no character pixels found!");
+        *centerX = *centerY = 0;
+        return false;
+    }
+//    TESTMSG("top: " << top << ", left: " << left << ", bottom: " << bottom << ", right: " << right);
+
+    // set center{X,Y} to center of drawn glyph relative to bottom left
+    *centerX = (int) (((double) (right - left)) / 2 + 0.5);
+    *centerY = (int) (((double) (bottom - top)) / 2 + 0.5);
+
+    return true;
 }
 
 void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
