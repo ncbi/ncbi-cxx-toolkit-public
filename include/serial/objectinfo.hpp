@@ -93,7 +93,7 @@ public:
 
     ETypeFamily GetTypeFamily(void) const;
 
-    bool CObjectTypeInfo::Valid(void) const
+    bool Valid(void) const
         {
             return m_TypeInfo != 0;
         }
@@ -361,6 +361,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/01/26 13:10:07  rsmith
+* delete unnecessary and illegal class specifier.
+*
 * Revision 1.11  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *
