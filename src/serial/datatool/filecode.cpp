@@ -285,7 +285,7 @@ CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out) const
         "/*\n"
         "* ===========================================================================\n"
         "*\n"
-        "* $""Log$"
+        "* $""Log$\n"
         "*\n"
         "* ===========================================================================\n"
         "*/\n";
@@ -712,6 +712,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2002/06/13 15:41:17  ucko
+* Restore generated newline following Log keyword (accidentally dropped in
+* the previous revision).
+*
 * Revision 1.31  2002/06/11 02:46:49  vakatov
 * Fixed a compilation bug introduced in R1.30;  plus some code beautification.
 *
