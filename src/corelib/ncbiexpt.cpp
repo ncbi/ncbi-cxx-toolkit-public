@@ -23,9 +23,13 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Authors:  Denis Vakatov, Andrei Gourianov,
+ *           Eugene Vasilchenko, Anton Lavrentiev
  *
  * File Description:
+ *   CNcbiException
+ *   CExceptionReporter
+ *   CExceptionReporterStream
  *   CErrnoException
  *   CParseException
  *   + initialization for the "unexpected"
@@ -37,7 +41,12 @@
 #include <string.h>
 #include <stdio.h>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+#include <stack>
+#ifdef NCBI_OS_MSWIN
+#  include <windows.h>
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -86,11 +95,297 @@ extern void DoDbgPrint(const char* file, int line,
     DoThrowTraceAbort();
 }
 
-/////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+// CNcbiException implementation
+
+bool CNcbiException::sm_BkgrEnabled=true;
+
+
+CNcbiException::CNcbiException(const char* file, int line, EErrCode err_code,
+                               const char* message,
+                               const CNcbiException* prev_exception) throw()
+    :   m_File(file),
+        m_Line(line),
+        m_ErrCode(err_code),
+        m_Msg(message),
+        m_InReporter(false)
+{
+    m_Predecessor = prev_exception ? prev_exception->x_Clone() : 0;
+}
+
+
+CNcbiException::CNcbiException(const CNcbiException& other) throw()
+{
+    x_Assign(other);
+}
+
+
+CNcbiException::~CNcbiException(void) throw()
+{
+    if (m_Predecessor) {
+        delete m_Predecessor;
+        m_Predecessor = 0;
+    }
+}
+
+void CNcbiException::AddBacklog(const char* file,int line,const char* message)
+{
+    const CNcbiException* prev = m_Predecessor;
+    m_Predecessor = x_Clone();
+    if (prev) {
+        delete prev;
+    }
+    m_File = file;
+    m_Line = line;
+    m_Msg = message;
+}
+
+
+// ---- report --------------
+
+const char* CNcbiException::what(void) const throw()
+{
+    m_What = ReportAll();
+    return m_What.c_str();    
+}
+
+
+void CNcbiException::Report(const char* file, int line,
+                            CExceptionReporter* reporter) const
+{
+    if (reporter ) {
+        reporter->Report(file, line, *this);
+    }
+    // unconditionally ...
+    CExceptionReporter::ReportDefault(file, line, *this);
+}
+
+
+string CNcbiException::ReportAll(void) const
+{
+    // invert the order
+    stack<const CNcbiException*> pile;
+    const CNcbiException* pex;
+    for (pex = this; pex; pex = pex->GetPredecessor()) {
+        pile.push(pex);
+    }
+    ostrstream os;
+    os << "NCBI C++ Exception: " << endl;
+    for (; !pile.empty(); pile.pop()) {
+        //indentation
+        for (size_t cnt = (pile.size()-1)*2; cnt!=0; --cnt) {
+            os.put(' ');
+        }
+        pile.top()->ReportStd(os);
+        pile.top()->ReportExtra(os);
+        os << endl;
+    }
+    os << '\0';
+    if (sm_BkgrEnabled && !m_InReporter) {
+        m_InReporter = true;
+        CExceptionReporter::ReportDefault(0,0,*this);
+        m_InReporter = false;
+    }
+    return os.str();
+}
+
+
+string CNcbiException::ReportThis(void) const
+{
+    ostrstream os;
+    ReportStd(os);
+    ReportExtra(os);
+    os << '\0';
+    return os.str();
+}
+
+
+void CNcbiException::ReportStd(ostream& out) const
+{
+    out <<
+        GetFile() << "(" << GetLine() << ") : " <<
+        GetType() << "::" << GetErrCodeString() << " : \"" <<
+        GetMsg() << "\" ";
+}
+
+void CNcbiException::ReportExtra(ostream& /*out*/) const
+{
+    return;
+}
+
+
+const char* CNcbiException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eUnknown: return "eUnknown";
+    default:       return "eInvalid";
+    }
+}
+
+
+CNcbiException::EErrCode CNcbiException::GetErrCode (void) const
+{
+    return typeid(*this) == typeid(CNcbiException) ?
+        (CNcbiException::EErrCode) x_GetErrCode() :
+        CNcbiException::eInvalid;
+}
+
+
+void CNcbiException::x_ReportToDebugger(void) const
+{
+#ifdef NCBI_OS_MSWIN
+    bool prev = EnableBackgroundReporting(false);
+    OutputDebugString(ReportAll().c_str());
+    EnableBackgroundReporting(prev);
+#endif
+}
+
+
+bool CNcbiException::EnableBackgroundReporting(bool enable)
+{
+    bool prev = sm_BkgrEnabled;
+    sm_BkgrEnabled = enable;
+    return prev;
+}
+
+
+const CNcbiException* CNcbiException::x_Clone(void) const
+{
+    return new CNcbiException(*this);
+}
+
+
+void CNcbiException::x_Assign(const CNcbiException& src)
+{
+    m_File    = src.m_File;
+    m_Line    = src.m_Line;
+    m_Msg     = src.m_Msg;
+    m_Predecessor =
+        src.m_Predecessor ? src.m_Predecessor->x_Clone() : 0;
+    x_AssignErrCode(src);
+}
+
+
+void CNcbiException::x_AssignErrCode(const CNcbiException& src)
+{
+    m_ErrCode = typeid(*this) == typeid(src) ?
+        src.m_ErrCode : CNcbiException::eInvalid;
+}
+
+
+void CNcbiException::x_InitErrCode(EErrCode err_code)
+{
+    m_ErrCode = err_code;
+    if (m_ErrCode != eInvalid && !m_Predecessor) {
+        x_ReportToDebugger();
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CExceptionReporter
+
+const CExceptionReporter* CExceptionReporter::sm_DefHandler = 0;
+
+bool CExceptionReporter::sm_DefEnabled = true;
+
+
+CExceptionReporter::CExceptionReporter(void)
+{
+    return;
+}
+
+
+CExceptionReporter::~CExceptionReporter(void)
+{
+    return;
+}
+
+
+void CExceptionReporter::SetDefault(const CExceptionReporter* handler)
+{
+    sm_DefHandler = handler;
+}
+
+
+const CExceptionReporter* CExceptionReporter::GetDefault(void)
+{
+    return sm_DefHandler;
+}
+
+
+bool CExceptionReporter::EnableDefault(bool enable)
+{
+    bool prev = sm_DefEnabled;
+    sm_DefEnabled = enable;
+    return prev;
+}
+
+
+void CExceptionReporter::ReportDefault(const char* file, int line,
+                                       const CNcbiException& ex)
+{
+    if ( !sm_DefEnabled )
+        return;
+
+    if ( sm_DefHandler ) {
+        sm_DefHandler->Report(file, line, ex);
+    } else {
+        CNcbiDiag(file, line) << ex;
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CExceptionReporterStream
+
+
+CExceptionReporterStream::CExceptionReporterStream(ostream& out)
+    : m_Out(out)
+{
+    return;
+}
+
+
+CExceptionReporterStream::~CExceptionReporterStream(void)
+{
+    return;
+}
+
+
+void CExceptionReporterStream::Report(const char* file, int line,
+                                      const CNcbiException& ex) const
+{
+    const CNcbiException* pex;
+    m_Out << "NCBI C++ Exception";
+    if (file) {
+        m_Out << " at \"" << file << "\", line " << line; 
+    }
+    m_Out << ":" << endl;
+    // invert the order
+    stack<const CNcbiException*> pile;
+    for (pex = &ex; pex; pex = pex->GetPredecessor()) {
+        pile.push(pex);
+    }
+    for (; !pile.empty(); pile.pop()) {
+        pex = pile.top();
+        m_Out <<
+            "    " << // indentation
+            pex->GetType() << "::" << pex->GetErrCodeString() << " at \"" <<
+            pex->GetFile() <<  "\", line " << pex->GetLine() << ": \"" <<
+            pex->GetMsg()  << "\" ";
+        pex->ReportExtra(m_Out);
+        m_Out << endl;
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CErrnoException
 
 CErrnoException::CErrnoException(const string& what) THROWS_NONE
-    : runtime_error(what + ": " + ::strerror(errno)), m_Errno(errno)
+: runtime_error(what + ": " + ::strerror(errno)), m_Errno(errno)
 {
 }
 
@@ -112,8 +407,8 @@ static string s_ComposeParse(const string& what, string::size_type pos)
 }
 
 CParseException::CParseException(const string& what, string::size_type pos)
-THROWS_NONE
-    : runtime_error(s_ComposeParse(what,pos)), m_Pos(pos)
+    THROWS_NONE
+: runtime_error(s_ComposeParse(what,pos)), m_Pos(pos)
 {
 }
 
@@ -121,13 +416,16 @@ CParseException::~CParseException(void) THROWS_NONE
 {
 }
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/06/26 18:38:04  gouriano
+ * added CNcbiException class
+ *
  * Revision 1.20  2002/04/11 21:08:02  ivanov
  * CVS log moved to end of the file
  *

@@ -313,7 +313,8 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* buf, size_t len,
                            const char* file, size_t line,
                            TDiagPostFlags flags, const char* prefix,
-                           int err_code, int err_subcode)
+                           int err_code, int err_subcode,
+                           const char* err_text)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
@@ -324,12 +325,16 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_Prefix     = prefix;
     m_ErrCode    = err_code;
     m_ErrSubCode = err_subcode;
+    m_ErrText    = err_text;
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2002/06/26 18:36:37  gouriano
+ * added CNcbiException class
+ *
  * Revision 1.29  2002/04/23 19:57:26  vakatov
  * Made the whole CNcbiDiag class "mutable" -- it helps eliminate
  * numerous warnings issued by SUN Forte6U2 compiler.

@@ -38,6 +38,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <string>
 #include <stdexcept>
+#include <typeinfo>
 
 
 BEGIN_NCBI_SCOPE
@@ -230,8 +231,8 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 
 #define STD_CATCH(message) \
 catch (NCBI_NS_STD::exception& e) { \
-      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error << "[" << message << "]" \
-           << "Exception: " << e.what(); \
+      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error \
+           << "[" << message << "]" << "Exception: " << e.what(); \
 }
 
 
@@ -240,9 +241,235 @@ catch (NCBI_NS_STD::exception& e) { \
 #define STD_CATCH_ALL(message) \
 STD_CATCH(message) \
     catch (...) { \
-      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error << "[" << message << "]" \
-           << "Unknown exception"; \
+      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error \
+           << "[" << message << "]" << "Unknown exception"; \
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CNcbiException: useful macros
+
+#define NCBI_THROW(exception_class, err_code, message) \
+    throw exception_class(__FILE__, __LINE__, \
+        exception_class::err_code, (message))
+
+#define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
+    throw exception_class(__FILE__, __LINE__, \
+        exception_class::err_code, (message), &(prev_exception))
+
+#define NCBI_RETHROW_SAME(prev_exception, message) \
+    do { prev_exception.AddBacklog(__FILE__, __LINE__, message); \
+    throw; }  while (0)
+
+#define REPORT_NCBI_EXCEPTION(e) \
+    CExceptionReporter::ReportDefault(__FILE__, __LINE__, e)
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CNcbiException
+
+class CExceptionReporter;
+
+class CNcbiException : public exception
+{
+public:
+    // Each derived class has its own err.codes and their interpretations
+    enum EErrCode {
+        eInvalid = -1, // to be used ONLY as a return value,
+                       // Please, NEVER throw an exception with this code
+        eUnknown = 0
+    };
+
+    // When throwing an exception initially, "prev_exception" must be 0
+    CNcbiException(const char* file, int line, EErrCode err_code,
+                   const char* message,
+                   const CNcbiException* prev_exception = 0) throw();
+
+    // Copy constructor
+    CNcbiException(const CNcbiException& other) throw();
+
+    // Add a message to backlog (to re-throw the same exception then)
+    void AddBacklog(const char* file, int line,const char* message);
+
+
+    // ---- Reporting --------------
+
+    // Standard report (includes full backlog)
+    virtual const char* what(void) const throw();
+
+    // Report the exception using "reporter";
+    // if "reporter" is not specified (passed 0), then use the default reporter
+    // (as set with CExceptionReporter::SetDefault)
+    void Report(const char* file, int line,
+                CExceptionReporter* reporter = 0) const;
+
+    // Report as a string
+    string ReportThis(void) const;  // this exception only, no backlog attached
+    string ReportAll (void) const;  // including full backlog
+
+    // Report "standard" attributes (file, line, type, err.code, user message)
+    // into the "out" stream (this exception only, no backlog)
+    void ReportStd(ostream& out) const;
+
+    // Report "non-standard" attributes (those of derived class)
+    // into the "out" stream
+    virtual void ReportExtra(ostream& out) const;
+
+    // If _enabled_, then calling what() or ReportAll() would
+    // also report exception to the default exception reporter.
+    // Return the previous state of the flag.
+    static bool EnableBackgroundReporting(bool enable);
+
+
+    // ---- Attributes ---------
+
+    // Class name as a string
+    virtual const char* GetType(void) const { return "CNcbiException"; }
+
+    // Interpretation of error code (as text)
+    virtual const char* GetErrCodeString(void) const;
+
+    // Other standard attributes
+    const string& GetFile    (void) const { return m_File; }
+    int           GetLine    (void) const { return m_Line; }
+    EErrCode      GetErrCode (void) const;
+    const string& GetMsg     (void) const { return m_Msg;  }
+
+
+    // Get "previous" exception from the backlog
+    const CNcbiException* GetPredecessor(void) const { return m_Predecessor; }
+
+    // Destructor
+    virtual ~CNcbiException(void) throw();
+
+protected:
+    // Report to the system debugger
+    void x_ReportToDebugger(void) const;
+
+    // Clone the exception
+    virtual const CNcbiException* x_Clone(void) const;
+
+    // Copy exception data
+    void x_Assign(const CNcbiException& src);
+
+    
+    void x_AssignErrCode(const CNcbiException& src);
+    void x_InitErrCode(CNcbiException::EErrCode err_code);
+    int  x_GetErrCode(void) const { return m_ErrCode; }
+
+private:
+    string  m_File;
+    int     m_Line;
+    int     m_ErrCode;
+    string  m_Msg;
+
+    mutable string m_What;
+    const CNcbiException* m_Predecessor;
+
+    mutable bool m_InReporter;
+    static bool sm_BkgrEnabled;
+
+    // Prohibit default constructor and assignment
+    CNcbiException(void);
+    CNcbiException& operator= (const CNcbiException&) throw();
+};
+
+
+// Return valid pointer to uppermost derived class only if "from" is _really_ 
+// the object of the desired type.
+// Do not cast to intermediate types (return NULL if such cast is attempted).
+template <class TTo, class TFrom>
+const TTo* UppermostCast(const TFrom& from)
+{
+    return typeid(from) == typeid(TTo) ? dynamic_cast<const TTo*>(&from) : 0;
+}
+
+
+// Macro to help declare new exception class
+// This can be used ONLY if the derived class
+// does not have any additional (non-standard) data members
+#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
+public: \
+    exception_class(const char* file,int line,EErrCode err_code,\
+        const char* message, const base_class* prev_exception=0) throw() \
+        : base_class(file, line, \
+            (base_class::EErrCode) CNcbiException::eInvalid, \
+            message, prev_exception) \
+    { \
+        x_InitErrCode((CNcbiException::EErrCode) err_code); \
+    } \
+    exception_class(const exception_class& other) throw() \
+       : base_class(other) \
+    { \
+        x_AssignErrCode(other); \
+    } \
+    virtual ~exception_class(void) throw() {} \
+    virtual const char* GetType(void) const {return #exception_class;} \
+    EErrCode GetErrCode(void) const \
+    { \
+        return typeid(*this) == typeid(##exception_class) ? \
+            (exception_class::EErrCode) x_GetErrCode() : \
+            (exception_class::EErrCode) CNcbiException::eInvalid; \
+    } \
+protected: \
+    virtual const CNcbiException* x_Clone(void) const \
+    { \
+        return new exception_class(*this); \
+    } \
+private: \
+    /* for the sake of semicolon at the end of macro...*/ \
+    static void xx_unused_##exception_class(void)
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CExceptionReporter
+
+class CExceptionReporter
+{
+public:
+    CExceptionReporter(void);
+    virtual ~CExceptionReporter(void);
+
+    // Default reporter
+    static void SetDefault(const CExceptionReporter* handler);
+    static const CExceptionReporter* GetDefault(void);
+
+    // Enable/disable using default reporter
+    // Return previous state of this flag
+    static bool EnableDefault(bool enable);
+
+    // Report exception using default reporter
+    static void ReportDefault(const char* file, int line,
+                              const CNcbiException& ex);
+
+    // Report exception with _this_ reporter
+    virtual void Report(const char* file, int line,
+                        const CNcbiException& ex) const = 0;
+
+private:
+    static const CExceptionReporter* sm_DefHandler;
+    static bool                      sm_DefEnabled;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CExceptionReporterStream
+
+class CExceptionReporterStream : public CExceptionReporter
+{
+public:
+    CExceptionReporterStream(ostream& out);
+    virtual ~CExceptionReporterStream(void);
+
+    virtual void Report(const char* file, int line,
+                        const CNcbiException& ex) const;
+private:
+    ostream& m_Out;
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -250,25 +477,28 @@ STD_CATCH(message) \
 //   CErrnoException
 //   CParseException
 //
+
 class CErrnoException : public runtime_error
 {
-    int m_Errno;
 public:
     // Report description of "errno" along with "what"
     CErrnoException(const string& what) THROWS_NONE;
     ~CErrnoException(void) THROWS_NONE;
     int GetErrno(void) const THROWS_NONE { return m_Errno; }
+private:
+    int m_Errno;
 };
 
 
 class CParseException : public runtime_error
 {
-    string::size_type m_Pos;
 public:
     // Report "pos" along with "what"
     CParseException(const string& what, string::size_type pos) THROWS_NONE;
     ~CParseException(void) THROWS_NONE;
     string::size_type GetPos(void) const THROWS_NONE { return m_Pos; }
+private:
+    string::size_type m_Pos;
 };
 
 
@@ -278,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/06/26 18:36:36  gouriano
+ * added CNcbiException class
+ *
  * Revision 1.27  2002/04/11 20:39:17  ivanov
  * CVS log moved to end of the file
  *

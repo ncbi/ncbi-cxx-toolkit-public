@@ -42,8 +42,10 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbiexpt.hpp>
 #include <stdlib.h>
 #include <time.h>
+#include <stack>
 
 #if defined(NCBI_OS_MAC)
 #  include <corelib/ncbi_os_mac.hpp>
@@ -288,12 +290,17 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
         (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
         os << CNcbiDiag::SeverityName(m_Severity) << ": ";
 
-    // (<err_code>.<err_subcode>)
-    if ((m_ErrCode  ||  m_ErrSubCode)  &&
+    // (<err_code>.<err_subcode>) or (err_text)
+    if ((m_ErrCode  ||  m_ErrSubCode || m_ErrText)  &&
         IsSetDiagPostFlag(eDPF_ErrCode, m_Flags)) {
-        os << "(" << m_ErrCode;
-        if ( IsSetDiagPostFlag(eDPF_ErrSubCode, m_Flags)) {
-            os << "." << m_ErrSubCode;
+        os << "(";
+        if (m_ErrText) {
+            os << m_ErrText;
+        } else {
+            os << m_ErrCode;
+            if ( IsSetDiagPostFlag(eDPF_ErrSubCode, m_Flags)) {
+                os << "." << m_ErrSubCode;
+            }
         }
         os << ") ";
     }
@@ -525,6 +532,46 @@ const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
     return *this;
 }
 
+const CNcbiDiag& CNcbiDiag::operator<< (const CNcbiException& ex) const
+{
+    {
+        ostrstream os;
+        os << " NCBI C++ Exception:" << endl << '\0';
+        *this << os.str();
+    }
+    const CNcbiException* pex;
+    stack<const CNcbiException*> pile;
+    // invert the order
+    for (pex = &ex; pex; pex = pex->GetPredecessor()) {
+        pile.push(pex);
+    }
+    for (; !pile.empty(); pile.pop()) {
+        pex = pile.top();
+        string text(pex->GetMsg());
+        {
+            ostrstream os;
+            pex->ReportExtra(os);
+            os << '\0';
+            if (strlen(os.str())!=0) {
+                text += " (";
+                text += os.str();
+                text += ')';
+            }
+        }
+        string err_type(pex->GetType());
+        err_type += "::";
+        err_type += pex->GetErrCodeString();
+        SDiagMessage diagmsg(
+            eDiag_Error, text.c_str(), text.size(),
+            (pex->GetFile()).c_str(), pex->GetLine(),
+            eDPF_Default, 0,0,0,err_type.c_str());
+        string report;
+        diagmsg.Write(report);
+        *this << "    "; // indentation
+        *this << report;
+    }
+    return *this;
+}
 
 ///////////////////////////////////////////////////////
 //  CDiagRestorer::
@@ -665,6 +712,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.55  2002/06/26 18:38:04  gouriano
+ * added CNcbiException class
+ *
  * Revision 1.54  2002/06/18 17:07:12  lavr
  * Take advantage of NStr:strftime()
  *

@@ -108,6 +108,8 @@ class ErrCode;
 //////////////////////////////////////////////////////////////////
 // The diagnostics class
 
+class CNcbiException;
+
 class CNcbiDiag
 {
 public:
@@ -126,6 +128,7 @@ public:
 
     // manipulator to set error code(s), like:  CNcbiDiag() << ErrCode(5,3);
     const CNcbiDiag& operator<< (const ErrCode& err_code) const;
+    const CNcbiDiag& operator<< (const CNcbiException& ex) const;
 
     // other (function-based) manipulators
     const CNcbiDiag& operator<< (const CNcbiDiag& (*f)(const CNcbiDiag&))
@@ -253,7 +256,8 @@ struct SDiagMessage {
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
                  TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
-                 int err_code = 0, int err_subcode = 0);
+                 int err_code = 0, int err_subcode = 0,
+                 const char* err_text = 0);
 
     EDiagSev       m_Severity;
     const char*    m_Buffer;  // not guaranteed to be '\0'-terminated!
@@ -264,6 +268,8 @@ struct SDiagMessage {
     int            m_ErrSubCode;
     TDiagPostFlags m_Flags;   // bitwise OR of "EDiagPostFlag"
     const char*    m_Prefix;
+    const char*    m_ErrText; // sometimes 'error' has no numeric code,
+                              // still it can be represented as text
 
     // Compose a message string in the standard format(see also "flags"):
     //    "<file>", line <line>: <severity>: [<prefix>] <message> EOL
@@ -380,6 +386,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.43  2002/06/26 18:36:37  gouriano
+ * added CNcbiException class
+ *
  * Revision 1.42  2002/04/23 19:57:25  vakatov
  * Made the whole CNcbiDiag class "mutable" -- it helps eliminate
  * numerous warnings issued by SUN Forte6U2 compiler.
