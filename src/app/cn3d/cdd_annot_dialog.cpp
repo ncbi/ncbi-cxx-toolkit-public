@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/01/19 02:34:35  thiessen
+* fixes for changes in asn serialization API
+*
 * Revision 1.19  2001/12/12 14:04:13  thiessen
 * add missing object headers after object loader change
 *
@@ -427,11 +430,11 @@ void CDDAnnotateDialog::NewAnnotation(void)
 
     // fill out location
     if (intervals.size() == 1) {
-        annot->SetLocation().SetInt(intervals.front());
+        annot->SetLocation().SetInt(intervals.front().GetObject());
     } else {
-        CRef < CPacked_seqint > packed(new CPacked_seqint());
+        CPacked_seqint *packed = new CPacked_seqint();
         packed->Set() = intervals;  // copy list
-        annot->SetLocation().SetPacked_int(packed);
+        annot->SetLocation().SetPacked_int(*packed);
     }
 
     // add to annotation list
@@ -498,11 +501,11 @@ void CDDAnnotateDialog::EditAnnotation(void)
         else if (move == wxYES) {
             // change location
             if (intervals.size() == 1) {
-                selectedAnnot->SetLocation().SetInt(intervals.front());
+                selectedAnnot->SetLocation().SetInt(intervals.front().GetObject());
             } else {
-                CRef < CPacked_seqint > packed(new CPacked_seqint());
+                CPacked_seqint *packed = new CPacked_seqint();
                 packed->Set() = intervals;  // copy list
-                selectedAnnot->SetLocation().SetPacked_int(packed);
+                selectedAnnot->SetLocation().SetPacked_int(*packed);
             }
             structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
         }
@@ -970,10 +973,10 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
         DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tSTRUCTURE, ID_T_STRUCTURE, wxTextCtrl)
         // either leave existing range alone, or use new one if none present or rerange button pressed
         if (!evidence->IsBsannot() || rerange) {
-            CRef < CBiostruc_annot_set > ref(GlobalMessenger()->
-                CreateBiostrucAnnotSetForHighlightsOnSingleObject());
-            if (ref.NotEmpty())
-                evidence->SetBsannot(ref);
+            CBiostruc_annot_set *ref =
+                GlobalMessenger()->CreateBiostrucAnnotSetForHighlightsOnSingleObject();
+            if (ref)
+                evidence->SetBsannot(*ref);
             else
                 return false;
         }

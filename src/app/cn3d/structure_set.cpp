@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2002/01/19 02:34:50  thiessen
+* fixes for changes in asn serialization API
+*
 * Revision 1.92  2002/01/03 16:18:40  thiessen
 * add distance selection
 *
@@ -859,8 +862,8 @@ void StructureSet::InitStructureAlignments(int masterMMDBID)
     // new Mmdb-id
     structureAlignments->SetId().resize(1);
     structureAlignments->SetId().front().Reset(new CBiostruc_id());
-    CRef<CMmdb_id> mid(new CMmdb_id(masterMMDBID));
-    structureAlignments->SetId().front().GetObject().SetMmdb_id(mid);
+    CMmdb_id *mid = new CMmdb_id(masterMMDBID);
+    structureAlignments->SetId().front().GetObject().SetMmdb_id(*mid);
     // new Biostruc-feature-set
     CRef<CBiostruc_feature_set> featSet(new CBiostruc_feature_set());
     featSet.GetObject().SetId().Set(NO_DOMAIN);
@@ -1133,9 +1136,9 @@ const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
 
     // add asn sequence to asn data
     if (dataManager->GetSequences()) {
-        CRef < CSeq_entry > se(new CSeq_entry());
-        se->SetSeq(CRef<CBioseq>(&bioseq));
-        dataManager->GetSequences()->push_back(se);
+        CSeq_entry *se = new CSeq_entry();
+        se->SetSeq(bioseq);
+        dataManager->GetSequences()->push_back(CRef<CSeq_entry>(se));
     } else
         ERR_POST(Error << "StructureSet::CreateNewSequence() - no sequence list in asn data");
     dataManager->SetDataChanged(eSequenceData);
@@ -1341,23 +1344,23 @@ void StructureObject::RealignStructure(int nCoords,
     feature->SetType(CBiostruc_feature::eType_alignment);
     CRef<CBiostruc_feature::C_Location> location(new CBiostruc_feature::C_Location());
     feature->SetLocation(*location);
-    CRef<CChem_graph_alignment> graphAlignment(new CChem_graph_alignment());
-    location.GetObject().SetAlignment(graphAlignment);
+    CChem_graph_alignment *graphAlignment = new CChem_graph_alignment();
+    location.GetObject().SetAlignment(*graphAlignment);
 
     // fill out the Chem-graph-alignment
-    graphAlignment.GetObject().SetDimension(2);
-    CRef<CMmdb_id>
-        masterMID(new CMmdb_id(parentSet->objects.front()->mmdbID)),
-        slaveMID(new CMmdb_id(mmdbID));
-    CRef<CBiostruc_id>
-        masterBID(new CBiostruc_id()),
-        slaveBID(new CBiostruc_id());
-    masterBID.GetObject().SetMmdb_id(masterMID);
-    slaveBID.GetObject().SetMmdb_id(slaveMID);
-    graphAlignment.GetObject().SetBiostruc_ids().resize(2);
-    graphAlignment.GetObject().SetBiostruc_ids().front() = masterBID;
-    graphAlignment.GetObject().SetBiostruc_ids().back() = slaveBID;
-    graphAlignment.GetObject().SetAlignment().resize(2);
+    graphAlignment->SetDimension(2);
+    CMmdb_id
+        *masterMID = new CMmdb_id(parentSet->objects.front()->mmdbID),
+        *slaveMID = new CMmdb_id(mmdbID);
+    CBiostruc_id
+        *masterBID = new CBiostruc_id(),
+        *slaveBID = new CBiostruc_id();
+    masterBID->SetMmdb_id(*masterMID);
+    slaveBID->SetMmdb_id(*slaveMID);
+    graphAlignment->SetBiostruc_ids().resize(2);
+    graphAlignment->SetBiostruc_ids().front().Reset(masterBID);
+    graphAlignment->SetBiostruc_ids().back().Reset(slaveBID);
+    graphAlignment->SetAlignment().resize(2);
 
     // fill out sequence alignment intervals, tracking domains in alignment
     int masterDomain = NO_DOMAIN, slaveDomain = NO_DOMAIN;
@@ -1366,23 +1369,23 @@ void StructureObject::RealignStructure(int nCoords,
         *slaveMolecule = multiple->GetSequenceOfRow(slaveRow)->molecule;
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
     if (blocks.get()) {
-        CRef<CChem_graph_pntrs>
-            masterCGPs(new CChem_graph_pntrs()),
-            slaveCGPs(new CChem_graph_pntrs());
-        graphAlignment.GetObject().SetAlignment().front() = masterCGPs;
-        graphAlignment.GetObject().SetAlignment().back() = slaveCGPs;
-        CRef<CResidue_pntrs>
-            masterRPs(new CResidue_pntrs()),
-            slaveRPs(new CResidue_pntrs());
-        masterCGPs.GetObject().SetResidues(masterRPs);
-        slaveCGPs.GetObject().SetResidues(slaveRPs);
+        CChem_graph_pntrs
+            *masterCGPs = new CChem_graph_pntrs(),
+            *slaveCGPs = new CChem_graph_pntrs();
+        graphAlignment->SetAlignment().front().Reset(masterCGPs);
+        graphAlignment->SetAlignment().back().Reset(slaveCGPs);
+        CResidue_pntrs
+            *masterRPs = new CResidue_pntrs(),
+            *slaveRPs = new CResidue_pntrs();
+        masterCGPs->SetResidues(*masterRPs);
+        slaveCGPs->SetResidues(*slaveRPs);
 
-        masterRPs.GetObject().SetInterval().resize(blocks->size());
-        slaveRPs.GetObject().SetInterval().resize(blocks->size());
+        masterRPs->SetInterval().resize(blocks->size());
+        slaveRPs->SetInterval().resize(blocks->size());
         BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
         CResidue_pntrs::TInterval::iterator
-            mi = masterRPs.GetObject().SetInterval().begin(),
-            si = slaveRPs.GetObject().SetInterval().begin();
+            mi = masterRPs->SetInterval().begin(),
+            si = slaveRPs->SetInterval().begin();
         for (b=blocks->begin(); b!=be; b++, mi++, si++) {
             CResidue_interval_pntr
                 *masterRIP = new CResidue_interval_pntr(),
@@ -1407,8 +1410,8 @@ void StructureObject::RealignStructure(int nCoords,
 
     // fill out structure alignment transform
     CTransform *xform = new CTransform();
-    graphAlignment.GetObject().SetTransform().resize(1);
-    graphAlignment.GetObject().SetTransform().front().Reset(xform);
+    graphAlignment->SetTransform().resize(1);
+    graphAlignment->SetTransform().front().Reset(xform);
     xform->SetId(1);
     xform->SetMoves().resize(3);
     CTransform::TMoves::iterator m = xform->SetMoves().begin();
@@ -1417,32 +1420,32 @@ void StructureObject::RealignStructure(int nCoords,
         m->Reset(move);
         static const int scaleFactor = 100000;
         if (i == 0) {   // translate slave so its COM is at origin
-            CRef<CTrans_matrix> trans(new CTrans_matrix());
-            move->SetTranslate(trans);
-            trans.GetObject().SetScale_factor(scaleFactor);
-            trans.GetObject().SetTran_1((int)(-(slaveCOM.x * scaleFactor)));
-            trans.GetObject().SetTran_2((int)(-(slaveCOM.y * scaleFactor)));
-            trans.GetObject().SetTran_3((int)(-(slaveCOM.z * scaleFactor)));
+            CTrans_matrix *trans = new CTrans_matrix();
+            move->SetTranslate(*trans);
+            trans->SetScale_factor(scaleFactor);
+            trans->SetTran_1((int)(-(slaveCOM.x * scaleFactor)));
+            trans->SetTran_2((int)(-(slaveCOM.y * scaleFactor)));
+            trans->SetTran_3((int)(-(slaveCOM.z * scaleFactor)));
         } else if (i == 1) {
-            CRef<CRot_matrix> rot(new CRot_matrix());
-            move->SetRotate(rot);
-            rot.GetObject().SetScale_factor(scaleFactor);
-            rot.GetObject().SetRot_11((int)(slaveRotation[0] * scaleFactor));
-            rot.GetObject().SetRot_12((int)(slaveRotation[4] * scaleFactor));
-            rot.GetObject().SetRot_13((int)(slaveRotation[8] * scaleFactor));
-            rot.GetObject().SetRot_21((int)(slaveRotation[1] * scaleFactor));
-            rot.GetObject().SetRot_22((int)(slaveRotation[5] * scaleFactor));
-            rot.GetObject().SetRot_23((int)(slaveRotation[9] * scaleFactor));
-            rot.GetObject().SetRot_31((int)(slaveRotation[2] * scaleFactor));
-            rot.GetObject().SetRot_32((int)(slaveRotation[6] * scaleFactor));
-            rot.GetObject().SetRot_33((int)(slaveRotation[10] * scaleFactor));
+            CRot_matrix *rot = new CRot_matrix();
+            move->SetRotate(*rot);
+            rot->SetScale_factor(scaleFactor);
+            rot->SetRot_11((int)(slaveRotation[0] * scaleFactor));
+            rot->SetRot_12((int)(slaveRotation[4] * scaleFactor));
+            rot->SetRot_13((int)(slaveRotation[8] * scaleFactor));
+            rot->SetRot_21((int)(slaveRotation[1] * scaleFactor));
+            rot->SetRot_22((int)(slaveRotation[5] * scaleFactor));
+            rot->SetRot_23((int)(slaveRotation[9] * scaleFactor));
+            rot->SetRot_31((int)(slaveRotation[2] * scaleFactor));
+            rot->SetRot_32((int)(slaveRotation[6] * scaleFactor));
+            rot->SetRot_33((int)(slaveRotation[10] * scaleFactor));
         } else if (i == 2) {    // translate slave so its COM is at COM of master
-            CRef<CTrans_matrix> trans(new CTrans_matrix());
-            move->SetTranslate(trans);
-            trans.GetObject().SetScale_factor(scaleFactor);
-            trans.GetObject().SetTran_1((int)(masterCOM.x * scaleFactor));
-            trans.GetObject().SetTran_2((int)(masterCOM.y * scaleFactor));
-            trans.GetObject().SetTran_3((int)(masterCOM.z * scaleFactor));
+            CTrans_matrix *trans = new CTrans_matrix();
+            move->SetTranslate(*trans);
+            trans->SetScale_factor(scaleFactor);
+            trans->SetTran_1((int)(masterCOM.x * scaleFactor));
+            trans->SetTran_2((int)(masterCOM.y * scaleFactor));
+            trans->SetTran_3((int)(masterCOM.z * scaleFactor));
         }
     }
 

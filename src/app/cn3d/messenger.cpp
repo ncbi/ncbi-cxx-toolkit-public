@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/01/19 02:34:42  thiessen
+* fixes for changes in asn serialization API
+*
 * Revision 1.24  2001/12/12 14:04:13  thiessen
 * add missing object headers after object loader change
 *
@@ -471,10 +474,10 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     bfs->SetFeatures().push_back(bf);
 
     // create Chem-graph-pntrs with residues
-    CRef < CChem_graph_pntrs > cgp(new CChem_graph_pntrs());
-    bf->SetLocation().SetSubgraph(cgp);
-    CRef < CResidue_pntrs > rp(new CResidue_pntrs());
-    cgp->SetResidues(rp);
+    CChem_graph_pntrs *cgp = new CChem_graph_pntrs();
+    bf->SetLocation().SetSubgraph(*cgp);
+    CResidue_pntrs *rp = new CResidue_pntrs();
+    cgp->SetResidues(*rp);
 
     // add all residue intervals
     for (h=highlights.begin(); h!=he; h++) {

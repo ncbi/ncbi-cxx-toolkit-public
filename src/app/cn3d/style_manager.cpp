@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/01/19 02:34:50  thiessen
+* fixes for changes in asn serialization API
+*
 * Revision 1.59  2001/12/12 14:04:15  thiessen
 * add missing object headers after object loader change
 *
@@ -1567,9 +1570,9 @@ static bool CreateObjectLocation(
         if (l == le) {
             CRef < CCn3d_object_location > loc(new CCn3d_object_location());
             if (r->first->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
-                CRef < CMmdb_id > mmdbID(new CMmdb_id());
+                CMmdb_id *mmdbID = new CMmdb_id();
                 mmdbID->Set(r->first->mmdbID);
-                loc->SetStructure_id().SetMmdb_id(mmdbID);
+                loc->SetStructure_id().SetMmdb_id(*mmdbID);
             } else {
                 ERR_POST(Error << "CreateObjectLocation() - MoleculeIdentifier must (currently) have MMDB ID");
                 return false;

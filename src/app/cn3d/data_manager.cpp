@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/19 02:34:40  thiessen
+* fixes for changes in asn serialization API
+*
 * Revision 1.4  2001/12/15 03:15:59  thiessen
 * adjustments for slightly changed object loader Set...() API
 *
@@ -422,7 +425,7 @@ bool ASNDataManager::ConvertMimeToGeneral(void)
 
     // copy alignment data into bundle
     CBundle_seqs_aligns *bundle = new CBundle_seqs_aligns();
-    newMime->SetGeneral().SetSeq_align_data().SetBundle(CRef<CBundle_seqs_aligns>(bundle));
+    newMime->SetGeneral().SetSeq_align_data().SetBundle(*bundle);
     if (seqEntryList) {
         bundle->SetSequences() = *seqEntryList;
         seqEntryList = &(bundle->SetSequences());
@@ -490,7 +493,7 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     if (usedSeqs.find((seq)->bioseqASN.GetPointer()) == usedSeqs.end()) { \
         seqEntryList->resize(seqEntryList->size() + 1); \
         seqEntryList->back().Reset(new CSeq_entry); \
-        seqEntryList->back().GetObject().SetSeq((seq)->bioseqASN); \
+        seqEntryList->back().GetObject().SetSeq((seq)->bioseqASN.GetObject()); \
         usedSeqs[(seq)->bioseqASN.GetPointer()] = true; \
     } } while (0)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/01/19 02:34:46  thiessen
+* fixes for changes in asn serialization API
+*
 * Revision 1.43  2002/01/11 15:49:01  thiessen
 * update for Mac CW7
 *
@@ -475,9 +478,9 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
     } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
         sid->SetGi(identifier->gi);
     } else if (identifier->accession.size() > 0) {
-        CRef<CObject_id> oid(new CObject_id());
+        CObject_id *oid = new CObject_id();
         oid->SetStr(identifier->accession);
-        sid->SetLocal(oid);
+        sid->SetLocal(*oid);
     } else {
         ERR_POST(Error << "Sequence::FillOutSeqId() - can't do Seq-id on sequence "
             << identifier->ToString());
@@ -704,7 +707,7 @@ void LaunchWebPage(const char *url)
         << "' ) >/dev/null 2>&1 &" << '\0';
     system(oss.str());
     delete oss.str();
-    
+
 #elif defined(__WXMAC__)
     Nlm_SendURLAppleEvent (url, "MOSS", NULL);
 #endif
