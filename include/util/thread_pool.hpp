@@ -43,6 +43,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/07 20:15:06  ucko
+* Fully initialize thread-pool state.
+*
 * Revision 1.1  2001/12/11 19:54:44  ucko
 * Introduce thread pools.
 *
@@ -126,8 +129,8 @@ public:
 
     CPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
                    int spawn_threshold = 1)
-        : m_MaxThreads(max_threads), m_Threshold(spawn_threshold),
-          m_Queue(queue_size)
+        : m_ThreadCount(0), m_MaxThreads(max_threads),
+          m_Delta(0), m_Threshold(spawn_threshold), m_Queue(queue_size)
         {}
     virtual ~CPoolOfThreads(void) {}
 
@@ -138,7 +141,7 @@ protected:
     virtual TThread* NewThread(void) = 0;
 
     volatile unsigned int    m_ThreadCount;
-    unsigned int             m_MaxThreads;
+    volatile unsigned int    m_MaxThreads;
     volatile int             m_Delta;     // # unfinished requests - # threads
     int                      m_Threshold; // for delta
     CMutex                   m_Mutex;     // for volatile counters
