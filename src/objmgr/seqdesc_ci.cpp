@@ -60,7 +60,7 @@ bool CSeqdesc_CI::x_RequestedType(void) const
 {
     _ASSERT(CSeqdesc::e_MaxChoice < 32);
     _ASSERT(x_ValidDesc());
-    return m_Choice & (1<<(**m_Desc_CI).Which());
+    return m_Choice & (1<<(**m_Desc_CI).Which()) ? true : false;
 }
 
 
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/11/22 16:08:15  dicuccio
+* Fix compiler warning in Win32
+*
 * Revision 1.14  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.
