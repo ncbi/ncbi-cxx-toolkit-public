@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/10 21:06:48  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.2  1999/06/07 19:30:26  vasilche
 * More bug fixes
 *
@@ -139,10 +142,16 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 bool COObjectList::CheckMember(TConstObjectPtr owner, TTypeInfo ownerTypeInfo,
                                TConstObjectPtr member, TTypeInfo memberTypeInfo)
 {
-    if ( owner == member && ownerTypeInfo == memberTypeInfo )
-        return true;
-    ERR_POST("check is not complete");
-    return false;
+    while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
+        const CMemberInfo* memberInfo =
+            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
+        if ( memberInfo == 0 ) {
+            return false;
+        }
+        ownerTypeInfo = memberInfo->GetTypeInfo();
+        owner = memberInfo->GetMember(owner);
+    }
+    return true;
 }
 
 void COObjectList::CheckAllWritten(void) const
@@ -151,25 +160,46 @@ void COObjectList::CheckAllWritten(void) const
           i != m_Objects.end();
           ++i ) {
         if ( !i->second.IsWritten() ) {
-            ERR_POST("object not written: " << unsigned(i->first) << '{' << i->second.GetTypeInfo()->GetName() << '}');
+            ERR_POST("object not written: " << unsigned(i->first) <<
+                     '{' << i->second.GetTypeInfo()->GetName() << '}');
             throw runtime_error("object not written");
         }
     }
 }
 
 void COObjectList::SetObject(COObjectInfo& info,
-                             TConstObjectPtr object, TTypeInfo typeInfo) const
+                             TConstObjectPtr member,
+                             TTypeInfo memberTypeInfo) const
 {
-    TObjects::const_iterator i = m_Objects.find(object);
-    if ( i != m_Objects.end() && i->second.GetTypeInfo() == typeInfo ) {
-        info.m_RootObject = &*i;
+    // note that TObject have reverse sort order
+    // just in case typedef in header file will be redefined:
+    typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
+
+    TObjects::const_iterator root = m_Objects.lower_bound(member);
+    // root->first <= object, (root-1)->first > object
+    if ( root == m_Objects.end() ) {
+        THROW1_TRACE(runtime_error, "object is not collected");
     }
-    THROW1_TRACE(runtime_error, "members not supported yet");
+
+    info.m_RootObject = &*root;
+    TConstObjectPtr owner = info.GetRootObject();
+    TTypeInfo ownerTypeInfo = info.GetRootObjectInfo().GetTypeInfo();
+
+    while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
+        const CMemberInfo* memberInfo =
+            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
+        if ( memberInfo == 0 ) {
+            THROW1_TRACE(runtime_error, "object is not collected");
+        }
+        info.m_Members.push_back(memberInfo);
+        ownerTypeInfo = memberInfo->GetTypeInfo();
+        owner = memberInfo->GetMember(owner);
+    }
 }
 
-void COObjectList::RegisterObject(CORootObjectInfo& info)
+void COObjectList::RegisterObject(const CORootObjectInfo& info)
 {
-    info.m_Index = m_NextObjectIndex++;
+    const_cast<CORootObjectInfo&>(info).m_Index = m_NextObjectIndex++;
 }
 
 END_NCBI_SCOPE

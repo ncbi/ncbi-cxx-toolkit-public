@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/10 21:06:50  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.4  1999/06/07 20:42:58  vasilche
 * Fixed compilation under MS VS
 *
@@ -167,6 +170,18 @@ void CTypeInfo::CollectObjects(COObjectList& , TConstObjectPtr ) const
 bool CTypeInfo::IsDefault(TConstObjectPtr ) const
 {
     return false;
+}
+
+const CMemberInfo* CTypeInfo::FindMember(const string& ) const
+{
+    return 0;
+}
+
+const CMemberInfo* CTypeInfo::LocateMember(TConstObjectPtr ,
+                                           TConstObjectPtr ,
+                                           TTypeInfo ) const
+{
+    return 0;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/10 21:06:37  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.4  1999/06/07 20:42:58  vasilche
 * Fixed compilation under MS VS
 *
@@ -103,6 +106,9 @@ public:
     TConstObjectPtr GetContainer(TConstObjectPtr object) const
         { return CTypeInfo::Add(object, -m_Offset); }
 
+    size_t GetEndOffset(void) const
+        { return GetOffset() + GetSize(); }
+
 private:
     string m_Name;
     size_t m_Offset;
@@ -126,7 +132,6 @@ public:
 
     CClassInfoTmpl* AddMember(const CMemberInfo& member);
 
-    const CMemberInfo& FindMember(const string& name) const;
     TMemberIterator MemberBegin(void) const
         {
             return m_Members.begin();
@@ -135,6 +140,11 @@ public:
         {
             return m_Members.end();
         }
+
+    virtual const CMemberInfo* FindMember(const string& name) const;
+    virtual const CMemberInfo* LocateMember(TConstObjectPtr object,
+                                            TConstObjectPtr member,
+                                            TTypeInfo memberTypeInfo) const;
 
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/10 21:06:38  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.2  1999/06/04 20:51:32  vasilche
 * First compilable version of serialization.
 *
@@ -54,7 +57,7 @@ class CObjectIStreamBinary : public CObjectIStream
 public:
     typedef unsigned char TByte;
 
-    CObjectIStreamBinary(CNcbiIstream* in);
+    CObjectIStreamBinary(CNcbiIstream& in);
 
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -68,20 +71,33 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
     virtual void ReadStd(string& data);
-    virtual void ReadStd(const char*& data);
-    virtual void ReadStd(char*& data);
 
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
     virtual TTypeInfo ReadTypeInfo(void);
+    virtual void ReadObject(TObjectPtr object,
+                            const CClassInfoTmpl* typeInfo);
+
+    virtual unsigned Begin(Block& block, bool tmpl);
 
     TByte ReadByte(void);
+    void ReadBytes(TByte* bytes, unsigned size);
     TIndex ReadIndex(void);
+    unsigned ReadSize(void);
     const string& ReadString(void);
 
 private:
+    CIObjectInfo ReadObjectPointer(void);
+
+    bool ReadNextMember(void);
+
+    void SkipValue(void);
+    void SkipObjectData(void);
+    void SkipObjectPointer(void);
+    void SkipBlock(void);
+
     vector<string> m_Strings;
 
-    CNcbiIstream* m_Input;
+    CNcbiIstream& m_Input;
 };
 
 //#include <objistrb.inl>

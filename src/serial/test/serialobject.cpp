@@ -35,7 +35,7 @@ const CTypeInfo* CSerialObject::GetTypeInfo(void)
 }
 
 CSerialObject::CSerialObject(void)
-    : m_NamePtr(0), m_Size(-1)
+    : m_NamePtr(0), m_Size(0)
 {
 }
 

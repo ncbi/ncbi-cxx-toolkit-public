@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/10 21:06:42  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.4  1999/06/07 19:59:38  vasilche
 * offset_t -> size_t
 *
@@ -57,6 +60,7 @@ class CObjectIStream;
 class CObjectOStream;
 class COObjectList;
 class CTypeRef;
+class CMemberInfo;
 
 class CTypeInfoOrder
 {
@@ -90,6 +94,9 @@ public:
         { return static_cast<char*>(object) + offset; }
     static TConstObjectPtr Add(TConstObjectPtr object, size_t offset)
         { return static_cast<const char*>(object) + offset; }
+    static size_t Sub(TConstObjectPtr first, TConstObjectPtr second)
+        { return static_cast<const char*>(first) -
+              static_cast<const char*>(second); }
 
     TObjectPtr EndOf(TObjectPtr object) const
         { return Add(object, GetSize()); }
@@ -107,6 +114,11 @@ public:
         }
 
     virtual ~CTypeInfo(void);
+
+    virtual const CMemberInfo* FindMember(const string& name) const;
+    virtual const CMemberInfo* LocateMember(TConstObjectPtr object,
+                                            TConstObjectPtr member,
+                                            TTypeInfo memberTypeInfo) const;
 
 protected:
 

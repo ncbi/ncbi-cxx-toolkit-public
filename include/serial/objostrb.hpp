@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/10 21:06:40  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.1  1999/06/07 19:30:18  vasilche
 * More bug fixes
 *
@@ -80,6 +83,7 @@ public:
     void WriteByte(TByte byte);
     void WriteBytes(const char* bytes, size_t size);
     void WriteIndex(TIndex index);
+    void WriteSize(unsigned size);
     void WriteString(const string& str);
     bool WriteRegisteredClassInfo(TTypeInfo typeInfo);
     virtual void WriteClassInfo(TTypeInfo typeInfo);

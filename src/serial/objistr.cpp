@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/10 21:06:46  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.3  1999/06/07 19:30:25  vasilche
 * More bug fixes
 *
@@ -49,6 +52,11 @@ BEGIN_NCBI_SCOPE
 
 // root reader
 void CObjectIStream::Read(TObjectPtr data, TTypeInfo typeInfo)
+{
+    typeInfo->ReadData(*this, data);
+}
+
+void CObjectIStream::RegisterAndRead(TObjectPtr data, TTypeInfo typeInfo)
 {
     typeInfo->ReadData(*this, data);
 }
@@ -96,6 +104,27 @@ CObjectIStream::Block::~Block(void)
     default:
         THROW1_TRACE(runtime_error, "not all elements read");
     }
+}
+
+const string& CObjectIStream::ReadId(void)
+{
+    return ReadString();
+}
+
+CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
+                                                      TTypeInfo typeInfo)
+{
+    TIndex index = m_Objects.size();
+    m_Objects.push_back(CIObjectInfo(object, typeInfo));
+    return index;
+}
+
+const CIObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
+{
+    if ( index >= m_Objects.size() ) {
+        THROW1_TRACE(runtime_error, "invalid object index");
+    }
+    return m_Objects[index];
 }
 
 /*

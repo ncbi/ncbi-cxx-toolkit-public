@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/10 21:06:45  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.5  1999/06/07 20:42:58  vasilche
 * Fixed compilation under MS VS
 *
@@ -109,5 +112,33 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
     in.ReadObject(object, this);
 }
 
+const CMemberInfo* CClassInfoTmpl::FindMember(const string& name) const
+{
+    TMembers::const_iterator i = m_Members.find(name);
+    if ( i == m_Members.end() )
+        return 0;
+    return &i->second;
+}
+
+const CMemberInfo* CClassInfoTmpl::LocateMember(TConstObjectPtr object,
+                                                TConstObjectPtr member,
+                                                TTypeInfo memberTypeInfo) const
+{
+    TConstObjectPtr objectEnd = EndOf(object);
+    TConstObjectPtr memberEnd = memberTypeInfo->EndOf(member);
+    if ( member < object || memberEnd > objectEnd ) {
+        return 0;
+    }
+    size_t memberOffset = Sub(member, object);
+    size_t memberEndOffset = Sub(memberEnd, object);
+    for ( TMembers::const_iterator i = m_Members.begin();
+          i != m_Members.end(); ++i ) {
+        if ( memberOffset >= i->second.GetOffset() &&
+             memberEndOffset <= i->second.GetEndOffset() ) {
+            return &i->second;
+        }
+    }
+    return 0;
+}
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/10 21:06:39  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.1  1999/06/07 19:30:16  vasilche
 * More bug fixes
 *
@@ -110,7 +113,7 @@ private:
     friend class COObjectList;
 
     const pair<const TConstObjectPtr, CORootObjectInfo>* m_RootObject;
-    list<CMemberInfo*> m_Members;
+    list<const CMemberInfo*> m_Members;
 };
 
 class COObjectList
@@ -135,7 +138,7 @@ public:
 protected:
     friend class CObjectOStream;
 
-    void RegisterObject(CORootObjectInfo& info);
+    void RegisterObject(const CORootObjectInfo& info);
 
     COObjectInfo GetObjectInfo(TConstObjectPtr object,
                                TTypeInfo typeInfo) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/10 21:06:49  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.4  1999/06/07 20:10:03  vasilche
 * Avoid using of numeric_limits.
 *
@@ -263,7 +266,12 @@ void CObjectOStreamBinary::WriteNull(void)
 
 void CObjectOStreamBinary::WriteIndex(TIndex index)
 {
-    WriteStdOrdinal(this, index);
+    WriteNumber(this, index);
+}
+
+void CObjectOStreamBinary::WriteSize(unsigned size)
+{
+    WriteNumber(this, size);
 }
 
 void CObjectOStreamBinary::WriteString(const string& str)
@@ -274,6 +282,7 @@ void CObjectOStreamBinary::WriteString(const string& str)
         TIndex index = m_Strings.size();
         WriteIndex(index);
         m_Strings[str] = index;
+        WriteSize(str.size());
         WriteBytes(str.data(), str.size());
     }
     else {
@@ -284,13 +293,18 @@ void CObjectOStreamBinary::WriteString(const string& str)
 void CObjectOStreamBinary::WritePointer(TConstObjectPtr object,
                                         TTypeInfo typeInfo)
 {
+    if ( object == 0 ) {
+        WriteNull();
+        return;
+    }
+
     COObjectInfo info(m_Objects, object, typeInfo);
 
     // find if this object is part of another object
     while ( info.IsMember() ) {
         // member of object
         WriteByte(CObjectStreamBinaryDefs::eMember);
-        WriteString(info.GetMemberInfo().GetName());
+        WriteId(info.GetMemberInfo().GetName());
         info.ToContainerObject();
     }
 
@@ -304,10 +318,10 @@ void CObjectOStreamBinary::WritePointer(TConstObjectPtr object,
         // new object
         TTypeInfo realTypeInfo = root.GetTypeInfo();
         if ( typeInfo == realTypeInfo ) {
-            WriteByte(CObjectStreamBinaryDefs::eObject);
+            WriteByte(CObjectStreamBinaryDefs::eThisClass);
         }
         else {
-            WriteByte(CObjectStreamBinaryDefs::eClass);
+            WriteByte(CObjectStreamBinaryDefs::eOtherClass);
             WriteId(realTypeInfo->GetName());
         }
         Write(info.GetRootObject(), realTypeInfo);
@@ -317,24 +331,28 @@ void CObjectOStreamBinary::WritePointer(TConstObjectPtr object,
 void CObjectOStreamBinary::WriteObject(TConstObjectPtr object,
                                        const CClassInfoTmpl* classInfo)
 {
-    NcbiCerr << "CObjectOStreamBinary::WriteObject(" << unsigned(object) << ", " << classInfo->GetName() << ')' << endl;
+    _TRACE("CObjectOStreamBinary::WriteObject(" << unsigned(object) << ", "
+           << classInfo->GetName() << ')');
     for ( CClassInfoTmpl::TMemberIterator i = classInfo->MemberBegin();
           i != classInfo->MemberEnd(); ++i ) {
         const CMemberInfo& memberInfo = i->second;
         TConstObjectPtr member = memberInfo.GetMember(object);
         TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
-        NcbiCerr << memberInfo.GetName() << '=' << unsigned(member) << '{' <<
-            memberTypeInfo->GetName() << '}' << endl;
+        _TRACE(memberInfo.GetName() << '=' << unsigned(member) << '{' <<
+               memberTypeInfo->GetName() << '}');
         if ( !memberTypeInfo->IsDefault(member) ) {
             WriteByte(CObjectStreamBinaryDefs::eMember);
             WriteId(memberInfo.GetName());
             Write(member, memberTypeInfo);
         }
     }
+    WriteByte(CObjectStreamBinaryDefs::eEndOfMembers);
 }
 
 bool CObjectOStreamBinary::WriteRegisteredClassInfo(TTypeInfo typeInfo)
 {
+    throw runtime_error("not implemented");
+/*
     COClassInfo* ci = GetRegisteredClass(typeInfo);
     if ( !ci )
         return false;
@@ -342,24 +360,31 @@ bool CObjectOStreamBinary::WriteRegisteredClassInfo(TTypeInfo typeInfo)
     WriteByte(CObjectStreamBinaryDefs::eClassReference);
     WriteIndex(ci->GetIndex());
     return true;
+*/
 }
 
 void CObjectOStreamBinary::WriteTypeInfo(TTypeInfo )
 {
+    throw runtime_error("not implemented");
 }
 
 void CObjectOStreamBinary::WriteClassInfo(TTypeInfo typeInfo)
 {
+    throw runtime_error("not implemented");
+/*
     if ( WriteRegisteredClassInfo(typeInfo) )
         return;
 
     WriteByte(CObjectStreamBinaryDefs::eClass);
     WriteString(typeInfo->GetName());
+*/
 }
 
 void CObjectOStreamBinary::WriteTemplateInfo(const string& name, TTypeInfo tmpl,
                                              TTypeInfo arg)
 {
+    throw runtime_error("not implemented");
+/*
     if ( WriteRegisteredClassInfo(tmpl) )
         return;
 
@@ -368,11 +393,14 @@ void CObjectOStreamBinary::WriteTemplateInfo(const string& name, TTypeInfo tmpl,
     Block block(*this, 1, true);
     block.Next();
     WriteTypeInfo(arg);
+*/
 }
 
 void CObjectOStreamBinary::WriteTemplateInfo(const string& name, TTypeInfo tmpl,
                                              TTypeInfo arg1, TTypeInfo arg2)
 {
+    throw runtime_error("not implemented");
+/*
     if ( WriteRegisteredClassInfo(tmpl) )
         return;
 
@@ -383,11 +411,14 @@ void CObjectOStreamBinary::WriteTemplateInfo(const string& name, TTypeInfo tmpl,
     WriteTypeInfo(arg1);
     block.Next();
     WriteTypeInfo(arg2);
+*/
 }
 
 void CObjectOStreamBinary::WriteTemplateInfo(const string& name, TTypeInfo tmpl,
                                              const vector<TTypeInfo>& args)
 {
+    throw runtime_error("not implemented");
+/*
     if ( WriteRegisteredClassInfo(tmpl) )
         return;
 
@@ -399,6 +430,7 @@ void CObjectOStreamBinary::WriteTemplateInfo(const string& name, TTypeInfo tmpl,
         block.Next();
         WriteTypeInfo(*i);
     }
+*/
 }
 
 void CObjectOStreamBinary::WriteByte(TByte byte)
@@ -414,7 +446,7 @@ void CObjectOStreamBinary::WriteBytes(const char* bytes, size_t size)
 void CObjectOStreamBinary::Begin(Block& , unsigned count, bool )
 {
     WriteByte(CObjectStreamBinaryDefs::eBlock);
-    WriteIndex(count);
+    WriteSize(count);
 }
 
 END_NCBI_SCOPE

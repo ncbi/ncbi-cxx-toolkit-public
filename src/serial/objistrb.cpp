@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/10 21:06:46  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.4  1999/06/07 20:10:02  vasilche
 * Avoid using of numeric_limits.
 *
@@ -48,21 +51,20 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrb.hpp>
 #include <serial/objstrb.hpp>
-#include <serial/tmplinfo.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-CObjectIStreamBinary::CObjectIStreamBinary(CNcbiIstream* in)
+CObjectIStreamBinary::CObjectIStreamBinary(CNcbiIstream& in)
     : m_Input(in)
 {
-    m_Strings.push_back(string());
 }
 
 unsigned char CObjectIStreamBinary::ReadByte(void)
 {
     char c;
-    if ( !m_Input->get(c) ) {
+    if ( !m_Input.get(c) ) {
         THROW1_TRACE(runtime_error, "unexpected EOF");
     }
     return c;
@@ -70,6 +72,8 @@ unsigned char CObjectIStreamBinary::ReadByte(void)
 
 CTypeInfo::TTypeInfo CObjectIStreamBinary::ReadTypeInfo(void)
 {
+    throw runtime_error("not implemented");
+/*
     TByte code = ReadByte();
 
 
@@ -83,6 +87,7 @@ CTypeInfo::TTypeInfo CObjectIStreamBinary::ReadTypeInfo(void)
     default:
         THROW1_TRACE(runtime_error, "undefined type: ");
     }
+*/
 }
 
 class CDataReader
@@ -143,11 +148,20 @@ public:
 
     TByte ReadByte(void) const
         {
-            return m_Input->ReadByte();
+            return m_Input.ReadByte();
         }
 
-    CObjectIStreamBinary* m_Input;
+    CObjectIStreamBinary& m_Input;
 };
+
+string CDataReader::binary(TByte byte)
+{
+    string s = "0b";
+    for ( unsigned bit = 0x80; bit; bit >>= 1 ) {
+        s += (bit & byte)? '1': '0';
+    }
+    return s;
+}
 
 class CNumberReader : public CDataReader
 {
@@ -227,6 +241,14 @@ public:
             switch ( code ) {
             case CObjectStreamBinaryDefs::eNull:
                 data = 0;
+                return;
+            case CObjectStreamBinaryDefs::eStd_sbyte:
+                if ( IsSigned() ) {
+                    data = ReadNumber(in, true);
+                }
+                return;
+            case CObjectStreamBinaryDefs::eStd_ubyte:
+                data = ReadNumber(in, false);
                 return;
             case CObjectStreamBinaryDefs::eStd_sordinal:
                 data = ReadNumber(in, true);
@@ -450,6 +472,11 @@ CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
     return CStdDataReader<TIndex>::ReadNumber(*this, false);
 }
 
+unsigned CObjectIStreamBinary::ReadSize(void)
+{
+    return CStdDataReader<unsigned>::ReadNumber(*this, false);
+}
+
 const string& CObjectIStreamBinary::ReadString(void)
 {
     TIndex index = ReadIndex();
@@ -457,13 +484,207 @@ const string& CObjectIStreamBinary::ReadString(void)
         // new string
         m_Strings.push_back(string());
         string& s = m_Strings.back();
-        SIZE_TYPE length = CStdDataReader<SIZE_TYPE>::ReadNumber(*this, false);
+        unsigned length = ReadSize();
         s.reserve(length);
+        for ( unsigned i = 0; i < length; ++i )
+            s += char(ReadByte());
         return s;
     }
-    else {
+    else if ( index < m_Strings.size() ) {
         return m_Strings[index];
     }
+    else {
+        ERR_POST(index);
+        THROW1_TRACE(runtime_error,
+                     "invalid string index: " + NStr::UIntToString(index));
+    }
+}
+
+unsigned CObjectIStreamBinary::Begin(Block& , bool )
+{
+    if ( ReadByte() != CObjectStreamBinaryDefs::eBlock )
+        THROW1_TRACE(runtime_error, "bad block start byte");
+    return ReadSize();
+}
+
+bool CObjectIStreamBinary::ReadNextMember(void)
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eMember:
+        return true;
+    case CObjectStreamBinaryDefs::eEndOfMembers:
+        return false;
+    default:
+        THROW1_TRACE(runtime_error, "invalid member type");
+    }
+}
+
+CTypeInfo::TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eNull:
+        return 0;
+    case CObjectStreamBinaryDefs::eMember:
+        {
+            const string& memberName = ReadId();
+            CIObjectInfo info = ReadObjectPointer();
+            const CMemberInfo* memberInfo =
+                info.GetTypeInfo()->FindMember(memberName);
+            if ( memberInfo == 0 ) {
+                THROW1_TRACE(runtime_error, "member not found: " +
+                             info.GetTypeInfo()->GetName() + "." + memberName);
+            }
+            if ( memberInfo->GetTypeInfo() != declaredType ) {
+                THROW1_TRACE(runtime_error, "incompatible member type");
+            }
+            return memberInfo->GetMember(info.GetObject());
+        }
+    case CObjectStreamBinaryDefs::eObjectReference:
+        {
+            const CIObjectInfo& info = GetRegisteredObject(ReadIndex());
+            if ( info.GetTypeInfo() != declaredType ) {
+                THROW1_TRACE(runtime_error, "incompatible object type");
+            }
+            return info.GetObject();
+        }
+    case CObjectStreamBinaryDefs::eThisClass:
+        {
+            TObjectPtr object = declaredType->Create();
+            RegisterObject(object, declaredType);
+            Read(object, declaredType);
+            return object;
+        }
+    default:
+        THROW1_TRACE(runtime_error, "invalid object reference code");
+    }
+}
+
+CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eMember:
+        {
+            const string& memberName = ReadId();
+            CIObjectInfo info = ReadObjectPointer();
+            const CMemberInfo* memberInfo =
+                info.GetTypeInfo()->FindMember(memberName);
+            if ( memberInfo == 0 ) {
+                THROW1_TRACE(runtime_error, "member not found: " +
+                             info.GetTypeInfo()->GetName() + "." + memberName);
+            }
+            return CIObjectInfo(memberInfo->GetMember(info.GetObject()),
+                                memberInfo->GetTypeInfo());
+        }
+    case CObjectStreamBinaryDefs::eObjectReference:
+        return GetRegisteredObject(ReadIndex());
+    case CObjectStreamBinaryDefs::eOtherClass:
+        {
+            TTypeInfo typeInfo = CTypeInfo::GetTypeInfoByName(ReadId());
+            TObjectPtr object = typeInfo->Create();
+            RegisterObject(object, typeInfo);
+            Read(object, typeInfo);
+            return CIObjectInfo(object, typeInfo);
+        }
+    default:
+        THROW1_TRACE(runtime_error, "invalid object reference code");
+    }
+}
+
+void CObjectIStreamBinary::ReadObject(TObjectPtr object,
+                                      const CClassInfoTmpl* classInfo)
+{
+    _TRACE("CObjectIStreamBinary::ReadObject(" << unsigned(object) << ", "
+           << classInfo->GetName() << ')');
+    while ( ReadNextMember() ) {
+        const string& memberName = ReadId();
+        const CMemberInfo* memberInfo = classInfo->FindMember(memberName);
+        if ( memberInfo == 0 ) {
+            ERR_POST("unknown member: "+memberName+", trying to skip...");
+            SkipValue();
+        }
+        else {
+            TObjectPtr member = memberInfo->GetMember(object);
+            Read(member, memberInfo->GetTypeInfo());
+        }
+    }
+}
+
+void CObjectIStreamBinary::SkipValue()
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eNull:
+        return;
+    case CObjectStreamBinaryDefs::eStd_char:
+    case CObjectStreamBinaryDefs::eStd_ubyte:
+    case CObjectStreamBinaryDefs::eStd_sbyte:
+        ReadByte();
+        return;
+    case CObjectStreamBinaryDefs::eStd_sordinal:
+        CStdDataReader<long>::ReadNumber(*this, true);
+        return;
+    case CObjectStreamBinaryDefs::eStd_uordinal:
+        CStdDataReader<long>::ReadNumber(*this, false);
+        return;
+    case CObjectStreamBinaryDefs::eStd_float:
+        THROW1_TRACE(runtime_error, "floating point numbers are not supported");
+        return;
+    case CObjectStreamBinaryDefs::eObjectReference:
+        ReadIndex();
+        return;
+    case CObjectStreamBinaryDefs::eThisClass:
+        RegisterInvalidObject();
+        SkipObjectData();
+        return;
+    case CObjectStreamBinaryDefs::eOtherClass:
+        ReadId();
+        RegisterInvalidObject();
+        SkipObjectData();
+        return;
+    case CObjectStreamBinaryDefs::eMember:
+        ReadId();
+        SkipObjectPointer();
+        return;
+    case CObjectStreamBinaryDefs::eBlock:
+        SkipBlock();
+        return;
+    default:
+        THROW1_TRACE(runtime_error, "invalid value code");
+    }
+}
+
+void CObjectIStreamBinary::SkipObjectPointer(void)
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eObjectReference:
+        ReadIndex();
+        return;
+    case CObjectStreamBinaryDefs::eOtherClass:
+        ReadId();
+        RegisterInvalidObject();
+        SkipObjectData();
+        return;
+    case CObjectStreamBinaryDefs::eMember:
+        ReadId();
+        SkipObjectPointer();
+        return;
+    default:
+        THROW1_TRACE(runtime_error, "invalid value code");
+    }
+}
+
+void CObjectIStreamBinary::SkipObjectData(void)
+{
+    while ( ReadNextMember() ) {
+        ReadId();
+        SkipValue();
+    }
+}
+
+void CObjectIStreamBinary::SkipBlock(void)
+{
+    unsigned count = ReadSize();
+    for ( unsigned i = 0; i < count; ++i )
+        SkipValue();
 }
 
 END_NCBI_SCOPE

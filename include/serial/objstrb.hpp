@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/10 21:06:41  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.2  1999/06/04 20:51:36  vasilche
 * First compilable version of serialization.
 *
@@ -60,14 +63,12 @@ public:
         eStd_string,      // string
         eStd_float,       // float, double, long double
 
-        eClass = 0xE0,
-        eClassDefinition,
-        eTemplate,
-        eClassReference,
-        eObject,
+        eBlock = 0xE0,
         eObjectReference,
+        eThisClass,
+        eOtherClass,
         eMember,
-        eBlock
+        eEndOfMembers
     };
 };
 

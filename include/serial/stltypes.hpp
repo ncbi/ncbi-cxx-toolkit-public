@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/10 21:06:42  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.3  1999/06/09 18:39:00  vasilche
 * Modified templates to work on Sun.
 *
@@ -88,6 +91,15 @@ public:
 
     CStlClassInfoList(void);
 
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+
     virtual size_t GetSize(void) const
         {
             return sizeof(TObjectType);
@@ -104,11 +116,16 @@ public:
             return typeInfo;
         }
 
+    virtual bool IsDefault(TConstObjectPtr object) const
+        {
+            return Get(object).empty();
+        }
+
 protected:
     virtual void CollectObjects(COObjectList& list,
                                 TConstObjectPtr object) const
         {
-            const TObjectType& l = *static_cast<const TObjectType*>(object);
+            const TObjectType& l = Get(object);
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
                 AddObject(list, &*i, GetDataTypeInfo());
@@ -117,18 +134,18 @@ protected:
 
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
-            const TObjectType& l = *static_cast<const TObjectType*>(object);
+            const TObjectType& l = Get(object);
             CObjectOStream::Block block(out, l.size());
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
                 block.Next();
-                out.Write(&*i, GetDataTypeInfo());
+                out.RegisterAndWrite(&*i, GetDataTypeInfo());
             }
         }
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            TObjectType& l = *static_cast<TObjectType*>(object);
+            TObjectType& l = Get(object);
             CObjectIStream::Block block(in);
             while ( block.Next() ) {
                 l.push_back(Data());

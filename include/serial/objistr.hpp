@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/10 21:06:38  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.3  1999/06/07 19:30:15  vasilche
 * More bug fixes
 *
@@ -67,6 +70,12 @@ public:
         : m_Object(object), m_TypeInfo(typeInfo)
         {
         }
+
+    TObjectPtr GetObject(void) const
+        { return m_Object; }
+
+    TTypeInfo GetTypeInfo(void) const
+        { return m_TypeInfo; }
 
 private:
     TObjectPtr m_Object;
@@ -111,10 +120,9 @@ public:
     virtual void ReadStd(float& data) = 0;
     virtual void ReadStd(double& data) = 0;
     virtual void ReadStd(string& data) = 0;
-    virtual void ReadStd(const char*& data) = 0;
-    virtual void ReadStd(char*& data) = 0;
 
     // object level readers
+    void RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo);
     // reads type info
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType) = 0;
     virtual TTypeInfo ReadTypeInfo(void) = 0;
@@ -143,15 +151,17 @@ public:
 protected:
     // low level readers
     virtual const string& ReadString(void) = 0;
-    virtual const string& ReadId(void) = 0;
+    virtual const string& ReadId(void);
 
     TTypeInfo GetRegiteredClass(TIndex index) const;
     TTypeInfo GetRegiteredClass(const string& name) const;
     TTypeInfo RegisterClass(TTypeInfo typeInfo);
 
     TTypeInfo GetClass(TIndex index) const;
-    const CIObjectInfo& GetObjectInfo(TIndex index) const;
+    const CIObjectInfo& GetRegisteredObject(TIndex index) const;
     TIndex RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
+    TIndex RegisterInvalidObject(void)
+        { return RegisterObject(0, 0); }
     
 private:
     vector<CIObjectInfo> m_Objects;

@@ -7,5 +7,5 @@
 #################################
 
 APP = serialtest
-OBJ = serialobject testserial
+OBJ = serialobject testserial rtti
 LIB = xser xncbi

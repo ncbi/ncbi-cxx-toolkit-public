@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/10 21:06:40  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.3  1999/06/07 19:30:17  vasilche
 * More bug fixes
 *
@@ -107,6 +110,7 @@ public:
     virtual void WriteStd(const char* const& data) = 0;
 
     // object level writers
+    void RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo);
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo) = 0;
     // write object content

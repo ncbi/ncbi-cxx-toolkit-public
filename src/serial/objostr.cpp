@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/10 21:06:48  vasilche
+* Working binary output and almost working binary input.
+*
 * Revision 1.3  1999/06/07 19:30:27  vasilche
 * More bug fixes
 *
@@ -54,7 +57,8 @@ CObjectOStream::~CObjectOStream(void)
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    NcbiCerr << "CObjectOStream::Write(" << unsigned(object) << ", " << typeInfo->GetName() << ')' << endl;
+    _TRACE("CObjectOStream::Write(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ')');
     typeInfo->CollectObjects(m_Objects, object);
     COObjectInfo info(m_Objects, object, typeInfo);
     if ( info.IsMember() ) {
@@ -68,10 +72,28 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
                          "trying to write already written object");
         }
     }
-    m_Objects.RegisterObject(const_cast<CORootObjectInfo&>(info.GetRootObjectInfo()));
-    //    RegisterClass(const_cast<CORootObjectInfo&>(info.GetRootObjectInfo()))
+    m_Objects.RegisterObject(info.GetRootObjectInfo());
     typeInfo->WriteData(*this, object);
     m_Objects.CheckAllWritten();
+}
+
+void CObjectOStream::RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo)
+{
+    _TRACE("CObjectOStream::RegisterAndWrite(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ')');
+    COObjectInfo info(m_Objects, object, typeInfo);
+    if ( info.IsMember() ) {
+        THROW1_TRACE(runtime_error,
+                     "trying to register member");
+    }
+    else {
+        if ( info.GetRootObjectInfo().IsWritten() ) {
+            THROW1_TRACE(runtime_error,
+                         "trying to write already written object");
+        }
+    }
+    m_Objects.RegisterObject(info.GetRootObjectInfo());
+    typeInfo->WriteData(*this, object);
 }
 
 void CObjectOStream::WriteId(const string& id)

@@ -22,8 +22,6 @@ public:
 
     static const CTypeInfo* GetTypeInfo(void);
 
-private:
-
     string m_Name;
     const string* m_NamePtr;
     int m_Size;
