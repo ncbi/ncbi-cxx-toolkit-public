@@ -205,7 +205,7 @@ public:
         : m_Ptr(0)
         {
         }
-    CRef(TObjectType* ptr)
+    explicit CRef(TObjectType* ptr)
         {
             if ( ptr )
                 CRefBase<C>::AddReference(ptr);
@@ -317,7 +317,7 @@ public:
 
     // getters
     inline
-    TObjectType* GetNonNullPointer(void) const
+    TObjectType* GetNonNullPointer(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -325,33 +325,72 @@ public:
             return m_Ptr;
         }
     inline
-    TObjectType* GetPointerOrNull(void) const THROWS_NONE
+    TObjectType* GetPointerOrNull(void) THROWS_NONE
         {
             return m_Ptr;
         }
     inline
-    TObjectType* GetPointer(void) const THROWS_NONE
+    TObjectType* GetPointer(void) THROWS_NONE
         {
             return GetPointerOrNull();
         }
     inline
-    TObjectType& GetObject(void) const
+    TObjectType& GetObject(void)
         {
             return *GetNonNullPointer();
         }
 
     inline
-    TObjectType& operator*(void) const
+    TObjectType& operator*(void)
         {
             return GetObject();
         }
     inline
-    TObjectType* operator->(void) const
+    TObjectType* operator->(void)
         {
             return GetPointer();
         }
     inline
-    operator TObjectType*(void) const
+    operator TObjectType*(void)
+        {
+            return GetPointer();
+        }
+
+    // const getters
+    const TObjectType* GetNonNullPointer(void) const
+        {
+            const TObjectType* ptr = m_Ptr;
+            if ( !ptr )
+                NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            return m_Ptr;
+        }
+    const TObjectType* GetPointerOrNull(void) const THROWS_NONE
+        {
+            return m_Ptr;
+        }
+    inline
+    const TObjectType* GetPointer(void) const THROWS_NONE
+        {
+            return GetPointerOrNull();
+        }
+    inline
+    const TObjectType& GetObject(void) const
+        {
+            return *GetNonNullPointer();
+        }
+
+    inline
+    const TObjectType& operator*(void) const
+        {
+            return GetObject();
+        }
+    inline
+    const TObjectType* operator->(void) const
+        {
+            return GetPointer();
+        }
+    inline
+    operator const TObjectType*(void) const
         {
             return GetPointer();
         }
@@ -712,6 +751,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2002/11/04 21:30:53  grichenk
+ * Made CRef<> constructor explicit, const CRef<> getters
+ * return const references/pointers.
+ *
  * Revision 1.37  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *
