@@ -2,7 +2,15 @@
 # $Id$
 #
 
-base="${TEST_DATA_DIR:-/net/sampson/a/coremake/test_data/objects}"
+base="${1:-@srcdir@/testdata}"
+if test ! -d $base; then
+    echo "Error -- test data dir not found: $base"
+    exit 1
+fi
+if test -d "$1"; then
+    shift
+fi
+
 d="$base/data"
 r="$base/res"
 
@@ -34,9 +42,5 @@ for i in "-t Seq-entry -d $d/set.bin" "-v $d/set.ent" "-vx $d/set.xml"; do
     do_test "$i -p" set.ent "$@"
     do_test "$i -px" set.xml "$@"
 done
-for i in "-t Bioseq-set -d $d/phg.bin" "-v $d/phg.ent" "-vx $d/phg.xml"; do
-    do_test "$i -e" phg.bin "$@"
-    do_test "$i -p" phg.ent "$@"
-    do_test "$i -px" phg.xml "$@"
-done
+
 echo "Done!"

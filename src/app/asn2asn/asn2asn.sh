@@ -2,7 +2,15 @@
 # $Id$
 #
 
-base="${TEST_DATA_DIR:-/net/sampson/a/coremake/test_data/objects}"
+base="${1:-@top_srcdir@/src/serial/datatool/testdata}"
+if test ! -d $base; then
+    echo "Error -- test data dir not found: $base"
+    exit 1
+fi
+if test -d "$1"; then
+    shift
+fi
+
 d="$base/data"
 r="$base/res"
 
@@ -31,11 +39,7 @@ for i in "set.bin -b" "set.ent" "set.xml -X"; do
     do_test "$i -e" set.ent
     do_test "$i -e -x" set.xml
 done
-#for i in "phg.bin -b" "phg.ent" "phg.xml -X"; do
-#    do_test "$i -s" phg.bin.sorted
-#    do_test "$i" phg.ent.sorted
-#    do_test "$i -x" phg.xml.sorted
-#done
+
 echo "Done!"
 
 
