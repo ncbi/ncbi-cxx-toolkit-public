@@ -75,7 +75,7 @@ private:
     HANDLE m_ChildStdin;
     HANDLE m_ChildStderr;
 
-    // process information, ofr our child process
+    // Process information for our child process
     HANDLE m_ProcHandle;
 };
 
@@ -97,7 +97,7 @@ CPipeHandle::~CPipeHandle()
 
 int CPipeHandle::Close()
 {
-    // wait for the child process to exit
+    // Wait for the child process to exit
     DWORD exit_code;
     if ( !GetExitCodeProcess(m_ProcHandle, &exit_code) ) {
         return -1;
@@ -116,18 +116,18 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
                        CPipe::EMode mode_stdout,
                        CPipe::EMode mode_stderr)
 {
-    // set the base security attributes
+    // Set the base security attributes
     SECURITY_ATTRIBUTES attr;
     attr.nLength = sizeof(attr);
     attr.bInheritHandle = TRUE;
     attr.lpSecurityDescriptor = NULL;
 
-    // save the current stdout / stdin handles
+    // Save the current stdout / stdin handles
     HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE stdin_handle  = GetStdHandle(STD_INPUT_HANDLE);
     HANDLE stderr_handle = GetStdHandle(STD_ERROR_HANDLE);
 
-    // create a pipe for the child's stdout
+    // Create a pipe for the child's stdout
     HANDLE child_stdout_read;
     HANDLE child_stdout_write;
     if (mode_stdout != CPipe::eDoNotUse) {
@@ -140,7 +140,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
                        "Cannot remap stdout for child process");
         }
 
-        // duplicate the handle
+        // Duplicate the handle
         if ( !DuplicateHandle(GetCurrentProcess(), child_stdout_read,
                               GetCurrentProcess(), &m_ChildStdout,
                               0, FALSE, DUPLICATE_SAME_ACCESS) ) {
@@ -150,7 +150,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
         CloseHandle(child_stdout_read);
     }
 
-    // create a pipe for the child's stdin
+    // Create a pipe for the child's stdin
     HANDLE child_stdin_read;
     HANDLE child_stdin_write;
     if (mode_stdin != CPipe::eDoNotUse) {
@@ -163,7 +163,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
                        "Cannot remap stdout for child process");
         }
 
-        // duplicate the handle
+        // Duplicate the handle
         if ( !DuplicateHandle(GetCurrentProcess(), child_stdin_write,
                               GetCurrentProcess(), &m_ChildStdin,
                               0, FALSE, DUPLICATE_SAME_ACCESS) ) {
@@ -173,7 +173,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
         CloseHandle(child_stdin_write);
     }
 
-    // create a pipe for the child's stderr
+    // Create a pipe for the child's stderr
     HANDLE child_stderr_read;
     HANDLE child_stderr_write;
     if (mode_stderr != CPipe::eDoNotUse) {
@@ -186,7 +186,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
                        "Cannot remap stdout for child process");
         }
 
-        // duplicate the handle
+        // Duplicate the handle
         if ( !DuplicateHandle(GetCurrentProcess(), child_stderr_read,
                               GetCurrentProcess(), &m_ChildStderr,
                               0, FALSE, DUPLICATE_SAME_ACCESS) ) {
@@ -196,7 +196,7 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
         CloseHandle(child_stderr_read);
     }
 
-    // create a process to handle our command line
+    // Create a process to handle our command line
     PROCESS_INFORMATION pinfo;
     STARTUPINFO sinfo;
     ZeroMemory(&pinfo, sizeof(PROCESS_INFORMATION));
@@ -215,18 +215,16 @@ void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
                         const_cast<char*> (cmds.c_str()),
                         NULL, NULL, TRUE, 0,
                         NULL, NULL, &sinfo, &pinfo) ) {
-        string msg = "Cannot create child process for ";
-        msg += cmd_line;
-        msg += " ";
+        string msg = "Cannot create child process for \"";
         msg += cmds;
-        msg += ": Error = ";
+        msg += "\": Error = ";
         msg += NStr::IntToString(GetLastError());
         NCBI_THROW(CPipeException, eBind, msg);
     }
 
     m_ProcHandle = pinfo.hProcess;
 
-    // restore stdout/stdin
+    // Restore stdout/stdin
     if ( !SetStdHandle(STD_OUTPUT_HANDLE, stdout_handle) ) {
         NCBI_THROW(CPipeException, eBind,
                    "Cannot remap stdout for parent process");
@@ -290,6 +288,7 @@ size_t CPipeHandle::Write(const void* buf, size_t size) const
 
 #elif defined NCBI_OS_UNIX
 
+
 //
 // Unix version of CPipeHandle
 //
@@ -324,10 +323,10 @@ private:
     int m_Pid;
 
 
-    // internal helper routine to bind a handle
+    // Internal helper routine to bind a handle
     int x_BindHandle(int fd_orig, bool is_input, int* fd_save);
 
-    // internal helper routine to restore a handle
+    // Internal helper routine to restore a handle
     bool x_RestoreHandle(int fd_orig, int fd_save);
 };
 
@@ -540,7 +539,7 @@ void CPipe::Open(const char* cmdname, const vector<string>& args,
     // Close pipe if it already was opened
     Close();
 
-    // create a new handle to forward our request
+    // Create a new handle to forward our request
     m_PipeHandle.Reset(new CPipeHandle());
     m_PipeHandle->Open(cmdname, args, mode_stdin, mode_stdout, mode_stderr);
 }
@@ -740,6 +739,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/03/06 21:12:10  ivanov
+ * Formal comments rearrangement
+ *
  * Revision 1.10  2003/03/03 14:47:20  dicuccio
  * Remplemented CPipe using private platform specific classes.  Remplemented
  * Win32 pipes using CreatePipe() / CreateProcess() - enabled CPipe in windows
