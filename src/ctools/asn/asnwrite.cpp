@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/04/14 17:26:52  vasilche
+* Fixed warning about mixing pointers to "C" and "C++" functions.
+*
 * Revision 1.2  1999/02/17 22:03:16  vasilche
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
@@ -45,6 +48,10 @@
 #include <html/asnwrite.hpp>
 
 BEGIN_NCBI_SCOPE
+
+extern "C" {
+    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+}
 
 CAsnWriteNode::CAsnWriteNode(void)
     : m_Out(0)
@@ -65,7 +72,7 @@ AsnIoPtr CAsnWriteNode::GetOut(void)
     return out;
 }
 
-Int2 CAsnWriteNode::WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;

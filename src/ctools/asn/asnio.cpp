@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/04/14 17:25:41  vasilche
+* Fixed warning about mixing pointers to "C" and "C++" functions.
+*
 * Revision 1.1  1999/02/17 22:03:12  vasilche
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
@@ -44,6 +47,11 @@
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
+
+extern "C" {
+    static Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
+    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+}
 
 AsnMemoryRead::AsnMemoryRead(const string& str)
     : m_Source(str), m_Data(str.c_str()), m_Size(str.size())
@@ -76,7 +84,7 @@ size_t AsnMemoryRead::Read(char* buffer, size_t size)
     return count;
 }
 
-Int2 AsnMemoryRead::ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
+Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
@@ -115,7 +123,7 @@ size_t AsnMemoryWrite::Write(const char* buffer, size_t size)
     return size;
 }
 
-Int2 AsnMemoryWrite::WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;

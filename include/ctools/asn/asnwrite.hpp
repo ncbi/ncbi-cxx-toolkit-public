@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/04/14 17:26:49  vasilche
+* Fixed warning about mixing pointers to "C" and "C++" functions.
+*
 * Revision 1.3  1999/02/26 21:03:29  vasilche
 * CAsnWriteNode made simple node. Use CHTML_pre explicitely.
 * Fixed bug in CHTML_table::Row.
@@ -67,7 +70,7 @@ public:
 
 private:
     // ASN.1 communication interface
-    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+    //    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
 
     // cached ASN.1 communication interface pointer
     AsnIoPtr m_Out;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/04/14 17:25:45  vasilche
+* Fixed warning about mixing pointers to "C" and "C++" functions.
+*
 * Revision 1.1  1999/02/17 22:03:08  vasilche
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
@@ -59,13 +62,13 @@ public:
     operator AsnIoPtr(void) const
         { return m_In; }
 
-private:
-
-    void Init(void);
-
     // ASN.1 communication interface
     size_t Read(char* buffer, size_t size);
-    static Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
+
+private:
+    void Init(void);
+
+    //    static Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
 
     string m_Source;
     const char* m_Data;
@@ -97,11 +100,11 @@ public:
     operator string(void) const
         { flush(); return string(m_Data, m_Ptr); }
 
-private:
-
     // ASN.1 communication interface
     size_t Write(const char* buffer, size_t size);
-    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+
+private:
+    //    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
 
     char* m_Data;
     size_t m_Size;
