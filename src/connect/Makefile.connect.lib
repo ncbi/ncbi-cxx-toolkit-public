@@ -1,0 +1,6 @@
+# $Id$
+
+LIBOBJ = ncbi_buffer ncbi_core ncbi_util ncbi_socket_
+LIB    = xconnect
+
+DLL_LIBS = $(NETWORK_LIBS)

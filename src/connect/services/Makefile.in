@@ -1,0 +1,15 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile for project "Connect":
+#  - library:  "xconnect"
+#  - tests:    "test/*.*"
+#################################
+
+LIB_PROJ = connect
+SUB_PROJ = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
