@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/09/26 17:09:30  thiessen
+* fix rerange bug
+*
 * Revision 1.8  2001/09/26 15:27:53  thiessen
 * tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
 *
@@ -549,10 +552,12 @@ void CDDAnnotateDialog::NewEvidence(void)
 
     // add new evidence
     if (result == wxOK) {
-        dialog.GetData(newEvidence.GetPointer());
-        selectedAnnot->SetEvidence().push_back(newEvidence);
-        SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
-        changed = true;
+        if (dialog.GetData(newEvidence.GetPointer())) {
+            selectedAnnot->SetEvidence().push_back(newEvidence);
+            SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
+            changed = true;
+        } else
+            ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting dialog data");
     }
 }
 
@@ -619,10 +624,12 @@ void CDDAnnotateDialog::EditEvidence(void)
 
     // update evidence
     if (result == wxOK && dialog.HasDataChanged()) {
-        dialog.GetData(selectedEvidence);
-        changed = true;
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
-        SetupGUIControls(annots->GetSelection(), evids->GetSelection());
+        if (dialog.GetData(selectedEvidence)) {
+            DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+            changed = true;
+            SetupGUIControls(annots->GetSelection(), evids->GetSelection());
+        } else
+            ERR_POST(Error << "CDDAnnotateDialog::EditEvidence() - error getting dialog data");
     }
 }
 
@@ -778,8 +785,7 @@ void CDDEvidenceDialog::OnButton(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case ID_B_EDIT_OK: {
-            CFeature_evidence test;
-            if (GetData(&test)) EndModal(wxOK);
+            EndModal(wxOK);
             break;
         }
         case ID_B_EDIT_CANCEL:
