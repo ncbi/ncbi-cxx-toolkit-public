@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/11/14 20:48:17  gouriano
+* modified constructor to use CClassTypeInfoBase
+*
 * Revision 1.12  2002/09/09 18:13:59  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -97,7 +100,7 @@
 */
 
 inline
-const CClassTypeInfo* CMemberInfo::GetClassType(void) const
+const CClassTypeInfoBase* CMemberInfo::GetClassType(void) const
 {
     return m_ClassType;
 }
