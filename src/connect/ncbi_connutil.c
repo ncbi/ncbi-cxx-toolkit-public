@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2002/02/20 19:12:17  lavr
+ * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
+ *
  * Revision 6.28  2002/02/08 22:22:17  lavr
  * BUGFIX: sizeof(info) -> sizeof(*info) in ConnNetInfo_Create()
  *
@@ -1021,9 +1024,10 @@ static const char* s_MIME_SubType[eMIME_Unknown+1] = {
     "x-unknown"
 };
 
-static const char* s_MIME_Encoding[eENCOD_None+1] = {
+static const char* s_MIME_Encoding[eENCOD_Unknown+1] = {
+    "",
     "urlencoded",
-    ""
+    "encoded"
 };
 
 
@@ -1086,7 +1090,7 @@ extern int/*bool*/ MIME_ParseContentTypeEx
     if ( subtype )
         *subtype = eMIME_Unknown;
     if ( encoding )
-        *encoding = eENCOD_None;
+        *encoding = eENCOD_Unknown;
 
     if (!str  ||  !*str)
         return 0/*false*/;
@@ -1117,9 +1121,9 @@ extern int/*bool*/ MIME_ParseContentTypeEx
         }
     }
 
-    for (i = 0;  i < (int) eENCOD_None;  i++) {
+    for (i = 0;  i < (int) eENCOD_Unknown;  i++) {
         char* x_encoding = strstr(x_subtype, s_MIME_Encoding[i]);
-        if (x_encoding  &&
+        if (x_encoding  &&  *x_encoding  &&
             x_encoding != x_subtype  &&  *(x_encoding - 1) == '-'  &&
             strcmp(x_encoding, s_MIME_Encoding[i]) == 0) {
             if ( encoding ) {
@@ -1129,7 +1133,9 @@ extern int/*bool*/ MIME_ParseContentTypeEx
             break;
         }
     }
-  
+    if (encoding  &&  *encoding == eENCOD_Unknown)
+        *encoding = eENCOD_None;
+
     if ( subtype ) {
         for (i = 0;  i < (int) eMIME_Unknown;  i++) {
             if ( !strcmp(x_subtype, s_MIME_SubType[i]) ) {
@@ -1157,7 +1163,7 @@ extern int/*bool*/ MIME_ParseContentType
         if ( subtype )
             *subtype  = eMIME_Unknown;
         if ( encoding )
-            *encoding = eENCOD_None;
+            *encoding = eENCOD_Unknown;
         return 0/*false*/;
     }
 

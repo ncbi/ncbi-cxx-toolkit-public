@@ -64,6 +64,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/02/20 19:12:03  lavr
+ * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
+ *
  * Revision 6.19  2001/12/30 19:39:36  lavr
  * +ConnNetInfo_ParseURL()
  *
@@ -463,25 +466,25 @@ extern void URL_Encode
  */
 typedef enum {
     eMIME_T_NcbiData = 0,  /* "x-ncbi-data"  (NCBI specific data) */
-    eMIME_T_Text,          /* "text" */
-    eMIME_T_Application,   /* "application" */
-    /* eMIME_T_???, "<type>"  here go other types */
-    eMIME_T_Unknown        /* "unknown" */
+    eMIME_T_Text,          /* "text"                              */
+    eMIME_T_Application,   /* "application"                       */
+    /* eMIME_T_???, "<type>" here go other types                  */
+    eMIME_T_Unknown        /* "unknown"                           */
 } EMIME_Type;
 
 
 /* SubType
  */
 typedef enum {
-    eMIME_Dispatch = 0,  /* "x-dispatch"    (dispatcher info) */
-    eMIME_AsnText,       /* "x-asn-text"    (text ASN.1 data) */
-    eMIME_AsnBinary,     /* "x-asn-binary"  (binary ASN.1 data) */
-    eMIME_Fasta,         /* "x-fasta"       (data in FASTA format) */
-    eMIME_WwwForm,       /* "x-www-form" */
+    eMIME_Dispatch = 0,  /* "x-dispatch"    (dispatcher info)          */
+    eMIME_AsnText,       /* "x-asn-text"    (text ASN.1 data)          */
+    eMIME_AsnBinary,     /* "x-asn-binary"  (binary ASN.1 data)        */
+    eMIME_Fasta,         /* "x-fasta"       (data in FASTA format)     */
+    eMIME_WwwForm,       /* "x-www-form"                               */
     /* standard MIMEs */
-    eMIME_Html,          /* "html" */
-    eMIME_Plain,         /* "plain" */
-    /* eMIME_???,           "<subtype>"   here go other NCBI subtypes */
+    eMIME_Html,          /* "html"                                     */
+    eMIME_Plain,         /* "plain"                                    */
+    /* eMIME_???,           "<subtype>" here go other NCBI subtypes    */
     eMIME_Unknown        /* "x-unknown"     (an arbitrary binary data) */
 } EMIME_SubType;
 
@@ -489,9 +492,10 @@ typedef enum {
 /* Encoding
  */
 typedef enum {
-    eENCOD_Url = 0,  /* "-urlencoded"   (the content is URL-encoded) */
-    /* eENCOD_???,      "-<encoding>"   here go other NCBI encodings */
-    eENCOD_None      /* ""              (the content is passed "as is") */
+    eENCOD_None = 0, /* ""              (the content is passed "as is") */
+    eENCOD_Url,      /* "-urlencoded"   (the content is URL-encoded)    */
+    /* eENCOD_???,      "-<encoding>" here go other NCBI encodings      */
+    eENCOD_Unknown   /* "-encoded"      (unknown encoding)              */
 } EMIME_Encoding;
 
 
@@ -533,7 +537,7 @@ extern char* MIME_ComposeContentType
  * return TRUE, eMIME_T_Unknown, eMIME_Unknown or eENCOD_None, respectively.
  * If the passed "str" has an invalid (non-HTTP ContentType) format
  * (or if it is NULL/empty), then
- * return FALSE, eMIME_T_Unknown, eMIME_Unknown, and eENCOD_None.
+ * return FALSE, eMIME_T_Unknown, eMIME_Unknown, and eENCOD_Unknown
  */
 extern int/*bool*/ MIME_ParseContentTypeEx
 (const char*     str,      /* the HTTP "Content-Type:" header to parse */
