@@ -216,7 +216,7 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
 
 void CBlastFormatUtil::PrintDbReport(list<CBlastFormatUtil::SDbInfo>& 
                                      dbinfo_list,
-                                     int line_length,  CNcbiOstream& out) 
+                                     size_t line_length,  CNcbiOstream& out) 
 {
 
     CBlastFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
@@ -350,7 +350,7 @@ CBlastFormatUtil::GetBlastDefline (const CBioseq_Handle& handle)
                             //only one user field
                             typedef const CUser_field::TData::TOss TOss;
                             const TOss& oss = usf.front()->GetData().GetOss();
-                            int size = 0;
+                            size_t size = 0;
                             //determine the octet string length
                             ITERATE (TOss, iter3, oss) {
                                 size += (**iter3).size();
@@ -419,9 +419,9 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
     }	
 }
 
-void CBlastFormatUtil::AddSpace(CNcbiOstream& out, int number)
+void CBlastFormatUtil::AddSpace(CNcbiOstream& out, size_t number)
 {
-    for(int i=0; i<number; i++){
+    for(size_t i=0; i<number; i++){
         out<<" ";
     }
 }

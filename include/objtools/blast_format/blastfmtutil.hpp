@@ -103,7 +103,7 @@ public:
     ///@param: line_len: length of each line desired
     ///@param out: stream to ouput
     ///
-    static void PrintDbReport(list<SDbInfo>& dbinfo_list, int line_length, 
+    static void PrintDbReport(list<SDbInfo>& dbinfo_list, size_t line_length, 
                               CNcbiOstream& out);
     
     ///Print out kappa, lamda blast parameters
@@ -154,7 +154,7 @@ public:
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
     ///
-    static void AddSpace(CNcbiOstream& out, int number);
+    static void AddSpace(CNcbiOstream& out, size_t number);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
@@ -173,6 +173,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.5  2005/02/02 16:31:57  jianye
+int to size_t to get rid of compiler warning
+
 Revision 1.4  2005/02/01 21:28:42  camacho
 Doxygen fixes
 

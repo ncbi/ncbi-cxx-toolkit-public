@@ -86,7 +86,7 @@ public:
     CShowBlastDefline(const CSeq_align_set& seqalign,                       
                       CScope& scope,
                       size_t line_length = 65,
-                      int num_defline_to_show = 100);
+                      size_t num_defline_to_show = 100);
     
     ~CShowBlastDefline();
     
@@ -212,7 +212,7 @@ private:
     size_t  m_LineLen;
 
     ///Number of seqalign hits to show
-    int m_NumToShow;
+    size_t m_NumToShow;
 
     ///Display options
     int m_Option;
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.5  2005/02/02 16:31:57  jianye
+int to size_t to get rid of compiler warning
+
 Revision 1.4  2005/02/01 21:28:42  camacho
 Doxygen fixes
 

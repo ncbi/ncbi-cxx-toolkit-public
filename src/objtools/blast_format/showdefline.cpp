@@ -201,14 +201,14 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
         if (user_url.find("dumpgnl.cgi") ==string::npos){
             nodb_path = true;
         }  
-        int length = db_name.size();
+        size_t length = db_name.size();
         string actual_db;
         char  *chptr, *dbtmp;
         Char tmpbuff[256];
         char* dbname = new char[sizeof(char)*length + 2];
         strcpy(dbname, db_name.c_str());
         if(nodb_path) {
-            int i, j;
+            size_t i, j;
             /* aditional space and NULL */
             dbtmp = new char[sizeof(char)*length + 2]; 
             
@@ -533,7 +533,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
                                      CScope& scope,
                                      size_t line_length,
-                                     int num_defline_to_show):
+                                     size_t num_defline_to_show):
     m_AlnSetRef(&seqalign), 
     m_ScopeRef(&scope),
     m_LineLen(line_length),
@@ -567,7 +567,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
       need to show defline only once for all hsp's with the same id*/
     
     bool is_first_aln = true;
-    int num_align = 0;
+    size_t num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
     size_t max_score_len = kBits.size(), max_evalue_len = kValue.size();
     size_t max_sum_n_len =1;
@@ -653,9 +653,8 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
             CBlastFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
             CBlastFormatUtil::AddSpace(out, kOneSpaceMargin.size());
             out << kBits;
-            //in case max_score_len
+            //in case max_score_len > kBits.size()
             CBlastFormatUtil::AddSpace(out, max_score_len - kBits.size()); 
-            // >  kBits.size()
             CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             out << kValue;
             if(m_Option & eShowSumN){
@@ -830,6 +829,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.5  2005/02/02 16:33:18  jianye
+*int to size_t to get rid of compiler warning
+*
 *Revision 1.4  2005/01/31 19:47:31  jianye
 *correct type error
 *
