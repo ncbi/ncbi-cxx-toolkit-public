@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -66,8 +67,8 @@ void CDbapiTest::Init()
 
 
     argList->AddDefaultKey("s", "string",
-                           "Server <sybase|mssql>",
-                           CArgDescriptions::eString, "sybase");
+                           "Server name",
+                           CArgDescriptions::eString, "STRAUSS");
 
 #ifdef WIN32
     argList->AddDefaultKey("d", "string",
@@ -76,7 +77,7 @@ void CDbapiTest::Init()
                            "odbc");
 #else
     argList->AddDefaultKey("d", "string",
-                           "Driver <ctlib|dblib|ftds|odbc>",
+                           "Driver <ctlib|dblib|ftds>",
                            CArgDescriptions::eString, 
                            "ctlib");
 #endif
@@ -89,23 +90,23 @@ int CDbapiTest::Run()
 
     CArgs args = GetArgs();
 
+    IDataSource *ds = 0;
 
     try {
     
         CDriverManager &dm = CDriverManager::GetInstance();
 
-        string server = "STRAUSS";
+        string server = args["s"].AsString();
 
-        if( !NStr::Compare("mssql", args["s"].AsString()) ) {
-            server = "MSSQL2";
-        }
 
 #ifdef WIN32
         DBAPI_RegisterDriver_ODBC(dm);
         //DBAPI_RegisterDriver_DBLIB(dm);
 #endif
    
-        IDataSource *ds = dm.CreateDs(args["d"].AsString());
+        ds = dm.CreateDs(args["d"].AsString());
+
+        //ds->SetLogStream(0);
 
         //CNcbiOfstream log("test.log");
         ds->SetLogStream(&NcbiCerr);
@@ -113,6 +114,7 @@ int CDbapiTest::Run()
         IConnection* conn = ds->CreateConnection();
 
         conn->SetMode(IConnection::eBulkInsert);
+        //conn->ForceSingle(true);
 
         conn->Connect("anyone",
                       "allowed",
@@ -155,7 +157,62 @@ int CDbapiTest::Run()
 
 
         //delete stmt;
+#if 0
+        // Testing bulk insert w/o BLOBs
+        NcbiCout << "Creating BulkSample table..." << endl;
+        sql = "if exists( select * from sysobjects \
+where name = 'BulkSample' \
+AND type = 'U') \
+begin \
+	drop table BulkSample \
+end";
+        stmt->ExecuteUpdate(sql);
 
+#endif
+        sql = "create table #test (\
+	id int not null, \
+	ord int not null, \
+    mode tinyint not null)";
+        stmt->ExecuteUpdate(sql);
+
+        delete stmt;
+
+        try {
+            //Initialize table using bulk insert
+            NcbiCout << "Initializing #test table..." << endl;
+            IBulkInsert *bi = conn->CreateBulkInsert("#test", 3);
+            CVariant b1(eDB_Int);
+            CVariant b2(eDB_Int);
+            CVariant b3(eDB_TinyInt);
+            bi->Bind(1, &b1);
+            bi->Bind(2, &b2);
+            bi->Bind(3, &b3);
+            int i;
+            for( i = 0; i < 10; ++i ) {
+                b1 = i;
+                b2 = i * 2;
+                b3 = Uint1(i + 1);
+                bi->AddRow();
+                //bi->StoreBatch();
+            }
+            
+            bi->StoreBatch();
+            
+            for( ; i < 20; ++i ) {
+                b1 = i;
+                b2 = i * 2;
+                b3 = Uint1(i + 1);
+                bi->AddRow();
+            }
+            bi->Complete();
+
+            delete bi;
+        }
+        catch(...) {
+            throw;
+        }
+
+        exit(1);
 
         // create a stored procedure
         sql = "if exists( select * from sysobjects \
@@ -174,6 +231,7 @@ as \
 begin \
   select int_val, fl_val, date_val from SelectSample \
   where int_val < @id and fl_val = @f \
+  select int_val, fl_val, date_val from SelectSample \
   return @id \
 end";
 
@@ -203,7 +261,7 @@ end";
         NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
 
        
-        cstmt->Close();
+        delete cstmt;
 
         // Reconnect
         NcbiCout << "Reconnecting..." << endl;
@@ -270,8 +328,7 @@ end";
         stmt->ExecuteUpdate(sql);
 
 
-        sql = "\
-create table BlobSample (\
+        sql = "create table BlobSample (\
 	id int null, \
 	blob text null, unique (id))";
         stmt->ExecuteUpdate(sql);
@@ -304,6 +361,7 @@ create table BlobSample (\
         }
         bi->Complete();
 
+        
 
         NcbiCout << "Writing BLOB using cursor..." << endl;
 
@@ -394,6 +452,7 @@ from BlobSample where id = 1");
     }
     catch(exception& e) {
         NcbiCout << e.what() << endl;
+        NcbiCout << ds->GetErrorInfo();
     }
 
     return 0;
@@ -410,9 +469,13 @@ int main(int argc, const char* argv[])
     return CDbapiTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/10/01 18:57:45  kholodov
+* Added: bulk insert test
+*
 * Revision 1.3  2002/09/19 14:38:49  kholodov
 * Modified: to work with ODBC driver
 *
