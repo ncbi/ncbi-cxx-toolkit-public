@@ -31,21 +31,6 @@
  * File Description:
  *    Build C Toolkit ANS streams on top of CONN (connection).
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.4  2001/12/02 21:17:28  lavr
- * Fix in comment
- *
- * Revision 1.3  2001/09/24 20:32:34  lavr
- * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
- *
- * Revision 1.2  2001/06/28 23:01:53  vakatov
- * Typo fixed (self-#include)
- *
- * Revision 1.1  2001/06/28 21:59:24  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_connection.h>
@@ -76,6 +61,7 @@ typedef enum {
  * Return ASN stream pointer on success, or 0 on error.
  * NOTE: Returned stream is valid while the underlying conn exists. After call
  *       to CONN_Close() the stream becomes invalid, and should not be used.
+ *       Don't destroy the ASN stream explicitly using AsnIoFree or AsnIoFree!
  */
 AsnIoPtr CreateAsnConn
 (CONN               conn,
@@ -95,6 +81,7 @@ AsnIoPtr CreateAsnConn
  * NOTE: Returned ASN stream pointers are valid as long as connection
  *       handle exists, that is after the connection handle is passed to
  *       CONN_Close(), both pointers become invalid, and should not be used.
+ *       Don't destroy the ASN streams explicitly using AsnIoFree or AsnIoFree!
  */
 CONN CreateAsnConn_ServiceEx
 (const char*           service,
@@ -122,5 +109,28 @@ CONN CreateAsnConn_Service
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2002/03/14 22:45:45  vakatov
+ * Warn against explicit destruction of ASN streams
+ *
+ * Revision 1.4  2001/12/02 21:17:28  lavr
+ * Fix in comment
+ *
+ * Revision 1.3  2001/09/24 20:32:34  lavr
+ * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
+ *
+ * Revision 1.2  2001/06/28 23:01:53  vakatov
+ * Typo fixed (self-#include)
+ *
+ * Revision 1.1  2001/06/28 21:59:24  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */
 
 #endif /* NCBI_ASN_CONNECTION__H */
