@@ -1,5 +1,5 @@
-#ifndef NCBI_BUFFER__H
-#define NCBI_BUFFER__H
+#ifndef CONNECT___NCBI_BUFFER__H
+#define CONNECT___NCBI_BUFFER__H
 
 /*  $Id$
  * ===========================================================================
@@ -43,27 +43,6 @@
  *   BUF_Read
  *   BUF_Destroy
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.5  2001/04/23 22:20:26  vakatov
- * BUF_PeekAt() -- special case for "data" == NULL
- *
- * Revision 6.4  2001/04/23 18:07:19  vakatov
- * + BUF_PeekAt()
- *
- * Revision 6.3  2000/02/23 22:33:37  vakatov
- * Can work both "standalone" and as a part of NCBI C++ or C toolkits
- *
- * Revision 6.2  1999/10/12 16:30:10  vakatov
- * include <string.h> to define "size_t"
- *
- * Revision 6.1  1999/08/17 19:45:22  vakatov
- * Moved all real code from NCBIBUF to NCBI_BUFFER;  the code has been cleaned
- * from the NCBI C toolkit specific types and API calls.
- * NCBIBUF module still exists for the backward compatibility -- it
- * provides old NCBI-wise interface.
- *
- * ===========================================================================
  */
 
 #if defined(NCBIBUF__H)
@@ -145,4 +124,32 @@ extern BUF BUF_Destroy(BUF buf);
 }
 #endif
 
-#endif /* NCBI_BUFFER__H */
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.6  2002/09/19 17:59:53  lavr
+ * Header file guard macro changed; log moved to the end
+ *
+ * Revision 6.5  2001/04/23 22:20:26  vakatov
+ * BUF_PeekAt() -- special case for "data" == NULL
+ *
+ * Revision 6.4  2001/04/23 18:07:19  vakatov
+ * + BUF_PeekAt()
+ *
+ * Revision 6.3  2000/02/23 22:33:37  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
+ * Revision 6.2  1999/10/12 16:30:10  vakatov
+ * include <string.h> to define "size_t"
+ *
+ * Revision 6.1  1999/08/17 19:45:22  vakatov
+ * Moved all real code from NCBIBUF to NCBI_BUFFER;  the code has been cleaned
+ * from the NCBI C toolkit specific types and API calls.
+ * NCBIBUF module still exists for the backward compatibility -- it
+ * provides old NCBI-wise interface.
+ *
+ * ===========================================================================
+ */
+
+#endif /* CONNECT___NCBI_BUFFER__H */

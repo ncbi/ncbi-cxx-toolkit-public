@@ -1,5 +1,5 @@
-#ifndef NCBI_CONNUTIL__H
-#define NCBI_CONNUTIL__H
+#ifndef CONNECT___NCBI_CONNUTIL__H
+#define CONNECT___NCBI_CONNUTIL__H
 
 /*  $Id$
  * ===========================================================================
@@ -62,86 +62,13 @@
  *       StringToHostPort()
  *       HostPortToString()
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.21  2002/05/06 19:07:25  lavr
- * -#include <stdlib>; -ConnNetInfo_Print(); +ConnNetInfo_Log()
- *
- * Revision 6.20  2002/02/20 19:12:03  lavr
- * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
- *
- * Revision 6.19  2001/12/30 19:39:36  lavr
- * +ConnNetInfo_ParseURL()
- *
- * Revision 6.18  2001/09/28 20:45:26  lavr
- * SConnNetInfo::max_try equal to 0 is now treated the same way as equal to 1
- *
- * Revision 6.17  2001/09/19 15:58:37  lavr
- * Cut trailing blanks in blank lines
- *
- * Revision 6.16  2001/09/10 21:14:47  lavr
- * Added functions: StringToHostPort()
- *                  HostPortToString()
- *
- * Revision 6.15  2001/06/01 16:01:58  vakatov
- * MIME_ParseContentTypeEx() -- extended description
- *
- * Revision 6.14  2001/05/29 21:15:42  vakatov
- * + eMIME_Plain
- *
- * Revision 6.13  2001/04/24 21:21:38  lavr
- * Special text value "infinite" accepted as infinite timeout from environment
- *
- * Revision 6.12  2001/03/07 23:00:15  lavr
- * Default value for SConnNetInfo::stateless set to empty (FALSE)
- *
- * Revision 6.11  2001/03/02 20:07:07  lavr
- * Typos fixed
- *
- * Revision 6.10  2001/02/26 16:56:41  vakatov
- * Comment SConnNetInfo.
- *
- * Revision 6.9  2001/01/23 23:06:15  lavr
- * SConnNetInfo.debug_printout converted from boolean to enum
- * BUF_StripToPattern() introduced
- *
- * Revision 6.8  2001/01/11 23:05:13  lavr
- * ConnNetInfo_Create() fully documented
- *
- * Revision 6.7  2001/01/08 23:46:10  lavr
- * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
- *
- * Revision 6.6  2001/01/08 22:47:13  lavr
- * ReqMethod constants changed (to conform to coding standard)
- * ClientMode removed; replaced by 2 booleans: stateless and firewall
- * in SConnInfo structure
- *
- * Revision 6.5  2000/12/29 17:47:46  lavr
- * NCBID stuff removed; ClientMode enum added;
- * ConnNetInfo_SetUserHeader added; http_user_header is now
- * included in ConnInfo structure. ConnNetInfo_Destroy parameter
- * changed to be a pointer (was a double pointer).
- *
- * Revision 6.4  2000/11/07 23:23:15  vakatov
- * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
- * (with "eMIME_Dispatch" added).
- *
- * Revision 6.3  2000/10/05 22:39:21  lavr
- * SConnNetInfo modified to contain 'client_mode' instead of just 'firewall'
- *
- * Revision 6.2  2000/09/26 22:01:30  lavr
- * Registry entries changed, HTTP request method added
- *
- * Revision 6.1  2000/03/24 22:52:48  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_core.h>
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_connection.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -574,4 +501,85 @@ extern size_t HostPortToString
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_CONNUTIL__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.22  2002/09/19 18:00:21  lavr
+ * Header file guard macro changed; log moved to the end
+ *
+ * Revision 6.21  2002/05/06 19:07:25  lavr
+ * -#include <stdlib>; -ConnNetInfo_Print(); +ConnNetInfo_Log()
+ *
+ * Revision 6.20  2002/02/20 19:12:03  lavr
+ * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
+ *
+ * Revision 6.19  2001/12/30 19:39:36  lavr
+ * +ConnNetInfo_ParseURL()
+ *
+ * Revision 6.18  2001/09/28 20:45:26  lavr
+ * SConnNetInfo::max_try equal to 0 is now treated the same way as equal to 1
+ *
+ * Revision 6.17  2001/09/19 15:58:37  lavr
+ * Cut trailing blanks in blank lines
+ *
+ * Revision 6.16  2001/09/10 21:14:47  lavr
+ * Added functions: StringToHostPort()
+ *                  HostPortToString()
+ *
+ * Revision 6.15  2001/06/01 16:01:58  vakatov
+ * MIME_ParseContentTypeEx() -- extended description
+ *
+ * Revision 6.14  2001/05/29 21:15:42  vakatov
+ * + eMIME_Plain
+ *
+ * Revision 6.13  2001/04/24 21:21:38  lavr
+ * Special text value "infinite" accepted as infinite timeout from environment
+ *
+ * Revision 6.12  2001/03/07 23:00:15  lavr
+ * Default value for SConnNetInfo::stateless set to empty (FALSE)
+ *
+ * Revision 6.11  2001/03/02 20:07:07  lavr
+ * Typos fixed
+ *
+ * Revision 6.10  2001/02/26 16:56:41  vakatov
+ * Comment SConnNetInfo.
+ *
+ * Revision 6.9  2001/01/23 23:06:15  lavr
+ * SConnNetInfo.debug_printout converted from boolean to enum
+ * BUF_StripToPattern() introduced
+ *
+ * Revision 6.8  2001/01/11 23:05:13  lavr
+ * ConnNetInfo_Create() fully documented
+ *
+ * Revision 6.7  2001/01/08 23:46:10  lavr
+ * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
+ *
+ * Revision 6.6  2001/01/08 22:47:13  lavr
+ * ReqMethod constants changed (to conform to coding standard)
+ * ClientMode removed; replaced by 2 booleans: stateless and firewall
+ * in SConnInfo structure
+ *
+ * Revision 6.5  2000/12/29 17:47:46  lavr
+ * NCBID stuff removed; ClientMode enum added;
+ * ConnNetInfo_SetUserHeader added; http_user_header is now
+ * included in ConnInfo structure. ConnNetInfo_Destroy parameter
+ * changed to be a pointer (was a double pointer).
+ *
+ * Revision 6.4  2000/11/07 23:23:15  vakatov
+ * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
+ * (with "eMIME_Dispatch" added).
+ *
+ * Revision 6.3  2000/10/05 22:39:21  lavr
+ * SConnNetInfo modified to contain 'client_mode' instead of just 'firewall'
+ *
+ * Revision 6.2  2000/09/26 22:01:30  lavr
+ * Registry entries changed, HTTP request method added
+ *
+ * Revision 6.1  2000/03/24 22:52:48  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_CONNUTIL__H */

@@ -1,5 +1,5 @@
-#ifndef NCBI_HEAPMGR__H
-#define NCBI_HEAPMGR__H
+#ifndef CONNECT___NCBI_HEAPMGR__H
+#define CONNECT___NCBI_HEAPMGR__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,36 +31,10 @@
  * File Description:
  *   Simple heap manager with a primitive garbage collection
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.10  2002/04/13 06:33:22  lavr
- * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
- *
- * Revision 6.9  2001/07/03 20:23:46  lavr
- * Added function: HEAP_Copy()
- *
- * Revision 6.8  2001/06/19 20:16:19  lavr
- * Added #include <connect/ncbi_types.h>
- *
- * Revision 6.7  2001/06/19 19:09:35  lavr
- * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
- *
- * Revision 6.6  2000/10/05 21:25:45  lavr
- * ncbiconf.h removed
- *
- * Revision 6.5  2000/10/05 21:09:52  lavr
- * ncbiconf.h included
- *
- * Revision 6.4  2000/05/23 21:41:05  lavr
- * Alignment changed to 'double'
- *
- * Revision 6.3  2000/05/12 18:28:40  lavr
- * First working revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_types.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -175,4 +149,38 @@ int HEAP_Serial(const HEAP heap);
 } /* extern "C" */
 #endif
 
-#endif /* NCBI_HEAPMGR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.11  2002/09/19 18:00:58  lavr
+ * Header file guard macro changed; log moved to the end
+ *
+ * Revision 6.10  2002/04/13 06:33:22  lavr
+ * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
+ *
+ * Revision 6.9  2001/07/03 20:23:46  lavr
+ * Added function: HEAP_Copy()
+ *
+ * Revision 6.8  2001/06/19 20:16:19  lavr
+ * Added #include <connect/ncbi_types.h>
+ *
+ * Revision 6.7  2001/06/19 19:09:35  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
+ * Revision 6.6  2000/10/05 21:25:45  lavr
+ * ncbiconf.h removed
+ *
+ * Revision 6.5  2000/10/05 21:09:52  lavr
+ * ncbiconf.h included
+ *
+ * Revision 6.4  2000/05/23 21:41:05  lavr
+ * Alignment changed to 'double'
+ *
+ * Revision 6.3  2000/05/12 18:28:40  lavr
+ * First working revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_HEAPMGR__H */

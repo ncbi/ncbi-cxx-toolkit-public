@@ -1,5 +1,5 @@
-#ifndef NCBI_FILE_CONNECTOR__H
-#define NCBI_FILE_CONNECTOR__H
+#ifndef CONNECT___NCBI_FILE_CONNECTOR__H
+#define CONNECT___NCBI_FILE_CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,15 +34,10 @@
  *   See in "connectr.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.1  2000/04/12 15:18:10  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_connector.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,7 +51,6 @@ extern CONNECTOR FILE_CreateConnector
 (const char* in_file_name,   /* to read data from */
  const char* out_file_name   /* to write the read data to */
  );
-
 
 
 /* Open mode for the output data file
@@ -90,4 +84,17 @@ extern CONNECTOR FILE_CreateConnectorEx
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_FILE_CONNECTOR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.2  2002/09/19 18:00:42  lavr
+ * Header file guard macro changed; log moved to the end
+ *
+ * Revision 6.1  2000/04/12 15:18:10  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_FILE_CONNECTOR__H */

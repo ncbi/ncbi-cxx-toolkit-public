@@ -1,5 +1,5 @@
-#ifndef NCBI_MEMORY_CONNECTOR__H
-#define NCBI_MEMORY_CONNECTOR__H
+#ifndef CONNECT___NCBI_MEMORY_CONNECTOR__H
+#define CONNECT___NCBI_MEMORY_CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,15 +34,10 @@
  *   See <connect/ncbi_connector.h> for the detailed specification of
  *   the connector's methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.1  2002/02/20 19:29:35  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_connector.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,4 +55,17 @@ extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_MEMORY_CONNECTOR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.2  2002/09/19 18:01:14  lavr
+ * Header file guard macro changed; log moved to the end
+ *
+ * Revision 6.1  2002/02/20 19:29:35  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_MEMORY_CONNECTOR__H */
