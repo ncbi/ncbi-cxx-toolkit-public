@@ -3,7 +3,7 @@
 
 # Meta-makefile
 
-APP_PROJ = coretest test_ncbiargs test_ncbitime
+APP_PROJ = coretest test_ncbiargs test_ncbitime test_ncbi_limits
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
