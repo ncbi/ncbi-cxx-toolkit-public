@@ -48,7 +48,6 @@ static char const rcsid[] =
 
 #include <objmgr/scope.hpp>
 
-#include <algo/blast/api/blast_aux.hpp>
 #include "blast_input.hpp"
 
 BEGIN_NCBI_SCOPE
