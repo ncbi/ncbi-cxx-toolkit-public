@@ -54,7 +54,9 @@ class UnalignedBlock;
 class BlockMultipleAlignment : public ncbi::CObject
 {
 public:
-    static const unsigned int UNDEFINED;
+    enum {
+        eUndefined = kMax_UInt
+    };
 
     typedef std::vector < const Sequence * > SequenceList;
     BlockMultipleAlignment(const SequenceList& sequenceList);   // first sequence is master
@@ -99,7 +101,7 @@ public:
         eSplit
     };
 
-    // return alignment position of left side first aligned block (UNDEFINED if no aligned blocks)
+    // return alignment position of left side first aligned block (eUndefined if no aligned blocks)
     unsigned int GetFirstAlignedBlockPosition(void) const;
 
     // makes a new copy of itself
@@ -135,7 +137,7 @@ public:
     unsigned int NRows(void) const { return m_sequences.size(); }
     unsigned int AlignmentWidth(void) const { return m_totalWidth; }
 
-    // return a number from 1..n for aligned blocks, UNDEFINED for unaligned
+    // return a number from 1..n for aligned blocks, eUndefined for unaligned
     unsigned int GetAlignedBlockNumber(unsigned int alignmentIndex) const
         { return m_blockMap[alignmentIndex].alignedBlockNum; }
 
@@ -157,11 +159,11 @@ public:
 
     ///// editing functions /////
 
-    // if in an aligned block, give block column and width of that position; otherwise UNDEFINED
+    // if in an aligned block, give block column and width of that position; otherwise eUndefined
     void GetAlignedBlockPosition(unsigned int alignmentIndex,
         unsigned int *blockColumn, unsigned int *blockWidth) const;
 
-    // get seqIndex of slave aligned to the given master seqIndex; UNDEFINED if master residue unaligned
+    // get seqIndex of slave aligned to the given master seqIndex; eUndefined if master residue unaligned
     unsigned int GetAlignedSlaveIndex(unsigned int masterSeqIndex, unsigned int slaveRow) const;
 
     // returns true if any boundary shift actually occurred
@@ -362,6 +364,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/26 14:49:59  thiessen
+* UNDEFINED -> eUndefined
+*
 * Revision 1.4  2004/05/26 14:30:16  thiessen
 * adjust handling of alingment data ; add row ordering
 *

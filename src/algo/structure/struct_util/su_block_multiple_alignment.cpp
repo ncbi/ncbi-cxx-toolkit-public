@@ -47,8 +47,6 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(struct_util)
 
-const unsigned int BlockMultipleAlignment::UNDEFINED = kMax_UInt;
-
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList& sequenceList)
 {
     m_sequences = sequenceList;
@@ -61,7 +59,7 @@ BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList& sequenceList)
 
 void BlockMultipleAlignment::InitCache(void)
 {
-    m_cachePrevRow = UNDEFINED;
+    m_cachePrevRow = eUndefined;
     m_cachePrevBlock = NULL;
     m_cacheBlockIterator = m_blocks.begin();
 }
@@ -336,7 +334,7 @@ bool BlockMultipleAlignment::UpdateBlockMap(bool clearRowInfo)
         for (j=0; j<(*b)->m_width; ++j, ++i) {
             m_blockMap[i].block = *b;
             m_blockMap[i].blockColumn = j;
-            m_blockMap[i].alignedBlockNum = aBlock ? n : UNDEFINED;
+            m_blockMap[i].alignedBlockNum = aBlock ? n : eUndefined;
         }
     }
 
@@ -442,7 +440,7 @@ unsigned int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
     else if (m_blocks.size() >= 2 && (*(++b))->IsAligned()) // second block is aligned
         return m_blocks.front()->m_width;
     else
-        return UNDEFINED;
+        return eUndefined;
 }
 
 unsigned int BlockMultipleAlignment::GetAlignedSlaveIndex(unsigned int masterSeqIndex, unsigned int slaveRow) const
@@ -450,7 +448,7 @@ unsigned int BlockMultipleAlignment::GetAlignedSlaveIndex(unsigned int masterSeq
     const UngappedAlignedBlock
         *aBlock = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(0, masterSeqIndex));
     if (!aBlock)
-        return UNDEFINED;
+        return eUndefined;
 
     const Block::Range
         *masterRange = aBlock->GetRangeOfRow(0),
@@ -461,7 +459,7 @@ unsigned int BlockMultipleAlignment::GetAlignedSlaveIndex(unsigned int masterSeq
 void BlockMultipleAlignment::GetAlignedBlockPosition(unsigned int alignmentIndex,
     unsigned int *blockColumn, unsigned int *blockWidth) const
 {
-    *blockColumn = *blockWidth = UNDEFINED;
+    *blockColumn = *blockWidth = eUndefined;
     const BlockInfo& info = m_blockMap[alignmentIndex];
     if (info.block->IsAligned()) {
         *blockColumn = info.blockColumn;
@@ -570,7 +568,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(unsigned int columnFrom, unsigned
 {
     unsigned int blockColumn, blockWidth;
     GetAlignedBlockPosition(columnFrom, &blockColumn, &blockWidth);
-    if (blockColumn == UNDEFINED || blockWidth == 0 || blockWidth == UNDEFINED) return false;
+    if (blockColumn == eUndefined || blockWidth == 0 || blockWidth == eUndefined) return false;
 
     TRACE_MESSAGE("trying to move block boundary from " << columnFrom << " to " << columnTo);
 
@@ -732,7 +730,7 @@ bool BlockMultipleAlignment::ShiftRow(unsigned int row, unsigned int fromAlignme
         unsigned int fromSeqIndex, toSeqIndex;
         GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, NULL, &fromSeqIndex, NULL);
         GetSequenceAndIndexAt(toAlignmentIndex, row, justification, NULL, &toSeqIndex, NULL);
-        if (fromSeqIndex == UNDEFINED || toSeqIndex == UNDEFINED)
+        if (fromSeqIndex == eUndefined || toSeqIndex == eUndefined)
             return false;
         requestedShift = toSeqIndex - fromSeqIndex;
     }
@@ -1373,7 +1371,7 @@ unsigned int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigne
 {
     if (row >= NRows() || seqIndex >= GetSequenceOfRow(row)->Length()) {
         ERROR_MESSAGE("BlockMultipleAlignment::GetAlignmentIndex() - coordinate out of range");
-        return UNDEFINED;
+        return eUndefined;
     }
 
     unsigned int alignmentIndex, blockColumn;
@@ -1402,14 +1400,14 @@ unsigned int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigne
                         return alignmentIndex + blockColumn;
                 }
                 ERROR_MESSAGE("BlockMultipleAlignment::GetAlignmentIndex() - can't find index in block");
-                return UNDEFINED;
+                return eUndefined;
             }
         }
     }
 
     // should never get here...
     ERROR_MESSAGE("BlockMultipleAlignment::GetAlignmentIndex() - confused");
-    return UNDEFINED;
+    return eUndefined;
 }
 
 /*
@@ -1503,7 +1501,7 @@ unsigned int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int r
         BlockMultipleAlignment::eUnalignedJustification justification) const
 {
     const Block::Range *range = GetRangeOfRow(row);
-    unsigned int seqIndex = BlockMultipleAlignment::UNDEFINED, rangeWidth, rangeMiddle, extraSpace;
+    unsigned int seqIndex = BlockMultipleAlignment::eUndefined, rangeWidth, rangeMiddle, extraSpace;
 
     switch (justification) {
         case BlockMultipleAlignment::eLeft:
@@ -1516,7 +1514,7 @@ unsigned int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int r
             rangeWidth = (range->to - range->from + 1);
             extraSpace = (m_width - rangeWidth) / 2;
             if (blockColumn < extraSpace || blockColumn >= extraSpace + rangeWidth)
-                seqIndex = BlockMultipleAlignment::UNDEFINED;
+                seqIndex = BlockMultipleAlignment::eUndefined;
             else
                 seqIndex = range->from + blockColumn - extraSpace;
             break;
@@ -1529,11 +1527,11 @@ unsigned int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int r
             else if (blockColumn >= extraSpace + rangeMiddle)
                 seqIndex = range->to - m_width + blockColumn + 1;
             else
-                seqIndex = BlockMultipleAlignment::UNDEFINED;
+                seqIndex = BlockMultipleAlignment::eUndefined;
             break;
     }
     if (seqIndex < range->from || seqIndex > range->to)
-        seqIndex = BlockMultipleAlignment::UNDEFINED;
+        seqIndex = BlockMultipleAlignment::eUndefined;
 
     return seqIndex;
 }
@@ -1580,6 +1578,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/26 14:49:59  thiessen
+* UNDEFINED -> eUndefined
+*
 * Revision 1.5  2004/05/26 14:30:16  thiessen
 * adjust handling of alingment data ; add row ordering
 *

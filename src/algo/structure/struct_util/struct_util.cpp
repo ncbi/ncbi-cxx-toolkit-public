@@ -227,9 +227,11 @@ bool AlignmentUtility::DoIBM(void)
     return true;
 }
 
+extern "C" {
 int ScoreByPSSM(unsigned int block, unsigned int queryPos)
 {
     return 1;
+}
 }
 
 bool AlignmentUtility::DoLeaveOneOut(
@@ -394,6 +396,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/26 14:49:59  thiessen
+* UNDEFINED -> eUndefined
+*
 * Revision 1.5  2004/05/26 14:45:11  gorelenk
 * UNALIGNED->eUnaligned
 *
