@@ -81,7 +81,7 @@ CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
             blaster->GetOptions().GetScoringOpts(), 
             blaster->GetOptions().GetEffLenOpts(), 
             blaster->GetOptions().GetExtnOpts(), 
-            blaster->GetOptions().GetHitSaveOpts(), blaster->GetQueryInfo(), 
+            blaster->GetOptions().GetHitSaveOpts(), m_ipQueryInfo, 
             blaster->GetScoreBlk(), &m_ipScoreParams, &m_ipExtParams, 
             &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
     } else {
@@ -170,9 +170,6 @@ void* CBlastTabularFormatThread::Main(void)
            /* This should not happen, but just in case */
            continue;
        }
-
-       /* Make sure the HSPs in this HSP list are sorted. */
-       Blast_HSPListCheckIfSorted(hsp_list);
 
        /* Perform traceback if necessary */
        if (m_ibPerformTraceback) {
@@ -264,6 +261,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/10/04 18:12:40  dondosha
+* Removed call to deleted Blast_HSPListCheckIfSorted function
+*
 * Revision 1.6  2004/09/21 13:51:44  dondosha
 * Check if HSPs in HSP lists are sorted coming out of BlastHSPStream
 *
