@@ -1,3 +1,7 @@
+# $Id$
+
+REQUIRES = objects
+
 APP = test_asn_converter
 SRC = test_asn_converter
 
