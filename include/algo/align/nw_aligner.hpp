@@ -73,7 +73,7 @@ public:
     virtual ~CNWAligner(void) {}
 
     // Compute the alignment
-    virtual TScore Run();
+    TScore Run();
 
     // Setters
     void SetSequences(const char* seq1, size_t len1,
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/10/14 18:43:37  kapustin
+ * Run() is not iteslf polymorphic
+ *
  * Revision 1.29  2003/09/30 19:49:32  kapustin
  * Make use of standard score matrix interface
  *
