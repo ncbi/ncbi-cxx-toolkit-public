@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/03/31 21:38:17  vasilche
+* Renamed First() -> FirstNode(), Next() -> NextNode() to avoid name conflict.
+*
 * Revision 1.25  2000/03/07 14:05:27  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -151,19 +154,19 @@ public:
 	CSequenceOfTypeInfo(const char* name, TTypeInfo type);
     ~CSequenceOfTypeInfo(void);
 
-    static TObjectPtr& First(TObjectPtr object)
+    static TObjectPtr& FirstNode(TObjectPtr object)
         {
             return TType::Get(object);
         }
-    static TConstObjectPtr First(TConstObjectPtr object)
+    static TConstObjectPtr FirstNode(TConstObjectPtr object)
         {
             return TType::Get(object);
         }
-    TObjectPtr& Next(TObjectPtr object) const
+    TObjectPtr& NextNode(TObjectPtr object) const
         {
             return TType::Get(Add(object, m_NextOffset));
         }
-    TConstObjectPtr Next(TConstObjectPtr object) const
+    TConstObjectPtr NextNode(TConstObjectPtr object) const
         {
             return TType::Get(Add(object, m_NextOffset));
         }

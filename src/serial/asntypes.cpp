@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/03/31 21:38:20  vasilche
+* Renamed First() -> FirstNode(), Next() -> NextNode() to avoid name conflict.
+*
 * Revision 1.36  2000/03/29 15:55:26  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -319,14 +322,15 @@ TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 
 bool CSequenceOfTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return First(object) == 0;
+    return FirstNode(object) == 0;
 }
 
 bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
                                  TConstObjectPtr object2) const
 {
-    for ( object1 = First(object1), object2 = First(object2);
-          object1 != 0; object1 = Next(object1), object2 = Next(object2) ) {
+    for ( object1 = FirstNode(object1), object2 = FirstNode(object2);
+          object1 != 0;
+          object1 = NextNode(object1), object2 = NextNode(object2) ) {
         if ( object2 == 0 )
             return false;
         if ( !GetDataTypeInfo()->Equals(Data(object1), Data(object2)) )
@@ -337,22 +341,22 @@ bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
 
 void CSequenceOfTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    First(dst) = 0;
+    FirstNode(dst) = 0;
 }
 
 void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    src = First(src);
+    src = FirstNode(src);
     if ( src == 0 ) {
-        First(dst) = 0;
+        FirstNode(dst) = 0;
         return;
     }
 
     TTypeInfo dataType = GetDataTypeInfo();
-    dst = First(dst) = CreateData();
+    dst = FirstNode(dst) = CreateData();
     dataType->Assign(Data(dst), Data(src));
-    while ( (src = Next(src)) != 0 ) {
-        dst = Next(dst) = CreateData();
+    while ( (src = NextNode(src)) != 0 ) {
+        dst = NextNode(dst) = CreateData();
         dataType->Assign(Data(dst), Data(src));
     }
 }
@@ -362,7 +366,7 @@ void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
 {
     CObjectOStream::Block block(out, RandomOrder());
     TTypeInfo dataType = GetDataTypeInfo();
-    for ( object = First(object); object != 0; object = Next(object) ) {
+    for ( object = FirstNode(object); object; object = NextNode(object) ) {
         block.Next();
         dataType->WriteData(out, Data(object));
     }
@@ -375,15 +379,15 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
            NStr::PtrToString(object) << ")");
     CObjectIStream::Block block(in, RandomOrder());
     if ( !block.Next() ) {
-        First(object) = 0;
+        FirstNode(object) = 0;
         return;
     }
     TTypeInfo dataType = GetDataTypeInfo();
 
-    TObjectPtr next = First(object);
+    TObjectPtr next = FirstNode(object);
     if ( next == 0 ) {
         ERR_POST(Warning << "null sequence pointer"); 
-        next = First(object) = CreateData();
+        next = FirstNode(object) = CreateData();
         _TRACE("new " << dataType->GetName() << ": " <<
                NStr::PtrToString(next));
     }
@@ -393,10 +397,10 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
 
     while ( block.Next() ) {
 
-        next = Next(object);
+        next = NextNode(object);
         if ( next == 0 ) {
             ERR_POST(Warning << "null sequence pointer"); 
-            next = Next(object) = CreateData();
+            next = NextNode(object) = CreateData();
             _TRACE("new " << dataType->GetName() << ": " <<
                    NStr::PtrToString(next));
         }
