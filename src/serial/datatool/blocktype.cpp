@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/09/19 14:10:26  vasilche
+* Added files to MSVC project
+* Updated shell scripts to use new datattool path on MSVC
+* Fixed internal compiler error on MSVC
+*
 * Revision 1.23  2000/09/18 20:00:28  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -127,6 +132,10 @@
 #include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
+
+#if defined(HAVE_WINDOWS_H) && !defined(for)
+# define for if(0);else for
+#endif
 
 class CAnyTypeClassInfo : public CClassTypeInfo
 {

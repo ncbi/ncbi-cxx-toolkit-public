@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/19 14:10:24  vasilche
+* Added files to MSVC project
+* Updated shell scripts to use new datattool path on MSVC
+* Fixed internal compiler error on MSVC
+*
 * Revision 1.8  2000/09/18 20:00:02  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -152,14 +157,14 @@ inline
 void CMemberInfo::ReadMember(CObjectIStream& stream,
                              TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetCurrentFunction().first(stream, this, classPtr);
+    m_ReadHookData.GetCurrentFunction().m_Main(stream, this, classPtr);
 }
 
 inline
 void CMemberInfo::ReadMissingMember(CObjectIStream& stream,
                                     TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetCurrentFunction().second(stream, this, classPtr);
+    m_ReadHookData.GetCurrentFunction().m_Missing(stream, this, classPtr);
 }
 
 inline
@@ -172,13 +177,13 @@ void CMemberInfo::WriteMember(CObjectOStream& stream,
 inline
 void CMemberInfo::CopyMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetCurrentFunction().first(stream, this);
+    m_CopyHookData.GetCurrentFunction().m_Main(stream, this);
 }
 
 inline
 void CMemberInfo::CopyMissingMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetCurrentFunction().second(stream, this);
+    m_CopyHookData.GetCurrentFunction().m_Missing(stream, this);
 }
 
 inline
@@ -197,14 +202,14 @@ inline
 void CMemberInfo::DefaultReadMember(CObjectIStream& stream,
                                     TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetDefaultFunction().first(stream, this, classPtr);
+    m_ReadHookData.GetDefaultFunction().m_Main(stream, this, classPtr);
 }
 
 inline
 void CMemberInfo::DefaultReadMissingMember(CObjectIStream& stream,
                                            TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetDefaultFunction().second(stream, this, classPtr);
+    m_ReadHookData.GetDefaultFunction().m_Missing(stream, this, classPtr);
 }
 
 inline
@@ -217,13 +222,13 @@ void CMemberInfo::DefaultWriteMember(CObjectOStream& stream,
 inline
 void CMemberInfo::DefaultCopyMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetDefaultFunction().first(stream, this);
+    m_CopyHookData.GetDefaultFunction().m_Main(stream, this);
 }
 
 inline
 void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetDefaultFunction().second(stream, this);
+    m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
 }
 
 inline

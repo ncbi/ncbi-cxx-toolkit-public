@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/09/19 14:10:24  vasilche
+* Added files to MSVC project
+* Updated shell scripts to use new datattool path on MSVC
+* Fixed internal compiler error on MSVC
+*
 * Revision 1.14  2000/09/18 20:00:02  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -100,6 +105,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -222,12 +228,24 @@ private:
     TMemberGetConst m_GetConstFunction;
     TMemberGet m_GetFunction;
 
-    CHookData<CObjectIStream, CReadClassMemberHook,
-        pair<TMemberRead, TMemberRead> > m_ReadHookData;
-    CHookData<CObjectOStream, CWriteClassMemberHook,
-        TMemberWrite> m_WriteHookData;
-    CHookData<CObjectStreamCopier, CCopyClassMemberHook,
-        pair<TMemberCopy, TMemberCopy> > m_CopyHookData;
+	struct SMemberRead {
+		SMemberRead(TMemberRead main, TMemberRead missing)
+			: m_Main(main), m_Missing(missing)
+		{
+		}
+		TMemberRead m_Main, m_Missing;
+	};
+	struct SMemberCopy {
+		SMemberCopy(TMemberCopy main, TMemberCopy missing)
+			: m_Main(main), m_Missing(missing)
+		{
+		}
+		TMemberCopy m_Main, m_Missing;
+	};
+
+    CHookData<CObjectIStream, CReadClassMemberHook, SMemberRead> m_ReadHookData;
+    CHookData<CObjectOStream, CWriteClassMemberHook, TMemberWrite> m_WriteHookData;
+    CHookData<CObjectStreamCopier, CCopyClassMemberHook, SMemberCopy> m_CopyHookData;
     TMemberSkip m_SkipFunction;
     TMemberSkip m_SkipMissingFunction;
 
