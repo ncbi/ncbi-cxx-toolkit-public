@@ -3,11 +3,7 @@
 # Meta-makefile
 #################################
 
-# sample_cgi is commented out because it needs xhtml, which is
-# normally built later.  (Moving it earlier is infeasible because some
-# of its demos use the CGI libraries.)
-
-APP_PROJ = cgidemo # sample_cgi
+APP_PROJ = cgidemo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
