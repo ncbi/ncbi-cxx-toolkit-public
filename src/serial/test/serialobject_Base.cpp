@@ -10,7 +10,7 @@
 #endif
 
 CTestSerialObject::CTestSerialObject(void)
-    : m_HaveName(false), m_NamePtr(0), m_Size(0), m_Next(0)
+    : m_HaveName(false), m_NamePtr(0), m_Size(0), m_Next(0), m_WebEnv(0)
 {
 }
 
