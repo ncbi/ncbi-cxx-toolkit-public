@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/04/25 20:52:29  vakatov
+ * LOG_WriteInternal() -- abort on "eLOG_Fatal" even if no logging is set
+ *
  * Revision 6.6  2001/01/11 16:42:32  lavr
  * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
  *
@@ -287,28 +290,27 @@ extern void LOG_WriteInternal
  const void* raw_data,
  size_t      raw_size)
 {
-    if ( !lg )
-        return;
+    if ( lg ) {
+        LOG_LOCK_READ;
+        LOG_VALID;
+        assert((raw_data == 0) == (raw_size == 0));
 
-    LOG_LOCK_READ;
-    LOG_VALID;
-    assert((raw_data == 0) == (raw_size == 0));
+        if ( lg->handler ) {
+            SLOG_Handler call_data;
 
-    if ( lg->handler ) {
-        SLOG_Handler call_data;
+            call_data.level    = level;
+            call_data.module   = module;
+            call_data.file     = file;
+            call_data.line     = line;
+            call_data.message  = message;
+            call_data.raw_data = raw_data;
+            call_data.raw_size = raw_size;
 
-        call_data.level    = level;
-        call_data.module   = module;
-        call_data.file     = file;
-        call_data.line     = line;
-        call_data.message  = message;
-        call_data.raw_data = raw_data;
-        call_data.raw_size = raw_size;
+            lg->handler(lg->user_data, &call_data);
+        }
 
-        lg->handler(lg->user_data, &call_data);
+        LOG_UNLOCK;
     }
-
-    LOG_UNLOCK;
 
     /* unconditional exit/abort on fatal error */
     if (level == eLOG_Fatal) {
