@@ -37,8 +37,6 @@ timestamp : Arbitrary combination of:
 [check_expiration] - Expiration timeout is always checked on any access to 
 cache element
 
-[individual_timing_priority] - Individual timing may exceed global 
-timeout settings (enables long term storage)
 
 Mandatory.
 
