@@ -36,21 +36,21 @@ USING_NCBI_SCOPE;
 
 int main(int argc, char **argv)
 {
-  if(argc != 4)
+  if(argc != 5)
   {
-    cerr << "Usage: " << argv[0] << " <host> <user_name> <passwd>" << endl;
+    cerr << "Usage: " << argv[0] << " host database user_name passwd" << endl;
     return 1;
   }
 
   try
   {
     CMySQLContext my_context;
-    auto_ptr<CDB_Connection> con(my_context.Connect(argv[1], argv[2], argv[3], 0));
+    auto_ptr<CDB_Connection> con(my_context.Connect(argv[1], argv[3], argv[4], 0));
 
     // changing database
     {
       auto_ptr<CDB_LangCmd>
-        lcmd(con->LangCmd("use trace"));
+        lcmd(con->LangCmd(string("use ") + argv[2]));
       lcmd->Send();
       cout << "Database changed" << endl;
     }
@@ -151,6 +151,9 @@ int main(int argc, char **argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/08/29 15:41:44  butanaev
+ * Command line interface improved.
+ *
  * Revision 1.3  2002/08/28 17:18:20  butanaev
  * Improved error handling, demo app.
  *
