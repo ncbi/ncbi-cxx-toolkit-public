@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2002/03/19 22:14:53  lavr
+ * Proper indentation of nested preprocessor directives
+ *
  * Revision 6.31  2002/03/11 22:00:22  lavr
  * Support encoding in MIME content type for server data
  *
@@ -135,7 +138,7 @@
 
 #include "ncbi_comm.h"
 #if defined(_DEBUG) && !defined(NDEBUG)
-#include "ncbi_priv.h"
+#  include "ncbi_priv.h"
 #endif
 #include "ncbi_servicep.h"
 #include <connect/ncbi_ansi_ext.h>
