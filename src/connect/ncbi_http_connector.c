@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2002/06/19 18:08:02  lavr
+ * Fixed some wrong assumptions on use of s_PreRead(); more comments added
+ *
  * Revision 6.27  2002/06/10 19:51:20  lavr
  * Small prettifying
  *
@@ -179,15 +182,17 @@ typedef struct {
 } SHttpConnector;
 
 
+/* Try to fix connection parameters (called for an unconnected connector) */
 static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
 {
+    assert(!uuu->sock);
     /* we're here because something is going wrong */
     if (++uuu->failure_count >= uuu->net_info->max_try) {
         if (*redirect) {
             free(*redirect);
             *redirect = 0;
         }
-        return 0/*false*/;
+        return 0/*failure*/;
     }
     /* adjust info before another connection attempt */
     if (*redirect) {
@@ -195,22 +200,22 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
         free(*redirect);
         *redirect = 0;
         if (!status)
-            return 0/*false*/;
+            return 0/*failure*/;
     } else if (!uuu->adjust_net_info ||
                !uuu->adjust_net_info(uuu->net_info,
                                      uuu->adjust_data,
                                      uuu->failure_count))
-               return 0/*false*/;
+               return 0/*failure*/;
 
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
 
     if (uuu->net_info->debug_printout)
         ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
-    return 1/*true*/;
+    return 1/*success*/;
 }
 
 
-/* Unconditionally drop connection; timeout may specify time allowance */
+/* Unconditionally drop the connection; timeout may specify time allowance */
 static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 {
     assert(uuu->sock);
@@ -221,8 +226,8 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 }
 
 
-/* Connect to the HTTP server, specified by uuu->info's "port:host".
- * If unsuccessful, try to adjust uuu->info with uuu->adjust_info()
+/* Connect to the HTTP server, specified by uuu->net_info's "port:host".
+ * If unsuccessful, try to adjust uuu->net_info by s_Adjust()
  * and then re-try the connection attempt.
  */
 static EIO_Status s_Connect(SHttpConnector* uuu)
@@ -262,16 +267,17 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
 }
 
 
-/* Connect to the server specified by uuu->info, then compose and form
+/* Connect to the server specified by uuu->net_info, then compose and form
  * relevant HTTP header, and flush the accumulated output data(uuu->obuf)
  * after the HTTP header. On error (and after all possible re-tries to
- * connect/send data), all accumulated output data will be lost,
- * and the connector socket will be NULL.
+ * connect/send data), all accumulated output data get discarded,
+ * and the connector socket set to NULL.
  */
 static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
 {
     EIO_Status status;
 
+    assert(!uuu->sock);
     uuu->first_read = 1/*true*/;
     for (;;) {
         char* null = 0;
@@ -331,7 +337,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
     char*       header;
     size_t      size;
 
-    assert(uuu->first_read);
+    assert(uuu->sock && uuu->first_read);
     *redirect = 0;
     if (uuu->flags & fHCC_KeepHeader) {
         uuu->first_read = 0;
@@ -432,6 +438,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 }
 
 
+/* Prepare connector for reading. Open socket if necessary and
+ * make initial connect and send, re-trying if possible until success.
+ * Return codes:
+ *   eIO_Success = success, connector is ready for reading (uuu->sock != NULL);
+ *   eIO_Timeout = maybe (check uuu->sock) connected and no data yet available;
+ *   other code  = error, not connected (uuu->sock == NULL).
+ */
 static EIO_Status s_PreRead(SHttpConnector* uuu, const STimeout* timeout)
 {
     static const STimeout zero_timeout = {0, 0};
@@ -458,6 +471,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu, const STimeout* timeout)
             BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
             break;
         }
+        /* if polling then bail out with eIO_Timeout */
         if (status == eIO_Timeout && timeout &&
             memcmp(timeout, &zero_timeout, sizeof(STimeout)) == 0)
             break;
@@ -542,7 +556,8 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
         }
     } else
         BUF_Read(uuu->ibuf, 0, BUF_Size(uuu->ibuf));
-    s_DropConnection(uuu, timeout);
+    if (uuu->sock) /* s_PreRead() might have dropped the connection already */
+        s_DropConnection(uuu, timeout);
     if (uuu->can_connect == eCC_Once)
         uuu->can_connect = eCC_None;
     return status;
@@ -568,7 +583,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu, const STimeout* timeout)
 
     if (!uuu->sock && ((uuu->flags & fHCC_SureFlush) || BUF_Size(uuu->obuf))) {
         /* "WRITE" mode and data (or just flag) pending */
-        if (s_PreRead(uuu, timeout) != eIO_Success)
+        if (s_PreRead(uuu, timeout) != eIO_Success && uuu->sock)
             s_DropConnection(uuu, timeout);
     }
     if (uuu->sock) {
@@ -690,7 +705,7 @@ static EIO_Status s_VT_Write
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
     /* if trying to "WRITE" after "READ" then close the socket,
-     * and thus switch to "WRITE" mode */
+     * and so switch to "WRITE" mode */
     if (uuu->sock) {
         EIO_Status status = s_Disconnect(uuu,
                                          uuu->flags & fHCC_DropUnread,
