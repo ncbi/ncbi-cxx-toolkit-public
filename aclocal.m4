@@ -36,7 +36,7 @@ esac
 # Don't blindly perform a `cd $1/$ac_foo && pwd` since $ac_foo can be
 # absolute.
 ac_abs_builddir=`cd $1 && pwd`
-ac_abs_top_builddir=`cd $1 && cd $ac_top_builddir && pwd`
+ac_abs_top_builddir=`cd $1 && cd ${ac_top_builddir}. && pwd`
 ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
 ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && pwd`
 ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
