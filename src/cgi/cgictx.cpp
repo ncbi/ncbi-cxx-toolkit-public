@@ -223,18 +223,31 @@ void CCgiContext::ReplaceRequestValue(const string&    name,
 }
 
 
-const string& CCgiContext::GetSelfURL(void) const
+const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
+    const
 {
     if ( !m_SelfURL.empty() )
         return m_SelfURL;
 
+    // Do not add the port # for front-end URLs by default for NCBI front-ends
+    if (use_port == eSelfUrlPort_Default) {
+        if (NStr::StartsWith(GetRequest().GetProperty(eCgi_ServerName),
+                             "www.ncbi", NStr::eNocase)  ||
+            NStr::StartsWith(GetRequest().GetProperty(eCgi_ServerName),
+                             "web.ncbi", NStr::eNocase)) {
+            use_port = eSelfUrlPort_Strip;
+        }
+    }
+
     // Compose self URL
     m_SelfURL = "http://";
     m_SelfURL += GetRequest().GetProperty(eCgi_ServerName);
-    m_SelfURL += ':';
-    m_SelfURL += GetRequest().GetProperty(eCgi_ServerPort);
-
-    // (workaround a bug in the "www.ncbi" proxy -- replace adjacent '//')
+    if (use_port != eSelfUrlPort_Strip) {
+        m_SelfURL += ':';
+        m_SelfURL += GetRequest().GetProperty(eCgi_ServerPort);
+    }
+    // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
+    //  it should not hurt, and may help with similar proxies outside NCBI)
     m_SelfURL += NStr::Replace
         (GetRequest().GetProperty(eCgi_ScriptName), "//", "/");
 
@@ -287,6 +300,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.38  2004/06/21 16:20:08  vakatov
+* GetSelfURL() -- allow to skip port #;  do it for NCBI frontents by default
+*
 * Revision 1.37  2004/05/17 20:56:50  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

@@ -183,8 +183,18 @@ public:
     void RemoveRequestValues(const string& name);
     void ReplaceRequestValue(const string& name, const CCgiEntry& value);
 
-    // program name access
-    const string& GetSelfURL(void) const;
+    /// Whether to use the port number when composing the CGI's own URL
+    /// @sa GetSelfURL()
+    enum ESelfUrlPort {
+        eSelfUrlPort_Use,     ///< Use port number in self-URL
+        eSelfUrlPort_Strip,   ///< Do not use port number in self-URL
+        eSelfUrlPort_Default  ///< Use port number, except for NCBI front-ends
+    };
+
+    /// Using HTTP environment variables, compose the CGI's own URL as:
+    ///   http://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
+    const string& GetSelfURL(ESelfUrlPort use_port = eSelfUrlPort_Default)
+        const;
 
     // Which streams are ready?
     enum EStreamStatus {
@@ -334,6 +344,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2004/06/21 16:20:08  vakatov
+* GetSelfURL() -- allow to skip port #;  do it for NCBI frontents by default
+*
 * Revision 1.29  2004/05/11 12:43:29  kuznets
 * Changes to control HTTP parsing (CCgiRequest flags)
 *
