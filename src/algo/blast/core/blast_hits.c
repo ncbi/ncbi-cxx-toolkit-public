@@ -396,7 +396,7 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
          diag_uniq_compare_hsps);
    /* Delete all HSPs that were flagged in qsort */
-   for (index = 0, new_hspcnt = 0; index < hsp_list->hspcnt; ++index) {
+   for (index = 0; index < hsp_list->hspcnt; ++index) {
       if (hsp_array[index]->score == 0) {
          hsp_array[index] = BlastHSPFree(hsp_array[index]);
       }
@@ -438,9 +438,13 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
          }
       }
       
+      /* If some lower indexed HSPs have been removed, shift the subsequent 
+         HSPs */
       if (shift_needed) {
+         /* Find the first non-NULL HSP, going backwards */
          while (index1 >= 0 && !hsp_array[index1])
             index1--;
+         /* Go forward, and shift any non-NULL HSPs */
          for (index2 = ++index1; index1 <= new_hspcnt; index1++) {
             if (hsp_array[index1])
                hsp_array[index2++] = hsp_array[index1];
@@ -1158,7 +1162,7 @@ diag_compare_hsps(const void* v1, const void* v2)
 
 #define OVERLAP_DIAG_CLOSE 10
 /** Merge the two HSPs if they intersect.
- * @param hsp1 The first HSP [in]
+ * @param hsp1 The first HSP; also contains the result of merge. [in] [out]
  * @param hsp2 The second HSP [in]
  * @param start The starting offset of the subject coordinates where the 
  *               intersection is possible [in]
@@ -1339,6 +1343,9 @@ BLAST_MergeHsps(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
          num2++;
       }
    }
+   
+   sfree(segments1);
+   sfree(segments2);
 
    if (intersection_found) {
       esp = NULL;
@@ -1534,7 +1541,7 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    Int4 hspcnt1, hspcnt2, new_hspcnt = 0;
    BlastHSP** new_hsp_array;
    Int4* index_array1, *index_array2;
-   
+  
    if (!hsp_list || hsp_list->hspcnt == 0)
       return 0;
 
@@ -1576,20 +1583,15 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    for (index=0; index<hspcnt1; index++) {
       for (index1=0; index1<hspcnt2; index1++) {
          if (hspp2[index1] && 
-             hspp2[index1]->query.frame == hspp1[index]->query.frame &&
-             hspp2[index1]->subject.frame == hspp1[index]->subject.frame &&
+             hspp1[index]->context == hspp2[index1]->context && 
              ABS(diag_compare_hsps(&hspp1[index], &hspp2[index1])) < 
              OVERLAP_DIAG_CLOSE) {
             if (merge_hsps) {
                if (BLAST_MergeHsps(hspp1[index], hspp2[index1], start)) {
-                  /* Point the corresponding element of the full first HSP
-                     array to the new HSP */
-                  combined_hsp_list->hsp_array[index_array1[index]] = hspp1[index];
                   /* Free the corresponding element of the full second 
                      HSP array. */
                   hsp_list->hsp_array[index_array2[index1]] = 
                      hspp2[index1] = BlastHSPFree(hspp2[index1]);
-                  break;
                }
             } else { /* No gap information available */
                if (BLASTHspContained(hspp1[index], hspp2[index1])) {
@@ -1600,6 +1602,9 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
                   combined_hsp_list->hsp_array[index_array1[index]] = hspp2[index1];
                   hsp_list->hsp_array[index_array2[index1]] = 
                      hspp2[index1] = NULL;
+                  /* This HSP has been removed, so break out of the inner 
+                     loop */
+                  break;
                } else if (BLASTHspContained(hspp2[index1], hspp1[index])) {
                   /* Just free the corresponding element of the second 
                      HSP array */
@@ -1607,27 +1612,26 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
                      hspp2[index1] = BlastHSPFree(hspp2[index1]);
                }
             }
+         } else {
+            break;
          }
       }
    }
 
-   new_hspcnt += hspcnt1;
-   for (index=0; index<hspcnt2; index++) {
-      if (hspp2[index] != NULL)
-         new_hspcnt++;
-   }
+   /* Purge the nulled out HSPs from the new HSP list */
+   hsp_list->hspcnt = 
+      BlastHSPArrayPurge(hsp_list->hsp_array, hsp_list->hspcnt);
+
+   /* The new number of HSPs is now the sum of the remaining counts in the 
+      two lists, but if there is a restriction on the number of HSPs to keep,
+      it might have to be reduced. */
+   new_hspcnt = 
+      MIN(hsp_list->hspcnt + combined_hsp_list->hspcnt, hsp_num_max);
    
    sfree(hspp1);
    sfree(hspp2);
    sfree(index_array1);
    sfree(index_array2);
-
-   /* Purge the nulled out HSPs from the new HSP list */
-   hsp_list->hspcnt = BlastHSPArrayPurge(hsp_list->hsp_array, hsp_list->hspcnt);
-
-   /* If there is a restriction on the number of HSPs to keep, the new number of
-      HSPs might have to be reduced */
-   new_hspcnt = MIN(new_hspcnt, hsp_num_max);
 
    if (new_hspcnt >= combined_hsp_list->allocated-1 && 
        combined_hsp_list->do_not_reallocate == FALSE) {
