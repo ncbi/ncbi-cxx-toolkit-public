@@ -509,7 +509,7 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
                            "Unrecognized magic number in GI list file.");
             }
             
-            if (num_gis != ((file_length - 8) / 4)) {
+            if (int(num_gis) != int((file_length - 8) / 4)) {
                 NCBI_THROW(CSeqDBException,
                            eFileErr,
                            "GI list file size does not match internal count.");

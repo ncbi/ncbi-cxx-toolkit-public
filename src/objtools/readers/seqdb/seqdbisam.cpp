@@ -893,7 +893,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
         
         Uint4 max_lines_2 = m_MaxLineSize * 2;
         
-        if (BytesToEnd > max_lines_2) {
+        if (BytesToEnd > (TIndx) max_lines_2) {
             BytesToEnd = max_lines_2;
         }
         

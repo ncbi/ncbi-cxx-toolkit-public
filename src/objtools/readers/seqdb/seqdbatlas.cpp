@@ -850,7 +850,7 @@ bool CSeqDBAtlas::x_Free(const char * freeme)
     
     size_t sz = (*i).second;
     
-    _ASSERT(m_CurAlloc >= sz);
+    _ASSERT(m_CurAlloc >= (TIndx)sz);
     m_CurAlloc -= sz;
     
     char * cp = (char*) freeme;
