@@ -49,7 +49,7 @@ public:
 
     virtual SIZE_TYPE GetWidth(void) const { return 78; }
 
-    virtual void EndSection(IFlatTextOStream& text_os);
+    virtual void EndSection(const CEndSectionItem&, IFlatTextOStream& text_os);
 
     virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
     virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:42:24  shomrat
+* EndSection() signature changed
+*
 * Revision 1.3  2004/02/19 17:57:40  shomrat
 * removed commented code
 *
