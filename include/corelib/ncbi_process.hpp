@@ -113,7 +113,10 @@ public:
     ///
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
-    //    attempts to terminate the process.
+    ///   attempts to terminate the process.
+    ///   Note that in case of zero or very small timeout the killing 
+    ///   process can be not released and continue to persists as zombie
+    ///   process even after call of this function.
     /// @return
     ///   TRUE  - if the process did not exist or was successfully terminated.
     ///   FALSE - if the process is still running and cannot be terminated.
@@ -223,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/03 17:04:00  ivanov
+ * Comments changes
+ *
  * Revision 1.2  2003/10/01 20:23:58  ivanov
  * Added const specifier to CProcess class member functions
  *
