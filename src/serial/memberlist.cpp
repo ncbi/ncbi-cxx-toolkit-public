@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/28 16:29:41  vasilche
+* Reverted back changes in processing parent classes.
+* It causes exceptions with map container.
+*
 * Revision 1.20  2000/09/26 17:38:21  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -227,7 +231,7 @@ void CMembersInfo::UpdateTags(void) const
         if ( tag == CMemberId::eNoExplicitTag ) {
             if ( index == FirstIndex() && id.GetName().empty() ) {
                 // parent class
-                tag = CMemberId::eParentTag - 1;
+                tag = CMemberId::eParentTag;
             }
             else {
                 tag = nextTag;
@@ -293,7 +297,7 @@ TMemberIndex CMembersInfo::Find(TTag tag) const
             if ( currentTag == CMemberId::eNoExplicitTag ) {
                 if ( index == FirstIndex() && id.GetName().empty() ) {
                     // parent class - skip it
-                    currentTag = CMemberId::eParentTag - 1;
+                    currentTag = CMemberId::eParentTag;
                 }
                 else {
                     currentTag = nextTag;
