@@ -5,7 +5,7 @@ property pRootFolderPath : "" -- full path of the parent of the toolkit director
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
-property pDLRootFolder : "sw:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
+property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -286,6 +286,7 @@ on SetProjectData()
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
 		AddSimpleProject("xalgoalign", {}, "algo:align")
+		
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
@@ -314,7 +315,7 @@ on SetProjectData()
 			mkFileData(gBdbRootFolder & "lock"), Â
 			mkFileData(gBdbRootFolder & "log"), Â
 			mkFileData(gBdbRootFolder & "mp"), Â
-			mkFileDataListFiles(gBdbRootFolder & "mutex", {"mutex.c", " mut_tas.c"}), Â
+			mkFileDataListFiles(gBdbRootFolder & "mutex", {"mutex.c", "mut_tas.c"}), Â
 			mkFileData(gBdbRootFolder & "os"), Â
 			mkFileData(gBdbRootFolder & "qam"), Â
 			mkFileData(gBdbRootFolder & "rep"), Â
@@ -424,6 +425,7 @@ on SetProjectData()
 		-- GuiProject's automatically have 'fltk' feature.
 		
 		AddGuiProject("gui_utils", {}, "utils")
+		AddGuiProject("gui_objutils", {}, "objutils")
 		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
 			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"})}))
@@ -457,11 +459,12 @@ on SetProjectData()
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
 		AddGuiProject("w_taxtree", {}, "widgets:tax_tree")
 		AddGuiProject("w_taxplot3d", {}, "widgets:taxplot3d")
+		AddGuiProject("w_seq", {}, "widgets:seq")
+		AddGuiProject("w_aln_table", {}, "widgets:aln_table")
+		AddGuiProject("w_workspace", {}, "widgets:workspace")
 		
 		-- AddGuiProject("w_dock", {}, "widgets:dock") -- not ready yet.
-		
 		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
-		AddGuiProject("w_seq", {}, "widgets:seq")
 		--AddGuiProject("w_seq_icon", {}, "widgets:seq_icon") -- empty
 		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
 		-- AddGuiProject("w_table", {}, "widgets:table") -- merged into w_fltk
@@ -476,7 +479,7 @@ on SetProjectData()
 				"fl_font_xft.cxx", "Fl_get_key_mac.cxx", "Fl_get_key_win32.cxx", "Fl_mac.cxx", Â
 				"fl_read_image_mac.cxx", "fl_read_image_win32.cxx", "fl_set_fonts_mac.cxx", Â
 				"fl_set_fonts_win32.cxx", "fl_set_fonts_x.cxx", "fl_set_fonts_xft.cxx", Â
-				"fl_set_gray.cxx", "Fl_Sys_Menu_Bar.cxx", "Fl_win32.cxx", "scandir_win32.c"})}))
+				"fl_set_gray.cxx", "Fl_win32.cxx", "scandir_win32.c"})})) --"Fl_Sys_Menu_Bar.cxx", 
 		set pCPlusPlusExt to saveCppExt
 		
 	end if
@@ -501,7 +504,7 @@ on SetProjectData()
 			GuiFileDataExcept("gui:core", {"settings_builtin.cpp"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_dlg", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
@@ -530,7 +533,7 @@ on SetProjectData()
 		--  
 		AddPlugin("gui_doc_table", {"sqlitelib"}, "plugins:doc:table", Â
 			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
-		
+
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
 			{"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix", "w_seq_graphic"})
@@ -538,7 +541,7 @@ on SetProjectData()
 			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
-		AddPluginExcept("gui_view_table", {}, "plugins:view:table", {}, {"view_alntable.cpp"})
+		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
