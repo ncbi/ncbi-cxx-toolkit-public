@@ -31,78 +31,6 @@
 * File Description:
 *   The HTML page
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.23  2002/08/09 21:12:15  ivanov
-* Added stuff to read template from a stream and string
-*
-* Revision 1.22  2002/02/13 20:17:06  ivanov
-* Added support of dynamic popup menus. Changed EnablePopupMenu().
-*
-* Revision 1.21  2001/08/14 16:57:14  ivanov
-* Added support for work HTML templates with JavaScript popup menu.
-* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
-*
-* Revision 1.20  1999/10/28 13:40:31  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.19  1999/05/28 16:32:11  vasilche
-* Fixed memory leak in page tag mappers.
-*
-* Revision 1.18  1999/04/27 14:49:59  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.17  1999/04/26 21:59:28  vakatov
-* Cleaned and ported to build with MSVC++ 6.0 compiler
-*
-* Revision 1.16  1999/04/20 13:51:59  vasilche
-* Removed unused parameter name to avoid warning.
-*
-* Revision 1.15  1999/04/19 20:11:47  vakatov
-* CreateTagMapper() template definitions moved from "page.inl" to
-* "page.hpp" because MSVC++ gets confused(cannot understand what
-* is declaration and what is definition).
-*
-* Revision 1.14  1999/04/15 22:06:46  vakatov
-* CQueryBox:: use "enum { kNo..., };" rather than "static const int kNo...;"
-* Fixed "class BaseTagMapper" to "struct ..."
-*
-* Revision 1.13  1998/12/28 23:29:03  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.12  1998/12/28 21:48:13  vasilche
-* Made Lewis's 'tool' compilable
-*
-* Revision 1.11  1998/12/24 16:15:38  vasilche
-* Added CHTMLComment class.
-* Added TagMappers from static functions.
-*
-* Revision 1.10  1998/12/23 21:21:00  vasilche
-* Added more HTML tags (almost all).
-* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
-*
-* Revision 1.9  1998/12/22 16:39:12  vasilche
-* Added ReadyTagMapper to map tags to precreated nodes.
-*
-* Revision 1.8  1998/12/21 22:24:59  vasilche
-* A lot of cleaning.
-*
-* Revision 1.7  1998/12/11 22:53:41  lewisg
-* added docsum page
-*
-* Revision 1.6  1998/12/11 18:13:51  lewisg
-* frontpage added
-*
-* Revision 1.5  1998/12/09 23:02:56  lewisg
-* update to new cgiapp class
-*
-* Revision 1.4  1998/12/09 17:27:44  sandomir
-* tool should be changed to work with the new CCgiApplication
-*
-* Revision 1.2  1998/12/01 19:09:06  lewisg
-* uses CCgiApplication and new page factory
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -225,6 +153,11 @@ public:
 private:
     void Init(void);
 
+    // Create the static part of the page(here - read it from <m_TemplateFile>)
+    // this is an internal version that gets around some issues with local
+    // versus externally-supplied streams
+    CNCBINode* x_CreateTemplate(CNcbiIstream& is);
+
     string   m_Title;
 
     // Template sources
@@ -314,3 +247,82 @@ inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer, size_t siz
 END_NCBI_SCOPE
 
 #endif  /* HTML__PAGE__HPP */
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.24  2002/09/11 16:07:32  dicuccio
+* added x_CreateTemplate()
+* moved cvs log to the bottom of the page
+*
+* Revision 1.23  2002/08/09 21:12:15  ivanov
+* Added stuff to read template from a stream and string
+*
+* Revision 1.22  2002/02/13 20:17:06  ivanov
+* Added support of dynamic popup menus. Changed EnablePopupMenu().
+*
+* Revision 1.21  2001/08/14 16:57:14  ivanov
+* Added support for work HTML templates with JavaScript popup menu.
+* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
+*
+* Revision 1.20  1999/10/28 13:40:31  vasilche
+* Added reference counters to CNCBINode.
+*
+* Revision 1.19  1999/05/28 16:32:11  vasilche
+* Fixed memory leak in page tag mappers.
+*
+* Revision 1.18  1999/04/27 14:49:59  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
+* Revision 1.17  1999/04/26 21:59:28  vakatov
+* Cleaned and ported to build with MSVC++ 6.0 compiler
+*
+* Revision 1.16  1999/04/20 13:51:59  vasilche
+* Removed unused parameter name to avoid warning.
+*
+* Revision 1.15  1999/04/19 20:11:47  vakatov
+* CreateTagMapper() template definitions moved from "page.inl" to
+* "page.hpp" because MSVC++ gets confused(cannot understand what
+* is declaration and what is definition).
+*
+* Revision 1.14  1999/04/15 22:06:46  vakatov
+* CQueryBox:: use "enum { kNo..., };" rather than "static const int kNo...;"
+* Fixed "class BaseTagMapper" to "struct ..."
+*
+* Revision 1.13  1998/12/28 23:29:03  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
+* Revision 1.12  1998/12/28 21:48:13  vasilche
+* Made Lewis's 'tool' compilable
+*
+* Revision 1.11  1998/12/24 16:15:38  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
+* Revision 1.10  1998/12/23 21:21:00  vasilche
+* Added more HTML tags (almost all).
+* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+*
+* Revision 1.9  1998/12/22 16:39:12  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
+* Revision 1.8  1998/12/21 22:24:59  vasilche
+* A lot of cleaning.
+*
+* Revision 1.7  1998/12/11 22:53:41  lewisg
+* added docsum page
+*
+* Revision 1.6  1998/12/11 18:13:51  lewisg
+* frontpage added
+*
+* Revision 1.5  1998/12/09 23:02:56  lewisg
+* update to new cgiapp class
+*
+* Revision 1.4  1998/12/09 17:27:44  sandomir
+* tool should be changed to work with the new CCgiApplication
+*
+* Revision 1.2  1998/12/01 19:09:06  lewisg
+* uses CCgiApplication and new page factory
+* ===========================================================================
+*/
