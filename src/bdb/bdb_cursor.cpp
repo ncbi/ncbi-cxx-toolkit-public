@@ -218,30 +218,31 @@ void CBDB_FileCursor::SetCondition(ECondition cond_from, ECondition cond_to)
 EBDB_ErrCode CBDB_FileCursor::FetchFirst()
 {
     m_FirstFetched = true;
+    ECondition cond_from = m_CondFrom;
 
-    // If cursor from buffer contains not all key fields
-    // (prefix search) we set all remaining fields to max.
-    // possible value for GT condition
-    From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
-                                 CBDB_FC_Condition::eAssignMaxVal
-                                 :
-                                 CBDB_FC_Condition::eAssignMinVal);
+    if (m_CondFrom != eFirst && m_CondFrom != eLast) {
 
-    m_Dbf.m_KeyBuf->CopyFieldsFrom(From.m_Condition.GetBuffer());
+        // If cursor from buffer contains not all key fields
+        // (prefix search) we set all remaining fields to max.
+        // possible value for GT condition
+        From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
+                                     CBDB_FC_Condition::eAssignMaxVal
+                                     :
+                                     CBDB_FC_Condition::eAssignMinVal);
+
+        m_Dbf.m_KeyBuf->CopyFieldsFrom(From.m_Condition.GetBuffer());
 
 
-    To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
-                               CBDB_FC_Condition::eAssignMaxVal
-                               :
-                               CBDB_FC_Condition::eAssignMinVal);
+        To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
+                                   CBDB_FC_Condition::eAssignMaxVal
+                                   :
+                                   CBDB_FC_Condition::eAssignMinVal);
 
-    // Incomplete == search transformed into >= search with incomplete
-    // fields set to min
-    ECondition cond_from;
-    if (m_CondFrom == eEQ  &&  !From.m_Condition.IsComplete()) {
-        cond_from = eGE;
-    } else {
-        cond_from = m_CondFrom;
+        // Incomplete == search transformed into >= search with incomplete
+        // fields set to min
+        if (m_CondFrom == eEQ  &&  !From.m_Condition.IsComplete()) {
+            cond_from = eGE;
+        }
     }
 
     unsigned int flag;
@@ -441,6 +442,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/21 19:51:04  kuznets
+ * Performance tweak: do not worry about incomplete key fields when
+ * "give me all records" cursor was requested
+ *
  * Revision 1.6  2003/07/02 17:55:35  kuznets
  * Implementation modifications to eliminated direct dependency from <db.h>
  *
