@@ -312,11 +312,15 @@ CObjectIStream::TFailFlags CObjectIStream::SetFailFlags(TFailFlags flags,
                                                         const char* message)
 {
     TFailFlags old = m_Fail;
-    m_Fail |= flags;
-    if ( !old && flags ) {
-        // first fail
-        ERR_POST(Error << "CObjectIStream: error at "<<
-                 GetPosition()<<": "<<GetStackTrace() << ": " << message);
+    if (flags == fNoError) {
+        m_Fail = flags;
+    } else {
+        m_Fail |= flags;
+        if ( !old && flags ) {
+            // first fail
+            ERR_POST(Error << "CObjectIStream: error at "<<
+                     GetPosition()<<": "<<GetStackTrace() << ": " << message);
+        }
     }
     return old;
 }
@@ -505,15 +509,16 @@ void CObjectIStream::ThrowError1(const char* file, int line,
     case fNoError:
         CNcbiDiag(file, line, eDiag_Trace) << message;
         return;
-    case fEOF:         err = CSerialException::eEOF;         break;
+    case fEOF:          err = CSerialException::eEOF;          break;
     default:
-    case fReadError:   err = CSerialException::eIoError;     break;
-    case fFormatError: err = CSerialException::eFormatError; break;
-    case fOverflow:    err = CSerialException::eOverflow;    break;
-    case fInvalidData: err = CSerialException::eInvalidData; break;
-    case fIllegalCall: err = CSerialException::eIllegalCall; break;
-    case fFail:        err = CSerialException::eFail;        break;
-    case fNotOpen:     err = CSerialException::eNotOpen;     break;
+    case fReadError:    err = CSerialException::eIoError;      break;
+    case fFormatError:  err = CSerialException::eFormatError;  break;
+    case fOverflow:     err = CSerialException::eOverflow;     break;
+    case fInvalidData:  err = CSerialException::eInvalidData;  break;
+    case fIllegalCall:  err = CSerialException::eIllegalCall;  break;
+    case fFail:         err = CSerialException::eFail;         break;
+    case fNotOpen:      err = CSerialException::eNotOpen;      break;
+    case fMissingValue: err = CSerialException::eMissingValue; break;
     }
     throw CSerialException(file,line,0,err,GetPosition()+": "+message);
 }
@@ -1464,6 +1469,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.124  2004/01/22 20:46:41  gouriano
+* Added new exception error code (eMissingValue)
+*
 * Revision 1.123  2004/01/05 14:25:20  gouriano
 * Added possibility to set serialization hooks by stack path
 *

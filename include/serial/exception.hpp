@@ -56,7 +56,8 @@ public:
         eInvalidData,
         eIllegalCall,
         eFail,
-        eNotOpen
+        eNotOpen,
+        eMissingValue
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -69,6 +70,7 @@ public:
         case eIllegalCall:    return "eIllegalCall";
         case eFail:           return "eFail";
         case eNotOpen:        return "eNotOpen";
+        case eMissingValue:   return "eMissingValue";
         default:              return CException::GetErrCodeString();
         }
     }
@@ -140,6 +142,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/01/22 20:46:59  gouriano
+* Added new exception error code (eMissingValue)
+*
 * Revision 1.14  2003/10/27 19:18:03  grichenk
 * Reformatted object stream error messages
 *

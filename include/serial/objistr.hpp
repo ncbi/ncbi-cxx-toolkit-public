@@ -327,7 +327,8 @@ public:
         fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
         fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
         fFail          = 1 << 6,        eFail        = fFail,
-        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen
+        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
+        fMissingValue  = 1 << 8,        eMissingValue= fMissingValue
     };
     typedef int TFailFlags;
 
@@ -660,6 +661,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2004/01/22 20:47:25  gouriano
+* Added new exception error code (eMissingValue)
+*
 * Revision 1.98  2004/01/05 14:24:08  gouriano
 * Added possibility to set serialization hooks by stack path
 *
