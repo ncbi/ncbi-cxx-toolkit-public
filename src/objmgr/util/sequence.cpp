@@ -2203,6 +2203,21 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
     CConstRef<CSeq_feat> feat_ref;
     int diff = -1;
 
+    // Check if the sequence is circular
+    TSeqPos circular_length = kInvalidSeqPos;
+    {{
+        const CSeq_id* single_id = 0;
+        loc.CheckId(single_id);
+        if ( single_id ) {
+            CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
+            if ( h
+                &&  h.IsSetInst_Topology()
+                &&  h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                circular_length = h.GetBioseqLength();
+            }
+        }
+    }}
+
     CFeat_CI feat_it(scope, loc, SAnnotSelector()
         .SetFeatType(feat_type)
         .SetFeatSubtype(feat_subtype)
@@ -2211,8 +2226,14 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
     for ( ; feat_it; ++feat_it) {
         // treat subset as a special case
         int cur_diff = ( !revert_locations ) ?
-            TestForOverlap(loc, feat_it->GetLocation(), overlap_type) :
-            TestForOverlap(feat_it->GetLocation(), loc, overlap_type);
+            TestForOverlap(loc,
+                           feat_it->GetLocation(),
+                           overlap_type,
+                           circular_length) :
+            TestForOverlap(feat_it->GetLocation(),
+                           loc,
+                           overlap_type,
+                           circular_length);
         if (cur_diff < 0)
             continue;
         if ( cur_diff < diff  ||  diff < 0 ) {
@@ -4113,6 +4134,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.87  2004/08/26 18:26:27  grichenk
+* Added check for circular sequence in x_GetBestOverlappingFeat()
+*
 * Revision 1.86  2004/08/24 16:42:03  vasilche
 * Removed TAB symbols in sources.
 *
