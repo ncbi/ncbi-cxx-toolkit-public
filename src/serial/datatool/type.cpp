@@ -45,13 +45,6 @@ private:
 };
 
 inline
-string replace(string s, char from, char to)
-{
-    replace(s.begin(), s.end(), from, to);
-    return s;
-}
-
-inline
 string Identifier(const string& typeName)
 {
     string s;
@@ -143,7 +136,7 @@ bool ASNType::Check(void)
     return true;
 }
 
-ostream& ASNType::NewLine(ostream& out, int indent)
+CNcbiOstream& ASNType::NewLine(CNcbiOstream& out, int indent)
 {
     out << endl;
     for ( int i = 0; i < indent; ++i )
@@ -263,7 +256,7 @@ ASNFixedType::ASNFixedType(const CDataTypeContext& context, const string& kw)
 {
 }
 
-ostream& ASNFixedType::Print(ostream& out, int ) const
+CNcbiOstream& ASNFixedType::Print(CNcbiOstream& out, int ) const
 {
     return out << keyword;
 }
@@ -464,7 +457,7 @@ void ASNEnumeratedType::AddValue(const string& valueName, int value)
     values.push_back(TValues::value_type(valueName, value));
 }
 
-ostream& ASNEnumeratedType::Print(ostream& out, int indent) const
+CNcbiOstream& ASNEnumeratedType::Print(CNcbiOstream& out, int indent) const
 {
     out << Keyword() << " {";
     indent++;
@@ -634,7 +627,7 @@ ASNUserType::ASNUserType(const CDataTypeContext& context, const string& n)
 {
 }
 
-ostream& ASNUserType::Print(ostream& out, int ) const
+CNcbiOstream& ASNUserType::Print(CNcbiOstream& out, int ) const
 {
     return out << userTypeName;
 }
@@ -713,7 +706,7 @@ ASNOfType::ASNOfType(const CDataTypeContext& context, const string& kw)
 {
 }
 
-ostream& ASNOfType::Print(ostream& out, int indent) const
+CNcbiOstream& ASNOfType::Print(CNcbiOstream& out, int indent) const
 {
     out << keyword << " OF ";
     return type->Print(out, indent);
@@ -819,7 +812,7 @@ ASNMemberContainerType::ASNMemberContainerType(const CDataTypeContext& context,
 {
 }
 
-ostream& ASNMemberContainerType::Print(ostream& out, int indent) const
+CNcbiOstream& ASNMemberContainerType::Print(CNcbiOstream& out, int indent) const
 {
     out << keyword << " {";
     indent++;
@@ -1090,7 +1083,7 @@ ASNMember::~ASNMember(void)
 {
 }
 
-ostream& ASNMember::Print(ostream& out, int indent) const
+CNcbiOstream& ASNMember::Print(CNcbiOstream& out, int indent) const
 {
     out << name << ' ';
     type->Print(out, indent);

@@ -48,7 +48,7 @@ public:
     const string& GetVar(const CNcbiRegistry& registry,
                          const string& value) const;
 
-    virtual ostream& Print(ostream& out, int indent) const = 0;
+    virtual CNcbiOstream& Print(CNcbiOstream& out, int indent) const = 0;
 
     virtual bool Check(void);
     virtual bool CheckValue(const ASNValue& value) = 0;
@@ -56,7 +56,7 @@ public:
 
     virtual const CTypeInfo* GetTypeInfo(void);
 
-    static ostream& NewLine(ostream& out, int indent);
+    static CNcbiOstream& NewLine(CNcbiOstream& out, int indent);
 
     void Warning(const string& mess) const;
 
@@ -87,7 +87,7 @@ class ASNFixedType : public ASNType {
 public:
     ASNFixedType(const CDataTypeContext& context, const string& kw);
 
-    ostream& Print(ostream& out, int indent) const;
+    CNcbiOstream& Print(CNcbiOstream& out, int indent) const;
 
     virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
     virtual string GetDefaultCType(void) const;
@@ -192,7 +192,7 @@ public:
 
     void AddValue(const string& name, int value);
 
-    ostream& Print(ostream& out, int indent) const;
+    CNcbiOstream& Print(CNcbiOstream& out, int indent) const;
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -223,7 +223,7 @@ class ASNUserType : public ASNType {
 public:
     ASNUserType(const CDataTypeContext& context, const string& n);
 
-    ostream& Print(ostream& out, int indent) const;
+    CNcbiOstream& Print(CNcbiOstream& out, int indent) const;
 
     bool Check(void);
     bool CheckValue(const ASNValue& value);
@@ -243,7 +243,7 @@ class ASNOfType : public ASNType {
 public:
     ASNOfType(const CDataTypeContext& context, const string& kw);
 
-    ostream& Print(ostream& out, int indent) const;
+    CNcbiOstream& Print(CNcbiOstream& out, int indent) const;
 
     bool Check(void);
     bool CheckValue(const ASNValue& value);
@@ -278,7 +278,7 @@ public:
     ASNMember(void);
     ~ASNMember(void);
 
-    ostream& Print(ostream& out, int indent) const;
+    CNcbiOstream& Print(CNcbiOstream& out, int indent) const;
 
     bool Check(void);
 
@@ -299,7 +299,7 @@ public:
 
     ASNMemberContainerType(const CDataTypeContext& context, const string& kw);
     
-    ostream& Print(ostream& out, int indent) const;
+    CNcbiOstream& Print(CNcbiOstream& out, int indent) const;
 
     bool Check(void);
 

@@ -2,7 +2,7 @@
 #include "type.hpp"
 
 inline
-ostream& NewLine(ostream& out, int indent)
+CNcbiOstream& NewLine(CNcbiOstream& out, int indent)
 {
     return ASNType::NewLine(out, indent);
 }
@@ -26,7 +26,7 @@ ASNNullValue::ASNNullValue(const CFilePosition& pos)
 {
 }
 
-ostream& ASNNullValue::Print(ostream& out, int )
+CNcbiOstream& ASNNullValue::Print(CNcbiOstream& out, int )
 {
     return out << "NULL";
 }
@@ -36,7 +36,7 @@ ASNBoolValue::ASNBoolValue(const CFilePosition& pos, bool v)
 {
 }
 
-ostream& ASNBoolValue::Print(ostream& out, int )
+CNcbiOstream& ASNBoolValue::Print(CNcbiOstream& out, int )
 {
     return out << (value? "TRUE": "FALSE");
 }
@@ -46,7 +46,7 @@ ASNIntegerValue::ASNIntegerValue(const CFilePosition& pos, int v)
 {
 }
 
-ostream& ASNIntegerValue::Print(ostream& out, int )
+CNcbiOstream& ASNIntegerValue::Print(CNcbiOstream& out, int )
 {
     return out << value;
 }
@@ -56,7 +56,7 @@ ASNStringValue::ASNStringValue(const CFilePosition& pos, const string& v)
 {
 }
 
-ostream& ASNStringValue::Print(ostream& out, int )
+CNcbiOstream& ASNStringValue::Print(CNcbiOstream& out, int )
 {
     out << '"';
     for ( string::const_iterator i = value.begin(), end = value.end();
@@ -75,7 +75,7 @@ ASNBitStringValue::ASNBitStringValue(const CFilePosition& pos, const string& v)
 {
 }
 
-ostream& ASNBitStringValue::Print(ostream& out, int )
+CNcbiOstream& ASNBitStringValue::Print(CNcbiOstream& out, int )
 {
     return out << value;
 }
@@ -85,7 +85,7 @@ ASNIdValue::ASNIdValue(const CFilePosition& pos, const string& v)
 {
 }
 
-ostream& ASNIdValue::Print(ostream& out, int )
+CNcbiOstream& ASNIdValue::Print(CNcbiOstream& out, int )
 {
     return out << id;
 }
@@ -101,7 +101,7 @@ ASNNamedValue::ASNNamedValue(const CFilePosition& pos,
 {
 }
 
-ostream& ASNNamedValue::Print(ostream& out, int indent)
+CNcbiOstream& ASNNamedValue::Print(CNcbiOstream& out, int indent)
 {
     out << name;
     if ( dynamic_cast<const ASNNamedValue*>(value.get()) ||
@@ -120,7 +120,7 @@ ASNBlockValue::ASNBlockValue(const CFilePosition& pos)
 {
 }
 
-ostream& ASNBlockValue::Print(ostream& out, int indent)
+CNcbiOstream& ASNBlockValue::Print(CNcbiOstream& out, int indent)
 {
     out << '{';
     indent++;

@@ -25,7 +25,7 @@ void ASNModule::AddDefinition(const string& def, const AutoPtr<ASNType> type)
     definitions.push_back(make_pair(def, type));
 }
 
-ostream& ASNModule::Print(ostream& out) const
+CNcbiOstream& ASNModule::Print(CNcbiOstream& out) const
 {
     out << name << " DEFINITIONS ::=" << endl;
     out << "BEGIN" << endl << endl;
