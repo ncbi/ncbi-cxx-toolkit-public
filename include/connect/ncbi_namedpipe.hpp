@@ -42,6 +42,7 @@
 
 #include <connect/ncbi_core.h>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
 #include <vector>
 
 #if defined(NCBI_OS_MSWIN)
@@ -95,8 +96,11 @@ class CNamedPipeHandle;
 class NCBI_XCONNECT_EXPORT CNamedPipe
 {
 public:
-    /// Default pipe size.
-    static const size_t kDefaultPipeSize;
+    /// Default pipe buffer size.
+    enum {
+        eDefaultBufSize    = 4096,      ///< portable default
+        eDefaultSysBufSize = kMax_Int   ///< use system-specific default
+    };
 
     /// Constructor.
     CNamedPipe(void);
@@ -182,7 +186,7 @@ public:
 protected:
     string            m_PipeName;          ///< pipe name 
     CNamedPipeHandle* m_NamedPipeHandle;   ///< os-specific handle
-    size_t            m_PipeSize;          ///< pipe size
+    size_t            m_PipeBufSize;       ///< pipe buffer size
     bool              m_IsClientSide;      ///< client/server-side pipe
 
     /// Timeouts
@@ -222,15 +226,15 @@ public:
     /// This constructor just calls Open().
     /// NOTE: Timeout from the argument becomes new open timeout.
     CNamedPipeClient(const string&   pipename,
-                     const STimeout* timeout = kDefaultTimeout,
-                     size_t          pipesize = kDefaultPipeSize);
+                     const STimeout* timeout     = kDefaultTimeout,
+                     size_t          pipebufsize = 0 /* use default */);
 
     /// Open a client-side pipe connection.
     ///
     /// NOTE: Should not be called if already opened.
     virtual EIO_Status Open(const string&   pipename,
-                            const STimeout* timeout  = kDefaultTimeout,
-                            size_t          pipesize = kDefaultPipeSize);
+                            const STimeout* timeout     = kDefaultTimeout,
+                            size_t          pipebufsize = 0 /* use default*/);
 
     // Always returns eIO_Unknown in this class.
     virtual EIO_Status Create(const string&, const STimeout*, size_t);
@@ -263,20 +267,20 @@ public:
     /// This constructor just calls Create().
     /// NOTES:
     ///   - Timeout from the argument becomes new timeout for a listening;
-    ///   - The "bufsize" specify a maxium size of data block that can be
-    ///     transmitted through the pipe. The actual buffer size reserved
+    ///   - The "pipebufsize" specify a maxium size of data block that can
+    ///     be transmitted through the pipe. The actual buffer size reserved
     ///     for each end of the named pipe is the specified size rounded
     ///     up to the next allocation boundary.
     CNamedPipeServer(const string&   pipename,
-                     const STimeout* timeout  = kDefaultTimeout,
-                     size_t          pipesize = kDefaultPipeSize);
+                     const STimeout* timeout     = kDefaultTimeout,
+                     size_t          pipebufsize = 0 /* use default */);
 
     /// Create a server-side pipe.
     ///
     /// NOTE: Should not be called if already created.
     virtual EIO_Status Create(const string&   pipename,
-                              const STimeout* timeout  = kDefaultTimeout,
-                              size_t          pipesize = kDefaultPipeSize);
+                              const STimeout* timeout     = kDefaultTimeout,
+                              size_t          pipebufsize = 0/*use default*/);
 
     /// Always returns eIO_Unknown in this class.
     virtual EIO_Status Open(const string&, const STimeout*, size_t);
@@ -330,6 +334,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/22 17:03:00  ivanov
+ * Replaced static member CNamedPipe::kDefaultPipeSize with enum values
+ * for default and system pipe buffer size (by Denis Vakatov).
+ *
  * Revision 1.7  2003/12/02 17:48:48  ivanov
  * Made Status() const
  *
