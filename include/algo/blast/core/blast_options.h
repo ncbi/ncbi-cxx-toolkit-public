@@ -28,7 +28,10 @@
  */
 
 /** @file blast_options.h
- * Options to be used for different stages of the BLAST search.
+ *  The structures and functions in blast_options.[ch] should be used to specify 
+ *  user preferences.  The options structures should not be changed by the BLAST code
+ *  but rather be read to determine user preferences.  When possible these structures
+ *  should be passed in as "const".
  */
 
 #ifndef __BLASTOPTIONS__
@@ -159,14 +162,6 @@ extern "C" {
                                    groups of three nucleotide bases to protein
                                    letters */
 
-/** Default parameters for linking HSPs */
-#define BLAST_GAP_PROB 0.5         /**< Gap probability for ungapped search */
-#define BLAST_GAP_PROB_GAPPED 1.0  /**< Gap probability for gapped search */
-#define BLAST_GAP_DECAY_RATE 0.5   /**< Gap decay rate for ungapped search */
-#define BLAST_GAP_DECAY_RATE_GAPPED 0.1/**< Gap decay rate for gapped search */
-#define BLAST_GAP_SIZE 40          /**< Default gap size */ 
-#define BLAST_OVERLAP_SIZE 9      /**< Default overlap size */
-
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
  */
@@ -235,27 +230,6 @@ typedef struct BlastInitialWordOptions {
                          extension */
 } BlastInitialWordOptions;
 
-/** Expect values corresponding to the default cutoff
- *  scores for all ungapped and gapped blastn alignments.
- */
-#define CUTOFF_E_BLASTN 0.05  /**< default evalue (blastn) */
-#define CUTOFF_E_BLASTP 1e-300 /**< default evalue (ungapped blastp) */
-#define CUTOFF_E_BLASTX 1.0 /**< default evalue (ungapped blastx) */
-#define CUTOFF_E_TBLASTN 1.0 /**< default evalue (ungapped tblastn) */
-#define CUTOFF_E_TBLASTX 1e-300/**< default evalue (tblastx) */
-
-/** Parameter block that contains a pointer to BlastInitialWordOptions
- * and parsed values for those options that require it 
- * (in this case x_dropoff).
- */
-typedef struct BlastInitialWordParameters {
-   BlastInitialWordOptions* options; /**< The original (unparsed) options. */
-   Int4 x_dropoff_init; /**< Raw X-dropoff value corresponding to the bit 
-                           value in options. */
-   Int4 x_dropoff; /**< Raw X-dropoff value used in the ungapped extension */
-   Int4 cutoff_score; /**< Cutoff score for saving ungapped hits. */
-} BlastInitialWordParameters;
-    
 /** The algorithm to be used for preliminary
  *  gapped extensions
  */
@@ -293,14 +267,6 @@ typedef struct BlastExtensionOptions {
    Boolean compositionBasedStats; /**< if TRUE use composition-based stats. */
 } BlastExtensionOptions;
 
-/** Computed values used as parameters for gapped alignments */
-typedef struct BlastExtensionParameters {
-   BlastExtensionOptions* options; /**< The original (unparsed) options. */
-   Int4 gap_x_dropoff; /**< X-dropoff value for gapped extension (raw) */
-   Int4 gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
-                               extension (raw) */
-} BlastExtensionParameters;
-
 /** Should sum statistics be performed? If not set, the engine decides this
  * question based on the program and gapped calculation option.
  */
@@ -310,7 +276,7 @@ typedef enum ESumStatsMode {
    eSumStatsFalse, /**< Do not use sum statistics. */
    eSumStatsTrue   /**< Use sum statistics. */
 } ESumStatsMode;
- 
+
 /** Options used when evaluating and saving hits
  *  These include: 
  *  a. Restrictions on the number of hits to be saved;
@@ -358,38 +324,6 @@ typedef struct BlastHitSavingOptions {
                                   before it's not blocked out. Must be > 0 to be used. */
 } BlastHitSavingOptions;
 
-/** Parameter block for linking HSPs with sum statistics. */
-typedef struct BlastLinkHSPParameters {
-   double gap_prob;       /**< Probability of decay for linking HSPs */
-   Int4 gap_size;          /**< Small gap size for linking HSPs */
-   Int4 overlap_size;     /**< Maximal overlap allowed in successive linked
-                             HSPs */
-   double gap_decay_rate; /**< Decay rate for linking HSPs and calculating
-                             cutoff scores. */
-   Int4 cutoff_small_gap; /**< Cutoff sum score for linked HSPs with small 
-                             gaps. Small gap calculations are ignored if 
-                             this value is set to 0. */
-   Int4 cutoff_big_gap; /**< Cutoff sum score for linked HSPs with big gaps. */
-   Int4 longest_intron; /**< Length of a longest intron for uneven gap linking
-                           of HSPs. */
-} BlastLinkHSPParameters;
-
-/** Parameter block that contains a pointer to BlastHitSavingOptions
- * and parsed values for those options that require it
- * (in this case expect value).
- */
-typedef struct BlastHitSavingParameters {
-   BlastHitSavingOptions* options; /**< The original (unparsed) options. */
-   Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
-                         provided by the user if no sum stats, the lowest score
-                         to attempt linking on if sum stats are used.*/
-   Int4 cutoff_score_max; /**< Raw cutoff score corresponding to the e-value 
-                         provided by user, cutoff_score should always <= this. */
-   BlastLinkHSPParameters* link_hsp_params; /**< Parameters for linking HSPs
-                                               with sum statistics; linking 
-                                               is not done if NULL. */
-} BlastHitSavingParameters;
-
 /** Scoring options block 
  *  Used to produce the BlastScoreBlk structure
  *  This structure may be needed for lookup table construction (proteins only),
@@ -413,22 +347,6 @@ typedef struct BlastScoringOptions {
                         gapping */
 } BlastScoringOptions;
 
-/** Scoring parameters block
- *  Contains scoring-related information that is actually used
- *  for the blast search
- */
-typedef struct BlastScoringParameters {
-   BlastScoringOptions *options; /**< User-provided values for these params */
-   Int2 reward;      /**< Reward for a match */
-   Int2 penalty;     /**< Penalty for a mismatch */
-   Int4 gap_open;    /**< Extra penalty for starting a gap (scaled version) */
-   Int4 gap_extend;  /**< Penalty for each gap residue  (scaled version) */
-   Int4 decline_align; /**< Cost for declining alignment  (scaled version) */
-   Int4 shift_pen;   /**< Penalty for shifting a frame in out-of-frame 
-                        gapping (scaled version) */
-   double scale_factor; /**< multiplier for all cutoff scores */
-} BlastScoringParameters;
-
 /** Options for setting up effective lengths and search spaces.  
  * The values are those the user has specified to override the real sizes.
  */
@@ -442,19 +360,6 @@ typedef struct BlastEffectiveLengthsOptions {
    Boolean use_real_db_size; /**< Use real database size instead of virtual
                                 database size for statistical calculations */
 } BlastEffectiveLengthsOptions;
-
-/** Parameters for setting up effective lengths and search spaces.  
- * The real database size values to be used for statistical calculations, if
- * there are no overriding values in options.
- */
-typedef struct BlastEffectiveLengthsParameters {
-   BlastEffectiveLengthsOptions* options; /**< User provided values for these 
-                                             parameters */
-   Int8 real_db_length; /**< Total database length to use in search space
-                           calculations. */
-   Int4 real_num_seqs;  /**< Number of subject sequences to use for search
-                           space calculations */
-} BlastEffectiveLengthsParameters;
 
 /** Options used in protein BLAST only (PSI, PHI, RPS and translated BLAST)
  *  Some of these possibly should be transfered elsewhere  
@@ -607,55 +512,6 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
    double xdrop_ungapped);
 
 
-/** Deallocate memory for BlastInitialWordParameters.
- * @param parameters Structure to free [in]
- */
-NCBI_XBLAST_EXPORT
-BlastInitialWordParameters*
-BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
-
-/** Allocate memory for BlastInitialWordParameters and set x_dropoff.
- * Calling BlastInitialWordParametersNew calculates the
- * raw x_dropoff from the bit x_dropoff and puts it into
- * the x_dropoff field of BlastInitialWordParameters*.
- *
- * @param program_number Type of BLAST program [in]
- * @param word_options The initial word options [in]
- * @param hit_params The hit saving options (needed to calculate cutoff score 
- *                    for ungapped extensions) [in]
- * @param sbp Statistical (Karlin-Altschul) information [in]
- * @param query_info Query information [in]
- * @param subject_length Average subject sequence length [in]
- * @param parameters Resulting parameters [out]
-*/
-NCBI_XBLAST_EXPORT
-Int2
-BlastInitialWordParametersNew(EBlastProgramType program_number, 
-   const BlastInitialWordOptions* word_options, 
-   const BlastHitSavingParameters* hit_params, 
-   BlastScoreBlk* sbp, 
-   BlastQueryInfo* query_info, 
-   Uint4 subject_length,
-   BlastInitialWordParameters* *parameters);
-
-/** Update cutoff scores in BlastInitialWordParameters structure.
- * @param program_number Type of BLAST program [in]
- * @param hit_params The hit saving parameters, needed to calculate cutoff 
- *                   score for ungapped extensions. The HSP linking cutoff
- *                   might have to be adjusted here. [in] [out]
- * @param sbp Statistical (Karlin-Altschul) information [in]
- * @param query_info Query information [in]
- * @param subject_length Average subject sequence length [in]
- * @param parameters Preallocated parameters [in] [out]
-*/
-NCBI_XBLAST_EXPORT
-Int2
-BlastInitialWordParametersUpdate(EBlastProgramType program_number, 
-   const BlastHitSavingParameters* hit_params, 
-   BlastScoreBlk* sbp, 
-   BlastQueryInfo* query_info, Uint4 subject_length,
-   BlastInitialWordParameters* parameters);
-
 /** Deallocate memory for BlastExtensionOptions.
  * @param options Structure to free [in]
  */
@@ -696,28 +552,6 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
 NCBI_XBLAST_EXPORT
 Int2 BlastExtensionOptionsValidate(EBlastProgramType program_number, 
         const BlastExtensionOptions* options, Blast_Message* *blast_msg);
-
-/** Calculate the raw values for the X-dropoff parameters 
- * @param blast_program Program number [in]
- * @param options Already allocated extension options [in]
- * @param sbp Structure containing statistical information [in]
- * @param query_info Query information, needed only for determining the first 
- *                   context [in]
- * @param parameters Extension parameters [out]
- */
-NCBI_XBLAST_EXPORT
-Int2 BlastExtensionParametersNew(EBlastProgramType blast_program, 
-        const BlastExtensionOptions* options, 
-        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
-        BlastExtensionParameters* *parameters);
-
-/** Deallocate memory for BlastExtensionParameters. 
- * @param parameters Structure to free [in]
- */
-NCBI_XBLAST_EXPORT
-BlastExtensionParameters*
-BlastExtensionParametersFree(BlastExtensionParameters* parameters);
-
 
 /**  Deallocate memory for BlastScoringOptions. 
  * @param options Structure to free [in]
@@ -765,23 +599,6 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 Int2 BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt);
 
-/**  Deallocate memory for BlastScoringParameters.
- * @param parameters Structure to free [in]
- */
-NCBI_XBLAST_EXPORT
-BlastScoringParameters* BlastScoringParametersFree(
-                                     BlastScoringParameters* parameters);
-
-/** Calculate scaled cutoff scores and gap penalties
- * @param options Already allocated scoring options [in]
- * @param sbp Structure containing scale factor [in]
- * @param parameters Scoring parameters [out]
- */
-NCBI_XBLAST_EXPORT
-Int2 BlastScoringParametersNew(const BlastScoringOptions *options,
-                               BlastScoreBlk* sbp, 
-                               BlastScoringParameters* *parameters);
-
 /** Deallocate memory for BlastEffectiveLengthsOptions*. 
  * @param options Structure to free [in]
  */
@@ -795,25 +612,6 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options);
  */
 NCBI_XBLAST_EXPORT
 Int2 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options);
-
-/** Deallocate memory for BlastEffectiveLengthsParameters*. 
- * @param parameters Structure to free [in]
- */
-NCBI_XBLAST_EXPORT
-BlastEffectiveLengthsParameters* 
-BlastEffectiveLengthsParametersFree(BlastEffectiveLengthsParameters* parameters);
-
-/** Allocate memory for BlastEffectiveLengthsParameters 
- * @param options The user provided options [in]
- * @param db_length The database length [in]
- * @param num_seqs Number of sequences in database [in]
- * @param parameters The parameters structure returned [out]
- */
-NCBI_XBLAST_EXPORT
-Int2 
-BlastEffectiveLengthsParametersNew(const BlastEffectiveLengthsOptions* options, 
-                               Int8 db_length, Int4 num_seqs,
-                               BlastEffectiveLengthsParameters* *parameters);
 
 /** Fill the non-default values in the BlastEffectiveLengthsOptions structure.
  * @param options The options [in] [out]
@@ -833,21 +631,6 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options,
  */
 NCBI_XBLAST_EXPORT
 Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *options);
-
-/** Auxiliary function that calculates best database scanning stride for the
- * given parameters.
- * @param word_size Length of the exact match required to trigger 
- *                  extensions [in]
- * @param var_words If true, and word_size is divisible by 4, partial bytes 
- *                  need not be checked to test the length of the 
- *                  exact match [in]
- * @param lut_type  What kind of lookup table is used (based on 4-mers, 8-mers 
- *                  or 12-mers) [in]
- * @return          The stride necessary to find all exact matches of a given
- *                  word size.
- */
-NCBI_XBLAST_EXPORT
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
 
 
 /** Allocate memory for lookup table options and fill with default values.
@@ -924,78 +707,6 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
                            double evalue, Int4 hitlist_size,
                            Boolean is_gapped);
 
-/** Deallocate memory for BlastLinkHSPParameters;
- * @param parameters Structure to free [in] 
- */
-NCBI_XBLAST_EXPORT
-BlastLinkHSPParameters* 
-BlastLinkHSPParametersFree(BlastLinkHSPParameters* parameters);
-
-/** Initialize the linking HSPs parameters with default values.
- * @param program_number Type of BLAST program [in]
- * @param gapped_calculation Is this a gapped search? [in]
- * @param link_hsp_params Initialized parameters structure [out]
- */
-NCBI_XBLAST_EXPORT
-Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number, 
-                               Boolean gapped_calculation,
-                               BlastLinkHSPParameters** link_hsp_params);
-
-/** Update BlastLinkHSPParameters, using calculated values of other parameters.
- * @param word_params Initial word parameters [in]
- * @param hit_params Hit saving parameters, including the link HSP 
- *                   parameters [in] [out]
- * @param gapped_calculation Is this a gapped search? [in]
- */
-NCBI_XBLAST_EXPORT
-Int2 
-BlastLinkHSPParametersUpdate(const BlastInitialWordParameters* word_params,
-                             const BlastHitSavingParameters* hit_params,
-                             Boolean gapped_calculation);
-
-/** Deallocate memory for BlastHitSavingOptions*. 
- * @param parameters Structure to free [in]
- */
-NCBI_XBLAST_EXPORT
-BlastHitSavingParameters*
-BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
-
-/** Allocate memory and initialize the BlastHitSavingParameters structure. 
- * Calculates the (raw) score cutoff given an expect value and puts
- * it in the "cutoff_score" field of the returned BlastHitSavingParameters*
- *
- * @param program_number Number of the BLAST program [in]
- * @param options The given hit saving options [in]
- * @param sbp Scoring block, needed for calculating score cutoff from 
- *            e-value [in]
- * @param query_info Query information, needed for calculating score cutoff 
- *                   from e-value [in]
- * @param avg_subject_length average length of subject sequence [in]
- * @param parameters Resulting parameters [out]
- */
-NCBI_XBLAST_EXPORT
-Int2 BlastHitSavingParametersNew(EBlastProgramType program_number, 
-        const BlastHitSavingOptions* options, 
-        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
-        Int4 avg_subject_length,
-        BlastHitSavingParameters* *parameters);
-
-/** Updates cutoff scores in hit saving parameters. 
- * @param program_number Number of the BLAST program [in]
- * @param sbp Scoring block, needed for calculating score cutoff from 
- *            e-value [in]
- * @param query_info Query information, needed for calculating score cutoff 
- *                   from e-value [in]
- * @param avg_subject_length average length of subject sequence, used in sum_stats
- *            mode [in]
- * @param parameters Preallocated parameters [in] [out]
- */
-NCBI_XBLAST_EXPORT
-Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
-        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
-        Int4 avg_subject_length,
-        BlastHitSavingParameters* parameters);
-
 /** Initialize default options for PSI BLAST */
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options);
 
@@ -1057,23 +768,20 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastHitSavingOptions* hit_options,
                            Blast_Message* *blast_msg);
 
-/** Calculates cutoff scores and returns them.
- *  Equations provided by Stephen Altschul.
- * @param program BLAST program type [in]
- * @param query_info Query(ies) information [in]
- * @param sbp Scoring statistical parameters [in]
- * @param link_hsp_params Parameters for linking HSPs [in] [out]
- * @param word_params InitialWordParameters  (cutoff_score used for small gaps) [in]
- * @param db_length Total length of database (non-database search if 0) [in]
- * @param subject_length Length of the subject sequence. [in]
- * 
-*/
+/** Auxiliary function that calculates best database scanning stride for the
+ * given parameters.
+ * @param word_size Length of the exact match required to trigger 
+ *                  extensions [in]
+ * @param var_words If true, and word_size is divisible by 4, partial bytes 
+ *                  need not be checked to test the length of the 
+ *                  exact match [in]
+ * @param lut_type  What kind of lookup table is used (based on 4-mers, 8-mers 
+ *                  or 12-mers) [in]
+ * @return          The stride necessary to find all exact matches of a given
+ *                  word size.
+ */
 NCBI_XBLAST_EXPORT
-void
-CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
-   const BlastInitialWordParameters* word_params,
-   Int8 db_length, Int4 subject_length);
+Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
 
 #ifdef __cplusplus
 }
