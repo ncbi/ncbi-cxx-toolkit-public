@@ -58,6 +58,15 @@ int CTestSerial::Run(void)
         write.m_Attributes.push_back("m_Size");
         write.m_Attributes.push_back("m_");
         write.m_Next = &write1;
+        const char* s = "data";
+        write.m_Data.assign(s, s + 4);
+        write.m_Offsets.push_back(25);
+        write.m_Offsets.push_back(-1024);
+        write.m_Names[0] = "zero";
+        write.m_Names[1] = "one";
+        write.m_Names[2] = "two";
+        write.m_Names[3] = "three";
+        write.m_Names[10] = "ten";
 
         write1.m_Name = "write1";
         write1.m_NamePtr = new string("test");
@@ -66,6 +75,9 @@ int CTestSerial::Run(void)
         write1.m_Next = &write1;
 
         {
+            {
+                CObjectOStreamAsn(ofstream("test.asno")) << write;
+            }
             {
                 CObjectOStreamBinary(ofstream("test.bin",
 											  ios::binary)) << write;

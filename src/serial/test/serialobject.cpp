@@ -7,6 +7,9 @@ BEGIN_CLASS_INFO(CSerialObject)
     ADD_PTR_CLASS_MEMBER(m_NamePtr);
     ADD_CLASS_MEMBER(m_Size);
     ADD_STL_CLASS_MEMBER(m_Attributes);
+    ADD_STL_CLASS_MEMBER(m_Data);
+    ADD_STL_CLASS_MEMBER(m_Offsets);
+    ADD_STL_CLASS_MEMBER(m_Names);
     ADD_PTR_CLASS_MEMBER(m_Next);
 END_CLASS_INFO
 
@@ -61,12 +64,31 @@ void CSerialObject::Dump(ostream& out) const
         out << "null";
     out << endl;
     out << "m_Size: " << m_Size << endl;
+
     out << "m_Attributes: {" << endl;
     for ( list<string>::const_iterator i = m_Attributes.begin();
           i != m_Attributes.end();
           ++i ) {
         out << "    \"" << *i << '"' << endl;
     }
+    out << "}" << endl;
+
+    out << "m_Offsets: {" << endl;
+    for ( vector<int>::const_iterator i = m_Offsets.begin();
+          i != m_Offsets.end();
+          ++i ) {
+        out << "    " << *i << endl;
+    }
+    out << "}" << endl;
+    
+    out << "m_Names: {" << endl;
+    for ( map<int, string>::const_iterator i = m_Names.begin();
+          i != m_Names.end();
+          ++i ) {
+        out << "    " << i->first << ": \"" << i->second << '"' << endl;
+    }
+    out << "}" << endl;
+
     out << "m_Next: ";
     if ( m_Next )
         out << Ptr(m_Next);

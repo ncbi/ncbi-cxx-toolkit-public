@@ -4,6 +4,8 @@
 #include <corelib/ncbistd.hpp>
 #include <string>
 #include <list>
+#include <vector>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -26,6 +28,9 @@ public:
     const string* m_NamePtr;
     int m_Size;
     list<string> m_Attributes;
+    vector<char> m_Data;
+    vector<int> m_Offsets;
+    map<int, string> m_Names;
     
     CSerialObject* m_Next;
 };

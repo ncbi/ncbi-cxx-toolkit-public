@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/15 19:35:06  vasilche
+* Implemented map<K, V>.
+*
 * Revision 1.13  1999/07/15 16:59:55  vasilche
 * Fixed template use in typedef.
 *
@@ -81,6 +84,7 @@
 #include <serial/typeref.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/memberid.hpp>
 #include <map>
 #include <list>
 #include <vector>
@@ -96,13 +100,66 @@ public:
         : m_DataType(dataType)
         { }
 
+/*
+    const CMemberId& GetDataId(void) const
+        {
+            return m_DataId;
+        }
+    void SetDataId(const CMemberId& id)
+        {
+            m_DataId = id;
+        }
+*/
     TTypeInfo GetDataTypeInfo(void) const
         {
             return m_DataType.Get();
         }
 
 private:
+    //    CMemberId m_DataId;
     CTypeRef m_DataType;
+};
+
+class CStlTwoArgsTemplate : public CTypeInfo
+{
+    typedef CTypeInfo CParent;
+public:
+
+    CStlTwoArgsTemplate(const CTypeRef& keyType, const CTypeRef& valueType)
+        : m_KeyType(keyType), m_ValueType(valueType)
+        { }
+
+    const CMemberId& GetKeyId(void) const
+        {
+            return m_KeyId;
+        }
+    void SetKeyId(const CMemberId& id)
+        {
+            m_KeyId = id;
+        }
+    const CMemberId& GetValueId(void) const
+        {
+            return m_ValueId;
+        }
+    void SetValueId(const CMemberId& id)
+        {
+            m_ValueId = id;
+        }
+
+    TTypeInfo GetKeyTypeInfo(void) const
+        {
+            return m_KeyType.Get();
+        }
+    TTypeInfo GetValueTypeInfo(void) const
+        {
+            return m_ValueType.Get();
+        }
+
+private:
+    CMemberId m_KeyId;
+    CMemberId m_ValueId;
+    CTypeRef m_KeyType;
+    CTypeRef m_ValueType;
 };
 
 template<typename List>
@@ -259,33 +316,23 @@ public:
 protected:
     virtual void Reserve(TObjectPtr object, size_t length) const
         {
-            Get(object).assign(length);
+            Get(object).resize(length);
         }
 
     virtual TObjectPtr AddEmpty(TObjectPtr object, size_t index) const
         {
-            return &Get(object).[index];
+            return &Get(object)[index];
         }
 };
 
-class CStlClassInfoMapImpl : public CTypeInfo
+class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
 {
-    typedef CTypeInfo CParent;
+    typedef CStlTwoArgsTemplate CParent;
 public:
 
     CStlClassInfoMapImpl(const CTypeRef& keyType, const CTypeRef& valueType)
-        : m_KeyType(keyType), m_ValueType(valueType)
+        : CParent(keyType, valueType)
         { }
-
-    TTypeInfo GetKeyTypeInfo(void) const
-        {
-            return m_KeyType.Get();
-        }
-
-    TTypeInfo GetValueTypeInfo(void) const
-        {
-            return m_ValueType.Get();
-        }
 
 protected:
     void CollectKeyValuePair(COObjectList& objectList,
@@ -294,14 +341,10 @@ protected:
                            TConstObjectPtr key, TConstObjectPtr value) const;
     void ReadKeyValuePair(CObjectIStream& in,
                           TObjectPtr key, TObjectPtr value) const;
-
-private:
-    CTypeRef m_KeyType;
-    CTypeRef m_ValueType;
 };
 
 template<typename Key, typename Value>
-class CStlClassInfoMap : CStlClassInfoMapImpl
+class CStlClassInfoMap : public CStlClassInfoMapImpl
 {
     typedef CStlClassInfoMapImpl CParent;
 
@@ -310,7 +353,11 @@ public:
     typedef Value TValueType;
     typedef map<TKeyType, TValueType> TObjectType;
 
-    CStlClassInfoMap(void);
+    CStlClassInfoMap(void)
+        : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
+                  GetTypeRef(static_cast<const TValueType*>(0)))
+        {
+        }
 
     static const TObjectType& Get(TConstObjectPtr object)
         {
@@ -382,6 +429,7 @@ protected:
             CObjectOStream::Block block(out, o.size());
             for ( TObjectType::const_iterator i = o.begin();
                   i != o.end(); ++i ) {
+                block.Next();
                 WriteKeyValuePair(out, &i->first, &i->second);
             }
         }
@@ -391,9 +439,10 @@ protected:
             TObjectType& o = Get(object);
             CObjectIStream::Block block(in, CObjectIStream::eFixed);
             while ( block.Next() ) {
-                TObjectType::value_type value;
-                ReadKeyValuePair(in, &value->first, &value->second);
-                o.insert(value);
+                TKeyType key;
+                TValueType value;
+                ReadKeyValuePair(in, &key, &value);
+                o.insert(TObjectType::value_type(key, value));
             }
         }
 };
