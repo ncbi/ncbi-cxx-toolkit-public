@@ -255,16 +255,16 @@ static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln) {
     NCBI_THROW(CException, eUnknown, "Input Seq-align should be Dendiag!");
   }
   
-  if(aln.CanGetType()){
+  if(aln.IsSetType()){
     sa->SetType(aln.GetType());
   }
-  if(aln.CanGetDim()){
+  if(aln.IsSetDim()){
     sa->SetDim(aln.GetDim());
   }
-  if(aln.CanGetScore()){
+  if(aln.IsSetScore()){
     sa->SetScore() = aln.GetScore();
   }
-  if(aln.CanGetBounds()){
+  if(aln.IsSetBounds()){
     sa->SetBounds() = aln.GetBounds();
   }
   
@@ -275,28 +275,28 @@ static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln) {
   ITERATE (CSeq_align::C_Segs::TDendiag, iter, aln.GetSegs().GetDendiag()){
      
     if(counter == 0){//assume all dendiag segments have same dim and ids
-      if((*iter)->CanGetDim()){
+      if((*iter)->IsSetDim()){
 	ds.SetDim((*iter)->GetDim());
       }
-      if((*iter)->CanGetIds()){
+      if((*iter)->IsSetIds()){
 	ds.SetIds() = (*iter)->GetIds();
       }
     }
     ds.SetNumseg() ++;
-    if((*iter)->CanGetStarts()){
+    if((*iter)->IsSetStarts()){
       ITERATE(CDense_diag::TStarts, iterStarts, (*iter)->GetStarts()){
 	ds.SetStarts().push_back(*iterStarts);
       }
     }
-    if((*iter)->CanGetLen()){
+    if((*iter)->IsSetLen()){
       ds.SetLens().push_back((*iter)->GetLen());
     }
-    if((*iter)->CanGetStrands()){
+    if((*iter)->IsSetStrands()){
       ITERATE(CDense_diag::TStrands, iterStrands, (*iter)->GetStrands()){
 	ds.SetStrands().push_back(*iterStrands);
       }
     }
-    if((*iter)->CanGetScores()){
+    if((*iter)->IsSetScores()){
       ITERATE(CDense_diag::TScores, iterScores, (*iter)->GetScores()){
 	ds.SetScores().push_back(*iterScores); //this might not have right meaning
       }
@@ -953,8 +953,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       }
       CRef<CDense_seg> finalDenseg(new CDense_seg);
       const CTypeIterator<CDense_seg> ds = Begin(*finalAln);
-      if(ds->CanGetStrands()&&ds->GetStrands().front()==eNa_strand_minus){
-
+      if((ds->IsSetStrands() && ds->GetStrands().front()==eNa_strand_minus) && !(ds->IsSetWidths() && ds->GetWidths()[0] == 3)){
+	//show plus strand if master is minus for non-translated case
 	memcpy(&*finalDenseg, &(*ds), sizeof(CDense_seg));
 	finalDenseg->Reverse();
 	avRef = new CAlnVec(*finalDenseg, m_Scope);
@@ -1031,7 +1031,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std) {
 	CTypeConstIterator<CStd_seg> ss = ConstBegin(**alnIter); 
 	CRef<CSeq_align> convertedDs = (*alnIter)->CreateDensegFromStdseg();
-	if((convertedDs->GetSegs().GetDenseg().CanGetWidths() && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3) || m_AlignOption & eTranslateNucToNucAlignment){//only do this for translated master
+	if((convertedDs->GetSegs().GetDenseg().IsSetWidths() && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3) || m_AlignOption & eTranslateNucToNucAlignment){//only do this for translated master
 	  int frame = s_GetStdsegMasterFrame(*ss, m_Scope);
 	  switch(frame){
 	  case 1:
@@ -1494,7 +1494,7 @@ void CDisplaySeqalign::getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& sc
 		  featStartSeqPos = m_AV->GetSeqPosFromAlnPos(row, i);
 		  const CCdregion& cdr = feat->GetData().GetCdregion();
 		  int frame = 1;
-		  if(cdr.CanGetFrame()){
+		  if(cdr.IsSetFrame()){
 		    frame = cdr.GetFrame();
 		  }
 		  int numBaseFromFeatStart = (featStartSeqPos - (featSeqFrom + (frame -1) )); //Number of bases between feature start and current base. adjust using frame
@@ -1897,7 +1897,7 @@ CRef<CSeq_align_set>CDisplaySeqalign::PrepareBlastUngappedSeqalign(CSeq_align_se
       if(seg.GetStd().size() > 1){ //has more than one stdseg. Need to seperate as each is a distinct HSP
 	ITERATE (CSeq_align::C_Segs::TStd, iterStdseg, seg.GetStd()){
 	  CRef<CSeq_align> aln(new CSeq_align);
-	  if((*iterStdseg)->CanGetScores()){
+	  if((*iterStdseg)->IsSetScores()){
 	    aln->SetScore() = (*iterStdseg)->GetScores();
 	  }
 	  aln->SetSegs().SetStd().push_back(*iterStdseg);
@@ -1911,7 +1911,7 @@ CRef<CSeq_align_set>CDisplaySeqalign::PrepareBlastUngappedSeqalign(CSeq_align_se
       if(seg.GetDendiag().size() > 1){ //has more than one dendiag. Need to seperate as each is a distinct HSP
 	ITERATE (CSeq_align::C_Segs::TDendiag, iterDendiag, seg.GetDendiag()){
 	  CRef<CSeq_align> aln(new CSeq_align);
-	  if((*iterDendiag)->CanGetScores()){
+	  if((*iterDendiag)->IsSetScores()){
 	    aln->SetScore() = (*iterDendiag)->GetScores();
 	  }
 	  aln->SetSegs().SetDendiag().push_back(*iterDendiag);
@@ -1960,6 +1960,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.26  2003/12/29 20:54:52  jianye
+*change CanGet to IsSet
+*
 *Revision 1.25  2003/12/29 18:36:32  jianye
 *Added nuc to nuc translation, show minus master as plus strand, etc
 *
