@@ -353,6 +353,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_TerminalNs",
     "SEQ_INST_UnexpectedIdentifierChange",
     "SEQ_INST_InternalNsInSeqLit",
+    "SEQ_INST_SeqLitGapLength0",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -642,6 +643,9 @@ block visible in the flatfile.",
 previous version of the record in the database.",
 //  SEQ_INST_InternalNsInSeqLit
 "There are runs of many Ns inside the SeqLit component of a delta Bioseq.",
+//  SEQ_INST_SeqLitGapLength0
+"A SeqLit component of a delta Bioseq can specify a gap, but it should " \
+"not be a gap of 0 length.",
 
 /* SEQ_DESCR */
 
@@ -1129,6 +1133,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/10/27 14:14:41  shomrat
+* added SEQ_INST_SeqLitGapLength0
+*
 * Revision 1.30  2003/10/20 16:07:07  shomrat
 * Added SEQ_FEAT_OnlyGeneXrefs
 *
