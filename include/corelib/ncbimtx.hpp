@@ -105,6 +105,13 @@ typedef HANDLE TSystemMutex;
 /// The CThreadSystemID is based on the platform dependent thread ID type,
 /// TThreadSystemID, defined in ncbithr_conf.hpp.
 
+#if defined(NCBI_COMPILER_MSVC)
+// MS VC compiler warns about legal two assignment operators (with and without volatile).
+// Without second assignment operator it doesn't compile the code. :-(
+# pragma warning(push)
+# pragma warning(disable : 4522)
+#endif
+
 class NCBI_XNCBI_EXPORT CThreadSystemID
 {
 public:
@@ -160,6 +167,10 @@ public:
             return m_ID != id.m_ID;
         }
 };
+
+#if defined(NCBI_COMPILER_MSVC)
+# pragma warning(pop)
+#endif
 
 /// Use in defining initial value of system mutex.
 #define THREAD_SYSTEM_ID_INITIALIZER { 0 }
@@ -1102,6 +1113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/09/02 16:36:50  vasilche
+ * Fixed warning on MSVC.
+ *
  * Revision 1.25  2003/09/02 16:08:48  vasilche
  * Fixed race condition with optimization on some compilers - added 'volatile'.
  * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.
