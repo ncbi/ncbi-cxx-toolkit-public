@@ -661,12 +661,15 @@ CDataType* DTDParser::x_Type(
         const list<string>& refs = node.GetContent();
         if (refs.size() == 1) {
             string refName = refs.front();
-            if (m_MapElement[refName].IsEmbedded() &&
+            DTDElement& refNode = m_MapElement[refName];
+            if (refNode.IsEmbedded() &&
                 (node.GetOccurrence(refName) == DTDElement::eOne)) {
-                type = x_Type(m_MapElement[refName],occ,fromInside);
+                type = x_Type(refNode,
+                              fromInside ? occ : refNode.GetOccurrence(),
+                              fromInside);
                 if (node.IsEmbedded()) {
                     DTDElement& emb = const_cast<DTDElement&>(node);
-                    emb.SetName(m_MapElement[refName].GetName());
+                    emb.SetName(refNode.GetName());
                 }
                 return type;
             }
@@ -680,7 +683,7 @@ CDataType* DTDParser::x_Type(
     bool attrib = !ignoreAttrib && node.HasAttributes();
     bool ref = fromInside && !node.IsEmbedded();
 
-    if ((cont && uniseq && (attrib || node.IsEmbedded())) || (!cont && attrib)) {
+    if ((cont && uniseq && (attrib || (node.IsEmbedded() && fromInside))) || (!cont && attrib)) {
         if (ref) {
             type = new CReferenceDataType(node.GetName());
         } else {
@@ -1015,6 +1018,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.20  2004/08/17 14:10:41  gouriano
+ * Corrected data tree generation for embedded elements
+ *
  * Revision 1.19  2004/05/19 17:24:18  gouriano
  * Corrected generation of C++ code by DTD for containers
  *
