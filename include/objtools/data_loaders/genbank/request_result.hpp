@@ -483,7 +483,7 @@ public:
         eActionRetry,
         eActionSuccess
     };
-        
+
     enum EProcessedBy {
         eProcessedByNone,
         eProcessedById1,
@@ -492,9 +492,9 @@ public:
         eProcessedByPubSeqos
     };
 
-    CReaderRequestResult(void);
+    CReaderRequestResult(const CSeq_id_Handle& requested_id);
     virtual ~CReaderRequestResult(void);
-    
+
     typedef string TKeySeq_ids;
     typedef CSeq_id_Handle TKeySeq_ids2;
     typedef CLoadInfoSeq_ids TInfoSeq_ids;
@@ -548,14 +548,22 @@ public:
     void SetActionResult(EActionResult res, EProcessedBy proc) 
     { m_ActionResult = res; m_ProcessedBy = proc; }
 
+    const CSeq_id_Handle& GetRequestedId(void) const { return m_RequestedId; }
+
+protected:
+    void SetRequestedId(const CSeq_id_Handle& requested_id)
+        {
+            m_RequestedId = requested_id;
+        }
+
 private:
     friend class CLoadInfoLock;
 
     void ReleaseLoadLock(const CRef<CLoadInfo>& info);
-    
+
     typedef map<CRef<CLoadInfo>, CLoadInfoLock*> TLockMap;
     typedef map<CBlob_id, CTSE_LoadLock> TBlobLoadLocks;
-    
+
     TLockMap        m_LockMap;
     TTSE_LockSet    m_TSE_LockSet;
     TBlobLoadLocks  m_BlobLoadLocks;
@@ -563,6 +571,7 @@ private:
     EProcessedBy    m_ProcessedBy;
     TLevel          m_Level;
     bool            m_Cached;
+    CSeq_id_Handle  m_RequestedId;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
@@ -574,7 +583,7 @@ class NCBI_XREADER_EXPORT CStandaloneRequestResult :
     public CReaderRequestResult
 {
 public:
-    CStandaloneRequestResult(void);
+    CStandaloneRequestResult(const CSeq_id_Handle& requested_id);
     virtual ~CStandaloneRequestResult(void);
 
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id);

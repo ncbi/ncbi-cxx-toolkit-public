@@ -243,21 +243,44 @@ void CDataSource_ScopeInfo::ForgetTSELock(CTSE_ScopeInfo& tse)
 }
 
 
+bool CDataSource_ScopeInfo::UnlockTSE(CTSE_ScopeInfo& tse)
+{
+    TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
+    TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_LockSetMutex);
+    if ( tse.CanBeUnloaded() ) {
+        m_TSE_UnlockQueue.Get(&tse);
+        TTSE_BySeqId::iterator id_it = m_TSE_BySeqId.begin();
+        while (id_it != m_TSE_BySeqId.end()) {
+            if (id_it->second == &tse) {
+                TTSE_BySeqId::iterator erase = id_it;
+                ++id_it;
+                m_TSE_BySeqId.erase(erase);
+            }
+            else {
+                ++id_it;
+            }
+        }
+    }
+    if (tse.m_TSE_Lock  &&  m_TSE_LockSet.RemoveLock(tse.m_TSE_Lock)) {
+        STSE_Key key(*tse.m_TSE_Lock, tse.CanBeUnloaded());
+        TTSE_InfoMap::iterator info_it = m_TSE_InfoMap.find(key);
+        if (info_it != m_TSE_InfoMap.end()) {
+            m_TSE_InfoMap.erase(info_it);
+        }
+        return true;
+    }
+    return false;
+}
+
+
 void CDataSource_ScopeInfo::Reset(void)
 {
-    {{
-        TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_LockSetMutex);
-        m_TSE_UnlockQueue.Clear();
-    }}
-    {{
-        TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
-        m_TSE_InfoMap.clear();
-        m_TSE_BySeqId.clear();
-    }}
-    {{
-        TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_LockSetMutex);
-        m_TSE_LockSet.Clear();
-    }}
+    TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
+    TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_LockSetMutex);
+    m_TSE_UnlockQueue.Clear();
+    m_TSE_InfoMap.clear();
+    m_TSE_BySeqId.clear();
+    m_TSE_LockSet.Clear();
 }
 
 
@@ -473,6 +496,13 @@ void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
 }
 
 
+bool CDataSource_ScopeInfo::TSEIsInQueue(const CTSE_ScopeInfo& tse) const
+{
+    TTSE_LockSetMutex::TReadLockGuard guard(m_TSE_LockSetMutex);
+    return m_TSE_UnlockQueue.Contains(&tse);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_ScopeInternalLock
 /////////////////////////////////////////////////////////////////////////////
@@ -552,6 +582,15 @@ void CTSE_ScopeUserLock::x_Unlock(void)
     if ( m_Object ) {
         //_TRACE("CTSE_ScopeUserLock("<<this<<") "<<&*m_Object<<" unlock");
         (*this)->x_UserUnlockTSE();
+        m_Object.Reset();
+    }
+}
+
+
+void CTSE_ScopeUserLock::Release(void)
+{
+    if ( m_Object ) {
+        (*this)->x_ReleaseTSE();
         m_Object.Reset();
     }
 }
@@ -689,6 +728,17 @@ void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 }
 
 
+void CTSE_ScopeInfo::x_ReleaseTSE(void)
+{
+    _ASSERT( !LockedMoreThanOnce() );
+    m_TSE_LockCounter.Add(-1);
+    if ( CanBeUnloaded() ) {
+        m_TSE_Lock.Reset();
+        x_ForgetLocks();
+    }
+}
+
+
 bool CTSE_ScopeInfo::x_SameTSE(const CTSE_Info& tse) const
 {
     return m_TSE_LockCounter.Get() > 0 && m_TSE_Lock && &*m_TSE_Lock == &tse;
@@ -736,6 +786,29 @@ void CTSE_ScopeInfo::x_ForgetLocks(void)
     }
     m_UsedTSE_Set.clear();
     m_TSE_Lock.Reset();
+}
+
+
+int CTSE_ScopeInfo::x_GetDSLocksCount(void) const
+{
+    int max_locks = CanBeUnloaded() ? 0 : 1;
+    if ( GetDSInfo().TSEIsInQueue(*this) ) {
+        // Extra-lock from delete queue allowed
+        ++max_locks;
+    }
+    return max_locks;
+}
+
+
+bool CTSE_ScopeInfo::IsLocked(void) const
+{
+    return m_TSE_LockCounter.Get() > x_GetDSLocksCount();
+}
+
+
+bool CTSE_ScopeInfo::LockedMoreThanOnce(void) const
+{
+    return m_TSE_LockCounter.Get() > x_GetDSLocksCount() + 1;
 }
 
 
@@ -998,6 +1071,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/03/14 18:17:15  grichenk
+* Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
+* CScope::RemoveDataLoader(). Added requested seq-id information to
+* CTSE_Info.
+*
 * Revision 1.13  2005/03/14 17:05:56  vasilche
 * Thread safe retrieval of configuration variables.
 *

@@ -84,7 +84,8 @@ class CGBReaderRequestResult : public CReaderRequestResult
 {
     typedef CReaderRequestResult TParent;
 public:
-    CGBReaderRequestResult(CGBDataLoader* loader);
+    CGBReaderRequestResult(CGBDataLoader* loader,
+                           const CSeq_id_Handle& requested_id);
     ~CGBReaderRequestResult(void);
 
     CGBDataLoader& GetLoader(void)
@@ -490,7 +491,7 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
 
 CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 {
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, sih);
     CLoadLockBlob_ids blobs(result, sih);
     if ( !blobs.IsLoaded() ) {
         CLoadLockSeq_ids ids(result, sih);
@@ -516,7 +517,7 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 
 void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);
     if ( !seq_ids.IsLoaded() ) {
         m_Dispatcher->LoadSeq_idSeq_ids(result, idh);
@@ -528,7 +529,7 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const CBlob_id& blob_id = dynamic_cast<const CBlob_id&>(*id);
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, CSeq_id_Handle());
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsSetBlobVersion() ) {
         m_Dispatcher->LoadBlobVersion(result, blob_id);
@@ -544,7 +545,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
     TTSE_Lock best;
     bool         conflict=false;
 
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, handle);
 
     ITERATE(TTSE_LockSet, sit, tse_set) {
         const CTSE_Info& tse = **sit;
@@ -741,7 +742,7 @@ CGBDataLoader::GetBlobById(const TBlobId& id)
 {
     CBlob_id blob_id = GetBlobId(id);
 
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, CSeq_id_Handle());
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsLoaded() ) 
         m_Dispatcher->LoadBlob(result, blob_id);
@@ -834,7 +835,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
     
     GC();
 
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, sih);
     CLoadLockBlob_ids blobs(result, sih);
     if ( !blobs.IsLoaded() ) {
         CLoadLockSeq_ids ids(result, sih);
@@ -876,7 +877,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
 
 void CGBDataLoader::GetChunk(TChunk chunk)
 {
-    CGBReaderRequestResult result(this);
+    CGBReaderRequestResult result(this, CSeq_id_Handle());
     m_Dispatcher->LoadChunk(result,
                             GetBlobId(chunk->GetBlobId()),
                             chunk->GetChunkId());
@@ -997,8 +998,11 @@ CGBDataLoader::GetLoadInfoBlob_ids(const CSeq_id_Handle& key)
 }
 
 
-CGBReaderRequestResult::CGBReaderRequestResult(CGBDataLoader* loader)
-    : m_Loader(loader)
+CGBReaderRequestResult::
+CGBReaderRequestResult(CGBDataLoader* loader,
+                       const CSeq_id_Handle& requested_id)
+    : CReaderRequestResult(requested_id),
+      m_Loader(loader)
 {
 }
 
@@ -1018,6 +1022,7 @@ CGBReaderRequestResult::GetInfoSeq_ids(const string& key)
 CRef<CLoadInfoSeq_ids>
 CGBReaderRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
 {
+    SetRequestedId(key);
     return GetLoader().GetLoadInfoSeq_ids(key);
 }
 

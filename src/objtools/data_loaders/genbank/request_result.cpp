@@ -359,9 +359,12 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CReaderRequestResult::CReaderRequestResult(void)
-    : m_ActionResult(eActionNoData), m_ProcessedBy(eProcessedByNone),
-      m_Level(0), m_Cached(false)
+CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
+    : m_ActionResult(eActionNoData),
+      m_ProcessedBy(eProcessedByNone),
+      m_Level(0),
+      m_Cached(false),
+      m_RequestedId(requested_id)
 {
 }
 
@@ -437,6 +440,7 @@ void CReaderRequestResult::AddTSE_Lock(const TTSE_Lock& tse_lock)
 {
     _ASSERT(tse_lock);
     m_TSE_LockSet.insert(tse_lock);
+    tse_lock->SetRequestedId(m_RequestedId);
 }
 
 #if 0
@@ -497,7 +501,9 @@ void CReaderRequestResult::ReleaseLocks(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CStandaloneRequestResult::CStandaloneRequestResult(void)
+CStandaloneRequestResult::
+CStandaloneRequestResult(const CSeq_id_Handle& requested_id)
+    : CReaderRequestResult(requested_id)
 {
 }
 
@@ -522,6 +528,7 @@ CStandaloneRequestResult::GetInfoSeq_ids(const string& key)
 CRef<CLoadInfoSeq_ids>
 CStandaloneRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
 {
+    SetRequestedId(key);
     CRef<CLoadInfoSeq_ids>& ret = m_InfoSeq_ids2[key];
     if ( !ret ) {
         ret = new CLoadInfoSeq_ids();

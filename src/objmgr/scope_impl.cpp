@@ -194,6 +194,70 @@ CSeq_annot_Handle CScope_Impl::AddAnnot(CSeq_annot& annot, TPriority priority)
 }
 
 
+void CScope_Impl::RemoveDataLoader(const string& loader_name)
+{
+    CRef<CDataSource> ds = m_ObjMgr->AcquireDataLoader(loader_name);
+    if ( !ds ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                "CScope_Impl::RemoveDataLoader: "
+                "data loader not found in the scope");
+    }
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+    set<CRef<CTSE_ScopeInfo> > tse_set;
+    CPriority_I ds_it(m_setDataSrc);
+    while ( ds_it ) {
+        CDataSource_ScopeInfo& ds_info = *ds_it;
+        if (&ds_info.GetDataSource() == ds) {
+            ITERATE(CDataSource_ScopeInfo::TTSE_InfoMap,
+                it, ds_info.GetTSE_InfoMap()) {
+                tse_set.insert(it->second);
+            }
+            NON_CONST_ITERATE(set<CRef<CTSE_ScopeInfo> >, tse, tse_set) {
+                CTSE_Handle tseh(const_cast<CTSE_ScopeInfo&>(**tse));
+                x_RemoveFromHistory(tseh);
+                if (tseh) {
+                    NCBI_THROW(CObjMgrException, eModifyDataError,
+                            "CScope_Impl::RemoveDataLoader: "
+                            "data source contains locked TSEs");
+                }
+            }
+            m_setDataSrc.Erase(*ds_it);
+            return; // Are there other priorities of the same loader?
+        }
+        ++ds_it;
+    }
+}
+
+
+void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle& entry)
+{
+    CDataSource_ScopeInfo& ds_info = entry.x_GetScopeInfo().GetDSInfo();
+    if (&ds_info.GetScopeImpl() != this) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                "CScope_Impl::RemoveTopLevelSeqEntry: "
+                "TSE not found in the scope");
+    }
+    if ( ds_info.GetDataLoader() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                "CScope_Impl::RemoveTopLevelSeqEntry: "
+                "can not remove a loaded TSE");
+    }
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+    x_RemoveFromHistory(entry);
+    if ( entry ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                "CScope_Impl::RemoveTopLevelSeqEntry: "
+                "TSE is still locked");
+    }
+    if ( !m_setDataSrc.Erase(ds_info) ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                "CScope_Impl::RemoveTopLevelSeqEntry: "
+                "can not remove data source from the scope");
+    }
+}
+
+
 CSeq_entry_EditHandle
 CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                            CRef<CSeq_entry_Info> entry,
@@ -772,10 +836,8 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
     if ( id )  {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info;
-        {{
-            TReadLockGuard rguard(m_Scope_Conf_RWLock);
-            info = x_GetBioseq_Info(id, get_flag, match);
-        }}
+        TReadLockGuard rguard(m_Scope_Conf_RWLock);
+        info = x_GetBioseq_Info(id, get_flag, match);
         if ( info ) {
             ret = info->HasBioseq() ?
                 GetBioseqHandle(id, *info)
@@ -1167,24 +1229,85 @@ void CScope_Impl::ResetHistory(void)
 }
 
 
+void CScope_Impl::RemoveFromHistory(CBioseq_Handle& bioseq)
+{
+    CTSE_Handle& tse = const_cast<CTSE_Handle&>(bioseq.GetTSE_Handle());
+    {{
+        TWriteLockGuard guard(m_Scope_Conf_RWLock);
+        x_RemoveFromHistory(tse);
+    }}
+    if ( !tse ) {
+        bioseq.Reset();
+    }
+}
+
+void CScope_Impl::RemoveFromHistory(CTSE_Handle& tse)
+{
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+    x_RemoveFromHistory(tse);
+}
+
+
+void CScope_Impl::x_RemoveFromHistory(CTSE_Handle& tse)
+{
+    CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
+    if ( tse_info.LockedMoreThanOnce() ) {
+        return;
+    }
+
+    const CTSE_ScopeInfo::TBioseqs& bs_ids = tse_info.m_Bioseqs;
+    ITERATE(CTSE_ScopeInfo::TBioseqs, id, bs_ids) {
+        TSeq_idMap::iterator mapped_id = m_Seq_idMap.find(id->first);
+        if (mapped_id == m_Seq_idMap.end()) {
+            continue;
+        }
+        if ( mapped_id->second.m_Bioseq_Info ) {
+            CBioseq_ScopeInfo& binfo = *mapped_id->second.m_Bioseq_Info;
+            if ( binfo.HasBioseq() ) {
+                binfo.m_BioseqAnnotRef_Info.Reset();
+            }
+            mapped_id->second.m_Bioseq_Info->m_SynCache.Reset();
+        }
+        m_Seq_idMap.erase(mapped_id);
+    }
+    tse_info.GetDSInfo().UnlockTSE(tse_info);
+    tse.m_TSE.Release();
+}
+
+
 void CScope_Impl::x_ResetHistory(void)
 {
     // 1. detach all CBbioseq_Handle objects from scope, and
     // 2. break circular link:
     // CBioseq_ScopeInfo-> CSynonymsSet-> SSeq_id_ScopeInfo-> CBioseq_ScopeInfo
-    NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
-        if ( it->second.m_Bioseq_Info ) {
-            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
-            if ( binfo.HasBioseq() ) {
-                binfo.m_BioseqAnnotRef_Info.Reset(); // break circular link
-            }
-            it->second.m_Bioseq_Info->m_SynCache.Reset(); // break circular link
-        }
-    }
+
+    // Check for locked TSEs ???
     m_EditInfoMap.clear();
-    m_Seq_idMap.clear();
-    for (CPriority_I it(m_setDataSrc); it; ++it) {
-        it->Reset();
+
+    set< CRef<CTSE_ScopeInfo> > unlocked_infos;
+    TSeq_idMap::iterator id_it = m_Seq_idMap.begin();
+    while ( id_it != m_Seq_idMap.end() ) {
+        if ( id_it->second.m_Bioseq_Info ) {
+            CBioseq_ScopeInfo& binfo = *id_it->second.m_Bioseq_Info;
+            if ( binfo.HasBioseq() ) {
+                if ( binfo.GetTSE_ScopeInfo().IsLocked() ) {
+                    ++id_it;
+                    continue;
+                }
+                binfo.m_BioseqAnnotRef_Info.Reset(); // break circular link
+                CTSE_ScopeInfo& tse_info = const_cast<CTSE_ScopeInfo&>(
+                    id_it->second.m_Bioseq_Info->GetTSE_ScopeInfo());
+                unlocked_infos.insert(Ref(&tse_info));
+            }
+            binfo.m_SynCache.Reset(); // break circular link
+        }
+        TSeq_idMap::iterator rm = id_it;
+        ++id_it;
+        m_Seq_idMap.erase(rm);
+    }
+    NON_CONST_ITERATE (set< CRef<CTSE_ScopeInfo> >, it, unlocked_infos) {
+        CTSE_ScopeInfo& tse_info = const_cast<CTSE_ScopeInfo&>(**it);
+        (*it)->GetDSInfo().UnlockTSE(tse_info);
     }
 }
 

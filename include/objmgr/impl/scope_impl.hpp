@@ -215,13 +215,23 @@ public:
     // Get bioseq handle by seqloc
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc, int get_flag);
 
+    // History cleanup methods
+    void ResetHistory(void);
+    void RemoveFromHistory(CBioseq_Handle& bioseq);
+    void RemoveFromHistory(CTSE_Handle& tse);
+
+    // Revoke data sources from the scope. Throw exception if the
+    // operation fails (e.g. data source is in use or not found).
+    void RemoveDataLoader(const string& loader_name);
+    // Remove TSE previously added using AddTopLevelSeqEntry() or
+    // AddBioseq().
+    void RemoveTopLevelSeqEntry(CTSE_Handle& entry);
+
     // Deprecated interface
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
     CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Handle& tse);
-
-    void ResetHistory(void);
 
     CScope& GetScope(void);
 
@@ -256,6 +266,7 @@ private:
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
     void x_ResetHistory(void);
+    void x_RemoveFromHistory(CTSE_Handle& tse);
 
     // clean some cache entries when new data source is added
     void x_ClearCacheOnNewData(void);

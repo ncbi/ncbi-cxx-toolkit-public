@@ -55,8 +55,8 @@ int main()
 
     CId1Reader reader;
     for(int k = 0; k < 500; k++) {
-        CStandaloneRequestResult request;
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
+        CStandaloneRequestResult request(seq_id);
         CLoadLockBlob_ids ids(request, seq_id);
         reader.LoadSeq_idSeq_ids(request, seq_id);
         ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
@@ -77,6 +77,11 @@ int main()
 
 /*
 * $Log$
+* Revision 1.9  2005/03/14 18:17:15  grichenk
+* Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
+* CScope::RemoveDataLoader(). Added requested seq-id information to
+* CTSE_Info.
+*
 * Revision 1.8  2005/03/10 20:55:07  vasilche
 * New CReader/CWriter schema of CGBDataLoader.
 *

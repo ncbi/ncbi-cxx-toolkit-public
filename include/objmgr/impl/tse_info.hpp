@@ -252,6 +252,9 @@ public:
 
     CTSE_Split_Info& GetSplitInfo(void);
 
+    const CSeq_id_Handle& GetRequestedId(void) const;
+    void SetRequestedId(const CSeq_id_Handle& requested_id) const;
+
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
@@ -403,6 +406,7 @@ private:
     TSeqIdToNames          m_SeqIdToNames;
 
     mutable TAnnotLock     m_AnnotLock;
+    mutable CSeq_id_Handle m_RequestedId;
 
 private:
     // Hide copy methods
@@ -543,6 +547,20 @@ inline
 const CTSE_Info::TBioseqs& CTSE_Info::GetBioseqsMap(void) const
 {
     return m_Bioseqs;
+}
+
+
+inline
+const CSeq_id_Handle& CTSE_Info::GetRequestedId(void) const
+{
+    return m_RequestedId;
+}
+
+
+inline
+void CTSE_Info::SetRequestedId(const CSeq_id_Handle& requested_id) const
+{
+    m_RequestedId = requested_id;
 }
 
 

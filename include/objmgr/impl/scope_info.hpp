@@ -82,6 +82,12 @@ public:
         {
         }
 
+    bool Contains(const key_type& key) const
+        {
+            _ASSERT(m_Queue.size() == m_Index.size());
+            return m_Index.find(key) != m_Index.end();
+        }
+
     value_type Get(const key_type& key)
         {
             value_type ret;
@@ -179,6 +185,8 @@ public:
     void UpdateTSELock(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
     void ReleaseTSELock(CTSE_ScopeInfo& tse); // into queue
     void ForgetTSELock(CTSE_ScopeInfo& tse); // completely
+    bool UnlockTSE(CTSE_ScopeInfo& tse);
+    bool TSEIsInQueue(const CTSE_ScopeInfo& tse) const;
 
     CDataSource& GetDataSource(void);
     const CDataSource& GetDataSource(void) const;
@@ -251,6 +259,10 @@ public:
     bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
 
     bool CanBeUnloaded(void) const;
+    // True if the TSE is referenced
+    bool IsLocked(void) const;
+    // True if the TSE is referenced by more than one handle
+    bool LockedMoreThanOnce(void) const;
 
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
     bool ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
@@ -271,8 +283,12 @@ protected:
     void x_RelockTSE(void);
     void x_UserUnlockTSE(void);
     void x_InternalUnlockTSE(void);
+    void x_ReleaseTSE(void);
 
     void x_ForgetLocks(void);
+
+    // Number of internal locks, not related to handles
+    int x_GetDSLocksCount(void) const;
 
 private: // members
     friend class CScope_Impl;
@@ -424,6 +440,7 @@ CDataSource_ScopeInfo::GetTSE_LockSetMutex(void) const
     return m_TSE_LockSetMutex;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
@@ -461,6 +478,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/03/14 18:17:14  grichenk
+* Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
+* CScope::RemoveDataLoader(). Added requested seq-id information to
+* CTSE_Info.
+*
 * Revision 1.16  2005/01/26 16:25:21  grichenk
 * Added state flags to CBioseq_Handle.
 *

@@ -219,6 +219,30 @@ void CScope::ResetHistory(void)
 }
 
 
+void CScope::RemoveFromHistory(CBioseq_Handle& bioseq)
+{
+    m_Impl->RemoveFromHistory(bioseq);
+}
+
+
+void CScope::RemoveFromHistory(CTSE_Handle& tse)
+{
+    m_Impl->RemoveFromHistory(tse);
+}
+
+
+void CScope::RemoveDataLoader(const string& loader_name)
+{
+    m_Impl->RemoveDataLoader(loader_name);
+}
+
+
+void CScope::RemoveTopLevelSeqEntry(CTSE_Handle& entry)
+{
+    m_Impl->RemoveTopLevelSeqEntry(entry);
+}
+
+
 CScope::TIds CScope::GetIds(const CSeq_id& id)
 {
     return GetIds(CSeq_id_Handle::GetHandle(id));
@@ -357,6 +381,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2005/03/14 18:17:15  grichenk
+* Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
+* CScope::RemoveDataLoader(). Added requested seq-id information to
+* CTSE_Info.
+*
 * Revision 1.113  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

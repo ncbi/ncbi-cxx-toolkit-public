@@ -177,6 +177,8 @@ public:
             }
         }
 
+    void Release(void);
+
 private:
     void x_Lock(TObject& object);
     void x_Lock(TObject& object, const CTSE_Lock& tse_lock);

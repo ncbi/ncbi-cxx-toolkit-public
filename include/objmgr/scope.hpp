@@ -182,8 +182,29 @@ public:
     /// Get editable Biosec-set handle by regular one
     CBioseq_set_EditHandle GetEditHandle(const CBioseq_set_Handle& seqset);
 
-    /// Clean scope's cache and release the memory
+    /// Clean all unused TSEs from the scope's cache and release the memory.
+    /// TSEs referenced by any handles are not removed.
     void ResetHistory(void);
+    /// Remove single TSE from the scope's history. If there are other
+    /// live handles referencing the TSE, nothing is removed.
+    /// @param tse
+    ///  TSE to be removed from the cache. If the TSE is removed from the
+    ///  histoty, the handle is reset.
+    void RemoveFromHistory(CTSE_Handle& tse);
+    /// Remove the bioseq's TSE from the scope's history. If there are other
+    /// live handles referencing the TSE, nothing is removed.
+    /// @param bioseq
+    ///  Bioseq, which TSE is to be removed from the cache. The handle
+    /// is reset even if the TSE can not be removed from the scope's history.
+    void RemoveFromHistory(CBioseq_Handle& bioseq);
+
+    /// Revoke data loader from the scope. Throw exception if the
+    /// operation fails (e.g. data source is in use or not found).
+    void RemoveDataLoader(const string& loader_name);
+    // Revoke TSE previously added using AddTopLevelSeqEntry() or
+    // AddBioseq(). Throw exception if the TSE is still in use or
+    /// not found in the scope.
+    void RemoveTopLevelSeqEntry(CTSE_Handle& entry);
 
     typedef CBioseq_Handle::TId TIds;
     /// Get "native" bioseq ids without filtering and matching.
@@ -263,6 +284,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/03/14 18:17:14  grichenk
+* Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
+* CScope::RemoveDataLoader(). Added requested seq-id information to
+* CTSE_Info.
+*
 * Revision 1.84  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *
