@@ -79,7 +79,7 @@ CDll::~CDll()
         try {
             Unload();
         } catch(CException& e) {
-            NCBI_REPORT_EXCEPTION("CDll destructor",e);
+            NCBI_REPORT_EXCEPTION("CDll destructor", e);
         }
     }
     delete m_Handle;
@@ -225,7 +225,7 @@ void CDll::x_ThrowException(const string& what)
 #  endif
 #endif
 
-    NCBI_THROW(CCoreException,eDll,what + ": " + errmsg);
+    NCBI_THROW(CCoreException, eDll, what + " [" + m_Name +"]: " + errmsg);
 }
 
 
@@ -235,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/12/19 20:27:09  ivanov
+ * Added DLL name to an exception description in the x_ThrowException()
+ *
  * Revision 1.10  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *
