@@ -216,6 +216,7 @@ property w_workspace : {name:"w_workspace", path:"gui:widgets:workspace"}
 property w_phylo_tree : {name:"w_phylo_tree", path:"gui:widgets:phylo_tree"}
 property w_serial_browse : {name:"w_serial_browse", path:"gui:widgets:serial_browse"}
 property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare"}
+property w_feat_table : {name:"w_feat_table", path:"gui:widgets:feat_table"}
 
 (* GUI Plugins *)
 property gui_doc_basic : {name:"gui_doc_basic", path:"gui:plugins:doc:basic"}
@@ -278,7 +279,7 @@ property gui_widgets : {name:"gui_widgets", libs:{w_toplevel, w_workspace, w_flt
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_config, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets", req:true}
-property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets", req:true}
+property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_textaln, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_widgets gui_widgets_seq", req:true} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_bdb ncbi_core ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
@@ -389,6 +390,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/10/01 17:42:09  lebedev
+ * w_feat_table added
+ *
  * Revision 1.26  2004/09/30 12:59:01  lebedev
  * Renamed: gbench -> Genome Workbench
  *
