@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/01/30 20:29:56  gouriano
+* Corrected reading white spaces
+*
 * Revision 1.55  2004/01/29 20:48:07  gouriano
 * Corrected handling of white spaces in XML tags: preserve insignificant
 * white spaces inside the tag.
@@ -730,10 +733,16 @@ void CObjectIStreamXml::x_EndTypeNamespace(void)
     }
 }
 
-int CObjectIStreamXml::ReadEscapedChar(char endingChar)
+int CObjectIStreamXml::ReadEscapedChar(char endingChar, bool* encoded)
 {
     char c = m_Input.PeekChar();
+    if (encoded) {
+        *encoded = false;
+    }
     if ( c == '&' ) {
+        if (encoded) {
+            *encoded = true;
+        }
         m_Input.SkipChar();
         const size_t limit = 32;
         size_t offset = m_Input.PeekFindChar(';', limit);
@@ -1062,22 +1071,32 @@ char* CObjectIStreamXml::ReadCString(void)
 void CObjectIStreamXml::ReadTagData(string& str)
 {
     BeginData();
-    bool first_space = IsWhiteSpace(m_Input.PeekChar());
-    bool last_space = false;
+    bool skip_spaces = false;
+    bool encoded = false;
     for ( ;; ) {
-        int c = ReadEscapedChar(m_Attlist ? '\"' : '<');
+        int c = ReadEscapedChar(m_Attlist ? '\"' : '<', &encoded);
         if ( c < 0 ) {
             break;
         }
-        last_space = IsWhiteSpace(c);
+        if (!encoded) {
+            if (c == '\n' || c == '\r') {
+                skip_spaces = true;
+                continue;
+            }
+            if (skip_spaces) {
+                if (IsWhiteSpace(c)) {
+                    continue;
+                } else {
+                    skip_spaces = false;
+                    str += ' ';
+                }
+            }
+        }
         str += char(c);
         // pre-allocate memory for long strings
         if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
             str.reserve(str.size()*2);
         }
-    }
-    if (first_space || last_space) {
-        str = NStr::TruncateSpaces(str);
     }
     str.reserve(str.size());
 }

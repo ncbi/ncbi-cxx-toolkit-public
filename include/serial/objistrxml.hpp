@@ -201,7 +201,7 @@ private:
     char BeginClosingTag(void);
     void BeginData(void);
 
-    int ReadEscapedChar(char endingChar);
+    int ReadEscapedChar(char endingChar, bool* encoded=0);
     void ReadTagData(string& s);
 
     CLightString ReadName(char c);
@@ -253,6 +253,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/01/30 20:31:05  gouriano
+* Corrected reading white spaces
+*
 * Revision 1.33  2004/01/22 20:47:55  gouriano
 * Corrected reading of AnyContent object attributes
 *
