@@ -173,11 +173,13 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
     return false;
 }
 
-//#define CHECKGI
+#ifdef _DEBUG
+#define CHECKGI
+#endif
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if(gi == 6325234){
+    if(/*gi == 6325234 ||*/ gi == 6322848){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -550,7 +552,23 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 		Site[Missed - 1][0] = (const char *)-1;
 		DeltaMass[Missed - 1][0] = 0;
         ModEnum[Missed - 1][0] = 0;
-			
+
+#ifdef CHECKGI
+{
+
+			    SeqId *bestid;
+						
+			    header = 0;
+			    readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
+			    bestid = SeqIdFindBest(sip, SEQID_GI);
+			    if(CheckGi(bestid->data.intvalue) && (PepStart[iMissed] - (const char *)Sequence) == 182)
+				cerr << "hello" << endl;
+			    //			int testgi = bestid->data.intvalue;
+			    MemFree(blastdefline);
+			    SeqIdSetFree(sip);
+}
+#endif
+
 		// calculate new stop and mass
 		SequenceDone = 
 		    enzyme->CalcAndCut((const char *)Sequence,
@@ -611,6 +629,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			    NoMassMatch = false;
 						
 #ifdef CHECKGI
+{
+
 			    SeqId *bestid;
 						
 			    header = 0;
@@ -621,6 +641,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			    //			int testgi = bestid->data.intvalue;
 			    MemFree(blastdefline);
 			    SeqIdSetFree(sip);
+}
 #endif
 						
 						
@@ -726,33 +747,39 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 		    } //iMod
 		} // iMissed
 		if(!SequenceDone) {
+            int NumModCount;
 		    // get rid of longest peptide and move the other peptides down the line
 		    for(iMissed = 0; iMissed < Missed - 1; iMissed++) {
-			// move masses to next missed cleavage
-			NumMod[iMissed] = NumMod[iMissed + 1];
-			Masses[iMissed] = Masses[iMissed + 1];
-			// don't move EndMasses as they are recalculated
-
-			// move the modification data
-			for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
-			    DeltaMass[iMissed][iMod] = 
-				DeltaMass[iMissed + 1][iMod];
-			    Site[iMissed][iMod] = 
-				Site[iMissed + 1][iMod];
-			    ModEnum[iMissed][iMod] = 
-				ModEnum[iMissed + 1][iMod];
-			}
-
-			// copy starts to next missed cleavage
-			PepStart[iMissed] = PepStart[iMissed + 1];
+    			// move masses to next missed cleavage
+    			Masses[iMissed] = Masses[iMissed + 1];
+    			// don't move EndMasses as they are recalculated
+    
+    			// move the modification data
+                NumModCount = 0;
+    			for(iMod = 0; iMod < NumMod[iMissed + 1]; iMod++) {
+                    // throw away the c term peptide mods as we have a new c terminus
+                    if(ModEnum[iMissed + 1][iMod] != eModCP  && 
+                       ModEnum[iMissed + 1][iMod] != eModCPAA) {
+        			    DeltaMass[iMissed][NumModCount] = 
+        				DeltaMass[iMissed + 1][iMod];
+        			    Site[iMissed][NumModCount] = 
+        				Site[iMissed + 1][iMod];
+        			    ModEnum[iMissed][NumModCount] = 
+        				ModEnum[iMissed + 1][iMod];
+                        NumModCount++;
+                    }
+    			}
+    			NumMod[iMissed] = NumModCount;
+    
+    			// copy starts to next missed cleavage
+    			PepStart[iMissed] = PepStart[iMissed + 1];
 		    }
-			
 			
 		    // init new start from old stop
 		    PepEnd[Missed-1] += 1;
 		    PepStart[Missed-1] = PepEnd[Missed-1];
 		    // PepStart = PepEnd + 1;
-		} 
+            } 
 	    }
 	}
 	
@@ -912,9 +939,6 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 
 		MakeModString(seqstring, modseqstring, MSHit);
 
-#ifdef CHECKGI
-		CheckGi(bestid->data.intvalue);
-#endif
 		if(PepDone.find(modseqstring) != PepDone.end()) {
 		    Hit = PepDone[modseqstring];
 		}
@@ -1012,6 +1036,8 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
 		Peaks->HighLow(High, Low, NumPeaks, tempMass, Charge, Threshold, NumLo, NumHi);
  
 		double TopHitProb = ((double)Tophitnum)/NumPeaks;
+        // correct for situation where more tophits than experimental peaks
+        if(TopHitProb > 1.0) TopHitProb = 1.0;
 		double Normal = CalcNormalTopHit(a, TopHitProb);
 		int numhits = HitList[iHitList].GetHits(Threshold, Peaks->GetMaxI(Which));
   // for poisson test
@@ -1170,6 +1196,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.29  2004/11/17 23:42:11  lewisg
+add cterm pep mods, fix prob for tophitnum
+
 Revision 1.28  2004/11/15 15:32:40  lewisg
 memory overwrite fixes
 

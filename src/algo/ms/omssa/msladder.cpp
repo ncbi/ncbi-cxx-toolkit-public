@@ -126,34 +126,29 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
 
     int delta;
     int ModIndex;  // index into number of possible mod sites
-    if(kIonDirection[IonType] == 1) ModIndex = 0;
-    else ModIndex = NumMod - 1;
+    int Direction;
+    int Offset;
+
+    if(kIonDirection[IonType] == 1) {
+        ModIndex = 0;
+        Direction = 1;
+        Offset = start;
+    }
+    else {
+        ModIndex = NumMod - 1;
+        Direction = -1;
+        Offset = stop;
+    }
 
     LadderIndex = stop - start;
     if(LadderIndex > LadderSize) return false;
     for(i = 0; i < LadderIndex; i++) {
-	GetHit()[i] = 0;
-	if(kIonDirection[IonType] == 1) {
-	    delta = IntMassArray[AAMap[Sequence[start + i]]];
-	    if(!delta) return false; // unusable char (-BXZ*)
-
-	    
-	    if(NumMod > 0 && ModIndex < NumMod && Site[ModIndex] == &(Sequence[start + i])) {
-		if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
-		ModIndex++;
-	    }
-	}
-	else {
-	    delta = IntMassArray[AAMap[Sequence[stop - i]]];
-	    if(!delta) return false; // unusable char (-BXZ*)
-
-	    if(NumMod > 0 && ModIndex >= 0 && Site[ModIndex] == &(Sequence[stop - i])) {
-		if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
-		ModIndex--;
-	    }
-	}
-	ion += delta/Charge;
-	(*this)[i] = ion;
+        GetHit()[i] = 0;
+        if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
+              Offset, Direction, NumMod, ModIndex,
+              Site, ModMask, DeltaMass, i)) return false;
+        ion += delta/Charge;
+        (*this)[i] = ion;
     }
     return true;
 }

@@ -242,6 +242,17 @@ public:
 		     const char *iPepStart,  // position in protein
              int *ModEnum   // enum of mod
              );
+
+///
+/// checks all mods for a particular type
+///
+    void CheckMods(EMSModType NonSpecific, EMSModType Specific,
+                   CMSMod &VariableMods, CMSMod &FixedMods,
+				   int& NumMod, char SeqChar, int MaxNumMod,
+				   const char **Site,
+				   int *DeltaMass, const char *iPepStart,
+                   int *ModEnum );
+
 protected:
     int ProtonMass; // mass of the proton
     int TermMass;  // mass of h2o
@@ -324,6 +335,27 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 	}
     }
 }
+
+inline
+void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
+                        CMSMod &VariableMods, CMSMod &FixedMods,
+                        int& NumMod, char SeqChar, int MaxNumMod,
+                        const char **Site,
+                        int *DeltaMass, const char *iPepStart,
+                        int *ModEnum )
+{
+    // check non-specific mods
+    CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, Site,
+                 DeltaMass, iPepStart, ModEnum);
+    // todo: treat n-term fixed mods as true fixed mods
+    CheckNonSpecificMods(NonSpecific, FixedMods, NumMod, MaxNumMod, Site,
+                 DeltaMass, iPepStart, ModEnum);
+
+    // check specific mods
+    CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod,
+            Site, DeltaMass, iPepStart, ModEnum);
+}
+
 
 /////////////////// end of CCleave inline methods
 
@@ -468,6 +500,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.13  2004/11/17 23:42:11  lewisg
+  add cterm pep mods, fix prob for tophitnum
+
   Revision 1.12  2004/09/29 19:43:09  lewisg
   allow setting of ions
 

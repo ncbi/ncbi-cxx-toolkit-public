@@ -84,6 +84,15 @@ public:
 		      const char **Site,
 		      int *DeltaMass,
 		      int NumMod);
+
+    ///
+    /// calculate the mass difference
+    ///
+    bool CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *Sequence,
+                        int Offset, int Direction, int NumMod, int &ModIndex,
+                        const char **Site, unsigned ModMask, int *DeltaMass, int i);
+
+
     // check if modification mask position is set
     bool MaskSet(unsigned ModMask, int ModIndex);
 
@@ -124,6 +133,22 @@ private:
 
 
 /////////////////// CLadder inline methods
+
+inline
+bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *Sequence,
+                        int Offset, int Direction, int NumMod, int &ModIndex,
+                        const char **Site, unsigned ModMask, int *DeltaMass, int i)
+{
+    delta = IntMassArray[AAMap[Sequence[Offset + Direction*i]]];
+    if(!delta) return false; // unusable char (-BXZ*)
+
+
+    if(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod && Site[ModIndex] == &(Sequence[Offset + Direction*i])) {
+        if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
+        ModIndex += Direction;
+    }
+    return true;
+}
 
 inline int& CLadder::operator [] (int n) 
 { 
@@ -216,6 +241,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.10  2004/11/17 23:42:11  lewisg
+  add cterm pep mods, fix prob for tophitnum
+
   Revision 1.9  2004/11/15 15:32:40  lewisg
   memory overwrite fixes
 

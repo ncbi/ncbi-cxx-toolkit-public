@@ -53,19 +53,28 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 /// Modification types
 /// there are five kinds of mods:
 /// 1. specific to an AA
-/// 2. N terminus, not specific to an AA
-/// 3. N terminus, specific to an AA
-/// 4. C terminus, not specific to an AA
-/// 5. C terminus, specific to an AA
+/// 2. N terminus protein, not specific to an AA
+/// 3. N terminus protein, specific to an AA
+/// 4. C terminus protein, not specific to an AA
+/// 5. C terminus protein, specific to an AA
+/// 6. N terminus peptide, not specific
+/// 7. N terminus peptide, specific AA
+/// 8. C terminus peptide, not specific
+/// 9. C terminus peptide, specific AA
 ///
-const int kNumModType = 5;
+
+const int kNumModType = 9;
 
 enum EMSModType {
     eModAA = 0,
     eModN,
     eModNAA,
     eModC,
-    eModCAA
+    eModCAA,
+    eModNP,
+    eModNPAA,
+    eModCP,
+    eModCPAA
 };
 
 
@@ -98,10 +107,10 @@ const EMSModType ModTypes[eMSMod_max] = {
     eModAA,
     eModAA,
     eModAA,
-    eModC,
+    eModCP,
     eModAA,
     eModAA,
-    eModC
+    eModCP
 };
 
 ///
@@ -126,10 +135,10 @@ char const * const kModNames[eMSMod_max] = {
     "trimethylation of K",
     "methylation of D",
     "methylation of E",
-    "C-term methylation",
+    "C-term peptide methylation",
     "trideuteromethylation of D",
     "trideuteromethylation of E",
-    "C-term trideuteromethylation"
+    "C-term peptide trideuteromethylation"
 };	   
  
 ///
@@ -189,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/11/17 23:42:11  lewisg
+* add cterm pep mods, fix prob for tophitnum
+*
 * Revision 1.7  2004/11/01 22:04:01  lewisg
 * c-term mods
 *
