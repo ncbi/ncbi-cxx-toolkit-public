@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/08/14 16:51:33  ivanov
+* Change mean for init JavaScript popup menu & add it to HTML document.
+* Remove early redefined classes for tags HEAD and BODY.
+*
 * Revision 1.53  2001/07/16 19:45:22  ivanov
 * Changed default value for JS menu lib path in CHTML_html::InitPopupMenus().
 *
@@ -221,7 +225,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
-#include <html/jsmenu.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -667,81 +670,32 @@ private:
 };
 
 
-// the <head> tag
-class CHTML_head : public CHTMLElement
-{
-    friend class CHTML_html;
-
-    // CParent, constructors, destructor
-    DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(head, CHTMLElement);
-    
-private:
-    // Init members
-    void Init(void);
-
-    // Set URL for the standard popup menu support script
-    void SetPopupMenuScript(const string& url = kEmptyStr);
-
-    // Add popup menu
-    void AddPopupMenu(CHTMLPopupMenu& menu); 
-
-    // Write all popup menu definitions to the output stream "os"
-    void WritePopupMenus(CNcbiOstream& out);
-
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
-
-    // List of popup menus
-    typedef list< CRef<CHTMLPopupMenu> > TMenus;
-    TMenus m_Menus;
-    string m_MenuScript;
-};
-
-
-// the <body> tag
-class CHTML_body : public CHTMLElement
-{
-    friend class CHTML_html;
-
-    // CParent, constructors, destructor
-    DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(body, CHTMLElement);
-
-protected:
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
-    
-private:
-    // Init members
-    void Init(void);
-
-    // Initialization flag
-    bool m_HaveMenuCode;
-};
-
-
 // the <html> tag
 class CHTML_html : public CHTMLElement
 {
     // CParent, constructors, destructor
     DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(html, CHTMLElement);
    
-    // Init for future adding of popup menus.
-    // Also, if this HTML does not have HEAD (or BODY) already, then
-    // "head" (or "body") will be added as a child to the HTML.
-    // If this HTML already has HEAD or BODY, then they must be the same as
-    // the passed "head" and "body";  otherwise, an exception will be thrown.
-    void InitPopupMenus(CHTML_head&    head, 
-                        CHTML_body&    body,
-                        const string&  menu_lib_url = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/menu.js");
+    // Enable using popup menus, set URL for popup menu library.
+    // If "menu_lib_url" is not defined, then using default URL.
+    // NOTE: If we not change value "menu_script_url", namely use default
+    //       value for it, then we can skip call this function.
+    void EnablePopupMenu(const string& menu_script_url = kEmptyStr);
 
-    // Add popup menu
-    // NOTE:  InitPopupMenus() must be called
-    void AddPopupMenu(CHTMLPopupMenu& menu); 
 
 private:
     // Init members
     void Init(void);
+    
+    // Print all self childrens (automatic include code for support 
+    // popup menus, if it need )
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 
-    CRef<CHTML_head> m_Head;    // HEAD node
+    // Popup menu variables
+    string m_PopupMenuLibUrl;
+    bool   m_UsePopupMenu;
 };
+
 
 
 // table classes
@@ -1369,6 +1323,8 @@ public:
 
 
 
+DECLARE_HTML_ELEMENT( head,       CHTMLElement);
+DECLARE_HTML_ELEMENT( body,       CHTMLElement);
 DECLARE_HTML_ELEMENT( base,       CHTMLElement);
 DECLARE_HTML_ELEMENT( isindex,    CHTMLOpenElement);
 DECLARE_HTML_ELEMENT( link,       CHTMLOpenElement);

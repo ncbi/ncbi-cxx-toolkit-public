@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2001/08/14 16:51:05  ivanov
+* Change mean for init JavaScript popup menu & add it to HTML document.
+* Remove early redefined classes for tags HEAD and BODY.
+*
 * Revision 1.66  2001/07/16 13:54:09  ivanov
 * Added support JavaScript popups menu (jsmenu.[ch]pp)
 *
@@ -266,6 +270,8 @@
 
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
+#include <html/jsmenu.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -767,131 +773,62 @@ CHTML_html::~CHTML_html(void)
 
 void CHTML_html::Init(void)
 {
-    m_Head = 0;
+    m_UsePopupMenu = false;
+    m_PopupMenuLibUrl = kEmptyStr;
 }
 
-void CHTML_html::InitPopupMenus(CHTML_head&    head,
-                                CHTML_body&    body,
-                                const string&  menu_lib_url)
+
+void CHTML_html::EnablePopupMenu(const string& menu_script_url)
 {
-    // Was already inited ?
-    if ( m_Head ) {
-        THROW1_TRACE(runtime_error, "CHTMLPopupMenu was already inited");
+    m_UsePopupMenu = true;
+    m_PopupMenuLibUrl = menu_script_url;
+}
+
+
+static bool s_CheckUsePopupMenus(const CNCBINode* node)
+{
+    iterate ( CNCBINode::TChildren, i, node->Children() ) {
+        const CNCBINode* cnode = node->Node(i);
+        if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
+            return true;
+        }
+        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    // Check mode
+    if ( mode != eHTML ) {
+        return CParent::PrintChildren(out, mode);
+    }
+    // Check for use popup menus
+    if ( !m_UsePopupMenu ) {
+        m_UsePopupMenu = s_CheckUsePopupMenus(this);
     }
 
-    // Check present tags HEAD and BODY
-    bool have_head = false;
-    bool have_body = false;
+    if ( !m_UsePopupMenu  ||  !HaveChildren() ) {
+        return CParent::PrintChildren(out, mode);
+    }
 
-    iterate (TChildren, i, Children()) {
-        if ((*i)->GetName() == CHTML_head::sm_TagName) {
-            if ((void*)(*i) != &head) {
-                THROW1_TRACE(runtime_error, "different HEAD tag");
-            }
-            have_head = true; 
+    non_const_iterate ( TChildren, i, Children() ) {
+
+        if ( dynamic_cast<CHTML_head*>(Node(i)) ) {
+             Node(i)->AppendChild(new CHTMLText(
+                      CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl)));
         } else {
-            if ((*i)->GetName() == CHTML_body::sm_TagName) {
-                if ((void*)(*i) != &body) {
-                    THROW1_TRACE(runtime_error, "different BODY tag");
-                }
-                have_body = true; 
+            if ( dynamic_cast<CHTML_body*>(Node(i)) ) {
+                 Node(i)->AppendChild(new CHTMLText(
+                          CHTMLPopupMenu::GetCodeBody()));
             }
-        } 
+        }
     }
-    if ( !have_head ) {
-        AppendChild(&head);
-    }
-    if ( !have_body ) {
-        AppendChild(&body);
-    }
-
-    // Set script path
-    head.SetPopupMenuScript(menu_lib_url);
-    // Set flag for support menu in the BODY tag
-    body.m_HaveMenuCode = true;
-    // Save pointer to the HEAD node (for the adding of new menus)
-    m_Head = &head;
+    return CParent::PrintChildren(out, mode);
 }
 
-
-void CHTML_html::AddPopupMenu(CHTMLPopupMenu& menu)
-{
-    if ( m_Head ) {
-        m_Head->AddPopupMenu(menu); 
-    } else {
-        THROW1_TRACE(runtime_error, "InitPopupMenues() must called first");
-    }
-}
-
-
-// the <HEAD> tag
-
-const char CHTML_head::sm_TagName[] = "head";
-
-CHTML_head::~CHTML_head(void)
-{
-}
-
-void CHTML_head::Init(void)
-{
-    m_MenuScript = kEmptyStr;
-}
-
-void CHTML_head::SetPopupMenuScript(const string& url)
-{
-    m_MenuScript = url;
-}
-
-void CHTML_head::AddPopupMenu(CHTMLPopupMenu& menu)
-{
-    m_Menus.push_back(&menu);
-}
-
-void CHTML_head::WritePopupMenus(CNcbiOstream& out)
-{
-    if ( m_Menus.empty() )
-        return;
-
-    string code;
-    iterate (TMenus, i, m_Menus) {
-        code += (*i)->GetCodeMenuItems();
-    }
-    out << CHTMLPopupMenu::GetCodeHead(m_MenuScript, code,
-                                       (*m_Menus.begin())->GetName());
-}
-
-
-CNcbiOstream& CHTML_head::PrintEnd(CNcbiOstream& out, TMode mode)
-{
-    if ( mode == eHTML ) {
-        WritePopupMenus(out);
-    }
-    CParent::PrintEnd(out, mode);
-    return out;
-}
-
-
-// the <BODY> tag
-
-const char CHTML_body::sm_TagName[] = "body";
-
-CHTML_body::~CHTML_body(void)
-{
-}
-
-void CHTML_body::Init(void)
-{
-    m_HaveMenuCode = false;
-}
-
-CNcbiOstream& CHTML_body::PrintEnd(CNcbiOstream& out, TMode mode)
-{
-    if (mode == eHTML  &&   m_HaveMenuCode) {
-        out << CHTMLPopupMenu::GetCodeBody();
-    }
-    CParent::PrintEnd(out, mode);
-    return out;
-}
 
 
 // TABLE element
@@ -2144,6 +2081,8 @@ CHTML_NAME(Tag)::~CHTML_NAME(Tag)(void) \
 const char CHTML_NAME(Tag)::sm_TagName[] = #Tag
 
 
+DEFINE_HTML_ELEMENT(head);
+DEFINE_HTML_ELEMENT(body);
 DEFINE_HTML_ELEMENT(base);
 DEFINE_HTML_ELEMENT(isindex);
 DEFINE_HTML_ELEMENT(link);
