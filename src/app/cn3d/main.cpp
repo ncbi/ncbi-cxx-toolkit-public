@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/17 22:37:17  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.9  2000/07/17 04:20:49  thiessen
 * now does correct structure alignment transformation
 *
@@ -137,6 +140,10 @@ bool Cn3DApp::OnInit(void)
     else if (argc == 2) {
         frame->LoadFile(argv[1]);
     }
+
+    // Create another main frame window
+    //frame = new Cn3DMainFrame(NULL, "Cn3D++ (2)", wxPoint(450, 450), wxSize(300, 300),
+    //    wxDEFAULT_FRAME_STYLE);
 
     return TRUE;
 }

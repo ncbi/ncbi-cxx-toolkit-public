@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.9  2000/07/17 04:20:50  thiessen
 * now does correct structure alignment transformation
 *
@@ -124,6 +127,39 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     
     } else {
         ERR_POST(Fatal << "Can't (yet) handle that Ncbi-mime-asn1 type");
+    }
+}
+
+void StructureSet::FindCenter(void)
+{
+    Vector siteSum;
+    int nAtoms = 0;
+    maxDistFromCenter = 0.0;
+
+    // loop trough all atoms twice - once to get average center, then once to
+    // find max distance from this center
+    for (int i=0; i<2; i++) {
+        ObjectList::const_iterator o, oe=objects.end();
+        for (o=objects.begin(); o!=oe; o++) {
+            StructureObject::CoordSetList::const_iterator c, ce=(*o)->coordSets.end();
+            for (c=(*o)->coordSets.begin(); c!=ce; c++) {
+                AtomSet::AtomMap::const_iterator a, ae=(*c)->atomSet->atomMap.end();
+                for (a=(*c)->atomSet->atomMap.begin(); a!=ae; a++) {
+                    Vector site(a->second.front()->site);
+                    if ((*o)->IsSlave() && (*o)->transformToMaster)
+                        ApplyTransformation(&site, *((*o)->transformToMaster));
+                    if (i==0) {
+                        siteSum += site;
+                        nAtoms++;
+                    } else {
+                        double dist = (site - center).length();
+                        if (dist > maxDistFromCenter)
+                            maxDistFromCenter = dist;
+                    }
+                }
+            }
+        }
+        if (i==0) center = siteSum / nAtoms;
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.4  2000/07/17 11:59:16  thiessen
 * fix nucleotide virtual bonds
 *
@@ -132,13 +135,16 @@ Residue::Residue(StructureBase *parent,
     }
 
     // set residue type and name of alpha atom to store ID of
-    const char *alphaName = NULL;
+    const char *alphaCode = NULL;
+    CAtom::EElement alphaElement;
     if (residueGraph->IsSetResidue_type()) {
         type = static_cast<eType>(residueGraph->GetResidue_type());
         if (IsAminoAcid()) {
-            alphaName = " CA ";
+            alphaCode = " CA ";
+            alphaElement = CAtom::eElement_c;
         } else if (IsNucleotide()) {
-            alphaName = " P  ";
+            alphaCode = " P  ";
+            alphaElement = CAtom::eElement_p;
         }
     }
 
@@ -158,7 +164,8 @@ Residue::Residue(StructureBase *parent,
         if (c != ce) continue;
 
         // store alphaID
-        if (alphaName && atom.IsSetName() && atom.GetName()==alphaName)
+        if (alphaCode && atom.IsSetIupac_code() && atom.GetIupac_code().front()==alphaCode &&
+            atom.GetElement()==alphaElement)
             alphaID = atom.GetId().Get();
 
         AtomInfo *info = new AtomInfo;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/17 22:36:46  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.9  2000/07/17 04:21:10  thiessen
 * now does correct structure alignment transformation
 *
@@ -94,8 +97,11 @@ public:
     ObjectList objects;
 
     OpenGLRenderer *renderer;
+    Vector center; // center of structure (relative to Master's coordinates)
+    double maxDistFromCenter; // max distance of any atom from center
 
     // public methods
+    void FindCenter(void);
     bool Draw(const StructureBase *data) const;
 
 private:
@@ -111,7 +117,6 @@ public:
     //~StructureObject(void);
 
     // public data
-    const bool isMaster;
     static const int NO_MMDB_ID;
     int mmdbID;
     std::string pdbID;
@@ -128,6 +133,11 @@ public:
     bool SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID);
 
 private:
+    const bool isMaster;
+
+public:
+    bool IsMaster(void) const { return isMaster; }
+    bool IsSlave(void) const { return !isMaster; }
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.1  2000/06/27 20:09:41  thiessen
 * initial checkin
 *
@@ -42,29 +45,26 @@ BEGIN_SCOPE(Cn3D)
 
 void SetTranslationMatrix(Matrix* m, const Vector& v, int n)
 {
-    m->m[0]=1; m->m[1]=0; m->m[2]=0; m->m[3]=n*v.x;
-    m->m[4]=0; m->m[5]=1; m->m[6]=0; m->m[7]=n*v.y;
-    m->m[8]=0; m->m[9]=0; m->m[10]=1; m->m[11]=n*v.z;
+    m->m[0]=1;  m->m[1]=0;  m->m[2]=0;  m->m[3]=n*v.x;
+    m->m[4]=0;  m->m[5]=1;  m->m[6]=0;  m->m[7]=n*v.y;
+    m->m[8]=0;  m->m[9]=0;  m->m[10]=1; m->m[11]=n*v.z;
     m->m[12]=0; m->m[13]=0; m->m[14]=0; m->m[15]=1;
 }
 
 void SetScaleMatrix(Matrix* m, const Vector& v)
 {
-    m->m[0]=v.x; m->m[1]=0; m->m[2]=0; m->m[3]=0;
-    m->m[4]=0; m->m[5]=v.y; m->m[6]=0; m->m[7]=0;
-    m->m[8]=0; m->m[9]=0; m->m[10]=v.z; m->m[11]=0;
-    m->m[12]=0; m->m[13]=0; m->m[14]=0; m->m[15]=1;
+    m->m[0]=v.x; m->m[1]=0;   m->m[2]=0;    m->m[3]=0;
+    m->m[4]=0;   m->m[5]=v.y; m->m[6]=0;    m->m[7]=0;
+    m->m[8]=0;   m->m[9]=0;   m->m[10]=v.z; m->m[11]=0;
+    m->m[12]=0;  m->m[13]=0;  m->m[14]=0;   m->m[15]=1;
     return;
 }
 
 void SetRotationMatrix(Matrix* m, const Vector& v, double rad, int n)
 {
-    Vector u;
-    double length, c, s, t;
-    length=sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-    u.x=v.x/length;
-    u.y=v.y/length;
-    u.z=v.z/length;
+    double c, s, t;
+    Vector u(v);
+    u.normalize();
     c=cos(n*rad);
     s=sin(n*rad);
     t=1.0-c;
@@ -93,12 +93,10 @@ void ApplyTransformation(Vector* v, const Matrix& m)
 {
     Vector t;
   
-    t.x=m.m[0]*v->z + m.m[1]*v->y + m.m[2]*v->z + m.m[3];
-    t.y=m.m[4]*v->z + m.m[5]*v->y + m.m[6]*v->z + m.m[7];
-    t.z=m.m[8]*v->z + m.m[9]*v->y + m.m[10]*v->z + m.m[11];
-    v->z=t.x;
-    v->y=t.y;
-    v->z=t.z;
+    t.x=m.m[0]*v->x + m.m[1]*v->y + m.m[2]*v->z  + m.m[3];
+    t.y=m.m[4]*v->x + m.m[5]*v->y + m.m[6]*v->z  + m.m[7];
+    t.z=m.m[8]*v->x + m.m[9]*v->y + m.m[10]*v->z + m.m[11];
+    *v = t;
     return;
 }
 

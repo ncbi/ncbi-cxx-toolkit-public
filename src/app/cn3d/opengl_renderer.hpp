@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/17 22:36:46  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.4  2000/07/17 04:21:09  thiessen
 * now does correct structure alignment transformation
 *
@@ -86,7 +89,6 @@ public:
     enum eViewAdjust {
         eXYRotateHV,        // rotate about X,Y axes according to horiz. & vert. movement
         eZRotateH,          // rotate in plane (about Z) according to horiz. movement
-        eScaleH,            // scale according to horiz. movement
         eXYTranslateHV,     // translate in X,Y according to horiz. & vert. movement
         eZoomHHVV,          // zoom according to (H1,V1),(H2,V2) box
         eZoomIn,            // zoom in
@@ -110,7 +112,8 @@ public:
 
     // drawing methods
     void DrawSphere(const Vector& site, double radius, const Vector& color);
-    void DrawLine(const Vector& site1, const Vector& site2, const Vector& color1, const Vector& color2);
+    void DrawStraightBond(const Vector& site1, const Vector& site2, 
+        double radius, const Vector& color1, const Vector& color2);
 
 
 private:

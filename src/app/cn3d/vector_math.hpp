@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/17 22:36:46  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.4  2000/07/12 23:28:28  thiessen
 * now draws basic CPK model
 *
@@ -62,9 +65,18 @@ class Vector {
 public:
     double x, y, z;
 
-    Vector(double xi = 0, double yi = 0, double zi = 0)
+    Vector(double xi = 0.0, double yi = 0.0, double zi = 0.0)
     {
         x=xi; y=yi; z=zi;
+    }
+    Vector(const Vector& v)
+    {
+        x=v.x; y=v.y; z=v.z;
+    }
+    Vector& operator = (const Vector& v)
+    {
+		x=v.x; y=v.y; z=v.z;
+        return *this;
     }
     double operator [] (SIZE_TYPE i) const
     {
@@ -114,15 +126,20 @@ public:
         x/=f; y/=f; z/=f;
         return *this;
     }
-    friend double length(const Vector& v)
+    double length(void) const
     {
-        return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+        return sqrt(x*x + y*y + z*z);
     }
-    friend double dot(const Vector& a, const Vector& b)
+    void normalize(void)
     {
-        return double (a.x*b.x + a.y*b.y + a.z*b.z);
+        double len=length();
+        *this /= len;
     }
-    friend Vector cross(const Vector& a, const Vector& b)
+    friend double vector_dot(const Vector& a, const Vector& b)
+    {
+        return (a.x*b.x + a.y*b.y + a.z*b.z);
+    }
+    friend Vector vector_cross(const Vector& a, const Vector& b)
     {
         return Vector(
             a.y*b.z - a.z*b.y,
@@ -140,10 +157,6 @@ inline CNcbiOstream& operator << (CNcbiOstream& s, const Vector& v)
 class Matrix {
 public:
     double m[16];
-    Matrix& operator = (const Matrix& o) {
-        for (int i=0; i<16; i++) m[i]=o.m[i];
-        return *this;
-    }
     Matrix(double m0 =1, double m1 =0, double m2 =0, double m3 =0,
            double m4 =0, double m5 =1, double m6 =0, double m7 =0,
            double m8 =0, double m9 =0, double m10 =1, double m11 =0,
@@ -152,6 +165,13 @@ public:
         m[4]=m4;  m[5]=m5;  m[6]=m6;  m[7]=m7;
         m[8]=m8;  m[9]=m9;  m[10]=m10; m[11]=m11;
         m[12]=m12; m[13]=m13; m[14]=m14; m[15]=m15;
+    }
+    Matrix(const Matrix& o) {
+        for (int i=0; i<16; i++) m[i]=o.m[i];
+    }
+    Matrix& operator = (const Matrix& o) {
+        for (int i=0; i<16; i++) m[i]=o.m[i];
+        return *this;
     }
 };
 

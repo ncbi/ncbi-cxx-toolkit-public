@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.4  2000/07/17 04:20:49  thiessen
 * now does correct structure alignment transformation
 *
@@ -145,7 +148,7 @@ void OpenGLRenderer::NewView(void) const
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    GLdouble aspect = ((GLfloat)(Viewport[2])) / Viewport[3];
+    GLdouble aspect = ((GLdouble)(Viewport[2])) / Viewport[3];
     gluPerspective(RadToDegrees(cameraAngleRad),    // viewing angle (degrees)
                    aspect,                          // w/h aspect
                    cameraClipNear,                  // near clipping plane
@@ -168,20 +171,32 @@ void OpenGLRenderer::ResetCamera(void)
     // set up initial camera
     cameraLookAtX = cameraLookAtY = 0.0;
     if (structureSet) { // for structure
-        cameraDistance = 200;
         cameraAngleRad = DegreesToRad(35.0);
+        // calculate camera distance so that structure fits exactly in
+        // the window in any rotation (based StructureSet's maxDistFromCenter)
+        GLint Viewport[4];
+        glGetIntegerv(GL_VIEWPORT, Viewport);
+        double angle = cameraAngleRad, aspect = ((double)(Viewport[2])) / Viewport[3];
+        if (aspect < 1.0) angle *= aspect;
+        cameraDistance = structureSet->maxDistFromCenter / sin(angle/2);
+        cameraClipNear = cameraDistance - structureSet->maxDistFromCenter;
+        cameraClipFar = cameraDistance + structureSet->maxDistFromCenter;
     } else { // for logo
         cameraAngleRad = PI / 14;
         cameraDistance = 200;
+        cameraClipNear = 0.5*cameraDistance;
+        cameraClipFar = 1.5*cameraDistance;
     }
-    cameraClipNear = 0.5*cameraDistance;
-    cameraClipFar = 1.5*cameraDistance;
     NewView();
 }
 
 void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int Y2)
 {
     glLoadIdentity();
+
+    // rotate relative to molecule center
+    if (structureSet && (control==eXYRotateHV || control==eZRotateH))
+        glTranslated(structureSet->center.x, structureSet->center.y, structureSet->center.z);
 
     switch (control) {
     case eXYRotateHV:
@@ -190,8 +205,6 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
         break;
     case eZRotateH:
         glRotated(rotateSpeed*dX, 0.0, 0.0, 1.0);
-        break;
-    case eScaleH:
         break;
     case eXYTranslateHV:
         break;
@@ -206,6 +219,9 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
         NewView();
         break;
     }
+
+    if (structureSet && (control==eXYRotateHV || control==eZRotateH))
+        glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
 
     glMultMatrixd(viewMatrix);
     glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
@@ -226,6 +242,10 @@ void OpenGLRenderer::Display(void) const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
+
+    if (structureSet)
+        glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
+
     glMultMatrixd(viewMatrix);
 
     if (structureSet) {
@@ -239,7 +259,10 @@ void OpenGLRenderer::Display(void) const
 void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
 {
     structureSet = targetStructureSet;
-    if (structureSet) structureSet->renderer = this;
+    if (structureSet) {
+        structureSet->renderer = this;
+        structureSet->FindCenter();
+    }
 
     // make sure general GL stuff is set up
     background[0] = background[1] = background[2] = 0.0;
@@ -262,8 +285,6 @@ void OpenGLRenderer::Construct(void)
         ConstructLogo();
     }
 }
-
-// drawing methods
 
 // set current GL color; don't change color if it's same as what's current
 void OpenGLRenderer::SetColor(int type, float red, float green, float blue, float alpha)
@@ -430,22 +451,26 @@ void OpenGLRenderer::DrawSphere(const Vector& site, double radius, const Vector&
     glPopMatrix();
 }
 
-void OpenGLRenderer::DrawLine(const Vector& site1, const Vector& site2, 
-    const Vector& color1, const Vector& color2)
+static inline void DrawLine(const Vector& a, const Vector& b)
+{
+    glBegin(GL_LINES);
+    glVertex3d(a.x, a.y, a.z);
+    glVertex3d(b.x, b.y, b.z);
+    glEnd();
+}
+
+void OpenGLRenderer::DrawStraightBond(const Vector& site1, const Vector& site2, 
+    double radius, const Vector& color1, const Vector& color2)
 {
     Vector midpoint = (site1 + site2) / 2;
 
     SetColor(GL_AMBIENT, color1[0], color1[1], color1[2]);
-    glBegin(GL_LINES);
-    glVertex3d(site1.x, site1.y, site1.z);
-    glVertex3d(midpoint.x, midpoint.y, midpoint.z);
-    glEnd();
-
+    if (radius <= 0.0)
+        DrawLine(site1, midpoint);
+    
     SetColor(GL_AMBIENT, color2[0], color2[1], color2[2]);
-    glBegin(GL_LINES);
-    glVertex3d(midpoint.x, midpoint.y, midpoint.z);
-    glVertex3d(site2.x, site2.y, site2.z);
-    glEnd();
+    if (radius <= 0.0)
+        DrawLine(midpoint, site2);
 }
 
 END_SCOPE(Cn3D)

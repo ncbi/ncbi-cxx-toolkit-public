@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/17 22:36:45  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.7  2000/07/16 23:18:33  thiessen
 * redo of drawing system
 *
@@ -100,8 +103,11 @@ public:
 private:
 };
 
+class StructureSet;
+
 class AtomSet : public StructureBase
 {
+    friend StructureSet;
 public:
     AtomSet(StructureBase *parent, const CAtomic_coordinates& coords);
     ~AtomSet(void);

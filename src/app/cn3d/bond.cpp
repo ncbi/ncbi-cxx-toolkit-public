@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/17 22:37:17  thiessen
+* fix vector_math typo; correctly set initial view
+*
 * Revision 1.3  2000/07/17 04:20:49  thiessen
 * now does correct structure alignment transformation
 *
@@ -131,7 +134,7 @@ bool Bond::Draw(const StructureBase *data) const
     // draw line
     if (atom1.mID != atom2.mID) {
         static const Vector connectionColor(1,1,0);
-        set->renderer->DrawLine(a1->site, a2->site, connectionColor, connectionColor);
+        set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, connectionColor, connectionColor);
 
     } else {
         const ChemicalGraph *graph;
@@ -143,11 +146,11 @@ bool Bond::Draw(const StructureBase *data) const
         const StructureObject *object;
         GetParentOfType(&object);
         Vector color;
-        if (object->isMaster)
+        if (object->IsMaster())
             color = Vector(1,0,1); // magenta master
         else
             color = Vector(0,1,0); // green slaves
-        set->renderer->DrawLine(a1->site, a2->site, color, color);
+        set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, color, color);
         /*
         // color by element for now
         const Residue::AtomInfo *info = graph->GetAtomInfo(atom1.mID, atom1.rID, atom1.aID);
