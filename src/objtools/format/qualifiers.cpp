@@ -414,11 +414,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
-    if ( !m_Value->CanGetName()  ||  m_Value->GetName().empty() ) {
-        return;
-    }
-
-    string subname = m_Value->GetName();
+    string subname = m_Value->CanGetName() ? m_Value->GetName() : kEmptyStr;
     if ( s_StringIsJustQuotes(subname) ) {
         subname = kEmptyStr;
     }
@@ -621,6 +617,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/04/27 15:13:16  shomrat
+* fixed SubSource formatting
+*
 * Revision 1.12  2004/04/22 15:57:06  shomrat
 * Changes in context
 *
