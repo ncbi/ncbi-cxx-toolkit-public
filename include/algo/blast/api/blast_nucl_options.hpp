@@ -89,6 +89,7 @@ public:
     /// @param ws WordSize [in]
     void SetWordSize(short ws) 
     { 
+#if 0
         if (GetLookupTableType() == MB_LOOKUP_TABLE && 
             ws % COMPRESSION_RATIO != 0)
             SetVariableWordSize(false);
@@ -98,6 +99,7 @@ public:
                                              GetLookupTableType());
 
         SetScanStep(s);
+#endif
         m_Opts->SetWordSize(ws); 
     }
 
@@ -195,6 +197,7 @@ public:
     /// @param algo GapExtnAlgorithm [in]
     void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) 
     {
+#if 0
         if (algo != GetGapExtnAlgorithm() ) {
             if (algo == eGreedyExt || algo == eGreedyWithTracebackExt) {
                 SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
@@ -203,8 +206,13 @@ public:
                 SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
                 SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
             }
+#endif
+            
             m_Opts->SetGapExtnAlgorithm(algo); 
+            
+#if 0
         }
+#endif
     }
 
     /// Returns GapTracebackAlgorithm
@@ -213,10 +221,12 @@ public:
     /// @param algo GapTracebackAlgorithm [in]
     void SetGapTracebackAlgorithm(EBlastTbackExt algo) 
     {
+#if 0
         if (algo != GetGapTracebackAlgorithm() && algo != eGreedyTbck) {
             SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
             SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
         }
+#endif
         m_Opts->SetGapTracebackAlgorithm(algo); 
     }
 
@@ -329,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/08/24 15:11:33  bealer
+ * - Rollback blast option interaction code to fix bug.
+ *
  * Revision 1.16  2004/08/03 21:52:16  dondosha
  * Minor correction in options dependency logic
  *
