@@ -693,6 +693,12 @@ to the "generic" ones
   </tr>
 
   <tr>
+	 <td><b>WXWIN_PATH<br></b></td>
+	 <td><i>$NCBI/wxwin</i></td>
+	 <td>Path to the wxWindows package</td>
+  </tr>
+
+  <tr>
 	 <td><b>NCBI_C_PATH</b></td>
 	 <td><i>$NCBI</i></td>
 	 <td>Path to the NCBI C Toolkit</td>
@@ -706,7 +712,7 @@ to the "generic" ones
 
   <tr>
 	 <td><b>NCBI_PM_PATH</b></td>
-	 <td><i>/net/neptune/pubmed1/Cvs5</i></td>
+	 <td><i>$NCBI/pubmed[64]</i></td>
 	 <td>Path to the NCBI PubMed package</td>
   </tr>
 </table>
@@ -764,37 +770,53 @@ to use in the generated makefiles:
 
   <tr>
 	 <td><i><b>SYBASE_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$SYBASE_PATH<i>/lib <br>
-       <b>-l</b>ct <b>-l</b>cs <b>-l</b>tcl <b>-l</b>comn <b>-l</b>intl
+	 <td><i><b>-L</b></i>$SYBASE_PATH<i>/lib[64] <br>
+       <b>-l</b>blk[_r][64] <b>-l</b>ct[_r][64] <b>-l</b>cs[_r][64] <br>
+       <b>-l</b>tcl[_r][64] <b>-l</b>comn[_r][64] <b>-l</b>intl[_r][64]
     </i></td>
 	 <td>link with Sybase libs</td>
   </tr>
 
   <tr>
 	 <td><i><b>FASTCGI_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$FASTCGI_PATH<i>/include</i></td>
+	 <td><i><b>-I</b></i>$FASTCGI_PATH<i>/include[64]</i></td>
 	 <td><i>#include</i> Fast-CGI headers</td>
   </tr>
 
   <tr>
 	 <td><i><b>FASTCGI_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$FASTCGI_PATH<i>/lib <b>-l</b>fcgi</i>
+	 <td><i><b>-L</b></i>$FASTCGI_PATH<i>/lib[64] <b>-l</b>fcgi</i>
         <br> or <br>
-        <i><b>-L</b></i>$FASTCGI_PATH<i>/altlib <b>-l</b>fcgi</i> </td>
+        <i><b>-L</b></i>$FASTCGI_PATH<i>/altlib[64] <b>-l</b>fcgi</i> </td>
 	 <td>link with Fast-CGI lib</td>
   </tr>
 
   <tr>
+	 <td><i><b>WXWIN_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$WXWIN_PATH<i>/include</i></td>
+	 <td><i>#include</i> wxWindows headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>WXWIN_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$WXWIN_PATH<i>/[GCC-]{Release|Debug}/lib <br>
+        <b>-l</b>wx_gtk[d]</i>  <b>-l</b>gtk</i>  <b>-l</b>gdk</i>  <b>-l</b>gmodule</i>  <b>-l</b>glib</i>
+        <br> or <br>
+        <i><b>-L</b></i>$WXWIN_PATH<i>/lib ..... </td>
+	 <td>link with wxWindows libs</td>
+  </tr>
+
+  <tr>
 	 <td><i><b>NCBI_C_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_C_PATH<i>/include</i></td>
+	 <td><i><b>-I</b></i>$NCBI_C_PATH<i>/include[64]</i></td>
 	 <td><i>#include</i> NCBI C Toolkit headers</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_C_LIBPATH</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_C_PATH<i>/lib</i>
+	 <td><i><b>-L</b></i>$NCBI_C_PATH<i>/lib[64]</i>
         <br> or <br>
-        <i><b>-L</b></i>$NCBI_C_PATH<i>/altlib</i></td>
+        <i><b>-L</b></i>$NCBI_C_PATH<i>/altlib[64]</i></td>
 	 <td>path to NCBI C Toolkit libs</td>
   </tr>
 
@@ -806,14 +828,14 @@ to use in the generated makefiles:
 
   <tr>
 	 <td><i><b>NCBI_SSS_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/include</td>
+	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/<i>include</i></td>
 	 <td><i>#include</i> NCBI SSS headers</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_SSS_LIBPATH</b></i></td>
 	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/lib/.... <br>
-					 ....{Release|Debug}[GNU][mt]</i>
+					 ....{Release|Debug}[GNU][64][mt]</i>
     </td>
 	 <td>link with NCBI SSS libs</td>
   </tr>
@@ -838,6 +860,7 @@ flags:
 <ul>
   <li> <i><b>--without-sybase</b></i> (Sybase)
   <li> <i><b>--without-fastcgi</b></i> (Fast-CGI)
+  <li> <i><b>--without-wxwin</b></i> (wxWindows)
   <li> <i><b>--without-ncbi-c</b></i> (NCBI C Toolkit)
   <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB)
   <li> <i><b>--without-sssutils</b></i> (NCBI SSS UTILS)
