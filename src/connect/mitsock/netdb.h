@@ -21,6 +21,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 1.2  2001/06/19 22:23:53  juran
+* Include <stddef.h> for size_t.
+*
 * Revision 1.1  2001/04/03 20:35:19  juran
 * Phil Churchill's MIT-derived OT sockets library.  No changes prior to initial check-in.
 *
@@ -94,6 +97,7 @@ unsigned long   gethostid(void);
 /*  
  *	not sure they belong here, but need to be somewhere...
  */
+#include <stddef.h>
 int gethostname( char* machname, size_t buflen);
 void bzero( char *b, long s);
 
