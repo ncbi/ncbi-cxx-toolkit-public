@@ -39,16 +39,37 @@
 extern "C" {
 #endif
 
+/** Top level routine to recompute alignments for each
+ *  match found by the gapped BLAST algorithm
+ *  A linked list of alignments is returned (param hitList); the alignments 
+ *  are sorted according to the lowest E-value of the best alignment for each
+ *  matching sequence; alignments for the same matching sequence
+ *  are in the list consecutively regardless of the E-value of the
+ *  secondary alignments. Ties in sorted order are much rarer than
+ *  for the standard BLAST method, but are broken deterministically
+ *  based on the index of the matching sequences in the database.
+ * @param queryBlk query sequence [in]
+ * @param query_info query information [in]
+ * @param sbp (Karlin-Altschul) information for search [in]
+ * @param hitList input hits for further investigation, output results [in][out]
+ * @param seqSrc used to fetch database/match sequences [in]
+ * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
+ * @param extendParams parameters used for extension [in]
+ * @param hitsavingParameters parameters used for saving hits [in]
+ * @param psiOptions options related to psi-blast [in]
+ * @return 0 on success, otherwise failure.
+*/
+
 Int2
 Kappa_RedoAlignmentCore(BLAST_SequenceBlk * query_blk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
-                  BlastHitList* hit_list,
-                  const BlastSeqSrc* seq_src,
+                  BlastHitList* hitList,
+                  const BlastSeqSrc* seqSrc,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
                   const BlastHitSavingParameters* hitsavingParams,
-                  const PSIBlastOptions* psi_options);
+                  const PSIBlastOptions* psiOptions);
 
 #ifdef __cplusplus
 
@@ -59,6 +80,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * query_blk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/05/20 15:20:57  madden
+ * Doxygen compliance fixes
+ *
  * Revision 1.3  2004/05/19 17:03:20  madden
  * Remove (to blast_kappa.c) #defines for Xchar and StarChar
  *

@@ -65,23 +65,24 @@ static char const rcsid[] =
 Int4 trueCharPositions[20] = {1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22};
 
 
-    /* Structure used for full Smith-Waterman results. */
-
+/** Structure used for full Smith-Waterman results. 
+*/
 typedef struct SWResults {
-    struct SWResults *next;
-    Uint1* seq;
-    Int4 seqStart;
-    Int4 seqEnd;
-    Int4 queryStart;
-    Int4 queryEnd;
-    Int4 score;
-    double eValue;
-    double eValueThisAlign;
-    double Lambda;
-    double logK;
-    Boolean isFirstAlignment;
-    Int4 subject_index;  /* needed to break ties on rare occasions */
-    BlastHSP* hsp; /* tracks alignment/hit. */
+    struct SWResults *next;    /**< next object in list */
+    Uint1* seq;	               /**< match sequence. */
+    Int4 seqStart;             /**< start of alignment on match */
+    Int4 seqEnd;               /**< end of alignment on match */
+    Int4 queryStart;           /**< start of alignment on query */
+    Int4 queryEnd;             /**< end of alignment on query */
+    Int4 score;                /**< score of alignment */
+    double eValue;             /**< best expect value for this match record */
+    double eValueThisAlign;    /**< expect value of this alignment. */
+    double Lambda;             /**< Karlin-Altschul parameter. */
+    double logK;               /**< log of Karlin-Altschul parameter */
+    Boolean isFirstAlignment;  /**< TRUE if first alignment for this sequence */
+    Int4 subject_index;        /**< ordinal ID of match sequence, needed to break 
+                                  ties on rare occasions */
+    BlastHSP* hsp;             /**< Saves alignment informaiton for conversion to SeqAlign. */
 } SWResults;
 
 /**
@@ -786,6 +787,8 @@ SWheapToFlatList(SWheap * self)
   return list;
 }
 
+/** keeps one row of the Smith-Waterman matrix
+ */
 typedef struct SWpairs {
   Int4 noGap;
   Int4 gapExists;
@@ -1725,7 +1728,8 @@ void scalePosMatrix(Int4 **fillPosMatrix, Int4 **nonposMatrix, char *matrixName,
  * with the query.  This abstract sequence is used to hide the
  * complexity associated with actually obtaining and releasing the
  * data for a matching sequence, e.g. reading the sequence from a DB
- * or translating it from a nucleotide sequence. */
+ * or translating it from a nucleotide sequence. 
+ */
 struct Kappa_MatchingSequence {
   Int4      length;             /**< length of the sequence */
   Uint1*  sequence;           /**< the sequence data */
@@ -1809,7 +1813,7 @@ Kappa_MatchingSequenceRelease(Kappa_MatchingSequence * self)
 }
 
 
-/* An instance of Kappa_ForbiddenRanges is used by the Smith-Waterman
+/** An instance of Kappa_ForbiddenRanges is used by the Smith-Waterman
  * algorithm to represent ranges in the database that are not to be
  * aligned.
  */
@@ -1993,9 +1997,10 @@ Kappa_SWFindFinalEndsUsingXdrop(
 }
 
 
-/* A Kappa_SearchParameters represents the data needed by
+/** A Kappa_SearchParameters represents the data needed by
  * RedoAlignmentCore to adjust the parameters of a search, including
- * the original value of these parameters */
+ * the original value of these parameters 
+ */
 struct Kappa_SearchParameters {
   Int4          gapOpen;        /**< a penalty for the existence of a gap */
   Int4          gapExtend;      /**< a penalty for each residue (or nucleotide) 
@@ -2368,34 +2373,6 @@ BlastHitsGetBestEvalue(BlastHSPList* hsplist)
 
     return retval;
 }
-
-/** Top level routine to recompute alignments for each
- *  match found by the gapped BLAST algorithm
- *  A linked list of alignments is returned (param hitList); the alignments 
- *  are sorted according to the lowest E-value of the best alignment for each
- *  matching sequence; alignments for the same matching sequence
- *  are in the list consecutively regardless of the E-value of the
- *  secondary alignments. Ties in sorted order are much rarer than
- *  for the standard BLAST method, but are broken deterministically
- *  based on the index of the matching sequences in the database.
- * @param queryBlk query sequence [in]
- * @param program query information [in]
- * @param sbp (Karlin-Altschul) information for search [in]
- * @param hitList input hits for further investigation, output results [in][out]
- * @param seqSrc used to fetch database/match sequences [in]
- * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
- * @param extendParams parameters used for extension [in]
- * @param hitsavingParameters parameters used for saving hits [in]
- * @param psiOptions options related to psi-blast [in]
- * @param adjustParameters determines whether we are to adjust the Karlin-Altschul
- *  parameters and score matrix [in]
- * @param SmithWaterman determines whether the new local alignments should be
- *  computed by the optimal Smith-Waterman algorithm; SmithWaterman false
- *  means that alignments will be recomputed by the current X-drop
- *  algorithm as implemented in the procedure ALIGN. [in]
- * It is assumed that at least one of adjustParameters and SmithWaterman
- *  is true when this procedure is called
-*/
 
 Int2
 Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
