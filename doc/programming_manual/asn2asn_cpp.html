@@ -10,19 +10,20 @@
 //		     binary/text to text/binary
 <font color = "green">
 #include <a href="asn2asn_hpp.html"> "asn2asn.hpp"</a>
-#include < corelib/ncbiutil.hpp >
-#include < corelib/ncbienv.hpp >
-#include < objects/seqset/Seq_entry.hpp >
-#include < objects/seqset/Bioseq_set.hpp >
-#include < serial/objistrasn.hpp >
-#include < serial/objistrasnb.hpp >
-#include < serial/objostrasn.hpp >
-#include < serial/objostrasnb.hpp >
-#include < serial/choiceptr.hpp >
-#include < serial/serial.hpp >
+#include &lt;corelib/ncbiutil.hpp>
+#include &lt;corelib/ncbienv.hpp>
+#include &lt;objects/seqset/Seq_entry.hpp>
+#include &lt;objects/seqset/Bioseq_set.hpp>
+#include &lt;serial/objistrasn.hpp>
+#include &lt;serial/objistrasnb.hpp>
+#include &lt;serial/objostrasn.hpp>
+#include &lt;serial/objostrasnb.hpp>
+#include &lt;serial/choiceptr.hpp>
+#include &lt;serial/serial.hpp>
 
 <font color = "blue">BEGIN_NCBI_SCOPE
-<font color = "black">
+
+using namespace objects; <font color = "black">
 
 static
 void PrintUsage(void)
@@ -130,7 +131,7 @@ int CAsn2Asn::Run(void)
 
 <font color = "red">    // initialize the ASN input stream <font color = "black">
 
-    auto_ptr<CNcbiIstream> inFStream;
+    auto_ptr&lt;CNcbiIstream> inFStream;
     CNcbiIstream* inStream;
     if ( inFile.empty() || inFile == "stdin" ) {
         inStream = &NcbiCin;
@@ -148,7 +149,7 @@ int CAsn2Asn::Run(void)
 
 <font color = "red">    // Associate an ASN input object with the input <font color = "black">
 
-    auto_ptr<CObjectIStream> inObject;
+    auto_ptr&lt;CObjectIStream> inObject;
     if ( inBinary )
       inObject.reset(new CObjectIStreamAsnBinary(*inStream));
     else
@@ -156,7 +157,7 @@ int CAsn2Asn::Run(void)
   
 <font color = "red">    // initialize the ASN output stream <font color = "black">
 
-    auto_ptr<CNcbiOstream> outFStream;
+    auto_ptr&lt;CNcbiOstream> outFStream;
     CNcbiOstream* outStream;
     if ( outFile.empty() ) {
         outStream = 0;
@@ -177,7 +178,7 @@ int CAsn2Asn::Run(void)
 
 <font color = "red">    // Associate an ASN output object with the output <font color = "black">
 
-    auto_ptr<CObjectOStream> outObject;
+    auto_ptr&lt;CObjectOStream> outObject;
     if ( outStream ) {
         if ( outBinary )
             outObject.reset(new CObjectOStreamAsnBinary(*outStream));
