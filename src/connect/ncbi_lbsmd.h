@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/04/24 21:31:22  lavr
+ * SERV_LBSMD_LOCAL_SVC_BONUS moved to .c file
+ *
  * Revision 6.3  2000/12/29 18:19:12  lavr
  * BONUS added for services running locally.
  *
@@ -48,9 +51,6 @@
  */
 
 #include "ncbi_servicep.h"
-
-/* Rate increase if svc runs locally */
-#define SERV_LBSMD_LOCAL_SVC_BONUS 1.75
 
 #ifdef __cplusplus
 extern "C" {
