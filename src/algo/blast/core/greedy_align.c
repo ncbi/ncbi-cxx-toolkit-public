@@ -170,7 +170,7 @@ MBGapEditScript *MBGapEditScriptFree(MBGapEditScript *es)
     if (es) {
         if (es->op)
             sfree(es->op);
-        MemSet(es, 0, sizeof(*es));
+        memset(es, 0, sizeof(*es));
         sfree(es);
     }
     return 0;

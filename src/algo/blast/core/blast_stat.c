@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.14  2003/07/30 15:29:37  madden
+ * Removed MemSets
+ *
  * Revision 1.13  2003/07/29 14:42:31  coulouri
  * use strdup() instead of StringSave()
  *
@@ -3353,7 +3356,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreqPtr sfp, FloatHi	lambda, FloatHi H)
 	if (P0 == NULL)
 		return -1.;
 #else
-	MemSet((CharPtr)P0, 0, DIMOFP0*sizeof(P0[0]));
+	memset((CharPtr)P0, 0, DIMOFP0*sizeof(P0[0]));
 #endif
 
 	Sum = 0.;

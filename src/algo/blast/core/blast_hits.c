@@ -434,7 +434,7 @@ BlastSortUniqHspArray(BlastHSPListPtr hsp_list)
          hsp_array[++new_hspcnt] = hsp_array[index];
    }
    /* Set all HSP pointers that will not be used any more to NULL */
-   MemSet(&hsp_array[new_hspcnt+1], 0, 
+   memset(&hsp_array[new_hspcnt+1], 0, 
 	  (hsp_list->hspcnt - new_hspcnt - 1)*sizeof(BlastHSPPtr));
    hsp_list->hspcnt = new_hspcnt + 1;
 
@@ -485,7 +485,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
 
    hspcnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
-   MemSet((void*) &seq_arg, 0, sizeof(seq_arg));
+   memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    /* In case of no traceback, return without doing anything */
    if (!hsp_list->traceback_done && hit_options->is_gapped) {

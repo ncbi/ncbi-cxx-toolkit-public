@@ -144,7 +144,7 @@ static Int4 wo (Int4 len, Uint1Ptr seq_start, Int4 iseg, DCURLOC PNTR cloc,
 
         /* get the chunk of sequence in triplets */
 
-        MemSet (seq,0,len+2);        /* Zero the triplet buffer */
+        memset (seq,0,len+2);        /* Zero the triplet buffer */
 	flen = dust_triplet_find (seq_start, iseg, len, seq);
 
         /* dust the chunk */
@@ -164,7 +164,7 @@ static void wo1 (Int4 len, Uint1Ptr seq, Int4 iwo, DCURLOC PNTR cloc)
 
 	Int2 PNTR countsptr;
 	Int2 counts[4*4*4];
-	MemSet (counts, 0, sizeof (counts));
+	memset (counts, 0, sizeof (counts));
 /* zero everything */
 	sum = 0;
 	newlevel = 0;

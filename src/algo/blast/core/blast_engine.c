@@ -695,7 +695,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
-   MemSet((void*) &seq_arg, 0, sizeof(seq_arg));
+   memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    /* FIXME: will only work for full databases */
    /*thr_info = BLAST_ThrInfoNew(eff_len_options->dbseq_num);*/

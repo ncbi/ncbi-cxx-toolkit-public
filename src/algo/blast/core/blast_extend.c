@@ -484,7 +484,7 @@ static Int2 MB_ExtendWordExit(BLAST_ExtendWordPtr ewp, Int4 subject_length)
    if (ewp->diag_table) {
       return BlastNaExtendWordExit(ewp, subject_length);
    } else { 
-      MemSet(ewp->stack_table->stack_index, 0, 
+      memset(ewp->stack_table->stack_index, 0, 
              ewp->stack_table->num_stacks*sizeof(Int4));
    }
 

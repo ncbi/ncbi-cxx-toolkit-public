@@ -343,7 +343,7 @@ GapPurgeState(GapStateArrayStructPtr state_struct)
    while (state_struct)
    {
       /*
-	MemSet(state_struct->state_array, 0, state_struct->used);
+	memset(state_struct->state_array, 0, state_struct->used);
       */
       state_struct->used = 0;
       state_struct = state_struct->next;
@@ -803,7 +803,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
      sfree(dyn_prog);
 
   if ((align_len -= data.sapp - S) > 0)
-     MemSet(data.sapp, 0, align_len);
+     memset(data.sapp, 0, align_len);
   *sapp = data.sapp;
 
   return best_score;
