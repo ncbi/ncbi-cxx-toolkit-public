@@ -28,8 +28,8 @@
  */
 
 /** @file mb_lookup.h
- * Functions responsible for creating and scanning
- * megablast lookup tables
+ * Declarations of functions and structures for 
+ * creating and scanning megablast lookup tables
  */
 
 

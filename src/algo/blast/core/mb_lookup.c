@@ -28,8 +28,8 @@
  */
 
 /** @file mb_lookup.c
- * Functions responsible for the creation of a lookup table
- * @todo FIXME @sa mb_lookup.h
+ * Functions responsible for the creation and scanning
+ * of megablast lookup tables
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
