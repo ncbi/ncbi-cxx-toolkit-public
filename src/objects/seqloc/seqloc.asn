@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
@@ -70,7 +70,7 @@ Seq-interval ::= SEQUENCE {
     from INTEGER ,
     to INTEGER ,
     strand Na-strand OPTIONAL ,
-    id Seq-id OPTIONAL ,
+    id Seq-id ,
     fuzz-from Int-fuzz OPTIONAL ,
     fuzz-to Int-fuzz OPTIONAL }
 
@@ -79,12 +79,12 @@ Packed-seqint ::= SEQUENCE OF Seq-interval
 Seq-point ::= SEQUENCE {
     point INTEGER ,
     strand Na-strand OPTIONAL ,
-    id Seq-id OPTIONAL ,
+    id Seq-id ,
     fuzz Int-fuzz OPTIONAL }
 
 Packed-seqpnt ::= SEQUENCE {
     strand Na-strand OPTIONAL ,
-    id Seq-id OPTIONAL ,
+    id Seq-id ,
     fuzz Int-fuzz OPTIONAL ,
     points SEQUENCE OF INTEGER }
 
