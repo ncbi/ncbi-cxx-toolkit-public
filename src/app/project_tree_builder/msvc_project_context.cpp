@@ -245,7 +245,7 @@ void CMsvcPrjProjectContext::CreateLibsList(list<string>* libs_list) const
     ITERATE(list<string>, p, m_ProjectLibs) {
         const string& lib = *p;
         list<string> components;
-        GetComponents(lib, &components);
+        GetApp().GetSite().GetComponents(lib, &components);
         copy(components.begin(), 
              components.end(), back_inserter(*libs_list));
 
@@ -643,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/05 16:28:47  gorelenk
+ * GetComponents was moved to class CMsvcSite.
+ *
  * Revision 1.9  2004/02/05 00:02:08  gorelenk
  * Added support of user site and  Makefile defines.
  *

@@ -261,14 +261,6 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
 }
 
 
-void GetComponents(const string& entry, list<string>* components)
-{
-    components->clear();
-    string comp_str = GetApp().GetConfig().GetString(entry, "Component", "");
-    NStr::Split(comp_str, " ,\t", *components);
-}
-
-
 bool SameRootDirs(const string& dir1, const string& dir2)
 {
     if ( dir1.empty() )
@@ -285,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/05 16:29:49  gorelenk
+ * GetComponents was moved to class CMsvcSite.
+ *
  * Revision 1.8  2004/02/04 23:35:17  gorelenk
  * Added definition of functions GetComponents and SameRootDirs.
  *
