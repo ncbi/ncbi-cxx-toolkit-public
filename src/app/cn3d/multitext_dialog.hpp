@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/10/18 14:48:46  thiessen
+* remove class name from member function
+*
 * Revision 1.4  2001/10/16 21:48:28  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -87,7 +90,7 @@ public:
     MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& initialText,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
-    MultiTextDialog::~MultiTextDialog(void);
+    ~MultiTextDialog(void);
 
     bool GetLines(TextLines *lines) const;
     bool GetLine(std::string *singleString) const;  // collapse all lines to single string
