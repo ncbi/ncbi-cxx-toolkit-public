@@ -221,7 +221,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
             tmout.usec = 0;
             auto_ptr<CConn_IOStream> stream;
             
-            bool is_service;
+            bool is_service = false;
             string dst;
             if ( dst.empty() ) {
                 static string cgi = GetConfigString("GENBANK",
