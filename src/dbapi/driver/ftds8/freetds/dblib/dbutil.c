@@ -44,7 +44,7 @@ int dblib_handle_info_message(TDSCONTEXT *tds_ctx, TDSSOCKET *tds, TDSMSGINFO *m
 	if (tds && tds->parent) {
 		dbproc = (DBPROCESS*)tds->parent;
 	}
-	if( msg->msg_number > 0 )
+	if( msg->msg_number >= 0 )
 	{
 		/* now check to see if the user supplied a function, if not ignore the
 		 * problem */

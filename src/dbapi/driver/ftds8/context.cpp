@@ -319,7 +319,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                                     const string& procname,
                                     int           line)
 {
-    if ((severity == 0 && msgno == 0)  ||  msgno == 5701  ||  msgno == 5703)
+    if (msgno == 5701  ||  msgno == 5703)
         return;
 
     CTDS_Connection* link = dblink ?
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/08/28 19:54:54  soussov
+ * allowes print messages go to handler
+ *
  * Revision 1.19  2003/07/21 22:00:56  soussov
  * fixes bug whith pool name mismatch in Connect()
  *

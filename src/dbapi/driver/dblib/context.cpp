@@ -363,7 +363,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                                         const string& procname,
                                         int           line)
 {
-    if ((severity == 0 && msgno == 0)  ||  msgno == 5701  ||  msgno == 5703)
+    if (msgno == 5701  ||  msgno == 5703)
         return;
 
     CDBL_Connection* link = dblink ?
@@ -493,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/08/28 19:54:36  soussov
+ * allowes print messages go to handler
+ *
  * Revision 1.24  2003/07/21 22:00:47  soussov
  * fixes bug whith pool name mismatch in Connect()
  *
