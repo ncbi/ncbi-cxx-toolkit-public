@@ -93,7 +93,7 @@ public:
         }
 
         seq->reserve(finish - start + 1);
-        for (int i = start;  i <= finish;  ++i) {
+        for (size_t i = start;  i <= finish;  ++i) {
             seq->push_back((*sv)[i]);
         }
     }
@@ -113,15 +113,16 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
                              const CSeq_loc &genomic,
                              CScope& scope) :
     m_Blast(blast::SSeqLoc(transcript, scope),
-            blast::SSeqLoc(genomic, scope), blast::eMegablast)
+            blast::SSeqLoc(genomic, scope), blast::eMegablast),
+    m_TranscriptId(&sequence::GetId(transcript)),
+    m_GenomicId   (&sequence::GetId(genomic))
 {
     CRef<CSplicedAligner> aligner(new CSplicedAligner16);
     CRef<CSplignSeqAccessor> accessor
-        (new CSplignObjMgrAccessor(sequence::GetId(transcript),
-                                   sequence::GetId(genomic),
-                                   scope));
+        (new CSplignObjMgrAccessor(*m_TranscriptId, *m_GenomicId, scope));
     m_Splign.SetAligner(aligner);
     m_Splign.SetSeqAccessor(accessor);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -161,15 +162,36 @@ const CSplign::TResults& CSplignSimple::Run(void)
 /*---------------------------------------------------------------------------*/
 // PRE : splign run
 // POST: splign results (if any) as Seq_align_set
-CRef<objects::CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
+CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
 {
-    return CSplignFormatter(m_Splign).AsSeqAlignSet();
+    CRef<CSeq_align_set> sas(CSplignFormatter(m_Splign).AsSeqAlignSet());
+
+    CRef<CSeq_id> si;
+
+    NON_CONST_ITERATE (CSeq_align_set::Tdata, compartmentI, sas->Set()) {
+        NON_CONST_ITERATE (CSeq_align_set::Tdata, saI,
+                           (*compartmentI)->SetSegs().SetDisc().Set()) {
+            CDense_seg &ds = (*saI)->SetSegs().SetDenseg();
+            ds.SetIds().clear();
+            si = new CSeq_id;
+            si->Assign(*m_TranscriptId);
+            ds.SetIds().push_back(si);
+            si = new CSeq_id;
+            si->Assign(*m_GenomicId);
+            ds.SetIds().push_back(si);
+        }
+    }
+
+    return sas;
 }
 
 END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.3  2004/05/04 19:39:35  johnson
+* return correct seq-ids in seq-align
+*
 * Revision 1.2  2004/05/04 15:23:45  ucko
 * Split splign code out of xalgoalign into new xalgosplign.
 *
