@@ -65,6 +65,12 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 }
 
+bool TestFunctor1(CTreeNode<int>& tr, int delta)
+{
+    cout << tr.GetValue() << " :" << delta << endl;
+    return false;
+}
+
 static void s_TEST_Tree()
 {
     typedef CTreeNode<int>  TTree;
@@ -73,6 +79,9 @@ static void s_TEST_Tree()
     
     tr->AddNode(10);
     tr->AddNode(11);
+
+    TreeDepthFirstTraverse(*tr, TestFunctor1);
+    cout << endl;
 
     {{
     unsigned int cnt;
@@ -118,6 +127,8 @@ static void s_TEST_Tree()
     }
     }}
 
+    TreeDepthFirstTraverse(*tr, TestFunctor1);
+    cout << endl;
 
     {{
     unsigned int cnt;
@@ -133,6 +144,18 @@ static void s_TEST_Tree()
     }}
     
     delete tr;
+
+    TTree* str = tr = new TTree(0);
+    
+    tr->AddNode(2)->AddNode(4);
+    tr = tr->AddNode(3);
+    tr->AddNode(5);
+    tr->AddNode(6);
+
+    cout << "Test Tree: " << endl;
+
+    TreeDepthFirstTraverse(*str, TestFunctor1);
+    cout << endl;
 }
 
 
@@ -234,6 +257,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2004/01/14 14:20:08  kuznets
+ * + test for for depth first traversal
+ *
  * Revision 1.3  2004/01/12 20:09:41  kuznets
  * Renamed CTreeNWay to CTreeNode
  *
