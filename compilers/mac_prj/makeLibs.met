@@ -380,7 +380,7 @@ on SetProjectData()
 		AddObject("scoremat")
 		-- combine in seq: seq, seqalign, seqblock, seqfeat, seqloc, seqres
 		set seqFileData to {Â
-			ObjectFileData("seq", {"seqport_util"}), Â
+			ObjectFileData("seq", {"seqport_util", "seq_id_tree", "seq_id_handle", "seq_id_mapper"}), Â
 			ObjectFileData("seqalign", {}), Â
 			ObjectFileData("seqblock", {}), Â
 			ObjectFileData("seqfeat", {}), Â
