@@ -620,7 +620,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
          BlastHSPGetNumIdentical(query_start, subject_start, hsp, 
             hit_options->is_gapped, &hsp->num_ident, &align_length);
          /* Check if this HSP passes the percent identity test */
-         if (hsp->num_ident / align_length * 100 < 
+         if (((FloatHi)hsp->num_ident) / align_length * 100 < 
              hit_options->percent_identity)
             delete_hsp = TRUE;
       }
