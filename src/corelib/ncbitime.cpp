@@ -41,8 +41,13 @@
 #   include <sys/time.h>
 #endif
 
-#ifdef NCBI_OS_MAC
-#	include <OSUtils.h>
+#if defined(NCBI_OS_MAC)  ||  defined(NCBI_OS_DARWIN)
+#  ifdef NCBI_OS_MAC
+#  include <OSUtils.h>
+#else
+#  include <CoreServices/CoreServices.h>
+#endif
+
 typedef
 struct MyTZDLS {
 	long timezone;
@@ -1149,6 +1154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2002/06/19 16:18:36  lebedev
+ * Added CoreServices.h for Darwin (timezone and daylight
+ *
  * Revision 1.18  2002/06/18 16:08:01  ivanov
  * Fixed all clauses "#if defined *" to "#if defined(*)"
  *
