@@ -125,11 +125,26 @@ CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
 
 
 CDataLoader::TTSE_LockSet
-CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
-                        const SRequestDetails& /*details*/)
+CDataLoader::GetDetailedRecords(const CSeq_id_Handle& idh,
+                                const SRequestDetails& details)
 {
-    NCBI_THROW(CObjMgrException, eNotImplemented,
-               "CDataLoader::GetRecords()");
+    return GetRecords(idh, DetailsToChoice(details));
+}
+
+
+CDataLoader::TTSE_LockSet
+CDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
+{
+    TTSE_LockSet ret;
+    ITERATE ( CBioseq_Info::TId, it, bioseq.GetId() ) {
+        if ( GetBlobId(*it) ) {
+            // correct id is found
+            TTSE_LockSet ret2 = GetRecords(*it, eExtAnnot);
+            ret.swap(ret2);
+            break;
+        }
+    }
+    return ret;
 }
 
 
@@ -137,10 +152,10 @@ void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
-        CConstRef<CBioseq_Info> bs_info = (*it)->FindBioseq(idh);
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindBioseqMatch(idh);
         if ( bs_info ) {
             ids = bs_info->GetId();
-            return;
+            break;
         }
     }
 }
@@ -181,27 +196,41 @@ CDataLoader::DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const
 CDataLoader::EChoice
 CDataLoader::DetailsToChoice(const SRequestDetails& details) const
 {
-    EChoice ret = DetailsToChoice(details.m_NeedInternalAnnots);
+    EChoice ret = DetailsToChoice(details.m_NeedAnnots);
+    switch ( details.m_AnnotBlobType ) {
+    case SRequestDetails::fAnnotBlobNone:
+        // no annotations
+        ret = eCore;
+        break;
+    case SRequestDetails::fAnnotBlobInternal:
+        // no change
+        break;
+    case SRequestDetails::fAnnotBlobExternal:
+        // shift from internal to external annotations
+        _ASSERT(ret >= eFeatures && ret <= eAnnot);
+        ret = EChoice(ret + eExtFeatures - eFeatures);
+        _ASSERT(ret >= eExtFeatures && ret <= eExtAnnot);
+        break;
+    case SRequestDetails::fAnnotBlobOrphan:
+        // all orphan annots
+        ret = eOrphanAnnot;
+        break;
+    default:
+        // all other cases -> eAll
+        ret = eAll;
+        break;
+    }
     if ( !details.m_NeedSeqMap.Empty() || !details.m_NeedSeqData.Empty() ) {
         // include sequence
         if ( ret == eCore ) {
             ret = eSequence;
         }
-        else {
+        else if ( ret >= eFeatures && ret <= eAnnot ) {
+            // only internal annot + sequence -> whole blob
             ret = eBlob;
         }
-    }
-
-    EChoice external = DetailsToChoice(details.m_NeedExternalAnnots);
-    if ( external != eCore ) {
-        // shift from internal to external annotations
-        _ASSERT(external >= eFeatures && external <= eAnnot);
-        external = EChoice(external + eExtFeatures - eFeatures);
-        _ASSERT(external >= eExtFeatures && external <= eExtAnnot);
-        if ( ret == eCore ) {
-            ret = external;
-        }
         else {
+            // all blobs
             ret = eAll;
         }
     }
@@ -212,52 +241,64 @@ CDataLoader::DetailsToChoice(const SRequestDetails& details) const
 SRequestDetails CDataLoader::ChoiceToDetails(EChoice choice) const
 {
     SRequestDetails details;
-    // internal annotations
-    bool internal = false;
-    bool external = false;
-    bool sequence = false;
     CSeq_annot::C_Data::E_Choice type = CSeq_annot::C_Data::e_not_set;
+    bool sequence = false;
     switch ( choice ) {
     case eAll:
-        sequence = external = internal = true; // from all blobs
+        sequence = true;
+        // from all blobs
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobAll;
         break;
     case eBlob:
     case eBioseq:
-        sequence = internal = true; // internal only
+        sequence = true;
+        // internal only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobInternal;
         break;
     case eSequence:
         sequence = true;
         break;
     case eAnnot:
-        internal = true; // internal only
+        // internal only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobInternal;
         break;
     case eGraph:
         type = CSeq_annot::C_Data::e_Graph;
-        internal = true;
+        // internal only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobInternal;
         break;
     case eFeatures:
         type = CSeq_annot::C_Data::e_Ftable;
-        internal = true;
+        // internal only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobInternal;
         break;
     case eAlign:
         type = CSeq_annot::C_Data::e_Align;
-        internal = true;
+        // internal only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobInternal;
         break;
     case eExtAnnot:
-        type = CSeq_annot::C_Data::e_not_set; // all annotations
-        external = true; // external only
+        // external only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobExternal;
         break;
     case eExtGraph:
         type = CSeq_annot::C_Data::e_Graph;
-        external = true;
+        // external only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobExternal;
         break;
     case eExtFeatures:
         type = CSeq_annot::C_Data::e_Ftable;
-        external = true;
+        // external only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobExternal;
         break;
     case eExtAlign:
         type = CSeq_annot::C_Data::e_Align;
-        external = true;
+        // external only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobExternal;
+        break;
+    case eOrphanAnnot:
+        // orphan annotations only
+        details.m_AnnotBlobType = SRequestDetails::fAnnotBlobOrphan;
         break;
     default:
         break;
@@ -266,13 +307,8 @@ SRequestDetails CDataLoader::ChoiceToDetails(EChoice choice) const
         details.m_NeedSeqMap = SRequestDetails::TRange::GetWhole();
         details.m_NeedSeqData = SRequestDetails::TRange::GetWhole();
     }
-    if ( internal ) {
-        details.m_NeedInternalAnnots[CAnnotName()]
-            .insert(SAnnotTypeSelector(type));
-    }
-    if ( external ) {
-        details.m_NeedExternalAnnots[CAnnotName()]
-            .insert(SAnnotTypeSelector(type));
+    if ( details.m_AnnotBlobType != SRequestDetails::fAnnotBlobNone ) {
+        details.m_NeedAnnots[CAnnotName()].insert(SAnnotTypeSelector(type));
     }
     return details;
 }
@@ -306,12 +342,6 @@ void CDataLoader::DebugDump(CDebugDumpContext, unsigned int) const
 }
 
 
-CDataLoader::TBlobId CDataLoader::GetBlobId(const CSeq_id& id)
-{
-    return GetBlobId(CSeq_id_Handle::GetHandle(id));
-}
-
-
 CDataLoader::TBlobId CDataLoader::GetBlobId(const CSeq_id_Handle& /*sih*/)
 {
     return TBlobId();
@@ -336,6 +366,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/10/25 16:53:26  vasilche
+* Removed obsolete comments and methods.
+* Added support for orphan annotations.
+* One of GetRecords() methods renamed to avoid name conflict.
+* Fixed default implementation of GetIds().
+*
 * Revision 1.21  2004/08/31 21:03:49  grichenk
 * Added GetIds()
 *
