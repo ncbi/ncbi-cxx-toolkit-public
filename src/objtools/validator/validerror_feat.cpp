@@ -192,6 +192,21 @@ static string s_LegalConsSpliceStrings[] = {
 };
 
 
+static bool s_IsLocRefSeq(const CSeq_loc& loc, CScope& scope)
+{
+    try {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+        ITERATE (CBioseq::TId, it, bsh.GetBioseq().GetId()) {
+            if ( (*it)->IsOther() ) {
+                return true;
+            }
+        }
+    } catch (CException&) {}
+
+    return false;
+}
+
+
 // private member functions:
 
 void CValidError_feat::ValidateSeqFeatData
@@ -735,7 +750,7 @@ void CValidError_feat::ValidateCdConflict
             transl_prot, 
             nuc, 
             feat.GetLocation(), 
-            cdregion, 
+            cdregion,
             false,   // do not include stop codons
             false);  // do not remove trailing X/B/Z
     } catch ( const runtime_error& ) {
@@ -2012,7 +2027,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         }
     }
-    
+    bool is_loc_refseq = s_IsLocRefSeq(feat.GetLocation(), *m_Scope);
+
     // pseuogene
     if ( (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
          IsOverlappingGenePseudo(feat) ) {
@@ -2040,22 +2056,41 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     if ( !nuc_handle ) {
         return;
     }
+    bool alt_start = false;
     try {
         CCdregion_translate::TranslateCdregion(
             transl_prot, 
             nuc_handle, 
             location, 
-            cdregion, 
+            cdregion,
             true,   // include stop codons
-            false); // do not remove trailing X/B/Z
-    } catch ( const exception& ) {
+            false,  // do not remove trailing X/B/Z
+            &alt_start);
+    } catch (CException&) {
     }
     if ( transl_prot.empty() ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_CdTransFail, 
             "Unable to translate", feat);
         return;
     }
-    
+    // check alternative start codon
+    if ( alt_start  &&  gc == 1 ) {
+        EDiagSev sev = eDiag_Warning;
+        if ( is_loc_refseq ) {
+            sev = eDiag_Error;
+        }
+        if ( feat.CanGetExcept()  &&  feat.GetExcept()  &&
+             feat.CanGetExcept_text()  &&  !feat.GetExcept_text().empty() ) {
+            if ( feat.GetExcept_text().find("alternative start codon") != NPOS ) {
+                sev = eDiag_Info;
+            }
+        }
+        if ( sev > eDiag_Info ) {
+            PostErr(sev, eErr_SEQ_FEAT_AltStartCodon,
+                "Alternative start codon used", feat);
+        }
+    }
+
     bool no_end = false;
     unsigned int part_loc = SeqLocPartialCheck(location, m_Scope);
     unsigned int part_prod = SeqLocPartialCheck(product, m_Scope);
@@ -2071,7 +2106,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     ValidateCodeBreakNotOnCodon(feat, location, cdregion);
     
     if ( cdregion.GetFrame() > CCdregion::eFrame_one ) {
-        EDiagSev sev = m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning;
+        EDiagSev sev = is_loc_refseq ? eDiag_Error : eDiag_Warning;
         if ( !(part_loc & eSeqlocPartial_Start) ) {
             PostErr(sev, eErr_SEQ_FEAT_PartialProblem, 
                 "Suspicious CDS location - frame > 1 but not 5' partial", feat);
@@ -2608,6 +2643,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/03/01 18:44:28  shomrat
+* Check alternative start codon
+*
 * Revision 1.47  2004/02/05 20:08:32  shomrat
 * Using convenience functions for overlapping features
 *
