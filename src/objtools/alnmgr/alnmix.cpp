@@ -46,7 +46,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 CAlnMix::CAlnMix(void)
-    : m_SingleRefseq(false)
+    : m_SingleRefseq(false),
+      m_MergeFlags(0)
 {
     x_CreateScope();
 }
@@ -54,7 +55,8 @@ CAlnMix::CAlnMix(void)
 
 CAlnMix::CAlnMix(CScope& scope)
     : m_Scope(&scope),
-      m_SingleRefseq(false)
+      m_SingleRefseq(false),
+      m_MergeFlags(0)
 {
 }
 
@@ -969,14 +971,22 @@ void CAlnMix::x_CreateSegmentsVector()
                         if (row->m_PositiveStrand) {
                             row->m_StartIt++;
                         } else {
-                            row->m_StartIt--;
+                            if (row->m_StartIt == row->m_Starts.begin()) {
+                                row->m_StartIt = row->m_Starts.end();
+                            } else {
+                                row->m_StartIt--;
+                            }
                         }
                     }
                 }
                 if (row->m_PositiveStrand) {
                     row->m_StartIt++;
                 } else {
-                    row->m_StartIt--;
+                    if (row->m_StartIt == row->m_Starts.begin()) {
+                        row->m_StartIt = row->m_Starts.end();
+                    } else {
+                        row->m_StartIt--;
+                    }
                 }
             }
             
@@ -1004,7 +1014,11 @@ void CAlnMix::x_CreateSegmentsVector()
             if (refseq->m_PositiveStrand) {
                 refseq->m_StartIt++;
             } else {
-                refseq->m_StartIt--;
+                if (refseq->m_StartIt == refseq->m_Starts.begin()) {
+                    refseq->m_StartIt = refseq->m_Starts.end();
+                } else {
+                    refseq->m_StartIt--;
+                }
             }
         }
     }
@@ -1337,6 +1351,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/04/01 20:25:31  todorov
+* fixed iterator-- behaviour at the begin()
+*
 * Revision 1.40  2003/03/28 16:47:28  todorov
 * Introduced TAddFlags (fCalcScore for now)
 *
