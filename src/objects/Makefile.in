@@ -13,5 +13,3 @@ SUB_PROJ = tinyseq general biblio medline pub pubmed \
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
-POTENTIAL_SUB_PROJ = seqfeat seqalign seqblock seqloc seqres seqcode
