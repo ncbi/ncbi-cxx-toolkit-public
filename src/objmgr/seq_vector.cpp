@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/05/03 18:36:19  grichenk
+* Fixed members initialization
+*
 * Revision 1.18  2002/05/02 20:42:38  grichenk
 * throw -> THROW1_TRACE
 *
@@ -125,6 +128,9 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
       m_Handle(handle),
       m_PlusStrand(plus_strand),
       m_Size(-1),
+      m_CachedData(""),
+      m_CachedPos(-1),
+      m_CachedLen(0),
       m_Coding(CSeq_data::e_not_set),
       m_RangeSize(-1),
       m_CurFrom(-1),
@@ -134,8 +140,6 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
     m_CurData.dest_start = -1;
     m_CurData.length = 0;
     m_SeqMap.Reset(&m_Handle.x_GetDataSource().GetSeqMap(m_Handle));
-    if (use_iupac_coding)
-        SetIupacCoding();
     if ( view_loc ) {
         x_SetVisibleArea(*view_loc);
     }
@@ -144,6 +148,8 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
             TRange::GetWholeFrom(), TRange::GetWholeTo()), true);
     }
     m_SelRange = m_Ranges.end();
+    if (use_iupac_coding)
+        SetIupacCoding();
 }
 
 
@@ -167,6 +173,9 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
     m_SeqMap = vec.m_SeqMap;
     m_Size = vec.m_Size;
     m_Coding = vec.m_Coding;
+    m_CachedPos = -1;
+    m_CachedLen = 0;
+    m_CachedData = "";
     m_Ranges.clear();
     m_SelRange = m_Ranges.end();
     iterate(TRanges, rit, vec.m_Ranges) {
@@ -302,6 +311,7 @@ void CSeqVector::x_UpdateSeqData(int pos)
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, pos, &m_CurData);
     m_CachedPos = -1; // Reset cached data
+    m_CachedLen = 0;
     m_CachedData = "";
 }
 
@@ -496,6 +506,7 @@ void CSeqVector::SetIupacCoding(void)
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, 0, &m_CurData);
     m_CachedPos = -1; // Reset cached data
+    m_CachedLen = 0;
     m_CachedData = "";
 
     // Check sequence type

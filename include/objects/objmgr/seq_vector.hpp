@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/05/03 18:36:13  grichenk
+* Fixed members initialization
+*
 * Revision 1.10  2002/04/30 14:32:51  ucko
 * Have size() return int in keeping with its actual behavior; should cut
 * down on warnings about truncation of 64-bit integers.
@@ -199,7 +202,7 @@ void CSeqVector::SetCoding(TCoding coding)
     if (m_Coding == coding) return;
     m_Coding = coding;
     // Reset cached data
-    m_CachedPos = 0;
+    m_CachedPos = -1;
     m_CachedLen = 0;
     m_CachedData = "";
 }
