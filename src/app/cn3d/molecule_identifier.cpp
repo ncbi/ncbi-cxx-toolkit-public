@@ -32,6 +32,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
 
@@ -42,11 +46,11 @@
 
 #include <memory>
 
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
+#include "structure_set.hpp"
+#include "molecule.hpp"
+#include "sequence_set.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -330,6 +334,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/19 17:04:59  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.10  2004/01/05 17:09:15  thiessen
 * abort import and warn if same accession different gi
 *

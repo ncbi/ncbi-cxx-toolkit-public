@@ -48,7 +48,7 @@
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/cn3d/Cn3d_view_settings.hpp>
 
-#include "cn3d/vector_math.hpp"
+#include "vector_math.hpp"
 
 class wxFont;
 
@@ -157,7 +157,7 @@ public:
     void EnableStereo(bool enableStereo);
 
     double GetRotateSpeed(void) const { return rotateSpeed; }
-    
+
     void RecreateQuadric(void) const;
 
 private:
@@ -231,6 +231,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/02/19 17:05:00  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.42  2003/12/04 15:58:37  thiessen
 * fix const problem
 *

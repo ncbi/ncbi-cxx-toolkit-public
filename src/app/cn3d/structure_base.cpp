@@ -31,9 +31,15 @@
 * ===========================================================================
 */
 
-#include "cn3d/structure_base.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include <corelib/ncbistd.hpp>
+
+#include "structure_base.hpp"
+#include "structure_set.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -97,6 +103,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/02/19 17:05:14  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.11  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

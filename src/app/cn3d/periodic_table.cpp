@@ -31,9 +31,16 @@
 * ===========================================================================
 */
 
-#include "cn3d/periodic_table.hpp"
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include <corelib/ncbistd.hpp>
+
+#include "periodic_table.hpp"
 
 USING_NCBI_SCOPE;
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -44,7 +51,7 @@ const Element* PeriodicTableClass::GetElement(int Z) const
     ZMapType::const_iterator i = ZMap.find(Z);
     if (i != ZMap.end())
         return (*i).second;
-    else 
+    else
         return NULL;
 }
 
@@ -181,6 +188,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/02/19 17:05:01  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.3  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

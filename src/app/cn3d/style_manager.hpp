@@ -45,7 +45,7 @@
 #include <map>
 #include <vector>
 
-#include "cn3d/vector_math.hpp"
+#include "vector_math.hpp"
 
 class wxWindow;
 
@@ -434,6 +434,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/02/19 17:05:20  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.40  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *

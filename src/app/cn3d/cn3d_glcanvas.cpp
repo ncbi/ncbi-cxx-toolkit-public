@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <memory>
@@ -38,10 +42,10 @@
 #include <wx/fontutil.h>
 #include <wx/image.h>
 
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/structure_set.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "opengl_renderer.hpp"
+#include "cn3d_tools.hpp"
+#include "structure_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -264,6 +268,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/02/19 17:04:50  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.2  2003/03/14 19:22:59  thiessen
 * add CommandProcessor to handle file-message commands; fixes for GCC 2.9
 *

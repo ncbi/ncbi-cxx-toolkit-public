@@ -31,6 +31,9 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
@@ -55,35 +58,35 @@
 #include <wx/filename.h>
 #include <wx/choicdlg.h>
 
-#include "cn3d/asn_reader.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/structure_window.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/show_hide_dialog.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/cdd_annot_dialog.hpp"
-#include "cn3d/preferences_dialog.hpp"
-#include "cn3d/cdd_ref_dialog.hpp"
-#include "cn3d/cdd_book_ref_dialog.hpp"
-#include "cn3d/cn3d_png.hpp"
-#include "cn3d/wx_tools.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cdd_splash_dialog.hpp"
-#include "cn3d/command_processor.hpp"
-#include "cn3d/animation_controls.hpp"
-#include "cn3d/cn3d_cache.hpp"
+#include "asn_reader.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "structure_window.hpp"
+#include "structure_set.hpp"
+#include "opengl_renderer.hpp"
+#include "style_manager.hpp"
+#include "messenger.hpp"
+#include "chemical_graph.hpp"
+#include "alignment_manager.hpp"
+#include "show_hide_manager.hpp"
+#include "show_hide_dialog.hpp"
+#include "cn3d_tools.hpp"
+#include "cdd_annot_dialog.hpp"
+#include "preferences_dialog.hpp"
+#include "cdd_ref_dialog.hpp"
+#include "cdd_book_ref_dialog.hpp"
+#include "cn3d_png.hpp"
+#include "wx_tools.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_set.hpp"
+#include "molecule_identifier.hpp"
+#include "cdd_splash_dialog.hpp"
+#include "command_processor.hpp"
+#include "animation_controls.hpp"
+#include "cn3d_cache.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
-    #include "cn3d/cn3d.xpm"
+    #include "cn3d.xpm"
 #endif
 
 #include <ncbienv.h>
@@ -1532,6 +1535,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/02/19 17:05:16  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.26  2004/01/17 01:47:26  thiessen
 * add network load
 *

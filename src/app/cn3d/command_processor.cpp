@@ -48,18 +48,22 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <list>
 
-#include "cn3d/command_processor.hpp"
-#include "cn3d/structure_window.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule_identifier.hpp"
+#include "command_processor.hpp"
+#include "structure_window.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "structure_set.hpp"
+#include "cn3d_tools.hpp"
+#include "messenger.hpp"
+#include "sequence_set.hpp"
+#include "molecule_identifier.hpp"
 
 #include <wx/tokenzr.h>
 
@@ -250,6 +254,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/19 17:04:53  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.8  2004/01/17 01:47:26  thiessen
 * add network load
 *

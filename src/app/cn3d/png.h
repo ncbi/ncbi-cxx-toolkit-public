@@ -324,10 +324,10 @@
 #ifndef PNG_VERSION_INFO_ONLY
 
 /* include the compression library's header */
-#include "cn3d/zlib.h"
+#include "../cn3d/zlib.h"
 
 /* include all user configurable info, including optional assembler routines */
-#include "cn3d/pngconf.h"
+#include "../cn3d/pngconf.h"
 
 /* Inhibit C++ name-mangling for libpng functions but not for system calls. */
 #ifdef __cplusplus

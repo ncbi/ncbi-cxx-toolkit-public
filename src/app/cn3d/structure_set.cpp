@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_limits.h>
@@ -68,26 +72,26 @@
 #include <objects/cdd/Reject_id.hpp>
 #include <objects/cdd/Update_comment.hpp>
 
-#include "cn3d/structure_set.hpp"
-#include "cn3d/data_manager.hpp"
-#include "cn3d/coord_set.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/atom_set.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/alignment_set.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/asn_converter.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_cache.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/residue.hpp"
-#include "cn3d/show_hide_dialog.hpp"
+#include "structure_set.hpp"
+#include "data_manager.hpp"
+#include "coord_set.hpp"
+#include "chemical_graph.hpp"
+#include "atom_set.hpp"
+#include "opengl_renderer.hpp"
+#include "show_hide_manager.hpp"
+#include "style_manager.hpp"
+#include "sequence_set.hpp"
+#include "alignment_set.hpp"
+#include "alignment_manager.hpp"
+#include "messenger.hpp"
+#include "asn_converter.hpp"
+#include "block_multiple_alignment.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_cache.hpp"
+#include "molecule.hpp"
+#include "residue.hpp"
+#include "show_hide_dialog.hpp"
 
 #include <objseq.h>
 
@@ -1492,6 +1496,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.138  2004/02/19 17:05:14  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.137  2004/02/05 19:00:08  thiessen
 * change mmdb->pdb upon het selection
 *

@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -57,15 +61,15 @@
 #include <png.h>
 #else
 // otherwise, use libs built into wxWindows
-#include "cn3d/png.h"
+#include "../cn3d/png.h"
 #endif
 
-#include "cn3d/cn3d_png.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/progress_meter.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/messenger.hpp"
+#include "cn3d_png.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "opengl_renderer.hpp"
+#include "progress_meter.hpp"
+#include "cn3d_tools.hpp"
+#include "messenger.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -734,7 +738,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (hglrc) wglDeleteContext(hglrc);
         if (hbm) DeleteObject(hbm);
         if (hdc) DeleteDC(hdc);
-    
+
 #elif defined(__WXGTK__)
         gotAnXError = false;
         if (glCtx) {
@@ -746,7 +750,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (localVI && visinfo) XFree(visinfo);
         if (gotAnXError) WARNINGMSG("Got an X error destroying GLXPixmap context");
         XSetErrorHandler(currentXErrHandler);
-    
+
 #elif defined(__WXMAC__)
         aglSetCurrentContext(currentCtx);
         if (ctx) aglDestroyContext(ctx);
@@ -873,6 +877,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/02/19 17:04:50  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.18  2003/12/04 15:49:39  thiessen
 * fix stereo and PNG export problems on Mac
 *

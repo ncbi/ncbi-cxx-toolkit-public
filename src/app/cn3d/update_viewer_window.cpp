@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #ifdef __WXMSW__
@@ -40,16 +44,16 @@
 #include <wx/wx.h>
 #include <wx/stattext.h>
 
-#include "cn3d/update_viewer_window.hpp"
-#include "cn3d/update_viewer.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/wx_tools.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_ba_interface.hpp"
+#include "update_viewer_window.hpp"
+#include "update_viewer.hpp"
+#include "messenger.hpp"
+#include "sequence_display.hpp"
+#include "alignment_manager.hpp"
+#include "cn3d_threader.hpp"
+#include "wx_tools.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_ba_interface.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -620,6 +624,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/02/19 17:05:21  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.58  2003/09/25 15:14:09  thiessen
 * add Reset All Regions command
 *

@@ -39,8 +39,8 @@
 #include <vector>
 #include <map>
 
-#include "cn3d/structure_base.hpp"
-#include "cn3d/show_hide_callback.hpp"
+#include "structure_base.hpp"
+#include "show_hide_callback.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -100,6 +100,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/19 17:05:13  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.12  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

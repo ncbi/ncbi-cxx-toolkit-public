@@ -53,7 +53,7 @@
 #include <list>
 #include <vector>
 
-#include "cn3d/structure_set.hpp"
+#include "structure_set.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -173,6 +173,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/19 17:04:55  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.12  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *

@@ -48,8 +48,8 @@
 #include <wx/html/helpctrl.h>
 #include <wx/fileconf.h>
 
-#include "cn3d/multitext_dialog.hpp"
-#include "cn3d/file_messaging.hpp"
+#include "multitext_dialog.hpp"
+#include "file_messaging.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -267,6 +267,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/02/19 17:05:17  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.11  2004/01/17 01:47:27  thiessen
 * add network load
 *

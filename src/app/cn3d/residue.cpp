@@ -31,6 +31,12 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include <corelib/ncbistd.hpp>
+
 #include <objects/mmdb1/Residue_graph_pntr.hpp>
 #include <objects/mmdb1/Biost_resid_graph_set_pntr.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -43,19 +49,19 @@
 #include <objects/mmdb1/Residue_graph_id.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
 
-#include "cn3d/residue.hpp"
-#include "cn3d/bond.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/coord_set.hpp"
-#include "cn3d/atom_set.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/periodic_table.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/cn3d_colors.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/messenger.hpp"
+#include "residue.hpp"
+#include "bond.hpp"
+#include "structure_set.hpp"
+#include "coord_set.hpp"
+#include "atom_set.hpp"
+#include "molecule.hpp"
+#include "periodic_table.hpp"
+#include "opengl_renderer.hpp"
+#include "style_manager.hpp"
+#include "cn3d_colors.hpp"
+#include "show_hide_manager.hpp"
+#include "cn3d_tools.hpp"
+#include "messenger.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -449,6 +455,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/02/19 17:05:05  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.31  2003/06/21 08:18:58  thiessen
 * show all atoms with coordinates, even if not in all coord sets
 *

@@ -49,8 +49,8 @@
 #include <vector>
 #include <map>
 
-#include "cn3d/vector_math.hpp"
-#include "cn3d/style_manager.hpp"
+#include "vector_math.hpp"
+#include "style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -420,6 +420,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/02/19 17:04:44  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.38  2003/11/06 18:52:31  thiessen
 * make geometry violations shown on/off; allow multiple pmid entry in ref dialog
 *

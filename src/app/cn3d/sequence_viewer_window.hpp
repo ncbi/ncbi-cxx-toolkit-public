@@ -34,7 +34,7 @@
 #ifndef CN3D_SEQUENCE_VIEWER_WINDOW__HPP
 #define CN3D_SEQUENCE_VIEWER_WINDOW__HPP
 
-#include "cn3d/viewer_window_base.hpp"
+#include "viewer_window_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -171,6 +171,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/02/19 17:05:10  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.28  2003/10/20 13:17:15  thiessen
 * add float geometry violations sorting
 *

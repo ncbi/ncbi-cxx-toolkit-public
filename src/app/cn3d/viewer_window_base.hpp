@@ -42,8 +42,8 @@
 #endif
 #include <wx/wx.h>
 
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_viewer_widget.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_viewer_widget.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -238,6 +238,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/02/19 17:05:22  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.25  2003/02/03 19:20:09  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

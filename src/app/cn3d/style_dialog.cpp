@@ -31,14 +31,18 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
-#include "cn3d/style_dialog.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/wx_tools.hpp"
+#include "style_dialog.hpp"
+#include "style_manager.hpp"
+#include "cn3d_tools.hpp"
+#include "structure_set.hpp"
+#include "messenger.hpp"
+#include "wx_tools.hpp"
 
 #include <wx/colordlg.h>
 
@@ -1313,6 +1317,9 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/02/19 17:05:17  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.25  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *

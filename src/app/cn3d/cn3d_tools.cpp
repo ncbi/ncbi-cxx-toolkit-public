@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #if defined(__WXMSW__)
 #include <windows.h>
 #include <shellapi.h>   // for ShellExecute, needed to launch browser
@@ -58,8 +62,8 @@
 #include <wx/wx.h>
 #include <wx/file.h>
 
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/asn_reader.hpp"
+#include "cn3d_tools.hpp"
+#include "asn_reader.hpp"
 
 #include <memory>
 
@@ -316,6 +320,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/02/19 17:04:52  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.6  2004/01/17 00:17:30  thiessen
 * add Biostruc and network structure load
 *

@@ -31,6 +31,9 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
@@ -60,21 +63,21 @@
 #include <wx/filesys.h>
 #include <wx/fs_zip.h>
 
-#include "cn3d/asn_reader.hpp"
-#include "cn3d/cn3d_app.hpp"
-#include "cn3d/structure_window.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/cn3d_cache.hpp"
+#include "asn_reader.hpp"
+#include "cn3d_app.hpp"
+#include "structure_window.hpp"
+#include "cn3d_tools.hpp"
+#include "structure_set.hpp"
+#include "chemical_graph.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "opengl_renderer.hpp"
+#include "messenger.hpp"
+#include "alignment_manager.hpp"
+#include "cn3d_cache.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
-    #include "cn3d/cn3d.xpm"
+    #include "cn3d.xpm"
 #endif
 
 #include <ncbi.h>
@@ -623,6 +626,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/02/19 17:04:47  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.15  2004/01/28 19:27:54  thiessen
 * add input asn stream verification
 *

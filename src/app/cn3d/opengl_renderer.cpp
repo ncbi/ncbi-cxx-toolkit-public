@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
 #include <corelib/ncbiobj.hpp>
@@ -58,15 +62,15 @@
 #include <objects/cn3d/Cn3d_GL_matrix.hpp>
 #include <objects/cn3d/Cn3d_vector.hpp>
 
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/structure_window.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/asn_converter.hpp"
-#include "cn3d/cn3d_colors.hpp"
+#include "opengl_renderer.hpp"
+#include "structure_window.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "structure_set.hpp"
+#include "style_manager.hpp"
+#include "messenger.hpp"
+#include "cn3d_tools.hpp"
+#include "asn_converter.hpp"
+#include "cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -168,7 +172,7 @@ void OpenGLRenderer::Init(void) const
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_NORMALIZE);
     glDisable(GL_SCISSOR_TEST);
-    
+
     RecreateQuadric();
 }
 
@@ -1610,6 +1614,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/02/19 17:05:00  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.74  2003/12/04 15:58:36  thiessen
 * fix const problem
 *

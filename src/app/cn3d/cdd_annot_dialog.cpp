@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Align_annot.hpp>
@@ -52,17 +56,17 @@
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
 
-#include "cn3d/cdd_annot_dialog.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/show_hide_manager.hpp"
+#include "cdd_annot_dialog.hpp"
+#include "structure_set.hpp"
+#include "messenger.hpp"
+#include "alignment_manager.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_set.hpp"
+#include "cn3d_tools.hpp"
+#include "chemical_graph.hpp"
+#include "molecule_identifier.hpp"
+#include "opengl_renderer.hpp"
+#include "show_hide_manager.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1222,6 +1226,9 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/02/19 17:04:45  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.35  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

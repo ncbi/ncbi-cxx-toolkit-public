@@ -46,7 +46,7 @@
 #include <map>
 #include <string>
 
-#include "cn3d/style_manager.hpp"
+#include "style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -149,6 +149,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/02/19 17:05:18  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.11  2003/02/03 19:20:07  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

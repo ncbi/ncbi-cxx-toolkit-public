@@ -31,23 +31,27 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqalign/Dense_diag.hpp>
 
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/conservation_colorer.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_colors.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/cn3d_blast.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_set.hpp"
+#include "molecule.hpp"
+#include "conservation_colorer.hpp"
+#include "style_manager.hpp"
+#include "structure_set.hpp"
+#include "messenger.hpp"
+#include "cn3d_colors.hpp"
+#include "alignment_manager.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_threader.hpp"
+#include "cn3d_blast.hpp"
 
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
 #ifdef _DEBUG
@@ -1811,6 +1815,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/02/19 17:04:43  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.53  2003/11/06 18:52:31  thiessen
 * make geometry violations shown on/off; allow multiple pmid entry in ref dialog
 *

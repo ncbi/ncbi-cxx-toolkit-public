@@ -31,21 +31,25 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <memory>
 
-#include "cn3d/viewer_window_base.hpp"
-#include "cn3d/viewer_base.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "viewer_window_base.hpp"
+#include "viewer_base.hpp"
+#include "sequence_display.hpp"
+#include "messenger.hpp"
+#include "cn3d_threader.hpp"
+#include "alignment_manager.hpp"
+#include "cn3d_tools.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
-    #include "cn3d/cn3d.xpm"
+    #include "cn3d.xpm"
 #endif
 
 USING_NCBI_SCOPE;
@@ -387,6 +391,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/02/19 17:05:22  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.47  2003/11/06 18:52:32  thiessen
 * make geometry violations shown on/off; allow multiple pmid entry in ref dialog
 *

@@ -31,28 +31,32 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/alignment_set.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/update_viewer.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_blast.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/cn3d_ba_interface.hpp"
+#include "alignment_manager.hpp"
+#include "sequence_set.hpp"
+#include "alignment_set.hpp"
+#include "block_multiple_alignment.hpp"
+#include "messenger.hpp"
+#include "structure_set.hpp"
+#include "sequence_viewer.hpp"
+#include "molecule.hpp"
+#include "show_hide_manager.hpp"
+#include "cn3d_threader.hpp"
+#include "update_viewer.hpp"
+#include "sequence_display.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_blast.hpp"
+#include "style_manager.hpp"
+#include "cn3d_ba_interface.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -948,6 +952,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2004/02/19 17:04:38  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.90  2003/10/13 14:16:31  thiessen
 * add -n option to not show alignment window
 *

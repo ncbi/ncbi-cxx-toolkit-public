@@ -42,7 +42,7 @@
 #include <objects/mmdb1/Residue_graph.hpp>
 #include <objects/mmdb1/Residue.hpp>
 
-#include "cn3d/structure_base.hpp"
+#include "structure_base.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
@@ -140,6 +140,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/02/19 17:05:05  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.19  2003/06/21 08:18:58  thiessen
 * show all atoms with coordinates, even if not in all coord sets
 *

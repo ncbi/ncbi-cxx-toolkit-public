@@ -43,7 +43,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
-#include "cn3d/structure_base.hpp"
+#include "structure_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -105,6 +105,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/02/19 17:04:40  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.15  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

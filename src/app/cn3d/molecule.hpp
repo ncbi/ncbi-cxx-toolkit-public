@@ -44,9 +44,9 @@
 #include <objects/mmdb1/Residue_graph.hpp>
 #include <objects/mmdb1/Biomol_descr.hpp>
 
-#include "cn3d/structure_base.hpp"
-#include "cn3d/residue.hpp"
-#include "cn3d/vector_math.hpp"
+#include "structure_base.hpp"
+#include "residue.hpp"
+#include "vector_math.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -158,6 +158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/02/19 17:04:58  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.28  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

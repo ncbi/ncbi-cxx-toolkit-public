@@ -32,6 +32,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <memory>
@@ -47,16 +51,16 @@
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
 
-#include "cn3d/messenger.hpp"
-#include "cn3d/structure_window.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "messenger.hpp"
+#include "structure_window.hpp"
+#include "cn3d_glcanvas.hpp"
+#include "sequence_viewer.hpp"
+#include "opengl_renderer.hpp"
+#include "structure_set.hpp"
+#include "chemical_graph.hpp"
+#include "sequence_set.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -544,6 +548,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/02/19 17:04:56  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.39  2004/01/08 15:31:02  thiessen
 * remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
 *

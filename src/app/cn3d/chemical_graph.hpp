@@ -43,9 +43,9 @@
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
 #include <objects/mmdb1/Atom_pntr.hpp>
 
-#include "cn3d/structure_base.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/residue.hpp"
+#include "structure_base.hpp"
+#include "molecule.hpp"
+#include "residue.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
@@ -115,6 +115,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/02/19 17:04:46  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.18  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -100,6 +100,7 @@ extern void RaiseLogWindow(void);
 // launch web browser on given URL
 extern void LaunchWebPage(const char *url);
 
+// retrieve a sequence via network; uid can be gi or accession
 ncbi::CRef < ncbi::objects::CBioseq > FetchSequenceViaHTTP(const std::string& id);
 
 // top-level window (the main structure window)
@@ -215,6 +216,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/02/19 17:04:52  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.31  2004/01/17 00:17:30  thiessen
 * add Biostruc and network structure load
 *

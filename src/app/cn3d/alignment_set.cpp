@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistl.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
@@ -38,12 +42,12 @@
 #include <map>
 #include <memory>
 
-#include "cn3d/alignment_set.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
+#include "alignment_set.hpp"
+#include "sequence_set.hpp"
+#include "structure_set.hpp"
+#include "block_multiple_alignment.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -274,6 +278,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/02/19 17:04:40  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.29  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -49,14 +53,14 @@
 #include <blast.h>
 #include <blastkar.h>
 
-#include "cn3d/cn3d_blast.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/asn_converter.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_threader.hpp"
+#include "cn3d_blast.hpp"
+#include "structure_set.hpp"
+#include "sequence_set.hpp"
+#include "block_multiple_alignment.hpp"
+#include "cn3d_tools.hpp"
+#include "asn_converter.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_threader.hpp"
 
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
 #ifdef _DEBUG
@@ -430,12 +434,21 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
 
         // actually do the BLAST alignment
-//        TESTMSG("calling BlastTwoSequencesByLocWithCallback()");
+
+//        TRACEMSG("calling BlastTwoSequencesByLocWithCallback()");
         SeqAlign *salp = BlastTwoSequencesByLocWithCallback(
             masterSeqLoc, slaveSeqLoc,
             "blastp", options,
             NULL, NULL, NULL,
             const_cast<BLAST_Matrix*>(BLASTmatrix));
+
+//        TRACEMSG("calling B2SPssmMultipleQueries()");
+//        SeqLocPtr target[1];
+//        target[0] = slaveSeqLoc;
+//        options->searchsp_eff = 0;
+//        SeqAlignPtr *psalp = B2SPssmMultipleQueries(masterSeqLoc,
+//            const_cast<BLAST_Matrix*>(BLASTmatrix), target, 1, options);
+//        SeqAlign *salp = psalp[0];
 
         // process the result
         double score = -1.0;
@@ -499,6 +512,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/02/19 17:04:49  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.31  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

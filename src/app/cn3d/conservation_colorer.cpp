@@ -31,14 +31,18 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
 #include <corelib/ncbi_limits.h>
 #include <util/tables/raw_scoremat.h>
 
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/conservation_colorer.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/cn3d_blast.hpp"
+#include "block_multiple_alignment.hpp"
+#include "conservation_colorer.hpp"
+#include "cn3d_tools.hpp"
+#include "cn3d_blast.hpp"
 
 #include <blastkar.h>           // for BLAST standard probability routines
 #include <objseq.h>
@@ -515,6 +519,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/02/19 17:04:53  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.32  2003/12/11 19:35:54  thiessen
 * use built-in blosum62 matrix
 *

@@ -31,14 +31,18 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/cdd/Cdd_book_ref.hpp>
 
-#include "cn3d/cdd_book_ref_dialog.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "cdd_book_ref_dialog.hpp"
+#include "structure_set.hpp"
+#include "cn3d_tools.hpp"
 
 #include <wx/clipbrd.h>
 #include <wx/tokenzr.h>
@@ -543,6 +547,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/02/19 17:04:45  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.3  2003/09/29 23:34:05  thiessen
 * add launch, paste buttons
 *

@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
@@ -38,24 +42,24 @@
 
 #include <algorithm>
 
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/viewer_window_base.hpp"
-#include "cn3d/viewer_base.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/sequence_viewer_window.hpp"
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/cn3d_colors.hpp"
-#include "cn3d/update_viewer.hpp"
-#include "cn3d/update_viewer_window.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/conservation_colorer.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_blast.hpp"
+#include "sequence_display.hpp"
+#include "viewer_window_base.hpp"
+#include "viewer_base.hpp"
+#include "molecule.hpp"
+#include "messenger.hpp"
+#include "structure_set.hpp"
+#include "style_manager.hpp"
+#include "sequence_viewer_window.hpp"
+#include "sequence_viewer.hpp"
+#include "alignment_manager.hpp"
+#include "cn3d_colors.hpp"
+#include "update_viewer.hpp"
+#include "update_viewer_window.hpp"
+#include "cn3d_tools.hpp"
+#include "cn3d_threader.hpp"
+#include "conservation_colorer.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -1272,6 +1276,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/02/19 17:05:05  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.70  2003/11/06 19:07:19  thiessen
 * leave show gv's on if on already
 *

@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #ifdef __WXMSW__
@@ -39,18 +43,18 @@
 #endif
 #include <wx/wx.h>
 
-#include "cn3d/taxonomy_tree.hpp"
-#include "cn3d/sequence_viewer_window.hpp"
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/show_hide_dialog.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/wx_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/cn3d_blast.hpp"
+#include "taxonomy_tree.hpp"
+#include "sequence_viewer_window.hpp"
+#include "sequence_viewer.hpp"
+#include "alignment_manager.hpp"
+#include "sequence_set.hpp"
+#include "show_hide_dialog.hpp"
+#include "sequence_display.hpp"
+#include "messenger.hpp"
+#include "wx_tools.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_tools.hpp"
+#include "cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -496,6 +500,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/02/19 17:05:10  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.51  2003/10/20 13:17:15  thiessen
 * add float geometry violations sorting
 *

@@ -42,9 +42,9 @@
 #include <vector>
 #include <map>
 
-#include "cn3d/vector_math.hpp"
-#include "cn3d/show_hide_callback.hpp"
-#include "cn3d/style_manager.hpp"
+#include "vector_math.hpp"
+#include "show_hide_callback.hpp"
+#include "style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -167,6 +167,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/02/19 17:04:40  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.48  2003/10/13 13:23:31  thiessen
 * add -i option to show import window
 *

@@ -31,19 +31,23 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <memory>
 
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/sequence_viewer_window.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/sequence_set.hpp"
+#include "sequence_viewer.hpp"
+#include "sequence_viewer_window.hpp"
+#include "sequence_display.hpp"
+#include "messenger.hpp"
+#include "alignment_manager.hpp"
+#include "structure_set.hpp"
+#include "molecule_identifier.hpp"
+#include "cn3d_tools.hpp"
+#include "sequence_set.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -536,6 +540,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/02/19 17:05:07  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.64  2003/11/26 20:37:54  thiessen
 * prefer gi for URLs
 *

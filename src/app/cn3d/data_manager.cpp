@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/ncbimime/Entrez_general.hpp>
@@ -45,13 +49,13 @@
 #include <objects/cdd/Cdd_descr_set.hpp>
 #include <objects/cdd/Cdd_descr.hpp>
 
-#include "cn3d/asn_reader.hpp"
-#include "cn3d/data_manager.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/alignment_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/asn_converter.hpp"
+#include "asn_reader.hpp"
+#include "data_manager.hpp"
+#include "structure_set.hpp"
+#include "sequence_set.hpp"
+#include "alignment_set.hpp"
+#include "cn3d_tools.hpp"
+#include "asn_converter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -753,6 +757,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/02/19 17:04:55  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.19  2003/08/21 18:02:01  thiessen
 * change header order for Mac compilation
 *

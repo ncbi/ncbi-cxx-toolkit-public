@@ -38,7 +38,7 @@
 
 #include <string>
 
-#include "cn3d/file_messaging.hpp"
+#include "file_messaging.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -102,6 +102,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/02/19 17:04:53  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.4  2003/09/02 19:34:52  thiessen
 * implement Exit message
 *

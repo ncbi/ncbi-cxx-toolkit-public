@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
@@ -47,15 +51,15 @@
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
-    #include "cn3d/cn3d.xpm"
+    #include "cn3d.xpm"
 #endif
 
-#include "cn3d/taxonomy_tree.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/messenger.hpp"
+#include "taxonomy_tree.hpp"
+#include "cn3d_tools.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_set.hpp"
+#include "molecule_identifier.hpp"
+#include "messenger.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -405,6 +409,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/19 17:05:20  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.10  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

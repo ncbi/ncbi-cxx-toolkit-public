@@ -31,7 +31,7 @@
 #ifndef _ZLIB_H
 #define _ZLIB_H
 
-#include "cn3d/zconf.h"
+#include "../cn3d/zconf.h"
 
 #ifdef __cplusplus
 extern "C" {

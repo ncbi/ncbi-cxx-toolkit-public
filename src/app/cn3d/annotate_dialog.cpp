@@ -31,15 +31,19 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
-#include "cn3d/annotate_dialog.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/style_dialog.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "annotate_dialog.hpp"
+#include "messenger.hpp"
+#include "style_manager.hpp"
+#include "style_dialog.hpp"
+#include "structure_set.hpp"
+#include "show_hide_manager.hpp"
+#include "cn3d_tools.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -695,6 +699,9 @@ wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_s
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/19 17:04:40  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.12  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -31,7 +31,11 @@
 * ===========================================================================
 */
 
-#include "cn3d/vector_math.hpp"
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include "vector_math.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
@@ -305,6 +309,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/02/19 17:05:22  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.5  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

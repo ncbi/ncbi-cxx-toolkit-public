@@ -31,15 +31,19 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/PubMedId.hpp>
 
-#include "cn3d/cdd_ref_dialog.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "cdd_ref_dialog.hpp"
+#include "structure_set.hpp"
+#include "cn3d_tools.hpp"
 
 #include <wx/tokenzr.h>
 
@@ -324,6 +328,9 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/19 17:04:45  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.10  2003/11/06 18:52:31  thiessen
 * make geometry violations shown on/off; allow multiple pmid entry in ref dialog
 *

@@ -31,12 +31,16 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include "cn3d/animation_controls.hpp"
-#include "cn3d/wx_tools.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "animation_controls.hpp"
+#include "wx_tools.hpp"
+#include "cn3d_tools.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,6 +271,9 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/02/19 17:04:40  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.2  2003/12/03 15:46:36  thiessen
 * adjust so spin increment is accurate
 *

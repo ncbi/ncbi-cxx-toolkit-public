@@ -38,7 +38,7 @@
 
 #include <list>
 
-#include "cn3d/viewer_base.hpp"
+#include "viewer_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -95,6 +95,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/02/19 17:05:08  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.32  2003/10/13 14:16:31  thiessen
 * add -n option to not show alignment window
 *

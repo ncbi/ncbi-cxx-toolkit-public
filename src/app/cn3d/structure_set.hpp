@@ -54,8 +54,8 @@
 #include <objseq.h>
 #include <objloc.h>
 
-#include "cn3d/structure_base.hpp"
-#include "cn3d/vector_math.hpp"
+#include "structure_base.hpp"
+#include "vector_math.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -302,6 +302,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2004/02/19 17:05:15  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.77  2003/07/17 20:13:51  thiessen
 * don't ask for filename on save/termination with -f; add eAnyAlignmentData flag
 *

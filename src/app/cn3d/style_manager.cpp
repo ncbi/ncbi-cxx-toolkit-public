@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
@@ -52,22 +56,22 @@
 #include <memory>
 #include <string.h> // for memcpy()
 
-#include "cn3d/style_manager.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/residue.hpp"
-#include "cn3d/periodic_table.hpp"
-#include "cn3d/bond.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/object_3d.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_colors.hpp"
-#include "cn3d/style_dialog.hpp"
-#include "cn3d/annotate_dialog.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/atom_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "style_manager.hpp"
+#include "structure_set.hpp"
+#include "chemical_graph.hpp"
+#include "residue.hpp"
+#include "periodic_table.hpp"
+#include "bond.hpp"
+#include "show_hide_manager.hpp"
+#include "object_3d.hpp"
+#include "alignment_manager.hpp"
+#include "messenger.hpp"
+#include "cn3d_colors.hpp"
+#include "style_dialog.hpp"
+#include "annotate_dialog.hpp"
+#include "molecule_identifier.hpp"
+#include "atom_set.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1634,6 +1638,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2004/02/19 17:05:19  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.78  2004/01/19 17:27:14  thiessen
 * add Proline CD-N bond for sidechain display
 *

@@ -34,7 +34,7 @@
 #ifndef CN3D_UPDATE_VIEWER_WINDOW__HPP
 #define CN3D_UPDATE_VIEWER_WINDOW__HPP
 
-#include "cn3d/viewer_window_base.hpp"
+#include "viewer_window_base.hpp"
 
 #include <wx/spinctrl.h>
 
@@ -234,6 +234,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/02/19 17:05:21  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.36  2003/09/25 15:14:09  thiessen
 * add Reset All Regions command
 *

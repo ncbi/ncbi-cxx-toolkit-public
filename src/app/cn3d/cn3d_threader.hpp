@@ -44,7 +44,7 @@
 #include <thrdatd.h>
 #include <blastkar.h>
 
-#include "cn3d/vector_math.hpp"
+#include "vector_math.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -76,7 +76,7 @@ public:
     Threader(void);
     ~Threader(void);
 
-    static const double SCALING_FACTOR;
+    static const int SCALING_FACTOR;
     static const std::string ThreaderResidues;
 
     // create new BlockMultipleAlignments from the given multiple and master/slave pairs; returns
@@ -144,6 +144,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/02/19 17:04:52  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.18  2003/11/06 18:52:32  thiessen
 * make geometry violations shown on/off; allow multiple pmid entry in ref dialog
 *

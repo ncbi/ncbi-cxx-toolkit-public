@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -38,7 +42,7 @@
 
 #include <memory>
 
-#include "cn3d/file_messaging.hpp"
+#include "file_messaging.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -477,6 +481,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/19 17:04:56  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.8  2003/10/20 23:03:33  thiessen
 * send pending commands before messenger is destroyed
 *

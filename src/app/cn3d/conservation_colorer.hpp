@@ -39,8 +39,8 @@
 #include <map>
 #include <vector>
 
-#include "cn3d/vector_math.hpp"
-#include "cn3d/cn3d_colors.hpp"
+#include "vector_math.hpp"
+#include "cn3d_colors.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -156,6 +156,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/02/19 17:04:54  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.14  2003/02/13 18:31:39  thiessen
 * separate basic from fit color calculation
 *

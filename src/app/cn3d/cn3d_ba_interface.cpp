@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -48,15 +52,15 @@
 
 #include <algo/structure/struct_dp/struct_dp.h>
 
-#include "cn3d/cn3d_ba_interface.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/asn_converter.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/wx_tools.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/cn3d_blast.hpp"
+#include "cn3d_ba_interface.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_set.hpp"
+#include "structure_set.hpp"
+#include "asn_converter.hpp"
+#include "molecule_identifier.hpp"
+#include "wx_tools.hpp"
+#include "cn3d_tools.hpp"
+#include "cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -484,6 +488,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/02/19 17:04:48  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.29  2004/02/19 02:16:06  thiessen
 * fix struct_dp.h path
 *

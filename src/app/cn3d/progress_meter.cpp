@@ -31,10 +31,14 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp>
 
-#include "cn3d/progress_meter.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "progress_meter.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -142,6 +146,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/02/19 17:05:04  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.6  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

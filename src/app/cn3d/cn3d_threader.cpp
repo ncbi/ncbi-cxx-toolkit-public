@@ -31,21 +31,25 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
 #include <corelib/ncbistl.hpp>
 
 #include <memory>
 
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/residue.hpp"
-#include "cn3d/coord_set.hpp"
-#include "cn3d/atom_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
+#include "block_multiple_alignment.hpp"
+#include "cn3d_threader.hpp"
+#include "sequence_set.hpp"
+#include "molecule.hpp"
+#include "structure_set.hpp"
+#include "residue.hpp"
+#include "coord_set.hpp"
+#include "atom_set.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
 
 // C-toolkit stuff
 #include <objseq.h>
@@ -98,7 +102,7 @@ static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
     return ((c != charMap.end()) ? c->second : -1);
 }
 
-const double Threader::SCALING_FACTOR = 1000000;
+const int Threader::SCALING_FACTOR = 1000000;
 
 const string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
@@ -944,7 +948,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
         // actually run the threader (finally!)
         INFOMSG("threading " << (*p)->GetSequenceOfRow(1)->identifier->ToString());
         success = atd(fldMtf, corDef, qrySeq, rcxPtl, gibScd, thdTbl, seqMtf,
-            trajectory, zscs, SCALING_FACTOR, options.weightPSSM);
+            trajectory, zscs, SCALING_FACTOR, (float) options.weightPSSM);
 
         BlockMultipleAlignment *newAlignment;
         if (success) {
@@ -1233,6 +1237,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/02/19 17:04:51  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.39  2003/11/04 18:09:17  thiessen
 * rearrange headers for OSX build
 *

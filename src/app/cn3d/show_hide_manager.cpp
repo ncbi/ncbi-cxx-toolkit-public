@@ -31,16 +31,20 @@
 * ===========================================================================
 */
 
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/residue.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include "show_hide_manager.hpp"
+#include "structure_set.hpp"
+#include "molecule.hpp"
+#include "residue.hpp"
+#include "chemical_graph.hpp"
+#include "messenger.hpp"
+#include "alignment_manager.hpp"
+#include "opengl_renderer.hpp"
+#include "cn3d_tools.hpp"
+#include "molecule_identifier.hpp"
 
 #include <corelib/ncbistre.hpp>
 #include <vector>
@@ -524,6 +528,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/02/19 17:05:13  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.20  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

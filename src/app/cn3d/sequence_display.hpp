@@ -39,9 +39,9 @@
 
 #include <map>
 
-#include "cn3d/viewable_alignment.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/sequence_set.hpp"
+#include "viewable_alignment.hpp"
+#include "block_multiple_alignment.hpp"
+#include "sequence_set.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -301,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/02/19 17:05:06  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.27  2003/10/20 13:17:15  thiessen
 * add float geometry violations sorting
 *

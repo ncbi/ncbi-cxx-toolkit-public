@@ -31,6 +31,12 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include <corelib/ncbistd.hpp>
+
 #include <objects/mmdb2/Model_coordinate_set.hpp>
 #include <objects/mmdb2/Coordinates.hpp>
 #include <objects/mmdb2/Surface_coordinates.hpp>
@@ -38,10 +44,10 @@
 #include <objects/mmdb3/Chem_graph_pntrs.hpp>
 #include <objects/mmdb2/Surface_coordinates.hpp>
 
-#include "cn3d/coord_set.hpp"
-#include "cn3d/atom_set.hpp"
-#include "cn3d/object_3d.hpp"
-#include "cn3d/cn3d_tools.hpp"
+#include "coord_set.hpp"
+#include "atom_set.hpp"
+#include "object_3d.hpp"
+#include "cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -112,6 +118,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/19 17:04:54  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.12  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -68,11 +68,11 @@ SRC = \
 LIB = \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode \
 	pub medline biblio general taxon1 \
+        xstruct_dp \
 	xser xutil xctools xconnect xncbi
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
-	-I$(srcdir)/.. \
 	$(WXWIN_INCLUDE) \
 	$(NCBI_C_INCLUDE)
 
@@ -80,7 +80,7 @@ LIBS = \
 	$(WXWIN_LIBS) $(WXWIN_GL_LIBS) \
 	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi \
-	-lxstruct_dp $(ORIG_LIBS)
+        $(ORIG_LIBS)
 
 
 # for distribution on linux/gcc, do:

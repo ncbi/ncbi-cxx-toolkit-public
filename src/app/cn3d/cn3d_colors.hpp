@@ -38,7 +38,7 @@
 
 #include <vector>
 
-#include "cn3d/vector_math.hpp"
+#include "vector_math.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -129,6 +129,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/02/19 17:04:50  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.13  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -31,6 +31,12 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
+#include <corelib/ncbistd.hpp>
+
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
@@ -44,10 +50,10 @@
 #include <objects/mmdb2/Conformation_ensemble.hpp>
 #include <objects/mmdb3/Atom_pntrs.hpp>
 
-#include "cn3d/atom_set.hpp"
-#include "cn3d/vector_math.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/structure_set.hpp"
+#include "atom_set.hpp"
+#include "vector_math.hpp"
+#include "cn3d_tools.hpp"
+#include "structure_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -287,6 +293,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/02/19 17:04:42  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.17  2003/10/21 13:48:48  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

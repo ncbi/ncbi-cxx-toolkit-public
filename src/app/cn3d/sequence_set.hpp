@@ -46,7 +46,7 @@
 
 #include <objloc.h>
 
-#include "cn3d/structure_base.hpp"
+#include "structure_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -106,6 +106,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/02/19 17:05:07  thiessen
+* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
+*
 * Revision 1.30  2003/07/14 18:37:08  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *
