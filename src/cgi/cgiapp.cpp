@@ -168,8 +168,12 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 
 void CCgiApplication::Init(void)
 {
-    // Disable background reporting for CGI applications
+    // Disable background reporting by default
     CException::EnableBackgroundReporting(false);
+
+    // Convert multi-line diagnostic messages into one-line ones by default
+    SetDiagPostFlag(eDPF_PreMergeLines);
+    SetDiagPostFlag(eDPF_MergeLines);
 
     CParent::Init();
 
@@ -722,6 +726,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.51  2004/04/07 22:21:41  vakatov
+* Convert multi-line diagnostic messages into one-line ones by default
+*
 * Revision 1.50  2004/03/10 23:35:13  vakatov
 * Disable background reporting for CGI applications
 *
