@@ -52,13 +52,8 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
     if ( csb->GetCONN() ) {
         init(csb.get());
         m_CSb = csb.release();
-    } else {
+    } else
         init(0); // according to the standard (27.4.4.1.3), badbit is set here
-#if 1
-        /* the next statement should not be really necessary */
-        clear(badbit | eofbit);
-#endif
-    }
 }
 
 
@@ -257,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/05/20 19:08:28  lavr
+ * Do not use clear() in constructor ('cause it may throw an exception)
+ *
  * Revision 6.22  2003/05/20 16:57:56  lavr
  * Fix typo in log
  *
