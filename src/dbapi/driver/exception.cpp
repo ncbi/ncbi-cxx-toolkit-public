@@ -112,15 +112,6 @@ CDB_Exception* CDB_RPCEx::Clone() const
 //
 
 CDB_SQLEx::CDB_SQLEx(EDBSeverity severity, int err_code,
-                     const char* originated_from, const char* msg,
-                     const char* sql_state, int batch_line)
-    : CDB_Exception(eSQL, severity, err_code, originated_from, msg)
-{
-    m_SqlState  = sql_state ? sql_state : "Unknown";
-    m_BatchLine = batch_line;
-}
-
-CDB_SQLEx::CDB_SQLEx(EDBSeverity severity, int err_code,
                      const string& originated_from, const string& msg,
                      const string& sql_state, int batch_line)
     : CDB_Exception(eSQL, severity, err_code, originated_from, msg)
@@ -206,7 +197,7 @@ bool CDB_MultiEx::CDB_MultiExStorage::Push(const CDB_Exception* ex)
 {
     if (ex->Type() == eMulti) { // this is a multi exception
         CDB_MultiEx& mex =
-            const_cast<CDB_MultiEx&> (dynamic_cast<const CDB_MultiEx&> (ex));
+            const_cast<CDB_MultiEx&> (dynamic_cast<const CDB_MultiEx&> (*ex));
 
         for (CDB_Exception* pex = mex.Pop();  pex;  pex = mex.Pop()) {
             if (m_NofExs < m_NofRooms) {
@@ -278,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/24 19:18:38  vakatov
+ * Fixed a couple of typos
+ *
  * Revision 1.1  2001/09/21 23:39:59  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
