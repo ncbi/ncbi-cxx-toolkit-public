@@ -497,7 +497,7 @@ const CSeq_id* s_GetLabel
         *label += "(feat)";
         break;
     default:
-        *label += "(??)";
+        *label += "(?\?)";
         break;
     }
     return last_id;
@@ -566,6 +566,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.23  2003/01/24 20:11:33  vasilche
+ * Fixed trigraph warning on GCC.
+ *
  * Revision 6.22  2003/01/22 20:17:33  vasilche
  * Optimized CSeq_loc::GetTotalRange().
  *
