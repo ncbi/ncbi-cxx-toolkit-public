@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2001/05/03 16:35:46  lavr
+ * Local bonus coefficient modified: meaning of negative value changed
+ *
  * Revision 6.25  2001/04/24 21:38:21  lavr
  * Additions to code to support new locality and bonus attributes of servers.
  *
@@ -350,8 +353,10 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
             case 'B':
                 if (!coef && sscanf(str, "=%lf%n", &d, &n) >= 1) {
                     str += n;
-                    if (d < 0.0)
-                        d = -1.0;
+                    if (d < -100.0)
+                        d = -100.0;
+                    else if (d < 0.0)
+                        d = (d < -0.1 ? d : -0.1);
                     else if (d < 0.01)
                         d = 0.0;
                     else if (d > 1000.0)

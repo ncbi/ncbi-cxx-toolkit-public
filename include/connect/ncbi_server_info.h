@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/05/03 16:35:34  lavr
+ * Local bonus coefficient modified: meaning of negative value changed
+ *
  * Revision 6.18  2001/04/24 21:24:05  lavr
  * New server attributes added: locality and bonus coefficient
  *
@@ -284,11 +287,17 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           specifies a multiplicative bonus given to a server run locally,
  *           when calculating reachability rate.
  *           Special rules apply to negitive/zero values:
- *           0.0 means not to use the rate increase at all (default
- *           rate calculation is used, which slightly increases rates
+ *           0.0 means not to use the described rate increase at all (default
+ *           rate calculation is used, which only slightly increases rates
  *           of locally run servers).
- *           Negative value (any) denotes that locally run server should
- *           be taken in first place, regardless of its rate.
+ *           Negative value denotes that locally run server should
+ *           be taken in first place, regardless of its rate, if this rate
+ *           is larger than percent of expressed by the absolute value
+ *           of this coefficient of average rate coefficient of other
+ *           servers for the same service. That is -5 instructs to
+ *           ignore locally run server if its status is less than 5% of
+ *           average status of remaining servers for the same service.
+ *
  *
  * Note that optional arguments can be omitted along with all preceding
  * optional arguments, that is the following 2 server specifications are

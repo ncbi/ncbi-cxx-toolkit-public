@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/05/03 16:35:53  lavr
+ * Local bonus coefficient modified: meaning of negative value changed
+ *
  * Revision 6.17  2001/04/26 20:20:01  lavr
  * Better way of choosing local server with a tiny (e.g. penalized) status
  *
@@ -365,7 +368,7 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
 {
-    double total = 0.0, point = -1.0, access = 0.0, status;
+    double total = 0.0, point = -1.0, access = 0.0, p = 0.0, status;
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
     SSERV_Info* info;
     size_t i;
@@ -387,6 +390,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
                 if (info->coef < 0.0 && access < status) {
                     access = status;
                     point  = total; /* Latch this local server */
+                    p = -info->coef;
                 }
             } else
                 status *= info->coef;
@@ -396,9 +400,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
     }
 
     /* We will take pre-chosen local server only if its status is not less
-       than 20% of the average rest status; otherwise, we ignore the server,
+       than p% of the average rest status; otherwise, we ignore the server,
        and apply the general procedure by seeding a random point. */
-    if (point < 0.0 || access < 0.2*(total - access)/data->n_node)
+    if (point < 0.0 || access*(data->n_node - 1) < p*(total - access))
         point = (total * rand()) / (double) RAND_MAX;
     for (i = 0; i < data->n_node; i++) {
         if (point < data->s_node[i].status)
