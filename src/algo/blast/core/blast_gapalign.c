@@ -538,6 +538,10 @@ BLAST_GapAlignStructNew(const BlastScoringOptions* score_options,
    Int2 status = 0;
    BlastGapAlignStruct* gap_align;
 
+   /* If pointer to output structure is NULL, just don't do anything */ 
+   if (!gap_align_ptr)
+      return 0;
+
    if (!gap_align_ptr || !sbp || !score_options || !ext_params)
       return -1;
 
@@ -2306,8 +2310,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
          BLAST_GreedyGappedAlignment(query_tmp.sequence, 
             subject->sequence, query_tmp.length, subject->length, gap_align, 
             score_options, init_hsp->q_off, init_hsp->s_off, 
-            TRUE, (ext_options->algorithm_type == EXTEND_GREEDY ? 
-                   TRUE : FALSE));
+            TRUE, (ext_options->algorithm_type == EXTEND_GREEDY));
          /* For neighboring we have a stricter criterion to keep an HSP */
          if (hit_options->is_neighboring) {
             Int4 hsp_length;
