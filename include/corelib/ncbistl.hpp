@@ -28,10 +28,12 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *   The NCBI C++/STL use hints
  *
  */
+
+/// @file ncbistl.hpp
+/// The NCBI C++/STL use hints.
+
 
 #include <ncbiconf.h>
 #include <corelib/mswin_export.h>
@@ -64,31 +66,54 @@
  */
 
 
+/// Define a new scope.
 #define BEGIN_SCOPE(ns) namespace ns {
+
+/// End the previously defined scope.
 #define END_SCOPE(ns) }
+
+/// Use the specified namespace.
 #define USING_SCOPE(ns) using namespace ns
 
 // Using STD and NCBI namespaces
+
+/// Define the std namespace.
 #define NCBI_NS_STD  std
+
+/// Use the std namespace.
 #define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
 
+/// Define the name for the NCBI namespace.
 #define NCBI_NS_NCBI ncbi
+
+/// Define ncbi namespace.
+///
+/// Place at beginning of file for NCBI related code.
 #define BEGIN_NCBI_SCOPE BEGIN_SCOPE(NCBI_NS_NCBI)
+
+/// End previously defined NCBI scope.
 #define END_NCBI_SCOPE   END_SCOPE(NCBI_NS_NCBI)
+
+/// For using NCBI namespace code.
 #define USING_NCBI_SCOPE USING_SCOPE(NCBI_NS_NCBI)
 
 
-// Magic spells ;-) needed for some weird compilers... very empiric
+/// Magic spell ;-) needed for some weird compilers... very empiric.
 namespace NCBI_NS_STD  { /* the fake one */ }
+
+/// Magic spell ;-) needed for some weird compilers... very empiric.
 namespace NCBI_NS_NCBI { /* the fake one, +"std" */ NCBI_USING_NAMESPACE_STD; }
+
+/// Magic spell ;-) needed for some weird compilers... very empiric.
 namespace NCBI_NS_NCBI { /* the fake one */ }
 
 
-// name concatenation
 #if !defined(NCBI_NAME2)
+/// Name concatenation macro with two names.
 #  define NCBI_NAME2(Name1, Name2) Name1##Name2
 #endif
 #if !defined(NCBI_NAME3)
+/// Name concatenation macro with three names.
 #  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
 #endif
 #if !defined(NCBI_EAT_SEMICOLON)
@@ -97,25 +122,26 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #endif
 
 
-// fix nonstandard 'for' statement behaviour on MSVC
 #if defined(NCBI_OS_MSWIN) && !defined(for)
+/// Fix nonstandard 'for' statement behaviour on MSVC.
 # define for if(0);else for
 #endif
 
-// ICC may fail to generate code preceded by "template<>"
 #ifdef NCBI_COMPILER_ICC
+/// ICC may fail to generate code preceded by "template<>".
 #define EMPTY_TEMPLATE
 #else
 #define EMPTY_TEMPLATE template<>
 #endif
 
-// Sun WorkShop < 5.3 fails to call destructors for objects created in
-// for-loop initializers; this macro prevents trouble with iterators
-// that contain CRefs by advancing them to the end, avoiding
-// "deletion of referenced CObject" errors.
-// (The nested ifs are to work around a bug in KCC's preprocessor -- sigh)
 #ifdef NCBI_COMPILER_WORKSHOP
 # if NCBI_COMPILER_VERSION < 530
+/// Advance iterator to end and then break out of loop.
+///
+/// Sun WorkShop < 5.3 fails to call destructors for objects created in
+/// for-loop initializers; this macro prevents trouble with iterators
+/// that contain CRefs by advancing them to the end, avoiding
+/// "deletion of referenced CObject" errors.
 #  define BREAK(it) while (it) { ++(it); }  break
 # else
 #  define BREAK(it) break
@@ -131,6 +157,9 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/08/24 14:17:36  siyan
+ * Documentation changes.
+ *
  * Revision 1.31  2003/04/14 11:34:27  siyan
  * Fixed STL group name
  *
