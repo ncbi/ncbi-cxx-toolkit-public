@@ -16,7 +16,7 @@ export DYLD_BIND_AT_LAUNCH
 . ${script_dir}/common.sh
 
 
-PLUGINS='algo_align algo_basic ncbi_init net_blast algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator'
+PLUGINS='algo_align algo_basic ncbi_init net_blast algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator algo_external'
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core xgbplugin'
 OPT_LIBS='bdb lds lds_admin xobjread'
@@ -60,6 +60,7 @@ MakeDirs()
     COMMON_ExecRB mkdir -p $1/lib
     COMMON_ExecRB mkdir -p $1/etc
     COMMON_ExecRB mkdir -p $1/plugins
+    COMMON_ExecRB mkdir -p $1/executables
 }
 
 
@@ -279,6 +280,13 @@ fltk_config=`sed -ne 's/^FLTK_CONFIG *= *//p' ${src_dir}/build/Makefile.mk`
 fltk_libdir=`$fltk_config --exec-prefix`/lib
 COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
+
+echo "Making links to executable plugins"
+# don't make links for *~ (emacs backup files) or #*# (autosave)
+for f in ${source_dir}/../plugins/algo/executables/*[^~#]; do
+    echo copying executable: `basename $f`
+    COMMON_ExecRB cp -p $f ${target_dir}/executables
+done
 
 # Do this last, to be sure the symlink doesn't end up dangling.
 rm -f ${src_dir}/bin/gbench
