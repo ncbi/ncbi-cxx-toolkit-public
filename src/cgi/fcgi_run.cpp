@@ -62,8 +62,11 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 # include <fcgiapp.h>
 # include <unistd.h>
 
-# ifdef NCBI_OS_UNIX
+// Normal FCGX_Accept ignores interrupts, so alarm() won't do much good
+// unless we use the reentrant version. :-/
+# if defined(NCBI_OS_UNIX) && defined(HAVE_FCGX_ACCEPT_R)
 #  include <signal.h>
+#  define USE_ALARM
 # endif
 
 BEGIN_NCBI_SCOPE
@@ -141,7 +144,7 @@ int CCgiWatchFile::x_Read(char* buf)
 }
 
 
-# ifdef NCBI_OS_UNIX
+# ifdef USE_ALARM
 extern "C" {
     static volatile bool s_AcceptTimedOut = false;
     static void s_AlarmHandler(int)
@@ -229,7 +232,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
     }}
 
-# ifdef NCBI_OS_UNIX
+# ifdef USE_ALARM
     int timeout = reg.GetInt("FastCGI", "WatchFile.Timeout", -1, 0,
                              CNcbiRegistry::eErrPost);
     struct sigaction old_sa;
@@ -237,9 +240,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         struct sigaction sa;
         memset(&sa, 0, sizeof(sa));
         sa.sa_handler = s_AlarmHandler;
-        sa.sa_flags   = SA_RESTART;
         sigaction(SIGALRM, &sa, &old_sa);
     }
+# endif
+
+# ifdef HAVE_FCGX_ACCEPT_R
+    FCGX_Init();
 # endif
 
     // Main Fast-CGI loop
@@ -251,7 +257,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << iterations);
 
-# ifdef NCBI_OS_UNIX
+# ifdef USE_ALARM
         if (timeout > 0) {
             alarm(timeout);
         }
@@ -260,22 +266,38 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // Accept the next request and obtain its data
         FCGX_Stream *pfin, *pfout, *pferr;
         FCGX_ParamArray penv;
-        if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
-# ifdef NCBI_OS_UNIX
+# ifdef HAVE_FCGX_ACCEPT_R
+        FCGX_Request request;
+        FCGX_InitRequest(&request, 0, FCGI_FAIL_ACCEPT_ON_INTR);
+        if (FCGX_Accept_r(&request) == 0) {
+            pfin  = request.in;
+            pfout = request.out;
+            pferr = request.err;
+            penv  = request.envp;
+        } else {
+#  ifdef USE_ALARM
             if (s_AcceptTimedOut) {
                 s_AcceptTimedOut = false;
                 if (x_FCGI_ShouldRestart(mtime, watcher.get())) {
                     break;
+                } else {
+                    continue;
                 }
             } else if (timeout > 0) {
                 alarm(0); // cancel the alarm!
             }
-# endif
+#  endif
             _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
         }
+# else
+        if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
+            _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
+            break;
+        }
+# endif
 
-# ifdef NCBI_OS_UNIX
+# ifdef USE_ALARM
         if (timeout > 0) {
             alarm(0); // cancel the alarm!
         }
@@ -313,7 +335,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     HTTP_EOL
                     "Done";
                 _TRACE("CCgiApplication::x_RunFastCGI: aborting by request");
+# ifdef HAVE_FCGX_ACCEPT_R
+                FCGX_Finish_r(&request);
+# else
                 FCGX_Finish();
+# endif
                 if (m_Iteration == 1) {
                     *result = 0;
                 }
@@ -366,14 +392,22 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if ( is_stop_onfail ) {     // configured to stop on error
                 // close current request
                 _TRACE("CCgiApplication::x_RunFastCGI: FINISHING (forced)");
+# ifdef HAVE_FCGX_ACCEPT_R
+                FCGX_Finish_r(&request);
+# else
                 FCGX_Finish();
+# endif
                 break;
             }
         }
 
         // Close current request
         _TRACE("CCgiApplication::x_RunFastCGI: FINISHING");
+# ifdef HAVE_FCGX_ACCEPT_R
+        FCGX_Finish_r(&request);
+# else
         FCGX_Finish();
+# endif
 
         // Logging
         if (logopt == eLog) {
@@ -393,7 +427,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // done
     _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI loop finished)");
-# ifdef NCBI_OS_UNIX
+# ifdef USE_ALARM
     if (timeout > 0) {
         sigaction(SIGALRM, &old_sa, 0);
     }
@@ -411,6 +445,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.29  2003/04/18 16:30:10  ucko
+ * Make timeout handling actually work.  (Requires the reentrant
+ * interface, so we can set FCGI_FAIL_ACCEPT_ON_INTR....)
+ *
  * Revision 1.28  2003/03/26 20:56:16  ucko
  * CCgiApplication::IsFastCGI: check dynamically (via FCGX_IsCGI).
  *
