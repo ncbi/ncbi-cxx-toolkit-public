@@ -407,7 +407,7 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
 					    continue;
 					} else {
 					    (*i)->SetSubname( pInfo->GetSval() );
-					    (*i)->SetSubtype( pInfo->GetIval2() );
+					    (*i)->SetSubtype( COrgMod::TSubtype( pInfo->GetIval2() ) );
 					}
 				    } else if( pInfo->GetIval1() != 0 ) {
 					// Another redirection occured
@@ -604,9 +604,10 @@ CTaxon1::PopulateReplaced( COrg_ref& org, COrgName::TMod& lMods  )
 				srchMod->SetSubname()
 				    .assign( sAttrib.c_str()+pos+1 );
 				srchMod->SetSubtype
-				    ( NStr::StringToInt
+				    ( COrgMod::TSubtype
+                                      (NStr::StringToInt
 				      (sAttrib.substr(1, pos-1), 10,
-				       NStr::eCheck_Skip) );
+				       NStr::eCheck_Skip) ) );
 				PFindMod mf;
 				mf.SetModToMatch( srchMod );
 				if( find_if( mods.begin(), mods.end(),
@@ -1106,7 +1107,7 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
                                                  |CObjectIStream::eNotOpen )
                                   ? true : false);
             } else {
-                m_pOut->ThrowError1((CObjectOStream::EFailFlags)
+                m_pOut->ThrowError((CObjectOStream::EFailFlags)
                                     m_pOut->GetFailFlags(),
                                     "Output stream is in bad state");
             }
@@ -1274,6 +1275,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.14  2003/03/10 20:59:37  ucko
+ * ThrowError1 -> ThrowError, per the recent change to <serial/objostr.hpp>.
+ * Explicitly cast ints to COrgMod::TSubtype when setting OrgMod.subtype.
+ *
  * Revision 6.13  2003/03/05 21:33:52  domrach
  * Enhanced orgref processing. Orgref cache capacity control added.
  *
