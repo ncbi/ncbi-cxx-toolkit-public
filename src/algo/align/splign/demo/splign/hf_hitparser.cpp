@@ -34,6 +34,7 @@
 #include "hf_hitparser.hpp"
 
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbistre.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/gbloader.hpp>
 #include <objmgr/reader_id1.hpp>
@@ -43,7 +44,6 @@
 
 #include <algorithm>
 #include <numeric>
-#include <stdio.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -717,16 +717,16 @@ int CHitParser::x_RunMSGS(bool bSelectGroupsOnly, int& nGroupId)
             for(size_t ig = 0; ig < nGroupCount; ig++)
             {
                 int ngid = ii->m_GroupID;
-                char acBuf [1024];  // the new subject
+		CNcbiOstrstream oss; // new subject
                 char c0 = (vStrands[ig] == -1)? 'x':
-                    (vStrands[ig] == 0)? 'i': 's';
+                    (vStrands[ig] == 0)? 'm': 'p';
                 int ngc = (c0 == 'i')? ++ngc_i: ++ngc_s;
-                sprintf(acBuf, "%s_[%c%02d]",
-                        strSubject0.c_str(), c0, ngc);
+		oss << strSubject0 << "_[" << c0 << ngc << ']';
+		const string new_subj = CNcbiOstrstreamToString(oss);
                 for(; ii != iend; ++ii)
                 {
                     if(ii->m_GroupID != ngid) break;
-                    ii->m_Subj = acBuf;
+                    ii->m_Subj = new_subj;
                 }
             }
         }}
@@ -1324,6 +1324,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/12/10 21:33:47  kapustin
+* -<stdio.h>, +<ncbistre.hpp>, sprintf --> CNcbiOstrstream
+*
 * Revision 1.3  2003/12/10 20:59:33  ucko
 * +<stdio.h> for sprintf(); add CVS log at end
 *
