@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/11/14 20:52:01  gouriano
+* added BeginChoice/EndChoice methods
+*
 * Revision 1.65  2002/11/04 21:28:59  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -660,6 +663,8 @@ public:
     virtual void EndClassMember(void);
 
     // choice
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
+    virtual void EndChoice(void);
     virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                     const CMemberId& id) = 0;
     virtual void EndChoiceVariant(void);
