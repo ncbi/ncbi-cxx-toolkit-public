@@ -32,9 +32,17 @@
  *
  */
 
+/// @file bdb_query.hpp
+/// Queries for BDB library.
+
 #include <corelib/ncbi_tree.hpp>
 
 BEGIN_NCBI_SCOPE
+
+/** @addtogroup BDB_Query
+ *
+ * @{
+ */
 
 /// Query node class
 /// 
@@ -108,7 +116,9 @@ protected:
     string m_Value;
 };
 
-
+/// Query class incapsulates query tree (query clause) and 
+/// implements set of utility methods to construct query trees.
+///
 class NCBI_BDB_EXPORT CBDB_Query
 {
 public:
@@ -233,11 +243,17 @@ private:
 /// (Intended more for debugging purposes)
 void BDB_PrintQueryTree(CNcbiOstream& os, const CBDB_Query& query);
 
+/* @} */
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/24 16:30:47  kuznets
+ * Improved doxygen documentation
+ *
  * Revision 1.4  2004/02/24 14:11:44  kuznets
  * Some improvement of CBDB_Query here and there. Additional constructor
  * parameter, NewOperatorNode helper function.
