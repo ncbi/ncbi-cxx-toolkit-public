@@ -40,6 +40,9 @@
 * -------  ----------  -----------------------------------------------------
 *
 * $Log$
+* Revision 1.3  2003/08/25 22:30:24  dondosha
+* Added LnGammaInt definition and Nlm_Factorial prototype
+*
 * Revision 1.2  2003/08/11 14:57:16  dondosha
 * Added algo/blast/core path to all #included headers
 *
@@ -93,6 +96,9 @@ extern double Nlm_Log1p (double);
 /* exp(x)-1 for all x */
 extern double Nlm_Expm1 (double);
 
+/* Factorial function */
+extern double Nlm_Factorial(Int4 n);
+
 /* Logarithm of the factorial Fn */
 extern double Nlm_LnFactorial (double x);
 
@@ -118,6 +124,7 @@ extern double Nlm_Powi (double x, Int4 n);
 #define Gcd	Nlm_Gcd
 #define Nint	Nlm_Nint
 #define Powi	Nlm_Powi
+#define LnGammaInt Nlm_LnGammaInt
 
 /* Error codes for the CTX_NCBIMATH context */
 #define ERR_NCBIMATH_INVAL	1 /* invalid parameter */
