@@ -115,7 +115,11 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 #else
     char buf[1024];
     str.erase();
-    while (is.good()) {
+    if ( !is.good() ) {
+        is.clear(is.rdstate() | NcbiFailbit);
+        return is;
+    }
+    do {
         CT_INT_TYPE nextc = is.get();
         if (CT_EQ_INT_TYPE(nextc, CT_EOF) 
             ||  CT_EQ_INT_TYPE(nextc, CT_TO_INT_TYPE(delim))) {
@@ -124,7 +128,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         is.putback(nextc);
         is.get(buf, sizeof(buf), delim);
         str.append(buf, is.gcount());
-    }
+    } while (is.good());
     return is;
 #endif
 }
@@ -369,6 +373,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/09/05 15:22:26  ivanov
+ * Fixed NcbiGetline() to correct handle last line in the input stream
+ *
  * Revision 1.27  2003/08/27 18:58:22  ucko
  * NcbiGetline: revert to std::getline for GCC 2.9x, since the custom
  * version blows up mysteriously (at least in debug builds).
