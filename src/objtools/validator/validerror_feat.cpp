@@ -1710,94 +1710,102 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
     
     CBioseq_Handle nuc = m_Scope->GetBioseqHandle(feat.GetLocation());
     if (!nuc) {
-        return;
-    }
-    EDiagSev sev = eDiag_Error;
-    CBioseq_Handle rna = m_Scope->GetBioseqHandleFromTSE(*product_id, nuc);
-    if (!rna) {
-        // if not local bioseq product, lower severity (with the exception of Refseq)
-        sev = m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning;
-        if (m_Imp.IsFarFetchMRNAproducts()) {
-            rna = m_Scope->GetBioseqHandle(feat.GetProduct());
-        }
-        if (!rna) {
-            return;
-        }
-        farstr = "(far)";
-    }
-    _ASSERT(nuc  &&  rna);
-    
-    CSeqVector nuc_vec = nuc.GetSequenceView(feat.GetLocation(),
-        CBioseq_Handle::eViewConstructed,
-        CBioseq_Handle::eCoding_Iupac);
-    CSeqVector rna_vec = rna.GetSequenceView(feat.GetProduct(),
-        CBioseq_Handle::eViewConstructed,
-        CBioseq_Handle::eCoding_Iupac);
-
-    size_t nuc_len = nuc_vec.size();
-    size_t rna_len = rna_vec.size();
-
-    if (nuc_len != rna_len) {
         has_errors = true;
-        if (nuc_len < rna_len) {
-            size_t count_a = 0, count_no_a = 0;
-            // count 'A's in the tail
-            for (CSeqVector_CI iter(rna_vec, nuc_len); iter; ++iter) {
-                if ((*iter == 'A')  ||  (*iter == 'a')) {
-                    ++count_a;
-                } else {
-                    ++count_no_a;
-                }
+        if (report_errors  ||  unclassified_except) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_MrnaTransFail,
+                "Unable to transcribe mRNA", feat);
+        };
+    }
+    if (nuc) {
+        EDiagSev sev = eDiag_Error;
+        CBioseq_Handle rna = m_Scope->GetBioseqHandleFromTSE(*product_id, nuc);
+        if (!rna) {
+            // if not local bioseq product, lower severity (with the exception of Refseq)
+            sev = m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning;
+            if (m_Imp.IsFarFetchMRNAproducts()) {
+                rna = m_Scope->GetBioseqHandle(feat.GetProduct());
             }
-            if (count_a < (19 * count_no_a)) { // less then 5%
-                if (report_errors) {
-                    PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
-                        "Transcript length [" + NStr::IntToString(nuc_len) + 
-                        "] less than " + farstr + "product length [" + NStr::IntToString(rna_len) + 
-                        "], and tail < 95% polyA", feat);
+            if (!rna) {
+                return;
+            }
+            farstr = "(far)";
+        }
+        _ASSERT(nuc  &&  rna);
+    
+        CSeqVector nuc_vec = nuc.GetSequenceView(feat.GetLocation(),
+            CBioseq_Handle::eViewConstructed,
+            CBioseq_Handle::eCoding_Iupac);
+        CSeqVector rna_vec = rna.GetSequenceView(feat.GetProduct(),
+            CBioseq_Handle::eViewConstructed,
+            CBioseq_Handle::eCoding_Iupac);
+
+        size_t nuc_len = nuc_vec.size();
+        size_t rna_len = rna_vec.size();
+
+        if (nuc_len != rna_len) {
+            has_errors = true;
+            if (nuc_len < rna_len) {
+                size_t count_a = 0, count_no_a = 0;
+                // count 'A's in the tail
+                for (CSeqVector_CI iter(rna_vec, nuc_len); iter; ++iter) {
+                    if ((*iter == 'A')  ||  (*iter == 'a')) {
+                        ++count_a;
+                    } else {
+                        ++count_no_a;
+                    }
                 }
+                if (count_a < (19 * count_no_a)) { // less then 5%
+                    if (report_errors) {
+                        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
+                            "Transcript length [" + NStr::IntToString(nuc_len) + 
+                            "] less than " + farstr + "product length [" +
+                            NStr::IntToString(rna_len) + "], and tail < 95% polyA",
+                            feat);
+                    }
+                } else {
+                    if (report_errors) {
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_TranscriptLen,
+                            "Transcript length [" + NStr::IntToString(nuc_len) + 
+                            "] less than " + farstr + "product length [" +
+                            NStr::IntToString(rna_len) + "], but tail >= 95% polyA",
+                            feat);
+                    }
+                }            
             } else {
                 if (report_errors) {
-                    PostErr(eDiag_Info, eErr_SEQ_FEAT_TranscriptLen,
-                        "Transcript length [" + NStr::IntToString(nuc_len) + 
-                        "] less than " + farstr + "product length [" + NStr::IntToString(rna_len) +
-                        "], but tail >= 95% polyA", feat);
+                    PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
+                        "Transcript length [" + NStr::IntToString(nuc_vec.size()) + "] " +
+                        "greater than " + farstr +"product length [" + 
+                        NStr::IntToString(rna_vec.size()) + "]", feat);
                 }
-            }            
-        } else {
-            if (report_errors) {
-                PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
-                    "Transcript length [" + NStr::IntToString(nuc_vec.size()) + "] " +
-                    "greater than " + farstr +"product length [" + 
-                    NStr::IntToString(rna_vec.size()) + "]", feat);
             }
+            // allow base-by-base comparison on common length
+            rna_len = nuc_len = min(nuc_len, rna_len);
         }
-        // allow base-by-base comparison on common length
-        rna_len = nuc_len = min(nuc_len, rna_len);
-    }
-    _ASSERT(nuc_len == rna_len);
+        _ASSERT(nuc_len == rna_len);
 
-    if (nuc_len > 0) {
-        CSeqVector_CI nuc_ci(nuc_vec);
-        CSeqVector_CI rna_ci(rna_vec);
-        size_t mismatches = 0;
+        if (nuc_len > 0) {
+            CSeqVector_CI nuc_ci(nuc_vec);
+            CSeqVector_CI rna_ci(rna_vec);
+            size_t mismatches = 0;
 
-        // compare content of common length
-        while ((nuc_ci  &&  rna_ci)  &&  (nuc_ci.GetPos() < nuc_len)) {
-            if (*nuc_ci != *rna_ci) {
-                ++mismatches;
+            // compare content of common length
+            while ((nuc_ci  &&  rna_ci)  &&  (nuc_ci.GetPos() < nuc_len)) {
+                if (*nuc_ci != *rna_ci) {
+                    ++mismatches;
+                }
+                ++nuc_ci;
+                ++rna_ci;
             }
-            ++nuc_ci;
-            ++rna_ci;
-        }
-        if (mismatches > 0) {
-            has_errors = true;
-            if (report_errors  &&  !mismatch_except) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
-                    "There are " + NStr::IntToString(mismatches) + 
-                    " mismatches out of " + NStr::IntToString(nuc_len) +
-                    " bases between the transcript and " + farstr + "product sequence",
-                    feat);
+            if (mismatches > 0) {
+                has_errors = true;
+                if (report_errors  &&  !mismatch_except) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
+                        "There are " + NStr::IntToString(mismatches) + 
+                        " mismatches out of " + NStr::IntToString(nuc_len) +
+                        " bases between the transcript and " + farstr + "product sequence",
+                        feat);
+                }
             }
         }
     }
@@ -3033,6 +3041,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2004/09/21 19:10:30  shomrat
+* Addede eErr_SEQ_FEAT_MrnaTransFail, support mismatches in transcription exception
+*
 * Revision 1.67  2004/09/21 16:03:51  shomrat
 * ValidateSplices suppress messages if specific exceptions, but do tests and report if no problem detected
 *
