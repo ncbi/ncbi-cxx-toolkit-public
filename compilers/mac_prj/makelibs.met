@@ -126,7 +126,7 @@ on SetProjectData()
 			"ncbistd", "ncbistre", "ncbithr", "ncbitime", "ncbimtx", "ncbi_safe_static", "ncbi_system", ¬
 			"ncbi_os_mac"})
 	
-	AddSimpleProject("cgi", {"C++"}, "cgi", {"cgi_run", "cgictx", "fcgibuf", "ncbicgir", "cgiapp", "ncbicgi", "ncbires"})
+	AddSimpleProject("cgi", {"C++"}, "cgi", {"cgi_run", "cgictx", "ncbicgir", "cgiapp", "ncbicgi", "ncbires"})
 	
 	AddSimpleProject("dbapi", {"C++"}, "dbapi", ¬
 		{"active_obj", "rsmeta_impl", "conn_impl", "array", "driver_mgr", "stmt_impl", "cstmt_impl", ¬

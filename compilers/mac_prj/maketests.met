@@ -153,7 +153,7 @@ on SetProjectData()
 				"enumtype", "reftype", "unitype", "blocktype", "choicetype", "typestr", "ptrstr", ¬
 				"stdstr", "classstr", "enumstr", "stlstr", "choicestr", "choiceptrstr", "value", ¬
 				"mcontainer", "module", "moduleset", "generate", "filecode", "code", "fileutil", ¬
-				"alexer", "aparser", "parser", "lexer", "exceptions", "comments", "srcutil"}}}
+				"dtdlexer", "dtdparser", "alexer", "aparser", "parser", "lexer", "exceptions", "comments", "srcutil"}}}
 		set datatoolData to {name:myName, features:myFeatures, settings:mySettings, rsrcs:myRsrcs, projLibs:myLibs, fileData:myFiles}
 		
 		set commonObjLibs to {¬
