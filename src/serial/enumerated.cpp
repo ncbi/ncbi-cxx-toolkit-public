@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/05 21:21:32  vasilche
+* Added mutex for enum values map
+*
 * Revision 1.21  2002/08/30 16:21:32  vasilche
 * Added MT lock for cache maps
 *
@@ -164,14 +167,14 @@ void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)
     m_NameToValue.reset(0);
 }
 
-static CMutex s_EnumValuesMutex;
+static CFastMutex s_EnumValuesMutex;
 
 const CEnumeratedTypeValues::TValueToName&
 CEnumeratedTypeValues::ValueToName(void) const
 {
     TValueToName* m = m_ValueToName.get();
     if ( !m ) {
-        CMutexGuard GUARD(s_EnumValuesMutex);
+        CFastMutexGuard GUARD(s_EnumValuesMutex);
         m = m_ValueToName.get();
         if ( !m ) {
             auto_ptr<TValueToName> keep(m = new TValueToName);
@@ -189,7 +192,7 @@ CEnumeratedTypeValues::NameToValue(void) const
 {
     TNameToValue* m = m_NameToValue.get();
     if ( !m ) {
-        CMutexGuard GUARD(s_EnumValuesMutex);
+        CFastMutexGuard GUARD(s_EnumValuesMutex);
         m = m_NameToValue.get();
         if ( !m ) {
             auto_ptr<TNameToValue> keep(m = new TNameToValue);
