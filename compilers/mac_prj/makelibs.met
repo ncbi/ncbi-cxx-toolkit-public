@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.13 2001/03/19 16:31:15 juran Exp $
+	$Id: makelibs.met,v 1.14 2001/06/19 22:32:08 juran Exp $
 	
 	Revision History:
 	----------------
@@ -47,18 +47,13 @@ property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder 
 
 global gStartupDisk
 global gMW6root
-global METRO
-global METROWERKSCW
-global OTLIB
+global gMWCWfolder
 
 global NCBICPP
 
 global SOURCEFILES
 global INCLUDEFILES
 global LIBRARIES
-
-global DODEBUG
-global DOOPENTPT
 
 on ResolveAlias(pathname)
 	tell application "Finder"
@@ -76,8 +71,7 @@ on DoSetGlobals()
 		
 		set gStartupDisk to startup disk as string
 		set gMW6root to gStartupDisk & "Metrowerks CodeWarrior 6.0:"
-		set METROWERKSCW to gMW6root & "Metrowerks CodeWarrior:"
-		set OTLIB to METROWERKSCW & "MacOS Support:OpenTransport:Open Tpt Client Developer:PPC Libraries:"
+		set gMWCWfolder to gMW6root & "Metrowerks CodeWarrior:"
 		
 		set NCBICPP to gMW6root & CPPROOT
 		
@@ -356,13 +350,14 @@ end DoSetPaths2
 on SetupTarget(projName, projFiles, prefixFile, flags)
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
+		-- Figure out what our output file and input libraries will be named.
 		if flags contains "Carbon" then
-			set targetAPI to "Carbon"
+			set targetAPI to "C2"
 		else
-			set targetAPI to "Blue"
+			set targetAPI to "Mac"
 		end if
 		if flags contains "debug" then
-			set targetDebug to "debug"
+			set targetDebug to "dbg"
 		else
 			set targetDebug to ""
 		end if
@@ -498,8 +493,8 @@ on CreateAllProjects()
 	end if
 	
 	my CreateSimpleProject("corelib", "corelib:", Â
-		{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", Â
-			"ncbiobj", "ncbireg", "ncbistd", "ncbistre", "ncbithr", "ncbitime"})
+		{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", "ncbiobj", "ncbireg", "ncbistd", Â
+			"ncbistre", "ncbithr", "ncbitime", "ncbimtx", "ncbi_safe_static", "ncbi_system"})
 	
 	my CreateSimpleProject("util", "util:", Â
 		{"bytesrc", "strbuffer", "checksum", "itree"})
@@ -512,7 +507,7 @@ on CreateAllProjects()
 			"objectiter", "objectio", "objcopy", "objhook", "objistr", "objistrasn", "objistrasnb", Â
 			"objistrxml", "objlist", "objostr", "objostrasn", "objostrasnb", Â
 			"objostrxml", "objstack", "objstrb", "ptrinfo", Â
-			"rtti", "serial", "serialasn", "stdtypes", Â
+			"rtti", "serial", "serialasn", "serializable", "stdtypes", Â
 			"stltypes", "typeinfo", "typemap", "typeref", "variant"})
 	
 	my CreateSimpleProject("html", "html:", Â
@@ -531,17 +526,29 @@ on CreateAllProjects()
 		my CreateSimpleProject("object_cdd", "objects:cdd:", Â
 			{"cdd__", "cdd___"})
 		
+		my CreateSimpleProject("object_cn3d", "objects:cn3d:", Â
+			{"cn3d__", "cn3d___"})
+		
+		my CreateSimpleProject("object_entrez2", "objects:entrez2:", Â
+			{"entrez2__", "entrez2___"})
+		
 		my CreateSimpleProject("object_featdef", "objects:featdef:", Â
 			{"featdef__", "featdef___"})
 		
 		my CreateSimpleProject("object_general", "objects:general:", Â
 			{"general__", "general___"})
 		
+		my CreateSimpleProject("object_id1", "objects:id1:", Â
+			{"id1__", "id1___"})
+		
 		my CreateSimpleProject("object_medlars", "objects:medlars:", Â
 			{"medlars__", "medlars___"})
 		
 		my CreateSimpleProject("object_medline", "objects:medline:", Â
 			{"medline__", "medline___"})
+		
+		my CreateSimpleProject("object_mim", "objects:mim:", Â
+			{"mim__", "mim___"})
 		
 		my CreateSimpleProject("object_mmdb1", "objects:mmdb1:", Â
 			{"mmdb1__", "mmdb1___"})
@@ -644,7 +651,8 @@ on BuildAllLibraries()
 			"object_medlars", "object_medline", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
 			"object_ncbimime", "object_objprt", "object_proj", "object_pub", "object_pubmed", "object_seq", Â
 			"object_seqalign", "object_seqblock", "object_seqcode", "object_seqfeat", "object_seqloc", Â
-			"object_seqres", "object_seqset", "object_submit", "objmgr"}
+			"object_seqres", "object_seqset", "object_submit", "objmgr", Â
+			"object_id1", "object_cn3d", "object_entrez2", "object_mim"}
 		BuildLibraries(myLibs)
 	end if
 	
