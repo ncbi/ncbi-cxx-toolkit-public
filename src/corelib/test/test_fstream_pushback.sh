@@ -4,7 +4,8 @@
 #
 
 i=0
-while [ $i -lt 5 ]; do
+j=`expr $$ % 4 + 1`
+while [ $i -lt $j ]; do
   test_fstream_pushback  ||  exit
   i="`expr $i + 1`"
 done
