@@ -64,11 +64,18 @@
 #endif
 
 
-#ifdef NCBI_TABLES_EXPORTS
-#  define NCBI_TABLES_EXPORT      __declspec(dllexport)
+/* This is a static lib on MSVC 7.10 */
+
+#if (_MSC_VER >= 1310)
+#  define NCBI_TABLES_EXPORT
 #else
-#  define NCBI_TABLES_EXPORT      __declspec(dllimport)
-#endif
+# ifdef NCBI_TABLES_EXPORTS
+#   define NCBI_TABLES_EXPORT      __declspec(dllexport)
+# else
+#   define NCBI_TABLES_EXPORT      __declspec(dllimport)
+# endif /* NCBI_TABLES_EXPORTS */
+#endif  /* (_MSC_VER >= 1310) */
+
 
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
@@ -90,6 +97,9 @@
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/03/11 20:32:20  gorelenk
+ * Conditionaly changed definition of NCBI_TABLES_EXPORT export prefix.
+ *
  * Revision 1.1  2003/08/21 19:48:19  ucko
  * Add tables library (shared with C) for raw score matrices, etc.
  *
