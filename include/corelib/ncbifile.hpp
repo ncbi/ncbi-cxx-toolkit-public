@@ -625,6 +625,15 @@ public:
     ///   An array containing all directory entries.
     TEntries GetEntries(const string& mask = kEmptyStr) const;
 
+    /// Get directory entries based on the specified set of"masks".
+    ///
+    /// @param mask
+    ///   Use to select only files that match this set of masks.
+    /// @return
+    ///   An array containing all directory entries.
+    TEntries GetEntries(const vector<string>& masks) const;
+
+
     /// Create the directory using "dirname" passed in the constructor.
     /// 
     /// @return
@@ -915,6 +924,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/11/05 15:35:44  kuznets
+ * Added CDir::GetEntries() based on set of masks
+ *
  * Revision 1.30  2003/10/23 12:11:37  ucko
  * Drop <memory> (now unneeded, and should have gone to ncbifile.cpp anyway)
  *
