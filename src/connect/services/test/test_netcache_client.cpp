@@ -392,9 +392,11 @@ void s_TestAlive(const string& host, unsigned short port)
 
 void s_TestClientLB(const string& service_name)
 {
-    CNetCacheClient_LB nc_client("test", service_name, 2, 1);
+    cout << "Load Balanced test." << endl;
+
+    CNetCacheClient_LB nc_client("test", service_name, 2, 10);
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
-//    const char test_data2[] = "New data.";
+    const char test_data2[] = "Test 2.";
     string key = nc_client.PutData(test_data, sizeof(test_data));
     NcbiCout << key << NcbiEndl;
 
@@ -414,15 +416,20 @@ void s_TestClientLB(const string& service_name)
 
     vector<string> keys;
 
+    cout << "Saving BLOBS..." << endl;
     {{
     for (unsigned i = 0; i < 1000; ++i) {
         key = nc_client.PutData(test_data, sizeof(test_data));
         keys.push_back(key);
+        if (i % 200 == 0) cout << "." << flush;
     }
     }}
 
+    cout << endl << "Done." << endl;
+
+    cout << "Read/Update test..." << endl;
     {{
-    for (unsigned i = 0; i < 1000; ++i) {
+    for (unsigned i = 0; i < keys.size(); ++i) {
         key = keys[i];
 
         char dataBuf[1024];
@@ -435,8 +442,30 @@ void s_TestClientLB(const string& service_name)
         int res = strcmp(dataBuf, test_data);
         assert(res == 0);
         assert(blob_size == sizeof(test_data));
+
+        IWriter* wrt = nc_client.PutData(&key);
+        size_t bytes_written;
+        ERW_Result wres = 
+            wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
+        delete wrt;
+
+        memset(dataBuf, 0xff, sizeof(dataBuf));
+        reader = nc_client.GetData(key, &blob_size);
+        assert(reader);
+        reader->Read(dataBuf, 1024);
+        delete reader;
+        res = strcmp(dataBuf, test_data2);
+        assert(res == 0);
+        assert(blob_size == sizeof(test_data2));
+
+        if (i % 200 == 0) cout << "." << flush;
+
     }
     }}
+
+    cout << endl << "Done." << endl;
+
+    cout << "Load Balanced test complete." << endl;
 
 }
 
@@ -637,6 +666,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/01/28 14:47:45  kuznets
+ * LB test improved
+ *
  * Revision 1.25  2005/01/27 14:56:29  kuznets
  * Fixed GCC warnings
  *
