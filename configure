@@ -12744,6 +12744,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -13439,6 +13440,7 @@ s,@KSTAT_LIBS@,$KSTAT_LIBS,;t t
 s,@RPCSVC_LIBS@,$RPCSVC_LIBS,;t t
 s,@CRYPT_LIBS@,$CRYPT_LIBS,;t t
 s,@DL_LIBS@,$DL_LIBS,;t t
+s,@SYBASE_PATH@,$SYBASE_PATH,;t t
 s,@SYBASE_INCLUDE@,$SYBASE_INCLUDE,;t t
 s,@SYBASE_LIBS@,$SYBASE_LIBS,;t t
 s,@SYBASE_DLLS@,$SYBASE_DLLS,;t t

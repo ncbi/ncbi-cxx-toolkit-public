@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.88 2002/06/10 17:07:46 ucko Exp $
+#  $Id: configure.ac,v 1.89 2002/06/10 19:49:18 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2649,6 +2649,7 @@ AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(CRYPT_LIBS)
 AC_SUBST(DL_LIBS)
+AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(SYBASE_DLLS)
