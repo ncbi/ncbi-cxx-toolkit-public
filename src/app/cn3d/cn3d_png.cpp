@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/21 12:21:21  thiessen
+* minor fixes for AIX
+*
 * Revision 1.8  2001/10/25 17:16:43  thiessen
 * add PNG output to Mac version
 *
@@ -122,6 +125,11 @@
 wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+// fix jmpbuf symbol problem on aix
+#if defined(_AIX43) && defined(jmpbuf)
+#undef jmpbuf
+#endif
 
 USING_NCBI_SCOPE;
 

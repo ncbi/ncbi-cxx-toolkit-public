@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/21 12:21:23  thiessen
+* minor fixes for AIX
+*
 * Revision 1.5  2001/08/21 01:10:13  thiessen
 * add labeling
 *
@@ -76,8 +79,8 @@ template < class T >
 class TypeStringAssociator
 {
 private:
-    std::map < T , std::string > type2string;
-    std::map < std::string , T > string2type;
+    typename std::map < T , std::string > type2string;
+    typename std::map < std::string , T > string2type;
 public:
     void Associate(const T& type, const std::string& name)
     {
