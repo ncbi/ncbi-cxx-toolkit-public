@@ -30,6 +30,7 @@
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -427,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/01/08 18:10:18  sapojnik
+ * Syabse to MSSQL name translations moved to interface_p.hpp
+ *
  * Revision 1.5  2001/12/18 19:29:22  soussov
  * adds conversion from nanosecs to milisecs for datetime args
  *

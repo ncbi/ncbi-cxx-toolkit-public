@@ -30,6 +30,7 @@
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -1405,6 +1406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/01/08 18:10:18  sapojnik
+ * Syabse to MSSQL name translations moved to interface_p.hpp
+ *
  * Revision 1.7  2002/01/03 17:01:56  sapojnik
  * fixing CR/LF mixup
  *

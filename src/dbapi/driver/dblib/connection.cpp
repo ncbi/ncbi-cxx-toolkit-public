@@ -30,6 +30,7 @@
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <string.h>
 
 
@@ -374,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/08 18:10:18  sapojnik
+ * Syabse to MSSQL name translations moved to interface_p.hpp
+ *
  * Revision 1.3  2001/10/24 16:39:01  lavr
  * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
  *

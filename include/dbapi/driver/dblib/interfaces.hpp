@@ -32,38 +32,29 @@
  *
  */
 
-#ifdef NCBI_OS_MSWIN
-
-#define DBNTWIN32          // must identify operating system environment
-#include "windows.h"
-#include <sqlfront.h>
-#include <sqldb.h>     // DB-LIB header file (should always be included)
-
-#define DBDATETIME4_days(x) ((x)->numdays)
-#define DBDATETIME4_mins(x) ((x)->nummins)
-#define DBNUMERIC_val(x) ((x)->val)
-
-#include <dbapi/driver/dblib/const_syb2ms.hpp>
-
-#else
-
-#define DBDATETIME4_days(x) ((x)->days)
-#define DBDATETIME4_mins(x) ((x)->minutes)
-#define DBNUMERIC_val(x) ((x)->array)
-
-#endif
-
-
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
 
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_MSWIN
+
+#include <windows.h>
+#define DBNTWIN32 /* must be defined before sqlfront.h */
+#include <sqlfront.h> /* must be after windows.h */
+#include <sqldb.h>
+
+#define DBVERSION_UNKNOWN DBUNKNOWN
+#define DBCOLINFO    DBCOL
+// Other constants and types remapped in interfaces_p.hpp
+
+#else
+
 #include <sybfront.h>
 #include <sybdb.h>
 #include <syberror.h>
+
 #endif
 
 
@@ -627,10 +618,10 @@ class CDBL_ITDescriptor : public I_ITDescriptor
 public:
     virtual ~CDBL_ITDescriptor();
 
-#ifndef NCBI_OS_MSWIN
+//#ifndef NCBI_OS_MSWIN
 private:
     bool x_MakeObjName(DBCOLINFO* col_info);
-#endif
+//#endif
 
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
@@ -654,6 +645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/01/08 18:09:39  sapojnik
+ * Syabse to MSSQL name translations moved to interface_p.hpp
+ *
  * Revision 1.5  2002/01/08 15:58:00  sapojnik
  * Moved to const_syb2ms.hpp: Sybase dblib constants translations to Microsoft-compatible ones
  *

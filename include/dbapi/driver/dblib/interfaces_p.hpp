@@ -26,13 +26,13 @@
  * Author:  Victor Sapojnikov
  *
  * File Description:
- *   Sybase dblib constants translations to Microsoft-compatible ones.
- *   Do not include directly: use interfaces.hpp instead.
+ *   Some Sybase dblib constants, types and structure members
+ *   translated to Microsoft-compatible ones.
  *
  */
 
-#ifndef DBAPI_DRIVER_DBLIB___CONST_SYB2MS__HPP
-#define DBAPI_DRIVER_DBLIB___CONST_SYB2MS__HPP
+#ifndef DBAPI_DRIVER_DBLIB___INTERFACES_P__HPP
+#define DBAPI_DRIVER_DBLIB___INTERFACES_P__HPP
 #ifdef NCBI_OS_MSWIN
 
 #define SYBINT1 SQLINT1
@@ -56,15 +56,24 @@
 
 // DBSETLENCRYPT
 #define DBDATETIME4  DBDATETIM4
-#define DBCOLINFO    DBCOL
 #define DBTYPEINFO   DBTYPEDEFS
-
-#define DBVERSION_UNKNOWN DBUNKNOWN
 
 #define CS_SUCCEED 0
 #define INT_TIMEOUT 1
 #define CS_INT Int4
 
+#define DBDATETIME4_days(x) ((x)->numdays)
+#define DBDATETIME4_mins(x) ((x)->nummins)
+#define DBNUMERIC_val(x) ((x)->val)
+
+#else
+
+#define DBDATETIME4_days(x) ((x)->days)
+#define DBDATETIME4_mins(x) ((x)->minutes)
+#define DBNUMERIC_val(x) ((x)->array)
+
 #endif
-#endif  /* DBAPI_DRIVER_DBLIB___CONST_SYB2MS__HPP */
+
+
+#endif  /* DBAPI_DRIVER_DBLIB___INTERFACES_P__HPP */
 
