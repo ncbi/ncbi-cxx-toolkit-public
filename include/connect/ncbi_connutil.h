@@ -60,6 +60,12 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/29 17:47:46  lavr
+ * NCBID stuff removed; ClientMode enum added;
+ * ConnNetInfo_SetUserHeader added; http_user_header is now
+ * included in ConnInfo structure. ConnNetInfo_Destroy parameter
+ * changed to be a pointer (was a double pointer).
+ *
  * Revision 6.4  2000/11/07 23:23:15  vakatov
  * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
  * (with "eMIME_Dispatch" added).
@@ -95,31 +101,30 @@ typedef enum {
 
 
 typedef enum {
-    eClientModeUnspecified = 0,
-    eClientModeFirewall,
-    eClientModeStatefulCapable
+    eClientModeStatelessOnly = 0,
+    eClientModeStatefulCapable,
+    eClientModeFirewall
 } EClientMode;
 
 
 /* Network connection related configurable info struct
  */
 typedef struct {
-    char           client_host[64];  /* effective client hostname */
-    char           host[64];         /* host to connect to */
-    unsigned short port;             /* port to connect to */
+    char           client_host[64];  /* effective client hostname            */
+    char           host[64];         /* host to connect to                   */
+    unsigned short port;             /* port to connect to, host byte order  */
     char           path[1024];       /* service: path(e.g. to  a CGI script) */
     char           args[1024];       /* service: args(e.g. for a CGI script) */
-    EReqMethod     req_method;       /* method to use in the request */
-    STimeout       timeout;          /* i/o timeout  */
+    EReqMethod     req_method;       /* method to use in the request         */
+    STimeout       timeout;          /* i/o timeout                          */
     unsigned int   max_try;          /* max. # of attempts to establish conn */
-    char           http_proxy_host[64];  /* hostname of HTTP proxy server */
-    unsigned short http_proxy_port;      /* port #   of HTTP proxy server */
+    char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
+    unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
     char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
-    int/*bool*/    debug_printout;   /* printout some debug info */
-    int/*bool*/    lb_disable;       /* to disable local load-balancing */
-    EClientMode    client_mode;      /* how to connect to the server */
-    unsigned short ncbid_port;       /* port of NCBID CGI script(used by LB) */
-    char           ncbid_path[256];  /* path to NCBID CGI script(used by LB) */
+    int/*bool*/    debug_printout;   /* printout some debug info             */
+    int/*bool*/    lb_disable;       /* to disable local load-balancing      */
+    EClientMode    client_mode;      /* how to connect to the server         */
+    const char*    http_user_header; /* user header to add to HTTP request   */
 
     /* the following field(s) are for the internal use only! */
     int/*bool*/    http_proxy_adjusted;
@@ -169,13 +174,6 @@ typedef struct {
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
 
-#define REG_CONN_NCBID_PORT       "NCBID_PORT"
-#define DEF_CONN_NCBID_PORT       80
-
-#define REG_CONN_NCBID_PATH       "NCBID_PATH"
-#define DEF_CONN_NCBID_PATH       "/Service/ncbid.cgi"
-                                  
-
 
 /* This function to fill out the "*info" structure using
  * registry entries named (see above) in macros REG_CONN_<NAME>:
@@ -224,6 +222,14 @@ extern SConnNetInfo* ConnNetInfo_Clone
  );
 
 
+/* Set user header (discard previously set header, if any).
+ */
+extern void ConnNetInfo_SetUserHeader
+(SConnNetInfo* info,
+ const char*   user_header
+ );
+
+
 /* Printout the "*info" to file "fp".
  */
 extern void ConnNetInfo_Print
@@ -232,11 +238,10 @@ extern void ConnNetInfo_Print
  );
 
 
-/* Destroy "**info" and deallocate "*info" if "*info" is not NULL.
- * Assign "*info" to NULL.
+/* Destroy and deallocate info if info is not NULL.
  */
 extern void ConnNetInfo_Destroy
-(SConnNetInfo** info
+(SConnNetInfo* info
  );
 
 
