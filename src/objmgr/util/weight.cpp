@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/21 18:57:31  ucko
+* Fix check for initial Met.
+*
 * Revision 1.1  2002/03/06 22:08:40  ucko
 * Add code to calculate protein weights.
 *
@@ -157,6 +160,7 @@ void GetProteinWeights(CScope* scope, const CBioseqHandle& handle,
     }
 
     if (locations.empty()) {
+        v.SetCoding(CSeq_data::e_Ncbistdaa); // so check for Met will work
         if ( signal.NotEmpty() ) {
             // Expects to see at beginning; is this assumption safe?
             CSeq_interval& interval = whole->SetInt();
