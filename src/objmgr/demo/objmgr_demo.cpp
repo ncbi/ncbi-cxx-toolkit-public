@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/28 14:32:58  grichenk
+* Minor fixes
+*
 * Revision 1.1  2002/03/28 14:07:25  grichenk
 * Initial revision
 *
@@ -154,33 +157,6 @@ int CDemoApp::Run(void)
         sout += seq_vect[i];
     }
     NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-
-/*
-    // Convert the sequence to CSeq_data::e_Ncbipna or CSeq_data::e_Ncbistdaa
-    // Sequences of unknown types are not converted.
-    switch ( bioseq->GetInst().GetMol() ) {
-    case CSeq_inst::eMol_dna:
-    case CSeq_inst::eMol_rna:
-    case CSeq_inst::eMol_na:
-        {
-            seq_vect.SetCoding(CSeq_data::e_Ncbi4na);
-            NcbiCout << "Ncbi4na: ";
-            break;
-        }
-    case CSeq_inst::eMol_aa:
-        {
-            seq_vect.SetCoding(CSeq_data::e_Ncbistdaa);
-            NcbiCout << "Ncbistdaa: ";
-            break;
-        }
-    }
-    sout = "";
-    for (size_t i = 0; (i < seq_vect.size()) && (i < 10); i++) {
-        // Convert sequence symbols to printable form
-        sout += seq_vect[i];
-    }
-    NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-*/
 
     // CSeq_descr iterator: iterates all descriptors starting
     // from the bioseq and going the seq-entries tree up to the
