@@ -93,7 +93,7 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlkPtr sbp,
    return sum_evalue;
 }
 
-/** Sort the HSP's by starting position of the query.  Called by HeapSort.  
+/** Sort the HSP's by starting position of the query.  Called by qsort.  
  *	The first function sorts in forward, the second in reverse order.
 */
 static int
@@ -302,10 +302,10 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
    MemCpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
    MemCpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
    MemCpy(end_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
-   HeapSort(offset_hsp_array, hspcnt, sizeof(BlastHSPPtr), fwd_compare_hsps);
-   HeapSort(end_hsp_array, hspcnt, sizeof(BlastHSPPtr), end_compare_hsps);
+   qsort(offset_hsp_array, hspcnt, sizeof(BlastHSPPtr), fwd_compare_hsps);
+   qsort(end_hsp_array, hspcnt, sizeof(BlastHSPPtr), end_compare_hsps);
 
-   HeapSort(score_hsp_array, hspcnt, sizeof(BlastHSPPtr), 
+   qsort(score_hsp_array, hspcnt, sizeof(BlastHSPPtr), 
             sumscore_compare_hsps);
       
    head_hsp = NULL;
@@ -421,7 +421,7 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
       }
    }
    
-   HeapSort(score_hsp_array, hspcnt, sizeof(BlastHSPPtr), sumscore_compare_hsps);
+   qsort(score_hsp_array, hspcnt, sizeof(BlastHSPPtr), sumscore_compare_hsps);
    /* Get the nucleotide subject sequence in Seq_code_ncbi4na */
    subject_seq = subject->sequence;
 
@@ -1158,7 +1158,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
     
     new_hspcnt = HspArrayPurge(hsp_array, hsp_list->hspcnt, FALSE);
     
-    HeapSort(hsp_array,new_hspcnt,sizeof(BlastHSPPtr), score_compare_hsps);
+    qsort(hsp_array,new_hspcnt,sizeof(BlastHSPPtr), score_compare_hsps);
     
     /* Remove extra HSPs if there is a user proveded limit on the number 
        of HSPs per database sequence */

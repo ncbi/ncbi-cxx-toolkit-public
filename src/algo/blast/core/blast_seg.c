@@ -193,7 +193,7 @@ static void stateon(SequencePtr win)
 	for (letter = nel; letter < alphasize+1; ++letter)
 		win->state[letter] = 0;
 
-	HeapSort(win->state, nel, sizeof(win->state[0]), state_cmp);
+	qsort(win->state, nel, sizeof(win->state[0]), state_cmp);
 
 	return;
 }

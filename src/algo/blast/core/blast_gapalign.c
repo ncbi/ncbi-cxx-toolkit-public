@@ -198,7 +198,7 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
    if (*hsp_array == NULL || hsp_count == 0)
       return 0;
    
-   HeapSort(hsp_array, hsp_count, sizeof(BlastHSPPtr), query_offset_compare_hsps);
+   qsort(hsp_array, hsp_count, sizeof(BlastHSPPtr), query_offset_compare_hsps);
    index=0;
    increment=1;
    while (index < hsp_count-increment) {
@@ -230,7 +230,7 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
       }
    }
    
-   HeapSort(hsp_array, hsp_count, sizeof(BlastHSPPtr), query_end_compare_hsps);
+   qsort(hsp_array, hsp_count, sizeof(BlastHSPPtr), query_end_compare_hsps);
    index=0;
    increment=1;
    while (index < hsp_count-increment)
@@ -265,7 +265,7 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
       }
    }
 
-   HeapSort(hsp_array,hsp_count,sizeof(BlastHSPPtr), score_compare_hsp);
+   qsort(hsp_array,hsp_count,sizeof(BlastHSPPtr), score_compare_hsp);
    
    index1 = 0;
    for (index=0; index<hsp_count; index++)
@@ -1516,7 +1516,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
    for (index=0; index<init_hitlist->total; ++index)
      init_hsp_array[index] = &init_hitlist->init_hsp_array[index];
 
-   HeapSort(init_hsp_array, init_hitlist->total, 
+   qsort(init_hsp_array, init_hitlist->total, 
             sizeof(BlastInitHSPPtr), diag_compare_match);
 
    for (index=0; index<init_hitlist->total; index++) {
@@ -2246,7 +2246,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    for (index = 0; index < init_hitlist->total; ++index)
       init_hsp_array[index] = &init_hitlist->init_hsp_array[index];
 
-   HeapSort(init_hsp_array, init_hitlist->total,
+   qsort(init_hsp_array, init_hitlist->total,
             sizeof(BlastInitHSPPtr), score_compare_match);
 
    /* If no initial HSPs passes the e-value threshold so far, check if any 
@@ -2289,7 +2289,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    
    /* Sort again, if necessary */
    if (index > 0) {
-      HeapSort(init_hsp_array, init_hitlist->total,
+      qsort(init_hsp_array, init_hitlist->total,
                sizeof(BlastInitHSPPtr), score_compare_match);
    }
 

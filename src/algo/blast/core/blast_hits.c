@@ -356,7 +356,7 @@ BlastSortUniqHspArray(BlastHSPListPtr hsp_list)
    Int2 context;
    FloatHi evalue;
 
-   HeapSort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSPPtr), 
+   qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSPPtr), 
             diag_uniq_compare_hsps);
    for (index=1, new_hspcnt=0; index<hsp_list->hspcnt; index++) {
       if (hsp_array[index]==NULL) 
@@ -671,7 +671,7 @@ heapify (CharPtr base0, CharPtr base, CharPtr lim, CharPtr last, size_t width, i
    }
 }
 
-/** The first part of HeapSort: create heap only, without sorting it
+/** The first part of qsort: create heap only, without sorting it
  * @param b An array [in] [out]
  * @param nel Number of elements in b [in]
  * @param width The size of each element [in]
@@ -895,7 +895,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
 
    /* Sort the HSPs by e-value */
    if (hsp_list->hspcnt > 1) {
-      HeapSort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSPPtr), 
+      qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSPPtr), 
                evalue_compare_hsps);
    }
 
@@ -1017,7 +1017,7 @@ Int2 BLAST_SortResults(BlastResultsPtr results)
    for (index = 0; index < results->num_queries; ++index) {
       hit_list = results->hitlist_array[index];
       if (hit_list && hit_list->hsplist_count > 1) {
-         HeapSort(hit_list->hsplist_array, hit_list->hsplist_count, 
+         qsort(hit_list->hsplist_array, hit_list->hsplist_count, 
                   sizeof(BlastHSPListPtr), evalue_compare_hsp_lists);
       }
    }
@@ -1391,8 +1391,8 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
          new_hspcnt++;
    }
 
-   HeapSort(hspp1, hspcnt1, sizeof(BlastHSPPtr), diag_compare_hsps);
-   HeapSort(hspp2, hspcnt2, sizeof(BlastHSPPtr), diag_compare_hsps);
+   qsort(hspp1, hspcnt1, sizeof(BlastHSPPtr), diag_compare_hsps);
+   qsort(hspp2, hspcnt2, sizeof(BlastHSPPtr), diag_compare_hsps);
 
    for (index=0; index<hspcnt1; index++) {
       for (index1=0; index1<hspcnt2; index1++) {

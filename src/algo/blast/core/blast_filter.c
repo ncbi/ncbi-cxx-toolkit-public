@@ -85,7 +85,7 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
    return NULL;
 }
 
-/** Used for HeapSort, compares two SeqLoc's by starting position. */
+/** Used for qsort, compares two SeqLoc's by starting position. */
 static int DoubleIntSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
 
 {
