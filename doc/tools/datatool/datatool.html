@@ -327,7 +327,9 @@ arguments for NCBI dir tree</td>
 <tr>
 <td><span class="ncbi_app_a">-oex &lt;export&gt;</span></td>
 <td>add storage-class modifier to generated classes</td>
-<td>sometimes required on Microsoft Windows</td>
+<td>can be overriden by
+<br><a href="#refDefCommon"> <span class="ncbi_keyword">[-]._export</span> </a>
+in the definition file</td>
 </tr>
 </table>
 
@@ -335,7 +337,10 @@ arguments for NCBI dir tree</td>
 <a NAME="refDefFile"></a>Definition file</h2>
 There is a possibility of fine tuning of code generation. It is performed
 via definition file specified in <a href="#refArg_od"><span class="ncbi_app_a">-od</span></a> argument.
-File format is the same as applications *.ini files.
+<br>
+Definition file uses the <a href="../../programming_manual/registry.html#syntax">generic NCBI configuration</a> format (also used in the standard NCBI application configuration (*.ini) files.
+
+files.
 <p>Tuning parameters are searched in several sections:
 <ol>
   <li>[ModuleName.TypeName]</li>
@@ -471,14 +476,14 @@ then no modifier is added at all.
   </li>
   <li>
 If <span class="ncbi_app_a">-oex &quot;&quot;</span>
-(that is an empty modifier) is specified in the command line,
+(that is, an empty modifier) is specified in the command line,
 then the modifier from the definition file will be used.
   </li>
   <li>
 The command line parameter in the form 
-<span class="ncbi_app_a">-oex NCBI_FOOBAR_EXPORT</span> will cause
-the generated classes to have <span class="ncbi_app_a">NCBI_FOOBAR_EXPORT</span>
-storage-class modiifer, unless another one is specified in the definition file.
+<span class="ncbi_app_a">-oex FOOBAR</span> will cause
+the generated classes to have <span class="ncbi_app_a">FOOBAR</span>
+storage-class modifier, unless another one is specified in the definition file.
 The modifier from the definition file always takes precedence.
   </li>
 </ol>
@@ -486,7 +491,7 @@ The modifier from the definition file always takes precedence.
 
 
 <h3>
-Definition which affect specific types:</h3>
+Definitions which affect specific types:</h3>
 
 <h3>
 <a NAME="refDefINT"></a>INTEGER, REAL, BOOLEAN, NULL:</h3>
