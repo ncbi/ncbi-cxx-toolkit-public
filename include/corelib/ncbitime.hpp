@@ -81,7 +81,7 @@ public:
 
 
 // Number nanoseconds in one second
-// Interval for it is from 0 to 999,999,999
+// Interval for it is from 0 to 999,999,999 
 const long kNanoSecondsPerSecond = 1000000000;
 
 // Number microseconds in one second
@@ -205,9 +205,6 @@ public:
     CTime& SetTimeDBI(const TDBTimeI& t);
     TDBTimeU GetTimeDBU(void) const;
     TDBTimeI GetTimeDBI(void) const;
-
-    // Get the number of seconds elapsed since midnight (00:00:00)
-    time_t GetTimeOfDay(void) const;
 
     // Make the time current (in the presently active time zone)
     CTime& SetCurrent(void);
@@ -632,8 +629,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.20  2003/04/14 19:37:42  ivanov
- * Added master export group NCBI_SEQEXT_EXPORTS. Moved a part code from NCBI_SEQ.DLL to NCBI_SEQEXT.DLLmswin_export.h
+ * Revision 1.21  2003/04/14 19:41:32  ivanov
+ * Rollback to R1.19 -- accidental commit
  *
  * Revision 1.19  2003/04/01 19:18:43  siyan
  * Added doxygen support
