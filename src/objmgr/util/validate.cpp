@@ -67,6 +67,9 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -81,6 +84,8 @@
 #include <objects/util/sequence.hpp>
 #include <objects/util/feature.hpp>
 #include <objects/util/validate.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1250,17 +1255,14 @@ private:
     void ValidateSeqAnnot(const CSeq_annot& annot);
     void ValidateSeqSet(const CBioseq_set& set);
     void ValidateBioseq(const CBioseq& seq);
-    void ValidateSeqDesc(const CSeq_descr& desc);
-    void ValidateSeqDescr(const CBioseq& seq, bool isTpa);
-    void ValidateSeqDescriptors(const CBioseq& seq);
-    void ValidateSeqSetDescr(const CBioseq_set& set);
-    void ValidateSeqIds(const CBioseq& seq, bool* pNTorNC, bool* pTpa,
-        bool* pPdb);
+    void ValidateSeqDesc(const CSeqdesc& desc);
+    void ValidateSeqDescContext(const CBioseq& seq);
+    void ValidateSeqIds(const CBioseq& seq);
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq& seq,
         char* prefix);
-    void ValidateInst(const CBioseq& seq, bool isNTorNC, bool isPdb);
+    void ValidateInst(const CBioseq& seq);
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);
-    void ValidateSeqLen(const CBioseq& seq, bool isPdb);
+    void ValidateSeqLen(const CBioseq& seq);
     void ValidateSeqParts(const CBioseq& seq);
     void ValidateProteinTitle(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
@@ -1270,11 +1272,13 @@ private:
     void ValidateCollidingGeneNames(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
-    void ValidateDelta(const CBioseq& seq, bool isNTorNC);
+    void ValidateDelta(const CBioseq& seq);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
-    void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj, 
-        bool allowRefSeq = false);
+    void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj);
+    void ValidateSourceQualTags(void);
+
+    bool IsCountryValid(const string &str);
 
     typedef const CSeq_feat& TFeat;
     typedef const CBioseq& TBioseq;
@@ -1293,6 +1297,270 @@ private:
     void ValidErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
         TDesc ds);
 
+};
+
+// ************************** Official country names  ***********************
+
+static string countrycodes[] = {
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "American Samoa",
+  "Andorra",
+  "Angola",
+  "Anguilla",
+  "Antarctica",
+  "Antigua and Barbuda",
+  "Argentina",
+  "Armenia",
+  "Aruba",
+  "Ashmore and Cartier Islands",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas",
+  "Bahrain",
+  "Baker Island",
+  "Bangladesh",
+  "Barbados",
+  "Bassas da India",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bermuda",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Bouvet Island",
+  "Brazil",
+  "British Virgin Islands",
+  "Brunei",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cambodia",
+  "Cameroon",
+  "Canada",
+  "Cape Verde",
+  "Cayman Islands",
+  "Central African Republic",
+  "Chad",
+  "Chile",
+  "China",
+  "Christmas Island",
+  "Clipperton Island",
+  "Cocos Islands",
+  "Colombia",
+  "Comoros",
+  "Cook Islands",
+  "Coral Sea Islands",
+  "Costa Rica",
+  "Cote d'Ivoire",
+  "Croatia",
+  "Cuba",
+  "Cyprus",
+  "Czech Republic",
+  "Democratic Republic of the Congo",
+  "Denmark",
+  "Djibouti",
+  "Dominica",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt",
+  "El Salvador",
+  "Equatorial Guinea",
+  "Eritrea",
+  "Estonia",
+  "Ethiopia",
+  "Europa Island",
+  "Falkland Islands (Islas Malvinas)",
+  "Faroe Islands",
+  "Fiji",
+  "Finland",
+  "France",
+  "French Guiana",
+  "French Polynesia",
+  "French Southern and Antarctic Lands",
+  "Gabon",
+  "Gambia",
+  "Gaza Strip",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Gibraltar",
+  "Glorioso Islands",
+  "Greece",
+  "Greenland",
+  "Grenada",
+  "Guadeloupe",
+  "Guam",
+  "Guatemala",
+  "Guernsey",
+  "Guinea",
+  "Guinea-Bissau",
+  "Guyana",
+  "Haiti",
+  "Heard Island and McDonald Islands",
+  "Honduras",
+  "Hong Kong",
+  "Howland Island",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Isle of Man",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Jan Mayen",
+  "Japan",
+  "Jarvis Island",
+  "Jersey",
+  "Johnston Atoll",
+  "Jordan",
+  "Juan de Nova Island",
+  "Kazakhstan",
+  "Kenya",
+  "Kingman Reef",
+  "Kiribati",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Laos",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Macau",
+  "Macedonia",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Marshall Islands",
+  "Martinique",
+  "Mauritania",
+  "Mauritius",
+  "Mayotte",
+  "Mexico",
+  "Micronesia",
+  "Midway Islands",
+  "Moldova",
+  "Monaco",
+  "Mongolia",
+  "Montserrat",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nauru",
+  "Navassa Island",
+  "Nepal",
+  "Netherlands",
+  "Netherlands Antilles",
+  "New Caledonia",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "Niue",
+  "Norfolk Island",
+  "North Korea",
+  "Northern Mariana Islands",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Palau",
+  "Palmyra Atoll",
+  "Panama",
+  "Papua New Guinea",
+  "Paracel Islands",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Pitcairn Islands",
+  "Poland",
+  "Portugal",
+  "Puerto Rico",
+  "Qatar",
+  "Republic of the Congo",
+  "Reunion",
+  "Romania",
+  "Russia",
+  "Rwanda",
+  "Saint Helena",
+  "Saint Kitts and Nevis",
+  "Saint Lucia",
+  "Saint Pierre and Miquelon",
+  "Saint Vincent and the Grenadines",
+  "Samoa",
+  "San Marino",
+  "Sao Tome and Principe",
+  "Saudi Arabia",
+  "Senegal",
+  "Seychelles",
+  "Sierra Leone",
+  "Singapore",
+  "Slovakia",
+  "Slovenia",
+  "Solomon Islands",
+  "Somalia",
+  "South Africa",
+  "South Georgia and the South Sandwich Islands",
+  "South Korea",
+  "Spain",
+  "Spratly Islands",
+  "Sri Lanka",
+  "Sudan",
+  "Suriname",
+  "Svalbard",
+  "Swaziland",
+  "Sweden",
+  "Switzerland",
+  "Syria",
+  "Taiwan",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Togo",
+  "Tokelau",
+  "Tonga",
+  "Trinidad and Tobago",
+  "Tromelin Island",
+  "Tunisia",
+  "Turkey",
+  "Turkmenistan",
+  "Turks and Caicos Islands",
+  "Tuvalu",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "Uruguay",
+  "USA",
+  "Uzbekistan",
+  "Vanuatu",
+  "Venezuela",
+  "Viet Nam",
+  "Virgin Islands",
+  "Wake Island",
+  "Wallis and Futuna",
+  "West Bank",
+  "Western Sahara",
+  "Yemen",
+  "Yugoslavia",
+  "Zambia",
+  "Zimbabwe"
 };
 
 //********************** CValidError_impl implementation ******************
@@ -1980,7 +2248,7 @@ static unsigned int s_GetSeqlocPartialInfo(const CSeq_loc& loc, CScope* scope)
     }
 
     // Find first and last Seq-loc
-    const CSeq_loc *first = 0, *last;
+    const CSeq_loc *first = 0, *last = 0;
     CTypeConstIterator<CSeq_loc> i1(ConstBegin(loc));
     for (++i1; i1; ++i1) {
         if (!first) {
@@ -2449,7 +2717,7 @@ void CValidError_impl::ValidateSeqEntry(const CSeq_entry& entry)
 }
 
 
-void CValidError_impl::ValidateSeqDescriptors(const CBioseq& seq)
+void CValidError_impl::ValidateSeqDescContext(const CBioseq& seq)
 {
     bool prf_found = false;
     const CDate* create_date_prev = 0;
@@ -2497,13 +2765,10 @@ void CValidError_impl::ValidateSeqDescriptors(const CBioseq& seq)
 void CValidError_impl::ValidateBioseq(const CBioseq& seq)
 {
     // Validate CSeq_ids
-    bool isNTorNC = false;
-    bool isTpa = false;
-    bool isPdb = false;
-    ValidateSeqIds(seq, &isNTorNC, &isTpa, &isPdb);
+    ValidateSeqIds(seq);
 
     // Validate the inst data
-    ValidateInst(seq, isNTorNC, isPdb);
+    ValidateInst(seq);
 
     // Validate the context
     ValidateBioseqContext(seq);
@@ -2511,9 +2776,7 @@ void CValidError_impl::ValidateBioseq(const CBioseq& seq)
 
 
 void CValidError_impl::ValidateInst
-(const CBioseq& seq,
- bool           isNTorNC,
- bool           isPdb)
+(const CBioseq& seq)
 {
 
     const CSeq_inst& inst = seq.GetInst();
@@ -2575,7 +2838,7 @@ void CValidError_impl::ValidateInst
 
     if (rp == CSeq_inst::eRepr_delta) {
         // Validate delta sequences
-        ValidateDelta(seq, isNTorNC);
+        ValidateDelta(seq);
     }
 
     if (rp == CSeq_inst::eRepr_seg  &&  seq.GetInst().IsSetExt()  &&
@@ -2590,15 +2853,12 @@ void CValidError_impl::ValidateInst
     }
 
     // Validate sequence length
-    ValidateSeqLen(seq, isPdb);
+    ValidateSeqLen(seq);
 }
 
 
 void CValidError_impl::ValidateSeqIds
-(const CBioseq& seq,
- bool*          pNTorNC,
- bool*          pTpa,
- bool*          pPdb)
+(const CBioseq& seq)
 {
 
     // Ensure that CBioseq has at least one CSeq_id
@@ -2610,11 +2870,10 @@ void CValidError_impl::ValidateSeqIds
     // Loop thru CSeq_ids for this CBioseq. Determine if seq has
     // gi, NT, or NC. Check that the same CSeq_id not included more
     // than once.
-    bool& isNTorNC = *pNTorNC;
-    isNTorNC = false;
     bool hasGi = false;
     iterate (list< CRef<CSeq_id> >, i, seq.GetId()) {
 
+        /*
         // Check if NT/NC or has Gi Seq-id
         if ((**i).IsOther() && (**i).GetOther().IsSetAccession()) {
             const string& acc = (**i).GetOther().GetAccession();
@@ -2624,6 +2883,7 @@ void CValidError_impl::ValidateSeqIds
         } else if ((**i).IsGi()) {
             hasGi = true;
         }
+        */
 
         // Check that no two CSeq_ids for same CBioseq are same type
         list< CRef < CSeq_id > >::const_iterator j;
@@ -2643,15 +2903,12 @@ void CValidError_impl::ValidateSeqIds
     // Loop thru CSeq_ids to check formatting
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
-    bool isPatent = false;
-    bool isPDB = *pPdb;
-    bool& isTpa = *pTpa;
     iterate (list< CRef<CSeq_id> >, k, seq.GetId()) {
         switch ((**k).Which()) {
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
-            isTpa = true;
+            m_IsTPA = true;
             // Fall thru
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
@@ -2763,10 +3020,10 @@ void CValidError_impl::ValidateSeqIds
             break;
         }
         case CSeq_id::e_Patent:
-            isPatent = true;
+            m_IsPatent = true;
             break;
         case CSeq_id::e_Pdb:
-            isPDB = true;
+            m_IsPDB = true;
             break;
         case CSeq_id::e_Gi:
             if ((**k).GetGi() == 0) {
@@ -2777,7 +3034,7 @@ void CValidError_impl::ValidateSeqIds
             break;
         case CSeq_id::e_General:
             if(!NStr::CompareCase((**k).GetGeneral().GetDb(), "BankIt")) {
-                isTpa = true;
+                m_IsTPA = true;
             }
             break;
         default:
@@ -2802,107 +3059,92 @@ void CValidError_impl::ValidateSeqIds
 }
 
 
-void CValidError_impl::ValidateSeqDesc(const CSeq_descr& desc)
+void CValidError_impl::ValidateSeqDesc(const CSeqdesc& desc)
 {
     // switch on type, e.g., call ValidateBioSource or ValidatePubdesc
-}
-
-
-void CValidError_impl::ValidateSeqDescr(const CBioseq& seq, bool isTpa)
-{
-    // Ensure not TPA and that seq and Seq-descr exist
-    if (isTpa  ||  !seq.IsSetDescr()) {
-        return;
-    }
-
-    CTypeConstIterator<CUser_object> uo(ConstBegin(seq.GetDescr()));
-    for (; uo; ++uo) {
-        const CObject_id& oi = uo->GetType();
-        if (!oi.IsStr()) {
-            continue;
-        }
-        if (!NStr::CompareNocase(oi.GetStr(), "TpaAssembly")) {
-            try {
-                CNcbiOstrstream os;
-                os << "Non-TPA record " << s_GetId(seq).DumpAsFasta()
-                   << " should not have TpaAssembly object";
-                ValidErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                    string(os.str()), seq);
-            } catch (const runtime_error&) {
-                return;
+    switch (desc.Which ()) {
+        case CSeqdesc::e_not_set:
+            break;
+        case CSeqdesc::e_Mol_type:
+            break;
+        case CSeqdesc::e_Modif:
+            break;
+        case CSeqdesc::e_Method:
+            break;
+        case CSeqdesc::e_Name:
+            break;
+        case CSeqdesc::e_Title:
+            break;
+        case CSeqdesc::e_Org:
+            break;
+        case CSeqdesc::e_Comment:
+            break;
+        case CSeqdesc::e_Num:
+            break;
+        case CSeqdesc::e_Maploc:
+            break;
+        case CSeqdesc::e_Pir:
+            break;
+        case CSeqdesc::e_Genbank:
+            break;
+        case CSeqdesc::e_Pub:
+            const CPubdesc& pub = desc.GetPub ();
+            ValidatePubdesc (pub, desc);
+            break;
+        case CSeqdesc::e_Region:
+            break;
+        case CSeqdesc::e_User:
+            const CUser_object& usr = desc.GetUser ();
+            const CObject_id& oi = usr.GetType();
+            if (!oi.IsStr()) {
+                break;
             }
-        }
-    }
-    
-    // Validate CBioSource
-    CTypeConstIterator<CBioSource> bsit(ConstBegin(seq.GetDescr()));
-    for (; bsit; ++bsit) {
-        ValidateBioSource(*bsit, seq.GetDescr());
-    }
-    
-    // Validate CPubdesc
-    CTypeConstIterator<CPubdesc> pit(ConstBegin(seq.GetDescr()));
-    for (;pit; ++pit) {
-        ValidatePubdesc(*pit, seq.GetDescr());
+            if (!NStr::CompareNocase(oi.GetStr(), "TpaAssembly")) {
+                try {
+                    ValidErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                        "Non-TPA record should not have TpaAssembly object", desc);
+                } catch (const runtime_error&) {
+                    return;
+                }
+            }
+            break;
+        case CSeqdesc::e_Sp:
+            break;
+        case CSeqdesc::e_Dbxref:
+            break;
+        case CSeqdesc::e_Embl:
+            break;
+        case CSeqdesc::e_Create_date:
+            break;
+        case CSeqdesc::e_Update_date:
+            break;
+        case CSeqdesc::e_Prf:
+            break;
+        case CSeqdesc::e_Pdb:
+            break;
+        case CSeqdesc::e_Het:
+            break;
+        case CSeqdesc::e_Source:
+            const CBioSource& src = desc.GetSource ();
+            ValidateBioSource (src, desc);
+            break;
+        case CSeqdesc::e_Molinfo:
+            break;
+        default:
+            break;
     }
 }
 
 
 void CValidError_impl::ValidateSeqSet(const CBioseq_set& seqset)
 {
-    /*
-    ValidateSeqSetDescr(seqset);
 
-    list< CRef< CSeq_annot > >::const_iterator i = seqset.GetAnnot().begin();
-    for (; i != seqset.GetAnnot().end(); ++i) {
-        ValidateSeqAnnot(**i);
-    }
-
-    list< CRef< CSeq_entry > >::const_iterator j = seqset.GetSeq_set().begin();
-    for (; j != seqset.GetSeq_set().end(); ++j) {
-        ValidateSeqEntry(**j);
-    }
-    */
 }
 
 
 void CValidError_impl::ValidateSeqAnnot(const CSeq_annot& annot)
 {
-    /*
-    switch (annot.GetData().Which()) {
-    case CSeq_annot::C_Data::e_Ftable:
-    {
-        list< CRef < CSeq_feat > >::const_iterator i =
-            annot.GetData().GetFtable().begin();
-        for (; i != annot.GetData().GetFtable().end(); ++i) {
-            ValidateSeqFeat(**i);
-        }
-        break;
-    }
-    case CSeq_annot::C_Data::e_Align:
-    {
-        list< CRef < CSeq_align > >::const_iterator i =
-            annot.GetData().GetAlign().begin();
-        for (; i != annot.GetData().GetAlign().end(); ++i) {
-            ValidateSeqAlign(**i);
-        }
-        break;
-    }
-    case CSeq_annot::C_Data::e_Graph:
-    {
-        list< CRef < CSeq_graph > >::const_iterator i =
-            annot.GetData().GetGraph().begin();
-        for (; i != annot.GetData().GetGraph().end(); ++i) {
-            ValidateSeqGraph(**i);
-        }
-        break;
-    }
-    case CSeq_annot::C_Data::e_Ids:
-    case CSeq_annot::C_Data::e_Locs:
-    default:
-        break;
-    }
-    */
+
 }
 
 
@@ -2951,12 +3193,6 @@ void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
             ValidateDbxref (**db, feat);
         }
     }
-}
-
-
-void CValidError_impl::ValidateSeqSetDescr(const CBioseq_set& seqset)
-{
-
 }
 
 
@@ -3255,7 +3491,7 @@ void CValidError_impl::Validate(const CSeq_entry& se, const CCit_sub* cs)
         ValidateSeqFeat (*fi);
     }
 
-    CTypeConstIterator <CSeq_descr> di (se);
+    CTypeConstIterator <CSeqdesc> di (se);
     for ( ; di; ++di) {
         ValidateSeqDesc (*di);
     }
@@ -3312,19 +3548,19 @@ void CValidError_impl::Validate(const CSeq_submit& ss)
 }
 
 
-void CValidError_impl::ValidateSeqLen(const CBioseq& seq, bool isPdb)
+void CValidError_impl::ValidateSeqLen(const CBioseq& seq)
 {
 
     const CSeq_inst& inst = seq.GetInst();
 
     TSeqPos len = inst.IsSetLength() ? inst.GetLength() : 0;
     if (s_isAa(seq)) {
-        if (len <= 3  &&  !isPdb) {
+        if (len <= 3  &&  !m_IsPDB) {
             ValidErr(eDiag_Warning, eErr_SEQ_INST_ShortSeq, "Sequence only " +
                 NStr::IntToString(len) + " residue(s) long", seq);
         }
     } else {
-        if (len <= 10  &&  !isPdb) {
+        if (len <= 10  &&  !m_IsPDB) {
             ValidErr(eDiag_Warning, eErr_SEQ_INST_ShortSeq, "Sequence only " +
                 NStr::IntToString(len) + " residue(s) long", seq);
         }
@@ -3336,8 +3572,7 @@ void CValidError_impl::ValidateSeqLen(const CBioseq& seq, bool isPdb)
 
     CTypeConstIterator<CMolInfo> mi = ConstBegin(seq);
     if (inst.GetRepr() == CSeq_inst::eRepr_delta) {
-        bool isGenbankEMBLorDDBJ = s_IsGEDSeqEmbedded(*m_SeqEntry);
-        if (mi  &&  mi->IsSetTech()  &&  isGenbankEMBLorDDBJ) {
+        if (mi  &&  mi->IsSetTech()  &&  m_IsGED) {
             CMolInfo::ETech tech = static_cast<CMolInfo::ETech>(mi->GetTech());
             if (tech == CMolInfo::eTech_htgs_0  ||
                 tech == CMolInfo::eTech_htgs_1  ||
@@ -3416,7 +3651,7 @@ void CValidError_impl::ValidateSeqParts(const CBioseq& seq)
 
     // Loop through seq_set looking for parent. When found, the next
     // CSeq_entry should have the parts
-    const CSeq_entry* se;
+    const CSeq_entry* se = 0;
     iterate (list< CRef<CSeq_entry> >, it, seq_set) {
         if (parent == &(**it)) {
             ++it;
@@ -3549,7 +3784,7 @@ void CValidError_impl::ValidateBioseqContext(const CBioseq& seq)
     // Check for colliding gene names
     ValidateCollidingGeneNames(seq);
 
-    ValidateSeqDescriptors(seq);
+    ValidateSeqDescContext(seq);
 }
 
 
@@ -3948,7 +4183,7 @@ void CValidError_impl::ValidateSegRef(const CBioseq& seq)
 
 
 // Assumes seq is a delta sequence
-void CValidError_impl::ValidateDelta(const CBioseq& seq, bool isNTorNC)
+void CValidError_impl::ValidateDelta(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
 
@@ -4040,7 +4275,7 @@ void CValidError_impl::ValidateDelta(const CBioseq& seq, bool isNTorNC)
     int tech = mi->IsSetTech() ? mi->GetTech() : 0;
 
     // Validate technique
-    if (mi  &&  !isNTorNC  &&  !s_IsGenProdSet(seq.GetParentEntry())) {
+    if (mi  &&  !m_IsNT  &&  !m_IsNC  &&  !s_IsGenProdSet(seq.GetParentEntry())) {
         if (tech != CMolInfo::eTech_unknown   &&
             tech != CMolInfo::eTech_standard  &&
             tech != CMolInfo::eTech_wgs       &&
@@ -4161,8 +4396,7 @@ const char * CValidError_impl::legalRefSeqDbXrefs [] = {
 
 void CValidError_impl::ValidateDbxref
 (const CDbtag&        xref,
- const CSerialObject& obj,
- bool                 allowRefSeq)
+ const CSerialObject& obj)
 {
     const string& str = xref.GetDb ();
     for (size_t i = 0; legalDbXrefs [i];  i++) {
@@ -4170,7 +4404,7 @@ void CValidError_impl::ValidateDbxref
             return;
         }
     }
-    if (allowRefSeq) {
+    if (m_IsRefSeq) {
         for (size_t i = 0; legalDbXrefs [i];  i++) {
             if (NStr::Compare (str, legalRefSeqDbXrefs [i]) == 0) {
                 return;
@@ -4186,6 +4420,110 @@ void CValidError_impl::ValidateBioSource
 (const CBioSource&    bsrc,
  const CSerialObject& obj)
 {
+	const COrg_ref &orgref = bsrc.GetOrg();
+  
+	// Rule: Organism must have a name.
+	if ( orgref.GetTaxname().empty() && orgref.GetCommon().empty() ) {
+		ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+			     "No organism name has been applied to this Bioseq.", obj);
+	}
+
+	// Rule: validate legal locations.
+	if ( bsrc.GetGenome() == CBioSource_Base::eGenome_transposon  ||
+		 bsrc.GetGenome() == CBioSource_Base::eGenome_insertion_seq ) {
+		ValidErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceLocation,
+			     "Transposon and insertion sequence are no longer legal locations.", obj);
+	}
+
+	int chrom_count = 0;
+	bool chrom_conflict = false;
+	CSubSource *chromosome = 0;
+	string countryname;
+	iterate( list< CRef< CSubSource > >, ssit, bsrc.GetSubtype() ) {
+		switch ( (**ssit).GetSubtype() ) {
+
+		case CSubSource::eSubtype_country:
+			countryname = (**ssit).GetName();
+			if ( !IsCountryValid(countryname) ) {
+				if ( countryname.empty() ) {
+					countryname = "?";
+				}
+				ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+						 "Bad country name" + countryname, obj);
+			}
+			break;
+
+		case CSubSource::eSubtype_chromosome:
+			++chrom_count;
+			if ( chromosome != 0 ) {
+				if ( NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
+					chrom_conflict = true;
+				}          
+			} else {
+				chromosome = ssit->GetPointer();
+			}
+			break;
+
+		case CSubSource::eSubtype_transposon_name:
+		case CSubSource::eSubtype_insertion_seq_name:
+			ValidErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
+					 "Transposon name and insertion sequence name are no longer legal qualifiers.", obj);
+		break;
+
+		case 0:
+			ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+               "Unknown subsource subtype 0.", obj);
+			break;
+    
+		case CSubSource::eSubtype_other:
+			//ValidateSourceQualTags 
+			break;
+		}
+	}
+	if ( chrom_count > 1 ) {
+		string msg = chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
+									  "Multiple identical chromosome qualifiers";
+		ValidErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
+	}
+
+	const COrgName &orgname = orgref.GetOrgname();
+	const string &lineage = orgname.GetLineage();
+	if ( lineage.empty() ) {
+		ValidErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
+			     "No lineage for this BioSource.", obj);
+	} else {
+		if ( bsrc.GetGenome() == CBioSource_Base::eGenome_kinetoplast ) {
+			if ( lineage.find("Kinetoplastida") == string::npos ) {
+				ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
+						 "Only Kinetoplastida have kinetoplasts", obj);
+			}
+		} 
+		if ( bsrc.GetGenome() == CBioSource_Base::eGenome_nucleomorph ) {
+			if ( lineage.find("Chlorarchniophyta") == string::npos  &&
+				lineage.find("Cryptophyta") == string::npos) {
+				ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
+						 "Only Chlorarchniophyta and Cryptophyta have nucleomorphs", obj);
+			}
+		}
+	}
+
+	iterate ( list< CRef< COrgMod > >, omit, orgname.GetMod() ) {
+		int subtype = (**omit).GetSubtype();
+
+		if ( (subtype == 0) || (subtype == 1) ) {
+			ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+				     "Unknown orgmod subtype " + subtype, obj);
+		}
+		if ( subtype == COrgMod::eSubtype_variety ) {
+			if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
+				ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+						 "Orgmod variety should only be in plants or fungi", obj);
+			}
+		}
+		if ( subtype == COrgMod::eSubtype_other ) {
+			//ValidateSourceQualTags 
+		}
+	}
 }
 
 
@@ -4193,6 +4531,50 @@ void CValidError_impl::ValidatePubdesc
 (const CPubdesc&      pub,
  const CSerialObject& obj)
 {
+}
+
+
+bool CValidError_impl::IsCountryValid(const string &str) {
+  if ( str.empty() ) {
+    return false;
+  }
+
+  string country_name = str;
+  string::size_type pos = str.find(':');
+  if ( pos != string::npos ) {
+    country_name = str.substr(0, pos);
+  }
+
+  const string *begin = countrycodes;
+  const string *end = &(countrycodes[sizeof (countrycodes) / sizeof (string)]);
+  if ( find (begin, end, country_name) == end ) {
+    return false;
+  }
+
+  return true;
+}
+
+void CValidError_impl::ValidateSourceQualTags(void) {
+/*
+  if (vsp->sourceQualTags == NULL || StringHasNoText (str)) return;
+  state = 0;
+  ptr = str;
+  ch = *ptr;
+  while (ch != '\0') {
+    matches = NULL;
+    state = TextFsaNext (vsp->sourceQualTags, state, ch, &matches);
+    if (matches != NULL) {
+      hit = (CharPtr) matches->data.ptrvalue;
+      if (StringHasNoText (hit)) {
+        hit = "?";
+      }
+      ValidErr (vsp, SEV_WARNING, ERR_SEQ_DESCR_StructuredSourceNote,
+                "Source note has structured tag %s", hit);
+    }
+    ptr++;
+    ch = *ptr;
+  }
+*/
 }
 
 
@@ -4233,6 +4615,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/10/11 21:36:48  kans
+* flatten organization, iterating within main Validate function, and added ValidateBiosource (MS)
+*
 * Revision 1.9  2002/10/11 13:52:36  clausen
 * QA fixes & changed Seq-entry navigation
 *
