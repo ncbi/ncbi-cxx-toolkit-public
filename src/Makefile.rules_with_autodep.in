@@ -16,7 +16,10 @@ include $(builddir)/Makefile.rules
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	 | sed -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
-	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' > $@_ \
+	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
+	       -e 's%$(incdir)%$$(incdir)%g' \
+	       -e 's%$(includedir)%$$(includedir)%g' \
+	       -e 's%$(includedir0)%$$(includedir0)%g' > $@_ \
 	  &&  test -s $@_  &&  mv -f $@_ $@
 
 %.d: ./%.cpp
