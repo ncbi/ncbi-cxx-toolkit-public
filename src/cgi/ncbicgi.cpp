@@ -626,7 +626,8 @@ static void s_ParseMultipartEntries(const string& boundary,
     SIZE_TYPE tail_size = boundary_size + eol_size + 2;
     SIZE_TYPE str_size = str.size();
 
-    if (str.compare(0, boundary_size + eol_size, boundary + s_Eol) != 0) {
+    if (NStr::Compare(str, 0, boundary_size + eol_size, boundary + s_Eol)
+        != 0) {
         if (str == boundary + "--") {
             // potential corner case: no actual data
             return;
@@ -635,8 +636,9 @@ static void s_ParseMultipartEntries(const string& boundary,
                     s_Me + ": input does not start with boundary line "
                     + boundary,
                     0);
-    } else if (str.compare(str_size - tail_size, tail_size,
-                           s_Eol + boundary + "--") != 0) {
+    } else if (NStr::Compare(str, str_size - tail_size, tail_size,
+                             s_Eol + boundary + "--")
+               != 0) {
         NCBI_THROW2(CParseException, eErr,
                     s_Me + ": input does not end with trailing boundary "
                     + boundary + "--",
@@ -1131,6 +1133,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.62  2002/07/19 14:50:23  ucko
+* Substitute NStr::Compare for uses of string::compare added in last revision.
+*
 * Revision 1.61  2002/07/18 21:15:24  ucko
 * Rewrite multipart/form-data parser; the old line-by-line approach was
 * somewhat clumsy and inefficient.
