@@ -415,7 +415,7 @@ extern char* MessagePlusErrno
         }
 
         for (len = 1, mod = 1;  (x_errno / mod) > 9;  len++, mod *= 10)
-        	continue;
+            continue;
         if ( neg )
             len++;
 
@@ -495,6 +495,9 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/12/04 19:51:12  lavr
+ * No change
+ *
  * Revision 6.22  2002/10/11 19:52:10  lavr
  * Log moved to end
  *
