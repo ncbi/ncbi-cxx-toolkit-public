@@ -368,20 +368,23 @@ s_ShowAlign(CNcbiOstream         & os,
     
     AutoPtr<CDisplaySeqalign> dsa_ptr;
     
-    if (true || (! gapped)) {
-        double dt1 = dbl_time();
-        CRef<CSeq_align_set> newalign =
-            CDisplaySeqalign::PrepareBlastUngappedSeqalign(*alignments);
-        
-        double dt2 = dbl_time();
-        dsa_ptr = new CDisplaySeqalign(*newalign, none1, none2, 0, * scope);
-        double dt3 = dbl_time();
-        
-        cerr << " prep time = " << (dt2 - dt1)
-             << " disp time = " << (dt3 - dt2) << endl;
-    } else {
-        dsa_ptr = new CDisplaySeqalign(*alignments, none1, none2, 0, * scope);
-    }
+    // if (async_mode || (! gapped)) {
+    
+    // 1. The "prepare" function needs to be called in ungapped mode.
+    // 2. It's safe to call this even if it is not needed (i.e. gapped mode).
+    // 3. If not needed, it takes almost no time compared to the actual display,
+    //    the ratio seems to be about 80,000 to 1.
+    // 4. We can't tell if we are in gapped mode in the async case.
+    // 5. So, we always call the prepare function.
+    
+    CRef<CSeq_align_set> newalign =
+        CDisplaySeqalign::PrepareBlastUngappedSeqalign(*alignments);
+    
+    dsa_ptr = new CDisplaySeqalign(*newalign, none1, none2, 0, * scope);
+    
+    // } else {
+    //     dsa_ptr = new CDisplaySeqalign(*alignments, none1, none2, 0, * scope);
+    // }
     
     alparms.AdjustDisplay(*dsa_ptr);
     
@@ -424,9 +427,9 @@ void ShowResults(CRef<CRemoteBlast>  cb4o,
     if (display) {
         bool gapped = true;
         
-//         if (opts.Gapped().Exists()) {
-//             gapped = opts.Gapped().GetValue();
-//         }
+        // if (opts.Gapped().Exists()) {
+        //     gapped = opts.Gapped().GetValue();
+        // }
         
         if (raw_asn) {
             s_Output(NcbiCout, cb4o->GetAlignments());
@@ -515,6 +518,10 @@ QueueAndPoll(string                program,
             err = "Internal: Did not get search object from s_QueueSearch()\n";
         }
         
+        if (err.empty() && verbose) {
+            cb4o->SetVerbose(CRemoteBlast::eDebug);
+        }
+        
         if (err.empty()) {
             if (async_mode) {
                 cb4o->Submit();
@@ -527,12 +534,6 @@ QueueAndPoll(string                program,
     } else {
         cb4o.Reset( new CRemoteBlast(get_RID) );
     }
-    
-#ifdef NDEBUG
-    if (err.empty() && verbose) {
-        cb4o->SetVerbose(true);
-    }
-#endif
     
     if (! err.empty()) {
         cerr << err << endl;
@@ -547,6 +548,10 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/02/18 20:28:18  bealer
+ * - Always call prepare function.
+ * - Set verbosity flag earlier.
+ *
  * Revision 1.1  2004/02/18 17:04:41  bealer
  * - Adapt blast_client code for Remote Blast API, merging code into the
  *   remote_blast demo application.
