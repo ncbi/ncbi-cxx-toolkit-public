@@ -32,6 +32,9 @@
  */
 
 #include <connect/ncbi_socket.hpp>
+#ifdef NCBI_OS_MSWIN
+#  define _POSIX_                       // causes PATH_MAX to define on MS-Win
+#endif
 #include <limits.h>                     // for PATH_MAX
 
 
@@ -512,6 +515,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/07/15 18:16:44  lavr
+ * Fix MS-Win compilation
+ *
  * Revision 6.17  2003/07/15 18:09:51  lavr
  * Use <limits.h> instead of <stdlib.h> to fetch PATH_MAX
  *
