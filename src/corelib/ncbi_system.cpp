@@ -339,6 +339,22 @@ unsigned int GetCpuCount(void)
     GetSystemInfo(&sysInfo);
     return (unsigned int) sysInfo.dwNumberOfProcessors;
 
+#elif defined(NCBI_OS_DARWIN)
+    #include <mach/mach.h>
+    #include <mach/mach_host.h>
+    #include <mach/host_info.h>
+
+    host_basic_info_data_t hinfo;
+    mach_msg_type_number_t hinfo_count = HOST_BASIC_INFO_COUNT;
+    kern_return_t rc;
+
+    rc = host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)&hinfo, &hinfo_count);
+
+    if (rc != KERN_SUCCESS) {
+        return -1;
+    }
+    return hinfo.avail_cpus;
+
 #elif defined(NCBI_OS_UNIX)
     long nproc = 0;
 #   if defined(_SC_NPROC_ONLN)
@@ -351,6 +367,7 @@ unsigned int GetCpuCount(void)
     return 1;
 #endif
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -395,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/03/06 15:46:46  ivanov
+ * Added George Coulouris's GetCpuCount() implementation for NCBI_OS_DARWIN
+ *
  * Revision 1.23  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *
