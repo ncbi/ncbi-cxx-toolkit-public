@@ -627,7 +627,7 @@ size_t CSplign::x_TestPolyA(void)
 }
 
 
-// PRE:  Hits (initial, not transformed) reporesenting the compartment; 
+// PRE:  Hits (initial, not transformed) representing the compartment; 
 //       maximum genomic sequence span;
 //       pre-loaded and appropriately transformed query sequence.
 // POST: A set of segments packed into the aligned compartment.
@@ -801,13 +801,13 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     for(; j >= 0; --j) {
         
         const CSplign::SSegment& s = m_segments[j];
+
         const char* p0 = &m_mrna[qmin] + s.m_box[0];
         const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
         size_t count = 0;
         for(const char* pc = p0; pc != p1; ++pc) {
             if(*pc == 'A') ++count;
         }
-        const size_t len = p1 - p0;
         
         double min_a_content = 0.799;
         // also check splices
@@ -817,9 +817,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             }
         }
         if(!s.m_exon) {
-            min_a_content = 0.599;
+            min_a_content = s.m_len > 4? 0.599: -1;
         }
         
+        const size_t len = p1 - p0;
         if(double(count)/len < min_a_content) {
             break;
         }
@@ -1442,6 +1443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/06/16 21:02:43  kapustin
+ * Set lower length limit for gaps treated as poly-A parts
+ *
  * Revision 1.14  2004/06/07 13:46:46  kapustin
  * Rearrange seg-level postprocessing steps
  *
