@@ -66,6 +66,8 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
 {
     CSeqDBLockHold locked(atlas);
     
+    m_Values["DBLIST"] = dbname_list;
+    
     NStr::Tokenize(dbname_list, " ", m_DBList, NStr::eMergeDelims);
     x_ResolveNames(prot_nucl);
     
@@ -134,19 +136,10 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl)
     Uint4 i = 0;
     
     for(i = 0; i < m_DBList.size(); i++) {
-        m_DBList[i] = 
+        string resolved_name = 
             SeqDB_FindBlastDBPath(m_DBList[i], prot_nucl, 0, false);
         
-        if (m_DBList[i].empty()) {
-            // Re-tokenize DBLIST, to get the original value of
-            // m_DBList[i] for message; we will be throwing an
-            // exception, so all object data is now throwaway.
-            
-            NStr::Tokenize(m_Values["DBLIST"],
-                           " ",
-                           m_DBList,
-                           NStr::eMergeDelims);
-            
+        if (resolved_name.empty()) {
             // Do over (to get the search path)
             
             string search_path;
@@ -161,6 +154,8 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl)
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        msg);
+        } else {
+            m_DBList[i].swap(resolved_name);
         }
     }
     
