@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
 * Revision 1.70  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -341,6 +344,9 @@ public:
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
 
+    // load style dictionary; returns true if there was one in the asn data
+    bool LoadStyleDictionary(void);
+
     // center rotation and view on aligned residues only
     void CenterViewOnAlignedResidues(void);
 
@@ -372,7 +378,7 @@ public:
     bool SaveASNData(const char *filename, bool doBinary);
 
     // adds a new Sequence to the SequenceSet
-    const Sequence * CreateNewSequence(const ncbi::objects::CBioseq& bioseq);
+    const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
 
     // reject sequence (from CDD)
     void RejectAndPurgeSequence(const Sequence *reject, std::string reason, bool purge);

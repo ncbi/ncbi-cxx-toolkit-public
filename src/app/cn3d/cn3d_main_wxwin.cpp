@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.166  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
 * Revision 1.165  2002/11/18 15:02:40  thiessen
 * set flags on style shortcut menus
 *
@@ -2182,25 +2185,31 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     SetWorkingTitle(glCanvas->structureSet);
     GlobalMessenger()->SetAllWindowTitles();
 
-    // set default rendering style and view
-    glCanvas->structureSet->SetCenter();
-    if (glCanvas->structureSet->alignmentSet) {
-        glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-        SetRenderingMenuFlag(MID_TUBE);
-        if (glCanvas->structureSet->IsCDD()) {
-            glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
-            SetColoringMenuFlag(MID_INFO);
-        } else {
-            glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
-            SetColoringMenuFlag(MID_IDENTITY);
-        }
-        // alignments always start with aligned domains only
-        glCanvas->structureSet->showHideManager->ShowAlignedDomains(glCanvas->structureSet);
+   // set style as stored in asn data if present, otherwise use a default style
+    if (glCanvas->structureSet->LoadStyleDictionary()) {
+        SetRenderingMenuFlag(0);
+        SetColoringMenuFlag(0);
     } else {
-        glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
-        SetRenderingMenuFlag(MID_WORM);
-        glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
-        SetColoringMenuFlag(MID_SECSTRUC);
+        // set default rendering style and view
+        glCanvas->structureSet->SetCenter();
+        if (glCanvas->structureSet->alignmentSet) {
+            glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+            SetRenderingMenuFlag(MID_TUBE);
+            if (glCanvas->structureSet->IsCDD()) {
+                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
+                SetColoringMenuFlag(MID_INFO);
+            } else {
+                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
+                SetColoringMenuFlag(MID_IDENTITY);
+            }
+            // alignments always start with aligned domains only
+            glCanvas->structureSet->showHideManager->ShowAlignedDomains(glCanvas->structureSet);
+        } else {
+            glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
+            SetRenderingMenuFlag(MID_WORM);
+            glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
+            SetColoringMenuFlag(MID_SECSTRUC);
+        }
     }
 
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());

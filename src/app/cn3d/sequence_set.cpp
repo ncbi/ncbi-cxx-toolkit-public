@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
 * Revision 1.51  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -247,10 +250,10 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+static void UnpackSeqSet(CBioseq_set& bss, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
-    CBioseq_set::TSeq_set::const_iterator q, qe = bss.GetSeq_set().end();
-    for (q=bss.GetSeq_set().begin(); q!=qe; q++) {
+    CBioseq_set::TSeq_set::iterator q, qe = bss.SetSeq_set().end();
+    for (q=bss.SetSeq_set().begin(); q!=qe; q++) {
         if (q->GetObject().IsSeq()) {
 
             // only store amino acid or nucleotide sequences
@@ -260,29 +263,29 @@ static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSe
                 q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
                 continue;
 
-            const Sequence *sequence = new Sequence(parent, q->GetObject().GetSeq());
+            const Sequence *sequence = new Sequence(parent, q->GetObject().SetSeq());
             seqlist.push_back(sequence);
 
         } else { // Bioseq-set
-            UnpackSeqSet(q->GetObject().GetSet(), parent, seqlist);
+            UnpackSeqSet(q->GetObject().SetSet(), parent, seqlist);
         }
     }
 }
 
-static void UnpackSeqEntry(const CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
     if (seqEntry.IsSeq()) {
-        const Sequence *sequence = new Sequence(parent, seqEntry.GetSeq());
+        const Sequence *sequence = new Sequence(parent, seqEntry.SetSeq());
         seqlist.push_back(sequence);
     } else { // Bioseq-set
-        UnpackSeqSet(seqEntry.GetSet(), parent, seqlist);
+        UnpackSeqSet(seqEntry.SetSet(), parent, seqlist);
     }
 }
 
-SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) :
+SequenceSet::SequenceSet(StructureBase *parent, SeqEntryList& seqEntries) :
     StructureBase(parent)
 {
-    SeqEntryList::const_iterator s, se = seqEntries.end();
+    SeqEntryList::iterator s, se = seqEntries.end();
     for (s=seqEntries.begin(); s!=se; s++)
         UnpackSeqEntry(s->GetObject(), this, sequences);
     TESTMSG("number of sequences: " << sequences.size());
@@ -356,7 +359,7 @@ static void StringFromStdaa(const std::vector < char >& vec, std::string *str)
         str->at(i) = stdaaMap[vec[i]];
 }
 
-Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
+Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     StructureBase(parent), bioseqASN(&bioseq), molecule(NULL), isProtein(false)
 {
     int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
 * Revision 1.53  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -906,7 +909,7 @@ void UpdateViewer::ImportStructure(void)
 
         if (s == se) {
             // if not, find the sequence in the list from the structure file
-            BioseqRefList::const_iterator b, be = bioseqs.end();
+            BioseqRefList::iterator b, be = bioseqs.end();
             for (b=bioseqs.begin(); b!=be; b++) {
                 CBioseq::TId::const_iterator i, ie = (*b)->GetId().end();
                 for (i=(*b)->GetId().begin(); i!=ie; i++) {

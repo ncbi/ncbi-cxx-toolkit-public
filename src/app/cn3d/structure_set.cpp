@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.121  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
 * Revision 1.120  2002/11/18 19:48:40  grichenk
 * Removed "const" from datatool-generated setters
 *
@@ -573,7 +576,8 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
             if (seq->molecule) {
                 TESTMSG("duplicating sequence " << seq->identifier->ToString());
 				SequenceSet *seqSetMod = const_cast<SequenceSet*>(sequenceSet);
-                seq = new Sequence(seqSetMod, *(seq->bioseqASN));
+                CBioseq& bioseqMod = const_cast<CBioseq&>(seq->bioseqASN.GetObject());
+                seq = new Sequence(seqSetMod, bioseqMod);
                 seqSetMod->sequences.push_back(seq);
                 // update Sequence handle, which should be a handle to a MasterSlaveAlignment slave,
                 // so that this new Sequence* is correctly loaded into the BlockMultipleAlignment
@@ -906,14 +910,7 @@ void StructureSet::Load(int structureLimit)
     // setup show/hide items
     showHideManager->ConstructShowHideArray(this);
 
-    // load user styles and annotations
-    const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();
-    if (styles) {
-        if (!styleManager->LoadFromASNStyleDictionary(*styles) ||
-            !styleManager->CheckGlobalStyleSettings())
-            ERR_POST(Error << "Error loading style dictionary");
-        dataManager->RemoveStyleDictionary();   // remove now; recreated with current settings upon save
-    }
+    // load user annotations (styles are loaded later using LoadStyleDictionary())
     const CCn3d_user_annotations *annots = dataManager->GetUserAnnotations();
     if (annots) {
         if (!styleManager->LoadFromASNUserAnnotations(*annots) ||
@@ -937,6 +934,18 @@ StructureSet::~StructureSet(void)
 
     BioseqMap::iterator i, ie = bioseqs.end();
     for (i=bioseqs.begin(); i!=ie; i++) BioseqFree(i->second);
+}
+
+bool StructureSet::LoadStyleDictionary(void)
+{
+    const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();
+    if (styles) {
+        if (!styleManager->LoadFromASNStyleDictionary(*styles) ||
+            !styleManager->CheckGlobalStyleSettings())
+            ERR_POST(Error << "Error loading style dictionary");
+        dataManager->RemoveStyleDictionary();   // remove now; recreated with current settings upon save
+    }
+    return (styles != NULL);
 }
 
 BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
@@ -1325,7 +1334,7 @@ void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly, bool ot
             GlobalMessenger()->ToggleHighlight(r->second, r->first->id, false);
 }
 
-const Sequence * StructureSet::CreateNewSequence(const ncbi::objects::CBioseq& bioseq)
+const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
 {
     // add Sequence to SequenceSet
     SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
@@ -1335,7 +1344,7 @@ const Sequence * StructureSet::CreateNewSequence(const ncbi::objects::CBioseq& b
     // add asn sequence to asn data
     if (dataManager->GetSequences()) {
         CSeq_entry *se = new CSeq_entry();
-        se->SetSeq(const_cast<CBioseq&>(bioseq));
+        se->SetSeq(bioseq);
         dataManager->GetSequences()->push_back(CRef<CSeq_entry>(se));
     } else
         ERR_POST(Error << "StructureSet::CreateNewSequence() - no sequence list in asn data");

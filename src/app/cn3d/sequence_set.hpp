@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
 * Revision 1.27  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -143,7 +146,7 @@ class SequenceSet : public StructureBase
 {
 public:
     typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
-    SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
+    SequenceSet(StructureBase *parent, SeqEntryList& seqEntries);
 
     typedef std::list < const Sequence * > SequenceList;
     SequenceList sequences;
@@ -154,10 +157,10 @@ public:
 class Sequence : public StructureBase
 {
 public:
-    Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
+    Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq);
 
     // keep a reference to the original asn Bioseq
-    const ncbi::CRef < const ncbi::objects::CBioseq > bioseqASN;
+    ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
 
     std::string sequenceString, description;
     const MoleculeIdentifier *identifier;
