@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/12/15 15:38:36  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.2  2000/04/07 19:26:15  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -128,7 +133,7 @@ private:
 };
 
 typedef CDataValueTmpl<bool> CBoolDataValue;
-typedef CDataValueTmpl<long> CIntDataValue;
+typedef CDataValueTmpl<Int4> CIntDataValue;
 typedef CDataValueTmpl<string> CStringDataValue;
 
 class CBitStringDataValue : public CStringDataValue {

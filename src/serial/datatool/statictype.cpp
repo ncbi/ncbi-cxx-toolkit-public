@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/12/15 15:38:51  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.20  2000/11/20 17:26:33  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -453,7 +458,7 @@ bool CIntDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
 {
-    return new AnyType::TInteger(dynamic_cast<const CIntDataValue&>(value).GetValue());
+    return new Int4(dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 string CIntDataType::GetDefaultString(const CDataValue& value) const
@@ -464,13 +469,51 @@ string CIntDataType::GetDefaultString(const CDataValue& value) const
 CTypeRef CIntDataType::GetTypeInfo(void)
 {
     if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<AnyType::TInteger>::CreateTypeInfo());
-    return &CStdTypeInfo<AnyType::TInteger>::GetTypeInfo;
+        return UpdateModuleName(CStdTypeInfo<Int4>::CreateTypeInfo());
+    return &CStdTypeInfo<Int4>::GetTypeInfo;
 }
 
 const char* CIntDataType::GetDefaultCType(void) const
 {
     return "int";
+}
+
+const char* CBigIntDataType::GetASNKeyword(void) const
+{
+    return "BigInt";
+}
+
+const char* CBigIntDataType::GetXMLContents(void) const
+{
+    return "( %INTEGER; )";
+}
+
+bool CBigIntDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CIntDataValue, "BigInt");
+    return true;
+}
+
+TObjectPtr CBigIntDataType::CreateDefault(const CDataValue& value) const
+{
+    return new Int8(dynamic_cast<const CIntDataValue&>(value).GetValue());
+}
+
+string CBigIntDataType::GetDefaultString(const CDataValue& value) const
+{
+    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
+}
+
+CTypeRef CBigIntDataType::GetTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<Int8>::CreateTypeInfo());
+    return &CStdTypeInfo<Int8>::GetTypeInfo;
+}
+
+const char* CBigIntDataType::GetDefaultCType(void) const
+{
+    return "Int8";
 }
 
 END_NCBI_SCOPE

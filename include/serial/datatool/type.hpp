@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/12/15 15:38:35  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.10  2000/11/29 17:42:31  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -123,10 +128,9 @@ class CNamespace;
 
 
 struct AnyType {
-    typedef long TInteger;
     union {
         bool booleanValue;
-        TInteger integerValue;
+        Int4 integerValue;
         void* pointerValue;
     };
     AnyType(void)

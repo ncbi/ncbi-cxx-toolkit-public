@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/15 15:38:51  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.19  2000/11/29 17:42:44  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -126,7 +131,7 @@ bool CEnumDataType::IsInteger(void) const
 }
 
 CEnumDataType::TValue& CEnumDataType::AddValue(const string& valueName,
-                                               AnyType::TInteger value)
+                                               TEnumValueType value)
 {
     m_Values.push_back(TValue(valueName, value));
     return m_Values.back();
@@ -232,11 +237,11 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id == 0 ) {
-        return new AnyType::TInteger(dynamic_cast<const CIntDataValue&>(value).GetValue());
+        return new TEnumValueType(dynamic_cast<const CIntDataValue&>(value).GetValue());
     }
     iterate ( TValues, i, m_Values ) {
         if ( i->GetName() == id->GetValue() )
-            return new AnyType::TInteger(i->GetValue());
+            return new TEnumValueType(i->GetValue());
     }
     value.Warning("illegal ENUMERATED value: " + id->GetValue());
     return 0;
@@ -264,7 +269,7 @@ CTypeInfo* CEnumDataType::CreateTypeInfo(void)
     }
     if ( HaveModuleName() )
         info->SetModuleName(GetModule()->GetName());
-    return new CEnumeratedTypeInfo(sizeof(AnyType::TInteger), info.release());
+    return new CEnumeratedTypeInfo(sizeof(TEnumValueType), info.release());
 }
 
 string CEnumDataType::DefaultEnumName(void) const
@@ -336,6 +341,11 @@ const char* CIntEnumDataType::GetASNKeyword(void) const
 bool CIntEnumDataType::IsInteger(void) const
 {
     return true;
+}
+
+const char* CBigIntEnumDataType::GetASNKeyword(void) const
+{
+    return "BigInt";
 }
 
 END_NCBI_SCOPE

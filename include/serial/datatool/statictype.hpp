@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/12/15 15:38:35  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.7  2000/11/15 20:34:43  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -193,6 +198,19 @@ public:
 
 class CIntDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
+public:
+    bool CheckValue(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const;
+    virtual string GetDefaultString(const CDataValue& value) const;
+
+    CTypeRef GetTypeInfo(void);
+    virtual const char* GetDefaultCType(void) const;
+    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
+};
+
+class CBigIntDataType : public CIntDataType {
+    typedef CIntDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/12/15 15:38:35  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.7  2000/11/15 20:34:43  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -129,7 +134,7 @@ public:
     void TypeList(list<string>& ids);
     AutoPtr<CDataValue> Value(void);
     AutoPtr<CDataValue> x_Value(void);
-    long Number(void);
+    Int4 Number(void);
     const string& String(void);
     const string& Identifier(void);
     const string& TypeReference(void);

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/12/15 15:38:51  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.14  2000/11/29 17:42:46  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -129,7 +134,7 @@ void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 }
 
 template<>
-void CDataValueTmpl<long>::PrintASN(CNcbiOstream& out, int ) const
+void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }

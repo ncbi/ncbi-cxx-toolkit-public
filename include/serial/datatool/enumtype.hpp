@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/12/15 15:38:35  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.8  2000/11/29 17:42:30  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -83,7 +88,7 @@ BEGIN_NCBI_SCOPE
 class CEnumDataTypeValue
 {
 public:
-    CEnumDataTypeValue(const string& name, AnyType::TInteger value)
+    CEnumDataTypeValue(const string& name, TEnumValueType value)
         : m_Name(name), m_Value(value)
         {
         }
@@ -92,7 +97,7 @@ public:
         {
             return m_Name;
         }
-    AnyType::TInteger GetValue(void) const
+    TEnumValueType GetValue(void) const
         {
             return m_Value;
         }
@@ -108,7 +113,7 @@ public:
 
 private:
     string m_Name;
-    AnyType::TInteger m_Value;
+    TEnumValueType m_Value;
     CComments m_Comments;
 };
 
@@ -122,7 +127,7 @@ public:
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
 
-    TValue& AddValue(const string& name, AnyType::TInteger value);
+    TValue& AddValue(const string& name, TEnumValueType value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
@@ -168,6 +173,12 @@ class CIntEnumDataType : public CEnumDataType {
     typedef CEnumDataType CParent;
 public:
     virtual bool IsInteger(void) const;
+    virtual const char* GetASNKeyword(void) const;
+};
+
+class CBigIntEnumDataType : public CIntEnumDataType {
+    typedef CIntEnumDataType CParent;
+public:
     virtual const char* GetASNKeyword(void) const;
 };
 

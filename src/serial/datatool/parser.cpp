@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/12/15 15:38:51  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.25  2000/11/15 20:34:55  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -218,6 +223,12 @@ CDataType* ASNParser::x_Type(void)
             return EnumeratedBlock(new CIntEnumDataType());
         else
             return new CIntDataType();
+    case K_BIGINT:
+        Consume();
+        if ( CheckSymbol('{') )
+            return EnumeratedBlock(new CBigIntEnumDataType());
+        else
+            return new CBigIntDataType();
     case K_ENUMERATED:
         Consume();
         return EnumeratedBlock(new CEnumDataType());
@@ -347,7 +358,7 @@ CEnumDataTypeValue& ASNParser::EnumeratedValue(CEnumDataType& t)
 {
     string id = Identifier();
     ConsumeSymbol('(');
-    long value = Number();
+    Int4 value = Number();
     ConsumeSymbol(')');
     CEnumDataTypeValue& ret = t.AddValue(id, value);
     CopyComments(ret.GetComments());
@@ -419,10 +430,10 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
 	return AutoPtr<CDataValue>(0);
 }
 
-long ASNParser::Number(void)
+Int4 ASNParser::Number(void)
 {
     bool minus = ConsumeIfSymbol('-');
-    long value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
+    Int4 value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
     if ( minus )
         value = -value;
     return value;
