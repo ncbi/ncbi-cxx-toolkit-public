@@ -157,6 +157,7 @@ CBDB_ConditionHandle::~CBDB_ConditionHandle()
 
 CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
 : m_Dbf(dbf),
+  m_DBC(0),
   From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
   To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
   m_CondFrom(eFirst),
@@ -170,6 +171,9 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
 
 CBDB_FileCursor::~CBDB_FileCursor()
 {
+    if (m_DBC) {
+        m_DBC->c_close(m_DBC);
+    }
 }
 
 
@@ -442,6 +446,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/29 12:54:33  kuznets
+ * Fixed cursor leak.
+ *
  * Revision 1.7  2003/07/21 19:51:04  kuznets
  * Performance tweak: do not worry about incomplete key fields when
  * "give me all records" cursor was requested
