@@ -38,6 +38,13 @@
 
 BEGIN_NCBI_SCOPE
 
+
+/** @addtogroup NetScheduleClient
+ *
+ * @{
+ */
+
+
 /// NetSchedule Storage interface
 ///
 /// This interface is used by Worker Node and Worker 
@@ -92,13 +99,16 @@ public:
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
+/* @} */
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/23 13:10:32  kuznets
+ * documented and doxygenized
+ *
  * Revision 1.2  2005/03/22 21:42:50  didenko
  * Got rid of warnning on Sun WorkShop
  *

@@ -47,29 +47,53 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup NetScheduleClient
+ *
+ * @{
+ */
+
+
 class CWorkerNodeJobContext;
 
-/// Worker Node Job interface
+/// Worker Node Job interface.
 /// 
+/// This interface is a worker node workhorse. 
+/// Job is executed by method Do of this interface.
+/// Worker node application may be configured to execute several jobs at once
+/// using threads, so implementation must be thread safe.
+///
 /// @sa CWorkerNodeJobContext
 ///
 class IWorkerNodeJob
 {
 public:
-    /// Execute the real job
+    /// Execute the job.
+    ///
+    /// Job is considered successfull if method calls 
+    /// CommitJob (see CWorkerNodeJobContext).
+    /// If method does not call CommitJob job is considered unresolved 
+    /// and returned back to the queue.
+    /// Method can throw an exception (derived from std::exception),
+    /// in this case job is considered failed (error message will be
+    /// redirected to the netschedule queue)
     ///
     /// @param context
     ///   Context where a job can get all requered information
     ///   like input/output steams, the job key etc.
+    ///
+    /// @return
+    ///   Job exit code
     ///
     virtual int Do(CWorkerNodeJobContext& context) = 0;
 };
 
 class CGridWorkerNode;
 class CWorkerNodeRequest;
-/// Worker Node Job Context
+
+/// Worker Node job context
 ///
-/// Context in which a job is runnig
+/// Context in which a job is runnig, gives access to input and output
+/// storage and some job control parameters.
 ///
 /// @sa IWorkerNodeJob
 ///
@@ -88,13 +112,13 @@ public:
     /// 1. It can be an input data for a job (if that data is short)
     ///    If it is so don't use GetIStream method.
     /// 2. It holds a key to a data stored in an external data storage.
-    ///    In this case use GetIStream method to get a stream with 
+    ///    (NetCache)  In this case use GetIStream method to get a stream with 
     ///    an input data for the job
     ///
     const string& GetJobInput() const      { return m_JobInput; }
 
     /// Set a job's output. This string will be sent to
-    /// a NetScehule server when job is done.
+    /// the queue when job is done.
     /// 
     /// This method can be used to send a short data back to the client.
     /// To send a large result use GetOStream method. Don't call this 
@@ -102,32 +126,40 @@ public:
     ///
     void          SetJobOutput(const string& output) { m_JobOutput = output; }
 
-    /// Get a stream with input data for a job
+    /// Get a stream with input data for a job. Stream is based on network
+    /// data storage (NetCache). Size of the input data can be determined 
+    /// using GetInputBlobSize
     ///
     CNcbiIstream& GetIStream();
 
     /// Get the size of an input stream
+    ///
     size_t        GetInputBlobSize() const { return m_InputBlobSize; }
 
     /// Get a stream where a job can write its result
     ///
     CNcbiOstream& GetOStream();
 
-    /// Confirm that a job is done and a result is ready to be sent 
+    /// Confirm that a job is done and result is ready to be sent 
     /// back to the client. 
     ///
-    /// This method should be called at the end of Do method of your job.
-    /// If this method is not called the job's result will not be sent to
-    /// the client and a job will be returned back to the NetSchedule queue
+    /// This method should be called at the end of IWorkerNodeJob::Do 
+    /// method. If this method is not called the job's result will NOT be sent 
+    /// to the queue (job is returned back to the NetSchedule queue 
+    /// and re-executed in a while)
     ///
     void CommitJob()                       { m_JobStatus = true; }
 
-    /// Check if shutdown was requested.
+    /// Check if node application shutdown was requested.
     ///
-    /// If a job takes a long time to do its task it should call 
-    /// this method during it execution and check if node shutdown was 
-    /// requested and if so gracefully finish its work.
+    /// If job takes a long time it should periodically call 
+    /// this method during the execution and check if node shutdown was 
+    /// requested and gracefully finish its work.
     ///
+    /// Shutdown level eNormal means job can finish the job and exit,
+    /// eImmidiate means node should exit immediately 
+    /// (unfinished jobs are returned back to the queue)
+    /// 
     CNetScheduleClient::EShutdownLevel GetShutdownLevel(void) const;
 
     /// Get a name of a queue where this node is connected to.
@@ -222,21 +254,20 @@ public:
     virtual CNetScheduleClient* CreateClient(void) = 0;
 };
 
-/// Crid Worker Node
+/// Grid Worker Node
 /// 
-/// This call does all the magic.
 /// It gets jobs from a NetSchedule server and runs them simultaneously
-/// in the different threads.
+/// in the different threads (thread pool is used).
 ///
 class NCBI_XCONNECT_EXPORT CGridWorkerNode
 {
 public:
 
-    /// Construct a worker node with given factories
+    /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(INetScheduleClientFactory& ns_client_creator, 
+    CGridWorkerNode(INetScheduleClientFactory&  ns_client_creator, 
                     INetScheduleStorageFactory& ns_storage_creator,
-                    IWorkerNodeJobFactory& job_creator);
+                    IWorkerNodeJobFactory&      job_creator);
 
     virtual ~CGridWorkerNode();
 
@@ -330,15 +361,17 @@ private:
 
 };
 
+/* @} */
 
-
-/////////////////////////////////////////////////////////////////////////////
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/23 13:10:32  kuznets
+ * documented and doxygenized
+ *
  * Revision 1.3  2005/03/22 21:42:50  didenko
  * Got rid of warnning on Sun WorkShop
  *

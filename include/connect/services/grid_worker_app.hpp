@@ -35,7 +35,7 @@
  */
 
 /// @file grid_worker_app.hpp
-/// NetSchedule Framework specs. 
+/// NetSchedule worker node application. 
 ///
 
 
@@ -50,6 +50,13 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup NetScheduleClient
+ *
+ * @{
+ */
+
+
+/// Base worker node application
 ///
 class NCBI_XCONNECT_EXPORT CGridWorkerApp 
     : public CNcbiApplication,
@@ -69,15 +76,25 @@ public:
     void HandleSignals(bool on_off) { m_HandleSignals = on_off; }
 
 protected:
-    // IWorkerNodeJobFactory interface
+
+    /// IWorkerNodeJobFactory interface, should be overloaded
+    /// to create job execution units.
+    /// 
     virtual IWorkerNodeJob* CreateJob(void) = 0;
-    /// Get the job version
+
+    /// Get the worker node version
     ///
     virtual string GetJobVersion(void) const = 0;
 
-    // INetScheduleClientFactory interface
+    /// INetScheduleClientFactory interface
     virtual CNetScheduleClient* CreateClient(void);
-    // INetScheduleStorageFactory interface
+
+    /// INetScheduleStorageFactory interface
+    /// Elements on netschedule infrastructure can store job input and
+    /// output information using different storage options.
+    /// The default is NetCache, but potentially we may want to use
+    /// SQL server
+    ///
     virtual INetScheduleStorage* CreateStorage(void) = 0;
 
 private:
@@ -90,29 +107,43 @@ private:
 
 };
 
+/// Main worker node application
+///
+/// This application uses NetCache as a job network storage.
+/// 
+/// @note
+/// Worker node application is parameterised using INI file settings.
+/// Please read the sample ini file for more information.
+///
 class NCBI_XCONNECT_EXPORT CGridWorkerNCSApp : public CGridWorkerApp
 {
 public:
     CGridWorkerNCSApp();
 
 protected:
-    // IWorkerNodeJobFactory interface
+    /// Override this function to implement worker node functionality
     virtual IWorkerNodeJob* CreateJob(void) = 0;
-    // INetScheduleStorageFactory interface
+
+protected:
     virtual INetScheduleStorage* CreateStorage(void);
 
 private:
     typedef CPluginManager<CNetCacheClient>    TPMNetCache;
-    TPMNetCache               m_PM_NetCache;
+    TPMNetCache                                m_PM_NetCache;
 };
 
-/////////////////////////////////////////////////////////////////////////////
+
+/* @} */
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/23 13:10:32  kuznets
+ * documented and doxygenized
+ *
  * Revision 1.1  2005/03/22 20:17:55  didenko
  * Initial version
  *

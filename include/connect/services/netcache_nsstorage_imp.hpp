@@ -36,6 +36,14 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup NetScheduleClient
+ *
+ * @{
+ */
+
+
+/// NetCache based job info storage for grid worker node
+///
 class NCBI_XCONNECT_EXPORT CNetCacheNSStorage : public INetScheduleStorage
 {
 public:
@@ -72,13 +80,16 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetCacheNSStorageException, CNetScheduleStorageException);
 };
 
-/////////////////////////////////////////////////////////////////////////////
+/* @} */
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/23 13:10:32  kuznets
+ * documented and doxygenized
+ *
  * Revision 1.3  2005/03/22 21:42:50  didenko
  * Got rid of warnning on Sun WorkShop
  *
