@@ -1120,7 +1120,7 @@ static void s_GetSeqLabel
 (const CBioseq& seq,
  string*        lbl,
  CScope*        scope,
- char*          default_label = "prot?")
+ char*  default_label = "prot?")
 {
     if (!lbl) {
         return;
@@ -2228,7 +2228,7 @@ void CValidError_impl::ValidateSeqLoc
     if (adjacent) {
         loc.GetLabel(&loc_lbl);
         ValidErr(eDiag_Error, eErr_SEQ_FEAT_AbuttingIntervals,
-            string (prefix) + ": Adjacent intervals in SeqLoc [" +
+            string(prefix) + ": Adjacent intervals in SeqLoc [" +
             loc_lbl + "]", seq);
     }
     if (mixed_strand  ||  unmarked_strand  ||  !ordered) {
@@ -2599,7 +2599,7 @@ void CValidError_impl::ValidateSeqLen(const CBioseq& seq)
                 ValidErr(eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
                     "WGS sequence exceeds 350kbp limit", seq);
             } else {
-                TSeqPos len = 0;
+                len = 0;
                 bool litHasData = false;
                 CTypeConstIterator<CSeq_literal> lit(ConstBegin(seq));
                 for (; lit; ++lit) {
@@ -4656,6 +4656,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2002/10/23 15:34:12  clausen
+* Fixed local variable scope warnings
+*
 * Revision 1.14  2002/10/22 19:28:44  clausen
 * Fixed CValidError_CI::operator++ to prevent  m_ErrIter from going beyond end()
 *

@@ -1412,9 +1412,6 @@ bool BadSeqLocSortOrder
     if (strand == eNa_strand_unknown  ||  strand == eNa_strand_other) {
         return false;
     }
-
-    // Check that loc in contained in seq
-    
     
     // Check that loc segments are in order
     CSeq_loc::TRange last_range;
@@ -1905,7 +1902,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
 
     // if complete at 5' end, require valid start codon
     if (offset == 0  &&  (! loc.IsPartialLeft ())) {
-        int state = tbl.SetCodonState (bases [offset], bases [offset + 1], bases [offset + 2]);
+        state = tbl.SetCodonState (bases [offset], bases [offset + 1], bases [offset + 2]);
         prot [0] = tbl.GetStartResidue (state);
     }
 
@@ -1919,7 +1916,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
     // optionally truncate at first terminator
     if (! include_stop) {
         int protlen = prot.size ();
-        for (int i = 0; i < protlen; i++) {
+        for (i = 0; i < protlen; i++) {
             if (prot [i] == '*') {
                 prot.resize (i);
                 return;
@@ -1953,6 +1950,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2002/10/23 15:33:50  clausen
+* Fixed local variable scope warnings
+*
 * Revision 1.11  2002/10/08 12:35:37  clausen
 * Fixed bugs in GetStrand(), ChangeSeqId() & SeqLocCheck()
 *
