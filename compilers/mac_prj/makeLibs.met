@@ -1,3 +1,4 @@
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -433,20 +434,23 @@ on SetProjectData()
 	-- GUI libs.
 	if pCreateGuiLibs then
 		-- GuiProject's automatically have 'fltk' feature.
-		
+		(*		
 		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_objutils", {}, "objutils")
 		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
 			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"})}))
 		
+		AddGuiProject("gui_dlg_basic", {}, "dialogs:basic")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
-		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
-		-- AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
-		AddGuiProject("gui_dlg_progress", {}, "dialogs:progress")
 		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
 		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
-		AddGuiProject("gui_dlg_seq_feat_edit", {}, "dialogs:edit:feature")
+		-- AddGuiProject("gui_dlg_seq_feat_edit", {}, "dialogs:edit:feature")
+		AddProject(ProjectData("gui_dlg_seq_feat_edit", {"fltk"}, Â
+			{GuiFileDataList("dialogs:edit:feature", {"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"})}))
+		-- AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
+		-- AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
+		--AddGuiProject("gui_dlg_progress", {}, "dialogs:progress")
 		-- AddGuiProject("gui_dlg_feature", {}, "dialogs:feature") -- empty
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
@@ -474,6 +478,8 @@ on SetProjectData()
 		AddGuiProject("w_aln_table", {}, "widgets:aln_table")
 		AddGuiProject("w_workspace", {}, "widgets:workspace")
 		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
+*)
+		AddGuiProject("w_feat_compare", {}, "widgets:feat_compare")
 		
 		-- AddGuiProject("w_dock", {}, "widgets:dock") -- not ready yet.
 		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
@@ -521,7 +527,7 @@ on SetProjectData()
 			GuiFileDataExcept("gui:core", {"FolderInfo.cpp", "GBProject.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg_basic", "gui_dlg_config", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
@@ -530,7 +536,7 @@ on SetProjectData()
 			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme", "biotree", "xobjwrite"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xreader_id1c", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
-			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
+			{"xalgoseq", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
@@ -541,7 +547,7 @@ on SetProjectData()
 				mkFileDataListFiles(gSourceDir & "gui:plugins:algo:basic", {"output_dlg.cpp"})}), Â
 			{"xalgoseq", "xcgi"}, {"gui_core"}))
 		AddPlugin("gui_algo_gnomon", {}, "plugins:algo:gnomon", Â
-			{"xalgognomon", "gui_multi_col_dlg"})
+			{"xalgognomon"})
 		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
 		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
@@ -558,7 +564,7 @@ on SetProjectData()
 			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
-		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table"})
+		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table", "w_feat_compare"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq", "w_serial_browse"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
@@ -1293,7 +1299,7 @@ on CreateProject(proj)
 				tell application "Finder" to delete file (gProjectsDir & ".DS_Store")
 			end try
 			Create Project projPathname from stationery alias stationeryName
-			set openedProject to false
+			set openedProject to true
 			if the name of window 1 is "Project Messages" then
 				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
@@ -1304,7 +1310,7 @@ on CreateProject(proj)
 		else if pUpdateExistingProjects then
 			-- project already exists. Make sure it has all right files.
 			open (projPathname)
-			set openedProject to false
+			set openedProject to true
 			if the name of window 1 is "Project Messages" then
 				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
@@ -1313,6 +1319,7 @@ on CreateProject(proj)
 			end repeat
 		end if
 		if openedProject then
+			set openedProject to false
 			if pProjectsCVSEnabled then
 				--try
 				Set Preferences of panel "VCS Setup" to {VCS Active:true, Connection Method:"mwCVS"}
