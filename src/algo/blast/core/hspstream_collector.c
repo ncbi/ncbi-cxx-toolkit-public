@@ -224,15 +224,9 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program, BlastHitSavingOptions* h
 
     stream_data->program = program;
     stream_data->hit_options = hit_options;
-    if (program == eBlastTypeRpsBlast || program == eBlastTypeRpsTblastn) {
-       /* For RPS BLAST, there is only one query, and num_queries variable
-        * is in fact the number of database sequences. */
-       Blast_HSPResultsInit(1, &stream_data->results);
-       stream_data->results->hitlist_array[0] = 
-          Blast_HitListNew(num_queries);
-    } else {
-       Blast_HSPResultsInit(num_queries, &stream_data->results);
-    }
+
+    Blast_HSPResultsInit(num_queries, &stream_data->results);
+
     stream_data->results_sorted = FALSE;
     stream_data->sort_on_read = sort_on_read;
     stream_data->first_query_index = 0;
