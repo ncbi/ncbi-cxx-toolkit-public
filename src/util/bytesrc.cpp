@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/05/30 19:55:35  grichenk
+* Fixed one more non-blocking stream reading bug, added comments
+*
 * Revision 1.13  2001/05/29 19:35:23  grichenk
 * Fixed non-blocking stream reading for GCC
 *
@@ -125,17 +128,27 @@ CRef<CByteSourceReader> CStreamByteSource::Open(void)
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
 #ifdef NCBI_COMPILER_GCC
+    // Special case: GCC has no readsome()
+    // read() will set "eof" flag if gcount() < bufferLength
     m_Stream->read(buffer, bufferLength);
     size_t count = m_Stream->gcount();
+    // Reset "eof" flag if some data have been read
     if (count  &&  m_Stream->eof()) {
         m_Stream->clear(ios::eofbit);
     }
     return count;
 #else
+    // Try to read data
     size_t n = m_Stream->readsome(buffer, bufferLength);
     if (n != 0  ||  m_Stream->eof())
-        return n;
+        return n; // success
+    // No data found in the buffer, try to read from the real source
     m_Stream->read(buffer, 1);
+    if ( !m_Stream->good() )
+        return 0;
+    if (bufferLength == 1)
+        return 1; // Do not need more data
+    // Read more data (up to the bufferLength)
     return m_Stream->readsome(buffer+1, bufferLength-1) + 1;
 #endif
 }
