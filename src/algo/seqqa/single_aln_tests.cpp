@@ -92,10 +92,14 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     sel.SetResolveDepth(0);
     CFeat_CI it(xcript_hand, 0, xcript_hand.GetBioseqLength() - 1, sel);
-
-    const CSeq_loc& loc = it->GetLocation();
-    TSeqPos cds_from = sequence::GetStart(loc);
-    TSeqPos cds_to   = sequence::GetStop(loc);
+    bool has_cds(it);
+    TSeqPos cds_from;
+    TSeqPos cds_to;
+    if (has_cds) {
+        const CSeq_loc& loc = it->GetLocation();
+        cds_from = sequence::GetStart(loc);
+        cds_to   = sequence::GetStop(loc);
+    }
 
 
     TSeqPos last_genomic_end = 0;
@@ -188,11 +192,13 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             if (consensus_splice) {
                 ++consensus_splices;
             }
-            if (cds_from < exon.GetSeqStart(0)
-                && cds_to >= exon.GetSeqStart(0)) {
-                ++total_cds_splices;
-                if (consensus_splice) {
-                    ++consensus_cds_splices;
+            if (has_cds) {
+                if (cds_from < exon.GetSeqStart(0)
+                    && cds_to >= exon.GetSeqStart(0)) {
+                    ++total_cds_splices;
+                    if (consensus_splice) {
+                        ++consensus_cds_splices;
+                    }
                 }
             }
         } // exon_index > 0
@@ -225,7 +231,9 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             
             if (!gap_in_xcript) {
                 TSeqPos pos = avec.GetSeqPosFromAlnPos(0, i);
-                in_cds = pos >= cds_from && pos <= cds_to;
+                if (has_cds) {
+                    in_cds = pos >= cds_from && pos <= cds_to;
+                }
                 if (!gap_in_genomic) {
                     ++aligned_residue_count;
                     if (in_cds) {
@@ -278,24 +286,28 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         .AddField("aligned_residues", (int) aligned_residue_count);
     result->SetOutput_data()
         .AddField("matching_residues", (int) match_count);
-    result->SetOutput_data()
-        .AddField("cds_matching_residues", (int) cds_match_count);
-    result->SetOutput_data()
-        .AddField("cds_aligned_residues", (int) cds_aligned_residue_count);
-    result->SetOutput_data()
-        .AddField("in_frame_cds_matching_residues",
-                  (int) cds_match_count_by_frame[0]);
+    if (has_cds) {
+        result->SetOutput_data()
+            .AddField("cds_matching_residues", (int) cds_match_count);
+        result->SetOutput_data()
+            .AddField("cds_aligned_residues", (int) cds_aligned_residue_count);
+        result->SetOutput_data()
+            .AddField("in_frame_cds_matching_residues",
+                      (int) cds_match_count_by_frame[0]);
+    }
 
     result->SetOutput_data()
         .AddField("total_splices_in_alignment", (int) total_splices);
     result->SetOutput_data()
         .AddField("consensus_splices_in_alignment", (int) consensus_splices);
-    result->SetOutput_data()
-        .AddField("total_cds_splices_in_alignment", (int) total_cds_splices);
-    result->SetOutput_data()
-        .AddField("consensus_cds_splices_in_alignment",
-                  (int) consensus_cds_splices);
-    
+    if (has_cds) {
+        result->SetOutput_data()
+            .AddField("total_cds_splices_in_alignment",
+                      (int) total_cds_splices);
+        result->SetOutput_data()
+            .AddField("consensus_cds_splices_in_alignment",
+                      (int) consensus_cds_splices);
+    }
     result->SetOutput_data()
         .AddField("5_prime_bases_not_aligned",
                   (int) disc.front()->GetSeqStart(0));
@@ -303,12 +315,14 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         .AddField("3_prime_bases_not_aligned",
                   (int) (xcript_hand.GetBioseqLength()
                   - disc.back()->GetSeqStop(0) - 1));
-    result->SetOutput_data()
-        .AddField("start_codon_in_aligned_region",
-                  disc.front()->GetSeqStart(0) <= cds_from);
-    result->SetOutput_data()
-        .AddField("stop_codon_in_aligned_region",
-                  disc.back()->GetSeqStop(0) >= cds_to);
+    if (has_cds) {
+        result->SetOutput_data()
+            .AddField("start_codon_in_aligned_region",
+                      disc.front()->GetSeqStart(0) <= cds_from);
+        result->SetOutput_data()
+            .AddField("stop_codon_in_aligned_region",
+                      disc.back()->GetSeqStop(0) >= cds_to);
+    }
 
     result->SetOutput_data()
         .AddField("worst_exon_matches", int(worst_exon_match_count));
@@ -451,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/14 17:06:34  jcherry
+ * Deal with lack of CDS
+ *
  * Revision 1.5  2004/10/13 15:49:06  jcherry
  * Use resolve depth of zero rather than adaptive depth
  *
