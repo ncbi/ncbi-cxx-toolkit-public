@@ -1,5 +1,5 @@
-#ifndef NCBIMTX__HPP
-#define NCBIMTX__HPP
+#ifndef CORELIB___NCBIMTX__HPP
+#define CORELIB___NCBIMTX__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -94,6 +94,8 @@ typedef HANDLE TSystemMutex;
 #  error Unknown threads type
 #endif
 
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CThreadSystemID --
@@ -141,6 +143,8 @@ public:
 /// Use in defining initial value of system mutex.
 #define THREAD_SYSTEM_ID_INITIALIZER { 0 }
 
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CMutexException --
@@ -179,6 +183,7 @@ public:
 
 class CFastMutex;
 class CFastMutexGuard;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -284,6 +289,7 @@ protected:
 
 class CMutex;
 class CMutexGuard;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -687,6 +693,7 @@ private:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  MUTEX
@@ -1074,6 +1081,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/09/02 15:06:14  siyan
+ * Minor comment changes.
+ *
  * Revision 1.23  2003/08/27 12:35:15  siyan
  * Added documentation.
  *
