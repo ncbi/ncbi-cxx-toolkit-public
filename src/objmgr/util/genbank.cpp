@@ -1939,8 +1939,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         if ((*feat)->GetData().Which() != CSeqFeatData::e_Biosrc) {
             try {
                 // handle "CAnnot_CI::CAnnot_CI() -- unsupported location type"
-                for (CFeat_CI gene(m_Scope,(*feat)->GetLocation(),
-                                                       CSeqFeatData::e_Gene);
+                for (CFeat_CI gene(m_Scope, (*feat)->GetLocation(),
+                                   CSeqFeatData::e_Gene);
                      gene;  ++gene) {
                     if (gene->GetData().GetGene().IsSetLocus()) {
                         gbfeat.AddQual(CGBQual::eType_gene,
@@ -1972,17 +1972,17 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         if ((*feat)->IsSetProduct()  &&  m_Format != eFormat_Genpept) {
             try {
                 // handle "CAnnot_CI::CAnnot_CI() -- unsupported location type"
-                for (CFeat_CI prot(m_Scope,(*feat)->GetProduct(),
-                                                       CSeqFeatData::e_Prot);
+                for (CFeat_CI prot(m_Scope, (*feat)->GetProduct(),
+                                   CSeqFeatData::e_Prot);
                      prot;  ++prot) {
                     s_AddProteinQualifiers(gbfeat, prot->GetData().GetProt());
                 }
             } catch (exception& e) {
                 ERR_POST(Warning << e.what());
             } 
-            {{
-                const CBioseq_Handle& prot_handle
-                    = m_Scope.GetBioseqHandle(s_GetID((*feat)->GetProduct()));
+            const CBioseq_Handle& prot_handle
+                = m_Scope.GetBioseqHandle(s_GetID((*feat)->GetProduct()));
+            if (prot_handle) {
                 const CBioseq& prot_seq = prot_handle.GetBioseq();
                 const CTextseq_id* tsid;
                 iterate(CBioseq::TId, it, prot_seq.GetId()) {
@@ -2006,7 +2006,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
                     }
                     gbfeat.AddQual(CGBQual::eType_translation, data);
                 }}
-            }}
+            }
         }
 
         if ((*feat)->IsSetQual()) {
@@ -2824,6 +2824,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2003/01/06 20:10:04  ucko
+* Be more conservative when calling GetBioseqHandle.
+* Fix some irregular indentation.
+*
 * Revision 1.28  2002/12/30 19:38:35  vasilche
 * Optimized CGenbankWriter::WriteSequence.
 * Implemented GetBestOverlappingFeat() with CSeqFeatData::ESubtype selector.
