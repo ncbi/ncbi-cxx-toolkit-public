@@ -69,12 +69,6 @@ TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
 
 // ASN
 inline
-CTypeRef GetOctetStringTypeRef(const void* const* )
-{
-    return &COctetStringTypeInfoGetTypeInfo;
-}
-
-inline
 CTypeRef GetOctetStringTypeRef(void* const* )
 {
     return &COctetStringTypeInfoGetTypeInfo;
@@ -82,23 +76,7 @@ CTypeRef GetOctetStringTypeRef(void* const* )
 
 template<typename T>
 inline
-CTypeRef GetSetTypeRef(const T* const* )
-{
-    const T* p = 0;
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
-}
-
-template<typename T>
-inline
 CTypeRef GetSetTypeRef(T* const* )
-{
-    const T* p = 0;
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
-}
-
-template<typename T>
-inline
-CTypeRef GetSequenceTypeRef(const T* const* )
 {
     const T* p = 0;
     return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
@@ -114,26 +92,10 @@ CTypeRef GetSequenceTypeRef(T* const* )
 
 template<typename T>
 inline
-CTypeRef GetSetOfTypeRef(const T* const* p)
-{
-    //    const T* p = 0;
-    return CTypeRef(&CSetOfTypeInfoGetTypeInfo, GetSetTypeRef(p));
-}
-
-template<typename T>
-inline
 CTypeRef GetSetOfTypeRef(T* const* p)
 {
     //    const T* p = 0;
     return CTypeRef(&CSetOfTypeInfoGetTypeInfo, GetSetTypeRef(p));
-}
-
-template<typename T>
-inline
-CTypeRef GetSequenceOfTypeRef(const T* const* p)
-{
-    //    const T* p = 0;
-    return CTypeRef(&CSequenceOfTypeInfoGetTypeInfo, GetSetTypeRef(p));
 }
 
 template<typename T>
@@ -215,8 +177,7 @@ CTypeRef GetOldAsnTypeRef(const string& name,
 #define ADD_NAMED_ASN_CHOICE_VARIANT(VariantAlias, AsnTypeKind, AsnTypeName) \
     NCBI_NS_NCBI::AddVariant(info,VariantAlias, \
         MEMBER_PTR(data.ptrvalue), \
-        NCBI_NAME3(Get,AsnTypeKind,TypeRef)(reinterpret_cast<const NCBI_NAME2 \
-            (struct_,AsnTypeName)* const*>(MEMBER_PTR(data.ptrvalue))))
+        NCBI_NAME3(Get,AsnTypeKind,TypeRef)(reinterpret_cast<NCBI_NAME2(struct_,AsnTypeName)*const*>(MEMBER_PTR(data.ptrvalue))))
 #define ADD_ASN_CHOICE_VARIANT(VariantName, AsnTypeKind, AsnTypeName) \
     ADD_NAMED_ASN_CHOICE_VARIANT(#VariantName, AsnTypeKind, AsnTypeName)
 
