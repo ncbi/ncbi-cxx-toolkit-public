@@ -1369,7 +1369,7 @@ private:
 inline
 void CDirEntry::Reset(const string& path)
 {
-    m_Path = DeleteTrailingPathSeparator(path);
+    m_Path = path;
 }
 
 inline
@@ -1572,6 +1572,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/10/06 18:19:53  ivanov
+ * Removed deleting trailing path separator from the CDirEntry::Reset(),
+ * because in this case CDirEntry works incorrectly with root directories
+ * like "/","\","E:\"
+ *
  * Revision 1.48  2004/09/02 16:18:04  ivanov
  * CFileException:: added errcode sctring for eRelativePath
  *
