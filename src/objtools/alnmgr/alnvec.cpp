@@ -322,7 +322,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                 char* ch_buff = new char[len+1];
                 char fill_ch;
                 
-                if (seg < left_seg  ||  seg > right_seg  &&  right_seg > 0) {
+                if (seg < left_seg  ||  seg > right_seg) {
                     fill_ch = GetEndChar();
                 } else {
                     fill_ch = GetGapChar(row);
@@ -797,6 +797,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/07/21 21:29:39  todorov
+* cleaned an expression
+*
 * Revision 1.34  2003/07/21 17:08:50  todorov
 * fixed calc of remaining nscrns in GetWhole...
 *
