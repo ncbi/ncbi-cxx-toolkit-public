@@ -50,7 +50,9 @@ BEGIN_SCOPE(objects)
 class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
+class CSeq_literal;
 class CBioseq_Base_Info;
+class CBioseq_Info;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
@@ -68,7 +70,7 @@ public:
     typedef vector<TPlace> TPlaces;
 
     // annot contents identification
-    typedef int TLocationId;
+    typedef CSeq_id_Handle TLocationId;
     typedef CRange<TSeqPos> TLocationRange;
     typedef pair<TLocationId, TLocationRange> TLocation;
     typedef vector<TLocation> TLocationSet;
@@ -94,6 +96,7 @@ public:
 
     void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
     CBioseq_Base_Info& x_GetBase(const TPlace& place);
+    CBioseq_Info& x_GetBioseq(const TPlace& place);
 
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
@@ -102,8 +105,13 @@ public:
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
                         const TLocationSet& location);
+    void x_AddSeq_data(const TLocationSet& location);
 
     void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
+
+    typedef list< CRef<CSeq_literal> > TSequence;
+    void x_LoadSequence(const TPlace& place, TSeqPos pos,
+                        const TSequence& seq);
 
 protected:
     virtual void x_Load(void);
@@ -112,6 +120,8 @@ protected:
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
+
+    void x_TSEAttachSeq_data(void);
 
 private:
     friend class CTSE_Info;
@@ -127,6 +137,7 @@ private:
 
     TPlaces         m_AnnotPlaces;
     TAnnotContents  m_AnnotContents;
+    TLocationSet    m_Seq_data;
 
     CFastMutex      m_LoadLock;
 
@@ -162,6 +173,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/15 14:06:49  vasilche
+* Added support to load split sequences.
+*
 * Revision 1.5  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

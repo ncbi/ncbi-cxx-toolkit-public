@@ -39,6 +39,8 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objmgr/seq_map.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -68,7 +70,7 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
     m_TSE_Info = &tse_info;
     tse_info.m_Chunks[GetChunkId()].Reset(this);
     tse_info.x_SetDirtyAnnotIndex();
-
+    x_TSEAttachSeq_data();
 }
 
 
@@ -122,6 +124,12 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
 }
 
 
+void CTSE_Chunk_Info::x_AddSeq_data(const TLocationSet& location)
+{
+    m_Seq_data.insert(m_Seq_data.end(), location.begin(), location.end());
+}
+
+
 void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     ITERATE ( TAnnotContents, it, m_AnnotContents ) {
@@ -143,7 +151,7 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
                 SAnnotObject_Key key;
                 SAnnotObject_Index annotRef;
                 key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
-                key.m_Handle = CSeq_id_Handle::GetGiHandle(lit->first);
+                key.m_Handle = lit->first;
                 key.m_Range = lit->second;
                 tse.x_MapAnnotObject(key, annotRef, infos);
             }
@@ -178,11 +186,57 @@ CBioseq_Base_Info& CTSE_Chunk_Info::x_GetBase(const TPlace& place)
 }
 
 
+CBioseq_Info& CTSE_Chunk_Info::x_GetBioseq(const TPlace& place)
+{
+    if ( place.first == eBioseq ) {
+        return GetTSE_Info().GetBioseq(place.second);
+    }
+    else {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "Bioseq-set id where gi is expected");
+    }
+}
+
+
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   CRef<CSeq_annot_Info> annot)
 {
     x_GetBase(place).AddAnnot(annot);
     GetTSE_Info().UpdateAnnotIndex(*annot);
+}
+
+
+void CTSE_Chunk_Info::x_TSEAttachSeq_data(void)
+{
+    ITERATE ( TLocationSet, it, m_Seq_data ) {
+        const CSeq_id_Handle& id = it->first;
+        const TLocationRange& range = it->second;
+        CConstRef<CBioseq_Info> bioseq = GetTSE_Info().FindBioseq(id);
+        if ( !bioseq ) {
+            NCBI_THROW(CObjMgrException, eOtherError,
+                       "Chunk-Info Seq-data has bad Seq-id: "+id.AsString());
+        }
+        const CSeqMap& seq_map = bioseq->GetSeqMap();
+        const_cast<CSeqMap&>(seq_map).SetRegionInChunk(*this,
+                                                       range.GetFrom(),
+                                                       range.GetLength());
+    }
+}
+
+
+void CTSE_Chunk_Info::x_LoadSequence(const TPlace& place, TSeqPos pos,
+                                     const TSequence& sequence)
+{
+    if ( place.first != eBioseq ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "cannot add Seq-data to Bioseq-set");
+    }
+    CSeqMap& seq_map = const_cast<CSeqMap&>(x_GetBioseq(place).GetSeqMap());
+    ITERATE ( TSequence, it, sequence ) {
+        const CSeq_literal& literal = **it;
+        seq_map.LoadSeq_data(pos, literal.GetLength(), literal.GetSeq_data());
+        pos += literal.GetLength();
+    }
 }
 
 
@@ -192,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/15 14:06:49  vasilche
+* Added support to load split sequences.
+*
 * Revision 1.9  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

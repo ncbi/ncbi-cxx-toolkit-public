@@ -39,6 +39,7 @@
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
@@ -72,6 +73,7 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
     : m_Position(kInvalidSeqPos),
       m_Length(length),
       m_SegType(seg_type),
+      m_ObjType(seg_type),
       m_RefMinusStrand(false),
       m_RefPosition(0)
 {
@@ -247,9 +249,56 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
 void CSeqMap::x_LoadObject(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
-    if ( !seg.m_RefObject ) {
-        NCBI_THROW(CSeqMapException, eFail, "Cannot load part of seqmap");
+    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+        CObject* obj = const_cast<CObject*>(seg.m_RefObject.GetPointer());
+        if ( obj && seg.m_ObjType == eSeqChunk ) {
+            CTSE_Chunk_Info* chunk = dynamic_cast<CTSE_Chunk_Info*>(obj);
+            if ( chunk ) {
+                chunk->Load();
+            }
+        }
     }
+}
+
+
+const CObject* CSeqMap::x_GetObject(const CSegment& seg) const
+{
+    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+        x_LoadObject(seg);
+    }
+    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+        NCBI_THROW(CSeqMapException, eNullPointer, "null object pointer");
+    }
+    return seg.m_RefObject.GetPointer();
+}
+
+
+void CSeqMap::x_SetObject(const CSegment& seg, const CObject& obj)
+{
+    // lock for object modification
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    // check for object
+    if ( seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
+        NCBI_THROW(CSeqMapException, eDataError, "object already set");
+    }
+    // set object
+    const_cast<CSegment&>(seg).m_ObjType = seg.m_SegType;
+    const_cast<CSegment&>(seg).m_RefObject.Reset(&obj);
+}
+
+
+void CSeqMap::x_SetChunk(const CSegment& seg, CTSE_Chunk_Info& chunk)
+{
+    // lock for object modification
+    //CFastMutexGuard guard(m_SeqMap_Mtx);
+    // check for object
+    if ( seg.m_ObjType == eSeqChunk ||
+         seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
+        NCBI_THROW(CSeqMapException, eDataError, "object already set");
+    }
+    // set object
+    const_cast<CSegment&>(seg).m_RefObject.Reset(&chunk);
+    const_cast<CSegment&>(seg).m_ObjType = eSeqChunk;
 }
 
 
@@ -258,13 +307,7 @@ CConstRef<CSeqMap> CSeqMap::x_GetSubSeqMap(const CSegment& seg, CScope* scope,
 {
     CConstRef<CSeqMap> ret;
     if ( seg.m_SegType == eSeqSubMap ) {
-        if ( !seg.m_RefObject ) {
-            x_LoadObject(seg);
-        }
-        if ( !seg.m_RefObject ) {
-        NCBI_THROW(CSeqMapException, eNullPointer, "Null CSeqMap pointer");
-        }
-        ret.Reset(static_cast<const CSeqMap*>(seg.m_RefObject.GetPointer()));
+        ret.Reset(static_cast<const CSeqMap*>(x_GetObject(seg)));
     }
     else if ( resolveExternal && seg.m_SegType == eSeqRef ) {
         ret.Reset(&x_GetBioseqHandle(seg, scope).GetSeqMap());
@@ -283,14 +326,7 @@ void CSeqMap::x_SetSubSeqMap(size_t /*index*/, CSeqMap_Delta_seqs* /*subMap*/)
 const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
 {
     if ( seg.m_SegType == eSeqData ) {
-        if ( !seg.m_RefObject ) {
-            x_LoadObject(seg);
-        }
-        if ( !seg.m_RefObject ) {
-            NCBI_THROW(CSeqMapException, eNullPointer,
-                       "Null CSeq_data pointer");
-        }
-        return *static_cast<const CSeq_data*>(seg.m_RefObject.GetPointer());
+        return *static_cast<const CSeq_data*>(x_GetObject(seg));
     }
     NCBI_THROW(CSeqMapException, eSegmentTypeError,
                "Invalid segment type");
@@ -305,24 +341,30 @@ void CSeqMap::x_SetSeq_data(size_t index, CSeq_data& data)
         NCBI_THROW(CSeqMapException, eSegmentTypeError,
                    "Invalid segment type");
     }
-    // lock for object modification
-    CFastMutexGuard guard(m_SeqMap_Mtx);
-    // check for object
-    if ( seg.m_RefObject ) {
-        NCBI_THROW(CSeqMapException, eDataError, "CSeq_data already set");
+    x_SetObject(seg, data);
+}
+
+
+void CSeqMap::LoadSeq_data(TSeqPos pos, TSeqPos len,
+                           const CSeq_data& data)
+{
+    const CSegment& seg = x_GetSegment(x_FindSegment(pos, 0));
+    if ( seg.m_Position != pos || seg.m_Length != len ) {
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "Invalid segment size");
     }
-    // set object
-    seg.m_RefObject.Reset(&data);
+    if ( seg.m_SegType != eSeqData ) {
+        NCBI_THROW(CSeqMapException, eSegmentTypeError,
+                   "Invalid segment type");
+    }
+    x_SetObject(seg, data);
 }
 
 
 const CSeq_id& CSeqMap::x_GetRefSeqid(const CSegment& seg) const
 {
     if ( seg.m_SegType == eSeqRef ) {
-        if ( !seg.m_RefObject ) {
-            NCBI_THROW(CSeqMapException, eNullPointer, "Null CSeq_id pointer");
-        }
-        return static_cast<const CSeq_id&>(*seg.m_RefObject);
+        return static_cast<const CSeq_id&>(*x_GetObject(seg));
     }
     NCBI_THROW(CSeqMapException, eSegmentTypeError,
                "Invalid segment type");
@@ -559,6 +601,11 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(const CBioseq& seq)
     else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
         // Virtual sequence -- no data, no segments
         // The total sequence is gap
+        ret.Reset(new CSeqMap(inst.GetLength()));
+    }
+    else if ( inst.GetRepr() != CSeq_inst::eRepr_not_set && 
+              inst.IsSetLength() && inst.GetLength() != 0 ) {
+        // split seq-data
         ret.Reset(new CSeqMap(inst.GetLength()));
     }
     else {
@@ -805,12 +852,56 @@ CSeqMap::CSegment& CSeqMap::x_Add(const CDelta_seq& seq)
 }
 
 
+void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
+                               TSeqPos pos, TSeqPos length)
+{
+    if ( length == kInvalidSeqPos ) {
+        _ASSERT(pos == 0);
+        _ASSERT(m_SeqLength != kInvalidSeqPos);
+        length = m_SeqLength;
+    }
+    size_t index = x_FindSegment(pos, 0);
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    while ( length ) {
+        // get segment
+        if ( index > x_GetSegmentsCount() ) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "split chunk beyond SeqMap bounds");
+        }
+        const CSegment& seg = x_GetSegment(index);
+
+        // check segment
+        if ( seg.m_Position != pos || seg.m_Length < length ) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "SeqMap segment crosses split chunk boundary");
+        }
+        if ( seg.m_SegType != eSeqGap ) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "split chunk covers bad SeqMap segment");
+        }
+        _ASSERT(!seg.m_RefObject);
+
+        // update segment
+        const_cast<CSegment&>(seg).m_SegType = eSeqData;
+        x_SetChunk(seg, chunk);
+
+        // next
+        pos += seg.m_Length;
+        length -= seg.m_Length;
+        ++index;
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/06/15 14:06:49  vasilche
+* Added support to load split sequences.
+*
 * Revision 1.53  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

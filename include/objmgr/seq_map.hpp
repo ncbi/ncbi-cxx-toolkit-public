@@ -60,6 +60,7 @@ class CSeq_literal;
 class CSeq_data;
 class CPacked_seqint;
 class CPacked_seqpnt;
+class CTSE_Chunk_Info;
 
 // Provided for compatibility with old code; new code should just use TSeqPos.
 typedef TSeqPos TSeqPosition;
@@ -88,7 +89,8 @@ public:
         eSeqData,             // real sequence data
         eSeqSubMap,           // sub seqmap
         eSeqRef,              // reference to Bioseq
-        eSeqEnd
+        eSeqEnd,
+        eSeqChunk
     };
 
     typedef CSeq_inst::TMol TMol;
@@ -114,6 +116,7 @@ protected:
 
         // Segment type
         char                 m_SegType;
+        char                 m_ObjType;
 
         // reference info, valid for eSeqData, eSeqSubMap, eSeqRef
         bool                 m_RefMinusStrand;
@@ -225,6 +228,9 @@ public:
 
     static TSeqPos ResolveBioseqLength(const CSeq_id& id, CScope* scope);
 
+    void SetRegionInChunk(CTSE_Chunk_Info& chunk, TSeqPos pos, TSeqPos length);
+    void LoadSeq_data(TSeqPos pos, TSeqPos len, const CSeq_data& data);
+
 protected:
     // 'ctors
     CSeqMap(CSeqMap* parent, size_t index);
@@ -286,7 +292,9 @@ protected:
     
     void x_LoadObject(const CSegment& seg) const;
     const CObject* x_GetObject(const CSegment& seg) const;
-    CObject* x_GetObject(CSegment& seg);
+    void x_SetObject(const CSegment& seg, const CObject& obj);
+    void x_SetChunk(const CSegment& seg, CTSE_Chunk_Info& chunk);
+
     virtual void x_SetSeq_data(size_t index, CSeq_data& data);
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
 
@@ -322,6 +330,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/06/15 14:06:49  vasilche
+* Added support to load split sequences.
+*
 * Revision 1.44  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
