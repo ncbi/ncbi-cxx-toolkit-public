@@ -57,7 +57,7 @@ template<> struct CBDB_TypeMapper<int>
 
 template<> struct CBDB_TypeMapper<string>
 {
-    typedef CBDB_FieldString TFieldType;
+    typedef CBDB_FieldLString TFieldType;
 };
 
 /// db_map_base 
@@ -602,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/04 17:04:58  kuznets
+ * Make use of LString type in map objects to handle non-ASCIIZ strings
+ *
  * Revision 1.8  2003/12/16 17:47:09  kuznets
  * minor code cleanup
  *
