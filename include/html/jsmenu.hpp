@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/08/14 16:52:47  ivanov
+ * Changed parent class for CHTMLPopupMenu.
+ * Changed mean for init JavaScript popup menu & add it to HTML document.
+ *
  * Revision 1.1  2001/07/16 13:45:33  ivanov
  * Initialization
  *
@@ -50,7 +54,13 @@ BEGIN_NCBI_SCOPE
 //
 // Class for support JavaScript popup menu (Smith's menu)
 //
-// NOTE: For successful work menu in HTML pages file "menu.js" need.  
+// NOTE: For successful work menu in HTML pages need:
+//       - file with popup menu JavaScript library "menu.js" (by default 
+//         using menu with URL, defined in constant "kJSMenuDefaultURL");
+//       - define menus and add its to HTML page (AppendChild()).
+//       - call EnablePopupMenu() (in CHTML_html or CHTMLPage).
+// 
+// NODE 1: We must add menus to BODY only, otherwise menu not will be work.
 //
 //===========================================================================
 
@@ -64,7 +74,7 @@ enum EHTML_PM_Attribute {
     eHTML_PM_disableHide,            // false
     eHTML_PM_fontSize,               // 14
     eHTML_PM_fontWeigh,              // plain
-    eHTML_PM_fontFamily,             // arial,helvetica,espy,sans-serif
+    eHTML_PM_fontFamily,             // arial,helvetica,sans-serif
     eHTML_PM_fontColor,              // black
     eHTML_PM_fontColorHilite,        // #ffffff
     eHTML_PM_bgColor,                // #555555
@@ -80,10 +90,11 @@ enum EHTML_PM_Attribute {
 };
 
 
-class CHTMLPopupMenu : public CObject
+
+class CHTMLPopupMenu : public CNCBINode
 {
-    friend class CHTML_head;
-    friend class CHTML_body;
+    typedef CNCBINode CParent;
+    friend class CHTMLPage;
 
 public:
     // Construct menu with name "name" (JavaScript variable name)
@@ -95,32 +106,39 @@ public:
 
     // Add new item to current menu
     void AddItem(const string& title, 
-                 const string& action    = kEmptyStr,
+                 const string& action    = kEmptyStr,  // JS code
                  const string& color     = kEmptyStr,
-                 const string& mouseover = kEmptyStr,
-                 const string& mouseout  = kEmptyStr);
+                 const string& mouseover = kEmptyStr,  // JS code
+                 const string& mouseout  = kEmptyStr); // JS code
 
     // Add item's separator
     void AddSeparator(void); 
 
     // Set menu attribute
-    void SetAttribute(const EHTML_PM_Attribute attribute, const string& value);
+    void SetAttribute(EHTML_PM_Attribute attribute, const string& value);
 
-    // Get JavaScript code for call menu
+    // Get JavaScript code for menu call
     string ShowMenu(void);
 
-private:
-    // Get HTML code for insert in the HEAD and BODY tags
-    static string GetCodeHead(const string& menu_lib_url,
-                              const string& menu_items_code,
-                              const string& menu_any_name);
+    // Get HTML code for insert in the HEAD and BODY tags.
+    // If "menu_lib_url" is not defined, then using default URL.
+    static string GetCodeHead(const string& menu_lib_url = kEmptyStr);
     static string GetCodeBody(void);
 
+private:
     // Get code for menu items in text format (JS function inside code)
     string GetCodeMenuItems(void);
+    
+    // Print menu
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
     // Menu item type
     struct SItem {
+        // menu item
+        SItem(const string& title, const string& action, const string& color,
+              const string& mouseover, const string& mouseout);
+        // separator
+        SItem(void);
         string title;      // menu item title
         string action;     // JS action on press item
         string color;      // ? (not used in JSMenu script)
@@ -131,6 +149,7 @@ private:
 
     // Menu attribute type
     struct SAttribute {
+        SAttribute(EHTML_PM_Attribute name, const string& value);
         EHTML_PM_Attribute name;   // attribute name
         string             value;  // attribute value
     };

@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/08/14 16:53:07  ivanov
+ * Changed parent class for CHTMLPopupMenu.
+ * Changed mean for init JavaScript popup menu & add it to HTML document.
+ *
  * Revision 1.1  2001/07/16 13:41:32  ivanov
  * Initialization
  *
@@ -43,6 +47,11 @@
 BEGIN_NCBI_SCOPE
 
 
+// URL to menu library (default)
+const string kJSMenuDefaultURL
+  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/menu.js";
+
+
 CHTMLPopupMenu::CHTMLPopupMenu(const string& name)
 {
     m_Name = name;
@@ -51,19 +60,35 @@ CHTMLPopupMenu::CHTMLPopupMenu(const string& name)
 
 CHTMLPopupMenu::~CHTMLPopupMenu(void)
 {
+    return;
 }
 
 
-void CHTMLPopupMenu::AddItem(const string& title, const string& action, 
+CHTMLPopupMenu::SItem::SItem(const string& v_title, 
+                             const string& v_action, 
+                             const string& v_color,
+                             const string& v_mouseover, 
+                             const string& v_mouseout)
+{
+    title     = v_title;
+    action    = v_action;
+    color     = v_color;
+    mouseover = v_mouseover;
+    mouseout  = v_mouseout;
+}
+
+CHTMLPopupMenu::SItem::SItem()
+{
+    title = kEmptyStr;
+}
+        
+
+void CHTMLPopupMenu::AddItem(const string& title,
+                             const string& action, 
                              const string& color,
                              const string& mouseover, const string& mouseout)
 {
-    SItem item;
-    item.title     = title; 
-    item.action    = action; 
-    item.color     = color; 
-    item.mouseover = mouseover; 
-    item.mouseout  = mouseout; 
+    SItem item(title, action, color, mouseover, mouseout);
     m_Items.push_back(item);
 }
 
@@ -71,17 +96,22 @@ void CHTMLPopupMenu::AddItem(const string& title, const string& action,
 void CHTMLPopupMenu::AddSeparator(void)
 {
     SItem item;
-    item.title = kEmptyStr; 
     m_Items.push_back(item);
 } 
 
 
-void CHTMLPopupMenu::SetAttribute(const EHTML_PM_Attribute attribute,
-                                  const string& value)
+CHTMLPopupMenu::SAttribute::SAttribute(EHTML_PM_Attribute v_name, 
+                                      const string& v_value)
 {
-    SAttribute attr;
-    attr.name  = attribute;
-    attr.value = value;
+    name   = v_name;
+    value  = v_value;
+}
+
+
+void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
+                                  const string&      value)
+{
+    SAttribute attr(attribute, value);
     m_Attrs.push_back(attr);
 }
 
@@ -108,11 +138,11 @@ string CHTMLPopupMenu::GetCodeMenuItems(void)
             code += m_Name + ".addMenuSeparator();\n";
         }
         else {
-            code += m_Name + ".addMenuItem(\"" + \
-                i->title     + "\",\""  + \
-                i->action    + "\",\""  + \
-                i->color     + "\",\""  + \
-                i->mouseover + "\",\""  + \
+            code += m_Name + ".addMenuItem(\"" +
+                i->title     + "\",\""  +
+                i->action    + "\",\""  +
+                i->color     + "\",\""  +
+                i->mouseover + "\",\""  +
                 i->mouseout  + "\");\n";
         }
     }
@@ -121,7 +151,7 @@ string CHTMLPopupMenu::GetCodeMenuItems(void)
     string attr; 
 
     iterate (TAttributes, i, m_Attrs) {
-        switch(i->name) {
+        switch ( i->name ) {
         case eHTML_PM_enableTracker:
             attr = "enableTracker"; 
             break;
@@ -173,36 +203,43 @@ string CHTMLPopupMenu::GetCodeMenuItems(void)
         case eHTML_PM_childMenuIconHilite:
             attr = "childMenuIconHilite"; 
             break;
+        default:
+            _TROUBLE;
         }
+
         code += m_Name + "." + attr + " = \"" + i->value + "\";\n";
     }
-    return code + "\n";
+
+    return code;
 }
 
- 
-string CHTMLPopupMenu::GetCodeHead(const string& menu_lib_url,
-                                   const string& menu_items_code,
-                                   const string& menu_any_name)
+
+CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
 {
+    if ( mode == eHTML ) {
+        out << "<script language=\"JavaScript1.2\">\n<!--\n" 
+            << GetCodeMenuItems() << "//-->\n</script>\n";
+    }
+    return out;
+}
+
+
+string CHTMLPopupMenu::GetCodeHead(const string& menu_lib_url)
+{
+    // If URL not defined, then use default value
+    string url = menu_lib_url.empty() ? kJSMenuDefaultURL : menu_lib_url;
+
     // Include the menu script loading
-    string script = "<script language=\"JavaScript1.2\" src=\"" + \
-        menu_lib_url + "\"></script>\n";
-
-    // Menu definition
-    script += "<script language=\"JavaScript1.2\">\n<!--\n";
-    script += "function onLoad() {\n\n" + menu_items_code;
-    script += menu_any_name + ".writeMenus();\n}\n//-->\n</script>\n";
-
-    // Return generated script
-    return script;
+    return "<script language=\"JavaScript1.2\" src=\""+url+"\"></script>\n";
 }
 
 
 string CHTMLPopupMenu::GetCodeBody(void)
 {
     return "<script language=\"JavaScript1.2\">\n" \
-        "<!--\n//For IE\nif (document.all) onLoad();\n//-->\n</script>\n";
+        "<!--\nfunction onLoad() {\nwindow.defaultjsmenu = new Menu();\n" \
+        "defaultjsmenu.writeMenus();\n}\n" \
+        "//For IE\nif (document.all) onLoad();\n//-->\n</script>\n";
 }
-
 
 END_NCBI_SCOPE
