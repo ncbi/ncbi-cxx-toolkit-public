@@ -13,6 +13,7 @@ LIB = \
 	xcddalignview \
 	ncbimime \
 	cdd \
+	scoremat \
 	cn3d \
 	mmdb \
 	seqset $(SEQ_LIBS) \
