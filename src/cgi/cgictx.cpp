@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/10/07 05:05:04  vakatov
+* [UNIX]  include <sys/time.h>
+*
 * Revision 1.22  2001/10/04 18:17:53  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -107,6 +110,10 @@
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgiapp.hpp>
+
+#ifdef NCBI_OS_UNIX
+#  include <sys/time.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
