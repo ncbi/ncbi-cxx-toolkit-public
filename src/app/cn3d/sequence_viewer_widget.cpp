@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/02/21 12:26:30  thiessen
+* fix row delete bug ; remember threader options
+*
 * Revision 1.30  2002/02/05 18:53:25  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -831,7 +834,7 @@ SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
         wxWindowID id,
         const wxPoint& pos,
         const wxSize& size) :
-    wxWindow(parent, id, pos, size),
+    wxWindow(parent, id, pos, size, wxNO_3D),
     titleFont(NULL), cellHeight(0), maxTitleWidth(20), alignment(NULL),
     sequenceArea(NULL), highlightedTitleRow(-1)
 {
@@ -1027,7 +1030,7 @@ SequenceViewerWidget::SequenceViewerWidget(
         wxWindowID id,
         const wxPoint& pos,
         const wxSize& size) :
-    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_3DBORDER)
+    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_NOBORDER | wxNO_3D)
 {
     sequenceArea = new SequenceViewerWidget_SequenceArea(this);
     titleArea = new SequenceViewerWidget_TitleArea(this);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/02/21 12:26:30  thiessen
+* fix row delete bug ; remember threader options
+*
 * Revision 1.26  2001/12/06 23:13:47  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -130,7 +133,7 @@ BEGIN_SCOPE(Cn3D)
 ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
         const char* title, const wxPoint& pos, const wxSize& size) :
     wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
-        wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT
+        wxDEFAULT_FRAME_STYLE
 #if wxVERSION_NUMBER >= 2302
             | wxFRAME_NO_TASKBAR
 #endif

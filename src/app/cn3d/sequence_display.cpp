@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/02/21 12:26:30  thiessen
+* fix row delete bug ; remember threader options
+*
 * Revision 1.41  2002/02/19 14:59:39  thiessen
 * add CDD reject and purge sequence
 *
@@ -530,9 +533,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     controlDown = ((controls &
 #ifdef __WXMAC__
         // on Mac, can't do ctrl-clicks, so use meta instead
-        ViewableAlignment::eAltOrMetaDown 
+        ViewableAlignment::eAltOrMetaDown
 #else
-        ViewableAlignment::eControlDown 
+        ViewableAlignment::eControlDown
 #endif
             ) > 0);
     if (!shiftDown && !controlDown && column == -1)
@@ -601,11 +604,11 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                         return false;
                     }
 
+                    // in case we need to redraw molecule associated with removed row
+                    const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
+
                     // delete row based on alignment row # (not display row #); redraw molecule
                     if (alignment->DeleteRow(selectedRow->row)) {
-
-                        // redraw molecule associated with removed row
-                        const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
 
                         // delete this row from the display, and update higher row #'s
                         RowVector::iterator r, re = rows.end(), toDelete;
@@ -643,17 +646,16 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                     return false;
                 }
                 // get threader options
-                ThreaderOptions options;
-                options.nRandomStarts = Threader::EstimateNRandomStarts(
+                globalThreaderOptions.nRandomStarts = Threader::EstimateNRandomStarts(
                     updateWindow->updateViewer->alignmentManager->GetCurrentMultipleAlignment(),
                     alignment);
-                ThreaderOptionsDialog optDialog(updateWindow, options);
+                ThreaderOptionsDialog optDialog(updateWindow, globalThreaderOptions);
                 if (optDialog.ShowModal() == wxCANCEL) return false;  // user cancelled
-                if (!optDialog.GetValues(&options)) {
+                if (!optDialog.GetValues(&globalThreaderOptions)) {
                     ERR_POST(Error << "Error retrieving options values from dialog");
                     return false;
                 }
-                updateWindow->updateViewer->alignmentManager->ThreadUpdate(options, alignment);
+                updateWindow->updateViewer->alignmentManager->ThreadUpdate(globalThreaderOptions, alignment);
                 updateWindow->ThreadSingleOff();
                 return false;
             }

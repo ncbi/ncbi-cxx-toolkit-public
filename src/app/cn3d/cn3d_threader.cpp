@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/02/21 12:26:29  thiessen
+* fix row delete bug ; remember threader options
+*
 * Revision 1.24  2001/10/08 00:00:09  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -158,6 +161,7 @@ ThreaderOptions::ThreaderOptions(void) :
 {
 }
 
+ThreaderOptions globalThreaderOptions;
 
 // gives threader residue number for a character (-1 if non-standard aa)
 static int LookupResidueNumber(char r)

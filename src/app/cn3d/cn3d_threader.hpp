@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/02/21 12:26:30  thiessen
+* fix row delete bug ; remember threader options
+*
 * Revision 1.12  2001/10/08 00:00:02  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -100,6 +103,8 @@ public:
 
     ThreaderOptions(void);
 };
+
+extern ThreaderOptions globalThreaderOptions;
 
 class BlockMultipleAlignment;
 class Sequence;

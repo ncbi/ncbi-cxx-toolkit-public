@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/02/21 12:26:30  thiessen
+* fix row delete bug ; remember threader options
+*
 * Revision 1.30  2002/02/13 14:53:30  thiessen
 * add update sort
 *
@@ -245,22 +248,21 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
             }
             if (!updateViewer->GetCurrentAlignments()) return;
 
-            ThreaderOptions options;
             // base nRS estimate on first update...
-            options.nRandomStarts = Threader::EstimateNRandomStarts(
+            globalThreaderOptions.nRandomStarts = Threader::EstimateNRandomStarts(
                 updateViewer->alignmentManager->GetCurrentMultipleAlignment(),
                 updateViewer->GetCurrentAlignments()->front());
-            ThreaderOptionsDialog optDialog(this, options);
+            ThreaderOptionsDialog optDialog(this, globalThreaderOptions);
             if (optDialog.ShowModal() == wxCANCEL) return;  // user cancelled
 
-            if (!optDialog.GetValues(&options)) {
+            if (!optDialog.GetValues(&globalThreaderOptions)) {
                 ERR_POST(Error << "Error retrieving options values from dialog");
                 return;
             }
 
             RaiseLogWindow();
             SetCursor(*wxHOURGLASS_CURSOR);
-            updateViewer->alignmentManager->ThreadAllUpdates(options);
+            updateViewer->alignmentManager->ThreadAllUpdates(globalThreaderOptions);
             SetCursor(wxNullCursor);
             break;
         }
