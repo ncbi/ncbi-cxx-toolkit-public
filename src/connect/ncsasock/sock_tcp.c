@@ -59,7 +59,7 @@ int sock_tcp_new_stream(
 	sock_print("sock_tcp_new_stream", sp);
 #endif
 	
-	io = xTCPCreate(STREAM_BUFFER_SIZE, sock_tcp_notify, &pb);
+	io = xTCPCreate(STREAM_BUFFER_SIZE, (TCPNotifyProc) sock_tcp_notify, &pb);
 	switch(io)
 	{
 		case noErr:                 break;
