@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/02/26 21:03:29  vasilche
+* CAsnWriteNode made simple node. Use CHTML_pre explicitely.
+* Fixed bug in CHTML_table::Row.
+* Added CHTML_table::HeaderCell & DataCell methods.
+*
 * Revision 1.2  1999/02/18 18:42:14  vasilche
 * Added autoflushing.
 *
@@ -48,13 +53,15 @@
 
 BEGIN_NCBI_SCOPE
 
-class CAsnWriteNode : public CHTML_pre
+class CAsnWriteNode : public CHTMLNode
 {
 public:
     CAsnWriteNode(void);
     ~CAsnWriteNode(void);
 
     AsnIoPtr GetOut(void);
+    operator AsnIoPtr(void)
+        { return GetOut(); }
 
     virtual void CreateSubNodes(void);
 

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/02/26 21:03:30  vasilche
+* CAsnWriteNode made simple node. Use CHTML_pre explicitely.
+* Fixed bug in CHTML_table::Row.
+* Added CHTML_table::HeaderCell & DataCell methods.
+*
 * Revision 1.25  1999/02/02 17:57:46  vasilche
 * Added CHTML_table::Row(int row).
 * Linkbar now have equal image spacing.
@@ -532,9 +537,19 @@ public:
     // returns row, will add rows if needed
     // throws exception if it is not left upper corner of cell
     CHTMLNode* Row(int row);
+
+    enum ECellType {
+        eAnyCell,
+        eDataCell,
+        eHeaderCell
+    };
     // returns cell, will add rows/columns if needed
     // throws exception if it is not left upper corner of cell
-    CHTMLNode* Cell(int row, int column);
+    CHTMLNode* Cell(int row, int column, ECellType type = eAnyCell);
+    CHTMLNode* HeaderCell(int row, int column)
+        { return Cell(row, column, eHeaderCell); }
+    CHTMLNode* DataCell(int row, int column)
+        { return Cell(row, column, eDataCell); }
     // checks table contents for validaty, throws exception if invalid
     void CheckTable(void) const;
     // returns width of table in columns. Should call CheckTable before
@@ -578,6 +593,7 @@ protected:
     static int sx_GetSpan(const CNCBINode* node, const string& attr, CTableInfo* info);
     static bool sx_IsRow(const CNCBINode* node);
     static bool sx_IsCell(const CNCBINode* node);
+    static CHTMLNode* sx_CheckType(CHTMLNode* node, ECellType type);
 };
 
 // the form tag

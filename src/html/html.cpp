@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/02/26 21:03:33  vasilche
+* CAsnWriteNode made simple node. Use CHTML_pre explicitely.
+* Fixed bug in CHTML_table::Row.
+* Added CHTML_table::HeaderCell & DataCell methods.
+*
 * Revision 1.29  1999/02/02 17:57:49  vasilche
 * Added CHTML_table::Row(int row).
 * Linkbar now have equal image spacing.
@@ -514,7 +519,7 @@ CHTMLNode* CHTML_table::Row(int needRow)  // todo: exception
     int row = 0;
     // scan all children (which should be <TR> tags)
     for ( TChildList::const_iterator iRow = ChildBegin();
-          iRow != ChildEnd(); ++iRow ) {
+          iRow != ChildEnd(); ++iRow, ++row ) {
         CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
         if ( !trNode || !sx_IsRow(trNode) ) {
             throw runtime_error("Table contains non <TR> tag");
@@ -534,7 +539,22 @@ CHTMLNode* CHTML_table::Row(int needRow)  // todo: exception
     return trNode;
 }
 
-CHTMLNode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
+CHTMLNode* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
+{
+    switch (type) {
+    case eHeaderCell:
+        if ( cell->GetName() != CHTML_th::s_GetTagName() )
+            throw runtime_error("CHTML_table::CheckType: wrong cell type: TH expected");
+        break;
+    case eDataCell:
+        if ( cell->GetName() != CHTML_td::s_GetTagName() )
+            throw runtime_error("CHTML_table::CheckType: wrong cell type: TH expected");
+        break;
+    }
+    return cell;
+}
+
+CHTMLNode* CHTML_table::Cell(int needRow, int needCol, ECellType type)
 {
     vector<int> rowSpans; // hanging down cells (with rowspan > 1)
 
@@ -567,8 +587,9 @@ CHTMLNode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
             }
 
             if ( row == needRow ) {
-                if ( col == needCol )
-                    return cell;
+                if ( col == needCol ) {
+                    return sx_CheckType(cell, type);
+                }
                 if ( col > needCol )
                     throw runtime_error("Table cells are overlapped");
             }
@@ -638,9 +659,14 @@ CHTMLNode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
 
     // add needed columns
     CHTMLNode* cell;
-    for ( int i = 0; i < addCells; ++i ) {
+    for ( int i = 1; i < addCells; ++i ) {
         needRowNode->AppendChild(cell = new CHTML_td);
     }
+    if ( type == eHeaderCell )
+        cell = new CHTML_th;
+    else
+        cell = new CHTML_td;
+    needRowNode->AppendChild(cell);
     return cell;
 }
 
