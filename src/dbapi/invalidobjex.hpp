@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/05 17:15:21  kholodov
+* Not used at the time
+*
 * Revision 1.1  2002/01/30 14:51:23  kholodov
 * User DBAPI implementation, first commit
 *
@@ -42,25 +45,17 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <exception>
-#include <string>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
-class CInvalidObjEx : public exception {
-
+class CInvalidObjEx : public runtime_error 
+{
 public:
-  CInvalidObjEx(const string& errMsg) 
-    : m_errMsg(errMsg) {}
-
-  const char* what() const {
-    return m_errMsg.c_str();
-  }
-
-private:
-  string m_errMsg;
+  CInvalidObjEx(const string& what) 
+    : runtime_error(what) {}
 
 };
 
+END_NCBI_SCOPE
 
 #endif // _GENERAL_EXCEPTION_HPP_
