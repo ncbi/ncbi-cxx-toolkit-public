@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/09/03 21:32:28  vakatov
+* Move #include <algorithm> after the NCBI #include's for more
+* consistency and to suppress some bulky MSVC++ warnings.
+*
 * Revision 1.11  1999/07/15 19:05:17  sandomir
 * GetSelfURL(() added in Context
 *
@@ -63,17 +67,16 @@
 * Revision 1.1  1999/04/27 14:50:04  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
-*
 * ===========================================================================
 */
-
-#include <algorithm>
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgiapp.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
