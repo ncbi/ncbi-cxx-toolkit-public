@@ -67,10 +67,19 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
         }
     }
 
-    EBDB_ErrCode ret = CBDB_File::Fetch();
+    EBDB_ErrCode ret;
+    try {
 
-    if ( buf )
-        *buf = m_DBT_Data.data;
+        ret = CBDB_File::Fetch();
+
+        if ( buf )
+            *buf = m_DBT_Data.data;
+
+    } catch(...) {
+        ::memset(&m_DBT_Data, 0, sizeof(m_DBT_Data));
+        throw;
+    }
+
 
     if (ret == eBDB_NotFound)
         return eBDB_NotFound;
@@ -250,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/08 13:43:40  kuznets
+ * Bug fix.
+ *
  * Revision 1.4  2003/05/05 20:15:32  kuznets
  * Added CBDB_BLobFile
  *
