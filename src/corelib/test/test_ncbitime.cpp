@@ -38,17 +38,47 @@
 USING_NCBI_SCOPE;
 
 
-//=============================================================================
+//============================================================================
 //
 // TestMisc
 //
-//=============================================================================
+//============================================================================
 
 static void s_TestMisc(void)
 {
     cout << "---------------------------" << endl;
     cout << "Test Misc" << endl;
     cout << "---------------------------" << endl << endl;
+
+    {{
+        assert(CTime::MonthNameToNum("Jan")              == CTime::eJanuary); 
+        assert(CTime::MonthNameToNum("January")          == 1); 
+        assert(CTime::MonthNameToNum("Dec")              == CTime::eDecember); 
+        assert(CTime::MonthNameToNum("December")         == 12); 
+        assert(CTime::MonthNumToName(CTime::eJanuary)    == "January"); 
+        assert(CTime::MonthNumToName(1, CTime::eAbbr)    == "Jan"); 
+        assert(CTime::MonthNumToName(CTime::eDecember,
+                                     CTime::eFull)       == "December"); 
+        assert(CTime::MonthNumToName(12,CTime::eAbbr)    == "Dec"); 
+
+        assert(CTime::DayOfWeekNameToNum("Sun")          == CTime::eSunday); 
+        assert(CTime::DayOfWeekNameToNum("Sunday")       == 0); 
+        assert(CTime::DayOfWeekNameToNum("Sat")          == CTime::eSaturday);
+        assert(CTime::DayOfWeekNameToNum("Saturday")     == 6); 
+        assert(CTime::DayOfWeekNumToName(CTime::eSunday) == "Sunday"); 
+        assert(CTime::DayOfWeekNumToName(0,CTime::eAbbr) == "Sun"); 
+        assert(CTime::DayOfWeekNumToName(CTime::eSaturday,
+                                       CTime::eFull)     == "Saturday"); 
+        assert(CTime::DayOfWeekNumToName(6,CTime::eAbbr) == "Sat"); 
+
+        cout << "Throw exception below:" << endl;
+        try {
+            CTime::MonthNameToNum("Month"); 
+        } catch (CTimeException& e) {
+            NCBI_REPORT_EXCEPTION("",e);
+        }
+    
+    }}
 
     CTime t1(CTime::eCurrent);
     cout << "[" << t1.AsString() << "]" << endl;
@@ -201,11 +231,11 @@ static void s_TestMisc(void)
 }
 
 
-//=============================================================================
+//============================================================================
 //
 // TestFormats
 //
-//=============================================================================
+//============================================================================
 
 static void s_TestFormats(void)
 {
@@ -305,11 +335,11 @@ static void s_TestFormats(void)
 }
 
 
-//=============================================================================
+//============================================================================
 //
 // TestGMT
 //
-//=============================================================================
+//============================================================================
 
 static void s_TestGMT(void)
 {
@@ -317,7 +347,7 @@ static void s_TestGMT(void)
     cout << "Test GMT and Local time"     << endl;
     cout << "---------------------------" << endl << endl;
 
-    {   
+    {{
         cout << "Write time in timezone format" << endl;
 
         CTime::SetFormat("M/D/Y h:m:s Z");
@@ -334,8 +364,8 @@ static void s_TestGMT(void)
         CTime t4(CTime::eCurrent, CTime::eGmt);
         cout << "GMT time   [" << t4.AsString() << "]" << endl;
         cout << endl;
-    }
-    {   
+    }}
+    {{   
         cout << "Process timezone string" << endl;
 
         CTime t;
@@ -347,8 +377,8 @@ static void s_TestGMT(void)
         cout << "[" << t.AsString() << "]" << endl;
         assert(t.AsString() == "03/12/2001 11:22:33 ");
         cout << endl;
-    }
-    {   
+    }}
+    {{   
         cout << "Day of week" << endl;
 
         CTime t(2001, 4, 1);
@@ -359,9 +389,9 @@ static void s_TestGMT(void)
             assert(t.DayOfWeek() == (i%7));
         }
         cout << endl;
-    }
+    }}
     //------------------------------------------------------------------------
-    {   
+    {{   
         cout << "Test GetTimeT" << endl;
 
         time_t timer=time(0);
@@ -387,9 +417,9 @@ static void s_TestGMT(void)
             cout << tt.AsString() << " - " << tt.GetTimeT() / 3600 << endl; 
         }
         cout << endl;
-    }
+    }}
     //------------------------------------------------------------------------
-    {   
+    {{   
         cout << "Test TimeZoneDiff (1)" << endl;
 
         CTime tw(2001, 1, 1, 12); 
@@ -410,9 +440,9 @@ static void s_TestGMT(void)
             }
         }
         cout << endl;
-    }
+    }}
     //------------------------------------------------------------------------
-    {   
+    {{   
         cout << "Test TimeZoneDiff (2)" << endl;
 
         CTime tw(2001, 6, 1, 12); 
@@ -433,9 +463,9 @@ static void s_TestGMT(void)
             }
         }
         cout << endl;
-    }
+    }}
     //------------------------------------------------------------------------
-    {   
+    {{   
         cout << "Test AdjustTime" << endl;
 
         CTime::SetFormat("M/D/Y h:m:s");
@@ -555,15 +585,15 @@ static void s_TestGMT(void)
         
         cout << endl; 
         cout << endl;
-    }
+    }}
 }
 
 
-//=============================================================================
+//============================================================================
 //
 // TestGMTSpeedRun
 //
-//=============================================================================
+//============================================================================
 
 static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz, 
                               CTime::ETimeZonePrecision tzp)
@@ -596,11 +626,11 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
 }
 
 
-//=============================================================================
+//============================================================================
 //
 // TestGMTSpeed
 //
-//=============================================================================
+//============================================================================
 
 static void s_TestGMTSpeed(void)
 {
@@ -616,11 +646,11 @@ static void s_TestGMTSpeed(void)
 }
 
 
-//=============================================================================
+//============================================================================
 //
 // MAIN
 //
-//=============================================================================
+//============================================================================
 
 int main()
 {
@@ -646,6 +676,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2003/10/03 18:27:20  ivanov
+ * Added tests for month and day of week names conversion functions
+ *
  * Revision 6.17  2003/07/15 19:37:50  vakatov
  * Added test with weekday and timezone
  *
