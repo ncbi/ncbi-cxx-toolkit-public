@@ -42,6 +42,22 @@
 #include <corelib/ncbistd.hpp>
 #include <vector>
 
+#ifdef NCBI_OS_BSD
+/* These fast macros mess up class defs below; make them real calls instead */
+#  ifdef ntohl
+#    undef ntohl
+#  endif
+#  ifdef ntohs
+#    undef ntohs
+#  endif
+#  ifdef htonl
+#    undef htonl
+#  endif
+#  ifdef htons
+#    undef htons
+#  endif
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -617,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/08/12 20:24:04  lavr
+ * Resolve expansion mess with byte order marcos (use calls instead) -- FreeBSD
+ *
  * Revision 6.1  2002/08/12 15:11:34  lavr
  * Initial revision
  *
