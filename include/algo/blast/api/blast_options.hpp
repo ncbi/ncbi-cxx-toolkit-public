@@ -117,7 +117,6 @@ enum EBlastOptIdx {
     eBlastOpt_UseRealDbSize,
     eBlastOpt_DbGeneticCode,
     eBlastOpt_PHIPattern,
-    eBlastOpt_SkipTraceback,
     eBlastOpt_InclusionThreshold,
     eBlastOpt_PseudoCount,
     eBlastOpt_GapTracebackAlgorithm
@@ -215,8 +214,6 @@ public:
 
     EBlastTbackExt GetGapTracebackAlgorithm() const;
     void SetGapTracebackAlgorithm(EBlastTbackExt a);
-
-    void SetSkipTraceback(bool skip);
 
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
@@ -1047,16 +1044,6 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_GapTracebackAlgorithm, a);
-        }
-    }
-
-    void SetSkipTraceback(bool skip = true)
-    {
-        if (m_Local) {
-            m_Local->SetSkipTraceback(skip);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_SkipTraceback, skip);
         }
     }
 
@@ -2085,12 +2072,6 @@ CBlastOptionsLocal::SetGapTracebackAlgorithm(EBlastTbackExt a)
     m_ExtnOpts->eTbackExt = a;
 }
 
-inline void
-CBlastOptionsLocal::SetSkipTraceback(bool skip)
-{
-    m_ExtnOpts->skip_traceback = skip;
-}
-
 /******************* Hit saving options *************************/
 inline int
 CBlastOptionsLocal::GetHitlistSize() const
@@ -2463,6 +2444,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2004/06/08 15:18:47  dondosha
+* Skip traceback option has been moved to the traceback extension method enum
+*
 * Revision 1.63  2004/06/08 14:58:57  dondosha
 * Removed is_neighboring option; let application set min_hit_length and percent_identity options instead
 *

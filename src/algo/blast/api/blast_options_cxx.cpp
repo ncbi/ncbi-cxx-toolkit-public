@@ -307,10 +307,6 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         x_SetParam("UseRealDbSize", v);
         return;
         
-    case eBlastOpt_SkipTraceback:
-        x_SetParam("SkipTraceback", v);
-        return;
-        
     default:
         break;
     }
@@ -593,6 +589,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/06/08 15:20:22  dondosha
+* Skip traceback option has been moved to the traceback extension method enum
+*
 * Revision 1.44  2004/05/21 21:41:02  gorelenk
 * Added PCH ncbi_pch.hpp
 *

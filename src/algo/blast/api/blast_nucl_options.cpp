@@ -157,6 +157,7 @@ CBlastNucleotideOptionsHandle::SetGappedExtensionDefaults()
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(eDynProgExt);
+    SetGapTracebackAlgorithm(eDynProgTbck);
 }
 
 void
@@ -166,6 +167,7 @@ CBlastNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(eGreedyWithTracebackExt);
+    SetGapTracebackAlgorithm(eSkipTbck);
 }
 
 
@@ -246,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/08 15:20:22  dondosha
+ * Skip traceback option has been moved to the traceback extension method enum
+ *
  * Revision 1.11  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -82,6 +82,7 @@ CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(eDynProgExt);
+    SetGapTracebackAlgorithm(eDynProgTbck);
 }
 
 void
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/08 15:20:23  dondosha
+ * Skip traceback option has been moved to the traceback extension method enum
+ *
  * Revision 1.8  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
