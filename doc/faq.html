@@ -54,10 +54,10 @@ The cause of this error is that the serialization library, by default, links in 
 C Toolkit library. You must link in the C Toolkit library by putting the following into your make file:<br>
 <pre>
 CPPFLAGS = $(ORIG_CPPFLAGS) \
-  $(NCBI_C_INCLUDE) \
+  $(NCBI_C_INCLUDE)
 
 LIBS = \
-  $(NCBI_C_LIBPATH) -lncbi
+  $(NCBI_C_LIBPATH) -lncbi \
   $(ORIG_LIBS)
 </pre>
 If you are using the make file created by new_project.sh, then just uncomment the applicable lines.<br><br>
