@@ -1839,8 +1839,8 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
                 }
                 max_start = start + 
                     lens[plus ? numseg : numsegs - 1 - numseg] *
-                    (widths.size() == (size_t) (numrows ?
-                                                widths[numrow] : 1));
+                    (widths.size() == (size_t) numrows ?
+                     widths[numrow] : 1);
             }
             if (plus) {
                 offset += numrows;
@@ -1859,6 +1859,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2003/09/08 20:44:21  todorov
+* expression bug fix
+*
 * Revision 1.72  2003/09/08 19:48:55  todorov
 * signed vs unsigned warnings fixed
 *
