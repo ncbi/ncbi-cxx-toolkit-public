@@ -559,7 +559,7 @@ int CBlastApplication::Run(void)
     // Read the query(ies) from input file; perform the setup
     TSeqLocVector query_loc = 
         BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
-                  m_Scope, strand, from, to, &id_counter, 
+                  *m_ObjMgr, strand, from, to, &id_counter, 
                   args["lcase"].AsBoolean());
 
     readdb_args.dbname = strdup(args["db"].AsString().c_str());
