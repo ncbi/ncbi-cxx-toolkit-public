@@ -1,5 +1,6 @@
 USR_PROJ = sources
 ASN_PROJ = id2
+LIB_PROJ = id2cli
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
