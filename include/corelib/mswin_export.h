@@ -137,6 +137,14 @@
 #  define NCBI_NCBIMIME_EXPORTS
 #endif
 
+/*
+ * Definitions for NCBI_ALGO.DLL
+ */
+#ifdef NCBI_XALGO_EXPORTS
+#  define NCBI_XALGOALIGN_EXPORTS
+#  define NCBI_XALGOSEQ_EXPORTS
+#  define NCBI_XBLAST_EXPORTS
+#endif
 
 /*
  * Definitsions for GUI_UTILS.DLL
@@ -190,12 +198,30 @@
 #endif
 
 /*
- * Export specifier for library xalgo
+ * Export specifier for library xalgoalign
  */
-#ifdef NCBI_XALGO_EXPORTS
-#  define NCBI_XALGO_EXPORT         __declspec(dllexport)
+#ifdef NCBI_XALGOALIGN_EXPORTS
+#  define NCBI_XALGOALIGN_EXPORT    __declspec(dllexport)
 #else
-#  define NCBI_XALGO_EXPORT         __declspec(dllimport)
+#  define NCBI_XALGOALIGN_EXPORT    __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xalgoseq
+ */
+#ifdef NCBI_XALGOSEQ_EXPORTS
+#  define NCBI_XALGOSEQ_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_XALGOSEQ_EXPORT      __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xblast
+ */
+#ifdef NCBI_XBLAST_EXPORTS
+#  define NCBI_XBLAST_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_XBLAST_EXPORT         __declspec(dllimport)
 #endif
 
 /*
@@ -712,6 +738,7 @@
  */
 
 #  define NCBI_ACCESS_EXPORT
+#  define NCBI_BDB_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
@@ -735,6 +762,7 @@
 #  define NCBI_GUIUTILS_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
 #  define NCBI_ID1_EXPORT
+#  define NCBI_LDS_EXPORT
 #  define NCBI_MEDLARS_EXPORT
 #  define NCBI_MEDLINE_EXPORT
 #  define NCBI_MIM_EXPORT
@@ -760,18 +788,19 @@
 #  define NCBI_TAXON1_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
+#  define NCBI_XALGOALIGN_EXPORT
+#  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
+#  define NCBI_XBLAST_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
+#  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
 #  define NCBI_XOBJREAD_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
-#  define NCBI_LDS_EXPORT
-#  define NCBI_BDB_EXPORT
-#  define NCBI_XLOADER_LDS_EXPORT
 
 #endif
 
@@ -781,6 +810,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.31  2003/08/04 15:44:12  dicuccio
+ * Added export specifier for libxblast.  Modified layout of algorithm export
+ * specifiers
+ *
  * Revision 1.30  2003/07/30 16:35:17  kuznets
  * Fixed typo with NCBI_XLOADER_LDS_EXPORT
  *
