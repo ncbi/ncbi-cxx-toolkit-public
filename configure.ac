@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.109 2002/07/25 19:21:51 ucko Exp $
+#  $Id: configure.ac,v 1.110 2002/07/26 00:10:04 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1645,7 +1645,19 @@ if test "$with_sybase" != "no" ; then
       linux*) sybtcl=-lsybtcl$syb_sfx; sybtli="" ;;
       *)      sybtcl=-ltcl$syb_sfx;    sybtli=-ltli$syb_sfx ;;
    esac
-   test -n "$bit64_sfx" && SYBASE_INCLUDE="-DSYB_LP64"
+
+   # quick-patch for the bad "tli" lib (Solaris8/Intel specific)
+   if test "$host_os:$host_vendor" = "solaris2.8:pc" ; then
+      : ${sybase_sol8pc_patch:="yes"}
+   fi
+   if test "$sybase_sol8pc_patch" = "yes" ; then
+      sybtli="-ltli_orig$syb_sfx -ltli$syb_sfx"
+      SYBASE_NETWORK_LIBS="-ltli$syb_sfx $NETWORK_LIBS"
+   else
+      SYBASE_NETWORK_LIBS="$NETWORK_LIBS"
+   fi
+
+   test -n "$bit64_sfx"  &&  SYBASE_INCLUDE="-DSYB_LP64"
    SYBASE_LIBLIST="-lblk$syb_sfx -lct$syb_sfx -lcs$syb_sfx $sybtcl"
    SYBASE_LIBLIST="$SYBASE_LIBLIST -lcomn$syb_sfx -lintl$syb_sfx"
    SYBASE_DLLLIST="$sybtli"
@@ -1665,7 +1677,7 @@ if test "$with_sybase" != "no" ; then
 
    AC_CACHE_CHECK([for Sybase in $SYBASE_PATH], ncbi_cv_lib_sybase,
       [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-       LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+       LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
        AC_TRY_LINK(
           [#include <ctpublic.h>],
           [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
@@ -1693,7 +1705,7 @@ if test "$with_sybase" != "no" ; then
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
       AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
          [CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
-          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"   
+          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"   
           AC_TRY_LINK(
              [
               #include <sybfront.h>
@@ -1711,6 +1723,10 @@ if test "$with_sybase" != "no" ; then
       else
          WithoutPackages="$WithoutPackages DBLib"
          SYBASE_DBLIBS=
+      fi
+      # apply the Sybase patch to $NETWORK_LIBS
+      if test "$sybase_sol8pc_patch" = "yes" ; then
+         NETWORK_LIBS="$SYBASE_LPATH $SYBASE_NETWORK_LIBS"
       fi
    else
       with_sybase=no
