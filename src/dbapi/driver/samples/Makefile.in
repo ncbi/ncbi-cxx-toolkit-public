@@ -1,5 +1,6 @@
 # $Id$
 
+APP_PROJ = lang_query
 LIB_PROJ = dbapi_driver_samples
 
 srcdir = @srcdir@
