@@ -107,25 +107,14 @@ typedef struct BlastHSPResults {
 /** BLAST_SaveHitlist
  *  Save the current hit list to appropriate places in the results structure
  * @param program The type of BLAST search [in]
- * @param query The query sequence [in]
- * @param subject The subject sequence [in]
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for the current subject sequence; in case of 
  *                 multiple queries, offsets are still in the concatenated 
  *                 sequence coordinates [in]
  * @param hit_parameters The options/parameters related to saving hits [in]
- * @param query_info A whole BlastQueryInfo is needed for concatenation
- *                    information of nucleotide queries [in]
- * @param sbp The Karlin-Altschul statistical information block [in]
- * @param score_options Options related to scoring [in]
- * @param bssp Needed to extract the whole subject sequence with
- *             ambiguities [in]
  */
-Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query, 
-        BLAST_SequenceBlk* subject, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
-        BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
-        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp);
+Int2 BLAST_SaveHitlist(Uint1 program, BlastHSPResults* results, 
+        BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters);
 
 /** Initialize the results structure.
  * @param num_queries Number of query sequences to allocate results structure

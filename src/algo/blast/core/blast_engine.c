@@ -593,9 +593,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    if (hsp_list && hsp_list->hspcnt > 0) {
       return_stats->prelim_gap_passed += hsp_list->hspcnt;
       /* Save the HSPs into a hit list */
-      BLAST_SaveHitlist(program_number, &concat_db, query, 
-         &prelim_results, hsp_list, hit_params, &concat_db_info, 
-         gap_align->sbp, internal_score_options, NULL);
+      BLAST_SaveHitlist(program_number, &prelim_results, hsp_list, hit_params);
    }
 
    /* Change the results from a single hsplist with many 
@@ -727,10 +725,13 @@ BLAST_SearchEngine(Uint1 program_number,
  
       if (hsp_list && hsp_list->hspcnt > 0) {
          return_stats->prelim_gap_passed += hsp_list->hspcnt;
+         if (program_number == blast_type_blastn) {
+            status = 
+               ReevaluateHSPListWithAmbiguities(hsp_list, query, seq_arg.seq, 
+                  hit_options, query_info, sbp, score_options, seq_src);
+         }
          /* Save the HSPs into a hit list */
-         BLAST_SaveHitlist(program_number, query, seq_arg.seq, results, 
-            hsp_list, hit_params, query_info, gap_align->sbp, 
-            score_options, seq_src);
+         BLAST_SaveHitlist(program_number, results, hsp_list, hit_params);
       }
          /*BlastSequenceBlkClean(subject);*/
    }

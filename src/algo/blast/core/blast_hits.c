@@ -1050,11 +1050,8 @@ static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
    return new_hsp_list;
 }
 
-Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
-        BLAST_SequenceBlk* subject, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
-        BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
-        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp)
+Int2 BLAST_SaveHitlist(Uint1 program, BlastHSPResults* results, 
+        BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters)
 {
    Int2 status = 0;
    BlastHSPList** hsp_list_array;
@@ -1067,8 +1064,6 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
       return 0;
 
    if (program == blast_type_blastn) {
-      status = ReevaluateHSPListWithAmbiguities(hsp_list, query, subject, 
-                  hit_options, query_info, sbp, score_options, bssp);
       context_factor = 2;
    } else if (program == blast_type_blastx || 
               program == blast_type_tblastx) {
