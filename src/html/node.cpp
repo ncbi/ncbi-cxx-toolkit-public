@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/12/12 14:38:45  vasilche
+* Changed the way CHTMLNode::CreateSubNodes() is called.
+*
 * Revision 1.22  2000/11/01 20:37:38  vasilche
 * Removed ECanDelete enum and related constructors.
 *
@@ -111,20 +114,22 @@
 */
 
 #include <html/node.hpp>
+#include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
 CNCBINode::CNCBINode(void)
+    : m_CreateSubNodesCalled(false)
 {
 }
 
 CNCBINode::CNCBINode(const string& name)
-    : m_Name(name)
+    : m_CreateSubNodesCalled(false), m_Name(name)
 {
 }
 
 CNCBINode::CNCBINode(const char* name)
-    : m_Name(name)
+    : m_CreateSubNodesCalled(false), m_Name(name)
 {
 }
 
@@ -262,9 +267,7 @@ CNodeRef CNCBINode::MapTagAll(const string& tagname, const TMode& mode)
 // print the whole node tree (with possible initialization)
 CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
 {
-    if ( !HaveChildren() ) { // if there is no children
-        CreateSubNodes();             // create them
-    }
+    Initialize();
 
     TMode mode(&prev, this);
     PrintBegin(out, mode);
@@ -296,12 +299,19 @@ CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode)
 CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( HaveChildren() ) {
-        for ( TChildren::iterator begin = ChildBegin(), end = ChildEnd(),
-                  i = begin; i != end; ++i) {
+        non_const_iterate ( TChildren, i, Children() ) {
             Node(i)->Print(out, mode);
         }
     }
     return out;
+}
+
+void CNCBINode::Initialize(void)
+{
+    if ( !m_CreateSubNodesCalled ) {
+        m_CreateSubNodesCalled = true;
+        CreateSubNodes();
+    }
 }
 
 // by default, we don't create any subnode

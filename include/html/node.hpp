@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/12 14:38:37  vasilche
+* Changed the way CHTMLNode::CreateSubNodes() is called.
+*
 * Revision 1.17  2000/07/18 17:21:34  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
@@ -228,9 +231,11 @@ public:
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
     virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
 
-    // this method will be called when printing and "this" node doesn't
-    // contain any children
+    // this method will be called once before Print()
     virtual void CreateSubNodes(void);
+    // call CreateSubNodes() if it's not calles yet
+    void Initialize(void);
+
     // finds and replaces text with a node    
     virtual CNCBINode* MapTag(const string& tagname);
     CNodeRef MapTagAll(const string& tagname, const TMode& mode);
@@ -267,6 +272,7 @@ protected:
     virtual void DoSetAttribute(const string& name,
                                 const string& value, bool optional);
 
+    bool m_CreateSubNodesCalled;
     TChildrenMember m_Children;  // Child nodes.
 
     string m_Name; // node name
