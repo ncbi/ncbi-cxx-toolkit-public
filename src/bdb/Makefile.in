@@ -7,7 +7,7 @@
 #################################
 
 LIB_PROJ = bdb
-SUB_PROJ = test demo
+EXPENDABLE_SUB_PROJ = test demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
