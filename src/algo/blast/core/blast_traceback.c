@@ -403,7 +403,7 @@ HSPContainedInHSPCheck(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index, Bool
 static Boolean
 HSPSetScores(BlastQueryInfo* query_info, Uint1* query, 
    Uint1* subject, BlastHSP* hsp, 
-   Uint1 program_number, BlastScoreBlk* sbp,
+   EBlastProgramType program_number, BlastScoreBlk* sbp,
    const BlastScoringParameters* score_params,
    const BlastHitSavingParameters* hit_params)
 {
@@ -570,7 +570,7 @@ HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_in
     Comments in blast_traceback.h
  */
 Int2
-Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list, 
+Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
@@ -811,7 +811,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
     return 0;
 }
 
-Uint1 Blast_TracebackGetEncoding(Uint1 program_number) 
+Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number) 
 {
    Uint1 encoding;
 
@@ -864,7 +864,7 @@ BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
    }
 }
 
-Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream, 
+Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hsp_stream, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* seq_src, BlastGapAlignStruct* gap_align,
         BlastScoringParameters* score_params,
@@ -881,7 +881,8 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream,
    BlastScoreBlk* sbp;
    Uint1 encoding;
    GetSeqArg seq_arg;
-   
+   Uint1* gen_code_string = NULL;
+ 
    if (!query_info || !seq_src || !hsp_stream || !results_out) {
       return 0;
    }
@@ -891,7 +892,10 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream,
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
 
    sbp = gap_align->sbp;
-   
+  
+   if (db_options)
+      gen_code_string = db_options->gen_code_string;
+ 
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
@@ -931,7 +935,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream,
 
             Blast_TracebackFromHSPList(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_params, 
-               ext_params->options, hit_params, db_options->gen_code_string);
+               ext_params->options, hit_params, gen_code_string);
             BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
          }
          
@@ -1017,7 +1021,7 @@ Blast_HSPListRPSUpdate(BlastHSPList *hsplist)
 
 #define RPS_K_MULT 1.2
 
-Int2 BLAST_RPSTraceback(Uint1 program_number, 
+Int2 BLAST_RPSTraceback(EBlastProgramType program_number, 
         BlastHSPStream* hsp_stream, 
         BLAST_SequenceBlk* concat_db, BlastQueryInfo* concat_db_info, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -1134,5 +1138,51 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
    *results_out = results;
 
    gap_align->sbp->posMatrix = orig_pssm;
+   return status;
+}
+
+Int2 
+Blast_RunTracebackSearch(EBlastProgramType program, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const BlastDatabaseOptions* db_options, 
+   const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
+   BlastHSPStream* hsp_stream, BlastHSPResults** results)
+{
+   Int2 status = 0;
+   BlastScoringParameters* score_params = NULL; /**< Scoring parameters */
+   BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
+                                                   parameters */
+   BlastHitSavingParameters* hit_params = NULL; /**< Hit saving parameters*/
+   BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters
+                                        for effective lengths calculations */
+   BlastGapAlignStruct* gap_align = NULL; /**< Gapped alignment structure */
+
+   status = 
+      BLAST_GapAlignSetUp(program, seq_src, score_options, eff_len_options, 
+         ext_options, hit_options, query_info, sbp, &score_params, 
+         &ext_params, &hit_params, &eff_len_params, &gap_align);
+   if (status)
+      return status;
+
+   /* Prohibit any subsequent writing to the HSP stream. */
+   BlastHSPStreamClose(hsp_stream);
+
+   status = 
+      BLAST_ComputeTraceback(program, hsp_stream, query, query_info,
+         seq_src, gap_align, score_params, ext_params, hit_params,
+         eff_len_params, db_options, psi_options, results);
+
+   /* Do not destruct score block here */
+   gap_align->sbp = NULL;
+   BLAST_GapAlignStructFree(gap_align);
+
+   score_params = BlastScoringParametersFree(score_params);
+   hit_params = BlastHitSavingParametersFree(hit_params);
+   ext_params = BlastExtensionParametersFree(ext_params);
+   eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
    return status;
 }
