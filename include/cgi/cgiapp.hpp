@@ -59,7 +59,7 @@ class CCgiWatchFile;
 //  CCgiApplication::
 //
 
-class CCgiApplication : public CNcbiApplication
+class NCBI_XCGI_EXPORT CCgiApplication : public CNcbiApplication
 {
     friend class CCgiStatistics;
     typedef CNcbiApplication CParent;
@@ -178,6 +178,10 @@ private:
 
     // Environment var. value to put to the diag.prefix;  [CGI].DiagPrefixEnv
     string                    m_DiagPrefixEnv;
+
+    // forbidden
+    CCgiApplication(const CCgiApplication&);
+    CCgiApplication& operator=(const CCgiApplication&);
 };
 
 
@@ -188,7 +192,7 @@ private:
 //    CGI statistics information
 //
 
-class CCgiStatistics
+class NCBI_XCGI_EXPORT CCgiStatistics
 {
     friend class CCgiApplication;
 public:
@@ -238,6 +242,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/11/05 18:25:32  dicuccio
+* Added export specifiers.  Added private, unimplemented copy ctor/assignment
+* operator
+*
 * Revision 1.39  2003/06/24 15:02:18  ucko
 * Prefix exception with std:: in OnException's declaration to avoid
 * possible clashes with the struct exception in Sun's <math.h>.

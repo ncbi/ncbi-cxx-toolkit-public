@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 //  CCgiServerContext::
 //
 
-class CCgiServerContext
+class NCBI_XCGI_EXPORT CCgiServerContext
 {
 public:
     virtual ~CCgiServerContext(void);
@@ -66,7 +66,7 @@ public:
 //  CCtxMsg::
 //
 
-class CCtxMsg
+class NCBI_XCGI_EXPORT CCtxMsg
 {
 public:
     virtual ~CCtxMsg(void);
@@ -95,7 +95,7 @@ CNcbiOstream& operator<< (CNcbiOstream& os, const CCtxMsg& ctx_msg)
 //  CCtxMsgString::
 //
 
-class CCtxMsgString : public CCtxMsg
+class NCBI_XCGI_EXPORT CCtxMsgString : public CCtxMsg
 {
 public:
     CCtxMsgString(const string& msg) : m_Message(msg) {}
@@ -128,7 +128,7 @@ class CNcbiResource;
 class CCgiApplication;
 
 
-class CCgiContext
+class NCBI_XCGI_EXPORT CCgiContext
 {
 public:
     CCgiContext(CCgiApplication&        app,
@@ -209,6 +209,10 @@ private:
     auto_ptr<CCgiServerContext> m_ServerContext; // application defined context
 
     mutable string m_SelfURL;
+
+    // forbidden
+    CCgiContext(const CCgiContext&);
+    CCgiContext& operator=(const CCgiContext&);
 }; 
 
 
@@ -329,6 +333,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.28  2003/11/05 18:25:32  dicuccio
+* Added export specifiers.  Added private, unimplemented copy ctor/assignment
+* operator
+*
 * Revision 1.27  2003/04/16 21:48:17  vakatov
 * Slightly improved logging format, and some minor coding style fixes.
 *
