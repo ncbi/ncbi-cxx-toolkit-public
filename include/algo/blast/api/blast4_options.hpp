@@ -36,7 +36,10 @@
 
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blastx_options.hpp>
+#include <algo/blast/api/tblastn_options.hpp>
+#include <algo/blast/api/tblastx_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
+
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/blast/Blast4_queue_search_reply.hpp>
 #include <objects/blast/Blast4_queue_search_reques.hpp>
@@ -49,7 +52,6 @@
 #include <objects/blast/Blast4_ka_block.hpp>
 #include <objects/scoremat/Score_matrix_parameters.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
@@ -59,7 +61,7 @@ BEGIN_SCOPE(blast)
 /// Provides an interface to build a Blast4 request given an
 /// of a subclass of CBlastOptions.
 
-class NCBI_XBLAST_EXPORT CBlast4Options
+class NCBI_XBLAST_EXPORT CBlast4Options : public CObject
 {
 public:
     // Protein = blastp/plain
@@ -84,6 +86,18 @@ public:
     CBlast4Options(CBlastxOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastx", "plain");
+    }
+    
+    // TBlastn = tblastn/plain
+    CBlast4Options(CTBlastnOptionsHandle * algo_opts)
+    {
+        x_Init(algo_opts, "tblastn", "plain");
+    }
+    
+    // TBlastx = tblastx/plain
+    CBlast4Options(CTBlastxOptionsHandle * algo_opts)
+    {
+        x_Init(algo_opts, "tblastx", "plain");
     }
     
     // DiscNucl = blastn/plain
@@ -137,12 +151,48 @@ public:
     }
     
     /******************* Getting Results *******************/
-    void GetReply(string & err);
     
-    const string & m_GetRID(void)
+    // Submit and poll results until a completion (or error) state is
+    // reached.  This sleeps 10 seconds the after the submission, 13
+    // seconds after the first check, increasing by 30% after each
+    // check to a maximum of 300 seconds per sleep.
+    
+    // Returns true if the search was _submitted_ (there may be
+    // errors, call CheckErrors).
+    
+    bool SubmitSync(void);
+    
+    
+    // Submit and return immediately; returns true if request was
+    // submitted (true iff an RID was returned).
+    
+    bool Submit(void);
+    
+    // This returns true if the search is done; it does a network
+    // operation, so it should not be called in a loop without a
+    // few seconds of delay.
+    
+    bool CheckDone(void);
+    
+    // This returns any errors encountered as a string (the empty
+    // string implies that everything is running smoothly).
+    
+    string GetErrors(void)
+    {
+        return m_Err;
+    }
+    
+    /******************* Getting Results *******************/
+    
+    // This is valid if submit returns true.
+    
+    const string & GetRID(void)
     {
         return m_RID;
     }
+    
+    // This is valid if CheckDone returns true.  If CheckErrors
+    // returns errors, the rest of these will return nulls.
     
     CRef<objects::CSeq_align_set>            GetAlignments(void);
     CRef<objects::CBlast4_phi_alignments>    GetPhiAlignments(void);
@@ -150,7 +200,7 @@ public:
     list< CRef<objects::CBlast4_ka_block > > GetKABlocks(void);
     list< string >                           GetSearchStats(void);
     
-    // Debugging method: set to true to output progress info to stdout
+    // Debugging method: set to true to output progress info to stdout.
     
     void SetVerbose(bool verbose)
     {
@@ -161,27 +211,35 @@ private:
     CRef<objects::CBlast4_queue_search_request> m_Qsr;
     CRef<objects::CBlast4_reply>                m_Reply;
     
+    string m_Err;
     string m_RID;
+    
+    bool   m_Pending;
     bool   m_Verbose;
     
+    // Initialize request (called by constructors)
     void x_Init(CBlastOptionsHandle * algo_opts, const char * program, const char * service);
     
-    void x_QueueSearch(string & RID, string & err);
-    
-    void x_PollResults(string & RID, string & err);
-
-#if 0 // seems to confuse GCC 2.95 :-/    
-    template<class T>
-    void x_SetParam(const char * name, T & value)
-    {
-        x_SetOneParam(name, & value);
-    }
-#endif
-    
-    void x_SetOneParam(const char * name, const int * x);
+    // Parameter setting
+    void x_SetOneParam(const char * name, const int * x); // not currently used
     void x_SetOneParam(const char * name, const list<int> * x);
     void x_SetOneParam(const char * name, const char ** x);
     void x_SetOneParam(const char * name, objects::CScore_matrix_parameters * matrix);
+    
+    // State helpers (for readability)
+    enum {
+        EStart = 0,
+        EFailed,
+        EWait,
+        EDone
+    };
+    
+    int x_GetState(void);
+    
+    // Submission/Result progression
+    void x_SubmitSearch(void);
+    void x_CheckResults(void);
+    void x_PollUntilDone(void);
 };
 
 
@@ -192,6 +250,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/04 22:31:24  bealer
+ * - Add async interface to Blast4 API.
+ * - Clean up, simplify code and interfaces.
+ * - Add state-based logic to promote robustness.
+ *
  * Revision 1.2  2004/01/17 04:28:25  ucko
  * Call x_SetOneParam directly rather than via x_SetParam, which was
  * giving GCC 2.95 trouble.
