@@ -81,5 +81,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 LIBS = $(ORIG_LIBS) \
 	$(WX_LIBS) \
 	$(GTK_LIBS) \
+        -lwx_gtk_gl -lGL -lGLU \
 	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
