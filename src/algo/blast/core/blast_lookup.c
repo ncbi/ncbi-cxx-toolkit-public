@@ -32,6 +32,7 @@
 #include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/lookup_util.h>
 #include <algo/blast/core/blast_encoding.h>
+#include "blast_inline.h"
 
 static char const rcsid[] = "$Id$";
 
@@ -45,18 +46,6 @@ static void AddPSSMWordHits( LookupTable *lookup,
 			 Int4** matrix,
 			 Int4 offset,
                          Int4 query_bias);
-
-static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
-				  Int4 charsize,
-				  Int4 mask,
-				  const Uint1* word,
-				  Int4* index);
-
-static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
-					     Int4 charsize,
-					     Int4 mask,
-					     const Uint1* word,
-					     Int4* index);
 
 Int4 BlastAaLookupNew(const LookupTableOptions* opt,
 		      LookupTable* * lut)
@@ -333,53 +322,6 @@ for(i=0;i<lookup->backbone_size;i++)
 #endif
 
  return 0;
-}
-
-/** Given a word, compute its index value from scratch.
- *
- * @param wordsize length of the word, in residues [in]
- * @param charsize length of one residue, in bits [in]
- * @param mask value used to mask the index so that only the bottom wordsize * charsize bits remain [in]
- * @param word pointer to the beginning of the word [in]
- * @param index the computed index value [out] 
- */
-
-static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
-				  Int4 charsize,
-				  Int4 mask,
-				  const Uint1* word,
-				  Int4* index)
-{
-  Int4 i;
-
-  *index = 0;
-
-  for(i=0;i<wordsize;i++)
-{
-    *index = ((*index << charsize) | word[i]) & mask;
-}
-
-  return;
-}
-
-/** Given a word, compute its index value, reusing a previously 
- *  computed index value.
- *
- * @param wordsize length of the word - 1, in residues [in]
- * @param charsize length of one residue, in bits [in]
- * @param mask value used to mask the index so that only the bottom wordsize * charsize bits remain [in]
- * @param word pointer to the beginning of the word [in]
- * @param index the computed index value [in/out]
- */
-
-static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
-					     Int4 charsize,
-					     Int4 mask,
-					     const Uint1* word,
-					     Int4* index)
-{
-  *index = ((*index << charsize) | word[wordsize - 1]) & mask;
-  return;
 }
 
 
@@ -864,40 +806,6 @@ static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix,
  *
  ******************************************************/
 
-/* Given a starting position of a word in a compressed nucleotide sequence, 
- * compute this word's lookup table index
- */
-static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
-		          const Uint1* word, Int4* index)
-{
-   Int4 i;
-   
-   *index = 0;
-   for (i = 0; i < length; ++i)
-      *index = ((*index)<<FULL_BYTE_SHIFT) | word[i];
-   return (Uint1 *) (word + length);
-}
-
-/* Recompute the word index given its previous value and the new location 
- *  of the last byte of the word
- */
-static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
-		      const Uint1* word, Int4 index)
-{
-   return (((index)<<scan_shift) & mask) | *(word);  
-   
-}
-
-/* Given a word computed from full bytes of a compressed sequence, 
- *  shift it by 0-3 bases 
- */
-static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index, 
-                      Int4 mask, Uint1 bit)
-{
-   return (((index)<<bit) & mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
-
-}
-
 /* Description in na_lookup.h */
 Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
 			   const BLAST_SequenceBlk* subject,
@@ -1092,31 +1000,6 @@ RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup)
    sfree(lookup->pv);
    sfree(lookup);
    return NULL;
-}
-
-/** Compute the lookup index for a word in an uncompressed sequence, without 
- *  using any previous index information.
- * @param lookup Pointer to the traditional BLASTn lookup table structure [in]
- * @param word Pointer to the start of the word [in]
- * @param index The lookup index [out]
- */
-#define BLAST2NA_MASK 0xfc
-static NCBI_INLINE Int2
-Na_LookupComputeIndex(LookupTable* lookup, Uint1* word, Int4* index)
-{
-   Int4 i;
-   Int4 wordsize = lookup->reduced_wordsize*COMPRESSION_RATIO; /* i.e. 8 or 4 */
-
-   *index = 0;
-   for (i = 0; i < wordsize; ++i) {
-      if ((word[i] & BLAST2NA_MASK) != 0) {
-	 *index = 0;
-	 return -1;
-      } else {
-	 *index = (((*index)<<lookup->charsize) & lookup->mask) | word[i];
-      }
-   }
-   return 0;
 }
 
 /** Add a word information to the lookup table 

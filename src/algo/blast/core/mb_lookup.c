@@ -39,7 +39,7 @@ Detailed Contents:
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/mb_lookup.h>
-
+#include "blast_inline.h"
 
 static char const rcsid[] = "$Id$";
 
@@ -487,40 +487,6 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
    return 0;
 }
 
-/** This function is identical to BlastNaLookupInitIndex in blast_lookup.c. 
- * It is copied here to allow inlining.
- */
-static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
-		          const Uint1* word, Int4* index)
-{
-   Int4 i;
-   
-   *index = 0;
-   for (i = 0; i < length; ++i)
-      *index = ((*index)<<FULL_BYTE_SHIFT) | word[i];
-   return (Uint1 *) (word + length);
-}
-
-/** This function is identical to BlastNaLookupComputeIndex 
- * in blast_lookup.c. 
- * It is copied here to allow inlining.
- */
-static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
-		      const Uint1* word, Int4 index)
-{
-   return (((index)<<scan_shift) & mask) | *(word);  
-}
-
-/** This function is identical to BlastNaLookupAdjustIndex 
- * in blast_lookup.c. 
- * It is copied here to allow inlining.
- */
-static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index, 
-                      Int4 mask, Uint1 bit)
-{
-   return (((index)<<bit) & mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
-}
-
 Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
        const BLAST_SequenceBlk* subject, Int4 start_offset,
        Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
@@ -600,164 +566,6 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
    }
 
    return total_hits;
-}
-
-/** Given a word packed into an integer, compute a discontiguous word lookup 
- *  index.
- * @param subject Pointer to the next byte of the sequence after the end of 
- *        the word (needed when word template is longer than 16 bases) [in]
- * @param word A piece of the sequence packed into an integer [in]
- * @param template_type What type of discontiguous word template to use [in]
- * @return The lookup table index of the discontiguous word [out]
- */
-static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1* subject, Int4 word,
-                  Uint1 template_type)
-{
-   Int4 index;
-   Int4 extra_code;   
-
-   switch (template_type) {
-   case TEMPL_11_16:
-      index = GET_WORD_INDEX_11_16(word);
-      break;
-   case TEMPL_12_16:
-      index = GET_WORD_INDEX_12_16(word);
-      break;
-   case TEMPL_11_16_OPT:
-      index = GET_WORD_INDEX_11_16_OPT(word);
-      break;
-   case TEMPL_12_16_OPT:
-      index = GET_WORD_INDEX_12_16_OPT(word);
-      break;
-   case TEMPL_11_18: 
-     extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18(subject);
-     index = (GET_WORD_INDEX_11_18(word) | extra_code);
-     break;
-   case TEMPL_12_18: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18(subject);
-      index = (GET_WORD_INDEX_12_18(word) | extra_code);
-      break;
-   case TEMPL_11_18_OPT: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18_OPT(subject);
-      index = (GET_WORD_INDEX_11_18_OPT(word) | extra_code);
-      break;
-   case TEMPL_12_18_OPT:
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_18_OPT(subject);
-      index = (GET_WORD_INDEX_12_18_OPT(word) | extra_code);
-      break;
-   case TEMPL_11_21: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21(subject);
-      index = (GET_WORD_INDEX_11_21(word) | extra_code);
-      break;
-   case TEMPL_12_21:
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21(subject);
-      index = (GET_WORD_INDEX_12_21(word) | extra_code);
-      break;
-   case TEMPL_11_21_OPT: 
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21_OPT(subject);
-      index = (GET_WORD_INDEX_11_21_OPT(word) | extra_code);
-      break;
-   case TEMPL_12_21_OPT:
-      extra_code = (Int4) GET_EXTRA_CODE_PACKED_4_21_OPT(subject);
-      index = (GET_WORD_INDEX_12_21_OPT(word) | extra_code);
-         break;
-   default: 
-      extra_code = 0; 
-      index = 0;
-      break;
-   }
-#ifdef USE_HASH_TABLE
-   hash_buf = (Uint1*)&index;
-   CRC32(crc, hash_buf);
-   index = (crc>>hash_shift) & hash_mask;
-#endif
-
-   return index;
-}
-
-/** Compute the lookup table index for the first word template, given a word 
- * position, template type and previous value of the word, in case of 
- * one-base (2 bit) database scanning.
- * @param word_start Pointer to the start of a word in the sequence [in]
- * @param word The word packed into an integer value [in]
- * @param sequence_bit By how many bits the real word start is shifted within 
- *        a compressed sequence byte [in]
- * @param template_type What discontiguous word template to use for index 
- *        computation [in]
- * @return The lookup index for the discontiguous word.
-*/
-static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1* word_start, 
-                      Int4 word, Uint1 sequence_bit, Uint1 template_type)
-{
-   Int4 index;
-   Uint1* subject = (Uint1 *) word_start;
-   Uint1 bit;
-   Int4 extra_code, tmpval;   
-
-   /* Prepare auxiliary variables for extra code calculation */
-   tmpval = 0;
-   extra_code = 0;
-   /* The bits in an integer byte are counted in a reverse order than in a
-      sequence byte */
-   bit = 6 - sequence_bit;
-
-   switch (template_type) {
-   case TEMPL_11_16:
-      index = GET_WORD_INDEX_11_16(word);
-      break;
-   case TEMPL_12_16:
-      index = GET_WORD_INDEX_12_16(word);
-      break;
-   case TEMPL_11_16_OPT:
-      index = GET_WORD_INDEX_11_16_OPT(word);
-      break;
-   case TEMPL_12_16_OPT:
-      index = GET_WORD_INDEX_12_16_OPT(word);
-      break;
-   case TEMPL_11_18: 
-      GET_EXTRA_CODE_PACKED_18(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_18(word) | extra_code);
-      break;
-   case TEMPL_12_18: 
-      GET_EXTRA_CODE_PACKED_18(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_18(word) | extra_code);
-      break;
-   case TEMPL_11_18_OPT: 
-      GET_EXTRA_CODE_PACKED_18_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_18_OPT(word) | extra_code);
-      break;
-   case TEMPL_12_18_OPT:
-      GET_EXTRA_CODE_PACKED_18_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_18_OPT(word) | extra_code);
-      break;
-   case TEMPL_11_21: 
-      GET_EXTRA_CODE_PACKED_21(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_21(word) | extra_code);
-      break;
-   case TEMPL_12_21:
-      GET_EXTRA_CODE_PACKED_21(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_21(word) | extra_code);
-      break;
-   case TEMPL_11_21_OPT: 
-      GET_EXTRA_CODE_PACKED_21_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_11_21_OPT(word) | extra_code);
-      break;
-   case TEMPL_12_21_OPT:
-      GET_EXTRA_CODE_PACKED_21_OPT(subject, bit, tmpval, extra_code);
-      index = (GET_WORD_INDEX_12_21_OPT(word) | extra_code);
-         break;
-   default: 
-      extra_code = 0; 
-      index = 0;
-      break;
-   }
-#ifdef USE_HASH_TABLE
-   hash_buf = (Uint1*)&index;
-   CRC32(crc, hash_buf);
-   index = (crc>>hash_shift) & hash_mask;
-#endif
-  
-   return index;
 }
 
 Int4 MB_ScanSubject(const LookupTableWrap* lookup,
