@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/20 17:26:11  vasilche
+* Fixed warnings on 64 bit platforms.
+*
 * Revision 1.6  2000/11/15 20:34:42  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -76,7 +79,7 @@ BEGIN_NCBI_SCOPE
 class CEnumDataTypeValue
 {
 public:
-    CEnumDataTypeValue(const string& name, long value)
+    CEnumDataTypeValue(const string& name, AnyType::TInteger value)
         : m_Name(name), m_Value(value)
         {
         }
@@ -85,7 +88,7 @@ public:
         {
             return m_Name;
         }
-    long GetValue(void) const
+    AnyType::TInteger GetValue(void) const
         {
             return m_Value;
         }
@@ -101,7 +104,7 @@ public:
 
 private:
     string m_Name;
-    long m_Value;
+    AnyType::TInteger m_Value;
     list<string> m_Comments;
 };
 
@@ -115,7 +118,7 @@ public:
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
 
-    TValue& AddValue(const string& name, long value);
+    TValue& AddValue(const string& name, AnyType::TInteger value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;

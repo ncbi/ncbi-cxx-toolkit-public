@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/11/20 17:26:10  vasilche
+* Fixed warnings on 64 bit platforms.
+*
 * Revision 1.2  2000/04/07 19:26:06  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -85,7 +88,7 @@ public:
 
     TToken token;
     const char* start;
-    int length;
+    size_t length;
     int line;
 };
 

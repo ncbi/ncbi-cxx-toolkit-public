@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/20 17:26:10  vasilche
+* Fixed warnings on 64 bit platforms.
+*
 * Revision 1.6  2000/11/15 21:02:13  vasilche
 * Fixed error.
 *
@@ -166,7 +169,7 @@ protected:
             m_TokenStart = m_Position;
             m_NextToken.line = CurrentLine();
         }
-    void AddChars(int count)
+    void AddChars(size_t count)
         {
             _ASSERT(TokenStarted());
             m_Position += count;
@@ -176,7 +179,7 @@ protected:
         {
             AddChars(1);
         }
-    void SkipChars(int count)
+    void SkipChars(size_t count)
         {
             _ASSERT(!TokenStarted());
             m_Position += count;
@@ -186,7 +189,7 @@ protected:
         {
             SkipChars(1);
         }
-    char Char(int index)
+    char Char(size_t index)
         {
             char* pos = m_Position + index;
             if ( pos < m_DataEnd )
@@ -210,7 +213,7 @@ protected:
         {
             return m_Position;
         }
-    int CurrentTokenLength(void) const
+    size_t CurrentTokenLength(void) const
         {
             return CurrentTokenEnd() - CurrentTokenStart();
         }
@@ -225,7 +228,7 @@ protected:
 
 private:
     const AbstractToken& FillNextToken(void);
-    char FillChar(int index);
+    char FillChar(size_t index);
 
     CNcbiIstream& m_Input;
     int m_Line;  // current line in source
