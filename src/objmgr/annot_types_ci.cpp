@@ -669,7 +669,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
     CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    TTSESet entries;
+    const TTSESet* entries;
     switch ( m_LimitObjectType ) {
     case eLimit_TSE:
     {
@@ -681,16 +681,16 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 m_TSESet.insert(tse_info);
             }
         }
-        entries = m_TSESet;
+        entries = &m_TSESet;
         break;
     }
     case eLimit_Entry:
     case eLimit_Annot:
     default:
-        m_Scope->GetTSESetWithAnnots(id, entries);
+        entries = &m_Scope->GetTSESetWithAnnots(id);
         break;
     }
-    ITERATE ( TTSESet, tse_it, entries ) {
+    ITERATE ( TTSESet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
 
@@ -832,6 +832,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/03/26 21:00:19  grichenk
+* Added seq-id -> tse with annotation cache to CScope
+*
 * Revision 1.60  2003/03/26 17:11:19  vasilche
 * Added reverse feature traversal.
 *

@@ -103,18 +103,14 @@ public:
     virtual ~CScope(void);
 
     // Add default data loaders from object manager
-    void AddDefaults(SDataSourceRec::TPriority priority = 9);
+    void AddDefaults(SDataSourceRec::TPriority priority = 99);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
-                       SDataSourceRec::TPriority priority = 9);
-    // Add seq_entry
+                       SDataSourceRec::TPriority priority = 99);
+    // Add seq_entry, default priority is higher than for defaults or loaders
     void AddTopLevelSeqEntry(CSeq_entry& top_entry,
                              SDataSourceRec::TPriority priority = 9);
-
-    //### TSEs should be dropped from CScope dectructor.
-    //### This function is obsolete.
-    //### void DropTopLevelSeqEntry(CSeq_entry& top_entry);
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
@@ -173,13 +169,14 @@ public:
 
     CSeq_id_Handle GetIdHandle(const CSeq_id& id) const;
 
+private:
+    typedef CAnnotTypes_CI::TTSESet       TTSE_Set;
+
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           CSeq_annot::C_Data::E_Choice sel,
                           const CSeq_entry* limit_entry = 0);
-    void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             CAnnotTypes_CI::TTSESet& tse_set);
+    const TTSE_Set& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
-private:
     void x_DetachFromOM(void);
     // Get requests history (used by data sources to process requests)
     const TRequestHistory& x_GetHistory(void);
@@ -227,6 +224,9 @@ private:
     typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
     TSynCache m_SynCache;
 
+    typedef map<CSeq_id_Handle, TTSE_Set> TAnnotCache;
+    TAnnotCache m_AnnotCache;
+
     mutable CMutex m_Scope_Mtx;
 
     friend class CObjectManager;
@@ -245,6 +245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/03/26 21:00:07  grichenk
+* Added seq-id -> tse with annotation cache to CScope
+*
 * Revision 1.38  2003/03/24 21:26:42  grichenk
 * Added support for CTSE_CI
 *

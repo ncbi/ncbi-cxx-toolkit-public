@@ -326,17 +326,24 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
 }
 
 
-void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                 CAnnotTypes_CI::TTSESet& tse_set)
+const CScope::TTSE_Set& CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 {
+    TAnnotCache::iterator cached = m_AnnotCache.find(idh);
+    if (cached != m_AnnotCache.end()) {
+        return cached->second;
+    }
+
+    // Create new entry for idh
+    TTSE_Set& tse_set = m_AnnotCache[idh];
     //CMutexGuard guard(m_Scope_Mtx);
     ITERATE (TDataSourceSet, it, m_setDataSrc) {
         it->m_DataSource->GetTSESetWithAnnots(idh, tse_set, *this);
     }
     //### Filter the set depending on the requests history?
-    NON_CONST_ITERATE (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
+    NON_CONST_ITERATE (TTSE_Set, tse_it, tse_set) {
         x_AddToHistory(const_cast<CTSE_Info&>(**tse_it));
     }
+    return tse_set;
 }
 
 
@@ -427,6 +434,7 @@ void CScope::ResetHistory(void)
     m_History.clear();
     m_Cache.clear();
     m_SynCache.clear();
+    m_AnnotCache.clear();
 }
 
 
@@ -518,6 +526,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/03/26 21:00:19  grichenk
+* Added seq-id -> tse with annotation cache to CScope
+*
 * Revision 1.55  2003/03/24 21:26:45  grichenk
 * Added support for CTSE_CI
 *
