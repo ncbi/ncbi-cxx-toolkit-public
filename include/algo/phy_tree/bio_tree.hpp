@@ -33,7 +33,8 @@
  */
 
 /// @file bio_tree.hpp
-/// Things for representing and manipulating bio trees
+/// Things for representing and manipulating bio trees. 
+/// CBioTree is the central class here.
 
 #include <corelib/ncbistd.hpp>
 
@@ -593,6 +594,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/10/21 13:29:11  kuznets
+ * Improved comments
+ *
  * Revision 1.18  2004/10/08 11:15:44  kuznets
  * Doxygen formatting (group Tree)
  *
