@@ -45,7 +45,7 @@ void CFindPattern::Find(const string& seq, const string& pattern,
     // note that it's somewhat ambiguous what this means
 
     // want to ignore case, and to allow white space (and comments) in pattern
-    CRegexp re(pattern, PCRE_CASELESS | PCRE_EXTENDED);
+    CRegexp re(pattern, CRegexp::fCompile_ignore_case | CRegexp::fCompile_extended);
 
     starts.clear();
     ends.clear();
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/22 18:05:43  ivanov
+ * Use CRegexp::fCompile_* flags instead PCRE_*
+ *
  * Revision 1.10  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *
