@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/08 00:33:44  lewisg
+* cleanup
+*
 * Revision 1.3  1998/12/01 23:31:14  vakatov
 * Got rid of <ncbi.h> etc. ald C toolit headers
 *
@@ -92,7 +95,7 @@ int CCgiApplication::Run(void)
 	//	Runtime.m_Cgi = & m_CgiEntries;
 	i = Factory.CgiFactory(m_CgiEntries, PageList);
 	Page = (PageList[i].pFactory)();
-	Page->m_CgiApplication = this;
+	Page->SetApplication(this);
 	Page->Create(PageList[i].Style);
       
 	Page->Print(NcbiCout);  // serialize it

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/08 00:33:42  lewisg
+* cleanup
+*
 * Revision 1.2  1998/11/23 23:44:28  lewisg
 * toolpages.cpp
 *
@@ -51,6 +54,9 @@ CQueryBox::CQueryBox()
 {
     m_Comments = NULL;
 }
+
+
+CQueryBox::~CQueryBox() { delete m_Comments; }
 
 
 CHTMLNode * CQueryBox::CreateComments(void)
@@ -92,7 +98,7 @@ void CQueryBox::InitSubPages(int style)
 }
 
 
-void CQueryBox::Draw(int style)
+void CQueryBox::Finish(int style)
 { 
 
     list < string >::iterator iList;

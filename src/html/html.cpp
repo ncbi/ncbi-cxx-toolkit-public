@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/08 00:33:43  lewisg
+* cleanup
+*
 * Revision 1.5  1998/12/03 22:48:00  lewisg
 * added HTMLEncode() and CHTML_img
 *
@@ -83,6 +86,8 @@ string & CHTMLHelper::HTMLEncode(string & input)
 }
 
 
+CHTMLNode::CHTMLNode(void): m_Name("") {}
+
 
 // serialize the node to the given string
 void CHTMLNode::Print(string & output)  
@@ -122,6 +127,14 @@ CNCBINode * CHTMLNode::AppendText(const string & appendstring)
 	throw;
     }
 }
+
+
+// text node
+
+CHTMLText::CHTMLText(void) {}
+
+
+CHTMLText::CHTMLText(const string & text): m_Datamember(text) {}
 
 
 void CHTMLText::Print(string& output)  
@@ -181,6 +194,11 @@ void CHTMLText::Rfind(const string & tagname, CNCBINode * replacenode)
 }
 
 
+// tag node
+
+CHTMLElement::CHTMLElement(void): m_EndTag(true) {}
+
+
 void CHTMLElement::Print(string& output)  
 {
     list <CNCBINode *>::iterator iChildren;
@@ -230,15 +248,19 @@ void CHTMLElement::Print(CNcbiOstream & output)
 
 // pre element
 
+CHTML_pre::CHTML_pre(void) { m_Name = "pre"; }
+
 
 CHTML_pre::CHTML_pre(const string & Text)
 {
-    m_Name = "pre";
-    AppendText(Text);
+     m_Name = "pre";
+     AppendText(Text);
 }
 
 
 // anchor element
+
+CHTML_a::CHTML_a(void) { m_Name = "a"; }
 
 
 CHTML_a::CHTML_a(const string & href)
@@ -258,11 +280,13 @@ CHTML_a::CHTML_a(const string & Href, const string & Text)
 
 // TABLE element
 
+CHTML_table::CHTML_table(void) { m_Name = "table"; }
+
 
 CHTML_table::CHTML_table(const string & bgcolor)
 {
-    m_Name = "table";
-    m_Attributes["bgcolor"] = bgcolor;
+     m_Name = "table";
+     m_Attributes["bgcolor"] = bgcolor;
 }
 
 
@@ -299,8 +323,8 @@ void CHTML_table::MakeTable(int row, int column)  // throw(bad_alloc)
 // contructors that also instantiate rows and cells
 CHTML_table::CHTML_table(int row, int column)
 {
-    m_Name = "table";
-    MakeTable(row, column);
+     m_Name = "table";
+     MakeTable(row, column);
 }
 
 
@@ -343,7 +367,7 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
     iChildren = m_ChildNodes.begin();
 
     while (iy < y && iChildren != m_ChildNodes.end()) {
-        if (((CHTMLNode *)(* iChildren))->NodeName() == "tr") iy++;           
+        if (((CHTMLNode *)(* iChildren))->GetName() == "tr") iy++;           
         iChildren++;
     }
 
@@ -351,7 +375,7 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
     iyChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
 
     while (ix < x && iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
-        if (((CHTMLNode *)(* iyChildren))->NodeName() == "td") ix++;           
+        if (((CHTMLNode *)(* iyChildren))->GetName() == "td") ix++;           
         iyChildren++;
     }
 
@@ -383,12 +407,12 @@ void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & wi
     iChildren = m_ChildNodes.begin();
     
     while (iChildren != m_ChildNodes.end()) {
-        if (((CHTMLNode *)(* iChildren))->NodeName() == "tr") {
+        if (((CHTMLNode *)(* iChildren))->GetName() == "tr") {
             ix = 1;
             iyChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
             
             while (ix < column && iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
-                if (((CHTMLNode *)(* iyChildren))->NodeName() == "td") ix++;  
+                if (((CHTMLNode *)(* iyChildren))->GetName() == "td") ix++;  
                 iyChildren++;
             }
             if(iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
@@ -401,7 +425,13 @@ void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & wi
 }
 
 
-CHTML_tr::CHTML_tr(const string & bgcolor)
+// tr tag
+
+
+CHTML_tr::CHTML_tr(void) { m_Name = "tr"; }
+
+
+CHTML_tr::CHTML_tr(const string & bgcolor) 
 {
     m_Name = "tr";
     m_Attributes["bgcolor"] = bgcolor;
@@ -417,13 +447,17 @@ CHTML_tr::CHTML_tr(const string & bgcolor, const string & width)
 
 
 CHTML_tr::CHTML_tr(const string & bgcolor, const string & width, const string & align)
-{
+{ 
     m_Name = "tr";
     m_Attributes["bgcolor"] = bgcolor;
     m_Attributes["width"] = width;
     m_Attributes["align"] = align;
 }
 
+
+// td tag
+
+CHTML_td::CHTML_td(void) { m_Name = "td"; }
 
 
 CHTML_td::CHTML_td(const string & bgcolor)
@@ -451,6 +485,10 @@ CHTML_td::CHTML_td(const string & bgcolor, const string & width, const string & 
 
 
 // form element
+
+CHTML_form::CHTML_form(void) { m_Name = "form"; }
+
+
 CHTML_form::CHTML_form(const string & action, const string & method)
 {
     m_Name = "form";
@@ -469,6 +507,10 @@ CHTML_form::CHTML_form (const string & action, const string & method, const stri
 
 
 // textarea element
+
+CHTML_textarea::CHTML_textarea(void) { m_Name = "textarea"; }
+
+
 CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const string & rows)
 {
     m_Name = "textarea";
@@ -489,68 +531,85 @@ CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const s
 
 
 //input tag
+
+CHTML_input::CHTML_input(void) { m_Name = "input"; m_EndTag = false; }
+
+
 CHTML_input::CHTML_input(const string & type, const string & value)
 {
     m_Name = "input";
+    m_EndTag = false;
     m_Attributes["type"] = type;
     m_Attributes["value"] = value;
-    m_EndTag = false;
 };
 
 
 CHTML_input::CHTML_input(const string & type, const string & name, const string & value)
 {
     m_Name = "input";
+    m_EndTag = false;
     m_Attributes["type"] = type;
     m_Attributes["name"] = name;
     m_Attributes["value"] = value;
-    m_EndTag = false;
 };
 
 
 CHTML_input::CHTML_input(const string & type, const string & name, const string & value, const string & size)
 {
     m_Name = "input";
+    m_EndTag = false;
     m_Attributes["type"] = type;
     m_Attributes["name"] = name;
     m_Attributes["size"] = size;
     if(!value.empty()) m_Attributes["value"] = value;
-    m_EndTag = false;
 };
 
 
+// checkbox tag 
 
 CHTML_checkbox::CHTML_checkbox(const string & name, const string & value, const string & description, bool checked)
 {
     m_Name = "input";
+    m_EndTag = false;
     m_Attributes["type"] = "checkbox";
     m_Attributes["name"] = name;
     if(!value.empty()) m_Attributes["value"] = value;
     if (checked) m_Attributes["checked"] = "";    
-    m_EndTag = false;  
     AppendText(description);  // adds the description at the end
 }
 
 
 // option tag
-CHTML_option::CHTML_option(bool selected)    
+
+CHTML_option::CHTML_option(void)
 {
     m_Name = "option";
-    if (selected) m_Attributes["selected"] = "";
     m_EndTag = false;
+}
+
+
+CHTML_option::CHTML_option(bool selected)
+{
+    m_Name = "option";
+    m_EndTag = false;
+    if (selected) m_Attributes["selected"] = "";
 };
 
 
-CHTML_option::CHTML_option(bool selected, const string & value)    
+CHTML_option::CHTML_option(bool selected, const string & value)
 {
     m_Name = "option";
+    m_EndTag = false;
     if (selected) m_Attributes["selected"] = "";
     m_Attributes["value"] = value;
-    m_EndTag = false;
 };
 
 
 // select tag
+
+CHTML_select::CHTML_select(void) { m_Name = "select"; }
+
+
 CHTML_select::CHTML_select(const string & name)
 {
     m_Name = "select";
@@ -605,15 +664,34 @@ CNCBINode * CHTML_select::AppendOption(const string & option, bool selected, con
 };
 
 
+// p tag with close tag
+
+CHTML_p::CHTML_p(void) { m_Name = "p"; }
+
+
+// p tag without close
+
+CHTML_pnop::CHTML_pnop(void) { m_Name = "p"; m_EndTag = false; }
+
+
+// br tag
+
+CHTML_br::CHTML_br(void) { m_Name = "br"; m_EndTag = false; }
+
+
+// img tag
+
+CHTML_img::CHTML_img(void) { m_Name = "img"; m_EndTag = false; }
+
 
 CHTML_img::CHTML_img(const string & src, const string & width, const string & height, const string & border)
 {
     m_Name = "img";
+    m_EndTag = false; 
     m_Attributes["src"] = src;
     m_Attributes["width"] = width;
     m_Attributes["height"] = height;
     m_Attributes["border"] = border;
-    m_EndTag = false;
 }
 
 

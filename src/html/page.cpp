@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/08 00:33:44  lewisg
+* cleanup
+*
 * Revision 1.3  1998/12/01 19:10:39  lewisg
 * uses CCgiApplication and new page factory
 *
@@ -45,11 +48,18 @@
 #include <ncbistd.hpp>
 #include <components.hpp>
 #include <page.hpp>
-
-
 BEGIN_NCBI_SCOPE
  
-	
+// CHTMLBasicPage
+
+CHTMLBasicPage::CHTMLBasicPage(): m_CgiApplication(0) {}
+
+
+// CHTMLPage
+
+CHTMLPage::CHTMLPage(): m_Title(0), m_View(0), m_Template(0) {}
+
+
 void CHTMLPage::InitMembers(int style)
 {
     ////////// section for initializing members
@@ -84,7 +94,7 @@ void CHTMLPage::InitSubPages(int style)
 }
 
 
-void CHTMLPage::Draw(int style)
+void CHTMLPage::Finish(int style)
 {
     if(m_Template)
 	AppendChild(m_Template);
@@ -128,7 +138,7 @@ CHTMLNode * CHTMLPage::CreateView(void)
     CQueryBox * querybox;
     try {
 	querybox = new CQueryBox();
-	querybox->Create();
+	querybox->Finish(0);
 	return querybox;
     }
     catch(...) {

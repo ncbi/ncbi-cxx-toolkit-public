@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/08 00:34:56  lewisg
+* cleanup
+*
 * Revision 1.2  1998/12/01 19:09:07  lewisg
 * uses CCgiApplication and new page factory
 *
@@ -51,20 +54,21 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////
 ///// the front page with fasta
 
-const int kNoSIDEBAR = 0x4;
 
 class CToolFastaPage: public CHTMLPage {
 public:
     virtual void InitMembers(int);
     virtual void InitSubPages(int Style);
-    virtual void Draw(int Style);
+    virtual void Finish(int Style);
     virtual CHTMLNode * CreateView(void);
+
     CHTMLNode * m_Sidebar;
     virtual CHTMLNode * CreateSidebar(void);
 
-    CToolFastaPage() { m_Sidebar = NULL; }
+    CToolFastaPage();
     static CHTMLBasicPage * New(void) { return new CToolFastaPage;}
 
+    static const int kNoSIDEBAR = 0x4;
 };
 
 
@@ -98,7 +102,7 @@ public:
 
 class CHTMLOptionForm: public CHTMLBasicPage {
 public: 
-    virtual void Draw(int style);   // create and aggregate sub pages + other html
+    virtual void Finish(int style);   // create and aggregate sub pages + other html
     static const int kBUFLEN = 4096;  // the maximum length of a line in param file
 
     string m_ParamFile;   // the name of the param file

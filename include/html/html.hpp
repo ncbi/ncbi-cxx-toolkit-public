@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/08 00:34:55  lewisg
+* cleanup
+*
 * Revision 1.5  1998/12/03 22:49:10  lewisg
 * added HTMLEncode() and CHTML_img
 *
@@ -69,14 +72,14 @@ public:
 
 class CHTMLNode : public CNCBINode {
 public:
-    string NodeName(void) const { return m_Name; }
-    void NodeName(string & namein) { m_Name = namein; }
+    string GetName(void) const { return m_Name; }
+    void SetName(string & namein) { m_Name = namein; }
     string GetAttributes(const string& aname) { return m_Attributes[aname]; }  // how to make const with non-const []?
     void SetAttributes(const string & aname, string avalue) { m_Attributes[aname] = avalue; }
     virtual void Print(string &);   // prints the tag and children
     virtual void Print(CNcbiOstream &);   // prints the tag and children
     virtual void Rfind(const string & tagname, CNCBINode * replacenode);  // finds and replaces text with a node    
-    CHTMLNode(void) { m_Name = ""; }
+    CHTMLNode(void);
     CNCBINode * AppendText(const string &);  // convenient way to add CHTMLText
 
 protected:
@@ -85,7 +88,7 @@ protected:
 };
 
 
-// A text node that contain plain text
+// A text node that contains plain text
 class CHTMLText: public CHTMLNode {
 public:
     string Data(void) const { return m_Datamember; }
@@ -94,8 +97,8 @@ public:
     virtual void Print(string &);
     virtual void Print(CNcbiOstream &);   // prints the tag and children
     virtual void Rfind(const string & tagname, CNCBINode * replacenode);  
-    CHTMLText(void) {};
-    CHTMLText(const string & text) { m_Datamember = text; };
+    CHTMLText(void);
+    CHTMLText(const string & text);
     
 protected:
     string m_Datamember;  // the text
@@ -107,7 +110,7 @@ class CHTMLElement: public CHTMLNode {
 public:
     virtual void Print(string&);
     virtual void Print(CNcbiOstream &);   // prints the tag and children
-    CHTMLElement(void) { m_EndTag = true; }
+    CHTMLElement(void);
 protected:
     bool m_EndTag;  // is there a closing tag for the element?
 };
@@ -116,7 +119,7 @@ protected:
 // the "pre" tag
 class CHTML_pre: public CHTMLElement {
 public:
-    CHTML_pre(void) { m_Name = "pre"; }
+    CHTML_pre(void);
     CHTML_pre(const string & Text);
 };
 
@@ -124,7 +127,7 @@ public:
 // the "a" tag
 class CHTML_a: public CHTMLElement {
 public:
-    CHTML_a(void) { m_Name = "a"; }
+    CHTML_a(void);
     CHTML_a(const string & href);
     CHTML_a(const string & Href, const string & Text);
 };
@@ -133,7 +136,7 @@ public:
 // the table tag
 class CHTML_table: public CHTMLElement {
 public:
-    CHTML_table(void) { m_Name = "table"; }
+    CHTML_table(void);
     CHTML_table(const string & bgcolor);
     CHTML_table(const string & bgcolor, const string & width);
     CHTML_table(int row, int column);
@@ -152,7 +155,7 @@ protected:
 // the tr tag
 class CHTML_tr: public CHTMLElement {
 public:
-    CHTML_tr(void) { m_Name = "tr"; }
+    CHTML_tr(void);
     CHTML_tr(const string &);
     CHTML_tr(const string &, const string &);
     CHTML_tr(const string &, const string &, const string &);
@@ -162,7 +165,7 @@ public:
 // the td tag
 class CHTML_td: public CHTMLElement {
 public:
-    CHTML_td(void) { m_Name = "td"; }
+    CHTML_td(void);
     CHTML_td(const string & bgcolor);
     CHTML_td(const string & bgcolor, const string & width);
     CHTML_td(const string & bgcolor, const string & width, const string & align);
@@ -172,7 +175,7 @@ public:
 // the form tag
 class CHTML_form: public CHTMLElement {
 public:
-    CHTML_form(void) {m_Name = "form";}
+    CHTML_form(void);
     CHTML_form(const string & action, const string & method);
     CHTML_form(const string & action, const string & method, const string & name);
 };
@@ -181,7 +184,7 @@ public:
 // the textarea tag
 class CHTML_textarea: public CHTMLElement {
 public:
-    CHTML_textarea(void) { m_Name = "textarea"; }
+    CHTML_textarea(void);
     CHTML_textarea(const string & name, const string & cols, const string & rows);
     CHTML_textarea(const string & name, const string & cols, const string & rows, const string & value);
 };
@@ -189,7 +192,7 @@ public:
 
 class CHTML_input: public CHTMLElement {
 public:
-    CHTML_input(void) { m_Name = "input"; m_EndTag = false; };
+    CHTML_input(void);
     CHTML_input::CHTML_input(const string & type, const string & value);
     CHTML_input::CHTML_input(const string & type, const string & name, const string & value);
     CHTML_input::CHTML_input(const string & type, const string & name, const string & value, const string & size);
@@ -204,7 +207,7 @@ public:
 //option tag.  rarely used alone.  see select tag
 class CHTML_option: public CHTMLElement {
 public:
-    CHTML_option(void) { m_Name = "option"; m_EndTag = false; };
+    CHTML_option(void);
     CHTML_option(bool selected);
     CHTML_option(bool selected, const string & value);
 };
@@ -216,7 +219,7 @@ public:
     CNCBINode * AppendOption(const string & option);
     CNCBINode * AppendOption(const string & option, bool selected);
     CNCBINode * AppendOption(const string & option, bool selected, const string & value);
-    CHTML_select(void) { m_Name = "select"; m_EndTag = false; };
+    CHTML_select(void);
     CHTML_select(const string & name);
 };
 
@@ -224,27 +227,27 @@ public:
 // paragraph with end tag
 class CHTML_p: public CHTMLElement {
 public:
-    CHTML_p(void) { m_Name = "p"; }
+    CHTML_p(void);
 };
 
 
 // paragraph without end tag
 class CHTML_pnop: public CHTMLElement {
 public:
-    CHTML_pnop(void) { m_Name = "p"; m_EndTag = false; }
+    CHTML_pnop(void);
 };
 
 
 // break
 class CHTML_br: public CHTMLElement {
 public:
-    CHTML_br(void) { m_Name = "br"; m_EndTag = false; }
+    CHTML_br(void);
 };
 
 
 class CHTML_img: public CHTMLElement {
 public:
-    CHTML_img(void) { m_Name = "img"; m_EndTag = false; }
+    CHTML_img(void);
     CHTML_img(const string & src, const string & width, const string & height, const string & border = "0");
 };
 

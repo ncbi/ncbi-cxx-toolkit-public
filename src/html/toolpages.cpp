@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/08 00:33:45  lewisg
+* cleanup
+*
 * Revision 1.4  1998/12/03 22:47:59  lewisg
 * added HTMLEncode() and CHTML_img
 *
@@ -52,6 +55,8 @@
 #include <memory>
 BEGIN_NCBI_SCOPE
 
+CToolFastaPage::CToolFastaPage(): m_Sidebar(0) {}
+
 
 void CToolFastaPage::InitSubPages(int style)
 {
@@ -70,9 +75,9 @@ void CToolFastaPage::InitSubPages(int style)
 }
 
 
-void CToolFastaPage::Draw(int style)
+void CToolFastaPage::Finish(int style)
 {
-    CHTMLPage::Draw(style);
+    CHTMLPage::Finish(style);
 
     if(!(style & kNoSIDEBAR) && m_Sidebar) 
         Rfind("<@SIDEBAR@>", m_Sidebar);
@@ -90,13 +95,14 @@ CHTMLNode * CToolFastaPage::CreateView(void)
 {
     CHTMLNode * Form;
     CHTML_textarea * Textarea;
+    CCgiApplication * CgiApplication = GetApplication();
     try {
 	Form = new CHTML_form( "http://ray/cgi-bin/tools/tool", "GET", "toolform");
 	Form->AppendText("Enter Fasta (and later on, Accession #):<br>");
-	map <string, string>:: iterator iCgi = m_CgiApplication->m_CgiEntries.find("supplemental_input");
+	map <string, string>:: iterator iCgi = CgiApplication->m_CgiEntries.find("supplemental_input");
 
-	if(iCgi != m_CgiApplication->m_CgiEntries.end()) {
-	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", (*iCgi).second);
+	if(iCgi != CgiApplication->m_CgiEntries.end()) {
+	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", CHTMLHelper::HTMLEncode((*iCgi).second));
 	    Form->AppendChild(Textarea);
 	    Textarea->SetAttributes("wrap", "virtual");
 	}
@@ -159,7 +165,7 @@ CHTMLNode * CToolOptionPage::CreateView(void)
 	Options->m_ParamFile = "tool";
 	Options->m_SectionName = "seg";
 	Options->m_ActionURL = "http://ray/cgi-bin/tools/segify";
-	Options->m_CgiApplication = m_CgiApplication;
+	Options->SetApplication(GetApplication());
 	Options->Create();
     } 
     catch(...) {
@@ -201,7 +207,7 @@ CHTMLNode * CToolReportPage::CreateView(void)
 	    NcbiCin.get(ch);  // skip the blank line
 	    input = "";
 	    while( NcbiCin.get(ch)) input += ch;
-	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", input);
+	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", CHTMLHelper::HTMLEncode(input));
 	    Form->AppendChild(Textarea);
 	    Textarea->SetAttributes("wrap", "virtual");
 	    Form->AppendText("<br>To continue analysis, click on a tool in the left column.");
@@ -251,14 +257,15 @@ string CHTMLOptionForm::GetParam(const string & name)
 }
 
 
-void CHTMLOptionForm::Draw(int style)
+void CHTMLOptionForm::Finish(int style)
 {
     CHTMLNode * Form;
+    CCgiApplication * CgiApplication = GetApplication();
     try {
 	Form = new CHTML_form("http://ray/cgi-bin/tools/segify", "GET");
 	AppendChild(Form);
-	map <string, string>:: iterator iCgi = m_CgiApplication->m_CgiEntries.find("supplemental_input");
-	if(iCgi != m_CgiApplication->m_CgiEntries.end()) Form->AppendChild(new CHTML_input("hidden", "supplemental_input", "\""+ CHTMLHelper::HTMLEncode((*iCgi).second)+"\""));
+	map <string, string>:: iterator iCgi = CgiApplication->m_CgiEntries.find("supplemental_input");
+	if(iCgi != CgiApplication->m_CgiEntries.end()) Form->AppendChild(new CHTML_input("hidden", "supplemental_input", "\""+ CHTMLHelper::HTMLEncode((*iCgi).second)+"\""));
 	Form->AppendChild(new CHTML_input("hidden", "toolpage_output", "TRUE"));
 	Form->AppendChild(new CHTML_input("hidden", "toolpage_options", "notcgi"));
 

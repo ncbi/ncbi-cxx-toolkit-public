@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/08 00:34:55  lewisg
+* cleanup
+*
 * Revision 1.2  1998/12/01 19:09:06  lewisg
 * uses CCgiApplication and new page factory
 *
@@ -55,14 +58,16 @@ BEGIN_NCBI_SCOPE
   
 class CHTMLBasicPage: public CHTMLNode {
 public: 
-    CHTMLBasicPage(): m_CgiApplication(0) {}
+    CHTMLBasicPage();
     virtual void Create(void) { Create(0); }
-    virtual void Create(int style) { InitMembers(style); InitSubPages(style); Draw(style); }
+    virtual void Create(int style) { InitMembers(style); InitSubPages(style); Finish(style); }
     virtual void InitMembers(int style) {}  
     virtual void InitSubPages(int style) {}  // initialize members
-    virtual void Draw(int style) = 0;  // create and aggregate sub pages + other html
-    virtual void Finish(int style) {}  // take down the page
+    virtual void Finish(int style) = 0;  // create and aggregate sub pages + other html
+    virtual CCgiApplication * GetApplication(void) { return m_CgiApplication; }
+    virtual void SetApplication(CCgiApplication * App) { m_CgiApplication = App; }
 
+private:
     CCgiApplication * m_CgiApplication;  // pointer to runtime information  
 };
 
@@ -70,17 +75,24 @@ public:
 ////////////////////////////////////
 //  this is the basic 3 section NCBI page
 
-const int kNoTITLE = 0x1;
-const int kNoVIEW = 0x2;
 
 class CHTMLPage: public CHTMLBasicPage {
 public:
+    ////////// 'tors
+
+    CHTMLPage();
+    static CHTMLBasicPage * New(void) { return new CHTMLPage; }  // for the page factory
+
+    ////////// flags
+
+    static const int kNoTITLE = 0x1;
+    static const int kNoVIEW = 0x2;
 
     ////////// how to make the page
 
     virtual void InitMembers(int);
     virtual void InitSubPages(int);
-    virtual void Draw(int);
+    virtual void Finish(int);
 
     ////////// page parameters
 
@@ -98,10 +110,7 @@ public:
     virtual CHTMLNode * CreateView(void);
     CHTMLNode * m_View;
 
-    ////////// 'tors
 
-    CHTMLPage() { m_Title = NULL; m_View = NULL; m_Template = NULL; }
-    static CHTMLBasicPage * New(void) { return new CHTMLPage;}  // for the page factory
 };
 
 
