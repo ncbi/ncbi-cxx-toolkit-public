@@ -107,7 +107,7 @@ CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
 
     const unsigned int kNumHits = m_SeqAlignSet->Get().size();
     m_ProcessHit.reserve(kNumHits);
-    m_ProcessHit.assign(kNumHits, 0U);
+    m_ProcessHit.assign(kNumHits, Uint1(0));
 }
 
 CPsiBlastInputData::~CPsiBlastInputData()
@@ -563,6 +563,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/07/29 21:00:22  ucko
+ * Tweak call to assign() in constructor to avoid triggering an
+ * inappropriate template (that takes two iterators) on some compilers.
+ *
  * Revision 1.1  2004/07/29 17:55:05  camacho
  * Initial revision
  *
