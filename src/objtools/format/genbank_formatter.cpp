@@ -486,6 +486,12 @@ void CGenbankFormatter::FormatComment
         Wrap(l, "COMMENT", comment.GetComment());
     }
 
+    if ( !l.empty() ) {
+        if ( !NStr::EndsWith(l.back(), ".") ) {
+            l.back() += ".";
+        }
+    }
+
     text_os.AddParagraph(l);
 }
 
@@ -518,9 +524,16 @@ void CGenbankFormatter::FormatFeature
     ITERATE (vector<CRef<CFlatQual> >, it, feat.GetQuals()) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
         switch ((*it)->GetStyle()) {
-        case CFlatQual::eEmpty:                    value.erase();  break;
-        case CFlatQual::eQuoted:   qual += "=\"";  value += '"';   break;
-        case CFlatQual::eUnquoted: qual += '=';                    break;
+        case CFlatQual::eEmpty:
+            value = qual;
+            qual.erase();
+            break;
+        case CFlatQual::eQuoted:
+            qual += "=\"";  value += '"';
+            break;
+        case CFlatQual::eUnquoted:
+            qual += '=';
+            break;
         }
         // Call NStr::Wrap directly to avoid unwanted line breaks right
         // before the start of the value (in /translation, e.g.)
@@ -716,6 +729,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/05 18:46:05  shomrat
+* fixed formatting of empty qualifier
+*
 * Revision 1.6  2004/02/19 18:13:12  shomrat
 * Added formatting of Contig and Origin
 *
