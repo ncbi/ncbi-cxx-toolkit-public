@@ -47,6 +47,8 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
     char        buf[1024];
     SIZE_TYPE   pos = 0;
 
+    str.erase();
+
     IOS_BASE::fmtflags f = is.flags();
     is.unsetf(IOS_BASE::skipws);
 #ifdef NO_PUBSYNC
@@ -62,8 +64,6 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
         return is;
     }
 #endif
-
-    str.erase();
 
     SIZE_TYPE end = str.max_size();
     SIZE_TYPE i = 0;
@@ -373,6 +373,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/06/07 14:40:13  ucko
+ * s_NcbiGetline: always drop the string's old contents, even if the
+ * stream has run out.
+ *
  * Revision 1.31  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
