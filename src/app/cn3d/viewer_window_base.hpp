@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/25 19:08:14  thiessen
+* fix GTK window redraw bug
+*
 * Revision 1.11  2001/05/23 17:43:29  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -221,6 +224,7 @@ public:
     void KillWindow(void)
     {
         viewer = NULL;
+        viewerWidget->AttachAlignment(NULL);
         Destroy();
     }
 
