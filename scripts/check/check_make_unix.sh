@@ -172,8 +172,8 @@ case "\$method" in
       ;;
 esac
 
-# Add current directory to PATH
-PATH=".:\$PATH"
+# Add current, build and scripts directories to PATH
+PATH=".:$x_build_dir:$x_root_dir/scripts:\$PATH"
 export PATH
 
 EOF
@@ -181,7 +181,6 @@ EOF
 if test -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib";  then
    cat >> $x_out <<EOF
 # Adjust PATH and LD_LIBRARY_PATH for running tests
-PATH=".:\$PATH"
 if test -n "\$LD_LIBRARY_PATH"; then
    LD_LIBRARY_PATH="$x_conf_dir/lib:\$LD_LIBRARY_PATH"
 else

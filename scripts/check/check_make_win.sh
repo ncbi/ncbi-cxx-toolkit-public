@@ -180,6 +180,9 @@ case "\$method" in
       ;;
 esac
 
+# Add current, build and scripts directories to PATH
+PATH=".:$x_build_dir:$x_root_dir/scripts:\$PATH"
+export PATH
 
 # Run
 
