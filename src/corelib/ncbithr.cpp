@@ -472,9 +472,15 @@ bool CThread::Run(TRunMode flags)
     xncbi_Validate(pthread_attr_init (&attr) == 0,
                    "CThread::Run() - error initializing thread attributes");
     if ( ! (flags & fRunUnbound) ) {
+#if defined(NCBI_OS_BSD)
+        xncbi_Validate(pthread_attr_setscope(&attr,
+                                             PTHREAD_SCOPE_PROCESS) == 0,
+                       "CThread::Run() - error setting thread scope");
+#else
         xncbi_Validate(pthread_attr_setscope(&attr,
                                              PTHREAD_SCOPE_SYSTEM) == 0,
                        "CThread::Run() - error setting thread scope");
+#endif
     }
     if ( m_IsDetached ) {
         xncbi_Validate(pthread_attr_setdetachstate(&attr,
@@ -655,6 +661,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/08/20 17:32:23  grichenk
+ * Do not use PTHREAD_SCOPE_SYSTEM on BSD
+ *
  * Revision 1.30  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
