@@ -66,7 +66,7 @@ public:
         // Default modes
         eDefaultStdIn  = eText,
         eDefaultStdOut = eText,
-        eDefaultStdErr = eDoNotUse,
+        eDefaultStdErr = eDoNotUse
     };
 
     // Child I/O handles for reading from pipe
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/06/12 19:38:45  ucko
+ * Remove a superfluous comma from the definition of EMode.
+ *
  * Revision 1.3  2002/06/11 19:25:06  ivanov
  * Added class CPipeIOStream
  *
