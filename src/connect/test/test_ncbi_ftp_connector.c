@@ -46,11 +46,12 @@
 #define TEST_PATH            "/"
 
 
-int main(void)
+int main(int argc, char* argv[])
 {
     static const char chdir[] = "CWD /toolbox/ncbi_tools\n";
     static const char file[] = "RETR CURRENT/ncbi.tar.gz";
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
+    int/*bool*/ aborting = 0;
     STimeout    timeout;
     CONNECTOR   connector;
     FILE*       data_file;
@@ -123,14 +124,20 @@ int main(void)
         status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
         if (n != 0)
             fwrite(buf, n, 1, data_file);
+        if (argc > 1  &&  rand() % 100 == 0) {
+            aborting = 1;
+            break;
+        }
     } while (status == eIO_Success);
    
     if (CONN_Close(conn) != eIO_Success)
-        CORE_LOG(eLOG_Fatal, "Error closing FTP connection");
+        CORE_LOGF(eLOG_Fatal, ("Error %s FTP connection",
+                               aborting ? "aborting" : "closing"));
 
     /* Cleanup and Exit */
-
     fclose(data_file);
+    if (aborting)
+        remove("test_ncbi_ftp_connector.log");
     CORE_SetLOG(0);
     return 0;
 }
@@ -139,6 +146,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/12/27 15:32:10  lavr
+ * Randomly test ABORTs (if there is an argument for main())
+ *
  * Revision 1.2  2004/12/06 22:02:51  ucko
  * +<stdlib.h> for getenv()
  *
