@@ -96,6 +96,11 @@ public:
     /// Verify that a named field exists
     bool HasField(const string& str,
                   const string& delim = ".") const;
+                  
+    /// Delete the named field.
+    /// return true if successful. false if field doesn't exist.
+    bool DeleteField(const string& str,
+                  const string& delim = ".");
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -127,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/16 13:40:00  rsmith
+* Add DeleteField() method.
+*
 * Revision 1.1  2004/11/22 16:03:19  dicuccio
 * Added subfield access to a user field, with delimited hierarchichal access; the
 * API is similar to that in CUser_object

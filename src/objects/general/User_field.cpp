@@ -285,6 +285,47 @@ bool CUser_field::HasField(const string& str,
 
 
 
+/// delete a named field.
+bool CUser_field::DeleteField(const string& str,
+              const string& delim)
+{
+    list<string> toks;
+    NStr::Split(str, delim, toks);
+
+    CRef<CUser_field> f(this);
+    list<string>::const_iterator last = toks.end();
+    --last;
+
+    ITERATE (list<string>, iter, toks) {
+        CRef<CUser_field> new_f;
+        if ( !f->GetData().IsFields() ) {
+            return false;
+        }
+        NON_CONST_ITERATE (TData::TFields, field_iter, f->SetData().SetFields()) {
+            const CUser_field& field = **field_iter;
+            if (field.GetLabel().IsStr()
+                &&  field.GetLabel().GetStr() == *iter) {
+                if (iter != last  &&  field.GetData().IsFields()) {
+                    new_f = *field_iter;
+                    break;
+                } else if (iter == last) {
+                    // delete this one from f, its parent.
+                    f->SetData().SetFields().erase(field_iter);
+                    return true;
+                }
+            }
+        }
+        if ( !new_f ) {
+            return false;
+        }
+        f = new_f;
+    }
+    // Never reached.
+    return false;
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -294,6 +335,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/03/16 13:40:00  rsmith
+* Add DeleteField() method.
+*
 * Revision 1.6  2005/02/22 20:02:45  rsmith
 * Do not allow a subkey to overwrite a leaf key
 *
