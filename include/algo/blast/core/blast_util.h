@@ -44,7 +44,13 @@ extern "C" {
 #endif
 
 #include <algo/blast/core/blast_def.h>
+
+#ifdef NCBI_DLL_BUILD
 #include <algo/blast/core/blast_export.h>
+#endif
+#ifndef NCBI_XBLAST_EXPORT
+#define NCBI_XBLAST_EXPORT
+#endif
 
 /** Different types of sequence encodings for sequence retrieval from the 
  * BLAST database 
@@ -84,6 +90,9 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
  * @param program string name of program [in]
  * @param number number of program [out]
 */
+
+
+
 NCBI_XBLAST_EXPORT
 Int2 BlastProgram2Number(const char *program, Uint1 *number);
 
