@@ -35,7 +35,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class NCBI_SEQALIGN_EXPORT CSeqalignException :
     EXCEPTION_VIRTUAL_BASE public CException
@@ -66,7 +66,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSeqalignException, CException);
 };
 
-END_objects_SCOPE
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
@@ -74,6 +74,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/27 19:20:23  johnson
+* {BEGIN,END}_objects_SCOPE not defined by includes; replaced with
+* {BEGIN,END}_SCOPE(objects)
+*
 * Revision 1.5  2003/11/04 14:45:54  todorov
 * +eInvalidInputData
 *
