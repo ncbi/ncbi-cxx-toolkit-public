@@ -52,11 +52,12 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Id.hpp>
+
 #include <objects/id1/id1__.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Info.hpp>
-#include <objects/id2/ID2S_Chunk.hpp>
-#include <objects/id2/ID2S_Chunk_Id.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
 
 #include <serial/serial.hpp>
@@ -1303,6 +1304,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.22  2004/01/22 20:53:31  vasilche
+ * Fixed include path.
+ *
  * Revision 1.21  2004/01/22 20:10:37  vasilche
  * 1. Splitted ID2 specs to two parts.
  * ID2 now specifies only protocol.

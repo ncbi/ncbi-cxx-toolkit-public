@@ -48,7 +48,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/id1/id1__.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
 
 #include <serial/enumvalues.hpp>
 #include <serial/iterator.hpp>
@@ -798,6 +798,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.71  2004/01/22 20:53:30  vasilche
+ * Fixed include path.
+ *
  * Revision 1.70  2004/01/22 20:10:36  vasilche
  * 1. Splitted ID2 specs to two parts.
  * ID2 now specifies only protocol.
