@@ -60,6 +60,7 @@ extern "C" {
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         const QuerySetUpOptions* qsup_options,
         const BlastScoringOptions* scoring_options,
@@ -80,10 +81,10 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
  * @param query_info Query information containing context information [in]
  *
 */
-Int2
-BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
-                        const BlastScoringOptions * scoring_options,
-                        EBlastProgramType program, BlastQueryInfo * query_info);
+NCBI_XBLAST_EXPORT
+Int2 BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
+    const BlastScoringOptions * scoring_options,
+    EBlastProgramType program, BlastQueryInfo * query_info);
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 
@@ -94,6 +95,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
  * @param query_info The query information block, which stores the effective
  *                   search spaces for all queries [in] [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_CalcEffLengths (EBlastProgramType program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsParameters* eff_len_params, 
@@ -117,8 +119,7 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
  * @param gap_align Gapped alignment information and allocated memory [out]
  */
 NCBI_XBLAST_EXPORT
-Int2 
-BLAST_GapAlignSetUp(EBlastProgramType program_number,
+Int2 BLAST_GapAlignSetUp(EBlastProgramType program_number,
    const BlastSeqSrc* seq_src,
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsOptions* eff_len_options,
@@ -166,8 +167,8 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
  * @param sbp Contains fields to be set, should not be NULL. [out]
  *
 */
-Int2
-BlastScoreBlkMatrixInit(EBlastProgramType program_number, 
+NCBI_XBLAST_EXPORT
+Int2 BlastScoreBlkMatrixInit(EBlastProgramType program_number, 
     const BlastScoringOptions* scoring_options,
     BlastScoreBlk* sbp);
 
@@ -181,8 +182,8 @@ BlastScoreBlkMatrixInit(EBlastProgramType program_number,
  * @param scale_factor Matrix scaling factor for this search [in]
  * @param blast_message Error message [out]
  */
-Int2
-BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
+NCBI_XBLAST_EXPORT
+Int2 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
     BlastQueryInfo* query_info, 
     const BlastScoringOptions* scoring_options, 
     EBlastProgramType program_number, 
@@ -199,6 +200,9 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.44  2004/08/11 11:58:43  ivanov
+* Added more export specifiers NCBI_XBLAST_EXPORT
+*
 * Revision 1.43  2004/08/10 14:52:00  ivanov
 * Added export specifier NCBI_XBLAST_EXPORT
 *
