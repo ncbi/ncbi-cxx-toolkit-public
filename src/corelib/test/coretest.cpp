@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/03 20:49:15  vakatov
+* use "NcbiCerr" instead of just "cerr"
+*
 * Revision 1.1  1998/10/30 19:57:54  vakatov
 * Initial revision
 *
@@ -50,7 +53,7 @@ extern void TestDiag(void)
     diag << "[Unset Diag Stream]  Diagnostics double = " << d;
     _TRACE( "[Unset Diag Stream]  Trace double = " << d );
 
-    SetDiagStream(&cerr);
+    SetDiagStream(&NcbiCerr);
     diag << "[Set Diag Stream(cerr)]  Diagnostics double = " << d;
     _TRACE( "[Set Diag Stream(cerr)]  Trace double = " << d );
 }
