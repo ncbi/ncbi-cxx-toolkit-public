@@ -37,6 +37,8 @@
 
 BEGIN_NCBI_SCOPE
 
+// Default image limit
+#define IMAGE_LIMIT_16MB  0x1000000
 
 enum ECompressMethod {
     eNone,
@@ -258,15 +260,12 @@ public:
     const string& getKeyColName() const { return m_KeyColName; }
     const string& getNumColName() const { return m_NumColName; }
 
-
     virtual ~CBlobStoreBase();
-
-    static const size_t g_16MB;
 
 protected:
     CBlobStoreBase(const string& table_name,
                    ECompressMethod cm = eNone,
-                   size_t image_limit = g_16MB,
+                   size_t image_limit = IMAGE_LIMIT_16MB,
                    bool log_it = false);
 
     void ReadTableDescr();
@@ -308,7 +307,7 @@ public:
     CBlobStoreStatic(CDB_Connection* pConn,
                      const string& table_name,
                      ECompressMethod cm = eNone,
-                     size_t image_limit = g_16MB,
+                     size_t image_limit = IMAGE_LIMIT_16MB,
                      bool log_it = false);
 
     CBlobStoreStatic(CDB_Connection* pConn,
@@ -319,7 +318,7 @@ public:
                      unsigned nofBC,
                      bool isText = false,
                      ECompressMethod cm = eNone,
-                     size_t image_limit = g_16MB,
+                     size_t image_limit = IMAGE_LIMIT_16MB,
                      bool log_it = false);
 
     virtual ~CBlobStoreStatic();
@@ -350,7 +349,7 @@ public:
                       const string& passwd,
                       const string& table_name,
                       ECompressMethod cm = eNone,
-                      size_t image_limit = g_16MB,
+                      size_t image_limit = IMAGE_LIMIT_16MB,
                       bool log_it = false);
 
     virtual ~CBlobStoreDynamic();
@@ -375,6 +374,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/22 11:40:17  ivanov
+ * Replaced static const member CBlobStoreBase::g_16MB with
+ * #define IMAGE_LIMIT_16MB.
+ *
  * Revision 1.5  2004/10/21 18:33:18  ivanovsk
  * Add methods to take blob key column name and
  * num column name.

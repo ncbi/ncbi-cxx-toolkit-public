@@ -416,8 +416,6 @@ bool CSimpleBlobStore::Fini(void)
  * the image/text data from a C++ application.
  */
 
-const size_t CBlobStoreBase::g_16MB = 0x1000000;
-
 CBlobStoreBase::CBlobStoreBase(const string& table_name,
                                ECompressMethod cm,
                                size_t image_limit,
