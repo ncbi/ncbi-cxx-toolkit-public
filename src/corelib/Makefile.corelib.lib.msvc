@@ -1,0 +1,2 @@
+[AddToProject]
+HeadersInInclude = hash_impl/*.h hash_impl/*.c
