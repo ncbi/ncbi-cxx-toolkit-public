@@ -40,6 +40,7 @@
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/seqsrc_multiseq.hpp>
+#include <algo/blast/api/seqinfosrc_seqvec.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
 
@@ -275,6 +276,7 @@ CBl2Seq::ScanDB()
     hsp_stream = BlastHSPStreamFree(hsp_stream);
 }
 
+
 /** Unlike the database search, we want to make sure that a seqalign list is   
  * returned for each query/subject pair, even if it is empty. Also we don't 
  * want subjects to be sorted in seqalign results. Hence we retrieve results 
@@ -293,12 +295,14 @@ CBl2Seq::x_Results2SeqAlign()
     bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
     Uint4 index;
 
+    CSeqVecSeqInfoSrc seqinfo_src(m_tSubjects);
+
     for (index = 0; index < m_tSubjects.size(); ++index)
     {
         TSeqAlignVector seqalign =
             BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
                  m_OptsHandle->GetOptions().GetProgram(),
-                 m_tQueries, m_tSubjects[index], index, 
+                 m_tQueries, &seqinfo_src, index, 
                  gappedMode, outOfFrameMode);
 
         /* Merge the new vector with the current. Assume that both vectors
@@ -320,6 +324,10 @@ CBl2Seq::x_Results2SeqAlign()
         }
     }
 
+    // Remap subject coordinates in Seq-aligns if some of the subject locations
+    // are on reverse strands or do not start from the beginning of sequences.
+    Blast_RemapToSubjectLoc(retval, m_tSubjects);
+
     // Clean up structures
     mi_clsInitWordParams.Reset(NULL);
     mi_clsHitSavingParams.Reset(NULL);
@@ -339,6 +347,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.63  2004/10/06 14:53:36  dondosha
+ * Remap subject coordinates in Seq-aligns separately after all Seq-aligns are filled; Use IBlastSeqInfoSrc interface in x_Results2CSeqAlign
+ *
  * Revision 1.62  2004/09/13 12:46:07  madden
  * Replace call to ListNodeFreeData with BlastSeqLocFree
  *
