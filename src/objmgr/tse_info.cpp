@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/14 18:39:13  gouriano
+* added mutex for MT protection
+*
 * Revision 1.2  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -57,6 +60,8 @@ BEGIN_SCOPE(objects)
 //    General information and indexes for top level seq-entries
 //
 
+
+CFastMutex CTSE_Info::sm_LockMutex;
 
 CTSE_Info::CTSE_Info(void)
     : m_Dead(false),

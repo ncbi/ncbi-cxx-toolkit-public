@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/14 18:39:14  gouriano
+* added mutex for MT protection
+*
 * Revision 1.2  2002/02/21 19:27:07  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -49,6 +52,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -100,6 +104,7 @@ private:
     CTSE_Info& operator= (const CTSE_Info& info);
 
     mutable int m_LockCount;
+    static CFastMutex sm_LockMutex;
 };
 
 
@@ -114,12 +119,14 @@ private:
 inline
 void CTSE_Info::Lock(void) const
 {
+    CFastMutexGuard guard(sm_LockMutex);
     m_LockCount++;
 }
 
 inline
 void CTSE_Info::Unlock(void) const
 {
+    CFastMutexGuard guard(sm_LockMutex);
     if (m_LockCount > 0)
         m_LockCount--;
     else
@@ -130,6 +137,7 @@ void CTSE_Info::Unlock(void) const
 inline
 bool CTSE_Info::Locked(void) const
 {
+    CFastMutexGuard guard(sm_LockMutex);
     return m_LockCount > 0;
 }
 
