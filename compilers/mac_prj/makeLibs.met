@@ -354,6 +354,8 @@ on SetProjectData()
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
+		AddGuiProject("gui_graph", {}, "graph")
+		AddGuiProject("gui_print", {}, "print")
 		
 		-- widgets
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
@@ -403,7 +405,7 @@ on SetProjectData()
 			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
