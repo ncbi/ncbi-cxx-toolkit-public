@@ -101,19 +101,35 @@ class CCompressionStreamProcessor;
 class NCBI_XUTIL_EXPORT CCompressionStream : virtual public CNcbiIos
 {
 public:
-    // Stream processing direction
+    /// Stream processing direction.
     enum EDirection {
         eRead,              // reading from stream
         eWrite,             // writing into stream
         eReadWrite          // eRead + eWrite
     };
 
-    // 'ctors
-    // If read/write stream processor is 0, that read/write operation
-    // on this stream will be unsuccessful.
+    /// Which of the objects (passed in the constructor) should be
+    /// deleted on this object's destruction.
+    /// NOTE:  if the reader and writer are in fact one object, it will
+    ///        not be deleted twice.
+    enum EOwnership {
+        fOwnStream = (1<<1),  // delete the underlying I/O stream
+        fOwnReader = (1<<2),  // delete the reader
+        fOwnWriter = (1<<3),  // delete the writer
+        fOwnProcessor = fOwnReader + fOwnWriter,
+        fOwnAll       = fOwnStream + fOwnProcessor
+    };
+    typedef int TOwnership;   // bitwise OR of EOwnership
+
+    /// Constructor
+    ///
+    /// If read/write stream processor is 0, that read/write operation
+    /// on this stream will be unsuccessful.
     CCompressionStream(CNcbiIos&                    stream,
                        CCompressionStreamProcessor* read_sp,
-                       CCompressionStreamProcessor* write_sp);
+                       CCompressionStreamProcessor* write_sp,
+                       TOwnership                   ownership = 0);
+    /// Destructor
     virtual ~CCompressionStream(void);
 
     // Finalize stream's compression/decompression process for read/write.
@@ -121,10 +137,11 @@ public:
     virtual void Finalize(CCompressionStream::EDirection dir =
                           CCompressionStream::eReadWrite);
 protected:
-    CNcbiIos*                    m_Stream   ; // Underlying stream
-    CCompressionStreambuf*       m_StreamBuf; // Stream buffer
-    CCompressionStreamProcessor* m_Reader;    // Read processor
-    CCompressionStreamProcessor* m_Writer;    // Write processor
+    CNcbiIos*                    m_Stream;    // underlying stream
+    CCompressionStreambuf*       m_StreamBuf; // stream buffer
+    CCompressionStreamProcessor* m_Reader;    // read processor
+    CCompressionStreamProcessor* m_Writer;    // write processor
+    TOwnership                   m_Ownership; // bitwise OR of EOwnership
 };
 
 
@@ -139,8 +156,10 @@ class NCBI_XUTIL_EXPORT CCompressionIStream : public istream,
 {
 public:
     CCompressionIStream(CNcbiIos&                    stream,
-                        CCompressionStreamProcessor* stream_processor)
-        : istream(0), CCompressionStream(stream, stream_processor, 0)
+                        CCompressionStreamProcessor* stream_processor,
+                        TOwnership                   ownership = 0)
+        : istream(0),
+          CCompressionStream(stream, stream_processor, 0, ownership)
     {}
 };
 
@@ -150,8 +169,10 @@ class NCBI_XUTIL_EXPORT CCompressionOStream : public ostream,
 {
 public:
     CCompressionOStream(CNcbiIos&                    stream,
-                        CCompressionStreamProcessor* stream_processor)
-        : ostream(0), CCompressionStream(stream, 0, stream_processor)
+                        CCompressionStreamProcessor* stream_processor,
+                        TOwnership                   ownership = 0)
+        : ostream(0),
+          CCompressionStream(stream, 0, stream_processor, ownership)
     {}
 };
 
@@ -162,8 +183,10 @@ class NCBI_XUTIL_EXPORT CCompressionIOStream : public iostream,
 public:
     CCompressionIOStream(CNcbiIos&                    stream,
                          CCompressionStreamProcessor* read_sp,
-                         CCompressionStreamProcessor* write_sp)
-        : iostream(0), CCompressionStream(stream, read_sp, write_sp)
+                         CCompressionStreamProcessor* write_sp,
+                         TOwnership                   ownership = 0)
+        : iostream(0),
+          CCompressionStream(stream, read_sp, write_sp, ownership)
     {}
 };
 
@@ -224,6 +247,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/04/09 11:48:56  ivanov
+ * Added ownership parameter for automaticaly destruction underlying stream
+ * and read/write compression processors.
+ *
  * Revision 1.7  2004/01/20 20:34:31  lavr
  * One empty line added (separator)
  *

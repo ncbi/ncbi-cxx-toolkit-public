@@ -81,10 +81,10 @@ CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
 
 CCompressionStream::CCompressionStream(CNcbiIos&                    stream,
                                        CCompressionStreamProcessor* read_sp,
-                                       CCompressionStreamProcessor* write_sp)
+                                       CCompressionStreamProcessor* write_sp,
+                                       TOwnership                   ownership)
     : CNcbiIos(0), m_Stream(&stream), m_StreamBuf(0),
-      m_Reader(read_sp), m_Writer(write_sp)
-      
+      m_Reader(read_sp), m_Writer(write_sp), m_Ownership(ownership)
 {
     // Create a new stream buffer
     auto_ptr<CCompressionStreambuf> sb(
@@ -108,6 +108,22 @@ CCompressionStream::~CCompressionStream(void)
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
 #endif
+    // Delete owned objects
+    if ( m_Stream  &&  m_Ownership & fOwnStream ) {
+        delete m_Stream;
+        m_Stream = 0;
+    }
+    if ( m_Reader  &&  m_Ownership & fOwnReader ) {
+        if ( m_Reader == m_Writer  &&  m_Ownership & fOwnWriter ) {
+            m_Writer = 0;
+        }
+        delete m_Reader;
+        m_Reader = 0;
+    }
+    if ( m_Writer  &&  m_Ownership & fOwnWriter ) {
+        delete m_Writer;
+        m_Writer = 0;
+    }
 }
 
 
@@ -125,6 +141,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/09 11:47:29  ivanov
+ * Added ownership parameter for automaticaly destruction underlying stream
+ * and read/write compression processors.
+ *
  * Revision 1.5  2004/01/20 20:38:34  lavr
  * Cease using HAVE_BUGGY_IOS_CALLBACKS in this file
  *
