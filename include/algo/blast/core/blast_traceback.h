@@ -55,13 +55,15 @@ extern "C" {
  * @param score_options The scoring related options [in]
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
+ * @param db_params Parameters containing database genetic code string [in]
  */
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results, 
         BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
         ReadDBFILEPtr rdfp, BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
-        BlastHitSavingParametersPtr hit_params);
+        BlastHitSavingParametersPtr hit_params,
+        BlastDatabaseParametersPtr db_params);
 
 /** Given the preliminary alignment results from a two sequences search
  * (possibly with multiple query sequences), redo the gapped alignment
@@ -75,13 +77,15 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
  * @param score_options The scoring related options [in]
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
+ * @param db_params Parameters containing database genetic code string [in]
  */
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
         BlastResultsPtr results, BLAST_SequenceBlkPtr query, 
         BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
         BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
-        BlastHitSavingParametersPtr hit_params);
+        BlastHitSavingParametersPtr hit_params,
+        BlastDatabaseParametersPtr db_params);
 
 #ifdef __cplusplus
 }
