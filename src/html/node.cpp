@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/20 16:52:34  pubmed
+* SaveAsText action for query; minor changes in filters,labels, tabletemplate
+*
 * Revision 1.11  1999/05/04 00:03:18  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -228,44 +231,44 @@ CNCBINode* CNCBINode::MapTag(const string& tagname)
 }
 
 // print the whole node tree (with possible initialization)
-CNcbiOstream& CNCBINode::Print(CNcbiOstream& out)
+CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode mode)
 {
     if ( !m_Initialized ) { // if there is no children
         CreateSubNodes();             // create them
         m_Initialized = true;
     }
 
-    PrintBegin(out);
+    PrintBegin(out,mode);
 
     try {
-        PrintChildren(out);
+        PrintChildren(out,mode);
     }
     catch (...) {
         ERR_POST("\
 CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
-        PrintEnd(out);
+        PrintEnd(out,mode);
         throw;
     }
 
-    PrintEnd(out);
+    PrintEnd(out,mode);
     return out;
 }
 
-CNcbiOstream& CNCBINode::PrintBegin(CNcbiOstream& out)
+CNcbiOstream& CNCBINode::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     return out;
 }
 
-CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out)
+CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     return out;
 }
 
 // print all children
-CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out)
+CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     for (TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i) {
-        (*i)->Print(out);
+        (*i)->Print(out,mode);
     }
     return out;
 }

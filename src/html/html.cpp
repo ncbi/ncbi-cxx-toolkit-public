@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  1999/05/20 16:52:31  pubmed
+* SaveAsText action for query; minor changes in filters,labels, tabletemplate
+*
 * Revision 1.38  1999/05/17 20:09:58  vasilche
 * Removed generation of implicit table cells.
 *
@@ -327,9 +330,13 @@ void CHTMLPlainText::SetText(const string& text)
     m_Text = text;
 }
 
-CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out)  
+CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)  
 {
-    return out << CHTMLHelper::HTMLEncode(m_Text);
+    if( mode == ePlainText ) {
+        return out << m_Text;
+    } else {
+        return out << CHTMLHelper::HTMLEncode(m_Text);
+    }
 }
 
 // text node
@@ -347,7 +354,7 @@ CNCBINode* CHTMLText::CloneSelf() const
 static const string KTagStart = "<@";
 static const string KTagEnd = "@>";
 
-CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out)  
+CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)  
 {
     return out << m_Text;
 }
@@ -411,16 +418,22 @@ CNCBINode* CHTMLOpenElement::CloneSelf(void) const
     return new CHTMLOpenElement(*this);
 }
 
-CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out)
+CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    out << '<' << m_Name;
-    for (TAttributes::iterator i = m_Attributes.begin(); i != m_Attributes.end(); ++i ) {
-        out << ' ' << i->first;
-        if ( !i->second.empty() ) {
-            out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
+    if( mode == ePlainText ) {
+        return out;
+    } else {
+        out << '<' << m_Name;
+        for (TAttributes::iterator i = m_Attributes.begin(); 
+             i != m_Attributes.end(); ++i ) {
+            out << ' ' << i->first;
+            if ( !i->second.empty() ) {
+                out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
+            }
         }
+        
+        return out << '>';
     }
-    return out << '>';
 }
 
 CHTMLElement::CHTMLElement(const string& name)
@@ -445,9 +458,13 @@ CNCBINode* CHTMLElement::CloneSelf(void) const
     return new CHTMLElement(*this);
 }
 
-CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out)
+CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
-    return out << "</" << m_Name << ">\n";
+    if( mode == ePlainText ) {
+        return out;
+    } else {
+        return out << "</" << m_Name << ">\n";
+    }
 }
 
 // HTML comment class
@@ -470,14 +487,22 @@ CNCBINode* CHTMLComment::CloneSelf(void) const
     return new CHTMLComment(*this);
 }
 
-CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out)
+CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    return out << "<!--";
+    if( mode == ePlainText ) {
+        return out;
+    } else {
+        return out << "<!--";
+    }
 }
 
-CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out)
+CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
 {
-    return out << "-->";
+    if( mode == ePlainText ) {
+        return out;
+    } else {
+        return out << "-->";
+    }
 }
 
 // TABLE element
@@ -836,7 +861,7 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
     return info.m_Rows;
 }
 
-CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
+CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     CTableInfo info;
     x_CheckTable(&info);
@@ -844,28 +869,25 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
     TIndex row = 0;
     for ( TChildList::iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow ) {
+
+        if( mode == ePlainText ) {
+            out << CHTMLHelper::GetNL();
+        }
+        
         CNCBINode* rowNode = *iRow;
         if ( !sx_IsRow(rowNode) )
-            rowNode->Print(out);
+            rowNode->Print(out,mode);
         else {
-            rowNode->Print(out);
-/* we should not add implicit <TD></TD>
-            rowNode->PrintBegin(out);
-            rowNode->PrintChildren(out);
-            // determine additional cells to print
-            TIndex addCells = info.m_Columns - info.m_RowSizes[row];
-            // print them
-            for ( TIndex i = 0; i < addCells; ++i )
-                out << "<TD></TD>";
-            rowNode->PrintEnd(out);
-*/
+            rowNode->Print(out,mode); 
             ++row;
         }
     }
 
-    // print implicit rows
-    for ( TIndex i = info.m_FinalRow; i < info.m_Rows; ++i )
-        out << "<TR></TR>";
+    if( mode == eHTML ) {
+        // print implicit rows
+        for ( TIndex i = info.m_FinalRow; i < info.m_Rows; ++i )
+            out << "<TR></TR>";
+    }
 
     return out;
 }
@@ -1113,10 +1135,21 @@ CHTML_file::CHTML_file(const string& name, const string& value)
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
+// br tag
+
 CHTML_br::CHTML_br(int count)
 {
     for ( int i = 1; i < count; ++i )
         AppendChild(new CHTML_br());
+}
+
+CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)  
+{
+    if( mode == ePlainText ) {
+        return out << CHTMLHelper::GetNL();
+    } else {
+        return CHTML_br_Base::PrintBegin(out,mode);
+    }
 }
 
 // img tag
@@ -1172,6 +1205,19 @@ CHTML_font* CHTML_font::SetRelativeSize(int size)
     if ( size != 0 )
         SetAttribute(KHTMLAttributeName_size, NStr::IntToString(size, true));
     return this;
+}
+
+// hr tag
+
+CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)  
+{
+    if( mode == ePlainText ) {
+        return out << CHTMLHelper::GetNL()
+                   << "----------" 
+                   << CHTMLHelper::GetNL();
+    } else {
+        return CHTML_hr_Base::PrintBegin(out,mode);
+    }
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/05/20 16:52:33  pubmed
+* SaveAsText action for query; minor changes in filters,labels, tabletemplate
+*
 * Revision 1.6  1999/03/15 19:58:35  vasilche
 * CIDs now use set instead of map.
 *
@@ -125,6 +128,12 @@ string CIDs::Encode(void) const
     }
     return out;
 }
+
+// 
+// class CHTMLHelper
+//
+
+string CHTMLHelper::sm_newline( "\n" );
 
 string CHTMLHelper::HTMLEncode(const string& input)
 {
