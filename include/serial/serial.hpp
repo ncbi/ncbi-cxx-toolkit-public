@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  1999/11/19 15:47:20  vasilche
+* Added specification of several tamplates with <char*> and <const char*> to
+* avoid warnings on MAC
+*
 * Revision 1.38  1999/11/16 15:40:14  vasilche
 * Added plain pointer choice.
 *
@@ -328,6 +332,18 @@ inline
 CTypeRef GetStdTypeRef(const T* )
 {
     return &CStdTypeInfo<T>::GetTypeInfo;
+}
+
+inline
+CTypeRef GetStdTypeRef(char* const* )
+{
+    return &CStdTypeInfo<char*>::GetTypeInfo;
+}
+
+inline
+CTypeRef GetStdTypeRef(const char* const* )
+{
+    return &CStdTypeInfo<const char*>::GetTypeInfo;
 }
 
 // STL
