@@ -85,6 +85,7 @@ public:
     //const TSeqLocVector& GetFilteredQueryRegions() const;
     const BlastMaskLoc* GetFilteredQueryRegions() const;
 
+    void SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src=false);
     BlastSeqSrc* GetSeqSrc() const;
     BlastHSPResults* GetResults() const;
     BlastReturnStat* GetReturnStats() const;
@@ -97,6 +98,7 @@ protected:
     virtual void RunSearchEngine();
     virtual TSeqAlignVector x_Results2SeqAlign();
     virtual void x_ResetQueryDs();
+    virtual void x_ResetResultDs();
     virtual void x_InitFields();
 
     BlastScoringOptions* GetScoringOpts() const;
@@ -187,6 +189,14 @@ CDbBlast::GetFilteredQueryRegions() const
     return m_ipFilteredRegions;
 }
 
+inline void CDbBlast::SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src)
+{
+    x_ResetResultDs();
+    if (free_old_src)
+        BlastSeqSrcFree(m_pSeqSrc);
+    m_pSeqSrc = seq_src;
+}
+
 inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
 {
     return m_pSeqSrc;
@@ -254,6 +264,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/05/05 15:28:31  dondosha
+* Added SetSeqSrc method
+*
 * Revision 1.14  2004/05/04 14:05:30  dondosha
 * Removed extra unimplemented SetOptions method
 *
