@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/04/13 14:57:15  kholodov
+* Added: SetDTDFileName function to set DTD module name in XML header
+*
 * Revision 1.23  2000/12/26 22:24:14  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -201,8 +204,20 @@ static string GetPublicModuleName(TTypeInfo type)
     return name;
 }
 
+static string dtdFileName = "";
+
+void SetDTDFileName(const string& name) {
+  dtdFileName = name;
+}
+
+
 static string GetModuleName(TTypeInfo type)
 {
+
+  if( ! dtdFileName.empty() ) {
+    return dtdFileName;
+  }
+
     const string& s = type->GetModuleName();
     string name;
     for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/04/13 14:57:21  kholodov
+* Added: SetDTDFileName function to set DTD module name in XML header
+*
 * Revision 1.14  2000/12/15 21:28:48  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -242,6 +245,8 @@ private:
 };
 
 #include <serial/objostrxml.inl>
+
+void SetDTDFileName(const string& name);
 
 END_NCBI_SCOPE
 
