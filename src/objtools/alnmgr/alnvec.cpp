@@ -690,11 +690,11 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
 {
     TNumrow       numrows = m_NumRows;
     TNumrow       index1 = row1, index2 = row2;
-    TSeqPos       start1, start2;
+    TSignedSeqPos start1, start2;
     string        buff1, buff2;
     bool          isAA1, isAA2;
     int           score = 0;
-    TSeqPos len;
+    TSeqPos       len;
     
     isAA1 = GetBioseqHandle(row1).GetBioseqCore()
         ->GetInst().GetMol() == CSeq_inst::eMol_aa;
@@ -748,6 +748,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/09/12 16:16:50  todorov
+* TSeqPos->TSignedSeqPos bug fix
+*
 * Revision 1.44  2003/08/29 18:18:58  dicuccio
 * Changed CreateConsensus() API to return a new dense-seg instead of altering the
 * current alignment manager
