@@ -65,7 +65,7 @@ SRC = \
 	wx_tools
 
 LIB = \
-	cdd ncbimime cn3d mmdb seqset seq seqcode \
+	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode \
 	pub medline biblio general taxon1 \
 	xser xutil xctools xconnect xncbi
 
