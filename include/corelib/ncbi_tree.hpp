@@ -211,7 +211,7 @@ public:
 
 public:
 
-    CTreePairNode(const TId& id = TId(), const TValue& value = V());
+    CTreePairNode(const TId& id = TId(), const TValue& value = TValue());
     CTreePairNode(const CTreePairNode<TId, TValue>& tr);
     CTreePairNode<TId, TValue>& operator=(const CTreePairNode<TId, TValue>& tr);
 
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/01/12 22:04:03  ucko
+ * Fix typo caught by MIPSpro.
+ *
  * Revision 1.13  2004/01/12 21:03:42  ucko
  * Fix use of typename in PairTreeTraceNode<>, silently added in last revision.
  *
