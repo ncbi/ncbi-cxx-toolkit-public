@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/09/18 17:42:53  grichenk
+* Disabled warning 4355
+*
 * Revision 1.22  2001/08/31 20:05:42  ucko
 * Fix ICC build.
 *
@@ -120,6 +123,8 @@
 #  pragma warning(disable: 4097)
 // inherits ... via dominance
 #  pragma warning(disable: 4250)
+// 'this' : used in base member initializer list
+#  pragma warning(disable: 4355)
 #endif /* _MSC_VER >= 1200 */
 
 
