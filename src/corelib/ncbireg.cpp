@@ -1088,7 +1088,7 @@ void CTwoLayerRegistry::x_Enumerate(const string& section,
         m_Transient ->EnumerateEntries(section, &tl, flags | fTPFlags);
         m_Persistent->EnumerateEntries(section, &pl, flags | fTPFlags);
         set_union(pl.begin(), pl.end(), tl.begin(), tl.end(),
-                  back_inserter(entries));
+                  back_inserter(entries), PNocase());
         break;
     }
     default:
@@ -1288,6 +1288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/01/18 15:18:51  ucko
+ * CTwoLayerRegistry::x_Enumerate: remember to call set_union with PNocase().
+ *
  * Revision 1.44  2005/01/12 16:55:15  vasilche
  * Avoid performance warning on MSVC.
  *
