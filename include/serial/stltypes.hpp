@@ -314,7 +314,7 @@ public:
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
                            TObjectPtr containerPtr, TConstObjectPtr elementPtr,
-                           ESerialRecursionMode how = eRecursive)
+                           ESerialRecursionMode /* how = eRecursive */)
         {
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
@@ -764,6 +764,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/02/01 21:44:06  grichenk
+* Fixed warnings
+*
 * Revision 1.72  2004/07/27 15:26:28  ucko
 * Correct previous fix, which was somewhat overzealous.
 *

@@ -545,14 +545,14 @@ END_NCBI_SCOPE
 BEGIN_NCBI_SCOPE
 
 
-CImage* CImageIOPng::ReadImage(CNcbiIstream& file)
+CImage* CImageIOPng::ReadImage(CNcbiIstream& /* file */)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOPng::ReadImage(): PNG format not supported");
 }
 
 
-CImage* CImageIOPng::ReadImage(CNcbiIstream& file,
+CImage* CImageIOPng::ReadImage(CNcbiIstream& /* file */,
                                size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -560,7 +560,8 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& file,
 }
 
 
-void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& file,
+void CImageIOPng::WriteImage(const CImage& /* image */,
+                             CNcbiOstream& /* file */,
                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -568,7 +569,8 @@ void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& file,
 }
 
 
-void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& file,
+void CImageIOPng::WriteImage(const CImage& /* image */,
+                             CNcbiOstream& /* file */,
                              size_t, size_t, size_t, size_t,
                              CImageIO::ECompress)
 {
@@ -585,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.6  2004/11/23 17:16:36  ivanov
  * Fixed compilation warnings
  *

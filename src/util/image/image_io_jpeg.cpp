@@ -674,14 +674,14 @@ END_NCBI_SCOPE
 BEGIN_NCBI_SCOPE
 
 
-CImage* CImageIOJpeg::ReadImage(CNcbiIstream& file)
+CImage* CImageIOJpeg::ReadImage(CNcbiIstream& /* file */)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOJpeg::ReadImage(): JPEG format not supported");
 }
 
 
-CImage* CImageIOJpeg::ReadImage(CNcbiIstream& file,
+CImage* CImageIOJpeg::ReadImage(CNcbiIstream& /* file */,
                                 size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -689,7 +689,8 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& file,
 }
 
 
-void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& file,
+void CImageIOJpeg::WriteImage(const CImage& /* image */,
+                              CNcbiOstream& /* file */,
                               CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -697,7 +698,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& file,
 }
 
 
-void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& file,
+void CImageIOJpeg::WriteImage(const CImage& /* image */,
+                              CNcbiOstream& /* file */,
                               size_t, size_t, size_t, size_t,
                               CImageIO::ECompress)
 {
@@ -715,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.9  2004/11/23 17:16:36  ivanov
  * Fixed compilation warnings
  *

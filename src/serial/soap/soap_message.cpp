@@ -158,9 +158,9 @@ void CSoapMessage::Write(CObjectOStream& out) const
         if (!flt) {
 // throw exception here (?)
         }
-        CRef<CSoapDetail::C_E> h(new CSoapDetail::C_E);
-        h->SetAnyContent(*(new CAnyContentObject));
-        flt->SetSoapDetail().Set().push_back(h);
+        CRef<CSoapDetail::C_E> h2(new CSoapDetail::C_E);
+        h2->SetAnyContent(*(new CAnyContentObject));
+        flt->SetSoapDetail().Set().push_back(h2);
     }
 
     CObjectTypeInfo typeH = CType<CSoapHeader::C_E>();
@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.7  2004/06/24 20:52:33  gouriano
 * Check if default namespace was set before using it
 *

@@ -145,7 +145,7 @@ void CTestDiagApp::x_SetExpects(const string& expects )
 } 
 
 
-bool CTestDiagApp::Thread_Init(int idx)
+bool CTestDiagApp::Thread_Init(int /* idx */)
 {
     return true;
 }
@@ -339,6 +339,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/01 21:47:14  grichenk
+ * Fixed warnings
+ *
  * Revision 1.2  2004/09/22 17:05:03  ucko
  * Don't rely on automatic pair<> conversion.
  *

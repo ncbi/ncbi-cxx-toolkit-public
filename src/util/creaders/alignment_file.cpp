@@ -49,7 +49,7 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 
 
 static void ALIGNMENT_CALLBACK s_ReportError (TErrorInfoPtr err_ptr,
-                           void *user_data)
+                                              void* /* user_data */)
 {
     if (err_ptr->category != eAlnErr_Fatal) {
         // ignore non-fatal errors
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.6  2004/05/17 21:07:45  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -109,7 +109,7 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
     if ( !buffer ) {
         return false;
     }
-    int nread;
+    size_t nread;
     while ( (nread = src_file.Read(buffer, buf_size)) > 0 ) {
         os.write(buffer, nread);
         if ( !os.good() ) {
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.8  2004/08/04 18:42:45  ivanov
  * Use binary mode to open file streams in the x_[De]compressFile.
  *

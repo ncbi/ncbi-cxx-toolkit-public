@@ -499,7 +499,7 @@ CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfo(void)
 class CNullBoolFunctions : public CPrimitiveTypeFunctions<bool>
 {
 public:
-    static TObjectPtr Create(TTypeInfo type)
+    static TObjectPtr Create(TTypeInfo /* type */)
         {
             NCBI_THROW(CSerialException,eIllegalCall, "Cannot create NULL object");
             return 0;
@@ -523,12 +523,12 @@ public:
         }
 
     static void Read(CObjectIStream& in, TTypeInfo ,
-                     TObjectPtr object)
+                     TObjectPtr /* object */)
         {
             in.ReadNull();
         }
     static void Write(CObjectOStream& out, TTypeInfo ,
-                      TConstObjectPtr /*object*/)
+                      TConstObjectPtr /* object */)
         {
             out.WriteNull();
         }
@@ -1551,6 +1551,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.44  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

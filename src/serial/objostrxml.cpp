@@ -638,7 +638,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
     x_EndNamespace(ns_name);
 }
 
-void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& in)
+void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& /* in */)
 {
     NCBI_THROW(CSerialException,eNotImplemented,"not yet");
 }
@@ -1338,6 +1338,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.77  2004/10/27 18:59:48  gouriano
 * Corrected writing namespace in case of named type
 *

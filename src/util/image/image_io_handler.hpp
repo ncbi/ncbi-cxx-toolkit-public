@@ -65,8 +65,8 @@ public:
 
     /// Read a scanline of an image from a file.  This will come back as a
     /// single string of unsigned characters; the order is RGBRGBRGB...
-    virtual void ReadScanLine(CNcbiIstream& istr,
-                              vector<unsigned char>& data) {}
+    virtual void ReadScanLine(CNcbiIstream&          /* istr */,
+                              vector<unsigned char>& /* data */) {}
 
     /// write images to file in HANDLER format
     virtual void WriteImage(const CImage& image,
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.4  2005/01/13 15:32:31  dicuccio
  * Doxygenated comments
  *

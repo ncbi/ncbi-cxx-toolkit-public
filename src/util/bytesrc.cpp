@@ -89,7 +89,7 @@ bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
     return true;
 }
 
-void CByteSourceReader::Seekg(CNcbiStreamoff pos)
+void CByteSourceReader::Seekg(CNcbiStreamoff /* pos */)
 {
     NCBI_THROW(CUtilException,eWrongCommand,"CByteSourceReader::Seekg: unable to seek");
 }
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.39  2005/01/12 16:56:41  vasilche
  * Avoid performance warning on MSVC.
  *

@@ -50,7 +50,7 @@ CFileObsolete::~CFileObsolete()
 }
 
 
-bool CFileObsolete::OnRemove(const string& filename)
+bool CFileObsolete::OnRemove(const string& /* filename */)
 {
     return true;
 }
@@ -121,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.4  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -128,7 +128,8 @@ void CImageIORaw::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
 
 void CImageIORaw::WriteImage(const CImage& image, CNcbiOstream& ostr,
-                             size_t x, size_t y, size_t width, size_t height,
+                             size_t /* x */, size_t y,
+                             size_t width, size_t height,
                              CImageIO::ECompress)
 {
     // write the header
@@ -159,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.2  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

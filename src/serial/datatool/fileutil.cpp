@@ -161,7 +161,7 @@ DestinationFile::~DestinationFile(void)
 #endif
 
 inline
-bool IsDiskSeparator(char c)
+bool IsDiskSeparator(char /* c */)
 {
 #ifdef DISK_SEPARATOR_CHAR
     if ( c == DISK_SEPARATOR_CHAR )
@@ -564,6 +564,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.29  2004/12/06 18:14:39  gouriano
 * Added MakeAbsolutePath method
 *

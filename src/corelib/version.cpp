@@ -54,7 +54,7 @@ CVersionInfo::CVersionInfo(int ver_major,
 
 
 CVersionInfo::CVersionInfo(const string& version,
-                           const string& name)
+                           const string& /* name */)
 {
     vector<string> lst;
     NStr::Tokenize(version, ".", lst, NStr::eNoMergeDelims);
@@ -184,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/02/01 21:47:14  grichenk
+ * Fixed warnings
+ *
  * Revision 1.8  2005/01/03 16:39:17  kuznets
  * Added constructor taking a rcs formatted string
  *

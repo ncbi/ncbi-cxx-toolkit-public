@@ -190,7 +190,7 @@ void CSimpleDictionary::x_GetMetaphoneKeys(const string& metaphone,
         return;
     }
 
-    const int max_meta_edit_dist = 1;
+    const size_t max_meta_edit_dist = 1;
     const CDictionaryUtil::EDistanceMethod method =
         CDictionaryUtil::eEditDistance_Similar;
 
@@ -207,7 +207,7 @@ void CSimpleDictionary::x_GetMetaphoneKeys(const string& metaphone,
               lower != m_ReverseDict.end()  &&  lower->first[0] == *iter;
               ++lower, ++count) {
 
-            int dist =
+            size_t dist =
                 CDictionaryUtil::GetEditDistance(lower->first, metaphone,
                                                  method);
             if (dist > max_meta_edit_dist) {
@@ -656,8 +656,8 @@ void CDictionaryUtil::GetSoundex(const string& in, string* out,
 
     // now, iterate substituting codes, using no more than four characters
     // total
-    ITERATE (string, iter, in) {
-        char c = sc_SoundexLut[(int)(unsigned char)*iter];
+    ITERATE (string, iter2, in) {
+        char c = sc_SoundexLut[(int)(unsigned char)*iter2];
         if (c  &&  *(out->end() - 1) != c) {
             *out += c;
             if (out->length() == max_chars) {
@@ -747,7 +747,6 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
             dist += (pstr1->end() - iter1) + (pstr2->end() - iter2);
             return dist;
          }}
-        break;
 
     case eEditDistance_Exact:
         {{
@@ -802,7 +801,6 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
 
             return row0_ptr[short_str->size()];
          }}
-        break;
     }
 
     // undefined
@@ -829,7 +827,7 @@ int CDictionaryUtil::Score(const string& word1, const string& meta1,
 {
     // score:
     // start with edit distance
-    int score = CDictionaryUtil::GetEditDistance(word1, word2, method);
+    size_t score = CDictionaryUtil::GetEditDistance(word1, word2, method);
 
     // normalize to length of word
     // this allows negative scores to be omittied
@@ -854,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.6  2004/10/28 18:41:47  dicuccio
  * Implemented CSimpleDictionary::Write()
  *

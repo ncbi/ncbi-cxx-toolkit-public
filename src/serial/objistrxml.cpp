@@ -940,8 +940,8 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
                     if ( attr == "value" ) {    
                         break;
                     }
-                    string value;
-                    ReadAttributeValue(value);
+                    string value_tmp;
+                    ReadAttributeValue(value_tmp);
                 }
                 if ( attr != "value" ) {
                     EndOpeningTagSelfClosed();
@@ -1184,7 +1184,9 @@ bool CObjectIStreamXml::ThisTagIsSelfClosed(void)
 }
 
 
-void CObjectIStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
+void
+CObjectIStreamXml::
+BeginContainer(const CContainerTypeInfo* /* containerType */)
 {
 /*
     if (!x_IsStdXml()) {
@@ -2106,6 +2108,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.70  2005/01/26 18:54:28  gouriano
 * Changed BeginContainer / EndContainer
 *

@@ -162,7 +162,7 @@ void CDebugDumpViewer::Bpt(
     string location, input, cmnd0, cmnd1, cmnd2;
     list<string> cmnd;
     list<string>::iterator it_cmnd;
-    int narg;
+    size_t narg;
     unsigned int depth;
     bool need_info;
 
@@ -231,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/01 21:47:15  grichenk
+ * Fixed warnings
+ *
  * Revision 1.4  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.35  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -731,12 +734,12 @@ const char* CBigIntDataType::GetDefaultCType(void) const
 }
 
 
-bool CAnyContentDataType::CheckValue(const CDataValue& value) const
+bool CAnyContentDataType::CheckValue(const CDataValue& /* value */) const
 {
     return true;
 }
 
-void CAnyContentDataType::PrintASN(CNcbiOstream& out, int indent) const
+void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
 {
     out << GetASNKeyword();
 }

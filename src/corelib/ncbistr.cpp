@@ -544,8 +544,8 @@ Uint8 NStr::StringToUInt8(const string&  str,
 /// @internal
 static Uint8 s_DataSizeConvertQual(const char*&         qual, 
                                    Uint8                value,
-                                   NStr::ECheckEndPtr   check_endptr,
-                                   NStr::EConvErrAction on_error)
+                                   NStr::ECheckEndPtr   /* check_endptr */,
+                                   NStr::EConvErrAction /* on_error */)
 {
     if (!qual  ||  !*qual) {
         return value;
@@ -915,7 +915,7 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
         if (beg == str.length())
             return kEmptyStr;
     }
-    int end = str.length() - 1;
+    int end = int(str.length() - 1);
     if (where == eTrunc_End  ||  where == eTrunc_Both) {
         while ( end >= 0  &&  isspace(str[end]) )
             end--;
@@ -1695,6 +1695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.132  2005/02/01 21:47:14  grichenk
+ * Fixed warnings
+ *
  * Revision 1.131  2005/01/05 16:55:01  ivanov
  * Added string version of NStr::MatchesMask()
  *

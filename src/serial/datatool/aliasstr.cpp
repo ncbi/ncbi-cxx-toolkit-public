@@ -315,7 +315,7 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     out << "\n";
 }
 
-void CAliasTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
+void CAliasTypeStrings::GenerateUserCPPCode(CNcbiOstream& /* out */) const
 {
     //m_RefType->GenerateUserCPPCode(out);
 }
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.8  2004/09/07 14:09:45  grichenk
 * Fixed assignment of default value to aliased types
 *

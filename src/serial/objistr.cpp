@@ -358,8 +358,9 @@ void CObjectIStream::Close(void)
     }
 }
 
-CObjectIStream::TFailFlags CObjectIStream::SetFailFlags(TFailFlags flags,
-                                                        const char* message)
+CObjectIStream::TFailFlags
+CObjectIStream::SetFailFlags(TFailFlags flags,
+                             const char* /* message */)
 {
     TFailFlags old = m_Fail;
     if (flags == fNoError) {
@@ -1419,7 +1420,7 @@ void CObjectIStream::ReadStringStore(string& s)
 
 void CObjectIStream::ReadString(string& s,
                                 CPackString& pack_string,
-                                EStringType type)
+                                EStringType /* type */)
 {
     ReadString(s);
     pack_string.Pack(s);
@@ -1522,6 +1523,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.134  2005/02/01 21:47:14  grichenk
+* Fixed warnings
+*
 * Revision 1.133  2004/12/06 18:27:38  gouriano
 * Check if the file is empty in ReadFileHeader
 *
