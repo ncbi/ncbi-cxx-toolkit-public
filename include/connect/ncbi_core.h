@@ -66,6 +66,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/04/07 19:55:14  vakatov
+ * Standard identation
+ *
  * Revision 6.2  2000/03/24 23:12:03  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -95,8 +98,8 @@ extern "C" {
 /* Timeout structure
  */
 typedef struct {
-  unsigned int sec;  /* seconds (gets truncated to platform-dep. max. limit) */
-  unsigned int usec; /* microseconds (always get truncated by mod 1,000,000) */
+    unsigned int sec;  /* seconds (truncated to the platf.-dep. max. limit) */
+    unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
 
@@ -109,33 +112,33 @@ typedef struct {
 /* I/O read method
  */
 typedef enum {
-  eIO_Plain,  /* read the presently available data only */
-  eIO_Peek,   /* eREAD_Plain, but dont discard the data from input queue */
-  eIO_Persist /* try to read exactly "size" bytes;  wait for enough data */
+    eIO_Plain,  /* read the presently available data only */
+    eIO_Peek,   /* eREAD_Plain, but dont discard the data from input queue */
+    eIO_Persist /* try to read exactly "size" bytes;  wait for enough data */
 } EIO_ReadMethod;
 
 
 /* I/O event (or direction)
  */
 typedef enum {
-  eIO_Open,
-  eIO_Read,
-  eIO_Write,
-  eIO_ReadWrite,
-  eIO_Close
+    eIO_Open,
+    eIO_Read,
+    eIO_Write,
+    eIO_ReadWrite,
+    eIO_Close
 } EIO_Event;
 
 
 /* I/O status
  */
 typedef enum {
-  eIO_Success = 0,  /* everything is fine, no errors occured          */
-  eIO_Timeout,      /* timeout expired before the data could be i/o'd */
-  eIO_Closed,       /* peer has closed the connection                 */
-  eIO_InvalidArg,   /* bad argument value(s)                          */
-  eIO_NotSupported, /* the requested operation is not supported       */
+    eIO_Success = 0,  /* everything is fine, no errors occured          */
+    eIO_Timeout,      /* timeout expired before the data could be i/o'd */
+    eIO_Closed,       /* peer has closed the connection                 */
+    eIO_InvalidArg,   /* bad argument value(s)                          */
+    eIO_NotSupported, /* the requested operation is not supported       */
 
-  eIO_Unknown       /* unknown (most probably -- fatal) error         */
+    eIO_Unknown       /* unknown (most probably -- fatal) error         */
 } EIO_Status;
 
 
@@ -161,9 +164,9 @@ typedef struct MT_LOCK_tag* MT_LOCK;
  *   eMT_LockRead <==> eMT_Lock
  */
 typedef enum {
-  eMT_Lock,      /* lock    critical section             */
-  eMT_LockRead,  /* lock    critical section for reading */
-  eMT_Unlock     /* unlock  critical section             */
+    eMT_Lock,      /* lock    critical section             */
+    eMT_LockRead,  /* lock    critical section for reading */
+    eMT_Unlock     /* unlock  critical section             */
 } EMT_Lock;
 
 
@@ -234,13 +237,13 @@ typedef struct LOG_tag* LOG;
 /* Log severity level
  */
 typedef enum {
-  eLOG_Trace = 0,
-  eLOG_Note,
-  eLOG_Warning,
-  eLOG_Error,
-  eLOG_Critical,
+    eLOG_Trace = 0,
+    eLOG_Note,
+    eLOG_Warning,
+    eLOG_Error,
+    eLOG_Critical,
 
-  eLOG_Fatal
+    eLOG_Fatal
 } ELOG_Level;
 
 
@@ -318,7 +321,7 @@ extern LOG LOG_Delete(LOG lg);
  * NOTE: use the LOG_Write()  to avoid overhead!
  */
 #define LOG_Write(lg,level,module,file,line,message) \
-  (void)(lg ? (LOG_WriteInternal(lg,level,module,file,line,message),0) : 1)
+  (void) (lg ? (LOG_WriteInternal(lg,level,module,file,line,message),0) : 1)
 extern void LOG_WriteInternal
 (LOG         lg,      /* created by LOG_Create() */
  ELOG_Level  level,   /* severity */
@@ -359,8 +362,8 @@ typedef struct REG_tag* REG;
 /* Transient/Persistent storage
  */
 typedef enum {
-  eREG_Transient = 0,
-  eREG_Persistent
+    eREG_Transient = 0,
+    eREG_Persistent
 } EREG_Storage;
 
 
