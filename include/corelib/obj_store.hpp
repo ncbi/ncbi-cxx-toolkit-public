@@ -207,12 +207,21 @@ protected:
     static  TReverseObjectStore   m_ObjStore;
 };
 
+template<class TKey, class TObject>
+CReverseObjectStore<TKey, TObject>  
+CSingletonObjectStore<TKey, TObject>::m_ObjStore;
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/08/02 16:35:16  kuznets
+ * Added missing static
+ *
  * Revision 1.3  2004/08/02 14:12:51  kuznets
  * Cosmetics..
  *
