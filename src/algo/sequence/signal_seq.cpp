@@ -192,7 +192,7 @@ void x_PredictSignalSeq(const Seq& seq, CSignalSeq::EDomain domain,
         Mat = CSignalSeq::EukMat;
     }
 
-    TSeqPos max_index = min(seq.size() - 15, max_pos - 12);
+    TSeqPos max_index = min((TSeqPos)seq.size() - 15, max_pos - 12);
     
     double max_score = -1e6;
     TSeqPos max_loc;
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/10 17:55:04  ucko
+ * Add a cast to fix 64-bit compilation.
+ *
  * Revision 1.1  2003/09/10 15:31:34  jcherry
  * Initial version
  *
