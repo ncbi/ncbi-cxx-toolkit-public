@@ -54,8 +54,8 @@ SCigarAlignment::SCigarAlignment(const string& s)
                 x_AddAndClear(seg);
             }
         } else if (isdigit(s[pos])) {
-            SIZE_TYPE pos2 = s.find_first_not_of("0123456789");
-            seg.len = NStr::StringToInt(s.substr(pos, pos2));
+            SIZE_TYPE pos2 = s.find_first_not_of("0123456789", pos + 1);
+            seg.len = NStr::StringToInt(s.substr(pos, pos2 - pos));
             if (seg.op) {
                 x_AddAndClear(seg);
             }
@@ -74,10 +74,11 @@ CRef<CSeq_loc> SCigarAlignment::x_NextChunk(const CSeq_id& id, TSeqPos pos,
                                             TSignedSeqPos len)
 {
     CRef<CSeq_loc> loc(new CSeq_loc);
-    loc->SetId(id);
+    loc->SetInt().SetId().Assign(id);
     if (len >= 0) {
         loc->SetInt().SetFrom(pos);
         loc->SetInt().SetTo(pos + len - 1);
+        loc->SetInt().SetStrand(eNa_strand_plus);
     } else {
         loc->SetInt().SetFrom(pos + len + 1);
         loc->SetInt().SetTo(pos);
@@ -199,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/06/21 18:44:07  ucko
+* Fix GFF 3 alignment parsing logic.
+*
 * Revision 1.1  2004/06/07 20:42:35  ucko
 * Add a reader for CIGAR alignments, as used by GFF 3.
 *

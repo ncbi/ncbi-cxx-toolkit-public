@@ -392,8 +392,8 @@ CRef<CSeq_align> CGFFReader::x_ParseAlignRecord(const SRecord& record)
         return align;
     }
     CRef<CSeq_id> tgid    = x_ResolveSeqName(target[0]);
-    TSeqPos       tgstart = NStr::StringToUInt(target[1]);
-    TSeqPos       tgstop  = NStr::StringToUInt(target[2]);
+    TSeqPos       tgstart = NStr::StringToUInt(target[1]) - 1;
+    TSeqPos       tgstop  = NStr::StringToUInt(target[2]) - 1;
     TSeqPos       tglen   = tgstop - tgstart + 1;
 
     CRef<CSeq_loc> refloc = x_ResolveLoc(record.loc);
@@ -986,6 +986,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/06/21 18:44:07  ucko
+* Fix GFF 3 alignment parsing logic.
+*
 * Revision 1.7  2004/06/07 20:44:07  ucko
 * Add initial GFF 3 support, and make more robust in spots.
 *
