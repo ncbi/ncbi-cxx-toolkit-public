@@ -220,8 +220,8 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     for (i = 1; i < s_RecsInTable; ++i) {
         dbf1.IdKey = i;
-        EBDB_ErrCode err = dbf1.Fetch();
-        assert (err == eBDB_Ok);
+        EBDB_ErrCode ret = dbf1.Fetch();
+        assert (ret == eBDB_Ok);
 
         ValidateRecord(dbf1, i);
 
@@ -233,15 +233,15 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     for (i = 1; i < s_RecsInTable; ++i) {
         dbf11.IdKey = i;
-        EBDB_ErrCode err = dbf11.Fetch();
-        assert (err == eBDB_Ok);
+        EBDB_ErrCode ret = dbf11.Fetch();
+        assert (ret == eBDB_Ok);
 
         ValidateRecord(dbf11, i);
 
         // Checking that attached buffer doesn't change status of the main one
         dbf1.IdKey = 1;
-        err = dbf1.Fetch();
-        assert (err == eBDB_Ok);
+        ret = dbf1.Fetch();
+        assert (ret == eBDB_Ok);
         ValidateRecord(dbf1, 1);
 
         ValidateRecord(dbf11, i);
@@ -670,8 +670,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     const char* tdata = test_data;
     while (cur.Fetch() == eBDB_Ok) {
-        char buf[256] = {0,};
-
+    
         assert(blob.i2 == 2 || blob.i2 == 3);
         unsigned len = blob.LobSize();
         ret = blob.GetData(buf, sizeof(buf));
@@ -925,9 +924,9 @@ static void s_TEST_db_map(void)
 
     i2s.open(s_db_map1, ios_base::out|ios_base::trunc);
 
-    i2s.insert(pair<int, string>(1, "Data1"));
-    i2s.insert(pair<int, string>(2, "Data2"));
-    i2s.insert(pair<int, string>(3, "Data3"));
+    i2s.insert(pair<const int, string>(1, "Data1"));
+    i2s.insert(pair<const int, string>(2, "Data2"));
+    i2s.insert(pair<const int, string>(3, "Data3"));
 
     string v = i2s[2];
 
@@ -936,8 +935,8 @@ static void s_TEST_db_map(void)
     {{
     db_map<int, string>::const_iterator it(i2s.begin());
     while (it.valid()) {
-        bool v = CheckMapDataValid_i2s((*it).first, (*it).second);
-        assert(v);
+        bool b = CheckMapDataValid_i2s((*it).first, (*it).second);
+        assert(b);
         ++it;
     }
 
@@ -947,8 +946,8 @@ static void s_TEST_db_map(void)
     db_map<int, string>::const_iterator it(i2s.begin());
     db_map<int, string>::const_iterator it_end(i2s.end());
     for (;it != it_end; ++it) {
-        bool v = CheckMapDataValid_i2s(it->first, it->second);
-        assert(v);
+        bool b = CheckMapDataValid_i2s(it->first, it->second);
+        assert(b);
     }
 
     }}
@@ -969,10 +968,10 @@ static void s_TEST_db_multimap(void)
 
     ii2s.open(s_db_map2, ios_base::out|ios_base::trunc);
 
-    ii2s.insert(pair<int, string>(1, "Data1"));
-    ii2s.insert(pair<int, string>(2, "Data2"));
-    ii2s.insert(pair<int, string>(3, "Data3"));
-    ii2s.insert(pair<int, string>(3, "Data31"));
+    ii2s.insert(pair<const int, string>(1, "Data1"));
+    ii2s.insert(pair<const int, string>(2, "Data2"));
+    ii2s.insert(pair<const int, string>(3, "Data3"));
+    ii2s.insert(pair<const int, string>(3, "Data31"));
 
     size_t sz = ii2s.size();
     assert(sz == 4);
@@ -1088,6 +1087,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/07/24 15:44:44  kuznets
+ * Clened up several compiler warnings
+ *
  * Revision 1.13  2003/07/23 20:23:37  kuznets
  * + test for clean, erase (db_map)
  *
