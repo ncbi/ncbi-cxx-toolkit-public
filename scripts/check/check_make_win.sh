@@ -212,7 +212,7 @@ RunTest() {
    for x_req in \$x_requires; do
       case "\$x_req" in
          MT )
-            test \`echo \$x_conf | grep MT\`  ||  return 0  
+            test \`echo \$x_conf | grep DLL\`  ||  return 0  
             ;;
          unix )
             return 0;
