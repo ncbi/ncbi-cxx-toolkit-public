@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/24 14:21:52  vasilche
+* Fixed usage of strstreams.
+*
 * Revision 1.20  1999/09/23 21:16:09  vasilche
 * Removed dependance on asn.h
 *
@@ -97,6 +100,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/memberid.hpp>
 #if HAVE_NCBI_C
@@ -469,12 +473,12 @@ void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
 void CObjectOStreamAsnBinary::WriteDouble(double data)
 {
     WriteSysTag(eReal);
-    char buffer[128];
-    sprintf(buffer, "%.15g", data);
-    size_t length = strlen(buffer);
+    CNcbiOstrstream buff;
+    buff << IO_PREFIX::setprecision(15) << data;
+    size_t length = buff.pcount();
     WriteShortLength(length + 1);
     WriteByte(eDecimal);
-    WriteBytes(buffer, length);
+    WriteBytes(buff.str(), length);
 }
 
 void CObjectOStreamAsnBinary::WriteString(const string& str)

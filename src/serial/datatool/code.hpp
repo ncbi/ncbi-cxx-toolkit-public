@@ -168,8 +168,8 @@ private:
     string m_ParentClass;
     bool m_Abstract;
 
-    mutable strstream m_HPP;
-    mutable strstream m_CPP;
+    mutable CNcbiOstrstream m_HPP;
+    mutable CNcbiOstrstream m_CPP;
 };
 
 class CNamespace

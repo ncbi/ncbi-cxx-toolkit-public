@@ -241,8 +241,8 @@ CClassCode::CClassCode(CFileCode& code, const ASNType* type)
     if ( !include.empty() )
         code.AddHPPInclude(include);
     type->GenerateCode(*this);
-    m_HPP << endl;
-    m_CPP << endl;
+    m_HPP << endl << '\0';
+    m_CPP << endl << '\0';
 }
 
 CClassCode::~CClassCode(void)

@@ -333,10 +333,10 @@ void ASNFixedType::GetCType(CTypeStrings& tType,
 
 string ASNFixedType::GetDefaultCType(void) const
 {
-    strstream msg;
+    CNcbiOstrstream msg;
     msg << typeid(*this).name() << ": Cannot generate C++ type: ";
     Print(msg, 0);
-    THROW1_TRACE(runtime_error, msg.str());
+    THROW1_TRACE(runtime_error, string(msg.str(), msg.pcount()));
 }
 
 ASNNullType::ASNNullType(ASNModule& module)
