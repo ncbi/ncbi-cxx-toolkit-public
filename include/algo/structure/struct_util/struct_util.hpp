@@ -35,6 +35,7 @@
 #define STRUCT_UTIL__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -84,7 +85,8 @@ public:
 	// Returns true on success.
     bool DoLeaveOneOut(
         unsigned int row, const std::vector < unsigned int >& blocksToRealign,  // what to realign
-        double percentile, unsigned int extension, unsigned int cutoff);        // to calculate max loop lengths
+        double percentile, unsigned int extension, unsigned int cutoff,         // to calculate max loop lengths
+        unsigned int queryFrom = 0, unsigned int queryTo = kMax_UInt);          // range on realigned row to search
 
 private:
     // sequence data
@@ -114,6 +116,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/07/15 13:52:14  thiessen
+* calculate max loops before row extraction; add quertFrom/To parameters
+*
 * Revision 1.7  2004/06/14 13:50:28  thiessen
 * make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
 *

@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.hpp>
 
 #include <algo/structure/struct_dp/struct_dp.h>
 
@@ -261,7 +260,8 @@ int ScoreByPSSM(unsigned int block, unsigned int queryPos)
 
 bool AlignmentUtility::DoLeaveOneOut(
     unsigned int rowToRealign, const std::vector < unsigned int >& blocksToRealign, // what to realign
-    double percentile, unsigned int extension, unsigned int cutoff)                 // to calculate max loop lengths
+    double percentile, unsigned int extension, unsigned int cutoff,                 // to calculate max loop lengths
+    unsigned int queryFrom, unsigned int queryTo)                                   // range on realigned row to search
 {
     // first we need to do IBM -> BlockMultipleAlignment
     if (!m_currentMultiple && !DoIBM())
@@ -281,7 +281,25 @@ bool AlignmentUtility::DoLeaveOneOut(
     bool prevState = CException::EnableBackgroundReporting(false);
 
     try {
-        // pull out the row we're realigning
+        // first calculate max loop lengths for default square well scoring; include the row to be realigned,
+        // in case it contains an unusually long loop that we don't want to disallow (still depends on loop
+        // calculation params, though)
+        dpBlocks = DP_CreateBlockInfo(blocks.size());
+        unsigned int b, r;
+        const Block::Range *range, *nextRange;
+        unsigned int *loopLengths = new unsigned int[m_currentMultiple->NRows()];
+        for (b=0; b<blocks.size()-1; ++b) {
+            for (r=0; r<m_currentMultiple->NRows(); ++r) {
+                range = blocks[b]->GetRangeOfRow(r);
+                nextRange = blocks[b + 1]->GetRangeOfRow(r);
+                loopLengths[r] = nextRange->from - range->to - 1;
+            }
+            dpBlocks->maxLoops[b] = DP_CalculateMaxLoopLength(
+                m_currentMultiple->NRows(), loopLengths, percentile, extension, cutoff);
+        }
+        delete[] loopLengths;
+
+        // now pull out the row we're realigning
         if (rowToRealign < 1 || rowToRealign >= m_currentMultiple->NRows())
             THROW_MESSAGE("invalid row number");
         vector < unsigned int > rowsToRemove(1, rowToRealign);
@@ -291,27 +309,12 @@ bool AlignmentUtility::DoLeaveOneOut(
         if (!m_currentMultiple->ExtractRows(rowsToRemove, &toRealign))
             THROW_MESSAGE("ExtractRows() failed");
 
-        // fill out DP_BlockInfo structure
-        dpBlocks = DP_CreateBlockInfo(blocks.size());
-        unsigned int b, r;
-        const Block::Range *range, *nextRange;
-        unsigned int *loopLengths = new unsigned int[m_currentMultiple->NRows()];
+        // fill out the rest of the DP_BlockInfo structure
         for (b=0; b<blocks.size(); ++b) {
             range = blocks[b]->GetRangeOfRow(0);
             dpBlocks->blockPositions[b] = range->from;
             dpBlocks->blockSizes[b] = range->to - range->from + 1;
-            // calculate max loop lengths for default square well scoring
-            if (b < blocks.size() - 1) {
-                for (r=0; r<m_currentMultiple->NRows(); ++r) {
-                    range = blocks[b]->GetRangeOfRow(r);
-                    nextRange = blocks[b + 1]->GetRangeOfRow(r);
-                    loopLengths[r] = nextRange->from - range->to - 1;
-                }
-                dpBlocks->maxLoops[b] = DP_CalculateMaxLoopLength(
-                    m_currentMultiple->NRows(), loopLengths, percentile, extension, cutoff);
-            }
         }
-        delete[] loopLengths;
 
         // if we're not realigning, freeze blocks to original slave position
         if (blocksToRealign.size() == 0)
@@ -330,20 +333,24 @@ bool AlignmentUtility::DoLeaveOneOut(
             TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
         }
 
+        // verify query range
+        r = toRealign.front()->GetSequenceOfRow(1)->Length();
+        if (queryTo == kMax_UInt)
+            queryTo = r - 1;
+        if (queryFrom >= r || queryTo >= r || queryFrom > queryTo)
+            THROW_MESSAGE("bad queryFrom/To range");
+        TRACE_MESSAGE("queryFrom " << queryFrom << ", queryTo " << queryTo);
+
         // set up PSSM
         g_dpPSSM = m_currentMultiple->GetPSSM();
         g_dpBlocks = dpBlocks;
         g_dpQuery = toRealign.front()->GetSequenceOfRow(1);
 
         // call the block aligner
-        if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM,
-                                0, toRealign.front()->GetSequenceOfRow(1)->Length() - 1,    // realign on whole query
-                                &dpResult)
-                    != STRUCT_DP_FOUND_ALIGNMENT ||
-                dpResult->nBlocks != blocks.size() ||
-                dpResult->firstBlock != 0)
+        if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM, queryFrom, queryTo, &dpResult) != STRUCT_DP_FOUND_ALIGNMENT ||
+                dpResult->nBlocks != blocks.size() || dpResult->firstBlock != 0)
             THROW_MESSAGE("DP_GlobalBlockAlign() failed");
-        INFO_MESSAGE("score of new alignment of extracted row with PSSM: " << dpResult->score);
+        INFO_MESSAGE("score of new alignment of extracted row with PSSM(N-1): " << dpResult->score);
 
         // adjust new alignment according to dp result
         BlockMultipleAlignment::ModifiableUngappedAlignedBlockList modBlocks;
@@ -482,6 +489,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/07/15 13:52:09  thiessen
+* calculate max loops before row extraction; add quertFrom/To parameters
+*
 * Revision 1.11  2004/06/14 13:50:23  thiessen
 * make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
 *

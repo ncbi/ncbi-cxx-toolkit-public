@@ -2,4 +2,3 @@
 LinkIncremental     = 2
 OptimizeReferences  = 0
 EnableCOMDATFolding = 0
-AdditionalOptions   = connect.lib

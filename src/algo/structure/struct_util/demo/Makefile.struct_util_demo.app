@@ -22,6 +22,7 @@ LIB = xstruct_util \
       medline \
       biblio \
       general \
+      xconnect \
       xser \
       xutil \
       xctools \
