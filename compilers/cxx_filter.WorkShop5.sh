@@ -18,7 +18,9 @@ egrep -v -e '
 ^"/netopt/SUNWspro6/SC5.0/include/CC/errno_iso_SUNWCC.h", line 16:
 ^"/netopt/SUNWspro6/SC5.0/include/CC/\./fstream", line 275:
 ^"/netopt/SUNWspro6/SC5.0/include/CC/\./fstream", line 319:
+^"/netopt/SUNWspro6/SC5.0/include/CC/./fstream", line 362: 
 ^"/netopt/ncbi_tools/include/..*\.h", line .*: Warning \(Anachronism\): Attempt to redefine .* without using #undef\.$
+^"/netopt/Sybase/clients/current/include/sybdb.h", line [0-9]*: Warning: There are two consecutive underbars in "db__
 : Warning: Could not find source for std::is[a-z][a-z]*(int)
 : Warning: Could not find source for std::toupper\(int\)\.
 : Warning: Could not find source for std::tolower\(int\)\.
@@ -26,8 +28,7 @@ egrep -v -e '
 :     Where: While specializing "std::basic_.*fstream<char, std::char_traits<char>>".
 :     Where: Specialized in non-template code.
 ^[0-9][0-9]* Warning\(s\) detected.
-^: 
-^touch .*\.dep$' |
+^: ' |
 
 sed '
 s/std::basic_string<char, std::char_traits<char>, std::allocator<char>>/std::string/g
