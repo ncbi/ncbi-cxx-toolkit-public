@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/03/23 04:18:52  thiessen
+* parse and display disulfides
+*
 * Revision 1.21  2001/02/13 01:03:56  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -119,6 +122,7 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -219,6 +223,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         if (molecules.find(molecule->id) != molecules.end())
             ERR_POST(Error << "confused by repeated Molecule-graph ID's");
         molecules[molecule->id] = molecule;
+        CheckForDisulfides(molecule);
 
         // set molecules' display list; each protein or nucleotide molecule
         // gets its own display list (one display list for each molecule for
@@ -257,6 +262,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             if (!bond) continue; // can happen bond if bond is to atom not present in coordinates
 
             interMoleculeBonds.push_back(bond);
+            CheckForDisulfide(const_cast<Bond*>(bond), &interMoleculeBonds, this);
 
             // set inter-molecule bonds' display list(s)
             if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
@@ -477,7 +483,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         if (moleculeToRedraw >= 0) break;
     }
 
-    // then put everything else (solvents, hets, intermolecule bonds) in a single display list
+    // then put everything else (solvents, hets, and intermolecule bonds) in a single display list
     if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
     //TESTMSG("drawing hets/solvents/i-m bonds");
 
@@ -506,6 +512,70 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
         if (!continueDraw) return false;
     }
+
+    return true;
+}
+
+void ChemicalGraph::CheckForDisulfides(Molecule *molecule)
+{
+    Molecule::BondList newDisulfides;
+    Molecule::BondList::const_iterator b, be = molecule->interResidueBonds.end();
+    for (b=molecule->interResidueBonds.begin(); b!=be; b++) {
+        if (CheckForDisulfide(const_cast<Bond*>(*b), &newDisulfides, molecule)) {
+            molecule->disulfideMap[(*b)->atom1.rID] = (*b)->atom2.rID;
+            molecule->disulfideMap[(*b)->atom2.rID] = (*b)->atom1.rID;
+        }
+    }
+    molecule->interResidueBonds.splice(molecule->interResidueBonds.end(), newDisulfides);
+}
+
+bool ChemicalGraph::CheckForDisulfide(Bond *bond, LIST_TYPE < const Bond * > *bondList, StructureBase *parent)
+{
+    if (bond->atom1.mID == bond->atom2.mID && bond->atom1.rID == bond->atom2.rID) return false;
+
+    ChemicalGraph::MoleculeMap::const_iterator
+        mol1 = molecules.find(bond->atom1.mID),
+        mol2 = molecules.find(bond->atom2.mID);
+    if (mol1 == molecules.end() || mol2 == molecules.end()) {
+        ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad molecule ID");
+        return false;
+    }
+
+    Molecule::ResidueMap::const_iterator
+        res1 = mol1->second->residues.find(bond->atom1.rID),
+        res2 = mol2->second->residues.find(bond->atom2.rID);
+    if (res1 == mol1->second->residues.end() || res2 == mol2->second->residues.end()) {
+        ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad residue ID");
+        return false;
+    }
+
+    // check to make sure both residues are cysteine
+    if (res1->second->type != Residue::eAminoAcid || res1->second->code != 'C' ||
+        res2->second->type != Residue::eAminoAcid || res2->second->code != 'C') return false;
+
+    const Residue::AtomInfo
+        *atom1 = res1->second->GetAtomInfo(bond->atom1.aID),
+        *atom2 = res2->second->GetAtomInfo(bond->atom2.aID);
+    if (!atom1 || !atom2) {
+        ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad atom ID");
+        return false;
+    }
+
+    // check to make sure both atoms are sulfur, and that residue has an alpha
+    if (atom1->atomicNumber != 16 || res1->second->alphaID == Residue::NO_ALPHA_ID ||
+        atom2->atomicNumber != 16 || res2->second->alphaID == Residue::NO_ALPHA_ID) return false;
+
+    TESTMSG("found disulfide between molecule " << bond->atom1.mID << " residue " << bond->atom1.rID
+        << " and molecule " << bond->atom2.mID << " residue " << bond->atom2.rID);
+
+    // first flag this bond as "real disulfide", so it's not drawn with connection style
+    bond->order = Bond::eRealDisulfide;
+
+    // then, make a new virtual disulfide bond between the alphas of these residues
+    const Bond *virtualDisulfide = MakeBond(parent,
+        bond->atom1.mID, bond->atom1.rID, res1->second->alphaID,
+        bond->atom2.mID, bond->atom2.rID, res2->second->alphaID, Bond::eVirtualDisulfide);
+    if (virtualDisulfide) bondList->push_back(virtualDisulfide);
 
     return true;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/03/23 04:18:20  thiessen
+* parse and display disulfides
+*
 * Revision 1.13  2000/12/20 23:47:52  thiessen
 * load CDD's
 *
@@ -102,6 +105,7 @@ void DeleteStandardDictionary(void);
 class Bond;
 class AtomSet;
 class StructureObject;
+class Molecule;
 
 typedef list< ncbi::CRef< ncbi::objects::CBiostruc_feature_set > > FeatureList;
 
@@ -115,7 +119,7 @@ public:
     typedef std::map < int, const Molecule * > MoleculeMap;
     MoleculeMap molecules;
     typedef LIST_TYPE < const Bond * > BondList;
-    BondList interMoleculeBonds;
+    BondList interMoleculeBonds;    // includes inter-molecular disulfides
 
     // public methods
 
@@ -136,6 +140,10 @@ private:
 
     void UnpackDomainFeatures(const ncbi::objects::CBiostruc_feature_set& featureSet);
     void UnpackSecondaryStructureFeatures(const ncbi::objects::CBiostruc_feature_set& featureSet);
+
+    // check if given bond or inter-residue bonds are disulfide bond; if so, add to disulfides list
+    bool CheckForDisulfide(Bond *bond, LIST_TYPE < const Bond * > *bondList, StructureBase *parent);
+    void CheckForDisulfides(Molecule *molecule);
 };
 
 END_SCOPE(Cn3D)

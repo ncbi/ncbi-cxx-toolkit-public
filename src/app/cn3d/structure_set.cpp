@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/03/23 04:18:52  thiessen
+* parse and display disulfides
+*
 * Revision 1.53  2001/03/22 00:33:17  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -427,8 +430,8 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
 
     // set up registry field to set GET connection method for HTTP
     CNcbiRegistry* reg = new CNcbiRegistry;
-//        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");  // for debugging
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "DATA");  // for debugging
+//    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
     CORE_SetREG(REG_cxx2c(reg, true));
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/03/23 04:18:52  thiessen
+* parse and display disulfides
+*
 * Revision 1.23  2001/02/09 20:17:32  thiessen
 * ignore atoms w/o alpha when doing structure realignment
 *
@@ -115,6 +118,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
+#include "cn3d/chemical_graph.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -168,26 +172,10 @@ Molecule::Molecule(StructureBase *parent,
         }
     }
 
-    // load inter-residue bonds from SEQUENCE OF Inter-residue-bond OPTIONAL
-    CMolecule_graph::TInter_residue_bonds::const_iterator j, je;
-    if (graph.IsSetInter_residue_bonds()) {
-        je = graph.GetInter_residue_bonds().end();
-        for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
-
-            int order = j->GetObject().IsSetBond_order() ?
-                j->GetObject().GetBond_order() : Bond::eUnknown;
-            const Bond *bond = MakeBond(this,
-                j->GetObject().GetAtom_id_1(),
-                j->GetObject().GetAtom_id_2(),
-                order);
-            if (bond) interResidueBonds.push_back(bond);
-        }
-        j=graph.GetInter_residue_bonds().begin();
-    }
-
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
     const Residue *prevResidue = NULL;
     const Bond *prevBond = NULL;
+    CMolecule_graph::TInter_residue_bonds::const_iterator j, je;
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
     for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
 
@@ -204,6 +192,8 @@ Molecule::Molecule(StructureBase *parent,
             // make sure there's a "real" inter-residue bond between these
             bool restarted = false, found = false;
             if (graph.IsSetInter_residue_bonds()) {
+				j = graph.GetInter_residue_bonds().begin();
+				je = graph.GetInter_residue_bonds().end();
                 do {
                     if (j == je) {
                         if (!restarted) {
@@ -228,7 +218,7 @@ Molecule::Molecule(StructureBase *parent,
                     id, residue->id, residue->alphaID,
                     Bond::eVirtual);
                 if (bond) {
-                    virtualBonds.push_back(bond);
+                    interResidueBonds.push_back(bond);
                     if (prevBond) {
                         (const_cast<Bond *>(prevBond))->nextVirtual = bond;
                         (const_cast<Bond *>(bond))->previousVirtual = prevBond;
@@ -245,6 +235,21 @@ Molecule::Molecule(StructureBase *parent,
     residueDomains.resize(residues.size(), VALUE_NOT_SET);
     // keep s.s. maps only for protein chains
     if (IsProtein()) residueSecondaryStructures.resize(residues.size(), eCoil);
+
+    // load inter-residue bonds from SEQUENCE OF Inter-residue-bond OPTIONAL
+    if (graph.IsSetInter_residue_bonds()) {
+        je = graph.GetInter_residue_bonds().end();
+        for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
+
+            int order = j->GetObject().IsSetBond_order() ?
+                j->GetObject().GetBond_order() : Bond::eUnknown;
+            const Bond *bond = MakeBond(this,
+                j->GetObject().GetAtom_id_1(),
+                j->GetObject().GetAtom_id_2(),
+                order);
+            if (bond) interResidueBonds.push_back(bond);
+        }
+    }
 }
 
 Vector Molecule::GetResidueColor(int sequenceIndex) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/03/23 04:18:21  thiessen
+* parse and display disulfides
+*
 * Revision 1.20  2001/03/09 15:48:44  thiessen
 * major changes to add initial update viewer
 *
@@ -181,7 +184,8 @@ public:
 
     double ballRadius, stickRadius, tubeRadius, tubeWormRadius,
         helixRadius, strandWidth, strandThickness;
-    Vector backgroundColor;
+
+    Vector disulfideColor, backgroundColor;
 
     // methods to set to predetermined states
     void SetToSecondaryStructure(void);
@@ -231,8 +235,8 @@ public:
         const StyleSettings::BackboneStyle* *saveBackboneStyle = NULL,
         const StyleSettings::GeneralStyle* *saveGeneralStyle = NULL) const;
     bool GetBondStyle(const Bond *bond,
-            const AtomPntr& atom1, const AtomPntr& atom2, double bondLength,
-            BondStyle *bondStyle) const;
+            const AtomPntr& atom1, const AtomPntr& atom2,
+            double bondLength, BondStyle *bondStyle) const;
     bool GetHelixStyle(const StructureObject *object,
         const Helix3D& helix, HelixStyle *helixStyle) const;
     bool GetStrandStyle(const StructureObject *object,

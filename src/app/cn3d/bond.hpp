@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/23 04:18:20  thiessen
+* parse and display disulfides
+*
 * Revision 1.5  2000/08/11 12:59:13  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -67,14 +70,16 @@ class Bond : public StructureBase
 {
 public:
     enum eBondOrder {
-        eSingle = ncbi::objects::CInter_residue_bond::eBond_order_single, 
-        ePartialDouble = ncbi::objects::CInter_residue_bond::eBond_order_partial_double, 
-        eAromatic = ncbi::objects::CInter_residue_bond::eBond_order_aromatic, 
+        eSingle = ncbi::objects::CInter_residue_bond::eBond_order_single,
+        ePartialDouble = ncbi::objects::CInter_residue_bond::eBond_order_partial_double,
+        eAromatic = ncbi::objects::CInter_residue_bond::eBond_order_aromatic,
         eDouble = ncbi::objects::CInter_residue_bond::eBond_order_double,
         eTriple = ncbi::objects::CInter_residue_bond::eBond_order_triple,
         eOther = ncbi::objects::CInter_residue_bond::eBond_order_other,
         eUnknown = ncbi::objects::CInter_residue_bond::eBond_order_unknown,
-        eVirtual // special identifier for virtual bonds (no "normal" bond order) 
+        eVirtual,           // special identifier for virtual bonds (no "normal" bond order)
+        eRealDisulfide,     // special flag for real disulfides (bonds between cysteine sulfur atoms)
+        eVirtualDisulfide   // virtual disulfide - links C-alphas with disulfide color when bb trace
     };
 
     Bond(StructureBase *parent);
@@ -86,15 +91,13 @@ public:
 
     // public methods
     bool Draw(const AtomSet *data) const;
-
-private:
 };
 
-const Bond* MakeBond(StructureBase *parent, 
-    const ncbi::objects::CAtom_pntr& atomPtr1, const ncbi::objects::CAtom_pntr& atomPtr2, 
+const Bond* MakeBond(StructureBase *parent,
+    const ncbi::objects::CAtom_pntr& atomPtr1, const ncbi::objects::CAtom_pntr& atomPtr2,
     int bondOrder = Bond::eUnknown);
 const Bond* MakeBond(StructureBase *parent,
-    int mID1, int rID1, int aID1, int mID2, int rID2, int aID2, 
+    int mID1, int rID1, int aID1, int mID2, int rID2, int aID2,
     int bondOrder = Bond::eUnknown);
 
 END_SCOPE(Cn3D)

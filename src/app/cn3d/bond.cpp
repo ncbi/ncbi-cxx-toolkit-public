@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/03/23 04:18:52  thiessen
+* parse and display disulfides
+*
 * Revision 1.14  2000/12/01 19:35:56  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -167,6 +170,7 @@ bool Bond::Draw(const AtomSet *atomSet) const
     if (!parentSet->styleManager->GetBondStyle(this, atom1, atom2,
             (a1->site - a2->site).length(), &bondStyle))
         return false;
+
     // don't show bond if either atom isn't visible
     if (bondStyle.end1.style == StyleManager::eNotDisplayed &&
         bondStyle.end2.style == StyleManager::eNotDisplayed)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/03/23 04:18:20  thiessen
+* parse and display disulfides
+*
 * Revision 1.19  2001/02/08 23:01:13  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -115,6 +118,7 @@ BEGIN_SCOPE(Cn3D)
 
 typedef list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
 
+class ChemicalGraph;
 class Bond;
 class Sequence;
 
@@ -145,8 +149,11 @@ public:
     typedef std::map < int, const Residue * > ResidueMap;
     ResidueMap residues;
     typedef LIST_TYPE < const Bond * > BondList;
-    BondList interResidueBonds;
-    BondList virtualBonds;
+    BondList interResidueBonds; // includes virtual and disulfide bonds
+
+    // used to track intramolecular disulfides (mainly for fast lookup by threader)
+    typedef std::map < int, int > DisulfideMap;
+    DisulfideMap disulfideMap;
 
     // maps of sequence location ( = residueID - 1) to secondary structure and domains
     enum eSecStruc {

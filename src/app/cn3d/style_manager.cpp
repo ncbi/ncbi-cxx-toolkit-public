@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/03/23 04:18:53  thiessen
+* parse and display disulfides
+*
 * Revision 1.26  2001/03/22 00:33:17  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -156,6 +159,8 @@ void StyleSettings::SetToSecondaryStructure(void)
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
 
+    disulfideColor.Set(1,1,0);
+
     helixObjects.isOn = strandObjects.isOn = true;
     helixObjects.style = strandObjects.style = eWithArrows;
     helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
@@ -200,6 +205,8 @@ void StyleSettings::SetToWireframe(void)
     connections.style = eWire;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
+
+    disulfideColor.Set(1,1,0);
 
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -246,6 +253,8 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     connections.style = eTubes;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
+
+    disulfideColor.Set(1,1,0);
 
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -581,8 +590,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         return false;
 
     // if either atom is hidden, don't display bond
-    if (atomStyle1.style == eNotDisplayed ||
-        atomStyle2.style == eNotDisplayed)
+    if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed)
         BOND_NOT_DISPLAYED;
 
     bondStyle->end1.name = info1->glName;
@@ -590,7 +598,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     bondStyle->midCap = false;
 
     // use connection style if bond is between molecules
-    if (atom1.mID != atom2.mID) {
+    if (atom1.mID != atom2.mID &&
+        bond->order != Bond::eRealDisulfide && bond->order != Bond::eVirtualDisulfide) {
         bondStyle->end1.color = bondStyle->end2.color = globalStyle.connections.userColor;
         if (globalStyle.connections.style == StyleSettings::eWire)
             bondStyle->end1.style = bondStyle->end2.style = eLineBond;
@@ -608,13 +617,17 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     else {
 
         // if this is a virtual bond, but style isn't eTrace, don't display
-        if (bond->order == Bond::eVirtual &&
+        if ((bond->order == Bond::eVirtual || bond->order == Bond::eVirtualDisulfide) &&
             (backboneStyle1->type != StyleSettings::eTrace ||
-            backboneStyle2->type != StyleSettings::eTrace))
+             backboneStyle2->type != StyleSettings::eTrace))
             BOND_NOT_DISPLAYED;
 
-        bondStyle->end1.color = atomStyle1.color;
-        bondStyle->end2.color = atomStyle2.color;
+        if (bond->order == Bond::eRealDisulfide || bond->order == Bond::eVirtualDisulfide) {
+            bondStyle->end1.color = bondStyle->end2.color = globalStyle.disulfideColor;
+        } else {
+            bondStyle->end1.color = atomStyle1.color;
+            bondStyle->end2.color = atomStyle2.color;
+        }
         bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
 
         const StyleSettings&
@@ -637,18 +650,26 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         if (!SetBondStyleFromResidueStyle(style2, settings2, &(bondStyle->end2)))
             return false;
 
+        // special case for disulfides - no worms
+        if (bond->order == Bond::eVirtualDisulfide) {
+            if (bondStyle->end1.style == eLineWormBond) bondStyle->end1.style = eLineBond;
+            else if (bondStyle->end1.style == eThickWormBond) bondStyle->end1.style = eCylinderBond;
+            if (bondStyle->end2.style == eLineWormBond) bondStyle->end2.style = eLineBond;
+            else if (bondStyle->end2.style == eThickWormBond) bondStyle->end2.style = eCylinderBond;
+        }
+
         // special case for bonds between side chain and residue - make whole bond
         // same style/color as side chain side
         if (info2->classification == Residue::eSideChainAtom &&
             (info1->classification == Residue::eAlphaBackboneAtom ||
-            info1->classification == Residue::ePartialBackboneAtom ||
-            info1->classification == Residue::eCompleteBackboneAtom)
+             info1->classification == Residue::ePartialBackboneAtom ||
+             info1->classification == Residue::eCompleteBackboneAtom)
             ) {
             bondStyle->end1.style = bondStyle->end2.style;
             bondStyle->end1.color = bondStyle->end2.color;
             bondStyle->end1.radius = bondStyle->end2.radius;
         } else if (info1->classification == Residue::eSideChainAtom &&
-                (info2->classification == Residue::eAlphaBackboneAtom ||
+                   (info2->classification == Residue::eAlphaBackboneAtom ||
                     info2->classification == Residue::ePartialBackboneAtom ||
                     info2->classification == Residue::eCompleteBackboneAtom)) {
             bondStyle->end2.style = bondStyle->end1.style;
@@ -664,7 +685,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         // atomCaps needed at ends of thick worms when at end of chain, or if
         // internal residues are hidden or of a different style
         if (bondStyle->end1.style == StyleManager::eThickWormBond ||
-            bondStyle->end1.style == StyleManager::eThickWormBond) {
+            bondStyle->end2.style == StyleManager::eThickWormBond) {
 
             const Residue::AtomInfo *infoV;
             AtomStyle atomStyleV;
