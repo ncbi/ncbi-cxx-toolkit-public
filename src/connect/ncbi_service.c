@@ -92,6 +92,23 @@ SERV_ITER SERV_OpenSimple(const char* service)
 
 static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 {
+    if (info->type == fSERV_Firewall) {
+        size_t n;
+        for (n = 0; n < iter->n_skip; n++) {
+            SSERV_Info* temp = iter->skip[n];
+            if (temp->type == fSERV_Firewall &&
+                temp->u.firewall.type == info->u.firewall.type) {
+                if (n < --iter->n_skip) {
+                    memmove(iter->skip + n, iter->skip + n + 1,
+                            sizeof(*iter->skip)*(iter->n_skip - n));
+                }
+                if (iter->last == temp)
+                    iter->last = 0;
+                free(temp);
+                break;
+            }
+        }
+    }
     if (iter->n_skip == iter->n_max_skip) {
         SSERV_Info** temp;
         size_t n = iter->n_max_skip + 10;
@@ -106,7 +123,6 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
         iter->skip = temp;
         iter->n_max_skip = n;
     }
-
     iter->skip[iter->n_skip++] = info;
     return 1;
 }
@@ -241,19 +257,20 @@ static void s_SkipSkip(SERV_ITER iter)
 {
     if (iter->n_skip) {
         TNCBI_Time t = (TNCBI_Time) time(0);
-        size_t i = 0;
+        size_t n = 0;
 
-        while (i < iter->n_skip) {
-            SSERV_Info* info = iter->skip[i];
-            if (info->time < t) {
-                if (i < --iter->n_skip)
-                    memmove(iter->skip + i, iter->skip + i + 1,
-                            sizeof(*iter->skip)*(iter->n_skip - i));
-                if (info == iter->last)
+        while (n < iter->n_skip) {
+            SSERV_Info* temp = iter->skip[n];
+            if (temp->time < t) {
+                if (n < --iter->n_skip) {
+                    memmove(iter->skip + n, iter->skip + n + 1,
+                            sizeof(*iter->skip)*(iter->n_skip - n));
+                }
+                if (iter->last == temp)
                     iter->last = 0;
-                free(info);
+                free(temp);
             } else
-                i++;
+                n++;
         }
     }
 }
@@ -473,6 +490,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2004/06/14 16:37:09  lavr
+ * Allow no more than one firewall server info in the skip list
+ *
  * Revision 6.52  2004/05/17 18:19:43  lavr
  * Mark skip infos with maximal time instead of calculating 1 year from now
  *
