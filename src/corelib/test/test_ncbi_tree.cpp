@@ -112,11 +112,11 @@ static void s_TEST_TreeOperations()
   corr10->AddNode(20);
   corr10->AddNode(21);
 
-  TreeReRoot(*orig11);
+  TreeReRoot(*orig10);
 
-  cout << "After rerooting original tree by node 11, " << endl;
+  cout << "After rerooting original tree by node 10, " << endl;
   cout << "the original tree and correct tree are now ";
-  if(TreeCompare(*orig11, *corr, TestFunctor3)) {
+  if(TreeCompare(*orig10, *corr, TestFunctor3)) {
     cout << "the same." << endl;
   }
   else {
@@ -124,14 +124,14 @@ static void s_TEST_TreeOperations()
   }
   cout << endl;
 
-  TreePrint(cout, *orig11, s_IntToStr, false);
+  TreePrint(cout, *orig10, s_IntToStr, false);
   TreePrint(cout, *corr, s_IntToStr, false);
   cout << endl;
-
+  /*
   TTree* corr2 = new TTree(11);
   corr2->AddNode(22);
   corr2->AddNode(23);
-  TTree* corr2_0 = corr2->AddNode(0);
+  corr2->AddNode(0);
  
   TTree* t = orig->DetachNode(orig10);
 
@@ -149,7 +149,7 @@ static void s_TEST_TreeOperations()
   TreePrint(cout, *t, s_IntToStr, false);
   TreePrint(cout, *corr2, s_IntToStr, false);
   cout << endl;
-
+  */
 }
 
 static void s_TEST_Tree()
@@ -158,8 +158,8 @@ static void s_TEST_Tree()
     
     TTree* tr = new TTree(0);
     TTree* tr10 = tr->AddNode(10);
-    TTree* tr11 = tr->AddNode(11);
-    TTree* tr20 = tr10->AddNode(20);
+    tr->AddNode(11);
+    tr10->AddNode(20);
     tr10->AddNode(21);
    
     TTree* sr = new TTree(0);
@@ -568,13 +568,13 @@ int CTestApplication::Run(void)
     "****** default reporter (diag) ******",e);
     */
     
-    //s_TEST_Tree();
+    s_TEST_Tree();
 
     s_TEST_TreeOperations();
 
-    //s_TEST_IdTree();
+    s_TEST_IdTree();
 
-    //s_TEST_IdTreeOperations();
+    s_TEST_IdTreeOperations();
 
     return 0;
 }
@@ -594,6 +594,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.18  2004/06/21 16:49:38  ckenny
+ * fixed warnings in compilation
+ *
  * Revision 1.17  2004/06/15 13:02:59  ckenny
  * + test case for tree operations
  *
