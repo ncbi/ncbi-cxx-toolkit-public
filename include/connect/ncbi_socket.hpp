@@ -131,7 +131,7 @@ public:
 
     bool IsServerSide(void) const;
 
-    // Close the current underlying "SOCK" (if any, and if owed),
+    // Close the current underlying "SOCK" (if any, and if owned),
     // and from now on use "sock" as the underlying "SOCK" instead.
     // NOTE:  "if_to_own" applies to the (new) "sock".
     void Reset(SOCK sock, EOwnership if_to_own);
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/09/17 20:45:28  lavr
+ * A typo corrected
+ *
  * Revision 6.8  2002/09/16 22:32:47  vakatov
  * Allow to change ownership for the underlying sockets "on-the-fly";
  * plus some minor (mostly formal) code and comments rearrangements
