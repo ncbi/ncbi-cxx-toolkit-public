@@ -33,12 +33,16 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/17 16:09:57  lavr
+ * Define prototypes of functions, usually defined but hidden in ANSI mode
+ *
  * Revision 6.1  2000/05/15 19:03:07  lavr
  * Initial revision
  *
  * ==========================================================================
  */
 
+#include <ncbiconf.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -46,25 +50,44 @@ extern "C" {
 #endif
 
 
+#ifndef HAVE_STRDUP
+#  define strdup      NCBI_strdup
+
 /* Create a copy of string "str".
  * Return an identical malloc'ed string, which must be explicitly freed 
  * by free() when no longer needed.
  */
-char *NCBI_strdup(const char* str);
+char *strdup(const char* str);
+#endif /* HAVE_STRDUP */
 
+
+#ifndef HAVE_STRCASECMP
+#  define strcasecmp  NCBI_strcasecmp
+#  define strncasecmp NCBI_strncasecmp
 
 /* Compare "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-int NCBI_strcasecmp(const char* s1, const char* s2);
-
+int strcasecmp(const char* s1, const char* s2);
 
 /* Compare not more than "n" characters of "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-int NCBI_strncasecmp(const char* s1, const char* s2, size_t n);
+int strncasecmp(const char* s1, const char* s2, size_t n);
+#endif /* HAVE_STRCASECMP */
+
+
+#ifndef HAVE_POPEN
+FILE *popen(const char *command, const char *mode);
+int  pclose(FILE *stream);
+#endif
+
+
+#ifndef HAVE_SIGACTION
+int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
+#endif
 
 
 #ifdef __cplusplus
