@@ -62,9 +62,9 @@ extern "C" {
  */
 NCBI_XBLAST_EXPORT
 Int2
-Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_list,
-   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk,
-   BlastQueryInfo* query_info,
+Blast_TracebackFromHSPList(EBlastProgramType program_number, 
+   BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
+   BLAST_SequenceBlk* subject_blk, BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp,
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
@@ -77,7 +77,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
  * @param hsp_stream A stream for reading HSP lists [in]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]
- * @param bssp BLAST database structure [in]
+ * @param seq_src Source of subject sequences [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_params Scoring parameters (esp. scale factor) [in]
  * @param ext_params Gapped extension parameters [in]
@@ -91,15 +91,16 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
  * @return nonzero indicates failure, otherwise zero
  */
 NCBI_XBLAST_EXPORT
-Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hsp_stream, 
-        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-        const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
-        BlastScoringParameters* score_params,
-        const BlastExtensionParameters* ext_params,
-        BlastHitSavingParameters* hit_params,
-        BlastEffectiveLengthsParameters* eff_len_params,
-        const BlastDatabaseOptions* db_options,
-        const PSIBlastOptions* psi_options, BlastHSPResults** results);
+Int2 
+BLAST_ComputeTraceback(EBlastProgramType program_number, 
+   BlastHSPStream* hsp_stream, BLAST_SequenceBlk* query, 
+   BlastQueryInfo* query_info, const BlastSeqSrc* seq_src, 
+   BlastGapAlignStruct* gap_align, BlastScoringParameters* score_params,
+   const BlastExtensionParameters* ext_params,
+   BlastHitSavingParameters* hit_params,
+   BlastEffectiveLengthsParameters* eff_len_params,
+   const BlastDatabaseOptions* db_options,
+   const PSIBlastOptions* psi_options, BlastHSPResults** results);
 
 /** Compute traceback information for alignments found by an
  *  RPS blast search. This function performs two major tasks:
@@ -154,6 +155,24 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
  */
 NCBI_XBLAST_EXPORT
 Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number);
+
+/** Modifies the HSP data after the final gapped alignment.
+ * Input includes only data that likely needs modification. This function
+ * could be static in blast_traceback.c, but for a unit test which checks its
+ * functionality.
+ * @param query_start start of alignment on query [in]
+ * @param query_end end of alignment on query [in]
+ * @param subject_start start of alignment on subject [in]
+ * @param subject_end end of alignment on subject [in]
+ * @param score New score for this HSP [in]
+ * @param gap_edit traceback from final gapped alignment [in] [out]
+ * @param hsp Original HSP from the preliminary stage [in] [out]
+ */
+Int2
+Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp, 
+                             Uint4 query_length, Uint4 subject_length, 
+                             EBlastProgramType program);
+
 
 #ifdef __cplusplus
 }
