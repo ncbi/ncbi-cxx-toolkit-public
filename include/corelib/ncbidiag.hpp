@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/03 20:51:24  vakatov
+* Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
+*
 * Revision 1.3  1998/10/30 20:08:20  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -47,7 +50,6 @@
 
 #include <ncbistd.hpp>
 
-NCBI_USING_STL;
 
 class CDiagBuffer;  // (fwd-declaration of internal class)
 
@@ -72,11 +74,18 @@ public:
               bool        flush   = false);
     ~CNcbiDiag(void);
 
-    EDiagSev GetSeverity(void) const;                      // current severity
-    template<class X> CNcbiDiag& operator <<(X& x) {      // formatted output
+    EDiagSev GetSeverity(void) const;                     // current severity
+
+    template<class X>  // formatted output
+#ifndef NO_INCLASS_TMPL
+    CNcbiDiag& operator <<(X& x) {
         m_Buffer.Put(*this, x);
         return *this;
     }
+#else  /* NO_INCLASS_TMPL */
+    friend CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
+#endif /* NO_INCLASS_TMPL */
+
     CNcbiDiag& operator <<(CNcbiDiag& (*f)(CNcbiDiag&)) { // manipulators
         return f(*this);
     }

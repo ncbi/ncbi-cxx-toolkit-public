@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/03 20:51:26  vakatov
+* Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
+*
 * Revision 1.2  1998/10/30 20:08:37  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -143,7 +146,7 @@ static void s_ToStream_Handler(EDiagSev    sev,
     if ( !x_data )
         return;
 
-    ostream& os = *x_data->os;
+    CNcbiOstream& os = *x_data->os;
     os << CNcbiDiag::SeverityName(sev) << ":\t";
     os.write(message_buf, message_len);
     os << endl;

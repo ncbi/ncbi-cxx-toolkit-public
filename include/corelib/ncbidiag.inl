@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/03 20:51:24  vakatov
+* Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
+*
 * Revision 1.3  1998/10/30 20:08:25  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -82,8 +85,9 @@ public:
 private:
     //###
 
-    // formatted output
-    template<class X> void Put(const CNcbiDiag& diag, X& x) {
+    template<class X>  // formatted output
+#ifndef NO_INCLASS_TMPL
+    void Put(const CNcbiDiag& diag, const X& x) {
         if (diag.GetSeverity() < sm_PostSeverity)
             return;
         if (m_Diag != &diag) {
@@ -93,6 +97,10 @@ private:
         }
         m_Stream << x;
     }
+#else  /* NO_INCLASS_TMPL */
+    friend void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x);
+#endif /* NO_INCLASS_TMPL */
+
 
     void Flush  (void);
     void Reset  (const CNcbiDiag& diag);  // reset content of the diag. message
@@ -144,6 +152,24 @@ inline CNcbiDiag::~CNcbiDiag(void) {
 inline EDiagSev CNcbiDiag::GetSeverity(void) const {
     return m_Severity;
 }
+
+#ifdef NO_INCLASS_TMPL
+template<class X> void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
+    if (diag.GetSeverity() < dbuff.sm_PostSeverity)
+        return;
+    if (dbuff.m_Diag != &diag) {
+        if ( dbuff.m_Stream.pcount() )
+            dbuff.Flush();
+        dbuff.m_Diag = &diag;
+    }
+    dbuff.m_Stream << x;
+}
+
+template<class X> CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x) {
+    Put(diag, diag.m_Buffer, x);
+    return diag;
+}
+#endif /* NO_INCLASS_TMPL */
 
 inline const char* CNcbiDiag::SeverityName(EDiagSev sev) {
     return CDiagBuffer::SeverityName[sev];
@@ -220,7 +246,7 @@ inline void CDiagBuffer::Flush(void) {
 
 inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
-        _VERIFY( !m_Stream.rdbuf()->seekoff(0, IOS_BASE::beg, IOS_BASE::out) );
+        _VERIFY( !m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out) );
 }
 
 inline void CDiagBuffer::EndMess(const CNcbiDiag& diag) {
