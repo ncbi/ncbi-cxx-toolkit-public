@@ -1152,13 +1152,18 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
             //TTSE_LockMap& tse_map = *ref_map;
 
             TTSE_LockMap with_ref;
-            const CBioseq_Info::TId& syns =
-                binfo->GetBioseq_Info().GetId();
-            ITERATE(CBioseq_Info::TId, syn_it, syns) {
-                // Search current id
-                GetTSESetWithAnnotsRef(*binfo, *syn_it, *ref_map);
-            }
-            info.second.m_AllAnnotRef_Info = ref_map;
+	    if ( binfo->HasBioseq() ) {
+		const CBioseq_Info::TId& syns =
+		    binfo->GetBioseq_Info().GetId();
+		ITERATE(CBioseq_Info::TId, syn_it, syns) {
+		    // Search current id
+		    GetTSESetWithAnnotsRef(*binfo, *syn_it, *ref_map);
+		}
+	    }
+	    else {
+		GetTSESetWithAnnotsRef(*binfo, idh, *ref_map);
+	    }
+	    info.second.m_AllAnnotRef_Info = ref_map;
         }
     }}
     return info.second.m_AllAnnotRef_Info;
@@ -1395,6 +1400,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/06/23 19:50:52  vasilche
+* Fixed null pointer access in GetTSESetWithAnnots() when CBioseq is not found.
+*
 * Revision 1.18  2004/06/15 14:02:22  vasilche
 * Commented out unused local variable.
 *
