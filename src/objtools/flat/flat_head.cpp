@@ -363,7 +363,7 @@ void SFlatHead::x_AddDBSource(void)
         CScope&             scope = m_Context->m_Handle.GetScope();
         for (CFeat_CI it(scope, *m_Context->m_Location,
                          CSeqFeatData::e_not_set,
-                         CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_TSE,
+                         SAnnotSelector::eOverlap_Intervals, CFeat_CI::eResolve_TSE,
                          CFeat_CI::e_Product);
              it;  ++it) {
             for (CTypeConstIterator<CSeq_id> id2(it->GetLocation());
@@ -700,6 +700,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/18 21:56:06  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.2  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

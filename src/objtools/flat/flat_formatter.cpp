@@ -301,7 +301,7 @@ void IFlatFormatter::x_FormatFeatures(SFlatContext& ctx,
         }
     } else if (ctx.m_IsProt) { // broaden condition?
         for (CFeat_CI it(scope, *ctx.m_Location, CSeqFeatData::e_not_set,
-                         CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_All,
+                         SAnnotSelector::eOverlap_Intervals, CFeat_CI::eResolve_All,
                          CFeat_CI::e_Product);
              it;  ++it) {
             l.push_back(TFFRef(new CFlattishFeature
@@ -309,7 +309,7 @@ void IFlatFormatter::x_FormatFeatures(SFlatContext& ctx,
         }
     }
     for (CFeat_CI it(scope, *ctx.m_Location, CSeqFeatData::e_not_set,
-                     CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_All);
+                     SAnnotSelector::eOverlap_Intervals, CFeat_CI::eResolve_All);
          it;  ++it) {
         switch (it->GetData().Which()) {
         case CSeqFeatData::e_Pub:  // done as REFERENCEs
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/18 21:56:06  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.3  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *
