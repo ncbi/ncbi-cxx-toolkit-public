@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/28 19:49:32  domrach
+ * Get/Set tax id methods added
+ *
  * Revision 1.1  2002/01/10 19:57:07  clausen
  * Added GetLabel
  *
@@ -67,6 +70,12 @@ public:
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
 
+    // Returns NCBI Taxonomy database id (AKA tax id)
+    // if the latter is found in Org_ref; otherwise returns 0
+    int GetTaxId() const;
+    // Sets tax id into Org_ref contents.
+    // Returns old value of tax id or 0 if it was not found
+    int SetTaxId( int tax_id );
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/28 19:49:49  domrach
+ * Get/Set tax id methods added
+ *
  * Revision 6.1  2002/01/10 19:58:39  clausen
  * Added GetLabel
  *
@@ -46,6 +49,7 @@
 
 // generated includes
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 
 // generated classes
@@ -71,6 +75,53 @@ void COrg_ref::GetLabel(string* label) const
     }
 }
     
+static const string s_taxonName( "taxon" );
+
+int
+COrg_ref::GetTaxId() const
+{
+    const TDb& lDbTags( GetDb() );
+ 
+    for(TDb::const_iterator i = lDbTags.begin();
+	i != lDbTags.end();
+	++i) {
+	if( i->GetPointer()
+	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
+	    const CObject_id& id( i->GetObject().GetTag() );
+	    if( id.IsId() )
+		return id.GetId();
+	}
+    }
+    return 0;
+}
+
+int
+COrg_ref::SetTaxId( int tax_id )
+{
+    int old_id(0);
+
+    TDb& lDbTags( SetDb() );
+    // Try to update existing tax id first
+    for(TDb::iterator i = lDbTags.begin();
+	i != lDbTags.end();
+	++i) {
+	if( i->GetPointer()
+	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
+	    CObject_id& id( i->GetObject().SetTag() );
+	    if( id.IsId() )
+		old_id = id.GetId();
+	    id.SetId() = tax_id;
+	    return old_id;
+	}
+    }
+    // Add new tag
+    CRef< CDbtag > ref( new CDbtag() );
+    ref->SetDb( s_taxonName );
+    ref->SetTag().SetId( tax_id );
+    SetDb().push_back( ref );
+
+    return old_id;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
