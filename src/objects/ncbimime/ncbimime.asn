@@ -1,4 +1,4 @@
---$Revision: 6.5 $
+--$Revision: 6.6 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -14,14 +14,14 @@ IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
 	Seq-entry FROM NCBI-Seqset
 	Seq-annot FROM NCBI-Sequence
     Medline-entry FROM NCBI-Medline
-    Cn3d-style-dictionary FROM NCBI-Cn3d;
+    Cn3d-style-dictionary, Cn3d-user-annotations FROM NCBI-Cn3d;
 
 Ncbi-mime-asn1 ::= CHOICE {
 	entrez	Entrez-general,			-- just a structure
-	alignstruc	Biostruc-align,			-- structures & sequences & alignments
+	alignstruc	Biostruc-align,	-- structures & sequences & alignments
 	alignseq	Biostruc-align-seq,	-- sequence alignment
-    strucseq    Biostruc-seq,	-- structure & sequences
-    strucseqs   Biostruc-seqs	    -- structure & sequences & alignments
+	strucseq    Biostruc-seq,	-- structure & sequences
+	strucseqs   Biostruc-seqs	-- structure & sequences & alignments
 	-- others may be added here in the future
 }
 
@@ -30,27 +30,31 @@ Biostruc-align ::= SEQUENCE {
 	slaves	SET OF Biostruc,
 	alignments	Biostruc-annot-set,	-- structure alignments
 	sequences SET OF Seq-entry,	-- sequences
-    seqalign SET OF Seq-annot,
-    style-dictionary Cn3d-style-dictionary OPTIONAL
+	seqalign SET OF Seq-annot,
+	style-dictionary Cn3d-style-dictionary OPTIONAL,
+	user-annotations Cn3d-user-annotations OPTIONAL
 }
 
 Biostruc-align-seq ::= SEQUENCE {	-- display seq structure align only
 	sequences SET OF Seq-entry,	-- sequences
-    seqalign SET OF Seq-annot,
-    style-dictionary Cn3d-style-dictionary OPTIONAL
+	seqalign SET OF Seq-annot,
+	style-dictionary Cn3d-style-dictionary OPTIONAL,
+	user-annotations Cn3d-user-annotations OPTIONAL
 }
 
 Biostruc-seq ::= SEQUENCE {	-- display  structure seq added by yanli
-    structure Biostruc,
-    sequences SET OF Seq-entry,
-    style-dictionary Cn3d-style-dictionary OPTIONAL
+	structure Biostruc,
+	sequences SET OF Seq-entry,
+	style-dictionary Cn3d-style-dictionary OPTIONAL,
+	user-annotations Cn3d-user-annotations OPTIONAL
 }
 
 Biostruc-seqs ::= SEQUENCE { -- display blast alignment along with neighbor's structure added by yanli
-    structure Biostruc,
+	structure Biostruc,
 	sequences SET OF Seq-entry,	-- sequences
-    seqalign SET OF Seq-annot,
-    style-dictionary Cn3d-style-dictionary OPTIONAL
+	seqalign SET OF Seq-annot,
+	style-dictionary Cn3d-style-dictionary OPTIONAL,
+	user-annotations Cn3d-user-annotations OPTIONAL
 }
 
 Entrez-style ::= ENUMERATED {
