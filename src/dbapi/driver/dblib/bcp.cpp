@@ -27,7 +27,6 @@
  *
  * File Description:  DBLib bcp-in command
  *
- *
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
@@ -125,14 +124,14 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
-                             val.IsNULL() ? 0 : val.Size(),
+                             val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBBINARY, i + 1);
             }
             break;
             case eDB_VarBinary: {
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
-                             val.IsNULL() ? 0 : val.Size(),
+                             val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBBINARY, i + 1);
             }
             break;
@@ -173,14 +172,16 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_Text: {
                 CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : val.Size(),
+                r = bcp_bind(m_Cmd, 0, 0,
+                             val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBTEXT, i + 1);
                 m_HasTextImage = true;
             }
             break;
             case eDB_Image: {
                 CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : val.Size(),
+                r = bcp_bind(m_Cmd, 0, 0,
+                             val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBIMAGE, i + 1);
                 m_HasTextImage = true;
             }
@@ -260,7 +261,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.Size(), i + 1)
+                    bcp_collen(m_Cmd,
+                               val.IsNULL() ? 0 : (DBINT) val.Size(), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
@@ -268,7 +270,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.Size(), i + 1)
+                    bcp_collen(m_Cmd,
+                               val.IsNULL() ? 0 : (DBINT) val.Size(), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
@@ -315,12 +318,12 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_Text: {
                 CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = bcp_collen(m_Cmd, val.Size(), i + 1);
+                r = bcp_collen(m_Cmd, (DBINT) val.Size(), i + 1);
             }
             break;
             case eDB_Image: {
                 CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-                r = bcp_collen(m_Cmd, val.Size(), i + 1);
+                r = bcp_collen(m_Cmd, (DBINT) val.Size(), i + 1);
             }
             break;
             default:
@@ -370,7 +373,7 @@ bool CDBL_BCPInCmd::SendRow()
                 size_t l = val.Read(buff, sizeof(buff));
                 if (l > s)
                     l = s;
-                if (bcp_moretext(m_Cmd, l, (BYTE*) buff) != SUCCEED) {
+                if (bcp_moretext(m_Cmd, (DBINT) l, (BYTE*) buff) != SUCCEED) {
                     m_HasFailed = true;
                     throw CDB_ClientEx(eDB_Error, 223006,
                                        "CDBL_BCPInCmd::SendRow",
@@ -438,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/24 16:38:53  lavr
+ * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
+ *
  * Revision 1.2  2001/10/22 18:38:49  soussov
  * sending NULL instead of emty string fixed
  *

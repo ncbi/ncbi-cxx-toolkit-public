@@ -291,28 +291,32 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
-                           is_null ? 0 : val.Size(), (BYTE*) val.Value());
+                           is_null ? 0 : (DBINT) val.Size(),
+                           (BYTE*) val.Value());
             break;
         }
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
-                           is_null ? 0 : val.Size(), (BYTE*) val.Value());
+                           is_null ? 0 : (DBINT) val.Size(),
+                           (BYTE*) val.Value());
         }
         break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
-                           is_null ? 0 : val.Size(), (BYTE*) val.Value());
+                           is_null ? 0 : (DBINT) val.Size(),
+                           (BYTE*) val.Value());
             break;
         }
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
-                           is_null ? 0 : val.Size(), (BYTE*) val.Value());
+                           is_null ? 0 : (DBINT) val.Size(),
+                           (BYTE*) val.Value());
         }
         break;
         case eDB_Float: {
@@ -368,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/24 16:39:32  lavr
+ * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
+ *
  * Revision 1.2  2001/10/22 16:28:02  lavr
  * Default argument values removed
  * (mistakenly left while moving code from header files)

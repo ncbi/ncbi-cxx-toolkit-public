@@ -27,7 +27,6 @@
  *
  * File Description:  DBLib connection
  *
- *
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
@@ -111,7 +110,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                     DBTXPLEN,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                     log_it ? TRUE : FALSE,
-                    data_size, 0) != SUCCEED ||
+                    (DBINT) data_size, 0) != SUCCEED ||
         dbsqlok(m_Link) != SUCCEED ||
         dbresults(m_Link) == FAIL) {
         throw CDB_ClientEx(eDB_Error, 210093, "CDBL_Connection::SendDataCmd",
@@ -327,7 +326,7 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > m_Bytes2go)
         nof_bytes = m_Bytes2go;
 
-    if (dbmoretext(m_Cmd, nof_bytes, (BYTE*) pChunk) != SUCCEED) {
+    if (dbmoretext(m_Cmd, (DBINT) nof_bytes, (BYTE*) pChunk) != SUCCEED) {
         dbcancel(m_Cmd);
         throw CDB_ClientEx(eDB_Error, 290001, "CDBL_SendDataCmd::SendChunk",
                            "dbmoretext failed");
@@ -375,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/24 16:39:01  lavr
+ * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
+ *
  * Revision 1.2  2001/10/22 16:28:01  lavr
  * Default argument values removed
  * (mistakenly left while moving code from header files)

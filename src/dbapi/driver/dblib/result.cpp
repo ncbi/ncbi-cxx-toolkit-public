@@ -522,13 +522,11 @@ size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
 
     if (is_null)
         *is_null = false;
-    if ((size_t) (d_len - m_Offset) < buffer_size) {
-        buffer_size = d_len - m_Offset;
-    }
-
+    if ((size_t) d_len - m_Offset < buffer_size)
+        buffer_size = (size_t) d_len - m_Offset;
     memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
-    if (m_Offset >= d_len) {
+    if (m_Offset >= (size_t) d_len) {
         m_Offset = 0;
         ++m_CurrItem;
     }
@@ -624,7 +622,7 @@ bool CDBL_BlobResult::Fetch()
     }
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0)
+    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
         ;
     switch (s) {
     case 0:
@@ -667,7 +665,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
     CDB_Text* val = (CDB_Text*) item_buff;
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0)
+    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
         val->Append(m_Buff, sizeof(m_Buff));
 
     switch (s) {
@@ -694,7 +692,7 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         return 0;
     }
 
-    STATUS s = dbreadtext(m_Cmd, buffer, buffer_size);
+    STATUS s = dbreadtext(m_Cmd, buffer, (DBINT) buffer_size);
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -734,7 +732,7 @@ bool CDBL_BlobResult::SkipItem()
         return false;
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0);
+    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0);
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -868,13 +866,11 @@ size_t CDBL_ParamResult::ReadItem(void* buffer, size_t buffer_size,
 
     if (is_null)
         *is_null = false;
-    if ((size_t) (d_len - m_Offset) < buffer_size) {
-        buffer_size = d_len - m_Offset;
-    }
-
+    if ((size_t) d_len - m_Offset < buffer_size)
+        buffer_size = (size_t) d_len - m_Offset;
     memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
-    if (m_Offset >= d_len) {
+    if (m_Offset >= (size_t) d_len) {
         m_Offset = 0;
         ++m_CurrItem;
     }
@@ -1043,13 +1039,11 @@ size_t CDBL_ComputeResult::ReadItem(void* buffer, size_t buffer_size,
 
     if (is_null)
         *is_null = false;
-    if ((size_t) (d_len - m_Offset) < buffer_size) {
-        buffer_size = d_len - m_Offset;
-    }
-
+    if ((size_t) d_len - m_Offset < buffer_size)
+        buffer_size = (size_t) d_len - m_Offset;
     memcpy(buffer, d_ptr + m_Offset, buffer_size);
-    m_Offset+= buffer_size;
-    if (m_Offset >= d_len) {
+    m_Offset += buffer_size;
+    if (m_Offset >= (size_t) d_len) {
         m_Offset = 0;
         ++m_CurrItem;
     }
@@ -1081,12 +1075,12 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
 //
 
 
-CDBL_StatusResult::CDBL_StatusResult(DBPROCESS* cmd)
+CDBL_StatusResult::CDBL_StatusResult(DBPROCESS* cmd) :
+    m_Offset(0), m_1stFetch(true)
 {
     m_Val = dbretstatus(cmd);
-    m_Offset = 0;
-    m_1stFetch = true;
 }
+
 
 EDB_ResType CDBL_StatusResult::ResultType() const
 {
@@ -1156,12 +1150,10 @@ size_t CDBL_StatusResult::ReadItem(void* buffer, size_t buffer_size,
     if (is_null)
         *is_null = false;
 
-
-    if (sizeof(int) <= (size_t) m_Offset)
+    if (sizeof(m_Val) <= m_Offset)
         return 0;
 
     size_t l = sizeof(int) - m_Offset;
-
     char* p = (char*) &m_Val;
 
     if (buffer_size > l)
@@ -1398,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/10/24 16:38:42  lavr
+ * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
+ *
  * Revision 1.3  2001/10/24 05:19:24  vakatov
  * Fixed return type for ItemMaxSize()
  *
