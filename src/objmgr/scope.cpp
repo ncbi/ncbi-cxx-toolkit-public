@@ -297,41 +297,12 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
 }
 
 
-void CScope::GetSynonyms(const CSeq_id_Handle& id,
-                         set<CSeq_id_Handle>& syns)
-{
-    //CMutexGuard guard(m_Scope_Mtx);
-    CBioseq_Handle bh = GetBioseqHandle(id);
-    if ( bh ) {
-        bh.x_GetDataSource().GetSynonyms(id, syns, *this);
-    }
-    else {
-        syns.insert(id);
-    }
-}
-
-
 void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                                  CAnnotTypes_CI::TTSESet& tse_set)
 {
     //CMutexGuard guard(m_Scope_Mtx);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         (*it)->GetTSESetWithAnnots(idh, tse_set, *this);
-    }
-    //### Filter the set depending on the requests history?
-    iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
-        x_AddToHistory(**tse_it);
-    }
-}
-
-
-void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
-                              CSeq_annot::C_Data::E_Choice sel,
-                              CAnnotTypes_CI::TTSESet& tse_set)
-{
-    //CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        (*it)->PopulateTSESet(loc, tse_set, sel, *this);
     }
     //### Filter the set depending on the requests history?
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
@@ -506,6 +477,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/03/03 20:32:47  vasilche
+* Removed obsolete method GetSynonyms().
+*
 * Revision 1.45  2003/02/28 21:54:18  grichenk
 * +CSynonymsSet::empty(), removed _ASSERT() in CScope::GetSynonyms()
 *

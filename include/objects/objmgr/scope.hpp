@@ -131,8 +131,6 @@ public:
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           CSeq_annot::C_Data::E_Choice sel);
-    void GetSynonyms(const CSeq_id_Handle& id,
-                     set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              CAnnotTypes_CI::TTSESet& tse_set);
 
@@ -145,11 +143,6 @@ private:
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(const CSeq_id& id);
-
-    // Get TSEs containing annotations for the given location
-    void x_PopulateTSESet(CHandleRangeMap& loc,
-                          CSeq_annot::C_Data::E_Choice sel,
-                          CAnnotTypes_CI::TTSESet& tse_set);
 
     // Get bioseq handles for sequences from the given TSE using the filter
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
@@ -202,6 +195,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/03/03 20:32:47  vasilche
+* Removed obsolete method GetSynonyms().
+*
 * Revision 1.31  2003/02/28 20:02:35  grichenk
 * Added synonyms cache and x_GetSynonyms()
 *
