@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/03/15 19:57:20  vasilche
+* Added CNcbiQueryResultIterator
+*
 * Revision 1.2  1999/03/10 21:20:23  sandomir
 * Resource added to CNcbiContext
 *
@@ -96,6 +99,65 @@ inline void CNcbiContext::PutMsg( const string& msg )
 inline void CNcbiContext::ClearMsgList( void ) 
 {
     m_msg.clear();
+}
+
+
+// CNcbiQieryResult::CIterator
+
+inline
+void CNcbiQueryResultIterator::reset(void)
+{
+    if ( m_Object ) {
+        m_Result->FreeObject(m_Object);
+        m_Object = 0;
+    }
+}
+
+inline
+CNcbiDataObject* CNcbiQueryResultIterator::release(void) const
+{
+    TObject* object = m_Object;
+    const_cast<TIterator*>(this)->m_Object = 0;
+    return object;
+}
+
+inline
+CNcbiQueryResultIterator::CNcbiQueryResultIterator(TResult* result,
+                                                   TObject* object)
+    : m_Result(result), m_Object(object)
+{
+}
+
+inline
+CNcbiQueryResultIterator::CNcbiQueryResultIterator(const TIterator& i)
+    : m_Result(i.m_Result), m_Object(i.release())
+{
+}
+
+inline
+CNcbiQueryResultIterator::~CNcbiQueryResultIterator(void)
+{
+    reset();
+}
+
+inline
+CNcbiQueryResultIterator&
+CNcbiQueryResultIterator::operator =(const TIterator& i)
+{
+    if ( &i != this ) {
+        reset();
+        m_Result = i.m_Result;
+        m_Object = i.release();
+    }
+    return *this;
+}
+
+inline
+CNcbiQueryResultIterator& CNcbiQueryResultIterator::operator ++(void)
+{
+    if ( m_Object )
+        m_Object = m_Result->NextObject(m_Object);
+    return *this;
 }
 
 #endif /* def NCBI_RES__HPP  &&  ndef NCBI_RES__INL */

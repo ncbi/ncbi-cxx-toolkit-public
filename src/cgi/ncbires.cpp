@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/03/15 19:58:24  vasilche
+* Added CNcbiQueryResultIterator
+*
 * Revision 1.17  1999/03/10 21:20:23  sandomir
 * Resource added to CNcbiContext
 *
@@ -208,6 +211,18 @@ bool CNcbiDataObjectReport::IsRequested( const CNcbiContext& ctx ) const
   } // for
 
   return false;
+}
+
+CNcbiQueryResult::CNcbiQueryResult(void)
+{
+}
+
+CNcbiQueryResult::~CNcbiQueryResult(void)
+{
+}
+
+void CNcbiQueryResult::FreeObject(CNcbiDataObject* object)
+{
 }
 
 END_NCBI_SCOPE

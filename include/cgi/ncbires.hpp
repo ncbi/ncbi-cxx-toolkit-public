@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/03/15 19:57:19  vasilche
+* Added CNcbiQueryResultIterator
+*
 * Revision 1.22  1999/03/10 21:20:23  sandomir
 * Resource added to CNcbiContext
 *
@@ -379,12 +382,90 @@ public:
 // class CNcbiQueryResult
 //
 
+class CNcbiQueryResultIterator
+{
+    friend class CNcbiQueryResult;
+    typedef CNcbiQueryResult TResult;
+    typedef CNcbiDataObject TObject;
+    typedef CNcbiQueryResultIterator TIterator;
+
+private:
+    inline CNcbiQueryResultIterator(TResult* result, TObject* object);
+
+public:
+    inline CNcbiQueryResultIterator(void)
+        : m_Result(0), m_Object(0)
+        { }
+
+    // pass ownership of object to this
+    inline CNcbiQueryResultIterator(const TIterator& i);
+
+    // will free object
+    inline ~CNcbiQueryResultIterator(void);
+
+    // pass ownership of object to this
+    inline TIterator& operator =(const TIterator& i);
+
+    // check whether result finished
+    operator bool(void) const
+        { return m_Object != 0; }
+
+    // check whether iterator points to the same object
+    bool operator ==(const TIterator& i) const
+        {
+            if ( m_Result != i.m_Result )
+                return false;
+            if ( m_Object == 0 )
+                return i.m_Object == 0;
+            else
+                return i.m_Object != 0 &&
+                    i.m_Object->GetID() == m_Object->GetID();
+        }
+        
+    const TObject& operator *(void) const
+        { return *m_Object; }
+    const TObject* operator ->(void) const
+        { return m_Object; }
+    const TObject* get(void) const
+        { return m_Object; }
+
+    // go to next result
+    inline TIterator& operator ++(void);
+        
+private:
+    TResult* m_Result;
+    TObject* m_Object;
+
+    // free current object ( for call from destructor etc.)
+    inline void reset(void);
+    // disown object ( for call from assignment )
+    inline TObject* release(void) const;
+};
+
 class CNcbiQueryResult
 {
 public:
+    friend class CNcbiQueryResultIterator;
+    typedef CNcbiQueryResultIterator TIterator;
+    typedef unsigned long TSize;
 
-  virtual ~CNcbiQueryResult() {}
+    CNcbiQueryResult(void);
+    virtual ~CNcbiQueryResult(void);
 
+    TIterator begin(TSize index = 0)
+        { return TIterator(this, FirstObject(index)); }
+    TIterator end(void)
+        { return TIterator(this, 0); }
+
+    virtual TSize Size(void) const = 0;
+
+protected:
+    // should return 'index' object in query (null if none)
+    virtual CNcbiDataObject* FirstObject(TSize index) = 0;
+    // should free 'object' and return next object in query (null if none)
+    virtual CNcbiDataObject* NextObject(CNcbiDataObject* object) = 0;
+    // should free 'object' (if needed)
+    virtual void FreeObject(CNcbiDataObject* object);
 };
 
 //
@@ -407,7 +488,8 @@ public:
   virtual string GetLink( const CNcbiDataObject& obj ) const = 0;
 
   virtual CNCBINode* CreateView( CNcbiContext& ctx,
-                                 const CNcbiDataObject& obj ) const = 0;
+                                 const CNcbiDataObject& obj
+                                 bool selected = false) const = 0;
 #endif
 
   virtual bool IsRequested( const CNcbiContext& ctx ) const;
