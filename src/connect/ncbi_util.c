@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/08/28 20:05:51  vakatov
+ * CORE_SetLOGFILE() -- typo fixed
+ *
  * Revision 6.5  2000/06/23 19:34:45  vakatov
  * Added means to log binary data
  *
@@ -115,7 +118,7 @@ extern void CORE_SetLOGFILE
  int/*bool*/ auto_close)
 {
     LOG lg = LOG_Create(0, 0, 0, 0);
-    LOG_ToFILE(lg, stderr, auto_close);
+    LOG_ToFILE(lg, fp, auto_close);
     CORE_SetLOG(lg);
 }
 
