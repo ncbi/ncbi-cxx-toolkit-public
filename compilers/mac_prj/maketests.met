@@ -126,9 +126,9 @@ on SetProjectData()
 		
 		set commonObjLibs to {¬
 			"corelib", "serial", "util", ¬
-			"object_seqset", "object_seq", "object_seqres", ¬
-			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", ¬
-			"object_medline", "object_biblio", "object_general"}
+			"object_seqset", "object_seq", "object_seqres", "object_seqloc", ¬
+			"object_seqcode", "object_seqalign", "object_seqfeat", "object_seqblock", ¬
+			"object_pub", "object_medline", "object_biblio", "object_general"}
 		
 	end tell
 	
