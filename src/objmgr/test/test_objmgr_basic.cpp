@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/11/04 21:29:14  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.8  2002/10/23 12:43:31  gouriano
 * comment out unused parameters
 *
@@ -109,7 +112,7 @@ int CTestApplication::Run()
 NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
 {
     {
-        CRef< CObjectManager> pOm = new CObjectManager;
+        CRef< CObjectManager> pOm(new CObjectManager);
         {
             CTestDataLoader *pLoader1 = new CTestDataLoader( name1);
             pOm->RegisterDataLoader( *pLoader1, CObjectManager::eNonDefault);
@@ -117,7 +120,7 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
             pOm->RegisterDataLoader( *pLoader2, CObjectManager::eDefault);
 
             // scope in CRef container
-            CRef< CScope> pScope1 = new CScope(*pOm);
+            CRef< CScope> pScope1(new CScope(*pOm));
             pScope1->AddDefaults(); // loader 2 added
             pScope1->AddDataLoader( name1);
             // scope on the stack
@@ -135,10 +138,10 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
 NcbiCout << "1.1.2 Adding Seq_entry to the scope=================" << NcbiEndl;
 {
     {
-        CRef< CObjectManager> pOm = new CObjectManager;
+        CRef< CObjectManager> pOm(new CObjectManager);
         {
             // 3 scopes
-            CRef< CScope> pScope1 = new CScope(*pOm);
+            CRef< CScope> pScope1(new CScope(*pOm));
             CScope scope2(*pOm);
             CScope* pScope3 = new CScope(*pOm);
             CRef< CSeq_entry> pEntry = CreateTestEntry();
@@ -156,7 +159,7 @@ NcbiCout << "1.1.2 Adding Seq_entry to the scope=================" << NcbiEndl;
 NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
 {
     {
-        CRef< CObjectManager> pOm = new CObjectManager;
+        CRef< CObjectManager> pOm(new CObjectManager);
         {
             CTestDataLoader *pLoader1 = new CTestDataLoader( name1);
             CScope* pScope1 = new CScope(*pOm);

@@ -74,12 +74,12 @@ void CSeqMap::Add(CSegmentInfo& interval)
     // of multiple segments of unknown (zero) lengths.
     for ( it = m_Data.begin(); it != m_Data.end(); ++it) {
         if ((**it).GetPosition() > interval.GetPosition()) {
-            m_Data.insert(it, &interval);
+            m_Data.insert(it, CRef<CSeqMap::CSegmentInfo>(&interval));
             break;
         }
     }
     if (it == m_Data.end()) {
-        m_Data.push_back(&interval);
+        m_Data.push_back(CRef<CSeqMap::CSegmentInfo>(&interval));
     }
 }
 
@@ -255,6 +255,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.23  2002/10/18 19:12:40  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

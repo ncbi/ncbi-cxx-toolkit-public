@@ -101,7 +101,7 @@ protected:
     // Move to the next valid position
     void Walk(void);
     // Return current annotation
-    CAnnotObject* Get(void) const;
+    const CAnnotObject* Get(void) const;
 
 private:
     struct SConvertionRec : public CObject {
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/11/04 21:28:58  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.20  2002/11/01 20:46:41  grichenk
 * Added sorting to set< CRef<CAnnotObject> >
 *

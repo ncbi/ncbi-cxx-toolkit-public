@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2002/11/04 21:28:59  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.73  2002/10/25 14:49:29  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -358,8 +361,8 @@ public:
     typedef size_t TObjectIndex;
 
     // open methods
-    virtual void Open(const CRef<CByteSourceReader>& reader);
-    void Open(const CRef<CByteSource>& source);
+    virtual void Open(CByteSourceReader& reader);
+    void Open(CByteSource& source);
     void Open(CNcbiIstream& inStream, bool deleteInStream = false);
     void Close(void);
 
@@ -787,7 +790,7 @@ public:
     // open helpers
     static CObjectIStream* Create(ESerialDataFormat format);
     static CObjectIStream* Create(ESerialDataFormat format,
-                                  const CRef<CByteSource>& source);
+                                  CByteSource& source);
 private:
     static CRef<CByteSource> GetSource(ESerialDataFormat format,
                                        const string& fileName,

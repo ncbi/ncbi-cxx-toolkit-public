@@ -176,7 +176,7 @@ void CAnnotTypes_CI::Walk(void)
 }
 
 
-CAnnotObject* CAnnotTypes_CI::Get(void) const
+const CAnnotObject* CAnnotTypes_CI::Get(void) const
 {
     _ASSERT( IsValid() );
     return *m_CurAnnot;
@@ -227,7 +227,8 @@ has_references = true;
     m_AnnotSet.clear();
     non_const_iterate(TAnnotSet, it, orig_annots) {
         if (m_ResolveMethod != eResolve_None) {
-            m_AnnotSet.insert(x_ConvertAnnotToMaster(**it));
+            m_AnnotSet.insert(CRef<CAnnotObject>
+                              (x_ConvertAnnotToMaster(**it)));
         }
         else {
             m_AnnotSet.insert(*it);
@@ -245,7 +246,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                                          TSignedSeqPos shift)
 {
     // Create a new entry in the convertions map
-    CRef<SConvertionRec> rec = new SConvertionRec;
+    CRef<SConvertionRec> rec(new SConvertionRec);
     rec->m_Location.reset
         (new CHandleRangeMap(m_Scope->x_GetIdMapper()));
     CHandleRange hrg(ref_idh);
@@ -326,9 +327,10 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
         if ( m_TSESet.insert(*tse_it).second ) {
             (*tse_it)->LockCounter();
         }
-        CAnnot_CI annot_it(**tse_it, loc, m_Selector);
+        CTSE_Info& tse_info = const_cast<CTSE_Info&>(tse_it->GetObject());
+        CAnnot_CI annot_it(tse_info, loc, m_Selector);
         for ( ; annot_it; annot_it++ ) {
-            m_AnnotSet.insert(&(*annot_it));
+            m_AnnotSet.insert(CRef<CAnnotObject>(&(*annot_it)));
         }
     }
 }
@@ -348,7 +350,7 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
         {
             const CSeq_feat& fsrc = annot_obj.GetFeat();
             // Process feature location
-            CRef<CSeq_feat> fcopy = new CSeq_feat;
+            CRef<CSeq_feat> fcopy(new CSeq_feat);
             fcopy->Assign(fsrc);
             if (x_ConvertLocToMaster(fcopy->SetLocation()))
                 fcopy->SetPartial() = true;
@@ -371,7 +373,7 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
         {
             const CSeq_graph& gsrc = annot_obj.GetGraph();
             // Process graph location
-            CRef<CSeq_graph> gcopy = new CSeq_graph;
+            CRef<CSeq_graph> gcopy(new CSeq_graph);
             gcopy->Assign(gsrc);
             x_ConvertLocToMaster(gcopy->SetLoc());
             m_AnnotCopy.Reset(new CAnnotObject
@@ -588,6 +590,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/11/04 21:29:11  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.25  2002/10/08 18:57:30  grichenk
 * Added feature sorting to the iterator class.
 *

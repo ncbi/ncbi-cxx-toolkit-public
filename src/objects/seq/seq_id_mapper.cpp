@@ -1470,7 +1470,7 @@ CSeq_id_Mapper::CSeq_id_Mapper(void)
     m_IdMap[CSeq_id::e_Giim] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Giim_Tree);
     // These three types share the same accessions space
-    CRef<CSeq_id_Which_Tree> gb = new CSeq_id_GB_Tree;
+    CRef<CSeq_id_Which_Tree> gb(new CSeq_id_GB_Tree);
     m_IdMap[CSeq_id::e_Genbank] = gb;
     m_IdMap[CSeq_id::e_Embl] = gb;
     m_IdMap[CSeq_id::e_Ddbj] = gb;
@@ -1514,7 +1514,7 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
     if ( do_not_create )
         return CSeq_id_Handle();
     CSeq_id_Handle new_handle(*this, GetNextKey());
-    CRef<CSeq_id> id_ref = new CSeq_id;
+    CRef<CSeq_id> id_ref(new CSeq_id);
     id_ref->Assign(id);
     _ASSERT(id_ref);
     m_KeyMap[new_handle.m_Value] = id_ref;
@@ -1674,6 +1674,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.21  2002/10/02 21:26:52  ivanov
 * A CSeq_id_Which_Tree class declaration moved from .cpp to .hpp to make
 * KCC happy

@@ -1568,7 +1568,8 @@ void CValidError_impl::ValidErr
     string msg(message + " DESCRIPTOR: ");
     ds.GetLabel (&msg, CSeqdesc::eBoth);
 
-    m_Errors->push_back (new CValidErrItem (sv, et, msg, ds));
+    m_Errors->push_back(CRef<CValidErrItem>
+                        (new CValidErrItem(sv, et, msg, ds)));
 }
 
 
@@ -1631,7 +1632,8 @@ void CValidError_impl::ValidErr
             msg += loc_label;
         }
     }
-    m_Errors->push_back (new CValidErrItem (sv, et, msg, ft));
+    m_Errors->push_back(CRef<CValidErrItem>
+                        (new CValidErrItem(sv, et, msg, ft)));
 }
 
 
@@ -1648,7 +1650,8 @@ void CValidError_impl::ValidErr
     } else {
         sq.GetLabel(&msg, CBioseq::eBoth, false);
     }
-    m_Errors->push_back (new CValidErrItem (sv, et, msg, sq));
+    m_Errors->push_back(CRef<CValidErrItem>
+                        (new CValidErrItem(sv, et, msg, sq)));
 }
 
 
@@ -1679,7 +1682,8 @@ void CValidError_impl::ValidErr
     } else {
         set.GetLabel(&msg, CBioseq_set::eBoth);
     }
-    m_Errors->push_back (new CValidErrItem (sv, et, msg, set));
+    m_Errors->push_back(CRef<CValidErrItem>
+                        (new CValidErrItem(sv, et, msg, set)));
 }
 
 
@@ -4053,7 +4057,7 @@ void CValidError_impl::ValidateBioSource
 
 	int chrom_count = 0;
 	bool chrom_conflict = false;
-	CSubSource *chromosome = 0;
+	const CSubSource *chromosome = 0;
 	string countryname;
 	iterate( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
 		switch ( (**ssit).GetSubtype() ) {
@@ -5213,6 +5217,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2002/11/04 21:29:19  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.21  2002/10/31 22:27:36  kans
 * GetBioseqHandleByLoc moved to objmgr/scope, used in ValidateCdregion to look for genetic code conflicts, which relies on CSeqdesc_CI up-the-hierarchy descriptor indexing
 *

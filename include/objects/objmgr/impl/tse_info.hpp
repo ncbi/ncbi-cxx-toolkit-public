@@ -71,7 +71,7 @@ public:
     void UnlockCounter(void) const;
     bool CounterLocked(void) const;
 
-    bool IsIndexed(void) { return m_Indexed; }
+    bool IsIndexed(void) const { return m_Indexed; }
     void SetIndexed(bool value) { m_Indexed = value; }
 
     bool operator< (const CTSE_Info& info) const;
@@ -180,6 +180,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.10  2002/10/18 19:12:41  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

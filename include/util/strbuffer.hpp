@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/11/04 21:29:00  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.25  2002/01/29 16:21:20  grichenk
 * COStreamBuffer destructor fixed - no exceptions thrown
 *
@@ -175,7 +178,7 @@ public:
     void ResetFail(void);
     const char* GetError(void) const;
 
-    void Open(const CRef<CByteSourceReader>& reader);
+    void Open(CByteSourceReader& reader);
     void Close(void);
 
     char PeekChar(size_t offset = 0)
@@ -349,7 +352,7 @@ public:
 
     void Write(const char* data, size_t dataLength)
         THROWS1((CIOException, bad_alloc));
-    void Write(const CRef<CByteSourceReader>& reader)
+    void Write(CByteSourceReader& reader)
         THROWS1((CIOException, bad_alloc));
 
 private:

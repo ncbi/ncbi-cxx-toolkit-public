@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/11/04 21:29:20  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.6  2001/01/05 20:10:50  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -77,7 +80,7 @@ CDelayBuffer::~CDelayBuffer(void)
 
 void CDelayBuffer::SetData(const CItemInfo* itemInfo, TObjectPtr object,
                            ESerialDataFormat dataFormat,
-                           const CRef<CByteSource>& data)
+                           CByteSource& data)
 {
     _ASSERT(!Delayed());
 
@@ -97,7 +100,7 @@ void CDelayBuffer::DoUpdate(void)
 
     {
         auto_ptr<CObjectIStream> in(CObjectIStream::Create(info.m_DataFormat,
-                                                           info.m_Source));
+                                                           *info.m_Source));
         info.m_ItemInfo->UpdateDelayedBuffer(*in, info.m_Object);
     }
 
@@ -115,9 +118,9 @@ TMemberIndex CDelayBuffer::GetIndex(void) const
 
 CDelayBuffer::SInfo::SInfo(const CItemInfo* itemInfo, TObjectPtr object,
                            ESerialDataFormat format,
-                           const CRef<CByteSource>& source)
+                           CByteSource& source)
     : m_ItemInfo(itemInfo), m_Object(object),
-      m_DataFormat(format), m_Source(source)
+      m_DataFormat(format), m_Source(&source)
 {
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/11/04 21:29:20  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.3  2001/01/05 20:10:50  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -190,7 +193,7 @@ void CHookDataData::ResetGlobalHook(void)
 
 void CHookDataData::SetLocalHook(CHookDataKeyData& key, CObject* hook)
 {
-    m_LocalHooks.insert(key.m_Key, hook);
+    m_LocalHooks.insert(key.m_Key, CRef<ncbi::CObject>(hook));
 }
 
 void CHookDataData::ResetLocalHook(CHookDataKeyData& key)
@@ -205,7 +208,7 @@ CObject* CHookDataData::GetGlobalHook(void) const
 
 CObject* CHookDataData::GetHook(CHookDataKeyData& key) const
 {
-    TMap::const_iterator i = m_LocalHooks.find(key.m_Key);
+    TMap::iterator i = m_LocalHooks.find(key.m_Key);
     if ( i != m_LocalHooks.end() )
         return i->second.GetPointer();
     return m_GlobalHook.GetPointer();

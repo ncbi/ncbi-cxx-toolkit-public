@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/11/04 21:29:07  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.24  2001/05/17 15:05:42  lavr
 * Typos corrected
 *
@@ -143,7 +146,7 @@ CNCBINode::~CNCBINode(void)
 // append a child
 void CNCBINode::DoAppendChild(CNCBINode* child)
 {
-    GetChildren().push_back(child);
+    GetChildren().push_back(CRef<ncbi::CNCBINode>(child));
 }
 
 void CNCBINode::RemoveAllChildren(void)
@@ -260,11 +263,11 @@ CNodeRef CNCBINode::MapTagAll(const string& tagname, const TMode& mode)
         if ( stackNode ) {
             CNCBINode* mapNode = stackNode->MapTag(tagname);
             if ( mapNode )
-                return mapNode;
+                return CNodeRef(mapNode);
         }
         context = context->GetPreviousContext();
     } while ( context );
-    return 0;
+    return CNodeRef(0);
 }
 
 // print the whole node tree (with possible initialization)

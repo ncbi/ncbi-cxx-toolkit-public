@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/11/04 21:29:14  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.22  2002/06/04 17:18:33  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *
@@ -143,7 +146,7 @@ int CTestApplication::Run()
     {{
       CObjectManager *x = new CObjectManager;
       // x->DoDeleteThisObject();
-      CRef< CObjectManager> pOm = x;
+      CRef< CObjectManager> pOm(x);
     }}
     CObjectManager Om, *pOm=&Om;
 
@@ -177,7 +180,7 @@ int CTestApplication::Run()
               if (cc > 40) break;
           }
           LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
-          CRef<CSeq_loc> loc = new CSeq_loc;
+          CRef<CSeq_loc> loc(new CSeq_loc);
           loc->SetWhole().SetGi(gi);
           int fcount = 0;
           {{ // Creating a block to destroy the iterator after using it

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/11/04 21:28:59  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.3  2001/01/05 20:10:34  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -90,8 +93,8 @@ public:
     CObject* GetGlobalHook(void) const;
     CObject* GetHook(CHookDataKeyData& key) const;
 
-    mapped_type m_GlobalHook;
-    TMap m_LocalHooks;
+    mutable mapped_type m_GlobalHook;
+    mutable TMap m_LocalHooks;
 };
 
 //#include <serial/hookdataimpl.inl>

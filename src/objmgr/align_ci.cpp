@@ -68,7 +68,7 @@ CAlign_CI::~CAlign_CI(void)
 
 const CSeq_align& CAlign_CI::operator* (void) const
 {
-    CAnnotObject* annot = Get();
+    const CAnnotObject* annot = Get();
     _ASSERT(annot  &&  annot->IsAlign());
     return annot->GetAlign();
 }
@@ -76,7 +76,7 @@ const CSeq_align& CAlign_CI::operator* (void) const
 
 const CSeq_align* CAlign_CI::operator-> (void) const
 {
-    CAnnotObject* annot = Get();
+    const CAnnotObject* annot = Get();
     _ASSERT(annot  &&  annot->IsAlign());
     return &annot->GetAlign();
 }
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/11/04 21:29:11  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.9  2002/07/08 20:51:00  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

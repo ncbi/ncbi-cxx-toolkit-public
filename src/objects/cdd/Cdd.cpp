@@ -765,7 +765,7 @@ int CCdd::GetSeqPosition(const TDendiag* pDenDiagSet, int Position, bool OnMaste
     k = (*i)->GetStarts().begin();
     Len = (*i)->GetLen();
     Start = OnMasterRow ? *k : *(++k);
-    k = (*i)->SetStarts().begin();
+    k = (*i)->GetStarts().begin();
     OtherStart = OnMasterRow ? *(++k)  : *k;
     if ((Position >= Start) && (Position < (Start+Len))) {
       return(OtherStart + (Position-Start));
@@ -1243,11 +1243,11 @@ void CCdd::SetCurationStatus(int Status) {
 //-------------------------------------------------------------------------
 // set curation status of CD
 //-------------------------------------------------------------------------
-  CCdd_descr_set::Tdata::const_iterator i;
+  CCdd_descr_set::Tdata::iterator i;
 
   if (IsSetDescription()) {
     // if curation-status is set, reset it
-    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+    for (i=SetDescription().Set().begin(); i!=SetDescription().Set().end(); i++) {
       if ((*i)->IsCuration_status()) {
         (*i)->SetCuration_status(Status);
         return;
@@ -1415,7 +1415,7 @@ void CCdd::SetOldRoot(string Accession, int Version) {
 //-------------------------------------------------------------------------
 // set accession and version of old-root
 //-------------------------------------------------------------------------
-  CCdd_descr_set::Tdata::const_iterator i;
+  CCdd_descr_set::Tdata::iterator i;
 
   // make a new old-root
   CRef< CCdd_id > ID(new CCdd_id);
@@ -1427,7 +1427,7 @@ void CCdd::SetOldRoot(string Accession, int Version) {
   // look through the descriptions
   if (IsSetDescription()) {
     // if there is an old-root
-    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+    for (i=SetDescription().Set().begin(); i!=SetDescription().Set().end(); i++) {
       if ((*i)->IsOld_root()) {
         // reset it, and set the new one
         (*i)->SetOld_root().Reset();
@@ -1557,6 +1557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/11/04 21:29:09  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 1.21  2002/10/23 22:58:44  hurwitz
  * changed curation-status strings
  *

@@ -76,7 +76,9 @@ void CThreadedServer::Run(void)
         sock.SetOwnership(eNoOwnership); // Process[Overflow] will close it
         if (status == eIO_Success) {
             try {
-                pool.AcceptRequest(new CSocketRequest(*this, sock.GetSOCK()));
+                pool.AcceptRequest
+                    (CRef<ncbi::CStdRequest>
+                     (new CSocketRequest(*this, sock.GetSOCK())));
                 if (pool.IsFull()  &&  m_TemporarilyStopListening) {
                     lsock.Close();
                     pool.WaitForRoom();
@@ -99,6 +101,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.9  2002/11/04 21:29:02  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 6.8  2002/09/17 18:42:30  ucko
 * Use CSocket now that SetOwnership exists.
 *

@@ -551,7 +551,7 @@ int CThreadedApp::Run(void)
 
     // Create test objects
     main_cleanup_flag = 0;
-    CRef< CTls<int> > tls = new CTls<int>;
+    CRef< CTls<int> > tls(new CTls<int>);
     tls->SetValue(0);
     CRWLock rw;
     CSharedResource res;
@@ -754,6 +754,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2002/11/04 21:29:05  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 6.5  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/11/04 21:29:22  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.1  2001/12/11 19:54:45  ucko
 * Introduce thread pools.
 *
@@ -80,7 +83,7 @@ void CStdPoolOfThreads::KillAllThreads(bool wait)
     CFatalRequest* poison = new CFatalRequest(sem.get());
 
     for (unsigned int i = 0;  i < n;  i++) {
-        AcceptRequest(poison);
+        AcceptRequest(CRef<ncbi::CStdRequest>(poison));
     }
     if (wait) {
         // Wait for all threads to post to the semaphore

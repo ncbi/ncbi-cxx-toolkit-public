@@ -124,7 +124,7 @@ bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
                              TSeqPosition start, TSeqLength length)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    CRef<CDelta_seq> dseq = new CDelta_seq;
+    CRef<CDelta_seq> dseq(new CDelta_seq);
     dseq->SetLiteral().SetSeq_data(seq);
     dseq->SetLiteral().SetLength(length);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
@@ -185,7 +185,8 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
     }
     // create result
     iterate(TSeq_id_HandleSet, itSet, setResult) {
-        setId.insert( &(m_pObjMgr->m_IdMapper->GetSeq_id(*itSet)));
+        setId.insert(CRef<const CSeq_id>
+                     (&(m_pObjMgr->m_IdMapper->GetSeq_id(*itSet))));
     }
 }
 
@@ -408,6 +409,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.33  2002/11/01 05:34:32  kans
 * added GetBioseqHandle taking CBioseq parameter
 *

@@ -241,7 +241,7 @@ CGBDataLoader::x_Check(STSEinfo *me)
 
 
 CTSE_Info*
-CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_set)
+CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_set)
 {
   TSeq_id_Key  sih       = x_GetSeq_id_Key(handle);
   SSeqrefs*    sr=0;
@@ -259,7 +259,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
   }
   iterate(TTSESet, sit, tse_set)
     {
-      CTSE_Info *ti = *sit;
+      CTSE_Info *ti = const_cast<CTSE_Info*>(sit->GetPointer());
       const CSeq_entry *sep = ti->m_TSE;
       TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
       if(it==m_Tse2TseInfo.end()) continue;
@@ -270,7 +270,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
       g.Lock(tse);
 
       if(tse->mode.test(STSEinfo::eDead) && !ti->m_Dead)
-        ti->m_Dead=true;
+        ti->m_Dead = true;
       if(tse->m_SeqIds.find(sih)!=tse->m_SeqIds.end()) // listed for given TSE
         {
           if(!best)
@@ -304,7 +304,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
           if (tsep == m_Sr2TseInfo.end()) continue;
           iterate(TTSESet, sit, tse_set)
             {
-              CTSE_Info *ti = *sit;
+              CTSE_Info *ti = const_cast<CTSE_Info*>(sit->GetPointer());;
               TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE.GetPointer());
               if(it==m_Tse2TseInfo.end()) continue;
               if(it->second==tsep->second)
@@ -820,6 +820,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.41  2002/09/09 16:12:43  dicuccio
 * Fixed minor typo ("conneciton" -> "connection").
 *

@@ -122,7 +122,7 @@ out_t CMLAClient::name(in_t in)                      \
     request.setter;                                  \
     CRef<CMla_back> response = SendRequest(request); \
     try {                                            \
-        return result;                               \
+        return out_t(result);                               \
     } catch (CInvalidChoiceSelection) {              \
         THROW0_TRACE(CException(*response));         \
     }                                                \
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 6.4  2002/11/04 21:29:10  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 6.3  2002/07/30 15:02:20  ucko
 * Fix result type of GetMle{Pmid,Uid} to CPubmed_entry.
 *

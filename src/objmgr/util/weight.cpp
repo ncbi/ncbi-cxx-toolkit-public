@@ -163,12 +163,12 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
             CSeq_interval& interval = whole->SetInt();
             interval.SetFrom(signal->GetLocation().GetTotalRange().GetTo() + 1);
             interval.SetTo(v.size() - 1);
-            interval.SetId(*core->GetId().front());                
+            interval.SetId(*const_cast<CSeq_id*>(core->GetId().front().GetPointer()));                
         } else if (v[0] == 'M') { // Treat initial methionine as start codon
             CSeq_interval& interval = whole->SetInt();
             interval.SetFrom(1);
             interval.SetTo(v.size() - 1);
-            interval.SetId(*core->GetId().front());
+            interval.SetId(*const_cast<CSeq_id*>(core->GetId().front().GetPointer()));
         }
         locations.insert(whole);
     }
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/11/04 21:29:19  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.12  2002/09/03 21:27:04  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.

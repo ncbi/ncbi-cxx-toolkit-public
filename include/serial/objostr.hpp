@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/11/04 21:28:59  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.64  2002/10/25 14:49:29  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -472,7 +475,7 @@ public:
                           CObjectIStream& in) = 0;
 
     // delayed buffer
-    virtual bool Write(const CRef<CByteSource>& source);
+    virtual bool Write(CByteSource& source);
 
     // low level readers:
     enum EFailFlags {

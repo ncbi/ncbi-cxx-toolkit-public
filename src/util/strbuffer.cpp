@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/11/04 21:29:22  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.32  2002/10/22 20:22:55  gouriano
 * undo the prev change
 *
@@ -192,9 +195,9 @@ CIStreamBuffer::~CIStreamBuffer(void)
     delete[] m_Buffer;
 }
 
-void CIStreamBuffer::Open(const CRef<CByteSourceReader>& reader)
+void CIStreamBuffer::Open(CByteSourceReader& reader)
 {
-    m_Input = reader;
+    m_Input = &reader;
     m_Error = 0;
 }
 
@@ -904,7 +907,7 @@ void COStreamBuffer::Write(const char* data, size_t dataLength)
     m_CurrentPos += dataLength;
 }
 
-void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
+void COStreamBuffer::Write(CByteSourceReader& reader)
     THROWS1((CIOException, bad_alloc))
 {
     for ( ;; ) {
@@ -913,9 +916,9 @@ void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
             FlushBuffer(false);
             available = GetAvailableSpace();
         }
-        size_t count = reader.GetObject().Read(m_CurrentPos, available);
+        size_t count = reader.Read(m_CurrentPos, available);
         if ( count == 0 ) {
-            if ( reader->EndOfData() )
+            if ( reader.EndOfData() )
                 return;
             else
                 THROW1_TRACE(CIOException, "buffer read fault");

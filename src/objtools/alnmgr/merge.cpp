@@ -104,7 +104,7 @@ void CAlnMix::x_Merge()
 
     list< CRef< CSeq_align > >& sa_lst = aln.SetSegs().SetDisc().Set();
     iterate (TConstDSs, ds_it, m_InputDSs) {
-        CRef<CSeq_align> sa = new CSeq_align();
+        CRef<CSeq_align> sa(new CSeq_align());
         sa->SetSegs().SetDenseg(**ds_it);
         sa_lst.push_back(sa);
     }
@@ -132,7 +132,7 @@ void CAlnMix::x_Merge()
     }
     
     // convert back to c++
-    CRef<CSeq_align> shared = new CSeq_align();
+    CRef<CSeq_align> shared(new CSeq_align());
     converter.FromC(((AMAlignIndex2Ptr)(sap->saip))->sharedaln, shared);
 
     SeqAlignFree(sap);
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/11/04 21:29:08  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.6  2002/10/24 21:42:07  todorov
 * adding Dense-segs instead of Seq-aligns
 *

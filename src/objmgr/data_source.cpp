@@ -64,23 +64,23 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
                                       const CScope::TRequestHistory& history) const
 {
 //### Don't forget to unlock TSE in the calling function!
-    const TTSESet* p_tse_set = 0;
+    TTSESet* p_tse_set = 0;
     CMutexGuard ds_guard(m_DataSource_Mtx);
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
     if ( tse_set == m_TSE_seq.end() ) {
         return 0;
     }
-    p_tse_set = &tse_set->second;
+    p_tse_set = const_cast<TTSESet*>(&tse_set->second);
     if ( p_tse_set->size() == 1) {
         // There is only one TSE, no matter live or dead
-        CTSE_Info* info = *p_tse_set->begin();
+        const CTSE_Info* info = *p_tse_set->begin();
         info->LockCounter();
-        return info;
+        return const_cast<CTSE_Info*>(info);
     }
     // The map should not contain empty entries
     _ASSERT(p_tse_set->size() > 0);
     TTSESet live;
-    CTSE_Info* from_history = 0;
+    const CTSE_Info* from_history = 0;
     iterate(TTSESet, tse, *p_tse_set) {
         // Check history
         CScope::TRequestHistory::const_iterator hst = history.find(*tse);
@@ -100,34 +100,34 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
     // History is always the best choice
     if (from_history) {
         from_history->LockCounter();
-        return from_history;
+        return const_cast<CTSE_Info*>(from_history);
     }
 
     // Check live
     if (live.size() == 1) {
         // There is only one live TSE -- ok to use it
-        CTSE_Info* info = *live.begin();
+        CTSE_Info* info = const_cast<CTSE_Info*>(live.begin()->GetPointer());
         info->LockCounter();
         return info;
     }
     else if ((live.size() == 0)  &&  m_Loader) {
         // No live TSEs -- try to select the best dead TSE
-        CTSE_Info* best = m_Loader->ResolveConflict(handle, *p_tse_set);
+        CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, *p_tse_set));
         if ( best ) {
-            CTSE_Info* info = *p_tse_set->find(best);
+            const CTSE_Info* info = *p_tse_set->find(best);
             info->LockCounter();
-            return info;
+            return const_cast<CTSE_Info*>(info);
         }
         THROW1_TRACE(runtime_error,
             "CDataSource::x_FindBestTSE() -- Multiple seq-id matches found");
     }
     // Multiple live TSEs -- try to resolve the conflict (the status of some
     // TSEs may change)
-    CTSE_Info* best = m_Loader->ResolveConflict(handle, live);
+    CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, live));
     if ( best ) {
-        CTSE_Info* info = *p_tse_set->find(best);
+        const CTSE_Info* info = *p_tse_set->find(best);
         info->LockCounter();
-        return info;
+        return const_cast<CTSE_Info*>(info);
     }
     THROW1_TRACE(runtime_error,
         "CDataSource::x_FindBestTSE() -- Multiple live entries found");
@@ -199,7 +199,7 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
     // Bioseq and TSE must be loaded if there exists a handle
     //### CMutexGuard guard(sm_DataSource_Mutex);
     _ASSERT(handle.m_DataSource == this);
-    return *m_Entries[handle.m_Entry]->m_TSE;
+    return *m_Entries[CRef<CSeq_entry>(handle.m_Entry)]->m_TSE;
 }
 
 
@@ -463,7 +463,7 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
-    return found->first;
+    return const_cast<CSeq_entry*>(found->first.GetPointer());
 }
 
 
@@ -478,10 +478,10 @@ bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
         return false;
     }
     // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[found]);
+    CTSE_Guard tse_guard(*m_Entries[CRef<CSeq_entry>(found)]);
     _ASSERT(found  &&  found->IsSet());
 
-    found->SetSet().SetSeq_set().push_back(&bioseq);
+    found->SetSet().SetSeq_set().push_back(CRef<CSeq_entry>(&bioseq));
 
     // Re-parentize, update index
     CSeq_entry* top = found;
@@ -506,7 +506,7 @@ bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
         return false;
     }
     // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[found]);
+    CTSE_Guard tse_guard(*m_Entries[CRef<CSeq_entry>(found)]);
 
     CSeq_entry& entry = *found;
     _ASSERT(entry.IsSeq());
@@ -535,7 +535,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
         return false;
     }
     // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[found]);
+    CTSE_Guard tse_guard(*m_Entries[CRef<CSeq_entry>(found)]);
 
     CSeq_entry& entry = *found;
     _ASSERT( entry.IsSeq() );
@@ -620,7 +620,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
         }
         else {
             // Split the gap, insert the new segment between the two gaps
-            CRef<CDelta_seq> gap_dup = new CDelta_seq;
+            CRef<CDelta_seq> gap_dup(new CDelta_seq);
             gap_dup->Assign(**gap);
             if ((*gap)->GetLiteral().GetLength() > 0) {
                 // Adjust gap lengths
@@ -655,7 +655,7 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
         return false;
     }
 
-    CTSE_Info* tse = m_Entries[found];
+    CTSE_Info* tse = m_Entries[CRef<CSeq_entry>(found)];
     //### Lock the TSE !!!!!!!!!!!
     CTSE_Guard tse_guard(*tse);
 
@@ -666,7 +666,7 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
     else {
         annot_list = &found->SetSeq().SetAnnot();
     }
-    annot_list->push_back(&annot);
+    annot_list->push_back(CRef<CSeq_annot>(&annot));
 
     if ( !m_IndexedAnnot )
         return true; // skip annotations indexing
@@ -732,7 +732,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
     // Lock indexes to prevent duplicate indexing
     CMutexGuard entries_guard(m_DataSource_Mtx);    
 
-    TEntries::iterator found_tse = m_Entries.find(&tse);
+    TEntries::iterator found_tse = m_Entries.find(CRef<CSeq_entry>(&tse));
     if (found_tse == m_Entries.end()) {
         // New TSE info
         tse_info = new CTSE_Info;
@@ -749,8 +749,8 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
     }
     _ASSERT(tse_info);
     CTSE_Guard tse_guard(*tse_info);
-
-    m_Entries[&entry] = tse_info;
+     
+    m_Entries[CRef<CSeq_entry>(&entry)] = tse_info;
     if ( entry.IsSeq() ) {
         CBioseq* seq = &entry.SetSeq();
         CBioseq_Info* info = new CBioseq_Info(entry);
@@ -760,14 +760,14 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
             TTSESet& seq_tse_set = m_TSE_seq[key];
             TTSESet::iterator tse_it = seq_tse_set.begin();
             for ( ; tse_it != seq_tse_set.end(); ++tse_it) {
-                if ((*tse_it)->m_TSE == &tse)
+                if (const_cast< CRef<CSeq_entry>& >((*tse_it)->m_TSE) == &tse)
                     break;
             }
             if (tse_it == seq_tse_set.end()) {
-                seq_tse_set.insert(tse_info);
+                seq_tse_set.insert(CRef<CTSE_Info>(tse_info));
             }
             else {
-                tse_info = *tse_it;
+                tse_info = const_cast<CTSE_Info*>(tse_it->GetPointer());
             }
             TBioseqMap::iterator found = tse_info->m_BioseqMap.find(key);
             if ( found != tse_info->m_BioseqMap.end() ) {
@@ -803,16 +803,18 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
             }
         }
         iterate ( CBioseq_Info::TSynonyms, syn, info->m_Synonyms ) {
-            tse_info->m_BioseqMap.insert(TBioseqMap::value_type(*syn, info));
+            tse_info->m_BioseqMap.insert
+                (TBioseqMap::value_type(*syn,
+                                        CRef<CBioseq_Info>(info)));
         }
     }
     else {
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
-            x_IndexEntry(**it, tse, dead, 0);
+            x_IndexEntry(const_cast<CSeq_entry&>(**it), tse, dead, 0);
         }
     }
     if (tse_set) {
-        tse_set->insert(tse_info);
+        tse_set->insert(CRef<CTSE_Info>(tse_info));
     }
     return tse_info;
 }
@@ -824,7 +826,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
     // Lock indexes
     CMutexGuard guard(m_DataSource_Mtx);    
 
-    CTSE_Info* tse = m_Entries[&entry];
+    CTSE_Info* tse = m_Entries[CRef<CSeq_entry>(&entry)];
     CTSE_Guard tse_guard(*tse);
     tse->SetIndexed(true);
     const CBioseq::TAnnot* annot_list = 0;
@@ -838,7 +840,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
             annot_list = &entry.GetSet().GetAnnot();
         }
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
-            x_AddToAnnotMap(**it);
+            x_AddToAnnotMap(const_cast<CSeq_entry&>(**it));
         }
     }
     if ( !annot_list ) {
@@ -1103,9 +1105,10 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first].insert(&tse);
+        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
         tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
-            mapit->second.GetOverlappingRange(), aobj));
+            mapit->second.GetOverlappingRange(),
+            CRef<CAnnotObject>(aobj)));
     }
 }
 
@@ -1122,9 +1125,10 @@ void CDataSource::x_MapAlign(const CSeq_align& align,
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first].insert(&tse);
+        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
         tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
-            mapit->second.GetOverlappingRange(), aobj));
+            mapit->second.GetOverlappingRange(),
+            CRef<CAnnotObject>(aobj)));
     }
 }
 
@@ -1142,9 +1146,10 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first].insert(&tse);
+        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
         tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
-            mapit->second.GetOverlappingRange(), aobj));
+            mapit->second.GetOverlappingRange(),
+            CRef<CAnnotObject>(aobj)));
     }
 }
 
@@ -1156,7 +1161,7 @@ void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
 {
     // Index all annotations if not indexed yet
     if ( !m_IndexedAnnot ) {
-        iterate (TEntries, tse_it, m_Entries) {
+        non_const_iterate (TEntries, tse_it, m_Entries) {
             //### Lock TSE so that another thread can not index it too
             CTSE_Guard guard(*tse_it->second);
             if ( !tse_it->second->IsIndexed() )
@@ -1377,7 +1382,7 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
         return false; // Not really dropped, although found
     if ( m_Loader )
         m_Loader->DropTSE(found->first);
-    x_DropEntry(*found->first);
+    x_DropEntry(const_cast<CSeq_entry&>(*found->first));
     return true;
 }
 
@@ -1400,13 +1405,16 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
             //### CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));
             TTSESet::iterator tse_it = tse_set->second.begin();
             for ( ; tse_it != tse_set->second.end(); ++tse_it) {
-                if ((*tse_it)->m_TSE == tse)
+                if (const_cast<CSeq_entry*>((*tse_it)->m_TSE.GetPointer()) ==
+                    const_cast<CSeq_entry*>(tse))
                     break;
             }
             _ASSERT(tse_it != tse_set->second.end());
-            TBioseqMap::iterator found = (*tse_it)->m_BioseqMap.find(key);
-            _ASSERT( found != (*tse_it)->m_BioseqMap.end() );
-            (*tse_it)->m_BioseqMap.erase(found);
+            TBioseqMap::iterator found =
+                const_cast<TBioseqMap&>((*tse_it)->m_BioseqMap).find(key);
+            _ASSERT( found !=
+                     const_cast<TBioseqMap&>((*tse_it)->m_BioseqMap).end() );
+            const_cast<TBioseqMap&>((*tse_it)->m_BioseqMap).erase(found);
             // Remove TSE index for the bioseq (the TSE may still be
             // in other id indexes).
             tse_set->second.erase(tse_it);
@@ -1422,11 +1430,11 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
     }
     else {
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
-            x_DropEntry(**it);
+            x_DropEntry(const_cast<CSeq_entry&>(**it));
         }
         x_DropAnnotMap(entry);
     }
-    m_Entries.erase(&entry);
+    m_Entries.erase(CRef<CSeq_entry>(&entry));
 }
 
 
@@ -1495,9 +1503,11 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
         // Find the TSE containing the feature
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
-            TAnnotMap::iterator annot_it = (*tse_info)->m_AnnotMap.find(
+            TAnnotMap::iterator annot_it =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).find(
                 mapit->first);
-            if (annot_it == (*tse_info)->m_AnnotMap.end())
+            if (annot_it ==
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).end())
                 continue;
             TRangeMap::iterator rg = annot_it->second.begin(
                 mapit->second.GetOverlappingRange());
@@ -1538,9 +1548,11 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
         // Find the TSE containing the align
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
-            TAnnotMap::iterator annot_it = (*tse_info)->m_AnnotMap.find(
+            TAnnotMap::iterator annot_it =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).find(
                 mapit->first);
-            if (annot_it == (*tse_info)->m_AnnotMap.end())
+            if (annot_it ==
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).end())
                 continue;
             TRangeMap::iterator rg = annot_it->second.begin(
                 mapit->second.GetOverlappingRange());
@@ -1581,9 +1593,11 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
         // Find the TSE containing the graph
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
-            TAnnotMap::iterator annot_it = (*tse_info)->m_AnnotMap.find(
+            TAnnotMap::iterator annot_it =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).find(
                 mapit->first);
-            if (annot_it == (*tse_info)->m_AnnotMap.end())
+            if (annot_it ==
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).end())
                 continue;
             TRangeMap::iterator rg = annot_it->second.begin(
                 mapit->second.GetOverlappingRange());
@@ -1630,7 +1644,7 @@ void CDataSource::x_CleanupUnusedEntries(void)
 
 void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
 {
-    TEntries::iterator tse_it = m_Entries.find(&tse);
+    TEntries::iterator tse_it = m_Entries.find(CRef<CSeq_entry>(&tse));
     _ASSERT(tse_it != m_Entries.end());
     CTSE_Guard guard(*tse_it->second);
     tse_it->second->m_Dead = dead;
@@ -1681,7 +1695,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     }
     bool just_loaded = false;
     iterate (TTSESet, lit, loaded_tse_set) {
-        if (*lit != tse) {
+        if (lit->GetPointer() != tse) {
             (*lit)->UnlockCounter();
         }
         else {
@@ -1829,8 +1843,9 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
     if (tse_set == m_TSE_seq.end())
         return false; // Could not find id1 in the datasource
-    iterate ( TTSESet, tse_it, tse_set->second ) {
-        const CBioseq_Info& bioseq = *(*tse_it)->m_BioseqMap[h1];
+    non_const_iterate (TTSESet, tse_it, const_cast<TTSESet&>(tse_set->second) ) {
+        const CBioseq_Info& bioseq =
+            *const_cast<TBioseqMap&>((*tse_it)->m_BioseqMap)[h1];
         if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
             return true;
     }
@@ -1859,14 +1874,15 @@ bool CDataSource::GetTSEHandles(CScope& scope,
     typedef map<CSeq_entry*, CBioseq_Info*> TEntryToInfo;
     TEntryToInfo bioseq_map;
     // Populate the map
-    iterate (CTSE_Info::TBioseqMap, bit, found->second->m_BioseqMap) {
+    non_const_iterate (CTSE_Info::TBioseqMap, bit, found->second->m_BioseqMap) {
         if (filter != CSeq_inst::eMol_not_set) {
             // Filter sequences
             _ASSERT(bit->second->m_Entry->IsSeq());
             if (bit->second->m_Entry->GetSeq().GetInst().GetMol() != filter)
                 continue;
         }
-        bioseq_map[bit->second->m_Entry.GetPointer()] = bit->second;
+        bioseq_map[const_cast<CSeq_entry*>(bit->second->m_Entry.GetPointer())] =
+            bit->second;
     }
     // Convert each map entry into bioseq handle
     iterate (TEntryToInfo, eit, bioseq_map) {
@@ -1950,6 +1966,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.67  2002/10/18 19:12:40  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

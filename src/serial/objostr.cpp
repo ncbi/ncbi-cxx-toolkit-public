@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/11/04 21:29:20  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.67  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -578,9 +581,9 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr objectPtr,
     WriteObject(objectPtr, typeInfo);
 }
 
-bool CObjectOStream::Write(const CRef<CByteSource>& source)
+bool CObjectOStream::Write(CByteSource& source)
 {
-    m_Output.Write(source.GetObject().Open());
+    m_Output.Write(*source.Open());
     return true;
 }
 

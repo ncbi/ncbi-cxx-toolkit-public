@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2002/11/04 21:29:20  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.94  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -422,7 +425,7 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
     if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
          (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
          (openFlags & eSerial_StdWhenStd) && fileName == "stdin" ) {
-        return new CStreamByteSource(NcbiCin);
+        return CRef<CByteSource>(new CStreamByteSource(NcbiCin));
     }
     else {
         bool binary;
@@ -441,11 +444,11 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
         
         if ( (openFlags & eSerial_UseFileForReread) )  {
             // use file as permanent file
-            return new CFileByteSource(fileName, binary);
+            return CRef<CByteSource>(new CFileByteSource(fileName, binary));
         }
         else {
             // open file as stream
-            return new CFStreamByteSource(fileName, binary);
+            return CRef<CByteSource>(new CFStreamByteSource(fileName, binary));
         }
     }
 }
@@ -454,10 +457,10 @@ CRef<CByteSource> CObjectIStream::GetSource(CNcbiIstream& inStream,
                                             bool deleteInStream)
 {
     if ( deleteInStream ) {
-        return new CFStreamByteSource(inStream);
+        return CRef<CByteSource>(new CFStreamByteSource(inStream));
     }
     else {
-        return new CStreamByteSource(inStream);
+        return CRef<CByteSource>(new CStreamByteSource(inStream));
     }
 }
 
@@ -478,7 +481,7 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format)
 }
 
 CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
-                                       const CRef<CByteSource>& source)
+                                       CByteSource& source)
 {
     AutoPtr<CObjectIStream> stream(Create(format));
     stream->Open(source);
@@ -489,14 +492,14 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
                                      bool deleteInStream)
 {
-    return Create(format, GetSource(inStream, deleteInStream));
+    return Create(format, *GetSource(inStream, deleteInStream));
 }
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      const string& fileName,
                                      TSerialOpenFlags openFlags)
 {
-    return Create(format, GetSource(format, fileName, openFlags));
+    return Create(format, *GetSource(format, fileName, openFlags));
 }
 
 CObjectIStream::CObjectIStream(void)
@@ -508,7 +511,7 @@ CObjectIStream::~CObjectIStream(void)
 {
 }
 
-void CObjectIStream::Open(const CRef<CByteSourceReader>& reader)
+void CObjectIStream::Open(CByteSourceReader& reader)
 {
     Close();
     _ASSERT(m_Fail == fNotOpen);
@@ -516,14 +519,14 @@ void CObjectIStream::Open(const CRef<CByteSourceReader>& reader)
     m_Fail = 0;
 }
 
-void CObjectIStream::Open(const CRef<CByteSource>& source)
+void CObjectIStream::Open(CByteSource& source)
 {
-    Open(source.GetObject().Open());
+    Open(*source.Open());
 }
 
 void CObjectIStream::Open(CNcbiIstream& inStream, bool deleteInStream)
 {
-    Open(GetSource(inStream, deleteInStream));
+    Open(*GetSource(inStream, deleteInStream));
 }
 
 void CObjectIStream::Close(void)
@@ -740,7 +743,7 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
                                     TObjectPtr objectPtr)
 {
     buffer.SetData(itemInfo, objectPtr,
-                   GetDataFormat(), m_Input.EndSubSource());
+                   GetDataFormat(), *m_Input.EndSubSource());
 }
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.5  2002/11/04 21:29:03  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 6.4  2002/09/19 20:05:42  vasilche
 * Safe initialization of static mutexes
 *
@@ -161,9 +164,11 @@ int CThreadedClientApp::Run(void)
 
     for (unsigned int i = 0;  i < s_Requests;  ++i) {
         X_SLEEP(rng.GetRand(0, 9));
-        pool.AcceptRequest(new CConnectionRequest(args["host"].AsString(),
-                                                  args["port"].AsInteger(),
-                                                  rng.GetRand(0, 9)));
+        pool.AcceptRequest
+            (CRef<ncbi::CStdRequest>
+             (new CConnectionRequest(args["host"].AsString(),
+                                     args["port"].AsInteger(),
+                                     rng.GetRand(0, 9))));
     }
 
     pool.KillAllThreads(true);

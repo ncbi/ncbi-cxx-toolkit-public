@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/11/04 21:28:59  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.5  2000/09/18 20:00:01  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -104,22 +107,22 @@ public:
             const SInfo* info = m_Info.get();
             return info && info->m_DataFormat == format;
         }
-    const CRef<CByteSource>& GetSource(void) const
+    CByteSource& GetSource(void) const
         {
-            return m_Info->m_Source;
+            return *m_Info->m_Source;
         }
 
     TMemberIndex GetIndex(void) const;
 
     void SetData(const CItemInfo* itemInfo, TObjectPtr object,
-                 ESerialDataFormat dataFormat, const CRef<CByteSource>& data);
+                 ESerialDataFormat dataFormat, CByteSource& data);
 
 private:
     struct SInfo
     {
     public:
         SInfo(const CItemInfo* itemInfo, TObjectPtr object,
-              ESerialDataFormat dataFormat, const CRef<CByteSource>& source);
+              ESerialDataFormat dataFormat, CByteSource& source);
         ~SInfo(void);
 
         // member info
@@ -129,7 +132,7 @@ private:
         // data format
         ESerialDataFormat m_DataFormat;
         // data source
-        CRef<CByteSource> m_Source;
+        mutable CRef<CByteSource> m_Source;
     };
 
     // private method declarations to prevent implicit generation by compiler

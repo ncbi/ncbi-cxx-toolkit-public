@@ -1124,7 +1124,7 @@ void CArgs::Add(CArgValue* arg)
     }
 
     // add
-    m_Args.insert(arg);
+    m_Args.insert(CRef<CArgValue>(arg));
 
     if ( is_extra ) {
         m_nExtra++;
@@ -2134,6 +2134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2002/11/04 21:29:04  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 1.41  2002/10/03 14:44:34  ucko
  * Tweak the interfaces to NStr::Wrap* to avoid publicly depending on
  * kEmptyStr, removing the need for fWrap_UsePrefix1 in the process; also

@@ -108,7 +108,7 @@ int CSampleObjmgrApplication::Run(void)
 
     // Create object manager
     // * We use CRef<> here to automatically delete the OM on exit.
-    CRef<CObjectManager> object_manager = new CObjectManager;
+    CRef<CObjectManager> object_manager(new CObjectManager);
 
     // Create GenBank data loader and register it with the OM.
     // * The last argument "eDefault" informs the OM that the loader must
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2002/11/04 21:29:01  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 1.6  2002/08/30 18:10:20  ucko
  * Let CGBDataLoader pick a driver automatically rather than forcing it
  * to use ID1.

@@ -96,7 +96,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
                     int_loc->SetInt().SetStrand((*ii)->GetStrand());
                 CDelta_seq* dseq = new CDelta_seq;
                 dseq->SetLoc(*int_loc);
-                ext.Set().push_back(dseq);
+                ext.Set().push_back(CRef<CDelta_seq>(dseq));
             }
             break;
         }
@@ -115,7 +115,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
                 }
                 CDelta_seq* dseq = new CDelta_seq;
                 dseq->SetLoc(*pnt_loc);
-                ext.Set().push_back(dseq);
+                ext.Set().push_back(CRef<CDelta_seq>(dseq));
             }
         }
     case CSeq_loc::e_Mix:
@@ -133,7 +133,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
             CSeq_loc* cp_loc = new CSeq_loc;
             SerialAssign<CSeq_loc>(*cp_loc, loc);
             dseq->SetLoc(*cp_loc);
-            ext.Set().push_back(dseq);
+            ext.Set().push_back(CRef<CDelta_seq>(dseq));
         }
     }
 }
@@ -152,7 +152,7 @@ CBioseq::CBioseq(const CSeq_loc& loc, string str_id)
     else {
         id->SetLocal().SetStr(str_id);
     }
-    id_list.push_back(id);
+    id_list.push_back(CRef<CSeq_id>(id));
 
     // Inst
     CSeq_inst& inst = SetInst();
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2002/11/04 21:29:15  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 6.15  2002/10/08 19:09:39  clausen
  * Fixed formatting but in GetLabel()
  *

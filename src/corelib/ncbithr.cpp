@@ -368,7 +368,8 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     {{
         CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
         non_const_iterate(TTlsSet, it, thread_obj->m_UsedTls) {
-            (*it)->x_Reset();
+            CRef<CTlsBase> tls = *it;
+            tls->x_Reset();
         }
     }}
 
@@ -617,7 +618,7 @@ void CThread::AddUsedTls(CTlsBase* tls)
     // Get current thread object
     CThread* x_this = GetThreadsTls().GetValue();
     if ( x_this ) {
-        x_this->m_UsedTls.insert(tls);
+        x_this->m_UsedTls.insert(CRef<CTlsBase>(tls));
     }
 }
 
@@ -644,6 +645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/11/04 21:29:04  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 1.22  2002/09/30 16:53:28  vasilche
  * Fix typedef on Windows.
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/11/04 21:29:13  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.8  2002/10/02 17:58:41  grichenk
 * Added CBioseq_CI sample code
 *
@@ -133,7 +136,7 @@ int CDemoApp::Run(void)
     int gi = args["gi"].AsInteger();
 
     // Create object manager. Use CRef<> to delete the OM on exit.
-    CRef<CObjectManager> pOm = new CObjectManager;
+    CRef<CObjectManager> pOm(new CObjectManager);
 
     // Create genbank data loader and register it with the OM.
     // The last argument "eDefault" informs the OM that the loader

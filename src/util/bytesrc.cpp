@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/11/04 21:29:22  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.16  2002/01/17 17:57:14  vakatov
 * [GCC > 3.0]  CStreamByteSourceReader::Read() -- use "readsome()", thus
 * avoid blocking on timeout at EOF for non-blocking input stream.
@@ -113,7 +116,7 @@ CByteSourceReader::~CByteSourceReader(void)
 
 CRef<CSubSourceCollector> CByteSourceReader::SubSource(size_t /*prevent*/)
 {
-    return new CMemorySourceCollector();
+    return CRef<CSubSourceCollector>(new CMemorySourceCollector());
 }
 
 
@@ -142,7 +145,8 @@ bool CByteSourceReader::EndOfData(void) const
 
 CRef<CByteSourceReader> CStreamByteSource::Open(void)
 {
-    return new CStreamByteSourceReader(this, m_Stream);
+    return CRef<CByteSourceReader>
+      (new CStreamByteSourceReader(this, m_Stream));
 }
 
 
@@ -218,7 +222,7 @@ CFileByteSource::CFileByteSource(const CFileByteSource& file)
 
 CRef<CByteSourceReader> CFileByteSource::Open(void)
 {
-    return new CFileByteSourceReader(this);
+    return CRef<CByteSourceReader>(new CFileByteSourceReader(this));
 }
 
 
@@ -232,7 +236,8 @@ CSubFileByteSource::CSubFileByteSource(const CFileByteSource& file,
 
 CRef<CByteSourceReader> CSubFileByteSource::Open(void)
 {
-    return new CSubFileByteSourceReader(this, m_Start, m_Length);
+    return CRef<CByteSourceReader>
+      (new CSubFileByteSourceReader(this, m_Start, m_Length));
 }
 
 
@@ -275,8 +280,8 @@ bool CSubFileByteSourceReader::EndOfData(void) const
 
 CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(size_t prepend)
 {
-    return new CFileSourceCollector(m_FileSource,
-                                    m_Stream->tellg() - TFileOff(prepend));
+    return CRef<CSubSourceCollector>(new CFileSourceCollector(m_FileSource,
+                                    m_Stream->tellg() - TFileOff(prepend)));
 }
 
 
@@ -299,8 +304,8 @@ void CFileSourceCollector::AddChunk(const char* /*buffer*/,
 
 CRef<CByteSource> CFileSourceCollector::GetSource(void)
 {
-    return new CSubFileByteSource(*m_FileSource,
-                                  m_Start, m_Length);
+    return CRef<CByteSource>(new CSubFileByteSource(*m_FileSource,
+                                  m_Start, m_Length));
 }
 
 
@@ -329,7 +334,7 @@ CMemoryByteSource::~CMemoryByteSource(void)
 
 CRef<CByteSourceReader> CMemoryByteSource::Open(void)
 {
-    return new CMemoryByteSourceReader(m_Bytes);
+    return CRef<CByteSourceReader>(new CMemoryByteSourceReader(m_Bytes));
 }
 
 
@@ -377,7 +382,7 @@ void CMemorySourceCollector::AddChunk(const char* buffer,
 
 CRef<CByteSource> CMemorySourceCollector::GetSource(void)
 {
-    return new CMemoryByteSource(m_FirstChunk);
+    return CRef<CByteSource>(new CMemoryByteSource(m_FirstChunk));
 }
 
 

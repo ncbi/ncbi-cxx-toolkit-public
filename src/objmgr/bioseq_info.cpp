@@ -82,7 +82,7 @@ CBioseq_Info::~CBioseq_Info(void)
 
 CBioseq_Info& CBioseq_Info::operator= (const CBioseq_Info& info)
 {
-    m_Entry.Reset(info.m_Entry);
+    m_Entry.Reset(const_cast<CBioseq_Info&>(info).m_Entry);
     iterate ( TSynonyms, it, info.m_Synonyms ) {
         m_Synonyms.insert(*it);
     }
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.4  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -70,7 +70,8 @@ COrgRefCache::Init()
     pNode->SetTaxid( 1 );
     pNode->SetOname().assign("root");
     pNode->SetCde( 0x40000000 ); // Gene bank hidden
-    m_tPartTree.SetRoot( new CTaxon1Node( pNode ) );
+    m_tPartTree.SetRoot(new CTaxon1Node
+                        (CRef<CTaxon1_name>(pNode)));
     return true;
 }
 
@@ -368,7 +369,7 @@ COrgRefCache::SetPartialName( CTaxon1Node& node, COrgName& on )
     int rank_id= node.GetRank();
     
     CPartialOrgName& pon = ( on.SetName().SetPartial() );
-    pon.Set().push_back( pTaxElem );
+    pon.Set().push_back(CRef<CTaxElement>(pTaxElem));
 
     if( rank_id == GetFamilyRank()) {
         pTaxElem->SetFixed_level( CTaxElement_Base::eFixed_level_family );
@@ -915,6 +916,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.9  2002/11/04 21:29:18  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 6.8  2002/08/06 15:09:45  domrach
  * Introducing new genbank name classes
  *

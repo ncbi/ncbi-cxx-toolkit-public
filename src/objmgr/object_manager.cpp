@@ -108,7 +108,7 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
     }
     // in case factory was not put in a CRef container by the caller
     // it will be deleted here
-    CRef<CDataLoaderFactory> p = &factory;
+    CRef<CDataLoaderFactory> p(&factory);
     // create loader
     CDataLoader* loader = factory.Create();
     // register
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.15  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *

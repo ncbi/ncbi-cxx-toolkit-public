@@ -131,7 +131,7 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
              IsPositiveStrand(row) ? 
              CBioseq_Handle::eStrand_Plus :
              CBioseq_Handle::eStrand_Minus);
-        CRef<CSeqVector> seq_vec = new CSeqVector(vec);
+        CRef<CSeqVector> seq_vec(new CSeqVector(vec));
         return *(m_SeqVectorCache[row] = seq_vec);
     }
 }
@@ -317,7 +317,7 @@ void CAlnVec::CreateConsensus(void)
     string data;
     TSignedSeqPos total_bases = 0;
 
-    CRef<CDense_seg> new_ds = new CDense_seg();
+    CRef<CDense_seg> new_ds(new CDense_seg());
     new_ds->SetDim(m_DS->GetDim() + 1);
     new_ds->SetNumseg(m_DS->GetNumseg());
     new_ds->SetLens() = m_DS->GetLens();
@@ -365,7 +365,7 @@ void CAlnVec::CreateConsensus(void)
     // this bioseq must have a local ID; it will be named "consensus"
     // once this is in, the Denseg should resolve all IDs correctly
     {{
-         CRef<CBioseq> bioseq = new CBioseq();
+         CRef<CBioseq> bioseq(new CBioseq());
 
          // construct a local sequence ID for this sequence
          CRef<CSeq_id> id(new CSeq_id());
@@ -392,7 +392,7 @@ void CAlnVec::CreateConsensus(void)
 
          // once we've created the bioseq, we need to add it to the
          // scope
-         CRef<CSeq_entry> entry = new CSeq_entry();
+         CRef<CSeq_entry> entry(new CSeq_entry());
          entry->SetSeq(*bioseq);
          GetScope().AddTopLevelSeqEntry(*entry);
     }}
@@ -433,6 +433,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2002/11/04 21:29:08  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.11  2002/10/21 19:15:20  todorov
 * added GetAlnSeqString
 *

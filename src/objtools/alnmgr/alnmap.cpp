@@ -450,7 +450,7 @@ CRef<CAlnMap::CAlnChunkVec>
 CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
                       TGetChunkFlags flags) const
 {
-    CRef<CAlnChunkVec> vec = new CAlnChunkVec(*this, row);
+    CRef<CAlnChunkVec> vec(new CAlnChunkVec(*this, row));
 
     // boundaries check
     if (range.GetTo() < 0
@@ -513,7 +513,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     CAlnMap::TNumseg start_seg = m_StartSegs[i];
     CAlnMap::TNumseg stop_seg  = m_StopSegs[i];
 
-    CRef<CAlnChunk>  chunk    = new CAlnChunk();
+    CRef<CAlnChunk>  chunk(new CAlnChunk());
 
     chunk->SetRange().SetFrom(m_AlnMap.m_DS->GetStarts()
                               [start_seg * m_AlnMap.m_DS->GetDim()
@@ -675,6 +675,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2002/11/04 21:29:08  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.15  2002/10/24 21:27:29  todorov
 * out-of-range adjustment instead of return -1 for the GetSeqPosFromAlnPos
 *

@@ -75,10 +75,10 @@ void CSeq_entry::Parentize(void)
         SetSeq().SetParentEntry(this);
     }
     else {
-        CBioseq_set::TSeq_set::const_iterator s_end =
-            GetSet().GetSeq_set().end();
-        for (CBioseq_set::TSeq_set::const_iterator si =
-            GetSet().GetSeq_set().begin(); si != s_end; si++) {
+        CBioseq_set::TSeq_set::iterator s_end =
+            SetSet().SetSeq_set().end();
+        for (CBioseq_set::TSeq_set::iterator si =
+            SetSet().SetSeq_set().begin(); si != s_end; si++) {
             (*si)->Parentize();
             (*si)->SetParentEntry(this);
         }
@@ -177,7 +177,7 @@ static CSeq_data& s_LastData(CSeq_inst& inst)
     if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
         CDelta_ext::Tdata& delta_data = inst.SetExt().SetDelta().Set();
         if (delta_data.empty()  ||  !delta_data.back()->IsLiteral()) {
-            CRef<CDelta_seq> delta_seq = new CDelta_seq;
+            CRef<CDelta_seq> delta_seq(new CDelta_seq);
             delta_data.push_back(delta_seq);
             return delta_seq->SetLiteral().SetSeq_data();
         } else {
@@ -191,9 +191,9 @@ static CSeq_data& s_LastData(CSeq_inst& inst)
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
 {
-    CRef<CSeq_entry>       entry = new CSeq_entry;
+    CRef<CSeq_entry>       entry(new CSeq_entry);
     CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
-    CRef<CBioseq>          seq   = 0; // current Bioseq
+    CRef<CBioseq>          seq(0); // current Bioseq
     string                 line;
 
     while ( !in.eof() ) {
@@ -215,7 +215,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             seq = new CBioseq;
             seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
             {{
-                CRef<CSeq_entry> entry2 = new CSeq_entry;
+                CRef<CSeq_entry> entry2(new CSeq_entry);
                 entry2->SetSeq(*seq);
                 sset.push_back(entry2);
             }}
@@ -238,8 +238,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                         }
                     }
 
-                    CRef<CSeq_id> id
-                        = new CSeq_id(name.substr(pos, end - pos));
+                    CRef<CSeq_id> id(new CSeq_id(name.substr(pos, end - pos)));
                     seq->SetId().push_back(id);
                     if (mol == CSeq_inst::eMol_not_set
                         &&  !(flags & fReadFasta_ForceType)) {
@@ -255,8 +254,9 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             }
             
             if ( !local.empty() ) {
-                seq->SetId().push_back(new CSeq_id(CSeq_id::e_Local, local,
-                                                   kEmptyStr));
+                seq->SetId().push_back
+                    (CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, local,
+                                               kEmptyStr)));
             }
 
             if (mol == CSeq_inst::eMol_not_set) {
@@ -270,7 +270,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             }
 
             if (space != NPOS) {
-                CRef<CSeqdesc> desc = new CSeqdesc;
+                CRef<CSeqdesc> desc(new CSeqdesc);
                 desc->SetTitle(line.substr(space + 1));
                 seq->SetDescr().Set().push_back(desc);
             }
@@ -285,7 +285,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                 } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
                     CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
                     if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
-                        CRef<CDelta_seq> ds = new CDelta_seq;
+                        CRef<CDelta_seq> ds(new CDelta_seq);
                         inst.SetRepr(CSeq_inst::eRepr_delta);
                         if (inst.IsSetSeq_data()) {
                             ds->SetLiteral().SetSeq_data(inst.SetSeq_data());
@@ -302,7 +302,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                         }                        
                     }
                     {{
-                        CRef<CDelta_seq> gap = new CDelta_seq;
+                        CRef<CDelta_seq> gap(new CDelta_seq);
                         gap->SetLoc().SetNull();
                         d.push_back(gap);
                     }}
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.8  2002/11/04 21:29:17  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 6.7  2002/10/30 02:34:41  ucko
  * Change seq to seq.NotEmpty() in compound test to make MSVC happy.
  *

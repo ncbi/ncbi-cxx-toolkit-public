@@ -66,7 +66,7 @@ CGraph_CI::~CGraph_CI(void)
 
 const CSeq_graph& CGraph_CI::operator* (void) const
 {
-    CAnnotObject* annot = Get();
+    const CAnnotObject* annot = Get();
     _ASSERT(annot  &&  annot->IsGraph());
     return annot->GetGraph();
 }
@@ -74,7 +74,7 @@ const CSeq_graph& CGraph_CI::operator* (void) const
 
 const CSeq_graph* CGraph_CI::operator-> (void) const
 {
-    CAnnotObject* annot = Get();
+    const CAnnotObject* annot = Get();
     _ASSERT(annot  &&  annot->IsGraph());
     return &annot->GetGraph();
 }
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/11/04 21:29:12  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.9  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/11/04 21:29:14  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.17  2002/07/12 18:34:56  grichenk
 * m_ObjMgr member should live longer than m_Scope - fixed
 *
@@ -142,8 +145,8 @@ bool CTestObjectManager::Thread_Run(int idx)
     // read data from a scope, which is shared by all threads
     CTestHelper::TestDataRetrieval(*m_Scope, 0, 0);
     // add more data to the global scope
-    CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(idx);
-    CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
+    CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+    CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
     m_Scope->AddTopLevelSeqEntry(*entry1);
     m_Scope->AddTopLevelSeqEntry(*entry2);
     CTestHelper::TestDataRetrieval(*m_Scope, idx, 0);
@@ -154,19 +157,19 @@ bool CTestObjectManager::Thread_Run(int idx)
     {
         CScope scope(*m_ObjMgr);
         // create new seq.entries - to be able to check unresolved lengths
-        CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(idx);
-        CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
+        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
         scope.AddTopLevelSeqEntry(*entry1);
         scope.AddTopLevelSeqEntry(*entry2);
-        CRef<CSeq_annot> annot = &CDataGenerator::CreateAnnotation1(idx);
+        CRef<CSeq_annot> annot(&CDataGenerator::CreateAnnotation1(idx));
         scope.AttachAnnot(*entry1, *annot);
         CTestHelper::TestDataRetrieval(scope, idx, 1);
 
         // 1.2.6. Constructed bio sequences
         CSeq_id id;
         {{
-            CRef<CSeq_entry> constr_entry =
-                &CDataGenerator::CreateConstructedEntry( idx, 1);
+            CRef<CSeq_entry> constr_entry
+                (&CDataGenerator::CreateConstructedEntry( idx, 1));
             scope.AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed1");
             CTestHelper::ProcessBioseq(scope, id, 27,
@@ -174,8 +177,8 @@ bool CTestObjectManager::Thread_Run(int idx)
                 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
         {{
-            CRef<CSeq_entry> constr_entry =
-                &CDataGenerator::CreateConstructedEntry( idx, 2);
+            CRef<CSeq_entry> constr_entry
+                (&CDataGenerator::CreateConstructedEntry( idx, 2));
             scope.AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed2");
             CTestHelper::ProcessBioseq(scope, id, 27,
@@ -187,9 +190,9 @@ bool CTestObjectManager::Thread_Run(int idx)
     // 1.2.7. one entry in two scopes
     {
         CScope Scope1(*m_ObjMgr);
-        CRef<CScope> pScope2 = new CScope(*m_ObjMgr);
-        CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(idx);
-        CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
+        CRef<CScope> pScope2(new CScope(*m_ObjMgr));
+        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope1.AddTopLevelSeqEntry(*entry1);
         Scope1.AddTopLevelSeqEntry(*entry2);
         pScope2->AddTopLevelSeqEntry(*entry2);
@@ -202,7 +205,7 @@ bool CTestObjectManager::Thread_Run(int idx)
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // add more data to the scope - to make references resolvable
-        CRef<CSeq_entry> entry1a = &CDataGenerator::CreateTestEntry1a(idx);
+        CRef<CSeq_entry> entry1a(&CDataGenerator::CreateTestEntry1a(idx));
         pScope2->AddTopLevelSeqEntry(*entry1a);
         // Test with resolvable references
         id.SetGi(21+idx*1000);
@@ -212,7 +215,7 @@ bool CTestObjectManager::Thread_Run(int idx)
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
-        CRef<CSeq_entry> entry1b = &CDataGenerator::CreateTestEntry1(idx);
+        CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
         pScope2->AddTopLevelSeqEntry(*entry1b);
         id.SetLocal().SetStr("seq"+NStr::IntToString(11+idx*1000));
         // gi|11 from entry1a must be selected
@@ -231,8 +234,8 @@ bool CTestObjectManager::TestApp_Init(void)
     m_ObjMgr = new CObjectManager;
     // Scope shared by all threads
     m_Scope = new CScope(*m_ObjMgr);
-    CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(0);
-    CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(0);
+    CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(0));
+    CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(0));
     m_Scope->AddTopLevelSeqEntry(*entry1);
     m_Scope->AddTopLevelSeqEntry(*entry2);
     return true;

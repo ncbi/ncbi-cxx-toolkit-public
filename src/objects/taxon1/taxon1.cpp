@@ -190,12 +190,12 @@ CTaxon1::GetById(int tax_id)
 
             SerialAssign<CTaxon2_data>( *pNewData, *pData );
 
-            return pNewData;
+            return CRef<CTaxon2_data>(pNewData);
         }
     } else {
         SetLastError( s_achInvalTaxid );
     }
-    return NULL;
+    return CRef<CTaxon2_data>(NULL);
 }
 
 CRef< CTaxon2_data >
@@ -214,9 +214,9 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 
         SerialAssign<CTaxon2_data>( *pNewData, *pData  );
 
-        return pNewData;
+        return CRef<CTaxon2_data>(pNewData);
     }
-    return NULL;
+    return CRef<CTaxon2_data>(NULL);
 }
 
 class PFindMod {
@@ -304,7 +304,7 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 	// Service stuff
 	CTaxon1_req req;
 	CTaxon1_resp resp;
-	CRef<CTaxon1_info> pModInfo = new CTaxon1_info();
+	CRef<CTaxon1_info> pModInfo(new CTaxon1_info());
 	// Copy with object copy as well
 	for( COrgName::TMod::const_iterator ci = mods.begin();
 	     ci != mods.end();
@@ -826,6 +826,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.7  2002/11/04 21:29:18  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 6.6  2002/08/06 16:12:34  domrach
  * Merging of modifiers is now performed in LookupMerge
  *

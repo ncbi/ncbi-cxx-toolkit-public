@@ -382,7 +382,7 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
             if ((*gcd)->IsId ()  &&  (*gcd)->GetId () == id) {
 
         	    // found proper genetic code, so create new trans table
-        	    CRef< CTrans_table> tbl = new CTrans_table (**gcl);
+        	    CRef< CTrans_table> tbl(new CTrans_table (**gcl));
 
         	    // extend size of translation table list, if necessary
         	    if (id >= m_TransTablesById.size ()) {
@@ -548,6 +548,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.7  2002/11/04 21:29:16  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 6.6  2002/09/19 18:07:05  kans
 * code 9 is echinoderm and flatworm mito, code 14 is alternative flatworm mito
 *

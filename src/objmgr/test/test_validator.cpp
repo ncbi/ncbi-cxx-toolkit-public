@@ -146,7 +146,7 @@ int CTest_validatorApplication::Run(void)
 
     // Create object manager
     // Use CRef<> here to automatically delete the OM on exit.
-    CRef<CObjectManager> obj_mgr = new CObjectManager;
+    CRef<CObjectManager> obj_mgr(new CObjectManager);
 
     if (args["o"].AsBoolean()) {
         // Create GenBank data loader and register it with the OM.
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2002/11/04 21:29:14  grichenk
+ * Fixed usage of const CRef<> and CRef<> constructor
+ *
  * Revision 1.2  2002/10/08 13:40:38  clausen
  * Changed current.asn to current.prt
  *

@@ -179,7 +179,7 @@ public:
 
 protected:
     virtual void ProcessRequest(const CRef<CStdRequest>& req)
-        { req->Process(); }
+        { const_cast<CStdRequest&>(*req).Process(); }
 
     // virtual void Init(void); // called before processing any requests
     // virtual void x_OnExit(void); // called just before exiting
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/11/04 21:29:00  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.7  2002/09/13 15:16:03  ucko
 * Give CBlockingQueue<>::{WaitForRoom,Get} optional timeouts (infinite
 * by default); change exceptions to use new setup.

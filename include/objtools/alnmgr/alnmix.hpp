@@ -97,7 +97,7 @@ private:
 inline
 CScope& CAlnMix::GetScope() const
 {
-    return *m_Scope;
+    return const_cast<CScope&>(*m_Scope);
 }
 
 
@@ -130,6 +130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/11/04 21:28:57  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.4  2002/10/25 20:02:20  todorov
 * new fTryOtherMethodOnFail flag
 *

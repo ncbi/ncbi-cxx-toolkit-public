@@ -67,7 +67,7 @@ int main()
         //oos << *blob->Seq_entry();
         //cout << endl;
 
-        CRef<CSeq_entry> se=blob->Seq_entry();
+        CRef<CSeq_entry> se(blob->Seq_entry());
         delete blob;
       }
       delete seqRef;
@@ -78,6 +78,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.9  2002/11/04 21:29:14  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
 * Revision 1.8  2002/05/06 03:28:52  vakatov
 * OM/OM1 renaming
 *
