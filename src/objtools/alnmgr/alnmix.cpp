@@ -342,12 +342,16 @@ void CAlnMix::Add(const CDense_seg &ds)
 
                             aln_seq1->m_BioseqHandle->GetSeqVector
                                 (CBioseq_Handle::eCoding_Iupac,
-                                 strand1).
+                                 strand1 == eNa_strand_minus ?
+                                 CBioseq_Handle::eStrand_Minus :
+                                 CBioseq_Handle::eStrand_Plus).
                                 GetSeqData(start1, start1 + len, s1);
                             
                             aln_seq2->m_BioseqHandle->GetSeqVector
                                 (CBioseq_Handle::eCoding_Iupac,
-                                 strand2).
+                                 strand2 == eNa_strand_minus ?
+                                 CBioseq_Handle::eStrand_Minus :
+                                 CBioseq_Handle::eStrand_Plus).
                                 GetSeqData(start2, start2 + len, s2);
 
 
@@ -1184,6 +1188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/01/16 17:40:19  todorov
+* Fixed strand param when calling GetSeqVector
+*
 * Revision 1.21  2003/01/10 17:37:28  todorov
 * Fixed a bug in fNegativeStrand
 *
