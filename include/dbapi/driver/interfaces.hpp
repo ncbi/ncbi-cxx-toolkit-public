@@ -533,10 +533,6 @@ public:
 				FDBAPI_CreateContext driver_ctx_func)= 0;
 };
 
-void DBAPI_CTLIB_Register(I_DriverMgr* mgr);
-void DBAPI_DBLIB_Register(I_DriverMgr* mgr);
-void DBAPI_FTDS_Register(I_DriverMgr* mgr);
-
 
 END_NCBI_SCOPE
 
@@ -545,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/01/17 22:33:13  soussov
+ * adds driver manager
+ *
  * Revision 1.10  2002/01/15 17:12:40  soussov
  * renaming 'tds' driver to 'ftds' driver
  *
