@@ -38,6 +38,7 @@
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/multiseq_src.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
 
@@ -121,10 +122,12 @@ void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries,
 {
     m_tQueries = queries;
     m_tSubjects = subjs;
-    mi_iMaxSubjLength = 0;
     mi_pScoreBlock = NULL;
     mi_pLookupTable = NULL;
     mi_pLookupSegments = NULL;
+    mi_pResults = NULL;
+    mi_pReturnStats = NULL;
+    mi_pSeqSrc = NULL;
 }
 
 CBl2Seq::~CBl2Seq()
@@ -152,18 +155,11 @@ void
 CBl2Seq::x_ResetSubjectDs()
 {
     // Clean up structures and results from any previous search
-    NON_CONST_ITERATE(vector<BLAST_SequenceBlk*>, itr, mi_vSubjects) {
-        *itr = BlastSequenceBlkFree(*itr);
-    }
-    mi_vSubjects.clear();
-    NON_CONST_ITERATE(vector<BlastHSPResults*>, itr, mi_vResults) {
-        *itr = BLAST_ResultsFree(*itr);
-    }
-    mi_vResults.clear();
-    mi_vReturnStats.clear();
+    mi_pSeqSrc = BlastSeqSrcFree(mi_pSeqSrc);
+    mi_pResults = BLAST_ResultsFree(mi_pResults);
+    sfree(mi_pReturnStats);
     // TODO: Should clear class wrappers for internal parameters structures?
     //      -> destructors will be called for them
-    mi_iMaxSubjLength = 0;
     //m_OptsHandle->SetDbSeqNum(0);  // FIXME: Really needed?
     //m_OptsHandle->SetDbLength(0);  // FIXME: Really needed?
 }
@@ -221,62 +217,59 @@ CBl2Seq::SetupSearch()
     }
 
     x_ResetSubjectDs();
-    SetupSubjects(m_tSubjects, &m_OptsHandle->SetOptions(), &mi_vSubjects, 
-                  &mi_iMaxSubjLength);
+
+    mi_pSeqSrc = MultiSeqSrcInit(m_tSubjects, 
+                                 m_OptsHandle->GetOptions().GetProgram());
+
+    // Set the hitlist size to the total number of subject sequences, to 
+    // make sure that no hits are discarded.
+    m_OptsHandle->SetHitlistSize(m_tSubjects.size());
+    m_OptsHandle->SetPrelimHitlistSize(m_tSubjects.size());
 }
 
 void 
 CBl2Seq::ScanDB()
 {
-    ITERATE(vector<BLAST_SequenceBlk*>, itr, mi_vSubjects) {
+    mi_pResults = NULL;
+    mi_pReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
 
-        BlastHSPResults* result = NULL;
-        BlastReturnStat return_stats;
-        memset((void*) &return_stats, 0, sizeof(return_stats));
+    BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
 
-        BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &result);
-
-        /*int total_hits = BLAST_SearchEngineCore(mi_Query, mi_pLookupTable, 
-          mi_QueryInfo, NULL, *itr,
-          mi_clsExtnWord, mi_clsGapAlign, m_OptsHandle->GetScoringOpts(), 
-          mi_clsInitWordParams, mi_clsExtnParams, mi_clsHitSavingParams, NULL,
-          m_OptsHandle->GetDbOpts(), &result, &return_stats);
-          _TRACE("*** BLAST_SearchEngineCore hits " << total_hits << " ***");*/
-
-        BLAST_TwoSequencesEngine(m_OptsHandle->GetOptions().GetProgram(),
-                                 mi_clsQueries, mi_clsQueryInfo, 
-                                 *itr, mi_pScoreBlock, 
-                                 m_OptsHandle->GetOptions().GetScoringOpts(),
-                                 mi_pLookupTable,
-                                 m_OptsHandle->GetOptions().GetInitWordOpts(),
-                                 m_OptsHandle->GetOptions().GetExtnOpts(),
-                                 m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                                 m_OptsHandle->GetOptions().GetEffLenOpts(),
-                                 NULL, m_OptsHandle->GetOptions().GetDbOpts(),
-                                 result, &return_stats);
-
-        mi_vResults.push_back(result);
-        mi_vReturnStats.push_back(return_stats);
-    }
+    BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
+                       mi_clsQueries, mi_clsQueryInfo, 
+                       mi_pSeqSrc, mi_pScoreBlock, 
+                       m_OptsHandle->GetOptions().GetScoringOpts(),
+                       mi_pLookupTable,
+                       m_OptsHandle->GetOptions().GetInitWordOpts(),
+                       m_OptsHandle->GetOptions().GetExtnOpts(),
+                       m_OptsHandle->GetOptions().GetHitSaveOpts(),
+                       m_OptsHandle->GetOptions().GetEffLenOpts(),
+                       NULL, m_OptsHandle->GetOptions().GetDbOpts(),
+                       mi_pResults, mi_pReturnStats);
 }
 
+/** Unlike the database search, we want to make sure that a seqalign list is   
+ * returned for each query/subject pair, even if it is empty. Also we don't 
+ * want subjects to be sorted in seqalign results. Hence we retrieve results 
+ * for each subject separately and append the resulting vectors of seqalign
+ * lists. 
+ */
 TSeqAlignVector
 CBl2Seq::x_Results2SeqAlign()
 {
-    ASSERT(mi_vResults.size() == m_tSubjects.size());
     TSeqAlignVector retval;
     retval.reserve(m_tQueries.size());
 
+    ASSERT(mi_pResults->num_queries == (int)m_tQueries.size());
+
     for (unsigned int index = 0; index < m_tSubjects.size(); ++index)
     {
-        ASSERT(mi_vResults[index]->num_queries == (int)m_tQueries.size());
-
         TSeqAlignVector seqalign =
-            BLAST_Results2CSeqAlign(mi_vResults[index],
-                m_OptsHandle->GetOptions().GetProgram(),
-                m_tQueries, NULL, 
-                &m_tSubjects[index],
-                m_OptsHandle->GetOptions().GetScoringOpts(), mi_pScoreBlock);
+            BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
+                 m_OptsHandle->GetOptions().GetProgram(),
+                 m_tQueries, mi_pSeqSrc, index,
+                 m_OptsHandle->GetOptions().GetScoringOpts(), 
+                 mi_pScoreBlock);
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
@@ -314,6 +307,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2004/03/15 19:56:03  dondosha
+ * Use sequence source instead of accessing subjects directly
+ *
  * Revision 1.44  2004/03/10 17:37:36  papadopo
  * add (unused) RPS info pointer to LookupTableWrapInit()
  *

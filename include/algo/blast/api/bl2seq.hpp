@@ -135,9 +135,8 @@ private:
     bool                                mi_bQuerySetUpDone;
     CBLAST_SequenceBlk                  mi_clsQueries;  // one for all queries
     CBlastQueryInfo                     mi_clsQueryInfo; // one for all queries
-    vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures?
-    unsigned int                        mi_iMaxSubjLength; // should use int8?
 
+    BlastSeqSrc*                        mi_pSeqSrc; // Subject sequences source
     BlastScoreBlk*                      mi_pScoreBlock;
     LookupTableWrap*                    mi_pLookupTable; // one for all queries
     ListNode*                           mi_pLookupSegments;
@@ -149,12 +148,12 @@ private:
     CBlastGapAlignStruct                mi_clsGapAlign;
     CBlastDatabaseOptions               mi_clsDbOptions;
 
-    /// Vector of result structures, one per subject
-    vector<BlastHSPResults*>               mi_vResults;//should use structs?
-    /// Vector of statistical return structures, should have one per query
-    vector<BlastReturnStat>             mi_vReturnStats;
+    /// Results for all queries and subjects together
+    BlastHSPResults*                    mi_pResults;
+    /// Return search statistics data
+    BlastReturnStat*                    mi_pReturnStats;
 
-    /// Regions filtered out from the query sequence
+    /// Regions filtered out from the query sequence, one per query
     vector< CConstRef<objects::CSeq_loc> >       mi_vFilteredRegions;
 
     void x_ResetQueryDs();
@@ -256,6 +255,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/03/15 19:55:28  dondosha
+* Use sequence source instead of accessing subjects directly
+*
 * Revision 1.28  2004/02/13 21:21:44  camacho
 * Add throws clause to Run method
 *
