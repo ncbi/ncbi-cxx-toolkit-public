@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/01 20:43:53  vasilche
+* cstring header is missing on IRIX.
+*
 * Revision 1.1  2000/06/01 19:06:56  vasilche
 * Added parsing of XML data.
 *
@@ -40,7 +43,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <cstring>
+#include <string.h>
 
 BEGIN_NCBI_SCOPE
 
