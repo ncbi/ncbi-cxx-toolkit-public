@@ -11,7 +11,6 @@
 <i>Note:</i> For a detailed description of the CVS utility see <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
 the CVS online manual</a> or run the commands <nobr><i>"man cvs"</i></nobr> or <nobr><i>"cvs --help"</i></nobr>
 on your Unix workstation.
-<!--<span class=red> cvs help on PC/Mac?</span>-->
 </font>
 
 <p></p>
@@ -44,7 +43,6 @@ Select the instructions appropriate for your <b>development</b> environment.
 					</li>
 
 					<li>
-					<!--<a href="new_proj.html#ref_OutsideImport">-->
 					<a href="#ref_Import_Project"> <tt>import_project.sh</tt> </a>:  Retrieve an Existing Project</li>
 
 
@@ -56,18 +54,16 @@ Select the instructions appropriate for your <b>development</b> environment.
                 </ul>
 
 			<li>
-			New Projects and New Modules <font size=-1>(does <b>not</b> require CVS!)</font></li>
+			New Projects and New Modules <font size=-1>does <b>not</b> require CVS!</font></li>
 				<ul>
 					<li>
 					<a href="#ref_New_Project">
-					<!--<a href="new_proj.html#ref_OutsideCreate"> -->
 					<tt>new_project.sh</tt> </a>:  Starting a New Project Outside the C++ Toolkit Tree</li>
 
 					<li>
 					<a href="#ref_Create"> Creating a New Project Inside the C++ Toolkit Tree</a></li>
 
 					<li>
-					<!-- <a href="new_mod.html"> -->
 					 <a href="#ref_NewModule">Template Source Files for New Modules</a></li>
 
 				</ul>
@@ -76,17 +72,17 @@ Select the instructions appropriate for your <b>development</b> environment.
 			CVS-Related Shell Script Reference</li>
 				<ul>
 					<li>
-					<tt>cvs_core.sh</tt> &nbsp; [<a href="scripts_usage.html#ref_CVS_CoreUsage">Usage</a> |
+					<i>cvs_core.sh</i> &nbsp; [<a href="scripts_usage.html#ref_CVS_CoreUsage">Usage</a> |
 					<a href="./lxr/source/scripts/cvs_core.sh">Source</a>]
 					</li>
 
 					<li>
-					<tt>import_project.sh </tt> &nbsp; [<a href="scripts_usage.html#ref_Import_ProjectUsage">Usage</a> |
+					<i>import_project.sh </i> &nbsp; [<a href="scripts_usage.html#ref_Import_ProjectUsage">Usage</a> |
 					 <a href="./lxr/source/scripts/import_project.sh">Source</a>]
 					 </li>
 
 					<li>
-					<tt>update_core.sh </tt> &nbsp; [<a href="scripts_usage.html#ref_Update_CoreUsage">Usage</a> |
+					<i>update_core.sh </i> &nbsp; [<a href="scripts_usage.html#ref_Update_CoreUsage">Usage</a> |
 					 <a href="./lxr/source/scripts/update_core.sh">Source</a>]
 					 </li>
 
@@ -96,7 +92,7 @@ Select the instructions appropriate for your <b>development</b> environment.
  					</li>
 
 					<li>
-					<tt>new_project.sh </tt> &nbsp; [<a href="scripts_usage.html#ref_New_ProjectUsage">Usage</a> |
+					<i>new_project.sh </i> &nbsp; [<a href="scripts_usage.html#ref_New_ProjectUsage">Usage</a> |
 					 <a href="./lxr/source/scripts/new_project.sh">Source</a>]<br>
 					 <font size=-1>(Note:  you do <b>not</b> need access to a CVS repository to use <tt>new_project.sh</tt>.)</font>
 					 </li>
@@ -135,13 +131,12 @@ The CVS tree has the same global and project-level
 organization of the <a href="src_tree.gif">source tree</a> yet contains the code
 needed for all supported builds.
 
-<p>
 <hr>
 
 <a name="ref_CVSUnix"></a>
 <h3>CVS	Retrieval under Unix <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h3>
-Retrieval instructions for <a href="win_cvs.html"> MS Windows </a> and <a href="mac_cvs.html"> Mac OS </a>
-are available on separate pages.
+CVS client installation instructions are available on separate pages
+for <a href="win_cvs.html"> MS Windows </a> and <a href="mac_cvs.html"> Mac OS </a> systems.
 
 <p>
 <br>
@@ -149,15 +144,12 @@ are available on separate pages.
 <a name="ref_CheckoutAll"></a>
 <h4>Checking Out the Complete NCBI C++ Toolkit Source Tree <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
 
-<dl>
-    <dt>
-    <dd>
 You can checkout the whole NCBI C++ source tree from CVS to your local
 directory (<i>e.g.</i>, <tt>foo/c++/</tt>) just by running:
 
 <pre>
-    cd foo
-    cvs checkout -d c++ internal/c++
+cd foo
+cvs checkout -d c++ internal/c++
 </pre>
 
 <p>
@@ -172,16 +164,16 @@ in the <tt>c++/scripts</tt> directory.
 The auxiliary scripts <a href="#ref_CVS_Core"><tt>cvs_core.sh</tt></a> and
 <a href="#ref_CVS_Core_Bat"><tt>cvs_core.bat</tt></a> checkout only the core
 (basic and portable) NCBI C++ Toolkit sources for a desired platform.  A similar auxiliary
-script, <a href="#ref_Import_Project"><tt>import_project.sh</tt></a>, exists to
-import the source from a single project.  To facilitate the
-creation of a new project use the <a href="#ref_New_Project"><tt>new_project.sh</tt></a> script, which
+script exists to import the source from a single project (<a href="#ref_Import_Project"><tt>import_project.sh</tt></a>).  To facilitate the creation of a new project, use the script
+(<a href="#ref_New_Project"><tt>new_project.sh</tt></a>), which
 generates new directories and <i>makefiles</i> for the new project from templates.
 The script also checks out a specified sample application
 from the CVS tree that may be adapted for the new project or built
 directly as a demonstration.
-</dl>
 
 <p>
+<br>
+
 <hr>
 
 <div id="cvs_core">
@@ -189,13 +181,21 @@ directly as a demonstration.
 <h4><tt>cvs_core.sh</tt>:  Retrieve Only the Portable and Core Components <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
 
 <dl>
-    <dt>
     <dd>
 <a href="scripts_usage.html#ref_CVS_CoreUsage">Usage</a> Summary:<br>
-<h5>&nbsp;&nbsp;&nbsp;&nbsp;<tt>cvs_core.sh &lt;dir&gt; [--with-&lt;feature&gt;]... [--without-&lt;feature&gt]... [--&lt;platform&gt;]</tt></h5>
+<h5><tt>cvs_core.sh &lt;dir&gt; [--with-&lt;feature&gt;]... [--without-&lt;feature&gt]... [--&lt;platform&gt;]</tt></h5>
 
 Default settings:<br>
-<h5>&nbsp;&nbsp;&nbsp;&nbsp;<tt>cvs_core.sh  &lt;dir&gt; --with-cvs --with-ctools --with-gui --all</tt></h5>
+<h5><tt>cvs_core.sh  &lt;dir&gt; --with-cvs --with-ctools --with-gui --all</tt></h5>
+    </dd>
+    <dt> For the major three platforms, here is a typical invokation for "core" source retrieval:
+    <dd>
+<br>
+<h5>Unix:&nbsp;&nbsp; <tt>cvs_core.sh  &lt;dir&gt; --unix</tt></h5>
+<h5>MS-Win: <tt>cvs_core.sh  &lt;dir&gt; --msvc --with-objects --without-dizzy</tt></h5>
+<h5>MacOS:&nbsp; <tt>cvs_core.sh  &lt;dir&gt; --mac --with-objects</tt></h5>
+        </dd>
+</dl>
 
 <p>
 The NCBI C++ Toolkit CVS repository contains the source for many features and extension beyond the
@@ -203,23 +203,17 @@ core of portable functionality.  Often one wants to obtain a set of Toolkit sour
 of the non-portable elements, and the <tt>cvs_core.sh</tt> script performs this task across the
 range of supported platforms.  Options to the basic command allow the developer to further tailor
 the retrieved source by including (or excluding) portions of the Toolkit not checked out by default.
-    </dd>
-</dl>
 
 <p>
 <p>
 <a name="ref_CVS_CoreFlags"></a>
 <h4><tt>cvs_core.sh</tt> Arguments <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
 
-<dl>
-    <dt>
-    <dd>
 The following summarizes the arguments of <tt>cvs_core.sh</tt>, along with their default values.  Only
 the target directory is mandatory.  The optional <tt>--with/without-&lt;feature&gt</tt> argument pairs include
 or exclude portions of the Toolkit from the checked-out source.  While both members of the pair may appear
 on the command line, only the final one controls the script's behavior.  Certain settings are
 meaningful only for certain <tt>&lt;platform&gt;</tt>s (most often with respect to MS Windows platforms).
-</dl>
 
 <p>&nbsp;
 <p>
@@ -475,10 +469,11 @@ be taken as relative to the common root $CVSROOT/<tt>internal/c++</tt>.
     <dt>
     <dd>
 <a href="scripts_usage.html#ref_Import_ProjectUsage">Usage</a> Summary:<br>
-<h5>&nbsp;&nbsp;&nbsp;&nbsp;<tt>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</tt></h5>
+<h5><tt>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</tt></h5>
     </dd>
+</dl>
 
-    <dd>
+<p>
 In many cases, you work on your own project which <b>is a part</b> of the
 NCBI C++ tree, and you do not want to check out, update and rebuild
 the whole NCBI C++ tree. -- Instead, you just want to use headers and
@@ -510,8 +505,6 @@ Now you can just go to the created working directory
 <pre>
    make -f Makefile.hello_app
 </pre>
-</dl>
-
 </div>
 
 <hr>
@@ -526,10 +519,12 @@ Now you can just go to the created working directory
     <dt>
     <dd>
 <a href="scripts_usage.html#ref_Update_CoreUsage">Usage</a> Summary:<br>
-<h5>&nbsp;&nbsp;&nbsp;&nbsp;<tt>scripts/update_core.sh [--no-projects] [&lt;dirs&gt;]</tt></h5>
+<h5><tt>scripts/update_core.sh [--no-projects] [&lt;dirs&gt;]</tt></h5>
     </dd>
+</dl>
 
-    <dd>
+<p>
+<br>
 Once you have obtained the core C++ Toolkit sources, with <tt>cvs_core.sh</tt> or otherwise,
 the local copies will become out of sync with the master CVS repository contents when other
 developers commit their changes.  <tt>update_core.sh</tt> will update your local core source tree
@@ -554,7 +549,6 @@ the current directory to update.  The default list of updated directories is:
 </ul>
 
 Note that the default list is not pushed onto a user-supplied list of directories.
-</dl>
 
 
 </div>
@@ -571,10 +565,12 @@ Note that the default list is not pushed onto a user-supplied list of directorie
     <dt>
     <dd>
 <a href="scripts_usage.html#ref_Update_ProjectsUsage">Usage</a> Summary:<br>
-<h5>&nbsp;&nbsp;&nbsp;&nbsp;<tt>scripts/update_projects.sh &lt;project-list&gt;</tt></h5>
+<h5><tt>scripts/update_projects.sh &lt;project-list&gt;</tt></h5>
     </dd>
+</dl>
 
-    <dd>
+<p>
+<br>
 The script <tt>update_projects.sh</tt> facilitates work with those projects not in
 the core C++ tree.  Because the source code and makefiles are distributed in more
 than one subdirectory of $CVSROOT<tt>/internal/c++</tt>, this script assembles
@@ -583,14 +579,14 @@ the set of required files and places them in your local C++ source tree.
 <p>
 <br>
 The list of projects to obtain and/or update appear in <tt>&lt;project-list&gt;</tt>, formatted according
-to the simple <a href="config.html#ref_ProjectList">syntax used by the configure script</a>.
-Project aliases and influencing how CVS recurses into subdirectories are among the options available.
+to the simple <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/cpp_DOC/config.html#ref_ProjectList">syntax
+used by the configure script</a>.   Project aliases and influencing how CVS recurses into subdirectories
+are among the options available.
 
 <p>
 <br>
 This script supports two modes of operation and should be run from the top level of
 the C++ source tree:
-
 <ol>
     <li>
 	<dl><dt>C++ Source Tree Exists</dt>
@@ -600,8 +596,6 @@ the C++ source tree:
 		specified projects.
 		</dd>
 	</dl>
-<!--	<p></p>
-	<a href="update_projects.session1"></a>Example Session <span class=red>make example</span> -->
 	<p></p>
 	</li>
 
@@ -614,13 +608,9 @@ the C++ source tree:
 		the build system to work.
 		</dd>
 	</dl>
-<!--	<p></p>
-	<a href="update_projects.session2"></a>Example Session <span class=red>make example</span> -->
 	<p></p>
 	</li>
 </ol>
-</dl>
-
 </div>
 
 <hr>
@@ -629,8 +619,7 @@ the C++ source tree:
 <h3>New Projects and New Modules <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h3>
 
 <p>
-A more complete discussion, with examples, of how to begin a new project can be found
-on the <a href="new_proj.html">"New Projects"</a> page.
+A more complete discussion of how to begin a new project can be found on the <a href="new_proj.html">"New Projects"</a> page.
 
 <p>
 <br>
@@ -641,23 +630,19 @@ on the <a href="new_proj.html">"New Projects"</a> page.
     <dt>
     <dd>
 <a href="scripts_usage.html#ref_Update_ProjectsUsage">Usage</a> Summary:<br>
-<h5>&nbsp;&nbsp;&nbsp;&nbsp;<tt>scripts/new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></h5>
+<h5><tt>scripts/new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></h5>
     </dd>
+</dl>
 
-
-    <dt>
-    <dd>
-        <p></p>
+<p></p>
 This script will create a startup <i>makefile</i> for a new, from-scratch
 project called "<tt>name</tt>" which uses the NCBI C++ Toolkit (and possibly the C Toolkit as
 well).  For new libraries, <tt>type=lib</tt> while for new applications <tt>type=app</tt>.
 
 <p></p>
-Sample code will be included in the project directory for new applications.  Different samples
-are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based
-on the <a href="libs.html#ref_SumXNCBI"><tt>corelib</tt></a> library),
-<tt>type=app/cgi</tt> (for a <a href="libs.html#ref_SumXCGI">CGI or Fast-CGI</a> application),
-<tt>type=app/objmgr</tt> (for an application using the <i>Object Manager</i>) and <tt>type=app/objects</tt>
+Sample code will be included in the project directory for new applications; different samples
+are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based on the <tt>corelib</tt> library),
+<tt>type=app/cgi</tt> (for a CGI or Fast-CGI application), and <tt>type=app/objects</tt>
 (for an application using ASN.1 objects).
 
 <p></p>
@@ -670,47 +655,66 @@ You will need to slightly edit the resultant <i>makefile</i> to:
        (if it's an application), if needed
 </ul>
 
+
+<p>
+For <a href="new_project.create.session"> EXAMPLE</a>:
+
+<pre>
+   new_project.sh foo app/basic
+</pre>
+
+<br>
+creates a model <i>makefile</i> <tt>Makefile.foo_app</tt> to build
+an application using tools and flags hard-coded in <tt>$NCBI/c++/Debug/build/Makefile.mk</tt>,
+and headers from <tt>$NCBI/c++/include/</tt>.  The file <tt>/tmp/foo/foo.cpp</tt> is
+also created; you can either replace this with your own <tt>foo.cpp</tt> or modify its sample
+code as required.
+
+<p></p>
+Now, after specifying the application name, list of source files, etc.,
+you can just go to the created working directory <tt>foo/</tt> and build your application using:
+
+<pre>
+   make -f Makefile.foo_app
+</pre>
+
 <p>
 You can easily change the active version of NCBI C++ Toolkit
 by manually setting variable <b>$(builddir)</b> in the file
 <tt>Makefile.foo_app</tt> to the desired Toolkit path, e.g.,
 <tt>builddir = </tt>$(NCBI)/<tt>c++/GCC-Release/build</tt>
-</dl>
 
 <p>
 <br>
 <a name="ref_Create"></a>
 <h4>Creating a New Project Inside the C++ Toolkit Tree</a> <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
 
-<dl>
-    <dt>
-    <dd>
+<p>
 To create your new project (<i>e.g.</i>, "bar_proj") directories in the
 NCBI C++ Toolkit CVS tree (assuming that the whole NCBI C++ has been
 <a href="#ref_Checkout">checked out</a> to directory <tt>foo/c++/</tt>):
 
+<font size="-1">
 <pre>
-cd foo/c++/include && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
-cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
+    cd foo/c++/include && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
+    cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
 </pre>
+</font>
 
 From there, you can now <a href="new_mod.html">add</a> and edit your project C++ files.
 
 <p>
 NOTE: remember to add this new project directory to the <i>$(SUB_PROJ)</i>
-list of the upper level <a href="new_proj.html#ref_MakeMeta"><i>meta-makefile</i></a>
+list of the upper level <a href="makefiles.html#ref_MakefilesMeta"><i>meta-makefile</i></a>
 configurable template (<i>e.g.</i>, for this particular case, to
 <tt>foo/c++/src/Makefile.in</tt>).
-</dl>
 
 <p>
 <br>
 <a name="ref_NewModule"></a>
 <h4>Template Source Files for New Modules <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
 
-<dl>
-    <dt>
-    <dd>
+<p>
 Projects in the NCBI C++ Toolkit are composed of "modules".  In turn, a module is a basic
 logical unit of organization for the source.  Usually, each C++ module consists of 2 files:
 
@@ -735,25 +739,27 @@ allow one to simply cut-and-paste to start a new C++ file
 (just dont forget to replace the <i>"framewrk"</i> stubs by your new module
 name).  You may also use the samples checked out by <a href="#ref_New_Project"><tt>new_project.sh</tt></a>
 as source file templates.
-</dl>
 
 <p>
 <br>
 <!--<a name="ref_CVS_Core_Bat"></a>-->
+<hr>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
 
 <!-- Begin footer content -->
 
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <script>
 <!--
-print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
-print_author('vasilche', 'Eugene Vasilchenko');
-print_author('lavr', 'Anton Lavrentiev');
-print_author('zimmerma', 'Diane Zimmerman');
-print_author('lewisg', 'Lewis Geer');
-print_author('lanczyck', 'Chris Lanczycki');
+print_author('cpp-core', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('cpp-core', 'Eugene Vasilchenko');
+print_author('cpp-core', 'Anton Lavrentiev');
+print_author('cpp-core', 'Diane Zimmerman');
+print_author('cpp-core', 'Lewis Geer');
+print_author('cpp-core', 'Chris Lanczycki');
 // -->
 </script>
 </table>

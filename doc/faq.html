@@ -334,7 +334,7 @@ cp /bar/bar/bar/foo_main.cpp .
 ## Adjust in the library makefile "Makefile.foo_main_app"
 
 PRE_LIBS = -L.. -lfoo
-CPPFLAGS = -I.. $(ORIG_CPPFLAGS)
+cppFLAGS = -I.. $(ORIG_cppFLAGS)
 
 LIB      = xgeneral xser xutil xncbi
 LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi)
@@ -430,14 +430,18 @@ file]</tt></i></li>
 <!-- **************************************************************** -->
 <p>
 
+<hr>
+
 <!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
 
 <!-- Begin footer content -->
 
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <script>
 <!--
-print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('cpp-core, 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
 // -->
 </script>
 </table>

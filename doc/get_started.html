@@ -3,7 +3,6 @@
 <!--#set var="HEADING" value="Getting Started" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<link rel="stylesheet" href="doc.css">
 
 <a name="ref_GetStartedTop"></a>
 
@@ -135,7 +134,7 @@ MS Windows</a> and <a href="mac_cvs.html">Mac OS</a>.
 
 A good deal of the complication and tedium of getting started has thankfully been wrapped by
 a number of shell scripts.  They facilitate a 'quick start' whether starting
-anew or within an existing Toolkit work environment.  ('Non-quick' starts sometimes
+anew or within an existing Toolkit work environment.  ('Non-quick starts' sometimes
 cannot be avoided, but they are considered <a href="cvs.html#ref_Create">elsewhere</a>.)
 
 <p></p>&nbsp;
@@ -150,10 +149,10 @@ cannot be avoided, but they are considered <a href="cvs.html#ref_Create">elsewhe
     <li> <b>Configure the <a href="bld_tree.gif">build tree</a></b></li>
         <ul>
             <li>Use the <tt><a href="config.html#ref_Running">configure</a></tt> script, <b>or</b></li>
-            <li>Use a compiler-specific wrapper script <tt>scripts/compilers/*.sh</tt>.</li>
+            <li>Use a compiler-specific wrapper script <tt>scripts/compilers/*.sh</tt>.</li>Run
         </ul>
 
-    <li> <b>Build the C++ Toolkit from the system and compiler specific <i>makefiles</i> and<i> meta-makefiles</i></b> <font size=-1>(if required)</font>
+    <li> <b>Build the C++ Toolkit from <i>makefiles</i> and<i> meta-makefiles</i></b><font size=-1>(if required)</font>
         <ul>
             <li><tt>make all_r&nbsp;&nbsp;</tt> for a recursive make, <b>or</b></li>
             <li><tt>make all&nbsp;&nbsp;&nbsp;&nbsp;</tt> to make only targets for the current directory.</li>
@@ -183,10 +182,10 @@ issue of how to use the installed Toolkit.  Where does one begin to look to iden
 functionality to solve your particular problem, or indeed, to write the simplest of programs?
 "<a href="#ref_UsingToolkit">Basics of Using the C++ Toolkit</a>" will deal with those issues.
 
+
 Investigate these and other topics with the set of <a href="#ref_ExampleApps">sample applications</a>.
 See <a href="examples.html"><i>Examples</i></a> or <a href="tests.html"><i>Tests</i></a>
 for further cases that employ specific features of the NCBI C++ Toolkit.
-<p>
 
 <hr>
 <a name="ref_ExampleApps"></a>
@@ -209,35 +208,12 @@ script for that application.  The following examples are now available:
         Presents the Toolkit infrastructure required to write Web-enabled CGI applications.
         </li>
 
-<!--
-        <a name="ref_ExAppHTML"></a>
-        <li>  <tt><a href="lxr/source/src/app/sample/html">app/html</a></tt>
-        Demonstrate a collection of useful classes that simplify dynamic web page generation.
-        </li>
-            -->
-        <p></p>
-
-    </ul>
-    The Toolkit is architected to manipulate biological data objects, represented as
-    <a href="libs.html#ref_SumASN1OBJ">serializable objects</a> constructed from the
-    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/DATAMODL.HTML">NCBI ASN.1 data specification</a>,
-    in the context of an <i><a href="get_started.html#ref_UsingSerial">Object Manager</a></i>
-    (class <tt>CObjectManager</tt>).  The following are examples of working with the ASN.1 types
-    and the <i>Object Manager</i>, respectively:
-    <ul>
         <a name="ref_ExAppObject"></a>
         <li>  <tt><a href="lxr/source/src/app/sample/objects">app/objects</a></tt>
-        This application is an example of how one can use the ASN.1 types by working
-        with a concrete class (<tt>CSeq_entry</tt> in this case) that represents a biological
-        sequence within the programming framework defined by the Toolkit.
-        </li>
-
-        <a name="ref_ExAppObjmgr"></a>
-        <li>  <tt><a href="lxr/source/src/app/sample/objmgr">app/objmgr</a></tt>
-        Set up an instance of the <tt>CObjectManager</tt> class that will load data from
-        a data source (GenBank in this case).  The resulting <tt>CBioseq</tt> object is
-        accessed through its handle (<tt>CBioseq_Handle</tt> class) and is traversed
-        using various iterators.
+        The Toolkit manipulates biological data objects in the context of an
+        <i>Object Manager</i> class (<tt>CObjectManager</tt>).  This example shows
+        how to employ a concrete class representing a biological sequence
+        within the general, flexible framework defined by the Toolkit.
         </li>
         <p></p>
     </ul>
@@ -310,31 +286,31 @@ To build an example use its accompanying <i>Makefile</i>.
     The NCBI C++ Toolkit <a href="src_tree.gif"><i>source tree</i></a> is organized as follows:
 
     <ul>
-        <li> <tt><b>src/</b></tt> -- a hierarchical directory tree of
-             <a href="new_proj.html">NCBI C++ projects</a>.  Contained within <tt><b>src</b></tt> are all source files (<i>*.cpp, *.c</i>), along with private header files
+        <li> <i><b>src/</b></i> -- a hierarchical directory tree of
+             <a href="new_proj.html">NCBI C++ projects</a>.  Contained within <i><b>src</b></i> are all source files (<i>*.cpp, *.c</i>), along with private header files
              (<i>*.hpp, *.h</i>), makefiles (<i>Makefile.*</i>, including
-             <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>),
+             <a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>),
              scripts (<i>*.sh</i>), and occasionally some project-specific data
 
-        <li> <tt><b>include/</b></tt> -- a hierarchical directory tree whose
-             structure mirrors the <tt><b>src</b></tt> directory tree. It
+        <li> <i><b>include/</b></i> -- a hierarchical directory tree whose
+             structure mirrors the <i><b>src</b></i> directory tree. It
              contains only public header files (<i>*.hpp, *.h</i>).
-             <br><i>Example:</i> <tt><b>include/corelib/</b></tt> contains public headers for the sources
-             located in <tt><b>src/corelib/</b></tt>
+             <br><i>Example:</i> <i><b>include/corelib/</b></i> contains public headers for the sources
+             located in <i><b>src/corelib/</b></i>
 
-        <li> <tt><b>scripts/</b></tt> -- auxiliary scripts, including those to help manage interactions
-             with the NCBI CVS code repository, such as
+        <li> <i><b>scripts/</b></i> -- auxiliary scripts, including those to help manage interactions
+             with the NCBI CVS code repository, such as  <scan class=red> verify links </span>
                 <a href="new_proj.html#ref_OutsideImport">
-                   <b><tt>import_project.sh</tt></b></a>,
+                   <b><i>import_project.sh</i></b></a>,
                 <a href="new_proj.html#ref_OutsideCreate">
-                   <b><tt>new_project.sh</tt></b></a>,
+                   <b><i>new_project.sh</i></b></a>,
                 <a href="new_proj.html#ref_Checkout">
-                   <b><tt>cvs_core.sh</tt></b></a>,
+                   <b><i>cvs_core.sh</i></b></a>,
               etc.
 
         <li> files for platform-specific <a href="config.html#ref_Running">configuration and installation</a>:
             <ul>
-                <li>  <tt><b>compilers/</b></tt> -- directory containing
+                <li>  <i><b>compilers/</b></i> -- directory containing
                       <a href="config.html#ref_Wrappers">
                       compiler-specific <b><i>configure</i></b> wrappers</a>
                       (<i>*.sh</i>) and
@@ -352,7 +328,7 @@ To build an example use its accompanying <i>Makefile</i>.
                       <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Invoking_autoheader.html"> autoheader</a>
             </ul>
 
-        <li> <tt><b>doc/</b></tt> -- NCBI C++ documentation, including a library reference,
+        <li> <i><b>doc/</b></i> -- NCBI C++ documentation, including a library reference,
              configuration and installation instructions, example code and guidelines
              for <b>everybody</b> writing code for the NCBI C++ Toolkit.
 
@@ -364,16 +340,16 @@ To build an example use its accompanying <i>Makefile</i>.
     <li>
     <b>The Core NCBI C++ Toolkit</b><br>
     The 'core' libraries of the Toolkit provide users with a highly portable set of functionality.
-    The following projects comprise the portable core of the Toolkit:<p>
-    <!--<span class=red>this is the list MANDATORY_PROJ from Makefile</span>-->
-<pre>
-            corelib
-            connect
-            cgi
-            html
-            util
-            hello
-</pre>
+    The following projects comprise the portable core of the Toolkit:<br>
+
+<blockquote><tt>
+corelib
+connect
+cgi
+html
+util
+hello
+</tt></blockquote>
     Consult the <a href="libs.html">library reference</a> for further details.
     </li>
     <p></p>
@@ -394,7 +370,7 @@ the public headers in <tt> include/ </tt> and the source code, private headers a
 The contents of each project's <a href="lxr/source/src/"><i>source tree</i></a> are:
 <ul>
     <li> <b><i>*.cpp, *.hpp</i></b> --  project's source files and private headers
-    <li> <b><i>Makefile.in</i></b> -- a <a href="new_proj.html#ref_MakeMeta"><i>meta-makefile</i></a>
+    <li> <b><i>Makefile.in</i></b> -- a <a href="makefiles.html#ref_MakefilesMeta"><i>meta-makefile</i></a>
           to specify which local projects (described in <i>Makefile.*.in</i>)
           and sub-projects(located in the project subdirectories) must be built
     <li> <b><i>Makefile.*.lib, Makefile.*.app</i></b> -- <i>customized makefiles</i> to build a library or an application
@@ -412,9 +388,8 @@ Each project is built by customizing a set of generic <i>makefiles</i>.  These g
 assembly of the entire Toolkit via recursive builds of the individual projects.  (The usage of
 these <i>makefiles</i> and other configurations issues are
 <a href="#ref_InstBasics">summarized below</a> and detailed
-on the <a href="config.html#ref_Configure">Configuration, Builds and Installation</a>,
-<a href="new_proj.html#ref_Makefile">Starting a new C++ project</a> and
-<a href="programming_manual/inside_tree.html#makefiles">Working within the C++ source tree</a> pages.)
+on the <a href="makefiles.html">Working with Makefiles</a> page.)
+
 <p></p>
 
         <ul>
@@ -525,7 +500,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
     <b><a href="config.html#ref_ToolsAndFlags">Influencing <tt>configure</tt> via Environment Variables</a></b><br>
     Several environment variables control the tools and flags employed by <tt>configure</tt>.  The
     <a href="config.html#ref_TableToolsAndFlags">generic ones</a> are:
-    <b>CC, CXX, CPP, AR, RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS</b>.  In addition,
+    <b>CC, CXX, cpp, AR, RANLIB, STRIP, CFLAGS, CXXFLAGS, cppFLAGS, LDFLAGS, LIBS</b>.  In addition,
     you may manually set various <a href="config.html#ref_Localization">localization environment variables</a>.
     </li>
     <p></p>
@@ -578,12 +553,12 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 <ul>
     <a name="ref_UsingMake"></a>
     <li>
-    <b><a href="programming_manual/inside_tree.html#makefiles">Compiling and Linking with <tt>make</tt></a></b><br>
+    <b><a href="makefiles.html">Compiling and Linking with <tt>make</tt></a></b><br>
     The NCBI C++ Toolkit uses the standard Unix utility <tt>make</tt> to build
     libraries and executable code, using instructions found in
     <i>makefiles</i>.   To initiate compilation and linking, run <tt>make</tt>:
 <pre>
-    make -f &lt;<i>Makefile_Name</i>&gt [<a href="new_proj.html#ref_MakeProjTarget">&lt;target_name&gt;</a>]
+    make -f &lt;<i>Makefile_Name</i>&gt [<a href="makefiles.html#ref_MakeProjTarget">&lt;target_name&gt;</a>]
 </pre>
 
     When run from the top of the build tree, this command can make the entire tree (with
@@ -592,10 +567,10 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 
     <p></p>
     The Toolkit has in its <tt>src </tt> directory templates (<i>e.g., </i> <tt>Makefile.*.in</tt>)
-    for <a href="new_proj.html#ref_MakeProj"><i>makefiles</i></a> and
-    <a href="new_proj.html#ref_Makefile"><i>meta-makefiles</i></a>
+    for <a href="makefiles.html#ref_MakefilesProj"><i>makefiles</i></a> and
+    <a href="makefiles.html#ref_MakefilesMeta"><i>meta-makefiles</i></a>
     that define common file locations, compiler options, environment settings,
-    and <a href="new_proj.html#ref_MakeProjTarget">standard <tt>make</tt> targets</a>.
+    and <a href="makefiles.html#ref_MakeProjTarget">standard <tt>make</tt> targets</a>.
     Each Toolkit project has a specialized <a href="#ref_MakefileTemplates"><i>meta-makefile</i></a>
     in its <tt>src </tt> directory.  The relevant <i>meta-makefile</i> templates for a project,
     <i>e.g., </i> <tt>Makefile.in</tt>,
@@ -609,13 +584,13 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 
     <a name="ref_UsingMakefiles"></a>
     <li>
-    <b><a href="new_proj.html#ref_MakeProj"><i>Makefile</i> Customization</a></b><br>
-    Fortunately, for the common situations where a <a href="get_started.html#ref_ScriptAvail">script</a> was
+    <b><a href="makefiles.html#ref_MakefilesProj"><i>Makefile</i> Customization</a></b><br>
+    Fortunately, for the common situations where a <a href="cvs.html">script</a> was
     used to set up your source, or if you are working in the C++ Toolkit source tree,
     you will usually have correctly customized <i>makefiles</i> in each project directory of the build tree.  For
     other cases, particularly <a href="cvs.html#ref_New_Project">when using the <tt>new_project.sh</tt></a>
     script, some measure of user customization may be needed.  The
-    more frequent customizations involve (see "<a href="new_proj.html#ref_MakeProj">Project makefiles"</a> for a full discussion):
+    more frequent customizations involve (see "<a href="makefiles.html#ref_MakefilesProj">Working with Makefiles</a>" or "<a href="new_proj.html#ref_MakeProj">Project makefiles"</a> for a full discussion):
     <p></p>
         <ul>
             <li>
@@ -628,7 +603,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
             non-Toolkit library(ies) to link, object files to make, and source to use, respectively.</li>
 
             <li>
-            <a href="new_proj.html#ref_MakeProjMk">Compiler Flag Macros</a>:  <b>CFLAGS, CPPFLAGS, CXXFLAGS, LDFLAGS</b><br>
+            <a href="makefiles.html#ref_MakeProjMk">Compiler Flag Macros</a>:  <b>CFLAGS, cppFLAGS, CXXFLAGS, LDFLAGS</b><br>
             Include or override C compiler, C/C++ preprocessor, C++ compilier, and linker flags, respectively.
             Many more localization macros are also <a href="config.html#ref_Localization">available for use</a>.</li>
 
@@ -746,7 +721,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
                 <p></p>
 
             <li><b><i>Serializable Objects, the ASN.1 Data Types and <tt>datatool</tt></i></b><br>
-                The <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/DATAMODL.HTML">ASN.1 data model</a> for biological
+                The <a href="../SDKDOCS/DATAMODL.HTML">ASN.1 data model</a> for biological
                 data underlies all of the C and C++ Toolkit development at NCBI.  The C++
                 Toolkit represents the ASN.1 data types as
                 <a href="programming_manual/objects.html">serializable objects</a>, that is,
@@ -958,9 +933,8 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 <p>
 <a name="ref_ImptFiles"></a>
 <h3>Noteworthy Files <font size=-2><span class=nava>[<a href="#ref_GetStartedTop">TOP</a>]</span></font></h3>
-
 <table border=0 cellspacing=5>
-  <tr class=head>
+  <tr bgcolor="#ccccff">
      <th align="left">Filename<br><font size=-1><i>(relative to $NCBI/<tt>c++</tt>)</i></font></th>
      <th align="center">Description</th>
   </tr>
@@ -971,7 +945,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
      <td>Use the <tt>configure</tt> shell script, or one of its compiler-specific wrappers, to
      fully configure and install all files required to build the Toolkit.</td>
   </tr>
-  <tr class=shade>
+  <tr>
      <td><tt>scripts/cvs_core.{sh|bat}</tt></td>
      <td>Unix/Windows scripts to obtain the <a href="#ref_CoreContents">core</a>, portable portions of the Toolkit
      from an existing CVS repository.</td>
@@ -981,7 +955,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
      <td>Import only an existing Toolkit project into an independent subtree of your current Toolkit source tree.<br>
      (Requires a CVS source repository.)</td>
   </tr>
-  <tr class=shade>
+  <tr>
      <td><tt>scripts/update_{core|projects}</tt></td>
      <td>Update your local copy of either the <a href="#ref_CoreContents">core</a> Toolkit or set of
      specified projects.<br>  (Requires a CVS source repository.)</td>
@@ -989,11 +963,11 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
   <tr>
      <td><tt>scripts/new_project</tt></td>
      <td>Set up a new project outside of the NCBI C++ Toolkit tree to access
-     pre-built version of the Toolkit libraries.  Sample code is included
-     to serve as a basic template for the new project.<br></td>
+     pre-built version of the Toolkit libraries.  Sample code can be requested
+     to serve as a template for the new module.<br></td>
   </tr>
   <a name="ref_TmplMetaMake"></a>
-  <tr class=shade>
+  <tr>
      <td><tt>src/<i>&lt;project_dir&gt;</i>/Makefile.in<br>
              src/<i>&lt;project_dir&gt;</i>/<br>&nbsp;&nbsp;&nbsp;&nbsp;
              Makefile.<i>&lt;project&gt;</i>.{app, lib}</tt></td>
@@ -1007,12 +981,12 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
      <td>Basic templates for source and header files that can be used when starting a new module.
      Includes common headers, the NCBI disclaimer and CVS keywords in a standard way.</td>
   </tr>
-  <tr class=shade>
+  <tr>
      <td><tt>CHECKOUT_STATUS</tt></td>
      <td>This file summarizes the local source tree structure that was obtained when using one of the
      shell scripts in <tt>scripts</tt>.<br>  (Requires a CVS source repository.)</td></td>
   </tr>
-  <tr class=head>
+  <tr bgcolor="#ccccff">
      <th align="left">Build-specific Files<br><font size=-1><i>(relative to $NCBI/<tt>c++/&lt;<i>builddir</i>&gt;</tt>)</i></font></th>
      <th align="center">Description</th>
   <tr>
@@ -1025,7 +999,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
      and <tt>Makefile.meta</tt> is where most of the make targets are defined.</td>
   </tr>
   <a name="ref_LiveMetaMake"></a>
-  <tr class=shade>
+  <tr>
      <td><tt><i>&lt;project_dir&gt;</i>/Makefile<br>
              <i>&lt;project_dir&gt;</i>/<br>&nbsp;&nbsp;&nbsp;&nbsp;Makefile.<i>&lt;project&gt;</i>_{app, lib}</tt></td>
      <td>Project-specific custom <i>meta-makefile</i> and <i>makefiles</i>, respectively, configured from
@@ -1039,7 +1013,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
      This file is auto-generated by the <tt>configure</tt> script, and some pre-built versions do exist
      in <tt>compilers</tt>.</td>
   </tr>
-  <tr class=shade>
+  <tr>
      <td><tt>reconfigure.sh</tt></td>
      <td>Update the build tree due to changes in or the addition of configurable files
      (*.in files, such as <tt>Makefile.in</tt> or the <i>meta-makefiles</i>) to the source tree.</td>
@@ -1048,7 +1022,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
      <td><tt>relocate.sh</tt></td>
      <td>Adjust paths to this build tree and the relevant source tree.</td>
   </tr>
-  <tr class=shade>
+  <tr>
      <td><tt>corelib/ncbicfg.c</tt></td>
      <td>Define and manage the runtime path settings.<br>
      This file is auto-generated by the <tt>configure</tt> script.</td>
@@ -1062,15 +1036,16 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 </table>
 
 <br></br>
+<hr>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<!-- Begin footer content -->
+<hr>
 
 <table border=0 width="100%" cellspacing=0>
 <script>
 <!--
-print_author('lanczyck', 'Chris Lanczycki', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('cpp-core', 'Chris Lanczycki', '$Date$', 'ncbi.nlm.nih.gov');
 // -->
 </script>
 </table>

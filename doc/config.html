@@ -163,7 +163,7 @@ The resultant <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> will conta
        <a href="new_proj.html">NCBI C++ projects</a>. Here go
        all source files (<i>*.cpp, *.c</i>), private header and inline files
        (<i>*.hpp, *.inl, *.h</i>), makefiles (<i>Makefile.*</i>, including
-       <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>),
+       <a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>),
        scripts (<i>*.sh</i>), and maybe some project-specific data
 
   <li> <i><b>include/</b></i> -- a hierarchical directory tree whose
@@ -239,7 +239,7 @@ while each
 can contain its own (platform/compiler-specific)
 <i>ncbiconf.h</i> header, and/or different set of compilation/linking/etc.
 flags and tools ("frozen" in the makefiles, especially in
-<a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>).
+<a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>).
 This is to allow one to build
 libraries and executables using different compilers and/or flags, yet from
 the same sources, and in a uniform way.
@@ -269,7 +269,7 @@ The structure of the tree is as follows (see also in
        to the original NCBI C++ source directories.
        <br>
        There is a "very special" file
-       <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
+       <a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
        that contains all configured
        <a href="#ref_ToolsAndFlags">tools, flags</a>
        and
@@ -475,11 +475,12 @@ runpath, if any, as a (possibly empty) string.
 <p><b>NOTE:</b>
 You also can use environment variable <i>$LD_LIBRARY_PATH</i> to specify
 the <i>runpath</i>, like this:
+<font size="-1">
 <pre>
-   setenv LD_LIBRARY_PATH "/home/USERNAME/c++/WorkShop6-ReleaseDLL/lib"
-   /home/USERNAME/c++/WorkShop6-ReleaseDLL/bin/coretest
+setenv LD_LIBRARY_PATH "/home/USERNAME/c++/WorkShop6-ReleaseDLL/lib"
+/home/USERNAME/c++/WorkShop6-ReleaseDLL/bin/coretest
 </pre>
-
+</font>
 
 <b>HINT:</b>
 The <i><b>--with-runpath=</b>....</i> option can be useful for the
@@ -512,8 +513,6 @@ your development cycle, again using local in-tree DLLs.
         the system thread library
   <li> <i><b>--without-mt</b></i> --
 		  compile with no regard to the MT-safety
-<!-- ; also, unset makefile variable
-		  <a href="#ref_TableLocalization"><b><i>$(THREAD_LIBS)</i></b></a> -->
   <li> default: <i><b>--without-mt</b></i>
 </ul>
 <dl>
@@ -559,7 +558,7 @@ your development cycle, again using local in-tree DLLs.
 Also, you can always switch between these two variants "manually", after
 the configuration is done, by setting the value of variable
 <i><b>Rules</b></i> in
-<a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
+<a href="makefiles.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
 to either <i><b>rules</b></i> or <i><b>rules_with_autodep</b></i>.
 
 <p>
@@ -672,13 +671,13 @@ environment variables for the <b><i>configure</i></b> script.
   </tr>
 
   <tr>
-	 <td><b>CPP</b></td>
+	 <td><b>cpp</b></td>
 	 <td><i>$CC -E</i></td>
 	 <td>C preprocessor</td>
   </tr>
 
   <tr>
-	 <td><b>CXXCPP</b></td>
+	 <td><b>CXXcpp</b></td>
 	 <td><i>$CXX -E</i></td>
 	 <td>C++ preprocessor</td>
   </tr>
@@ -712,7 +711,7 @@ environment variables for the <b><i>configure</i></b> script.
   </tr>
 
   <tr>
-	 <td><b>CPPFLAGS</b></td>
+	 <td><b>cppFLAGS</b></td>
 	 <td><i>-D_DEBUG</i>
     <a href="#ref_DebugVsRelease">or/and/nor</a>
     <i>-DNDEBUG</i></td>
@@ -740,14 +739,14 @@ environment variables for the <b><i>configure</i></b> script.
 </table>
 
 <p>
-<a href="new_proj.html#ref_MakeProjMk">Later</a>, these tools and flags will
+<a href="makefiles.html#ref_MakeProjMk">Later</a>, these tools and flags will
 be engaged in the makefiles:
 <a name="ref_StdBuildRules"></a>
 <ul>
   <li> To compile C sources:
-    <br> <b><i>$(CC) -c $(CFLAGS) $(CPPFLAGS) .....</i></b>
+    <br> <b><i>$(CC) -c $(CFLAGS) $(cppFLAGS) .....</i></b>
   <li> To compile C++ sources:
-    <br> <b><i>$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) .....</i></b>
+    <br> <b><i>$(CXX) -c $(CXXFLAGS) $(cppFLAGS) .....</i></b>
   <li> To compose a library:
     <br> <b><i> $(AR)     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i>
 	 <br> <b><i> $(RANLIB) </i></b> <i>libXXX.a</i>
@@ -776,7 +775,7 @@ the given local host's working environment.
 The following localization environment variables can be set in addition
 to the "generic" ones
 <a href="#ref_ToolsAndFlags">
-<b>(CC, CXX, CPP, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS)
+<b>(CC, CXX, cpp, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, cppFLAGS, LDFLAGS, LIBS)
 </b></a>:
 
 <br></br>
@@ -1902,16 +1901,17 @@ The directions are <a href="config_mac.html">here</a>.
 
 
 <br></br>
+<hr>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<!-- Begin footer content -->
+<hr>
 
 <table border=0 width="100%" cellspacing=0>
 <script>
 <!--
-print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
-print_author('lavr', 'Anton Lavrentiev');
+print_author('cpp-core', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('cpp-core', 'Anton Lavrentiev');
 //-->
 </script>
 </table>

@@ -7,7 +7,7 @@
 <!--  Page Contents -->
 
 <ul>
-    <li><h4><a href="cvs.html">CVS Retrieval</a> <font size=-2><span class=navait>(requires access to a CVS repository with a Toolkit module)</span></font></h4> </li>
+    <li><h4><a href="cvs.html">CVS Retrieval</a> <font size=-1>(NCBI-only link)</font></h4> </li>
     <li><h4><a href="#ref_FTP">FTP Retrieval</a></h4> </li>
         <ul>
             <li><a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/">FTP Download Now</a></li>
@@ -108,37 +108,32 @@
 To summarize the <a href="get_started.html#ref_Source">Getting Started</a> page, the <a href="src_tree.gif"><i>source tree</i></a> is organized as follows:
 
 <ul>
-	<li>  The top-level has configuration files and the directories
-<pre>
-        include
-        src
-        scripts
-        compilers
-        doc
-</pre>
-        </li>
-	<li>  The <tt>src</tt> and <tt>include</tt> directories contain <i>"<a href="projects.html">projects</a>"</i> as subdirectories.
+	<li>  The top-level has configuration files and the directories <tt>include/, src/, scripts/, compilers/</tt> and <tt>doc/</tt></li>
+	<li>  The <tt>src</tt> and <tt>include</tt> directories contain "projects" as subdirectories.
 	Projects may contain sub-projects in a hierarchical fashion.</li>
-	<li>  <tt>src</tt> additionally contains <a href="get_started.html#ref_MakefileTemplates"><i>makefile</i> and <i>meta-makefile</i> <b>templates</b></a>.
-	<li>  Projects contain <i>"<a href="new_mod.html">modules</a>"</i> and various
-        <a href="get_started.html#ref_UsingMakefiles">customized <i>makefiles</i> and <i>meta-makefiles</i></a> to control their compilation.</li>
+	<li>  <tt>src/</tt> additionally contains <i>makefile</i> and <i>meta-makefile</i> templates.
+	<li>  Projects contain "<a href="new_mod.html">modules</a>" and various customized
+        <a href="get_started.html#ref_MakefileTemplates"><i>makefiles</i>
+        and <i>meta-makefiles</i></a> to control their compilation.</li>
 </ul>
 
-<br>
+<hr>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
 
 <!-- Begin footer content -->
 
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <script>
 <!--
-print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
-print_author('vasilche', 'Eugene Vasilchenko');
-print_author('lavr', 'Anton Lavrentiev');
-print_author('zimmerma', 'Diane Zimmerman');
-print_author('lewisg', 'Lewis Geer');
-print_author('lanczyck', 'Chris Lanczycki');
+print_author('cpp-core', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('cpp-core', 'Eugene Vasilchenko');
+print_author('cpp-core', 'Anton Lavrentiev');
+print_author('cpp-core', 'Diane Zimmerman');
+print_author('cpp-core', 'Lewis Geer');
+print_author('cpp-core', 'Chris Lanczycki');
 // -->
 </script>
 </table>
