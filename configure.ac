@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.291 2004/04/19 14:43:26 ucko Exp $
+#  $Id: configure.ac,v 1.292 2004/04/19 15:55:47 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -404,12 +404,12 @@ if test "$GCC" != "yes" ; then
 fi
 
 
-#### Detect ICC compiler
-if test "$GCC" != "yes"  -a  "$KCC" != "yes"; then
+#### Detect ICC compiler (newer versions of which configure can mis-ID as GCC)
+if test "$KCC" != "yes"; then
    icc_ver="`$real_CC -V 2>&1 | grep '^Intel(R) C++ Compiler'`"
    icc_license="`$real_CC -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
    case "$icc_ver" in 
-      Intel*C*Compiler* )  ICC="yes" ;;
+      Intel*C*Compiler* )  ICC="yes"; GCC="no" ;;
    esac
 fi
 
@@ -940,7 +940,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         esac
         ;;
       ICC )
-        if test "$with_mt" = "yes"; then
+        if test "$with_mt" = "yes" -a "$compiler_version" -lt 800; then
            DEF_FAST_FLAGS="-O3 -ip"
         else
            DEF_FAST_FLAGS="-O3 -axW -ip"
