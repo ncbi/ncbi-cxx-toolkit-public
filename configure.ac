@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.106 2002/07/12 21:03:57 ucko Exp $
+#  $Id: configure.ac,v 1.107 2002/07/23 18:27:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -77,6 +77,8 @@ AC_ARG_WITH(debug,
    [ --without-debug         build non-debug versions of libs and apps])
 AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
+AC_ARG_WITH(profiling,
+   [ --with-profiling        build profiled versions of libs and apps])
 AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
 AC_ARG_WITH(static,
@@ -177,7 +179,7 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll static runpath mt 64 projects \
+debug optimization profiling dll static runpath mt 64 projects \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus \
@@ -498,15 +500,24 @@ case "$host_os:$compiler" in
 
  linux*:GCC )
    LDFLAGS="-Wl,-E"
+   # May be needed for pthread_{set,get}concurrency
+   CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
    ;;
 
  linux*:ICC )
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
+   # May be needed for pthread_{set,get}concurrency
+   CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
    ;;
 
- linux* | osf*:GCC )
+ linux*)
+   # May be needed for pthread_{set,get}concurrency
+   CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
+   ;;
+
+ osf*:GCC )
    ;;
 
  irix*:GCC )
@@ -782,6 +793,10 @@ case "$compiler:$compiler_version" in
        *)        LDFLAGS="-Wl,-R`dirname $libstdcxx` $LDFLAGS" ;;
     esac
     ;;
+  ICC:6* )
+    # Seems to use libcxa.so.1 even without -i_dynamic...
+    LDFLAGS="-Xlinker -rpath -Xlinker $compiler_root/lib $LDFLAGS"
+    ;;
 esac
 
 # Provide runpath to the C++ Toolkit (or as specified by --with-runpath=) DLLs
@@ -1008,9 +1023,31 @@ fi
 DEBUG_SFX=${release_debug}
 
 
-#### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${build_root}"
+#### Profiling; try to turn on both function weight and basic-block counting
+if test "$with_profiling" = "yes" ; then
+   prof_sfx="Prof"
+   case "$compiler" in
+      Compaq)    PFFLAGS="-pg" ;;
+      GCC)       PFFLAGS="-pg -ax" ;;
+      ICC)       PFFLAGS="-p" ;;
+      KCC)       PFFLAGS="-pg" ;;
+      MIPSpro73) PFFLAGS="" ;; # pixie(1) adds info at runtime
+      MSVC)      PFFLAGS="/PROFILE" ;;
+      VisualAge) PFFLAGS="-pg" ;;
+      WorkShop*) PFFLAGS="-pg -xprofile=tcov" ;;
+      *)         PFFLAGS="-p" ;; # Fairly standard; shouldn't rely on -pg
+   esac
+   CFLAGS="$CFLAGS $PFFLAGS"
+   CXXFLAGS="$CXXFLAGS $PFFLAGS"
+   LDFLAGS="$LDFLAGS $PFFLAGS"
+else
+   prof_sfx=
+fi
+
+
+#### Add "Release"/"Debug", "MT", "DLL", "64", "_p" suffixes to "${build_root}"
 if test "$with_suffix" != "no" ; then
-   build_root="${build_root}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}"
+   build_root="${build_root}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}"
 fi
 
 
@@ -1021,7 +1058,7 @@ fi
 
 
 #### Overall configuration mode summary
-signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
 
 #### Check if there is "${build_root}" dir
