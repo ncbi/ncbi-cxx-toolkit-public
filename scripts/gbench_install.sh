@@ -30,7 +30,7 @@ done
 
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core gui_utils xgbplugin'
-OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds'
+OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds ncbi_xloader_trace ncbi_xloader_table'
 
 
 Usage()
