@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.31  2003/08/25 22:29:07  dondosha
+ * Default matrix loading is defined only in C++ toolkit
+ *
  * Revision 1.30  2003/08/25 18:05:41  dondosha
  * Moved assert statement after variables declarations
  *
@@ -147,7 +150,9 @@ Detailed Contents:
  * */
 #include <algo/blast/core/blastkar.h>
 #include <algo/blast/core/blast_util.h>
+#ifndef NCBI_C_TOOLKIT
 #include <util/tables/raw_scoremat.h>
+#endif
 
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
@@ -1225,6 +1230,7 @@ Int2
 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
 {
     Int2 status = 0;
+#ifndef NCBI_C_TOOLKIT
     SNCBIPackedScoreMatrix* psm;
     Int4** matrix = sbp->matrix;
     int i, j;   /* loop indices */
@@ -1262,7 +1268,7 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
                                            i, j);
         }
     }
-
+#endif /* NCBI_C_TOOLKIT */
     return status;
 }
 
