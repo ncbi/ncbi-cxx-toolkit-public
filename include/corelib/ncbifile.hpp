@@ -40,7 +40,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
-#include <memory>
 #include <vector>
 
 
@@ -916,6 +915,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/10/23 12:11:37  ucko
+ * Drop <memory> (now unneeded, and should have gone to ncbifile.cpp anyway)
+ *
  * Revision 1.29  2003/10/23 03:18:53  ucko
  * +<memory> for auto_ptr
  *
