@@ -63,7 +63,9 @@ class CBDB_ConfigStructureParser
 public:
     typedef vector<SBDB_FieldDescription> TFileStructure;
 public:
-    CBDB_ConfigStructureParser() : m_BlobStorage(false) {};
+    CBDB_ConfigStructureParser() 
+        : m_BlobStorage(false), 
+          m_KeyDuplicates(false) {};
 
     void ParseConfigFile(const string& fname);
 
@@ -75,9 +77,12 @@ public:
     
     bool IsBlobStorage() const { return m_BlobStorage; }
     
+    bool IsKeyDuplicates() const { return m_KeyDuplicates; }
+    
 private:
     TFileStructure   m_FileStructure;
     bool             m_BlobStorage;
+    bool             m_KeyDuplicates;
 };
 
 
@@ -88,6 +93,7 @@ bool
 CBDB_ConfigStructureParser::ParseStructureLine(const string&           line, 
                                                SBDB_FieldDescription*  descr)
 {
+    int cmp;
     list<string> tokens;
     
     NStr::Split(line, string(" \t"), tokens, NStr::eMergeDelims);
@@ -100,6 +106,29 @@ CBDB_ConfigStructureParser::ParseStructureLine(const string&           line,
     ITERATE(list<string>, it, tokens) {
         switch (cnt) {
         case 0:     // field name
+            cmp = NStr::CompareNocase(*it, string("duplicates"));
+            
+            if (cmp == 0) { // "DUPLICATES ALLOWED" ?
+                ++it;
+                if (it != tokens.end()) {
+                    cmp = NStr::CompareNocase(*it, string("allowed"));
+                    if (cmp == 0) {
+                        m_KeyDuplicates = true;
+                        return false;
+                    }
+                    cmp = NStr::CompareNocase(*it, string("yes"));
+                    if (cmp == 0) {
+                        m_KeyDuplicates = true;
+                        return false;
+                    }
+                    cmp = NStr::CompareNocase(*it, string("true"));
+                    if (cmp == 0) {
+                        m_KeyDuplicates = true;
+                        return false;
+                    }
+                }
+            }
+            
             descr->field_name = *it;
             break;
         case 1:     // field type
@@ -123,7 +152,7 @@ CBDB_ConfigStructureParser::ParseStructureLine(const string&           line,
             break;
         default: // PK or NULL or NOT NULL
             {
-            int cmp = NStr::CompareNocase(*it, string("PK"));
+            cmp = NStr::CompareNocase(*it, string("PK"));
             if (cmp == 0) {
                 descr->is_primary_key = true;
             }
@@ -174,23 +203,20 @@ void CBDB_ConfigStructureParser::ParseConfigFile(const string& fname)
         
         if (*s == 0 || *s == '#') // empty line or comment
             continue;
-                
+                        
         SBDB_FieldDescription fdescr;
         bool parsed = ParseStructureLine(line, &fdescr);
-        
-        CBDB_FieldFactory::EType ft = ffact.GetType(fdescr.type);
-        if (ft == CBDB_FieldFactory::eUnknown) {
-            BDB_THROW(eInvalidType, fdescr.type);            
-        }
-        if (ft == CBDB_FieldFactory::eBlob) {  // BLOB file
-            m_BlobStorage = true;
-        }
+
+        if (parsed) {        
+            CBDB_FieldFactory::EType ft = ffact.GetType(fdescr.type);
+            if (ft == CBDB_FieldFactory::eUnknown) {
+                BDB_THROW(eInvalidType, fdescr.type);            
+            }
+            if (ft == CBDB_FieldFactory::eBlob) {  // BLOB file
+                m_BlobStorage = true;
+            }
                 
-        if (parsed) {
             m_FileStructure.push_back(fdescr);
-        } else {
-            NcbiCerr << "Error in line: " << line_idx << endl;
-            return;
         }
         
     } // for
@@ -255,7 +281,12 @@ void CBDB_FileDumperApp::Init(void)
                              "blob_file",
                              "Dump BLOB to file (Use with -k)",
                              CArgDescriptions::eString);
-            
+
+    arg_desc->AddOptionalKey("ofile",
+                             "output_file",
+                             "All records dumped into another database (append mode)",
+                             CArgDescriptions::eString);
+                    
     arg_desc->AddFlag("nl", "Do NOT print field labels(names)");
     arg_desc->AddFlag("bt", "Display BLOB as text (default: HEX)");
     arg_desc->AddFlag("bf", "Display full BLOB");
@@ -278,8 +309,9 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
 
     CBDB_FieldFactory ffact;
 
-    auto_ptr<CBDB_File> db_file;
-    auto_ptr<CBDB_BLobFile> db_blob_file;
+    auto_ptr<CBDB_File>      db_file;
+    auto_ptr<CBDB_BLobFile>  db_blob_file;
+    auto_ptr<CBDB_File>      db_out_file;
     
     CBDB_File* dump_file;
     
@@ -303,7 +335,9 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
             db_blob_file.reset(new CBDB_BLobFile);
             dump_file = db_blob_file.get();
         } else {
-            db_file.reset(new CBDB_File);
+            db_file.reset(new CBDB_File(parser.IsKeyDuplicates() ? 
+                                        CBDB_File::eDuplicatesEnable : 
+                                        CBDB_File::eDuplicatesDisable));
             dump_file = db_file.get();
         }
         dump_file->SetFieldOwnership(true);
@@ -383,14 +417,26 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
         fdump.SetBlobDumpFile(args["bfile"].AsString());
     }
     
+    if (args["ofile"]) {
+        const string& out_fname = args["ofile"].AsString();
+        db_out_file.reset(new CBDB_File(parser.IsKeyDuplicates() ? 
+                                        CBDB_File::eDuplicatesEnable : 
+                                        CBDB_File::eDuplicatesDisable));
+        db_out_file->SetFieldOwnership(true);
+        db_out_file->DuplicateStructure(*dump_file);
+        
+        db_out_file->Open(out_fname.c_str(), CBDB_File::eReadWriteCreate);
+        
+        fdump.SetOutFile(db_out_file.get());
+    }
+    
     if (args["k"]) {        
         const string& key_str = args["k"].AsString();
 
         CBDB_FileCursor cur(*dump_file);
         cur.SetCondition(CBDB_FileCursor::eEQ);
         
-        const CBDB_BufferManager* key_buf = dump_file->GetKeyBuffer();
-        
+        const CBDB_BufferManager* key_buf = dump_file->GetKeyBuffer();        
         unsigned field_count = key_buf->FieldCount();
         
         if (field_count > 1) {
@@ -460,6 +506,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/29 12:28:30  kuznets
+ * Added option to copy all db records to another file
+ *
  * Revision 1.7  2004/06/28 12:19:13  kuznets
  * Improved BLOB dumping
  *

@@ -119,6 +119,11 @@ public:
     
     /// Set BLOB dump file name
     void SetBlobDumpFile(const string& fname) { m_BlobDumpFname = fname; }
+    
+    /// Set reference on output file 
+    /// (mode when all dumped records are put into a separate database)
+    /// Class does not take ownership on out_dbf
+    void SetOutFile(CBDB_File* out_dbf) { m_OutFile = out_dbf; }
 protected:
         
     void PrintHeader(CNcbiOstream& out,
@@ -144,6 +149,8 @@ protected:
     
     string               m_QueryStr;
     CBDB_Query*          m_Query;
+    
+    CBDB_File*           m_OutFile;
 }; 
 
 /* @} */
@@ -180,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/29 12:27:36  kuznets
+ * Added option to copy all db records to another file
+ *
  * Revision 1.7  2004/06/28 12:18:24  kuznets
  * Added setting to dump BLOB to a file
  *

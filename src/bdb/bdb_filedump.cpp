@@ -51,7 +51,8 @@ CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
   m_ValueFormatting(eNoQuotes),
   m_BlobFormat(eBlobSummary | eBlobAsHex),
   m_RecordsDumped(0),
-  m_Query(0)
+  m_Query(0),
+  m_OutFile(0)
 {
 }
 
@@ -63,7 +64,8 @@ CBDB_FileDumper::CBDB_FileDumper(const CBDB_FileDumper& fdump)
   m_BlobFormat(fdump.m_BlobFormat),
   m_RecordsDumped(0),
   m_QueryStr(fdump.m_QueryStr),
-  m_Query(0)
+  m_Query(0),
+  m_OutFile(0)
 {
 }
 
@@ -84,6 +86,8 @@ CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
     m_QueryStr = fdump.m_QueryStr;
     
     delete m_Query; m_Query = 0;
+    
+    m_OutFile = 0;
     
     return *this;
 }
@@ -281,8 +285,14 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
             x_DumpFields(out, *data, data_quote_flags, false/*not key*/);
         }
         
+        // Copy recors to output file
+        if (m_OutFile) {
+            m_OutFile->CopyFrom(db);
+            m_OutFile->Insert();
+        }
+        
         out << NcbiEndl;
-    }
+    } // for
 	
 }
 
@@ -371,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/29 12:28:02  kuznets
+ * Added option to copy all db records to another file
+ *
  * Revision 1.8  2004/06/28 12:17:42  kuznets
  * Improved BLOB dumping
  *
