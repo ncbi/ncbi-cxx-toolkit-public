@@ -91,6 +91,8 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 
 /* Can be combined in types to get even dead services (not off ones!) */
 #define fSERV_Promiscuous 0x80000000
+/* Do reverse DNS translation of the resulting info */
+#define fSERV_ReverseDns  0x40000000
 
 
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
@@ -202,6 +204,9 @@ extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2005/03/05 21:04:11  lavr
+ * +fSERV_ReverseDns
+ *
  * Revision 6.35  2005/01/31 17:08:35  lavr
  * info -> net_info where appropriate for consistency
  *
