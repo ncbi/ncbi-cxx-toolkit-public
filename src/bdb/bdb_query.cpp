@@ -331,6 +331,7 @@ public:
         }
     }
 
+
     /// Checks if value is equal to any field in the database
     bool IsAnyField(CBDB_File& dbf, 
                     const string& search_value,
@@ -597,12 +598,28 @@ void CBDB_FileScanner::Scan(CBDB_FileCursor& cur,
 }
 
 /// The main tree evaluation functor
+///
+/// @internal
+
 class CScannerEvaluateFunc
 {
 public: 
     CScannerEvaluateFunc(CQueryExecEnv& env)
-    : m_QueryEnv(env)
-    {}
+    : m_QueryEnv(env),
+      m_Matcher(0)
+    {
+    }
+
+    ~CScannerEvaluateFunc()
+    {
+        delete m_Matcher;
+    }
+
+    CScannerEvaluateFunc(const CScannerEvaluateFunc& func)
+    : m_QueryEnv(func.m_QueryEnv),
+      m_Matcher(0)
+    {
+    }
   
     ETreeTraverseCode 
     operator()(CTreeNode<CBDB_QueryNode>& tr, int delta)
@@ -615,6 +632,24 @@ public:
             // If node has children, we skip it and process on the way back
             if (!tr.IsLeaf())
                 return eTreeTraverse;
+        }
+
+        if (qnode.GetType() == CBDB_QueryNode::eValue) {
+            if (tr.GetParent() == 0) { // single top node
+                CBDB_File& dbf = m_QueryEnv.GetFile();
+                
+                if (!m_Matcher) {
+                    const string& search_value = qnode.GetValue();
+                    m_Matcher = new CBoyerMooreMatcher(search_value,
+                                                       NStr::eNocase,
+                                   CBoyerMooreMatcher::ePrefixMatch);
+
+                }
+                CBDB_File::TUnifiedFieldIndex fidx;
+                fidx = BDB_find_field(dbf, *m_Matcher);
+
+                qnode.SetAltValue(fidx ? "1" : "0");
+            }
         }
 
         if (!qnode.HasValue()) {
@@ -665,9 +700,10 @@ public:
 
         return eTreeTraverse;
     }
+protected:
+    CBoyerMooreMatcher*  m_Matcher;
+    CQueryExecEnv&       m_QueryEnv;
 
-private:
-    CQueryExecEnv&  m_QueryEnv;
 };
 
 
@@ -682,10 +718,19 @@ bool CBDB_FileScanner::Evaluate(CBDB_Query& query)
 
     TreeDepthFirstTraverse(qtree, scanner_eval);
 
-    const string& v = qtree.GetValue().GetValue();
+    const CBDB_QueryNode& qnode = qtree.GetValue();
+    const string& v_alt = qnode.GetAltValue();
 
-    if (v == "0")
-        return false;
+    if (v_alt.empty()) {
+        const string& v = qnode.GetValue();
+
+        if (v == "0")
+            return false;
+        return true;
+    } else {
+        if (v_alt == "0")
+            return false;
+    }
     return true;
 }
 
@@ -814,6 +859,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/11 13:16:10  kuznets
+ * Bug fixed corner case when query is one word only
+ *
  * Revision 1.5  2004/03/08 13:35:07  kuznets
  * Modified queries to do full text searches
  *
