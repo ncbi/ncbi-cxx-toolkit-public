@@ -106,9 +106,10 @@ public:
     static TBlobId GetBlobId(const CID2_Blob_Id& blob_id);
 
 protected:
-    virtual void x_Connect(TConn conn);
-    virtual void x_Disconnect(TConn conn);
-    virtual void x_Reconnect(TConn conn);
+    virtual void x_AddConnectionSlot(TConn conn);
+    virtual void x_RemoveConnectionSlot(TConn conn);
+    virtual void x_DisconnectAtSlot(TConn conn);
+    virtual void x_ConnectAtSlot(TConn conn);
 
     CConn_IOStream* x_GetConnection(TConn conn);
     CConn_IOStream* x_NewConnection(void);

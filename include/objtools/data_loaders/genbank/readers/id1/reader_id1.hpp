@@ -88,9 +88,10 @@ public:
                  TChunkId chunk_id);
 
 protected:
-    virtual void x_Connect(TConn conn);
-    virtual void x_Disconnect(TConn conn);
-    virtual void x_Reconnect(TConn conn);
+    virtual void x_AddConnectionSlot(TConn conn);
+    virtual void x_RemoveConnectionSlot(TConn conn);
+    virtual void x_DisconnectAtSlot(TConn conn);
+    virtual void x_ConnectAtSlot(TConn conn);
 
     CConn_ServiceStream* x_GetConnection(TConn conn);
     CConn_ServiceStream* x_NewConnection(TConn conn);

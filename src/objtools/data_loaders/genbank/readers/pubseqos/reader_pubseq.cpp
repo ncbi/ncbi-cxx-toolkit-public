@@ -100,16 +100,7 @@ CPubseqReader::CPubseqReader(int max_connections,
                    "without MT-safe DB library");
     }
 #endif
-    SetMaximumConnections(max_connections);
-    try {
-        CConn conn(this);
-        x_GetConnection(conn);
-        conn.Release();
-    }
-    catch ( ... ) {
-        SetMaximumConnections(0);
-        throw;
-    }
+    SetInitialConnections(max_connections);
 }
 
 
@@ -132,20 +123,20 @@ int CPubseqReader::GetMaximumConnectionsLimit(void) const
 }
 
 
-void CPubseqReader::x_Connect(TConn conn)
+void CPubseqReader::x_AddConnectionSlot(TConn conn)
 {
     _ASSERT(!m_Connections.count(conn));
     m_Connections[conn];
 }
 
 
-void CPubseqReader::x_Disconnect(TConn conn)
+void CPubseqReader::x_RemoveConnectionSlot(TConn conn)
 {
     _VERIFY(m_Connections.erase(conn));
 }
 
 
-void CPubseqReader::x_Reconnect(TConn conn)
+void CPubseqReader::x_DisconnectAtSlot(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
@@ -154,6 +145,12 @@ void CPubseqReader::x_Reconnect(TConn conn)
                  "reconnecting...");
         stream.reset();
     }
+}
+
+
+void CPubseqReader::x_ConnectAtSlot(TConn conn)
+{
+    x_GetConnection(conn);
 }
 
 

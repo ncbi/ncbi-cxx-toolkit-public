@@ -125,16 +125,7 @@ CId2Reader::CId2Reader(int max_connections)
     : m_AvoidRequest(0)
 {
     m_RequestSerialNumber.Set(1);
-    SetMaximumConnections(max_connections);
-    try {
-        CConn conn(this);
-        x_GetConnection(conn);
-        conn.Release();
-    }
-    catch ( ... ) {
-        SetMaximumConnections(0);
-        throw;
-    }
+    SetInitialConnections(max_connections);
 }
 
 
@@ -153,20 +144,20 @@ int CId2Reader::GetMaximumConnectionsLimit(void) const
 }
 
 
-void CId2Reader::x_Connect(TConn conn)
+void CId2Reader::x_AddConnectionSlot(TConn conn)
 {
     _ASSERT(!m_Connections.count(conn));
     m_Connections[conn];
 }
 
 
-void CId2Reader::x_Disconnect(TConn conn)
+void CId2Reader::x_RemoveConnectionSlot(TConn conn)
 {
     _VERIFY(m_Connections.erase(conn));
 }
 
 
-void CId2Reader::x_Reconnect(TConn conn)
+void CId2Reader::x_DisconnectAtSlot(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
@@ -174,6 +165,12 @@ void CId2Reader::x_Reconnect(TConn conn)
         ERR_POST("CId2Reader: ID2 GenBank connection failed: reconnecting...");
         stream.reset();
     }
+}
+
+
+void CId2Reader::x_ConnectAtSlot(TConn conn)
+{
+    x_GetConnection(conn);
 }
 
 

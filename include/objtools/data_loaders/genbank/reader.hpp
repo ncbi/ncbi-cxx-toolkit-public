@@ -130,6 +130,7 @@ public:
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
 
+    void SetInitialConnections(int max);
     int SetMaximumConnections(int max);
     int GetMaximumConnections(void) const;
     virtual int GetMaximumConnectionsLimit(void) const;
@@ -169,9 +170,14 @@ public:
 protected:
     CReadDispatcher* m_Dispatcher;
 
-    virtual void x_Connect(TConn conn) = 0;
-    virtual void x_Disconnect(TConn conn) = 0;
-    virtual void x_Reconnect(TConn conn);
+    // allocate connection slot with key 'conn'
+    virtual void x_AddConnectionSlot(TConn conn) = 0;
+    // disconnect and remove connection slot with key 'conn'
+    virtual void x_RemoveConnectionSlot(TConn conn) = 0;
+    // disconnect at connection slot with key 'conn'
+    virtual void x_DisconnectAtSlot(TConn conn);
+    // force connection at connection slot with key 'conn'
+    virtual void x_ConnectAtSlot(TConn conn) = 0;
 
 private:
     friend class CConn;

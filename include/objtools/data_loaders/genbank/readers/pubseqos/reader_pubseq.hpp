@@ -74,9 +74,10 @@ public:
                  TChunkId chunk_id);
 
 protected:
-    void x_Connect(TConn conn);
-    void x_Disconnect(TConn conn);
-    void x_Reconnect(TConn conn);
+    void x_AddConnectionSlot(TConn conn);
+    void x_RemoveConnectionSlot(TConn conn);
+    void x_DisconnectAtSlot(TConn conn);
+    void x_ConnectAtSlot(TConn conn);
 
     CDB_Connection* x_GetConnection(TConn conn);
     CDB_Connection* x_NewConnection(void);

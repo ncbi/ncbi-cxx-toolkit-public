@@ -52,6 +52,30 @@ CReader::~CReader(void)
 }
 
 
+void CReader::SetInitialConnections(int max)
+{
+    if ( SetMaximumConnections(max) <= 0 ) {
+        NCBI_THROW(CLoaderException, eConnectionFailed,
+                   "Maximum connection is zero");
+    }
+    for ( int attempt = 1; ; ++attempt ) {
+        try {
+            CConn conn(this);
+            x_ConnectAtSlot(conn);
+            conn.Release();
+            return;
+        }
+        catch ( ... ) {
+            if ( attempt >= GetRetryCount() ) {
+                // this is the last attempt to establish connection
+                SetMaximumConnections(0);
+                throw;
+            }
+        }
+    }
+}
+
+
 int CReader::SetMaximumConnections(int max)
 {
     int limit = GetMaximumConnectionsLimit();
@@ -96,7 +120,7 @@ void CReader::x_AddConnection(void)
 {
     CMutexGuard guard(m_ConnectionsMutex);
     TConn conn = m_NextConnection.Add(1);
-    x_Connect(conn);
+    x_AddConnectionSlot(conn);
     x_ReleaseConnection(conn, true);
     _VERIFY(m_NumConnections.Add(1) > 0);
 }
@@ -107,7 +131,7 @@ void CReader::x_RemoveConnection(void)
     TConn conn = x_AllocConnection(true);
     CMutexGuard guard(m_ConnectionsMutex);
     _VERIFY(m_NumConnections.Add(-1) >= 0);
-    x_Disconnect(conn);
+    x_RemoveConnectionSlot(conn);
 }
 
 
@@ -152,11 +176,17 @@ void CReader::x_AbortConnection(TConn conn)
 {
     CMutexGuard guard(m_ConnectionsMutex);
     try {
-        x_Reconnect(conn);
+        x_DisconnectAtSlot(conn);
     }
     catch ( exception& exc ) {
         ERR_POST("CReader: cannot reuse connection: "<<exc.what());
         // cannot reuse connection number, allocate new one
+        try {
+            x_RemoveConnectionSlot(conn);
+        }
+        catch ( ... ) {
+            // ignore
+        }
         _VERIFY(m_NumConnections.Add(-1) >= 0);
         x_AddConnection();
         return;
@@ -165,11 +195,11 @@ void CReader::x_AbortConnection(TConn conn)
 }
 
 
-void CReader::x_Reconnect(TConn conn)
+void CReader::x_DisconnectAtSlot(TConn conn)
 {
     ERR_POST("CReader: GenBank connection failed: reconnecting...");
-    x_Disconnect(conn);
-    x_Connect(conn);
+    x_RemoveConnectionSlot(conn);
+    x_AddConnectionSlot(conn);
 }
 
 

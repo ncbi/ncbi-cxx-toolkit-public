@@ -153,8 +153,10 @@ public:
     int GetMaximumConnectionsLimit(void) const;
 
 protected:
-    void x_Connect(TConn conn);
-    void x_Disconnect(TConn conn);
+    void x_AddConnectionSlot(TConn conn);
+    void x_RemoveConnectionSlot(TConn conn);
+    void x_DisconnectAtSlot(TConn conn);
+    void x_ConnectAtSlot(TConn conn);
 
     bool x_LoadIdCache(const string& key,
                        const string& subkey,

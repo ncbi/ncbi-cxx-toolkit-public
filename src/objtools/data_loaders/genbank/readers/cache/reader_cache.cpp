@@ -174,19 +174,29 @@ CCacheReader::CCacheReader(ICache* blob_cache,
                            TOwnership own)
     : CCacheHolder(blob_cache, id_cache, own)
 {
-    SetMaximumConnections(1);
+    SetInitialConnections(1);
 }
 
 
-void CCacheReader::x_Connect(TConn /*conn*/)
+void CCacheReader::x_AddConnectionSlot(TConn /*conn*/)
 {
 }
 
 
-void CCacheReader::x_Disconnect(TConn /*conn*/)
+void CCacheReader::x_RemoveConnectionSlot(TConn /*conn*/)
 {
     SetIdCache(0);
     SetBlobCache(0);
+}
+
+
+void CCacheReader::x_DisconnectAtSlot(TConn /*conn*/)
+{
+}
+
+
+void CCacheReader::x_ConnectAtSlot(TConn /*conn*/)
+{
 }
 
 

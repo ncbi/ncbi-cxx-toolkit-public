@@ -64,12 +64,31 @@
 
 #include <iomanip>
 
-//#define GENBANK_ID1_RANDOM_FAILS 1
-#define GENBANK_ID1_RANDOM_FAILS_FREQUENCY 1
-#define GENBANK_ID1_RANDOM_FAILS_RECOVER 2
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+//#define GENBANK_ID1_RANDOM_FAILS 1
+#define GENBANK_ID1_RANDOM_FAILS_FREQUENCY 20
+#define GENBANK_ID1_RANDOM_FAILS_RECOVER 3 // new + write + read
+
+#ifdef GENBANK_ID1_RANDOM_FAILS
+static void SetRandomFail(CConn_ServiceStream& stream)
+{
+    static int fail_recover = 0;
+    if ( fail_recover > 0 ) {
+        --fail_recover;
+        return;
+    }
+    if ( random() % GENBANK_ID1_RANDOM_FAILS_FREQUENCY == 0 ) {
+        fail_recover = GENBANK_ID1_RANDOM_FAILS_RECOVER;
+        stream.setstate(ios::badbit);
+    }
+}
+#else
+# define SetRandomFail(stream)
+#endif
+
 
 #ifdef ID1_COLLECT_STATS
 static STimeStatistics resolve_id;
@@ -125,16 +144,7 @@ enum EDebugLevel
 
 CId1Reader::CId1Reader(int max_connections)
 {
-    SetMaximumConnections(max_connections);
-    try {
-        CConn conn(this);
-        x_GetConnection(conn);
-        conn.Release();
-    }
-    catch ( ... ) {
-        SetMaximumConnections(0);
-        throw;
-    }
+    SetInitialConnections(max_connections);
 }
 
 
@@ -293,20 +303,20 @@ int CId1Reader::GetMaximumConnectionsLimit(void) const
 }
 
 
-void CId1Reader::x_Connect(TConn conn)
+void CId1Reader::x_AddConnectionSlot(TConn conn)
 {
     _ASSERT(!m_Connections.count(conn));
     m_Connections[conn];
 }
 
 
-void CId1Reader::x_Disconnect(TConn conn)
+void CId1Reader::x_RemoveConnectionSlot(TConn conn)
 {
     _VERIFY(m_Connections.erase(conn));
 }
 
 
-void CId1Reader::x_Reconnect(TConn conn)
+void CId1Reader::x_DisconnectAtSlot(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_ServiceStream>& stream = m_Connections[conn];
@@ -314,6 +324,12 @@ void CId1Reader::x_Reconnect(TConn conn)
         ERR_POST("CId1Reader: ID1 GenBank connection failed: reconnecting...");
         stream.reset();
     }
+}
+
+
+void CId1Reader::x_ConnectAtSlot(TConn conn)
+{
+    x_GetConnection(conn);
 }
 
 
@@ -338,6 +354,10 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
     
     AutoPtr<CConn_ServiceStream> stream
         (new CConn_ServiceStream(id1_svc, fSERV_Any, 0, 0, &tmout));
+
+#ifdef GENBANK_ID1_RANDOM_FAILS
+    SetRandomFail(*stream);
+#endif
 
     if ( stream->bad() ) {
         NCBI_THROW(CLoaderException, eNoConnection, "connection failed");
@@ -804,30 +824,13 @@ void CId1Reader::x_SendRequest(const CBlob_id& blob_id, TConn conn)
     x_SendRequest(conn, id1_request);
 }
 
-#if GENBANK_ID1_RANDOM_FAILS
-static void SetRandomFail(CConn_ServiceStream& stream)
-{
-    static int fail_recover = 0;
-    if ( fail_recover > 0 ) {
-        --fail_recover;
-        return;
-    }
-    if ( random() % GENBANK_ID1_RANDOM_FAILS_FREQUENCY == 0 ) {
-        fail_recover = GENBANK_ID1_RANDOM_FAILS_RECOVER;
-        stream.setstate(ios::badbit);
-    }
-}
-#else
-# define SetRandomFail(stream)
-#endif
-
 
 void CId1Reader::x_SendRequest(TConn conn,
                                const CID1server_request& request)
 {
     CConn_ServiceStream* stream = x_GetConnection(conn);
 
-#if GENBANK_ID1_RANDOM_FAILS
+#ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
 #endif
     if ( GetDebugLevel() >= eTraceConn ) {
@@ -855,7 +858,7 @@ void CId1Reader::x_ReceiveReply(TConn conn,
 {
     CConn_ServiceStream* stream = x_GetConnection(conn);
 
-#if GENBANK_ID1_RANDOM_FAILS
+#ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
 #endif
     if ( GetDebugLevel() >= eTraceConn ) {
