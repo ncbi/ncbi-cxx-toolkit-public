@@ -667,23 +667,34 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
         return kEmptyStr;
     }
 
-    // Find organism name
-    if (cds_loc) {
+    {{ // Find organism name 
         CConstRef<COrg_ref> org;
-        CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc);
-        for (; id; ++id) {
-            CBioseq_Handle na_handle = scope.GetBioseqHandle(*id);
-            CSeqdesc_CI it(na_handle, CSeqdesc::e_Source);
+        {{
+            CSeqdesc_CI it(handle, CSeqdesc::e_Source);
             for (;  it;  ++it) {
                 org = &it->GetSource().GetOrg();
                 BREAK(it);
             }
-            if (org) BREAK(id);
+        }}
+        if (org.Empty()  &&  cds_loc) {
+            CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc);
+            for (; id; ++id) {
+                CBioseq_Handle na_handle = scope.GetBioseqHandle(*id);
+                if (!na_handle) {
+                    continue;
+                }
+                CSeqdesc_CI it(na_handle, CSeqdesc::e_Source);
+                for (;  it;  ++it) {
+                    org = &it->GetSource().GetOrg();
+                    BREAK(it);
+                }
+                if (org) BREAK(id);
+            }
         }
         if (org.NotEmpty()  &&  org->IsSetTaxname()) {
             organism = org->GetTaxname();
         }
-    }
+    }}
 
     return result;
 }
@@ -765,6 +776,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/08/21 15:30:00  ucko
+* s_TitleFromProtein: when looking for the organism name, start with the
+* actual product, and deal with references to absent sequences.
+*
 * Revision 1.4  2002/06/28 18:39:20  ucko
 * htgs_cancelled keyword suppresses sequencing in progress phrase in defline
 *
