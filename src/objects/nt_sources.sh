@@ -2,11 +2,27 @@
 # $Id$
 #
 # Script to update ASN.1 objects' sources on Windows-NT
-#       (using bash and datatool)
+#       (using BASH and DATATOOL)
 #
 
 cd $(dirname $(echo $0 | sed 's%\\%/%g'))
-ROOT="$(echo $PWD | sed 's%/cygdrive/\([a-zA-Z]\)/%\1:\\%' | sed 's%//\([a-zA-Z]\)/%\1:\\%' | sed 's%/src/objects%%')"
+
+if test -z "$1" ; then
+    ROOT="$(echo $PWD | sed 's%/cygdrive/\([a-zA-Z]\)/%\1:\\%' | sed 's%//\([a-zA-Z]\)/%\1:\\%' | sed 's%/src/objects%%')"
+    if echo "$ROOT" | grep '^/' >/dev/null ; then
+        ROOT="u:\\`echo \"$ROOT\" | sed 's%/home/[a-zA-Z_]*/%%'`"
+    fi
+else
+    ROOT="$1"
+fi
+if test ! -d $ROOT/src/objects ; then
+    echo "Cannot auto-find C++ Toolkit in: \"$ROOT\""
+    echo "please specify the path to it, like (note the double back-slash):"
+    echo "      $0 c:\\\\ncbi_cxx"
+    exit 1
+fi
+
+
 TOOL="$ROOT/compilers/msvc_prj/serial/datatool/DebugMT/datatool"
 
 OBJECTS="$ROOT/src/objects"
