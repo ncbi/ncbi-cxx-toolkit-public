@@ -37,6 +37,9 @@
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+    class CSeq_align;
+END_SCOPE(objects)
 
 
 // single hit representation
@@ -59,6 +62,7 @@ public:
 
     CHit();
     CHit(const string&);
+    CHit(const objects::CSeq_align&);
     CHit(const CHit&,const CHit&);
     virtual ~CHit() {}
 

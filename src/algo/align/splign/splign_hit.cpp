@@ -33,11 +33,15 @@
 #include <algo/align/splign_hit.hpp>
 #include <algo/align/align_exception.hpp>
 #include <corelib/ncbistre.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <algorithm>
 #include <math.h>
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 CHit::CHit()
 {
@@ -46,7 +50,7 @@ CHit::CHit()
 
 void CHit::x_InitDefaults()
 {
-    m_Score = m_Value = 0;
+    m_Idnty = m_Score = m_Value = m_MM = m_Gaps = 0;
     m_GroupID = -1;
     m_MaxDistClustID = -1;
     m_an[0] = m_an[1] = m_an[2] = m_an[3] = 0;
@@ -173,6 +177,49 @@ CHit::CHit(const string& strTemplate)
     m_anLength[0] = m_ai[1] - m_ai[0] + 1;
     m_anLength[1] = m_ai[3] - m_ai[2] + 1;
     m_Length = max(m_anLength[0], m_anLength[1]);
+}
+
+
+CHit::CHit(const CSeq_align& sa)
+{
+    x_InitDefaults();
+
+    if (sa.CheckNumRows() != 2) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "CHit::CHit passed seq-align of dimension != 2");
+    }
+    m_Query = sa.GetSeq_id(0).GetSeqIdString(true);
+    m_Subj  = sa.GetSeq_id(1).GetSeqIdString(true);
+    m_an[0] = sa.GetSeqStart(0) + 1;
+    m_an[1] = sa.GetSeqStop(0) + 1;
+    m_an[2] = sa.GetSeqStart(1) + 1;
+    m_an[3] = sa.GetSeqStop(1) + 1;
+
+    if (!sa.GetSegs().IsDenseg()) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "CHit::CHit passed a seq-align that isn't a dense-seg.");
+    }
+
+    const CDense_seg &ds = sa.GetSegs().GetDenseg();
+    if (ds.GetStrands()[0] == eNa_strand_minus  &&
+        ds.GetStrands()[1] == eNa_strand_plus) {
+        swap(m_an[0], m_an[1]);
+    } else if (ds.GetStrands()[0] == eNa_strand_plus  &&
+               ds.GetStrands()[1] == eNa_strand_minus) {
+        swap(m_an[2], m_an[3]);
+    }
+
+    sa.GetNamedScore("num_ident", m_Idnty);
+    sa.GetNamedScore("bit_score", m_Score);
+    sa.GetNamedScore("sum_e", m_Value);
+
+    SetEnvelop();    
+
+    m_anLength[0] = m_ai[1] - m_ai[0] + 1;
+    m_anLength[1] = m_ai[3] - m_ai[2] + 1;
+    m_Length = max(m_anLength[0], m_anLength[1]);
+
+    m_Idnty = 100 * m_Idnty / m_Length; //convert # identities to % identity
 }
 
 
@@ -401,6 +448,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/03 15:23:08  johnson
+* Added CHit constructor that takes a CSeq_align
+*
 * Revision 1.3  2004/04/23 14:37:44  kapustin
 * *** empty log message ***
 *
