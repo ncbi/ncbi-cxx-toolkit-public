@@ -1571,6 +1571,36 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
 }
 
 
+TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
+                       EOffsetType how, CScope* scope)
+{
+    SRelLoc rl(outer, inner, scope);
+    bool    want_reverse;
+    {{
+        bool outer_is_reverse = IsReverse(GetStrand(outer, scope));
+        switch (how) {
+        case eOffset_FromStart:
+            want_reverse = false;
+            break;
+        case eOffset_FromEnd:
+            want_reverse = true;
+            break;
+        case eOffset_FromLeft:
+            want_reverse = outer_is_reverse;
+            break;
+        case eOffset_FromRight:
+            want_reverse = !outer_is_reverse;
+            break;
+        }
+    }}
+    if (want_reverse) {
+        return GetLength(outer, scope) - rl.m_Ranges.back().GetTo();
+    } else {
+        return rl.m_Ranges.front().GetFrom();
+    }
+}
+
+
 int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type)
 {
     CRange<TSeqPos> rg1 = loc1.GetTotalRange();
@@ -2464,6 +2494,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2002/12/09 20:38:41  ucko
+* +sequence::LocationOffset
+*
 * Revision 1.21  2002/12/06 15:36:05  grichenk
 * Added overlap type for annot-iterators
 *

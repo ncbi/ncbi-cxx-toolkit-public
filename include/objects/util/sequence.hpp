@@ -196,6 +196,17 @@ typedef int TP2SFlags; // binary OR of ES2PFlags
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
 
+enum EOffsetType {
+    // For positive-orientation strands, start = left and end = right;
+    // for reverse-orientation strands, start = right and end = left.
+    eOffset_FromStart, // relative to beginning of location
+    eOffset_FromEnd,   // relative to end of location
+    eOffset_FromLeft,  // relative to low-numbered end
+    eOffset_FromRight  // relative to high-numbered end
+};
+TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
+                       EOffsetType how = eOffset_FromStart, CScope* scope = 0);
+
 enum EOverlapType {
     eOverlap_Simple,          // any overlap of extremes
     eOverlap_Contained,       // contained within extremes
@@ -428,6 +439,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2002/12/09 20:38:34  ucko
+* +sequence::LocationOffset
+*
 * Revision 1.14  2002/11/25 21:24:45  grichenk
 * Added TestForOverlap() function.
 *
