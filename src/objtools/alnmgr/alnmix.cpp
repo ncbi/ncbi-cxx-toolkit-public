@@ -1217,7 +1217,9 @@ void CAlnMix::x_CreateSegmentsVector()
             string errstr =
                 string("CAlnMix::x_CreateSegmentsVector():") +
                 " Internal error: no starts for row " +
-                NStr::IntToString(row->m_RowIndex) + ".";
+                NStr::IntToString(row->m_RowIndex) +
+                " (seq " +
+                NStr::IntToString(row->m_SeqIndex) + ").";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
 #endif
         }
@@ -1865,6 +1867,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2003/10/03 19:22:55  todorov
+* Extended exception msg in case of empty row
+*
 * Revision 1.76  2003/09/16 14:45:56  todorov
 * more informative exception strng
 *
