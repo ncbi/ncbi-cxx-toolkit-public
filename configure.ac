@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.287 2004/04/07 15:09:14 ucko Exp $
+#  $Id: configure.ac,v 1.288 2004/04/13 14:53:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -689,7 +689,7 @@ case "$host_os:$compiler" in
    ;;
 
  irix*:MIPSpro73 )
-   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared -TENV:large_got"
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
    # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
    # 1107: A signed bit field has a length of 1 bit.
    # 1169: External/internal linkage conflicts with a previous declaration.
@@ -701,7 +701,7 @@ case "$host_os:$compiler" in
    CFLAGS="$COMMON_FLAGS -woff 1209 $CFLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
    CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
-   LDFLAGS="-LANG:std $LDFLAGS"
+   LDFLAGS="-LANG:std -G0 $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    ;;
