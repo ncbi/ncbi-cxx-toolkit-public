@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/03 18:59:23  thiessen
+* added row/column selection
+*
 * Revision 1.13  2000/10/02 23:25:22  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -103,13 +106,20 @@ public:
 
     void NewAlignment(ViewableAlignment *newAlignment);
 
+    void OnTitleView(wxCommandEvent& event);
     void OnMouseMode(wxCommandEvent& event);
     void OnJustification(wxCommandEvent& event);
 
     // menu identifiers
     enum {
+        // view menu
+        MID_SHOW_TITLES,
+        MID_HIDE_TITLES,
+
         // mouse mode
-        MID_SELECT,
+        MID_SELECT_RECT,
+        MID_SELECT_COLS,
+        MID_SELECT_ROWS,
         MID_MOVE_ROW,
 
         // unaligned justification
@@ -127,6 +137,8 @@ private:
 
     void OnCloseWindow(wxCloseEvent& event);
 
+    wxMenuBar *menuBar;
+
 public:
     // scroll over to a given column
     void ScrollToColumn(int column) { viewerWidget->ScrollToColumn(column); };
@@ -136,7 +148,8 @@ public:
 
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_CLOSE     (                                     SequenceViewerWindow::OnCloseWindow)
-    EVT_MENU_RANGE(MID_SELECT,      MID_MOVE_ROW,       SequenceViewerWindow::OnMouseMode)
+    EVT_MENU_RANGE(MID_SHOW_TITLES, MID_HIDE_TITLES,    SequenceViewerWindow::OnTitleView)
+    EVT_MENU_RANGE(MID_SELECT_RECT, MID_MOVE_ROW,       SequenceViewerWindow::OnMouseMode)
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          SequenceViewerWindow::OnJustification)
 END_EVENT_TABLE()
 
@@ -150,20 +163,34 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     SetStatusWidths(2, widths);
 
     viewerWidget = new SequenceViewerWidget(this);
-    viewerWidget->SetMouseMode(SequenceViewerWidget::eSelect);
+    wxString noHelp("");
 
-    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
-    menu->Append(MID_SELECT, "&Select");
-    menu->Append(MID_MOVE_ROW, "Move &Row");
+    menu->Append(MID_SHOW_TITLES, "&Show Titles");
+    //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
+    menuBar->Append(menu, "&View");
+
+    menu = new wxMenu;
+    menu->Append(MID_SELECT_RECT, "&Select Rectangle", noHelp, true);
+    menu->Append(MID_SELECT_COLS, "Select &Columns", noHelp, true);
+    menu->Append(MID_SELECT_ROWS, "Select &Rows", noHelp, true);
+    menu->Append(MID_MOVE_ROW, "&Move Row", noHelp, true);
     menuBar->Append(menu, "&Mouse Mode");
 
     menu = new wxMenu;
-    menu->Append(MID_LEFT, "&Left");
-    menu->Append(MID_RIGHT, "&Right");
-    menu->Append(MID_CENTER, "&Center");
-    menu->Append(MID_SPLIT, "&Split");
+    menu->Append(MID_LEFT, "&Left", noHelp, true);
+    menu->Append(MID_RIGHT, "&Right", noHelp, true);
+    menu->Append(MID_CENTER, "&Center", noHelp, true);
+    menu->Append(MID_SPLIT, "&Split", noHelp, true);
     menuBar->Append(menu, "Unaligned &Justification");
+
+    // set default modes
+    viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle);
+    menuBar->Check(MID_SELECT_RECT, true);
+
+    viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
+    menuBar->Check(MID_SPLIT, true);
 
     SetMenuBar(menuBar);
 }
@@ -184,11 +211,28 @@ void SequenceViewerWindow::NewAlignment(ViewableAlignment *newAlignment)
     Show(true);
 }
 
-void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
+void SequenceViewerWindow::OnTitleView(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case MID_SELECT:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelect); break;
+        case MID_SHOW_TITLES:
+            viewerWidget->TitleAreaOn(); break;
+        case MID_HIDE_TITLES:
+            viewerWidget->TitleAreaOff(); break;
+    }
+}
+
+void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
+{
+    for (int i=MID_SELECT_RECT; i<=MID_MOVE_ROW; i++)
+        menuBar->Check(i, (i == event.GetId()) ? true : false);
+
+    switch (event.GetId()) {
+        case MID_SELECT_RECT:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle); break;
+        case MID_SELECT_COLS:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns); break;
+        case MID_SELECT_ROWS:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRows); break;
         case MID_MOVE_ROW:
             viewerWidget->SetMouseMode(SequenceViewerWidget::eDragVertical); break;
     }
@@ -196,19 +240,18 @@ void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnJustification(wxCommandEvent& event)
 {
+    for (int i=MID_LEFT; i<=MID_SPLIT; i++)
+        menuBar->Check(i, (i == event.GetId()) ? true : false);
+
     switch (event.GetId()) {
         case MID_LEFT:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eLeft);
-            break;
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eLeft); break;
         case MID_RIGHT:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eRight);
-            break;
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eRight); break;
         case MID_CENTER:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eCenter);
-            break;
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eCenter); break;
         case MID_SPLIT:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
-            break;
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit); break;
     }
     viewer->messenger->PostRedrawSequenceViewers();
 }

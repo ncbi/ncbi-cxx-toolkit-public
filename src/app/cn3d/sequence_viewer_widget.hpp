@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/03 18:59:55  thiessen
+* added row/column selection
+*
 * Revision 1.6  2000/10/02 23:25:08  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -178,7 +181,9 @@ public:
     // selection is limited to coordinates given by ViewableAlignment's GetSize(),
     // even if the window is larger.
     enum eMouseMode {
-        eSelect,            // select rectangle of cells
+        eSelectRectangle,   // select rectangle of cells
+        eSelectColumns,     // select whole columns
+        eSelectRows,        // select whole rows
         eDrag,              // move one cell
         eDragHorizontal,    // move one cell only horizontally
         eDragVertical       // move one cell only vertically
@@ -200,6 +205,11 @@ public:
 
     // scroll sequence area to specific column
     void ScrollToColumn(int column);
+
+    // turn on/off the title area
+    void TitleAreaOn(void);
+    void TitleAreaOff(void);
+    void TitleAreaToggle(void);
     
 private:
     SequenceViewerWidget_SequenceArea *sequenceArea;

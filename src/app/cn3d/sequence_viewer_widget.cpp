@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/03 18:59:23  thiessen
+* added row/column selection
+*
 * Revision 1.10  2000/10/02 23:25:23  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -211,7 +214,7 @@ SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
     currentHighlightColor.Set(255,255,0);   // yellow
 
     // set default mouse mode
-    mouseMode = SequenceViewerWidget::eSelect;
+    mouseMode = SequenceViewerWidget::eSelectRectangle;
 
     // set default rubber band color
     currentRubberbandColor = *wxRED;
@@ -461,11 +464,15 @@ void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, int fromX, int 
     // set color
     dc.SetPen(*(wxThePenList->FindOrCreatePen(currentRubberbandColor, 1, wxSOLID)));
 
-    // draw sides
-    DrawLine(dc, minX, minY, maxX, minY);   // top
-    DrawLine(dc, maxX, minY, maxX, maxY);   // right
-    DrawLine(dc, maxX, maxY, minX, maxY);   // bottom
-    DrawLine(dc, minX, maxY, minX, minY);   // left
+    // draw sides (should draw in order, due to pixel roundoff)
+    if (mouseMode != SequenceViewerWidget::eSelectColumns)
+        DrawLine(dc, minX, minY, maxX, minY);   // top
+    if (mouseMode != SequenceViewerWidget::eSelectRows)
+        DrawLine(dc, maxX, minY, maxX, maxY);   // right
+    if (mouseMode != SequenceViewerWidget::eSelectColumns)
+        DrawLine(dc, maxX, maxY, minX, maxY);   // bottom
+    if (mouseMode != SequenceViewerWidget::eSelectRows)
+        DrawLine(dc, minX, maxY, minX, minY);   // left
 }
 
 // move the rubber band to a new rectangle, erasing only the side(s) of the
@@ -593,6 +600,12 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
     prevMOX = MOX;
     prevMOY = MOY;
 
+    // adjust for column/row selection
+    if (mouseMode == SequenceViewerWidget::eSelectColumns)
+        cellY = vsY + GetClientSize().GetHeight() / cellHeight;
+    else if (mouseMode == SequenceViewerWidget::eSelectRows)
+        cellX = vsX + GetClientSize().GetWidth() / cellWidth;
+
     // limit coordinates of selection to virtual area
     if (cellX < 0) cellX = 0;
     else if (cellX >= areaWidth) cellX = areaWidth - 1;
@@ -623,6 +636,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         alignment->MouseDown(MOX, MOY, controls);
 
         if (MOX != -1) {    // don't start selection if mouse-down is not inside display area
+
             prevToX = fromX = cellX;
             prevToY = fromY = cellY;
             dragging = true;
@@ -630,8 +644,22 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             ERR_POST(Info << "drawing initial rubberband");
             wxClientDC dc(this);
             dc.BeginDrawing();
-            currentRubberbandType = (mouseMode == SequenceViewerWidget::eSelect) ? eDot : eSolid;
-            DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
+            currentRubberbandType =
+                (mouseMode == SequenceViewerWidget::eSelectRectangle ||
+                 mouseMode == SequenceViewerWidget::eSelectColumns ||
+                 mouseMode == SequenceViewerWidget::eSelectRows) ? eDot : eSolid;
+
+            if (mouseMode == SequenceViewerWidget::eSelectColumns) {
+                fromY = vsY;
+                prevToY = cellY;
+                DrawRubberband(dc, fromX, fromY, fromX, cellY, vsX, vsY);
+            } else if (mouseMode == SequenceViewerWidget::eSelectRows) {
+                fromX = vsX;
+                prevToX = cellX;
+                DrawRubberband(dc, fromX, fromY, cellX, fromY, vsX, vsY);
+            } else {
+                DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
+            }
             dc.EndDrawing();
         }
     }
@@ -642,13 +670,14 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             cellX = prevToX;
             cellY = prevToY;
         }
+
         dragging = false;
         wxClientDC dc(this);
         dc.BeginDrawing();
         dc.SetFont(*currentFont);
 
         // remove rubberband
-        if (mouseMode == SequenceViewerWidget::eSelect)
+        if (mouseMode == SequenceViewerWidget::eSelectRectangle)
             RemoveRubberband(dc, fromX, fromY, cellX, cellY, vsX, vsY);
         else {
             DrawCell(dc, fromX, fromY, vsX, vsY, true);
@@ -657,8 +686,19 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         }
         dc.EndDrawing();
 
+        // adjust for column/row selection
+        if (mouseMode == SequenceViewerWidget::eSelectColumns) {
+            fromY = 0;
+            cellY = areaHeight - 1;
+        } else if (mouseMode == SequenceViewerWidget::eSelectRows) {
+            fromX = 0;
+            cellX = areaWidth - 1;
+        }
+
         // do appropriate callback
-        if (mouseMode == SequenceViewerWidget::eSelect)
+        if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
+            mouseMode == SequenceViewerWidget::eSelectColumns ||
+            mouseMode == SequenceViewerWidget::eSelectRows)
             alignment->SelectedRectangle(
                 (fromX < cellX) ? fromX : cellX,
                 (fromY < cellY) ? fromY : cellY,
@@ -670,11 +710,14 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 
     // process continuation of selection - redraw rectangle
     else if (dragging && (cellX != prevToX || cellY != prevToY)) {
+
         wxClientDC dc(this);
         dc.BeginDrawing();
         dc.SetFont(*currentFont);
         currentRubberbandType = eDot;
-        if (mouseMode == SequenceViewerWidget::eSelect) {
+        if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
+            mouseMode == SequenceViewerWidget::eSelectColumns ||
+            mouseMode == SequenceViewerWidget::eSelectRows) {
             MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY, vsX, vsY);
         } else {
             if (prevToX != fromX || prevToY != fromY)
@@ -841,7 +884,7 @@ SequenceViewerWidget::SequenceViewerWidget(
         wxWindowID id,
         const wxPoint& pos,
         const wxSize& size) :
-    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_3D)
+    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_3DBORDER)
 {
     sequenceArea = new SequenceViewerWidget_SequenceArea(this);
     titleArea = new SequenceViewerWidget_TitleArea(this);
@@ -861,6 +904,30 @@ SequenceViewerWidget::~SequenceViewerWidget(void)
 void SequenceViewerWidget::OnDoubleClickSash(int x, int y)
 {
     Unsplit(titleArea);
+}
+
+void SequenceViewerWidget::TitleAreaOn(void)
+{
+    if (!IsSplit()) {
+        titleArea->Show(true);
+        SplitVertically(titleArea, sequenceArea, titleArea->GetMaxTitleWidth() + 10);
+    }    
+}
+
+void SequenceViewerWidget::TitleAreaOff(void)
+{
+    if (IsSplit())
+        Unsplit(titleArea);
+}
+
+void SequenceViewerWidget::TitleAreaToggle(void)
+{
+    if (IsSplit())
+        Unsplit(titleArea);
+    else {
+        titleArea->Show(true);
+        SplitVertically(titleArea, sequenceArea, titleArea->GetMaxTitleWidth() + 10);
+    }
 }
 
 bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
