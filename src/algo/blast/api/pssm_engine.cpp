@@ -88,7 +88,7 @@ CPssmEngine::Run()
     // Convert core BLAST matrix structure into ASN.1 score matrix object
     CRef<CScore_matrix_parameters> retval(NULL);
     if (pssm) {
-        retval.Reset(x_PsiMatrix2ScoreMatrix(pssm, diagnostics));
+        retval = x_PsiMatrix2ScoreMatrix(pssm, diagnostics);
         pssm = PSIMatrixFree(pssm);
     }
 
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/08/02 13:42:41  camacho
+ * Fix warning
+ *
  * Revision 1.7  2004/08/02 13:29:00  camacho
  * +Initialization of BlastScoreBlk and population of Score_matrix structure
  *
