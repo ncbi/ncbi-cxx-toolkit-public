@@ -65,8 +65,10 @@ public:
 
     CScope& GetScope(void) const;
 
-    // GetSeqString methods
-    // in seq coords
+
+    // GetSeqString methods:
+
+    // raw seq string (in seq coords)
     string& GetSeqString   (string& buffer,
                             TNumrow row,
                             TSeqPos seq_from, TSeqPos seq_to)             const;
@@ -76,12 +78,12 @@ public:
     string& GetSegSeqString(string& buffer, 
                             TNumrow row, 
                             TNumseg seg, TNumseg offset = 0) const;
-    // in aln coords
+ 
+   // alignment (seq + gaps) string (in aln coords)
     string& GetAlnSeqString(string& buffer,
                             TNumrow row, 
                             const CAlnMap::TSignedRange& aln_rng)         const;
-
-    // get the seq string for the whole alignment
+    // get the seq string for the whole alignment (seq + gaps)
     // optionally, get the inserts and screen limit coords
     string& GetWholeAlnSeqString(TNumrow       row,
                                  string&       buffer,
@@ -328,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2003/09/10 15:28:11  todorov
+ * improved the Get{,Seg,Aln}SeqString comments
+ *
  * Revision 1.25  2003/08/29 18:17:50  dicuccio
  * Changed API for creating consensus - CreateConsensus() now returns the new
  * dense-seg, rather than altering the existing alignment manager
