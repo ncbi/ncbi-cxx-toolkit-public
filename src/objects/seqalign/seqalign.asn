@@ -1,4 +1,4 @@
---$Revision: 3.1 $
+--$Revision: 3.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -9,13 +9,15 @@
 NCBI-Seqalign DEFINITIONS ::=
 BEGIN
 
-EXPORTS Seq-align, Score, Score-set;
+EXPORTS Seq-align, Score, Score-set, Seq-align-set;
 
 IMPORTS Seq-id, Seq-loc , Na-strand FROM NCBI-Seqloc
         Object-id FROM NCBI-General;
 
 --*** Sequence Alignment ********************************
 --*
+
+Seq-align-set ::= SET OF Seq-align
 
 Seq-align ::= SEQUENCE {
     type ENUMERATED {
