@@ -270,7 +270,7 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
                 if ( extFeat.IsNULL() ) {
                     AddSNPSeqref(srs, gi, CSeqref::fPossible);
                 }
-                else if ( extFeat.Value() != 0 ) {
+                else if ( extFeat.Value() & 1 ) {
                     AddSNPSeqref(srs, gi);
                 }
             }
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.40  2003/11/04 14:43:26  vasilche
+* Load SNP only when bit 1 in ext_feat is set.
+*
 * Revision 1.39  2003/10/22 16:12:38  vasilche
 * Added CLoaderException::eNoConnection.
 * Added check for 'fail' state of ID1 connection stream.
