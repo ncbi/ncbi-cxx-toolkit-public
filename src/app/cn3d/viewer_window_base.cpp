@@ -88,6 +88,9 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
     viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations", "", true);
     viewMenu->Append(MID_FIND_PATTERN, "Find &Pattern");
+    viewMenu->AppendSeparator();
+    viewMenu->Append(MID_CACHE_HIGHLIGHTS, "&Cache Highlights");
+    viewMenu->Append(MID_RESTORE_CACHED_HIGHLIGHTS, "Rest&ore Cached Highlights");
     menuBar->Append(viewMenu, "&View");
 
     editMenu = new wxMenu;
@@ -390,12 +393,23 @@ void ViewerWindowBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
     }
 }
 
+void ViewerWindowBase::OnCacheHighlights(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_CACHE_HIGHLIGHTS)
+        GlobalMessenger()->CacheHighlights();
+    else if (event.GetId() == MID_RESTORE_CACHED_HIGHLIGHTS)
+        GlobalMessenger()->RestoreCachedHighlights();
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/09/27 21:40:46  thiessen
+* add highlight cache
+*
 * Revision 1.52  2004/09/27 18:31:20  thiessen
 * continually track GV's in message log when on
 *

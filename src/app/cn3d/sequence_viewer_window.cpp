@@ -87,6 +87,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
 {
     SetWindowTitle();
 
+    viewMenu->AppendSeparator();
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
     viewMenu->Append(MID_SCORE_THREADER, "Show PSSM+Contact &Scores");
     viewMenu->Append(MID_SELF_HIT, "Show Se&lf-Hits");
@@ -501,6 +502,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/09/27 21:40:46  thiessen
+* add highlight cache
+*
 * Revision 1.54  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -126,6 +126,10 @@ public:
     // so when called with suspend==false, highlights will come back on
     void SuspendHighlighting(bool suspend);
 
+    // store/restore highlights in/from a cache
+    void CacheHighlights(void);
+    void RestoreCachedHighlights(void);
+
 private:
 
     // lists of registered viewers
@@ -144,7 +148,7 @@ private:
     bool highlightingSuspended;
 
     // To store lists of highlighted entities
-    MoleculeHighlightMap highlights;
+    MoleculeHighlightMap highlights, highlightCache;
 
     bool IsHighlighted(const MoleculeIdentifier *identifier, int index) const;
     void ToggleHighlights(const MoleculeIdentifier *identifier, int indexFrom, int indexTo,
@@ -195,6 +199,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/09/27 21:40:46  thiessen
+* add highlight cache
+*
 * Revision 1.27  2004/01/08 15:31:03  thiessen
 * remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
 *

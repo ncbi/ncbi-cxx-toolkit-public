@@ -424,6 +424,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         return false;
     }
 
+    // check special keys
     shiftDown = ((controls & ViewableAlignment::eShiftDown) > 0);
     controlDown = ((controls &
 #ifdef __WXMAC__
@@ -433,7 +434,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         ViewableAlignment::eControlDown
 #endif
             ) > 0);
-    if (!shiftDown && !controlDown && column == -1)
+
+    // clear highlights if ctrl-click is in whitespace below alignment
+    if (controlDown && !shiftDown && column == -1)
         GlobalMessenger()->RemoveAllHighlights(true);
 
     // process events in sequence area
@@ -1292,6 +1295,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2004/09/27 21:40:46  thiessen
+* add highlight cache
+*
 * Revision 1.75  2004/09/27 15:33:04  thiessen
 * add block info content optimization on ctrl+shift+click
 *

@@ -364,6 +364,22 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
     return anyRemoved;
 }
 
+void Messenger::CacheHighlights(void)
+{
+    highlightCache = highlights;
+}
+
+void Messenger::RestoreCachedHighlights(void)
+{
+    highlights = highlightCache;
+    PostRedrawAllSequenceViewers();
+    if (structureWindow) {
+        MoleculeHighlightMap::const_iterator h, he = highlights.end();
+        for (h=highlights.begin(); h!=he; ++h)
+            RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
+    }
+}
+
 void Messenger::SetHighlights(const MoleculeHighlightMap& newHighlights)
 {
     RemoveAllHighlights(true);
@@ -549,6 +565,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/09/27 21:40:46  thiessen
+* add highlight cache
+*
 * Revision 1.42  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

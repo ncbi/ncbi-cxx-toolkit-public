@@ -60,7 +60,8 @@ class MoleculeIdentifier;
     EVT_MENU_RANGE(MID_SELECT_RECT, MID_DRAG_HORIZ,     ViewerWindowBase::OnMouseMode) \
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          ViewerWindowBase::OnJustification) \
     EVT_MENU      (MID_SHOW_GEOM_VLTNS,                 ViewerWindowBase::OnShowGeomVltns) \
-    EVT_MENU      (MID_FIND_PATTERN,                    ViewerWindowBase::OnFindPattern)
+    EVT_MENU      (MID_FIND_PATTERN,                    ViewerWindowBase::OnFindPattern) \
+    EVT_MENU_RANGE(MID_CACHE_HIGHLIGHTS, MID_RESTORE_CACHED_HIGHLIGHTS, ViewerWindowBase::OnCacheHighlights)
 
 class ViewerWindowBase : public wxFrame
 {
@@ -114,6 +115,7 @@ public:
     void OnJustification(wxCommandEvent& event);
     void OnShowGeomVltns(wxCommandEvent& event);
     void OnFindPattern(wxCommandEvent& event);
+    void OnCacheHighlights(wxCommandEvent& event);
 
 protected:
 
@@ -124,6 +126,8 @@ protected:
         MID_HIDE_TITLES,
         MID_SHOW_GEOM_VLTNS,
         MID_FIND_PATTERN,
+        MID_CACHE_HIGHLIGHTS,
+        MID_RESTORE_CACHED_HIGHLIGHTS,
 
         // edit menu
         MID_ENABLE_EDIT,
@@ -242,6 +246,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/09/27 21:40:46  thiessen
+* add highlight cache
+*
 * Revision 1.28  2004/09/27 18:31:20  thiessen
 * continually track GV's in message log when on
 *
