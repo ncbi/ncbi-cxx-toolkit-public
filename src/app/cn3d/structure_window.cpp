@@ -52,9 +52,9 @@
 #include <wx/filename.h>
 
 #include "cn3d/asn_reader.hpp"
+#include "cn3d/cn3d_glcanvas.hpp"
 #include "cn3d/structure_window.hpp"
 #include "cn3d/structure_set.hpp"
-#include "cn3d/cn3d_glcanvas.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/messenger.hpp"
@@ -1390,6 +1390,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/13 22:48:43  thiessen
+* fixes for Mac/OSX/gcc
+*
 * Revision 1.3  2003/03/13 18:55:17  thiessen
 * tweak file load error reporting
 *

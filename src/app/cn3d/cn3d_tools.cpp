@@ -220,7 +220,7 @@ static OSStatus MacLaunchURL(ConstStr255Param urlStr)
 #endif
         if (err == noErr) {
             startSel = 0;
-            endSel = StrLen(urlStr);
+            endSel = strlen(urlStr);
             err = ICLaunchURL(inst, "\p", urlStr, endSel, &startSel, &endSel);
         }
         ICStop(inst);
@@ -258,6 +258,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/13 22:48:43  thiessen
+* fixes for Mac/OSX/gcc
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *
