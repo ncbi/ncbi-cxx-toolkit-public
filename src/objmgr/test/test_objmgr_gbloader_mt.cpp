@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/05 19:53:13  gouriano
+* reset scope history more accurately (was incorrect)
+*
 * Revision 1.4  2002/04/04 01:35:38  kimelman
 * more MT tests
 *
@@ -157,8 +160,7 @@ void* CTestThread::Main(void)
       }
       GBLOG_POST(" gi=" << gi << " OK");
     }
-    if(m_mode&3 < 2 && i%3==0)
-      s->ResetHistory();
+    s->ResetHistory();
   }
   return 0;
 }
@@ -177,7 +179,7 @@ public:
 };
 
 const unsigned c_TestFrom = 1;
-const unsigned c_TestTo   = 101;
+const unsigned c_TestTo   = 51;
 const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
 int CTestApplication::Test(const int test_mode,const int thread_count)
@@ -219,14 +221,14 @@ int CTestApplication::Test(const int test_mode,const int thread_count)
 
 int CTestApplication::Run()
 {
-  int timing[5/*threads*/][2/*om*/][3/*scope*/];
+  int timing[4/*threads*/][2/*om*/][3/*scope*/];
   int tc = sizeof(timing)/sizeof(*timing);
   
   LOG_POST("START: " << time(0) );;
   
   for(int thr=tc-1,i=0 ; thr >= 0 ; --thr)
-    for(int global_om=(thr>0?0:1);global_om<=1; ++global_om)
-      for(int global_scope=(thr==0?1:(global_om==0?1:0));global_scope<=2 ; ++global_scope)
+    for(int global_om=1;global_om>=(thr>0?0:1); --global_om)
+      for(int global_scope=2;global_scope>=(thr==0?1:(global_om==0?1:0)); --global_scope)
         {
           int mode = (global_om<<2) + global_scope ;
           LOG_POST("Test(" << i << ") # threads = " << thr+1 );
