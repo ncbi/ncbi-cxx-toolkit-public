@@ -100,8 +100,8 @@
  */
 #ifdef NCBI_SEQEXT_EXPORTS
 #  define NCBI_BLAST_EXPORTS
-#  define NCBI_FLAT_EXPORTS
 #  define NCBI_ID1_EXPORTS
+#  define NCBI_FLAT_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
@@ -130,9 +130,9 @@
 #ifdef NCBI_MMDB_EXPORTS
 #  define NCBI_CDD_EXPORTS
 #  define NCBI_CN3D_EXPORTS
-#  define NCBI_MMDB1_EXPORT
-#  define NCBI_MMDB2_EXPORT
-#  define NCBI_MMDB3_EXPORT
+#  define NCBI_MMDB1_EXPORTS
+#  define NCBI_MMDB2_EXPORTS
+#  define NCBI_MMDB3_EXPORTS
 #  define NCBI_NCBIMIME_EXPORTS
 #endif
 
@@ -762,6 +762,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.26  2003/06/03 19:22:20  dicuccio
+ * Fixed specification of MMDB lib exports
+ *
  * Revision 1.25  2003/06/03 18:48:54  kuznets
  * + export defines for bdb and lds libraries.
  *
