@@ -190,9 +190,9 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("align", "alignments", 
         "How many matching sequence alignments to show?",
         CArgDescriptions::eInteger, "250");
-    arg_desc->AddDefaultKey("out", "out", 
+    arg_desc->AddOptionalKey("out", "outfile", 
         "File name for writing output",
-        CArgDescriptions::eOutputFile, "stdout");
+        CArgDescriptions::eOutputFile);
     arg_desc->AddDefaultKey("format", "format", 
         "How to format the results?",
         CArgDescriptions::eInteger, "0");
@@ -480,25 +480,6 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
                                       TSeqAlignVector& seqalignv)
 {
     CArgs args = GetArgs();
-    EProgram program = blaster.SetOptions().GetProgram();
-    char* dbname = const_cast<char*>(args["db"].AsString().c_str());
-    bool db_is_na = (program == eBlastn || program == eTblastn || 
-                     program == eTblastx);
-
-    CBlastFormatOptions* format_options = 
-        new CBlastFormatOptions(program, args["out"].AsOutputFile());
-
-    format_options->SetAlignments(args["align"].AsInteger());
-    format_options->SetDescriptions(args["descr"].AsInteger());
-    format_options->SetAlignView(args["format"].AsInteger());
-    format_options->SetHtml(args["html"].AsBoolean());
-
-#ifdef C_FORMATTING
-    if (dbname) {
-        BLAST_PrintOutputHeader(format_options, args["greedy"].AsBoolean(), 
-                                dbname, db_is_na);
-    }
-#endif
 
     if (args["asnout"]) {
         auto_ptr<CObjectOStream> asnout(
@@ -512,25 +493,45 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
         }
     }
 
-    RegisterBlastDbLoader(dbname, db_is_na);
-    /* Format the results */
-    TSeqLocInfoVector maskv =
-        BlastMask2CSeqLoc(blaster.GetFilteredQueryRegions(), 
-                          blaster.GetQueries(), program);
-
-    if (BLAST_FormatResults(seqalignv, 
-            program, blaster.GetQueries(), maskv, 
-            format_options, m_pOptions->GetOutOfFrameMode())) {
-        NCBI_THROW(CBlastException, eInternal, 
-                   "Error in formatting results");
-    }
-
+    if (args["out"]) {
+        EProgram program = blaster.SetOptions().GetProgram();
+        char* dbname = const_cast<char*>(args["db"].AsString().c_str());
+        bool db_is_na = (program == eBlastn || program == eTblastn || 
+                         program == eTblastx);
+        CBlastFormatOptions* format_options = 
+            new CBlastFormatOptions(program, args["out"].AsOutputFile());
+        
+        format_options->SetAlignments(args["align"].AsInteger());
+        format_options->SetDescriptions(args["descr"].AsInteger());
+        format_options->SetAlignView(args["format"].AsInteger());
+        format_options->SetHtml(args["html"].AsBoolean());
+        
 #ifdef C_FORMATTING
-    PrintOutputFooter(program, format_options, score_options, 
-        m_sbp, lookup_options, word_options, ext_options, hit_options, 
-        blaster.GetQueryInfo(), dbname, blaster.GetReturnStats());
+        if (dbname) {
+            BLAST_PrintOutputHeader(format_options, 
+                args["greedy"].AsBoolean(), dbname, db_is_na);
+        }
 #endif
-
+        
+        RegisterBlastDbLoader(dbname, db_is_na);
+        /* Format the results */
+        TSeqLocInfoVector maskv =
+            BlastMask2CSeqLoc(blaster.GetFilteredQueryRegions(), 
+                              blaster.GetQueries(), program);
+        
+        if (BLAST_FormatResults(seqalignv, program, blaster.GetQueries(), 
+                maskv, format_options, m_pOptions->GetOutOfFrameMode())) {
+            NCBI_THROW(CBlastException, eInternal, 
+                       "Error in formatting results");
+        }
+        
+#ifdef C_FORMATTING
+        PrintOutputFooter(program, format_options, score_options, 
+            m_sbp, lookup_options, word_options, ext_options, hit_options, 
+            blaster.GetQueryInfo(), dbname, blaster.GetReturnStats());
+#endif
+        
+    }
 }
 
 int CBlastApplication::Run(void)
