@@ -36,6 +36,7 @@ BEGIN { status=0 }
 /^compiler\([^)]+\) error:/                  { status=1 }
 /^Undefined/                                 { status=1 }
 /^Could not open file /                      { status=1 }
+/: fatal:/                                   { status=1 }
 END { exit status } # This must be the last END block.
 
 
