@@ -549,7 +549,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                        program_number == blast_type_tblastx);
    if (program_number == blast_type_tblastn ||
        program_number == blast_type_tblastx)
-      num_subject_frames = 2;
+      num_subject_frames = NUM_STRANDS;
    else
       num_subject_frames = 1;
 
@@ -574,7 +574,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	ignore_small_gaps = hit_params->ignore_small_gaps;
 	
 	if (translated_query)
-		num_query_frames = 2*query_info->num_queries;
+		num_query_frames = NUM_STRANDS*query_info->num_queries;
 	else
 		num_query_frames = query_info->num_queries;
    
