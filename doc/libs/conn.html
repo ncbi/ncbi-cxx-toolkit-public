@@ -105,14 +105,14 @@ Read or peek data, depending on read method <tt>how</tt>, up to <tt>bufsize</tt>
 <tt>buf</tt>, return (via pointer argument <tt>n_read</tt>) the number of actually read bytes. The last argument
 <tt>how</tt> can be one of the following:
 <ul>
-<li><a href="../lxr/ident?i=EIO_ReadMethod"><i><b>eIO_Plain</b></i></a> - to read data in a regular way, that is extracting data from the connection,
-<li><i><b>eIO_Peek</b></i> - to peek data from the connection, i.e. the next read operation will see the data again,
-<li><i><b>eIO_Persist</b></i> - to read exactly (not less than) <tt>bufsize</tt> bytes or until an error condition occurs.
+<li><a href="../lxr/ident?i=EIO_ReadMethod"><i><b>eIO_ReadPlain</b></i></a> - to read data in a regular way, that is extracting data from the connection,
+<li><i><b>eIO_ReadPeek</b></i> - to peek data from the connection, i.e. the next read operation will see the data again,
+<li><i><b>eIO_ReadPersist</b></i> - to read exactly (not less than) <tt>bufsize</tt> bytes or until an error condition occurs.
 </ul>
 Return value other than <i><b>eIO_Success</b></i> means trouble.
 Specifically, return value <i><b>eIO_Timeout</b></i> indicates that the operation could not
 be completed within the preset amount of time; but some data may, however,
-be available in the buffer (e.g. in case of persistent reading, with <i><b>eIO_Persist</b></i>), and this is actually the case for any return code.
+be available in the buffer (e.g. in case of persistent reading, with <i><b>eIO_ReadPersist</b></i>), and this is actually the case for any return code.
 
 <li> <a href="../lxr/ident?i=CONN_Write"><i><b>CONN_Write</b></i></a>&nbsp;<tt>(CONN conn, const void* buf, size_t bufsize, size_t* n_written);</tt><br>
 Write the specified number of bytes <tt>bufsize</tt> from the buffer <tt>buf</tt> to the connection. Return (via <tt>n_written</tt>)
@@ -796,28 +796,29 @@ environment or registry if and only if <i><b>SConnNetInfo</b></i> is always
 created with the use of <a href="#ref_SConnNetInfo">convenience routines</a>.
 
 <p>
-Debugging output is not always sent to the same destination. For instance, data debugging
-in sockets is done via <tt>CORE</tt> log file, whereas printing connection points (when
-activated with the use of <b><i>SConnNetInfo</i></b>'s <tt>debug_printout</tt>
-member) is rerouted into <tt>stderr</tt>. In order to have full debugging
-output available, the application has to set the log file to be
-<tt>stderr</tt>, exactly as it is done in the
-<a href="../lxr/source/src/connect/test/test_ncbi_service_connector.c">example program</a> by means
-of <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE</i></b></a><tt>(stderr, 0/*false*/)</tt>
-declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>.
+Debugging output is always sent to the same destination, <tt>CORE</tt> log file,
+which is a C object shared between both C and C++ Toolkits. As said, the logger
+is an abstract object, i.e. it is empty and cannot produce any output if not tuned
+accordingly. The library defines few calls gathered in <i><b><a href="../lxr/source/include/connect/ncbi_util.h"></a></b></i>
+which allow the logger to go via <b><i>FILE</i></b> file pointer, like <b><i>stderr</i></b>:
+<a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a> as e.g. shown in
+the example <a href="../lxr/source/src/connect/test/test_ncbi_service_connector.c"><tt>test_ncbi_service_connector.c</tt></a>, or
+to be a regular file on disk. Moreover, both Toolkits <a href="cxx2c.html">define interfaces</a>
+to deal with registries, loggers and locks that use native objects of each toolkit and use
+them as replacements for corresponding abstract layer's objects.
 
 <p>
 There is a common problem reported several times and actually concerning
-network configuration rather than a misbehavior of the library. If a test program,
+network configuration rather than misbehavior of the library. If a test program,
 which connects to a named NCBI service, is not getting anything back from the NCBI
 site, one first has to check whether there is a transparent proxying/caching in between the
 host and NCBI. As the service dispatching is implemented on top of ordinary HTTP
-protocol, the transparent proxying may latch unsuccessful service search (which could
-happen and may not indicate a real problem) as an error response from the NCBI
+protocol, the transparent proxying may latch unsuccessful service searches (which could
+happen and may not indicate a real problem) as error responses from the NCBI
 server. Afterwards, instead of actually connecting to NCBI, the proxy returns
-that cached error (or sometimes just an empty document),
+those cached errors (or sometimes just an empty document),
 which breaks the service dispatcher code. In most cases there are configurable ways
-to exclude certain URLs from proxying and caching, and are subject for discussion
+to exclude certain URLs from proxying and caching, and they are subject for discussion
 with a local network administrator.
 
 <p>
@@ -826,9 +827,9 @@ passed, for example, in
 <a href="#ref_HttpUserHeader">SConnNetInfo::user_header</a> field)
 do have '\r\n' as tag separators (including the last tag).
 Many proxy servers (including transparent proxies, which usually
-the user is not even aware of) are known to be sensitive that each
+the user is not even aware of) are known to be sensitive to that each
 and every HTTP tag is closed by '\r\n' (and <i>not</i> by a single
-'\n' character). Otherwise the HTTP packet is treated as lame and gets
+'\n' character). Otherwise the HTTP packet would be treated as lame and gets
 discarded.
 
 <p>
@@ -893,7 +894,7 @@ fragment (for more examples please refer to the test program
         while (info != 0) {
             char* str = <a href="../lxr/ident?i=SERV_WriteInfo">SERV_WriteInfo</a>(info);
 
-            printf("Service = `%s'\n", str);
+            printf("Server = `%s'\n", str);
             free(str);
             n++;
         }
@@ -907,15 +908,15 @@ guarantee that the service is available, whereas <tt>NULL</tt> iterator definite
 means that the service does not exist.
 
 <p>
-As shown in the above example, loop reading from the iterator results in the sequence of successive structures
-(none of which is to be freed by the program!), which along with conversion functions
+As shown in the above example, loop over reading from the iterator results in the sequence of successive structures
+(none of which is to be freed by the program!) that along with conversion functions
 <a href="../lxr/ident?i=SERV_ReadInfo"><b><i>SERV_ReadInfo()</i></b></a>,
 <a href="../lxr/ident?i=SERV_WriteInfo"><b><i>SERV_WriteInfo()</i></b></a> and others are defined
 in <a href="../lxr/source/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>.
-Structure <a href="../lxr/ident?i=SSERV_Info"><b><i>SSERV_Info</i></b></a> describes the server, which implements
+Structure <a href="../lxr/ident?i=SSERV_Info"><b><i>SSERV_Info</i></b></a> describes a server that implements
 requested service.
-<tt>NULL</tt> gets returned, when no more servers (if any) could be found. The iterator returns servers in the order
-the load-balancing algorithm extracts them. Each server has a rate, and the larger the rate
+<tt>NULL</tt> gets returned when no more servers (if any) could be found. The iterator returns servers in the order
+the load-balancing algorithm arrange them. Each server has a rating, and the larger the rating
 the better the chance for the server to be chosen first.
 
 <p>
@@ -927,6 +928,11 @@ and with the assumption that the client has chosen firewall connection mode, reg
 supplied in <b><i>SConnNetInfo</i></b>, or read out from either registry or environment.
 
 <p>
+<u>Note</u>: Search for servers of type <b><i>fSERV_Dns</i></b> is not inclusive with
+<b><i>fSERV_Any</i></b> specified as server type. That is, servers of type DNS are only
+returned if specifically requested in the server mask at the time the iterator was opened.
+
+<p>
 There is a simplified version of <b><i>SERV_Open()</i></b>, called <a href="../lxr/ident?i=SERV_OpenSimple"><b><i>SERV_OpenSimple()</i></b></a>,
 as well as an advanced version, called <a href="../lxr/ident?i=SERV_OpenEx"><b><i>SERV_OpenEx()</i></b></a>.
 The former takes only one argument, the service name. The latter takes two more arguments, which describe the
@@ -934,16 +940,16 @@ set of servers <i>not</i> to be seen from the iterator (excluded server descript
 
 <p>
 There is also an advanced version of <b><i>SERV_GetNextInfo()</i></b>, called
-<a href="../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>, which allows via its second
-argument to get so called <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a>,
+<a href="../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>, which via its second
+argument allows to get a so called <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a>,
 a <tt>'\0'</tt>-terminated string, consisting of set of lines
 separated by <tt>'\n'</tt> characters, and specified in the configuration file of
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>
 of the host, where the returned server was found. The typical line within the set has a form <tt>"name=value"</tt>
 and resembles very much the shell environment, where its name comes from. The host environment could be
-very handy to pass additional information to applications if the host has some limitations or requires special
+very handy for passing additional information to applications if the host has some limitations or requires special
 handling should the server be selected and used on this host. <a href="#ref_Example">Example below</a> should give an idea.<br>
-For the time of writing, getting the host environment is only implemented when the service is obtained via <a href="#ref_DirectIndirect">direct access</a> to
+At the time of writing, getting the host environment is only implemented when the service is obtained via <a href="#ref_DirectIndirect">direct access</a> to
 the load-balancing daemon. Unlike returned server descriptors, the returned host environment is not a constant object i.e. it
 could be modified, and it must be explicitly freed by the application when no longer needed.
 If the server descriptor was obtained using dispatching CGI (<a href="#ref_DirectIndirect">indirect dispatching</a>),
