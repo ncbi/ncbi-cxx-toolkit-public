@@ -45,7 +45,7 @@ COrgRefCache::COrgRefCache( CTaxon1& host )
 }
 
 bool
-COrgRefCache::Init()
+COrgRefCache::Init( unsigned nCapacity )
 {
     CTaxon1_req  req;
     CTaxon1_resp resp;
@@ -72,6 +72,9 @@ COrgRefCache::Init()
     pNode->SetCde( 0x40000000 ); // Gene bank hidden
     m_tPartTree.SetRoot(new CTaxon1Node
                         (CRef<CTaxon1_name>(pNode)));
+    if( nCapacity != 0 ) {
+	m_nCacheCapacity = nCapacity;
+    }
     return true;
 }
 
@@ -236,7 +239,10 @@ s_BuildLineage( string& str, CTaxon1Node* pNode, unsigned sz, int sp_rank )
             bCont=s_BuildLineage( str, pNode->GetParent(),
                                   sz+pNode->GetName().size()+2, sp_rank );
             if( bCont ) {
-                str.append( pNode->GetName() ).append( "; " );
+                str.append( pNode->GetName() );
+		if( sz != 0 ) {
+		    str.append( "; " );
+		}
             }
             return bCont;
         }
@@ -256,6 +262,72 @@ s_AfterPrefix( const string& str1, const string& prefix )
     return str1.find_first_not_of( " \t\n\r", pos );
 }
 
+static const string s_sSubspCf( "subsp. cf." );
+static const string s_sSubspAff( "subsp. aff." );
+static const string s_sSubsp( "subsp." );
+static const string s_sSsp( "ssp." );
+static const string s_sF_Sp( "f. sp." );
+static const string s_sFSp( "f.sp." );
+static const string s_sStr( "str." );
+static const string s_sSubstr( "substr." );
+static const string s_sVar( "var." );
+static const string s_sSv( "sv.");
+static const string s_sCv( "cv.");
+static const string s_sPv( "pv.");
+static const string s_sBv( "bv.");
+static const string s_sF( "f.");
+static const string s_sFo( "fo.");
+static const string s_sGrp( "grp.");
+
+static struct SSubtypeAbbr {
+    const string&     m_sAbbr;
+    COrgMod::ESubtype m_eSubtype;
+} s_subtypes[] = {
+    { s_sSubsp, COrgMod::eSubtype_sub_species },
+    { s_sSsp,   COrgMod::eSubtype_sub_species },
+    { s_sF_Sp,  COrgMod::eSubtype_forma_specialis },
+    { s_sFSp,   COrgMod::eSubtype_forma_specialis },
+    { s_sStr,   COrgMod::eSubtype_strain },
+    { s_sSubstr,COrgMod::eSubtype_substrain },
+    { s_sVar,   COrgMod::eSubtype_variety },
+    { s_sSv,    COrgMod::eSubtype_serovar },
+    { s_sCv,    COrgMod::eSubtype_cultivar },
+    { s_sPv,    COrgMod::eSubtype_pathovar },
+    { s_sBv,    COrgMod::eSubtype_biovar },
+    { s_sF,     COrgMod::eSubtype_forma },
+    { s_sFo,    COrgMod::eSubtype_forma },
+    { s_sGrp,   COrgMod::eSubtype_group },
+    { s_sGrp,   COrgMod::eSubtype_other } // Means end of array
+};
+
+COrgMod::ESubtype
+COrgRefCache::GetSubtypeFromName( string& sName )
+{
+    string::size_type pos;
+    if( sName.find('.') == string::npos ) {
+	return COrgMod::eSubtype_other;
+    }
+    /* ignore subsp. cf. and subsp. aff. */
+    if( NStr::FindNoCase( sName, s_sSubspCf ) != string::npos ) {
+	return COrgMod::eSubtype_other;
+    }
+    if( NStr::FindNoCase( sName, s_sSubspAff ) != string::npos ) {
+	return COrgMod::eSubtype_other;
+    }
+
+    /* check for subsp */
+    SSubtypeAbbr* pSubtypeAbbr = &s_subtypes[0];
+    while( pSubtypeAbbr->m_eSubtype != COrgMod::eSubtype_other ) {
+	if( (pos=NStr::FindNoCase( sName, pSubtypeAbbr->m_sAbbr )) != NPOS ) {
+	    sName.erase( pos, pSubtypeAbbr->m_sAbbr.size() );
+	    sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
+	    return pSubtypeAbbr->m_eSubtype;
+	}
+	++pSubtypeAbbr;
+    }
+    return COrgMod::eSubtype_other;
+}
+
 bool
 COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
                                 list< CRef<COrgMod> >& lMod,
@@ -267,7 +339,7 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
     if( !pParent && !pNode->IsRoot() ) {
         pTmp = pNode->GetParent();
         while( !pTmp->IsRoot() ) {
-            int prank( pTmp->GetRank() );
+            int prank = pTmp->GetRank();
             if((prank == GetSubspeciesRank()) || 
                (prank == GetSpeciesRank()) ||
                (prank == GetGenusRank())) {
@@ -284,17 +356,20 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
     }
     pMod->SetSubname().assign( pNode->GetName(), pos,
                                pNode->GetName().size()-pos );
-    int rank = pNode->GetRank();
-    if( rank == GetSubspeciesRank()) {
-        pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
-    } else if( rank == GetVarietyRank()) {
-        pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
-    } else if( rank == GetFormaRank()
-               || (pParent
-                   && rank == GetSubspeciesRank()) ) {
-        pMod->SetSubtype( COrgMod_Base::eSubtype_strain );
-    }  else {
-        pMod->SetSubtype( COrgMod_Base::eSubtype_other );
+
+    pMod->SetSubtype( GetSubtypeFromName( pMod->SetSubname() ) );
+
+    if( pMod->GetSubtype() == COrgMod_Base::eSubtype_other ) {
+	int rank = pNode->GetRank();
+	if( rank == GetSubspeciesRank() ) {
+	    pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
+	} else if( rank == GetVarietyRank() ) {
+	    pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
+	} else if( rank == GetFormaRank() ) {
+	    pMod->SetSubtype( COrgMod_Base::eSubtype_forma );
+	} else if( pParent && rank == GetSubspeciesRank() ) {
+	    pMod->SetSubtype( COrgMod_Base::eSubtype_strain );
+	}
     }
     // Store it into list
     lMod.push_back( pMod );
@@ -446,7 +521,9 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                 on.SetDiv( GetDivisionCode( div_id ) );
             }
             on.SetGcode( node.GetGC() );
-            on.SetMgcode( node.GetMGC() );
+	    if( node.GetMGC() > 0 ) {
+		on.SetMgcode( node.GetMGC() );
+	    }
             // Build lineage
             CTaxon1Node* pNode;
             if( !node.IsRoot() ) {
@@ -930,6 +1007,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.12  2003/03/05 21:33:52  domrach
+ * Enhanced orgref processing. Orgref cache capacity control added.
+ *
  * Revision 6.11  2003/01/21 19:36:22  domrach
  * Secondary tax id support added. New copy constructor for partial tree support added.
  *

@@ -52,7 +52,7 @@ class COrgRefCache
 public:
     COrgRefCache( CTaxon1& host );
 
-    bool Init();
+    bool Init( unsigned nCapacity = 10 );
 
     bool LookupAndAdd( int tax_id, CTaxon1Node** ppData );
     bool LookupAndInsert( int tax_id, CTaxon1_data** ppData );
@@ -94,6 +94,8 @@ public:
     const CTreeCont& GetTree() const { return m_tPartTree; }
 
     void  SetIndexEntry( int id, CTaxon1Node* pNode );
+
+    COrgMod::ESubtype GetSubtypeFromName( string& sName );
 
 private:
     friend class CTaxon1Node;
@@ -226,6 +228,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.8  2003/03/05 21:33:52  domrach
+ * Enhanced orgref processing. Orgref cache capacity control added.
+ *
  * Revision 6.7  2003/01/21 19:36:23  domrach
  * Secondary tax id support added. New copy constructor for partial tree support added.
  *

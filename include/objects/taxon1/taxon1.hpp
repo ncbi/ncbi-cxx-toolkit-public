@@ -35,6 +35,7 @@
 
 
 #include <objects/taxon1/taxon1__.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 #include <serial/serialdef.hpp>
 #include <connect/ncbi_types.h>
 
@@ -67,8 +68,11 @@ public:
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
     ///
-    bool Init(void);  // default:  120 sec timeout, 5 reconnect attempts
-    bool Init(const STimeout* timeout, unsigned reconnect_attempts=5);
+    bool Init(void);  // default:  120 sec timeout, 5 reconnect attempts,
+                      // cache for 10 org-refs
+    bool Init(unsigned cache_capacity);
+    bool Init(const STimeout* timeout, unsigned reconnect_attempts=5,
+	      unsigned cache_capacity=10);
 
     //---------------------------------------------
     // Taxon1 server fini (closes connection, frees memory)
@@ -228,6 +232,12 @@ public:
     bool GetBlastName(int tax_id, string& blast_name_out);
 
     //--------------------------------------------------
+    // Get error message after latest erroneous operation
+    // Returns: error message, or empty string if no error occured
+    ///
+    const string& GetLastError() const { return m_sLastError; }
+
+    //--------------------------------------------------
     // This function constructs minimal common tree from the gived tax id
     // set (ids_in) treated as tree's leaves. It then returns a residue of 
     // this tree node set and the given tax id set in ids_out.
@@ -235,12 +245,6 @@ public:
     //          true  if Ok
     ///
     bool GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out );
-
-    //--------------------------------------------------
-    // Get error message after latest erroneous operation
-    // Returns: error message, or empty string if no error occured
-    ///
-    const string& GetLastError() const { return m_sLastError; }
 
 private:
     friend class COrgRefCache;
@@ -268,6 +272,12 @@ private:
     void             Reset(void);
     bool             SendRequest(CTaxon1_req& req, CTaxon1_resp& resp);
     void             SetLastError(const char* err_msg);
+    void             PopulateReplaced(COrg_ref& org, COrgName::TMod& lMods);
+    bool             LookupByOrgRef(const COrg_ref& inp_orgRef, int* pTaxid,
+				    COrgName::TMod& hitMods);
+    void             OrgRefAdjust( COrg_ref& inp_orgRef,
+				   const COrg_ref& db_orgRef,
+				   int tax_id );
 };
 
 
@@ -278,8 +288,8 @@ END_NCBI_SCOPE
 
 //
 // $Log$
-// Revision 1.6  2003/01/10 19:58:47  domrach
-// Function GetPopsetJoin() added to CTaxon1 class
+// Revision 1.7  2003/03/05 21:32:02  domrach
+// Enhanced orgref processing. Orgref cache capacity control added.
 //
 // Revision 1.5  2002/11/08 14:39:51  domrach
 // Member function GetSuperkingdom() added

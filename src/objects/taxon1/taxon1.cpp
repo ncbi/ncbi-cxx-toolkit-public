@@ -34,6 +34,7 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <serial/serial.hpp>
+#include <serial/enumvalues.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
@@ -86,9 +87,16 @@ CTaxon1::Init(void)
     return CTaxon1::Init(&def_timeout);
 }
 
+bool
+CTaxon1::Init(unsigned cache_capacity)
+{
+    static const STimeout def_timeout = { 120, 0 };
+    return CTaxon1::Init(&def_timeout, 5, cache_capacity);
+}
 
 bool
-CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts)
+CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
+	      unsigned cache_capacity)
 {
     SetLastError(NULL);
     if( m_pServer ) { // Already inited
@@ -137,7 +145,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts)
             if( resp.IsInit() ) {
                 // Init is done
                 m_plCache = new COrgRefCache( *this );
-                if( m_plCache->Init() ) {
+                if( m_plCache->Init( cache_capacity ) ) {
                     return true;
                 }
                 delete m_plCache;
@@ -198,27 +206,6 @@ CTaxon1::GetById(int tax_id)
     return CRef<CTaxon2_data>(NULL);
 }
 
-CRef< CTaxon2_data >
-CTaxon1::Lookup(const COrg_ref& inp_orgRef )
-{
-    SetLastError(NULL);
-    // Check if this taxon is in cache
-    CTaxon2_data* pData = 0;
-
-    int tax_id = GetTaxIdByOrgRef( inp_orgRef );
-
-    if( tax_id > 0
-        && m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
-
-        CTaxon2_data* pNewData = new CTaxon2_data();
-
-        SerialAssign<CTaxon2_data>( *pNewData, *pData  );
-
-        return CRef<CTaxon2_data>(pNewData);
-    }
-    return CRef<CTaxon2_data>(NULL);
-}
-
 class PFindMod {
 public:
     void SetModToMatch( const CRef< COrgMod >& mod ) {
@@ -266,106 +253,441 @@ private:
     int     m_nType;
 };
 
+class PFindConflict {
+public:
+    void SetTypeToMatch( int type ) {
+	m_nType = type;
+	switch( type ) {
+	case COrgMod::eSubtype_strain:
+	case COrgMod::eSubtype_variety:
+	case COrgMod::eSubtype_sub_species:
+	    m_bSubSpecType = true;
+	    break;
+	default:
+	    m_bSubSpecType = false;
+	    break;
+	}
+    }
+
+    bool operator()( const CRef< COrgMod >& mod ) const {
+	// mod is the destination modifier
+	if( m_nType == mod->GetSubtype() ) {
+	    return true;
+	}
+	switch( mod->GetSubtype() ) {
+	case COrgMod::eSubtype_strain:
+	case COrgMod::eSubtype_substrain:
+	case COrgMod::eSubtype_type:
+	case COrgMod::eSubtype_subtype:
+	case COrgMod::eSubtype_variety:
+	case COrgMod::eSubtype_serotype:
+	case COrgMod::eSubtype_serogroup:
+	case COrgMod::eSubtype_serovar:
+	case COrgMod::eSubtype_cultivar:
+	case COrgMod::eSubtype_pathovar:
+	case COrgMod::eSubtype_chemovar:
+	case COrgMod::eSubtype_biovar:
+	case COrgMod::eSubtype_biotype:
+	case COrgMod::eSubtype_group:
+	case COrgMod::eSubtype_subgroup:
+	case COrgMod::eSubtype_isolate:
+	case COrgMod::eSubtype_sub_species:
+	    return m_bSubSpecType;
+
+//	    if( (m_nType >= 2 && m_nType <= 17)) || m_nType == 22 return 1;
+// 	case COrgMod::eSubtype_other:
+// 	    return true;
+	default:
+	    break;
+	}
+	return false;
+    }
+
+private:
+    int     m_nType;
+    bool    m_bSubSpecType;
+};
+
+class PFindModByType {
+public:
+    PFindModByType( int type ) : m_nType( type ) {}
+
+    bool operator()( const CRef< COrgMod >& mod ) const {
+	return ( m_nType == mod->GetSubtype() );
+    }
+private:
+    int     m_nType;
+};
+
+class PRemoveSynAnamorph {
+public:
+    PRemoveSynAnamorph( const string& sTaxname ) : m_sName( sTaxname ) {}
+
+    bool operator()( const CRef< COrgMod >& mod ) const {
+	switch( mod->GetSubtype() ) {
+	case COrgMod::eSubtype_synonym:
+	case COrgMod::eSubtype_anamorph:
+	    return (NStr::CompareNocase( m_sName, mod->GetSubname() ) == 0);
+	default:
+	    break;
+	}
+	return false;
+    }
+
+private:
+    const string& m_sName;
+};
+
+void
+CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
+		       int tax_id )
+{
+    inp_orgRef.ResetCommon();
+    inp_orgRef.ResetSyn();
+    
+    // fill-up inp_orgRef based on db_orgRef
+    inp_orgRef.SetTaxname( db_orgRef.GetTaxname() );
+    if( db_orgRef.IsSetCommon() ) {
+	inp_orgRef.SetCommon( db_orgRef.GetCommon() );
+    }
+    // Set tax id
+    inp_orgRef.SetTaxId( tax_id );
+    // copy the synonym list
+    if( m_bWithSynonyms && db_orgRef.IsSetSyn() ) {
+	inp_orgRef.SetSyn() = db_orgRef.GetSyn();
+    }
+  
+    // copy orgname
+    COrgName& on = inp_orgRef.SetOrgname();
+
+    // Copy the orgname
+    on.SetName().Assign( db_orgRef.GetOrgname().GetName() );
+
+    bool bHasMod = on.IsSetMod();
+    const COrgName::TMod& lSrcMod = db_orgRef.GetOrgname().GetMod();
+    COrgName::TMod& lDstMod = on.SetMod();
+
+    if( bHasMod ) { // Merge modifiers
+	// Find and remove gb_xxx modifiers
+	// tc2proc.c: CleanOrgName
+	// Service stuff
+	CTaxon1_req req;
+	CTaxon1_resp resp;
+	CRef<CTaxon1_info> pModInfo( new CTaxon1_info() );
+
+	PushDiagPostPrefix( "Taxon1::OrgRefAdjust" );
+
+	for( COrgName::TMod::iterator i = lDstMod.begin();
+	     i != lDstMod.end(); ) {
+	    switch( (*i)->GetSubtype() ) {
+	    case COrgMod::eSubtype_gb_acronym:
+	    case COrgMod::eSubtype_gb_anamorph:
+	    case COrgMod::eSubtype_gb_synonym:
+		i = lDstMod.erase( i );
+		break;
+	    default: // Check the modifier validity
+		if( !(*i)->GetSubname().empty() && (*i)->GetSubtype() != 0 ) {
+		    pModInfo->SetIval1( tax_id );
+		    pModInfo->SetIval2( (*i)->GetSubtype() );
+		    pModInfo->SetSval( (*i)->GetSubname() );
+
+		    req.SetGetorgmod( *pModInfo );
+		    try {
+			if( SendRequest( req, resp ) ) {
+			    if( !resp.IsGetorgmod() ) { // error
+				ERR_POST( "Response type is not Getorgmod" );
+			    } else {
+				if( resp.GetGetorgmod().size() > 0 ) {
+				    CRef<CTaxon1_info> pInfo
+					= resp.GetGetorgmod().front();
+				    if( pInfo->GetIval1() == tax_id ) {
+					if( pInfo->GetIval2() == 0 ) {
+					// Modifier is wrong (probably, hidden)
+					    i = lDstMod.erase( i );
+					    continue;
+					} else {
+					    (*i)->SetSubname( pInfo->GetSval() );
+					    (*i)->SetSubtype( pInfo->GetIval2() );
+					}
+				    } else if( pInfo->GetIval1() != 0 ) {
+					// Another redirection occured
+					// leave modifier but issue warning
+					NCBI_NS_NCBI::CNcbiDiag(eDiag_Warning)
+					    << "OrgMod type="
+					    << COrgMod::GetTypeInfo_enum_ESubtype()
+					    ->FindName( (*i)->GetSubtype(), true )
+					    << " name='" << (*i)->GetSubname()
+					    << "' causing illegal redirection"
+					    << NCBI_NS_NCBI::Endm;
+				    }
+				}
+			    }
+			} else if( resp.IsError()
+				   && resp.GetError().GetLevel() 
+				   != CTaxon1_error::eLevel_none ) {
+			    string sErr;
+			    resp.GetError().GetErrorText( sErr );
+			    ERR_POST( sErr );
+			}
+		    } catch( exception& e ) {
+			ERR_POST( e.what() );
+		    }
+
+		}
+
+		++i;
+		break;
+	    }
+	}
+
+	PopDiagPostPrefix();
+
+	PFindConflict predConflict;
+	
+	for( COrgName::TMod::const_iterator i = lSrcMod.begin();
+	     i != lSrcMod.end();
+	     ++i ) {
+	    predConflict.SetTypeToMatch( (*i)->GetSubtype() );
+	    if( (*i)->GetSubtype() != COrgMod::eSubtype_other ) {
+		if( find_if( lDstMod.begin(), lDstMod.end(), predConflict )
+		    == lDstMod.end() ) {
+		    CRef<COrgMod> pMod( new COrgMod() );
+		    pMod->Assign( *(*i) );
+		    lDstMod.push_back( pMod );
+		}
+	    }
+	}
+    } else { // Copy modifiers
+	
+	CRef<COrgMod> pMod;
+	for( COrgName::TMod::const_iterator i = lSrcMod.begin();
+	     i != lSrcMod.end();
+	     ++i ) {
+	    switch( (*i)->GetSubtype() ) {
+	    case COrgMod::eSubtype_gb_acronym:
+	    case COrgMod::eSubtype_gb_anamorph:
+	    case COrgMod::eSubtype_gb_synonym:
+	       pMod.Reset( new COrgMod() );
+	       pMod->Assign( *(*i) );
+	       lDstMod.push_back( pMod );
+	    default:
+	       break;
+	    }
+	}
+	// Remove 'other' modifiers
+	PFindModByType fmbt( COrgMod::eSubtype_other );
+	remove_if( lDstMod.begin(), lDstMod.end(), fmbt );
+    }
+    // Remove 'synonym' or 'anamorph' it if coincides with taxname
+    PRemoveSynAnamorph rsa( inp_orgRef.GetTaxname() );
+    remove_if( lDstMod.begin(), lDstMod.end(), rsa );
+
+    // Copy lineage
+    if( db_orgRef.GetOrgname().IsSetLineage() ) {
+	on.SetLineage() = db_orgRef.GetOrgname().GetLineage();
+    } else {
+	on.ResetLineage();
+    }
+    if( db_orgRef.GetOrgname().IsSetGcode() ) {
+	on.SetGcode( db_orgRef.GetOrgname().GetGcode() );
+    } else {
+	on.ResetGcode();
+    }
+    if( db_orgRef.GetOrgname().IsSetMgcode() ) {
+	on.SetMgcode( db_orgRef.GetOrgname().GetMgcode() );
+    } else {
+	on.ResetMgcode();
+    }
+    if( db_orgRef.GetOrgname().IsSetDiv() ) {
+	on.SetDiv( db_orgRef.GetOrgname().GetDiv() );
+    } else {
+	on.ResetDiv();
+    }
+}
+
+bool
+CTaxon1::LookupByOrgRef(const COrg_ref& inp_orgRef, int* pTaxid,
+			COrgName::TMod& hitMods )
+{
+    SetLastError(NULL);
+
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
+
+    SerialAssign< COrg_ref >( req.SetLookup(), inp_orgRef );
+
+    if( SendRequest( req, resp ) ) {
+        if( resp.IsLookup() ) {
+            // Correct response, return object
+	    COrg_ref& result = resp.SetLookup().SetOrg();
+	    *pTaxid = result.GetTaxId();
+	    if( result.IsSetOrgname() &&
+		result.GetOrgname().IsSetMod() ) {
+		hitMods.swap( result.SetOrgname().SetMod() );
+	    }
+// 		for( COrgName::TMod::const_iterator ci =
+// 			 result.GetOrgname().GetMod().begin();
+// 		     ci != result.GetOrgname().GetMod().end();
+// 		     ++ci ) {
+// 		    if( (*ci)->GetSubtype() == COrgMod::eSubtype_old_name ) {
+// 			hitMod->Assign( *ci );
+// 			bHitFound = true;
+// 			break;
+// 		    }
+// 		}
+// 	    }
+// 	    if( bHitFound ) {
+// 		hitMod.Reset( NULL );
+// 	    }
+	    return true;
+        } else { // Internal: wrong respond type
+            SetLastError( "Response type is not Lookup" );
+        }
+    }
+    return false;
+}
+
+void
+CTaxon1::PopulateReplaced( COrg_ref& org, COrgName::TMod& lMods  )
+{
+    if( org.IsSetOrgname() ) {
+	CRef< COrgMod > pOldNameMod;
+	COrgName& on = org.SetOrgname();
+	for( COrgName::TMod::iterator i = lMods.begin();
+	     i != lMods.end();
+	     ++i ) {
+	    if( (*i)->GetSubtype() == COrgMod::eSubtype_old_name ) {
+		pOldNameMod = *i;
+		continue;
+	    }
+	    if( on.IsSetMod() ) {
+		PFindModByType fmbt( (*i)->GetSubtype() );
+		if( find_if( on.GetMod().begin(), on.GetMod().end(), fmbt )
+		    != on.GetMod().end() ) {
+		    /* modifier already present in target orgref */
+		    continue;
+		}
+	    }
+	    /* adding this modifier */
+	    on.SetMod().push_back( *i );
+	}
+	if( pOldNameMod ) {
+	    if( on.IsSetMod() ) {
+		PFindModByType fmbt( COrgMod::eSubtype_old_name );
+		COrgName::TMod::iterator i =
+		    find_if( on.SetMod().begin(), on.SetMod().end(), fmbt );
+		if( i != on.SetMod().end() ) {
+		    // There is old-name in the target already
+		    if( !(*i)->IsSetAttrib() && pOldNameMod->IsSetAttrib() &&
+			NStr::CompareNocase(pOldNameMod->GetSubname(), 
+					    (*i)->GetSubname() ) == 0 ) {
+			(*i)->SetAttrib( pOldNameMod->GetAttrib() );
+		    }
+		    return;
+		}
+	    }
+	    /* we probably don't need to populate search name */
+	    if( org.IsSetTaxname() &&
+		NStr::CompareNocase( org.GetTaxname(),
+				     pOldNameMod->GetSubname() ) == 0 ) {
+		if( pOldNameMod->IsSetAttrib() ) {
+		    const string& sAttrib = pOldNameMod->GetAttrib();
+		    if( !sAttrib.empty() && sAttrib[0] == '(' ) {
+			try {
+			    CRef< COrgMod > srchMod( new COrgMod );
+			    string::size_type pos = sAttrib.find("=");
+			    if( pos == string::npos ) {
+				return;
+			    }
+			    if( on.IsSetMod() ) {
+				const COrgName::TMod& mods = on.GetMod();
+				srchMod->SetSubname()
+				    .assign( sAttrib.c_str()+pos+1 );
+				srchMod->SetSubtype
+				    ( NStr::StringToInt
+				      (sAttrib.substr(1, pos-1), 10,
+				       NStr::eCheck_Skip) );
+				PFindMod mf;
+				mf.SetModToMatch( srchMod );
+				if( find_if( mods.begin(), mods.end(),
+					     mf ) != mods.end() ) {
+				    return;
+				}
+			    }
+			} catch(...) { return; }
+		    } else
+			return;
+		} else
+		    return;
+	    }
+	    // Add old-name to modifiers
+	    on.SetMod().push_back( pOldNameMod );
+	}
+    }
+}
+
+CRef< CTaxon2_data >
+CTaxon1::Lookup(const COrg_ref& inp_orgRef )
+{
+    SetLastError(NULL);
+    // Check if this taxon is in cache
+    CTaxon2_data* pData = 0;
+    COrgName::TMod hitMod;
+    int tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
+
+    if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
+	&& tax_id > 0
+        && m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
+
+        CTaxon2_data* pNewData = new CTaxon2_data();
+
+	//        SerialAssign<CTaxon2_data>( *pNewData, *pData  );
+	COrg_ref* pOrf = new COrg_ref;
+	pOrf->Assign( inp_orgRef );
+	if( pOrf->IsSetOrgname() && pOrf->GetOrgname().IsSetMod() ) {
+	    // Clean up modifiers
+	    pOrf->SetOrgname().SetMod().clear();
+	}
+	pNewData->SetOrg( *pOrf );
+		
+	const COrg_ref& db_orgRef = pData->GetOrg();
+
+	OrgRefAdjust( pNewData->SetOrg(), db_orgRef, tax_id );
+	// Copy all other fields
+	pNewData->SetBlast_name() = pData->GetBlast_name();
+	pNewData->SetIs_uncultured( pData->GetIs_uncultured() );
+	pNewData->SetIs_species_level( pData->GetIs_species_level() );
+
+	// Insert the hitMod if necessary
+	if( hitMod.size() > 0 ) {
+	    PopulateReplaced( pNewData->SetOrg(), hitMod );
+	}
+
+        return CRef<CTaxon2_data>(pNewData);
+    }
+    return CRef<CTaxon2_data>(NULL);
+}
+
 CConstRef< CTaxon2_data >
 CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 {
     CTaxon2_data* pData = 0;
 
     SetLastError(NULL);
-    int tax_id = GetTaxIdByOrgRef( inp_orgRef );
+    COrgName::TMod hitMod;
+    int tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
 
-    if( tax_id > 0
+    if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
+	&& tax_id > 0
         && m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
 
-        const COrg_ref& src = pData->GetOrg();
-
-        inp_orgRef.SetTaxname( src.GetTaxname() );
-        if( src.IsSetCommon() ) {
-            inp_orgRef.SetCommon( src.GetCommon() );
-        } else {
-            inp_orgRef.ResetCommon();
-        }
-
-        // populate tax_id
-        inp_orgRef.SetTaxId( tax_id );
-    
-        // copy the synonym list
-        if( m_bWithSynonyms ) {
-            inp_orgRef.SetSyn() = src.GetSyn();
-        }
+	const COrg_ref& db_orgRef = pData->GetOrg();
 	
-	// Remember old modifiers
-	COrgName::TMod modd;
-	modd.swap( inp_orgRef.SetOrgname().SetMod() );
-	//        if( !inp_orgRef.GetOrgname().IsSetMod() ) {
-	const COrgName::TMod& mods = src.GetOrgname().GetMod();
-	PFindMod predMod;
+	OrgRefAdjust( inp_orgRef, db_orgRef, tax_id );
 
-	// Service stuff
-	CTaxon1_req req;
-	CTaxon1_resp resp;
-	CRef<CTaxon1_info> pModInfo(new CTaxon1_info());
-	// Copy with object copy as well
-	for( COrgName::TMod::const_iterator ci = mods.begin();
-	     ci != mods.end();
-	     ++ci ) {
-	    // Check if there is no such modifier in the destination
-	    predMod.SetModToMatch( *ci );
-	    COrgName::TMod::iterator di =
-		find_if( modd.begin(), modd.end(), predMod );
-	    if( di != modd.end() ) { // Modifier found
-		modd.erase( di );
-	    }
+	if( hitMod.size() > 0 ) {
+	    PopulateReplaced( inp_orgRef, hitMod );
 	}
-	// Check the remaining modifiers for validity
-	for( COrgName::TMod::iterator di = modd.begin();
-	     di != modd.end(); ) { // Check modifier that was not found
-	    pModInfo->SetIval1( tax_id );
-	    pModInfo->SetIval2( (*di)->GetSubtype() );
-	    pModInfo->SetSval( (*di)->GetSubname() );
-	    
-	    req.SetGetorgmod( *pModInfo );
-	    try {
-		if( SendRequest( req, resp ) ) {
-		    if( !resp.IsGetorgmod() ) { // error
-			SetLastError( 
-				     "ERROR: Response type is not Getorgmod" );
-		    } else {
-			++di;
-			continue;
-		    }
-		} else if( resp.IsError()
-			   && resp.GetError().GetLevel() 
-			   == CTaxon1_error::eLevel_none ) {
-		    // Just delete modifier
-		}
-	    } catch( exception& e ) {
-		SetLastError( e.what() );
-	    }
-	    modd.erase( di );
-	}
-// 	// Copy all modifiers from source
-// 	for( COrgName::TMod::const_iterator ci = mods.begin();
-// 	     ci != mods.end();
-// 	     ++ci ) {
-// 	    COrgMod* pMod = new COrgMod;
-// 	    SerialAssign<COrgMod>( *pMod, ci->GetObject() );
-// 	    modd.push_back( pMod );
-// 	}
-        /* copy orgname */
-        inp_orgRef.SetOrgname().Assign( src.GetOrgname() );
-	// Set modifiers
-	COrgName::TMod& inp_mods = inp_orgRef.SetOrgname().SetMod();
-	inp_mods.splice( inp_mods.end(), modd );
-
-        if( src.GetOrgname().IsSetLineage() )
-            inp_orgRef.SetOrgname()
-                .SetLineage( src.GetOrgname().GetLineage() );
-        else
-            inp_orgRef.SetOrgname().ResetLineage();
-        inp_orgRef.SetOrgname().SetGcode( src.GetOrgname().GetGcode() );
-        inp_orgRef.SetOrgname().SetMgcode( src.GetOrgname().GetMgcode() );
-        inp_orgRef.SetOrgname().SetDiv( src.GetOrgname().GetDiv() );
     }
     return CConstRef<CTaxon2_data>(pData);
 }
@@ -952,6 +1274,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.13  2003/03/05 21:33:52  domrach
+ * Enhanced orgref processing. Orgref cache capacity control added.
+ *
  * Revision 6.12  2003/01/31 03:46:46  lavr
  * Heed int->bool performance warnings
  *
