@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/11/29 22:20:52  lavr
+ * Flow control trace messages added
+ *
  * Revision 6.8  2001/09/24 20:35:34  lavr
  * +Test for SERV_Reset()
  *
@@ -76,17 +79,22 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFILE(stderr, 0/*false*/);
     CORE_LOGF(eLOG_Note, ("Looking for service `%s' (%s)", service,
                           local ? "locally" : "randomly"));
+    CORE_LOG(eLOG_Trace, "Opening service mapper");
     if ((local &&
          (iter = SERV_Open(service, fSERV_Any, SERV_LOCALHOST, 0)) != 0) ||
         (!local && (iter = SERV_OpenSimple(service)) != 0)) {
+        CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
         while ((info = SERV_GetNextInfo(iter)) != 0) {
             char* info_str = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
             n_found++;
         }
+        CORE_LOG(eLOG_Trace, "Resetting service mapper");
         SERV_Reset(iter);
+        CORE_LOG(eLOG_Trace, "Service mapper has been reset");
         if (n_found && !(info = SERV_GetNextInfo(iter)))
             CORE_LOG(eLOG_Fatal, "Service not found after reset");
+        CORE_LOG(eLOG_Trace, "Closing service mapper");
         SERV_Close(iter);
     }
 
