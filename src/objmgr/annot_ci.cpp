@@ -80,11 +80,13 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
 {
     CTSE_Guard guard(tse);
     m_TSEInfo->LockCounter();
+    TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
+        &m_TSEInfo->m_AnnotMap_ByInt : &m_TSEInfo->m_AnnotMap_ByTotal;
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
             TAnnotMap::iterator ait =
-                m_TSEInfo->m_AnnotMap.find(it->first);
-            if (ait == m_TSEInfo->m_AnnotMap.end())
+                annot_map->find(it->first);
+            if (ait == annot_map->end())
                 continue;
             TAnnotSelectorMap::iterator sit =
                 ait->second.find(selector);
@@ -206,11 +208,13 @@ void CAnnot_CI::x_Walk(void)
     // to select the next one.
     CHandleRangeMap::TLocMap::const_iterator h =
         m_HandleRangeMap->GetMap().find(m_CurrentHandle);
+    TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
+        &m_TSEInfo->m_AnnotMap_ByInt : &m_TSEInfo->m_AnnotMap_ByTotal;
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
         if ( !h->second.Empty() ) {
             TAnnotMap::iterator ait =
-                m_TSEInfo->m_AnnotMap.find(h->first);
-            if (ait == m_TSEInfo->m_AnnotMap.end())
+                annot_map->find(h->first);
+            if (ait == annot_map->end())
                 continue;
             TAnnotSelectorMap::iterator sit =
                 ait->second.find(m_Selector);
@@ -237,6 +241,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/02/04 21:46:32  grichenk
+* Added map of annotations by intervals (the old one was
+* by total ranges)
+*
 * Revision 1.14  2003/01/29 17:45:02  vasilche
 * Annotaions index is split by annotation/feature type.
 *

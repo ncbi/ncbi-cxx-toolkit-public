@@ -1257,7 +1257,10 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
               mapit, aobj->GetRangeMap().GetMap() ) {
         m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
 
-        CTSE_Info::TAnnotSelectorMap& selMap = tse.m_AnnotMap[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapTotal =
+            tse.m_AnnotMap_ByTotal[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapInt =
+            tse.m_AnnotMap_ByInt[mapit->first];
         CTSE_Info::TRangeMap::value_type
             ins(mapit->second.GetOverlappingRange(), aobj);
         SAnnotSelector ss[2];
@@ -1265,7 +1268,13 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
                                feat.GetData().Which());
         ss[1] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable);
         for ( int i = 0; i < 2; ++i ) {
-            selMap[ss[i]].insert(ins);
+            selMapTotal[ss[i]].insert(ins);
+        }
+        iterate (CHandleRange::TRanges, rgit, mapit->second) {
+            CTSE_Info::TRangeMap::value_type ins(rgit->first, aobj);
+            for ( int i = 0; i < 2; ++i ) {
+                selMapInt[ss[i]].insert(ins);
+            }
         }
     }
     if ( aobj->GetProductMap() ) {
@@ -1273,7 +1282,10 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
                   mapit, aobj->GetProductMap()->GetMap() ) {
             m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
             
-            CTSE_Info::TAnnotSelectorMap& selMap = tse.m_AnnotMap[mapit->first];
+            CTSE_Info::TAnnotSelectorMap& selMapTotal =
+                tse.m_AnnotMap_ByTotal[mapit->first];
+            CTSE_Info::TAnnotSelectorMap& selMapInt =
+                tse.m_AnnotMap_ByInt[mapit->first];
             CTSE_Info::TRangeMap::value_type
                 ins(mapit->second.GetOverlappingRange(), aobj);
 
@@ -1285,7 +1297,13 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
                                    CSeqFeatData::e_not_set,
                                    true);
             for ( int i = 0; i < 2; ++i ) {
-                selMap[ss[i]].insert(ins);
+                selMapTotal[ss[i]].insert(ins);
+            }
+            iterate (CHandleRange::TRanges, rgit, mapit->second) {
+                CTSE_Info::TRangeMap::value_type ins(rgit->first, aobj);
+                for ( int i = 0; i < 2; ++i ) {
+                    selMapInt[ss[i]].insert(ins);
+                }
             }
         }
     }
@@ -1307,11 +1325,20 @@ void CDataSource::x_MapAlign(const CSeq_align& align,
               mapit, aobj->GetRangeMap().GetMap() ) {
         m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
 
-        CTSE_Info::TAnnotSelectorMap& selMap = tse.m_AnnotMap[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapTotal =
+            tse.m_AnnotMap_ByTotal[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapInt =
+            tse.m_AnnotMap_ByInt[mapit->first];
         CTSE_Info::TRangeMap::value_type ins
             (mapit->second.GetOverlappingRange(), CRef<CAnnotObject>(aobj));
 
-        selMap[SAnnotSelector(CSeq_annot::C_Data::e_Align)].insert(ins);
+        selMapTotal[SAnnotSelector(CSeq_annot::C_Data::e_Align)].insert(ins);
+        iterate (CHandleRange::TRanges, rgit, mapit->second) {
+            CTSE_Info::TRangeMap::value_type ins
+                (rgit->first, CRef<CAnnotObject>(aobj));
+            selMapInt[SAnnotSelector(CSeq_annot::C_Data::e_Align)].
+                insert(ins);
+        }
     }
 }
 
@@ -1332,11 +1359,20 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
         mapit, aobj->GetRangeMap().GetMap() ) {
         m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
 
-        CTSE_Info::TAnnotSelectorMap& selMap = tse.m_AnnotMap[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapTotal =
+            tse.m_AnnotMap_ByTotal[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapInt =
+            tse.m_AnnotMap_ByInt[mapit->first];
         CTSE_Info::TRangeMap::value_type ins
             (mapit->second.GetOverlappingRange(), CRef<CAnnotObject>(aobj));
 
-        selMap[SAnnotSelector(CSeq_annot::C_Data::e_Graph)].insert(ins);
+        selMapTotal[SAnnotSelector(CSeq_annot::C_Data::e_Graph)].insert(ins);
+        iterate (CHandleRange::TRanges, rgit, mapit->second) {
+            CTSE_Info::TRangeMap::value_type ins
+                (rgit->first, CRef<CAnnotObject>(aobj));
+            selMapInt[SAnnotSelector(CSeq_annot::C_Data::e_Graph)].
+                insert(ins);
+        }
     }
 }
 
@@ -1707,33 +1743,57 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
         // Find the TSE containing the feature
         for ( TTSESet::iterator tse_info = tse_set->second.begin();
               tse_info != tse_set->second.end(); ++tse_info) {
-            CTSE_Info::TAnnotMap& annotMap =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap);
-            TAnnotMap::iterator annot_it = annotMap.find(mapit->first);
-            if ( annot_it == annotMap.end() )
-                continue;
-
-            for ( int i = 0; i < 2; ++i ) {
-                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                    annot_it->second.find(ss[i]);
-                if ( sel_it == annot_it->second.end() )
-                    continue;
-                TRangeMap::iterator rg = sel_it->second.begin(range);
-                for ( ; rg != sel_it->second.end(); ++rg) {
-                    if (rg->second->IsFeat()  &&
-                        &(rg->second->GetFeat()) == &feat)
-                        break;
-                }
-                if (rg == sel_it->second.end())
-                    continue;
-                // Delete the feature from all indexes
-                sel_it->second.erase(rg);
-                if (sel_it->second.empty()) {
-                    annot_it->second.erase(sel_it);
+            CTSE_Info::TAnnotMap& amt =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
+            CTSE_Info::TAnnotMap& ami =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
+            TAnnotMap::iterator annot_itt = amt.find(mapit->first);
+            TAnnotMap::iterator annot_iti = ami.find(mapit->first);
+            if ( annot_itt != amt.end() ) {
+                for ( int i = 0; i < 2; ++i ) {
+                    CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                        annot_itt->second.find(ss[i]);
+                    if ( sel_it == annot_itt->second.end() )
+                        continue;
+                    TRangeMap::iterator rg = sel_it->second.begin(range);
+                    for ( ; rg != sel_it->second.end(); ++rg) {
+                        if (rg->second->IsFeat()  &&
+                            &(rg->second->GetFeat()) == &feat)
+                            break;
+                    }
+                    if (rg == sel_it->second.end())
+                        continue;
+                    // Delete the feature from all indexes
+                    sel_it->second.erase(rg);
+                    if (sel_it->second.empty()) {
+                        annot_itt->second.erase(sel_it);
+                    }
                 }
             }
-            if (annot_it->second.empty()) {
-                annotMap.erase(annot_it);
+            if ( annot_iti != ami.end() ) {
+                for ( int i = 0; i < 2; ++i ) {
+                    CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                        annot_iti->second.find(ss[i]);
+                    if ( sel_it == annot_iti->second.end() )
+                        continue;
+                    TRangeMap::iterator rg = sel_it->second.begin(range);
+                    for ( ; rg != sel_it->second.end(); ++rg) {
+                        if (rg->second->IsFeat()  &&
+                            &(rg->second->GetFeat()) == &feat)
+                            break;
+                    }
+                    if (rg == sel_it->second.end())
+                        continue;
+                    // Delete the feature from all indexes
+                    sel_it->second.erase(rg);
+                    if (sel_it->second.empty()) {
+                        annot_iti->second.erase(sel_it);
+                    }
+                }
+            }
+            if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
+                amt.erase(annot_itt);
+                ami.erase(annot_iti);
                 tse_set->second.erase(tse_info);
             }
             if (tse_set->second.empty()) {
@@ -1764,34 +1824,57 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
             // Find the TSE containing the feature
             for ( TTSESet::iterator tse_info = tse_set->second.begin();
                   tse_info != tse_set->second.end(); ++tse_info) {
-                CTSE_Info::TAnnotMap& annotMap =
-                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap);
-
-                TAnnotMap::iterator annot_it = annotMap.find(mapit->first);
-                if (annot_it == annotMap.end())
-                    continue;
-
-                for ( int i = 0; i < 2; ++i ) {
-                    CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                        annot_it->second.find(ss[i]);
-                    if ( sel_it == annot_it->second.end() )
-                        continue;
-                    TRangeMap::iterator rg = sel_it->second.begin(range);
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsFeat()  &&
-                            &(rg->second->GetFeat()) == &feat)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the feature from all indexes
-                    sel_it->second.erase(rg);
-                    if (sel_it->second.empty()) {
-                        annot_it->second.erase(sel_it);
+                CTSE_Info::TAnnotMap& amt =
+                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
+                CTSE_Info::TAnnotMap& ami =
+                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
+                TAnnotMap::iterator annot_itt = amt.find(mapit->first);
+                TAnnotMap::iterator annot_iti = ami.find(mapit->first);
+                if (annot_itt != amt.end()) {
+                    for ( int i = 0; i < 2; ++i ) {
+                        CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                            annot_itt->second.find(ss[i]);
+                        if ( sel_it == annot_itt->second.end() )
+                            continue;
+                        TRangeMap::iterator rg = sel_it->second.begin(range);
+                        for ( ; rg != sel_it->second.end(); ++rg) {
+                            if (rg->second->IsFeat()  &&
+                                &(rg->second->GetFeat()) == &feat)
+                                break;
+                        }
+                        if (rg == sel_it->second.end())
+                            continue;
+                        // Delete the feature from all indexes
+                        sel_it->second.erase(rg);
+                        if (sel_it->second.empty()) {
+                            annot_itt->second.erase(sel_it);
+                        }
                     }
                 }
-                if (annot_it->second.empty()) {
-                    annotMap.erase(annot_it);
+                if (annot_iti != ami.end()) {
+                    for ( int i = 0; i < 2; ++i ) {
+                        CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                            annot_iti->second.find(ss[i]);
+                        if ( sel_it == annot_iti->second.end() )
+                            continue;
+                        TRangeMap::iterator rg = sel_it->second.begin(range);
+                        for ( ; rg != sel_it->second.end(); ++rg) {
+                            if (rg->second->IsFeat()  &&
+                                &(rg->second->GetFeat()) == &feat)
+                                break;
+                        }
+                        if (rg == sel_it->second.end())
+                            continue;
+                        // Delete the feature from all indexes
+                        sel_it->second.erase(rg);
+                        if (sel_it->second.empty()) {
+                            annot_iti->second.erase(sel_it);
+                        }
+                    }
+                }
+                if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
+                    amt.erase(annot_itt);
+                    ami.erase(annot_iti);
                     tse_set->second.erase(tse_info);
                 }
                 if (tse_set->second.empty()) {
@@ -1822,34 +1905,55 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
         // Find the TSE containing the align
         for ( TTSESet::iterator tse_info = tse_set->second.begin();
               tse_info != tse_set->second.end(); ++tse_info) {
-            CTSE_Info::TAnnotMap& annotMap =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap);
-            TAnnotMap::iterator annot_it =
-                annotMap.find(mapit->first);
-            if (annot_it == annotMap.end())
-                continue;
-
-            CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                annot_it->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Align));
-            if ( sel_it == annot_it->second.end() )
-                continue;
-
-            TRangeMap::iterator rg = sel_it->second.begin(
-                mapit->second.GetOverlappingRange());
-            for ( ; rg != sel_it->second.end(); ++rg) {
-                if (rg->second->IsAlign()  &&
-                    &(rg->second->GetAlign()) == &align)
-                    break;
+            CTSE_Info::TAnnotMap& amt =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
+            CTSE_Info::TAnnotMap& ami =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
+            TAnnotMap::iterator annot_itt = amt.find(mapit->first);
+            TAnnotMap::iterator annot_iti = ami.find(mapit->first);
+            if (annot_itt != amt.end()) {
+                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                    annot_itt->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Align));
+                if ( sel_it != annot_itt->second.end() ) {
+                    TRangeMap::iterator rg = sel_it->second.begin(
+                        mapit->second.GetOverlappingRange());
+                    for ( ; rg != sel_it->second.end(); ++rg) {
+                        if (rg->second->IsAlign()  &&
+                            &(rg->second->GetAlign()) == &align)
+                            break;
+                    }
+                    if (rg == sel_it->second.end())
+                        continue;
+                    // Delete the align from all indexes
+                    sel_it->second.erase(rg);
+                    if ( sel_it->second.empty() ) {
+                        annot_itt->second.erase(sel_it);
+                    }
+                }
             }
-            if (rg == sel_it->second.end())
-                continue;
-            // Delete the align from all indexes
-            sel_it->second.erase(rg);
-            if ( sel_it->second.empty() ) {
-                annot_it->second.erase(sel_it);
+            if (annot_iti != amt.end()) {
+                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                    annot_iti->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Align));
+                if ( sel_it != annot_iti->second.end() ) {
+                    TRangeMap::iterator rg = sel_it->second.begin(
+                        mapit->second.GetOverlappingRange());
+                    for ( ; rg != sel_it->second.end(); ++rg) {
+                        if (rg->second->IsAlign()  &&
+                            &(rg->second->GetAlign()) == &align)
+                            break;
+                    }
+                    if (rg == sel_it->second.end())
+                        continue;
+                    // Delete the align from all indexes
+                    sel_it->second.erase(rg);
+                    if ( sel_it->second.empty() ) {
+                        annot_iti->second.erase(sel_it);
+                    }
+                }
             }
-            if (annot_it->second.empty()) {
-                annotMap.erase(annot_it);
+            if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
+                amt.erase(annot_itt);
+                ami.erase(annot_iti);
                 tse_set->second.erase(tse_info);
             }
             if (tse_set->second.empty()) {
@@ -1879,34 +1983,55 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
         // Find the TSE containing the graph
         for ( TTSESet::iterator tse_info = tse_set->second.begin();
               tse_info != tse_set->second.end(); ++tse_info) {
-            CTSE_Info::TAnnotMap& annotMap =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap);
-            TAnnotMap::iterator annot_it =
-                annotMap.find(mapit->first);
-            if (annot_it == annotMap.end())
-                continue;
-
-            CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                annot_it->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Graph));
-            if ( sel_it == annot_it->second.end() )
-                continue;
-
-            TRangeMap::iterator rg = sel_it->second.begin(
-                mapit->second.GetOverlappingRange());
-            for ( ; rg != sel_it->second.end(); ++rg) {
-                if (rg->second->IsGraph()  &&
-                    &(rg->second->GetGraph()) == &graph)
-                    break;
+            CTSE_Info::TAnnotMap& amt =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
+            CTSE_Info::TAnnotMap& ami =
+                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
+            TAnnotMap::iterator annot_itt = amt.find(mapit->first);
+            TAnnotMap::iterator annot_iti = ami.find(mapit->first);
+            if (annot_itt != amt.end()) {
+                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                    annot_itt->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Graph));
+                if ( sel_it != annot_itt->second.end() ) {
+                    TRangeMap::iterator rg = sel_it->second.begin(
+                        mapit->second.GetOverlappingRange());
+                    for ( ; rg != sel_it->second.end(); ++rg) {
+                        if (rg->second->IsGraph()  &&
+                            &(rg->second->GetGraph()) == &graph)
+                            break;
+                    }
+                    if (rg == sel_it->second.end())
+                        continue;
+                    // Delete the graph from all indexes
+                    sel_it->second.erase(rg);
+                    if ( sel_it->second.empty() ) {
+                        annot_itt->second.erase(sel_it);
+                    }
+                }
             }
-            if (rg == sel_it->second.end())
-                continue;
-            // Delete the graph from all indexes
-            sel_it->second.erase(rg);
-            if ( sel_it->second.empty() ) {
-                annot_it->second.erase(sel_it);
+            if (annot_iti != ami.end()) {
+                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
+                    annot_iti->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Graph));
+                if ( sel_it != annot_iti->second.end() ) {
+                    TRangeMap::iterator rg = sel_it->second.begin(
+                        mapit->second.GetOverlappingRange());
+                    for ( ; rg != sel_it->second.end(); ++rg) {
+                        if (rg->second->IsGraph()  &&
+                            &(rg->second->GetGraph()) == &graph)
+                            break;
+                    }
+                    if (rg == sel_it->second.end())
+                        continue;
+                    // Delete the graph from all indexes
+                    sel_it->second.erase(rg);
+                    if ( sel_it->second.empty() ) {
+                        annot_iti->second.erase(sel_it);
+                    }
+                }
             }
-            if (annot_it->second.empty()) {
-                annotMap.erase(annot_it);
+            if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
+                amt.erase(annot_itt);
+                ami.erase(annot_iti);
                 tse_set->second.erase(tse_info);
             }
             if (tse_set->second.empty()) {
@@ -2334,6 +2459,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/02/04 21:46:32  grichenk
+* Added map of annotations by intervals (the old one was
+* by total ranges)
+*
 * Revision 1.77  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *

@@ -88,7 +88,8 @@ public:
     // Dead seq-entry flag
     bool m_Dead;
     TBioseqMap m_BioseqMap;
-    TAnnotMap  m_AnnotMap;
+    TAnnotMap  m_AnnotMap_ByInt;
+    TAnnotMap  m_AnnotMap_ByTotal;
 
     void CounterOverflow(void) const;
     void CounterUnderflow(void) const;
@@ -186,6 +187,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/04 21:46:31  grichenk
+* Added map of annotations by intervals (the old one was
+* by total ranges)
+*
 * Revision 1.15  2003/01/29 22:02:22  grichenk
 * Fixed includes for SAnnotSelector
 *

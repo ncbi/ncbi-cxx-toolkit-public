@@ -82,7 +82,8 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.Log("m_Dead", m_Dead);
     if (depth == 0) {
         DebugDumpValue(ddc, "m_BioseqMap.size()", m_BioseqMap.size());
-        DebugDumpValue(ddc, "m_AnnotMap.size()",  m_AnnotMap.size());
+        DebugDumpValue(ddc, "m_AnnotMap_ByInt.size()",  m_AnnotMap_ByInt.size());
+        DebugDumpValue(ddc, "m_AnnotMap_ByTotal.size()",  m_AnnotMap_ByTotal.size());
     } else {
         unsigned int depth2 = depth-1;
         { //--- m_BioseqMap
@@ -96,15 +97,55 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                 ddc2.Log(member_name, (it->second).GetPointer(),depth2);
             }
         }
-        { //--- m_AnnotMap
-            DebugDumpValue(ddc, "m_AnnotMap.type",
+        { //--- m_AnnotMap_ByInt
+            DebugDumpValue(ddc, "m_AnnotMap_ByInt.type",
                 "map<CSeq_id_Handle, CRangeMultimap<CRef<CAnnotObject>,"
                 "CRange<TSeqPos>::position_type>>");
 
-            CDebugDumpContext ddc2(ddc,"m_AnnotMap");
+            CDebugDumpContext ddc2(ddc,"m_AnnotMap_ByInt");
             TAnnotMap::const_iterator it;
-            for (it=m_AnnotMap.begin(); it!=m_AnnotMap.end(); ++it) {
-                string member_name = "m_AnnotMap[ " +
+            for (it=m_AnnotMap_ByInt.begin(); it!=m_AnnotMap_ByInt.end(); ++it) {
+                string member_name = "m_AnnotMap_ByInt[ " +
+                    (it->first).AsString() +" ]";
+                if (depth2 == 0) {
+                    member_name += "size()";
+                    DebugDumpValue(ddc2, member_name, (it->second).size());
+                } else {
+/*
+                    // CRangeMultimap
+                    CDebugDumpContext ddc3(ddc2, member_name);
+                    iterate ( TRangeMap, itrm, it->second ) {
+                        // CRange as string
+                        string rg;
+                        if (itrm->first.Empty()) {
+                            rg += "empty";
+                        } else if (itrm->first.IsWhole()) {
+                            rg += "whole";
+                        } else if (itrm->first.IsWholeTo()) {
+                            rg += "unknown";
+                        } else {
+                            rg +=
+                                NStr::UIntToString(itrm->first.GetFrom()) +
+                                "..." +
+                                NStr::UIntToString(itrm->first.GetTo());
+                        }
+                        string rm_name = member_name + "[ " + rg + " ]";
+                        // CAnnotObject
+                        ddc3.Log(rm_name, itrm->second, depth2-1);
+                    }
+*/
+                }
+            }
+        }
+        { //--- m_AnnotMap_ByTotal
+            DebugDumpValue(ddc, "m_AnnotMap_ByTotal.type",
+                "map<CSeq_id_Handle, CRangeMultimap<CRef<CAnnotObject>,"
+                "CRange<TSeqPos>::position_type>>");
+
+            CDebugDumpContext ddc2(ddc,"m_AnnotMap_ByTotal");
+            TAnnotMap::const_iterator it;
+            for (it=m_AnnotMap_ByTotal.begin(); it!=m_AnnotMap_ByTotal.end(); ++it) {
+                string member_name = "m_AnnotMap_ByTotal[ " +
                     (it->first).AsString() +" ]";
                 if (depth2 == 0) {
                     member_name += "size()";
@@ -147,6 +188,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/04 21:46:32  grichenk
+* Added map of annotations by intervals (the old one was
+* by total ranges)
+*
 * Revision 1.13  2003/01/29 17:45:03  vasilche
 * Annotaions index is split by annotation/feature type.
 *
