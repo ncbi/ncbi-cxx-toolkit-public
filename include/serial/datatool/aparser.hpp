@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/11/14 21:41:12  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.3  2000/08/25 15:58:45  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -58,6 +61,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/datatool/alexer.hpp>
 #include <serial/datatool/atoken.hpp>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,27 +84,35 @@ public:
 
     string Location(void) const;
 
+    AbstractLexer& Lexer(void)
+        {
+            return m_Lexer;
+        }
+    const AbstractLexer& Lexer(void) const
+        {
+            return m_Lexer;
+        }
+
     const AbstractToken& NextToken(void) const
         {
             return m_Lexer.NextToken();
+        }
+    int NextTokenLine(void) const
+        {
+            return NextToken().GetLine();
         }
     TToken Next(void) const
         {
             return NextToken().token;
         }
 
-    const AbstractLexer& Lexer(void) const
-        {
-            return m_Lexer;
-        }
-
     void Consume(void)
         {
-            m_Lexer.Consume();
+            Lexer().Consume();
         }
-    string ConsumeAndValue(void)
+    const string& ConsumeAndValue(void)
         {
-            return m_Lexer.ConsumeAndValue();
+            return Lexer().ConsumeAndValue();
         }
 
     bool Check(TToken token)
@@ -125,7 +137,7 @@ public:
             Expect(token, expected);
             Consume();
         }
-    string ValueOf(TToken token, const char* expected)
+    const string& ValueOf(TToken token, const char* expected)
         {
             Expect(token, expected);
             return ConsumeAndValue();
@@ -168,6 +180,16 @@ public:
             return '\0';
         }
     
+    void CopyComments(list<string>& comments)
+        {
+            Lexer().FlushCommentsTo(comments);
+        }
+    enum {
+        eNoFetchNext = 1,
+        eCombineNext = 2
+    };
+    void CopyLineComment(int line, list<string>& comments, int flags = 0);
+
 private:
     AbstractLexer& m_Lexer;
 };

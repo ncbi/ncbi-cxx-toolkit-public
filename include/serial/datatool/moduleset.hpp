@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:14  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/11/08 17:02:39  vasilche
 * Added generation of modular DTD files.
 *
@@ -120,10 +123,16 @@ public:
     CDataType* ResolveInAnyModule(const string& fullName,
                                   bool allowInternal = false) const;
 
+    list<string>& LastComments(void)
+        {
+            return m_LastComments;
+        }
+
 private:
     TModules m_Modules;
     TModulesByName m_ModulesByName;
     string m_SourceFileName;
+    list<string> m_LastComments;
     mutable string m_PrefixFromSourceFileName;
 
     friend class CFileSet;

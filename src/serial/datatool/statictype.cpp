@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/14 21:41:26  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.17  2000/11/08 17:02:52  vasilche
 * Added generation of modular DTD files.
 *
@@ -115,20 +118,16 @@
 
 BEGIN_NCBI_SCOPE
 
-void CStaticDataType::PrintASN(CNcbiOstream& out, int ) const
+void CStaticDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    CParent::PrintASN(out, indent);
     out << GetASNKeyword();
 }
 
-void CStaticDataType::PrintDTD(CNcbiOstream& out) const
+void CStaticDataType::PrintDTDElement(CNcbiOstream& out) const
 {
     out <<
-        "<!ELEMENT "<<XmlTagName()<<" "<<GetXMLContents()<<">\n";
-}
-
-const char* CStaticDataType::GetXMLContents(void) const
-{
-    return 0;
+        "<!ELEMENT "<<XmlTagName()<<" "<<GetXMLContents()<<">";
 }
 
 AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
@@ -191,12 +190,15 @@ const char* CBoolDataType::GetASNKeyword(void) const
     return "BOOLEAN";
 }
 
-void CBoolDataType::PrintDTD(CNcbiOstream& out) const
+const char* CBoolDataType::GetXMLContents(void) const
 {
-    string tag = XmlTagName();
+    return "%BOOLEAN; ";
+}
+
+void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
     out <<
-        "<!ELEMENT "<<tag<<" %BOOLEAN; >\n"
-        "<!ATTLIST "<<tag<<" value ( true | false ) #REQUIRED >\n"
+        "<!ATTLIST "<<XmlTagName()<<" value ( true | false ) #REQUIRED >\n"
         "\n";
 }
 

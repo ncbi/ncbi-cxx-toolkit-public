@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:13  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/11/08 17:02:39  vasilche
 * Added generation of modular DTD files.
 *
@@ -142,9 +145,20 @@ public:
     CDataType* ExternalResolve(const string& name,
                                bool allowInternal = false) const;
 
+    list<string>& Comments(void)
+        {
+            return m_Comments;
+        }
+    list<string>& LastComments(void)
+        {
+            return m_LastComments;
+        }
+
 private:
     bool m_Errors;
     string m_Name;
+    list<string> m_Comments;
+    list<string> m_LastComments;
     mutable string m_PrefixFromName;
 
     TExports m_Exports;

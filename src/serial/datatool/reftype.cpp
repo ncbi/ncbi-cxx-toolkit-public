@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/11/14 21:41:26  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.20  2000/11/08 17:02:52  vasilche
 * Added generation of modular DTD files.
 *
@@ -123,15 +126,16 @@ CReferenceDataType::CReferenceDataType(const string& n)
 {
 }
 
-void CReferenceDataType::PrintASN(CNcbiOstream& out, int ) const
+void CReferenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    CParent::PrintASN(out, indent);
     out << m_UserTypeName;
 }
 
-void CReferenceDataType::PrintDTD(CNcbiOstream& out) const
+void CReferenceDataType::PrintDTDElement(CNcbiOstream& out) const
 {
     out <<
-        "<!ELEMENT "<<XmlTagName()<<" ( "<<UserTypeXmlTagName()<<" )>\n";
+        "<!ELEMENT "<<XmlTagName()<<" ( "<<UserTypeXmlTagName()<<" )>";
 }
 
 void CReferenceDataType::FixTypeTree(void) const

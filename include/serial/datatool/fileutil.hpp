@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:13  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/04/28 16:58:08  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -81,6 +84,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <memory>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -182,6 +186,10 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
 CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
                           const char* tab = 0);
 string Tabbed(const string& code, const char* tab = 0);
+
+CNcbiOstream& PrintDTDComments(CNcbiOstream& out,
+                               const list<string>& comments,
+                               bool allowOneLine = true);
 
 END_NCBI_SCOPE
 

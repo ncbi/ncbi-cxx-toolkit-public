@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/14 21:41:15  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.7  2000/11/07 17:25:30  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 *
@@ -93,6 +96,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeref.hpp>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -166,8 +170,11 @@ public:
 
     bool InChoice(void) const;
 
-    virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
-    virtual void PrintDTD(CNcbiOstream& out) const = 0;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTD(CNcbiOstream& out, const list<string>& extraComments) const;
+    virtual void PrintDTDElement(CNcbiOstream& out) const = 0;
+    virtual void PrintDTDExtra(CNcbiOstream& out) const;
 
     virtual CTypeRef GetTypeInfo(void);
     virtual const CTypeInfo* GetAnyTypeInfo(void);
@@ -240,12 +247,18 @@ public:
     virtual bool CheckType(void) const;
     virtual bool CheckValue(const CDataValue& value) const = 0;
     virtual TObjectPtr CreateDefault(const CDataValue& value) const = 0;
+    
+    list<string>& Comments(void)
+        {
+            return m_Comments;
+        }
 
 private:
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
     string m_MemberName;
     int m_SourceLine;
+    list<string> m_Comments;
 
     // tree info
     const CUniSequenceDataType* m_Set;

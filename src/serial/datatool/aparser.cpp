@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/14 21:41:23  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.8  2000/09/26 17:38:25  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -81,6 +84,30 @@ string AbstractParser::Location(void) const
 {
     const AbstractToken& token = NextToken();
     return NStr::IntToString(token.GetLine()) + ':';
+}
+
+void AbstractParser::CopyLineComment(int line, list<string>& comments,
+                                     int flags)
+{
+    if ( !(flags & eNoFetchNext) )
+        NextToken();
+    _TRACE("CopyLineComment("<<line<<") current: "<<m_Lexer.CurrentLine());
+    _TRACE("  "<<(m_Lexer.HaveComments()?m_Lexer.NextComment().GetLine():-1));
+    while ( m_Lexer.HaveComments() ) {
+        const AbstractLexer::CComment& c = m_Lexer.NextComment();
+        if ( c.GetLine() > line ) {
+            // next comment is below limit line
+            return;
+        }
+
+        if ( c.GetLine() == line && (flags & eCombineNext) ) {
+            // current comment is on limit line -> allow next line comment
+            ++line;
+        }
+
+        comments.push_back(c.GetValue());
+        m_Lexer.SkipNextComment();
+    }
 }
 
 END_NCBI_SCOPE

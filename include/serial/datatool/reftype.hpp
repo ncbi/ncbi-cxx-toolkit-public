@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:14  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/11/01 20:36:12  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -78,7 +81,7 @@ public:
     CReferenceDataType(const string& n);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:12  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/08/25 15:58:45  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -83,6 +86,7 @@ public:
     ~CDataMember(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintDTD(CNcbiOstream& out) const;
 
     bool Check(void) const;
 
@@ -110,11 +114,17 @@ public:
     void SetOptional(void);
     void SetDefault(const AutoPtr<CDataValue>& value);
 
+    list<string>& Comments(void)
+        {
+            return m_Comments;
+        }
+
 private:
     string m_Name;
     AutoPtr<CDataType> m_Type;
     bool m_Optional;
     AutoPtr<CDataValue> m_Default;
+    list<string> m_Comments;
 };
 
 class CDataMemberContainerType : public CDataType {
@@ -123,7 +133,8 @@ public:
     typedef list< AutoPtr<CDataMember> > TMembers;
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;
@@ -140,8 +151,14 @@ public:
             return m_Members;
         }
 
+    list<string>& LastComments(void)
+        {
+            return m_LastComments;
+        }
+
 private:
     TMembers m_Members;
+    list<string> m_LastComments;
 };
 
 class CDataContainerType : public CDataMemberContainerType {

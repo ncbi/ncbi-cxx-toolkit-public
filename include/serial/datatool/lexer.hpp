@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/11/14 21:41:13  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.3  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -56,16 +59,27 @@
 */
 
 #include <serial/datatool/alexer.hpp>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
-class ASNLexer : public AbstractLexer {
+class ASNLexer : public AbstractLexer
+{
+    typedef AbstractLexer CParent;
 public:
     ASNLexer(CNcbiIstream& in);
     virtual ~ASNLexer();
 
+    const string& StringValue(void) const
+        {
+            return m_StringValue;
+        }
+
 protected:
     TToken LookupToken(void);
+
+    void StartString(void);
+    void AddStringChar(char c);
 
     void SkipComment(void);
     void LookupNumber(void);
@@ -73,6 +87,8 @@ protected:
     void LookupString(void);
     TToken LookupBinHexString(void);
     TToken LookupKeyword(void);
+
+    string m_StringValue;
 };
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/14 21:41:24  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.12  2000/08/25 15:59:22  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -521,6 +524,25 @@ string Tabbed(const string& code, const char* tab)
         }
     }
     return out;
+}
+
+CNcbiOstream& PrintDTDComments(CNcbiOstream& out,
+                               const list<string>& comments,
+                               bool allowOneLine)
+{
+    if ( comments.empty() ) // no comments
+        return out;
+    if ( allowOneLine && comments.size() == 1 ) // one line comment
+        return out <<
+            "<!--" << comments.front() << " -->\n";
+    // multiline comments
+    out <<
+        "<!--\n";
+    iterate ( list<string>, i, comments ) {
+        out << *i << '\n';
+    }
+    return out <<
+        "-->\n";
 }
 
 END_NCBI_SCOPE

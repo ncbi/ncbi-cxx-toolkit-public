@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/14 21:41:24  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.15  2000/11/08 17:02:51  vasilche
 * Added generation of modular DTD files.
 *
@@ -117,6 +120,7 @@ void CEnumDataType::AddValue(const string& valueName, long value)
 
 void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    CParent::PrintASN(out, indent);
     out << GetASNKeyword() << " {";
     indent++;
     for ( TValues::const_iterator i = m_Values.begin();
@@ -130,17 +134,20 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
-void CEnumDataType::PrintDTD(CNcbiOstream& out) const
+void CEnumDataType::PrintDTDElement(CNcbiOstream& out) const
 {
-    string tag = XmlTagName();
     out <<
-        "<!ELEMENT "<<tag<<" ";
+        "<!ELEMENT "<<XmlTagName()<<" ";
     if ( IsInteger() )
-        out << "( %INTEGER; )>\n";
+        out << "( %INTEGER; )>";
     else
-        out << "%ENUM; >\n";
+        out << "%ENUM; >";
+}
+
+void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
     out <<
-        "<!ATTLIST "<<tag<<" value (\n";
+        "<!ATTLIST "<<XmlTagName()<<" value (\n";
     iterate ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             out << " |\n";
@@ -152,6 +159,7 @@ void CEnumDataType::PrintDTD(CNcbiOstream& out) const
     else
         out << "#REQUIRED";
     out << " >\n";
+    PrintDTDComments(out, m_LastComments);
 }
 
 bool CEnumDataType::CheckValue(const CDataValue& value) const

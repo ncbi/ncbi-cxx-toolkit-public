@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:14  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/11/01 20:36:11  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -74,6 +77,7 @@
 
 #include <corelib/ncbiutil.hpp>
 #include <serial/datatool/aparser.hpp>
+#include <serial/datatool/lexer.hpp>
 #include <serial/datatool/moduleset.hpp>
 #include <list>
 
@@ -90,9 +94,18 @@ class CEnumDataType;
 class ASNParser : public AbstractParser
 {
 public:
-    ASNParser(AbstractLexer& lexer)
+    ASNParser(ASNLexer& lexer)
         : AbstractParser(lexer)
         {
+        }
+
+    const ASNLexer& L(void) const
+        {
+            return static_cast<const ASNLexer&>(Lexer());
+        }
+    ASNLexer& L(void)
+        {
+            return static_cast<ASNLexer&>(Lexer());
         }
 
     AutoPtr<CFileModules> Modules(const string& fileName);
@@ -111,12 +124,12 @@ public:
     AutoPtr<CDataValue> Value(void);
     AutoPtr<CDataValue> x_Value(void);
     long Number(void);
-    string String(void);
-    string Identifier(void);
-    string TypeReference(void);
-    string ModuleReference(void);
-    string BinaryString(void);
-    string HexadecimalString(void);
+    const string& String(void);
+    const string& Identifier(void);
+    const string& TypeReference(void);
+    const string& ModuleReference(void);
+
+    bool HaveMoreElements(void);
 };
 
 END_NCBI_SCOPE

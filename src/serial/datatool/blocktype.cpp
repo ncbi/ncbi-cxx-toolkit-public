@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/14 21:41:24  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.28  2000/11/09 18:14:43  vasilche
 * Fixed nonstandard behaviour of 'for' statement on MS VC.
 *
@@ -146,6 +149,7 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/module.hpp>
+#include <serial/datatool/fileutil.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <typeinfo>
@@ -192,20 +196,21 @@ void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
 
 void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    CParent::PrintASN(out, indent);
     out << GetASNKeyword() << " {";
     indent++;
-    for ( TMembers::const_iterator i = m_Members.begin();
-          i != m_Members.end(); ++i ) {
+    iterate ( TMembers, i, m_Members ) {
         if ( i != m_Members.begin() )
             out << ',';
         NewLine(out, indent);
-        (*i)->PrintASN(out, indent);
+        const CDataMember& member = **i;
+        member.PrintASN(out, indent);
     }
     NewLine(out, indent - 1);
     out << "}";
 }
 
-void CDataMemberContainerType::PrintDTD(CNcbiOstream& out) const
+void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out) const
 {
     string tag = XmlTagName();
     out <<
@@ -214,18 +219,25 @@ void CDataMemberContainerType::PrintDTD(CNcbiOstream& out) const
     iterate ( TMembers, i, m_Members ) {
         if ( i != m_Members.begin() )
             out <<separator<<'\n';
-        out << "               "<<tag<<'_'<<(*i)->GetName();
+        const CDataMember& member = **i;
+        out << "               "<<tag<<'_'<<member.GetName();
         if ( (*i)->Optional() )
             out << '?';
     }
-    out << " )>\n";
+    out << " )>";
+}
+
+void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
+{
     if ( GetParentType() == 0 ) {
         out <<
             "\n";
     }
-    iterate ( TMembers, j, m_Members ) {
-        (*j)->GetType()->PrintDTD(out);
+    iterate ( TMembers, i, m_Members ) {
+        const CDataMember& member = **i;
+        member.PrintDTD(out);
     }
+    PrintDTDComments(out, m_LastComments);
 }
 
 void CDataMemberContainerType::FixTypeTree(void) const
@@ -472,6 +484,11 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent) const
     else if ( Optional() ) {
         out << " OPTIONAL";
     }
+}
+
+void CDataMember::PrintDTD(CNcbiOstream& out) const
+{
+    GetType()->PrintDTD(out, m_Comments);
 }
 
 bool CDataMember::Check(void) const

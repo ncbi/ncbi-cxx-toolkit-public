@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/14 21:41:23  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.10  2000/09/26 17:38:25  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -79,22 +82,21 @@ AbstractLexer::~AbstractLexer(void)
 void AbstractLexer::LexerError(const char* error)
 {
     THROW1_TRACE(runtime_error,
-                 NStr::IntToString(m_Line)+": lexer error: "+error);
+                 NStr::IntToString(CurrentLine())+": lexer error: "+error);
 }
 
 void AbstractLexer::LexerWarning(const char* error)
 {
-    ERR_POST(m_Line << ": lexer error: " << error);
+    ERR_POST(CurrentLine() << ": lexer error: " << error);
 }
 
-string AbstractLexer::ConsumeAndValue(void)
+const string& AbstractLexer::ConsumeAndValue(void)
 {
     if ( !TokenStarted() )
         LexerError("illegal call: Consume() without NextToken()");
-    const char* token = CurrentTokenStart();
-    const char* tokenEnd = CurrentTokenEnd();
+    m_TokenText.assign(CurrentTokenStart(), CurrentTokenEnd());
     m_TokenStart = 0;
-    return string(token, tokenEnd);
+    return m_TokenText;
 }
 
 const AbstractToken& AbstractLexer::FillNextToken(void)
@@ -102,7 +104,7 @@ const AbstractToken& AbstractLexer::FillNextToken(void)
     _ASSERT(!TokenStarted());
     if ( (m_NextToken.token = LookupToken()) == T_SYMBOL ) {
         m_TokenStart = m_Position;
-        m_NextToken.line = m_Line;
+        m_NextToken.line = CurrentLine();
         if ( m_Position == m_DataEnd ) {
             // no more data read -> EOF
             m_NextToken.token = T_EOF;
@@ -178,6 +180,35 @@ char AbstractLexer::FillChar(int index)
         m_DataEnd += read;
     }
     return *pos;
+}
+
+void AbstractLexer::SkipNextComment(void)
+{
+    m_Comments.pop_front();
+}
+
+AbstractLexer::CComment& AbstractLexer::AddComment(void)
+{
+    m_Comments.push_back(CComment(CurrentLine()));
+    return m_Comments.back();
+}
+
+void AbstractLexer::CComment::AddChar(char c)
+{
+    m_Value += c;
+}
+
+void AbstractLexer::FlushComments(void)
+{
+    m_Comments.clear();
+}
+
+void AbstractLexer::FlushCommentsTo(list<string>& comments)
+{
+    iterate ( list<CComment>, i, m_Comments ) {
+        comments.push_back(i->GetValue());
+    }
+    FlushComments();
 }
 
 END_NCBI_SCOPE

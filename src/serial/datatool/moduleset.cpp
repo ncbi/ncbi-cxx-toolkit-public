@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/14 21:41:25  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.26  2000/11/08 17:02:51  vasilche
 * Added generation of modular DTD files.
 *
@@ -142,6 +145,9 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
     iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintASN(out);
     }
+    iterate ( list<string>, i, m_LastComments ) {
+        out << "--" << *i << '\n';
+    }
 }
 
 void CFileModules::PrintDTD(CNcbiOstream& out) const
@@ -149,6 +155,7 @@ void CFileModules::PrintDTD(CNcbiOstream& out) const
     iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintDTD(out);
     }
+    PrintDTDComments(out, m_LastComments);
 }
 
 void CFileModules::PrintDTDModular(void) const

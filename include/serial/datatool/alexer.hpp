@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/11/14 21:41:11  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.3  2000/08/25 15:58:45  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -85,35 +88,65 @@ public:
                 LexerError("illegal call: Consume() without NextToken()");
             m_TokenStart = 0;
         }
-    string ConsumeAndValue(void);
+    const string& ConsumeAndValue(void);
 
-    string CurrentTokenText(void) const
+    int CurrentLine(void) const
         {
-            _ASSERT(TokenStarted());
-            return string(CurrentTokenStart(), CurrentTokenEnd());
-        }
-    const string& CurrentTokenValue(void) const
-        {
-            _ASSERT(TokenStarted());
-            return m_TokenValue;
+            return m_Line;
         }
 
     virtual void LexerError(const char* error);
     virtual void LexerWarning(const char* error);
+
+    class CComment
+    {
+    public:
+        CComment(int line)
+            : m_Line(line)
+            {
+            }
+
+        int GetLine(void) const
+            {
+                return m_Line;
+            }
+        const string& GetValue(void) const
+            {
+                return m_Value;
+            }
+
+        void AddChar(char c);
+
+    private:
+        int m_Line;
+        string m_Value;
+    };
+
+    bool HaveComments(void) const
+        {
+            return !m_Comments.empty();
+        }
+    const CComment& NextComment(void) const
+        {
+            return m_Comments.front();
+        }
+    void SkipNextComment(void);
+
+    void FlushComments(void);
+    void FlushCommentsTo(list<string>& comments);
 
 protected:
     virtual TToken LookupToken(void) = 0;
 
     void NextLine(void)
         {
-            m_Line++;
+            ++m_Line;
         }
     void StartToken(void)
         {
             _ASSERT(!TokenStarted());
             m_TokenStart = m_Position;
-            m_NextToken.line = m_Line;
-            m_TokenValue.erase();
+            m_NextToken.line = CurrentLine();
         }
     void AddChars(int count)
         {
@@ -124,10 +157,6 @@ protected:
     void AddChar(void)
         {
             AddChars(1);
-        }
-    void AddValueChar(char c)
-        {
-            m_TokenValue += c;
         }
     void SkipChars(int count)
         {
@@ -168,11 +197,15 @@ protected:
             return CurrentTokenEnd() - CurrentTokenStart();
         }
 
-private:
+protected:
     bool TokenStarted(void) const
         {
             return m_TokenStart != 0;
         }
+
+    CComment& AddComment(void);
+
+private:
     const AbstractToken& FillNextToken(void);
     char FillChar(int index);
 
@@ -184,7 +217,8 @@ private:
     char* m_DataEnd; // end of read data in buffer
     char* m_TokenStart; // token start in buffer (0: not parsed yet)
     AbstractToken m_NextToken;
-    string m_TokenValue;
+    string m_TokenText;
+    list<CComment> m_Comments;
 };
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/14 21:41:12  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.4  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -78,7 +81,8 @@ public:
     void AddValue(const string& name, long value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDExtra(CNcbiOstream& out) const;
 
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
@@ -98,6 +102,12 @@ public:
     
     string DefaultEnumName(void) const;
     SEnumCInfo GetEnumCInfo(void) const;
+
+    list<string>& LastComments(void)
+        {
+            return m_LastComments;
+        }
+
 public:
 
     CTypeInfo* CreateTypeInfo(void);
@@ -107,6 +117,7 @@ public:
 
 private:
     TValues m_Values;
+    list<string> m_LastComments;
 };
 
 class CIntEnumDataType : public CEnumDataType {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/14 21:41:25  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.8  2000/08/25 15:59:22  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -108,6 +111,7 @@ TToken ASNLexer::LookupToken(void)
         case '\"':
             StartToken();
             AddChar();
+            StartString();
             LookupString();
             return T_STRING;
         case '\'':
@@ -140,9 +144,11 @@ TToken ASNLexer::LookupToken(void)
 
 void ASNLexer::SkipComment(void)
 {
+    CComment& comment = AddComment();
     while ( true ) {
         // wait for end of comments
-        switch ( Char() ) {
+        char c = Char();
+        switch ( c ) {
         case '\n':
             SkipChar();
             NextLine();
@@ -158,6 +164,7 @@ void ASNLexer::SkipComment(void)
             }
             break;
         }
+        comment.AddChar(c);
         SkipChar();
     }
 }
@@ -177,7 +184,7 @@ void ASNLexer::LookupString(void)
                 return;
             }
             LexerWarning("illagal character in string: \\0");
-            AddValueChar(c);
+            AddStringChar(c);
             AddChar();
             break;
         case '\"':
@@ -192,7 +199,7 @@ void ASNLexer::LookupString(void)
                 LexerWarning("illegal character in string: \\...");
             }
             else {
-                AddValueChar(c);
+                AddStringChar(c);
             }
             AddChar();
             break;
@@ -301,12 +308,12 @@ TToken ASNLexer::LookupKeyword(void)
         CHECK("FALSE", K_FALSE, 5);
         break;
     case 6:
-        CHECK("STRING", K_STRING, 6);
         CHECK("CHOICE", K_CHOICE, 6);
+        CHECK("STRING", K_STRING, 6);
         break;
     case 7:
-        CHECK("BOOLEAN", K_BOOLEAN, 7);
         CHECK("INTEGER", K_INTEGER, 7);
+        CHECK("BOOLEAN", K_BOOLEAN, 7);
         CHECK("DEFAULT", K_DEFAULT, 7);
         CHECK("IMPORTS", K_IMPORTS, 7);
         CHECK("EXPORTS", K_EXPORTS, 7);
@@ -319,14 +326,26 @@ TToken ASNLexer::LookupKeyword(void)
         CHECK("ENUMERATED", K_ENUMERATED, 10);
         break;
     case 11:
-        CHECK("DEFINITIONS", K_DEFINITIONS, 11);
         CHECK("StringStore", K_StringStore, 11);
+        CHECK("DEFINITIONS", K_DEFINITIONS, 11);
         break;
     case 13:
         CHECK("VisibleString", K_VisibleString, 13);
         break;
     }
     return T_TYPE_REFERENCE;
+}
+
+void ASNLexer::StartString(void)
+{
+    _ASSERT(TokenStarted());
+    m_StringValue.erase();
+}
+
+void ASNLexer::AddStringChar(char c)
+{
+    _ASSERT(TokenStarted());
+    m_StringValue += c;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/14 21:41:14  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.5  2000/08/25 15:58:48  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -86,12 +89,12 @@ class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out) const;
 
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const = 0;
-    virtual const char* GetXMLContents(void) const;
+    virtual const char* GetXMLContents(void) const = 0;
 };
 
 class CNullDataType : public CStaticDataType {
@@ -114,10 +117,12 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
-    void PrintDTD(CNcbiOstream& out) const;
     CTypeRef GetTypeInfo(void);
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
+
+    void PrintDTDExtra(CNcbiOstream& out) const;
 };
 
 class CRealDataType : public CStaticDataType {

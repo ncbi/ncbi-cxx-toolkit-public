@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/14 21:41:27  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.17  2000/11/08 17:02:53  vasilche
 * Added generation of modular DTD files.
 *
@@ -128,11 +131,12 @@ void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
 
 void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    CParent::PrintASN(out, indent);
     out << GetASNKeyword() << " OF ";
     GetElementType()->PrintASN(out, indent);
 }
 
-void CUniSequenceDataType::PrintDTD(CNcbiOstream& out) const
+void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out) const
 {
     const CDataType* data = GetElementType();
     const CReferenceDataType* ref =
@@ -143,7 +147,14 @@ void CUniSequenceDataType::PrintDTD(CNcbiOstream& out) const
         out << ref->UserTypeXmlTagName();
     else
         out << data->XmlTagName();
-    out << "* )>\n";
+    out << "* )>";
+}
+
+void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
+    const CDataType* data = GetElementType();
+    const CReferenceDataType* ref =
+        dynamic_cast<const CReferenceDataType*>(data);
     if ( !ref ) {
         // array of internal type, we should generate tag for element type
         if ( GetParentType() == 0 )

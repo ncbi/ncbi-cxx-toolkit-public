@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/14 21:41:25  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.23  2000/11/01 20:38:59  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -100,6 +103,7 @@ AutoPtr<CFileModules> ASNParser::Modules(const string& fileName)
     while ( Next() != T_EOF ) {
         modules->AddModule(Module());
     }
+    CopyComments(modules->LastComments());
     return modules;
 }
 
@@ -111,8 +115,16 @@ AutoPtr<CDataTypeModule> ASNParser::Module(void)
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
     Consume(K_BEGIN, "BEGIN");
+
+    Next();
+
+    CopyComments(module->Comments());
+
     ModuleBody(*module);
     Consume(K_END, "END");
+
+    CopyComments(module->LastComments());
+
     return module;
 }
 
@@ -143,10 +155,12 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             case K_EXPORTS:
                 Consume();
                 Exports(module);
+                CopyComments(module.Comments());
                 break;
             case K_IMPORTS:
                 Consume();
                 Imports(module);
+                CopyComments(module.Comments());
                 break;
             case T_TYPE_REFERENCE:
             case T_IDENTIFIER:
@@ -174,9 +188,10 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
 
 AutoPtr<CDataType> ASNParser::Type(void)
 {
-    int line = NextToken().GetLine();
+    int line = NextTokenLine();
     AutoPtr<CDataType> type(x_Type());
     type->SetSourceLine(line);
+    CopyLineComment(line, type->Comments());
     return type;
 }
 
@@ -238,15 +253,37 @@ CDataType* ASNParser::x_Type(void)
 	return 0;
 }
 
+bool ASNParser::HaveMoreElements(void)
+{
+    const AbstractToken& token = NextToken();
+    if ( token.GetToken() == T_SYMBOL ) {
+        switch ( token.GetSymbol() ) {
+        case ',':
+            Consume();
+            return true;
+        case '}':
+            Consume();
+            return false;
+        }
+    }
+    ParseError("',' or '}' expected");
+    return false;
+}
+
 CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
                                  bool allowDefaults)
 {
     AutoPtr<CDataMemberContainerType> container(containerType);
+    int line = NextTokenLine();
     ConsumeSymbol('{');
-    do {
-        container->AddMember(NamedDataType(allowDefaults));
-    } while ( ConsumeIfSymbol(',') );
-    ConsumeSymbol('}');
+    CopyLineComment(line, container->Comments(), eCombineNext);
+    for ( bool more = true; more; ) {
+        line = NextTokenLine();
+        AutoPtr<CDataMember> member = NamedDataType(allowDefaults);
+        more = HaveMoreElements();
+        CopyLineComment(line, member->Comments(), (more? eCombineNext: 0));
+        container->AddMember(member);
+    }
     return container.release();
 }
 
@@ -276,11 +313,15 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
 CEnumDataType* ASNParser::EnumeratedBlock(CEnumDataType* enumType)
 {
     AutoPtr<CEnumDataType> e(enumType);
+    int line = NextTokenLine();
     ConsumeSymbol('{');
-    do {
+    CopyLineComment(line, e->Comments(), eCombineNext);
+    for ( bool more = true; more; ) {
+        line = NextTokenLine();
         EnumeratedValue(*e);
-    } while ( ConsumeIfSymbol(',') );
-    ConsumeSymbol('}');
+        more = HaveMoreElements();
+        CopyLineComment(line, e->Comments(), (more? eCombineNext: 0));
+    }
     return e.release();
 }
 
@@ -302,7 +343,7 @@ void ASNParser::TypeList(list<string>& ids)
 
 AutoPtr<CDataValue> ASNParser::Value(void)
 {
-    int line = NextToken().GetLine();
+    int line = NextTokenLine();
     AutoPtr<CDataValue> value(x_Value());
     value->SetSourceLine(line);
     return value;
@@ -367,15 +408,14 @@ long ASNParser::Number(void)
     return value;
 }
 
-string ASNParser::String(void)
+const string& ASNParser::String(void)
 {
     Expect(T_STRING, "string");
-    const string& ret = Lexer().CurrentTokenValue();
     Consume();
-    return ret;
+    return L().StringValue();
 }
 
-string ASNParser::Identifier(void)
+const string& ASNParser::Identifier(void)
 {
     switch ( Next() ) {
     case T_TYPE_REFERENCE:
@@ -388,7 +428,7 @@ string ASNParser::Identifier(void)
 	return NcbiEmptyString;
 }
 
-string ASNParser::TypeReference(void)
+const string& ASNParser::TypeReference(void)
 {
     switch ( Next() ) {
     case T_TYPE_REFERENCE:
@@ -401,7 +441,7 @@ string ASNParser::TypeReference(void)
 	return NcbiEmptyString;
 }
 
-string ASNParser::ModuleReference(void)
+const string& ASNParser::ModuleReference(void)
 {
     switch ( Next() ) {
     case T_TYPE_REFERENCE:

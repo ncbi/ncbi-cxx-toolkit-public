@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/11/14 21:41:26  vasilche
+* Added preserving of ASN.1 definition comments.
+*
 * Revision 1.53  2000/11/07 17:26:26  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -183,6 +186,37 @@ void CDataType::SetSourceLine(int line)
 void CDataType::Warning(const string& mess) const
 {
     CNcbiDiag() << LocationString() << ": " << mess;
+}
+
+void CDataType::PrintASN(CNcbiOstream& /*out*/, int /*indent*/) const
+{
+    //PrintASNComments(out, m_Comments);
+}
+
+void CDataType::PrintDTD(CNcbiOstream& out) const
+{
+    PrintDTDComments(out, m_Comments);
+    PrintDTDElement(out);
+    out << '\n';
+    PrintDTDExtra(out);
+}
+
+void CDataType::PrintDTD(CNcbiOstream& out,
+                         const list<string>& extraComments) const
+{
+    PrintDTDComments(out, m_Comments);
+    bool oneLineComment = extraComments.size() == 1;
+    if ( !oneLineComment )
+        PrintDTDComments(out, extraComments);
+    PrintDTDElement(out);
+    if ( oneLineComment )
+        out << " <!--" << extraComments.front() << " -->";
+    out << '\n';
+    PrintDTDExtra(out);
+}
+
+void CDataType::PrintDTDExtra(CNcbiOstream& /*out*/) const
+{
 }
 
 void CDataType::SetInSet(const CUniSequenceDataType* sequence)
