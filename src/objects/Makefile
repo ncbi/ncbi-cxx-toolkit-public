@@ -1,4 +1,4 @@
-MODULES = access biblio blast blastdb cdd cn3d docsum entrez2 entrezgene \
+MODULES = omssa access biblio blast blastdb cdd cn3d docsum entrez2 entrezgene \
 		  featdef gbseq general id1 id2 medlars medline mim mla mmdb1 mmdb2 \
         mmdb3 ncbimime objprt proj pub pubmed scoremat seq seqalign \
 		  seqblock seqcode seqfeat seqloc seqres seqset submit \

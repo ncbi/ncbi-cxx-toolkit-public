@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("algo/ms" projects)
+#################################
+
+SUB_PROJ = omssa
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

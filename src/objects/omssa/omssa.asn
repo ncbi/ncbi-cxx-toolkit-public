@@ -1,0 +1,136 @@
+-- $Id: omssa.asn,v 1.1 2003/10/20 21:32:13 lewisg Exp $
+--**********************************************************************
+--
+--  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
+--  Lewis Geer, 2003
+--
+--  make using 
+--
+-- /netopt/ncbi_tools/c++/Release/bin/datatool -m omssa.asn -oc ObjOmssa -oA -od omssa.ini
+--
+--**********************************************************************
+
+OMMSA DEFINITIONS ::=
+BEGIN
+
+MSSpectrum ::= SEQUENCE {
+	charge SEQUENCE OF INTEGER,  -- may be more than one if unknown
+	precursormz INTEGER,  -- scaled
+	scale INTEGER,
+	mz SEQUENCE OF INTEGER,  -- scaled
+	abundance SEQUENCE OF INTEGER,  -- scaled
+	name VisibleString OPTIONAL, -- unique name of spectrum
+	number INTEGER -- unique number of spectrum
+	}
+
+MSSpectrumset ::= SEQUENCE OF MSSpectrum
+
+MSEnzymes ::= INTEGER {
+	trypsin (1),
+	argc (2),
+	aspn (3),
+	chymotrypsin (4),
+	formicacid (5),
+	lysc (6),
+	lyscp (7),
+	pepsina (8),
+	tryp-cnbr (9),
+	trychymo (10),
+	trypsinp (11),
+	v8de (12),
+	v8e (13),
+	none (14)  -- always highest bound
+	}
+
+MSMod ::= INTEGER {
+    	ntermacetyl (1),  -- n term acetylation
+    	moxy (2),         -- oxidation of methionine
+    	mcleave (3),      -- cleave n-term methionine
+	none(4)           -- always highest bound
+	}
+
+MSChargeHandle ::= INTEGER {
+	calculate (1),  -- guess the charge(s) from the data
+	usefile (2)     -- use what the input file says
+	}
+
+MSRequest ::= SEQUENCE {
+	spectra MSSpectrumset,
+	peptol REAL,  -- peptide mass tolerance
+	msmstol REAL, -- msms mass tolerance
+        haircut REAL, -- the intensity fraction below which peaks will be discarded
+	fixed SEQUENCE OF MSMod,
+	variable SEQUENCE OF MSMod,
+	enzyme MSEnzymes,
+	missedcleave INTEGER, 
+	db VisibleString,  -- database to search, e.g. "nr"
+	cull INTEGER,  -- parameter for s/n cutoff
+	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search
+	rid VisibleString OPTIONAL,  -- request id
+	chargehandling MSChargeHandle OPTIONAL  -- how to deal with charges
+	}
+
+MSIonType ::= INTEGER {
+	a (1),
+	b (2),
+        c (3),
+	x (4),
+	y (5),
+	z (6)
+	}
+	
+MSMZHit ::= SEQUENCE {
+	ion MSIonType,
+	charge INTEGER,
+	number INTEGER,
+	mz INTEGER  -- scaled m/z value
+}
+
+-- contains information about identical peptide sequences
+MSPepHit ::= SEQUENCE {
+	start INTEGER,
+	stop INTEGER,
+	gi INTEGER OPTIONAL,
+	accession VisibleString OPTIONAL,
+	defline VisibleString OPTIONAL
+}	
+
+-- hits to a given spectrum
+MSHits ::= SEQUENCE {
+	evalue REAL,
+	pvalue REAL,
+	charge INTEGER,  -- the charge state used in search.  -1 == not +1
+	pephits SEQUENCE OF MSPepHit,
+	mzhits SEQUENCE OF MSMZHit OPTIONAL,
+	pepstring VisibleString OPTIONAL,  -- the peptide sequence
+	threshold REAL OPTIONAL -- significance threshold
+	}
+
+MSHitError ::= INTEGER {
+	none (0),
+	generalerr (1),
+	unable2read (2),
+	notenuffpeaks (3)
+	}
+
+MSHitSet ::= SEQUENCE {
+	number INTEGER, -- unique number of spectrum
+	error MSHitError OPTIONAL,
+	hits SEQUENCE OF MSHits OPTIONAL,
+        filename VisibleString OPTIONAL -- place to put corresponding filename
+	}
+
+MSResponseError ::= INTEGER {
+	none (0),
+	generalerr (1),
+	noblastdb (2),
+	noinput (3)
+	}
+
+MSResponse ::= SEQUENCE {
+	hitsets SEQUENCE OF MSHitSet,
+	rid VisibleString OPTIONAL,  -- request id
+	error MSResponseError OPTIONAL
+	}	
+	
+END

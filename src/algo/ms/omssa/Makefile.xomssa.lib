@@ -1,0 +1,11 @@
+# $Id$
+# Author:  Lewis Geer
+
+# Build library "xomssa"
+#################################
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) $(NCBI_C_INCLUDE)
+
+SRC = SpectrumSet msladder msms mspeak nrutil omssa
+
+LIB = xomssa

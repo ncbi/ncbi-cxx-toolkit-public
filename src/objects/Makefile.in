@@ -5,7 +5,7 @@
 
 USR_PROJ = sources
 
-SUB_PROJ = tinyseq general biblio medline pub pubmed \
+SUB_PROJ = omssa tinyseq general biblio medline pub pubmed \
 		   featdef seqcode seqset seq \
 		   id1 id2 gbseq entrez2 submit medlars mla proj mmdb \
 		   cdd cn3d scoremat ncbimime access objprt docsum taxon1 mim \

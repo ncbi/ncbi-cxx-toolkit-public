@@ -1,0 +1,11 @@
+# $Id$
+
+# Meta-makefile ("omssa" library and apps)
+#################################
+
+LIB_PROJ = xomssa
+APP_PROJ = omssacl
+REQUIRES = C-Toolkit
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
