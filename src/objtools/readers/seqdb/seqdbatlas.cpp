@@ -621,7 +621,7 @@ void CSeqDBAtlas::ShowLayout(bool locked, Uint8 index)
     
     // MSVC fails to grok "ostream << [Uint8]". (Okalee-dokalee...)
     
-    cout << "\n\nShowing layout (index " << Int8(index)
+    cout << "\n\nShowing layout (index " << NStr::UInt8ToString(index)
          << "), current alloc = " << m_CurAlloc << endl;
     
     for(unsigned i = 0; i < m_Regions.size(); i++) {
