@@ -6,14 +6,14 @@ IMPFILES = $(MODULE_IMPORT:=.asn)
 FILES = $(MODULE).files
 MODULEFILE = $(MODULE).module
 
-FULL_MODULE = $(MODULE)__.cpp
-FULL_MODULE_BASE = $(MODULE)___.cpp
+#FULL_MODULE = $(MODULE)__.cpp
+#FULL_MODULE_BASE = $(MODULE)___.cpp
 
 all: sources makefiles
 
 all_files: sources makefiles
 
-sources: $(FILES) $(FULL_MODULE) $(FULL_MODULE_BASE)
+sources: $(FILES) #$(FULL_MODULE) $(FULL_MODULE_BASE)
 
 clean_sources:
 	-rm $(FILES)
@@ -30,34 +30,23 @@ purge_all_files:
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
-	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -of $@ -or $(MODULE_PATH) -oR $(top_srcdir) -od $(MODULE).def
+	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -oc $(MODULE) -or $(MODULE_PATH) -oR $(top_srcdir) -od $(MODULE).def
 
-$(FULL_MODULE_BASE): $(FILES)
-	for f in `grep GENFILES_LOCAL $(FILES) | sed 's/^.*=//'`; do echo '#include "'$$f'_.cpp"'; done > $@
+#$(FULL_MODULE_BASE): $(FILES)
+#	for f in `grep GENFILES_LOCAL $(FILES) | sed 's/^.*=//'`; do echo '#include "'$$f'_.cpp"'; done > $@
 
-$(FULL_MODULE): $(FULL_MODULE_BASE)
-	sed 's/_\.cpp/\.cpp/' $(FULL_MODULE_BASE) > $@
+#$(FULL_MODULE): $(FULL_MODULE_BASE)
+#	sed 's/_\.cpp/\.cpp/' $(FULL_MODULE_BASE) > $@
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
 Makefile.in: $(MODULEFILE)
 	@echo Updating $@
-	@( \
-		echo "LIB_PROJ = $(MODULE)"; \
-		echo "srcdir = @srcdir@"; \
-		echo "include @builddir@/Makefile.meta"; \
-	) > $@
+	@( echo "LIB_PROJ = $(MODULE)"; echo "srcdir = @srcdir@"; echo "include @builddir@/Makefile.meta"; ) > $@
 
 Makefile.$(MODULE).lib: $(MODULEFILE)
 	@echo Updating $@
-	@( \
-		echo 'LIB = $$(TMPL)'; \
-		echo 'LIBOBJ = $$(LIB)__ $$(LIB)___'; \
-	) > $@
-
-#		echo '#include $$(srcdir)/$(MODULE).files'; \
-#		echo '#LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_)'; \
-#		echo '#AR = -strip -x *.o SunWS_cache/*/*.o; $$(CONF_AR)'; \
+	@( echo 'LIB = $$(TMPL)'; echo 'LIBOBJ = $$(LIB)__ $$(LIB)___'; ) > $@
 
 $(MODULEFILE):
 
