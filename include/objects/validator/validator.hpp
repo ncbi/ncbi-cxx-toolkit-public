@@ -127,8 +127,8 @@ public:
     CValidError_CI(void);
     CValidError_CI(const CValidError& ve,
                    const string& errcode = kEmptyStr,
-                   EDiagSev minsev  = eDiag_Info,
-                   EDiagSev maxsev  = eDiag_Critical);
+                   EDiagSev minsev  = eDiagSevMin,
+                   EDiagSev maxsev  = eDiagSevMax);
     CValidError_CI(const CValidError_CI& iter);
     virtual ~CValidError_CI(void);
 
@@ -160,18 +160,19 @@ class NCBI_VALIDATOR_EXPORT CValidator : public CObject
 public:
 
     enum EValidOptions {
-        eVal_non_ascii       = 1,
-        eVal_no_context      = 2,
-        eVal_val_align       = 4,
-        eVal_val_exons       = 8,
-        eVal_splice_err      = 16,
-        eVal_ovl_pep_err     = 32,
-        eVal_need_taxid      = 64,
-        eVal_need_isojta     = 128, 
-        eVal_validate_id_set = 256,
+        eVal_non_ascii       = 0x1,
+        eVal_no_context      = 0x2,
+        eVal_val_align       = 0x4,
+        eVal_val_exons       = 0x8,
+        eVal_splice_err      = 0x10,
+        eVal_ovl_pep_err     = 0x20,
+        eVal_need_taxid      = 0x40,
+        eVal_need_isojta     = 0x80, 
+        eVal_validate_id_set = 0x100,
+        eVal_remote_fetch    = 0x200,
 
         // !!! For test purposes only {
-        eVal_perf_bottlenecks  = 512
+        eVal_perf_bottlenecks  = 0x1000
         // }
     };
 
@@ -269,6 +270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/04/04 18:29:06  shomrat
+* Added remote_fetch option
+*
 * Revision 1.9  2003/03/21 20:57:59  shomrat
 * Added validate is set agins db option
 *
