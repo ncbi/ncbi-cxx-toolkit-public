@@ -50,7 +50,8 @@ BEGIN_SCOPE(blast)
 
 CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
 {
-    m_ibIsProt = (program == eBlastp || program == eBlastx);
+    m_ibIsProt = (program == eBlastp || program == eBlastx || 
+                  program == ePSIBlast || program == eRPSBlast);
     
     SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
 
@@ -351,6 +352,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2004/12/20 20:17:00  camacho
+ * + PSI-BLAST
+ *
  * Revision 1.23  2004/11/17 20:22:38  camacho
  * 1. Implemented error handling at initialization time.
  * 2. Made initialization function name consistent with other BlastSeqSrc

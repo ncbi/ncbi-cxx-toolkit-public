@@ -61,6 +61,7 @@ GetQueryEncoding(EProgram program)
     case eBlastp: 
     case eTblastn:
     case eRPSBlast: 
+    case ePSIBlast:
         retval = BLASTP_ENCODING; 
         break;
 
@@ -89,6 +90,7 @@ GetSubjectEncoding(EProgram program)
 
     case eBlastp: 
     case eBlastx:
+    case ePSIBlast:
         retval = BLASTP_ENCODING; 
         break;
 
@@ -408,6 +410,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2004/12/20 20:17:00  camacho
+ * + PSI-BLAST
+ *
  * Revision 1.76  2004/11/12 16:43:34  camacho
  * Add handling of missing EProgram values to GetNumberOfFrames
  *
