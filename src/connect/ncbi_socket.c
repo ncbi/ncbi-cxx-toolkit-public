@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/03/22 17:43:54  vakatov
+ * Typo fixed in the SOCK_AllowSigPipeAPI() proto
+ *
  * Revision 6.20  2001/03/22 17:40:36  vakatov
  * + SOCK_AllowSigPipeAPI()
  *
@@ -366,7 +369,7 @@ static int/*bool*/ s_AllowSigPipe = 0/*false*/;
 #endif
 
 
-extern EIO_Status SOCK_AllowSigPipeAPI(void)
+extern void SOCK_AllowSigPipeAPI(void)
 {
 #if defined(NCBI_OS_UNIX)
     s_AllowSigPipe = 1/*true*/;
