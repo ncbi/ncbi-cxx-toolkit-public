@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/09/10 21:20:19  lavr
+ * Few unimportant layout changes
+ *
  * Revision 6.3  2001/06/04 17:00:18  lavr
  * Include files adjusted
  *
@@ -56,11 +59,11 @@ extern "C" {
 #endif
 
 
-extern CONNECTOR SERVICE_CreateConnector(const char *service);
+extern CONNECTOR SERVICE_CreateConnector(const char* service);
 
-extern CONNECTOR SERVICE_CreateConnectorEx(const char *service,
-                                           TSERV_Type types,
-                                           const SConnNetInfo *info);
+extern CONNECTOR SERVICE_CreateConnectorEx(const char*         service,
+                                           TSERV_Type          types,
+                                           const SConnNetInfo* net_info);
 
 #ifdef __cplusplus
 }  /* extern "C" */
