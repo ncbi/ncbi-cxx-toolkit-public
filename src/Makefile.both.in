@@ -41,9 +41,14 @@ default_rule: all
 
 
 ### C/C++ source file compilation (and maybe auto-dependencies) build rules
+# Build both shared and static libraries as PIC for the PubMed people.
 
-CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+#CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+#CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+CXXFLAGS_ALL = @f_compile@ \
+	$(CXXFLAGS) $(CXXFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+CFLAGS_ALL   = @f_compile@ \
+	$(CFLAGS) $(CFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 SOURCES      = @UNIX_SRC@ $(SRC) $(LIBOBJ)
 include $(builddir)/Makefile.$(Rules)
 
@@ -57,7 +62,7 @@ XLIBDEP = .$(LIB).dep
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
-	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XLOBJ)
+	$(AR) @f_outlib@$(XLIB) `lorder $(XLIBOBJ) $(XLOBJ) | tsort`
 	@$(RANLIB) $(XLIB)
 	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
@@ -66,7 +71,8 @@ $(XLIB): $(XLIBOBJ)
 
 ### The shared library build rule
 
-XDLLOBJ     = $(SOURCES:%=shared/%@obj_ext@) $(LOBJ:%=shared/%@obj_ext@)
+#XDLLOBJ     = $(SOURCES:%=shared/%@obj_ext@) $(LOBJ:%=shared/%@obj_ext@)
+XDLLOBJ     = $(XLIBOBJ) $(XLOBJ)
 XDLL        = $(LIB:%=@lib_pre@%@dll_ext@)
 XDLLDEP     = .$(LIB).dep
 XDLL_LIB    = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
