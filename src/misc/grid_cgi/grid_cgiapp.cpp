@@ -114,7 +114,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     try {
         page.reset(new CHTMLPage(GetPageTitle(), GetPageTemplate()));
     } catch (exception& e) {
-        ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
+        ERR_POST("Failed to create " << GetPageTitle()
+                                     << " HTML page: " << e.what());
         return 2;
     }
 
@@ -181,13 +182,14 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 
                 // Get an ouptut stream
                 CNcbiOstream& os = job_submiter.GetOStream();
-
-                OnJobSubmit(os, grid_ctx);
+                
+                PrepareJobData(os);
 
                 // Submit a job
                 string job_key = job_submiter.Submit();
                 res_cookies.Add("job_key", job_key);
                 grid_ctx.SetJobKey(job_key);
+                OnJobSubmitted(grid_ctx);
               
                 CHTMLText* jscript = new CHTMLText(GetRefreshJScript());
                 page->AddTagMap("JSCRIPT", jscript);
@@ -203,7 +205,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         OnEndProcessRequest(grid_ctx);
     }
     catch (exception& e) {
-        ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
+        ERR_POST("Failed to populate " << GetPageTitle() 
+                                       << " HTML page: " << e.what());
         return 3;
     }
 
@@ -213,7 +216,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         response.WriteHeader();
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
-        ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
+        ERR_POST("Failed to compose/send " << GetPageTitle() 
+                                           <<" HTML page: " << e.what());
         return 4;
     }
 
@@ -231,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/01 15:06:59  didenko
+ * Divided OnJobSubmit methos onto two PrepareJobData and OnJobSubmitted
+ *
  * Revision 1.3  2005/03/31 20:14:19  didenko
  * Added CGridCgiContext
  *

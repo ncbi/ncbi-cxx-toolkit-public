@@ -64,7 +64,10 @@ protected:
     virtual bool CollectParams(void);
 
     // Prepare the job's input data
-    virtual void OnJobSubmit(CNcbiOstream& os, CGridCgiContext& ctx);
+    virtual void PrepareJobData(CNcbiOstream& os);
+
+    // Show an information page
+    virtual void OnJobSubmitted(CGridCgiContext& ctx);
 
     // Get the job's result.
     virtual void OnJobDone(CNcbiIstream& is, CGridCgiContext& ctx);
@@ -173,18 +176,22 @@ bool CGridCgiSampleApplication::CollectParams()
 }
 
 
-void CGridCgiSampleApplication::OnJobSubmit(CNcbiOstream& os, CGridCgiContext& ctx)
+void CGridCgiSampleApplication::PrepareJobData(CNcbiOstream& os)
 {   
     // Send jobs input data
     os << m_Doubles.size() << ' ';
     for (size_t j = 0; j < m_Doubles.size(); ++j) {
         os << m_Doubles[j] << ' ';
     }
+}
+
   
+void CGridCgiSampleApplication::OnJobSubmitted(CGridCgiContext& ctx)
+{   
     // Render a report page
     CHTMLText* inp_text = new CHTMLText(
-            "<p/>Input Data : <@INPUT_DATA@><br/>"
-            "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check Status\">");
+               "<p/>Input Data : <@INPUT_DATA@><br/>"
+               "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check Status\">");
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
     CHTMLPlainText* idoubles = new CHTMLPlainText(VectorToString(m_Doubles));
     ctx.GetHTMLPage().AddTagMap("INPUT_DATA", idoubles);
@@ -329,6 +336,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/01 15:07:31  didenko
+ * Divided OnJobSubmit methos onto two PrepareJobData and OnJobSubmitted
+ *
  * Revision 1.3  2005/03/31 20:14:59  didenko
  * Added CGrigCgiContext
  *

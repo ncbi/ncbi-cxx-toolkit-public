@@ -129,11 +129,16 @@ protected:
     /// will be called.
     ///
     virtual bool CollectParams(void) = 0;
-
+   
     /// This method is called when a job is ready to be send to a the queue.
     /// Override this method to prepare input data for the worker node.
     /// 
-    virtual void OnJobSubmit(CNcbiOstream& os,CGridCgiContext& ctx) = 0;
+    virtual void PrepareJobData(CNcbiOstream& os) = 0;
+
+    /// This method is called just after a job has been submitted.
+    /// Override this method to render information HTML page.
+    /// 
+    virtual void OnJobSubmitted(CGridCgiContext& ctx) {}
 
     /// This method is call when a worker node finishes its job and 
     /// result is ready to be retrieved.
@@ -211,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/01 15:06:21  didenko
+ * Divided OnJobSubmit methos onto two PrepareJobData and OnJobSubmitted
+ *
  * Revision 1.4  2005/03/31 20:13:37  didenko
  * Added CGridCgiContext
  *
