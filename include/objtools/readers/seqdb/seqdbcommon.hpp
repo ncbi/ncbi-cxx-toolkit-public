@@ -35,129 +35,9 @@
 
 BEGIN_NCBI_SCOPE
 
-// Temporary development tools/tricks
+// Publically visible seqdb related definitions.
 
-extern int seqdb_debug_class;
-enum seqdb_debug_bits {
-    debug_rh    = 1,
-    debug_rhsum = 2,
-    debug_mvol  = 4,
-    debug_alias = 8,
-    debug_oid   = 16
-};
-
-#define ifdebug_rh    if (seqdb_debug_class & debug_rh)    cerr
-#define ifdebug_rhsum if (seqdb_debug_class & debug_rhsum) cerr
-#define ifdebug_mvol  if (seqdb_debug_class & debug_mvol)  cerr
-#define ifdebug_alias if (seqdb_debug_class & debug_alias) cerr
-#define ifdebug_oid   if (seqdb_debug_class & debug_oid)   cerr
-
-// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
-
-const char kSeqTypeProt = 'p';
-const char kSeqTypeNucl = 'n';
-const char kSeqTypeUnkn = '-';
-
-// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
-
-const Uint4 kSeqDBNuclNcbiNA8  = 0;
-const Uint4 kSeqDBNuclBlastNA8 = 1;
-
-// Flag specifying whether to use memory mapping.
-
-const bool kSeqDBMMap   = true;
-const bool kSeqDBNoMMap = false;
-
-// Portable byte swapping from marshalled version
-
-#ifdef WORDS_BIGENDIAN
-
-template<typename T>
-inline T SeqDB_GetStdOrd(const T * stdord_obj)
-{
-    return *stdord_obj;
-}
-
-template<typename T>
-inline T SeqDB_GetBroken(const T * stdord_obj)
-{
-    unsigned char * stdord =
-	(unsigned char*)(stdord_obj);
-    
-    unsigned char * pend = stdord;
-    unsigned char * pcur = stdord + sizeof(T) - 1;
-    
-    T retval = *pcur;
-    
-    while(pcur > pend) {
-	retval <<= 8;
-	retval += *--pcur;
-    }
-    
-    return retval;
-}
-
-#else
-
-template<typename T>
-inline T SeqDB_GetStdOrd(const T * stdord_obj)
-{
-    unsigned char * stdord =
-	(unsigned char*)(stdord_obj);
-    
-    unsigned char * pend = stdord + sizeof(T) - 1;
-    unsigned char * pcur = stdord;
-    
-    T retval = *pcur;
-    
-    while(pcur < pend) {
-	retval <<= 8;
-	retval += *++pcur;
-    }
-    
-    return retval;
-}
-
-template<typename T>
-inline T SeqDB_GetBroken(const T * stdord_obj)
-{
-    return *stdord_obj;
-}
-
-#endif
-
-// Combine two paths, trying a little to avoid duplicated delimiters.
-// If either string is empty, the other is returned.  Conceptually,
-// the first path is "cwd" and the second path is the filename.  So,
-// if the second path starts with "/", the first path is ignored.
-
-string SeqDB_CombinePath(const string & path, const string & file);
-
-// Returns a path minus filename (actually, last component).
-
-string SeqDB_GetDirName (string s);
-
-// Returns a filename minus greedy path.
-
-string SeqDB_GetFileName(string s);
-
-// Returns a filename minus non-greedy extension.
-
-string SeqDB_GetBasePath(string s);
-
-// Composition of the above two functions; returns a filename minus
-// greedy path and non-greedy extension.
-
-string SeqDB_GetBaseName(string s);
-
-// Find the full name, minus extension, of a ".?al" or ".?in" file,
-// and return it.  If not found, return null.
-
-string SeqDB_FindBlastDBPath(const string & file_name, char dbtype);
-
-
-class CSeqDBException : public CException
-{
+class CSeqDBException : public CException {
 public:
     enum EErrCode {
         eArgErr,
@@ -176,6 +56,23 @@ public:
     
     NCBI_EXCEPTION_DEFAULT(CSeqDBException,CException);
 };
+
+// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
+
+const char kSeqTypeProt = 'p';
+const char kSeqTypeNucl = 'n';
+const char kSeqTypeUnkn = '-';
+
+// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
+
+const Uint4 kSeqDBNuclNcbiNA8  = 0;
+const Uint4 kSeqDBNuclBlastNA8 = 1;
+
+// Flag specifying whether to use memory mapping.
+
+const bool kSeqDBMMap   = true;
+const bool kSeqDBNoMMap = false;
+
 
 END_NCBI_SCOPE
 
