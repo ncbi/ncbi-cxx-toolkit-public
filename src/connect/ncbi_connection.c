@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/25 16:55:48  lavr
+ * CONN_ReInit bugs fixed
+ *
  * Revision 6.5  2001/01/23 23:10:53  lavr
  * Typo corrected in description of connection structure
  *
@@ -171,17 +174,19 @@ extern EIO_Status CONN_ReInit
                 status = (*conn->meta.close)(conn->meta.c_close,
                                              conn->l_timeout);
                 if (status != eIO_Success) {
-                    CONN_LOG(eLOG_Error,
+                    CONN_LOG(connector ? eLOG_Error : eLOG_Warning,
                              "[CONN_Reinit]  Cannot close current connection");
-                    return status;
+                    if (connector)
+                        return status;
                 }
             }
             conn->state = eCONN_Closed;
         }
-        
+
         for (x_conn = conn->meta.list; x_conn; x_conn = x_conn->next) {
             if (x_conn == connector) {
-                if (!x_conn->next)
+                /* Reinit with the same and the only connector - allowed */
+                if (!x_conn->next && x_conn == conn->meta.list)
                     break;
                 status = eIO_Unknown;
                 CONN_LOG(eLOG_Error,
@@ -412,6 +417,8 @@ static EIO_Status s_CONN_Read
     /* flush the unwritten output data, if any */
     CONN_Flush(conn);
 
+    *n_read = 0;
+
     /* check if the read method is specified at all */
     if (!conn->meta.read) {
         status = eIO_NotSupported;
@@ -431,7 +438,7 @@ static EIO_Status s_CONN_Read
     
     /* read data from the connection */
     {{
-        size_t x_read = 0;
+        size_t x_read;
         /* call current connector's "READ" method */
         status = (*conn->meta.read)(conn->meta.c_read,
                                     buf, size, &x_read, conn->r_timeout);
