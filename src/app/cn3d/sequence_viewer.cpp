@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/12 19:20:45  thiessen
+* working block deletion
+*
 * Revision 1.18  2000/10/12 16:22:45  thiessen
 * working block split
 *
@@ -146,6 +149,8 @@ public:
         // edit menu
         MID_ENABLE_EDIT,
         MID_SPLIT_BLOCK,
+        MID_MERGE_BLOCKS,
+        MID_DELETE_BLOCK,
         MID_SYNC_STRUCS,
         MID_SYNC_STRUCS_ON,
 
@@ -174,6 +179,8 @@ private:
 
     wxMenuBar *menuBar;
 
+    SequenceViewerWidget::eMouseMode prevMouseMode;
+
 public:
     // scroll over to a given column
     void ScrollToColumn(int column) { viewerWidget->ScrollToColumn(column); };
@@ -183,7 +190,24 @@ public:
     bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
 
     bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }
-    void SplitBlockOff(void) { menuBar->Check(MID_SPLIT_BLOCK, false); }
+    void SplitBlockOff(void) {
+        menuBar->Check(MID_SPLIT_BLOCK, false);
+        SetCursor(wxNullCursor);
+    }
+
+    bool DoMergeBlocks(void) const { return menuBar->IsChecked(MID_MERGE_BLOCKS); }
+    void MergeBlocksOff(void)
+    {
+        menuBar->Check(MID_MERGE_BLOCKS, false); 
+        viewerWidget->SetMouseMode(prevMouseMode);
+        SetCursor(wxNullCursor);
+    }
+
+    bool DoDeleteBlock(void) const { return menuBar->IsChecked(MID_DELETE_BLOCK); }
+    void DeleteBlockOff(void) {
+        menuBar->Check(MID_DELETE_BLOCK, false);
+        SetCursor(wxNullCursor);
+    }
 
     void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
@@ -219,6 +243,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->Append(MID_ENABLE_EDIT, "&Enable Editor", noHelp, true);
     menu->AppendSeparator();
     menu->Append(MID_SPLIT_BLOCK, "&Split Block", noHelp, true);
+    menu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", noHelp, true);
+    menu->Append(MID_DELETE_BLOCK, "&Delete Block", noHelp, true);
     menu->Append(MID_SYNC_STRUCS, "Sync Structure &Colors");
     menu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", noHelp, true);
     menuBar->Append(menu, "&Edit");
@@ -245,6 +271,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menuBar->Check(MID_SPLIT, true);
     viewerWidget->TitleAreaOff();
     menuBar->Check(MID_SPLIT_BLOCK, false);
+    menuBar->Check(MID_MERGE_BLOCKS, false);
+    menuBar->Check(MID_DELETE_BLOCK, false);
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
 
@@ -299,10 +327,30 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             EnableEditorMenuItems(!editorOn);
             break;
         case MID_SPLIT_BLOCK:
+            if (DoMergeBlocks()) MergeBlocksOff();
+            if (DoDeleteBlock()) DeleteBlockOff();
             if (menuBar->IsChecked(MID_SPLIT_BLOCK))
                 SetCursor(*wxCROSS_CURSOR);
             else
-                SetCursor(wxNullCursor);
+                SplitBlockOff();
+            break;
+        case MID_MERGE_BLOCKS:
+            if (DoSplitBlock()) SplitBlockOff();
+            if (DoDeleteBlock()) DeleteBlockOff();
+            if (menuBar->IsChecked(MID_MERGE_BLOCKS)) {
+                SetCursor(*wxCROSS_CURSOR);
+                prevMouseMode = viewerWidget->GetMouseMode();
+                viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns);
+            } else
+                MergeBlocksOff();
+            break;
+        case MID_DELETE_BLOCK:
+            if (DoSplitBlock()) SplitBlockOff();
+            if (DoMergeBlocks()) MergeBlocksOff();
+            if (menuBar->IsChecked(MID_DELETE_BLOCK))
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                DeleteBlockOff();
             break;
         case MID_SYNC_STRUCS:
             viewer->RedrawAlignedMolecules();
@@ -319,8 +367,9 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
         menuBar->Enable(i, enabled);
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
     if (!enabled) {
-        menuBar->Check(MID_SPLIT_BLOCK, false);
-        SetCursor(wxNullCursor);
+        SplitBlockOff();
+        MergeBlocksOff();
+        DeleteBlockOff();
     }
 }
 
@@ -472,12 +521,10 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(int column,
     bool isHighlighted,
         result = alignment->GetCharacterTraitsAt(column, row, character, color, &isHighlighted);
     
-    *drawBackground = true;
-    if (isHighlighted)
+    if (isHighlighted) {
+        *drawBackground = true;
         *cellBackgroundColor = highlightColor;
-    else if (alignment->IsEmphasized(column, row))
-        cellBackgroundColor->Set(128,200,128);
-    else
+    } else
         *drawBackground = false;
 
     return result;
@@ -784,14 +831,17 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         if ((*viewerWindow)->DoSplitBlock()) {
             if (alignment->SplitBlock(column)) {
                 (*viewerWindow)->SplitBlockOff();
-                (*viewerWindow)->SetCursor(wxNullCursor);
                 (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
             }
             return false;
         }
-//        alignment->EmphasizeBlock(column, row);
-//        messenger->PostRedrawSequenceViewers();
-//        return false;
+        if ((*viewerWindow)->DoDeleteBlock()) {
+            if (alignment->DeleteBlock(column)) {
+                (*viewerWindow)->DeleteBlockOff();
+                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+            }
+            return false;
+        }
     }
 
     return true;
@@ -802,6 +852,14 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
 {
     TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
         << columnRight << ',' << rowBottom);
+
+    if (alignment && (*viewerWindow)->DoMergeBlocks()) {
+        if (alignment->MergeBlocks(columnLeft, columnRight)) {
+            (*viewerWindow)->MergeBlocksOff();
+            (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+        }
+        return;
+    }
 
     if (!controlDown)
         messenger->RemoveAllHighlights(true);

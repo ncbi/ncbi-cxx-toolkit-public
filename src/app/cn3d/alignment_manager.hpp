@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/12 19:20:37  thiessen
+* working block deletion
+*
 * Revision 1.14  2000/10/12 16:22:37  thiessen
 * working block split
 *
@@ -161,7 +164,7 @@ public:
 
     ///// editing functions /////
 
-    // if in an alingned block, give block column and width of that position; otherwise, -1
+    // if in an aligned block, give block column and width of that position; otherwise, -1
     void GetAlignedBlockPosition(int alignmentIndex, int *blockColumn, int *blockWidth) const;
 
     // returns true if any boundary shift actually occurred
@@ -170,6 +173,13 @@ public:
     // splits a block such that alignmentIndex is the first column of the new block;
     // returns false if no split occurred (e.g. if index is not inside aligned block)
     bool SplitBlock(int alignmentIndex);
+
+    // merges all blocks that overlap specified range - assuming no unaligned blocks
+    // in that range. Returns true if any merge(s) occurred, false otherwise.
+    bool MergeBlocks(int fromAlignmentIndex, int toAlignmentIndex);
+
+    // deletes the block containing this index; returns true if deletion occurred.
+    bool DeleteBlock(int alignmentIndex);
     
 private:
     ConservationColorer *conservationColorer;
@@ -206,8 +216,6 @@ private:
     // given a row and seqIndex, find block that contains that residue
     const Block * GetBlock(int row, int seqIndex) const;
 
-    const Block *emphasizedBlock1, *emphasizedBlock2;
-
 public:
     int NBlocks(void) const { return blocks.size(); }
     int NRows(void) const { return sequences->size(); }
@@ -227,14 +235,6 @@ public:
     // called when user selects some part of a row
     void SelectedRange(int row, int from, int to) const;
 
-    // add an emphasis (not highlight) color to this block's background
-    void EmphasizeBlock(int alignmentIndex, int row);
-    void UnemphasizeBlocks(void)
-        { emphasizedBlock1 = emphasizedBlock2 = NULL; }
-    bool IsEmphasized(int alignmentIndex, int row) const
-		{ const Block *block = blockMap[alignmentIndex].block;
-		  return (block &&
-            (block == emphasizedBlock1 || block == emphasizedBlock2)); }
 };
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these

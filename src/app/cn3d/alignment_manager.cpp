@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/12 19:20:45  thiessen
+* working block deletion
+*
 * Revision 1.16  2000/10/12 16:22:45  thiessen
 * working block split
 *
@@ -234,7 +237,6 @@ BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList,
     messenger(mesg), conservationColorer(NULL)
 {
     InitCache();
-    UnemphasizeBlocks();
 
     // create conservation colorer
     conservationColorer = new ConservationColorer();
@@ -816,13 +818,14 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
     if (!info.block->IsAligned() || info.block->width < 2 || info.blockColumn == 0)
         return false;
 
+    TESTMSG("splitting block");
     UngappedAlignedBlock *newAlignedBlock = new UngappedAlignedBlock(sequences);
     newAlignedBlock->width = info.block->width - info.blockColumn;
     info.block->width = info.blockColumn;
 
     const Block::Range *range;
     int oldTo;
-    for (int row=0; row < info.block->NSequences(); row++) {
+    for (int row=0; row<NRows(); row++) {
         range = info.block->GetRangeOfRow(row);
         oldTo = range->to;
         info.block->SetRangeOfRow(row, range->from, range->from + info.block->width - 1);
@@ -838,11 +841,101 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
     return true;
 }
 
-void BlockMultipleAlignment::EmphasizeBlock(int alignmentIndex, int row)
+bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignmentIndex)
 {
-    const Block *block = blockMap[alignmentIndex].block;
-    emphasizedBlock2 = emphasizedBlock1;
-    emphasizedBlock1 = block;
+    Block
+        *expandedBlock = blockMap[fromAlignmentIndex].block,
+        *lastBlock = blockMap[toAlignmentIndex].block;
+    if (expandedBlock == lastBlock) return false;
+    int i;
+    for (i=fromAlignmentIndex; i<=toAlignmentIndex; i++)
+        if (!blockMap[i].block->IsAligned()) return false;
+    
+    TESTMSG("merging block(s)");
+    for (i=0; i<NRows(); i++)
+        expandedBlock->SetRangeOfRow(i,
+            expandedBlock->GetRangeOfRow(i)->from, lastBlock->GetRangeOfRow(i)->to);
+    expandedBlock->width = lastBlock->GetRangeOfRow(0)->to - expandedBlock->GetRangeOfRow(0)->from + 1;
+
+    Block *deletedBlock = NULL, *blockToDelete;
+    for (i=fromAlignmentIndex; i<=toAlignmentIndex; i++) {
+        blockToDelete = blockMap[i].block;
+        if (blockToDelete == expandedBlock) continue;
+        if (blockToDelete != deletedBlock) {
+            deletedBlock = blockToDelete;
+            RemoveBlock(blockToDelete);
+        }
+    }    
+
+    if (!CheckAlignedBlock(expandedBlock))
+        ERR_POST(Error << "BlockMultipleAlignment::MergeBlocks() - merge failed to create valid block");
+
+    UpdateBlockMapAndConservationColors();
+    messenger->PostRedrawSequenceViewers();
+    return true;
+}
+
+bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
+{
+    Block *block = blockMap[alignmentIndex].block;
+    if (!block || !block->IsAligned()) return false;
+
+    TESTMSG("deleting block");
+    Block
+        *prevBlock = GetBlockBefore(block),
+        *nextBlock = GetBlockAfter(block);
+
+    // unaligned blocks on both sides
+    if (prevBlock && !prevBlock->IsAligned() && nextBlock && !nextBlock->IsAligned()) {
+        const Block::Range *prevRange, *nextRange;
+        for (int row=0; row<NRows(); row++) {
+            prevRange = prevBlock->GetRangeOfRow(row);
+            nextRange = nextBlock->GetRangeOfRow(row);
+            prevBlock->SetRangeOfRow(row, prevRange->from, nextRange->to);
+        }
+        prevBlock->width += block->width + nextBlock->width;
+        TESTMSG("removing extra unaligned block");
+        RemoveBlock(nextBlock);
+    }
+
+    // unaligned block on left only
+    else if (prevBlock && !prevBlock->IsAligned()) {
+        const Block::Range *prevRange, *range;
+        for (int row=0; row<NRows(); row++) {
+            prevRange = prevBlock->GetRangeOfRow(row);
+            range = block->GetRangeOfRow(row);
+            prevBlock->SetRangeOfRow(row, prevRange->from, range->to);
+        }
+        prevBlock->width += block->width;
+    }
+
+    // unaligned block on right only
+    else if (nextBlock && !nextBlock->IsAligned()) {
+        const Block::Range *range, *nextRange;
+        for (int row=0; row<NRows(); row++) {
+            range = block->GetRangeOfRow(row);
+            nextRange = nextBlock->GetRangeOfRow(row);
+            nextBlock->SetRangeOfRow(row, range->from, nextRange->to);
+        }
+        nextBlock->width += block->width;
+    }
+
+    // no adjacent unaligned blocks
+    else {
+        TESTMSG("creating new unaligned block");
+        Block *newBlock = CreateNewUnalignedBlockBetween(prevBlock, nextBlock);
+        if (prevBlock)
+            InsertBlockAfter(prevBlock, newBlock);
+        else if (nextBlock)
+            InsertBlockBefore(newBlock, nextBlock);
+        else
+            blocks.push_back(newBlock);
+    }
+
+    RemoveBlock(block);
+    UpdateBlockMapAndConservationColors();
+    messenger->PostRedrawSequenceViewers();
+    return true;
 }
 
 
