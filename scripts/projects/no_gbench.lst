@@ -1,0 +1,22 @@
+corelib
+util
+connect
+cgi
+html
+misc
+serial
+bdb
+sqlite
+dbapi
+objects
+objmgr
+objtools
+ctools
+app
+algo
+check
+gui
+-gui/core
+-gui/plugins
+-gui/gbench
+test update-only
