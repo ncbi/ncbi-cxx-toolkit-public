@@ -30,8 +30,12 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 }
 
 
-bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
+void CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
+    // Already have it
+    if ( prj.m_ProjType == CProjKey::eMsvc)
+        return;
+
     CMsvcPrjProjectContext project_context(prj);
     CVisualStudioProject xmlprj;
 
@@ -542,8 +546,6 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
     SaveIfNewer(project_path, xmlprj);
 
-    return true;
-
 }
 
 static 
@@ -609,6 +611,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/05/10 19:55:08  gorelenk
+ * Changed CMsvcProjectGenerator::Generate .
+ *
  * Revision 1.31  2004/05/10 14:28:01  gorelenk
  * Changed implementation CMsvcProjectGenerator::Generate .
  *
