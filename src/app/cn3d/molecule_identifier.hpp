@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/07/04 19:38:55  thiessen
+* finish user annotation system
+*
 * Revision 1.2  2001/06/29 18:12:53  thiessen
 * initial (incomplete) user annotation system
 *
@@ -74,6 +77,9 @@ public:
         std::string pdbID, int pdbChain, int gi, std::string accession);
     static const MoleculeIdentifier * GetIdentifier(const Sequence *sequence,
         std::string pdbID, int pdbChain, int mmdbID, int gi, std::string accession);
+
+    // get identifier for MMDB ID + molecule (NULL if not found)
+    static const MoleculeIdentifier * FindIdentifier(int mmdbID, int moleculeID);
 
     // clear identifier store (e.g. when a new file is loaded)
     static void ClearIdentifiers(void);

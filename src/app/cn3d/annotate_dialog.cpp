@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/04 19:39:16  thiessen
+* finish user annotation system
+*
 * Revision 1.1  2001/06/29 18:13:57  thiessen
 * initial (incomplete) user annotation system
 *
@@ -43,6 +46,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/style_dialog.hpp"
+#include "cn3d/structure_set.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,19 +72,21 @@
 #define ID_B_MOVE_DOWN 10005
 #define ID_L_DISPLAYED 10006
 #define ID_LINE 10007
-#define ID_B_NEW 10008
-#define ID_B_EDIT 10009
-#define ID_B_MOVE 10010
-#define ID_B_DELETE 10011
-#define ID_B_DONE 10012
+#define ID_ST_NAME 10008
+#define ID_B_NEW 10009
+#define ID_ST_DESCR 10010
+#define ID_B_HIGH 10011
+#define ID_B_EDIT 10012
+#define ID_B_MOVE 10013
+#define ID_B_DELETE 10014
+#define ID_B_DONE 10015
 wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
-#define ID_T_NAME 10013
-#define ID_B_EDIT_STYLE 10014
-#define ID_X_DESCR 10015
-#define ID_T_DESCR 10016
-#define ID_B_EDIT_DONE 10017
-#define ID_B_EDIT_CANCEL 10018
+#define ID_T_NAME 10016
+#define ID_B_EDIT_STYLE 10017
+#define ID_T_DESCR 10018
+#define ID_B_EDIT_DONE 10019
+#define ID_B_EDIT_CANCEL 10020
 wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,6 +104,10 @@ BEGIN_SCOPE(Cn3D)
         return; \
     }
 
+#define ANNOT_FROM_CLIENT_DATA(listbox) \
+    (reinterpret_cast < StyleManager::UserAnnotation * > \
+        ((listbox)->GetClientData((listbox)->GetSelection())))
+
 BEGIN_EVENT_TABLE(AnnotateDialog, wxDialog)
     EVT_CLOSE       (       AnnotateDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    AnnotateDialog::OnButton)
@@ -110,8 +120,7 @@ AnnotateDialog::AnnotateDialog(wxWindow *parent, StyleManager *manager, const St
     styleManager(manager), structureSet(set)
 {
     // get the structure highlights present when this dialog is created
-    GlobalMessenger()->
-        GetHighlightedResiduesWithStructure(const_cast<ResidueMap*>(&highlightedResidues));
+    GlobalMessenger()->GetHighlightedResiduesWithStructure(&highlightedResidues);
 
     // construct the panel
     wxSizer *topSizer = SetupAnnotationControlDialog(this, false);
@@ -148,16 +157,25 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
         case ID_B_DELETE:
             DeleteAnnotation();
             break;
-        case ID_B_DONE:
-            EndModal(wxOK);
+        case ID_B_HIGH: {
+            DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
+            if (available->GetSelection() >= 0) {
+                StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
+                if (annotation) {
+                    GlobalMessenger()->SetHighlights(annotation->residues);
+                    highlightedResidues = annotation->residues;
+                } else
+                    ERR_POST(Error << "AnnotateDialog::OnButton() - error highlighting annotation #"
+                        << available->GetSelection());
+            }
             break;
+        }
         case ID_B_MOVE_UP: case ID_B_MOVE_DOWN: {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(displayed, ID_L_DISPLAYED, wxListBox)
             if (displayed->GetSelection() >= 0) {
-                if (styleManager->ReprioritizeDisplayOrder(
-                        reinterpret_cast<StyleManager::UserAnnotation *>(
-                            displayed->GetClientData(displayed->GetSelection())),
-                        (event.GetId() == ID_B_MOVE_UP)))
+                StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(displayed);
+                if (annotation && styleManager->
+                        ReprioritizeDisplayOrder(annotation, (event.GetId() == ID_B_MOVE_UP)))
                     ResetListBoxes();
                 else
                     ERR_POST(Error << "AnnotateDialog::OnButton() - error reprioritizing annotation #"
@@ -169,9 +187,9 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
 			int listID = (event.GetId() == ID_B_TURN_OFF) ? ID_L_DISPLAYED : ID_L_AVAILABLE;
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listBox, listID, wxListBox)
             if (listBox->GetSelection() >= 0) {
-				StyleManager::UserAnnotation *annotation = reinterpret_cast<StyleManager::UserAnnotation *>
-                    (listBox->GetClientData(listBox->GetSelection()));
-                if (styleManager->DisplayAnnotation(annotation, (event.GetId() == ID_B_TURN_ON)))
+                StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(listBox);
+                if (annotation && styleManager->
+                        DisplayAnnotation(annotation, (event.GetId() == ID_B_TURN_ON)))
                     ResetListBoxes();
                 else
                     ERR_POST(Error << "AnnotateDialog::OnButton() - error toggling annotation #"
@@ -179,6 +197,9 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
             }
             break;
         }
+        case ID_B_DONE:
+            EndModal(wxOK);
+            break;
         default:
             event.Skip();
     }
@@ -199,7 +220,6 @@ void AnnotateDialog::OnSelection(wxCommandEvent& event)
     // turn on corresponding item in other box
     for (e=0; e<eventBox->Number(); e++) {
         if (eventBox->Selected(e)) {
-            ERR_POST(Info << "eventBox selected " << e);
             for (o=0; o<otherBox->Number(); o++) {
                 if (otherBox->GetClientData(o) == eventBox->GetClientData(e)) {
                     otherBox->SetSelection(o, true);
@@ -215,16 +235,19 @@ void AnnotateDialog::OnSelection(wxCommandEvent& event)
 
 void AnnotateDialog::SetButtonStates(void)
 {
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(button, ID_B_NEW, wxButton)
-    button->Enable(HighlightsPresent());
-
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(displayed, ID_L_DISPLAYED, wxListBox)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bTurnOn, ID_B_TURN_ON, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bTurnOff, ID_B_TURN_OFF, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bMoveUp, ID_B_MOVE_UP, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bMoveDown, ID_B_MOVE_DOWN, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNew, ID_B_NEW, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEdit, ID_B_EDIT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bMove, ID_B_MOVE, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bHigh, ID_B_HIGH, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_ST_NAME, wxStaticText)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tDescr, ID_ST_DESCR, wxStaticText)
 
     bool availableSelected = (available->GetSelection() >= 0);
     bool displayedSelected = (displayed->GetSelection() >= 0);
@@ -232,7 +255,21 @@ void AnnotateDialog::SetButtonStates(void)
     bTurnOff->Enable(displayedSelected);
     bMoveUp->Enable(displayedSelected && displayed->GetSelection() > 0);
     bMoveDown->Enable(displayedSelected && displayed->GetSelection() < displayed->Number() - 1);
+
+    bNew->Enable(HighlightsPresent());
     bEdit->Enable(availableSelected);
+    bMove->Enable(availableSelected && HighlightsPresent());
+    bDelete->Enable(availableSelected);
+
+    bHigh->Enable(availableSelected);
+    const StyleManager::UserAnnotation *annotation = NULL;
+    if (availableSelected) {
+        annotation = ANNOT_FROM_CLIENT_DATA(available);
+        if (!annotation)
+            ERR_POST(Error << "AnnotateDialog::SetButtonStates() - NULL annotation pointer");
+    }
+    tName->SetLabel(annotation ? annotation->name.c_str() : "");
+    tDescr->SetLabel(annotation ? annotation->description.c_str() : "");
 }
 
 // recreates the list box entries, trying to keep current selection
@@ -294,12 +331,17 @@ void AnnotateDialog::NewAnnotation(void)
     int result = dialog.ShowModal();
     GlobalMessenger()->SuspendHighlighting(false);
 
-    // copy name and description from dialog
     if (result == wxOK) {
+        // copy name and description from dialog
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_T_NAME, wxTextCtrl)
         newAnnotation->name = tName->GetValue().c_str();
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tDescr, ID_T_DESCR, wxTextCtrl)
         newAnnotation->description = tDescr->GetValue().c_str();
+
+        // set selection to new annotation
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
+        available->SetSelection(available->Number() - 1);
+
     } else { // wxCANCEL
         if (!styleManager->RemoveUserAnnotation(newAnnotation))
             ERR_POST(Error << "AnnotateDialog::NewAnnotation() - error removing new annotation");
@@ -312,8 +354,7 @@ void AnnotateDialog::EditAnnotation(void)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
     if (available->GetSelection() < 0) return;
-    StyleManager::UserAnnotation *annotation = reinterpret_cast<StyleManager::UserAnnotation *>
-        (available->GetClientData(available->GetSelection()));
+    StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
     StyleSettings *style = NULL;
     if (!annotation || (style=styleManager->GetUserStyle(annotation->styleID)) == NULL) {
         ERR_POST(Error << "AnnotateDialog::EditAnnotation() - error getting annotation and style");
@@ -325,14 +366,16 @@ void AnnotateDialog::EditAnnotation(void)
     AnnotationEditorDialog dialog(this, style, structureSet, *annotation);
     int result = dialog.ShowModal();
 
-    // copy name and description from dialog
     if (result == wxOK) {
+        // copy name and description from dialog
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_T_NAME, wxTextCtrl)
         annotation->name = tName->GetValue().c_str();
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tDescr, ID_T_DESCR, wxTextCtrl)
         annotation->description = tDescr->GetValue().c_str();
+        structureSet->StyleDataChanged();
     } else {    // wxCANCEL
-        *style = copy;  // restore original settings
+        // restore original settings
+        *style = copy;
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }
@@ -340,10 +383,51 @@ void AnnotateDialog::EditAnnotation(void)
 
 void AnnotateDialog::MoveAnnotation(void)
 {
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
+    if (available->GetSelection() < 0) return;
+    StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
+    if (!annotation) {
+        ERR_POST(Error << "AnnotateDialog::MoveAnnotation() - NULL annotation pointer");
+        return;
+    }
+
+    // make sure this is what the user wants
+    wxString message;
+    message.Printf("This will move the coverage of annotation '%s'\n"
+        "to the currently highlighted region. Is this correct?", available->GetStringSelection().c_str());
+    int result = wxMessageBox(message, "Confirmation", wxOK | wxCANCEL | wxCENTRE, this);
+
+    // copy current highlight list to selected annotation
+    if (result == wxOK) {
+        annotation->residues = highlightedResidues;
+        GlobalMessenger()->PostRedrawAllStructures();
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
+        structureSet->StyleDataChanged();
+    }
 }
 
 void AnnotateDialog::DeleteAnnotation(void)
 {
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
+    if (available->GetSelection() < 0) return;
+    StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
+    if (!annotation) {
+        ERR_POST(Error << "AnnotateDialog::DeleteAnnotation() - NULL annotation pointer");
+        return;
+    }
+
+    // make sure this is what the user wants
+    wxString message;
+    message.Printf("This will permanently remove the annotation\n"
+        "'%s'. Is this correct?", available->GetStringSelection().c_str());
+    int result = wxMessageBox(message, "Confirmation", wxOK | wxCANCEL | wxCENTRE, this);
+
+    // copy current highlight list to selected annotation
+    if (result == wxOK) {
+        styleManager->RemoveUserAnnotation(annotation);
+        ResetListBoxes();
+        SetButtonStates();
+    }
 }
 
 
@@ -371,6 +455,10 @@ AnnotationEditorDialog::AnnotationEditorDialog(wxWindow *parent,
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
+
+    // select name, so user can quickly change it
+    tName->SetFocus();
+    tName->SetSelection(0, initialText.name.size());
 }
 
 // same as hitting cancel button
@@ -470,34 +558,62 @@ wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit, bool set_
     wxStaticLine *item13 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
     item1->Add( item13, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxBoxSizer *item14 = new wxBoxSizer( wxHORIZONTAL );
+    wxFlexGridSizer *item14 = new wxFlexGridSizer( 2, 0, 0, 0 );
+    item14->AddGrowableCol( 1 );
 
-    wxButton *item15 = new wxButton( parent, ID_B_NEW, "New", wxDefaultPosition, wxDefaultSize, 0 );
-    item14->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item15 = new wxStaticText( parent, ID_TEXT, "Selection:", wxDefaultPosition, wxDefaultSize, 0 );
+    item14->Add( item15, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item16 = new wxButton( parent, ID_B_EDIT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
-    item16->Enable( FALSE );
-    item14->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxFlexGridSizer *item16 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item16->AddGrowableCol( 0 );
 
-    wxButton *item17 = new wxButton( parent, ID_B_MOVE, "Move", wxDefaultPosition, wxDefaultSize, 0 );
-    item17->Enable( FALSE );
-    item14->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item17 = new wxStaticText( parent, ID_ST_NAME, "", wxDefaultPosition, wxSize(120,-1), 0 );
+    item16->Add( item17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item18 = new wxButton( parent, ID_B_DELETE, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
-    item18->Enable( FALSE );
-    item14->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item18 = new wxButton( parent, ID_B_NEW, "New", wxDefaultPosition, wxDefaultSize, 0 );
+    item16->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item1->Add( item14, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item14->Add( item16, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+
+    wxStaticText *item19 = new wxStaticText( parent, ID_TEXT, "Description:", wxDefaultPosition, wxDefaultSize, 0 );
+    item14->Add( item19, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticText *item20 = new wxStaticText( parent, ID_ST_DESCR, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item14->Add( item20, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item1->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticLine *item21 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
+    item1->Add( item21, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxBoxSizer *item22 = new wxBoxSizer( wxHORIZONTAL );
+
+    wxButton *item23 = new wxButton( parent, ID_B_HIGH, "Highlight", wxDefaultPosition, wxDefaultSize, 0 );
+    item22->Add( item23, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item24 = new wxButton( parent, ID_B_EDIT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
+    item24->Enable( FALSE );
+    item22->Add( item24, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item25 = new wxButton( parent, ID_B_MOVE, "Move", wxDefaultPosition, wxDefaultSize, 0 );
+    item25->Enable( FALSE );
+    item22->Add( item25, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item26 = new wxButton( parent, ID_B_DELETE, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
+    item26->Enable( FALSE );
+    item22->Add( item26, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item1->Add( item22, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxBoxSizer *item19 = new wxBoxSizer( wxHORIZONTAL );
+    wxBoxSizer *item27 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item20 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
-    item20->SetDefault();
-    item19->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item28 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
+    item28->SetDefault();
+    item27->Add( item28, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item27, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -541,7 +657,7 @@ wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_s
 
     item3->Add( item5, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
 
-    wxStaticText *item8 = new wxStaticText( parent, ID_X_DESCR, "Description:", wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item8 = new wxStaticText( parent, ID_TEXT, "Description:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item8, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxLEFT|wxTOP|wxBOTTOM, 5 );
 
     wxTextCtrl *item9 = new wxTextCtrl( parent, ID_T_DESCR, "", wxDefaultPosition, wxDefaultSize, 0 );

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/07/04 19:38:55  thiessen
+* finish user annotation system
+*
 * Revision 1.14  2001/06/29 18:12:53  thiessen
 * initial (incomplete) user annotation system
 *
@@ -135,6 +138,9 @@ public:
 
     // these next few are related to highlighting:
 
+    // typedef for highlight storage
+    typedef std::map < const MoleculeIdentifier *, std::vector < bool > > MoleculeHighlightMap;
+
     // check for highlight
     bool IsHighlighted(const Molecule *molecule, int residueID) const;
     bool IsHighlighted(const Sequence *sequence, int seqIndex) const;
@@ -151,6 +157,9 @@ public:
 
     // highlight any 'ole residue, regardless of molecule type
     void ToggleHighlight(const Molecule *molecule, int residueID);
+
+    // set a bunch of highlights all at once - copies highlight list from given set
+    void SetHighlights(const MoleculeHighlightMap& newHighlights);
 
     // temporarily turns off highlighting (suspend==true) - but doesn't erase highlight stores,
     // so when called with suspend==false, highlights will come back on
@@ -174,8 +183,7 @@ private:
     bool highlightingSuspended;
 
     // To store lists of highlighted entities
-    typedef std::map < const MoleculeIdentifier *, std::vector < bool > > HighlightStore;
-    HighlightStore highlights;
+    MoleculeHighlightMap highlights;
 
     bool IsHighlighted(const MoleculeIdentifier *identifier, int index) const;
     void ToggleHighlights(const MoleculeIdentifier *identifier, int indexFrom, int indexTo,
@@ -190,8 +198,7 @@ public:
     bool IsAnythingHighlighted(void) const { return (highlights.size() > 0); }
 
     // to get lists of highlighted molecules with structure only (for user annotations)
-    typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
-    bool GetHighlightedResiduesWithStructure(ResidueMap *residues) const;
+    bool GetHighlightedResiduesWithStructure(MoleculeHighlightMap *residues) const;
 
     // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(ViewerBase *sequenceViewer)

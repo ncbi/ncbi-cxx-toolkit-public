@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/07/04 19:38:55  thiessen
+* finish user annotation system
+*
 * Revision 1.29  2001/06/29 18:12:53  thiessen
 * initial (incomplete) user annotation system
 *
@@ -127,6 +130,7 @@
 
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
 #include <objects/cn3d/Cn3d_style_settings.hpp>
+#include <objects/cn3d/Cn3d_user_annotations.hpp>
 
 #include <string>
 #include <list>
@@ -273,7 +277,7 @@ class AnnotateDialog;
 class StyleManager
 {
 public:
-    StyleManager(void);
+    StyleManager(const StructureSet *set);
 
     // display styles for various types of objects
     enum eDisplayStyle {
@@ -303,14 +307,14 @@ public:
         const Strand3D& strand, StrandStyle *strandStyle) const;
 
     // bring up dialog to edit global style; returns true if style changed
-    bool EditGlobalStyle(wxWindow *parent, const StructureSet *set);
+    bool EditGlobalStyle(wxWindow *parent);
 
     // edit user annotations; returns true if any style changed
-    bool EditUserAnnotations(wxWindow *parent, const StructureSet *set);
+    bool EditUserAnnotations(wxWindow *parent);
 
     // check style option consistency
-    bool CheckStyleSettings(StyleSettings *settings, const StructureSet *set);
-    bool CheckGlobalStyleSettings(const StructureSet *set);
+    bool CheckStyleSettings(StyleSettings *settings);
+    bool CheckGlobalStyleSettings(void);
 
     // load/save asn style dictionary to/from current styles
     ncbi::objects::CCn3d_style_dictionary * CreateASNStyleDictionary(void) const;
@@ -322,6 +326,10 @@ public:
 
     // remove a style; returns false if a user style of the given ID is not found
     bool RemoveUserStyle(int id);
+
+    // load/save asn user annotations
+    ncbi::objects::CCn3d_user_annotations * CreateASNUserAnnotations(void) const;
+    bool LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_annotations& annotations);
 
     // various typedefs
     typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
@@ -347,6 +355,7 @@ public:
     bool ReprioritizeDisplayOrder(UserAnnotation *annotation, bool moveUp);
 
 private:
+    const StructureSet *structureSet;
     StyleSettings globalStyle;
 
     // a set of user styles, each with its own unique integer id
@@ -393,10 +402,8 @@ public:
         { return userAnnotationsDisplayed; }
 
     // predefined styles
-    void SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme)
-        { globalStyle.SetColorScheme(scheme); }
-    void SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style)
-        { globalStyle.SetRenderingStyle(style); }
+    void SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme);
+    void SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style);
 };
 
 // the following are convenience containers to tell the Draw functions how

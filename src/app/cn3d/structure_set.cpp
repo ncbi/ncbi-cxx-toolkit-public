@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
 * Revision 1.68  2001/06/29 18:13:58  thiessen
 * initial (incomplete) user annotation system
 *
@@ -259,6 +262,7 @@
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
+#include <objects/cn3d/Cn3d_user_annotations.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <connect/ncbi_util.h>
@@ -386,7 +390,7 @@ void StructureSet::Init(void)
     mimeData = NULL;
     cddData = NULL;
     showHideManager = new ShowHideManager();
-    styleManager = new StyleManager();
+    styleManager = new StyleManager(this);
     if (!showHideManager || !styleManager)
         ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
     GlobalMessenger()->RemoveAllHighlights(false);
@@ -400,6 +404,7 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
     mimeData = mime;
     StructureObject *object;
     const CCn3d_style_dictionary *styleDictionary = NULL;
+    const CCn3d_user_annotations *userAnnotations = NULL;
 
     // create StructureObjects from (list of) biostruc
     if (mime->IsStrucseq()) {
@@ -410,6 +415,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         alignmentManager = new AlignmentManager(sequenceSet, NULL);
         if (mime->GetStrucseq().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetStrucseq().GetStyle_dictionary());
+        if (mime->GetStrucseq().IsSetUser_annotations())
+            userAnnotations = &(mime->GetStrucseq().GetUser_annotations());
 
     } else if (mime->IsStrucseqs()) {
         object = new StructureObject(this, mime->GetStrucseqs().GetStructure(), true, false);
@@ -422,6 +429,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
         if (mime->GetStrucseqs().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetStrucseqs().GetStyle_dictionary());
+        if (mime->GetStrucseqs().IsSetUser_annotations())
+            userAnnotations = &(mime->GetStrucseqs().GetUser_annotations());
 
     } else if (mime->IsAlignstruc()) {
         TESTMSG("Master:");
@@ -449,6 +458,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         structureAlignments = &(mime->GetAlignstruc().SetAlignments());
         if (mime->GetAlignstruc().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetAlignstruc().GetStyle_dictionary());
+        if (mime->GetAlignstruc().IsSetUser_annotations())
+            userAnnotations = &(mime->GetAlignstruc().GetUser_annotations());
 
     } else if (mime->IsEntrez() && mime->GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true, false);
@@ -460,15 +471,28 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
 
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
+
+    // load styles
     if (styleDictionary) {
         if (!styleManager->LoadFromASNStyleDictionary(*styleDictionary) ||
-            !styleManager->CheckGlobalStyleSettings(this))
+            !styleManager->CheckGlobalStyleSettings())
             ERR_POST(Error << "Error loading style dictionary from mime");
         // remove now; recreated with current settings upon save
         if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
         else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
         else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
     }
+
+    // load user annotations
+    if (userAnnotations) {
+        if (!styleManager->LoadFromASNUserAnnotations(*userAnnotations))
+            ERR_POST(Error << "Error loading user annotations from mime");
+        // remove now; recreated with current settings upon save
+        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetUser_annotations();
+        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetUser_annotations();
+        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetUser_annotations();
+    }
+    dataChanged = 0;
 }
 
 static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
@@ -628,12 +652,20 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
     styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
+
     if (cdd->IsSetStyle_dictionary()) {
         if (!styleManager->LoadFromASNStyleDictionary(cdd->GetStyle_dictionary()) ||
-            !styleManager->CheckGlobalStyleSettings(this))
+            !styleManager->CheckGlobalStyleSettings())
             ERR_POST(Error << "Error loading style dictionary from cdd");
         cdd->ResetStyle_dictionary();   // remove now; recreated with current settings upon save
     }
+
+    if (cdd->IsSetUser_annotations()) {
+        if (!styleManager->LoadFromASNUserAnnotations(cdd->GetUser_annotations()))
+            ERR_POST(Error << "Error loading user annotations from cdd");
+        cdd->ResetUser_annotations();   // remove now; recreated with current settings upon save
+    }
+    dataChanged = 0;
 }
 
 StructureSet::~StructureSet(void)
@@ -783,8 +815,9 @@ void StructureSet::RemoveUnusedSequences(void)
             seqEntries = &(cddData->SetSequences().SetSet().SetSeq_set());
     }
     if (!seqEntries) {
-        ERR_POST(Error << "StructureSet::RemoveUnusedSequences() - "
-            << "can't figure out where in the asn the sequences are to go");
+        if (!mimeData || !mimeData->IsStrucseq())
+            ERR_POST(Error << "StructureSet::RemoveUnusedSequences() - "
+                << "can't figure out where in the asn the sequences are to go");
         return;
     }
 
@@ -839,15 +872,24 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     GlobalMessenger()->SequenceWindowsSave();
     if (dataChanged) RemoveUnusedSequences();
 
-    // create and temporarily attach a style dictionary to the data (and then remove it again,
-    // so it's never out of date)
+    // create and temporarily attach a style dictionary and annotation set to the data
+    // (and then remove it again, so it's never out of date)
     CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
+    CRef < CCn3d_user_annotations > userAnnotations(styleManager->CreateASNUserAnnotations());
     if (mimeData) {
-        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().SetStyle_dictionary(styleDictionary);
-        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().SetStyle_dictionary(styleDictionary);
-        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().SetStyle_dictionary(styleDictionary);
+        if (mimeData->IsAlignstruc()) {
+            mimeData->SetAlignstruc().SetStyle_dictionary(styleDictionary);
+            if (!userAnnotations.IsNull()) mimeData->SetAlignstruc().SetUser_annotations(userAnnotations);
+        } else if (mimeData->IsStrucseq()) {
+            mimeData->SetStrucseq().SetStyle_dictionary(styleDictionary);
+            if (!userAnnotations.IsNull()) mimeData->SetStrucseq().SetUser_annotations(userAnnotations);
+        } else if (mimeData->IsStrucseqs()) {
+            mimeData->SetStrucseqs().SetStyle_dictionary(styleDictionary);
+            if (!userAnnotations.IsNull()) mimeData->SetStrucseqs().SetUser_annotations(userAnnotations);
+        }
     } else if (cddData) {
         cddData->SetStyle_dictionary(styleDictionary);
+        if (!userAnnotations.IsNull()) cddData->SetUser_annotations(userAnnotations);
     }
 
     std::string err;
@@ -862,13 +904,21 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
         ERR_POST(Error << "Write failed: " << err);
     }
 
-    // remove style dictionary from asn
+    // remove style dictionary and annotations from asn
     if (mimeData) {
-        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
-        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
-        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
+        if (mimeData->IsAlignstruc()) {
+            mimeData->SetAlignstruc().ResetStyle_dictionary();
+            mimeData->SetAlignstruc().ResetUser_annotations();
+        } else if (mimeData->IsStrucseq()) {
+            mimeData->SetStrucseq().ResetStyle_dictionary();
+            mimeData->SetStrucseq().ResetUser_annotations();
+        } else if (mimeData->IsStrucseqs()) {
+            mimeData->SetStrucseqs().ResetStyle_dictionary();
+            mimeData->SetStrucseqs().ResetUser_annotations();
+        }
     } else if (cddData) {
         cddData->ResetStyle_dictionary();
+        cddData->ResetUser_annotations();
     }
 
     return writeOK;
@@ -951,7 +1001,7 @@ void StructureSet::SetCenter(const Vector *given)
 bool StructureSet::Draw(const AtomSet *atomSet) const
 {
     TESTMSG("drawing StructureSet");
-    if (!styleManager->CheckGlobalStyleSettings(this)) return false;
+    if (!styleManager->CheckGlobalStyleSettings()) return false;
     return true;
 }
 

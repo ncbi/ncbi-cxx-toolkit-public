@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
 * Revision 1.44  2001/06/29 18:54:46  thiessen
 * fix mysterious CRef error in MSVC MT compile mode
 *
@@ -174,6 +177,13 @@
 #include <objects/cn3d/Cn3d_color.hpp>
 #include <objects/cn3d/Cn3d_style_table_item.hpp>
 #include <objects/cn3d/Cn3d_style_table_id.hpp>
+#include <objects/cn3d/Cn3d_user_annotation.hpp>
+#include <objects/cn3d/Cn3d_object_location.hpp>
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Mmdb_id.hpp>
+#include <objects/cn3d/Cn3d_molecule_location.hpp>
+#include <objects/cn3d/Cn3d_residue_range.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
 
 #include <memory>
 #include <string.h> // for memcpy()
@@ -191,6 +201,7 @@
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/style_dialog.hpp"
 #include "cn3d/annotate_dialog.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -433,17 +444,17 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
 
 ///// StyleManager stuff /////
 
-StyleManager::StyleManager(void)
+StyleManager::StyleManager(const StructureSet *set) : structureSet(set)
 {
 }
 
-bool StyleManager::CheckGlobalStyleSettings(const StructureSet *set)
+bool StyleManager::CheckGlobalStyleSettings()
 {
-    return CheckStyleSettings(&globalStyle, set);
+    return CheckStyleSettings(&globalStyle);
 }
 
 // check for inconsistencies in style settings; returns false if there's an uncorrectable problem
-bool StyleManager::CheckStyleSettings(StyleSettings *settings, const StructureSet *set)
+bool StyleManager::CheckStyleSettings(StyleSettings *settings)
 {
     // can't do worm with partial or complete backbone
     if (((settings->proteinBackbone.style == StyleSettings::eWireWorm ||
@@ -460,7 +471,7 @@ bool StyleManager::CheckStyleSettings(StyleSettings *settings, const StructureSe
     }
 
     // can't do non-trace backbones for ncbi-backbone models
-    if (set->isAlphaOnly) {
+    if (structureSet->isAlphaOnly) {
         if (settings->proteinBackbone.type == StyleSettings::ePartial ||
             settings->proteinBackbone.type == StyleSettings::eComplete) {
             settings->proteinBackbone.type = StyleSettings::eTrace;
@@ -1055,9 +1066,9 @@ const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
     return GlobalColors()->Get(Colors::eCycle1, object->id - 1);
 }
 
-bool StyleManager::EditGlobalStyle(wxWindow *parent, const StructureSet *set)
+bool StyleManager::EditGlobalStyle(wxWindow *parent)
 {
-    StyleDialog dialog(parent, &globalStyle, set);
+    StyleDialog dialog(parent, &globalStyle, structureSet);
     return (dialog.ShowModal() == wxOK);
 }
 
@@ -1107,9 +1118,9 @@ bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styl
     return true;
 }
 
-bool StyleManager::EditUserAnnotations(wxWindow *parent, const StructureSet *set)
+bool StyleManager::EditUserAnnotations(wxWindow *parent)
 {
-    AnnotateDialog dialog(parent, this, set);
+    AnnotateDialog dialog(parent, this, structureSet);
     dialog.ShowModal();
     return false;
 }
@@ -1130,6 +1141,7 @@ bool StyleManager::AddUserStyle(int *id, StyleSettings **newStyle)
         if (userStyles.find(i) == userStyles.end()) {
             *newStyle = &(userStyles[i]);
             *id = i;
+            structureSet->StyleDataChanged();
             return true;
         }
     }
@@ -1141,12 +1153,14 @@ bool StyleManager::RemoveUserStyle(int id)
     StyleMap::iterator u = userStyles.find(id);
     if (u == userStyles.end()) return false;
     userStyles.erase(u);
+    structureSet->StyleDataChanged();
     return true;
 }
 
 StyleManager::UserAnnotation * StyleManager::AddUserAnnotation(void)
 {
     userAnnotations.resize(userAnnotations.size() + 1);
+    structureSet->StyleDataChanged();
     return &(userAnnotations.back());
 }
 
@@ -1180,6 +1194,7 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
         if (u->styleID == removedStyleID) break;
     if (u == ue) RemoveUserStyle(removedStyleID);
 
+    structureSet->StyleDataChanged();
     return true;
 }
 
@@ -1208,6 +1223,7 @@ bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
     if (changed) {  // need to redraw if displayed annotations list has changed
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
+        structureSet->StyleDataChanged();
     }
 
     return true;
@@ -1234,9 +1250,185 @@ bool StyleManager::ReprioritizeDisplayOrder(UserAnnotation *annotation, bool mov
     if (changed) {  // need to redraw if displayed annotations list has changed
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
+        structureSet->StyleDataChanged();
     }
 
     return true;
+}
+
+static bool CreateObjectLocation(
+    CCn3d_user_annotation::TResidues *residuesASN,
+    const StyleManager::ResidueMap& residueMap)
+{
+    residuesASN->clear();
+
+    StyleManager::ResidueMap::const_iterator r, re = residueMap.end();
+    for (r=residueMap.begin(); r!=re; r++) {
+
+        // find an existing object location that matches this MMDB ID
+        CCn3d_user_annotation::TResidues::iterator l, le = residuesASN->end();
+        for (l=residuesASN->begin(); l!=le; l++)
+            if ((*l)->GetStructure_id().GetMmdb_id().Get() == r->first->mmdbID) break;
+
+        // if necessary, create new object location, with Biostruc-id from MMDB ID
+        if (l == le) {
+            CRef < CCn3d_object_location > loc(new CCn3d_object_location());
+            if (r->first->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
+                CRef < CMmdb_id > mmdbID(new CMmdb_id());
+                mmdbID->Set(r->first->mmdbID);
+                loc->SetStructure_id().SetMmdb_id(mmdbID);
+            } else {
+                ERR_POST(Error << "CreateObjectLocation() - MoleculeIdentifier must (currently) have MMDB ID");
+                return false;
+            }
+            residuesASN->push_back(loc);
+            l = residuesASN->end();
+            l--;    // set iterator to the new object location
+        }
+
+        // set molecule location
+        CRef < CCn3d_molecule_location > molecule(new CCn3d_molecule_location());
+        molecule->SetMolecule_id().Set(r->first->moleculeID);
+        (*l)->SetResidues().push_back(molecule);
+
+        // check if covers whole molecule; if so, leave 'residues' field of Cn3d_molecule_location blank
+        int i;
+        for (i=0; i<r->second.size(); i++)
+            if (!r->second[i]) break;
+
+        // else break list down into individual contiguous residue ranges
+        if (i != r->second.size()) {
+            int first = 0, last = 0;
+            while (first < r->second.size()) {
+                // find first included residue
+                while (first < r->second.size() && !r->second[first]) first++;
+                if (first >= r->second.size()) break;
+                // find last in contiguous stretch of included residues
+                last = first;
+                while (last + 1 < r->second.size() && r->second[last + 1]) last++;
+                CRef < CCn3d_residue_range > range(new CCn3d_residue_range());
+                range->SetFrom().Set(first + 1);    // assume moleculeID = index + 1
+                range->SetTo().Set(last + 1);
+                molecule->SetResidues().push_back(range);
+                first = last + 2;
+            }
+            if (molecule->GetResidues().size() == 0) {
+                ERR_POST(Error << "CreateObjectLocation() - no residue ranges found");
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+ncbi::objects::CCn3d_user_annotations * StyleManager::CreateASNUserAnnotations(void) const
+{
+    if (userAnnotations.size() == 0) return NULL;
+    auto_ptr < CCn3d_user_annotations > annotations(new CCn3d_user_annotations());
+
+    AnnotationList::const_iterator a, ae = userAnnotations.end();
+    AnnotationPtrList::const_iterator d, de = userAnnotationsDisplayed.end();
+    for (a=userAnnotations.begin(); a!=ae; a++) {
+
+        // fill out individual annotations
+        CRef < CCn3d_user_annotation > annotation(new CCn3d_user_annotation());
+        annotation->SetName(a->name);
+        annotation->SetDescription(a->description);
+        annotation->SetStyle_id().Set(a->styleID);
+
+        // is this annotation on? check displayed annotations list
+        for (d=userAnnotationsDisplayed.begin(); d!=de; d++)
+            if (*d == &(*a)) break;
+        annotation->SetIs_on(d != de);
+
+        // fill out residues list
+        if (!CreateObjectLocation(&(annotation->SetResidues()), a->residues)) {
+            ERR_POST(Error << "StyleManager::CreateASNUserAnnotations() - error creating object location");
+            return NULL;
+        }
+
+        annotations->SetAnnotations().push_back(annotation);
+    }
+
+    return annotations.release();
+}
+
+static bool ExtractObjectLocation(
+    StyleManager::ResidueMap *residueMap,
+    const CCn3d_user_annotation::TResidues& residuesASN)
+{
+    CCn3d_user_annotation::TResidues::const_iterator o, oe = residuesASN.end();
+    for (o=residuesASN.begin(); o!=oe; o++) {
+        int mmdbID;
+        if ((*o)->GetStructure_id().IsMmdb_id()) {
+            mmdbID = (*o)->GetStructure_id().GetMmdb_id().Get();
+        } else {
+            ERR_POST(Error << "ExtractObjectLocation() - can't handle non-MMDB identifiers (yet)");
+            return false;
+        }
+
+        // extract molecules
+        CCn3d_object_location::TResidues::const_iterator m, me = (*o)->GetResidues().end();
+        for (m=(*o)->GetResidues().begin(); m!=me; m++) {
+            int moleculeID = (*m)->GetMolecule_id().Get();
+
+            // get identifier for this molecule
+            const MoleculeIdentifier *identifier = MoleculeIdentifier::FindIdentifier(mmdbID, moleculeID);
+            if (!identifier) {
+                ERR_POST(Error << "ExtractObjectLocation() - can't find identifier for molecule location");
+                return false;
+            }
+            std::vector < bool >& residueFlags = (*residueMap)[identifier];
+            residueFlags.resize(identifier->nResidues, false);
+
+            // set residue ranges
+            CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
+            for (r=(*m)->GetResidues().begin(); r!=re; r++) {
+                for (int i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
+                    if (i > 0 && i < residueFlags.size()) {
+                        residueFlags[i - 1] = true;     // assume index = residue id - 1
+                    } else {
+                        ERR_POST(Error << "ExtractObjectLocation() - residue from/to out of range");
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+	return true;
+}
+
+bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_annotations& annotations)
+{
+    CCn3d_user_annotations::TAnnotations::const_iterator a, ae = annotations.GetAnnotations().end();
+    for (a=annotations.GetAnnotations().begin(); a!=ae; a++) {
+        UserAnnotation *userAnnot = AddUserAnnotation();
+
+        // fill out annotation parameters
+        userAnnot->name = (*a)->GetName();
+        userAnnot->description = (*a)->GetDescription();
+        userAnnot->styleID = (*a)->GetStyle_id().Get();
+        DisplayAnnotation(userAnnot, (*a)->GetIs_on());
+
+        // extract object locations
+        if (!ExtractObjectLocation(&(userAnnot->residues), (*a)->GetResidues()))
+            return false;
+    }
+
+    return true;
+}
+
+void StyleManager::SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme)
+{
+    globalStyle.SetColorScheme(scheme);
+    structureSet->StyleDataChanged();
+}
+
+void StyleManager::SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style)
+{
+    globalStyle.SetRenderingStyle(style);
+    structureSet->StyleDataChanged();
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
 * Revision 1.4  2001/06/14 00:34:01  thiessen
 * asn additions
 *
@@ -429,6 +432,7 @@ void StyleDialog::OnCloseWindow(wxCommandEvent& event)
             *editedSettings = dummy;
             GlobalMessenger()->PostRedrawAllStructures();
             GlobalMessenger()->PostRedrawAllSequenceViewers();
+            structureSet->StyleDataChanged();
         }
     } else
         wxBell();
@@ -446,6 +450,8 @@ void StyleDialog::OnButton(wxCommandEvent& event)
                     GlobalMessenger()->PostRedrawAllStructures();
                     GlobalMessenger()->PostRedrawAllSequenceViewers();
                 }
+                if (changedEver)
+                    structureSet->StyleDataChanged();
                 EndModal(wxOK);
             } else
                 wxBell();
@@ -458,6 +464,7 @@ void StyleDialog::OnButton(wxCommandEvent& event)
                 GlobalMessenger()->PostRedrawAllStructures();
                 GlobalMessenger()->PostRedrawAllSequenceViewers();
                 changedSinceApply = false;
+                structureSet->StyleDataChanged();
             } else
                 wxBell();
             break;
@@ -509,7 +516,7 @@ void StyleDialog::OnChange(wxCommandEvent& event)
     TESTMSG("control changed");
     StyleSettings tmpSettings;
     if (!GetValues(&tmpSettings) ||
-        !structureSet->styleManager->CheckStyleSettings(&tmpSettings, structureSet) ||
+        !structureSet->styleManager->CheckStyleSettings(&tmpSettings) ||
         !SetControls(tmpSettings)) {
         ERR_POST(Error << "StyleDialog::OnChange() - error adjusting settings/controls");
         return;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/07/04 19:38:55  thiessen
+* finish user annotation system
+*
 * Revision 1.48  2001/06/14 17:44:46  thiessen
 * progress in styles<->asn ; add structure limits
 *
@@ -307,12 +310,16 @@ private:
         eAlignmentData              = 0x01,
         eStructureAlignmentData     = 0x02,
         eSequenceData               = 0x04,
-        eUpdateData                 = 0x08
+        eUpdateData                 = 0x08,
+        eStyleData                  = 0x100,
+        eUserAnnotationData         = 0x200
     };
-    unsigned int dataChanged;
+    mutable unsigned int dataChanged;
 
 public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
+    void StyleDataChanged(void) const { dataChanged |= eStyleData; }
+    bool UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
 
     // for manipulating structure alignment features
     void InitStructureAlignments(int masterMMDBID);

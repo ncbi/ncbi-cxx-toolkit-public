@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/07/04 19:39:16  thiessen
+* finish user annotation system
+*
 * Revision 1.55  2001/06/29 18:13:57  thiessen
 * initial (incomplete) user annotation system
 *
@@ -712,11 +715,11 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
         glCanvas->SetCurrent();
         switch (event.GetId()) {
             case MID_EDIT_STYLE:
-                if (!glCanvas->structureSet->styleManager->EditGlobalStyle(this, glCanvas->structureSet))
+                if (!glCanvas->structureSet->styleManager->EditGlobalStyle(this))
                     return;
                 break;
             case MID_ANNOTATE:
-                if (!glCanvas->structureSet->styleManager->EditUserAnnotations(this, glCanvas->structureSet))
+                if (!glCanvas->structureSet->styleManager->EditUserAnnotations(this))
                     return;
                 break;
             case MID_WORM:
@@ -740,7 +743,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             default:
                 return;
         }
-        glCanvas->structureSet->styleManager->CheckGlobalStyleSettings(glCanvas->structureSet);
+        glCanvas->structureSet->styleManager->CheckGlobalStyleSettings();
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
 * Revision 1.1  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -208,6 +211,19 @@ std::string MoleculeIdentifier::ToString(void) const
     oss << '\0';
     auto_ptr<char> chars(oss.str());    // frees memory upon function return
     return std::string(oss.str());
+}
+
+const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int moleculeID)
+{
+    const MoleculeIdentifier *identifier = NULL;
+    MoleculeIdentifierList::const_iterator i, ie = knownIdentifiers.end();
+    for (i=knownIdentifiers.begin(); i!=ie; i++) {
+        if (mmdbID == i->mmdbID && moleculeID == i->moleculeID) {
+            identifier = &(*i);
+            break;
+        }
+    }
+    return identifier;
 }
 
 void MoleculeIdentifier::ClearIdentifiers(void)

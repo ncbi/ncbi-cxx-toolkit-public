@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/04 19:38:55  thiessen
+* finish user annotation system
+*
 * Revision 1.1  2001/06/29 18:12:52  thiessen
 * initial (incomplete) user annotation system
 *
@@ -71,7 +74,7 @@ private:
     const StructureSet *structureSet;
 
     typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
-    const ResidueMap highlightedResidues;
+    ResidueMap highlightedResidues;
     bool HighlightsPresent(void) const { return (highlightedResidues.size() > 0); }
 
     // event callbacks

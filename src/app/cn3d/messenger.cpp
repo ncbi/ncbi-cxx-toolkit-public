@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
 * Revision 1.18  2001/06/29 18:13:57  thiessen
 * initial (incomplete) user annotation system
 *
@@ -225,7 +228,7 @@ bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, int index) c
 {
     if (highlightingSuspended) return false;
 
-    HighlightStore::const_iterator h = highlights.find(identifier);
+    MoleculeHighlightMap::const_iterator h = highlights.find(identifier);
     if (h == highlights.end()) return false;
 
     if (index < 0 || index >= h->second.size()) {
@@ -266,7 +269,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
         return;
     }
 
-    HighlightStore::iterator h = highlights.find(sequence->identifier);
+    MoleculeHighlightMap::iterator h = highlights.find(sequence->identifier);
     if (h == highlights.end()) {
         highlights[sequence->identifier].resize(sequence->Length(), false);
         h = highlights.find(sequence->identifier);
@@ -287,7 +290,7 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
         return;
     }
 
-    HighlightStore::iterator h = highlights.find(sequence->identifier);
+    MoleculeHighlightMap::iterator h = highlights.find(sequence->identifier);
     if (h != highlights.end()) {
         int i;
         for (i=seqIndexFrom; i<=seqIndexTo; i++) h->second[i] = false;
@@ -312,7 +315,7 @@ void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int index
         return;
     }
 
-    HighlightStore::iterator h = highlights.find(identifier);
+    MoleculeHighlightMap::iterator h = highlights.find(identifier);
     if (h == highlights.end()) {
         highlights[identifier].resize(identifier->nResidues, false);
         h = highlights.find(identifier);
@@ -342,7 +345,7 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
     if (postRedraws) {
         if (anyRemoved) PostRedrawAllSequenceViewers();
 
-        HighlightStore::iterator h, he = highlights.end();
+        MoleculeHighlightMap::const_iterator h, he = highlights.end();
         for (h=highlights.begin(); h!=he; h++)
             RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
     }
@@ -350,6 +353,17 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
     highlights.clear();
 
     return anyRemoved;
+}
+
+void Messenger::SetHighlights(const MoleculeHighlightMap& newHighlights)
+{
+    RemoveAllHighlights(true);
+    highlights = newHighlights;
+
+    PostRedrawAllSequenceViewers();
+    MoleculeHighlightMap::const_iterator h, he = highlights.end();
+    for (h=highlights.begin(); h!=he; h++)
+        RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
 }
 
 void Messenger::SuspendHighlighting(bool suspend)
@@ -363,12 +377,12 @@ void Messenger::SuspendHighlighting(bool suspend)
     }
 }
 
-bool Messenger::GetHighlightedResiduesWithStructure(ResidueMap *residues) const
+bool Messenger::GetHighlightedResiduesWithStructure(MoleculeHighlightMap *residues) const
 {
     residues->clear();
     if (!IsAnythingHighlighted()) return false;
 
-    HighlightStore::const_iterator h, he = highlights.end();
+    MoleculeHighlightMap::const_iterator h, he = highlights.end();
     for (h=highlights.begin(); h!=he; h++) {
         if (h->first->HasStructure())
             (*residues)[h->first] = h->second;
