@@ -128,7 +128,6 @@ typedef struct BlastGapDP {
 
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
-   Uint1 program;   /**< BLAST program type */
    Boolean positionBased; /**< Is this PSI-BLAST? */
    GapXDropStateArrayStructPtr state_struct; /**< Structure to keep extension 
                                                 state information */
@@ -160,8 +159,8 @@ typedef struct BlastGapAlignStruct {
 Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
-   const Uint4 max_subject_length, const Int4 query_length,
-   const Uint1 program, BLAST_ScoreBlkPtr sbp, 
+   Uint4 max_subject_length, Int4 query_length, 
+   Uint1 program, BLAST_ScoreBlkPtr sbp, 
    BlastGapAlignStructPtr PNTR gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */
@@ -196,6 +195,7 @@ BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list);
  *    - Performs greedy gapped extension;
  *    - Saves qualifying HSPs with gapped information into an HSP list 
  *      structure.
+ * @param program_number Not needed: added for prototype consistency.
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param gap_align A placeholder for gapped alignment information and 
@@ -206,7 +206,8 @@ BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list);
  * @param init_hitlist Contains all the initial hits [in]
  * @param hsp_list_ptr List of HSPs with full extension information [out]
 */
-Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
+Int2 BLAST_MbGetGappedScore(Uint1 program_number, 
+        BLAST_SequenceBlkPtr query, 
 			    BLAST_SequenceBlkPtr subject,
 			    BlastGapAlignStructPtr gap_align,
 			    BlastScoringOptionsPtr score_options, 
@@ -221,6 +222,7 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
  * Deletes HSPs that are included in already extended HSPs;
  * Performs gapped extension;
  * Saves HSPs into an HSP list.
+ * @param program_number Type of BLAST program [in]
  * @param query The query sequence block [in]
  * @param subject The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
@@ -231,7 +233,7 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  */
-Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
+Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlkPtr query, 
 		      BLAST_SequenceBlkPtr subject,
 		      BlastGapAlignStructPtr gap_align,
 		      BlastScoringOptionsPtr score_options, 
