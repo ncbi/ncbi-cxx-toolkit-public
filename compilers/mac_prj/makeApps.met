@@ -33,7 +33,7 @@ property pCreateProfiledTargets : false
 property pShouldBuild : true
 
 -- do test/demo applications
-property pBuildDemos : true
+property pBuildDemos : false
 
 property pStationeryName : "ApplicationStationery"
 
@@ -255,13 +255,13 @@ on SetProjectData()
 		
 	end tell
 	
+	
 	-- fluid
 	set saveCppExt to pCPlusPlusExt
 	set pCPlusPlusExt to ".cxx"
 	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
 	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib"}, {fluidFileData}), {"fltk"}, {}))
 	set pCPlusPlusExt to saveCppExt
-	
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
@@ -274,13 +274,15 @@ on SetProjectData()
 	
 	---------- OBJECTS ----------	
 	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "app:asn2asn", {"C++"}), commonObjLibs, {}))
-	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets"}, {"test_validator"}), Â
+	
+	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl"}, {"test_validator"}), Â
 		objMgrLibs & {"xvalidate"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
 	
 	if pBuildDemos then
 		---- DEMO ---
+		
 		AddAppProject("demo_seqgraphic", {"fltk"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "xalnmgr", "w_gl"}, {"gui_core"})
 		
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
@@ -673,6 +675,11 @@ on SetupTarget(proj, targetIndex)
 				-- NOTE: if the following line is within a tell "Codewarrior" block then
 				--  the following Add Files command will fail.
 				copy alias (projPath & i) to end of filesToAdd
+				-- Set the file's type so CW will have less problems with it.
+				tell application "Finder"
+					set file type of file (projPath & i) to "TEXT"
+					set creator type of file (projPath & i) to "CWIE"
+				end tell
 			end try
 		end repeat
 		
@@ -712,10 +719,8 @@ on SetupTarget(proj, targetIndex)
 		
 		if projFeatures contains "libdl" then
 			my PushAccessPath(pDLRootFolder & "include", false, false)
-			if projFeatures contains "DLL" or projFeatures contains "plugin" then
-				my PushAccessPath(pDLRootFolder & "lib", false, false)
-				copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
-			end if
+			my PushAccessPath(pDLRootFolder & "lib", false, false)
+			copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
 		end if
 		
 		-- try
