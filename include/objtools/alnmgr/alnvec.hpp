@@ -38,22 +38,21 @@
 #include <objects/objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE
 
 
 // forward declarations
 class CObjectManager;
 class CScope;
 
+
 class CAlnVec : public CAlnMap
 {
     typedef CAlnMap Tparent;
-    typedef map<TNumrow, CBioseq_Handle> TBioseqHandleCache;
+    typedef map<TNumrow, CBioseq_Handle>    TBioseqHandleCache;
     typedef map<TNumrow, CRef<CSeqVector> > TSeqVectorCache;
 
 public:
-
     // constructor
     CAlnVec(const CDense_seg& ds);
     CAlnVec(const CDense_seg& ds, TNumrow anchor);
@@ -69,8 +68,8 @@ public:
     string GetSeqString(TNumrow row, const CAlnMap::TRange& range)       const;
     string GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
 
-    const CBioseq_Handle&   GetBioseqHandle(TNumrow row)                  const;
-    CSeqVector::TResidue    GetResidue     (TNumrow row, TSeqPos aln_pos) const;
+    const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
+    CSeqVector::TResidue  GetResidue     (TNumrow row, TSeqPos aln_pos) const;
 
     // functions for manipulating the consensus sequence
     const CBioseq_Handle&   GetConsensusHandle  (void)        const;
@@ -89,8 +88,8 @@ public:
 
 private:
     // Prohibit copy constructor and assignment operator
-    CAlnVec(const CAlnVec& value);
-    CAlnVec& operator=(const CAlnVec& value);
+    CAlnVec(const CAlnVec&);
+    CAlnVec& operator= (const CAlnVec&);
 
     CSeqVector& x_GetSeqVector         (TNumrow row) const;
     CSeqVector& x_GetConsensusSeqVector(void)        const;
@@ -108,9 +107,15 @@ private:
     
 };
 
-///////////////////////////////////////////////////////////
-///////////////////// inline methods //////////////////////
-///////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
 
 inline
 CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
@@ -119,11 +124,11 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
     if (iter != m_SeqVectorCache.end()) {
         return *(iter->second);
     } else {
-        CRef<CSeqVector> vec =
-            new CSeqVector(GetBioseqHandle(row).GetSeqVector
-                           (CBioseq_Handle::eCoding_Iupac,
-                            CBioseq_Handle::eStrand_Plus));
-        return *(m_SeqVectorCache[row] = vec);
+        CSeqVector vec = GetBioseqHandle(row).GetSeqVector
+            (CBioseq_Handle::eCoding_Iupac,
+             CBioseq_Handle::eStrand_Plus);
+        CRef<CSeqVector> seq_vec = new CSeqVector(vec);
+        return *(m_SeqVectorCache[row] = seq_vec);
     }
 }
 
@@ -135,10 +140,10 @@ CSeqVector& CAlnVec::x_GetConsensusSeqVector(void) const
     }
 
     if ( !m_ConsensusSeqvector ) {
-        m_ConsensusSeqvector =
-            new CSeqVector(m_ConsensusBioseq.GetSeqVector
-                           (CBioseq_Handle::eCoding_Iupac,
-                            CBioseq_Handle::eStrand_Plus));
+        CSeqVector vec = m_ConsensusBioseq.GetSeqVector
+            (CBioseq_Handle::eCoding_Iupac,
+             CBioseq_Handle::eStrand_Plus);
+        m_ConsensusSeqvector = new CSeqVector(vec);
     }
 
     return *m_ConsensusSeqvector;
@@ -194,10 +199,9 @@ TSignedSeqPos CAlnVec::GetConsensusSeqStart(void) const
         x_CreateConsensus();
     }
 
-    for (TNumseg seg = 0;  seg < m_ConsensusStarts.size();  ++seg) {
-        if (m_ConsensusStarts[seg] != -1) {
-            return m_ConsensusStarts[seg];
-        }
+    iterate (vector<TSignedSeqPos>, seg, m_ConsensusStarts) {
+        if (*seg != -1)
+            return *seg;
     }
 
     return -1;
@@ -218,6 +222,8 @@ TSignedSeqPos CAlnVec::GetConsensusSeqStop(void) const
 
     return -1;
 }
+
+
 //
 // these are a temporary work-around
 // CSeqportUtil contains routines for converting sequence data from one
@@ -253,23 +259,22 @@ inline unsigned char CAlnVec::FromIupac(unsigned char c)
 inline unsigned char CAlnVec::ToIupac(unsigned char c)
 {
     const char *data = "-ACMGRSVTWYHKDBN";
-    return ( (c < 16) ? data[c] : 0);
+    return ((c < 16) ? data[c] : 0);
 }
 
 
-
-///////////////////////////////////////////////////////////
-////////////////// end of inline methods //////////////////
-///////////////////////////////////////////////////////////
-
-END_objects_SCOPE // namespace ncbi::objects::
-
+END_objects_SCOPE
 END_NCBI_SCOPE
+
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/09/23 18:22:45  vakatov
+* Workaround an older MSVC++ compiler bug.
+* Get rid of "signed/unsigned" comp.warning, and some code prettification.
+*
 * Revision 1.5  2002/09/19 18:22:28  todorov
 * New function name for GetSegSeqString to avoid confusion
 *
@@ -292,4 +297,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif // OBJECTS_ALNMGR___ALNVEC__HPP
+#endif  /* OBJECTS_ALNMGR___ALNVEC__HPP */
