@@ -328,6 +328,8 @@ private:
                           CSeq_inst::EMol filter,
                           TBioseqLevelFlag level);
 
+    TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh, bool bioseq);
+
     //typedef CMutex TMainLock;
     //typedef CFastMutex TAnnotLock;
     typedef CRWLock TMainLock;
