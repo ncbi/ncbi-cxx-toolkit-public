@@ -290,7 +290,10 @@ string CDirEntry::MakePath(const string& dir, const string& base,
     string path;
 
     // Adding "dir" and file base
-    path = AddTrailingPathSeparator(dir) + base;
+    if ( dir.length() ) {
+        path = AddTrailingPathSeparator(dir);
+    }
+    path += base;
     // Adding extension
     if ( ext.length()  &&  ext.at(0) != '.' ) {
         path += '.';
@@ -1601,6 +1604,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2003/09/16 16:03:00  ivanov
+ * MakePath():  don't add separator to directory name if it is empty string
+ *
  * Revision 1.53  2003/09/16 15:17:16  ivanov
  * + CDirEntry::NormalizePath()
  *
