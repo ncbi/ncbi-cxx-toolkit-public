@@ -229,26 +229,26 @@ protected:
     typedef typename TRangeVector::iterator    iterator;
     typedef typename TRangeVector::reverse_iterator    reverse_iterator;
 
-    iterator  begin()   
+    iterator  begin_nc()   
     {   
         return m_vRanges.begin();   
     }
-    iterator  end()
+    iterator  end_nc()
     {   
         return m_vRanges.end(); 
     }    
     pair<iterator, bool>    x_Find(position_type pos)
     {
         PRangeLessPos<TRange, position_type>    p;
-        iterator it = lower_bound(begin(), end(), pos, p);
-        bool b_contains = it != end()  &&  it->GetFrom() >= pos;
+        iterator it = lower_bound(begin_nc(), end_nc(), pos, p);
+        bool b_contains = it != end_nc()  &&  it->GetFrom() >= pos;
         return make_pair(it, b_contains);
     }
     pair<iterator, bool>    x_Intersects(const TRange& r)
     {
         PRangeLessPos<TRange, position_type>    p;
-        iterator it = lower_bound(begin(), end(), r.GetFrom(), p);
-        bool b_intersects = it != end()  &&  it->GetFrom() < r.GetToOpen();
+        iterator it = lower_bound(begin_nc(), end_nc(), r.GetFrom(), p);
+        bool b_intersects = it != end_nc()  &&  it->GetFrom() < r.GetToOpen();
         return make_pair(it, b_intersects);
     }
    
@@ -257,21 +257,22 @@ protected:
         PRangeLessPos<TRange, position_type>    p;
 
         position_type pos_to = r.GetTo();
-        iterator it_right = lower_bound(begin(), end(), pos_to, p);
-        if(it_right != end()) {
+        iterator it_right = lower_bound(begin_nc(), end_nc(), pos_to, p);
+        if(it_right != end_nc()) {
             if(it_right->GetFrom() <= pos_to) {   //intersects
                 it_right->SetTo(pos_to);
                 ++it_right; // exclude from removal
             }
-            m_vRanges.erase(it_right, end()); // erase ranges to the right
+            m_vRanges.erase(it_right, end_nc()); // erase ranges to the right
         }
 
         position_type pos_from = this->R.GetFrom();
-        iterator it_left = lower_bound(begin(), end(), pos_from, this->P);
-        if(it_left != end()) {        
+        iterator it_left =
+            lower_bound(begin_nc(), end_nc(), pos_from, this->P);
+        if(it_left != end_nc()) {        
             if(it_left->GetFrom() < pos_from)    
                 it_left->SetFrom(pos_from);
-            m_vRanges.erase(begin(), it_left); //erase ranges to the left
+            m_vRanges.erase(begin_nc(), it_left); //erase ranges to the left
         }
     }
 
@@ -283,12 +284,13 @@ protected:
         position_type pos_from = r.GetFrom();
         position_type pos_to_open = r.GetToOpen();                    
 
-        iterator it_begin_m = lower_bound(begin(), end(), pos_from - 1, p);        
-        if(it_begin_m != end() && it_begin_m->GetFrom() <= pos_to_open)  { // intersection
+        iterator it_begin_m =
+            lower_bound(begin_nc(), end_nc(), pos_from - 1, p);
+        if(it_begin_m != end_nc() && it_begin_m->GetFrom() <= pos_to_open)  { // intersection
             it_begin_m->CombineWith(r);
         
-            iterator it_end_m = lower_bound(it_begin_m, end(), pos_to_open, p);
-            if(it_end_m != end()  &&  it_end_m->GetFrom() <= pos_to_open) {// subject to merge
+            iterator it_end_m = lower_bound(it_begin_m, end_nc(), pos_to_open, p);
+            if(it_end_m != end_nc()  &&  it_end_m->GetFrom() <= pos_to_open) {// subject to merge
                 it_begin_m->SetToOpen(it_end_m->GetToOpen()); 
                 ++it_end_m; // including it into erased set
             }
@@ -306,8 +308,8 @@ protected:
         position_type pos_from = r.GetFrom();
         position_type pos_to_open = r.GetToOpen();
 
-        iterator it_begin_e = lower_bound(begin(), end(), pos_from, P);
-        if(it_begin_e != end()) {   // possible intersection
+        iterator it_begin_e = lower_bound(begin_nc(), end_nc(), pos_from, P);
+        if(it_begin_e != end_nc()) {   // possible intersection
             
             if(it_begin_e->GetFrom() < pos_from  &&  it_begin_e->GetToOpen() > pos_to_open)    { 
                 //it_begin_e contains R, split it in two
@@ -319,8 +321,8 @@ protected:
                     it_begin_e->SetToOpen(pos_from);
                     ++it_begin_e;
                 }
-                iterator it_end_e = lower_bound(it_begin_e, end(), pos_to_open, P);
-                if(it_end_e != end()  &&  it_end_e->GetFrom() < pos_to_open)    { 
+                iterator it_end_e = lower_bound(it_begin_e, end_nc(), pos_to_open, P);
+                if(it_end_e != end_nc()  &&  it_end_e->GetFrom() < pos_to_open)    { 
                     it_end_e->SetFrom(pos_to_open); // truncate
                 }
                 // erase ranges fully covered by R
@@ -364,6 +366,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/18 19:52:11  grichenk
+ * Renamed protected non-const begin() and end() to begin_nc() and end_nc().
+ *
  * Revision 1.5  2004/10/04 16:00:16  yazhuk
  * Added operator == and x_Equals()
  *
