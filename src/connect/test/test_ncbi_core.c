@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/06/23 19:35:51  vakatov
+ * Test the logging of binary data
+ *
  * Revision 6.3  2000/06/01 18:35:12  vakatov
  * Dont log with level "eLOG_Fatal" (it exits/coredumps now)
  *
@@ -330,6 +333,16 @@ static void TEST_UTIL_Log(void)
 #define THIS_FILE __FILE__
 #undef  THIS_MODULE
 #define THIS_MODULE 0
+
+  /* data logging */
+  {{
+    unsigned char data[300];
+    size_t i;
+    for (i = 0;  i < sizeof(data);  i++) {
+        data[i] = (unsigned char) (i % 256);
+    }
+    LOG_DATA(x_log, data, sizeof(data), "Data logging test");
+  }}
 
   /* logging with errno */
   LOG_WRITE_ERRNO(x_log, eLOG_Warning, 0);  
