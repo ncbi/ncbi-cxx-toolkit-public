@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/02/04 18:54:13  dicuccio
+ * Removed unnecessary #includes
+ *
  * Revision 6.3  2002/06/06 20:45:36  clausen
  * Moved IsValid to objects/util/sequence.cpp
  *
@@ -47,9 +50,6 @@
  *
  * ===========================================================================
  */
-
-// standard includes
-#include <serial/iterator.hpp>
 
 // generated includes
 #include <objects/seqloc/Packed_seqpnt.hpp>
