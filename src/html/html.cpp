@@ -435,19 +435,22 @@ CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
         if ( m_Flags & fEncodeHtmlMode )
             flags |= fEncode;
     }
+    string str;
+    const string *pstr = &str;
     switch (flags) {
         case fStrip:
-            out << CHTMLHelper::StripHTML(s);
+            str = CHTMLHelper::StripHTML(s);
             break;
         case fEncode:
-            out << CHTMLHelper::HTMLEncode(s);
+            str = CHTMLHelper::HTMLEncode(s);
             break;
         case fStrip | fEncode:
-            out << CHTMLHelper::HTMLEncode(CHTMLHelper::StripHTML(s));
+            str = CHTMLHelper::HTMLEncode(CHTMLHelper::StripHTML(s));
             break;
         default:
-            out << s;
+            pstr = &s;
     }
+    out.write(pstr->data(), pstr->size());
     CHECK_STREAM_WRITE(out);
     return out;
 }
@@ -468,6 +471,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     CNcbiOstrstream strout;
 
     strout << text.substr(0, tagStart);
+    strout << '\0';
     SIZE_TYPE last = tagStart;
     do {
         SIZE_TYPE tagNameStart = tagStart + tag_start_size;
@@ -502,8 +506,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     if ( last != text.size() ) {
         strout << text.substr(last);
     }
-    strout << '\0';
-    x_PrintBegin(out, mode, strout.str());
+    x_PrintBegin(out, mode, CNcbiOstrstreamToString(strout));
     return out;
 }
 
@@ -2254,6 +2257,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2004/10/26 20:12:30  ivanov
+ * CHTMLText::PrintBegin() -- using CNcbiOstrstreamToString() to convert
+ * strstream to string. Fixed CHTMLText::x_PrintBegin to accept '\0'.
+ *
  * Revision 1.107  2004/10/21 17:44:04  ivanov
  * CHTMLText: added EFlag type and flag parameter to constructors
  *
