@@ -1,334 +1,312 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+   <meta name="GENERATOR" content="Mozilla/4.78 [en] (WinNT; U) [Netscape]">
 <!--#set var="TITLE" value="NCBI DBAPI User-Layer Docs" -->
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
-
-
 <!--<B><FONT FACE="Arial" SIZE=4><P>DBAPI Interface Overview.</P></B></FONT><P>&nbsp;</P>-->
-<h1>
-NCBI DBAPI User-Layer Reference</h3>
+</head>
+<body>
 
-<h2>Contents</h2>
+<h1>
+NCBI DBAPI User-Layer Reference</h1>
+
+<h2>
+Contents</h2>
 
 <ul>
-    <li> <a href="#ref_ObjHierarchy">Object Hierarchy</a> </li>
-    <li> <a href="#ref_Includes">Includes</a> </li>
-    <li> <a href="#ref_Objects">Objects</a> </li>
-    <li> <a href="#ref_ObjLifeCycle">Object Life Cycle</a> </li>
-    <li> <a href="#ref_CVariant">CVariant Type</a> </li>
-    <li> <a href="#ref_ChooseDriver">Choosing the Driver</a> </li>
-    <li> <a href="#ref_SrcCnxns">Data Source and Connections</a> </li>
-    <li> <a href="#ref_MainLoop">Main Loop</a> </li>
-	<li> <a href="#ref_IOParams">Input and Output Parameters</a> </li>
-	<li> <a href="#ref_StoredProcs">Stored Procedures</a> </li>
-	<li> <a href="#ref_Cursors">Cursors</a> </li>
-	<li> <a href="#ref_Libraries">Libraries</a> </li>
+<li>
+<a href="#ref_ObjHierarchy">Object Hierarchy</a></li>
+
+<li>
+<a href="#ref_Includes">Includes</a></li>
+
+<li>
+<a href="#ref_Objects">Objects</a></li>
+
+<li>
+<a href="#ref_ObjLifeCycle">Object Life Cycle</a></li>
+
+<li>
+<a href="#ref_CVariant">CVariant Type</a></li>
+
+<li>
+<a href="#ref_ChooseDriver">Choosing the Driver</a></li>
+
+<li>
+<a href="#ref_SrcCnxns">Data Source and Connections</a></li>
+
+<li>
+<a href="#ref_MainLoop">Main Loop</a></li>
+
+<li>
+<a href="#ref_IOParams">Input and Output Parameters</a></li>
+
+<li>
+<a href="#ref_StoredProcs">Stored Procedures</a></li>
+
+<li>
+<a href="#ref_Cursors">Cursors</a></li>
+
+<li>
+<a href="#ref_Libraries">Libraries</a></li>
 </ul>
 
-<p></p>
-<hr>
-
-<!-- List of different sections to get indentation of text from heading
+<hr><!-- List of different sections to get indentation of text from heading
      NOTE:  spacing is preserved in PRE blocks, so that is *not* indented here!
 	 NOTE:  <blockquote> converts <TAB> to 8 spaces in NS4.78; untabify those regions-->
-
-
-<dl>
-
-<a name="ref_ObjHierarchy"></a>
-<dt><h3>Object hierarchy</h3></dt>
-	<dd>
-		<P><IMG SRC="dbapi_user.gif" WIDTH=681 HEIGHT=464></P>
-	</dd>
-
-<P>&nbsp;</P>
-<a name="ref_Includes"></a>
-<dt><h3>Includes</h3></dt>
-	<dd>
-		<P>For most purposes it is sufficient to include one file in the user source file: dbapi.hpp.</P>
-
-	<PRE>
-#include &lt;dbapi/dbapi.hpp&gt;  <FONT FACE="Arial"><B>and,</B></FONT>
-#include &lt;dbapi/driver/drivers.hpp&gt; <FONT FACE="Arial">(for static linkage only!)</FONT>
-    </PRE>
-
-	</dd>
-
-<a name="ref_Objects"></a>
-<dt><h3>Objects</h3></dt>
-	<dd>
-		<P>All objects are returned by pointers to their respective
-		interfaces. The null (0) value is valid, meaning that no object was
-		returned.</P>
-	</dd>
-
-<a name="ref_ObjLifeCycle"></a>
-<dt><h3>Object Life Cycle</h3></dt>
-<dd>
-	<P>In general, any child object is valid only in the
-	scope of its parent object. This is  because most of the objects share
-	the same internal structures. There is no need to delete every object
-	explicitly, as all created objects will be deleted upon program exit.</P>
-</dd>
-
-<a name="ref_CVariant"></a>
-<dt><h3>CVariant type</h3></dt>
-	<dd>
-		<P></P>
-		The <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> type is used to represent any database data
-		type (except BLOBs). It is an object, not a pointer, so it behaves
-		like a primitive C++ type. Basic comparison operators are supported
-		<FONT FACE="Courier New">(==, !=, &lt; </FONT>)  for identical
-		internal types. If types are not identical, <a href="../docxx/CVariantException.html"><tt>CVariantException</tt></a> is
-		thrown. <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> has a set of getters to extract a value of a
-		particular type, e.g. <tt>GetInt4(), GetByte(), GetString()</tt>, etc. If
-		<tt>GetString()</tt> is called for a different type, like <tt>DateTime</tt> or <tt>integer</tt>
-		it tries to convert it to a string. It it doesn't succeed,
-		<a href="../docxx/CVariantException.html"><tt>CVariantException</tt></a> is thrown.
-
-		<p></p>
-		There is a set of factory methods (static functions) for creating <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> objects of a particular type, such as
-		<tt><a href="../docxx/CVariant.html">CVariant</a>::BigInt(), <a href="../docxx/CVariant.html">CVariant</a>::SmallDateTime(), <a href="../docxx/CVariant.html">CVariant</a>::VarBinary()</tt>,
-		etc. For more details please see the comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a> file.
-		</dd>
-
-<P></P>
-<a name="ref_ChooseDriver"></a>
-<dt><h3>Choosing the driver</h3></dt>
-	<dd>
-		<P>There are several drivers for working with different SQL servers on
-		different platforms.  The ones presently implemented are "<b>ctlib</b>"
-		(Sybase), "<b>dblib</b>"(MS SQL), "<b>ftds</b>" (cross platform). For static linkage
-		these drivers should be registered manually; for dynamic linkage this
-		is not necessary. The <a href="../docxx/CDriverManager.html"><tt>CDriverManager</tt></a> object maintains all registered
-		drivers.</P>
-
-		<blockquote>
-		<pre>
-CDriverManager &amp;dm = CDriverManager::GetInstance();
+<dl><a NAME="ref_ObjHierarchy"></a>
+<h3>
+Object hierarchy</h3>
+<img SRC="dbapi_user.gif" height=464 width=681>
+<br>&nbsp;
+<p><a NAME="ref_Includes"></a>
+<h3>
+Includes</h3>
+For most purposes it is sufficient to include one file in the user source
+file: dbapi.hpp.
+<pre>#include &lt;dbapi/dbapi.hpp></pre>
+For static linkage the following include file is also necessary:
+<pre>#include &lt;dbapi/driver/drivers.hpp></pre>
+<a NAME="ref_Objects"></a>
+<h3>
+Objects</h3>
+All objects are returned by pointers to their respective interfaces. The
+null (0) value is valid, meaning that no object was returned.
+<br><a NAME="ref_ObjLifeCycle"></a>
+<h3>
+Object Life Cycle</h3>
+In general, any child object is valid only in the scope of its parent object.
+This is because most of the objects share the same internal structures.
+There is no need to delete every object explicitly, as all created objects
+will be deleted upon program exit. Specifically, all objects are derived
+from the static CDriverManager object, and will be destroyed when CDriverManager
+is destroyed. Thus it is recommended to reuse the objects such as <tt><a href="../docxx/IStatement.html">IStatement,</a>
+<a href="../docxx/ICallableStatement.html">ICallableStatement</a> </tt>or
+delete them explicitly, if otherwise is not possible.
+<br><a NAME="ref_CVariant"></a>
+<h3>
+CVariant type</h3>
+The <tt><a href="../docxx/CVariant.html">CVariant</a></tt> type is used
+to represent any database data type (except BLOBs). It is an object, not
+a pointer, so it behaves like a primitive C++ type. Basic comparison operators
+are supported <font face="Courier New">(==, !=, &lt; </font>) for identical
+internal types. If types are not identical, <tt><a href="../docxx/CVariantException.html">CVariantException</a></tt>
+is thrown. <tt><a href="../docxx/CVariant.html">CVariant</a></tt> has a
+set of getters to extract a value of a particular type, e.g. <tt>GetInt4(),
+GetByte(), GetString()</tt>, etc. If <tt>GetString()</tt> is called for
+a different type, like <tt>DateTime</tt> or <tt>integer</tt> it tries to
+convert it to a string. It it doesn't succeed, <tt><a href="../docxx/CVariantException.html">CVariantException</a></tt>
+is thrown.
+<br>There is a set of factory methods (static functions) for creating <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
+objects of a particular type, such as <tt><a href="../docxx/CVariant.html">CVariant</a>::BigInt(),
+<a href="../docxx/CVariant.html">CVariant</a>::SmallDateTime(),
+<a href="../docxx/CVariant.html">CVariant</a>::VarBinary()</tt>, etc. For
+more details please see the comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a>
+file.
+<br><a NAME="ref_ChooseDriver"></a>
+<h3>
+Choosing the driver</h3>
+There are several drivers for working with different SQL servers on different
+platforms. The ones presently implemented are "<b>ctlib</b>" (Sybase),
+"<b>dblib</b>"(MS SQL, Sybase), "<b>ftds</b>" (MS SQLcross platform). For
+static linkage these drivers should be registered manually; for dynamic
+linkage this is not necessary. The <tt><a href="../docxx/CDriverManager.html">CDriverManager</a></tt>
+object maintains all registered drivers.
+<blockquote>
+<pre>CDriverManager &amp;dm = CDriverManager::GetInstance();
 DBAPI_RegisterDriver_CTLIB(dm);
 DBAPI_RegisterDriver_DBLIB(dm);
 
-		</pre>
-		</blockquote>
+</pre>
+</blockquote>
+<a NAME="ref_SrcCnxns"></a>
+<h3>
+Data Source and Connections</h3>
+The <tt><a href="../docxx/IDataSource.html">IDataSource</a></tt> interface
+defines the database platform. To create an object implementing this interface,
+use the method <tt>CreateDs(const string&amp; driver)</tt>. An <tt><a href="../docxx/IDataSource.html">IDataSource</a></tt>
+can create objects represented by an <tt><a href="../docxx/IConnection.html">IConnection</a></tt>
+interface, which is responsible for the connection to the database. It
+is highly recommended to specify the database name as an argument to the
+<tt>CreateConnction()</tt>
+method, or use the <tt>SetDatabase()</tt> method of a <tt><a href="../docxx/CConnection.html">CConneciton</a></tt>
+object instead of using a reqular SQL statement. In the later case, the
+library won't be able to track the current database.
+<blockquote>
+<pre>IDataSource *ds = dm.CreateDs("ctlib");
+IConnection *conn = ds->CreateConnection();
+conn->Connect("user", "password", "server", "database");
+IStatement *stmt = conn->CreateStatement();
 
-	</dd>
+</pre>
+</blockquote>
+Every additional call to <tt><a href="../docxx/IConnection.html">IConnection</a>::CreateStatement()</tt>
+results in cloning the connection for each statement. These connections
+inherit the same default database, which was specified in the <tt>Connect()</tt>
+or <tt>SetDatabase()</tt> method. Thus if the default database was changed
+by calling <tt>SetDatabase()</tt>, all subsequent cloned connections created
+by <tt>CreateStatement()</tt> will inherit this particular default database.
+<br><a NAME="ref_MainLoop"></a>
+<h3>
+Main loop</h3>
+The library simulates the main result-retrieving loop of the Sybase client
+library by using the <tt><a href="../docxx/IStatement.html">IStatement</a>::HasMoreResults()</tt>
+method:
+<blockquote>
+<pre>stmt->Execute("select а");
+while( stmt->HasMoreResults() ) {
+&nbsp;&nbsp;&nbsp; if( stmt->HasRows() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IResultSet *rs = stmt->GetResultset();
 
-<a name="ref_SrcCnxns"></a>
-<dt><h3>Data Source and Connections</h3></dt>
-	<dd>
-		<P>The <a href="../docxx/IDataSource.html"><tt>IDataSource</tt></a> interface defines the database platform.
-		To create an object implementing this
-		interface, use the method <tt>CreateDs(const string&amp; driver)</tt>.  An
-		<a href="../docxx/IDataSource.html"><tt>IDataSource</tt></a> can create objects represented by an
-		<a href="../docxx/IConnection.html"><tt>IConnection</tt></a> interface,
-		which is responsible for the connection to the database.  It is highly
-		recommended to specify the database name as an argument to the
-		<tt>CreateConnction()</tt> method, or use the <tt>SetDatabase()</tt> method of
-		a <a href="../docxx/CConnection.html"><tt>CConneciton</tt></a>
-		object instead of using a reqular SQL statement.  In the later case, the library
-		won't be able to track the current database. </P>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Retrieve results, if any
 
-		<blockquote>
-		<PRE>
-IDataSource *ds = dm.CreateDs("ctlib");
-IConnection *conn = ds-&gt;CreateConnection();
-conn-&gt;Connect("user", "password", "server", "database");
-IStatement *stmt = conn-&gt;CreateStatement();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while( rs->Next() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int col1 = rs->GetVariant(1).GetInt4();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
+}</pre>
+</blockquote>
+This method should be called until it returns false, which means that no
+more results is available. It returns as soon as a result is ready. The
+type of the result can be obtained by calling the <tt><a href="../docxx/IResultSet.html">IResultSet</a>::GetResultType()</tt>
+method. Supported result types are <tt>eRowResult, eParamResult, eComputeResult,
+eStatusResult, eCursorResult</tt>. The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</tt>
+returns the number of updated or deleted rows.
+<p>The <tt><a href="../docxx/IStatement.html">IStatement</a>::ExecuteUpdate()</tt>
+method is used for SQL statements that do not return rows:
+<blockquote>
+<pre>stmt->ExecuteUpdate("update...");
+int rows = stmt->GetRowCount();
 
-		</PRE>
-		</blockquote>
-
-		</FONT><P>Every additional call to <tt><a href="../docxx/IConnection.html">IConnection</a>::CreateStatement()</tt>
-		results in cloning the connection for each statement. These
-		connections inherit the same default database, which was specified in the
-		<tt>Connect()</tt> or <tt>SetDatabase()</tt> method.  Thus if the default database was
-		changed by calling <tt>SetDatabase()</tt>, all subsequent cloned connections
-		created by <tt>CreateStatement()</tt> will inherit this particular default
-		database.</P>
-
-	</dd>
-
-<a name="ref_MainLoop"></a>
-<dt><h3>Main loop</h3></dt>
-	<dd>
-		<P>The library simulates the main result-retrieving loop of
-		the Sybase client library by using the <tt><a href="../docxx/IStatement.html">IStatement</a>::HasMoreResults()</tt> method:</P>
-
-		<blockquote>
-        <PRE>
-stmt-&gt;Execute(&quot;select …&quot;);
-while( stmt-&gt;HasMoreResults() ) {
-    if( stmt-&gt;HasRows() ) {
-        IResultSet *rs = stmt-&gt;GetResultset();
-
-        // Retrieve results, if any
-
-        while( rs-&gt;Next() ) {
-            int col1 = rs-&gt;GetVariant(1).GetInt4();
-            ...
-        }
-    }
-}
-        </PRE>
-		</blockquote>
-
-		<P>This method should be called until it returns false, which
-		means that no more results is available. It returns as soon as a
-		result is ready. The type of the result can be obtained by calling the
-		<tt><a href="../docxx/IResultSet.html">IResultSet</a>::GetResultType()</tt> method.  Supported result types are
-		<tt>eRowResult, eParamResult, eComputeResult, eStatusResult,
-		eCursorResult</tt>. The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</tt> returns the
-		number of updated or deleted rows.</P>
-
-		<P>The <tt><a href="../docxx/IStatement.html">IStatement</a>::ExecuteUpdate()</tt> method is used for SQL statements that do not return rows:</P>
-
-		<blockquote>
-		<PRE>
-stmt-&gt;ExecuteUpdate("update...");
-int rows = stmt-&gt;GetRowCount();
-
-		</PRE>
-		</blockquote>
-
-		<P>The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetResultSet()</tt> returns an <a href="../docxx/IResultSet.html"><tt>IResultSet</tt></a>
-		object. The method <tt><a href="../docxx/IResultSet.html">IResultSet</a>::Next()</tt> actually does fetch, so it
-		should be always called first. It returns false when no more fetch
-		data is available. All column data, except Image and Text is
-		represented by a single <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> object. The method
-		<tt><a href="../docxx/IResultSet.html">IResultSet</a>::GetVariant()</tt> takes one parameter – column
-		number. Column numbers start with 1. </P>
-		<P>&nbsp;</P>
-	</dd>
-
-<a name="ref_IOParams"></a>
-<dt><h3>Input and Output Parameters</h3></dt>
-	<dd>
-		<P>The method <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetParam(const
-		CVariant&amp; v, const string&amp; name)</tt> is used to pass parameters to
-		stored procedures and dynamic SQL statements. To ensure the correct parameter
-		type it is recommended to use <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> type factories (static methods)
-		to create a <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> of the required internal type.  Here are a few
-		examples:  <tt><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4 *p), <a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p),
-		<a href="../docxx/CVariant.html">CVariant</a>::VarChar(const char *p, size_t len )</tt> etc.
-
-		<p>
-		There are also corresponding constructors, like <tt><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4 v),
-		<a href="../docxx/CVariant.html">CVariant</a>::CVariant(const string&amp; s), ...</tt>, but the user must ensure
-		the proper type conversion in the arguments, and not all internal
-		types can be created using constructors.
-
-		<p></p>
-		Output parameters are set by the
-		<tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetOutputParam(const CVariant&amp; v, const
-		string&amp; name)</tt> method, where the first argument is a null <a href="../docxx/CVariant.html"><tt>CVariant</tt></a>
-		of a particular type, e.g. <tt>SetOutputParam(CVariant::SmallInt(0),"@arg")</tt>.</P>
-	</dd>
-
-<a name="ref_StoredProcs"></a>
-<dt><h3>Stored Procedures</h3></dt>
-	<dd>
-		<P>The <a href="../docxx/ICallableStatement.html"><tt>ICallableStatement</tt></a> object is used for calling stored
-		procedures. Fist get the object itself by calling
-		<tt><a href="../docxx/IConnection.html">IConnection</a>::PrepareCall()</tt>. Then set any parameters. If the parameter name
-		is empty, the calls to <tt>SetParam()</tt> should be in the exact order of the actual
-		parameters.  Retrieve all results in the main loop. Get the status of the
-		stored procedure using the <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::GetReturnStatus()</tt> method.</P>
-
-		<blockquote>
-		<PRE>
-ICallableStatement *cstmt = conn-&gt;PrepareCall(&quot;ProcName&quot;);
+</pre>
+</blockquote>
+The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetResultSet()</tt>
+returns an <tt><a href="../docxx/IResultSet.html">IResultSet</a></tt> object.
+The method <tt><a href="../docxx/IResultSet.html">IResultSet</a>::Next()</tt>
+actually does fetch, so it should be always called first. It returns false
+when no more fetch data is available. All column data, except Image and
+Text is represented by a single <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
+object. The method <tt><a href="../docxx/IResultSet.html">IResultSet</a>::GetVariant()</tt>
+takes one parameter ы column number. Column numbers start with 1.
+<br>&nbsp;
+<p><a NAME="ref_IOParams"></a>
+<h3>
+Input and Output Parameters</h3>
+The method <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetParam(const
+CVariant&amp; v, const string&amp; name)</tt> is used to pass parameters
+to stored procedures and dynamic SQL statements. To ensure the correct
+parameter type it is recommended to use <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
+type factories (static methods) to create a <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
+of the required internal type. Here are a few examples: <tt><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
+*p), <a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p),
+<a href="../docxx/CVariant.html">CVariant</a>::VarChar(const
+char *p, size_t len )</tt> etc.
+<p>There are also corresponding constructors, like <tt><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4
+v), <a href="../docxx/CVariant.html">CVariant</a>::CVariant(const string&amp;
+s), ...</tt>, but the user must ensure the proper type conversion in the
+arguments, and not all internal types can be created using constructors.
+<br>Output parameters are set by the <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetOutputParam(const
+CVariant&amp; v, const string&amp; name)</tt> method, where the first argument
+is a null <tt><a href="../docxx/CVariant.html">CVariant</a></tt> of a particular
+type, e.g. <tt>SetOutputParam(CVariant::SmallInt(0),"@arg")</tt>.<a NAME="ref_StoredProcs"></a>
+<h3>
+Stored Procedures</h3>
+The <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a></tt>
+object is used for calling stored procedures. Fist get the object itself
+by calling <tt><a href="../docxx/IConnection.html">IConnection</a>::PrepareCall()</tt>.
+Then set any parameters. If the parameter name is empty, the calls to <tt>SetParam()</tt>
+should be in the exact order of the actual parameters. Retrieve all results
+in the main loop. Get the status of the stored procedure using the <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::GetReturnStatus()</tt>
+method.
+<blockquote>
+<pre>ICallableStatement *cstmt = conn->PrepareCall("ProcName");
 Uint1 status = 1;
-cstmt-&gt;SetParam(CVariant(&quot;test&quot;), &quot;@test_input&quot;);
-cstmt-&gt;SetParam(CVariant::TinyInt(&amp;status), &quot;@status&quot;);
-cstmt-&gt;SetOutputParam(CVariant::Int(0), &quot;@result&quot;);
+cstmt->SetParam(CVariant("test"), "@test_input");
+cstmt->SetParam(CVariant::TinyInt(&amp;status), "@status");
+cstmt->SetOutputParam(CVariant::Int(0), "@result");
 
-cstmt-&gt;Execute();
+cstmt->Execute();
 
-while(cstmt-&gt;HasMoreResults()) {
-    if( cstmt-&gt;HasRows() ) {
-        IResultSet *rs = cstmt-&gt;GetResultSet();
-        switch( rs-&gt;GetResultType() ) {
-            case eRowResult:
-                  while(rs-&gt;Next()) {
+while(cstmt->HasMoreResults()) {
+&nbsp;&nbsp;&nbsp; if( cstmt->HasRows() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IResultSet *rs = cstmt->GetResultSet();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch( rs->GetResultType() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eRowResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(rs->Next()) {
 
-                  // retrieve row results
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // retrieve row results
 
-                  }
-                  break;
-            case eParamResult:
-                  while(rs-&gt;Next()) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eParamResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(rs->Next()) {
 
-                  // Retrieve parameter row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Retrieve parameter row
 
-                  }
-                  break;
-        }
-    }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
 }
 
 // Get status
-int status = cstmt-&gt;GetReturnStatus();
+int status = cstmt->GetReturnStatus();
 
-		</PRE>
-		</blockquote>
-
-	</dd>
-
-<a name="ref_Cursors"></a>
-<dt><h3>Cursors</h3></dt>
-	<dd>
-		<P>The library currently supports basic cursor features
-		such as setting parameters and cursor update and delete
-		operations.</P>
-
-		<blockquote>
-		<PRE>
-ICursor *cur = conn-&gt;CreateCursor("table_cur",
-                                  "select ... for update of ...");
-IResultSet *rs = cur-&gt;Open();
-while(rs-&gt;Next()) {
-    cur-&gt;Update(table, sql_statement_for_update);
+</pre>
+</blockquote>
+<a NAME="ref_Cursors"></a>
+<h3>
+Cursors</h3>
+The library currently supports basic cursor features such as setting parameters
+and cursor update and delete operations.
+<blockquote>
+<pre>ICursor *cur = conn->CreateCursor("table_cur",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "select ... for update of ...");
+IResultSet *rs = cur->Open();
+while(rs->Next()) {
+&nbsp;&nbsp;&nbsp; cur->Update(table, sql_statement_for_update);
 }
-cur-&gt;Close();
+cur->Close();
 
-		</PRE>
-		</blockquote>
+</pre>
+</blockquote>
+<a NAME="ref_Libraries"></a>
+<h3>
+Libraries</h3>
+The following libraries should be used (the order is significant):
+<dl>
+<dt>
+for <b>ctlib</b> (Sybase):</dt>
 
-	</dd>
+<br>&nbsp;
+<p>&nbsp;
+<p><font face="Courier New">dbapi dbapi_driver_ctlib dbapi_driver</font>
+<p>plus corresponding Sybase libraries.
+<dt>
+for <b>dblib</b> (MS SQL):</dt>
 
-<a name="ref_Libraries"></a>
-<dt><h3>Libraries</h3></dt>
-	<dd>
-		<FONT FACE="Courier New">
-		</FONT><P>The following libraries should be used (the order is significant):</P>
-		<dl>
-			<dt>for <b>ctlib</b> (Sybase):</dt>
-			<dd><FONT FACE="Courier New"><P>dbapi dbapi_driver_ctlib dbapi_driver</P>
-			</FONT><P>plus corresponding Sybase libraries.</P>
-			</dd>
-
-			<dt>for <b>dblib</b> (MS SQL):</dt>
-			<dd><FONT FACE="Courier New"><P>dbapi dbapi_driver_dblib dbapi_driver </P>
-			</FONT><P>plus Sybase <FONT FACE="Courier New">sybdb</P></FONT>
-			</dd>
-		</dl>
-	</dd>
+<br>&nbsp;
+<p>&nbsp;
+<p><font face="Courier New">dbapi dbapi_driver_dblib dbapi_driver</font>
+<p>plus Sybase <font face="Courier New">sybdb</font></dl>
 </dl>
-
-<p>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-
-<!-- Begin footer content -->
-
-<table border=0 width="100%" cellspacing=0>
+<!--#include virtual="../ssi/navlinks.shtml" --><!-- Begin footer content -->
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
-<td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Michael Kholodov</a></address>
+<td ALIGN=LEFT>
+<address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Michael Kholodov</a></address>
 </td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT><i>$Date$</i></td>
 </tr>
 </table>
-
 <!--#include virtual="../ssi/footer.shtml" -->
+</body>
+</html>
