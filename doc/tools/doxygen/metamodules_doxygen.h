@@ -488,7 +488,11 @@
  *  Algorithm members
  */
 
-/** @defgroup AlgoAlignExcep Global Alignment Algorithm Exceptions
+/** @defgroup AlgoBlast BLAST (Basic Local Alignment Search Tool)
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoAlignExcep Global Alignment Exceptions
  *  @ingroup ALGO
  */
 
@@ -496,15 +500,15 @@
  *  @ingroup ALGO
  */
 
-/** @defgroup AlgoAlignRoot Generic Global(Needleman-Wunsch) Alignment Algorithm
+/** @defgroup AlgoAlignRoot Generic Global(Needleman-Wunsch) Alignment
  *  @ingroup ALGO
  */
 
-/** @defgroup AlgoAlignMM Linear Space Global Alignment Algorithm
+/** @defgroup AlgoAlignMM Linear Space Global Alignment
  *  @ingroup ALGO
  */
 
-/** @defgroup AlgoAlignSpliced Spliced cDna-to-Genomic Alignment Algorithms
+/** @defgroup AlgoAlignSpliced Spliced cDna-to-Genomic Alignment
  *  @ingroup ALGO
  */
 
