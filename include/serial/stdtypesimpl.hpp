@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/03 19:04:25  vasilche
+* Fixed type references in templates.
+*
 * Revision 1.1  2000/07/03 18:42:37  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -82,6 +85,7 @@ class CPrimitiveTypeInfoImpl : public CPrimitiveTypeInfo
 {
 public:
     typedef T TObjectType;
+    typedef CPrimitiveTypeInfo::EValueType EValueType;
 
     static TObjectType& Get(TObjectPtr object)
         {
@@ -157,6 +161,8 @@ public:
 template<typename T>
 class CPrimitiveTypeInfoLong : public CPrimitiveTypeInfoImpl<T>
 {
+    typedef CPrimitiveTypeInfo::EValueType EValueType;
+
     static bool x_IsSigned(void)
         {
             return TObjectType(-1) < 0;
@@ -232,6 +238,7 @@ class CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfoImpl<T>
 {
 public:
     typedef T TObjectType;
+    typedef CPrimitiveTypeInfo::EValueType EValueType;
 
     virtual EValueType GetValueType(void) const
         {
@@ -285,6 +292,8 @@ template<typename T>
 class CPrimitiveTypeInfoCharPtr : public CPrimitiveTypeInfoImpl<T>
 {
 public:
+    typedef CPrimitiveTypeInfo::EValueType EValueType;
+
     virtual EValueType GetValueType(void) const
         {
             return eString;
@@ -347,6 +356,7 @@ class CCharVectorTypeInfoImpl : public CPrimitiveTypeInfo
 public:
     typedef vector<Char> TObjectType;
     typedef Char TChar;
+    typedef CPrimitiveTypeInfo::EValueType EValueType;
 
     virtual EValueType GetValueType(void) const
         {
