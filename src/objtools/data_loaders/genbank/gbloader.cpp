@@ -63,6 +63,8 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
