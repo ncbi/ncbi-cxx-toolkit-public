@@ -121,7 +121,7 @@ const int CDisplaySeqalign::m_PMatrixSize;
 const char CDisplaySeqalign::m_PSymbol[m_PMatrixSize+1] = "ARNDCQEGHILKMFPSTWYVBZX";
 
 //Constructor
-CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
+CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
   m_AlignOption = 0;
   m_SeqLocChar = eX;
   m_SeqLocColor = eBlack;
@@ -1920,6 +1920,10 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.24  2003/12/22 21:13:59  camacho
+*Fix Seq-align-set type qualifier.
+*Indenting left as-is.
+*
 *Revision 1.23  2003/12/16 19:21:23  jianye
 *Set k_ColorMismatchIdentity to 0
 *
