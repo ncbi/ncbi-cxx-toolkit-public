@@ -66,6 +66,7 @@ void CTitleTester::Init(void)
     arg_desc->AddFlag("reconstruct", "Reconstruct title");
     arg_desc->AddFlag("accession", "Prepend accession");
     arg_desc->AddFlag("organism", "Append organism name");
+    arg_desc->AddFlag("allproteins", "Name all proteins, not just the first");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -91,6 +92,9 @@ int CTitleTester::Run(void)
     if (args["organism"]) {
         flags |= fGetTitle_Organism;
     }
+    if (args["allproteins"]) {
+        flags |= fGetTitle_AllProteins;
+    }
     NcbiCout << GetTitle(handle, flags) << NcbiEndl;
     return 0;
 }
@@ -110,6 +114,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/10/14 20:30:31  ucko
+* Add a flag -allproteins (off by default) that governs whether to include
+* all protein names or just the first, per recent changes to the C Toolkit.
+*
 * Revision 1.5  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
