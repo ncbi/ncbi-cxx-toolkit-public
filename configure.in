@@ -47,13 +47,12 @@ AC_CONFIG_HEADER(config.h:config.h.in)
 
 #### Check if "${exec_prefix}" dir is defined
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
-  AC_MSG_ERROR([Use option \"--exec_prefix\" to define output dirs!])
+  exec_prefix="${srcdir}/exec"
 fi
 
 #### Check if there is "${exec_prefix}" dir
 if test ! -d "${exec_prefix}" ; then
-  AC_MSG_ERROR(
-   [Directory \"${exec_prefix}\"(see \"--exec_prefix\") does not exist!])
+   mkdir -p "${exec_prefix}"
 fi
 
 #### Make "exec_prefix" absolute
@@ -104,8 +103,8 @@ AC_PROG_CXX
 changequote(, )dnl
 if test "$GCC" = "yes" ; then
   # GNU compiler
-  CFLAGS="-Wall $CFLAGS"
-  CXXFLAGS="-Wall $CXXFLAGS"
+  CFLAGS="-Wall -ansi $CFLAGS"
+  CXXFLAGS="-Wall -ansi $CXXFLAGS"
 elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then
   # MSVC++ compiler
   CFLAGS="-W4 $CFLAGS"
@@ -182,7 +181,7 @@ AC_CHECK_SIZEOF(long double)
 ### Compose a list of makefile templates("Makefile.in") in subdirs,
 ### then configure them into regular makefiles("Makefile")
 
-makefiles=`find . -name 'Makefile*.in' -print | sed 's/\(Makefile.*\)\.in/\1/g'`
+makefiles=`cd "${srcdir}"  &&  find . -name 'Makefile*.in' -print | sed 's/\(Makefile.*\)\.in/\1/g'`
 if test -z "$makefiles" ; then
   AC_MSG_ERROR([Cannot find any of \"Makefile.in\" below \"${srcdir}\"!])
 fi
@@ -212,6 +211,41 @@ AC_SUBST(LIBS)
 
 
 #############################################################################
-### Create output files
+### Create output files and render the "$exec_prefix" sub-dirs
 
-AC_OUTPUT( ${makefiles} )
+AC_OUTPUT(
+${makefiles},
+
+### Create and render the "$exec_prefix" directory
+set -x
+exec_prefix="$SAVE_exec_prefix"
+
+libdir="$exec_prefix/lib"
+bindir="$exec_prefix/bin"
+incdir="$exec_prefix/include"
+
+mkdir -p "$libdir" "$bindir" "$incdir"
+cp -p "$top_srcdir/config.h" "$incdir/ncbiconf.h"
+
+if test "$exec_prefix" = "$top_srcdir" ; then
+   builddir="$top_srcdir/src"
+else
+   builddir="$exec_prefix/build"
+   if test ! -d  "$builddir" ; then
+      mkdir -p "$builddir"
+   fi
+
+   src_dir="$top_srcdir"/src
+   cd "$src_dir"  &&  find . -name 'Makefile*' -print |
+   grep -v 'Makefile.*\.in' |
+   while read x_makefile ; do
+      dest_dir="$builddir"/`dirname "$x_makefile"`
+      if test ! -d "$dest_dir" ; then
+         mkdir -p "$dest_dir"
+      fi
+      cp -p "$src_dir/$x_makefile" "$dest_dir/"
+   done
+fi,
+
+SAVE_exec_prefix="$exec_prefix"
+)
