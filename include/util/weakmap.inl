@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/01/21 13:10:24  dicuccio
+* Use typename to make SWIG happy
+*
 * Revision 1.7  2001/05/17 15:01:19  lavr
 * Typos corrected
 *
@@ -117,7 +120,7 @@ template<class Object>
 inline
 void CWeakMap<Object>::insert(key_type& key, const mapped_type& object)
 {
-    pair<TMap::iterator, bool> insert =
+    pair<typename TMap::iterator, bool> insert =
         m_Map.insert(TMap::value_type(&key, object));
     if ( insert.second ) {
         key.Register(this);
@@ -131,7 +134,7 @@ template<class Object>
 inline
 void CWeakMap<Object>::erase(key_type& key)
 {
-    TMap::iterator mi = m_Map.find(&key);
+    typename TMap::iterator mi = m_Map.find(&key);
     if ( mi != m_Map.end() ) {
         m_Map.erase(mi);
         key.Deregister(this);
