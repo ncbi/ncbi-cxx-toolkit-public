@@ -311,8 +311,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             strand = strand_opt;
         }
 
-        if (itr->mask)
-            mask = CSeqLoc2BlastMaskLoc(*itr->mask, index);
+        mask = CSeqLoc2BlastMaskLoc(itr->mask, index);
 
         ++index;
 
@@ -441,8 +440,7 @@ SetupSubjects(const TSeqLocVector& subjects,
         }
 
         /* Set the lower case mask, if it exists */
-        if (itr->mask)
-            subj->lcase_mask = CSeqLoc2BlastMaskLoc(*itr->mask, index);
+        subj->lcase_mask = CSeqLoc2BlastMaskLoc(itr->mask, index);
         ++index;
 
         if (subj_is_na) {
@@ -680,35 +678,27 @@ void
 x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
                          const BlastSeqSrc* seq_src, // [in]
                          int oid,                    // [in] 
-                         CSeq_id** seqid,            // [out]
+                         CConstRef<CSeq_id>& seqid,  // [out]
                          TSeqPos* length)            // [out]
 {
     ASSERT(ss || seq_src);
-    ASSERT(seqid);
     ASSERT(length);
 
     if ( !seq_src ) {
-        *seqid = const_cast<CSeq_id*>(&sequence::GetId(*ss->seqloc,
-                                                       ss->scope));
+        seqid.Reset(&sequence::GetId(*ss->seqloc, ss->scope));
         *length = sequence::GetLength(*ss->seqloc, ss->scope);
     } else {
         ListNode* seqid_wrap;
         seqid_wrap = BLASTSeqSrcGetSeqId(seq_src, (void*) &oid);
         ASSERT(seqid_wrap);
         if (seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID) {
-            *seqid = (CSeq_id*)seqid_wrap->ptr;
-            ListNodeFree(seqid_wrap);
+            seqid.Reset((CSeq_id*)seqid_wrap->ptr);
         } else if (seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID_REF) {
-            *seqid = ((CRef<CSeq_id>*)seqid_wrap->ptr)->GetPointer();
-        } else {
-            /** FIXME!!! This is wrong, because the id created here will 
-                not be registered! However if sequence source returns a 
-                C object, we cannot handle it here. */
-            char* id = BLASTSeqSrcGetSeqIdStr(seq_src, (void*) &oid);
-            string id_str(id);
-            *seqid = new CSeq_id(id_str);
-            sfree(id);
+            CRef<CSeq_id>* seqid_ref = (CRef<CSeq_id>*)seqid_wrap->ptr;
+            seqid.Reset(seqid_ref->GetPointer());
+            delete seqid_ref;
         }
+        ListNodeFree(seqid_wrap);
         *length = BLASTSeqSrcGetSeqLen(seq_src, (void*) &oid);
     }
     return;
@@ -798,13 +788,10 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     }
 
     TSeqPos query_length = 0;
-    CSeq_id* qid = NULL;
     CConstRef<CSeq_id> query_id;
-    x_GetSequenceLengthAndId(&query, NULL, 0, &qid, &query_length);
-    query_id.Reset(qid);
+    x_GetSequenceLengthAndId(&query, NULL, 0, query_id, &query_length);
 
     TSeqPos subj_length = 0;
-    CSeq_id* sid = NULL;
     CConstRef<CSeq_id> subject_id;
 
     for (int index = 0; index < hit_list->hsplist_count; index++) {
@@ -813,8 +800,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
             continue;
 
         x_GetSequenceLengthAndId(NULL, seq_src, hsp_list->oid,
-                                 &sid, &subj_length);
-        subject_id.Reset(sid);
+                                 subject_id, &subj_length);
 
         // Create a CSeq_align for each matching sequence
         CRef<CSeq_align> hit_align;
@@ -883,21 +869,17 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     TSeqAlignVector retval;
     CConstRef<CSeq_id> subject_id;
     CConstRef<CSeq_id> query_id;
-    CSeq_id* sid = NULL;
-    CSeq_id* qid = NULL;
     TSeqPos subj_length = 0;
     TSeqPos query_length = 0;
 
     // Subject is the same for all queries, so retrieve its id right away
     x_GetSequenceLengthAndId(NULL, seq_src, subject_index,
-                             &sid, &subj_length);
-    subject_id.Reset(sid);
-
+                             subject_id, &subj_length);
 
     // Process each query's hit list
     for (int index = 0; index < results->num_queries; index++) {
-        x_GetSequenceLengthAndId(&query[index], NULL, 0, &qid, &query_length);
-        query_id.Reset(qid);
+        x_GetSequenceLengthAndId(&query[index], NULL, 0, query_id, 
+                                 &query_length);
         CRef<CSeq_align_set> seq_aligns;
         BlastHitList* hit_list = results->hitlist_array[index];
         BlastHSPList* hsp_list = NULL;
@@ -952,8 +934,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/06/23 14:05:34  dondosha
+* Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer; fixed a memory leak in x_GetSequenceLengthAndId
+*
 * Revision 1.7  2004/06/22 16:45:14  camacho
-* Changed the blast_type_* definitions for the EBlastProgramType enumeration.
+* Changed the blast_type_* definitions for the TBlastProgramType enumeration.
 *
 * Revision 1.6  2004/06/21 15:28:16  jcherry
 * Guard against trying to access unset strand of a Seq-interval
