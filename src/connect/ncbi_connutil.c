@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/04/21 19:42:35  vakatov
+ * Several minor typo/bugs fixed
+ *
  * Revision 6.2  2000/03/29 16:36:09  vakatov
  * MIME_ParseContentType() -- a fix
  *
@@ -112,6 +115,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* reg_section)
         val = atoi(str);
         info->http_proxy_port = (unsigned short)
             (val > 0 ? val : DEF_CONN_HTTP_PROXY_PORT);
+    } else {
+        info->http_proxy_port = DEF_CONN_HTTP_PROXY_PORT;
     }
 
     /* non-transparent CERN-like firewall proxy server? */
@@ -125,13 +130,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* reg_section)
                              strcmp(str, "yes" ) == 0));
 
     /* turn on firewall mode? */
-    if ( !info->firewall ) {
-        REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-        info->firewall = (*str  &&
-                          (strcmp(str, "1"   ) == 0  ||
-                           strcmp(str, "true") == 0  ||
-                           strcmp(str, "yes" ) == 0));
-    }
+    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
+    info->firewall = (*str  &&
+                      (strcmp(str, "1"   ) == 0  ||
+                       strcmp(str, "true") == 0  ||
+                       strcmp(str, "yes" ) == 0));
 
     /* prohibit the use of local load balancer? */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
@@ -159,11 +162,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* reg_section)
 
 extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 {
-    if (info->http_proxy_adjusted  ||  *info->http_proxy_host) {
+    if (info->http_proxy_adjusted  ||  !*info->http_proxy_host) {
         return 0/*false*/;
     }
 
-    if (strlen(info->host) + strlen(info->path) + 16 < sizeof(info->path)) {
+    if (strlen(info->host) + strlen(info->path) + 16 > sizeof(info->path)) {
         CORE_LOG(eLOG_Error,
                  "[ConnNetInfo_AdjustForHttpProxy]  Too long adjusted path");
         assert(0);
