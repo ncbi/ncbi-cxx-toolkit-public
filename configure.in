@@ -579,26 +579,6 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-AC_MSG_CHECKING(for popen)
-AC_TRY_COMPILE(
-   [#include <stdio.h>],
-   [ FILE* fp = popen("command", "mode"); ],
-   AC_DEFINE_UNQUOTED(HAVE_POPEN, 1)
-)
-AC_MSG_RESULT()
-
-
-AC_MSG_CHECKING(for sigaction)
-AC_TRY_COMPILE(
-   [#include <signal.h>],
-   [ const struct sigaction* sa1 = 0;
-     struct sigaction* sa2 = 0;
-     int i = sigaction(SIGKILL, sa1, sa2); ],
-   AC_DEFINE_UNQUOTED(HAVE_SIGACTION, 1)
-)
-AC_MSG_RESULT()
-
-
 AC_MSG_CHECKING(for strcasecmp)
 AC_TRY_COMPILE(
    [#include <string.h>],

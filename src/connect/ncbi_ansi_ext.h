@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/17 18:51:28  vakatov
+ * no HAVE_SIGACTION
+ * no HAVE_STRCASECMP
+ *
  * Revision 6.2  2000/05/17 16:09:57  lavr
  * Define prototypes of functions, usually defined but hidden in ANSI mode
  *
@@ -77,17 +81,6 @@ int strcasecmp(const char* s1, const char* s2);
  */
 int strncasecmp(const char* s1, const char* s2, size_t n);
 #endif /* HAVE_STRCASECMP */
-
-
-#ifndef HAVE_POPEN
-FILE *popen(const char *command, const char *mode);
-int  pclose(FILE *stream);
-#endif
-
-
-#ifndef HAVE_SIGACTION
-int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
-#endif
 
 
 #ifdef __cplusplus
