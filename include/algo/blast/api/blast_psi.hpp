@@ -60,14 +60,12 @@ BEGIN_SCOPE(blast)
 /// This class must be configured with a concrete strategy for it to obtain 
 /// its input data.
 /// The following example uses the CPsiBlastInputData concrete strategy:
-/// @sa CPsiBlastInputData
 ///
 /// @code
 /// ...
-/// auto_ptr<CPsiBlastInputData> psi_strategy(
-///     new CPsiBlastInputData(query, query_length, alignment, scope,
-///                            psi_blast_options));
-/// CPssmEngine pssm_engine(psi_strategy.get());
+/// CPsiBlastInputData pssm_strategy(query, query_length, alignment, 
+///                                  object_manager_scope, psi_blast_options);
+/// CPssmEngine pssm_engine(&pssm_strategy);
 /// CRef<CScore_matrix_parameters> scoremat = pssm_engine.Run();
 /// ...
 /// @endcode
@@ -75,10 +73,12 @@ BEGIN_SCOPE(blast)
 class CPssmEngine
 {
 public:
-    /// Does not take ownership of input
+    /// Constructor to configure the PSSM engine with a PSSM input data
+    /// strategy object
     CPssmEngine(IPssmInputData* input);
     ~CPssmEngine();
 
+    /// Runs the PSSM engine to compute the PSSM
     CRef<objects::CScore_matrix_parameters> Run();
 
 private:
@@ -144,6 +144,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/08/05 18:02:13  camacho
+ * Enhanced documentation
+ *
  * Revision 1.9  2004/08/04 20:52:37  camacho
  * Documentation changes
  *

@@ -40,7 +40,6 @@
 // Forward declaration for unit test classes
 class CPssmEngineTest;
 
-
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -65,7 +64,7 @@ class CPsiBlastInputData : public IPssmInputData
 {
 public:
     /// Construct a concrete strategy, used to configure the CPssmEngine object
-    /// @param query query sequence for the alignment.
+    /// @param query query sequence for the alignment in ncbistdaa encoding.
     /// @param query_length length of the sequence above.
     /// @param sset pairwise alignment produced by BLAST where query was the
     /// query sequence.
@@ -149,6 +148,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/08/05 18:02:13  camacho
+ * Enhanced documentation
+ *
  * Revision 1.5  2004/08/04 21:13:11  camacho
  * Removed unneeded e_value parameter
  *

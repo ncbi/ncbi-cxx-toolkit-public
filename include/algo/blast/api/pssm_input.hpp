@@ -41,10 +41,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Abstract base class to encapsulate the sources and processing of PSSM input
-/// data.
+/// Abstract base class to encapsulate the source(s) and pre-processing of 
+/// PSSM input data as well as options to the PSI-BLAST PSSM engine.
 ///
-/// This interface represents the strategy to process PSSM input data and
+/// This interface represents the strategy to pre-process PSSM input data and
 /// to provide to the PSSM engine (context) the multiple sequence alignment 
 /// structure and options that it can use to build the PSSM.
 /// This class is meant to provide a uniform interface that the PSSM engine can
@@ -62,7 +62,7 @@ public:
     virtual void Process() = 0;
 
     /// Get the query sequence used as master for the multiple sequence
-    /// alignment.
+    /// alignment in ncbistdaa encoding.
     virtual unsigned char* GetQuery() = 0;
 
     /// Get the query's length
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/08/05 18:02:13  camacho
+ * Enhanced documentation
+ *
  * Revision 1.4  2004/08/04 20:52:37  camacho
  * Documentation changes
  *
