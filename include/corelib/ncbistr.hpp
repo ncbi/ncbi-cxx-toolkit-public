@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbitype.h>
+#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistl.hpp>
 #include <string.h>
 #include <ctype.h>
@@ -552,6 +553,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2002/07/17 16:49:03  gouriano
+ * added ncbiexpt.hpp include
+ *
  * Revision 1.19  2002/07/15 18:17:52  gouriano
  * renamed CNcbiException and its descendents
  *
