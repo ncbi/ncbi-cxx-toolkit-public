@@ -825,25 +825,25 @@ static void s_TestTimeSpan(void)
     }}
     {{
         CTimeSpan t1(2,3,4,5,6);
-        assert(t1.GetTotalHours()   == 51);
-        assert(t1.GetTotalMinutes() == (51*60+4));
-        assert(t1.GetTotalSeconds() == ((51*60+4)*60+5));
+        assert(t1.GetCompleteHours()   == 51);
+        assert(t1.GetCompleteMinutes() == (51*60+4));
+        assert(t1.GetCompleteSeconds() == ((51*60+4)*60+5));
         assert(t1.GetNanoSecondsAfterSecond() == 6);
         cout << t1.AsString() << endl;
         assert(t1.AsString() == "183845.000000006");
 
         CTimeSpan t2(-2,-3,-4,-5,-6);
-        assert(t2.GetTotalHours()   == -51);
-        assert(t2.GetTotalMinutes() == -(51*60+4));
-        assert(t2.GetTotalSeconds() == -((51*60+4)*60+5));
+        assert(t2.GetCompleteHours()   == -51);
+        assert(t2.GetCompleteMinutes() == -(51*60+4));
+        assert(t2.GetCompleteSeconds() == -((51*60+4)*60+5));
         assert(t2.GetNanoSecondsAfterSecond() == -6);
         cout << t2.AsString() << endl;
         assert(t2.AsString() == "-183845.000000006");
 
         CTimeSpan t3(-2,+3,-4,-5,+6);
-        assert(t3.GetTotalHours()   == -45);
-        assert(t3.GetTotalMinutes() == -(45*60+4));
-        assert(t3.GetTotalSeconds() == -((45*60+4)*60+4));
+        assert(t3.GetCompleteHours()   == -45);
+        assert(t3.GetCompleteMinutes() == -(45*60+4));
+        assert(t3.GetCompleteSeconds() == -((45*60+4)*60+4));
         assert(t3.GetNanoSecondsAfterSecond() == -999999994);
         cout << t3.AsString() << endl;
         assert(t3.AsString() == "-162244.999999994");
@@ -998,6 +998,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2004/09/07 18:48:06  ivanov
+ * CTimeSpan:: renamed GetTotal*() -> GetComplete*()
+ *
  * Revision 6.23  2004/09/07 16:33:19  ivanov
  * + s_TestTimeSpan(), s_DemoStopWatch()
  *

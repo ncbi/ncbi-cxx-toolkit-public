@@ -1153,7 +1153,7 @@ CTime& CTime::AddTimeSpan(const CTimeSpan& ts)
     if ( ts.GetSign() == eZero ) {
         return *this;
     }
-    AddSecond(ts.GetTotalSeconds());
+    AddSecond(ts.GetCompleteSeconds());
     AddNanoSecond(ts.GetNanoSecondsAfterSecond());
     return *this;
 }
@@ -1611,19 +1611,19 @@ string CTimeSpan::AsString(const string& fmt) const
                       str += "-";
                   }
                   break;
-        case 'd': s_AddZeroPadInt(str, abs(GetTotalDays()));
+        case 'd': s_AddZeroPadInt(str, abs(GetCompleteDays()));
                   break;
         case 'h': s_AddZeroPadInt(str, abs(x_Hour()));
                   break;
-        case 'H': s_AddZeroPadInt(str, abs(GetTotalHours()), 0);
+        case 'H': s_AddZeroPadInt(str, abs(GetCompleteHours()), 0);
                   break;
         case 'm': s_AddZeroPadInt(str, abs(x_Minute()));
                   break;
-        case 'M': s_AddZeroPadInt(str, abs(GetTotalMinutes()), 0);
+        case 'M': s_AddZeroPadInt(str, abs(GetCompleteMinutes()), 0);
                   break;
         case 's': s_AddZeroPadInt(str, abs(x_Second()));
                   break;
-        case 'S': s_AddZeroPadInt(str, abs(GetTotalSeconds()), 0);
+        case 'S': s_AddZeroPadInt(str, abs(GetCompleteSeconds()), 0);
                   break;
         case 'n': s_AddZeroPadInt(str, abs(GetNanoSecondsAfterSecond()), 9);
                   break;
@@ -1729,6 +1729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/09/07 18:47:49  ivanov
+ * CTimeSpan:: renamed GetTotal*() -> GetComplete*()
+ *
  * Revision 1.51  2004/09/07 16:31:51  ivanov
  * Added CTimeSpan class and its support to CTime class (addition/subtraction)
  * CTime:: added new format letter support 'd', day without leading zero.
