@@ -131,6 +131,12 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     }
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
+#ifdef NCBI_COMPILER_MIPSPRO
+    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
+        return CT_EOF;
+    m_MIPSPRO_ReadsomeGptr = 0;
+#endif
+
     // read from the connection
     size_t n_read;
     EIO_Status status;
@@ -267,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/03/30 07:00:09  lavr
+ * MIPS-specific workaround for lame-designed stream read ops
+ *
  * Revision 6.24  2003/03/28 03:58:08  lavr
  * CConn_Streambuf::xsgetn(): tiny formal fix in backup condition
  *

@@ -341,7 +341,12 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #    define NCBI_NO_READSOME 1
 #  endif
 #elif defined(NCBI_COMPILER_MSVC)
-    /* MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided */
+    // MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided
+#  define NCBI_NO_READSOME 1
+#elif defined(NCBI_COMPILER_MIPSPRO)
+    /* MIPSPro does not comply with the standard and always checks for EOF
+     * doing one extra read from the stream [which might be a killing idea
+     * for network connections]. We introduced an ugly workaround here... */
 #  define NCBI_NO_READSOME 1
 #endif
 
@@ -349,7 +354,17 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #undef NCBI_NO_READSOME
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" flag if gcount() < buf_size
+#ifdef NCBI_COMPILER_MIPSPRO
+    CMIPSPRO_ReadsomeTolerantStreambuf* sb =
+        dynamic_cast<CMIPSPRO_ReadsomeTolerantStreambuf*> (is.rdbuf());
+    if (sb)
+        sb->MIPSPRO_ReadsomeBegin();
+#endif
     is.read(buf, buf_size);
+#ifdef NCBI_COMPILER_MIPSPRO
+    if (sb)
+        sb->MIPSPRO_ReadsomeEnd();
+#endif
     streamsize count = is.gcount();
     // Reset "eof" flag if some data have been read
     if (count  &&  is.eof())
@@ -378,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2003/03/30 07:00:36  lavr
+ * MIPS-specific workaround for lame-designed stream read ops
+ *
  * Revision 1.20  2003/03/28 03:26:15  lavr
  * Reinstate NCBI_NO_READSOME for MSVC
  *

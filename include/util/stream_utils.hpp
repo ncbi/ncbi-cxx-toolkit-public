@@ -41,6 +41,44 @@
 BEGIN_NCBI_SCOPE
 
 
+#ifdef NCBI_COMPILER_MIPSPRO
+
+class CMIPSPRO_ReadsomeTolerantStreambuf : public streambuf
+{
+public:
+    // Do not use these two ugly, weird, ad-hoc methods, ever!!!
+    void MIPSPRO_ReadsomeBegin(void);
+    void MIPSPRO_ReadsomeEnd  (void);
+
+protected:
+    CMIPSPRO_ReadsomeTolerantStreambuf();
+
+    const CT_CHAR_TYPE* m_MIPSPRO_ReadsomeGptr;
+    unsigned int        m_MIPSPRO_ReadsomeGptrSetLevel;
+};
+
+
+CMIPSPRO_ReadsomeTolerantStreambuf::CMIPSPRO_ReadsomeTolerantStreambuf() :
+    m_MIPSPRO_ReadsomeGptrSetLevel(0)
+{
+}
+
+
+void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeBegin(void)
+{
+    if (!m_MIPSPRO_ReadsomeGptrSetLevel++)
+        m_MIPSPRO_ReadsomeGptr = gptr();
+}
+
+
+void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeEnd(void)
+{
+    --m_MIPSPRO_ReadsomeGptrSetLevel;
+}
+
+#endif/*NCBI_COMPILER_MIPSPRO*/
+
+
 struct NCBI_XUTIL_EXPORT CStreamUtils {
 
 // Push the block of data [buf, buf+buf_size) back to the input stream "is".
@@ -87,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2003/03/30 06:59:50  lavr
+ * MIPS-specific workaround for lame-designed stream read ops
+ *
  * Revision 1.8  2002/12/19 14:51:00  dicuccio
  * Added export specifier for Win32 DLL builds.
  *

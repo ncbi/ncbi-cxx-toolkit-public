@@ -39,11 +39,16 @@
 
 #include "strstreambuf.hpp"
 
+#ifdef NCBI_COMPILER_MIPSPRO
+#  include <util/stream_utils.hpp>
+#endif
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
+streambuf* CId1Reader::SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
 {
     try {
         return x_SeqrefStreamBuf(seqId, conn);
@@ -55,9 +60,9 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 }
 
 
-streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
+streambuf* CId1Reader::x_SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
 {
-    CConn_ServiceStream *server = m_Pool[conn % m_Pool.size()];
+    CConn_ServiceStream* server = m_Pool[conn % m_Pool.size()];
     auto_ptr<CObjectIStream>
         server_input(CObjectIStream::Open(eSerial_AsnBinary, *server, false));
     CID1server_request id1_request;
@@ -112,50 +117,57 @@ streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 }
 
 
-void CId1Seqref::Save(ostream &os) const
+void CId1Seqref::Save(ostream& os) const
 {
     CSeqref::Save(os);
     os << m_Gi << m_Sat << m_SatKey;
 }
 
 
-void CId1Seqref::Restore(istream &is)
+void CId1Seqref::Restore(istream& is)
 {
     CSeqref::Restore(is);
     is >> m_Gi >> m_Sat >> m_SatKey;
 }
 
 
-CSeqref* CId1Seqref::Dup() const
+CSeqref* CId1Seqref::Dup(void) const
 {
     return new CId1Seqref(*this);
 }
 
 
-CSeqref *CId1Reader::RetrieveSeqref(istream &is)
+CSeqref* CId1Reader::RetrieveSeqref(istream &is)
 {
-    CId1Seqref *id1Seqref = new CId1Seqref;
+    CId1Seqref* id1Seqref = new CId1Seqref;
     id1Seqref->m_Reader = this;
     is >> *id1Seqref;
     return id1Seqref;
 }
 
-
-struct CId1StreamBuf : public streambuf
+#ifdef NCBI_COMPILER_MIPSPRO
+class CId1StreamBuf : public CMIPSPRO_ReadsomeTolerantStreambuf
+#else
+class CId1StreamBuf : public streambuf
+#endif/*NCBI_COMPILER_MIPSPRO*/
 {
-    CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream *server);
+public:
+    CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream* server);
     ~CId1StreamBuf();
-    virtual CT_INT_TYPE underflow();
+    void                Close(void) { m_Server = 0; }
+
+protected:
+    virtual CT_INT_TYPE underflow(void);
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize size);
-    void Close() { m_Server = 0; }
 
     CId1Seqref&          m_Id1Seqref;
     CT_CHAR_TYPE         buffer[1024];
-    CConn_ServiceStream *m_Server;
+    CConn_ServiceStream* m_Server;
 };
 
-CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref,
-                             CConn_ServiceStream *server) :
+
+CId1StreamBuf::CId1StreamBuf(CId1Seqref&          id1Seqref,
+                             CConn_ServiceStream* server) :
     m_Id1Seqref(id1Seqref)
 {
     CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
@@ -181,10 +193,16 @@ CId1StreamBuf::~CId1StreamBuf()
 }
 
 
-CT_INT_TYPE CId1StreamBuf::underflow()
+CT_INT_TYPE CId1StreamBuf::underflow(void)
 {
-    if( !m_Server)
+    if( !m_Server )
         return CT_EOF;
+
+#ifdef NCBI_COMPILER_MIPSPRO
+    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
+        return CT_EOF;
+    m_MIPSPRO_ReadsomeGptr = 0;
+#endif/*NCBI_COMPILER_MIPSPRO*/    
 
     size_t n = CIStream::Read(*m_Server, buffer, sizeof(buffer));
     setg(buffer, buffer, buffer + n);
@@ -236,8 +254,8 @@ streambuf *CId1Seqref::BlobStreamBuf(int a, int b,
 }
 
 
-streambuf *CId1Seqref::x_BlobStreamBuf(int, int,
-                                       const CBlobClass &, unsigned conn)
+streambuf* CId1Seqref::x_BlobStreamBuf(int, int,
+                                       const CBlobClass&, unsigned conn)
 {
     auto_ptr<CId1StreamBuf>
         b(new CId1StreamBuf(*this,
@@ -246,7 +264,7 @@ streambuf *CId1Seqref::x_BlobStreamBuf(int, int,
 }
 
 
-CSeq_entry *CId1Blob::Seq_entry()
+CSeq_entry* CId1Blob::Seq_entry()
 {
     auto_ptr<CObjectIStream>
         objStream(CObjectIStream::Open(eSerial_AsnBinary, m_IStream, false));
@@ -255,7 +273,7 @@ CSeq_entry *CId1Blob::Seq_entry()
 
     try {
         *objStream >> id1_reply;
-        static_cast<CId1StreamBuf *>(m_IStream.rdbuf())->Close();
+        static_cast<CId1StreamBuf*> (m_IStream.rdbuf())->Close();
     }
     catch (exception& e) {
         LOG_POST("TROUBLE: reader_id1: can not read Seq-entry from reply: "
@@ -274,43 +292,43 @@ CSeq_entry *CId1Blob::Seq_entry()
 }
 
 
-CBlob *CId1Seqref::RetrieveBlob(istream &is)
+CBlob* CId1Seqref::RetrieveBlob(istream& is)
 {
     return new CId1Blob(is);
 }
 
 
-void CId1Blob::Save(ostream &os) const
+void CId1Blob::Save(ostream& os) const
 {
     CBlob::Save(os);
 }
 
 
-void CId1Blob::Restore(istream &is)
+void CId1Blob::Restore(istream& is)
 {
     CBlob::Restore(is);
 }
 
 
-char* CId1Seqref::print(char *s,int size) const
+char* CId1Seqref::print(char* s, int size) const
 {
     CNcbiOstrstream ostr(s,size);
-    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
+    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
     s[ostr.pcount()]=0;
     return s;
 }
 
-char* CId1Seqref::printTSE(char *s,int size) const
+char* CId1Seqref::printTSE(char* s, int size) const
 {
     CNcbiOstrstream ostr(s,size);
-    ostr << "TSE(" << Sat() << "," << SatKey () << ")" ;
+    ostr << "TSE(" << Sat() << "," << SatKey () << ")";
     s[ostr.pcount()]=0;
     return s;
 }
 
-int CId1Seqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
+int CId1Seqref::Compare(const CSeqref &seqRef, EMatchLevel ml) const
 {
-    const CId1Seqref *p = dynamic_cast<const CId1Seqref*>(& seqRef);
+    const CId1Seqref* p = dynamic_cast<const CId1Seqref*> (&seqRef);
     if (!p) {
         throw
             runtime_error("Attempt to compare seqrefs from different sources");
@@ -381,7 +399,7 @@ void CId1Reader::SetParallelLevel(size_t size)
 }
 
 
-CConn_ServiceStream *CId1Reader::NewID1Service()
+CConn_ServiceStream* CId1Reader::NewID1Service(void)
 {
     _TRACE("CId1Reader("<<this<<")->NewID1Service()");
     STimeout tmout;
@@ -406,6 +424,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.31  2003/03/30 07:00:29  lavr
+ * MIPS-specific workaround for lame-designed stream read ops
+ *
  * Revision 1.30  2003/03/28 03:28:14  lavr
  * CId1Reader::xsgetn() added; code heavily reformatted
  *

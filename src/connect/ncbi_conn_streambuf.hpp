@@ -33,14 +33,18 @@
  *
  */
 
-#include <corelib/ncbistre.hpp>
+#include <util/stream_utils.hpp>
 #include <connect/ncbi_connection.h>
 
 
 BEGIN_NCBI_SCOPE
 
 
+#ifdef NCBI_COMPILER_MIPSPRO
+class CConn_Streambuf : public CMIPSPRO_ReadsomeTolerantStreambuf
+#else
 class CConn_Streambuf : public streambuf
+#endif/*NCBI_COMPILER_MIPSPRO*/
 {
 public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
@@ -84,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/03/30 07:00:09  lavr
+ * MIPS-specific workaround for lame-designed stream read ops
+ *
  * Revision 6.14  2003/03/28 03:30:36  lavr
  * Define CConn_Streambuf::xsgetn() unconditionally of compiler
  *
