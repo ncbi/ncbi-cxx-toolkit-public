@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/18 17:07:12  gouriano
+* renamed GetSequence to GetSeqVector
+*
 * Revision 1.2  2002/01/16 16:26:35  gouriano
 * restructured objmgr
 *
@@ -115,7 +118,7 @@ public:
                             TGetTitleFlags flags = 0);
 
     // Get sequence: Iupacna or Iupacaa
-    virtual CSeqVector GetSequence(const CBioseqHandle& handle,
+    virtual CSeqVector GetSeqVector(const CBioseqHandle& handle,
                                     bool plus_strand = true);
 
     // Find mode flags: how to treat duplicate IDs within the same scope
