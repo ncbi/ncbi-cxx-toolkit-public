@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/08 23:48:51  lavr
+ * REQ_METHOD "any" added to SConnNetInfo
+ *
  * Revision 6.4  2000/11/15 17:29:52  vakatov
  * Fixed path to the test CGI application.
  *
@@ -64,6 +67,7 @@
 #define TEST_PATH            "/tools/vakatov/con_url.cgi"
 #define TEST_ARGS            "arg1+arg2+arg3"
 #define TEST_DEBUG_PRINTOUT  "yes"
+#define TEST_REQ_METHOD      "any"
 
 
 #if defined(__cplusplus)
@@ -91,10 +95,11 @@ static void s_REG_Get
       return; \
   }
 
-    X_GET_VALUE(REG_CONN_HOST,    TEST_HOST);
-    X_GET_VALUE(REG_CONN_PORT,    TEST_PORT);
-    X_GET_VALUE(REG_CONN_PATH,    TEST_PATH);
-    X_GET_VALUE(REG_CONN_ARGS,    TEST_ARGS);
+    X_GET_VALUE(REG_CONN_HOST,           TEST_HOST);
+    X_GET_VALUE(REG_CONN_PORT,           TEST_PORT);
+    X_GET_VALUE(REG_CONN_PATH,           TEST_PATH);
+    X_GET_VALUE(REG_CONN_ARGS,           TEST_ARGS);
+    X_GET_VALUE(REG_CONN_REQ_METHOD,     TEST_REQ_METHOD);
     X_GET_VALUE(REG_CONN_DEBUG_PRINTOUT, TEST_DEBUG_PRINTOUT);
 }
 
