@@ -36,7 +36,7 @@ conf_name="TEST_CONF"
 
 # Get C++ tree from CVS for Unix platform
 rm -rf "$src_dir" > /dev/null
-flags="--without-gui --without-objects --without-cvs --unix"
+flags="--without-gui --without-cvs --unix"
 if [ -n "$date_time" ]; then
   $cvs_core "$src_dir" $flags "$date_time" $cvs_tree ||  exit 1
 else
@@ -52,10 +52,10 @@ cd $conf_name/build  ||  exit 3
 make check_r RUN_CHECK=N CHECK_USE_IGNORE_LIST=N
 
 # Copy check list to target dir
-cp check.sh.list "$target_dir"  ||  exit 4
+###cp check.sh.list "$target_dir"  ||  exit 4
 
 # Cleanup
 cd ../../..
-rm -rf "$src_dir" > /dev/null
+###rm -rf "$src_dir" > /dev/null
 
 exit 0
