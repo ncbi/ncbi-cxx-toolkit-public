@@ -53,8 +53,6 @@ void CAppHitFilter::Init()
 
 int CAppHitFilter::Run()
 { 
-
-    /*
     typedef CConstRef<CSeq_id>     TId;
     typedef CAlignShadow<TId>      THit;
     typedef CRef<THit>             THitRef;
@@ -81,8 +79,6 @@ int CAppHitFilter::Run()
          cout << **ii << endl;
     }
 
-    */
-
     return 0;
 }
 
@@ -107,6 +103,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/22 21:26:18  kapustin
+ * Move friend template definition to the header. Declare explicit specialization.
+ *
  * Revision 1.2  2004/12/21 22:45:19  kapustin
  * Temporarily comment out the code
  *

@@ -43,7 +43,7 @@
 #include <numeric>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(AlgoAlignUtil);
+//USING_SCOPE(AlgoAlignUtil);
 USING_SCOPE(objects);
 
 
@@ -215,9 +215,11 @@ void CAlignShadow<TId>::x_InitFromString(const char* str)
         }
     }
     else {
-        const string err_msg = 
-            string(g_msg_FailedToInitFromString) + str;
-        NCBI_THROW(CAlgoAlignUtilException, eFormat, err_msg.c_str());
+        
+        //string err_msg ( g_msg_StrInitFailed  );
+        //err_msg += str;
+
+        NCBI_THROW(CAlgoAlignUtilException, eFormat, "");
     }
 }
 
@@ -526,33 +528,6 @@ float CAlignShadow<TId>::GetScore(void) const
 /////////////////////////////////////////////////////////////////////////////
 // serialization
 
-template<class TId> 
-CNcbiOstream& operator<< (CNcbiOstream& os, 
-                       const CAlignShadow<TId>& align_shadow)
-{
-    os  << align_shadow.GetId(0) << '\t'
-        << align_shadow.GetId(1) << '\t';
-
-    align_shadow.x_Ser(os);
-
-    return os;
-}
-
-
-// explicit specialization
-template<> 
-CNcbiOstream& operator<< (
-    CNcbiOstream& os, const CAlignShadow<CConstRef<CSeq_id> >& align_shadow)
-{
-    os  << align_shadow.GetId(0)->GetSeqIdString(true) << '\t'
-        << align_shadow.GetId(1)->GetSeqIdString(true) << '\t';
-
-    align_shadow.x_Ser(os);
-
-    return os;
-}
-
-
 template<class TId>
 void CAlignShadow<TId>::x_Ser(CNcbiOstream& os) const
 {
@@ -578,6 +553,21 @@ void CAlignShadow<TId>::x_Ser(CNcbiOstream& os) const
 }
 
 
+// explicit specialization
+template<> 
+CNcbiOstream& operator<< (
+    CNcbiOstream& os, const CAlignShadow<CConstRef<CSeq_id> >& align_shadow)
+
+{
+    os  << align_shadow.GetId(0)->GetSeqIdString(true) << '\t'
+        << align_shadow.GetId(1)->GetSeqIdString(true) << '\t';
+
+    align_shadow.x_Ser(os);
+
+    return os;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 // explicit instantiations
 
@@ -585,11 +575,6 @@ template class CAlignShadow<Uint4>;
 template class CAlignShadow<string>;
 template class CAlignShadow<CConstRef<CSeq_id> >;
 
-template CNcbiOstream& operator<< <Uint4>
-    (CNcbiOstream& os, const CAlignShadow<Uint4>& align_shadow);
-
-template CNcbiOstream& operator<< <string>
-    (CNcbiOstream& os, const CAlignShadow<string>& align_shadow);
 
 END_NCBI_SCOPE
 
@@ -597,6 +582,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.4  2004/12/22 21:26:18  kapustin
+ * Move friend template definition to the header. Declare explicit specialization.
+ *
  * Revision 1.3  2004/12/22 15:55:53  kapustin
  * A few type conversions to make msvc happy
  *

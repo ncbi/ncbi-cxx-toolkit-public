@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_align;
+    class CSeq_id;
 END_SCOPE(objects)
 
 
@@ -132,6 +133,28 @@ protected:
 };
 
 
+//////////////////////////////////////////////////////////////////////////////
+// 
+
+template<class TId> 
+CNcbiOstream& operator << (CNcbiOstream& os,
+                          const CAlignShadow<TId>& align_shadow)
+{
+    os  << align_shadow.GetId(0) << '\t'
+        << align_shadow.GetId(1) << '\t';
+
+    align_shadow.x_Ser(os);
+
+    return os;
+}
+
+
+template<> 
+CNcbiOstream& operator << (
+    CNcbiOstream& os,
+    const CAlignShadow<CConstRef<objects::CSeq_id> >& align_shadow);
+
+
 END_NCBI_SCOPE
 
 
@@ -139,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/22 21:25:15  kapustin
+ * Move friend template definition to the header. Declare explicit specialization.
+ *
  * Revision 1.2  2004/12/22 15:50:02  kapustin
  * Drop dllexport specifier
  *
