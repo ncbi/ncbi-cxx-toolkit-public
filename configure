@@ -3598,7 +3598,7 @@ case "$compiler:$compiler_version" in
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
         path=`$CXX $LDFLAGS -print-file-name=$f`
         dir=`dirname "$path"`
-	abs_dir=`cd "$dir" && pwd`
+        abs_dir=`cd "$dir" && pwd`
         case "$dir:$abs_dir" in
             *:/lib | *:/usr/lib ) break ;; # no rpath needed
             /*                  ) found=true; break ;;
@@ -5662,11 +5662,11 @@ int
 main ()
 {
 
-    	 void*           dummy = (void*) &gethostbyname_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 struct hostent* hp = 0;
-    	 hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
+         void*           dummy = (void*) &gethostbyname_r;
+         char            buf[1024];
+         int             err;
+         struct hostent* hp = 0;
+         hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
 
   ;
   return 0;
@@ -5685,7 +5685,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
 
-    	 ncbi_cv_func_gethostbyname_r="5"
+         ncbi_cv_func_gethostbyname_r="5"
 
 
 else
@@ -5702,11 +5702,11 @@ int
 main ()
 {
 
-    	 void*           dummy = (void*) &gethostbyname_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 struct hostent* hp = 0;
-    	 err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
+         void*           dummy = (void*) &gethostbyname_r;
+         char            buf[1024];
+         int             err;
+         struct hostent* hp = 0;
+         err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
 
   ;
   return 0;
@@ -5725,7 +5725,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
 
-    	 ncbi_cv_func_gethostbyname_r="6"
+         ncbi_cv_func_gethostbyname_r="6"
 
 
 else
@@ -5760,21 +5760,21 @@ else
 #line $LINENO "configure"
 #include "confdefs.h"
 
-    	 #include <netdb.h>
-    	 #include <sys/types.h>
-    	 #include <sys/socket.h>
+         #include <netdb.h>
+         #include <sys/types.h>
+         #include <sys/socket.h>
 
 int
 main ()
 {
 
-    	 void* dummy = (void*) &gethostbyaddr_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 unsigned int    host;
-    	 struct hostent* hp = 0;
-    	 hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-    			      hp, buf, sizeof(buf), &err);
+         void* dummy = (void*) &gethostbyaddr_r;
+         char            buf[1024];
+         int             err;
+         unsigned int    host;
+         struct hostent* hp = 0;
+         hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                              hp, buf, sizeof(buf), &err);
 
   ;
   return 0;
@@ -5793,7 +5793,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
 
-    	 ncbi_cv_func_gethostbyaddr_r="7"
+         ncbi_cv_func_gethostbyaddr_r="7"
 
 
 else
@@ -5806,21 +5806,21 @@ rm -f conftest.$ac_objext conftest.$ac_ext
 #line $LINENO "configure"
 #include "confdefs.h"
 
-    	 #include <netdb.h>
-    	 #include <sys/types.h>
-    	 #include <sys/socket.h>
+         #include <netdb.h>
+         #include <sys/types.h>
+         #include <sys/socket.h>
 
 int
 main ()
 {
 
-    	 void* dummy = (void*) &gethostbyaddr_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 unsigned int    host;
-    	 struct hostent* hp = 0;
-    	 int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-    				   hp, buf, sizeof(buf), &hp, &err);
+         void* dummy = (void*) &gethostbyaddr_r;
+         char            buf[1024];
+         int             err;
+         unsigned int    host;
+         struct hostent* hp = 0;
+         int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                                   hp, buf, sizeof(buf), &hp, &err);
 
   ;
   return 0;
@@ -5839,7 +5839,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
 
-    	 ncbi_cv_func_gethostbyaddr_r="8"
+         ncbi_cv_func_gethostbyaddr_r="8"
 
 
 else
@@ -6129,9 +6129,9 @@ int
 main ()
 {
 
-    	 void* dummy = (void*) &sysinfo;
-    	 struct sysinfo* info = 0;
-    	 int retval = sysinfo(info);
+         void* dummy = (void*) &sysinfo;
+         struct sysinfo* info = 0;
+         int retval = sysinfo(info);
 
   ;
   return 0;
@@ -6482,7 +6482,7 @@ else
 #line $LINENO "configure"
 #include "confdefs.h"
 template <class T> inline int test_throw_spec(const T&) throw() {
-    	  return 0;
+          return 0;
        }
 int
 main ()
@@ -6628,12 +6628,12 @@ else
 #line $LINENO "configure"
 #include "confdefs.h"
 #include <algorithm>
-    	#ifdef min
-    	#undef min
-    	#endif
-    	#ifdef max
-    	#undef max
-    	#endif
+        #ifdef min
+        #undef min
+        #endif
+        #ifdef max
+        #undef max
+        #endif
 
 int
 main ()
@@ -6841,16 +6841,16 @@ else
 #line $LINENO "configure"
 #include "confdefs.h"
 
-    	 int f(int* p)
-    	 {
-    	     int i;
-    	     return (&i < p) ? 1 : 0;
-    	 }
-    	 int main(void)
-    	 {
-    	     int p;
-    	     return f(&p);
-    	 }
+         int f(int* p)
+         {
+             int i;
+             return (&i < p) ? 1 : 0;
+         }
+         int main(void)
+         {
+             int p;
+             return f(&p);
+         }
 
 _ACEOF
 rm -f conftest$ac_exeext
@@ -8167,9 +8167,16 @@ fi
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
-   LIBS="$orig_LIBS"
-   CPPFLAGS="$orig_CPPFLAGS"
-   echo "$as_me:$LINENO: checking for X" >&5
+   case "$OSTYPE" in
+      darwin) # Use native interface
+         OPENGL_LIBS="-framework Carbon -framework ApplicationServices"
+         OPENGL_LIBS="$OPENGL_LIBS -framework AGL -framework OpenGL"
+         ;;
+      # cygwin) ... ;;
+      *) # Default -- assume X-based
+         LIBS="$orig_LIBS"
+         CPPFLAGS="$orig_CPPFLAGS"
+         echo "$as_me:$LINENO: checking for X" >&5
 echo $ECHO_N "checking for X... $ECHO_C" >&6
 
 
@@ -9244,7 +9251,7 @@ fi
 
 fi
 
-   echo "$as_me:$LINENO: checking for XextCreateExtension in -lXext" >&5
+         echo "$as_me:$LINENO: checking for XextCreateExtension in -lXext" >&5
 echo $ECHO_N "checking for XextCreateExtension in -lXext... $ECHO_C" >&6
 if test "${ac_cv_lib_Xext_XextCreateExtension+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -9299,7 +9306,7 @@ else
   Xext=
 fi
 
-   echo "$as_me:$LINENO: checking for XtMainLoop in -lXt" >&5
+         echo "$as_me:$LINENO: checking for XtMainLoop in -lXt" >&5
 echo $ECHO_N "checking for XtMainLoop in -lXt... $ECHO_C" >&6
 if test "${ac_cv_lib_Xt_XtMainLoop+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -9354,7 +9361,7 @@ else
   Xt=
 fi
 
-   echo "$as_me:$LINENO: checking for XmuMakeAtom in -lXmu" >&5
+         echo "$as_me:$LINENO: checking for XmuMakeAtom in -lXmu" >&5
 echo $ECHO_N "checking for XmuMakeAtom in -lXmu... $ECHO_C" >&6
 if test "${ac_cv_lib_Xmu_XmuMakeAtom+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -9409,28 +9416,36 @@ else
   Xmu=
 fi
 
-   X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-   # Kludge for in-house 64-bit Solaris installations; I don't know why I
-   # have to specify /sparcv9 expliclitly.
-   ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
-   if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
-      X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
-   elif test "$OSTYPE:$host_cpu" = "solaris:i386" -a \
-      -d /usr/ncbi/include/GL; then
-      X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
-      X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
-   fi
+         X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+         # Kludge for in-house 64-bit Solaris installations; I don't know why I
+         # have to specify /sparcv9 expliclitly.
+         ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
+         if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
+            X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
+         elif test "$OSTYPE:$host_cpu" = "solaris:i386" -a \
+            -d /usr/ncbi/include/GL; then
+            X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
+            X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
+         fi
+         OPENGL_INCLUDE="$X_CFLAGS"
+         OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
+         ;;
+   esac
    echo "$as_me:$LINENO: checking for OpenGL" >&5
 echo $ECHO_N "checking for OpenGL... $ECHO_C" >&6
 if test "${ncbi_cv_lib_opengl+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$orig_CPPFLAGS $X_CFLAGS"
-       LIBS="$X_LIBS -lGL $X_ALL_LIBS $orig_LIBS"
+  CPPFLAGS="$orig_CPPFLAGS $OPENGL_INCLUDE"
+       LIBS="$OPENGL_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <GL/gl.h>
+#ifdef NCBI_OS_DARWIN
+           #  include <OpenGL/gl.h>
+           #else
+           #  include <GL/gl.h>
+           #endif
 int
 main ()
 {
@@ -9464,6 +9479,7 @@ echo "${ECHO_T}$ncbi_cv_lib_opengl" >&6
 fi
 
 if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
+   OPENGL_INCLUDE=
    OPENGL_LIBS=
    with_opengl="no"
    WithoutPackages="$WithoutPackages OpenGL"
@@ -9474,8 +9490,6 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_OPENGL 1
 _ACEOF
 
-   OPENGL_INCLUDE="$X_CFLAGS"
-   OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
 fi
 
 

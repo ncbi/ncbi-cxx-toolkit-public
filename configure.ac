@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.144 2002/10/29 16:58:01 ucko Exp $
+#  $Id: configure.ac,v 1.145 2002/10/29 20:27:18 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -826,7 +826,7 @@ case "$compiler:$compiler_version" in
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
         path=`$CXX $LDFLAGS -print-file-name=$f`
         dir=`dirname "$path"`
-	abs_dir=`cd "$dir" && pwd`
+        abs_dir=`cd "$dir" && pwd`
         case "$dir:$abs_dir" in
             *:/lib | *:/usr/lib ) break ;; # no rpath needed
             /*                  ) found=true; break ;;
@@ -1331,28 +1331,28 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
     AC_TRY_COMPILE(
        [#include <netdb.h>],
        [
-    	 void*           dummy = (void*) &gethostbyname_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 struct hostent* hp = 0;
-    	 hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
+         void*           dummy = (void*) &gethostbyname_r;
+         char            buf[1024];
+         int             err;
+         struct hostent* hp = 0;
+         hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
        ],
        [
-    	 ncbi_cv_func_gethostbyname_r="5"
+         ncbi_cv_func_gethostbyname_r="5"
        ]
     )
     if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
     AC_TRY_COMPILE(
        [#include <netdb.h>],
        [
-    	 void*           dummy = (void*) &gethostbyname_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 struct hostent* hp = 0;
-    	 err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
+         void*           dummy = (void*) &gethostbyname_r;
+         char            buf[1024];
+         int             err;
+         struct hostent* hp = 0;
+         err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
        ],
        [
-    	 ncbi_cv_func_gethostbyname_r="6"
+         ncbi_cv_func_gethostbyname_r="6"
        ]
     )
     fi])
@@ -1371,41 +1371,41 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
    [ncbi_cv_func_gethostbyaddr_r="no"
     AC_TRY_COMPILE(
        [
-    	 #include <netdb.h>
-    	 #include <sys/types.h>
-    	 #include <sys/socket.h>
+         #include <netdb.h>
+         #include <sys/types.h>
+         #include <sys/socket.h>
        ],
        [
-    	 void* dummy = (void*) &gethostbyaddr_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 unsigned int    host;
-    	 struct hostent* hp = 0;
-    	 hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-    			      hp, buf, sizeof(buf), &err);
+         void* dummy = (void*) &gethostbyaddr_r;
+         char            buf[1024];
+         int             err;
+         unsigned int    host;
+         struct hostent* hp = 0;
+         hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                              hp, buf, sizeof(buf), &err);
        ],
        [
-    	 ncbi_cv_func_gethostbyaddr_r="7"
+         ncbi_cv_func_gethostbyaddr_r="7"
        ]
     )
     if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
     AC_TRY_COMPILE(
        [
-    	 #include <netdb.h>
-    	 #include <sys/types.h>
-    	 #include <sys/socket.h>
+         #include <netdb.h>
+         #include <sys/types.h>
+         #include <sys/socket.h>
        ],
        [
-    	 void* dummy = (void*) &gethostbyaddr_r;
-    	 char            buf[1024];
-    	 int             err;
-    	 unsigned int    host;
-    	 struct hostent* hp = 0;
-    	 int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-    				   hp, buf, sizeof(buf), &hp, &err);
+         void* dummy = (void*) &gethostbyaddr_r;
+         char            buf[1024];
+         int             err;
+         unsigned int    host;
+         struct hostent* hp = 0;
+         int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                                   hp, buf, sizeof(buf), &hp, &err);
        ],
        [
-    	 ncbi_cv_func_gethostbyaddr_r="8"
+         ncbi_cv_func_gethostbyaddr_r="8"
        ]
     )
     fi])
@@ -1436,9 +1436,9 @@ AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,
    [AC_TRY_COMPILE(
        [#include <sys/sysinfo.h>],
        [
-    	 void* dummy = (void*) &sysinfo;
-    	 struct sysinfo* info = 0;
-    	 int retval = sysinfo(info);
+         void* dummy = (void*) &sysinfo;
+         struct sysinfo* info = 0;
+         int retval = sysinfo(info);
        ], [ncbi_cv_func_sysinfo_1=yes], [ncbi_cv_func_sysinfo_1=no])])
 
 if test "$ncbi_cv_func_sysinfo_1" = yes; then
@@ -1465,7 +1465,7 @@ AC_CACHE_CHECK([whether function prototypes can use throw(...)],
    ncbi_cv_cxx_throw_spec,
    [AC_TRY_COMPILE(
        [template <class T> inline int test_throw_spec(const T&) throw() {
-    	  return 0;
+          return 0;
        }],
        [return test_throw_spec(123);],
        [ncbi_cv_cxx_throw_spec=yes], [ncbi_cv_cxx_throw_spec=no])])
@@ -1503,12 +1503,12 @@ fi
 AC_CACHE_CHECK([for min/max templates], ncbi_cv_func_min_max,
    [AC_TRY_COMPILE(
        [#include <algorithm>
-    	#ifdef min
-    	#undef min
-    	#endif
-    	#ifdef max
-    	#undef max
-    	#endif
+        #ifdef min
+        #undef min
+        #endif
+        #ifdef max
+        #undef max
+        #endif
        ],
        [int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b); ],
        [ncbi_cv_func_min_max=yes], [ncbi_cv_func_min_max=no])])
@@ -1554,20 +1554,20 @@ AC_CHECK_TYPE([union semun],
 
 AC_CACHE_CHECK([which way the stack grows], ncbi_cv_sys_stack_dir,
    [AC_TRY_RUN(
-    	[
-    	 int f(int* p)
-    	 {
-    	     int i;
-    	     return (&i < p) ? 1 : 0;
-    	 }
-    	 int main(void)
-    	 {
-    	     int p;
-    	     return f(&p);
-    	 }
-    	],
-    	[ncbi_cv_sys_stack_dir=up], [ncbi_cv_sys_stack_dir=down],
-    	[ncbi_cv_sys_stack_dir="unknown (cross-compiling)"])])
+        [
+         int f(int* p)
+         {
+             int i;
+             return (&i < p) ? 1 : 0;
+         }
+         int main(void)
+         {
+             int p;
+             return f(&p);
+         }
+        ],
+        [ncbi_cv_sys_stack_dir=up], [ncbi_cv_sys_stack_dir=down],
+        [ncbi_cv_sys_stack_dir="unknown (cross-compiling)"])])
 case "$ncbi_cv_sys_stack_dir" in
  up)   AC_DEFINE(STACK_GROWS_UP,   1, [Define to 1 if the stack grows up.])  ;;
  down) AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.]);;
@@ -1909,44 +1909,58 @@ fi
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
-   LIBS="$orig_LIBS"
-   CPPFLAGS="$orig_CPPFLAGS"
-   AC_PATH_XTRA
-   AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
-      [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-   AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
-      [$X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-   AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
-      [$X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-   X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-   # Kludge for in-house 64-bit Solaris installations; I don't know why I
-   # have to specify /sparcv9 expliclitly.
-   ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
-   if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
-      X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
-   elif test "$OSTYPE:$host_cpu" = "solaris:i386" -a \
-      -d /usr/ncbi/include/GL; then
-      X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
-      X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
-   fi
+   case "$OSTYPE" in
+      darwin) # Use native interface
+         OPENGL_LIBS="-framework Carbon -framework ApplicationServices"
+         OPENGL_LIBS="$OPENGL_LIBS -framework AGL -framework OpenGL"
+         ;;
+      # cygwin) ... ;; 
+      *) # Default -- assume X-based
+         LIBS="$orig_LIBS"
+         CPPFLAGS="$orig_CPPFLAGS"
+         AC_PATH_XTRA
+         AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
+            [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+         AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
+            [$X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+         AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
+            [$X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+         X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+         # Kludge for in-house 64-bit Solaris installations; I don't know why I
+         # have to specify /sparcv9 expliclitly.
+         ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
+         if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
+            X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
+         elif test "$OSTYPE:$host_cpu" = "solaris:i386" -a \
+            -d /usr/ncbi/include/GL; then
+            X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
+            X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
+         fi
+         OPENGL_INCLUDE="$X_CFLAGS"
+         OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
+         ;;
+   esac
    AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
-      [CPPFLAGS="$orig_CPPFLAGS $X_CFLAGS"
-       LIBS="$X_LIBS -lGL $X_ALL_LIBS $orig_LIBS"
+      [CPPFLAGS="$orig_CPPFLAGS $OPENGL_INCLUDE"
+       LIBS="$OPENGL_LIBS $orig_LIBS"
        AC_TRY_LINK(
-          [#include <GL/gl.h>],
+          [#ifdef NCBI_OS_DARWIN
+           #  include <OpenGL/gl.h>
+           #else
+           #  include <GL/gl.h>
+           #endif],
           [glBegin(0);],
           [ncbi_cv_lib_opengl=yes], [ncbi_cv_lib_opengl=no])])
 fi
 
 if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
+   OPENGL_INCLUDE=
    OPENGL_LIBS=
    with_opengl="no"
    WithoutPackages="$WithoutPackages OpenGL"
 else
    WithPackages="$WithPackages OpenGL"
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
-   OPENGL_INCLUDE="$X_CFLAGS"
-   OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
 fi
 
 
