@@ -178,7 +178,7 @@ private:
                     Uint4            preferred_gi,
                     CSeqDBLockHold & locked) const;
     
-    CRef<CSeqdesc>
+    list< CRef<CSeqdesc> >
     x_GetTaxonomy(Uint4                 oid,
                   bool                  have_oidlist,
                   Uint4                 membership_bit,
@@ -201,6 +201,9 @@ private:
     mutable CRef<CSeqDBIsam> m_IsamPig;
     mutable CRef<CSeqDBIsam> m_IsamGi;
     mutable CRef<CSeqDBIsam> m_IsamStr;
+    
+    // Will cache some taxid->Seqdesc data.
+    mutable map< Uint4, CRef<CSeqdesc> > m_TaxCache;
 };
 
 END_NCBI_SCOPE

@@ -36,6 +36,7 @@
 #include "seqdboidlist.hpp"
 
 #include <objects/general/general__.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -721,7 +722,7 @@ CSeqDBVol::x_GetTaxDefline(Uint4            oid,
     return BDLS;
 }
 
-CRef<CSeqdesc>
+list< CRef<CSeqdesc> >
 CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
                          bool                  have_oidlist,
                          Uint4                 membership_bit,
@@ -729,9 +730,15 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
                          CRef<CSeqDBTaxInfo>   tax_info,
                          CSeqDBLockHold      & locked) const
 {
-    const char * TAX_DATA_OBJ_LABEL = "TaxNamesData";
+    const bool  provide_old_taxonomy_info = false;
+    const bool  provide_new_taxonomy_info = true;
+    const bool  use_taxinfo_cache         = true;
+    const Uint4 max_taxcache_size         = 200;
     
-    CRef<CSeqdesc> taxonomy;
+    const char * TAX_DATA_OBJ_LABEL = "TaxNamesData";
+    const char * TAX_ORGREF_DB_NAME = "taxon";
+    
+    list< CRef<CSeqdesc> > taxonomy;
     
     CRef<CBlast_def_line_set> bdls =
         x_GetTaxDefline(oid,
@@ -750,16 +757,35 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
     
     const TBDLL & dl = bdls->Get();
     
-    CRef<CUser_object> uobj(new CUser_object);
+    CRef<CBioSource>   source;
+    CRef<CUser_object> uobj;
+    CRef<CObject_id>   uo_oi;
     
-    CRef<CObject_id> uo_oi(new CObject_id);
-    uo_oi->SetStr(TAX_DATA_OBJ_LABEL);
-    uobj->SetType(*uo_oi);
+    if (provide_new_taxonomy_info) {
+        source.Reset(new CBioSource);
+    }
+    
+    if (provide_old_taxonomy_info) {
+        uobj  .Reset(new CUser_object);
+        uo_oi .Reset(new CObject_id);
+        uo_oi->SetStr(TAX_DATA_OBJ_LABEL);
+        uobj->SetType(*uo_oi);
+    }
     
     bool found = false;
     
+    // Lock for sake of tax cache
+    
+    m_Atlas.Lock(locked);
+    
     for(TBDLLConstIter iter = dl.begin(); iter != dl.end(); iter ++) {
         Uint4 taxid = (*iter)->GetTaxid();
+        
+        bool have_org_desc = false;
+        
+        if (use_taxinfo_cache && m_TaxCache[taxid].NotEmpty()) {
+            have_org_desc = true;
+        }
         
         CSeqDBTaxNames tnames;
         
@@ -767,7 +793,11 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
             continue;
         }
         
-        bool worked = tax_info->GetTaxNames(taxid, tnames, locked);
+        bool worked = true;
+        
+        if (provide_old_taxonomy_info || ((! have_org_desc) && provide_new_taxonomy_info)) {
+            worked = tax_info->GetTaxNames(taxid, tnames, locked);
+        }
         
         if (! worked) {
             continue;
@@ -775,28 +805,67 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
         
         found = true;
         
-        CRef<CUser_field> uf(new CUser_field);
+        if (provide_old_taxonomy_info) {
+            CRef<CUser_field> uf(new CUser_field);
+            
+            CRef<CObject_id> uf_oi(new CObject_id);
+            uf_oi->SetId(taxid);
+            uf->SetLabel(*uf_oi);
+            
+            vector<string> & strs = uf->SetData().SetStrs();
+            
+            uf->SetNum(4);
+            strs.resize(4);
+            
+            strs[0] = tnames.GetSciName();
+            strs[1] = tnames.GetCommonName();
+            strs[2] = tnames.GetBlastName();
+            strs[3] = tnames.GetSKing();
+            
+            uobj->SetData().push_back(uf);
+        }
         
-        CRef<CObject_id> uf_oi(new CObject_id);
-        uf_oi->SetId(taxid);
-        uf->SetLabel(*uf_oi);
-        
-        vector<string> & strs = uf->SetData().SetStrs();
-        
-        uf->SetNum(4);
-        strs.resize(4);
-        
-        strs[0] = tnames.GetSciName();
-        strs[1] = tnames.GetCommonName();
-        strs[2] = tnames.GetBlastName();
-        strs[3] = tnames.GetSKing();
-        
-        uobj->SetData().push_back(uf);
+        if (provide_new_taxonomy_info) {
+            if (have_org_desc) {
+                taxonomy.push_back(m_TaxCache[taxid]);
+            } else {
+                CRef<CDbtag> org_tag(new CDbtag);
+                org_tag->SetDb(TAX_ORGREF_DB_NAME);
+                org_tag->SetTag().SetId(taxid);
+            
+                CRef<COrg_ref> org(new COrg_ref);
+                org->SetTaxname(tnames.GetSciName());
+                org->SetCommon(tnames.GetCommonName());
+                org->SetDb().push_back(org_tag);
+                
+                source->SetOrg(*org);
+                
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                desc->SetSource(*source);
+                
+                taxonomy.push_back(desc);
+                
+                if (use_taxinfo_cache) {
+                    // Simple memory usage limitation.  This could
+                    // probably be profiled to determine the best max
+                    // size to use.  If you use more than 200 or so,
+                    // the cache may be hurting more than helping.  It
+                    // would be easy to make this more sophisticated.
+                    
+                    if (m_TaxCache.size() > max_taxcache_size) {
+                        m_TaxCache.clear();
+                    }
+                    
+                    m_TaxCache[taxid] = desc;
+                }
+            }
+        }
     }
     
-    if (found) {
-        taxonomy = new CSeqdesc;
-        taxonomy->SetUser(*uobj); // or something.
+    if (found && provide_old_taxonomy_info) {
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->SetUser(*uobj);
+        taxonomy.push_back(desc);
     }
     
     return taxonomy;
@@ -951,16 +1020,16 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
         }
     }
     
-    CRef<CSeqdesc> tax = x_GetTaxonomy(oid,
-                                       have_oidlist,
-                                       memb_bit,
-                                       pref_gi,
-                                       tax_info,
-                                       locked);
+    list< CRef<CSeqdesc> > tax =
+        x_GetTaxonomy(oid,
+                      have_oidlist,
+                      memb_bit,
+                      pref_gi,
+                      tax_info,
+                      locked);
     
-    if (tax.NotEmpty()) {
-        CSeq_descr & seqdesc = bioseq->SetDescr();
-        seqdesc.Set().push_back(tax);
+    ITERATE(list< CRef<CSeqdesc> >, iter, tax) {
+        bioseq->SetDescr().Set().push_back(*iter);
     }
     
     return bioseq;
