@@ -1910,6 +1910,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     EDiagSev sev = eDiag_Warning;
     bool full_length_prot_ref = false;
+    bool found_cds = false;
     TSeqPos x5UTR_to = 0, cds_from = 0, cds_to = 0, x3UTR_from = 0;
 
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
@@ -1962,28 +1963,35 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 
             switch ( ftype ) {
             case CSeqFeatData::e_Cdregion:
-                if ( NumOfIntervals(fi->GetLocation()) > 1 ) {
-                    bool excpet = fi->IsSetExcept()  &&  !fi->GetExcept();
-                    string except_text;
-                    if ( fi->IsSetExcept_text() ) {
-                        except_text = fi->GetExcept_text();
-                    }
-                    if ( excpet  ||
-                         (NStr::FindNoCase(except_text, "ribosomal slippage") == string::npos  &&
-                          NStr::FindNoCase(except_text, "ribosome slippage") == string::npos) ) {
-                        PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
-                            "Multi-interval CDS feature is invalid on an mRNA "
-                            "(cDNA) Bioseq.",
+                if ( !found_cds ) {
+                    found_cds = true;
+                    if ( NumOfIntervals(fi->GetLocation()) > 1 ) {
+                        bool excpet = fi->IsSetExcept()  &&  !fi->GetExcept();
+                        string except_text;
+                        if ( fi->IsSetExcept_text() ) {
+                            except_text = fi->GetExcept_text();
+                        }
+                        if ( excpet  ||
+                            (NStr::FindNoCase(except_text, "ribosomal slippage") == string::npos  &&
+                            NStr::FindNoCase(except_text, "ribosome slippage") == string::npos) ) {
+                            PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
+                                "Multi-interval CDS feature is invalid on an mRNA "
+                                "(cDNA) Bioseq.",
                                 fi->GetOriginalFeature());
+                        }
                     }
-                }
-                cds_from = loc.GetStart(kInvalidSeqPos);
-                cds_to = loc.GetEnd(kInvalidSeqPos);
-                if ( x5UTR_to > 0 ) {
-                    if ( x5UTR_to + 1 != cds_from ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                            "5'UTR does not abut CDS", fi->GetOriginalFeature());
+                    cds_from = loc.GetStart(kInvalidSeqPos);
+                    cds_to = loc.GetEnd(kInvalidSeqPos);
+                    if ( x5UTR_to > 0 ) {
+                        if ( x5UTR_to + 1 != cds_from ) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                                "5'UTR does not abut CDS", fi->GetOriginalFeature());
+                        }
                     }
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCdsOnMrna,
+                        "more than one CDS is annotated on the mRNA bioseq",
+                        fi->GetOriginalFeature());
                 }
                 break;
                 
@@ -3314,6 +3322,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2003/11/12 20:30:24  shomrat
+* added test for multiple cds on mrna
+*
 * Revision 1.53  2003/10/27 17:02:49  shomrat
 * fixes to 3'UTR and 5'UTR checks
 *
