@@ -135,13 +135,13 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
         string value;
         NStr::Replace((*it)->GetValue(), " \b", kEmptyStr, value);
         string value2(NStr::PrintableString(value));
-        // some parsers may be dumb, so avoid spaces and quotes
-        // (even though the latter are already backslashed)
+        // some parsers may be dumb, so quote further
         value.erase();
         ITERATE (string, c, value2) {
             switch (*c) {
-            case '\"': value += "x22";   break;
             case ' ':  value += "\\x20"; break;
+            case '\"': value += "x22";   break; // already backslashed
+            case '#':  value += "\\x23"; break;
             default:   value += *c;
             }
         }
@@ -395,6 +395,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/12/03 20:53:53  ucko
+* Also quote #s in values to avoid trouble with naive comment recognizers.
+*
 * Revision 1.4  2003/11/04 20:00:28  ucko
 * Edit " \b" sequences (used as hints for wrapping) out from qualifier values
 *
