@@ -252,7 +252,7 @@ CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
                                        streamsize buf_size)
     : CConn_IOStream(MEMORY_CreateConnector
                      (MT_LOCK_cxx2c(lk, pass_lk_ownership)),
-                     0, buf_size)
+                     0, buf_size), m_Buf(0)
 {
     return;
 }
@@ -343,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2004/10/27 20:59:37  vasilche
+ * Initialize m_Buf in all constructors.
+ *
  * Revision 6.37  2004/10/27 18:53:23  lavr
  * +CConn_MemoryStream(BUF buf,...)
  *
