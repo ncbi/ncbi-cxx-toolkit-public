@@ -86,7 +86,7 @@ static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
 {
     size_t i;
 
-    /* First check that the new server info is updating existing one */
+    /* First check that the new server info updates an existing one */
     for (i = 0; i < data->n_node; i++) {
         if (SERV_EqualInfo(data->s_node[i].info, info)) {
             /* Replace older version */
@@ -428,6 +428,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2003/05/22 20:31:40  lavr
+ * Comment change
+ *
  * Revision 6.56  2003/05/14 15:43:31  lavr
  * Add host address in dispatcher's CGI query
  *
