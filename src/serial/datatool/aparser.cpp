@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/10/18 14:33:14  gouriano
+* added possibility to replace lexer "on the fly"
+*
 * Revision 1.13  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -79,7 +82,7 @@
 BEGIN_NCBI_SCOPE
 
 AbstractParser::AbstractParser(AbstractLexer& lexer)
-    : m_Lexer(lexer)
+    : m_Lexer(&lexer)
 {
 }
 
@@ -107,10 +110,10 @@ void AbstractParser::CopyLineComment(int line, CComments& comments,
 {
     if ( !(flags & eNoFetchNext) )
         Lexer().FillComments();
-    _TRACE("CopyLineComment("<<line<<") current: "<<m_Lexer.CurrentLine());
-    _TRACE("  "<<(m_Lexer.HaveComments()?m_Lexer.NextComment().GetLine():-1));
-    while ( m_Lexer.HaveComments() ) {
-        const AbstractLexer::CComment& c = m_Lexer.NextComment();
+    _TRACE("CopyLineComment("<<line<<") current: "<<Lexer().CurrentLine());
+    _TRACE("  "<<(Lexer().HaveComments()?Lexer().NextComment().GetLine():-1));
+    while ( Lexer().HaveComments() ) {
+        const AbstractLexer::CComment& c = Lexer().NextComment();
         if ( c.GetLine() > line ) {
             // next comment is below limit line
             return;
@@ -122,7 +125,7 @@ void AbstractParser::CopyLineComment(int line, CComments& comments,
         }
 
         comments.Add(c.GetValue());
-        m_Lexer.SkipNextComment();
+        Lexer().SkipNextComment();
     }
 }
 

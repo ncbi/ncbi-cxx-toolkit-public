@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/10/18 14:32:17  gouriano
+* added possibility to replace lexer "on the fly"
+*
 * Revision 1.7  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -99,16 +102,16 @@ public:
 
     AbstractLexer& Lexer(void)
         {
-            return m_Lexer;
+            return *m_Lexer;
         }
     const AbstractLexer& Lexer(void) const
         {
-            return m_Lexer;
+            return *m_Lexer;
         }
 
     const AbstractToken& NextToken(void) const
         {
-            return m_Lexer.NextToken();
+            return m_Lexer->NextToken();
         }
     TToken Next(void) const
         {
@@ -120,7 +123,7 @@ public:
         }
     int LastTokenLine(void) const
         {
-            return m_Lexer.LastTokenLine();
+            return Lexer().LastTokenLine();
         }
 
     void Consume(void)
@@ -162,7 +165,7 @@ public:
 
     bool CheckSymbol(char symbol)
         {
-            return m_Lexer.CheckSymbol(symbol);
+            return Lexer().CheckSymbol(symbol);
         }
 
     void ExpectSymbol(char symbol)
@@ -205,8 +208,14 @@ public:
     };
     void CopyLineComment(int line, CComments& comments, int flags = 0);
 
+protected:
+    void SetLexer(AbstractLexer* lexer)
+    {
+        m_Lexer = lexer;
+    }
+
 private:
-    AbstractLexer& m_Lexer;
+    AbstractLexer* m_Lexer;
 };
 
 END_NCBI_SCOPE
