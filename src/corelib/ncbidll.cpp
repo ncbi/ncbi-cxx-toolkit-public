@@ -191,6 +191,12 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
     void* ptr = 0;
 #  if defined(HAVE_DLFCN_H)
     ptr = dlsym(m_Handle->handle, entry_name.c_str());
+#    if defined(NCBI_OS_DARWIN)
+    // Try again without the underscore, since 10.3 and up don't need it.
+    if ( !ptr ) {
+        ptr = dlsym(m_Handle->handle, entry_name.c_str() + 1);
+    }
+#    endif
 #  endif
 #else
     void* ptr = 0;
@@ -304,6 +310,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/02/05 18:41:25  ucko
+ * GetEntryPoint: Darwin may or may not need a leading underscore, so try
+ * it both ways.
+ *
  * Revision 1.18  2003/12/09 13:06:44  kuznets
  * Supported dll base name in entry point resolution (CDllResolver)
  *
