@@ -37,6 +37,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <algorithm>
+#include <numeric>
 #include <math.h>
 
 
@@ -176,7 +177,6 @@ CHit::CHit(const string& strTemplate)
 
     m_anLength[0] = m_ai[1] - m_ai[0] + 1;
     m_anLength[1] = m_ai[3] - m_ai[2] + 1;
-    m_Length = max(m_anLength[0], m_anLength[1]);
 }
 
 
@@ -201,10 +201,34 @@ CHit::CHit(const CSeq_align& sa)
     }
 
     const CDense_seg &ds = sa.GetSegs().GetDenseg();
-    if ((ds.GetStrands()[0] == eNa_strand_minus  &&
-         ds.GetStrands()[1] == eNa_strand_plus)  ||
-        (ds.GetStrands()[0] == eNa_strand_plus  &&
-         ds.GetStrands()[1] == eNa_strand_minus)) {
+    const CDense_seg::TStrands& strands = ds.GetStrands();
+    const CDense_seg::TLens& lens = ds.GetLens();
+
+    bool strand_query;
+    if(strands[0] == eNa_strand_plus) {
+        strand_query = true;
+    }
+    else if(strands[0] == eNa_strand_minus) {
+        strand_query = false;
+    }
+    else {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Unexpected query strand reported to CHit::CHit(CSeq_align).");
+    }
+
+    bool strand_subj;
+    if( strands[1] == eNa_strand_plus) {
+        strand_subj = true;
+    }
+    else if(strands[1] == eNa_strand_minus) {
+        strand_subj = false;
+    }
+    else {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Unexpected subject strand reported to CHit::CHit(CSeq_align).");
+    }
+
+    if (strand_query != strand_subj) {
         swap(m_an[2], m_an[3]);
     }
 
@@ -216,7 +240,7 @@ CHit::CHit(const CSeq_align& sa)
 
     m_anLength[0] = m_ai[1] - m_ai[0] + 1;
     m_anLength[1] = m_ai[3] - m_ai[2] + 1;
-    m_Length = max(m_anLength[0], m_anLength[1]);
+    m_Length = accumulate(lens.begin(), lens.end(), 0);
 
     m_Idnty = 100 * m_Idnty / m_Length; //convert # identities to % identity
 }
@@ -447,6 +471,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/10 16:33:52  kapustin
+* Report unexpected strands in CHit(CSeq_align&). Calculate length and identity based on alignment data.
+*
 * Revision 1.6  2004/05/06 17:43:27  johnson
 * CHit(CSeq_align&) now indicates minus strand via swapping subject
 * coordinates (*not* query coordinates)
