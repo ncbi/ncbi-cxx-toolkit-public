@@ -267,6 +267,13 @@ public:
     ///   True if a valid OID was found, false otherwise.
     bool CheckOrFindOID(TOID & next_oid);
     
+    /// Get list of database names.
+    ///
+    /// This returns the database name list used at construction.
+    /// @return
+    ///   List of database names.
+    const string & GetDBNameList(void);
+    
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
