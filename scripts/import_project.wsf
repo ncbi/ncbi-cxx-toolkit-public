@@ -1,221 +1,221 @@
 <package>
-	<job id="import-project-wsh-js">
-		
-		<script language="JScript" src="project_utilits.js">
-		</script>
-		
-		<script language="JScript">
-		// Framework
-		
-		// Create usage string
-		function Usage()
-		{
-			var usage_str;
-			//usage_str  = "Usage:\n";
-			//usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-			usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll [-b] [-r]]\n";
-			usage_str += "SYNOPSIS:\n";
-			usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
-			usage_str += "    CVS tree at:\n";
-			usage_str += "      " + GetCvsTreeRoot()+"/src/<cvs_tree_path>\n";
-			usage_str += "      " + GetCvsTreeRoot()+"/include/<cvs_tree_path>\n";
-			usage_str += "    Create local build tree structure. Fill-in local tree.\n";
-			usage_str += "    Adjust Makefile.in in src/<cvs_tree_path> to require NCBI C++ toolkit.\n";
-			usage_str += "    Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
-			usage_str += "    Run project tree builder on local build tree.\n";
-			usage_str += "    Open created solution in MSVC7.1 IDE.\n";
-			usage_str += "ARGUMENTS:\n";
-			usage_str += "    <cvs_tree_path>  -- starting path for import\n";
-			usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
-			usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
-			usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
-			usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
-			usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
-			usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
-			usage_str += "EXAMPLES:\n";
-			usage_str += "    cscript import_project.wsf objmgr/test\n";
-			usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
-			usage_str += "    cscript import_project.wsf objmgr/test cxx.potluck -dll\n";
-			usage_str += "    cscript import_project.wsf objmgr/test \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
-			
-			return usage_str;
-		}
-		// Verify command line arguments
-		function VerifyArguments(oArgs)
-		{
-			if (oArgs.Length < 1) {
-				return false;
-			}
-			if (oArgs.Length > 5) {
-				return false;
-			}
-			
-			return true;
-		}
-		// Verify task object
-		function VerifyTask(oTask)
-		{
-			//Project name
-			var oRe = /^[a-z]([a-z]|\d|[_]|[/])*$/g;
-			if (oTask.ProjectName.match(oRe) == null) {
-				WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
-				WScript.Echo("Project name should starts from lower-case letter");
-				WScript.Echo("             and containts lower-case letter(s),");
-				WScript.Echo("                           underscore(s),");
-				WScript.Echo("                           digit(s)");
-				WScript.Echo("                        or slashe(s)");
-				WScript.Quit(1);
-			}
-			
-			//Path to C++ Toolkit
-			var oFso = new ActiveXObject("Scripting.FileSystemObject");
-			if ( !oFso.FolderExists(oTask.ToolkitPath) ) {
-				WScript.Echo("Path to Pre-built C++ Toolkit: " + oTask.ToolkitPath + " does not exist");
-				WScript.Quit(1);	
-			}
-		}		
-		// Task object constructor
-		function Task()
-		{
-			var oArgs = WScript.Arguments;
-			if ( !VerifyArguments(oArgs) ) {
-				WScript.Echo(Usage());
-				WScript.Quit(1);
-			}
-			
-			//this.ProjectName     = WScript.Arguments.Item(0);
-			//this.ToolkitPath     = WScript.Arguments.Item(1);
-			//if (WScript.Arguments.Length == 2) {
-			//	this.DllBuild    = false; // default is static build
-			//} else {
-			//	this.DllBuild    = WScript.Arguments.Item(2).toLowerCase() == "-dll";
-			//}
-			this.ProjectName = GetPositionalValue(oArgs, 0);
-			this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
-			if ( this.DllBuild ) {
-				this.CopyDlls    = GetFlagValue(oArgs, "-b", false);
-			} else {
-				this.CopyDlls    = false;
-			}
-			if ( this.DllBuild ) {
-				this.CopyRes    = GetFlagValue(oArgs, "-r", false);
-			} else {
-				this.CopyRes    = false;
-			}
-			
-			var toolkit_path = GetOptionalPositionalValue(oArgs, 
-			                                              1, 
-			                                              GetDefaultCXX_ToolkitFolder() +
-			                                                     "\\" +
-			                                                     GetDefaultCXX_ToolkitSubFolder());
-			if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
-				this.ToolkitPath = toolkit_path;
-			} else {
-				this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path;	
-			}
-		}
-		// Diagnostic dump of task object
-		function DumpTask(oTask)
-		{
-			WScript.Echo(oTask.ProjectName        );
-			WScript.Echo(oTask.ToolkitPath        );
-			WScript.Echo(oTask.DllBuild.toString());
-			WScript.Echo(oTask.CopyDlls.toString());
-		}
-		
-		// Fill local tree
-		function FillTree(oShell, oTree, oTask)
-		{
-			FillTreeStructure(oShell, oTree);
-			
-			var include_dir = "include/" + oTask.ProjectName;
-			var src_dir     = "src/"     + oTask.ProjectName;
-			CheckoutSubDir(oShell, oTree, include_dir);
-			CheckoutSubDir(oShell, oTree, src_dir);
-		}
-		// Project will require pre-built C++ Toolkit		
-		function AdjustProject(oShell, oTree, oTask)
-		{
-			var oFso = new ActiveXObject("Scripting.FileSystemObject");
-			
-			// Makefile.in - open for appending
-			var makefile_path = oTree.SrcProjectBranch + "\\Makefile.in";
-			if ( oFso.FileExists(makefile_path) ) {
-				var makefile = oFso.OpenTextFile(makefile_path, 8);
-				makefile.WriteLine("REQUIRES = CXX_Toolkit");
-				makefile.Close();
-			}
-		}
-		// Generate solution name. Must be the same as we can import more projects
-		function SolutionName(oTask)
-		{
-			if ( oTask.DllBuild ) {
-				return "imported_projects_dll";
-			} else {
-				return "imported_projects_static";
-			}
-		}
-		// Run project tree builder
-		function RunPtb(oShell, oTree, oTask)
-		{
-			var conf = GetConfigs(oTask)[0];
-			var target_path = oTree.BinPathStatic + "\\" + conf;
-			var ptb_command_line = target_path + "\\project_tree_builder.exe";
-			if ( oTask.DllBuild ) {
-				ptb_command_line += " -dll";
-			}
-			ptb_command_line += " -logfile out.log";
-			ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
-			ptb_command_line += " " + oTree.TreeRoot;
-			ptb_command_line += " src\\";
-			if ( oTask.DllBuild ) {
-				ptb_command_line += " " + oTree.CompilersBranchDll   + "\\build\\" +  SolutionName(oTask) + ".sln";
-			} else {
-				ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln";
-			}
-			WScript.Echo(ptb_command_line);
-			execute(oShell, ptb_command_line);
-		}
-		// Open (re-)generated solution in  MSVC IDE
-		function LoadSolution(oShell, oTree, oTask)
-		{
-			var sln_path = " ";
-			if ( oTask.DllBuild ) {
-				sln_path += oTree.CompilersBranchDll;
-			} else {
-				sln_path += oTree.CompilersBranchStatic;
-			}
-			sln_path += "\\build\\" + SolutionName(oTask) + ".sln";
+<job id="import-project-wsh-js">
 
-			execute(oShell, "start " + sln_path);
-		}
-				
-		</script>
-		
-		<script language="JScript">
-		// Main script line:
-		var oShell = WScript.CreateObject("WScript.shell");
-		
-		var oTask  = new Task();
-		//DumpTask(oTask);
-		VerifyTask(oTask);
-		
-		var oTree  = new Tree(oShell, oTask);
-		//DumpTree(oTree);
-		
-		CreateTreeStructure(oTree, oTask);
-		FillTree           (oShell, oTree, oTask);
-		CopyPtb            (oShell, oTree, oTask);
-		CopyDatatool       (oShell, oTree, oTask);
-		AdjustProject      (oShell, oTree, oTask);
-		AdjustLocalSite    (oShell, oTree, oTask);
-		CopyDlls		   (oShell, oTree, oTask);
-		CopyRes		       (oShell, oTree, oTask);
-		
- 		RunPtb             (oShell, oTree, oTask);
- 		LoadSolution       (oShell, oTree, oTask);
- 		
-	 	</script>
-	</job>
+<script language="JScript" src="project_utilits.js">
+</script>
+
+<script language="JScript">
+// Framework
+
+// Create usage string
+function Usage()
+{
+    var usage_str;
+    //usage_str  = "Usage:\n";
+    //usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
+    usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll [-b] [-r]]\n";
+    usage_str += "SYNOPSIS:\n";
+    usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
+    usage_str += "    CVS tree at:\n";
+    usage_str += "      " + GetCvsTreeRoot()+"/src/<cvs_tree_path>\n";
+    usage_str += "      " + GetCvsTreeRoot()+"/include/<cvs_tree_path>\n";
+    usage_str += "    Create local build tree structure. Fill-in local tree.\n";
+    usage_str += "    Adjust Makefile.in in src/<cvs_tree_path> to require NCBI C++ toolkit.\n";
+    usage_str += "    Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
+    usage_str += "    Run project tree builder on local build tree.\n";
+    usage_str += "    Open created solution in MSVC7.1 IDE.\n";
+    usage_str += "ARGUMENTS:\n";
+    usage_str += "    <cvs_tree_path>  -- starting path for import\n";
+    usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
+    usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
+    usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
+    usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+    usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
+    usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
+    usage_str += "EXAMPLES:\n";
+    usage_str += "    cscript import_project.wsf objmgr/test\n";
+    usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
+    usage_str += "    cscript import_project.wsf objmgr/test cxx.potluck -dll\n";
+    usage_str += "    cscript import_project.wsf objmgr/test \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
+
+    return usage_str;
+}
+// Verify command line arguments
+function VerifyArguments(oArgs)
+{
+    if (oArgs.Length < 1) {
+        return false;
+    }
+    if (oArgs.Length > 5) {
+        return false;
+    }
+
+    return true;
+}
+// Verify task object
+function VerifyTask(oTask)
+{
+    //Project name
+    var oRe = /^[a-z]([a-z]|\d|[_]|[/])*$/g;
+    if (oTask.ProjectName.match(oRe) == null) {
+        WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
+        WScript.Echo("Project name should starts from lower-case letter");
+        WScript.Echo("             and containts lower-case letter(s),");
+        WScript.Echo("                           underscore(s),");
+        WScript.Echo("                           digit(s)");
+        WScript.Echo("                        or slashe(s)");
+        WScript.Quit(1);
+    }
+
+    //Path to C++ Toolkit
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    if ( !oFso.FolderExists(oTask.ToolkitPath) ) {
+        WScript.Echo("Path to Pre-built C++ Toolkit: " + oTask.ToolkitPath + " does not exist");
+        WScript.Quit(1);    
+    }
+}       
+// Task object constructor
+function Task()
+{
+    var oArgs = WScript.Arguments;
+    if ( !VerifyArguments(oArgs) ) {
+        WScript.Echo(Usage());
+        WScript.Quit(1);
+    }
+
+    //this.ProjectName     = WScript.Arguments.Item(0);
+    //this.ToolkitPath     = WScript.Arguments.Item(1);
+    //if (WScript.Arguments.Length == 2) {
+    //  this.DllBuild    = false; // default is static build
+    //} else {
+    //  this.DllBuild    = WScript.Arguments.Item(2).toLowerCase() == "-dll";
+    //}
+    this.ProjectName = GetPositionalValue(oArgs, 0);
+    this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
+    if ( this.DllBuild ) {
+        this.CopyDlls    = GetFlagValue(oArgs, "-b", false);
+    } else {
+        this.CopyDlls    = false;
+    }
+    if ( this.DllBuild ) {
+        this.CopyRes    = GetFlagValue(oArgs, "-r", false);
+    } else {
+        this.CopyRes    = false;
+    }
+
+    var toolkit_path = GetOptionalPositionalValue(oArgs, 
+                                                  1, 
+                                                  GetDefaultCXX_ToolkitFolder() +
+                                                  "\\" +
+                                                  GetDefaultCXX_ToolkitSubFolder());
+    if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
+        this.ToolkitPath = toolkit_path;
+    } else {
+        this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path; 
+    }
+}
+// Diagnostic dump of task object
+function DumpTask(oTask)
+{
+    WScript.Echo("Project name: " + oTask.ProjectName        );
+    WScript.Echo("Toolkit path: " + oTask.ToolkitPath        );
+    WScript.Echo("DLL Build:    " + oTask.DllBuild.toString());
+    WScript.Echo("Copy DLLs:    " + oTask.CopyDlls.toString());
+}
+
+// Fill local tree
+function FillTree(oShell, oTree, oTask)
+{
+    FillTreeStructure(oShell, oTree);
+
+    var include_dir = "include/" + oTask.ProjectName;
+    var src_dir     = "src/"     + oTask.ProjectName;
+    CheckoutSubDir(oShell, oTree, include_dir);
+    CheckoutSubDir(oShell, oTree, src_dir);
+}
+// Project will require pre-built C++ Toolkit       
+function AdjustProject(oShell, oTree, oTask)
+{
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+
+    // Makefile.in - open for appending
+    var makefile_path = oTree.SrcProjectBranch + "\\Makefile.in";
+    if ( oFso.FileExists(makefile_path) ) {
+        var makefile = oFso.OpenTextFile(makefile_path, 8);
+        makefile.WriteLine("REQUIRES = CXX_Toolkit");
+        makefile.Close();
+    }
+}
+// Generate solution name. Must be the same as we can import more projects
+function SolutionName(oTask)
+{
+    if ( oTask.DllBuild ) {
+        return "imported_projects_dll";
+    } else {
+        return "imported_projects_static";
+    }
+}
+// Run project tree builder
+function RunPtb(oShell, oTree, oTask)
+{
+    var conf = GetConfigs(oTask)[0];
+    var target_path = oTree.BinPathStatic + "\\" + conf;
+    var ptb_command_line = target_path + "\\project_tree_builder.exe";
+    if ( oTask.DllBuild ) {
+        ptb_command_line += " -dll";
+    }
+    ptb_command_line += " -logfile out.log";
+    ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
+    ptb_command_line += " " + oTree.TreeRoot;
+    ptb_command_line += " src\\";
+    if ( oTask.DllBuild ) {
+        ptb_command_line += " " + oTree.CompilersBranchDll   + "\\build\\" +  SolutionName(oTask) + ".sln";
+    } else {
+        ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln";
+    }
+    WScript.Echo(ptb_command_line);
+    execute(oShell, ptb_command_line);
+}
+// Open (re-)generated solution in  MSVC IDE
+function LoadSolution(oShell, oTree, oTask)
+{
+    var sln_path = " ";
+    if ( oTask.DllBuild ) {
+        sln_path += oTree.CompilersBranchDll;
+    } else {
+        sln_path += oTree.CompilersBranchStatic;
+    }
+    sln_path += "\\build\\" + SolutionName(oTask) + ".sln";
+
+    execute(oShell, "start " + sln_path);
+}
+
+</script>
+
+<script language="JScript">
+// Main script line:
+var oShell = WScript.CreateObject("WScript.shell");
+
+var oTask  = new Task();
+DumpTask(oTask);
+VerifyTask(oTask);
+
+var oTree  = new Tree(oShell, oTask);
+//DumpTree(oTree);
+
+CreateTreeStructure(oTree, oTask);
+FillTree           (oShell, oTree, oTask);
+CopyPtb            (oShell, oTree, oTask);
+CopyDatatool       (oShell, oTree, oTask);
+AdjustProject      (oShell, oTree, oTask);
+AdjustLocalSite    (oShell, oTree, oTask);
+CopyDlls           (oShell, oTree, oTask);
+CopyRes            (oShell, oTree, oTask);
+
+RunPtb             (oShell, oTree, oTask);
+LoadSolution       (oShell, oTree, oTask);
+
+</script>
+</job>
 </package>
- 
+
