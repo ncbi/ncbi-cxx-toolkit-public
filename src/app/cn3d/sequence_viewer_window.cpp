@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/09/09 22:51:19  thiessen
+* add basic taxonomy tree viewer
+*
 * Revision 1.39  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -169,6 +172,7 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/cn3d_blast.hpp"
+#include "cn3d/taxonomy_tree.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -190,11 +194,12 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
+    EVT_MENU      (MID_TAXONOMY,                        SequenceViewerWindow::OnTaxonomy)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
     ViewerWindowBase(parentSequenceViewer, wxPoint(0,500), wxSize(1000,200)),
-    sequenceViewer(parentSequenceViewer)
+    sequenceViewer(parentSequenceViewer), taxonomyTree(NULL)
 {
     SetWindowTitle();
 
@@ -206,7 +211,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_EXPORT_A2M, "&A2M FASTA");
     subMenu->Append(MID_EXPORT_TEXT, "&Text");
     subMenu->Append(MID_EXPORT_HTML, "&HTML");
-    viewMenu->Append(MID_EXPORT, "Export...", subMenu);
+    viewMenu->Append(MID_EXPORT, "&Export...", subMenu);
+    viewMenu->Append(MID_TAXONOMY, "Show Ta&xonomy...");
 
     editMenu->AppendSeparator();
     subMenu = new wxMenu;
@@ -236,6 +242,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
 
 SequenceViewerWindow::~SequenceViewerWindow(void)
 {
+    if (taxonomyTree) delete taxonomyTree;
 }
 
 void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
@@ -276,6 +283,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
         menuBar->Enable(MID_SELF_HIT, editable);
+        menuBar->Enable(MID_TAXONOMY, editable);
         menuBar->Enable(MID_SCORE_THREADER, editable);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
@@ -550,6 +558,13 @@ void SequenceViewerWindow::OnSelfHit(wxCommandEvent& event)
         const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments()->front();
         sequenceViewer->alignmentManager->blaster->CalculateSelfHitScores(multiple);
     }
+}
+
+void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
+{
+    if (!taxonomyTree) taxonomyTree = new TaxonomyTree();
+    if (sequenceViewer->GetCurrentAlignments())
+        taxonomyTree->ShowTreeForAlignment(sequenceViewer->GetCurrentAlignments()->front());
 }
 
 END_SCOPE(Cn3D)

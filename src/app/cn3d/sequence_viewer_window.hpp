@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/09 22:51:19  thiessen
+* add basic taxonomy tree viewer
+*
 * Revision 1.21  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -106,6 +109,7 @@ BEGIN_SCOPE(Cn3D)
 
 class SequenceViewer;
 class SequenceDisplay;
+class TaxonomyTree;
 
 class SequenceViewerWindow : public ViewerWindowBase
 {
@@ -122,6 +126,7 @@ public:
 
 private:
     SequenceViewer *sequenceViewer;
+    TaxonomyTree *taxonomyTree;
 
     // menu identifiers - additional items beyond base class items
     enum {
@@ -129,6 +134,7 @@ private:
         MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
         MID_SCORE_THREADER,
         MID_SELF_HIT,
+        MID_TAXONOMY,
         MID_EXPORT,
             MID_EXPORT_FASTA,
             MID_EXPORT_A2M,
@@ -163,6 +169,7 @@ private:
     void OnMarkBlock(wxCommandEvent& event);
     void OnExport(wxCommandEvent& event);
     void OnSelfHit(wxCommandEvent& event);
+    void OnTaxonomy(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation

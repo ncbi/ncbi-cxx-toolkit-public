@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.156  2002/09/09 22:51:19  thiessen
+* add basic taxonomy tree viewer
+*
 * Revision 1.155  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -707,7 +710,7 @@ public:
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
             wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__)
-                | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
+                | wxTE_RICH | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
 #endif
             )
     {
@@ -752,8 +755,8 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     // info messages and less severe errors get added to the log
     else {
         if (logFrame) {
-            // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
-            if (logFrame->totalChars + errMsg.size() > 32000) {
+            // delete top of log if too big
+            if (logFrame->totalChars + errMsg.size() > 100000) {
                 logFrame->logText->Clear();
                 logFrame->totalChars = 0;
             }

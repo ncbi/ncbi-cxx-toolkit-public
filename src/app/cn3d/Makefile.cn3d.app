@@ -51,6 +51,7 @@ SRC = \
 	structure_set \
 	style_dialog \
 	style_manager \
+	taxonomy_tree \
 	update_viewer \
 	update_viewer_window \
 	vector_math \
@@ -60,7 +61,7 @@ SRC = \
 
 LIB = \
 	cdd ncbimime cn3d mmdb1 mmdb2 mmdb3 seqset \
-	$(SEQ_LIBS) pub medline	biblio general \
+	$(SEQ_LIBS) pub medline	biblio general taxon1 \
 	xser xutil xctools xconnect xncbi
 
 
