@@ -556,26 +556,26 @@ BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
     for (index = 0; index < (int)slp.size(); ++index) {
         mask_info_list.clear();
 
-        if (!mask) {
+/*   FIXME???
+        BlastSeqLoc* loc = mask->seqloc_array[index*num_frames];
+        if (!loc) {
             retval.push_back(mask_info_list);
             continue;
         }
-        for ( ; mask && mask->index < index*num_frames;
-              mask = mask->next);
-        BlastSeqLoc* loc;
+*/
         CDisplaySeqalign::SeqlocInfo* seqloc_info =
             new CDisplaySeqalign::SeqlocInfo;
 
-        for ( ; mask && mask->index < (index+1)*num_frames;
-              mask = mask->next) {
-            frame = (translated_query ? (mask->index % num_frames) + 1 : 0);
-
-
-            for (loc = mask->loc_list; loc; loc = loc->next) {
+        for (int tmp_index=0; tmp_index<num_frames; tmp_index++)
+        {
+            frame = (translated_query ? (tmp_index+1) : 0);
+            BlastSeqLoc* loc = mask->seqloc_array[index*num_frames+tmp_index];
+           
+            for ( ; loc; loc = loc->next) {
                 seqloc_info->frame = Context2TranslatedFrame(frame);
                 CRef<CSeq_loc> seqloc(new CSeq_loc());
-                seqloc->SetInt().SetFrom(((SSeqRange*) loc->ptr)->left);
-                seqloc->SetInt().SetTo(((SSeqRange*) loc->ptr)->right);
+                seqloc->SetInt().SetFrom((loc->ssr)->left);
+                seqloc->SetInt().SetTo((loc->ssr)->right);
                 seqloc->SetInt().SetId(*(const_cast<CSeq_id*>(&sequence::GetId(*
 slp[index].seqloc, slp[index].scope))));
 
