@@ -1,305 +1,292 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
-  <head>
-    <title>Diagnostic Streams</title>
-  </head>
-  <body bgcolor = white>
-    <h1><a href="../libs/err_msg.html#ref_Message">
-    Diagnostic Streams</h1></a>
-<ul>
- <li><a href="#severity">  Severity levels </a>
- <li><a href="#PostFlags"> Post Flags</a>
- <li><a href="#setStream"> Defining the output stream</a>
- <li><a href="#buffering"> The message buffer </a> 
- <li><a href="#callback">  FDiagHandler functions</a>
- <li><a href="#errpost">   The ERR_POST macro </a>
- <li><a href="#trace">     The _TRACE macro </a>
- <li><a href="#example">   Example of using the <i>CNcbiDiag</i> class </a>
-</a>
-</ul>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Diagnostic Streams</title>
+</head>
+<body bgcolor="#FFFFFF">
 
+<h1>
+<a href="../libs/err_msg.html#ref_Message">Diagnostic Streams</a></h1>
+
+<ul>
+<li>
+<a href="#severity">Severity levels</a></li>
+
+<li>
+<a href="#PostFlags">Post Flags</a></li>
+
+<li>
+<a href="#setStream">Defining the output stream</a></li>
+
+<li>
+<a href="#buffering">The message buffer</a></li>
+
+<li>
+<a href="#callback">FDiagHandler functions</a></li>
+
+<li>
+<a href="#errpost">The ERR_POST macro</a></li>
+
+<li>
+<a href="#trace">The _TRACE macro</a></li>
+
+<li>
+<a href="#example">Example of using the <i>CNcbiDiag</i> class</a></li>
+</ul>
 The
-<a href="../docxx/CNcbiDiag.html">
-<i> CNcbiDiag </i></a> class implements the functionality of an output stream enhanced with
-error posting mechanisms similar to those found in the NCBI C Toolkit.  A <i> CNcbiDiag </i> object
-has the look and feel of an output stream; its member functions and friends include output
-operators and format manipulators. A <i>CNcbiDiag</i> object is not itself a stream, but serves as an
-interface to a stream which allows multiple threads to write to the same output. Each
-instance of <i>CNcbiDiag</i> includes the following private data members:
-
+<i><a href="../docxx/CNcbiDiag.html">CNcbiDiag </a></i>class implements
+the functionality of an output stream enhanced with error posting mechanisms
+similar to those found in the NCBI C Toolkit. A <i>CNcbiDiag </i>object
+has the look and feel of an output stream; its member functions and friends
+include output operators and format manipulators. A <i>CNcbiDiag</i> object
+is not itself a stream, but serves as an interface to a stream which allows
+multiple threads to write to the same output. Each instance of <i>CNcbiDiag</i>
+includes the following private data members:
 <ul>
-<li> a buffer to store (a single)  message text 
-<li> a severity level
-<li> a set of post flags
+<li>
+a buffer to store (a single) message text</li>
+
+<li>
+a severity level</li>
+
+<li>
+a set of post flags</li>
 </ul>
+Limiting each instance of <i>CNcbiDiag</i> to the storage and handling
+of a single message ensures that multiple threads writing to the same stream
+will not have interleaving message texts.&nbsp;<a NAME="severity"></a>
+<h3>
+Severity levels</h3>
+Each <i>CNcbiDiag</i> instance has its own (<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EDiagSev">EDiagSev</a></i>)
+severity level, which is compared to a global severity threshold to determine
+whether or not its message should be posted. Six levels of severity are
+defined by the <i>EDiagSev</i> enumeration:
+<pre>enum EDiagSev {
+&nbsp;&nbsp;&nbsp; eDiag_Info = 0,
+&nbsp;&nbsp;&nbsp; eDiag_Warning,
+&nbsp;&nbsp;&nbsp; eDiag_Error,
+&nbsp;&nbsp;&nbsp; eDiag_Critical,
+&nbsp;&nbsp;&nbsp; eDiag_Fatal,&nbsp;&nbsp; // guarantees to exit(or abort)
+&nbsp;&nbsp;&nbsp; eDiag_Trace
+};</pre>
+The default is to post only those messages whose severity level exceeds
+the
+<i>eDiag_Warning</i> level (i.e. <i>eDiag_Error, eDiag_Critical</i>,
+and <i>eDiag_Fatal</i>). The global severity threshold for posting messages
+can be reset using <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagPostLevel">SetDiagPostLevel</a>
+(EDiagSev postSev)</i>. A parallel function, <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagDieLevel">SetDiagDieLevel</a>
+(EDiagSev dieSev)</i>, defines the severity level at which execution will
+abort.
+<p>Tracing is considered to be a special, debug-oriented feature, and therefore
+messages with severity level <i>eDiag_Trace</i> are not affected by these
+global <i>post/die</i> levels. Instead, <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace">SetDiagTrace</a>
+(EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on
+or off. By default, the tracing is off -- unless you assign the environment
+variable $DIAG_TRACE to an arbitrary non-empty string or, alternatively,
+define a DIAG_TRACE entry in the [DEBUG] section of your <a href="registry.html">registry</a>
+file.
+<p><a NAME="sevman"></a>The <i>CNcbiDiag</i> class also has class-specific
+<i>manipulators</i> to control the message severity level. These can be
+invoked as in the following examples on diagnostic stream <i>diag</i>:
+<pre>&nbsp;&nbsp;&nbsp; diag &lt;&lt; Info;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to eDiag_Info
+&nbsp;&nbsp;&nbsp; diag &lt;&lt; Warning;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Warning
+</i>&nbsp;&nbsp;&nbsp; diag &lt;&lt; Error;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Error</i> [default]
+&nbsp;&nbsp;&nbsp; diag &lt;&lt; Fatal;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Fatal
+</i>&nbsp;&nbsp;&nbsp; diag &lt;&lt; Trace;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Trace</i></pre>
+<a NAME="PostFlags"></a>
+<h3>
+Post Flags</h3>
+The post flags define additional information that will appear along with
+the message body. The standard format of a message is:
+<center><pre>&nbsp;
+"&lt;file>", line &lt;line>:&lt;severity>: [&lt;prefix>] &lt;message body></pre></center>
+where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
+(or not) depending on the post flags
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EDiagPostFlag">EDiagPostFlag
+</a>associated with the <i>CNcbiDiag</i>:
+<pre>enum EDiagPostFlag {
+&nbsp;&nbsp;&nbsp; eDPF_File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x1,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
+&nbsp;&nbsp;&nbsp; eDPF_LongFilename = 0x2,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
+&nbsp;&nbsp;&nbsp; eDPF_Line&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x4,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
+&nbsp;&nbsp;&nbsp; eDPF_Prefix&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x8,&nbsp; // set by default (always)
+&nbsp;&nbsp;&nbsp; eDPF_Severity&nbsp;&nbsp;&nbsp;&nbsp; = 0x10, // set by default (always)
 
-Limiting each instance of <i>CNcbiDiag</i> to the storage and handling of a single message
-ensures that multiple threads writing to the same stream will not have interleaving message
-texts.  
-
-<a name="severity"> <h3> Severity levels </h3>
-
-Each <i>CNcbiDiag</i> instance has its own 
-(<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EDiagSev"><i>EDiagSev</i></a>)
-severity level, which is compared to a global
-severity threshold to determine whether or not its message should be posted. 
-Six levels of severity are defined by the <i>EDiagSev</i> enumeration:
-<pre>
-enum EDiagSev {
-    eDiag_Info = 0,
-    eDiag_Warning,
-    eDiag_Error,
-    eDiag_Critical,
-    eDiag_Fatal,   // guarantees to exit(or abort)
-    eDiag_Trace
-};
-</pre>
-
-The default is to post only those messages whose severity level exceeds the
-<i>eDiag_Warning</i> level (i.e. <i>eDiag_Error, eDiag_Critical</i>, and <i>eDiag_Fatal</i>). The
-global severity threshold for posting messages can be reset using 
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagPostLevel">
-SetDiagPostLevel</a> (EDiagSev postSev)</i>. A parallel function, 
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagDieLevel">
-SetDiagDieLevel</a> (EDiagSev dieSev)</i>, defines the severity
-level at which execution will abort. <p>
-
-Tracing is considered to be a special, debug-oriented feature, and therefore messages with
-severity level <i>eDiag_Trace</i> are not affected by these global <i>post/die</i>
-levels. Instead, 
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace">
-SetDiagTrace</a> (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on or
-off.  By default, the tracing is off -- unless you assign the environment variable $DIAG_TRACE
-to an arbitrary non-empty string or, alternatively, define a DIAG_TRACE entry in the [DEBUG]
-section of your <a href="applic.html#CNcbiRegistry">registry</a> file.<p>
-
-<a name="sevman">
-The <i>CNcbiDiag</i> class also has class-specific <i>manipulators</i> to control
-the message severity level. These can be invoked as in the following examples
-on diagnostic stream <i>diag</i>:
- <pre>
-    diag << Info;	// set severity level to eDiag_Info
-    diag << Warning;	// set severity level to <i>eDiag_Warning</i>
-    diag << Error;	// set severity level to <i>eDiag_Error</i> [default]
-    diag << Fatal;	// set severity level to <i>eDiag_Fatal</i>
-    diag << Trace;	// set severity level to <i>eDiag_Trace</i> </pre>
-
-<a name="PostFlags"> <h3> Post Flags</h3>
-The post flags define additional information that will appear along with the message body. The
-standard format of a message is: 
-
-<center><pre> 
-"&lt;file&gt;", line &lt;line&gt;:&lt;severity&gt;: [&lt;prefix&gt;] &lt;message body&gt; 
-</pre></center>
-
-where the <i> file, line, severity</i> and <i>prefix</i> fields are displayed (or not)
-depending on the post flags
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EDiagPostFlag"> EDiagPostFlag </a>
-associated with the <i>CNcbiDiag</i>:
-<pre>
-enum EDiagPostFlag {
-    eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
-    eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
-    eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
-    eDPF_Prefix       = 0x8,  // set by default (always)
-    eDPF_Severity     = 0x10, // set by default (always)
-
-    // set all flags
-    eDPF_All          = 0x7FFF,
-    // set all flags for using with __FILE__ and __LINE__
-    eDPF_Trace        = 0x1f,
-    // ignore all other flags, use global flags
-    eDPF_Default      = 0x8000
-};
-</pre>
-The default message format displays only the severity level and the
-message body. This can be overridden inside the constructor for a
-specific instance of <i>CNcbiDiag</i>, or globally, using 
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagPostFlag">
-SetDiagPostFlag</a>(EDiagSev postSev)</i> on a selected flag.
-
-<a name="setStream"><h3> Defining the output stream</h3>
-
+&nbsp;&nbsp;&nbsp; // set all flags
+&nbsp;&nbsp;&nbsp; eDPF_All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x7FFF,
+&nbsp;&nbsp;&nbsp; // set all flags for using with __FILE__ and __LINE__
+&nbsp;&nbsp;&nbsp; eDPF_Trace&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x1f,
+&nbsp;&nbsp;&nbsp; // ignore all other flags, use global flags
+&nbsp;&nbsp;&nbsp; eDPF_Default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x8000
+};</pre>
+The default message format displays only the severity level and the message
+body. This can be overridden inside the constructor for a specific instance
+of <i>CNcbiDiag</i>, or globally, using <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagSev
+postSev)</i> on a selected flag.&nbsp;<a NAME="setStream"></a>
+<h3>
+Defining the output stream</h3>
 All <i>CNcbiDiag</i> objects are associated with a single globally defined
-callback, which often writes the messages to an output stream. The
-default is to post messages to <i>cerr</i>, but the stream destination can be reset at any time using:<p><center><i>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagStream">
-SetDiagStream</a>
+callback, which often writes the messages to an output stream. The default
+is to post messages to <i>cerr</i>, but the stream destination can be reset
+at any time using:
+<center>
+<p><i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagStream">SetDiagStream</a>
+(CNcbiOstream* os, bool quick_flush,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=FDiagCleanup">FDiagCleanup</a>
+cleanup, void* cleanup_data)</i></center>
 
- (CNcbiOstream* os,
-  bool          quick_flush,
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=FDiagCleanup">
-  FDiagCleanup</a>  cleanup,
-  void*         cleanup_data)
-</i></center><br>
-
-This function can be called numerous times, thus allowing
-different sections of the executable to write to different files. At any given time however,
-all <i>CNcbiDiag</i> objects will be associated with the same global output stream.  Because
-the messages are completely buffered, each message will appear on whatever stream is active at
-the time the message actually completes.
-
-<p>
-And, of course, you can
-<a href="#callback">provide</a>
-(using
+<p>This function can be called numerous times, thus allowing different
+sections of the executable to write to different files. At any given time
+however, all <i>CNcbiDiag</i> objects will be associated with the same
+global output stream. Because the messages are completely buffered, each
+message will appear on whatever stream is active at the time the message
+actually completes.
+<p>And, of course, you can
+<a href="#callback">provide</a> (using
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagHandler">SetDiagHandler</a>)
 your own message posting callback
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=FDiagHandler">FDiagHandler</a>,
-which does not necessarily write the messages to a standard C++ output stream.
+which does not necessarily write the messages to a standard C++ output
+stream.&nbsp;<a NAME="buffering"></a>
+<h3>
+The message buffer</h3>
+The <i>CNcbiDiag</i> message buffer is initialized when the class is first
+instantiated. Additional information can then be appended to the message
+using the overloaded stream operator
+<i>&lt;&lt;</i>. Messages can then
+be terminated explicitly using <i>CNcbiDiag's</i> stream manipulator <i>Endm</i>,
+or implicitly, when the <i>CNcbiDiag</i> object exits scope.
+<p>Implicit message termination also occurs as a side effect of applying
+one of the
+<a href="#sevman">severity level manipulators</a>. Whenever
+the severity level is changed,
+<i>CNcbiDiag</i> also automatically executes
+the following two <i>manipulators</i>:
+<ul>
+<li>
+<i>Endm</i> -- the message is complete and to be flushed</li>
 
-
-
-<a name="buffering"> <h3> The message buffer </h3> 
-
-The <i>CNcbiDiag</i> message buffer is initialized when the class is first instantiated.
-Additional information can then be appended to the message using the overloaded stream operator
-<i><<</i>. Messages can then be terminated explicitly using <i>CNcbiDiag's</i> stream
-manipulator <i>Endm</i>, or implicitly, when the <i>CNcbiDiag</i> object exits scope.  
-<p>
-
-Implicit message termination also occurs as a side effect of applying one of the
-<a href="#sevman"> severity level manipulators</a>.  Whenever the severity level is changed,
-<i>CNcbiDiag</i> also automatically executes the following two <i>manipulators</i>:
-	 <ul>
-		<li> <i>Endm</i> -- the message is complete and to be	flushed
-		<li> <i>Reset</i> -- empty the contents of current message buffer
-	 </ul>
-
-When the message controlled by an instance of <i>CNcbiDiag</i> is complete, <i>CNcbiDiag</i>
-calls a global callback function (of type 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=FDiagHandler">
-<i>FDiagHandler</i></a>) and passes the message (along
-with its severity level) as the function arguments. The default callback function posts errors
-to the currently designated output stream, with the action (continue or abort) determined by
-the severity level of the message.
-<p>
-
-<a name="callback"> <h3> FDiagHandler functions</h3>
-
-The user can install his own callback function (of type <i>FDiagHandler</i>) using
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagHandler">
-<i>SetDiagHandler()</i></a>. The signature of the callback function is given by the typedef:
-
-<center><pre>
-typedef void (*FDiagHandler)(const SDiagMessage& mess);
-</pre></center>
-
-where 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SDiagMessage">
-<i>SDiagMessage</i></a> is a simple struct defined in <i>ncbidiag.hpp</i> whose data
-members' values are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
-occurs at the time that the callback is invoked. See also the discussion in
-the Reference Manual on <a href="../libs/err_msg.html#ref_Message"> <i>Message posting</i></a>
-for a more technical discussion.
-
-<a name="errpost"><h3>The ERR_POST macro</h3>
-
-An <i>ERR_POST(message)</i> macro is also available for routine error posting.  This macro
-implicitly creates a temporary <i>CNcbiDiag</i> object and puts the passed "message" into it
-with a default severity of <i>eDiag_Error</i>. A <a href="#sevman"> severity level manipulator</a>
-can be applied if desired, to modify the message's severity level. For example:
-
-	 <pre>
-long lll = 345;
-ERR_POST("My ERR_POST message, print long: " << lll); </pre>
-	 would write to the diagnostic stream something like:
-	 <pre>
-"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345 </pre>
-
-	 while:
-
-	 <pre>
-double ddd = 123.345;
-ERR_POST(Warning << "...print double: " << ddd); </pre>
-	 would write to the diagnostic stream something like:
-	 <pre>
-"somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
-
-<a name="trace"><h3>The _TRACE macro</h3> The <i>_TRACE(message)</i> macro is a debugging tool that
-allows the user to insert trace statements that will only be posted if the code was <a
-href="../libs/err_msg.html#ref_Assert"> compiled in <i>debug mode</i> </a>, and provided that the
-tracing has been turned on.  If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an
-entry in the [DEBUG] section of your configuration file (<i>*.ini</i>), the initial state of tracing
-is <b><I>on</i></b>. By default, if no such variable or registry entry is defined, tracing is
-<b><I>off</i></b>.  <i><a
-href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace"> SetDiagTrace</a>
-(EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.<p>
-
-Just like <i>ERR_POST</i>, the <i> _TRACE</i> macro takes a message, and
-the message will be posted only if tracing has been enabled. For example:
-
-<pre>
-    SetDiagTrace(eDT_Disable);
-    _TRACE("Testing the _TRACE macro");
-    SetDiagTrace(eDT_Enable);
-    _TRACE("Testing the _TRACE macro AGAIN");
-</pre>
-Here, only the second trace message will be posted, as tracing is disabled when
-the first <i>_TRACE()</i> macro call is executed.
-
-<a name="example"> <h4> Example usage of the <i>CNcbiDiag</i> class</h4></a>
-
-<i><b>NOTE:</b>
-Normally, one should use ERR_POST() and _TRACE() macro to post messages,
-and regulate the severity level by using
-<a href="#sevman"> severity level manipulators</a>, like:
-<pre>
-   ERR_POST(Info << "A notice" << "Fooo");
-   ERR_POST(Critical << "Some critical error");
-</pre>
-</i>
-
-<p>
-Examples in <a href="diag_cpp.html"> <i>diag.cpp</i></a> demonstrate the features
-described above. <i>CTestApp::Run()</i> begins by testing the <i>ERR_POST</i> and <i>_TRACE</i>
-macros. Initially, tracing is enabled (from the registry file), so the first <i>_TRACE</i> message
-is posted. Tracing is then explicitly disabled, so the second  <i>_TRACE</i> message
-is <i>not</i> posted. <p>
-
-Next, the global severity level for posting messages is set to the lowest level
-(<i>eDiag_Info</i>) so that all but the trace messages will be visible.  Trace messages are still
-disabled by the explicit call to <i>SetDiagTrace()</i>.  Five instances of the
-<i>CNcbiDiag</i> class are then created, each with an associated file name, line number,
-severity level, and enumerated value for the post flags. A single message, <i>Msg</i> will be
-posted on all of the diagnostic streams. <p>
-
-<i>myHandler()</i> is then installed to replace the default message handler.
-The last two messages,
-which are created after the new handler has been installed, are handled by 
-<i>myHandler()</i>. The first of these is a trace message however, and because tracing is
-now disabled, this message will not be made visible. All of the messages which do not explicitly use 
-the <i>Endm</i> manipulator are automatically terminated when <i>Run()</i> exits.
-<p>
-Output generated by <i>diag.cpp</i>:
-<pre>
-"/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp", line 23: Error: My ERR_POST message, print long: 345
+<li>
+<i>Reset</i> -- empty the contents of current message buffer</li>
+</ul>
+When the message controlled by an instance of <i>CNcbiDiag</i> is complete,
+<i>CNcbiDiag</i> calls a global callback function (of type <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=FDiagHandler">FDiagHandler</a></i>)
+and passes the message (along with its severity level) as the function
+arguments. The default callback function posts errors to the currently
+designated output stream, with the action (continue or abort) determined
+by the severity level of the message.
+<p><a NAME="callback"></a>
+<h3>
+FDiagHandler functions</h3>
+The user can install his own callback function (of type <i>FDiagHandler</i>)
+using
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagHandler">SetDiagHandler()</a></i>.
+The signature of the callback function is given by the typedef:
+<center><pre>typedef void (*FDiagHandler)(const SDiagMessage&amp; mess);</pre></center>
+where <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SDiagMessage">SDiagMessage</a></i>
+is a simple struct defined in <i>ncbidiag.hpp</i> whose data members' values
+are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
+occurs at the time that the callback is invoked. See also the discussion
+in the Reference Manual on <i><a href="../libs/err_msg.html#ref_Message">Message
+posting</a></i> for a more technical discussion.&nbsp;<a NAME="errpost"></a>
+<h3>
+The ERR_POST macro</h3>
+An <i>ERR_POST(message)</i> macro is also available for routine error posting.
+This macro implicitly creates a temporary <i>CNcbiDiag</i> object and puts
+the passed "message" into it with a default severity of <i>eDiag_Error</i>.
+A <a href="#sevman">severity level manipulator</a> can be applied if desired,
+to modify the message's severity level. For example:
+<pre>long lll = 345;
+ERR_POST("My ERR_POST message, print long: " &lt;&lt; lll);</pre>
+would write to the diagnostic stream something like:
+<pre>"somefile.cpp", line 111: Error:&nbsp; My ERR_POST message, print long: 345</pre>
+while:
+<pre>double ddd = 123.345;
+ERR_POST(Warning &lt;&lt; "...print double: " &lt;&lt; ddd);</pre>
+would write to the diagnostic stream something like:
+<pre>"somefile.cpp", line 222: Warning:&nbsp; ...print double: 123.345</pre>
+<a NAME="trace"></a>
+<h3>
+The _TRACE macro</h3>
+The <i>_TRACE(message)</i> macro is a debugging tool that allows the user
+to insert trace statements that will only be posted if the code was <a href="../libs/err_msg.html#ref_Assert">compiled
+in <i>debug mode</i> </a>, and provided that the tracing has been turned
+on. If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an
+entry in the [DEBUG] section of your configuration file (<i>*.ini</i>),
+the initial state of tracing is <b><i>on</i></b>. By default, if no such
+variable or registry entry is defined, tracing is
+<b><i>off</i></b>. <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace">SetDiagTrace</a>
+(EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.
+<p>&nbsp;Just like <i>ERR_POST</i>, the <i>_TRACE</i> macro takes a message,
+and the message will be posted only if tracing has been enabled. For example:
+<pre>&nbsp;&nbsp;&nbsp; SetDiagTrace(eDT_Disable);
+&nbsp;&nbsp;&nbsp; _TRACE("Testing the _TRACE macro");
+&nbsp;&nbsp;&nbsp; SetDiagTrace(eDT_Enable);
+&nbsp;&nbsp;&nbsp; _TRACE("Testing the _TRACE macro AGAIN");</pre>
+Here, only the second trace message will be posted, as tracing is disabled
+when the first <i>_TRACE()</i> macro call is executed.&nbsp;<a NAME="example"></a>
+<h4>
+Example usage of the <i>CNcbiDiag</i> class</h4>
+<i><b>NOTE:</b> Normally, one should use ERR_POST() and _TRACE() macro
+to post messages, and regulate the severity level by using
+<a href="#sevman">severity
+level manipulators</a>, like:</i>
+<pre><i>&nbsp;&nbsp; ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
+&nbsp;&nbsp; ERR_POST(Critical &lt;&lt; "Some critical error");</i></pre>
+Examples in <i><a href="diag_cpp.html">diag.cpp</a></i> demonstrate the
+features described above. <i>CTestApp::Run()</i> begins by testing the
+<i>ERR_POST</i> and <i>_TRACE</i> macros. Initially, tracing is enabled
+(from the registry file), so the first <i>_TRACE</i> message is posted.
+Tracing is then explicitly disabled, so the second <i>_TRACE</i> message
+is <i>not</i> posted.
+<p>Next, the global severity level for posting messages is set to the lowest
+level (<i>eDiag_Info</i>) so that all but the trace messages will be visible.
+Trace messages are still disabled by the explicit call to <i>SetDiagTrace()</i>.
+Five instances of the
+<i>CNcbiDiag</i> class are then created, each with
+an associated file name, line number, severity level, and enumerated value
+for the post flags. A single message, <i>Msg</i> will be posted on all
+of the diagnostic streams.
+<p><i>myHandler()</i> is then installed to replace the default message
+handler. The last two messages, which are created after the new handler
+has been installed, are handled by <i>myHandler()</i>. The first of these
+is a trace message however, and because tracing is now disabled, this message
+will not be made visible. All of the messages which do not explicitly use
+the <i>Endm</i> manipulator are automatically terminated when <i>Run()</i>
+exits.
+<p>Output generated by <i>diag.cpp</i>:
+<pre>"/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp", line 23: Error: My ERR_POST message, print long: 345
 "/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp", line 26: Warning: ...print double: 123.345
 "/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp", line 34: Trace: Testing the _TRACE macro
 "diag.cpp", line 41: Info: This is a test message
 "diag.cpp", line 42: Warning: This is a test message
 "diag.cpp", line 43: Error: This is a test message
-Installed Handler "diag.cpp", line 45: Critical: This is a test message
-</pre>
+Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
+<a href="registry.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; 
+<i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp;
 
+<i><a href="exceptions.html">next&nbsp;</a></i>
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+</td>
 
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
 
-<br>
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
 
-  </body>
-<a href="registry.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="exceptions.html"> <i> next </i> </a>
+<tr>
+<td>
+<address>
+<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+</td>
+</tr>
+</table>
+
+</body>
 </html>
-
-	 <hr>
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-		<tr>
-		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
-	 </table>
