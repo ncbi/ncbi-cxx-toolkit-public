@@ -65,13 +65,24 @@ public:
     typedef Mapped mapped_type;
     typedef pair<const range_type, mapped_type> value_type;
     
-    // calculates selection key depending on length of interval
-    //            length           key
-    //                 1             1
-    //             2...3             3
-    //             4...7             7
-    // 2^n...(2^(n+1)-1)   (2^(n+1)-1)
-    // minimum is     32    ->      63
+    // The idea is to split a set of intervals into groups of similar
+    // lengths.  Then, when searching, we can use our knowledge about
+    // minimum and maximum possible lengths of intervals in the group for
+    // later optimizations.
+
+    // There is little gain with splitting small groups, so the small
+    // intervals are all grouped into the group with maximum length 63
+    // (which is also a bit-mask of 6 bits set, which is equal to 2^6 - 1).
+    // The other groups have maximum length of 2^n - 1, where n > 6.  The
+    // minimum length in the group is one greater than the maximum in the
+    // group below, so we get
+
+    //    length range              maximum value in group
+    //    1-63                      63
+    //    64-127                    127
+    //    ...                       ...
+    //    2^n...(2^(n+1)-1)         (2^(n+1)-1)  [n > 6]
+    //    ...                       ...
     static position_type get_max_length(const range_type& key)
         {
             position_type len = position_type(key.GetLength() | 32);
@@ -651,6 +662,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/04/22 17:21:02  ucko
+* Clarified comment for get_max_length (taken from an exchange between
+* Eugene and Karl).
+*
 * Revision 1.21  2003/04/17 17:50:26  siyan
 * Added doxygen support
 *
