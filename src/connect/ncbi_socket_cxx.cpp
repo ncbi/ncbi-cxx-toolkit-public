@@ -51,10 +51,12 @@ CSocket::CSocket(void)
 
 CSocket::CSocket(const string&   host,
                  unsigned short  port,
-                 const STimeout* timeout)
+                 const STimeout* timeout,
+                 ESwitch         log)
     : m_IsOwned(eTakeOwnership)
 {
-    if (SOCK_Create(host.c_str(), port, timeout, &m_Socket) != eIO_Success)
+    const char* x_host = host.c_str();
+    if (SOCK_CreateEx(x_host, port, timeout, &m_Socket, log) != eIO_Success)
         m_Socket = 0;
 }
 
@@ -76,12 +78,14 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own)
 
 EIO_Status CSocket::Connect(const string&   host,
                             unsigned short  port,
-                            const STimeout* timeout)
+                            const STimeout* timeout,
+                            ESwitch         log)
 {
     if ( m_Socket )
         return eIO_Unknown;
 
-    EIO_Status status = SOCK_Create(host.c_str(), port, timeout, &m_Socket);
+    const char* x_host = host.c_str();
+    EIO_Status status = SOCK_CreateEx(x_host, port, timeout, &m_Socket, log);
     if (status != eIO_Success)
         m_Socket = 0;
     return status;
@@ -334,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/12/04 16:56:02  lavr
+ * Employ SOCK_CreateEx()
+ *
  * Revision 6.8  2002/11/14 01:11:49  lavr
  * Minor formatting changes
  *
