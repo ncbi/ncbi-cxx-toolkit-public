@@ -73,7 +73,9 @@ class CBlastOptionsHandle;
 class NCBI_XBLAST_EXPORT CBlastOptionsFactory
 {
 public:
-    static CBlastOptionsHandle* Create(EProgram program) 
+    typedef CBlastOptions::EAPILocality EAPILocality;
+    
+    static CBlastOptionsHandle* Create(EProgram program, EAPILocality locality = CBlastOptions::eLocal)
         THROWS((CBlastException));
 
 private:
@@ -90,19 +92,24 @@ private:
 class NCBI_XBLAST_EXPORT CBlastOptionsHandle : public CObject
 {
 public:
-    CBlastOptionsHandle();
-
+    typedef CBlastOptions::EAPILocality EAPILocality;
+    
+    CBlastOptionsHandle(EAPILocality locality);
+    
     /// Return the object which this object is a handle for.
     ///
     /// Assumes user knows exactly how to set the individual options 
     /// correctly.
     const CBlastOptions& GetOptions() const { return *m_Opts; }
     CBlastOptions& SetOptions() { return *m_Opts; }
-
+    
     /// Resets the state of the object to all default values.
     /// This is a template method (design pattern).
     virtual void SetDefaults();
-
+    
+    /// Returns true if this object needs default values set.
+    void DoneDefaults() { m_Opts->DoneDefaults(); }
+    
     /******************* Lookup table options ***********************/
     int GetAlphabetSize() const { return m_Opts->GetAlphabetSize(); }
     void SetAlphabetSize(int asz) { m_Opts->SetAlphabetSize(asz); }
@@ -188,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/16 20:45:31  bealer
+ * - Add locality flag and DoneDefaults() method.
+ *
  * Revision 1.4  2003/12/15 23:41:35  dondosha
  * Added [gs]etters of database (subject) length and number of sequences to general options handle
  *
