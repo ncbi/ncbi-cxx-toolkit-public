@@ -141,9 +141,15 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         hrmaps.resize(feat.IsSetProduct()? 2: 1);
         hrmaps[0].clear();
         hrmaps[0].AddLocation(feat.GetLocation());
+        if (hrmaps[0].GetMap().size() > 1) {
+            m_MultiId |= fMultiId_Location;
+        }
         if ( feat.IsSetProduct() ) {
             hrmaps[1].clear();
             hrmaps[1].AddLocation(feat.GetProduct());
+            if (hrmaps[1].GetMap().size() > 1) {
+                m_MultiId |= fMultiId_Product;
+            }
         }
         break;
     }
@@ -153,6 +159,9 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         hrmaps.resize(1);
         hrmaps[0].clear();
         hrmaps[0].AddLocation(graph.GetLoc());
+        if (hrmaps[0].GetMap().size() > 1) {
+            m_MultiId |= fMultiId_Location;
+        }
         break;
     }
     case CSeq_annot::C_Data::e_Align:
@@ -415,6 +424,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/03/31 20:43:29  grichenk
+* Fixed mapping of seq-locs containing both master sequence
+* and its segments.
+*
 * Revision 1.34  2004/03/26 19:42:04  vasilche
 * Fixed premature deletion of SNP annot info object.
 * Removed obsolete references to chunk info.

@@ -119,6 +119,16 @@ public:
     bool IsChunkStub(void) const;
     const CTSE_Chunk_Info& GetChunk_Info(void) const;
 
+    enum EMultiIdFlags {
+        fMultiId_Location = 0x1,
+        fMultiId_Product  = 0x2
+    };
+    typedef Uint1 TMultiIdFlags;
+
+    TMultiIdFlags GetMultiIdFlags(void) const {
+        return m_MultiId;
+    }
+
 private:
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot
@@ -131,6 +141,7 @@ private:
     Uint2                        m_FeatSubtype;    // feature subtype
     Uint1                        m_FeatType;       // feature type or e_not_set
     Uint1                        m_AnnotType;      // annot object type
+    mutable TMultiIdFlags        m_MultiId;
 };
 
 
@@ -257,6 +268,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/03/31 20:43:28  grichenk
+* Fixed mapping of seq-locs containing both master sequence
+* and its segments.
+*
 * Revision 1.16  2004/03/26 19:42:03  vasilche
 * Fixed premature deletion of SNP annot info object.
 * Removed obsolete references to chunk info.
