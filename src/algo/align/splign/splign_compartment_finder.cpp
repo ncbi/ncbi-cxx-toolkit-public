@@ -40,6 +40,9 @@
 
 BEGIN_NCBI_SCOPE
 
+const double kPenaltyPerIntronBase = -1e-3; // a small penalty to prefer
+                                            // more compact models
+                                            // among equal
 
 void CCompartmentFinder::CCompartment::UpdateMinMax() {
     
@@ -114,7 +117,7 @@ size_t CCompartmentFinder::Run()
     qmarks.push_back(SQueryMark(0, 0, -1));
     const list<SQueryMark>::iterator li_b = qmarks.begin();
     
-    // *** Generic hit iteration (could be optimized of course) ***
+    // *** Generic hit iteration (not yet quite optimized) ***
     // For every hit:
     // - find out if its query mark already exists (qm_new)
     // - for query mark below the current:
@@ -138,10 +141,11 @@ size_t CCompartmentFinder::Run()
         const list<SQueryMark>::iterator li_e = qmarks.end();
         
         const CHit& h = *m_hits[i];
+
         list<SQueryMark>::iterator li0 = lower_bound(li_b, li_e,
                                              SQueryMark(h.m_ai[1], 0, -2));
         bool qm_new = (li0 == li_e)? true: (size_t(h.m_ai[1]) < li0->m_coord);
-        
+
         int best_ext_score = kMin_Int;
         list<SQueryMark>::iterator li_best_ext = li_b;
         int best_open_score = kMin_Int;
@@ -156,6 +160,7 @@ size_t CCompartmentFinder::Run()
 
                 size_t q0 = h.m_ai[0], s0 = h.m_ai[2]; // possible continuation
                 bool good;
+                int intron;
                 if(li->m_hit == -1) {
                     good = false;
                 }
@@ -173,14 +178,20 @@ size_t CCompartmentFinder::Run()
                             q0 = phc->m_ai[1] + 1;
                             s0 += q0 - h.m_ai[0];
                         }
-                        int intron = int(s0) - phc->m_ai[3] - 1;
+                        intron = int(s0) - phc->m_ai[3] - 1;
                         good = intron <= int(m_intron_max);
                     }          
                 }
                 
                 if(good) {
+                    
+                    int intron_penalty = intron > 0?
+                        int(intron*kPenaltyPerIntronBase): 0;
+
                     int ext_score = li->m_score +
-                        int(0.01 * h.m_Idnty * (h.m_ai[1] - q0 + 1));
+                        int(0.01 * h.m_Idnty * (h.m_ai[1] - q0 + 1)) +
+                        intron_penalty;
+
                     if(ext_score > best_ext_score) {
                         best_ext_score = ext_score;
                         li_best_ext = li;
@@ -198,7 +209,7 @@ size_t CCompartmentFinder::Run()
                 }
             }
         }
-        
+
         SHitStatus::EType hit_type;
         int prev_hit;
         int best_score;
@@ -219,7 +230,7 @@ size_t CCompartmentFinder::Run()
             updated = true;
         }
         else {
-            if(best_score > li0->m_score) {
+            if(best_score >= li0->m_score) {
                 li0->m_score = best_score;
                 li0->m_hit = i;
                 updated = true;
@@ -247,7 +258,6 @@ size_t CCompartmentFinder::Run()
     }
     
     if( int(score_best + m_penalty) >= int(m_min_coverage) ) {
-        
         int i = li_best->m_hit;
         CCompartment* pc = 0;
         bool new_compartment = true;
@@ -422,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/07 13:42:03  kapustin
+ * Introduced intron length penalty and let the latest hit to own a query mark if there are several hits with exactly same score and query coordinate
+ *
  * Revision 1.7  2004/09/27 17:12:38  kapustin
  * Move splign_compartment_finder.hpp to /include/algo/align/splign. SetIntronLimits() => SetMaxIntron()
  *
