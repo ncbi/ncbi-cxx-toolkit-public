@@ -286,6 +286,15 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
                 return ret;
         }
     }
+    else
+    if (m_CondFrom == eEQ && !From.m_Condition.IsComplete()) {
+        int cmp =
+            m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
+                                    From.m_Condition.GetFieldsAssigned());
+        if (cmp != 0) {
+            return eBDB_NotFound;
+        }
+    }
 
     if ( !TestTo() ) {
         ret = eBDB_NotFound;
@@ -431,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/01 13:42:12  kuznets
+ * Bug fix
+ *
  * Revision 1.4  2003/04/30 20:25:42  kuznets
  * Bug fix
  *
