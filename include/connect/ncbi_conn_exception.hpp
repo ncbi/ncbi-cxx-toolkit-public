@@ -39,10 +39,20 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XCONNECT_EXPORT CConn_Exception : public runtime_error
+class NCBI_XNCBI_EXPORT CConnException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
-    CConn_Exception(const string& what) : runtime_error(what) { }
+    enum EErrCode {
+        eConn
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eConn:    return "eConn";
+        default:       return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CConnException, CException);
 };
 
 
@@ -52,6 +62,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/12/19 17:23:11  lavr
+ * Replace CConn_Exception with CConnException derived from CException
+ *
  * Revision 6.3  2002/12/19 14:51:48  dicuccio
  * Added export specifier for Win32 DLL builds.
  *
