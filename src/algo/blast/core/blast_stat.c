@@ -51,6 +51,23 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.58  2004/04/23 13:21:25  madden
+ * Rewrote BlastKarlinLHtoK to do the following and more:
+ * 1. fix a bug whereby the wrong formula was used when high score == 1
+ *    and low score == -1;
+ * 2. fix a methodological error of truncating the first sum
+ *    and trying to make it converge quickly by adding terms
+ *    of a geometric progression, even though the geometric progression
+ *    estimate is not correct in all cases;
+ *    the old adjustment code is left in for historical purposes but
+ *    #ifdef'd out
+ * 3. Eliminate the Boolean bi_modal_score variable.  The old test that
+ *    set the value of bi_modal_score would frequently fail to choose the
+ *    correct value due to rounding error.
+ * 4. changed numerous local variable names to make them more meaningful;
+ * 5. added substantial comments to explain what the procedure
+ *    is doing and what each variable represents
+ *
  * Revision 1.57  2004/04/19 12:58:18  madden
  * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
  *
@@ -1767,151 +1784,233 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, Blast_ResFreq* rfp1
 	return 0;
 }
 
-#define DIMOFP0	(iter*range + 1)
+
+#define DIMOFP0	(iterlimit*range + 1)
 #define DIMOFP0_MAX (BLAST_KARLIN_K_ITER_MAX*BLAST_SCORE_RANGE_MAX+1)
 
 
+#define smallLambdaThreshold 20 /*defines special case in K computation*/
+                                /*threshold is on exp(-Lambda)*/
+
+/*The following procedure computes K. The input includes Lambda, H,
+ *  and an array of probabilities for each score.
+ *  There are distinct closed form for three cases:
+ *  1. high score is 1 low score is -1
+ *  2. high score is 1 low score is not -1
+ *  3. low score is -1, high score is not 1
+ *
+ * Otherwise, in most cases the value is computed as:
+ * -exp(-2.0*outerSum) / ((H/lambda)*(exp(-lambda) - 1)
+ * The last term (exp(-lambda) - 1) can be computed in two different
+ * ways depending on whether lambda is small or not.
+ * outerSum is a sum of the terms
+ * innerSum/j, where j is denoted by iterCounter in the code.
+ * The sum is truncated when the new term innersum/j i sufficiently small.
+ * innerSum is a weighted sum of the probabilities of
+ * of achieving a total score i in a gapless alignment,
+ * which we denote by P(i,j).
+ * of exactly j characters. innerSum(j) has two parts
+ * Sum over i < 0  P(i,j)exp(-i * lambda) +
+ * Sum over i >=0  P(i,j)
+ * The terms P(i,j) are computed by dynamic programming.
+ * An earlier version was flawed in that ignored the special case 1
+ * and tried to replace the tail of the computation of outerSum
+ * by a geometric series, but the base of the geometric series
+ * was not accurately estimated in some cases.
+ */
+
 static double
-BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
+BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
 {
+    /*The next array stores the probabilities of getting each possible
+      score in an alignment of fixed length; the array is shifted
+      during part of the computation, so that
+      entry 0 is for score 0.  */
 #ifndef BLAST_KARLIN_STACKP
-	double* P0 = NULL;
+    double         *alignmentScoreProbabilities = NULL;
 #else
-	double	P0 [DIMOFP0_MAX];
+    double          alignmentScoreProbabilities [DIMOFP0_MAX];
 #endif
-	Int4	low;	/* Lowest score (must be negative) */
-	Int4	high;	/* Highest score (must be positive) */
-	double	K;			/* local copy of K */
-	double	ratio;
-	int		i, j;
-	Int4	range, lo, hi, first, last, d;
-	register double	sum;
-	double	Sum, av, oldsum, oldsum2, score_avg;
-	int		iter;
-	double	sumlimit;
-	double* p, * ptrP, * ptr1, * ptr2, * ptr1e;
-	double	x;
-        Boolean         bi_modal_score = FALSE;
+    Int4            low;    /* Lowest score (must be negative) */
+    Int4            high;   /* Highest score (must be positive) */
+    Int4            range;  /* range of scores, computed as high - low*/
+    double          K;      /* local copy of K  to return*/
+    int             i;   /*loop index*/
+    int             iterCounter; /*counter on iterations*/
+    Int4            divisor; /*candidate divisor of all scores with
+                               non-zero probabilities*/
+    /*highest and lowest possible alignment scores for current length*/
+    Int4            lowAlignmentScore, highAlignmentScore;
+    Int4            first, last; /*loop indices for dynamic program*/
+    register double innerSum;
+    double          oldsum, oldsum2;  /* values of innerSum on previous
+                                         iterations*/
+    double          outerSum;        /* holds sum over j of (innerSum
+                                        for iteration j/j)*/
 
-	if (lambda <= 0. || H <= 0.) {
-		return -1.;
-	}
+    double          score_avg; /*average score*/
+    /*first term to use in the closed form for the case where
+      high == 1 or low == -1, but not both*/
+    double          firstTermClosedForm;  /*usually store H/lambda*/
+    int             iterlimit; /*upper limit on iterations*/
+    double          sumlimit; /*lower limit on contributions
+                                to sum over scores*/
 
-	if (sfp->score_avg >= 0.0) {
-		return -1.;
-	}
+    /*array of score probabilities reindexed so that low is at index 0*/
+    double         *probArrayStartLow;
 
-	low = sfp->obs_min;
-	high = sfp->obs_max;
-	range = high - low;
-	p = &sfp->sprob[low];
+    /*pointers used in dynamic program*/
+    double         *ptrP, *ptr1, *ptr2, *ptr1e;
+    double          expMinusLambda; /*e^^(-Lambda) */
 
-        /* Look for the greatest common divisor ("delta" in Appendix of PNAS 87 of
-           Karlin&Altschul (1990) */
-    	for (i = 1, d = -low; i <= range && d > 1; ++i)
-           if (p[i])
-              d = BLAST_Gcd(d, i);
-        
-        high /= d;
-        low /= d;
-        lambda *= d;
+    if (lambda <= 0. || H <= 0.) {
+        /* Theory dictates that H and lambda must be positive, so
+         * return -1 to indicate an error */
+        return -1.;
+    }
 
-	range = high - low;
+    /*Karlin-Altschul theory works only if the expected score
+      is negative*/
+    if (sfp->score_avg >= 0.0) {
+        return -1.;
+    }
 
-	av = H/lambda;
-	x = exp((double) -lambda);
+    low   = sfp->obs_min;
+    high  = sfp->obs_max;
+    range = high - low;
 
-	if (low == -1 || high == 1) {
-           if (high == 1)
-              K = av;
-           else {
-              score_avg = sfp->score_avg / d;
-              K = (score_avg * score_avg) / av;
-           }
-           return K * (1.0 - x);
-	}
+    probArrayStartLow = &sfp->sprob[low];
+    /* Look for the greatest common divisor ("delta" in Appendix of PNAS 87 of
+       Karlin&Altschul (1990) */
+    for (i = 1, divisor = -low; i <= range && divisor > 1; ++i) {
+        if (probArrayStartLow[i])
+            divisor = BLAST_Gcd(divisor, i);
+    }
 
-	sumlimit = BLAST_KARLIN_K_SUMLIMIT_DEFAULT;
+    high   /= divisor;
+    low    /= divisor;
+    lambda *= divisor;
 
-	iter = BLAST_KARLIN_K_ITER_MAX;
+    range = high - low;
 
-	if (DIMOFP0 > DIMOFP0_MAX) {
-		return -1.;
-	}
+    firstTermClosedForm = H/lambda;
+    expMinusLambda      = exp((double) -lambda);
+
+    if (low == -1 && high == 1) {
+        K = (sfp->sprob[low] - sfp->sprob[high]) *
+            (sfp->sprob[low] - sfp->sprob[high]) / sfp->sprob[low];
+        return(K);
+    }
+
+    if (low == -1 || high == 1) {
+        if (high == 1)
+            ;
+        else {
+            score_avg = sfp->score_avg / divisor;
+            firstTermClosedForm
+                = (score_avg * score_avg) / firstTermClosedForm;
+        }
+        return firstTermClosedForm * (1.0 - expMinusLambda);
+    }
+
+    sumlimit  = BLAST_KARLIN_K_SUMLIMIT_DEFAULT;
+    iterlimit = BLAST_KARLIN_K_ITER_MAX;
+
+    if (DIMOFP0 > DIMOFP0_MAX) {
+        return -1.;
+    }
 #ifndef BLAST_KARLIN_STACKP
-	P0 = (double*)calloc(DIMOFP0 , sizeof(*P0));
-	if (P0 == NULL)
-		return -1.;
+    alignmentScoreProbabilities =
+        (double *)calloc(DIMOFP0, sizeof(*alignmentScoreProbabilities));
+    if (alignmentScoreProbabilities == NULL)
+        return -1.;
 #else
-	memset((char*)P0, 0, DIMOFP0*sizeof(P0[0]));
+    memset((char*)alignmentScoreProbabilities, 0,
+               DIMOFP0*sizeof(alignmentScoreProbabilities[0]));
 #endif
 
-	Sum = 0.;
-	lo = hi = 0;
-	P0[0] = sum = oldsum = oldsum2 = 1.;
+    outerSum = 0.;
+    lowAlignmentScore = highAlignmentScore = 0;
+    alignmentScoreProbabilities[0] = innerSum = oldsum = oldsum2 = 1.;
 
-        if (p[0] + p[range*d] == 1.) {
-           /* There are only two scores (e.g. DNA comparison matrix */
-           bi_modal_score = TRUE;
-           sumlimit *= 0.01;
+    for (iterCounter = 0;
+         ((iterCounter < iterlimit) && (innerSum > sumlimit));
+         outerSum += innerSum /= ++iterCounter) {
+        first = last = range;
+        lowAlignmentScore  += low;
+        highAlignmentScore += high;
+        /*dynamic program to compute P(i,j)*/
+        for (ptrP = alignmentScoreProbabilities +
+                 (highAlignmentScore-lowAlignmentScore);
+             ptrP >= alignmentScoreProbabilities;
+             *ptrP-- =innerSum) {
+            ptr1  = ptrP - first;
+            ptr1e = ptrP - last;
+            ptr2  = probArrayStartLow + first;
+            for (innerSum = 0.; ptr1 >= ptr1e; )
+                innerSum += *ptr1--  *  *ptr2++;
+            if (first)
+                --first;
+            if (ptrP - alignmentScoreProbabilities <= range)
+                --last;
         }
-
-        for (j = 0; j < iter && sum > sumlimit; Sum += sum /= ++j) {
-           first = last = range;
-           lo += low;
-           hi += high;
-           for (ptrP = P0+(hi-lo); ptrP >= P0; *ptrP-- =sum) {
-              ptr1 = ptrP - first;
-              ptr1e = ptrP - last;
-              ptr2 = p + first;
-              for (sum = 0.; ptr1 >= ptr1e; )
-                 sum += *ptr1--  *  *ptr2++;
-              if (first)
-                 --first;
-              if (ptrP - P0 <= range)
-                 --last;
-           }
-					 /* Horner's rule */
-					 sum = *++ptrP;
-					 for( i = lo + 1; i < 0; i++ ) {
-						 sum = *++ptrP + sum * x;
-					 }
-					 sum *= x;
-
-           for (; i <= hi; ++i)
-              sum += *++ptrP;
-           oldsum2 = oldsum;
-           oldsum = sum;
+        /* Horner's rule */
+        innerSum = *++ptrP;
+        for( i = lowAlignmentScore + 1; i < 0; i++ ) {
+            innerSum = *++ptrP + innerSum * expMinusLambda;
         }
-        
-        if (!bi_modal_score) {
-           /* Terms of geometric progression added for correction */
-           ratio = oldsum / oldsum2;
-           if (ratio >= (1.0 - sumlimit*0.001)) {
-              K = -1.;
-              goto CleanUp;
-           }
-           sumlimit *= 0.01;
-           while (sum > sumlimit) {
-              oldsum *= ratio;
-              Sum += sum = oldsum / ++j;
-           }
+        innerSum *= expMinusLambda;
+
+        for (; i <= highAlignmentScore; ++i)
+            innerSum += *++ptrP;
+        oldsum2 = oldsum;
+        oldsum  = innerSum;
+    }
+
+#ifdef ADD_GEOMETRIC_TERMS_TO_K
+    /*old code assumed that the later terms in sum were
+      asymptotically comparable to those of a geometric
+      progression, and tried to speed up convergence by
+      guessing the estimated ratio between sucessive terms
+      and using the explicit terms of a geometric progression
+      to speed up convergence. However, the assumption does not
+      always hold, and convergenece of the above code is fast
+      enough in practice*/
+    /* Terms of geometric progression added for correction */
+    {
+        double     ratio;  /* fraction used to generate the
+                                   geometric progression */
+
+        ratio = oldsum / oldsum2;
+        if (ratio >= (1.0 - sumlimit*0.001)) {
+            K = -1.;
+            goto CleanUp;
         }
+        sumlimit *= 0.01;
+        while (innerSum > sumlimit) {
+            oldsum   *= ratio;
+            outerSum += innerSum = oldsum / ++iterCounter;
+        }
+    }
+#endif
 
-	if (x <  1.0 / 0.05 ) {
-		K = exp((double)-2.0*Sum) / (av*(1.0 - x));
-	} else {
-		K = -exp((double)-2.0*Sum) / (av*BLAST_Expm1(-(double)lambda));
-	}
+    if (expMinusLambda <  smallLambdaThreshold ) {
+        K = -exp((double)-2.0*outerSum) /
+            (firstTermClosedForm*(expMinusLambda - 1.0));
+    } else {
+        K = -exp((double)-2.0*outerSum) /
+            (firstTermClosedForm*BLAST_Expm1(-(double)lambda));
+    }
 
-CleanUp:
+ CleanUp:
 #ifndef BLAST_KARLIN_K_STACKP
-	if (P0 != NULL)
-		sfree(P0);
+    if (alignmentScoreProbabilities != NULL)
+        sfree(alignmentScoreProbabilities);
 #endif
 
-	return K;
+    return K;
 }
+
 
 /**
  * Find positive solution to sum_{i=low}^{high} exp(i lambda) = 1.
