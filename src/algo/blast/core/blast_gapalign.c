@@ -43,6 +43,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
 #include "blast_gapalign_priv.h"
+#include "blast_hits_priv.h"
 
 static Int2 s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
@@ -96,11 +97,6 @@ data.last = (data.last > 0) ? (data.sapp[-1] += (k)) : (*data.sapp++ = (k));
 #define MB_HSP_CONTAINED(qo1,qo2,qe2,so1,so2,se2,c) \
 (qo1>=qo2 && qo1<=qe2 && so1>=so2 && so1<=se2 && \
 MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
-
-/** TRUE if c is between a and b; f between d and f. Determines if the
- * coordinates are already in an HSP that has been evaluated. 
- */
-#define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
 
 /** Callback for sorting HSPs by starting offset in query. The sorting criteria
  * in order of priority: context, starting offset in query, starting offset in 

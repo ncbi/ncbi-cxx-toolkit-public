@@ -49,6 +49,7 @@ static char const rcsid[] =
 #include "blast_psi_priv.h"
 #include "matrix_freq_ratios.h"
 #include "blast_gapalign_priv.h"
+#include "blast_hits_priv.h"
 
 
 #define EVALUE_STRETCH 5 /*by what factor might initially reported E-value
@@ -86,44 +87,6 @@ s_HSPListRescaleScores(BlastHSPList * hsp_list,
   }
 }
 
-/**
- * A macro expression that returns 1, 0, -1 if a is greater than,
- * equal to or less than b, respectively.  This macro evaluates its
- * arguments more than once.
- */
-#define KAPPA_CMP(a,b) ((a)>(b) ? 1 : ((a)<(b) ? -1 : 0))
-
-
-/**
- * A comparison function used to sort HSPs, first by score in
- * descending order, then by e-value in ascending order, then by
- * location.  Among alignments with equal score and e-value, an
- * HSP will precede any other HSPs that are completely contained
- * within its endpoints.
- */
-static int
-kappa_score_compare_hsps(const void * v1, const void * v2)
-{
-  BlastHSP *hsp1, *hsp2;      /* the HSPs to be compared */
-  int          result;          /* the result of the comparison */
-
-  hsp1  = *((BlastHSP **) v1);
-  hsp2  = *((BlastHSP **) v2);
-
-  if(0 == (result = KAPPA_CMP(hsp2->score,          hsp1->score)) &&
-     0 == (result = KAPPA_CMP(hsp1->evalue,         hsp2->evalue)) &&
-     0 == (result = KAPPA_CMP(hsp1->subject.offset, hsp2->subject.offset)) &&
-     0 == (result = KAPPA_CMP(hsp2->subject.end,    hsp1->subject.end)) &&
-     0 == (result = KAPPA_CMP(hsp1->query  .offset, hsp2->query  .offset))) {
-    /* if all other test can't distinguish the HSPs, then the final
-       test is the result */
-    result = KAPPA_CMP(hsp2->query.end, hsp1->query.end );
-  }
-  return result;
-}
-
-
-#define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
 /**
  * Remove from a hitlist all HSPs that are completely contained in an
  * HSP that occurs earlier in the list and that:
@@ -1868,9 +1831,9 @@ location_compare_windows(const void * vp1, const void *vp2)
   Kappa_WindowInfo * w2 = ((Kappa_WindowIndexPair *) vp2)->window;
 
   Int4 result;                   /* result of the comparison */
-  if(0 == (result = KAPPA_CMP(w1->frame, w2->frame)) &&
-     0 == (result = KAPPA_CMP(w1->begin, w2->begin))) {
-      result = KAPPA_CMP(w1->end, w2->end);
+  if(0 == (result = BLAST_CMP(w1->frame, w2->frame)) &&
+     0 == (result = BLAST_CMP(w1->begin, w2->begin))) {
+      result = BLAST_CMP(w1->end, w2->end);
   }
   return (int) result;
 }
@@ -3098,7 +3061,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
            * contained in another, so the call to HitlistReapContained
            * is not needed. */
           qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP *),
-                kappa_score_compare_hsps);
+                ScoreCompareHSPs);
           HitlistReapContained(hsp_list->hsp_array, &hsp_list->hspcnt);
         }
       }

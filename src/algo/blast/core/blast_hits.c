@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_util.h>
+#include "blast_hits_priv.h"
 
 /********************************************************************************
           Functions manipulating BlastHSP's
@@ -563,12 +564,9 @@ Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
    }
 }
 
-/** TRUE if c is between a and b; f between d and f. Determines if the
- * coordinates are already in an HSP that has been evaluated. 
+/** Checks if the first HSP is contained in the second. 
+ * @todo FIXME: can this function be reused in other contexts?
  */
-#define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
-
-/** Checks if the first HSP is contained in the second. */
 static Boolean 
 s_BlastHSPContained(BlastHSP* hsp1, BlastHSP* hsp2)
 {
@@ -700,50 +698,33 @@ Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, BLAST_SequenceBlk* subject_blk,
             return;
 }
 
-/** Comparison callback function for sorting HSPs by score. Assumes that both 
- * HSPs being compared are not NULL.
- */
-static int
-s_ScoreCompareHSPs(const void* v1, const void* v2)
+int
+ScoreCompareHSPs(const void* h1, const void* h2)
 {
-   BlastHSP* h1,* h2;
+   BlastHSP* hsp1,* hsp2;   /* the HSPs to be compared */
+   int result = 0;      /* the result of the comparison */
    
-   h1 = *((BlastHSP**) v1);
-   h2 = *((BlastHSP**) v2);
+   hsp1 = *((BlastHSP**) h1);
+   hsp2 = *((BlastHSP**) h2);
 
    /* Null HSPs are "greater" than any non-null ones, so they go to the end
       of a sorted list. */
-   if (!h1 && !h2)
+   if (!hsp1 && !hsp2)
        return 0;
-   else if (!h1)
+   else if (!hsp1)
        return 1;
-   else if (!h2)
+   else if (!hsp2)
        return -1;
 
-   if (h1->score > h2->score)
-      return -1;
-   else if (h1->score < h2->score)
-      return 1;
-   /* Tie-breakers: decreasing subject offsets; decreasing subject ends, 
-      decreasing query offsets, decreasing query ends */
-   else if (h1->subject.offset > h2->subject.offset)
-      return -1;
-   else if (h1->subject.offset < h2->subject.offset)
-      return 1;
-   else if (h1->subject.end > h2->subject.end)
-      return -1;
-   else if (h1->subject.end < h2->subject.end)
-      return 1;
-   else if (h1->query.offset > h2->query.offset)
-      return -1;
-   else if (h1->query.offset < h2->query.offset)
-      return 1;
-   else if (h1->query.end > h2->query.end)
-      return -1;
-   else if (h1->query.end < h2->query.end)
-      return 1;
-
-   return 0;
+   if (0 == (result = BLAST_CMP(hsp2->score,          hsp1->score)) &&
+       0 == (result = BLAST_CMP(hsp1->subject.offset, hsp2->subject.offset)) &&
+       0 == (result = BLAST_CMP(hsp2->subject.end,    hsp1->subject.end)) &&
+       0 == (result = BLAST_CMP(hsp1->query  .offset, hsp2->query  .offset))) {
+       /* if all other test can't distinguish the HSPs, then the final
+          test is the result */
+       result = BLAST_CMP(hsp2->query.end, hsp1->query.end);
+   }
+   return result;
 }
 
 Boolean Blast_HSPListIsSortedByScore(const BlastHSPList* hsp_list) 
@@ -754,8 +735,8 @@ Boolean Blast_HSPListIsSortedByScore(const BlastHSPList* hsp_list)
         return TRUE;
 
     for (index = 0; index < hsp_list->hspcnt - 1; ++index) {
-        if (s_ScoreCompareHSPs(&hsp_list->hsp_array[index], 
-                               &hsp_list->hsp_array[index+1]) > 0) {
+        if (ScoreCompareHSPs(&hsp_list->hsp_array[index], 
+                             &hsp_list->hsp_array[index+1]) > 0) {
             return FALSE;
         }
     }
@@ -769,7 +750,7 @@ void Blast_HSPListSortByScore(BlastHSPList* hsp_list)
 
     if (!Blast_HSPListIsSortedByScore(hsp_list)) {
         qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
-              s_ScoreCompareHSPs);
+              ScoreCompareHSPs);
     }
 }
 
@@ -819,7 +800,7 @@ s_EvalueCompareHSPs(const void* v1, const void* v2)
    if ((retval = s_FuzzyEvalueComp(h1->evalue, h2->evalue)) != 0)
       return retval;
 
-   return s_ScoreCompareHSPs(v1, v2);
+   return ScoreCompareHSPs(v1, v2);
 }
 
 void Blast_HSPListSortByEvalue(BlastHSPList* hsp_list)
@@ -1252,7 +1233,7 @@ s_BlastHSPListInsertHSPInHeap(BlastHSPList* hsp_list,
                              BlastHSP** hsp)
 {
     BlastHSP** hsp_array = hsp_list->hsp_array;
-    if (s_ScoreCompareHSPs(hsp, &hsp_array[0]) > 0)
+    if (ScoreCompareHSPs(hsp, &hsp_array[0]) > 0)
     {
          Blast_HSPFree(*hsp);
          return;
@@ -1265,7 +1246,7 @@ s_BlastHSPListInsertHSPInHeap(BlastHSPList* hsp_list,
         s_Heapify((char*)hsp_array, (char*)hsp_array, 
                 (char*)&hsp_array[hsp_list->hspcnt/2 - 1],
                  (char*)&hsp_array[hsp_list->hspcnt-1],
-                 sizeof(BlastHSP*), s_ScoreCompareHSPs);
+                 sizeof(BlastHSP*), ScoreCompareHSPs);
     }
 }
 
@@ -1309,8 +1290,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
       /* If it is the first time when the HSP array is filled to capacity,
          create a heap now. */
       if (hsp_list->do_not_reallocate) {
-          s_CreateHeap(hsp_array, hspcnt, sizeof(BlastHSP*), 
-                     s_ScoreCompareHSPs);
+          s_CreateHeap(hsp_array, hspcnt, sizeof(BlastHSP*), ScoreCompareHSPs);
       }
    }
 
@@ -1797,8 +1777,8 @@ s_BlastHSPListsCombineByScore(BlastHSPList* hsp_list,
       for (index = 0; index < new_hspcnt; ++index) {
          if (index1 < combined_hsp_list->hspcnt &&
              (index2 >= hsp_list->hspcnt ||
-              s_ScoreCompareHSPs(&combined_hsp_list->hsp_array[index1],
-                                 &hsp_list->hsp_array[index2]) <= 0)) {
+              ScoreCompareHSPs(&combined_hsp_list->hsp_array[index1],
+                               &hsp_list->hsp_array[index2]) <= 0)) {
             new_hsp_array[index] = combined_hsp_list->hsp_array[index1];
             ++index1;
          } else {

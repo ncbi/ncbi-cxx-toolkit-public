@@ -58,11 +58,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_kappa.h>
 #include "blast_gapalign_priv.h"
 #include "blast_psi_priv.h"
-
-/** TRUE if c is between a and b; f between d and f.  Determines if the
- * coordinates are already in an HSP that has been evaluated. 
-*/
-#define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
+#include "blast_hits_priv.h"
 
 /** Compares HSPs in an HSP array and deletes those whose ranges are completely
  * included in other HSP ranges. The HSPs must be sorted by e-value/score 

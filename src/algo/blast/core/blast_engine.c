@@ -448,7 +448,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
     */
    if (program_number != eBlastTypeRpsTblastn) {
       if (translation_buffer) {
-	 sfree(translation_buffer);
+         sfree(translation_buffer);
       }
    }
    
@@ -832,8 +832,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);
          } 
          
-	 /* Save the results. */
-	 BlastHSPStreamWrite(hsp_stream, &hsp_list);
+         /* Save the results. */
+         BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
       
       BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
