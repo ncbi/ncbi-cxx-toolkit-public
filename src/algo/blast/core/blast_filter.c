@@ -118,12 +118,12 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
 
    /* Put all the SeqLoc's into one big linked list. */
    loc_head = last_loc = 
-      (BlastSeqLoc*) MemDup(mask_loc, sizeof(BlastSeqLoc));
+      (BlastSeqLoc*) BlastMemDup(mask_loc, sizeof(BlastSeqLoc));
          
    /* Copy all locations, so loc points at the end of the chain */
    while (last_loc->next) {		
       last_loc->next = 
-         (BlastSeqLoc*)MemDup(last_loc->next, sizeof(BlastSeqLoc));
+         (BlastSeqLoc*) BlastMemDup(last_loc->next, sizeof(BlastSeqLoc));
       last_loc = last_loc->next;
    }
    
@@ -218,7 +218,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          /* Reverse the order of the locations */
          for (start_loc = mask_loc->loc_list; start_loc; 
               start_loc = start_loc->next) {
-            loc = (BlastSeqLoc*) MemDup(start_loc, sizeof(BlastSeqLoc));
+            loc = (BlastSeqLoc*) BlastMemDup(start_loc, sizeof(BlastSeqLoc));
             loc->next = prev_loc;
             prev_loc = loc;
          }

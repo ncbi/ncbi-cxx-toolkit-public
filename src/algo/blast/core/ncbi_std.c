@@ -1,7 +1,7 @@
 #include <algo/blast/core/blast_def.h> /* for sfree() macro */
 #include <algo/blast/core/ncbi_std.h>
 
-void * MemDup (const void *orig, size_t size)
+void * BlastMemDup (const void *orig, size_t size)
 {
 	void*	copy;
 

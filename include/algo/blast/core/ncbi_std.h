@@ -141,7 +141,7 @@ typedef Uint1 Boolean;
 
 #endif /* _NCBISTD_ */
 
-extern void* MemDup (const void *orig, size_t size);
+extern void* BlastMemDup (const void *orig, size_t size);
 
 
 /******************************************************************************/

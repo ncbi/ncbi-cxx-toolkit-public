@@ -940,9 +940,9 @@ static BlastHitList* BLAST_HitListFree(BlastHitList* hitlist)
 static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
 {
    BlastHSPList* new_hsp_list = (BlastHSPList*) 
-      MemDup(hsp_list, sizeof(BlastHSPList));
+      BlastMemDup(hsp_list, sizeof(BlastHSPList));
    new_hsp_list->hsp_array = (BlastHSP**) 
-      MemDup(hsp_list->hsp_array, hsp_list->hspcnt*sizeof(BlastHSP*));
+      BlastMemDup(hsp_list->hsp_array, hsp_list->hspcnt*sizeof(BlastHSP*));
    new_hsp_list->allocated = hsp_list->hspcnt;
 
    return new_hsp_list;
