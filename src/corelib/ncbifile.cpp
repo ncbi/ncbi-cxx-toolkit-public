@@ -431,6 +431,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
     while ( xpath.find(sep2) != NPOS ) {
         xpath = NStr::Replace(xpath, sep2, sep);
     }
+#if !defined(NCBI_OS_MAC)
     // replace smth like "../xxx/../yyy/zzz" with "../yyy/zzz"
     {
         sep1 = DIR_SEPARATOR; sep1 += DIR_PARENT; sep1 += DIR_SEPARATOR;
@@ -439,14 +440,15 @@ string CDirEntry::ConvertToOSPath(const string& path)
             size_t found = xpath.find(sep1);
             if (found != 0 && found != string::npos) {
                 size_t start = xpath.rfind(DIR_SEPARATOR,found-1);
-                if (start != string::npos) {
+                if (start != string::npos && (found-start > 1)) {
                     xpath.erase(start,found+sep1.length()-1-start);
                     erased=true;
                 }
             }
         }
     }
-#endif
+#endif // NCBI_OS_MAC
+#endif // DIR_PARENT
     // Remove leading ":" in the relative path on non-MAC platforms 
     if ( xpath[0] == DIR_SEPARATOR ) {
         xpath.erase(0,1);
@@ -1402,6 +1404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2002/10/01 17:02:53  gouriano
+ * minor modification of ConvertToOSPath
+ *
  * Revision 1.33  2002/10/01 14:18:45  gouriano
  * "optimize" result of ConvertToOSPath
  *
