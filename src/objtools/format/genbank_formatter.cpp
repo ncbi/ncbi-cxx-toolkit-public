@@ -395,13 +395,7 @@ void CGenbankFormatter::x_Title
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    string title = ref.GetTitle();
-
-    if ( NStr::EndsWith(title, ".") ) {
-        title.erase(title.length() - 1);
-    }
-    
-    Wrap(l, "TITLE",   title,   eSubp);
+    Wrap(l, "TITLE", ref.GetTitle(),   eSubp);
 }
 
 
@@ -708,6 +702,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/10/18 18:49:10  shomrat
+* fixed reference TITLE
+*
 * Revision 1.19  2004/10/05 18:06:28  shomrat
 * in place TruncateSpaces ->TruncateSpacesInPlace
 *
