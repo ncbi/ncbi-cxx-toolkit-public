@@ -238,7 +238,7 @@ public:
     ///
     /// This builds and returns the header and sequence data
     /// corresponding to the indicated sequence as a CBioseq.  If
-    /// target_gi is non-null, the header information will be filtered
+    /// target_gi is non-zero, the header information will be filtered
     /// to only include the defline associated with that gi.
     ///
     /// @param oid
@@ -491,6 +491,55 @@ public:
     /// @return
     ///   An OID near the specified residue offset.
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+
+    /// Get a CBioseq for a given GI
+    ///
+    /// This builds and returns the header and sequence data
+    /// corresponding to the indicated GI as a CBioseq.  If target_gi
+    /// is nonzero, the header information will be filtered to only
+    /// include the defline associated with that GI.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param target_gi
+    ///   The target gi to filter the header information by.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence.
+    CRef<CBioseq> GiToBioseq(TGI oid, TGI target_gi) const;
+    
+    /// Get a CBioseq for a given PIG
+    ///
+    /// This builds and returns the header and sequence data
+    /// corresponding to the indicated PIG (a numeric identifier used
+    /// for proteins) as a CBioseq.  If target_gi is nonzero, the
+    /// header information will be filtered to only include the
+    /// defline associated with that GI.
+    ///
+    /// @param pig
+    ///   The protein identifier group id of the sequence.
+    /// @param target_gi
+    ///   The target gi to filter the header information by.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence.
+    CRef<CBioseq> PigToBioseq(TPIG pig, TGI target_gi) const;
+    
+    /// Get a CBioseq for a given Seq-id
+    ///
+    /// This builds and returns the header and sequence data
+    /// corresponding to the indicated Seq-id as a CBioseq.  If
+    /// target_gi is nonzero, the header information will be filtered
+    /// to only include the defline associated with that GI.  Note
+    /// that certain forms of Seq-id map to more than one OID.  If
+    /// this is the case for this Seq-id, the first matching OID will
+    /// be used.
+    ///
+    /// @param seqid
+    ///   The Seq-id identifier of the sequence.
+    /// @param target_gi
+    ///   The target gi to filter the header information by.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence.
+    CRef<CBioseq> SeqidToBioseq(const CSeq_id & seqid, TGI target_gi) const;
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

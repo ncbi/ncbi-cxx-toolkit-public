@@ -391,6 +391,50 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-alphabeta]";
         
+        if (s == "-bioseqs") {
+            CSeqDB db(dbname, seqtype);
+            
+            unsigned gi (129297);                 // chicken receptor (gg)
+            unsigned pig(123);                    // junctional adhesion molecule 3 (hs)
+            string   str("sp|P35586|COCO_LIMPO"); // cocoonase (limulus polyphemus)
+            
+            CSeq_id  seqid(str);
+            
+            {
+                cout << "--- gi " << gi << " ---" << endl;
+                
+                CRef<CBioseq> bs = db.GiToBioseq(gi, 0);
+                
+                auto_ptr<CObjectOStream>
+                    outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                *outpstr << *bs;
+            }
+            
+            {
+                cout << "\n--- pig " << pig << " ---" << endl;
+                
+                CRef<CBioseq> bs = db.PigToBioseq(pig, 0);
+                
+                auto_ptr<CObjectOStream>
+                    outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                *outpstr << *bs;
+            }
+            
+            {
+                cout << "\n--- seqid " << str << " ---" << endl;
+                
+                CRef<CBioseq> bs = db.SeqidToBioseq(seqid, 0);
+                
+                auto_ptr<CObjectOStream>
+                    outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                *outpstr << *bs;
+                
+                cout << endl;
+            }
+            
+            return 0;
+        } else desc += " [-bioseqs]";
+        
         if ((s == "-gi2bs") || (s == "-gi2bs-target")) {
             CSeqDB db(dbname, seqtype);
             

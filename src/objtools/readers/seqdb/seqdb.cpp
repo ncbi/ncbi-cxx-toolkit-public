@@ -342,5 +342,46 @@ CSeqDBIter & CSeqDBIter::operator++(void)
     return *this;
 }
 
+CRef<CBioseq>
+CSeqDB::GiToBioseq(TGI gi, TGI target_gi) const
+{
+    TOID oid(0);
+    CRef<CBioseq> bs;
+    
+    if (m_Impl->GiToOid(gi, oid)) {
+        bs = m_Impl->GetBioseq(oid, target_gi);
+    }
+    
+    return bs;
+}
+
+CRef<CBioseq>
+CSeqDB::PigToBioseq(TPIG pig, TGI target_gi) const
+{
+    TOID oid(0);
+    CRef<CBioseq> bs;
+    
+    if (m_Impl->PigToOid(pig, oid)) {
+        bs = m_Impl->GetBioseq(oid, target_gi);
+    }
+    
+    return bs;
+}
+
+CRef<CBioseq>
+CSeqDB::SeqidToBioseq(const CSeq_id & seqid, TGI target_gi) const
+{
+    vector<TOID> oids;
+    CRef<CBioseq> bs;
+    
+    m_Impl->SeqidToOids(seqid, oids);
+    
+    if (! oids.empty()) {
+        bs = m_Impl->GetBioseq(oids[0], target_gi);
+    }
+    
+    return bs;
+}
+
 END_NCBI_SCOPE
 
