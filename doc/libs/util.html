@@ -113,7 +113,7 @@ CEofException</li>
 </ul>
 
 <h1>
-Classes descriptions</h1>
+Container descriptions</h1>
 
 <hr WIDTH="100%">
 <h2>
@@ -281,9 +281,9 @@ CRange&lt;position_type>&amp; SetTo();</pre>
 </blockquote>
 
 <hr WIDTH="100%">
-<h3>
+<h2>
 <a NAME="CRangeMap"></a>template&lt;typename Object, typename Coordinate
-= int> class CRangeMap</h3>
+= int> class CRangeMap</h2>
 Class for storing and retrieving data using interval as key.
 <br>Also allows efficient iteration over intervals intersecting with specified
 interval.
@@ -292,15 +292,15 @@ iterator.
 <br>In some cases, algorithm is not so efficient and may slowdown.
 <br>
 <hr WIDTH="100%">
-<h3>
+<h2>
 <a NAME="CRangeMultiMap"></a>template&lt;typename Object, typename Coordinate
-= int> class CRangeMultiMap</h3>
+= int> class CRangeMultiMap</h2>
 Almost the same as <a href="#CRangeMap">CRangeMap</a> but allows several
 values have the same key interval.
 <br>
 <hr WIDTH="100%">
-<h3>
-<a NAME="CIntervalTree"></a>class CIntervalTree</h3>
+<h2>
+<a NAME="CIntervalTree"></a>class CIntervalTree</h2>
 Class with the same functionality as <a href="#CRangeMap">CRangeMap</a>
 but using different algorithm.
 <br>It is faster and its speed is not affected by type of data but it uses
@@ -313,25 +313,33 @@ greater than processor cache.
 <br>
 
 <hr WIDTH="100%">
-<h3>
-  <a name="CBlockingQueue"></a>class CBlockingQueue&lt;typename TRequest></a>
-</h3>
+<h1>
+Thread pool descriptions</h1>
+<hr WIDTH="100%">
+<h2>
+  <a name="CBlockingQueue"></a>template &lt;typename TRequest> class
+  <a href="../lxr/ident?i=CBlockingQueue&d=C">CBlockingQueue</a>
+</h2>
 A blocking queue is a first-in-first-out container with the special
 property that attempting to extract an element from an empty queue
 blocks efficiently until more elements are available.  Thread pools
 use this class internally to manage requests.
 <hr WIDTH="100%">
-<h3> <a name="CStdRequest"></a>class CStdRequest</a> </h3>
-Abstract class, derived from CObject, encapsulating requests to a
-<a href="#CStdPoolOfThreads">CStdPoolOfThreads</a>.  The pure virtual
-method <tt>void Process(void)</tt> gets called when a thread handles
-the request.
+<h2>
+  <a name="CStdRequest"></a>class
+  <a href="../lxr/ident?i=CStdRequest&d=C">CStdRequest</a>
+</h2>
+Abstract class, derived from <a href="../lxr/ident?i=CObject&d=C">CObject</a>,
+encapsulating requests to a <a href="#CStdPoolOfThreads">CStdPoolOfThreads</a>.
+The pure virtual method <tt>void Process(void)</tt> gets called when a
+thread handles the request.
 <hr WIDTH="100%">
-<h3>
-  <a name="CThreadInPool"></a>class CThreadInPool&lt;typename TRequest></a>
-</h3>
-Abstract class, derived from CThread, for the threads in a pool.
-Three virtual methods control its behavior:
+<h2>
+  <a name="CThreadInPool"></a>template &lt;typename TRequest> class
+  <a href="../lxr/ident?i=CThreadInPool&d=C">CThreadInPool</a>
+</h2>
+Abstract class, derived from <a href="../lxr/ident?i=CThread&d=C">CThread</a>,
+for the threads in a pool.  Three virtual methods control its behavior:
 <pre>
     virtual void Init(void) {} // called at beginning of Main()
 
@@ -341,14 +349,18 @@ Three virtual methods control its behavior:
     virtual void x_OnExit(void) {} // called by OnExit()
 </pre>
 <hr WIDTH="100%">
-<h3> <a name="CStdThreadInPool"></a>class CStdThreadInPool</a> </h3>
+<h2>
+  <a name="CStdThreadInPool"></a>class
+  <a href="../lxr/ident?i=CStdThreadInPool&d=C">CStdThreadInPool</a>
+</h2>
 A specialization of CThreadInPool for
 CRef&lt;<a href="#CStdRequest">CStdRequest</a>>, which simply
 processes each request by calling its <tt>Process</tt> method.
 <hr WIDTH="100%">
-<h3>
-  <a name="CPoolOfThreads"></a>class CPoolOfThreads&lt;typename TRequest></a>
-</h3>
+<h2>
+  <a name="CPoolOfThreads"></a>template &lt;typename TRequest> class
+  <a href="../lxr/ident?i=CPoolOfThreads&d=C">CPoolOfThreads</a>
+</h2>
 Abstract class for a pool of request-handling threads.  The
 constructor takes three arguments: the maximum size of the pool, the
 maximum size of the queue of pending requests, and an optional
@@ -360,7 +372,10 @@ the constructor does not create any threads itself; you have to call
 requests to the pool, and the protected pure virtual function
 <tt>NewThread</tt> creates the actual threads.
 <hr WIDTH="100%">
-<h3> <a name="CStdPoolOfThreads"></a>class CStdPoolOfThreads</a> </h3>
+<h2>
+  <a name="CStdPoolOfThreads"></a>class
+  <a href="../lxr/ident?i=CStdPoolOfThreads&d=C">CStdPoolOfThreads</a>
+</h2>
 A specialization of CPoolOfThreads for
 CRef&lt;<a href="#CStdRequest">CStdRequest</a>>; its
 <tt>NewThread</tt> method creates objects of class <a
@@ -371,8 +386,11 @@ takes an argument indicating whether to return immediately or to wait
 for them to finish.
 
 <hr WIDTH="100%">
-<h3>
-<a NAME="CLightString"></a>class CLightString</h3>
+<h1>
+Other descriptions</h1>
+<hr WIDTH="100%">
+<h2>
+<a NAME="CLightString"></a>class CLightString</h2>
 Class for storing information about char strings. Unlike standard C++ string
 class it doesn't take ownership over string contents. So, char array containing
 string value should exist for whole life of holding CLightString object.
@@ -400,8 +418,8 @@ which, if sorted by standard comparison will look like:
 </blockquote>
 
 <hr WIDTH="100%">
-<h3>
-<a NAME="CChecksum"></a>class CChecksum</h3>
+<h2>
+<a NAME="CChecksum"></a>class CChecksum</h2>
 Class for CRC32 checksum calculation.
 <br>It also have methods for adding and checking checkum line in text files.
 <p>
