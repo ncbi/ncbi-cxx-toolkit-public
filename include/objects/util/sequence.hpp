@@ -193,6 +193,7 @@ NCBI_XOBJUTIL_EXPORT
 ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope);
 
 // Returns true if the order of Seq_locs is bad, otherwise, false
+NCBI_XOBJUTIL_EXPORT
 bool BadSeqLocSortOrder
 (const CBioseq&  seq,
  const CSeq_loc& loc,
@@ -225,6 +226,7 @@ enum EOffsetType {
     eOffset_FromLeft,  // relative to low-numbered end
     eOffset_FromRight  // relative to high-numbered end
 };
+NCBI_XOBJUTIL_EXPORT
 TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
                        EOffsetType how = eOffset_FromStart, CScope* scope = 0);
 
@@ -238,15 +240,16 @@ enum EOverlapType {
 
 // Check if the two locations have ovarlap of a given type
 NCBI_XOBJUTIL_EXPORT
-
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
                    EOverlapType type);
 
+NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope);
+NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
@@ -266,6 +269,7 @@ enum ESeqlocPartial {
 };
 
 // Sets bits for incomplete location and/or errors
+NCBI_XOBJUTIL_EXPORT
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 
 END_SCOPE(sequence)
@@ -489,6 +493,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2003/01/03 19:27:45  shomrat
+* Added Win32 export specifier where missing
+*
 * Revision 1.21  2002/12/30 19:38:34  vasilche
 * Optimized CGenbankWriter::WriteSequence.
 * Implemented GetBestOverlappingFeat() with CSeqFeatData::ESubtype selector.
