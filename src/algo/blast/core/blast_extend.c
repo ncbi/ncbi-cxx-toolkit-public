@@ -704,6 +704,11 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
    last_hit = diag_array_elem->last_hit;
    step = s_pos - last_hit;
 
+   if (step <= 0)
+      /* This is a hit on a diagonal that has already been explored 
+         further down */
+      return 0;
+
    min_step = 0;
    if (!do_ungapped_extension) {
       if (lookup->lut_type == MB_LOOKUP_TABLE) {
@@ -735,7 +740,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
             &ungapped_data);
       
          diag_array_elem->last_hit = 
-            ungapped_data->length - 1 + ungapped_data->s_start 
+            ungapped_data->length + ungapped_data->s_start 
             + diag_table->offset;
       } else {
          ungapped_data = NULL;
@@ -849,7 +854,6 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
          }
 	 
       }
-      
       start_offset = next_start;
    }
 
@@ -983,7 +987,6 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
          hitsfound = MB_AG_ScanSubject(lookup, subject, start_offset, 
 	    q_offsets, s_offsets, max_hits, &next_start);
       }
-
       if (ag_blast) {
          for (i = 0; i < hitsfound; ++i) {
             q = q_start + q_offsets[i] - s_offsets[i]%COMPRESSION_RATIO;
@@ -1123,7 +1126,6 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
                s_offsets[i] + extended_right, s_offsets[i], init_hitlist);
          }
       }
-      
       start_offset = next_start;
    }
 
