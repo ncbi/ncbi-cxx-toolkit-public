@@ -56,6 +56,7 @@ class CMsvcConfigureProjectGenerator
 public:
     CMsvcConfigureProjectGenerator(const string&            output_dir,
                                    const list<SConfigInfo>& configs,
+                                   bool                     dll_build,
                                    const string&            project_dir,
                                    const string&            tree_root,
                                    const string&            subtree_to_build,
@@ -74,6 +75,7 @@ private:
 
     const string      m_OutputDir;
     list<SConfigInfo> m_Configs;
+    bool              m_DllBuild;
 
     const string      m_ProjectDir;
     const string      m_TreeRoot;
@@ -104,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/10 21:26:19  gorelenk
+ * Changed CMsvcConfigureProjectGenerator constructor.
+ *
  * Revision 1.2  2004/02/12 17:48:11  gorelenk
  * Re-designed of projects saving. Added member-function GetPath().
  *
