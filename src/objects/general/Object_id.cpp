@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/02/07 16:03:07  vasilche
+ * Fixed CObject_id::Match().
+ *
  * Revision 6.7  2003/02/06 22:25:25  vasilche
  * Added some Compare() methods.
  *
@@ -93,7 +96,7 @@ bool CObject_id::Match(const CObject_id& oid2) const
     case e_Str:
         return PNocase().Equals(GetStr(), oid2.GetStr());
     default:
-        return this == &oid2? 0: this < &oid2? -1: 1;
+        return this == &oid2;
     }
 }
 
