@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/04/14 21:01:22  vakatov
+* s_HexChar():  get rid of "::tolower()"
+*
 * Revision 1.23  1999/04/14 20:11:56  vakatov
 * + <stdio.h>
 * Changed all "str.compare(...)" to "NStr::Compare(str, ...)"
@@ -392,9 +395,10 @@ static int s_HexChar(char ch) THROWS_NONE
 {
     if ('0' <= ch  &&  ch <= '9')
         return ch - '0';
-    ch = ::tolower(ch);
     if ('a' <= ch  &&  ch <= 'f')
         return 10 + (ch - 'a');
+    if ('A' <= ch  &&  ch <= 'F')
+        return 10 + (ch - 'A');
     return -1;
 }
 
