@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/22 16:39:12  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
 * Revision 1.8  1998/12/21 22:24:59  vasilche
 * A lot of cleaning.
 *
@@ -63,16 +66,24 @@
 #include <ncbistd.hpp>
 #include <html.hpp>
 #include <cgiapp.hpp>
+#include <nodemap.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class BaseTagMapper;
+
+template<class C>
+BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(void));
+
+template<class C>
+BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(const string& name));
 
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is
 // the turning on and off of sub HTML components via style bits and a
 // creation function that orders sub components on the page.  The ability
 // to hold children and print HTML is inherited from CHTMLNode.
-  
+
 class CHTMLBasicPage: public CNCBINode {
     // parent class
     typedef CNCBINode CParent;
@@ -90,10 +101,18 @@ public:
     virtual CNCBINode* MapTag(const string& name);
     // add tag resolver
     void AddTagMap(const string& name, BaseTagMapper* mapper);
+    void AddTagMap(const string& name, CNCBINode* node);
+
     //    void AddTagMap(const string& name, CNCBINode* (*function)(void));
     //    void AddTagMap(const string& name, CNCBINode* (*function)(const string& name));
-    void AddTagMap(const string& name, CNCBINode* (CHTMLBasicPage::*method)(void));
-    void AddTagMap(const string& name, CNCBINode* (CHTMLBasicPage::*method)(const string& name));
+
+/*
+    template<class C>
+    void AddTagMap(const string& name, CNCBINode* (C::*method)(void));
+
+    template<class C>
+    void AddTagMap(const string& name, CNCBINode* (C::*method)(const string& name));
+*/
 
 protected:
     CCgiApplication * m_CgiApplication;  // pointer to runtime information

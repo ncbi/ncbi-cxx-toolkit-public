@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/22 16:39:15  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
 * Revision 1.5  1998/12/21 22:25:04  vasilche
 * A lot of cleaning.
 *
@@ -51,7 +54,7 @@
 #include <ncbistd.hpp>
 #include <components.hpp>
 #include <page.hpp>
-#include <nodemap.hpp>
+//#include <nodemap.hpp>
 BEGIN_NCBI_SCOPE
  
 // CHTMLBasicPage
@@ -86,10 +89,6 @@ void CHTMLBasicPage::SetStyle(int style)
     m_Style = style;
 }
 
-BaseTagMapper::~BaseTagMapper(void)
-{
-}
-
 CNCBINode* CHTMLBasicPage::MapTag(const string& name)
 {
     map<string, BaseTagMapper*>::iterator i = m_TagMap.find(name);
@@ -105,34 +104,17 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
     m_TagMap[name] = mapper;
 }
 
-void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode*(CHTMLBasicPage::*method)(void))
-{
-    AddTagMap(name, new TagMapper<CHTMLBasicPage>(method));
-}
-
-void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode*(CHTMLBasicPage::*method)(const string& name))
-{
-    AddTagMap(name, new TagMapper<CHTMLBasicPage>(method));
-}
-
 // CHTMLPage
+
+template class TagMapper<CHTMLPage>;
 
 CHTMLPage::CHTMLPage(CCgiApplication* application, int style)
     : CParent(application, style),  m_PageName("PubMed"), m_TemplateFile("frontpage.html")
 {
-    AddTagMap("TEMPLATE", new TagMapper<CHTMLPage>(&CreateTemplate));
-    AddTagMap("TITLE", new TagMapper<CHTMLPage>(&CreateTitle));
-    AddTagMap("VIEW", new TagMapper<CHTMLPage>(&CreateView));
+    AddTagMap("TEMPLATE", CreateTagMapper(this, &CreateTemplate));
+    AddTagMap("TITLE", CreateTagMapper(this, &CreateTitle));
+    AddTagMap("VIEW", CreateTagMapper(this, &CreateView));
 }
-
-/*
-CHTMLPage::CHTMLPage(const CHTMLPage* origin)
-    : CParent(origin)
-{
-    m_PageName = origin->m_PageName;
-    m_TemplateFile = origin->m_TemplateFile;
-}
-*/
 
 CNCBINode* CHTMLPage::CloneSelf() const
 {

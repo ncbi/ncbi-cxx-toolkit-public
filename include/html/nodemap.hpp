@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/22 16:39:11  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
 * Revision 1.1  1998/12/21 22:24:58  vasilche
 * A lot of cleaning.
 *
@@ -47,114 +50,52 @@
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 class CNCBINode;
-class CHTMLBasicPage;
 
 struct BaseTagMapper {
     virtual ~BaseTagMapper(void);
 
-    virtual CNCBINode* MapTag(CHTMLBasicPage* page, const string& name) const = 0;
-
-    virtual BaseTagMapper* Clone(void) const = 0;
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
 };
 
-struct BaseTagMapperCaller
+struct ReadyTagMapper : BaseTagMapper
 {
-    virtual CNCBINode* Call(CHTMLBasicPage* page, const string& name) const = 0;
+    ReadyTagMapper(CNCBINode* node);
 
-    virtual BaseTagMapperCaller* Clone() const = 0;
+    ~ReadyTagMapper(void);
+
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+
+private:
+    CNCBINode* m_Node;
 };
 
 template<class C>
-struct TagMapperCaller : BaseTagMapperCaller
+struct TagMapper : BaseTagMapper
 {
-    TagMapperCaller(CNCBINode* (C::*method)(void))
-        : m_Method(method)
-    {
-    }
+    TagMapper(CNCBINode* (C::*method)(void));
 
-    virtual CNCBINode* Call(CHTMLBasicPage* page, const string& ) const
-    {
-        return (dynamic_cast<C*>(page)->*m_Method)();
-    }
-
-    virtual BaseTagMapperCaller* Clone() const
-    {
-        return new TagMapperCaller(m_Method);
-    }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
     CNCBINode* (C::*m_Method)(void);
 };
 
 template<class C>
-struct TagMapperCallerWithName : BaseTagMapperCaller
+struct TagMapperByName : BaseTagMapper
 {
-    TagMapperCallerWithName(CNCBINode* (C::*method)(const string&))
-        : m_Method(method)
-    {
-    }
+    TagMapperByName(CNCBINode* (C::*method)(const string& name));
 
-    virtual CNCBINode* Call(CHTMLBasicPage* page, const string& name) const
-    {
-        return (dynamic_cast<C*>(page)->*m_Method)(name);
-    }
-
-    virtual BaseTagMapperCaller* Clone() const
-    {
-        return new TagMapperCallerWithName(m_Method);
-    }
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
-    CNCBINode* (C::*m_Method)(const string&);
+    CNCBINode* (C::*m_Method)(const string& name);
 };
 
-template<class C>
-struct TagMapper : BaseTagMapper
-{
-    TagMapper(CNCBINode* (C::*method)(void))
-        : m_Caller(new TagMapperCaller<C>(method))
-    {
-    }
-
-    TagMapper(CNCBINode* (C::*method)(const string& tagname))
-        : m_Caller(new TagMapperCallerWithName<C>(method))
-    {
-    }
-
-    ~TagMapper(void)
-    {
-        delete m_Caller;
-    }
-    
-    virtual BaseTagMapper* Clone(void) const
-    {
-        return new TagMapper(*this);
-    }
-
-    virtual CNCBINode* MapTag(CHTMLBasicPage* page, const string& name) const
-    {
-        return m_Caller->Call(page, name);
-    }
-
-private:
-    BaseTagMapperCaller* m_Caller;
-
-    TagMapper(const TagMapper& src)
-        : m_Caller(src.m_Caller->Clone())
-    {
-    }
-};
-
-///////////////////////////////////////////////////////
-// All inline function implementations and internal data
-// types, etc. are in this file
 #include <nodemap.inl>
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NODEMAP__HPP */

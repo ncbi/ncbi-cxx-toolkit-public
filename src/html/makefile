@@ -1,5 +1,9 @@
 #include ../../makefile.in
 
+CXX       = /netopt/SUNWspro6/bin/CC
+CPPFLAGS  = -I../include -I../../corelib/include -I/netopt/ncbi_tools/ver0.0/ncbi/include -D_DEBUG
+CXXFLAGS  = +w2 -g
+
 CCC = CC -g
 SUFFIXES = .o .c .h .hpp .cpp
 .SUFFIXES:
@@ -45,10 +49,10 @@ LDFLAGS = -xar
 
 EXE = libxhtml.a
 
-OBJ =  page.o html.o node.o components.o querypages.o
+OBJ =  node.o html.o page.o nodemap.o components.o querypages.o
 
 .cpp.o:
-	$(CCC) $(CFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
 
 
 all: $(EXE)

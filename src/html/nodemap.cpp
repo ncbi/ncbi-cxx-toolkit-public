@@ -1,6 +1,3 @@
-#if defined(PAGE__HPP)  &&  !defined(PAGE__INL)
-#define PAGE__INL
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,51 +30,42 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/12/22 16:39:13  vasilche
+* Revision 1.1  1998/12/22 16:39:15  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
-*
-* Revision 1.1  1998/12/21 22:24:59  vasilche
-* A lot of cleaning.
 *
 * ===========================================================================
 */
 
+#include <ncbistd.hpp>
+#include <page.hpp>
 
-static inline CHTMLBasicPage* CHTMLPage::New(void)
-{
-    return new CHTMLPage;
-}  // for the page factory
+// This is to use the ANSI C++ standard templates without the "std::" prefix
+// NCBI_USING_NAMESPACE_STD;
 
-inline CCgiApplication* CHTMLBasicPage::GetApplication(void)
+// This is to use the ANSI C++ standard templates without the "std::" prefix
+// and to use NCBI C++ entities without the "ncbi::" prefix
+// USING_NCBI_SCOPE;
+
+BEGIN_NCBI_SCOPE
+
+
+BaseTagMapper::~BaseTagMapper()
 {
-    return m_CgiApplication;
 }
 
-inline int CHTMLBasicPage::GetStyle(void) const
+ReadyTagMapper::ReadyTagMapper(CNCBINode* node)
+    : m_Node(node)
 {
-    return m_Style;
 }
 
-inline BaseTagMapper* CreateTagMapper(CNCBINode* node)
+ReadyTagMapper::~ReadyTagMapper(void)
 {
-    return new ReadyTagMapper(node);
+    delete m_Node;
 }
 
-template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void))
+CNCBINode* ReadyTagMapper::MapTag(CNCBINode*, const string&) const
 {
-    return new TagMapper<C>(method);
+    return m_Node->Clone();
 }
 
-template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(const string& name))
-{
-    return new TagMapperByName<C>(method);
-}
-
-inline void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode* node)
-{
-    AddTagMap(name, new ReadyTagMapper(node));
-}
-
-#endif /* def PAGE__HPP  &&  ndef PAGE__INL */
+END_NCBI_SCOPE

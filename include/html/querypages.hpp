@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/22 16:39:13  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
 * Revision 1.4  1998/12/21 22:25:00  vasilche
 * A lot of cleaning.
 *
@@ -77,7 +80,8 @@ class CPmDocSumPage: public CHTMLPage
     virtual CNCBINode* CreateView(void);
     // only one pager for now until I make copy constructor.
     static const int kNoPAGER = 0x16;
-    virtual CNCBINode* CreatePager();
+    virtual void CreateSubNodes(void);
+    virtual CNCBINode* CreatePager(void);
 
     CPmDocSumPage();
     static CHTMLBasicPage * New(void) { return new CPmDocSumPage;}

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/22 16:39:12  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
 * Revision 1.1  1998/12/21 22:24:58  vasilche
 * A lot of cleaning.
 *
@@ -44,5 +47,28 @@
 //  !!! PUT YOUR CODE HERE !!!
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!
 
+template<class C>
+inline TagMapper<C>::TagMapper<C>(CNCBINode* (C::*method)(void))
+    : m_Method(method)
+{
+}
+
+template<class C>
+inline CNCBINode* TagMapper<C>::MapTag(CNCBINode* _this, const string&) const
+{
+    return (dynamic_cast<C*>(_this)->*m_Method)();
+}
+
+template<class C>
+inline TagMapperByName<C>::TagMapperByName<C>(CNCBINode* (C::*method)(const string& name))
+    : m_Method(method)
+{
+}
+
+template<class C>
+inline CNCBINode* TagMapperByName<C>::MapTag(CNCBINode* _this, const string& name) const
+{
+    return (dynamic_cast<C*>(_this)->*m_Method)(name);
+}
 
 #endif /* def NODEMAP__HPP  &&  ndef NODEMAP__INL */

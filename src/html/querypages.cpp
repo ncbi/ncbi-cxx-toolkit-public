@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/22 16:39:16  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
 * Revision 1.4  1998/12/21 22:25:05  vasilche
 * A lot of cleaning.
 *
@@ -65,7 +68,7 @@ CPmFrontPage::CPmFrontPage()
     m_PageName = "Pubmed Search";
     m_TemplateFile = "tabletemplate.html";
 
-    //    AddTagMap("QUERYBOX", new TagMapper<CPmFrontPage>(&CreateQueryBox));
+    //    AddTagMap("QUERYBOX", CreateTagMapper(this, &CreateQueryBox));
 }
 
 /*
@@ -116,13 +119,18 @@ CNCBINode* CPmFrontPage::CreateView(void)
 // Docsum page
 //
 
+template class TagMapper<CPmDocSumPage>;
+
 CPmDocSumPage::CPmDocSumPage()
 {
     m_PageName = "Search Results";
     m_TemplateFile = "template.html";
+}
 
-    AddTagMap("PAGER", new TagMapper<CPmDocSumPage>(&CreatePager));
-    //    AddTagMap("QUERYBOX", new TagMapper<CPmDocSumPage>(&CreateQueryBox));
+void CPmDocSumPage::CreateSubNodes(void)
+{
+    AddTagMap("PAGER", CreatePager());
+    CHTMLPage::CreateSubNodes();
 }
 
 CNCBINode* CPmDocSumPage::CreatePager(void) 

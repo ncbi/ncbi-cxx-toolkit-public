@@ -7,7 +7,7 @@ SUFFIXES = .o .c .h .hpp .cpp
 
 CFLAGS = -I../include -I../../html/include -I../../corelib/include -I/netopt/ncbi_tools/ver0.0/ncbi/include 
 
-LDFLAGS = -L../../corelib/src -L../src -lncbi -lxncbi -lxhtml
+LDFLAGS = -L../../corelib/src -L../src -lxncbi -lxhtml
 
 #CFLAGS = $(iLOCALINCPATH) $(iINCPATH) $(iCFLAGS)
 #LDFLAGS = $(iLDFLAGS) -L../../libs $(iLOCALLIBS) $(iLIBS) -lm
