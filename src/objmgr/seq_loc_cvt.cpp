@@ -45,6 +45,8 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -521,9 +523,106 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
 }
 
 
+void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
+                                          CRef<CSeq_feat>& mapped_feat)
+{
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    _ASSERT( src_feat_data.IsCdregion() );
+    if (!src_feat_data.GetCdregion().IsSetCode_break()) {
+        return;
+    }
+    const CCdregion& src_cd = src_feat_data.GetCdregion();
+    // Map code-break locations
+    const CCdregion::TCode_break& src_cb = src_cd.GetCode_break();
+    mapped_feat.Reset(new CSeq_feat);
+    // Initialize mapped feature
+    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    
+    // Copy Cd-region, do not change the original one
+    CRef<CSeqFeatData> new_data(new CSeqFeatData);
+    mapped_feat->SetData(*new_data);
+    CCdregion& new_cd = new_data->SetCdregion();
+
+    if ( src_cd.IsSetOrf() ) {
+        new_cd.SetOrf(src_cd.GetOrf());
+    }
+    else {
+        new_cd.ResetOrf();
+    }
+    new_cd.SetFrame(src_cd.GetFrame());
+    if ( src_cd.IsSetConflict() ) {
+        new_cd.SetConflict(src_cd.GetConflict());
+    }
+    else {
+        new_cd.ResetConflict();
+    }
+    if ( src_cd.IsSetGaps() ) {
+        new_cd.SetGaps(src_cd.GetGaps());
+    }
+    else {
+        new_cd.ResetGaps();
+    }
+    if ( src_cd.IsSetMismatch() ) {
+        new_cd.SetMismatch(src_cd.GetMismatch());
+    }
+    else {
+        new_cd.ResetMismatch();
+    }
+    if ( src_cd.IsSetCode() ) {
+        new_cd.SetCode(const_cast<CGenetic_code&>(src_cd.GetCode()));
+    }
+    else {
+        new_cd.ResetCode();
+    }
+    if ( src_cd.IsSetStops() ) {
+        new_cd.SetStops(src_cd.GetStops());
+    }
+    else {
+        new_cd.ResetStops();
+    }
+
+    CCdregion::TCode_break& mapped_cbs = new_cd.SetCode_break();
+    mapped_cbs.clear();
+    ITERATE(CCdregion::TCode_break, it, src_cb) {
+        CRef<CSeq_loc> cb_loc;
+        Convert((*it)->GetLoc(), &cb_loc, eCnvAlways);
+        // Preserve partial flag
+        bool partial = m_Partial;
+        Reset();
+        m_Partial = partial;
+        if (bool(cb_loc)  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
+            CRef<CCode_break> cb(new CCode_break);
+            cb->SetAa(const_cast<CCode_break::TAa&>((*it)->GetAa()));
+            cb->SetLoc(*cb_loc);
+            mapped_cbs.push_back(cb);
+        }
+        /*else {
+            // Keep the original code-break
+            CRef<CCode_break> cb(&const_cast<CCode_break&>(**it));
+            mapped_cbs.push_back(cb);
+        }*/
+    }
+}
+
+
+void CSeq_loc_Conversion::ConvertFeature(CAnnotObject_Ref& ref,
+                                         CRef<CSeq_feat>& mapped_feat)
+{
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    if ( src_feat_data.IsCdregion() ) {
+        ConvertCdregion(ref, mapped_feat);
+    }
+}
+
+
 void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
 {
     Reset();
+    CRef<CSeq_feat> mapped_feat;
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
@@ -531,6 +630,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
         CRef<CSeq_loc> mapped_loc;
         const CSeq_loc* src_loc;
         if ( loctype != eProduct ) {
+            ConvertFeature(ref, mapped_feat);
             src_loc = &obj.GetFeatFast()->GetLocation();
         }
         else {
@@ -552,6 +652,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
         break;
     }
     SetMappedLocation(ref, loctype);
+    if ( mapped_feat ) {
+        // This will also set location and partial of the mapped feature
+        ref.SetMappedSeq_feat(*mapped_feat);
+    }
 }
 
 
@@ -623,6 +727,99 @@ CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
 }
 
 
+void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
+                                              CRef<CSeq_feat>& mapped_feat)
+{
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    _ASSERT( src_feat_data.IsCdregion() );
+    if (!src_feat_data.GetCdregion().IsSetCode_break()) {
+        return;
+    }
+    const CCdregion& src_cd = src_feat_data.GetCdregion();
+    // Map code-break locations
+    const CCdregion::TCode_break& src_cb = src_cd.GetCode_break();
+    mapped_feat.Reset(new CSeq_feat);
+    // Initialize mapped feature
+    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    
+    // Copy Cd-region, do not change the original one
+    CRef<CSeqFeatData> new_data(new CSeqFeatData);
+    mapped_feat->SetData(*new_data);
+    CCdregion& new_cd = new_data->SetCdregion();
+
+    if ( src_cd.IsSetOrf() ) {
+        new_cd.SetOrf(src_cd.GetOrf());
+    }
+    else {
+        new_cd.ResetOrf();
+    }
+    new_cd.SetFrame(src_cd.GetFrame());
+    if ( src_cd.IsSetConflict() ) {
+        new_cd.SetConflict(src_cd.GetConflict());
+    }
+    else {
+        new_cd.ResetConflict();
+    }
+    if ( src_cd.IsSetGaps() ) {
+        new_cd.SetGaps(src_cd.GetGaps());
+    }
+    else {
+        new_cd.ResetGaps();
+    }
+    if ( src_cd.IsSetMismatch() ) {
+        new_cd.SetMismatch(src_cd.GetMismatch());
+    }
+    else {
+        new_cd.ResetMismatch();
+    }
+    if ( src_cd.IsSetCode() ) {
+        new_cd.SetCode(const_cast<CGenetic_code&>(src_cd.GetCode()));
+    }
+    else {
+        new_cd.ResetCode();
+    }
+    if ( src_cd.IsSetStops() ) {
+        new_cd.SetStops(src_cd.GetStops());
+    }
+    else {
+        new_cd.ResetStops();
+    }
+
+    CCdregion::TCode_break& mapped_cbs = new_cd.SetCode_break();
+    mapped_cbs.clear();
+    ITERATE(CCdregion::TCode_break, it, src_cb) {
+        CRef<CSeq_loc> cb_loc;
+        Convert((*it)->GetLoc(), &cb_loc, 0);
+        m_TotalRange = TRange::GetEmpty();
+        if (bool(cb_loc)  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
+            CRef<CCode_break> cb(new CCode_break);
+            cb->SetAa(const_cast<CCode_break::TAa&>((*it)->GetAa()));
+            cb->SetLoc(*cb_loc);
+            mapped_cbs.push_back(cb);
+        }
+        /*else {
+            // Keep the original code-break
+            CRef<CCode_break> cb(&const_cast<CCode_break&>(**it));
+            mapped_cbs.push_back(cb);
+        }*/
+    }
+}
+
+
+void CSeq_loc_Conversion_Set::ConvertFeature(CAnnotObject_Ref& ref,
+                                             CRef<CSeq_feat>& mapped_feat)
+{
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    if ( src_feat_data.IsCdregion() ) {
+        ConvertCdregion(ref, mapped_feat);
+    }
+}
+
+
 void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
                                       CSeq_loc_Conversion::ELocationType
                                       loctype)
@@ -634,6 +831,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         m_SingleConv->Convert(ref, loctype);
         return;
     }
+    CRef<CSeq_feat> mapped_feat;
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
@@ -642,6 +840,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         const CSeq_loc* src_loc;
         unsigned int loc_index = 0;
         if ( loctype != CSeq_loc_Conversion::eProduct ) {
+            ConvertFeature(ref, mapped_feat);
             src_loc = &obj.GetFeatFast()->GetLocation();
         }
         else {
@@ -671,6 +870,10 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
     ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
     ref.SetPartial(m_Partial);
     ref.SetTotalRange(m_TotalRange);
+    if ( mapped_feat ) {
+        // This will also set location and partial of the mapped feature
+        ref.SetMappedSeq_feat(*mapped_feat);
+    }
 }
 
 
@@ -1021,6 +1224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/10/12 17:09:00  grichenk
+* Added mapping of code-break.
+*
 * Revision 1.36  2004/08/13 18:41:46  grichenk
 * Changed size() to empty()
 *

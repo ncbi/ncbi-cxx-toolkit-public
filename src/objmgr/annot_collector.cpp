@@ -1527,13 +1527,6 @@ void CAnnotObject_Ref::InitializeMappedSeq_feat(const CSeq_feat& src,
 
     dst.SetData(src_nc.SetData());
 
-    /*
-    if ( IsPartial() )
-        dst.SetPartial(true);
-    else
-        dst.ResetPartial();
-    */
-
     if ( src_nc.IsSetExcept() )
         dst.SetExcept(src_nc.GetExcept());
     else
@@ -1607,14 +1600,33 @@ void CAnnotObject_Ref::InitializeMappedSeq_feat(const CSeq_feat& src,
 
 void CAnnotObject_Ref::SetMappedSeq_feat(CSeq_feat& feat)
 {
-    if ( !IsMapped() ) {
-        // Set mapped location and product from the original feature
+    _ASSERT( IsMapped() );
+    _ASSERT(GetMappedObjectType() != eMappedObjType_Seq_feat);
+
+    // Fill mapped location and product in the mapped feature
+    CRef<CSeq_loc> mapped_loc;
+    if ( MappedSeq_locNeedsUpdate() ) {
+        mapped_loc.Reset(new CSeq_loc);
+        UpdateMappedSeq_loc(mapped_loc);
     }
     else {
-        // Fill mapped location and product in the mapped feature
+        mapped_loc.Reset(&const_cast<CSeq_loc&>(GetMappedSeq_loc()));
     }
-    //m_MappedObject.Reset(&feat);
-    //m_MappedObjectType = eMappedObjType_Seq_feat;
+    if ( IsMappedLocation() ) {
+        feat.SetLocation(*mapped_loc);
+    }
+    else if ( IsMappedProduct() ) {
+        feat.SetProduct(*mapped_loc);
+    }
+    if ( IsPartial() ) {
+        feat.SetPartial(true);
+    }
+    else {
+        feat.ResetPartial();
+    }
+
+    m_MappedObject.Reset(&feat);
+    m_MappedObjectType = eMappedObjType_Seq_feat;
 }
 
 
@@ -1736,6 +1748,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/10/12 17:09:00  grichenk
+* Added mapping of code-break.
+*
 * Revision 1.27  2004/10/08 14:18:34  grichenk
 * Moved MakeMappedXXXX methods to CAnnotCollector,
 * fixed mapped feature initialization bug.

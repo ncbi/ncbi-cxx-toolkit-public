@@ -59,6 +59,7 @@ class CSeq_loc;
 class CSeq_interval;
 class CSeq_point;
 
+class CSeq_feat;
 class CSeq_align;
 class CDense_seg;
 class CPacked_seg;
@@ -112,6 +113,10 @@ public:
     bool ConvertInterval(TSeqPos src_from, TSeqPos src_to,
                          ENa_strand src_strand);
     bool ConvertInterval(const CSeq_interval& src);
+    void ConvertFeature(CAnnotObject_Ref& ref,
+                        CRef<CSeq_feat>& mapped_feat);
+    void ConvertCdregion(CAnnotObject_Ref& ref,
+                         CRef<CSeq_feat>& mapped_feat);
 
     enum EConvertFlag {
         eCnvDefault,
@@ -275,6 +280,10 @@ private:
     bool ConvertBond(const CSeq_loc& src,
                      CRef<CSeq_loc>* dst,
                      unsigned int loc_index);
+    void ConvertFeature(CAnnotObject_Ref& ref,
+                        CRef<CSeq_feat>& mapped_feat);
+    void ConvertCdregion(CAnnotObject_Ref& ref,
+                         CRef<CSeq_feat>& mapped_feat);
 
     CRef<CSeq_loc_Conversion> m_SingleConv;
     unsigned int              m_SingleIndex;
@@ -363,6 +372,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/10/12 17:09:00  grichenk
+* Added mapping of code-break.
+*
 * Revision 1.21  2004/07/19 17:41:34  grichenk
 * Simplified switches in Convert() methods.
 *
