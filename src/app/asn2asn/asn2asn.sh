@@ -2,7 +2,7 @@
 # $Id$
 #
 
-base="${1:-@top_srcdir@/src/serial/datatool/testdata}"
+base="${1:-./testdata}"
 if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     exit 1
@@ -43,6 +43,3 @@ for i in "set.bin -b" "set.ent" "set.xml -X"; do
 done
 
 echo "Done!"
-
-
-
