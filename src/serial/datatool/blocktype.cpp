@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/01/12 18:05:10  gouriano
+* Corrected generation of XML schema for sequence of choice types,
+* and simple types with default
+*
 * Revision 1.52  2004/09/27 18:28:40  gouriano
 * Improved diagnostics when creating DataMember with no name
 *
@@ -403,20 +407,27 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
                                    string("Wrong element type: ") + tag);
                     }
                     statType->GetXMLSchemaContents(simpleType, simpleContents);
-                    break;
-                }
-                isSimpleSeq = (dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType()) != 0);
-                if (isSimpleSeq) {
-                    isSeq = true;
-                    if (i->get()->GetType()->GetDataMember()) {
-                        if (i->get()->GetType()->GetDataMember()->Notag()) {
-                            isOptional = i->get()->GetType()->GetDataMember()->Optional();
-                        } else {
-                            isSeq = isSimpleSeq = false;
+                } else {
+                    const CUniSequenceDataType* typeSeq =
+                        dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
+                    isSimpleSeq = (typeSeq != 0);
+                    if (isSimpleSeq) {
+                        isSeq = true;
+                        const CDataMember *mem = typeSeq->GetDataMember();
+                        if (mem) {
+                            const CDataMemberContainerType* data =
+                                dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                            if (data) {
+                                asnk = data->GetASNKeyword();
+                            }
+                            if (mem->Notag()) {
+                                isOptional = mem->Optional();
+                            } else {
+                                isSeq = isSimpleSeq = false;
+                            }
                         }
                     }
                 }
-                break;
             }
         }
     }
@@ -507,6 +518,9 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
             out << "      <xs:element ref=\"" << member_name << "\"";
             if ( member.Optional()) {
                 out << " minOccurs=\"0\"";
+                if (member.GetDefault()) {
+                    out << " default=\"" << member.GetDefault()->GetXmlString() << "\"";
+                }
             }
             if (uniseq) {
                 out << " maxOccurs=\"unbounded\"";

@@ -839,8 +839,12 @@ CDataType* DTDParser::CompositeNode(
     AutoPtr<CDataMember> member(new CDataMember(node.GetName(),
         uniseq ? (AutoPtr<CDataType>(new CUniSequenceDataType(type))) : type));
 
-    member->SetNoPrefix();
+    if ((occ == DTDElement::eZeroOrOne) ||
+        (occ == DTDElement::eZeroOrMore)) {
+        member->SetOptional();
+    }
     member->SetNotag();
+    member->SetNoPrefix();
     if (!uniseq) {
         member->SetSimpleType();
     }
@@ -1079,6 +1083,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.23  2005/01/12 18:05:10  gouriano
+ * Corrected generation of XML schema for sequence of choice types,
+ * and simple types with default
+ *
  * Revision 1.22  2005/01/06 20:30:38  gouriano
  * added support for compound identifier names
  *
