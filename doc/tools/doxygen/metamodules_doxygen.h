@@ -39,7 +39,7 @@
  *  @ingroup CORELIB
  */
 
-/** @defgroup Args Argument Processing
+/** @defgroup Args Command-Line Argument Processing
  *  @ingroup CORELIB
  */
 
@@ -47,59 +47,55 @@
  *  @ingroup CORELIB
  */
 
-/** @defgroup Debug
+/** @defgroup Debug Debugging Macros
  *  @ingroup CORELIB
  */
 
-/** @defgroup Diagnostics
+/** @defgroup Diagnostics Run-Time Diagnostics
  *  @ingroup CORELIB
  */
 
-/** @defgroup Environment Environment Interface
+/** @defgroup Environment Access To Shell Environment
  *  @ingroup CORELIB
  */
 
-/** @defgroup Files Files and Directory
+/** @defgroup Files File System Access
  *  @ingroup CORELIB
  */
 
-/** @defgroup MTWrappers MT Test Wrappers
+/** @defgroup Object Smart Pointers with Reference Counting
  *  @ingroup CORELIB
  */
 
-/** @defgroup Object Object and Ref classes
+/** @defgroup Portability Fixed-Size Types and Their Limits
  *  @ingroup CORELIB
  */
 
-/** @defgroup Portability Portability Definitions
+/** @defgroup Dll DLL Support
  *  @ingroup CORELIB
  */
 
-/** @defgroup Dll Portable DLL
+/** @defgroup PluginMgr Plugin Creation and Usage Framework
  *  @ingroup CORELIB
  */
 
-/** @defgroup PluginMgr Plugin Manager
+/** @defgroup Exec Process Creation and Execution
  *  @ingroup CORELIB
  */
 
-/** @defgroup Exec Portable Exec Handling
+/** @defgroup Exception Exceptions Hierarchy
  *  @ingroup CORELIB
  */
 
-/** @defgroup Exception Portable Exception Handling
+/** @defgroup Application Registry
  *  @ingroup CORELIB
  */
 
-/** @defgroup Registry
+/** @defgroup STL NCBI Namespaces Etc
  *  @ingroup CORELIB
  */
 
-/** @defgroup STL STL Use Hints
- *  @ingroup CORELIB
- */
-
-/** @defgroup Stream Stream Wrappers
+/** @defgroup Stream C++ IOStream Fixups And Utilities
  *  @ingroup CORELIB
  */
 
@@ -107,23 +103,27 @@
  *  @ingroup CORELIB
  */
 
-/** @defgroup Utility Template Utilities
+/** @defgroup Utility STL-related And Other Template Utilities
  *  @ingroup CORELIB
  */
 
-/** @defgroup Threads
+/** @defgroup Threads Threads
  *  @ingroup CORELIB
  */
 
-/** @defgroup Time
+/** @defgroup Time Time And Date
  *  @ingroup CORELIB
  */
 
-/** @defgroup Version
+/** @defgroup Version Versioning
  *  @ingroup CORELIB
  */
 
 /** @defgroup Tree Tree Templates
+ *  @ingroup CORELIB
+ */
+
+/** @defgroup MTWrappers MT-safety Testing Framework
  *  @ingroup CORELIB
  */
 
@@ -183,9 +183,6 @@
  *  @ingroup CONNECT
  */
 
-/** @defgroup WinDLL Windows DLL Support
- *  @ingroup CONNECT
- */
 
 /* ========================================================================= */
 
@@ -670,5 +667,9 @@
  */
 
 /** @defgroup Miscellaneous
+ *  @ingroup MISC
+ */
+
+/** @defgroup WinDLL DLL Export/Import Defines for MS Windows
  *  @ingroup MISC
  */
