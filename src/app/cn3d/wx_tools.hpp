@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/04 00:54:19  thiessen
+* forgot to add 'public' inheritor
+*
 * Revision 1.1  2001/04/04 00:27:22  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -76,7 +79,7 @@ private:
 // my own special integer spin control - for more control over text box
 /////////////////////////////////////////////////////////////////////////////////
 
-class IntegerSpinCtrl : wxEvtHandler
+class IntegerSpinCtrl : public wxEvtHandler
 {
 public:
     IntegerSpinCtrl(wxWindow* parent,
@@ -133,7 +136,7 @@ private:
 // like wxSpinCtrl, except works on floating point values
 /////////////////////////////////////////////////////////////////////////////////
 
-class FloatingPointSpinCtrl : wxEvtHandler
+class FloatingPointSpinCtrl : public wxEvtHandler
 {
 public:
     FloatingPointSpinCtrl(wxWindow* parent,
