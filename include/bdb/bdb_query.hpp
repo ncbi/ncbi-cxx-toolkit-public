@@ -79,9 +79,12 @@ public:
 
 public:
 
+    /// Constuction of value type node
     CBDB_QueryNode(string value = kEmptyStr);
+    /// Construction of logical (AND, OR, etc) node
     CBDB_QueryNode(ELogicalType  ltype);
-    CBDB_QueryNode(EOperatorType otype);
+    /// Construction of operator node
+    CBDB_QueryNode(EOperatorType otype, bool not_flag = false);
 
     CBDB_QueryNode(const CBDB_QueryNode& qnode);
     CBDB_QueryNode& operator=(const CBDB_QueryNode& qnode);
@@ -91,6 +94,11 @@ public:
     ENodeType     GetType() const { return m_NodeType; }
     ELogicalType  GetLogicType() const;
     EOperatorType GetOperatorType() const;
+
+    /// @return TRUE when node is an inverted operator (not EQ)
+    bool IsNot() const { return m_NotFlag; }
+    /// Set NOT flag (NOT EQ, etc)
+    void SetNot() { m_NotFlag = true; }
 
     const string& GetValue() const { return m_Value; }
     string& GetValue() { return m_Value; }
@@ -119,7 +127,7 @@ protected:
         EOperatorType  OperatorType;
         int            FieldIdx;
     } m_SubType;
-
+    bool               m_NotFlag; ///< Inverted function
     string m_Value;
     string m_AltValue; ///< Alternative value
 };
@@ -259,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/23 14:50:43  kuznets
+ * Implemented logical NOT
+ *
  * Revision 1.8  2004/03/11 13:17:02  kuznets
  * Added alternative value to the tree node
  *
