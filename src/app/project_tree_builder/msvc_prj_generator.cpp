@@ -585,26 +585,10 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     CDirEntry::SplitPath(src.m_SourceFile, NULL, &data_tool_src_base);
     string outputs = "$(InputDir)" + data_tool_src_base + "__.cpp;";
     outputs += "$(InputDir)" + data_tool_src_base + "___.cpp;";
-    ITERATE(list<string>, p, src.m_GeneratedCppLocal) {
-        const string& src_cpp = *p;
-        outputs += "$(InputDir)" + src_cpp + ".cpp;";
-        outputs += "$(InputDir)" + src_cpp + "_.cpp;";
-    }
-    ITERATE(list<string>, p, src.m_GeneratedHpp) {
-        const string& src_hpp = *p;
-        string src_hpp_abs = 
-            CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, 
-                                  src_hpp);
-        string src_hpp_rel = 
-            CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, src_hpp_abs);
-
-        outputs += "$(InputDir)" + src_hpp_rel + ".hpp;";
-        outputs += "$(InputDir)" + src_hpp_rel + "_.hpp;";
-    }
     build_info->m_Outputs = outputs;
 
     //Additional Dependencies
-    build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def";
+    build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
 }
 
 
@@ -613,6 +597,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/04/30 13:57:01  dicuccio
+ * Fixed project generation to correct dependency rules for datatool-generated
+ * code.
+ *
  * Revision 1.29  2004/03/18 22:44:26  gorelenk
  * Changed implementation of CMsvcProjectGenerator::Generate - implemented
  * custom builds only in available configurations.
