@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
-
+#include <deque>
 
 /** @addtogroup UTIL
  *
@@ -164,7 +164,7 @@ private:
     unsigned int     m_NumRequests;    ///< Num requests per period
 
     typedef AutoPtr<CTime> TTime;
-    typedef vector<TTime>  TTimeLine;
+    typedef deque<TTime>   TTimeLine;
 
     TTimeLine       m_TimeLine;        ///< Vector of times of approvals
 };
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/02 17:20:43  ivanov
+ * Use deque instead vector to improve performance
+ *
  * Revision 1.2  2005/03/02 15:52:19  ivanov
  * + CRequestThrottler::Reset()
  *
