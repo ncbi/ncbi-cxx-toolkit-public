@@ -37,6 +37,11 @@
 
 #include <util/compress/zlib.hpp>
 
+// Identify as Unix by default.
+#ifndef OS_CODE
+#define OS_CODE 0x03
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -875,6 +880,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/10 13:06:45  ucko
+ * Default OS_CODE to the Unix value (0x03).
+ *
  * Revision 1.10  2004/05/10 12:57:03  ivanov
  * Removed #include <zutil.h>
  *
