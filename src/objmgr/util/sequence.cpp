@@ -295,6 +295,16 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
         }}
         break;
 
+    case eGetId_ForceAcc:
+        {{
+            const CSeq_id& best = GetId(id, scope, eGetId_Best);
+            if (best.GetTextseq_Id() != NULL  &&
+                best.GetTextseq_Id()->IsSetAccession()) {
+                return best;
+            }
+        }}
+        break;
+
     case eGetId_Best:
         {{
             CScope::TIds ids = scope.GetIds(id);
@@ -322,63 +332,40 @@ const CSeq_id& GetId(const CSeq_id_Handle& idh, CScope& scope,
 const CSeq_id& GetId(const CBioseq_Handle& handle,
                      EGetIdType type)
 {
-    switch (type) {
-    case eGetId_HandleDefault:
-        return *handle.GetSeqId();
+    _ASSERT(handle);
 
-    case eGetId_ForceGi:
-        if (handle.GetSeqId().GetPointer()  &&  handle.GetSeqId()->IsGi()) {
-            return *handle.GetSeqId();
-        }
-        {{
-            CConstRef<CSynonymsSet> syns =
-                handle.GetScope().GetSynonyms(*handle.GetSeqId());
-            if ( !syns ) {
-                string msg("No synonyms found for sequence ");
-                handle.GetSeqId()->GetLabel(&msg);
-                NCBI_THROW(CSeqIdFromHandleException, eNoSynonyms, msg);
-            }
-
-            ITERATE (CSynonymsSet, iter, *syns) {
-                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(iter);
-                if (idh.GetSeqId()->IsGi()) {
-                    return *idh.GetSeqId();
-                }
-            }
-        }}
-        break;
-
-    case eGetId_Best:
-        {{
-            CConstRef<CSynonymsSet> syns =
-                handle.GetScope().GetSynonyms(handle.GetSeq_id_Handle());
-            if ( !syns ) {
-                string msg("No synonyms found for sequence ");
-                handle.GetSeqId()->GetLabel(&msg);
-                NCBI_THROW(CSeqIdFromHandleException, eNoSynonyms, msg);
-            }
-
-            list< CRef<CSeq_id> > ids;
-            ITERATE (CSynonymsSet, iter, *syns) {
-                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(iter);
-                ids.push_back
-                    (CRef<CSeq_id>(const_cast<CSeq_id*>(idh.GetSeqId().GetPointer())));
-            }
-            CConstRef<CSeq_id> best_id = FindBestChoice(ids, CSeq_id::Score);
-            if (best_id) {
-                return *best_id;
-			}
-        }}
-        break;
-
-    default:
+    CConstRef<CSeq_id> id = handle.GetSeqId();
+    if (!id) {
         NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
-                   "Unhandled seq-id type");
-        break;
+                   "Unable to get Seq-id from handle");
     }
 
-    NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
-               "No best seq-id could be found");
+    return GetId(*id, handle.GetScope(), type);
+}
+
+
+int GetGiForAccession(const string& acc, CScope& scope)
+{
+    try {
+        return GetId(acc, scope, eGetId_ForceGi).GetGi();
+    } catch (CException& e) {
+         ERR_POST(Warning << e.what());
+    }
+
+    return 0;
+}
+
+
+string GetAccessionForGi(int gi, CScope& scope, bool with_version)
+{
+    try {
+        CSeq_id gi_id(CSeq_id::e_Gi, gi);
+        return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqIdString(with_version);
+    } catch (CException& e) {
+        ERR_POST(Warning << e.what());
+    }
+
+    return kEmptyStr;
 }
 
 
@@ -4908,6 +4895,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.100  2004/11/01 17:14:35  shomrat
+* + GetGiForAccession and GetAccessionForGi
+*
 * Revision 1.99  2004/10/26 14:18:18  grichenk
 * Added processing of multi-strand locations in TestForOverlap
 *

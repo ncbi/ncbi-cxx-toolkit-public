@@ -126,6 +126,12 @@ NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
+NCBI_XOBJUTIL_EXPORT
+int GetGiForAccession(const string& acc, CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+string GetAccessionForGi(int gi, CScope& scope, bool with_version = true);
+
 // Returns eNa_strand_unknown if multiple Bioseqs in loc
 // Returns eNa_strand_other if multiple strands in same loc
 // Returns eNa_strand_both if loc is a Whole
@@ -173,6 +179,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 /// CSynonymsSet internally to decide which seq-id should be used.
 enum EGetIdType {
     eGetId_ForceGi,         // return only a gi-based seq-id
+    eGetId_ForceAcc,        // return only an accession based seq-id
     eGetId_Best,            // return the "best" gi (uses FindBestScore(),
                             // with CSeq_id::CalculateScore() as the score
                             // function
@@ -734,6 +741,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2004/11/01 17:14:04  shomrat
+* + GetGiForAccession and GetAccessionForGi
+*
 * Revision 1.48  2004/10/14 20:29:50  ucko
 * Add a flag fGetTitle_AllProteins (off by default) that governs whether
 * to include all protein names or just the first, per recent changes to
