@@ -122,10 +122,12 @@ public:
     /// Get a pointer to raw sequence data.
     ///
     /// Get the raw sequence (strand data).  When done, resources
-    /// should be returned with RetSequence.  The sequence length is
-    /// returned by this method.  This data is in read-only memory
-    /// (where supported).
-    Uint4 GetSequence(TOID oid, const char ** buffer);
+    /// should be returned with RetSequence.  This data pointed to
+    /// by *buffer is in read-only memory (where supported).
+    /// @return
+    ///   In case of an error, -1 is returned; otherwise the return
+    ///   value is the sequence length (in base pairs or residues).
+    Int4 GetSequence(TOID oid, const char ** buffer);
     
     /// Returns any resources associated with the sequence.
     /// 
