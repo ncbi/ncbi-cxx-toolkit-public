@@ -53,7 +53,8 @@
  *  
  * I/O Socket (handle SOCK):
  *
- *  SOCK_Create[Ex] (see also LSOCK_Accept)
+ *  SOCK_Create[Ex]      (see also LSOCK_Accept)
+ *  SOCK_CreateOnTop[Ex]
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close
@@ -66,6 +67,7 @@
  *  SOCK_PushBack
  *  SOCK_Status
  *  SOCK_Write
+ *  SOCK_Abort
  *  SOCK_GetPeerAddress
  *
  *  SOCK_SetReadOnWriteAPI
@@ -73,6 +75,21 @@
  *  SOCK_SetInterruptOnSignalAPI
  *  SOCK_SetInterruptOnSignal
  *
+ * Datagram Socket:
+ *
+ *  DSOCK_Create[Ex]
+ *  DSOCK_Bind
+ *  DSOCK_Connect
+ *  DSOCK_WaitMsg
+ *  DSOCK_SendMsg
+ *  DSOCK_RecvMsg
+ *  DSOCK_WipeMsg
+ *  DSOCK_SetBroadcast
+ *
+ * Socket classification:
+ *
+ *  SOCK_IsDatagram
+ *  SOCK_IsClientSide
  *  SOCK_IsServerSide
  *
  * Data logging:
@@ -88,6 +105,8 @@
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
  *  SOCK_NetToHostLong
+ *  SOCK_gethostbyname
+ *  SOCK_gethostbyaddr
  *
  */
 
@@ -160,20 +179,20 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
  */
 
 
-/* By default ("log_data" == eDefault,eOff), the data is not logged.
- * To start logging the data, call this func with "log_data" == eOn.
- * To stop  logging the data, call this func with "log_data" == eOff.
+/* By default ("log" == eDefault, which is eOff), the data is not logged.
+ * To start logging the data, call this func with "log" == eOn.
+ * To stop  logging the data, call this func with "log" == eOff.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLoggingAPI(ESwitch log_data);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLoggingAPI(ESwitch log);
 
 
 /* Control the data logging for socket "sock" individually.
  * To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
- * call this function with "log_data" == eDefault.
+ * call this function with "log" == eDefault.
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLogging
 (SOCK    sock,
- ESwitch log_data
+ ESwitch log
  );
 
 
@@ -289,20 +308,22 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 /* [CLIENT-side]  Connect client to another(server-side, listening) socket
  * (socket() + connect() [+ select()])
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
-(const char*     host,    /* [in]  host to connect to                     */
- unsigned short  port,    /* [in]  port to connect to                     */
- const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
- SOCK*           sock,    /* [out] handle of the created socket           */
- ESwitch         do_log   /* [in]  whether to do logging on this socket   */
+/* SOCK_CreateEx(host, port, timeout, sock, 0, 0, eDefault) */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
+(const char*     host,    /* [in]  host to connect to                        */
+ unsigned short  port,    /* [in]  port to connect to                        */
+ const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL)    */
+ SOCK*           sock     /* [out] handle of the created socket              */
  );
 
-/* SOCK_CreateEx(host, port, timeout, sock, eDefault) */
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
-(const char*     host,    /* [in]  host to connect to                     */
- unsigned short  port,    /* [in]  port to connect to                     */
- const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
- SOCK*           sock     /* [out] handle of the created socket           */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
+(const char*     host,     /* [in]  host to connect to                       */
+ unsigned short  port,     /* [in]  port to connect to                       */
+ const STimeout* timeout,  /* [in]  the connect timeout (infinite if NULL)   */
+ SOCK*           sock,     /* [out] handle of the created socket             */
+ const void*     init_data,/* [in]  initial output data segment (may be NULL)*/
+ size_t          init_size,/* [in]  size of initial data segment (may be 0)  */
+ ESwitch         log       /* [in]  whether to do logging on this socket     */
  );
 
 
@@ -321,12 +342,22 @@ typedef enum {
     eSCOT_CloseOnClose    /* Do close "handle" on SOCK_Close() */
 } ESCOT_OnClose;
 
+/* SOCK_CreateOnTopEx(handle, handle_size, sock,
+                      0, 0, eDefault, eSCOT_CloseOnClose) */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
 (const void*   handle,      /* [in]  OS-dependent "handle" to be converted */
  size_t        handle_size, /* [in]  "handle" size                         */
+ SOCK*         sock         /* [out] SOCK built on top of OS "handle"      */
+ );
+
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
+(const void*   handle,      /* [in]  OS-dependent "handle" to be converted */
+ size_t        handle_size, /* [in]  "handle" size                         */
  SOCK*         sock,        /* [out] SOCK built on top of OS "handle"      */
- ESCOT_OnClose on_close,    /* [in]  if to keep "handle" in  SOCK_Close()  */
- ESwitch       do_log       /* [in]  data logging for the resulting SOCK   */
+ const void*   init_data,   /* [in]  initial output data segment (ok NULL) */
+ size_t        init_size,   /* [in]  size of initial data segment (ok 0)   */
+ ESwitch       log,         /* [in]  data logging for the resulting SOCK   */
+ ESCOT_OnClose on_close     /* [in]  if to keep "handle" in SOCK_Close()   */
  );
 
 
@@ -334,13 +365,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
  * it to another "host:port";  fail if it takes more than "timeout".
  * (close() + connect() [+ select()])
  *
- * HINT: if "host" is NULL then connect to the same host address as before;
- *       if "port" is zero then connect to the same port # as before.
+ * HINT:  if "host" is NULL then connect to the same host address as before;
+ *        if "port" is zero then connect to the same port # as before.
  *
- * [DATAGRAM]     Set default host:port destination (or no destination in
- *                case of NULL parameters.
- *
- * NOTE: "new" socket inherits the old i/o timeouts,
+ * NOTE1: "new" socket inherits the old i/o timeouts.
+ * NOTE2: the call is applicable to stream [not datagram] sockets only.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
 (SOCK            sock,    /* [in] handle of the socket to reconnect      */
@@ -353,6 +382,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
 /* Shutdown the connection in only one direction (specified by "direction").
  * Later attempts to I/O (or to wait) in the shutdown direction will
  * do nothing, and immediately return with "eIO_Closed" status.
+ * Pending data output can cause data transfer to the remote end (subject
+ * for eIO_Close timeout as previously set by SOCK_SetTimeout()).
  * Cannot be applied to datagram sockets (eIO_InvalidArg results).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
@@ -364,8 +395,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
 /* Close the connection, destroy relevant internal data.
  * The "sock" handle goes invalid after this function call, regardless
  * of whether the call was successful or not.
- * NOTE: if eIO_Close timeout was specified then it blocks until
- *       either all unsent data are sent or the timeout expires.
+ * NOTE1:  if eIO_Close timeout was specified (or NULL) then it blocks until
+ *         either all unsent data are sent, error flagged, or the timeout
+ *         expires.
+ * NOTE2:  if there is output pending, that output will be flushed.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
 
@@ -421,7 +454,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
 
 /* Specify timeout for the connection i/o (see SOCK_[Read|Write|Close] funcs).
  * If "timeout" is NULL then set the timeout to be infinite;
- * NOTE: the default timeout is infinite (wait "ad infinitum" on i/o).
+ * NOTE: the default timeout is infinite (wait "ad infinitum" on I/O).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
 (SOCK            sock,
@@ -522,6 +555,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
  );
 
 
+/* If there is outstanding connection or output data pending, cancel it.
+ * Mark the socket as been shut down for both reading and writing.
+ * Do not attempt to send anything upon SOCK_Close().
+ * This call is applicable to stream sockets only.
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
+(SOCK sock                  /* [in]  data to write to the socket             */
+ );
+
+
 /* Get host and port of the socket's peer.
  * If "network_byte_order" is true(non-zero) then return the host/port in the
  * network byte order; otherwise return them in the local host byte order.
@@ -593,7 +636,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWrite
  *  and optionally can return the initial datagram fragment via provided
  *  buffer [this initial fragment is then stripped from what remains unread
  *  in the internal buffer]. Optimized version can supply a maximal message
- *  size (if known in advance), or 0 to get a message of any allowable size.
+ *  size (if known in advance), or 0 to get a message of any allowed size.
  *  The actual size of the received message can be obtained via a
  *  pointer-type argument 'msgsize'. The message kept in the internal buffer
  *  can be read out in several SOCK_Read() calls, last returning eIO_Closed,
@@ -607,23 +650,27 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWrite
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
-(unsigned short  port,                  /* [in]  may be 0 for unbound        */
- SOCK*           sock                   /* [out] socket created              */
+(SOCK*           sock                   /* [out] socket created              */
  );
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
-(unsigned short  port,                  /* [in]  may be 0 for unbound        */
- SOCK*           sock,                  /* [out] socket created              */
- ESwitch         do_log                 /* [in]  whether to log data activity*/
+(SOCK*           sock,                  /* [out] socket created              */
+ ESwitch         log                    /* [in]  whether to log data activity*/
  );
 
 
-/* DSOCK_Connect() establishes default destination for all messages that
- * are sent using default (0) arguments for host/port in DSOCK_SendMsg().
- * DSOCK_Connect() does not restrict the origin of the incoming messages.
- */
-#define DSOCK_Connect(s, h, p) SOCK_Reconnect(s, h, p, 0)
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ unsigned short  port                   /* [in]  port to bind to (!=0)       */
+ );
+
+
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ const char*     host,                  /* [in]  peer host                   */
+ unsigned short  port                   /* [in]  peer port                   */
+ );
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
@@ -670,6 +717,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
  */
 
 
+/* Return non-zero value if socket "sock" was created by DSOCK_Create[Ex]().
+ * Return zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsDatagram(SOCK sock);
+
+
 /* Return non-zero value if socket "sock" was created by SOCK_Create[Ex]().
  * Return zero otherwise.
  */
@@ -680,12 +733,6 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsClientSide(SOCK sock);
  * Return zero otherwise.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsServerSide(SOCK sock);
-
-
-/* Return non-zero value if socket "sock" was created by DSOCK_Create[Ex]().
- * Return zero otherwise.
- */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsDatagram(SOCK sock);
 
 
 
@@ -769,6 +816,10 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2003/05/14 03:46:15  lavr
+ * Revised API to include {0,0} connect timeouts, initial data block
+ * Revised datagram socket API
+ *
  * Revision 6.35  2003/04/30 16:59:05  lavr
  * Added notice about how datagram API is supposed to work
  *
