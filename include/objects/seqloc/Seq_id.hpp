@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2001/04/17 04:13:03  vakatov
+ * Utilize the redesigned "CSerializable" base class.
+ * Completely get rid of the non-standard "AsFastaString()" method in
+ * favor of more standard "DumpAsFasta()" one.
+ *
  * Revision 1.7  2001/04/16 16:55:19  kholodov
  * Modified: Added implementation for the ISerializable interface.
  *
@@ -57,7 +62,6 @@
  * Revision 1.1  2000/11/21 18:58:12  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
- *
  * ===========================================================================
  */
 
@@ -78,7 +82,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CBioseq;
 class CAbstractObjectManager;
 
-class CSeq_id : public CSeq_id_Base, public ISerializable
+
+class CSeq_id : public CSeq_id_Base, public CSerializable
 {
     typedef CSeq_id_Base Tparent;
 public:
@@ -101,10 +106,6 @@ public:
     // return compatible CTextseq_id
     const CTextseq_id* GetTextseq_Id(void) const;
 
-    // SeqId string functions
-    // format one SeqId with vertical bar delimiters
-    ostream& AsFastaString(ostream& s) const;
-
     // setup object manager
     void SetObjectManager(const CRef<CAbstractObjectManager>& objMgr);
     void ResetObjectManager(const CRef<CAbstractObjectManager>& objMgr);
@@ -112,23 +113,12 @@ public:
     // use object manager to resolve sequence
     CConstRef<CBioseq> Resolve(void) const;
 
-  // Implement serializable interface
-  virtual EOutputType GetOutputType() {
-    return m_OutputType;
-  }
-
-  virtual void WriteAsFasta(ostream& out) {
-    AsFastaString(out);
-  }
-
-  ISerializable& DumpAsFasta() {
-    m_OutputType = eAsFasta;
-    return *this;
-  }
+    // Implement serializable interface
+    virtual void WriteAsFasta(ostream& out) const;
+    const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
 
 private:
     CRef<CAbstractObjectManager> m_ObjectManager;
-    EOutputType m_OutputType;
 };
 
 
@@ -141,6 +131,7 @@ bool CSeq_id::Match (const CSeq_id& sid2) const
 {
     return Compare(sid2) == e_YES;
 }
+
 
 /////////////////// end of CSeq_id inline methods
 
