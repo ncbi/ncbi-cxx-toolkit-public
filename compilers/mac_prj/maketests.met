@@ -226,6 +226,7 @@ on SetProjectData()
 
 	AddProject(DataPlusLibs(SimpleProjectData("objmgr_demo", "objects:objmgr:demo",	{"C++", "sockets"}), objMgrLibs))
 	AddProject(DataPlusLibs(ComplexProjectData("testobjmgr1", "objects:objmgr:test", {"C++", "sockets"}, {"testobjmgr1", "test_helper"}), objMgrLibs))
+	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objects:objmgr:test", {"C++", "sockets"}, {"test_validator"}), objMgrLibs))
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("reader_id1_test", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"reader_id1_test"}))
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_objmgr1_gbloader", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"test_objmgr1_gbloader"}))
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_objmgr1_basic", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"test_objmgr1_basic"}))
