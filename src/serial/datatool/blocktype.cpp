@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/02/09 14:33:25  gouriano
+* Corrected formatting when writing DTD
+*
 * Revision 1.54  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -370,9 +373,17 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
                     continue;
                 }
                 if (member.Notag()) {
-                    out << "(";
+                    const CStaticDataType* statType = 
+                        dynamic_cast<const CStaticDataType*>(member.GetType());
+                    if (!statType) {
+                        out << "(";
+                    } else {
+                        out << "\n        ";
+                    }
                     member.GetType()->PrintDTDElement(out,true);
-                    out << ")";
+                    if (!statType) {
+                        out << ")";
+                    }
                 } else {
                     out << "\n        " << member_name;
                 }
@@ -898,11 +909,14 @@ CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
 
 {
     if ( m_Name.empty() ) {
+        m_Notag = true;
+/*
         string loc("Invalid identifier name in ASN.1 specification");
         if (type) {
             loc += " (line " + NStr::IntToString(type->GetSourceLine()) + ")";
         }
         NCBI_THROW(CDatatoolException,eInvalidData, loc);
+*/
     }
     m_Type->SetDataMember(this);
 }

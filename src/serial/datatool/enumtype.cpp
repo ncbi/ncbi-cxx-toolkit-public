@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/02/09 14:33:57  gouriano
+* Corrected formatting when writing DTD
+*
 * Revision 1.28  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -227,9 +230,9 @@ void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
         out <<
             "\n<!ELEMENT " << tag << " ";
         if ( IsInteger() )
-            out << "( %INTEGER; )>";
+            out << "(%INTEGER;)>";
         else
-            out << "%ENUM; >";
+            out << "%ENUM;>";
     }
 }
 

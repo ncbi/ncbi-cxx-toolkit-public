@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/02/09 14:35:20  gouriano
+* Corrected formatting when writing DTD
+*
 * Revision 1.37  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -220,11 +223,11 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) con
             close.erase();
         }
         if (!contents_only) {
-            out << "\n<!ELEMENT " << tag << ' ';
+            out << "\n<!ELEMENT " << tag << ' ' << open;
         }
-        out << open << content << close;
+        out << content;
         if (!contents_only) {
-            out << ">";
+            out << close << ">";
         }
     }
 }
@@ -336,7 +339,7 @@ const char* CBoolDataType::GetASNKeyword(void) const
 
 const char* CBoolDataType::GetXMLContents(void) const
 {
-    return "%BOOLEAN; ";
+    return "%BOOLEAN;";
 }
 
 void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const

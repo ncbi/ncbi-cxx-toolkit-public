@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/02/09 14:35:50  gouriano
+* Corrected formatting when writing DTD
+*
 * Revision 1.34  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -217,8 +220,9 @@ void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only
             out << "\n<!ELEMENT " << tag << ' ';
         }
         if (typeStatic) {
+            out << '(';
             typeStatic->PrintDTDElement(out, true);
-            out << ">";
+            out << ")>";
         } else {
             if (!GetParentType()) {
                 out << '(';
@@ -403,7 +407,8 @@ const char* CUniSetDataType::GetASNKeyword(void) const
 
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 {
-    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateSetTypeInfo(GetElementType()->GetTypeInfo().Get()));
+    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateSetTypeInfo(
+        GetElementType()->GetTypeInfo().Get(), GlobalName()));
 }
 
 AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
