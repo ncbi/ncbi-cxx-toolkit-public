@@ -31,10 +31,14 @@
  * File Description:
  *   NCBI C++ diagnostic API
  *
+ *   More elaborate documentation could be found in:
+ *   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
+ *          programming_manual/diag.html
  */
 
 #include <corelib/ncbistre.hpp>
 #include <list>
+#include <map>
 #include <stdexcept>
 
 
@@ -65,10 +69,12 @@ enum EDiagSev {
     eDiag_Fatal,   // guarantees to exit(or abort)
     eDiag_Trace
 };
+const EDiagSev kDiagSevMax = eDiag_Trace;
+
 
 // Severity level change state
 enum EDiagSevChange {
-    eDiagSC_Unknown,  // Status of changing severity level is unknown (first call)
+    eDiagSC_Unknown,  // Status of changing severity is unknown (first call)
     eDiagSC_Disable,  // Disable change severity level 
     eDiagSC_Enable    // Enable change severity level 
 };
@@ -77,31 +83,37 @@ enum EDiagSevChange {
 // Which parts of the diagnostic context should be posted, and which are not...
 // The generic appearance of the posted message is as follows:
 //   "<file>", line <line>: <severity>: (<err_code>.<err_subcode>)
-//    [<prefix1>::<prefix2>::<prefixN>] <message>
+//    [<prefix1>::<prefix2>::<prefixN>] <message>\n
+//    <err_code_message>\n
+//    <err_code_explanation>
 //
 // e.g. if all flags are set, and prefix string is set to "My prefix", and
 // ERR_POST(eDiag_Warning, "Take care!"):
 //   "/home/iam/myfile.cpp", line 33: Warning: (2.11) [aa::bb::cc] Take care!
+//
 // See also SDiagMessage::Compose().
 enum EDiagPostFlag {
-    eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
-    eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
-    eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
-    eDPF_Prefix       = 0x8,  // set by default (always)
-    eDPF_Severity     = 0x10, // set by default (always)
-    eDPF_ErrCode      = 0x20, // set by default (always)
-    eDPF_ErrSubCode   = 0x40, // set by default (always)
-    eDPF_DateTime     = 0x80,
-    eDPF_OmitInfoSev  = 0x4000,// no severity indication if eDiag_Info is sev.
-
+    eDPF_File               = 0x1,   // set by default #if _DEBUG; else not set
+    eDPF_LongFilename       = 0x2,   // set by default #if _DEBUG; else not set
+    eDPF_Line               = 0x4,   // set by default #if _DEBUG; else not set
+    eDPF_Prefix             = 0x8,   // set by default (always)
+    eDPF_Severity           = 0x10,  // set by default (always)
+    eDPF_ErrCode            = 0x20,  // set by default (always)
+    eDPF_ErrSubCode         = 0x40,  // set by default (always)
+    eDPF_ErrCodeMessage     = 0x100, // set by default (always)
+    eDPF_ErrCodeExplanation = 0x200, // set by default (always)
+    eDPF_ErrCodeUseSeverity = 0x400, // set by default (always)
+    eDPF_DateTime           = 0x80,  //
+    eDPF_OmitInfoSev        = 0x4000,// no severity indication if eDiag_Info 
+                                     // is sev.
     // set all flags
-    eDPF_All          = 0x3FFF,
+    eDPF_All                = 0x3FFF,
     // set all flags for using with __FILE__ and __LINE__
-    eDPF_Trace        = 0x1F,
+    eDPF_Trace              = 0x1F,
     // print the posted message only;  without severity, location, prefix, etc.
-    eDPF_Log          = 0x0,
+    eDPF_Log                = 0x0,
     // ignore all other flags, use global flags
-    eDPF_Default      = 0x8000
+    eDPF_Default            = 0x8000
 };
 
 typedef int TDiagPostFlags;  // binary OR of "EDiagPostFlag"
@@ -109,7 +121,23 @@ typedef int TDiagPostFlags;  // binary OR of "EDiagPostFlag"
 
 // Forward declaration of some classes
 class CDiagBuffer;
-class ErrCode;
+class CDiagErrCodeInfo;
+
+
+
+///////////////////////////////////////////////////////
+//  ErrCode - class for manipulator ErrCode
+
+class ErrCode
+{
+public:
+    ErrCode(int code, int subcode = 0)
+        : m_Code(code), m_SubCode(subcode)
+    { }
+    int m_Code;
+    int m_SubCode;
+};
+
 
 
 //////////////////////////////////////////////////////////////////
@@ -280,16 +308,16 @@ struct SDiagMessage {
                  int err_code = 0, int err_subcode = 0,
                  const char* err_text = 0);
 
-    EDiagSev       m_Severity;
-    const char*    m_Buffer;  // not guaranteed to be '\0'-terminated!
-    size_t         m_BufferLen;
-    const char*    m_File;
-    size_t         m_Line;
-    int            m_ErrCode;
-    int            m_ErrSubCode;
-    TDiagPostFlags m_Flags;   // bitwise OR of "EDiagPostFlag"
-    const char*    m_Prefix;
-    const char*    m_ErrText; // sometimes 'error' has no numeric code,
+    mutable EDiagSev m_Severity;
+    const char*      m_Buffer;  // not guaranteed to be '\0'-terminated!
+    size_t           m_BufferLen;
+    const char*      m_File;
+    size_t           m_Line;
+    int              m_ErrCode;
+    int              m_ErrSubCode;
+    TDiagPostFlags   m_Flags;   // bitwise OR of "EDiagPostFlag"
+    const char*      m_Prefix;
+    const char*      m_ErrText; // sometimes 'error' has no numeric code,
                               // still it can be represented as text
 
     // Compose a message string in the standard format(see also "flags"):
@@ -381,33 +409,127 @@ private:
     void  operator delete   (void*)   { throw runtime_error("forbidden"); }
     void  operator delete[] (void*)   { throw runtime_error("forbidden"); }
 
-    string         m_PostPrefix;
-    list<string>   m_PrefixList;
-    TDiagPostFlags m_PostFlags;
-    EDiagSev       m_PostSeverity;
-    EDiagSevChange m_PostSeverityChange;
-    EDiagSev       m_DieSeverity;
-    EDiagTrace     m_TraceDefault;
-    bool           m_TraceEnabled;
-    CDiagHandler*  m_Handler;
-    bool           m_CanDeleteHandler;
+    string            m_PostPrefix;
+    list<string>      m_PrefixList;
+    TDiagPostFlags    m_PostFlags;
+    EDiagSev          m_PostSeverity;
+    EDiagSevChange    m_PostSeverityChange;
+    EDiagSev          m_DieSeverity;
+    EDiagTrace        m_TraceDefault;
+    bool              m_TraceEnabled;
+    CDiagHandler*     m_Handler;
+    bool              m_CanDeleteHandler;
+    CDiagErrCodeInfo* m_ErrCodeInfo;
+    bool              m_CanDeleteErrCodeInfo;
 };
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CDiagErrCodeInfo class
+//
+// Auxilary class for CNcbiDiag. Using for read error messages from message 
+// file and explain error on base the error code and subcode.
+
+
+// Structure using for store the errors code and subcode description.
+struct SDiagErrCodeDescription {
+    SDiagErrCodeDescription(void);
+    SDiagErrCodeDescription(const string& message,
+                            const string& explanation,
+                            int           severity = -1/*do not override*/)
+        : m_Message(message),
+          m_Explanation(explanation),
+          m_Severity(severity)
+    {
+        return;
+    }
+
+public:
+    string m_Message;     // Error message (short)
+    string m_Explanation; // Error message (with detailed explanation)
+    int    m_Severity;    // Message severity (if less that 0, then use 
+                          // current diagnostic severity level)
+};
+
+
+class CDiagErrCodeInfo
+{
+public:
+    // Constructors
+    CDiagErrCodeInfo(void);
+    CDiagErrCodeInfo(const string& file_name);  // can throw runtime_error
+    CDiagErrCodeInfo(CNcbiIstream& is);         // can throw runtime_error
+
+    // Destructor
+    ~CDiagErrCodeInfo(void);
+
+    // Read error descriptions from the specified file/stream,
+    // store it in memory.
+    bool Read(const string& file_name);
+    bool Read(CNcbiIstream& is);
+    
+    // Delete all stored descriptions from memory
+    void Clear(void);
+
+    // Get description message for the error by its code.
+    // Return TRUE if error description exists for this code;
+    // return FALSE otherwise.
+    bool GetDescription(const ErrCode&           err_code, 
+                        SDiagErrCodeDescription* description) const;
+
+    // Set error description for specified error code.
+    // If description for this code already exist, then it will be overwritten.
+    void SetDescription(const ErrCode&                 err_code, 
+                        const SDiagErrCodeDescription& description);
+
+    // Return TRUE if description for specified error code exists, 
+    // otherwise return FALSE.
+    bool HaveDescription(const ErrCode& err_code) const;
+
+private:
+    // Map for error messages
+    typedef map<ErrCode, SDiagErrCodeDescription> TInfo;
+    TInfo m_Info;
+};
+
+
+// Set/get handler for processing error codes. 
+// By default this handler is unset. 
+// NcbiApplication can init it self only if registry key DIAG_MESSAGE_FILE
+// section DEBUG) has specified. The value of this key should be a hame 
+// of the file with error codes explanations.
+// About message file format see documentation.
+
+#define DIAG_MESSAGE_FILE "MessageFile"
+
+extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info,
+                               bool              can_delete = true);
+
+extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership = false);
 
 
 
 ///////////////////////////////////////////////////////
 // All inline function implementations and internal data
 // types, etc. are in this file
+
 #include <corelib/ncbidiag.inl>
 
 
 END_NCBI_SCOPE
 
 
+
+
 /*
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.48  2002/08/01 18:48:07  ivanov
+ * Added stuff to store and output error verbose messages for error codes
+ *
  * Revision 1.47  2002/07/15 18:17:50  gouriano
  * renamed CNcbiException and its descendents
  *

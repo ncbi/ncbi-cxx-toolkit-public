@@ -54,6 +54,8 @@ class CDiagBuffer
     CDiagBuffer& operator= (const CDiagBuffer&);
 
     friend CDiagBuffer& GetDiagBuffer(void);
+
+    // Flags
     friend bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags);
     friend TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
     friend void SetDiagPostFlag(EDiagPostFlag flag);
@@ -62,20 +64,31 @@ class CDiagBuffer
     friend void PushDiagPostPrefix(const char* prefix);
     friend void PopDiagPostPrefix();
 
+    //
     friend class CNcbiDiag;
     friend const CNcbiDiag& Reset(const CNcbiDiag& diag);
     friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
 
+    // Severity
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
     friend void SetDiagFixedPostLevel(const EDiagSev post_sev);
     friend bool DisableDiagPostLevelChange(bool disable_change);
-
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
+
+    // Others
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
+    friend bool IsDiagStream(const CNcbiOstream* os);
+
+    // Handler
     friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
     friend CDiagHandler* GetDiagHandler(bool take_ownership);
-    friend bool IsDiagStream(const CNcbiOstream* os);
     friend bool IsSetDiagHandler(void);
+
+    // Error code information
+    friend void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete);
+    friend CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership);
+    friend bool IsSetDiagErrCodeInfo(void);
+
 private:
     friend class CDiagRestorer;
 
@@ -107,7 +120,7 @@ private:
     }
 
     void Flush  (void);
-    void Reset  (const CNcbiDiag& diag);   // reset content of the diag. message
+    void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
     void EndMess(const CNcbiDiag& diag);   // output current diag. message
     bool SetDiag(const CNcbiDiag& diag);
 
@@ -143,6 +156,10 @@ private:
     // Application-wide diagnostic handler
     static CDiagHandler* sm_Handler;
     static bool          sm_CanDeleteHandler;
+
+    // Error codes info
+    static CDiagErrCodeInfo* sm_ErrCodeInfo;
+    static bool          sm_CanDeleteErrCodeInfo;
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
@@ -200,20 +217,19 @@ const char* CNcbiDiag::SeverityName(EDiagSev sev) {
 ///////////////////////////////////////////////////////
 //  ErrCode - class for manipulator ErrCode
 
-class ErrCode
-{
-public:
-    ErrCode(int code, int subcode = 0)
-        : m_Code(code), m_SubCode(subcode)
-    { }
-    int m_Code;
-    int m_SubCode;
-};
-
 inline
 const CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code) const
 {
     return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
+}
+
+
+inline
+bool operator< (const ErrCode& ec1, const ErrCode& ec2)
+{
+    return (ec1.m_Code == ec2.m_Code)
+        ? (ec1.m_SubCode < ec2.m_SubCode)
+        : (ec1.m_Code < ec2.m_Code);
 }
 
 
@@ -336,9 +352,77 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
 }
 
 
+
+///////////////////////////////////////////////////////
+//  CDiagErrCodeInfo::
+
+
+inline
+CDiagErrCodeInfo::CDiagErrCodeInfo(void)
+{
+    return;
+}
+
+
+inline
+CDiagErrCodeInfo::CDiagErrCodeInfo(const string& file_name)
+{
+    if ( !Read(file_name) ) {
+        throw runtime_error
+            ("CDiagErrCodeInfo::  failed to read error descriptions from file "
+             + file_name);
+    }
+}
+
+
+inline
+CDiagErrCodeInfo::CDiagErrCodeInfo(CNcbiIstream& is)
+{
+    if ( !Read(is) ) {
+        throw runtime_error
+            ("CDiagErrCodeInfo::  failed to read error descriptions");
+    }
+}
+
+
+inline
+CDiagErrCodeInfo::~CDiagErrCodeInfo(void)
+{
+    Clear();
+}
+
+
+inline
+void CDiagErrCodeInfo::Clear(void)
+{
+    m_Info.clear();
+}
+
+
+inline
+void CDiagErrCodeInfo::SetDescription
+(const ErrCode&                 err_code, 
+ const SDiagErrCodeDescription& description)
+{
+    m_Info[err_code] = description;
+}
+
+
+inline
+bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
+{
+    return m_Info.find(err_code) != m_Info.end();
+}
+
+
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2002/08/01 18:48:08  ivanov
+ * Added stuff to store and output error verbose messages for error codes
+ *
  * Revision 1.33  2002/07/10 16:18:43  ivanov
  * Added CNcbiDiag::StrToSeverityLevel().
  * Rewrite and rename SetDiagFixedStrPostLevel() -> SetDiagFixedPostLevel()

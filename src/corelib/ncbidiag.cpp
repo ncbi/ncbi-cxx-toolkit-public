@@ -82,6 +82,7 @@ public:
     ~CDiagRecycler(void)
     {
         SetDiagHandler(0, false);
+        SetDiagErrCodeInfo(0, false);
     }
 };
 
@@ -101,7 +102,8 @@ EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
                                                   // to be set on first request
 
 TDiagPostFlags CDiagBuffer::sm_PostFlags          =
-    eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
+    eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode | 
+    eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation | eDPF_ErrCodeUseSeverity;
 
 EDiagSev       CDiagBuffer::sm_DieSeverity        = eDiag_Fatal;
 
@@ -114,9 +116,11 @@ const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
 
 // Use s_DefaultHandler only for purposes of comparison, as installing
 // another handler will normally delete it.
-CDiagHandler* s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr);
-CDiagHandler* CDiagBuffer::sm_Handler = s_DefaultHandler;
-bool          CDiagBuffer::sm_CanDeleteHandler = true;
+CDiagHandler*      s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr);
+CDiagHandler*      CDiagBuffer::sm_Handler = s_DefaultHandler;
+bool               CDiagBuffer::sm_CanDeleteHandler = true;
+CDiagErrCodeInfo*  CDiagBuffer::sm_ErrCodeInfo = 0;
+bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
 
 CDiagBuffer::CDiagBuffer(void)
@@ -310,6 +314,26 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
     if (print_file  ||  print_line)
         os << ": ";
 
+    // Get error code description
+    bool have_description = false;
+    SDiagErrCodeDescription description;
+    if ((m_ErrCode  ||  m_ErrSubCode)  &&
+        (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags)  || 
+         IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags)  ||
+         IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags))  &&
+         IsSetDiagErrCodeInfo()) {
+
+        CDiagErrCodeInfo* info = GetDiagErrCodeInfo();
+        if ( info  && 
+             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode), 
+                                  &description) ) {
+            have_description = true;
+            if (IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags) && 
+                description.m_Severity != -1 )
+                m_Severity = (EDiagSev)description.m_Severity;
+        }
+    }
+
     // <severity>:
     if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
         (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
@@ -335,8 +359,18 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
         os << '[' << m_Prefix << "] ";
 
     // <message>
-    if ( m_BufferLen )
+    if (m_BufferLen)
         os.write(m_Buffer, m_BufferLen);
+
+    // <err_code_message> and <err_code_explanation>
+    if (have_description) {
+        if (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
+            !description.m_Message.empty())
+            os << NcbiEndl << description.m_Message << " ";
+        if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
+            !description.m_Explanation.empty())
+            os << NcbiEndl << description.m_Explanation;
+    }
 
     // Endl
     os << NcbiEndl;
@@ -544,6 +578,30 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 }
 
 
+extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    if ( CDiagBuffer::sm_CanDeleteErrCodeInfo )
+        delete CDiagBuffer::sm_ErrCodeInfo;
+    CDiagBuffer::sm_ErrCodeInfo = info;
+    CDiagBuffer::sm_CanDeleteErrCodeInfo = can_delete;
+}
+
+extern bool IsSetDiagErrCodeInfo(void)
+{
+    return (CDiagBuffer::sm_ErrCodeInfo != 0);
+}
+
+extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    if (take_ownership) {
+        _ASSERT(CDiagBuffer::sm_CanDeleteErrCodeInfo);
+        CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
+    }
+    return CDiagBuffer::sm_ErrCodeInfo;
+}
+
 
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
@@ -626,8 +684,10 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     // Digital value
     int nsev = NStr::StringToNumeric(str_sev);
 
-    // String value
-    if ( nsev == -1 ) {
+    if (nsev > kDiagSevMax) {
+        nsev = kDiagSevMax;
+    } else if ( nsev == -1 ) {
+        // String value
         for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
             if (NStr::CompareNocase(str_sev, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
                 nsev = s;
@@ -637,7 +697,7 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     }
     sev = (EDiagSev)nsev;
     // Unknown value
-    return sev >= eDiag_Info  && sev <= eDiag_Trace;
+    return sev >= 0  && sev <= kDiagSevMax;
 }
 
 
@@ -658,7 +718,11 @@ CDiagRestorer::CDiagRestorer(void)
     m_TraceEnabled          = buf.sm_TraceEnabled;
     m_Handler               = buf.sm_Handler;
     m_CanDeleteHandler      = buf.sm_CanDeleteHandler;
-    buf.sm_CanDeleteHandler = false; // avoid premature cleanup
+    m_ErrCodeInfo           = buf.sm_ErrCodeInfo;
+    m_CanDeleteErrCodeInfo  = buf.sm_CanDeleteErrCodeInfo;
+    // avoid premature cleanup
+    buf.sm_CanDeleteHandler = false;
+    buf.sm_CanDeleteErrCodeInfo = false;
 }
 
 CDiagRestorer::~CDiagRestorer(void)
@@ -676,6 +740,7 @@ CDiagRestorer::~CDiagRestorer(void)
         buf.sm_TraceEnabled       = m_TraceEnabled;
     }}
     SetDiagHandler(m_Handler, m_CanDeleteHandler);
+    SetDiagErrCodeInfo(m_ErrCodeInfo, m_CanDeleteErrCodeInfo);
 }
 
 
@@ -775,6 +840,171 @@ extern void Abort(void)
 }
 
 
+///////////////////////////////////////////////////////
+//  CDiagErrCodeInfo::
+//
+
+SDiagErrCodeDescription::SDiagErrCodeDescription(void)
+        : m_Message(kEmptyStr),
+          m_Explanation(kEmptyStr),
+          m_Severity(-1)
+{
+    return;
+}
+
+
+bool CDiagErrCodeInfo::Read(const string& file_name)
+{
+    CNcbiIfstream is(file_name.c_str());
+    if ( !is.good() ) {
+        return false;
+    }
+    return Read(is);
+}
+
+
+// Parse string for CDiagErrCodeInfo::Read()
+
+bool s_ParseErrCodeInfoStr(string&          str,
+                           const SIZE_TYPE  line,
+                           int&             x_code,
+                           int&             x_severity,
+                           string&          x_message,
+                           bool&            x_ready)
+{
+    list<string> tokens;    // List with line tokens
+
+    try {
+        // Get message text
+        SIZE_TYPE pos = str.find_first_of(':');
+        if (pos == NPOS) {
+            x_message = kEmptyStr;
+        } else {
+            x_message = NStr::TruncateSpaces(str.substr(pos+1));
+            str.erase(pos);
+        }
+
+        // Split string on parts
+        NStr::Split(str, ",", tokens);
+        if (tokens.size() < 2) {
+            ERR_POST("Error message file parsing: Incorrect file format " \
+                     ", line " + NStr::IntToString(line));
+            return false;
+        }
+        // Mnemonic name (skip)
+        tokens.pop_front();
+
+        // Error code
+        string token = NStr::TruncateSpaces(tokens.front());
+        tokens.pop_front();
+        x_code = NStr::StringToInt(token);
+
+        // Severity
+        if (!tokens.empty()) { 
+            token = NStr::TruncateSpaces(tokens.front());
+            EDiagSev sev;
+            if (CNcbiDiag::StrToSeverityLevel(token.c_str(), sev)) {
+                x_severity = sev;
+            } else {
+                ERR_POST(Warning << "Error message file parsing: " \
+                         "Incorrect severity level in the verbose " \
+                         "message file, line " + NStr::IntToString(line));
+            }
+        } else {
+            x_severity = -1;
+        }
+    }
+    catch (CException& e) {
+        ERR_POST(Warning << "Error message file parsing: " << e.GetMsg() <<
+                 ", line " + NStr::IntToString(line));
+        return false;
+    }
+    x_ready = true;
+    return true;
+}
+
+  
+bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
+{
+    string       str;                      // The line being parsed
+    SIZE_TYPE    line;                     // # of the line being parsed
+    bool         err_ready       = false;  // Error data ready flag 
+    int          err_code        = 0;      // First level error code
+    int          err_subcode     = 0;      // Second level error code
+    string       err_message;              // Short message
+    string       err_text;                 // Error explanation
+    int          err_severity    = -1;     // Use default severity if  
+                                           // has not specified
+    int          err_subseverity = -1;     // Use parents severity if  
+                                           // has not specified
+
+    for (line = 1;  NcbiGetlineEOL(is, str);  line++) {
+        
+        // This is a comment or empty line
+        if (!str.length()  ||  NStr::StartsWith(str,"#")) {
+            continue;
+        }
+        // Add error description
+        if (err_ready  &&  str[0] == '$') {
+            if (err_subseverity == -1)
+                err_subseverity = err_severity;
+            SetDescription(ErrCode(err_code, err_subcode), 
+                SDiagErrCodeDescription(err_message, err_text,
+                                        err_subseverity));
+            // Clean
+            err_subseverity = -1;
+            err_text     = kEmptyStr;
+            err_ready    = false;
+        }
+
+        // Get error code
+        if (NStr::StartsWith(str,"$$")) {
+            if (!s_ParseErrCodeInfoStr(str, line, err_code, err_severity, 
+                                       err_message, err_ready))
+                continue;
+            err_subcode = 0;
+        
+        } else if (NStr::StartsWith(str,"$^")) {
+        // Get error subcode
+            s_ParseErrCodeInfoStr(str, line, err_subcode, err_subseverity,
+                                  err_message, err_ready);
+      
+        } else if (err_ready) {
+        // Get line of explanation message
+            if (!err_text.empty()) {
+                err_text += "\n";
+            }
+            err_text += str;
+        }
+    }
+    if (err_ready) {
+        if (err_subseverity == -1)
+            err_subseverity = err_severity;
+        SetDescription(ErrCode(err_code, err_subcode), 
+            SDiagErrCodeDescription(err_message, err_text,
+                                    err_subseverity));
+    }
+    return true;
+}
+
+
+bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code, 
+                      SDiagErrCodeDescription* description) const
+{
+    // Find entry
+    TInfo::const_iterator find_entry = m_Info.find(err_code);
+    if (find_entry == m_Info.end()) {
+        return false;
+    }
+    // Get entry value
+    const SDiagErrCodeDescription& entry = find_entry->second;
+    if (description) {
+        *description = entry;
+    }
+    return true;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -782,6 +1012,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.63  2002/08/01 18:47:43  ivanov
+ * Added stuff to store and output error verbose messages for error codes
+ *
  * Revision 1.62  2002/07/25 15:46:08  ivanov
  * Rollback R1.60
  *
