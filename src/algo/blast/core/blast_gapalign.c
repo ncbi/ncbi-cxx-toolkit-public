@@ -2968,7 +2968,6 @@ Blast_GappedScorePrelimTest(EBlastProgramType program_number,
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
         const BlastScoringParameters* score_params,
-        const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,
         BlastGappedStats* gapped_stats)
@@ -2981,13 +2980,11 @@ Blast_GappedScorePrelimTest(EBlastProgramType program_number,
     Int4 context;
     Int4 **orig_pssm;
     Boolean further_process = FALSE;
-    Int4 gap_trigger;
     Int4 cutoff_score;
     Boolean is_prot;
     Int4 max_offset;
     Int2 status = 0;
     
-    gap_trigger = ext_params->gap_trigger;
     cutoff_score = hit_params->cutoff_score;
     is_prot = (program_number != eBlastTypeBlastn);
     orig_pssm = gap_align->sbp->posMatrix;
@@ -3009,10 +3006,6 @@ Blast_GappedScorePrelimTest(EBlastProgramType program_number,
         init_hsp_tmp.ungapped_data = NULL;
         for (index=0; index<init_hsp_count; index++) {
             init_hsp = &init_hsp_array[index];
-
-            if (init_hsp->ungapped_data && 
-                init_hsp->ungapped_data->score < gap_trigger)
-                break;
 
             if (gapped_stats) {
                 ++gapped_stats->extra_extensions;
@@ -3114,7 +3107,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       hsp_list = *hsp_list_ptr;
 
    if (!Blast_GappedScorePrelimTest(program_number, query, query_info, 
-           subject, gap_align, score_params, ext_params, hit_params, 
+           subject, gap_align, score_params, hit_params, 
            init_hitlist, gapped_stats))
       return 0;
 
@@ -3233,7 +3226,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
              *  is included in the leftward extension. */
             init_hsp->s_off += 3;
             init_hsp->q_off += 3;
- 
             status = BLAST_DynProgNtGappedAlignment(&query_tmp, subject, 
                          gap_align, score_params, init_hsp);
          }
@@ -3263,13 +3255,13 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    sfree(helper);
    gap_align->sbp->posMatrix = orig_pssm;
-      
+
    /* Remove any HSPs that share a starting or ending diagonal
       with a higher-scoring HSP. */
-   hsp_list->hspcnt = 
-       CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
+   hsp_list->hspcnt =
+       CheckGappedAlignmentsForOverlap(hsp_list->hsp_array,
                                        hsp_list->hspcnt);
-
+      
    /* Sort the HSP array by score */
    Blast_HSPListSortByScore(hsp_list);
 
