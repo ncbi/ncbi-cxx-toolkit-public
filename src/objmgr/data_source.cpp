@@ -281,129 +281,6 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 }
 
 
-bool CDataSource::GetSequence(const CBioseq_Handle& handle,
-                              TSeqPos point,
-                              SSeqData* seq_piece,
-                              CScope& scope)
-{
-    //### CMutexGuard guard(sm_DataSource_Mtx);
-    if (handle.m_DataSource != this  &&  handle.m_DataSource != 0) {
-        // Resolved to a different data source
-        return false;
-    }
-    CSeq_entry* entry = handle.m_Entry;
-    CBioseq_Handle rhandle = handle; // resolved handle for local use
-    if ( !entry ) {
-        //### The TSE returns locked - unlock it
-        CTSE_Lock info = x_FindBestTSE(rhandle.GetKey(), scope.m_History);
-        CTSE_Guard guard(*info);
-        if ( !info )
-            return false;
-        entry = info->m_BioseqMap.find(rhandle.GetKey())->second->m_Entry;
-        rhandle.x_ResolveTo(scope, *this, *entry, *info);
-    }
-    _ASSERT(entry->IsSeq());
-    CBioseq& seq = entry->SetSeq();
-    if ( seq.GetInst().IsSetSeq_data() ) {
-        // Simple sequence -- just return seq-data
-        seq_piece->dest_start = 0;
-        seq_piece->src_start = 0;
-        seq_piece->length = seq.GetInst().GetLength();
-        seq_piece->src_data = &seq.GetInst().GetSeq_data();
-        return true;
-    }
-    if ( seq.GetInst().IsSetExt() )
-    {
-        // Seq-ext: check the extension type, prepare the data
-        CSeqMap& seqmap = x_GetSeqMap(rhandle);
-        // Omit the last element - it is always eSeqEnd
-        CSeqMap::CSegmentInfo seg = seqmap.FindSegment(point, &scope);
-        /*
-        if (seg.GetPosition() > point  ||
-            seg.GetPosition() + seg.GetLength() - 1 < point) {
-            // This may happen when the x_Resolve() was unable to
-            // resolve some references before the point and the total
-            // length of the sequence appears to be less than point.
-            // Immitate a gap of length 1.
-            seq_piece->dest_start = point;
-            seq_piece->length = 1;
-            seq_piece->src_data = 0;
-            seq_piece->src_start = 0;
-            return true;
-        }
-        */
-        switch (seg.GetType()) {
-        case CSeqMap::eSeqData:
-            {
-                seq_piece->dest_start = seg.GetPosition();
-                seq_piece->src_start = 0;
-                seq_piece->length = seg.GetLength();
-                seq_piece->src_data = &seg.GetData();
-                return true;
-            }
-        case CSeqMap::eSeqRef:
-            {
-                TSignedSeqPos shift = seg.GetRefPosition() - seg.GetPosition();
-                if ( scope.x_GetSequence(seg.GetRefSeqid(),
-                                         point + shift, seq_piece) ) {
-                    TSeqPos xL = seg.GetLength();
-                    TSignedSeqPos delta = seg.GetRefPosition() -
-                        seq_piece->dest_start;
-                    seq_piece->dest_start = seg.GetPosition();
-                    if (delta < 0) {
-                        // Got less then requested (delta is negative: -=)
-                        seq_piece->dest_start -= delta;
-                        xL += delta;
-                    }
-                    else {
-                        // Got more than requested
-                        seq_piece->src_start += delta;
-                        seq_piece->length -= delta;
-                    }
-                    if (seq_piece->length > xL)
-                        seq_piece->length = xL;
-                    if ( seg.GetRefMinusStrand() &&
-                         seq_piece->src_data != 0 ) {
-                        // Convert data, update location
-                        CSeq_data* tmp = new CSeq_data;
-                        CSeqportUtil::ReverseComplement(
-                            *seq_piece->src_data, tmp,
-                            seq_piece->src_start, seq_piece->length);
-                        seq_piece->src_start = 0;
-                        seq_piece->src_data = tmp;
-                    }
-                    return true;
-                }
-                else {
-                    seq_piece->dest_start = seg.GetPosition();
-                    seq_piece->length = seg.GetLength();
-                    seq_piece->src_data = 0;
-                    seq_piece->src_start = 0;
-                    return true;
-                }
-            }
-        case CSeqMap::eSeqGap:
-            {
-                seq_piece->dest_start = seg.GetPosition();
-                seq_piece->src_start = 0;
-                seq_piece->length = seg.GetLength();
-                seq_piece->src_data = 0;
-                return true;
-            }
-#if 0
-        case CSeqMap::eSeqEnd:
-            {
-                THROW1_TRACE(runtime_error,
-                             "CDataSource::GetSequence() -- "
-                             "Attempt to read beyond sequence end");
-            }
-#endif
-        }
-    }
-    return false;
-}
-
-
 CTSE_Info* CDataSource::AddTSE(CSeq_entry& se, TTSESet* tse_set, bool dead)
 {
     //### CMutexGuard guard(sm_DataSource_Mtx);
@@ -2164,6 +2041,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2003/03/11 14:15:52  grichenk
+* +Data-source priority
+*
 * Revision 1.88  2003/03/10 16:55:17  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

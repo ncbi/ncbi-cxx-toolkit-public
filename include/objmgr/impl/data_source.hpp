@@ -140,10 +140,6 @@ public:
     /// Return FALSE if the final source Bioseq (i.e. the Bioseq that actually
     /// describe the piece of sequence data containing the "point") cannot be
     /// found.
-    bool GetSequence(const CBioseq_Handle& handle,
-                     TSeqPosition point,
-                     SSeqData* seq_piece,
-                     CScope& scope);
 
     CDataLoader* GetDataLoader(void);
     CSeq_entry* GetTopEntry(void);
@@ -361,6 +357,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/03/11 14:15:50  grichenk
+* +Data-source priority
+*
 * Revision 1.43  2003/03/10 16:55:16  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

@@ -43,6 +43,7 @@
 #include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/seqmatch_info.hpp>
 #include <objects/objmgr/impl/synonyms.hpp>
+#include <objects/objmgr/impl/priority.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -59,6 +60,42 @@ class CDataSource;
 class CTSE_Info;
 struct SSeqData;
 
+typedef CRef<CObject> TBlob_ID;
+
+class CBlob_Info
+{
+public:
+    CBlob_Info(void)
+        : m_Blob_ID(0), m_Source(0) {}
+
+    CBlob_Info(TBlob_ID bid, CDataSource& src)
+        : m_Blob_ID(bid), m_Source(&src) {}
+
+    ~CBlob_Info(void) {}
+
+    CBlob_Info(const CBlob_Info& info)
+        : m_Blob_ID(info.m_Blob_ID), m_Source(info.m_Source) {}
+
+    CBlob_Info& operator =(const CBlob_Info& info)
+        {
+            if (&info != this) {
+                m_Blob_ID = info.m_Blob_ID;
+                m_Source = info.m_Source;
+            }
+            return *this;
+        }
+
+    operator bool(void)
+        { return bool(m_Blob_ID)  &&  m_Source; }
+
+    bool operator !(void)
+        { return !m_Blob_ID  ||  !m_Source; }
+
+    TBlob_ID     m_Blob_ID;
+    CDataSource* m_Source;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CScope : public CObject
 {
 public:
@@ -66,12 +103,14 @@ public:
     virtual ~CScope(void);
 
     // Add default data loaders from object manager
-    void AddDefaults(void);
+    void AddDefaults(SDataSourceRec::TPriority priority = 9);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
-    void AddDataLoader(const string& loader_name);
+    void AddDataLoader(const string& loader_name,
+                       SDataSourceRec::TPriority priority = 9);
     // Add seq_entry
-    void AddTopLevelSeqEntry(CSeq_entry& top_entry);
+    void AddTopLevelSeqEntry(CSeq_entry& top_entry,
+                             SDataSourceRec::TPriority priority = 9);
 
     //### TSEs should be dropped from CScope dectructor.
     //### This function is obsolete.
@@ -155,10 +194,6 @@ private:
                                     set<CBioseq_Handle>& handles,
                                     CSeq_inst::EMol filter);
 
-    bool x_GetSequence(const CBioseq_Handle& handle,
-                       TSeqPos point,
-                       SSeqData* seq_piece);
-
     CSeq_id_Mapper& x_GetIdMapper(void) const;
 
     const CSynonymsSet* x_GetSynonyms(const CSeq_id_Handle& id);
@@ -173,7 +208,7 @@ private:
                          const CSeqMatch_Info& info2) const;
 
     CObjectManager      *m_pObjMgr;
-    set<CDataSource*>    m_setDataSrc;
+    TDataSourceSet       m_setDataSrc;
 
     EFindMode m_FindMode;
 
@@ -201,6 +236,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/03/11 14:15:49  grichenk
+* +Data-source priority
+*
 * Revision 1.33  2003/03/10 16:55:16  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

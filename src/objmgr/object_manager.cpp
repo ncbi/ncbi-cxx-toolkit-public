@@ -201,33 +201,36 @@ void CObjectManager::RevokeScope(CScope& scope)
 
 
 void CObjectManager::AcquireDefaultDataSources(
-    set< CDataSource* >& sources)
+    TDataSourceSet& sources,
+    SDataSourceRec::TPriority priority)
 {
     CMutexGuard guard(s_OM_Mutex);
-    set< CDataSource* >::const_iterator itSource;
+    set<CDataSource*>::const_iterator itSource;
     // for each source in defaults
     for (itSource = m_setDefaultSource.begin();
         itSource != m_setDefaultSource.end(); ++itSource) {
-        x_AddDataSource(sources, *itSource);
+        x_AddDataSource(sources, *itSource, priority);
     }
 }
 
 
 void CObjectManager::AddDataLoader(
-    set< CDataSource* >& sources, CDataLoader& loader)
+    TDataSourceSet& sources, CDataLoader& loader,
+    SDataSourceRec::TPriority priority)
 {
     CMutexGuard guard(s_OM_Mutex);
     x_RegisterLoader(loader);
-    x_AddDataSource(sources, m_mapLoaderToSource[&loader]);
+    x_AddDataSource(sources, m_mapLoaderToSource[&loader], priority);
 }
 
 
 void CObjectManager::AddDataLoader(
-    set< CDataSource* >& sources, const string& loader_name)
+    TDataSourceSet& sources, const string& loader_name,
+    SDataSourceRec::TPriority priority)
 {
     CDataLoader* loader = x_GetLoaderByName(loader_name);
     if (loader) {
-        AddDataLoader(sources, *loader);
+        AddDataLoader(sources, *loader, priority);
     }
     else {
         THROW1_TRACE(runtime_error,
@@ -237,16 +240,17 @@ void CObjectManager::AddDataLoader(
 }
 
 void CObjectManager::AddTopLevelSeqEntry(
-    set< CDataSource* >& sources, CSeq_entry& top_entry)
+    TDataSourceSet& sources, CSeq_entry& top_entry,
+    SDataSourceRec::TPriority priority)
 {
     CMutexGuard guard(s_OM_Mutex);
     x_RegisterTSE(top_entry);
-    x_AddDataSource(sources, m_mapEntryToSource[ &top_entry]);
+    x_AddDataSource(sources, m_mapEntryToSource[ &top_entry], priority);
 }
 
 
 void CObjectManager::RemoveTopLevelSeqEntry(
-    set< CDataSource* >& sources, CSeq_entry& top_entry)
+    TDataSourceSet& sources, CSeq_entry& top_entry)
 {
     CMutexGuard guard(s_OM_Mutex);
     if (m_mapEntryToSource.find(&top_entry) != m_mapEntryToSource.end()) {
@@ -266,12 +270,12 @@ void CObjectManager::RemoveTopLevelSeqEntry(
 }
 
 
-void CObjectManager::ReleaseDataSources(set< CDataSource* >& sources)
+void CObjectManager::ReleaseDataSources(TDataSourceSet& sources)
 {
     CMutexGuard guard(s_OM_Mutex);
-    set< CDataSource* >::iterator itSet;
+    TDataSourceSet::iterator itSet;
     for (itSet = sources.begin(); itSet != sources.end(); ++itSet) {
-        x_ReleaseDataSource(*itSet);
+        x_ReleaseDataSource(itSet->m_DataSource);
     }
     sources.clear();
 }
@@ -336,15 +340,16 @@ CDataLoader* CObjectManager::x_GetLoaderByName(
 
 
 void CObjectManager::x_AddDataSource(
-    set< CDataSource* >& setSources, CDataSource* pSource) const
+    TDataSourceSet& setSources, CDataSource* pSource,
+    SDataSourceRec::TPriority priority) const
 {
     _ASSERT(pSource);
-    set< CDataSource* >::iterator itSrc = setSources.find(pSource);
+    TDataSourceSet::iterator itSrc = setSources.find(pSource);
     // if it is not there
     if (itSrc == setSources.end()) {
         // add
         pSource->AddReference();
-        setSources.insert(pSource);
+        setSources.insert(SDataSourceRec(pSource, priority));
     }
 }
 
@@ -418,6 +423,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/11 14:15:52  grichenk
+* +Data-source priority
+*
 * Revision 1.19  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

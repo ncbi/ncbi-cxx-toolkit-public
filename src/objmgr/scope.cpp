@@ -66,29 +66,31 @@ CScope::~CScope(void)
     x_DetachFromOM();
 }
 
-void CScope::AddDefaults(void)
+void CScope::AddDefaults(SDataSourceRec::TPriority priority)
 {
-    m_pObjMgr->AcquireDefaultDataSources(m_setDataSrc);
+    m_pObjMgr->AcquireDefaultDataSources(m_setDataSrc, priority);
 }
 
 
-void CScope::AddDataLoader (const string& loader_name)
+void CScope::AddDataLoader (const string& loader_name,
+                            SDataSourceRec::TPriority priority)
 {
-    m_pObjMgr->AddDataLoader(m_setDataSrc, loader_name);
+    m_pObjMgr->AddDataLoader(m_setDataSrc, loader_name, priority);
 }
 
 
-void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
+void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
+                                 SDataSourceRec::TPriority priority)
 {
-    m_pObjMgr->AddTopLevelSeqEntry(m_setDataSrc, top_entry);
+    m_pObjMgr->AddTopLevelSeqEntry(m_setDataSrc, top_entry, priority);
 }
 
 
 bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachAnnot(entry, annot) ) {
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        if ( it->m_DataSource->AttachAnnot(entry, annot) ) {
             return true;
         }
     }
@@ -99,10 +101,10 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 bool CScope::RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->GetDataLoader() )
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        if ( it->m_DataSource->GetDataLoader() )
             continue; // can not modify loaded data
-        if ( (*it)->RemoveAnnot(entry, annot) ) {
+        if ( it->m_DataSource->RemoveAnnot(entry, annot) ) {
             return true;
         }
     }
@@ -115,8 +117,8 @@ bool CScope::ReplaceAnnot(const CSeq_entry& entry,
                           CSeq_annot& new_annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->ReplaceAnnot(entry, old_annot, new_annot) ) {
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        if ( it->m_DataSource->ReplaceAnnot(entry, old_annot, new_annot) ) {
             return true;
         }
     }
@@ -127,8 +129,8 @@ bool CScope::ReplaceAnnot(const CSeq_entry& entry,
 bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachEntry(parent, entry) ) {
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        if ( it->m_DataSource->AttachEntry(parent, entry) ) {
             return true;
         }
     }
@@ -139,8 +141,8 @@ bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachMap(bioseq, seqmap) ) {
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        if ( it->m_DataSource->AttachMap(bioseq, seqmap) ) {
             return true;
         }
     }
@@ -156,8 +158,8 @@ bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
     CRef<CDelta_seq> dseq(new CDelta_seq);
     dseq->SetLiteral().SetSeq_data(seq);
     dseq->SetLiteral().SetLength(length);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachSeqData(bioseq, *dseq, index, start, length) ) {
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        if ( it->m_DataSource->AttachSeqData(bioseq, *dseq, index, start, length) ) {
             return true;
         }
     }
@@ -248,8 +250,8 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
     // find all
     x_GetIdMapper().GetMatchingHandlesStr(searchBy, setSource);
     // filter those which "belong" to my data sources
-    iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
-        (*itSrc)->FilterSeqid(setResult, setSource);
+    iterate(TDataSourceSet, itSrc, m_setDataSrc) {
+        itSrc->m_DataSource->FilterSeqid(setResult, setSource);
     }
     // create result
     iterate(TSeq_id_HandleSet, itSet, setResult) {
@@ -261,12 +263,18 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 
 CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 {
+    //### Use priority flag, do not scan all DSs - find the first one.
     // Protected by m_Scope_Mtx in upper-level functions
     set<CSeqMatch_Info> bm_set;
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        CSeqMatch_Info info = (*it)->BestResolve(id, *this);
+    SDataSourceRec::TPriority pr = SDataSourceRec::TPriority(-1);
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        // Do not search in lower-priority sources
+        if (pr < it->m_Priority)
+            continue;
+        CSeqMatch_Info info = it->m_DataSource->BestResolve(id, *this);
         if ( info ) {
             bm_set.insert(info);
+            pr = it->m_Priority;
         }
     }
     CSeqMatch_Info best;
@@ -323,8 +331,8 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
                               CSeq_annot::C_Data::E_Choice sel)
 {
     //CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        (*it)->UpdateAnnotIndex(loc, sel);
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        it->m_DataSource->UpdateAnnotIndex(loc, sel);
     }
 }
 
@@ -333,8 +341,8 @@ void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                                  CAnnotTypes_CI::TTSESet& tse_set)
 {
     //CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        (*it)->GetTSESetWithAnnots(idh, tse_set, *this);
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        it->m_DataSource->GetTSESetWithAnnots(idh, tse_set, *this);
     }
     //### Filter the set depending on the requests history?
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
@@ -347,25 +355,12 @@ CTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
 {
     CTSE_Lock ret;
     CMutexGuard guard(m_Scope_Mtx);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        ret = (*it)->GetTSEInfo(tse);
+    iterate (TDataSourceSet, it, m_setDataSrc) {
+        ret = it->m_DataSource->GetTSEInfo(tse);
         if ( ret )
             break;
     }
     return ret;
-}
-
-
-bool CScope::x_GetSequence(const CBioseq_Handle& handle,
-                           TSeqPosition point,
-                           SSeqData* seq_piece)
-{
-    CMutexGuard guard(m_Scope_Mtx);
-    CSeqMatch_Info match = x_BestResolve(*handle.GetSeqId());
-    if (!match)
-        return false;
-    x_AddToHistory(*match);
-    return match.GetDataSource()->GetSequence(handle, point, seq_piece, *this);
 }
 
 
@@ -439,8 +434,8 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
                                         set<CBioseq_Handle>& handles,
                                         CSeq_inst::EMol filter)
 {
-    iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
-        if ((*itSrc)->GetTSEHandles(*this, tse, handles, filter))
+    iterate(TDataSourceSet, itSrc, m_setDataSrc) {
+        if (itSrc->m_DataSource->GetTSEHandles(*this, tse, handles, filter))
             break;
     }
 }
@@ -448,6 +443,7 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
 
 const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
 {
+    //### Check priority
     TSynCache::const_iterator cached = m_SynCache.find(id);
     if (cached != m_SynCache.end()) {
         return cached->second;
@@ -506,9 +502,11 @@ void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
         DebugDumpValue(ddc,"m_History.size()", m_History.size());
     } else {
         DebugDumpValue(ddc,"m_setDataSrc.type", "set<CDataSource*>");
+        /*
         DebugDumpRangePtr(ddc,"m_setDataSrc",
             m_setDataSrc.begin(), m_setDataSrc.end(), depth);
 
+        */
         DebugDumpValue(ddc,"m_History.type", "set<CConstRef<CTSE_Info>>");
         DebugDumpRangeCRef(ddc,"m_History",
             m_History.begin(), m_History.end(), depth);
@@ -523,6 +521,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/03/11 14:15:52  grichenk
+* +Data-source priority
+*
 * Revision 1.48  2003/03/10 16:55:17  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/03/11 14:15:49  grichenk
+* +Data-source priority
+*
 * Revision 1.10  2003/01/29 22:03:43  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *
@@ -74,6 +77,7 @@
 */
 
 #include <objects/objmgr/data_loader.hpp>
+#include <objects/objmgr/impl/priority.hpp>
 
 #include <corelib/ncbiobj.hpp>
 #include <set>
@@ -92,6 +96,7 @@ class CSeq_id_Mapper;
 
 /////////////////////////////////////////////////////////////////////////////
 // CObjectManager
+
 
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
@@ -147,12 +152,15 @@ protected:
     void RegisterScope(CScope& scope);
     void RevokeScope  (CScope& scope);
 
-    void AcquireDefaultDataSources(set< CDataSource* >& sources);
+    void AcquireDefaultDataSources(TDataSourceSet& sources,
+                                   SDataSourceRec::TPriority priority);
 
     void AddDataLoader(
-        set< CDataSource* >& sources, const string& loader_name);
+        TDataSourceSet& sources, const string& loader_name,
+        SDataSourceRec::TPriority priority);
     void AddDataLoader(
-        set< CDataSource* >& sources, CDataLoader& loader);
+        TDataSourceSet& sources, CDataLoader& loader,
+        SDataSourceRec::TPriority priority);
 /*
     void RemoveDataLoader(
         set< CDataSource* >& sources, CDataLoader& loader);
@@ -160,11 +168,12 @@ protected:
         set< CDataSource* >& sources, const string& loader_name);
 */
     void AddTopLevelSeqEntry(
-        set< CDataSource* >& sources, CSeq_entry& top_entry);
+        TDataSourceSet& sources, CSeq_entry& top_entry,
+        SDataSourceRec::TPriority priority);
     void RemoveTopLevelSeqEntry(
-        set< CDataSource* >& sources, CSeq_entry& top_entry);
+        TDataSourceSet& sources, CSeq_entry& top_entry);
 
-    void ReleaseDataSources(set< CDataSource* >& sources);
+    void ReleaseDataSources(TDataSourceSet& sources);
 
 
 private:
@@ -176,7 +185,8 @@ private:
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;
     
     void x_AddDataSource(
-        set< CDataSource* >& sources, CDataSource* source) const;
+        TDataSourceSet& sources, CDataSource* source,
+        SDataSourceRec::TPriority priority) const;
     void x_ReleaseDataSource(CDataSource* source);
 
 private:
