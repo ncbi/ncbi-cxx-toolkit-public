@@ -83,6 +83,7 @@
  * Definitions for NCBI_SEQ.DLL
  */
 #ifdef NCBI_SEQ_EXPORTS
+#  define NCBI_FLAT_EXPORTS
 #  define NCBI_ID1_EXPORTS
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
@@ -184,6 +185,15 @@
 #  define NCBI_XALGO_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XALGO_EXPORT       __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_flat
+ */
+#ifdef NCBI_FLAT_EXPORTS
+#  define NCBI_FLAT_EXPORT        __declspec(dllexport)
+#else
+#  define NCBI_FLAT_EXPORT        __declspec(dllimport)
 #endif
 
 /*
@@ -682,6 +692,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.14  2003/03/28 17:44:54  dicuccio
+ * Added export specifier for flatfile generator library.  Made this specifier
+ * part of the NCBI_SEQ_EXPORTS master group
+ *
  * Revision 1.13  2003/02/25 19:34:21  kuznets
  * Added NCBI_DBAPIDRIVER_MYSQL_EXPORTS
  *
