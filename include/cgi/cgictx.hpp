@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/12/23 23:53:19  vakatov
+* TLMsg container to use AutoPtr instead of regular pointer
+*
 * Revision 1.14  2000/01/20 17:54:13  vakatov
 * CCgiContext:: constructor to get "CNcbiArguments*" instead of raw argc/argv.
 * All virtual member function implementations moved away from the header.
@@ -112,7 +115,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiutil.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 
@@ -231,7 +233,8 @@ private:
     CCgiResponse m_response; // CGI response information
 
     //message buffer
-    list<CCtxMsg*> m_lmsg;
+    typedef list< AutoPtr<CCtxMsg> > TLMsg;
+    TLMsg m_lmsg;
 
     // server context will be obtained from CCgiApp::LoadServerContext()
     auto_ptr<CCgiServerContext> m_srvCtx; // application defined context

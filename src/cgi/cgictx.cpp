@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/23 23:54:01  vakatov
+* TLMsg container to use AutoPtr instead of regular pointer
+*
 * Revision 1.19  2000/05/24 20:57:13  vasilche
 * Use new macro _DEBUG_ARG to avoid warning about unused argument.
 *
@@ -159,7 +162,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
 
 CCgiContext::~CCgiContext( void )
 {
-    DeleteElements( m_lmsg );
+    return;
 }
 
 const CNcbiRegistry& CCgiContext::GetConfig(void) const
