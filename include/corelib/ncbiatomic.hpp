@@ -105,29 +105,39 @@ void* SwapPointers(void * volatile * location, void* new_value)
                       reinterpret_cast<unsigned long>(new_value)));
 #  elif defined(NCBI_OS_AIX)
     boolean_t swapped   = FALSE;
-    void*     old_value = *nv_loc;
+    void*     old_value;
     while (swapped == FALSE) {
+        old_value = *location;
         swapped = compare_and_swap(reinterpret_cast<atomic_p>(nv_loc),
                                    reinterpret_cast<int*>(&old_value),
                                    reinterpret_cast<int>(new_value));
+#    ifdef HAVE_SCHED_YIELD
+        sched_yield();
+#    endif
     }
     return old_value;
 #  elif defined(NCBI_OS_DARWIN)
-    bool swapped = false;
-    void*   old_value;
+    bool  swapped = false;
+    void* old_value;
     while (swapped == false) {
-        old_value = *nv_loc;
+        old_value = *location;
         swapped = CompareAndSwap(reinterpret_cast<UInt32>(old_value),
                                  reinterpret_cast<UInt32>(new_value),
                                  reinterpret_cast<UInt32*>(nv_loc));
+#    ifdef HAVE_SCHED_YIELD
+        sched_yield();
+#    endif
     }
     return old_value;
 #  elif defined(NCBI_OS_MAC)
     Boolean swapped = FALSE;
     void*   old_value;
     while (swapped == FALSE) {
-        old_value = *nv_loc;
-        swapped = OTCompareAndSwapPtr(*nv_loc, new_value, nv_loc);
+        old_value = *location;
+        swapped = OTCompareAndSwapPtr(*location, new_value, nv_loc);
+#    ifdef HAVE_SCHED_YIELD
+        sched_yield();
+#    endif
     }
     return old_value;
 #  elif defined(NCBI_OS_MSWIN)
@@ -147,15 +157,23 @@ void* SwapPointers(void * volatile * location, void* new_value)
 #      endif
     return old_value;
 #    elif defined(__sparcv9)
-    void* old_value = *nv_loc;
-    void* tmp       = new_value;
-    while (tmp != old_value) {
+    void* old_value;
+    for (;;) {
+        void* tmp = new_value;
+        old_value = *location;
 #      ifdef NCBI_COMPILER_WORKSHOP
         tmp = NCBICORE_asm_casx(tmp, nv_loc, old_value);
 #      else
         asm volatile("casx [%3], %2, %1" : "+m" (*nv_loc), "+r" (tmp)
                      : "r" (old_value), "r" (nv_loc));
 #      endif
+        if (tmp == old_value) {
+            break;
+        } else {
+#    ifdef HAVE_SCHED_YIELD
+            sched_yield();
+#    endif
+        }
     }
     return old_value;
 #    elif defined(__sparc)
@@ -190,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/18 23:27:56  ucko
+ * Fix logic errors, and call sched_yield() between tries rather than spinning.
+ *
  * Revision 1.7  2004/02/04 00:38:02  ucko
  * Centralize undefinition of Darwin's check macro.
  *
