@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.7  2003/04/16 22:25:37  dondosha
+ * Correction to previous change
+ *
  * Revision 1.6  2003/04/16 22:20:24  dondosha
  * Correction in calculation of cutoff score for ungapped extensions
  *
@@ -338,6 +341,8 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
        hit_options->program_number != blast_type_blastn) {
       (*parameters)->cutoff_score = 
          MIN((Int4)ext_params->gap_trigger, cutoff_score);
+   } else {
+      (*parameters)->cutoff_score = cutoff_score;
    }
 
    return 0;
