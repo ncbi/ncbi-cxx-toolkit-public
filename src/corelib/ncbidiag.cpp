@@ -92,22 +92,24 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 //  CDiagBuffer::
 
 #if defined(NDEBUG)
-EDiagSev     CDiagBuffer::sm_PostSeverity     = eDiag_Error;
+EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Error;
 #else
-EDiagSev     CDiagBuffer::sm_PostSeverity     = eDiag_Warning;
+EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Warning;
 #endif /* else!NDEBUG */
-bool         CDiagBuffer::sm_PostSeverityLock = false;
 
-TDiagPostFlags CDiagBuffer::sm_PostFlags      =
-eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
+EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
+                                                  // to be set on first request
 
-EDiagSev     CDiagBuffer::sm_DieSeverity      = eDiag_Fatal;
+TDiagPostFlags CDiagBuffer::sm_PostFlags          =
+    eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
 
-EDiagTrace   CDiagBuffer::sm_TraceDefault     = eDT_Default;
-bool         CDiagBuffer::sm_TraceEnabled;  // to be set on first request
+EDiagSev       CDiagBuffer::sm_DieSeverity        = eDiag_Fatal;
+
+EDiagTrace     CDiagBuffer::sm_TraceDefault       = eDT_Default;
+bool           CDiagBuffer::sm_TraceEnabled;     // to be set on first request
 
 
-const char*  CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
+const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
 // Use s_DefaultHandler only for purposes of comparison, as installing
@@ -149,6 +151,11 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 {
     if ( !m_Stream ) {
         return false;
+    }
+
+    // Check severity level change status
+    if ( sm_PostSeverityChange == eDiagSC_Unknown ) {
+        GetSeverityChangeEnabledFirstTime();
     }
 
     if (diag.GetSeverity() < sm_PostSeverity  ||
@@ -217,6 +224,23 @@ bool CDiagBuffer::GetTraceEnabledFirstTime(void)
     }
     sm_TraceEnabled = (sm_TraceDefault == eDT_Enable);
     return sm_TraceEnabled;
+}
+
+
+bool CDiagBuffer::GetSeverityChangeEnabledFirstTime(void)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    if ( sm_PostSeverityChange != eDiagSC_Unknown ) {
+        return sm_PostSeverityChange == eDiagSC_Enable;
+    }
+    const char* str = ::getenv(DIAG_POST_LEVEL);
+    if (str  &&  *str) {
+        SetDiagFixedStrPostLevel(str);
+        sm_TraceDefault = eDT_Enable;
+    } else {
+        sm_PostSeverityChange = eDiagSC_Enable;
+    }
+    return sm_PostSeverityChange == eDiagSC_Enable;
 }
 
 
@@ -392,17 +416,47 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
     CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
-    if ( !CDiagBuffer::sm_PostSeverityLock ) {
+    if ( CDiagBuffer::sm_PostSeverityChange != eDiagSC_Disable) {
         CDiagBuffer::sm_PostSeverity = post_sev;
     }
     return sev;
 }
 
+
+extern void SetDiagFixedStrPostLevel(const char* str_post_sev)
+{
+    if (!str_post_sev || !*str_post_sev) {
+        return;
+    } 
+    int sev = -1;
+    if ( strlen(str_post_sev) == 1  &&  *str_post_sev >= '0'  &&  *str_post_sev <= '9' ) {
+        // Digital value
+        sev = atoi(str_post_sev);
+    } else {
+        // String value
+        for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
+            if (NStr::CompareNocase(str_post_sev, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
+                sev = s;
+                break;
+            }
+        }
+    }
+    // Unknown value
+    if (sev == -1) {
+        return;
+    }
+    SetDiagPostLevel((EDiagSev)sev);
+    DisableDiagPostLevelChange();
+}
+
+
 extern bool DisableDiagPostLevelChange(bool disable_change)
 {
-    bool lock = CDiagBuffer::sm_PostSeverityLock;
-    CDiagBuffer::sm_PostSeverityLock = disable_change;
-    return lock;
+    CMutexGuard LOCK(s_DiagMutex);
+    bool prev_status = (CDiagBuffer::sm_PostSeverityChange == eDiagSC_Enable);
+    CDiagBuffer::sm_PostSeverityChange = disable_change ? eDiagSC_Disable : 
+                                                          eDiagSC_Enable;
+    return prev_status;
 }
 
 
@@ -589,17 +643,17 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CNcbiException& ex) const
 CDiagRestorer::CDiagRestorer(void)
 {
     CMutexGuard LOCK(s_DiagMutex);
-    const CDiagBuffer& buf = GetDiagBuffer();
-    m_PostPrefix       = buf.m_PostPrefix;
-    m_PrefixList       = buf.m_PrefixList;
-    m_PostFlags        = buf.sm_PostFlags;
-    m_PostSeverity     = buf.sm_PostSeverity;
-    m_PostSeverityLock = buf.sm_PostSeverityLock;
-    m_DieSeverity      = buf.sm_DieSeverity;
-    m_TraceDefault     = buf.sm_TraceDefault;
-    m_TraceEnabled     = buf.sm_TraceEnabled;
-    m_Handler          = buf.sm_Handler;
-    m_CanDeleteHandler = buf.sm_CanDeleteHandler;
+    const CDiagBuffer& buf  = GetDiagBuffer();
+    m_PostPrefix            = buf.m_PostPrefix;
+    m_PrefixList            = buf.m_PrefixList;
+    m_PostFlags             = buf.sm_PostFlags;
+    m_PostSeverity          = buf.sm_PostSeverity;
+    m_PostSeverityChange    = buf.sm_PostSeverityChange;
+    m_DieSeverity           = buf.sm_DieSeverity;
+    m_TraceDefault          = buf.sm_TraceDefault;
+    m_TraceEnabled          = buf.sm_TraceEnabled;
+    m_Handler               = buf.sm_Handler;
+    m_CanDeleteHandler      = buf.sm_CanDeleteHandler;
     buf.sm_CanDeleteHandler = false; // avoid premature cleanup
 }
 
@@ -607,15 +661,15 @@ CDiagRestorer::~CDiagRestorer(void)
 {
     {{
         CMutexGuard LOCK(s_DiagMutex);
-        CDiagBuffer& buf = GetDiagBuffer();
-        buf.m_PostPrefix        = m_PostPrefix;
-        buf.m_PrefixList        = m_PrefixList;
-        buf.sm_PostFlags        = m_PostFlags;
-        buf.sm_PostSeverity     = m_PostSeverity;
-        buf.sm_PostSeverityLock = m_PostSeverityLock;
-        buf.sm_DieSeverity      = m_DieSeverity;
-        buf.sm_TraceDefault     = m_TraceDefault;
-        buf.sm_TraceEnabled     = m_TraceEnabled;
+        CDiagBuffer& buf          = GetDiagBuffer();
+        buf.m_PostPrefix          = m_PostPrefix;
+        buf.m_PrefixList          = m_PrefixList;
+        buf.sm_PostFlags          = m_PostFlags;
+        buf.sm_PostSeverity       = m_PostSeverity;
+        buf.sm_PostSeverityChange = m_PostSeverityChange;
+        buf.sm_DieSeverity        = m_DieSeverity;
+        buf.sm_TraceDefault       = m_TraceDefault;
+        buf.sm_TraceEnabled       = m_TraceEnabled;
     }}
     SetDiagHandler(m_Handler, m_CanDeleteHandler);
 }
@@ -724,6 +778,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.58  2002/07/09 16:37:11  ivanov
+ * Added GetSeverityChangeEnabledFirstTime().
+ * Fix usage forced set severity post level from environment variable
+ * to work without NcbiApplication::AppMain()
+ *
  * Revision 1.57  2002/07/02 18:26:22  ivanov
  * Added CDiagBuffer::DisableDiagPostLevelChange()
  *

@@ -65,8 +65,11 @@ class CDiagBuffer
     friend class CNcbiDiag;
     friend const CNcbiDiag& Reset(const CNcbiDiag& diag);
     friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
+
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
+    friend void SetDiagFixedStrPostLevel(const char* str_post_sev);
     friend bool DisableDiagPostLevelChange(bool disable_change);
+
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
     friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
@@ -104,8 +107,8 @@ private:
     }
 
     void Flush  (void);
-    void Reset  (const CNcbiDiag& diag);  // reset content of the diag. message
-    void EndMess(const CNcbiDiag& diag);  // output current diag. message
+    void Reset  (const CNcbiDiag& diag);   // reset content of the diag. message
+    void EndMess(const CNcbiDiag& diag);   // output current diag. message
     bool SetDiag(const CNcbiDiag& diag);
 
     // flush & detach the current user
@@ -117,19 +120,19 @@ private:
     // the bitwise OR combination of "EDiagPostFlag"
     static TDiagPostFlags sm_PostFlags;
 
-    // NOTE:  these three dont need to be protected by mutexes because it is
-    // not critical, while not having a mutex around them saves us a little
-    // performance
-    static EDiagSev   sm_PostSeverity;
-    static bool       sm_PostSeverityLock; // severity level changing is ON/OFF
-    static EDiagSev   sm_DieSeverity;
-    static EDiagTrace sm_TraceDefault;     // default state of tracing
-    static bool       sm_TraceEnabled;     // current state of tracing
+    // static members
+    static EDiagSev       sm_PostSeverity;
+    static EDiagSevChange sm_PostSeverityChange;
+                                           // severity level changing status
+    static EDiagSev       sm_DieSeverity;
+    static EDiagTrace     sm_TraceDefault; // default state of tracing
+    static bool           sm_TraceEnabled; // current state of tracing
                                            // (enable/disable)
 
     static bool GetTraceEnabled(void);     // dont access sm_TraceEnabled 
                                            // directly
     static bool GetTraceEnabledFirstTime(void);
+    static bool GetSeverityChangeEnabledFirstTime(void);
 
     // call the current diagnostics handler directly
     static void DiagHandler(SDiagMessage& mess);
@@ -336,6 +339,11 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2002/07/09 16:38:00  ivanov
+ * Added GetSeverityChangeEnabledFirstTime().
+ * Fix usage forced set severity post level from environment variable
+ * to work without NcbiApplication::AppMain()
+ *
  * Revision 1.31  2002/07/02 18:26:08  ivanov
  * Added CDiagBuffer::DisableDiagPostLevelChange()
  *

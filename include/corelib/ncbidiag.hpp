@@ -66,6 +66,13 @@ enum EDiagSev {
     eDiag_Trace
 };
 
+// Severity level change state
+enum EDiagSevChange {
+    eDiagSC_Unknown,  // Status of changing severity level is unknown (first call)
+    eDiagSC_Disable,  // Disable change severity level 
+    eDiagSC_Enable    // Enable change severity level 
+};
+
 
 // Which parts of the diagnostic context should be posted, and which are not...
 // The generic appearance of the posted message is as follows:
@@ -374,7 +381,7 @@ private:
     list<string>   m_PrefixList;
     TDiagPostFlags m_PostFlags;
     EDiagSev       m_PostSeverity;
-    bool           m_PostSeverityLock;
+    EDiagSevChange m_PostSeverityChange;
     EDiagSev       m_DieSeverity;
     EDiagTrace     m_TraceDefault;
     bool           m_TraceEnabled;
@@ -397,6 +404,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.45  2002/07/09 16:38:00  ivanov
+ * Added GetSeverityChangeEnabledFirstTime().
+ * Fix usage forced set severity post level from environment variable
+ * to work without NcbiApplication::AppMain()
+ *
  * Revision 1.44  2002/07/02 18:26:08  ivanov
  * Added CDiagBuffer::DisableDiagPostLevelChange()
  *
