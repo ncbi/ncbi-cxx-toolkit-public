@@ -52,6 +52,8 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 
+#include <util/stream_utils.hpp>
+
 #include <memory>
 #include <iomanip>
 
@@ -419,6 +421,24 @@ int CId1Reader::x_GetVersion(const CSeqref& seqref, TConn conn)
 }
 
 
+static void x_Read(CNcbiIstream& sin, CID1server_back& id1_reply)
+{
+    {{
+        CObjectIStreamAsnBinary in(sin);
+        in >> id1_reply;
+    }}
+    if ( id1_reply.IsError() && id1_reply.GetError() == 0 ) {
+        char next_byte;
+        if ( CStreamUtils::Readsome(sin, &next_byte, 1) ) {
+            CStreamUtils::Pushback(sin, &next_byte, 1);
+            ERR_POST(Warning << "Extra ERROR 0");
+            CObjectIStreamAsnBinary in(sin);
+            in >> id1_reply;
+        }
+    }
+}
+
+
 void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
                              const CID1server_request& id1_request,
                              TConn conn)
@@ -435,10 +455,7 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
         out.Flush();
     }}
     
-    {{
-        CObjectIStreamAsnBinary in(*stream);
-        in >> id1_reply;
-    }}
+    x_Read(*stream, id1_reply);
 
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
@@ -714,6 +731,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.61  2003/11/19 15:43:03  vasilche
+ * Temporary fix for extra ERROR 0 packed from ID1 server.
+ *  CVS: ----------------------------------------------------------------------
+ *
  * Revision 1.60  2003/11/07 16:59:01  vasilche
  * Fixed stats message.
  *
