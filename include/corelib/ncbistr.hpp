@@ -127,6 +127,8 @@ public:
                                          ECheckEndPtr check = eCheck_Need);
     static double        StringToDouble (const string& str,
                                          ECheckEndPtr check = eCheck_Need);
+    static Int8          StringToInt8(const string& str);
+    static Uint8         StringToUint8(const string& str);
 
     /// X-to-String conversion functions
     static string IntToString(long value, bool sign = false);
@@ -636,6 +638,56 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 }
 
 
+inline
+Int8 NStr::StringToInt8(const string& str)
+{
+    bool sign = false;    
+    const char* pc = str.c_str();
+        
+    switch (*pc) {
+    case '-': 
+        sign = true;
+    case '+':
+        ++pc;
+        break;
+    }
+    
+    if (!isdigit(*pc))
+        NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+
+    Int8 n = 0;    
+    while (*pc) {
+        if (!isdigit(*pc))
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+        n = n * 10 + (*pc++ - '0');
+    }
+    
+    return sign ? -n : n;
+}
+
+
+inline
+Uint8 NStr::StringToUint8(const string& str)
+{
+    const char* pc = str.c_str();
+
+    if (*pc == '+')
+        ++pc;        
+    
+    if (!isdigit(*pc))
+        NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+
+    Int8 n = 0;  
+    while (*pc) {
+        if (!isdigit(*pc))
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+        n = n * 10 + (*pc++ - '0');
+    }
+    
+    return n;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  PCase::
 //
@@ -702,6 +754,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2003/01/10 21:59:06  kuznets
+ * +NStr::String2Int8
+ *
  * Revision 1.29  2003/01/10 00:08:05  vakatov
  * + Int8ToString(),  UInt8ToString()
  *
