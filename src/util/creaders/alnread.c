@@ -3282,7 +3282,9 @@ s_FindInterleavedBlocks
         }
     }
     best_ptr = s_GetMostPopularSizeInfo (size_list);
-    if (best_ptr != NULL  &&  best_ptr->num_appearances > 1) {
+    if (best_ptr != NULL  
+        &&  (best_ptr->num_appearances > 1  ||  
+             (size_list->next == NULL  &&  size_list->size_value > 1))) {
         afrp->block_size = best_ptr->size_value;
         line_counter = 0;
         for (llp = pattern_list; llp != NULL; llp = llp->next) {
@@ -5746,6 +5748,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/12/02 17:12:18  bollin
+ * allow reading of an interleaved alignment with only one block
+ *
  * Revision 1.13  2004/12/01 14:14:35  bollin
  * improved detection of consensus lines in Clustal files
  *
