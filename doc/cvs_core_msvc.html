@@ -15,17 +15,19 @@ all 6 configurations (Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL).
 this might not be very convenient, as the resulting project file (if modified) <a href="msvc_prj.html#commit_sh">cannot be</a>
 checked in back to the CVS repository. Therefore, we provide an option (to be used by Toolkit developers), which
 allows to check out C++ Toolkit "as is", i.e. without expanding the project files:
-<br>
-<tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs_core.sh ... --without-vc-cfgs</font></tt>
+<ol>
+<tt><b>$</b> cvs_core.sh ... --without-vc-cfgs</font></tt></ol>
 
 <p>
 Note that in this case only one configuration, namely DebugMT, will be available in the projects,
-and the batch file <i>all.bat</i> (even if started without arguments) will build only this one configuration.
+and the batch file <a href="msvc_prj.html#all_bat"><i>all.bat</i></a>
+(even if started without arguments) will build only this one configuration.
 <p>
 <a name="note"></a>Suppose that you want to build only one configuration (e.g. ReleaseDLL). You can do it in either
 of the following ways:
 <ol>
 	<li>Checkout the Toolkit sources using <i>cvs_core.sh</i> <b>without</b> option <i>--without-vc-cfgs</i>.</li>
+	<li>Move entire Toolkit tree to your PC.</li>
 	<li>Run "<i>all.bat ReleaseDLL</i>" to build the Toolkit. In this case you are able to build other
 	configuration(s) as well (e.g. "<i>all.bat Debug</i>").</li>
 </ol>
@@ -34,12 +36,13 @@ or:
 	<li>Checkout the Toolkit sources using <i>cvs_core.sh</i> <b>with</b> option <i>--without-vc-cfgs</i>.</li>
 	<li>Apply script <a href="msvc_prj.html#one2one_sh"><i>one2one.sh</i></a> recursively for all project files:</li>
 		<ol>
-		<tt>$ find . -name "*.dsp" -exec ./one2one.sh {} ReleaseDLL \;</tt>
+		<tt><b>$</b> find . -name "*.dsp" -exec ./one2one.sh {} ReleaseDLL \;</tt>
 		</ol>
+	<li>Move entire Toolkit tree to your PC.</li>
 	<li>Run "<i>all.bat</i>" to build the Toolkit.</li>
 </ol>
 
-<br><br>
+<br>
 <hr>
 <table border=0 width="100%" cellspacing=0>
 <tr>
