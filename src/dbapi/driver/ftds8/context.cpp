@@ -514,7 +514,7 @@ CDbapiFtdsCF2::CreateInstance(
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
         bool reuse_context = true;
-        DBINT version = DBVERSION_UNKNOWN;
+        DBINT db_version = DBVERSION_UNKNOWN;
 
         // Optional parameters ...
         CS_INT page_size = 0;
@@ -536,20 +536,20 @@ CDbapiFtdsCF2::CreateInstance(
                         return CTDSContext::m_pTDSContext;
                     }
                 } else if ( v.id == "version" ) {
-                    version = NStr::StringToInt( v.value );
+                    int value = NStr::StringToInt( v.value );
 
-                    switch ( version ) {
+                    switch ( value ) {
                     case 42 :
-                        version = DBVERSION_42;
+                        db_version = DBVERSION_42;
                         break;
                     case 46 :
-                        version = DBVERSION_46;
+                        db_version = DBVERSION_46;
                         break;
                     case 70 :
-                        version = DBVERSION_70;
+                        db_version = DBVERSION_70;
                         break;
                     case 100 :
-                        version = DBVERSION_100;
+                        db_version = DBVERSION_100;
                         break;
                     }
                 } else if ( v.id == "packet" ) {
@@ -559,7 +559,7 @@ CDbapiFtdsCF2::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CTDSContext( version );
+        drv = new CTDSContext( db_version );
 
         // Set parameters ...
         if ( page_size ) {
@@ -624,6 +624,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/03/21 14:08:30  ssikorsk
+ * Fixed the 'version' of a databases protocol parameter handling
+ *
  * Revision 1.34  2005/03/02 21:19:20  ssikorsk
  * Explicitly call a new RegisterDriver function from the old one
  *

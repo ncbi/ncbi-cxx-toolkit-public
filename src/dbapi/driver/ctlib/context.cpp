@@ -947,7 +947,7 @@ CDbapiCtlibCF2::CreateInstance(
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
         bool reuse_context = true;
-        CS_INT version = CS_VERSION_110;
+        CS_INT db_version = CS_VERSION_110;
 
         // Optional parameters ...
         CS_INT page_size = 0;
@@ -968,9 +968,9 @@ CDbapiCtlibCF2::CreateInstance(
                 if ( v.id == "reuse_context" ) {
                     reuse_context = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    version = NStr::StringToInt( v.value );
-                    if ( version == 100 ) {
-                        version = CS_VERSION_100;
+                    int value = NStr::StringToInt( v.value );
+                    if ( value == 100 ) {
+                        db_version = CS_VERSION_100;
                     }
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
@@ -983,7 +983,7 @@ CDbapiCtlibCF2::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CTLibContext(reuse_context, version);
+        drv = new CTLibContext( reuse_context, db_version );
 
         // Set parameters ...
         if ( page_size ) {
@@ -1043,6 +1043,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/03/21 14:08:30  ssikorsk
+ * Fixed the 'version' of a databases protocol parameter handling
+ *
  * Revision 1.36  2005/03/02 21:19:20  ssikorsk
  * Explicitly call a new RegisterDriver function from the old one
  *

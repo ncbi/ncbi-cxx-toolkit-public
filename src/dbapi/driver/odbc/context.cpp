@@ -453,7 +453,7 @@ CDbapiOdbcCF2::CreateInstance(
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
-        SQLINTEGER version = SQL_OV_ODBC3;
+        SQLINTEGER odbc_version = SQL_OV_ODBC3;
         bool use_dsn = false;
 
         // Optional parameters ...
@@ -473,14 +473,14 @@ CDbapiOdbcCF2::CreateInstance(
                 if ( v.id == "use_dsn" ) {
                     use_dsn = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    version = NStr::StringToInt( v.value );
+                    int value = NStr::StringToInt( v.value );
 
-                    switch ( version ) {
+                    switch ( value ) {
                     case 3 :
-                        version = SQL_OV_ODBC3;
+                        odbc_version = SQL_OV_ODBC3;
                         break;
                     case 2 :
-                        version = SQL_OV_ODBC3;
+                        odbc_version = SQL_OV_ODBC3;
                         break;
                     }
                 } else if ( v.id == "packet" ) {
@@ -490,7 +490,7 @@ CDbapiOdbcCF2::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CODBCContext(version, use_dsn);
+        drv = new CODBCContext( odbc_version, use_dsn );
 
         // Set parameters ...
         if ( page_size ) {
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/21 14:08:30  ssikorsk
+ * Fixed the 'version' of a databases protocol parameter handling
+ *
  * Revision 1.18  2005/03/02 21:19:20  ssikorsk
  * Explicitly call a new RegisterDriver function from the old one
  *

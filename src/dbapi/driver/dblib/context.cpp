@@ -531,7 +531,7 @@ CDbapiDblibCF2::CreateInstance(
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
-        DBINT version = DBVERSION_46;
+        DBINT db_version = DBVERSION_46;
 
         // Optional parameters ...
         CS_INT page_size = 0;
@@ -548,13 +548,13 @@ CDbapiDblibCF2::CreateInstance(
                 const TValue& v = (*cit)->GetValue();
 
                 if ( v.id == "version" ) {
-                    version = NStr::StringToInt( v.value );
-                    switch ( version ) {
+                    int value = NStr::StringToInt( v.value );
+                    switch ( value ) {
                     case 46 :
-                        version = DBVERSION_46;
+                        db_version = DBVERSION_46;
                         break;
                     case 100 :
-                        version = DBVERSION_100;
+                        db_version = DBVERSION_100;
                     }
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
@@ -562,7 +562,7 @@ CDbapiDblibCF2::CreateInstance(
             }
 
             // Create a driver ...
-            drv = new CDBLibContext(version);
+            drv = new CDBLibContext( db_version );
 
             // Set parameters ...
             if ( page_size ) {
@@ -711,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/03/21 14:08:30  ssikorsk
+ * Fixed the 'version' of a databases protocol parameter handling
+ *
  * Revision 1.35  2005/03/02 21:19:20  ssikorsk
  * Explicitly call a new RegisterDriver function from the old one
  *
