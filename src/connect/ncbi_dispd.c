@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2002/05/06 19:18:12  lavr
+ * Few changes to comply with the rest of API
+ *
  * Revision 6.36  2002/04/13 06:40:05  lavr
  * Few tweaks to reduce the number of syscalls made
  *
@@ -263,7 +266,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     char *s;
 
     /* Form service name argument (as CGI argument) */
-    if (strlen(iter->service) + sizeof(service) > sizeof(net_info->args))
+    if (sizeof(service) + strlen(iter->service) > sizeof(net_info->args))
         return 0/*failed*/;
     strcpy(net_info->args, service);
     strcat(net_info->args, iter->service);
@@ -464,7 +467,7 @@ static void s_Close(SERV_ITER iter)
 
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                     const SConnNetInfo* net_info,
-                                    SSERV_Info** info, char** env)
+                                    SSERV_Info** info, char** env/*unused*/)
 {
     SDISPD_Data* data;
 
@@ -474,7 +477,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         s_RandomSeed = (int)time(0) + (int)SOCK_gethostbyname(0);
         srand(s_RandomSeed);
     }
-    data->net_info = ConnNetInfo_Clone(net_info);
+    data->net_info = ConnNetInfo_Clone(net_info); /*called with non-NULL*/
     if (iter->type & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
     if (iter->type & fSERV_Firewall)
@@ -494,7 +497,5 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     /* call GetNextInfo if info is needed */
     if (info)
         *info = 0;
-    if (env)
-        *env = 0;
     return &s_op;
 }
