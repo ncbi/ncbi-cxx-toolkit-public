@@ -2437,6 +2437,41 @@ OOF_SEMI_G_ALIGN_EX(Uint1* query, Uint1* subject, Int4 q_off,
    }
 }
 
+#define MAX_SUBJECT_OFFSET 90000
+#define MAX_TOTAL_GAPS 3000
+
+static void 
+AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 
+		   Int4 query_offset, Int4 query_length, Int4* start_shift)
+{
+   Int4 s_offset;
+   Int4 subject_length = *subject_length_ptr;
+   Int4 max_extension_left, max_extension_right;
+   
+   /* If subject sequence is not too long, leave everything as is */
+   if (subject_length < MAX_SUBJECT_OFFSET) {
+      *start_shift = 0;
+      return;
+   }
+
+   s_offset = *subject_offset_ptr;
+   /* Maximal extension length is the remaining length in the query, plus 
+      an estimate of a maximal total number of gaps. */
+   max_extension_left = query_offset + MAX_TOTAL_GAPS;
+   max_extension_right = query_length - query_offset + MAX_TOTAL_GAPS;
+
+   if (s_offset <= max_extension_left) {
+      *start_shift = 0;
+   } else {
+      *start_shift = s_offset - max_extension_left;;
+      *subject_offset_ptr = max_extension_left;
+   }
+
+   if (subject_length - s_offset > max_extension_right) {
+      *subject_length_ptr = s_offset + max_extension_right - *start_shift;
+   }
+}
+
 /** Performs gapped extension for protein sequences, given two
  * sequence blocks, scoring and extension options, and an initial HSP 
  * with information from the previously performed ungapped extension
@@ -2458,13 +2493,15 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    Uint1* query=NULL,* subject=NULL;
    Boolean switch_seq = FALSE;
    Int4 query_length, subject_length;
+   Uint4 subject_shift = 0;
     
    if (gap_align == NULL)
       return FALSE;
    
    if (score_options->is_ooframe) {
-      q_length = init_hsp->ungapped_data->q_start;
-      s_length = init_hsp->ungapped_data->s_start;
+      q_length = init_hsp->q_off;
+      s_length = init_hsp->s_off;
+
       if (program == blast_type_blastx) {
          subject = subject_blk->sequence + s_length;
          query = query_blk->oof_sequence + CODON_LENGTH + q_length;
@@ -2486,6 +2523,9 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
       subject_length = subject_blk->length;
    }
 
+   AdjustSubjectRange(&s_length, &subject_length, q_length, query_length, 
+                      &subject_shift);
+
    found_start = FALSE;
    found_end = FALSE;
     
@@ -2498,17 +2538,15 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
                NULL, &private_q_start, &private_s_start, TRUE, NULL, 
                gap_align, score_options, q_length, TRUE, switch_seq);
       } else {
-         score_left = SEMI_G_ALIGN_EX(query, subject, q_length, s_length, NULL,
+         score_left = SEMI_G_ALIGN_EX(query, subject+subject_shift, q_length, 
+            s_length, NULL,
             &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
             score_options, init_hsp->q_off, FALSE, TRUE);
       }
         
       gap_align->query_start = q_length - private_q_start;
-      gap_align->subject_start = s_length - private_s_start;
+      gap_align->subject_start = s_length - private_s_start + subject_shift;
       
-   } else {
-      q_length = init_hsp->q_off;
-      s_length = init_hsp->s_off;
    }
 
    score_right = 0;
@@ -2516,12 +2554,12 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
       found_end = TRUE;
       if(score_options->is_ooframe) {
          score_right = OOF_SEMI_G_ALIGN_EX(query-1, subject-1, 
-            query_length-q_length, subject_length-s_length,
+            query_length-q_length+1, subject_length-s_length+1,
             NULL, &(gap_align->query_stop), &(gap_align->subject_stop), 
             TRUE, NULL, gap_align, 
             score_options, q_length, FALSE, switch_seq);
          gap_align->query_stop += q_length;
-         gap_align->subject_stop += s_length;
+         gap_align->subject_stop += s_length + subject_shift;
       } else {
          score_right = SEMI_G_ALIGN_EX(query+init_hsp->q_off,
             subject+init_hsp->s_off, query_length-q_length, 
