@@ -519,7 +519,7 @@ CBlastOption::SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector)
     // index corresponds to the query index in the case of query concatenation
     ITERATE(vector< CConstRef<CSeq_loc> >, itr, sl_vector) {
 
-        curr = BLASTSeqLoc2BlastMask(**itr, index++);
+        curr = CSeqLoc2BlastMask(*itr, index++);
         if (!mask) {
             mask = tail = curr;
         } else {
@@ -998,6 +998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/11 15:23:23  dondosha
+* Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
+*
 * Revision 1.11  2003/08/11 13:58:51  dicuccio
 * Added export specifiers.  Fixed problem with unimplemented private copy ctor
 * (truly make unimplemented)

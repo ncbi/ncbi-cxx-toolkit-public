@@ -36,14 +36,15 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
 
+#include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
 // NewBlast includes
-#include <blast_def.h>
-#include <blast_options.h>
-#include <blast_hits.h>
-#include <blast_filter.h>       // Needed for BlastMask & BlastSeqLoc
-#include <blast_util.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_filter.h>       // Needed for BlastMask & BlastSeqLoc
+#include <algo/blast/core/blast_util.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -56,11 +57,16 @@ USING_SCOPE(objects);
  */
 NCBI_XBLAST_EXPORT
 BlastMask*
-BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index);
+CSeqLoc2BlastMask(CConstRef<CSeq_loc> & sl, int index);
 
 CRef<CSeq_loc>
-BLASTBlastMask2SeqLoc(BlastMask* mask);
+BlastMask2CSeqLoc(BlastMask* mask);
 
+void BlastMaskDNAToProtein(BlastMask** mask, 
+         vector< CConstRef<CSeq_loc> >& slp, CRef<CScope>& scope);
+
+void BlastMaskProteinToDNA(BlastMask** mask_ptr, 
+         vector< CConstRef<CSeq_loc> > &slp, CRef<CScope>& scope);
 
 
 /** Declares class to handle deallocating of the structure using the appropriate
@@ -125,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/11 15:23:23  dondosha
+* Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
+*
 * Revision 1.6  2003/08/11 13:58:51  dicuccio
 * Added export specifiers.  Fixed problem with unimplemented private copy ctor
 * (truly make unimplemented)

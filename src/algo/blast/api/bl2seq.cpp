@@ -40,12 +40,12 @@
 #include <algo/blast/api/blast_seqalign.hpp>
 
 // NewBlast includes
-#include <blast_def.h>
-#include <blast_util.h>
-#include <blast_setup.h>
-#include <aa_lookup.h>
-#include <blast_engine.h>
-#include <blast_traceback.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_setup.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/blast_engine.h>
+#include <algo/blast/core/blast_traceback.h>
 
 #ifndef NUM_FRAMES
 #define NUM_FRAMES 6
@@ -329,7 +329,7 @@ CBl2Seq::x_SetupQuery()
     }
 
     // Convert the BlastMask* into a CSeq_loc
-    mi_FilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
+    mi_FilteredRegions = BlastMask2CSeqLoc(filter_mask);
 }
 
 void
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2003/08/11 15:23:59  dondosha
+ * Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
+ *
  * Revision 1.12  2003/08/11 14:00:41  dicuccio
  * Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
  * BEGIN_NCBI_SCOPE block)
