@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("xstruct_dp" library)
+#################################
+
+LIB_PROJ = xstruct_dp
+SUB_PROJ = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
