@@ -1,0 +1,12 @@
+APP = test_pin
+SRC = test_pin
+LIB = seqdb xobjutil xobjread $(OBJMGR_LIBS)
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+LIBS = $(ORIG_LIBS) $(NETWORK_LIBS) $(DL_LIBS)
+
+REQUIRES = objects
+
