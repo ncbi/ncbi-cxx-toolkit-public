@@ -42,6 +42,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/general/Object_id.hpp>
 
 // Object Manager includes
 #include <objects/objmgr/gbloader.hpp>
@@ -630,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/04/15 14:21:27  vasilche
+* Added missing include file.
+*
 * Revision 1.24  2003/03/29 07:07:31  todorov
 * deallocation bug fixed
 *
