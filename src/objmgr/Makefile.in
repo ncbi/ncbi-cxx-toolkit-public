@@ -1,9 +1,6 @@
 # $Id$
 
-# Meta-makefile("CACHE" project)
-#################################
-
-LIB_PROJ = objmgr1
+LIB_PROJ = objmgr
 SUB_PROJ = test demo
 
 srcdir = @srcdir@
