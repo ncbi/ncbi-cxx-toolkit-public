@@ -788,7 +788,7 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
 
 
 template <typename T>
-static string s_Join(const T& arr, const string& delim)
+string s_NStr_Join(const T& arr, const string& delim)
 {
     if (arr.empty()) {
         return kEmptyStr;
@@ -811,12 +811,12 @@ static string s_Join(const T& arr, const string& delim)
 
 string NStr::Join(const list<string>& arr, const string& delim)
 {
-    return s_Join(arr, delim);
+    return s_NStr_Join(arr, delim);
 }
 
 string NStr::Join(const vector<string>& arr, const string& delim)
 {
-    return s_Join(arr, delim);
+    return s_NStr_Join(arr, delim);
 }
 
 
@@ -1390,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2004/02/19 16:44:55  vasilche
+ * WorkShop compiler doesn't support static templates.
+ *
  * Revision 1.103  2004/02/18 20:54:47  shomrat
  * bug fix (pos -> pos2)
  *
