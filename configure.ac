@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.204 2003/07/09 21:10:34 ucko Exp $
+#  $Id: configure.ac,v 1.205 2003/07/16 20:57:28 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -567,6 +567,8 @@ else
    THREAD_LIBS=
    mt_sfx=""
 fi
+MT_SFX="${mt_sfx}"
+AC_SUBST(MT_SFX)
 
 CFLAGS="$MT_FLAG $CFLAGS"
 CXXFLAGS="$MT_FLAG $CXXFLAGS"
