@@ -230,11 +230,11 @@ void COrf::FindOrfs(const CSeqVector& orig_vec,
 
 // build an annot representing CDSs
 CRef<CSeq_annot>
-COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CRef<CSeq_id> id)
+COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)
 {
     CRef<CSeq_annot> annot(new CSeq_annot());
 
-    ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
+    ITERATE (TLocVec, orf, orfs) {
         // create feature
         CRef<CSeq_feat> feat(new CSeq_feat());
 
@@ -243,12 +243,12 @@ COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CRef<CSeq_id> id)
         feat->SetData().SetCdregion().SetOrf(true);  // just an ORF
         // they're all frame 1 in this sense of 'frame'
         feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
-        feat->SetTitle("ORF");
+        feat->SetTitle("Open reading frame");
 
         // set up the location
-        feat->SetLocation().Assign(**orf);
+        feat->SetLocation(const_cast<CSeq_loc&>(**orf));
         if (id) {
-            feat->SetLocation().SetInt().SetId(*id);
+            feat->SetLocation().SetId(*id);
         }
 
         // save in annot
@@ -265,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/15 20:25:05  dicuccio
+ * Fixed access of seq-loc - don't assume interval...
+ *
  * Revision 1.4  2003/09/04 21:10:42  ucko
  * MakeCDSAnnot: remove redundant (and illegal) default for id.
  *
