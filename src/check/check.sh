@@ -73,41 +73,55 @@ EOF
 
 ####  ARGS
 
-test $# -gt 3  ||  Error "Wrong number of args:  $#"
+# Files with check results already prepared and standing in the 
+# current directory. Parameters are <signature> and <destination>.
+# Only post results in this case.
 
-signature="$1"
-make="$2"
-builddir="$3"
-action="$4"
+if test $# -eq 2 ; then
+  need_check="no"
+  signature="$1"
 
-shift
-shift
-shift
-shift
+  if test ! -f $summary_res -o ! -f $error_res ; then
+     Error "Missing check result files"
+  fi
 
-test -d "$builddir"  &&  cd "$builddir"  ||  \
-  Error "Cannot CHDIR to directory:  $builddir"
+# Default check
+else
+  test $# -gt 3  ||  Error "Wrong number of args:  $#"
+  need_check="yes"
+  signature="$1"
+  make="$2"
+  builddir="$3"
+  action="$4"
 
-case "$action" in
- all )
-   # continue
-   ;;
- clean | purge )
-   test -x ./check.sh  &&  $run_script ./check.sh clean
-   exit 0
-   ;;
- * )
-   Error "Invalid action: $action"
-   ;;
-esac
+  shift
+  shift
+  shift
+  shift
 
+  test -d "$builddir"  &&  cd "$builddir"  ||  \
+    Error "Cannot CHDIR to directory:  $builddir"
 
-####  RUN CHECKS
+  case "$action" in
+   all )
+     # continue
+     ;;
+   clean | purge )
+     test -x ./check.sh  &&  $run_script ./check.sh clean
+     exit 0
+     ;;
+   * )
+     Error "Invalid action: $action"
+     ;;
+  esac
 
-export MAKEFLAGS
-MAKEFLAGS=
-"$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
-$run_script ./check.sh run
+  ####  RUN CHECKS
+
+  export MAKEFLAGS
+  MAKEFLAGS=
+  "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
+  $run_script ./check.sh run
+fi
 
 
 ####  POST RESULTS
@@ -149,8 +163,11 @@ for dest in "$@" ; do
    esac
 done
 
+
 # Compose "full" results archive, if necessary
-$run_script ./check.sh concat_err
+if test "$need_check" = "yes" ; then
+  $run_script ./check.sh concat_err
+fi
 
 # Post results to the specified locations
 if test -n "$file_list_full" ; then
