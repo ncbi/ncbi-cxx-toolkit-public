@@ -56,7 +56,7 @@ typedef struct DCURLOC { /* localcurrents */
 
 /* local functions */
 
-static void wo (Int4, Uint1*, Int4, DCURLOC*, Uint1*, Boolean, Int4);
+static void wo (Int4, Uint1*, Int4, DCURLOC*, Uint1*, Uint1, Int4);
 static Boolean wo1 (Int4, Uint1*, Int4, DCURLOC*);
 static Int4 dust_triplet_find (Uint1*, Int4, Int4, Uint1*);
 
@@ -84,17 +84,46 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
       return -1;
    }
 
-   len = (Int4) ((length > windowsize) ? windowsize : length);
-   len -= 2;
-   dust_triplet_find (sequence, 0, len-1, seq+1);
+   if (length < windowsize) windowsize = length;
 
-   for (i = 0; i < length-2; i++) {
+   /* Consider smaller windows in beginning of the sequence */
+   for (i = 2; i <= windowsize-1; i++) {
+      len = i-1;
+      wo (len, sequence, 0, &cloc, seq, 1, level);
+      
+      if (cloc.curlevel > level) {
+         if (nreg &&
+             regold->to + linker >= cloc.curstart+start &&
+             regold->from <= cloc.curend + start + linker) {
+            /* overlap windows nicely if needed */
+            if (regold->to < cloc.curend +  start)
+                regold->to = cloc.curend +  start;
+            if (regold->from > cloc.curstart + start)
+                regold->from = cloc.curstart + start;
+         } else	{
+            /* new window or dusted regions do not overlap */
+            reg->from = cloc.curstart + start;
+            reg->to = cloc.curend + start;
+            regold = reg;
+            reg = (DREGION*) calloc(1, sizeof(DREGION));
+            if (!reg) {
+               sfree(seq);
+               return -1;
+            }
+            reg->next = NULL;
+            regold->next = reg;
+            nreg++;
+         }
+      }				/* end 'if' high score	*/
+   }					/* end for */
+
+   for (i = 1; i < length-2; i++) {
       len = (Int4) ((length > i+windowsize) ? windowsize : length-i);
       len -= 2;
-      if ((length >= i+windowsize) || (i==0))
-          wo (len, sequence, i, &cloc, seq, TRUE, level);
+      if (length >= i+windowsize)
+          wo (len, sequence, i, &cloc, seq, 2, level);
       else /* remaining portion of sequence is less than windowsize */
-          wo (len, sequence, i, &cloc, seq, FALSE, level);
+          wo (len, sequence, i, &cloc, seq, 3, level);
       
       if (cloc.curlevel > level) {
          if (nreg &&
@@ -126,7 +155,7 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
 }
 
 static void wo (Int4 len, Uint1* seq_start, Int4 iseg, DCURLOC* cloc, 
-                Uint1* seq, Boolean FIND_TRIPLET, Int4 level)
+                Uint1* seq, Uint1 FIND_TRIPLET, Int4 level)
 {
 	Int4 smaller_window_start, mask_window_end;
         Boolean SINGLE_TRIPLET;
@@ -139,13 +168,18 @@ static void wo (Int4 len, Uint1* seq_start, Int4 iseg, DCURLOC* cloc,
 		return;
 
         /* get the chunk of sequence in triplets */
-	if (FIND_TRIPLET==TRUE) /* Copy suffix as prefix and find one */
+	if (FIND_TRIPLET==1) /* Append one */
+	{
+		seq[len-1] = seq[len] = seq[len+1] = 0;
+		dust_triplet_find (seq_start, iseg+len-1, 1, seq+len-1);
+	}
+	if (FIND_TRIPLET==2) /* Copy suffix as prefix and find one */
 	{
 		memmove(seq,seq+1,(len-1)*sizeof(Uint1));
 		seq[len-1] = seq[len] = seq[len+1] = 0;
 		dust_triplet_find (seq_start, iseg+len-1, 1, seq+len-1);
 	}
-	else /* Copy suffix */
+	if (FIND_TRIPLET==3) /* Copy suffix */
 		memmove(seq,seq+1,len*sizeof(Uint1));
 
         /* dust the chunk */
