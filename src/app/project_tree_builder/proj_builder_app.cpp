@@ -613,99 +613,105 @@ const CMsvcMetaMakefile& CProjBulderApp::GetMetaMakefile(void)
 
 const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 {
-    if ( !m_ProjectTreeInfo.get() ) {
+    if ( m_ProjectTreeInfo.get() )
+        return *m_ProjectTreeInfo;
         
-        m_ProjectTreeInfo.reset(new SProjectTreeInfo);
-        
-        CArgs args = GetArgs();
-        
-        // Root, etc.
-        string root = args["root"].AsString();
-        root = CDirEntry::AddTrailingPathSeparator(root);
-        root = CDirEntry::NormalizePath(root);
-        root = CDirEntry::AddTrailingPathSeparator(root);
-        m_ProjectTreeInfo->m_Root = root;
+    m_ProjectTreeInfo.reset(new SProjectTreeInfo);
+    
+    CArgs args = GetArgs();
+    
+    // Root, etc.
+    string root = args["root"].AsString();
+    root = CDirEntry::AddTrailingPathSeparator(root);
+    root = CDirEntry::NormalizePath(root);
+    root = CDirEntry::AddTrailingPathSeparator(root);
+    m_ProjectTreeInfo->m_Root = root;
 
-        /// <include> branch of tree
-        string include = GetConfig().GetString("ProjectTree", "include", "");
-        m_ProjectTreeInfo->m_Include = 
-                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
-                                      include);
-        m_ProjectTreeInfo->m_Include = 
-            CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Include);
-        
+    /// <include> branch of tree
+    string include = GetConfig().GetString("ProjectTree", "include", "");
+    m_ProjectTreeInfo->m_Include = 
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                  include);
+    m_ProjectTreeInfo->m_Include = 
+        CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Include);
+    
 
-        /// <src> branch of tree
-        string src = GetConfig().GetString("ProjectTree", "src", "");
-        m_ProjectTreeInfo->m_Src = 
-                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
-                                      src);
-        m_ProjectTreeInfo->m_Src =
-            CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Src);
+    /// <src> branch of tree
+    string src = GetConfig().GetString("ProjectTree", "src", "");
+    m_ProjectTreeInfo->m_Src = 
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                  src);
+    m_ProjectTreeInfo->m_Src =
+        CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Src);
 
-        // Subtree to build - projects filter
-        string subtree = args["subtree"].AsString();
-        subtree = 
-            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
-        string ext;
-        CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
-        if (NStr::CompareNocase(ext, ".lst") == 0) {
-            //If this is *.lst file
-            m_ProjectTreeInfo->m_IProjectFilter = 
-                auto_ptr<IProjectFilter>(new CProjectsLstFileFilter
-                                                 (m_ProjectTreeInfo->m_Src,
-                                                  subtree));
-        } else {
-            //Simple subtree
-            subtree = CDirEntry::AddTrailingPathSeparator(subtree);
-            m_ProjectTreeInfo->m_IProjectFilter = 
-                auto_ptr<IProjectFilter>(new CProjectOneNodeFilter
-                                                 (m_ProjectTreeInfo->m_Src,
-                                                  subtree));
-        }
-
-
-
-        /// <compilers> branch of tree
-        string compilers = 
-            GetConfig().GetString("ProjectTree", "compilers", "");
-        m_ProjectTreeInfo->m_Compilers = 
-                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
-                                      compilers);
-        m_ProjectTreeInfo->m_Compilers = 
-            CDirEntry::AddTrailingPathSeparator
-                       (m_ProjectTreeInfo->m_Compilers);
-
-
-        /// ImplicitExcludedBranches - all subdirs will be excluded by default
-        string implicit_exclude_str 
-            = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
-        list<string> implicit_exclude_list;
-        NStr::Split(implicit_exclude_str, 
-                    LIST_SEPARATOR, 
-                    implicit_exclude_list);
-        ITERATE(list<string>, p, implicit_exclude_list) {
-            const string& subdir = *p;
-            string dir = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Src, 
-                                               subdir);
-            dir = CDirEntry::AddTrailingPathSeparator(dir);
-            m_ProjectTreeInfo->m_ImplicitExcludedAbsDirs.push_back(dir);
-        }
-
-        /// <projects> branch of tree (scripts\projects)
-        string projects = 
-            GetConfig().GetString("ProjectTree", "projects", "");
-        m_ProjectTreeInfo->m_Projects = 
-                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
-                                      projects);
-        m_ProjectTreeInfo->m_Projects = 
-            CDirEntry::AddTrailingPathSeparator
-                       (m_ProjectTreeInfo->m_Compilers);
-
-        /// impl part if include project node
-        m_ProjectTreeInfo->m_Impl = 
-            GetConfig().GetString("ProjectTree", "impl", "");
+    // Subtree to build - projects filter
+    string subtree = args["subtree"].AsString();
+    subtree = 
+        CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
+    string ext;
+    CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
+    if (NStr::CompareNocase(ext, ".lst") == 0) {
+        //If this is *.lst file
+        m_ProjectTreeInfo->m_IProjectFilter = 
+            auto_ptr<IProjectFilter>(new CProjectsLstFileFilter
+                                             (m_ProjectTreeInfo->m_Src,
+                                              subtree));
+    } else {
+        //Simple subtree
+        subtree = CDirEntry::AddTrailingPathSeparator(subtree);
+        m_ProjectTreeInfo->m_IProjectFilter = 
+            auto_ptr<IProjectFilter>(new CProjectOneNodeFilter
+                                             (m_ProjectTreeInfo->m_Src,
+                                              subtree));
     }
+
+
+
+    /// <compilers> branch of tree
+    string compilers = 
+        GetConfig().GetString("ProjectTree", "compilers", "");
+    m_ProjectTreeInfo->m_Compilers = 
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                  compilers);
+    m_ProjectTreeInfo->m_Compilers = 
+        CDirEntry::AddTrailingPathSeparator
+                   (m_ProjectTreeInfo->m_Compilers);
+
+
+    /// ImplicitExcludedBranches - all subdirs will be excluded by default
+    string implicit_exclude_str 
+        = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
+    list<string> implicit_exclude_list;
+    NStr::Split(implicit_exclude_str, 
+                LIST_SEPARATOR, 
+                implicit_exclude_list);
+    ITERATE(list<string>, p, implicit_exclude_list) {
+        const string& subdir = *p;
+        string dir = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Src, 
+                                           subdir);
+        dir = CDirEntry::AddTrailingPathSeparator(dir);
+        m_ProjectTreeInfo->m_ImplicitExcludedAbsDirs.push_back(dir);
+    }
+
+    /// <projects> branch of tree (scripts\projects)
+    string projects = 
+        GetConfig().GetString("ProjectTree", "projects", "");
+    m_ProjectTreeInfo->m_Projects = 
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                  projects);
+    m_ProjectTreeInfo->m_Projects = 
+        CDirEntry::AddTrailingPathSeparator
+                   (m_ProjectTreeInfo->m_Compilers);
+
+    /// impl part if include project node
+    m_ProjectTreeInfo->m_Impl = 
+        GetConfig().GetString("ProjectTree", "impl", "");
+
+    /// Makefile in tree node
+    m_ProjectTreeInfo->m_TreeNode = 
+        GetConfig().GetString("ProjectTree", "TreeNode", "");
+
+
     return *m_ProjectTreeInfo;
 }
 
@@ -811,6 +817,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/06/14 14:16:58  gorelenk
+ * Changed implementation of CProjBulderApp::GetProjectTreeInfo - added
+ * m_TreeNode .
+ *
  * Revision 1.41  2004/06/07 19:14:54  gorelenk
  * Changed CProjBulderApp::GetProjectTreeInfo .
  *
