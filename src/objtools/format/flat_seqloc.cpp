@@ -46,6 +46,7 @@
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/format/context.hpp>
 #include <algorithm>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -61,7 +62,7 @@ static bool s_IsVirtualId(const CSeq_id_Handle& id, const CBioseq_Handle& seq)
     CBioseq_Handle::TId ids = seq.GetId();
     if (find(ids.begin(), ids.end(), id) == ids.end()) {
         CBioseq_Handle bsh = seq.GetScope().GetBioseqHandleFromTSE(id, seq);
-        return bsh ? bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual : true;
+        return bsh ? bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual : false;
     }
     return false;
 }
@@ -424,24 +425,20 @@ void CFlatSeqLoc::x_AddID
         return;
     }
 
-    const CSeq_id* idp = 0;
-    if ( bh ) {
+    CConstRef<CSeq_id> idp;
+    if (bh) {
         idp = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::Score);
     } else {
-        if ( id.IsGi() ) {
-            // NB: temporary !!!
-            bh = ctx.GetScope().GetBioseqHandle(id);
-            if (bh) {
-                idp = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::Score);
-            }
+        if (id.IsGi()) {
+            idp = FindBestId(ctx.GetScope().GetIds(id), CSeq_id::Score);
         }
     }
-    if (idp == 0) {
-        idp = &id;
+    if (!idp) {
+        idp.Reset(&id);
     }
 
     string acc;
-    if ( idp->GetTextseq_Id() != 0 ) 
+    if (idp->GetTextseq_Id() != 0) 
         acc = idp->GetSeqIdString(true);
     else {
         acc = idp->AsFastaString();
@@ -458,6 +455,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/10/05 15:40:02  shomrat
+* Use CScope::GetIds
+*
 * Revision 1.12  2004/08/30 13:39:13  shomrat
 * get accession for GI
 *
