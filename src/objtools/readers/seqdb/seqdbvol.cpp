@@ -979,9 +979,7 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
         // nucl
         vector<Int4> ambchars;
         
-        if (! x_GetAmbChar(oid, ambchars, locked)) {
-            return null_result;
-        }
+        x_GetAmbChar(oid, ambchars, locked);
         
         if (ambchars.empty()) {
             // keep as 2 bit
@@ -1130,11 +1128,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
             // Get ambiguity characters.
             
             vector<Int4> ambchars;
-            
-            if (! x_GetAmbChar(oid, ambchars, locked) ) {
-                NCBI_THROW(CSeqDBException, eFileErr,
-                           "File error: could not get ambiguity data.");
-            }
+            x_GetAmbChar(oid, ambchars, locked);
             
             // Combine and translate to 4 bits-per-character encoding.
             
@@ -1362,7 +1356,7 @@ CSeqDBVol::x_GetHdrBinaryMembBit(Uint4            oid,
     hdr_data.assign(str.data(), str.data() + str.length());
 }
 
-bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
+void CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -1370,32 +1364,32 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
     bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset);
     
     if (! ok) {
-        return false;
+        NCBI_THROW(CSeqDBException, eFileErr,
+                   "File error: could not get ambiguity data.");
     }
     
     Int4 length = Int4(end_offset - start_offset);
     
-    if (0 == length)
-        return true;
-    
-    Int4 total = length / 4;
-    
-    Int4 * buffer =
-        (Int4*) m_Seq.GetRegion(start_offset,
-                                start_offset + (total * 4),
-                                false,
-                                locked);
-    
-    // This makes no sense...
-    total &= 0x7FFFFFFF;
-    
-    ambchars.resize(total);
-    
-    for(int i = 0; i<total; i++) {
-	ambchars[i] = SeqDB_GetStdOrd((const Uint4 *)(& buffer[i]));
+    if (length) {
+        Int4 total = length / 4;
+        
+        Int4 * buffer =
+            (Int4*) m_Seq.GetRegion(start_offset,
+                                    start_offset + (total * 4),
+                                    false,
+                                    locked);
+        
+        // This makes no sense...
+        total &= 0x7FFFFFFF;
+        
+        ambchars.resize(total);
+        
+        for(int i = 0; i<total; i++) {
+            ambchars[i] = SeqDB_GetStdOrd((const Uint4 *)(& buffer[i]));
+        }
+    } else {
+        ambchars.clear();
     }
-    
-    return true;
 }
 
 Uint4 CSeqDBVol::GetNumOIDs(void) const

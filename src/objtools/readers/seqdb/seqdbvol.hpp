@@ -495,17 +495,34 @@ private:
                                    CSeqDBLockHold & locked) const;
     
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
-    char   x_GetSeqType() const;
+    char x_GetSeqType() const;
     
-    bool   x_GetAmbChar(Uint4            oid,
-                        vector<Int4>   & ambchars,
-                        CSeqDBLockHold & locked) const;
+    /// Get ambiguity information
+    /// 
+    /// This method is used to fetch the ambiguity data for sequences
+    /// in a nucleotide database.  The ambiguity data describes
+    /// sections of the nucleotide sequence for which more than one of
+    /// 'A', 'C', 'G', or 'T' are possible.  The integers returned by
+    /// this function contain a packed description of the ranges of
+    /// the sequence which have such data.  This method only returns
+    /// the array of integers, and does not interpret them, except for
+    /// byte swapping.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence.
+    /// @param ambchars
+    ///   The returned array of ambiguity descriptors.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void x_GetAmbChar(Uint4            oid,
+                      vector<Int4>   & ambchars,
+                      CSeqDBLockHold & locked) const;
     
-    Int4   x_GetAmbigSeq(Int4               oid,
-                         char            ** buffer,
-                         Uint4              nucl_code,
-                         ESeqDBAllocType    alloc_type,
-                         CSeqDBLockHold   & locked) const;
+    Int4 x_GetAmbigSeq(Int4               oid,
+                       char            ** buffer,
+                       Uint4              nucl_code,
+                       ESeqDBAllocType    alloc_type,
+                       CSeqDBLockHold   & locked) const;
     
     char * x_AllocType(Uint4             length,
                        ESeqDBAllocType   alloc_type,
