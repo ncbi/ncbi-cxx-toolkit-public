@@ -144,7 +144,7 @@ CDistMethods::TTree *CDistMethods::NjTree(const TMatrix& dist_mat,
                 i = (*it1)->GetValue().GetId();
                 j = (*it2)->GetValue().GetId();
                 m = dmat(i, j) - (r[i] + r[j]) / (n - 2);
-                if (m < min_m) {
+                if (m <= min_m) {
                     neighbor1 = it1;
                     neighbor2 = it2;
                     min_m = m;
@@ -448,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/01 17:28:37  jcherry
+ * Fixed neighbor-joining problem with certain datasets
+ *
  * Revision 1.12  2005/02/28 20:19:46  jcherry
  * Treat gaps at ends the same as internal gaps when calculating divergence
  *
