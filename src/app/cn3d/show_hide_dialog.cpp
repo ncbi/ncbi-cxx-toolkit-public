@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/09/06 13:10:10  thiessen
+* tweak show hide dialog layout
+*
 * Revision 1.7  2001/08/06 20:22:01  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -69,6 +72,10 @@ BEGIN_EVENT_TABLE(ShowHideDialog, wxDialog)
     EVT_CLOSE                  (ShowHideDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
+#define MIN_SIZE 200,300
+#define B_WIDTH 50
+#define MARGIN 10
+
 ShowHideDialog::ShowHideDialog(
     const wxString items[],
     std::vector < bool > *itemsOn,
@@ -76,41 +83,38 @@ ShowHideDialog::ShowHideDialog(
     wxWindow* parent,
     wxWindowID id,
     const wxString& title,
-    const wxPoint& pos,
-    const wxSize& size
+    const wxPoint& pos
 ) :
-    wxDialog(parent, id, title, pos, size, wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
+    wxDialog(parent, id, title, pos, wxSize(MIN_SIZE), wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
     itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL)
 {
     SetAutoLayout(true);
-    SetSizeHints(150, 100);
-
-    static const int margin = 0;
+    SetSizeHints(MIN_SIZE);
 
 	wxButton *doneB;
     if (callbackObject) {
         doneB = new wxButton(this, B_DONE, "Done");
         wxLayoutConstraints *c1 = new wxLayoutConstraints();
-        c1->bottom.SameAs       (this,      wxBottom,   margin);
-        c1->right.SameAs        (this,      wxRight,    margin);
-        c1->width.PercentOf     (this,      wxWidth,    33);
+        c1->bottom.SameAs       (this,      wxBottom,   MARGIN);
+        c1->right.SameAs        (this,      wxRight,    MARGIN);
+        c1->width.Absolute      (B_WIDTH);
         c1->height.AsIs         ();
         doneB->SetConstraints(c1);
 
         applyB = new wxButton(this, B_APPLY, "Apply");
         wxLayoutConstraints *c2 = new wxLayoutConstraints();
-        c2->bottom.SameAs       (this,      wxBottom,   margin);
-        c2->left.SameAs         (this,      wxLeft,     margin);
-        c2->width.PercentOf     (this,      wxWidth,    33);
+        c2->bottom.SameAs       (this,      wxBottom,   MARGIN);
+        c2->centreX.SameAs      (this,      wxCentreX);
+        c2->width.Absolute      (B_WIDTH);
         c2->top.SameAs          (doneB,     wxTop);
         applyB->SetConstraints(c2);
         applyB->Enable(false);
 
         cancelB = new wxButton(this, B_CANCEL, "Cancel");
         wxLayoutConstraints *c3 = new wxLayoutConstraints();
-        c3->bottom.SameAs       (this,      wxBottom,   margin);
-        c3->left.RightOf        (applyB,                margin);
-        c3->right.LeftOf        (doneB,                 margin);
+        c3->bottom.SameAs       (this,      wxBottom,   MARGIN);
+        c3->left.SameAs         (this,      wxLeft,     MARGIN);
+        c3->width.Absolute      (B_WIDTH);
         c3->top.SameAs          (doneB,     wxTop);
         cancelB->SetConstraints(c3);
         cancelB->Enable(false);
@@ -120,17 +124,17 @@ ShowHideDialog::ShowHideDialog(
     else {
         doneB = new wxButton(this, B_DONE, "Done");
         wxLayoutConstraints *c1 = new wxLayoutConstraints();
-        c1->bottom.SameAs       (this,      wxBottom,   margin);
-        c1->right.SameAs        (this,      wxRight,    margin);
-        c1->width.PercentOf     (this,      wxWidth,    50);
+        c1->bottom.SameAs       (this,      wxBottom,   MARGIN);
+        c1->left.SameAs         (this,      wxCentreX,  MARGIN);
+        c1->width.Absolute      (B_WIDTH);
         c1->height.AsIs         ();
         doneB->SetConstraints(c1);
 
         cancelB = new wxButton(this, B_CANCEL, "Cancel");
         wxLayoutConstraints *c3 = new wxLayoutConstraints();
-        c3->bottom.SameAs       (this,      wxBottom,   margin);
-        c3->left.SameAs         (this,      wxLeft,     margin);
-        c3->right.LeftOf        (doneB,                 margin);
+        c3->bottom.SameAs       (this,      wxBottom,   MARGIN);
+        c3->right.SameAs        (this,      wxCentreX,  MARGIN);
+        c3->width.Absolute      (B_WIDTH);
         c3->top.SameAs          (doneB,     wxTop);
         cancelB->SetConstraints(c3);
         cancelB->Enable(false);
@@ -139,10 +143,10 @@ ShowHideDialog::ShowHideDialog(
     listBox = new wxListBox(this, LISTBOX, wxDefaultPosition, wxDefaultSize,
         itemsEnabled->size(), items, wxLB_EXTENDED | wxLB_HSCROLL | wxLB_NEEDED_SB);
     wxLayoutConstraints *c4 = new wxLayoutConstraints();
-    c4->top.SameAs          (this,      wxTop,      margin);
-    c4->left.SameAs         (this,      wxLeft,     margin);
-    c4->right.SameAs        (this,      wxRight,    margin);
-    c4->bottom.Above        (doneB,                 margin);
+    c4->top.SameAs          (this,      wxTop,      MARGIN);
+    c4->left.SameAs         (this,      wxLeft,     MARGIN);
+    c4->right.SameAs        (this,      wxRight,    MARGIN);
+    c4->bottom.Above        (doneB,                 -MARGIN);
     listBox->SetConstraints(c4);
 
     Layout();

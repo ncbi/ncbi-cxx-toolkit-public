@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2001/09/06 13:10:10  thiessen
+* tweak show hide dialog layout
+*
 * Revision 1.76  2001/09/04 20:06:37  thiessen
 * tweaks for Mac
 *
@@ -966,7 +969,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
             !RegistrySetInteger(section, REG_FONT_STYLE, font.GetStyle()) ||
             !RegistrySetInteger(section, REG_FONT_WEIGHT, font.GetWeight()) ||
             !RegistrySetBoolean(section, REG_FONT_UNDERLINED, font.GetUnderlined(), true) ||
-            !RegistrySetString(section, REG_FONT_FACENAME, 
+            !RegistrySetString(section, REG_FONT_FACENAME,
                 (font.GetFaceName().size() > 0) ? font.GetFaceName().c_str() : FONT_FACENAME_UNKNOWN.c_str()))
         {
             ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting registry data");
@@ -1193,10 +1196,9 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
             for (int i=0; i<structureNames.size(); i++) titles[i] = structureNames[i].c_str();
 
             ShowHideDialog dialog(
-                titles,
-                &structureVisibilities,
+                titles, &structureVisibilities,
                 glCanvas->structureSet->showHideManager,
-                NULL, -1, "Show/Hide Structures", wxPoint(400, 50), wxSize(200, 300));
+                this, -1, "Show/Hide Structures");
             dialog.ShowModal();
     //        delete titles;    // apparently deleted by wxWindows
             break;

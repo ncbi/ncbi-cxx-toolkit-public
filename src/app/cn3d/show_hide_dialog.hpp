@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/09/06 13:09:38  thiessen
+* tweak show hide dialog layout
+*
 * Revision 1.6  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -93,8 +96,7 @@ public:
         wxWindow* parent,
         wxWindowID id,
         const wxString& title,
-        const wxPoint& pos = wxDefaultPosition,
-        const wxSize& size = wxDefaultSize
+        const wxPoint& pos = wxDefaultPosition
     );
 
 private:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/09/06 13:10:10  thiessen
+* tweak show hide dialog layout
+*
 * Revision 1.20  2001/08/24 18:53:43  thiessen
 * add filename to sequence viewer window titles
 *
@@ -285,10 +288,9 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     wxString title = "Show/Hide Slaves of ";
     title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
-        titleStrs,
-        &visibilities,
+        titleStrs, &visibilities,
         sequenceViewer->alignmentManager,
-        NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
+        this, -1, title);
     dialog.ShowModal();
 //    delete titleStrs;    // apparently deleted by wxWindows
 }
@@ -352,10 +354,9 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     wxString title = "Realign Slaves of ";
     title.Append(alignment->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
-        titleStrs,
-        &selectedSlaves,
+        titleStrs, &selectedSlaves,
         NULL,   // no "apply" button or callback
-        NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
+        this, -1, title);
     dialog.ShowModal();
 
     // make list of slave rows to be realigned
