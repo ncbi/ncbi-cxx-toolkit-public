@@ -31,7 +31,6 @@
  * File Description:
  *   Configuration wrapper for CONNECT library in NCBI C++ Toolkit
  *
- * ===========================================================================
  */
 
 /* Real configuration
