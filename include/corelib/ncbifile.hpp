@@ -110,7 +110,7 @@ enum EFollowLinks {
 ///
 /// - dir   - file path             ("/usr/local/bin/"  or  "c:\windows\")
 /// - title - file name without ext ("autoexec")
-/// - ext   - file extension        (".bat" -- whatever goes after the last dot)
+/// - ext   - file extension        (".bat" - whatever goes after the last dot)
 ///
 /// Supported filename formats:  MS DOS/Windows, UNIX and MAC.
 
@@ -141,11 +141,11 @@ public:
     virtual ~CDirEntry(void);
 
     /// Equality operator.
-        bool operator== (const CDirEntry& other) const;
+    bool operator== (const CDirEntry& other) const;
 
 # if defined(NCBI_OS_MAC)
     /// Get FSSpec setting - for Mac file system.
-        const FSSpec& FSS() const;
+    const FSSpec& FSS() const;
 #endif
 
     /// Get directory entry path.
@@ -267,7 +267,7 @@ public:
     /// @param follow_links
     ///   Whether to follow symlinks (shortcuts, aliases)
     static string NormalizePath(const string& path,
-                                EFollowLinks follow_links = eIgnoreLinks);
+                                EFollowLinks  follow_links = eIgnoreLinks);
 
 
     //
@@ -437,8 +437,9 @@ public:
 
     /// Set mode for this one object only.
     ///
-    /// When "fDefault" is passed as value of the mode parameters, the mode will
-    /// be set to the current global mode as specified by SetDefaultModeGlobal().
+    /// When "fDefault" is passed as value of the mode parameters, the mode
+    /// will be set to the current global mode as specified
+    /// by SetDefaultModeGlobal().
     virtual void SetDefaultMode(EType entry_type,
                                 TMode user_mode,  // e.g. fDefault
                                 TMode group_mode = fDefault,
@@ -667,7 +668,6 @@ public:
     ///   An array containing all directory entries.
     TEntries GetEntries(const vector<string>& masks) const;
 
-
     /// Create the directory using "dirname" passed in the constructor.
     /// 
     /// @return
@@ -677,7 +677,7 @@ public:
     /// Create the directory path recursively possibly more than one at a time.
     ///
     /// @return
-    ///   TRUE if operation successful; FALSE, otherwise.
+    ///   TRUE if operation successful; FALSE otherwise.
     bool CreatePath(void) const;
 
     /// Delete existing directory.
@@ -690,12 +690,12 @@ public:
     ///   - If set to "eRecursive" remove all files in directory, and
     ///   subdirectories.
     /// @return
-    ///   TRUE if operation successful; FALSE, otherwise.
+    ///   TRUE if operation successful; FALSE otherwise.
     /// @sa
     ///   EDirRemoveMode
     virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
-
 };
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -704,6 +704,7 @@ public:
 /// finds files to match the masks and stores all found files in 
 /// the container object.
 ///
+
 template<class TContainer, class It1>
 void FindFiles(TContainer&           out, 
                It1                   first_path, 
@@ -719,9 +720,9 @@ void FindFiles(TContainer&           out,
         ITERATE(CDir::TEntries, it, contents) {
             out.push_back((*it)->GetPath());
         }
-
     } // for
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -730,6 +731,7 @@ void FindFiles(TContainer&           out,
 /// finds files to match the masks and stores all found files in 
 /// the container object.
 ///
+
 template<class TContainer, class It1, class It2>
 void FindFiles(TContainer&      out, 
                It1  first_path, It1 last_path, 
@@ -744,8 +746,15 @@ void FindFiles(TContainer&      out,
     FindFiles(out, first_path, last_path, masks);
 }
 
-// fwd-decl of struct containing OS-specific mem.-file handle.
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// fwd-decl of struct containing OS-specific mem.-file handle.
+
 struct SMemoryFileHandle;
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -781,7 +790,7 @@ public:
     ///   Specify if change to memory mapped file can be shared or not.
     /// @sa
     ///   EMemMapProtect, EMemMapShare
-    CMemoryFile(const string& file_name,
+    CMemoryFile(const string&  file_name,
                 EMemMapProtect protect_attr = eMMP_Read,
                 EMemMapShare   share_attr   = eMMS_Private);
 
@@ -876,7 +885,7 @@ private:
     ///   Specify if change to memory mapped file can be shared or not.
     /// @sa
     ///   EMemMapProtect, EMemMapShare
-    void x_Map(const string& file_name,
+    void x_Map(const string&  file_name,
                EMemMapProtect protect_attr,
                EMemMapShare   share_attr);
 
@@ -889,6 +898,7 @@ private:
 
 
 /* @} */
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1003,6 +1013,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/03/11 22:16:52  vakatov
+ * Cosmetics
+ *
  * Revision 1.35  2004/01/05 21:41:55  gorelenk
  * += Exception throwing in CDirEntry::CreateRelativePath()
  *
