@@ -87,7 +87,7 @@ CDB_Connection* CMySQLContext::Connect(const string&   srv_name,
 // DriverManager related functions
 //
 
-static I_DriverContext* MYSQL_CreateContext(map<string,string>* /*attr*/)
+static I_DriverContext* MYSQL_CreateContext(const map<string,string>* /*attr*/)
 {
     return new CMySQLContext();
 }
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/12/20 17:13:13  ucko
+ * Const-correctness fix for latest RegisterDriver interface.
+ *
  * Revision 1.7  2004/05/17 21:15:34  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
