@@ -118,6 +118,18 @@ void CJobTimeLine::RemoveObject(unsigned object_id)
     }
 }
 
+void CJobTimeLine::MoveObject(time_t old_time, 
+                              time_t new_time, 
+                              unsigned object_id)
+{
+    bool removed = RemoveObject(old_time, object_id);
+    if (!removed) {
+        RemoveObject(object_id);
+    }
+    AddObject(new_time, object_id);
+}
+
+
 unsigned CJobTimeLine::TimeLineSlot(time_t tm) const
 {
     _ASSERT(tm >= m_TimeLineHead);
@@ -165,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/10 14:18:46  kuznets
+ * +MoveObject()
+ *
  * Revision 1.1  2005/03/09 17:37:16  kuznets
  * Added node notification thread and execution control timeline
  *

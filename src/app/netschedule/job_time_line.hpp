@@ -78,6 +78,9 @@ public:
     /// Find and remove object
     void RemoveObject(unsigned object_id);
 
+    /// Move object from one time slot to another
+    void MoveObject(time_t old_time, time_t new_time, unsigned object_id);
+
     /// Compute slot position in the timeline
     unsigned TimeLineSlot(time_t tm) const;
 
@@ -110,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/10 14:18:46  kuznets
+ * +MoveObject()
+ *
  * Revision 1.1  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
  *
