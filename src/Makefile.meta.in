@@ -186,7 +186,7 @@ $(IRRELEVANT_FILE): $(PROJECTS)
 	@if test -n "$(PROJECTS)" ; then \
 	    sed -ne 's@^-@build/@p' $(PROJECTS); \
 	else \
-	    echo '.*'; \
+	    echo '^$$'; \
 	fi > $(IRRELEVANT_FILE)
 
 # Commands to see whether project directories are relevant.
