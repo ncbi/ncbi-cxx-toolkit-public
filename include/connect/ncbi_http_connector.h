@@ -1,5 +1,5 @@
-#ifndef NCBI_HTTP_CONNECTOR__H
-#define NCBI_HTTP_CONNECTOR__H
+#ifndef CONNECT___HTTP_CONNECTOR__H
+#define CONNECT___HTTP_CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,33 +34,6 @@
  *   See in "ncbi_connector.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2001/09/28 20:46:13  lavr
- * Comments revised; parameter names adjusted
- *
- * Revision 6.7  2001/09/10 21:15:48  lavr
- * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
- *
- * Revision 6.6  2001/05/23 21:52:00  lavr
- * +fHCC_NoUpread
- *
- * Revision 6.5  2001/01/25 16:53:22  lavr
- * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
- *
- * Revision 6.4  2000/12/29 17:41:44  lavr
- * Pretty printed; HTTP_CreateConnectorEx constructor interface changed
- *
- * Revision 6.3  2000/10/03 21:20:34  lavr
- * Request method changed from POST to {GET|POST}
- *
- * Revision 6.2  2000/09/26 22:02:55  lavr
- * HTTP request method added
- *
- * Revision 6.1  2000/04/21 19:40:58  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_connector.h>
@@ -198,4 +171,38 @@ extern CONNECTOR HTTP_CreateConnectorEx
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_HTTP_CONNECTOR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.9  2002/09/06 15:41:13  lavr
+ * Log moved to end
+ *
+ * Revision 6.8  2001/09/28 20:46:13  lavr
+ * Comments revised; parameter names adjusted
+ *
+ * Revision 6.7  2001/09/10 21:15:48  lavr
+ * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
+ *
+ * Revision 6.6  2001/05/23 21:52:00  lavr
+ * +fHCC_NoUpread
+ *
+ * Revision 6.5  2001/01/25 16:53:22  lavr
+ * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
+ *
+ * Revision 6.4  2000/12/29 17:41:44  lavr
+ * Pretty printed; HTTP_CreateConnectorEx constructor interface changed
+ *
+ * Revision 6.3  2000/10/03 21:20:34  lavr
+ * Request method changed from POST to {GET|POST}
+ *
+ * Revision 6.2  2000/09/26 22:02:55  lavr
+ * HTTP request method added
+ *
+ * Revision 6.1  2000/04/21 19:40:58  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___HTTP_CONNECTOR__H */
