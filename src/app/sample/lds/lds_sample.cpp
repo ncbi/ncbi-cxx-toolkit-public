@@ -51,6 +51,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
 
@@ -163,6 +164,25 @@ int CSampleLdsApplication::Run(void)
     }
     NcbiCout << NcbiEndl;
 
+    
+    /////////////////////////////////////////////////////////////////////////
+    // Get Bioseq handle for the Seq-id.
+    // * Most of requests will use this handle.
+    CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
+
+    // Terminate the program if the GI cannot be resolved to a Bioseq.
+    if ( !bioseq_handle ) {
+        ERR_POST(Fatal << "Bioseq not found, with GI=" << gi);
+    }
+    string object_title = sequence::GetTitle(bioseq_handle);
+    NcbiCout << "Title: " << object_title << NcbiEndl;
+
+
+    CSeq_entry_Handle eh = bioseq_handle.GetTopLevelEntry();
+    CConstRef<CSeq_entry> se = eh.GetCompleteSeq_entry();
+
+    // NcbiCout << MSerial_Xml << *se;
+
 
     // Done
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
@@ -251,6 +271,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/01/13 17:40:34  kuznets
+ * Sample improvements
+ *
  * Revision 1.1  2005/01/11 20:41:47  kuznets
  * Initial revision
  *
