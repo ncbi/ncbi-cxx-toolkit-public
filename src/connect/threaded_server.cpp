@@ -108,6 +108,7 @@ void CThreadedServer::Run(void)
         }
     }
 
+    lsock.Close();
     pool.KillAllThreads(true);
 }
 
@@ -119,6 +120,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.15  2005/01/05 15:12:31  ucko
+ * Close the listening socket before killing all threads to avoid
+ * misleading belated clients.
+ *
  * Revision 6.14  2004/10/18 18:18:20  ucko
  * Catch exceptions by reference rather than value.
  *
