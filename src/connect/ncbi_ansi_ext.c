@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/11/07 21:45:16  lavr
+ * Removed isupper/islower checking in strlwr/strupr
+ *
  * Revision 6.5  2000/11/07 21:19:38  vakatov
  * Compilation warning fixed;  plus, some code beautification...
  *
@@ -102,9 +105,7 @@ extern char* strupr(char* s)
     unsigned char* t = (unsigned char*) s;
 
     while ( *t ) {
-        if ( islower(*t) ) {
-            *t = toupper(*t);
-        }
+        *t = toupper(*t);
         t++;
     }
     return s;
@@ -116,9 +117,7 @@ extern char* strlwr(char* s)
     unsigned char* t = (unsigned char*) s;
 
     while ( *t ) {
-        if ( isupper(*t) ) {
-            *t = tolower(*t);
-        }
+        *t = tolower(*t);
         t++;
     }
     return s;
