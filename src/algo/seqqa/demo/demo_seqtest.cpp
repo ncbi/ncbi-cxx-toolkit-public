@@ -38,6 +38,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/scope.hpp>
 #include <algo/seqqa/seqtest.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/Bioseq.hpp>
 
 
@@ -150,6 +151,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/21 18:40:49  vasilche
+ * Added missing include Seq_align.hpp.
+ *
  * Revision 1.1  2004/10/06 19:57:15  jcherry
  * Initial version
  *

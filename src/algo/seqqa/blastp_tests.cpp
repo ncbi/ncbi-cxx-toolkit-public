@@ -41,6 +41,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -161,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/21 18:40:49  vasilche
+ * Added missing include Seq_align.hpp.
+ *
  * Revision 1.4  2004/10/25 14:29:39  jcherry
  * Don't get taxid of a hit (expensive) unless its score is the
  * highest seen yet.  Don't do pointless check that descriptor
