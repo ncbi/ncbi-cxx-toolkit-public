@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/04/18 16:26:04  ivanov
+ * Change types TUnicodeChar, TUnicodeString to simple types.
+ * TUnicode char to long, TUnicodeString to vector<long>.
+ *
  * Revision 1.1  2001/04/06 19:14:36  ivanov
  * Initial revision
  *
@@ -58,7 +62,7 @@ const char kOutrangeChar = '?';
 // ASCII-7. 
 // For example, there are a lot of characters which meaning is to modify the
 // character next to them.
-const unsigned char kSkipChar = '\xFF';
+const char kSkipChar = '\xFF';
 
 // Result (status) conversion Unicode symbols to character
 enum EConversionStatus {
@@ -66,9 +70,6 @@ enum EConversionStatus {
     eSkip,                // Result conversion == kSkipChar
     eOutrange             // Result conversion == kOutrangeChar
 };
-
-typedef unsigned long        TUnicodeChar;    // Unicode symbol code
-typedef vector<TUnicodeChar> TUnicodeString;  // Vector of Unicode symbol codes
 
 
 // Convert first UTF-8 symbol of "src" into ASCII-7 character.
@@ -79,10 +80,10 @@ typedef vector<TUnicodeChar> TUnicodeString;  // Vector of Unicode symbol codes
 // NOTE:  If the UTF-8 symbol has no ASCII-7 equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
-extern unsigned char StringToChar(const string&      src,
-                                  size_t*            seq_len     = 0,
-                                  bool               ascii_table = true,
-                                  EConversionStatus* status      = 0);
+extern char StringToChar(const string&      src,
+                         size_t*            seq_len     = 0,
+                         bool               ascii_table = true,
+                         EConversionStatus* status      = 0);
 
 // Convert UTF-8 string "src" into the ASCII-7 string with
 // graphically similar characters -- using StringToChar().
@@ -99,15 +100,15 @@ extern string StringToAscii(const string& src,
 // NOTE:  If the UTF-8 symbol has no Unicode equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
-extern TUnicodeChar StringToCode(const string&      src,
-                                 size_t*            seq_len = 0,
-                                 EConversionStatus* status  = 0);
+extern long StringToCode(const string&      src,
+                         size_t*            seq_len = 0,
+                         EConversionStatus* status  = 0);
 
 // Convert UTF-8 string "src" into the vector of Unicode symbol codes
 // using StringToCode().
 // Return resulting vector.
 //
-extern TUnicodeString StringToVector(const string& src);
+extern vector<long> StringToVector(const string& src);
 
 
 // Translate Unicode symbol code "src" into graphically similar ASCII-7
@@ -116,8 +117,7 @@ extern TUnicodeString StringToVector(const string& src);
 // NOTE:  If the Unicode symbol has no ASCII-7 equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
-extern unsigned char CodeToChar(const TUnicodeChar src,
-                                EConversionStatus* status = 0); 
+extern char CodeToChar(const long src, EConversionStatus* status = 0); 
 
 
 END_SCOPE(utf8)
