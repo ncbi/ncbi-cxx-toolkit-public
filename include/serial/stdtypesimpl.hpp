@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/13 16:28:32  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.6  2000/09/19 20:16:53  vasilche
 * Fixed type in CStlClassInfo_auto_ptr.
 * Added missing include serialutil.hpp.
@@ -100,209 +106,95 @@ void ThrowIllegalCall(void);
     SERIAL_ENUMERATE_ALL_INTEGRAL_TYPES \
     SERIAL_ENUMERATE_ALL_FLOAT_TYPES
 
-template<typename T>
-class CPrimitiveTypeFunctions
-{
-public:
-    static void Read(CObjectIStream& in,
-                     TTypeInfo , TObjectPtr objectPtr)
-        {
-            in.ReadStd(CTypeConverter<T>::Get(objectPtr));
-        }
-    static void Write(CObjectOStream& out,
-                      TTypeInfo , TConstObjectPtr objectPtr)
-        {
-            out.WriteStd(CTypeConverter<T>::Get(objectPtr));
-        }
-    static void Skip(CObjectIStream& in, TTypeInfo )
-        {
-            T data;
-            in.ReadStd(data);
-        }
-    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
-        {
-            T data;
-            copier.In().ReadStd(data);
-            copier.Out().WriteStd(data);
-        }
-    static TObjectPtr Create(TTypeInfo )
-        {
-            return new T();
-        }
-    static TObjectPtr CreateZero(TTypeInfo )
-        {
-            return new T(0);
-        }
-};
-
-// template to standard C types with default value 0 (int, double, char* etc.)
-template<typename T>
-class CPrimitiveTypeInfoImpl : public CPrimitiveTypeInfo
+class CPrimitiveTypeInfoBool : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
-    typedef T TObjectType;
-    CPrimitiveTypeInfoImpl(EPrimitiveValueType valueType)
-        : CParent(sizeof(TObjectType), valueType)
-        {
-            SetCreateFunction(&CPrimitiveTypeFunctions<T>::CreateZero);
-            SetReadFunction(&CPrimitiveTypeFunctions<T>::Read);
-            SetWriteFunction(&CPrimitiveTypeFunctions<T>::Write);
-            SetSkipFunction(&CPrimitiveTypeFunctions<T>::Skip);
-            SetCopyFunction(&CPrimitiveTypeFunctions<T>::Copy);
-        }
+    typedef bool TObjectType;
 
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return CTypeConverter<TObjectType>::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return CTypeConverter<TObjectType>::Get(object);
-        }
+    CPrimitiveTypeInfoBool(void);
 
-    virtual bool IsDefault(TConstObjectPtr object) const
-        {
-            return Get(object) == 0;
-        }
-
-    virtual void SetDefault(TObjectPtr dst) const
-        {
-            Get(dst) = 0;
-        }
-
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
-        {
-            return Get(object1) == Get(object2);
-        }
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
-        {
-            Get(dst) = Get(src);
-        }
+    bool GetValueBool(TConstObjectPtr object) const;
+    void SetValueBool(TObjectPtr object, bool value) const;
 };
 
-class CPrimitiveTypeInfoBool : public CPrimitiveTypeInfoImpl<bool>
+class CPrimitiveTypeInfoChar : public CPrimitiveTypeInfo
 {
-    typedef CPrimitiveTypeInfoImpl<bool> CParent;
+    typedef CPrimitiveTypeInfo CParent;
 public:
-    CPrimitiveTypeInfoBool(void)
-        : CParent(ePrimitiveValueBool)
-        {
-        }
+    typedef char TObjectType;
 
-    virtual bool GetValueBool(TConstObjectPtr object) const;
-    virtual void SetValueBool(TObjectPtr object, bool value) const;
+    CPrimitiveTypeInfoChar(void);
+
+    char GetValueChar(TConstObjectPtr object) const;
+    void SetValueChar(TObjectPtr object, char value) const;
+    void GetValueString(TConstObjectPtr object, string& value) const;
+    void SetValueString(TObjectPtr object, const string& value) const;
 };
 
-class CPrimitiveTypeInfoChar : public CPrimitiveTypeInfoImpl<char>
+class CPrimitiveTypeInfoLong : public CPrimitiveTypeInfo
 {
-    typedef CPrimitiveTypeInfoImpl<char> CParent;
+    typedef CPrimitiveTypeInfo CParent;
 public:
-    CPrimitiveTypeInfoChar(void)
-        : CParent(ePrimitiveValueChar)
-        {
-        }
+    typedef long (*TGetLongFunction)(TConstObjectPtr objectPtr);
+    typedef unsigned long (*TGetULongFunction)(TConstObjectPtr objectPtr);
+    typedef void (*TSetLongFunction)(TObjectPtr objectPtr, long v);
+    typedef void (*TSetULongFunction)(TObjectPtr objectPtr, unsigned long v);
 
-    virtual char GetValueChar(TConstObjectPtr object) const;
-    virtual void SetValueChar(TObjectPtr object, char value) const;
+    CPrimitiveTypeInfoLong(size_t size, bool isSigned);
+
+    void SetLongFunctions(TGetLongFunction, TSetLongFunction,
+                          TGetULongFunction, TSetULongFunction);
+
+    long GetValueLong(TConstObjectPtr objectPtr) const;
+    unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
+    void SetValueLong(TObjectPtr objectPtr, long value) const;
+    void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
+    
+protected:
+    TGetLongFunction m_GetLong;
+    TSetLongFunction m_SetLong;
+    TGetULongFunction m_GetULong;
+    TSetULongFunction m_SetULong;
 };
 
-template<typename T>
-class CPrimitiveTypeInfoLong : public CPrimitiveTypeInfoImpl<T>
+class CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfo
 {
-    typedef CPrimitiveTypeInfoImpl<T> CParent;
-
-    static bool x_IsSigned(void)
-        {
-            return TObjectType(-1) < 0;
-        }
-    static void x_CheckNoSign(long value)
-        {
-            if ( value < 0 ) // value doesn't fit
-                ThrowIntegerOverflow();
-        }
+    typedef CPrimitiveTypeInfo CParent;
 public:
-    CPrimitiveTypeInfoLong(void)
-        : CParent(ePrimitiveValueInteger)
-        {
-        }
-    virtual bool IsSigned(void) const
-        {
-            return x_IsSigned();
-        }
-    virtual long GetValueLong(TConstObjectPtr objectPtr) const
-        {
-            TObjectType value = Get(objectPtr);
-            if ( sizeof(TObjectType) == sizeof(long) && !x_IsSigned() ) {
-                // type is unsigned long
-                x_CheckNoSign(value);
-            }
-            return value;
-        }
-    virtual unsigned long GetValueULong(TConstObjectPtr objectPtr) const
-        {
-            TObjectType value = Get(objectPtr);
-            if ( sizeof(TObjectType) == sizeof(long) && x_IsSigned() ) {
-                // type is signed long
-                x_CheckNoSign(value);
-            }
-            return value;
-        }
-    virtual void SetValueLong(TObjectPtr objectPtr, long value) const
-        {
-            TObjectType newValue = TObjectType(value);
-            if ( sizeof(TObjectType) == sizeof(long) ) {
-                if ( !x_IsSigned() ) {
-                    // type is unsigned long
-                    x_CheckNoSign(value);
-                }
-            }
-            else {
-                // type is smaller than long
-                if ( long(newValue) != value )
-                    ThrowIntegerOverflow();
-            }
-            Get(objectPtr) = newValue;
-        }
-    virtual void SetValueULong(TObjectPtr objectPtr, unsigned long value) const
-        {
-            TObjectType newValue = TObjectType(value);
-            if ( sizeof(TObjectType) == sizeof(long) ) {
-                if ( x_IsSigned() ) {
-                    // type is signed long
-                    x_CheckNoSign(newValue);
-                }
-            }
-            else {
-                // type is smaller than long
-                if ( static_cast<unsigned long>(newValue) != value )
-                    ThrowIntegerOverflow();
-            }
-            Get(objectPtr) = newValue;
-        }
+    typedef double TObjectType;
+
+    CPrimitiveTypeInfoDouble(void);
+
+    double GetValueDouble(TConstObjectPtr objectPtr) const;
+    void SetValueDouble(TObjectPtr objectPtr, double value) const;
 };
 
-template<typename T>
-class CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfoImpl<T>
+class CPrimitiveTypeInfoFloat : public CPrimitiveTypeInfo
 {
-    typedef CPrimitiveTypeInfoImpl<T> CParent;
+    typedef CPrimitiveTypeInfo CParent;
 public:
-    typedef T TObjectType;
+    typedef float TObjectType;
 
-    CPrimitiveTypeInfoDouble(void)
-        : CParent(ePrimitiveValueReal)
-        {
-        }
-    virtual double GetValueDouble(TConstObjectPtr objectPtr) const
-        {
-            return Get(objectPtr);
-        }
-    virtual void SetValueDouble(TObjectPtr objectPtr, double value) const
-        {
-            Get(objectPtr) = value;
-        }
+    CPrimitiveTypeInfoFloat(void);
+
+    double GetValueDouble(TConstObjectPtr objectPtr) const;
+    void SetValueDouble(TObjectPtr objectPtr, double value) const;
 };
+
+#if HAVE_LONG_DOUBLE
+class CPrimitiveTypeInfoLongDouble : public CPrimitiveTypeInfo
+{
+    typedef CPrimitiveTypeInfo CParent;
+public:
+    typedef long double TObjectType;
+
+    CPrimitiveTypeInfoLongDouble(void);
+
+    double GetValueDouble(TConstObjectPtr objectPtr) const;
+    void SetValueDouble(TObjectPtr objectPtr, double value) const;
+};
+#endif
 
 // CTypeInfo for C++ STL type string
 class CPrimitiveTypeInfoString : public CPrimitiveTypeInfo
@@ -313,219 +205,43 @@ public:
 
     CPrimitiveTypeInfoString(void);
 
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return CTypeConverter<TObjectType>::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return CTypeConverter<TObjectType>::Get(object);
-        }
-
-    virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
-    virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-    virtual void GetValueString(TConstObjectPtr objectPtr,
-                                string& value) const;
-    virtual void SetValueString(TObjectPtr objectPtr,
-                                const string& value) const;
+    char GetValueChar(TConstObjectPtr objectPtr) const;
+    void SetValueChar(TObjectPtr objectPtr, char value) const;
+    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
+    void SetValueString(TObjectPtr objectPtr, const string& value) const;
 };
 
 template<typename T>
-class CPrimitiveTypeInfoCharPtr : public CPrimitiveTypeInfoImpl<T>
-{
-    typedef CPrimitiveTypeInfoImpl<T> CParent;
-public:
-    CPrimitiveTypeInfoCharPtr(void)
-        : CParent(ePrimitiveValueString)
-        {
-        }
-
-    static void Reset(TObjectPtr dst)
-        {
-            free(const_cast<char*>(Get(dst)));
-            Get(dst) = 0;
-        }
-
-    virtual void SetDefault(TObjectPtr dst) const
-        {
-            Reset(dst);
-        }
-
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
-        {
-            return strcmp(Get(object1), Get(object2)) == 0;
-        }
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
-        {
-            TObjectType value = Get(src);
-            _ASSERT(Get(dst) != value);
-            Reset(dst);
-            if ( value )
-                Get(dst) = NotNull(strdup(value));
-        }
-
-    virtual void GetValueString(TConstObjectPtr objectPtr,
-                                string& value) const
-        {
-            value = Get(objectPtr);
-        }
-    virtual void SetValueString(TObjectPtr objectPtr,
-                                const string& value) const
-        {
-            Get(objectPtr) = NotNull(strdup(value.c_str()));
-        }
-};
-
-class CStringStoreTypeInfo : public CPrimitiveTypeInfoString
-{
-public:
-    CStringStoreTypeInfo(void);
-};
-
-class CNullBoolTypeInfo : public CPrimitiveTypeInfoBool
-{
-public:
-    CNullBoolTypeInfo(void);
-};
-
-class COctetStringTypeInfoBase : public CPrimitiveTypeInfo
+class CPrimitiveTypeInfoCharPtr : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
-    COctetStringTypeInfoBase(size_t size);
+    typedef T TObjectType;
 
-private:
-    static void SkipByteBlock(CObjectIStream& in, TTypeInfo objectType);
-    static void CopyByteBlock(CObjectStreamCopier& copier,
-                              TTypeInfo objectType);
+    CPrimitiveTypeInfoCharPtr(void);
+
+    char GetValueChar(TConstObjectPtr objectPtr) const;
+    void SetValueChar(TObjectPtr objectPtr, char value) const;
+    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
+    void SetValueString(TObjectPtr objectPtr, const string& value) const;
 };
 
 template<typename Char>
-class CCharVectorFunctions
+class CCharVectorTypeInfo : public CPrimitiveTypeInfo
 {
+    typedef CPrimitiveTypeInfo CParent;
 public:
     typedef vector<Char> TObjectType;
     typedef Char TChar;
 
-    static char* ToChar(Char* p)
-        { return reinterpret_cast<char*>(p); }
-    static const char* ToChar(const Char* p)
-        { return reinterpret_cast<const char*>(p); }
-    static const Char* ToTChar(const char* p)
-        { return reinterpret_cast<const Char*>(p); }
+    CCharVectorTypeInfo(void);
 
-    static void Read(CObjectIStream& in,
-                     TTypeInfo , TObjectPtr objectPtr)
-        {
-            TObjectType& o = CTypeConverter<TObjectType>::Get(objectPtr);
-            CObjectIStream::ByteBlock block(in);
-            if ( block.KnownLength() ) {
-                size_t length = block.GetExpectedLength();
-                o.resize(length);
-                block.Read(ToChar(&o.front()), length, true);
-            }
-            else {
-                // length is unknown -> copy via buffer
-                Char buffer[4096];
-                size_t count;
-                o.clear();
-                while ( (count = block.Read(ToChar(buffer),
-                                            sizeof(buffer))) != 0 ) {
-                    o.insert(o.end(), buffer, buffer + count);
-                }
-            }
-            block.End();
-        }
-    static void Write(CObjectOStream& out,
-                      TTypeInfo , TConstObjectPtr objectPtr)
-        {
-            const TObjectType& o = CTypeConverter<TObjectType>::Get(objectPtr);
-            size_t length = o.size();
-            CObjectOStream::ByteBlock block(out, length);
-            if ( length > 0 )
-                block.Write(ToChar(&o.front()), length);
-        }
-    static TObjectPtr Create(TTypeInfo )
-        {
-            return new TObjectType();
-        }
-};
-
-template<typename Char>
-class CCharVectorTypeInfoImpl : public COctetStringTypeInfoBase
-{
-    typedef COctetStringTypeInfoBase CParent;
-public:
-    typedef vector<Char> TObjectType;
-    typedef Char TChar;
-
-    CCharVectorTypeInfoImpl(void)
-        : CParent(sizeof(TObjectType))
-        {
-            SetCreateFunction(&CCharVectorFunctions<Char>::Create);
-            SetReadFunction(&CCharVectorFunctions<Char>::Read);
-            SetWriteFunction(&CCharVectorFunctions<Char>::Write);
-        }
-
-private:
-    // helper methods
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return CTypeConverter<TObjectType>::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return CTypeConverter<TObjectType>::Get(object);
-        }
-
-    static char* ToChar(Char* p)
-        { return reinterpret_cast<char*>(p); }
-    static const char* ToChar(const Char* p)
-        { return reinterpret_cast<const char*>(p); }
-    static const Char* ToTChar(const char* p)
-        { return reinterpret_cast<const Char*>(p); }
-
-public:
-    virtual bool IsDefault(TConstObjectPtr object) const
-        {
-            return Get(object).empty();
-        }
-
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
-        {
-            return Get(object1) == Get(object2);
-        }
-
-    virtual void SetDefault(TObjectPtr dst) const
-        {
-            Get(dst).clear();
-        }
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
-        {
-            Get(dst) = Get(src);
-        }
-
-    virtual void GetValueOctetString(TConstObjectPtr objectPtr,
-                                     vector<char>& value) const
-        {
-            const TObjectType& obj = Get(objectPtr);
-            value.clear();
-            const char* buffer = ToChar(&obj.front());
-            value.insert(value.end(), buffer, buffer + obj.size());
-        }
-    virtual void SetValueOctetString(TObjectPtr objectPtr,
-                                     const vector<char>& value) const
-        {
-            TObjectType& obj = Get(objectPtr);
-            obj.clear();
-            const Char* buffer = ToTChar(&value.front());
-            obj.insert(obj.end(), buffer, buffer + value.size());
-        }
+    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
+    void SetValueString(TObjectPtr objectPtr, const string& value) const;
+    void GetValueOctetString(TConstObjectPtr objectPtr,
+                             vector<char>& value) const;
+    void SetValueOctetString(TObjectPtr objectPtr,
+                             const vector<char>& value) const;
 };
 
 //#include <serial/stdtypesimpl.inl>

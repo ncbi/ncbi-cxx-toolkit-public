@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/10/13 16:28:31  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.51  2000/10/03 17:22:34  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -234,8 +240,8 @@
 #include <serial/typeinfo.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/objstack.hpp>
-#include <serial/weakmap.hpp>
 #include <serial/objhook.hpp>
+#include <serial/hookdatakey.hpp>
 #include <vector>
 
 struct asnio;
@@ -740,9 +746,9 @@ private:
 
 public:
     // hook support
-    CWeakMapKey< CRef<CReadObjectHook> > m_ObjectHookKey;
-    CWeakMapKey< CRef<CReadClassMemberHook> > m_ClassMemberHookKey;
-    CWeakMapKey< CRef<CReadChoiceVariantHook> > m_ChoiceVariantHookKey;
+    CHookDataKey<CReadObjectHook> m_ObjectHookKey;
+    CHookDataKey<CReadClassMemberHook> m_ClassMemberHookKey;
+    CHookDataKey<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
 #include <serial/objistr.inl>

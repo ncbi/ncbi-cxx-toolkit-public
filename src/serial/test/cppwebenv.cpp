@@ -2,8 +2,7 @@
 #if HAVE_NCBI_C
 #include "cppwebenv.hpp"
 #include <serial/serialimpl.hpp>
-#include <serial/asntypes.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/serialasn.hpp>
 
 #include <asn.h>
 #include "twebenv.h"

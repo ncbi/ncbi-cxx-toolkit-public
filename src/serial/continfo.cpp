@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/13 16:28:39  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.4  2000/09/18 20:00:21  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -112,19 +118,87 @@ CContainerTypeInfo::CContainerTypeInfo(size_t size, const string& name,
     InitContainerTypeInfoFunctions();
 }
 
+class CContainerTypeInfoFunctions
+{
+public:
+    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
+
+    static void Throw(const char* message)
+        {
+            THROW1_TRACE(runtime_error, message);
+        }
+    static TNewIteratorResult InitIteratorConst(const CContainerTypeInfo* ,
+                                                TConstObjectPtr )
+        {
+            Throw("cannot create iterator");
+            return TNewIteratorResult(0, false);
+        }
+    static TNewIteratorResult InitIterator(const CContainerTypeInfo* ,
+                                           TObjectPtr )
+        {
+            Throw("cannot create iterator");
+            return TNewIteratorResult(0, false);
+        }
+    static void AddElement(const CContainerTypeInfo* /*containerType*/,
+                           TObjectPtr /*containerPtr*/,
+                           TConstObjectPtr /*elementPtr*/)
+        {
+            Throw("illegal call");
+        }
+    
+    static void AddElementIn(const CContainerTypeInfo* /*containerType*/,
+                             TObjectPtr /*containerPtr*/,
+                             CObjectIStream& /*in*/)
+        {
+            Throw("illegal call");
+        }
+};
+
 void CContainerTypeInfo::InitContainerTypeInfoFunctions(void)
 {
     SetReadFunction(&ReadContainer);
     SetWriteFunction(&WriteContainer);
     SetCopyFunction(&CopyContainer);
     SetSkipFunction(&SkipContainer);
+    m_InitIteratorConst = &CContainerTypeInfoFunctions::InitIteratorConst;
+    m_InitIterator = &CContainerTypeInfoFunctions::InitIterator;
+    m_AddElement = &CContainerTypeInfoFunctions::AddElement;
+    m_AddElementIn = &CContainerTypeInfoFunctions::AddElementIn;
 }
 
-CContainerTypeInfo::CIterator* CContainerTypeInfo::NewIterator(void) const
+void CContainerTypeInfo::SetAddElementFunctions(TAddElement addElement,
+                                                TAddElementIn addElementIn)
 {
-    _ASSERT(RandomElementsOrder());
-    THROW1_TRACE(runtime_error,
-                 "cannot use non const iterator for unique container");
+    m_AddElement = addElement;
+    m_AddElementIn = addElementIn;
+}
+
+void CContainerTypeInfo::SetConstIteratorFunctions(TInitIteratorConst init,
+                                                   TReleaseIteratorConst release,
+                                                   TCopyIteratorConst copy,
+                                                   TNextElementConst next,
+                                                   TGetElementPtrConst get)
+{
+    m_InitIteratorConst = init;
+    m_ReleaseIteratorConst = release;
+    m_CopyIteratorConst = copy;
+    m_NextElementConst = next;
+    m_GetElementPtrConst = get;
+}
+
+void CContainerTypeInfo::SetIteratorFunctions(TInitIterator init,
+                                              TReleaseIterator release,
+                                              TCopyIterator copy,
+                                              TNextElement next,
+                                              TGetElementPtr get,
+                                              TEraseElement erase)
+{
+    m_InitIterator = init;
+    m_ReleaseIterator = release;
+    m_CopyIterator = copy;
+    m_NextElement = next;
+    m_GetElementPtr = get;
+    m_EraseElement = erase;
 }
 
 bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
@@ -136,11 +210,11 @@ void CContainerTypeInfo::Assign(TObjectPtr dst,
                                 TConstObjectPtr src) const
 {
     SetDefault(dst); // clear destination container
-    AutoPtr<CConstIterator> i(NewConstIterator());
-    if ( i->Init(src) ) {
+    CConstIterator i;
+    if ( InitIterator(i, src) ) {
         do {
-            AddElement(dst, i->GetElementPtr());
-        } while ( i->Next() );
+            AddElement(dst, GetElementPtr(i));
+        } while ( NextElement(i) );
     }
 }
 
@@ -148,25 +222,24 @@ bool CContainerTypeInfo::Equals(TConstObjectPtr object1,
                                 TConstObjectPtr object2) const
 {
     TTypeInfo elementType = GetElementType();
-    AutoPtr<CConstIterator> i1(NewConstIterator());
-    AutoPtr<CConstIterator> i2(NewConstIterator());
-    if ( i1->Init(object1) ) {
-        if ( !i2->Init(object2) )
+    CConstIterator i1, i2;
+    if ( InitIterator(i1, object1) ) {
+        if ( !InitIterator(i2, object2) )
             return false;
-        if ( !elementType->Equals(i1->GetElementPtr(),
-                                  i2->GetElementPtr()) )
+        if ( !elementType->Equals(GetElementPtr(i1),
+                                  GetElementPtr(i2)) )
             return false;
-        while ( i1->Next() ) {
-            if ( !i2->Next() )
+        while ( NextElement(i1) ) {
+            if ( !NextElement(i2) )
                 return false;
-            if ( !elementType->Equals(i1->GetElementPtr(),
-                                      i2->GetElementPtr()) )
+            if ( !elementType->Equals(GetElementPtr(i1),
+                                      GetElementPtr(i2)) )
                 return false;
         }
-        return !i2->Next();
+        return !NextElement(i2);
     }
     else {
-        return !i2->Init(object2);
+        return !InitIterator(i2, object2);
     }
 }
 
@@ -206,21 +279,6 @@ void CContainerTypeInfo::SkipContainer(CObjectIStream& in,
         CTypeConverter<CContainerTypeInfo>::SafeCast(objectType);
 
     in.SkipContainer(containerType);
-}
-
-void CContainerTypeInfo::ThrowDuplicateElementError(void) const
-{
-    _ASSERT(RandomElementsOrder());
-    THROW1_TRACE(runtime_error,
-                 "duplicate element of unique container");
-}
-
-CContainerTypeInfo::CConstIterator::~CConstIterator(void)
-{
-}
-
-CContainerTypeInfo::CIterator::~CIterator(void)
-{
 }
 
 END_NCBI_SCOPE

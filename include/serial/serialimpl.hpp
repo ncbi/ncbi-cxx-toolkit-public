@@ -36,19 +36,17 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/typeinfoimpl.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/enumerated.hpp>
-#include <serial/classinfob.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
 #include <serial/choiceptr.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/exception.hpp>
-#include <typeinfo>
+#include <serial/classinfohelper.hpp>
 
 struct valnode;
 
@@ -60,203 +58,6 @@ class CClassTypeInfoBase;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CDelayBufferData;
-
-// these methods are external to avoid inclusion of big headers
-class CClassInfoHelperBase
-{
-protected:
-    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
-    typedef CTypeInfo::TTypeCreate TCreateFunction; 
-    typedef TMemberIndex (*TWhichFunction)(const CChoiceTypeInfo* choiceType,
-                                           TConstObjectPtr choicePtr);
-    typedef void (*TResetFunction)(const CChoiceTypeInfo* choiceType,
-                                   TObjectPtr choicePtr);
-    typedef void (*TSelectFunction)(const CChoiceTypeInfo* choiceType,
-                                    TObjectPtr choicePtr,
-                                    TMemberIndex index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object,
-                                         TMemberIndex index);
-
-    static CChoiceTypeInfo* CreateChoiceInfo(const char* name, size_t size,
-                                             const void* nonCObject,
-                                             TCreateFunction createFunc,
-                                             const type_info& ti,
-                                             TWhichFunction whichFunc,
-                                             TSelectFunction selectFunc,
-                                             TResetFunction resetFunc);
-    static CChoiceTypeInfo* CreateChoiceInfo(const char* name, size_t size,
-                                             const CObject* cObject,
-                                             TCreateFunction createFunc,
-                                             const type_info& ti,
-                                             TWhichFunction whichFunc,
-                                             TSelectFunction selectFunc,
-                                             TResetFunction resetFunc);
-
-public:
-#if HAVE_NCBI_C
-    static CChoiceTypeInfo* CreateAsnChoiceInfo(const char* name);
-    static CClassTypeInfo* CreateAsnStructInfo(const char* name, size_t size,
-                                               const type_info& id);
-#endif
-    
-protected:
-    static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
-                                           const void* nonCObject,
-                                           TCreateFunction createFunc,
-                                           const type_info& id,
-                                           TGetTypeIdFunction func);
-    static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
-                                           const CObject* cObject,
-                                           TCreateFunction createFunc,
-                                           const type_info& id,
-                                           TGetTypeIdFunction func);
-};
-
-// template collecting all helper methods for generated classes
-template<class C>
-class CClassInfoHelper : public CClassInfoHelperBase
-{
-    typedef CClassInfoHelperBase CParent;
-public:
-    typedef C CClassType;
-
-    static CClassType& Get(void* object)
-        {
-            return *static_cast<CClassType*>(object);
-        }
-    static const CClassType& Get(const void* object)
-        {
-            return *static_cast<const CClassType*>(object);
-        }
-
-    static void* Create(TTypeInfo /*typeInfo*/)
-        {
-            return new CClassType();
-        }
-    static void* CreateCObject(TTypeInfo /*typeInfo*/)
-        {
-            CObject* object = new CClassType();
-            object->SetCanDelete();
-            return object;
-        }
-
-
-    static const type_info* GetTypeId(const void* object)
-        {
-            return &typeid(Get(object));
-        }
-
-    enum EGeneratedChoiceValues {
-        eGeneratedChoiceEmpty = 0,
-        eGeneratedChoiceToMemberIndex = kEmptyChoice - eGeneratedChoiceEmpty,
-        eMemberIndexToGeneratedChoice = - eGeneratedChoiceToMemberIndex
-    };
-
-    static TMemberIndex WhichChoice(const CChoiceTypeInfo* /*choiceType*/,
-                                    const void* choicePtr)
-        {
-            return Get(choicePtr).Which() + eGeneratedChoiceToMemberIndex;
-        }
-    static void ResetChoice(const CChoiceTypeInfo* choiceType,
-                            void* choicePtr)
-        {
-            if ( WhichChoice(choiceType, choicePtr) != kEmptyChoice )
-                Get(choicePtr).Reset();
-        }
-    static void SelectChoice(const CChoiceTypeInfo* /*choiceType*/,
-                             void* choicePtr,
-                             TMemberIndex index)
-        {
-            typedef typename CClassType::E_Choice E_Choice;
-            Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice));
-        }
-    static void SelectDelayBuffer(void* choicePtr,
-                                  TMemberIndex index)
-        {
-            typedef typename CClassType::E_Choice E_Choice;
-            Get(choicePtr).SelectDelayBuffer(E_Choice(index + eMemberIndexToGeneratedChoice));
-        }
-
-    static void SetReadWriteMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
-        {
-            const CClassType* object = 0;
-            NCBISERSetPostRead(object, info);
-            NCBISERSetPreWrite(object, info);
-        }
-    static void SetReadWriteMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
-        {
-            const CClassType* object = 0;
-            NCBISERSetPostRead(object, info);
-            NCBISERSetPreWrite(object, info);
-        }
-
-    static CClassTypeInfo* CreateAbstractClassInfo(const char* name)
-        {
-            const CClassType* object = 0;
-            CClassTypeInfo* info =
-                CParent::CreateClassInfo(name, sizeof(CClassType),
-                                         object, &CVoidTypeFunctions::Create,
-                                         typeid(CClassType), &GetTypeId);
-            SetReadWriteMethods(info);
-            return info;
-        }
-
-    static CClassTypeInfo* CreateClassInfo(const char* name)
-        {
-            const CClassType* object = 0;
-            CClassTypeInfo* info = CreateClassInfo(name, object);
-            SetReadWriteMethods(info);
-            return info;
-        }
-
-    static CChoiceTypeInfo* CreateChoiceInfo(const char* name)
-        {
-            const CClassType* object = 0;
-            CChoiceTypeInfo* info = CreateChoiceInfo(name, object);
-            SetReadWriteMethods(info);
-            return info;
-        }
-    static CClassTypeInfo* CreateAsnStructInfo(const char* name)
-        {
-            return CParent::CreateAsnStructInfo(name,
-                                                sizeof(CClassType),
-                                                typeid(CClassType));
-        }
-
-private:
-    static CClassTypeInfo* CreateClassInfo(const char* name,
-                                           const void* nonCObject)
-        {
-            return CParent::CreateClassInfo(name, sizeof(CClassType),
-                                            nonCObject, &Create,
-                                            typeid(CClassType), &GetTypeId);
-        }
-    static CClassTypeInfo* CreateClassInfo(const char* name,
-                                           const CObject* cObject)
-        {
-            return CParent::CreateClassInfo(name, sizeof(CClassType),
-                                            cObject, &CreateCObject,
-                                            typeid(CClassType), &GetTypeId);
-        }
-    static CChoiceTypeInfo* CreateChoiceInfo(const char* name,
-                                             const void* nonCObject)
-        {
-            return CParent::CreateChoiceInfo(name, sizeof(CClassType),
-                                             nonCObject, &Create, 
-                                             typeid(CClassType),
-                                             &WhichChoice,
-                                             &SelectChoice, &ResetChoice);
-        }
-    static CChoiceTypeInfo* CreateChoiceInfo(const char* name,
-                                             const CObject* cObject)
-        {
-            return CParent::CreateChoiceInfo(name, sizeof(CClassType),
-                                             cObject, &CreateCObject, 
-                                             typeid(CClassType),
-                                             &WhichChoice,
-                                             &SelectChoice, &ResetChoice);
-        }
-};
 
 //
 // define type info getter for standard classes
@@ -274,13 +75,13 @@ TTypeInfoGetter GetStdTypeInfoGetter(const T* )
 inline
 TTypeInfoGetter GetStdTypeInfoGetter(char* const* )
 {
-    return &GetStdTypeInfo_char_ptr;
+    return &CStdTypeInfo<char*>::GetTypeInfo;
 }
 
 inline
 TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 {
-    return &GetStdTypeInfo_const_char_ptr;
+    return &CStdTypeInfo<const char*>::GetTypeInfo;
 }
 
 
@@ -296,10 +97,12 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STD(CType) &NCBI_NS_NCBI::CStdTypeInfo<CType>::GetTypeInfo
 
 #define SERIAL_TYPE_StringStore() NCBI_NS_STD::string
-#define SERIAL_REF_StringStore() &NCBI_NS_NCBI::GetTypeInfoStringStore
+#define SERIAL_REF_StringStore() \
+    &NCBI_NS_NCBI::CStdTypeInfo<string>::GetTypeInfoStringStore
 
 #define SERIAL_TYPE_null() bool
-#define SERIAL_REF_null() &NCBI_NS_NCBI::GetTypeInfoNullBool
+#define SERIAL_REF_null() \
+    &NCBI_NS_NCBI::CStdTypeInfo<bool>::GetTypeInfoNullBool
 
 #define SERIAL_TYPE_ENUM(CType, EnumName) CType
 #define SERIAL_REF_ENUM(CType, EnumName) \
@@ -351,7 +154,7 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 
 #define SERIAL_TYPE_STL_CHAR_vector(CharType) NCBI_NS_STD::vector<CharType>
 #define SERIAL_REF_STL_CHAR_vector(CharType) \
-    &NCBI_NS_NCBI::CCharVectorTypeInfo<CharType>::GetTypeInfo
+    &NCBI_NS_NCBI::CStdTypeInfo< SERIAL_TYPE(STL_CHAR_vector)(CharType) >::GetTypeInfo
 
 #define SERIAL_TYPE_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
     NCBI_NS_STD::auto_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >

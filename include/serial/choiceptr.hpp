@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/13 16:28:29  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.21  2000/09/26 17:38:07  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -150,6 +156,7 @@ public:
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
+    static TTypeInfo CreateTypeInfo(TTypeInfo base);
 
 protected:
     static TMemberIndex GetPtrIndex(const CChoiceTypeInfo* choiceType,

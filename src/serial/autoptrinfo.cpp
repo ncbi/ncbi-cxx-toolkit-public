@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/13 16:28:38  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.11  2000/09/18 20:00:20  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -93,7 +99,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo_map;
+static CTypeInfoMap s_AutoPointerTypeInfo_map;
 
 CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
     : CParent(type->GetName(), type)
@@ -106,7 +112,12 @@ CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
 
 TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
 {
-    return CAutoPointerTypeInfo_map.GetTypeInfo(base);
+    return s_AutoPointerTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+}
+
+TTypeInfo CAutoPointerTypeInfo::CreateTypeInfo(TTypeInfo base)
+{
+    return new CAutoPointerTypeInfo(base);
 }
 
 void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,

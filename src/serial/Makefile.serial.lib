@@ -4,7 +4,7 @@
 #################################
 
 LIBOBJ = \
-	hookdata typeinfo object typeref \
+	hookdata typeinfo object typeref typemap \
     stdtypes enumerated ptrinfo autoptrinfo continfo stltypes asntypes \
 	memberid memberlist item classinfob member classinfo \
 	variant choice choiceptr \

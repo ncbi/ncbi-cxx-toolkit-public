@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 16:28:39  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.1  2000/10/03 17:22:42  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -43,112 +49,162 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/hookdata.hpp>
 #include <serial/hookdataimpl.hpp>
-#include <serial/objhook.hpp>
-#include <serial/hookfunc.hpp>
-#include <algorithm>
+#include <serial/hookdatakey.hpp>
+#include <serial/weakmap.hpp>
 
 BEGIN_NCBI_SCOPE
 
-template<class Object, typename Function>
-CHookData<Object, Function>::CHookData(TFunction typeFunction,
-                                       TFunction hookFunction)
-    : m_CurrentFunction(typeFunction), m_SecondaryFunction(hookFunction)
+CHookDataKeyBase::CHookDataKeyBase(void)
+    : m_Key(0)
 {
 }
 
-template<class Object, typename Function>
-CHookData<Object, Function>::~CHookData(void)
+CHookDataKeyBase::~CHookDataKeyBase(void)
 {
-    if ( m_Data.get() )
-        ResetHooks();
+    delete m_Key;
 }
 
-template<class Object, typename Function>
-CHookData<Object, Function>::TData&
-CHookData<Object, Function>::CreateData(void)
+CHookDataKeyBase::TData& CHookDataKeyBase::Get(void)
 {
-    _ASSERT(!m_Data.get());
-    TData* hooks = new TData;
-    m_Data.reset(hooks);
-    swap(m_CurrentFunction, m_SecondaryFunction);
+    TData* key = m_Key;
+    if ( !key )
+        m_Key = key = new TData;
+    return *key;
+}
+
+CHookDataBase::TData& CHookDataBase::GetDataForSet(void)
+{
+    TData* hooks = m_Data;
+    if ( !hooks )
+        m_Data = hooks = new TData;
     return *hooks;
 }
 
-template<class Object, typename Function>
-void CHookData<Object, Function>::ResetHooks(void)
+CHookDataBase::TData& CHookDataBase::GetDataForReset(void)
 {
-    _ASSERT(m_Data.get());
-    swap(m_CurrentFunction, m_SecondaryFunction);
-    m_Data.reset(0);
+    _ASSERT(m_Data);
+    return *m_Data;
 }
 
-template<class Object, typename Function>
-void CHookData<Object, Function>::SetLocalHook(key_type& key, THook* hook)
+CHookDataBase::CHookDataBase(void)
+    : m_Data(0)
+{
+}
+
+CHookDataBase::~CHookDataBase(void)
+{
+    delete m_Data;
+}
+
+void CHookDataBase::ResetData(void)
+{
+    _ASSERT(m_Data);
+    delete m_Data;
+    m_Data = 0;
+}
+
+bool CHookDataBase::SetLocalHook(TKey& key, THook* hook)
 {
     _ASSERT(hook);
-    GetDataForSet().m_LocalHooks.insert(key, hook);
+    bool wasEmpty = Empty();
+    GetDataForSet().SetLocalHook(key.Get(), hook);
+    _ASSERT(!Empty());
+    return wasEmpty;
 }
 
-template<class Object, typename Function>
-void CHookData<Object, Function>::SetGlobalHook(THook* hook)
+bool CHookDataBase::SetGlobalHook(THook* hook)
 {
     _ASSERT(hook);
-    GetDataForSet().m_GlobalHook.Reset(hook);
+    bool wasEmpty = Empty();
+    GetDataForSet().SetGlobalHook(hook);
+    _ASSERT(!Empty());
+    return wasEmpty;
 }
 
-template<class Object, typename Function>
-void CHookData<Object, Function>::ResetLocalHook(key_type& key)
+bool CHookDataBase::ResetLocalHook(TKey& key)
 {
+    _ASSERT(!Empty());
     TData& hooks = GetDataForReset();
-    hooks.m_LocalHooks.erase(key);
-    if ( hooks.empty() )
-        ResetHooks();
+    hooks.ResetLocalHook(key.Get());
+    if ( hooks.Empty() ) {
+        ResetData();
+        return true;
+    }
+    return false;
 }
 
-template<class Object, typename Function>
-void CHookData<Object, Function>::ResetGlobalHook(void)
+bool CHookDataBase::ResetGlobalHook(void)
 {
+    _ASSERT(!Empty());
     TData& hooks = GetDataForReset();
-    hooks.m_GlobalHook.Reset(0);
-    if ( hooks.m_LocalHooks.empty() ) // m_GlobalHook already empty
-        ResetHooks();
+    hooks.ResetGlobalHook();
+    if ( hooks.Empty() ) {
+        ResetData();
+        return true;
+    }
+    return false;
 }
 
-template<class Object, typename Function>
-CHookData<Object, Function>::THook*
-CHookData<Object, Function>::GetGlobalHook(void) const
+CHookDataBase::THook* CHookDataBase::GetHook(TKey& key) const
 {
     const TData* hooks = GetDataForGet();
     if ( hooks )
-        return hooks->m_GlobalHook.GetPointer();
+        return hooks->GetHook(key.Get());
     return 0;
 }
 
-template<class Object, typename Function>
-CHookData<Object, Function>::THook*
-CHookData<Object, Function>::GetHook(key_type& key) const
+CHookDataKeyData::CHookDataKeyData(void)
 {
-    const TData* hooks = GetDataForGet();
-    if ( hooks ) {
-        typedef typename TData::TMap::const_iterator TMapCI;
-        TMapCI i = hooks->m_LocalHooks.find(key);
-        if ( i != hooks->m_LocalHooks.end() )
-            return i->second.GetPointer();
-        return hooks->m_GlobalHook.GetPointer();
-    }
-    return 0;
 }
 
-template class CHookData<CReadObjectHook, TTypeReadFunction>;
-template class CHookData<CWriteObjectHook, TTypeWriteFunction>;
-template class CHookData<CCopyObjectHook, TTypeCopyFunction>;
+CHookDataKeyData::~CHookDataKeyData(void)
+{
+}
 
-template class CHookData<CReadClassMemberHook, SMemberReadFunctions>;
-template class CHookData<CWriteClassMemberHook, TMemberWriteFunction>;
-template class CHookData<CCopyClassMemberHook, SMemberCopyFunctions>;
+CHookDataData::CHookDataData(void)
+{
+}
 
-template class CHookData<CReadChoiceVariantHook, TVariantReadFunction>;
-template class CHookData<CWriteChoiceVariantHook, TVariantWriteFunction>;
-template class CHookData<CCopyChoiceVariantHook, TVariantCopyFunction>;
+CHookDataData::~CHookDataData(void)
+{
+}
+
+bool CHookDataData::Empty(void) const
+{
+    return !m_GlobalHook && m_LocalHooks.empty();
+}
+
+void CHookDataData::SetGlobalHook(CObject* hook)
+{
+    m_GlobalHook.Reset(hook);
+}
+
+void CHookDataData::ResetGlobalHook(void)
+{
+    m_GlobalHook.Reset();
+}
+
+void CHookDataData::SetLocalHook(CHookDataKeyData& key, CObject* hook)
+{
+    m_LocalHooks.insert(key.m_Key, hook);
+}
+
+void CHookDataData::ResetLocalHook(CHookDataKeyData& key)
+{
+    m_LocalHooks.erase(key.m_Key);
+}
+
+CObject* CHookDataData::GetGlobalHook(void) const
+{
+    return m_GlobalHook.GetPointer();
+}
+
+CObject* CHookDataData::GetHook(CHookDataKeyData& key) const
+{
+    TMap::const_iterator i = m_LocalHooks.find(key.m_Key);
+    if ( i != m_LocalHooks.end() )
+        return i->second.GetPointer();
+    return m_GlobalHook.GetPointer();
+}
 
 END_NCBI_SCOPE

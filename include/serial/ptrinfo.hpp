@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/10/13 16:28:31  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.23  2000/09/18 20:00:08  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -166,6 +172,14 @@ public:
     CConstObjectInfo GetPointedObject(const CConstObjectInfo& object) const;
     CObjectInfo GetPointedObject(const CObjectInfo& object) const;
 
+    typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
+                                           TObjectPtr objectPtr);
+    typedef void (*TSetDataFunction)(const CPointerTypeInfo* objectType,
+                                     TObjectPtr objectPtr,
+                                     TObjectPtr dataPtr);
+
+    void SetFunctions(TGetDataFunction getFunc, TSetDataFunction setFunc);
+
 protected:
     static TObjectPtr GetPointer(const CPointerTypeInfo* objectType,
                                  TObjectPtr objectPtr);
@@ -187,12 +201,6 @@ protected:
                             TTypeInfo objectType);
 
 protected:
-    typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
-                                           TObjectPtr objectPtr);
-    typedef void (*TSetDataFunction)(const CPointerTypeInfo* objectType,
-                                     TObjectPtr objectPtr,
-                                     TObjectPtr dataPtr);
-
     CTypeRef m_DataTypeRef;
     TGetDataFunction m_GetData;
     TSetDataFunction m_SetData;

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/13 16:28:40  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.2  1999/11/22 21:29:27  vasilche
 * Fixed compilation on Windows
 *
@@ -48,7 +54,6 @@
 * ===========================================================================
 */
 
-#include <serial/serialasn.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/asntypes.hpp>
 
@@ -77,10 +82,10 @@ TTypeInfo CSequenceOfTypeInfoGetTypeInfo(TTypeInfo type)
 }
 
 TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
-                                     TNewProc newProc,
-                                     TFreeProc freeProc,
-                                     TReadProc readProc,
-                                     TWriteProc writeProc)
+                                     TAsnNewProc newProc,
+                                     TAsnFreeProc freeProc,
+                                     TAsnReadProc readProc,
+                                     TAsnWriteProc writeProc)
 {
     return new COldAsnTypeInfo(name, newProc, freeProc, readProc, writeProc);
 }

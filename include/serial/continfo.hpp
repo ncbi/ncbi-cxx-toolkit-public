@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/13 16:28:30  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.5  2000/09/18 20:00:00  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -92,50 +98,92 @@ public:
 
     bool RandomElementsOrder(void) const;
     
-    class CConstIterator
-    {
-    public:
-        virtual ~CConstIterator(void);
-        
-        virtual bool Init(TConstObjectPtr containerPtr) = 0;
-        virtual bool Next(void) = 0;
-        
-        virtual TConstObjectPtr GetElementPtr(void) const = 0;
-        
-        virtual CConstIterator* Clone(void) const = 0;
-    };
-    
-    class CIterator
-    {
-    public:
-        virtual ~CIterator(void);
-        
-        virtual bool Init(TObjectPtr containerPtr) = 0;
-        virtual bool Next(void) = 0;
-        
-        virtual TObjectPtr GetElementPtr(void) const = 0;
-        
-        virtual CIterator* Clone(void) const = 0;
-        
-        virtual bool Erase(void) = 0;
-    };
-
-    virtual CConstIterator* NewConstIterator(void) const = 0;
-    virtual CIterator* NewIterator(void) const;
-
     virtual bool MayContainType(TTypeInfo type) const;
 
     void Assign(TObjectPtr dst, TConstObjectPtr src) const;
     bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
-    virtual void AddElement(TObjectPtr containerPtr,
-                            TConstObjectPtr elementPtr) const = 0;
-    virtual void AddElement(TObjectPtr containerPtr,
-                            CObjectIStream& in) const = 0;
+    // iterators methods (private)
+    class CConstIterator
+    {
+    public:
+        CConstIterator(void);
+        ~CConstIterator(void);
+
+        const CContainerTypeInfo* GetContainerType(void) const;
+        void Reset(void);
+
+    private:
+        friend class CContainerTypeInfo;
+
+        const CContainerTypeInfo* m_ContainerType;
+        void* m_IteratorData;
+    };
+    
+    class CIterator
+    {
+    public:
+        CIterator(void);
+        ~CIterator(void);
+
+        const CContainerTypeInfo* GetContainerType(void) const;
+        void Reset(void);
+
+    private:
+        friend class CContainerTypeInfo;
+
+        const CContainerTypeInfo* m_ContainerType;
+        void* m_IteratorData;
+    };
+
+    bool InitIterator(CConstIterator& it, TConstObjectPtr containerPtr) const;
+    void ReleaseIterator(CConstIterator& it) const;
+    void CopyIterator(CConstIterator& dst, const CConstIterator& src) const;
+    bool NextElement(CConstIterator& it) const;
+    TConstObjectPtr GetElementPtr(const CConstIterator& it) const;
+
+    bool InitIterator(CIterator& it, TObjectPtr containerPtr) const;
+    void ReleaseIterator(CIterator& it) const;
+    void CopyIterator(CIterator& dst, const CIterator& src) const;
+    bool NextElement(CIterator& it) const;
+    TObjectPtr GetElementPtr(const CIterator& it) const;
+    bool EraseElement(CIterator& it) const;
+
+    void AddElement(TObjectPtr containerPtr, TConstObjectPtr elementPtr) const;
+    void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const;
+
+    typedef void* TIteratorDataPtr;
+    typedef pair<TIteratorDataPtr, bool> TNewIteratorResult;
+
+    typedef TNewIteratorResult (*TInitIteratorConst)(const CContainerTypeInfo*,
+                                                     TConstObjectPtr);
+    typedef void (*TReleaseIteratorConst)(TIteratorDataPtr);
+    typedef TIteratorDataPtr (*TCopyIteratorConst)(TIteratorDataPtr);
+    typedef TNewIteratorResult (*TNextElementConst)(TIteratorDataPtr);
+    typedef TConstObjectPtr (*TGetElementPtrConst)(TIteratorDataPtr);
+
+    typedef TNewIteratorResult (*TInitIterator)(const CContainerTypeInfo*,
+                                                TObjectPtr);
+    typedef void (*TReleaseIterator)(TIteratorDataPtr);
+    typedef TIteratorDataPtr (*TCopyIterator)(TIteratorDataPtr);
+    typedef TNewIteratorResult (*TNextElement)(TIteratorDataPtr);
+    typedef TObjectPtr (*TGetElementPtr)(TIteratorDataPtr);
+    typedef TNewIteratorResult (*TEraseElement)(TIteratorDataPtr);
+
+    typedef void (*TAddElement)(const CContainerTypeInfo* cType,
+                                TObjectPtr cPtr, TConstObjectPtr ePtr);
+    typedef void (*TAddElementIn)(const CContainerTypeInfo* cType,
+                                  TObjectPtr cPtr, CObjectIStream& in);
+
+    void SetConstIteratorFunctions(TInitIteratorConst, TReleaseIteratorConst,
+                                   TCopyIteratorConst, TNextElementConst,
+                                   TGetElementPtrConst);
+    void SetIteratorFunctions(TInitIterator, TReleaseIterator,
+                              TCopyIterator, TNextElement,
+                              TGetElementPtr, TEraseElement);
+    void SetAddElementFunctions(TAddElement, TAddElementIn);
 
 protected:
-    void ThrowDuplicateElementError(void) const;
-
     static void ReadContainer(CObjectIStream& in,
                               TTypeInfo objectType,
                               TObjectPtr objectPtr);
@@ -153,35 +201,23 @@ protected:
 
 private:
     void InitContainerTypeInfoFunctions(void);
-};
 
-class CContainerElementIterator
-{
-public:
-    typedef CContainerTypeInfo::CIterator TIterator;
+    // iterator functions
+    TInitIteratorConst m_InitIteratorConst;
+    TReleaseIteratorConst m_ReleaseIteratorConst;
+    TCopyIteratorConst m_CopyIteratorConst;
+    TNextElementConst m_NextElementConst;
+    TGetElementPtrConst m_GetElementPtrConst;
 
-    CContainerElementIterator(void);
-    CContainerElementIterator(TObjectPtr containerPtr,
-                              const CContainerTypeInfo* containerType);
-    CContainerElementIterator(const CContainerElementIterator& src);
-    CContainerElementIterator& operator=(const CContainerElementIterator& src);
-    void Init(TObjectPtr containerPtr,
-              const CContainerTypeInfo* containerType);
+    TInitIterator m_InitIterator;
+    TReleaseIterator m_ReleaseIterator;
+    TCopyIterator m_CopyIterator;
+    TNextElement m_NextElement;
+    TGetElementPtr m_GetElementPtr;
+    TEraseElement m_EraseElement;
 
-    TTypeInfo GetElementType(void) const;
-    
-    bool Valid(void) const;
-    void Next(void);
-    void Erase(void);
-
-    pair<TObjectPtr, TTypeInfo> Get(void) const;
-
-private:
-    TIterator* CloneIterator(void) const;
-
-    TTypeInfo m_ElementType;
-    AutoPtr<TIterator> m_Iterator;
-    bool m_Valid;
+    TAddElement m_AddElement;
+    TAddElementIn m_AddElementIn;
 };
 
 class CConstContainerElementIterator
@@ -208,10 +244,35 @@ public:
     pair<TConstObjectPtr, TTypeInfo> Get(void) const;
 
 private:
-    TIterator* CloneIterator(void) const;
-
     TTypeInfo m_ElementType;
-    AutoPtr<TIterator> m_Iterator;
+    TIterator m_Iterator;
+    bool m_Valid;
+};
+
+class CContainerElementIterator
+{
+public:
+    typedef CContainerTypeInfo::CIterator TIterator;
+
+    CContainerElementIterator(void);
+    CContainerElementIterator(TObjectPtr containerPtr,
+                              const CContainerTypeInfo* containerType);
+    CContainerElementIterator(const CContainerElementIterator& src);
+    CContainerElementIterator& operator=(const CContainerElementIterator& src);
+    void Init(TObjectPtr containerPtr,
+              const CContainerTypeInfo* containerType);
+
+    TTypeInfo GetElementType(void) const;
+    
+    bool Valid(void) const;
+    void Next(void);
+    void Erase(void);
+
+    pair<TObjectPtr, TTypeInfo> Get(void) const;
+
+private:
+    TTypeInfo m_ElementType;
+    TIterator m_Iterator;
     bool m_Valid;
 };
 

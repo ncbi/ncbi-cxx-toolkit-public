@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/13 16:28:45  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.14  2000/10/03 17:22:50  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -98,6 +104,7 @@
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <typeinfo>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -157,7 +164,7 @@ TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
 
 CTypeRef CNullDataType::GetTypeInfo(void)
 {
-    return &GetTypeInfoNullBool;
+    return &CStdTypeInfo<bool>::GetTypeInfoNullBool;
 }
 
 AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
@@ -339,7 +346,7 @@ const char* CStringStoreDataType::GetASNKeyword(void) const
 
 TTypeInfo CStringStoreDataType::GetRealTypeInfo(void)
 {
-    return GetTypeInfoStringStore();
+    return CStdTypeInfo<string>::GetTypeInfoStringStore();
 }
 
 bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
@@ -400,7 +407,7 @@ TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
 
 TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
 {
-    return CCharVectorTypeInfo<char>::GetTypeInfo();
+    return CStdTypeInfo< vector<char> >::GetTypeInfo();
 }
 
 bool COctetStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const

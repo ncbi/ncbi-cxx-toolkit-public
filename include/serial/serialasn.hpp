@@ -38,34 +38,9 @@
 #if HAVE_NCBI_C
 
 #include <serial/serialimpl.hpp>
-#include <serial/member.hpp>
-
-struct asnio;
-struct asntype;
+#include <serial/serialasndef.hpp>
 
 BEGIN_NCBI_SCOPE
-
-TTypeInfo COctetStringTypeInfoGetTypeInfo(void);
-TTypeInfo CAutoPointerTypeInfoGetTypeInfo(TTypeInfo type);
-TTypeInfo CSetOfTypeInfoGetTypeInfo(TTypeInfo type);
-TTypeInfo CSequenceOfTypeInfoGetTypeInfo(TTypeInfo type);
-
-#ifdef HAVE_WINDOWS_H
-# define ASNCALL __stdcall
-#else
-# define ASNCALL
-#endif
-
-typedef TObjectPtr (ASNCALL*TNewProc)(void);
-typedef TObjectPtr (ASNCALL*TFreeProc)(TObjectPtr);
-typedef TObjectPtr (ASNCALL*TReadProc)(asnio*, asntype*);
-typedef unsigned char (ASNCALL*TWriteProc)(TObjectPtr, asnio*, asntype*);
-
-TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
-                                     TNewProc newProc,
-                                     TFreeProc freeProc,
-                                     TReadProc readProc,
-                                     TWriteProc writeProc);
 
 // ASN
 inline
@@ -114,18 +89,14 @@ CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
 
 template<typename T>
 inline
-CTypeRef GetOldAsnTypeRef(const string& name,
-                          T* (ASNCALL*newProc)(void),
-						  T* (ASNCALL*freeProc)(T*),
-                          T* (ASNCALL*readProc)(asnio*, asntype*),
-                          unsigned char (ASNCALL*writeProc)(T*, asnio*,
-                                                            asntype*))
+CTypeRef
+GetOldAsnTypeRef(const string& name,
+                 T* (ASNCALL*newProc)(void),
+                 T* (ASNCALL*freeProc)(T*),
+                 T* (ASNCALL*readProc)(asnio*, asntype*),
+                 unsigned char (ASNCALL*writeProc)(T*, asnio*, asntype*))
 {
-    return COldAsnTypeInfoGetTypeInfo(name,
-                                      reinterpret_cast<TNewProc>(newProc),
-                                      reinterpret_cast<TFreeProc>(freeProc),
-                                      reinterpret_cast<TReadProc>(readProc),
-                                      reinterpret_cast<TWriteProc>(writeProc));
+    return COldAsnTypeInfoGetTypeInfo(name, reinterpret_cast<TAsnNewProc>(newProc), reinterpret_cast<TAsnFreeProc>(freeProc), reinterpret_cast<TAsnReadProc>(readProc), reinterpret_cast<TAsnWriteProc>(writeProc));
 }
 
 // old ASN structires info

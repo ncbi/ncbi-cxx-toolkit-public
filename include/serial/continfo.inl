@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 16:28:30  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.1  2000/09/18 20:00:00  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -55,10 +61,180 @@ bool CContainerTypeInfo::RandomElementsOrder(void) const
 }
 
 inline
-CContainerElementIterator::TIterator* CContainerElementIterator::CloneIterator(void) const
+CContainerTypeInfo::CConstIterator::CConstIterator(void)
+    : m_ContainerType(0), m_IteratorData(0)
 {
-    TIterator* i = m_Iterator.get();
-    return i? i->Clone(): 0;
+}
+
+inline
+CContainerTypeInfo::CConstIterator::~CConstIterator(void)
+{
+    const CContainerTypeInfo* containerType = m_ContainerType;
+    if ( containerType )
+        containerType->ReleaseIterator(*this);
+}
+
+inline
+const CContainerTypeInfo* CContainerTypeInfo::CConstIterator::GetContainerType(void) const
+{
+    return m_ContainerType;
+}
+
+inline
+void CContainerTypeInfo::CConstIterator::Reset(void)
+{
+    const CContainerTypeInfo* containerType = m_ContainerType;
+    if ( containerType ) {
+        containerType->ReleaseIterator(*this);
+        m_ContainerType = 0;
+        m_IteratorData = 0;
+    }
+}
+
+inline
+CContainerTypeInfo::CIterator::CIterator(void)
+    : m_ContainerType(0), m_IteratorData(0)
+{
+}
+
+inline
+CContainerTypeInfo::CIterator::~CIterator(void)
+{
+    const CContainerTypeInfo* containerType = m_ContainerType;
+    if ( containerType )
+        containerType->ReleaseIterator(*this);
+}
+
+inline
+const CContainerTypeInfo* CContainerTypeInfo::CIterator::GetContainerType(void) const
+{
+    return m_ContainerType;
+}
+
+inline
+void CContainerTypeInfo::CIterator::Reset(void)
+{
+    const CContainerTypeInfo* containerType = m_ContainerType;
+    if ( containerType ) {
+        containerType->ReleaseIterator(*this);
+        m_ContainerType = 0;
+        m_IteratorData = 0;
+    }
+}
+
+inline
+bool CContainerTypeInfo::InitIterator(CConstIterator& it,
+                                      TConstObjectPtr obj) const
+{
+    it.Reset();
+    TNewIteratorResult data = m_InitIteratorConst(this, obj);
+    it.m_ContainerType = this;
+    it.m_IteratorData = data.first;
+    return data.second;
+}
+
+inline
+void CContainerTypeInfo::ReleaseIterator(CConstIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    m_ReleaseIteratorConst(it.m_IteratorData);
+    it.m_ContainerType = 0;
+    it.m_IteratorData = 0;
+}
+
+inline
+void CContainerTypeInfo::CopyIterator(CConstIterator& dst,
+                                      const CConstIterator& src) const
+{
+    dst.Reset();
+    _ASSERT(src.m_ContainerType == this);
+    dst.m_IteratorData = m_CopyIteratorConst(src.m_IteratorData);
+    dst.m_ContainerType = this;
+}
+
+inline
+bool CContainerTypeInfo::NextElement(CConstIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    TNewIteratorResult data = m_NextElementConst(it.m_IteratorData);
+    it.m_IteratorData = data.first;
+    return data.second;
+}
+
+inline
+TConstObjectPtr CContainerTypeInfo::GetElementPtr(const CConstIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    return m_GetElementPtrConst(it.m_IteratorData);
+}
+
+inline
+bool CContainerTypeInfo::InitIterator(CIterator& it,
+                                      TObjectPtr obj) const
+{
+    it.Reset();
+    TNewIteratorResult data = m_InitIterator(this, obj);
+    it.m_ContainerType = this;
+    it.m_IteratorData = data.first;
+    return data.second;
+}
+
+inline
+void CContainerTypeInfo::ReleaseIterator(CIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    m_ReleaseIterator(it.m_IteratorData);
+    it.m_ContainerType = 0;
+    it.m_IteratorData = 0;
+}
+
+inline
+void CContainerTypeInfo::CopyIterator(CIterator& dst,
+                                      const CIterator& src) const
+{
+    dst.Reset();
+    _ASSERT(src.m_ContainerType == this);
+    dst.m_IteratorData = m_CopyIterator(src.m_IteratorData);
+    dst.m_ContainerType = this;
+}
+
+inline
+bool CContainerTypeInfo::NextElement(CIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    TNewIteratorResult data = m_NextElement(it.m_IteratorData);
+    it.m_IteratorData = data.first;
+    return data.second;
+}
+
+inline
+TObjectPtr CContainerTypeInfo::GetElementPtr(const CIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    return m_GetElementPtr(it.m_IteratorData);
+}
+
+inline
+bool CContainerTypeInfo::EraseElement(CIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    TNewIteratorResult data = m_EraseElement(it.m_IteratorData);
+    it.m_IteratorData = data.first;
+    return data.second;
+}
+
+inline
+void CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
+                                    TConstObjectPtr elementPtr) const
+{
+    m_AddElement(this, containerPtr, elementPtr);
+}
+
+inline
+void CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
+                                    CObjectIStream& in) const
+{
+    m_AddElementIn(this, containerPtr, in);
 }
 
 inline
@@ -70,26 +246,32 @@ CContainerElementIterator::CContainerElementIterator(void)
 inline
 CContainerElementIterator::CContainerElementIterator(TObjectPtr containerPtr,
                                                      const CContainerTypeInfo* containerType)
-    : m_ElementType(containerType->GetElementType()),
-      m_Iterator(containerType->NewIterator()),
-      m_Valid(m_Iterator->Init(containerPtr))
+    : m_ElementType(containerType->GetElementType())
 {
+    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
 }
 
 inline
 CContainerElementIterator::CContainerElementIterator(const CContainerElementIterator& src)
     : m_ElementType(src.m_ElementType),
-      m_Iterator(src.CloneIterator()),
       m_Valid(src.m_Valid)
 {
+    const CContainerTypeInfo* containerType =
+        src.m_Iterator.GetContainerType();
+    if ( containerType )
+        containerType->CopyIterator(m_Iterator, src.m_Iterator);
 }
 
 inline
 CContainerElementIterator& CContainerElementIterator::operator=(const CContainerElementIterator& src)
 {
     m_Valid = false;
+    m_Iterator.Reset();
     m_ElementType = src.m_ElementType;
-    m_Iterator = src.CloneIterator();
+    const CContainerTypeInfo* containerType =
+        src.m_Iterator.GetContainerType();
+    if ( containerType )
+        containerType->CopyIterator(m_Iterator, src.m_Iterator);
     m_Valid = src.m_Valid;
     return *this;
 }
@@ -99,9 +281,9 @@ void CContainerElementIterator::Init(TObjectPtr containerPtr,
                                      const CContainerTypeInfo* containerType)
 {
     m_Valid = false;
+    m_Iterator.Reset();
     m_ElementType = containerType->GetElementType();
-    m_Iterator.reset(containerType->NewIterator());
-    m_Valid = m_Iterator->Init(containerPtr);
+    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
 }
 
 inline
@@ -120,28 +302,22 @@ inline
 void CContainerElementIterator::Next(void)
 {
     _ASSERT(m_Valid);
-    m_Valid = m_Iterator->Next();
+    m_Valid = m_Iterator.GetContainerType()->NextElement(m_Iterator);
 }
 
 inline
 void CContainerElementIterator::Erase(void)
 {
     _ASSERT(m_Valid);
-    m_Valid = m_Iterator->Erase();
+    m_Valid = m_Iterator.GetContainerType()->EraseElement(m_Iterator);
 }
 
 inline
 pair<TObjectPtr, TTypeInfo> CContainerElementIterator::Get(void) const
 {
     _ASSERT(m_Valid);
-    return make_pair(m_Iterator->GetElementPtr(), GetElementType());
-}
-
-inline
-CConstContainerElementIterator::TIterator* CConstContainerElementIterator::CloneIterator(void) const
-{
-    TIterator* i = m_Iterator.get();
-    return i? i->Clone(): 0;
+    return make_pair(m_Iterator.GetContainerType()->GetElementPtr(m_Iterator),
+                     GetElementType());
 }
 
 inline
@@ -153,18 +329,20 @@ CConstContainerElementIterator::CConstContainerElementIterator(void)
 inline
 CConstContainerElementIterator::CConstContainerElementIterator(TConstObjectPtr containerPtr,
                                                                const CContainerTypeInfo* containerType)
-    : m_ElementType(containerType->GetElementType()),
-      m_Iterator(containerType->NewConstIterator()),
-      m_Valid(m_Iterator->Init(containerPtr))
+    : m_ElementType(containerType->GetElementType())
 {
+    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
 }
 
 inline
 CConstContainerElementIterator::CConstContainerElementIterator(const CConstContainerElementIterator& src)
     : m_ElementType(src.m_ElementType),
-      m_Iterator(src.CloneIterator()),
       m_Valid(src.m_Valid)
 {
+    const CContainerTypeInfo* containerType =
+        src.m_Iterator.GetContainerType();
+    if ( containerType )
+        containerType->CopyIterator(m_Iterator, src.m_Iterator);
 }
 
 inline
@@ -172,8 +350,12 @@ CConstContainerElementIterator&
 CConstContainerElementIterator::operator=(const CConstContainerElementIterator& src)
 {
     m_Valid = false;
+    m_Iterator.Reset();
     m_ElementType = src.m_ElementType;
-    m_Iterator.reset(src.CloneIterator());
+    const CContainerTypeInfo* containerType =
+        src.m_Iterator.GetContainerType();
+    if ( containerType )
+        containerType->CopyIterator(m_Iterator, src.m_Iterator);
     m_Valid = src.m_Valid;
     return *this;
 }
@@ -183,9 +365,9 @@ void CConstContainerElementIterator::Init(TConstObjectPtr containerPtr,
                                           const CContainerTypeInfo* containerType)
 {
     m_Valid = false;
+    m_Iterator.Reset();
     m_ElementType = containerType->GetElementType();
-    m_Iterator.reset(containerType->NewConstIterator());
-    m_Valid = m_Iterator->Init(containerPtr);
+    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
 }
 
 inline
@@ -204,14 +386,15 @@ inline
 void CConstContainerElementIterator::Next(void)
 {
     _ASSERT(m_Valid);
-    m_Valid = m_Iterator->Next();
+    m_Valid = m_Iterator.GetContainerType()->NextElement(m_Iterator);
 }
 
 inline
 pair<TConstObjectPtr, TTypeInfo> CConstContainerElementIterator::Get(void) const
 {
     _ASSERT(m_Valid);
-    return make_pair(m_Iterator->GetElementPtr(), GetElementType());
+    return make_pair(m_Iterator.GetContainerType()->GetElementPtr(m_Iterator),
+                     GetElementType());
 }
 
 #endif /* def CONTINFO__HPP  &&  ndef CONTINFO__INL */

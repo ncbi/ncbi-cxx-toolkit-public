@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/10/13 16:28:29  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.35  2000/10/03 17:22:30  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -181,6 +187,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/member.hpp>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -219,6 +226,7 @@ protected:
                    const type_info& ti, TGetTypeIdFunction idFunc);
 
 public:
+    typedef list<pair<CMemberId, CTypeRef> > TSubClasses;
 
     const CItemsInfo& GetMembers(void) const;
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const;

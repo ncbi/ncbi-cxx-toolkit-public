@@ -33,36 +33,50 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 16:28:33  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.1  1999/07/13 20:18:11  vasilche
 * Changed types naming.
 *
 * ===========================================================================
 */
 
-#include <map>
+#include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CTypeInfo;
+class CTypeInfoMapData;
+class CTypeInfoMap2Data;
 
-template<class Type>
 class CTypeInfoMap
 {
-    typedef const CTypeInfo* TTypeInfo;
 public:
+    CTypeInfoMap(void);
+    ~CTypeInfoMap(void);
 
-    TTypeInfo GetTypeInfo(TTypeInfo key)
-        {
-            TTypeInfo& ret = m_Map[key];
-            if ( ret == 0 )
-                ret = new Type(key);
-            return ret;
-        }
+    TTypeInfo GetTypeInfo(TTypeInfo key, TTypeInfoGetter1 func);
+
 private:
-    map<TTypeInfo, TTypeInfo> m_Map;
+    CTypeInfoMapData* m_Data;
 };
 
-//#include <typemap.inl>
+class CTypeInfoMap2
+{
+public:
+    CTypeInfoMap2(void);
+    ~CTypeInfoMap2(void);
+
+    TTypeInfo GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
+                          TTypeInfoGetter2 func);
+
+private:
+    CTypeInfoMap2Data* m_Data;
+};
 
 END_NCBI_SCOPE
 

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/10/13 16:28:28  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.34  2000/09/19 20:16:52  vasilche
 * Fixed type in CStlClassInfo_auto_ptr.
 * Added missing include serialutil.hpp.
@@ -177,8 +183,7 @@
 #include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/typeref.hpp>
-#include <serial/choice.hpp>
-#include <serial/serialasn.hpp>
+#include <serial/serialasndef.hpp>
 
 struct valnode;
 struct bytestore;
@@ -198,11 +203,6 @@ public:
 	CSequenceOfTypeInfo(const string& name,
                         TTypeInfo type, bool randomOrder = false);
 
-    CConstIterator* NewConstIterator(void) const;
-    CIterator* NewIterator(void) const;
-    void AddElement(TObjectPtr container, TConstObjectPtr element) const;
-    void AddElement(TObjectPtr container, CObjectIStream& in) const;
-
     size_t GetNextOffset(void) const
         {
             return m_NextOffset;
@@ -212,23 +212,21 @@ public:
             return m_DataOffset;
         }
     
-    TObjectPtr CreateData(void) const;
-
     static TObjectPtr& FirstNode(TObjectPtr object)
         {
             return CTypeConverter<TObjectPtr>::Get(object);
         }
-    static TConstObjectPtr FirstNode(TConstObjectPtr object)
+    static TObjectPtr FirstNode(TConstObjectPtr object)
         {
-            return CTypeConverter<TConstObjectPtr>::Get(object);
+            return CTypeConverter<TObjectPtr>::Get(object);
         }
     TObjectPtr& NextNode(TObjectPtr object) const
         {
             return CTypeConverter<TObjectPtr>::Get(Add(object, m_NextOffset));
         }
-    TConstObjectPtr NextNode(TConstObjectPtr object) const
+    TObjectPtr NextNode(TConstObjectPtr object) const
         {
-            return CTypeConverter<TConstObjectPtr>::Get(Add(object, m_NextOffset));
+            return CTypeConverter<TObjectPtr>::Get(Add(object, m_NextOffset));
         }
     TObjectPtr Data(TObjectPtr object) const
         {
@@ -240,11 +238,15 @@ public:
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
+    static TTypeInfo CreateTypeInfo(TTypeInfo base);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst,
                         TConstObjectPtr src) const;
+
+    TObjectPtr CreateNode(void) const;
+    void DeleteNode(TObjectPtr node) const;
 
 private:
 	void InitSequenceOfTypeInfo(void);
@@ -254,12 +256,6 @@ private:
     void SetValNodeNext(void);
     // SET OF CHOICE (use choice's valnode->next field as link)
     void SetChoiceNext(void);
-
-protected:
-
-    static void ReadSequence(CObjectIStream& in,
-                             TTypeInfo objectType,
-                             TObjectPtr objectPtr);
 
 private:
     size_t m_NextOffset;  // offset in struct of pointer to next object (def 0)
@@ -274,6 +270,7 @@ public:
     CSetOfTypeInfo(const string& name, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
+    static TTypeInfo CreateTypeInfo(TTypeInfo base);
 };
 
 class COctetStringTypeInfo : public CPrimitiveTypeInfo {
@@ -321,17 +318,12 @@ class COldAsnTypeInfo : public CPrimitiveTypeInfo
     typedef CPrimitiveTypeInfo CParent;
     typedef void* TObjectType;
 public:
-    typedef TObjectPtr (ASNCALL*TNewProc)(void);
-    typedef TObjectPtr (ASNCALL*TFreeProc)(TObjectPtr);
-    typedef TObjectPtr (ASNCALL*TReadProc)(asnio*, asntype*);
-    typedef unsigned char (ASNCALL*TWriteProc)(TObjectPtr, asnio*, asntype*);
-
     COldAsnTypeInfo(const char* name,
-                    TNewProc newProc, TFreeProc freeProc,
-                    TReadProc readProc, TWriteProc writeProc);
+                    TAsnNewProc newProc, TAsnFreeProc freeProc,
+                    TAsnReadProc readProc, TAsnWriteProc writeProc);
     COldAsnTypeInfo(const string& name,
-                    TNewProc newProc, TFreeProc freeProc,
-                    TReadProc readProc, TWriteProc writeProc);
+                    TAsnNewProc newProc, TAsnFreeProc freeProc,
+                    TAsnReadProc readProc, TAsnWriteProc writeProc);
 
     static TObjectType& Get(TObjectPtr object)
         {
@@ -358,10 +350,10 @@ protected:
                                   TConstObjectPtr objectPtr);
 
 private:
-    TNewProc m_NewProc;
-    TFreeProc m_FreeProc;
-    TReadProc m_ReadProc;
-    TWriteProc m_WriteProc;
+    TAsnNewProc m_NewProc;
+    TAsnFreeProc m_FreeProc;
+    TAsnReadProc m_ReadProc;
+    TAsnWriteProc m_WriteProc;
 };
 
 //#include <serial/asntypes.inl>

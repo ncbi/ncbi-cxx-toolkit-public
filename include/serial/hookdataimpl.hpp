@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 16:28:30  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.1  2000/10/03 17:22:31  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -44,21 +50,41 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <serial/weakmap.hpp>
 
 BEGIN_NCBI_SCOPE
 
-template<class Object>
+class CHookDataKeyData
+{
+public:
+    typedef CRef<CObject> mapped_type;
+    typedef CWeakMapKey<mapped_type> TKey;
+
+    CHookDataKeyData(void);
+    ~CHookDataKeyData(void);
+
+    TKey m_Key;
+};
+
 class CHookDataData
 {
 public:
-    typedef Object mapped_type;
+    CHookDataData(void);
+    ~CHookDataData(void);
+
+    typedef CRef<CObject> mapped_type;
     typedef CWeakMap<mapped_type> TMap;
     
-    bool empty(void) const
-        {
-            return !m_GlobalHook && m_LocalHooks.empty();
-        }
+    bool Empty(void) const;
+
+    void SetGlobalHook(CObject* hook);
+    void ResetGlobalHook(void);
+    void SetLocalHook(CHookDataKeyData& key, CObject* hook);
+    void ResetLocalHook(CHookDataKeyData& key);
+
+    CObject* GetGlobalHook(void) const;
+    CObject* GetHook(CHookDataKeyData& key) const;
 
     mapped_type m_GlobalHook;
     TMap m_LocalHooks;

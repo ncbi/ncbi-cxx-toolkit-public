@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/10/13 16:28:39  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.51  2000/10/05 15:52:50  vasilche
 * Avoid useing snprintf bacause it's missing on osf1_gcc
 *
@@ -552,20 +558,21 @@ void CObjectOStreamAsn::WriteContainer(const CContainerTypeInfo* cType,
 {
     BEGIN_OBJECT_FRAME2(eFrameArray, cType);
     StartBlock();
-        
-    TTypeInfo elementType = cType->GetElementType();
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+    
+    CContainerTypeInfo::CConstIterator i;
+    if ( cType->InitIterator(i, containerPtr) ) {
+        TTypeInfo elementType = cType->GetElementType();
+        BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-    auto_ptr<CContainerTypeInfo::CConstIterator> i(cType->NewConstIterator());
-    if ( i->Init(containerPtr) ) {
         do {
             NextElement();
             
-            WriteObject(i->GetElementPtr(), elementType);
-        } while ( i->Next() );
-    }
+            WriteObject(cType->GetElementPtr(i), elementType);
 
-    END_OBJECT_FRAME();
+        } while ( cType->NextElement(i) );
+        
+        END_OBJECT_FRAME();
+    }
 
     EndBlock();
     END_OBJECT_FRAME();

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/13 16:28:40  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.15  2000/10/05 15:52:51  vasilche
 * Avoid useing snprintf bacause it's missing on osf1_gcc
 *
@@ -287,7 +293,7 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
     char buffer[128];
     // ensure buffer is large enough to fit result
     // (additional bytes are for sign, dot and exponent)
-    _ASSERT(sizeof(buffer) > precision + 16);
+    _ASSERT(sizeof(buffer) > size_t(precision + 16));
     int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         THROW1_TRACE(runtime_error, "buffer overflow");
@@ -512,23 +518,27 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
                                                TConstObjectPtr containerPtr)
 {
     TTypeInfo elementType = cType->GetElementType();
-    auto_ptr<CContainerTypeInfo::CConstIterator> i(cType->NewConstIterator());
+    CContainerTypeInfo::CConstIterator i;
     if ( WillHaveName(elementType) ) {
-        if ( i->Init(containerPtr) ) {
+        if ( cType->InitIterator(i, containerPtr) ) {
             do {
-                WriteObject(i->GetElementPtr(), elementType);
-            } while ( i->Next() );
+
+                WriteObject(cType->GetElementPtr(i), elementType);
+
+            } while ( cType->NextElement(i) );
         }
     }
     else {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-        if ( i->Init(containerPtr) ) {
+        if ( cType->InitIterator(i, containerPtr) ) {
             do {
                 OpenStackTag(0);
-                WriteObject(i->GetElementPtr(), elementType);
+
+                WriteObject(cType->GetElementPtr(i), elementType);
+
                 CloseStackTag(0);
-            } while ( i->Next() );
+            } while ( cType->NextElement(i) );
         }
 
         END_OBJECT_FRAME();

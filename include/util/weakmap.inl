@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/13 16:28:34  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.2  2000/09/29 20:14:30  vasilche
 * Fixed name conflict (map).
 *
@@ -79,6 +85,12 @@ bool CWeakMap<Object>::empty(void) const
 
 template<class Object>
 inline
+CWeakMap<Object>::CWeakMap(void)
+{
+}
+
+template<class Object>
+inline
 CWeakMap<Object>::~CWeakMap(void)
 {
     while ( !empty() ) {
@@ -106,7 +118,6 @@ void CWeakMap<Object>::erase(key_type& key)
 {
     TMap::iterator mi = m_Map.find(&key);
     if ( mi != m_Map.end() ) {
-        key_type& key = *mi->first;
         m_Map.erase(mi);
         key.Deregister(this);
     }
@@ -160,6 +171,12 @@ inline
 CWeakMap<Object>::iterator CWeakMap<Object>::end(void)
 {
     return m_Map.end();
+}
+
+template<class Object>
+inline
+CWeakMapKey<Object>::CWeakMapKey(void)
+{
 }
 
 template<class Object>

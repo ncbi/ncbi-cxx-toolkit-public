@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/13 16:28:29  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.7  2000/10/03 17:22:30  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -80,7 +86,6 @@
 #include <serial/memberid.hpp>
 #include <map>
 #include <set>
-#include <vector>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -88,7 +93,6 @@ BEGIN_NCBI_SCOPE
 class CClassTypeInfoBase : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    typedef vector<pair<CMemberId, CTypeRef> > TSubClasses;
     typedef map<TTypeInfo, bool> TContainedTypes;
 
 protected:

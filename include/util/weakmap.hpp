@@ -36,6 +36,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 16:28:34  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.1  2000/09/29 16:18:16  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -88,6 +94,7 @@ public:
     typedef Object mapped_type;
     typedef CWeakMap<mapped_type> TWeakMap;
 
+    CWeakMapKey(void);
     ~CWeakMapKey(void);
 
 private:
@@ -112,6 +119,7 @@ public:
     typedef typename TMap::iterator iterator;
 
 public:
+    CWeakMap(void);
     ~CWeakMap(void);
 
     size_t size(void) const;

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/13 16:28:32  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.21  2000/09/18 20:00:10  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -128,13 +134,26 @@ class CPrimitiveTypeInfo : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
-    CPrimitiveTypeInfo(size_t size, EPrimitiveValueType valueType);
+    typedef bool (*TIsDefaultFunction)(TConstObjectPtr objectPtr);
+    typedef void (*TSetDefaultFunction)(TObjectPtr objectPtr);
+    typedef bool (*TEqualsFunction)(TConstObjectPtr o1, TConstObjectPtr o2);
+    typedef void (*TAssignFunction)(TObjectPtr dst, TConstObjectPtr src);
+
+    CPrimitiveTypeInfo(size_t size,
+                       EPrimitiveValueType valueType, bool isSigned = true);
     CPrimitiveTypeInfo(size_t size, const char* name,
-                       EPrimitiveValueType valueType);
+                       EPrimitiveValueType valueType, bool isSigned = true);
     CPrimitiveTypeInfo(size_t size, const string& name,
-                       EPrimitiveValueType valueType);
+                       EPrimitiveValueType valueType, bool isSigned = true);
+
+    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
+    virtual void SetDefault(TObjectPtr dst) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     EPrimitiveValueType GetPrimitiveValueType(void) const;
+
+    bool IsSigned(void) const;
 
     virtual bool GetValueBool(TConstObjectPtr objectPtr) const;
     virtual void SetValueBool(TObjectPtr objectPtr, bool value) const;
@@ -142,7 +161,6 @@ public:
     virtual char GetValueChar(TConstObjectPtr objectPtr) const;
     virtual void SetValueChar(TObjectPtr objectPtr, char value) const;
 
-    virtual bool IsSigned(void) const;
     virtual long GetValueLong(TConstObjectPtr objectPtr) const;
     virtual void SetValueLong(TObjectPtr objectPtr, long value) const;
     virtual unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
@@ -161,11 +179,22 @@ public:
 
     static const CPrimitiveTypeInfo* GetIntegerTypeInfo(size_t size);
 
+    void SetMemFunctions(TTypeCreate,
+                         TIsDefaultFunction, TSetDefaultFunction,
+                         TEqualsFunction, TAssignFunction);
+    void SetIOFunctions(TTypeReadFunction, TTypeWriteFunction,
+                        TTypeCopyFunction, TTypeSkipFunction);
 protected:
     friend class CObjectInfo;
     friend class CConstObjectInfo;
 
     EPrimitiveValueType m_ValueType;
+    bool m_Signed;
+
+    TIsDefaultFunction m_IsDefault;
+    TSetDefaultFunction m_SetDefault;
+    TEqualsFunction m_Equals;
+    TAssignFunction m_Assign;
 };
 
 class CVoidTypeInfo : public CPrimitiveTypeInfo
@@ -173,11 +202,6 @@ class CVoidTypeInfo : public CPrimitiveTypeInfo
     typedef CPrimitiveTypeInfo CParent;
 public:
     CVoidTypeInfo(void);
-
-    virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
-    virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 };
 
 // template for getting type info of standard types
@@ -191,6 +215,7 @@ class CStdTypeInfo<bool>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static TTypeInfo GetTypeInfoNullBool(void);
 };
 
 template<>
@@ -291,55 +316,39 @@ class CStdTypeInfo<string>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static TTypeInfo GetTypeInfoStringStore(void);
 };
-
-TTypeInfo GetStdTypeInfo_char_ptr(void);
-TTypeInfo GetStdTypeInfo_const_char_ptr(void);
 
 template<>
 class CStdTypeInfo<char*>
 {
 public:
-    static TTypeInfo GetTypeInfo(void)
-        {
-            return GetStdTypeInfo_char_ptr();
-        }
+    static TTypeInfo GetTypeInfo(void);
 };
 
 template<>
 class CStdTypeInfo<const char*>
 {
 public:
-    static TTypeInfo GetTypeInfo(void)
-        {
-            return GetStdTypeInfo_const_char_ptr();
-        }
-};
-
-TTypeInfo GetTypeInfoNullBool(void);
-TTypeInfo GetTypeInfoStringStore(void);
-
-template<typename Char>
-class CCharVectorTypeInfo
-{
+    static TTypeInfo GetTypeInfo(void);
 };
 
 template<>
-class CCharVectorTypeInfo<char>
+class CStdTypeInfo< vector<char> >
 {
 public:
     static TTypeInfo GetTypeInfo(void);
 };
 
 template<>
-class CCharVectorTypeInfo<signed char>
+class CStdTypeInfo< vector<signed char> >
 {
 public:
     static TTypeInfo GetTypeInfo(void);
 };
 
 template<>
-class CCharVectorTypeInfo<unsigned char>
+class CStdTypeInfo< vector<unsigned char> >
 {
 public:
     static TTypeInfo GetTypeInfo(void);

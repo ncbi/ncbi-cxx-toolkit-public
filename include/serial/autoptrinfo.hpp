@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/13 16:28:29  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.8  2000/09/18 19:59:59  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -81,6 +87,7 @@ public:
     CAutoPointerTypeInfo(TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
+    static TTypeInfo CreateTypeInfo(TTypeInfo base);
 
 protected:
     static void ReadAutoPtr(CObjectIStream& in,

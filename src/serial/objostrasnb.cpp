@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/10/13 16:28:40  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.48  2000/10/05 15:52:50  vasilche
 * Avoid useing snprintf bacause it's missing on osf1_gcc
 *
@@ -741,7 +747,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     char buffer[128];
     // ensure buffer is large enough to fit result
     // (additional bytes are for sign, dot and exponent)
-    _ASSERT(sizeof(buffer) > precision + 16);
+    _ASSERT(sizeof(buffer) > size_t(precision + 16));
     int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         THROW1_TRACE(runtime_error, "buffer overflow");
@@ -929,18 +935,20 @@ void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
     else
         WriteShortTag(eUniversal, true, eSequence);
     WriteIndefiniteLength();
-        
-    TTypeInfo elementType = cType->GetElementType();
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+    
+    CContainerTypeInfo::CConstIterator i;
+    if ( cType->InitIterator(i, containerPtr) ) {
+        TTypeInfo elementType = cType->GetElementType();
+        BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-    auto_ptr<CContainerTypeInfo::CConstIterator> i(cType->NewConstIterator());
-    if ( i->Init(containerPtr) ) {
         do {
-            WriteObject(i->GetElementPtr(), elementType);
-        } while ( i->Next() );
-    }
 
-    END_OBJECT_FRAME();
+            WriteObject(cType->GetElementPtr(i), elementType);
+
+        } while ( cType->NextElement(i) );
+
+        END_OBJECT_FRAME();
+    }
 
     WriteEndOfContent();
 }

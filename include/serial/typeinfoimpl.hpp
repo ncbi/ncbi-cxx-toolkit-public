@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 16:28:33  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.1  2000/09/18 20:00:11  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -51,10 +57,16 @@ class CVoidTypeFunctions
 {
 public:
     static TObjectPtr Create(TTypeInfo objectType);
-    static void Read(CObjectIStream& in,
-                     TTypeInfo objectType, TObjectPtr object);
-    static void Write(CObjectOStream& out,
-                      TTypeInfo objectType, TConstObjectPtr objectPtr);
+
+    static bool IsDefault(TConstObjectPtr objectPtr);
+    static void SetDefault(TObjectPtr objectPtr);
+    static bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2);
+    static void Assign(TObjectPtr dst, TConstObjectPtr src);
+
+    static void Read(CObjectIStream& in, TTypeInfo objectType,
+                     TObjectPtr objectPtr);
+    static void Write(CObjectOStream& out, TTypeInfo objectType,
+                      TConstObjectPtr objectPtr);
     static void Copy(CObjectStreamCopier& copier, TTypeInfo objectType);
     static void Skip(CObjectIStream& in, TTypeInfo objectType);
 

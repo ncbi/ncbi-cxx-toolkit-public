@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/13 16:28:39  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.11  2000/10/03 17:22:43  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -104,7 +110,7 @@ BEGIN_NCBI_SCOPE
 
 // object type info
 
-void CObjectTypeInfo::WrongTypeFamily(ETypeFamily needFamily) const
+void CObjectTypeInfo::WrongTypeFamily(ETypeFamily /*needFamily*/) const
 {
     THROW1_TRACE(runtime_error, "wrong type family");
 }

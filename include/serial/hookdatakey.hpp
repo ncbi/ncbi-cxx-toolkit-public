@@ -1,5 +1,5 @@
-#if defined(STDTYPES__HPP)  &&  !defined(STDTYPES__INL)
-#define STDTYPES__INL
+#ifndef HOOKDATAKEY__HPP
+#define HOOKDATAKEY__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,37 +33,41 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2000/10/13 16:28:32  vasilche
+* Revision 1.1  2000/10/13 16:28:30  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
 * Reduced amount of different maps used.
 * All this lead to smaller compiled code size (libraries and programs).
 *
-* Revision 1.3  2000/09/18 20:00:10  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.2  1999/06/04 20:51:39  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:30  vasilche
-* Commit just in case.
-*
 * ===========================================================================
 */
 
-inline
-EPrimitiveValueType CPrimitiveTypeInfo::GetPrimitiveValueType(void) const
-{
-    return m_ValueType;
-}
+#include <corelib/ncbistd.hpp>
 
-inline
-bool CPrimitiveTypeInfo::IsSigned(void) const
-{
-    return m_Signed;
-}
+BEGIN_NCBI_SCOPE
 
-#endif /* def STDTYPES__HPP  &&  ndef STDTYPES__INL */
+class CHookDataKeyData;
+
+class CHookDataKeyBase
+{
+public:
+    typedef CHookDataKeyData TData;
+
+    CHookDataKeyBase(void);
+    ~CHookDataKeyBase(void);
+
+    TData& Get(void);
+
+private:
+    TData* m_Key;
+};
+
+
+template<class Hook>
+class CHookDataKey : public CHookDataKeyBase
+{
+};
+
+END_NCBI_SCOPE
+
+#endif  /* HOOKDATAKEY__HPP */

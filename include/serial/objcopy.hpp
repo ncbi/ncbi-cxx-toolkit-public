@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/13 16:28:31  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.3  2000/09/29 16:18:13  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -59,7 +65,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <serial/weakmap.hpp>
+#include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -122,9 +128,9 @@ private:
 
 public:
     // hook support
-    CWeakMapKey< CRef<CCopyObjectHook> > m_ObjectHookKey;
-    CWeakMapKey< CRef<CCopyClassMemberHook> > m_ClassMemberHookKey;
-    CWeakMapKey< CRef<CCopyChoiceVariantHook> > m_ChoiceVariantHookKey;
+    CHookDataKey<CCopyObjectHook> m_ObjectHookKey;
+    CHookDataKey<CCopyClassMemberHook> m_ClassMemberHookKey;
+    CHookDataKey<CCopyChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
 #include <serial/objcopy.inl>

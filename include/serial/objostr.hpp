@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/10/13 16:28:31  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.48  2000/10/04 19:18:54  vasilche
 * Fixed processing floating point data.
 *
@@ -229,7 +235,7 @@
 #include <serial/strbuffer.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/objstack.hpp>
-#include <serial/weakmap.hpp>
+#include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
 
 struct asnio;
@@ -557,9 +563,9 @@ protected:
 
 public:
     // hook support
-    CWeakMapKey< CRef<CWriteObjectHook> > m_ObjectHookKey;
-    CWeakMapKey< CRef<CWriteClassMemberHook> > m_ClassMemberHookKey;
-    CWeakMapKey< CRef<CWriteChoiceVariantHook> > m_ChoiceVariantHookKey;
+    CHookDataKey<CWriteObjectHook> m_ObjectHookKey;
+    CHookDataKey<CWriteClassMemberHook> m_ClassMemberHookKey;
+    CHookDataKey<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
 #include <serial/objostr.inl>

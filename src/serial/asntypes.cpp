@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/10/13 16:28:37  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.47  2000/10/03 17:22:41  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -244,11 +250,16 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
-static CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo_map;
+static CTypeInfoMap s_SequenceOfTypeInfo_map;
 
 TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
 {
-    return CSequenceOfTypeInfo_map.GetTypeInfo(base);
+    return s_SequenceOfTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+}
+
+TTypeInfo CSequenceOfTypeInfo::CreateTypeInfo(TTypeInfo base)
+{
+    return new CSequenceOfTypeInfo(base);
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder)
@@ -282,10 +293,161 @@ size_t GetFirstItemOffset(const CItemsInfo& items)
     return offset;
 }
 
+class CSequenceOfTypeInfoFunctionsCI
+{
+public:
+    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
+    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
+
+    struct SData
+    {
+        const CSequenceOfTypeInfo* m_Type;
+        TObjectPtr m_NodePtr;
+        SData(const CSequenceOfTypeInfo* type, TObjectPtr nodePtr)
+            : m_Type(type), m_NodePtr(nodePtr)
+            {
+            }
+    };
+
+    static SData& Get(void* data)
+        {
+            return *static_cast<SData*>(data);
+        }
+
+    static TNewIteratorResult InitIterator(const CContainerTypeInfo* cType,
+                                           TConstObjectPtr containerPtr)
+        {
+            const CSequenceOfTypeInfo* seqType =
+                CTypeConverter<CSequenceOfTypeInfo>::SafeCast(cType);
+            TObjectPtr nodePtr = seqType->FirstNode(containerPtr);
+            return TNewIteratorResult(new SData(seqType, nodePtr),
+                                      nodePtr != 0);
+        }
+    static void ReleaseIterator(TIteratorDataPtr data)
+        {
+            delete &Get(data);
+        }
+    static TIteratorDataPtr CopyIterator(TIteratorDataPtr data)
+        {
+            return new SData(Get(data));
+        }
+    static TNewIteratorResult NextElement(TIteratorDataPtr data)
+        {
+            TObjectPtr nodePtr =
+                Get(data).m_Type->NextNode(Get(data).m_NodePtr);
+            Get(data).m_NodePtr = nodePtr;
+            return TNewIteratorResult(data, nodePtr != 0);
+        }
+    static TConstObjectPtr GetElementPtr(TIteratorDataPtr data)
+        {
+            return Get(data).m_Type->Data(Get(data).m_NodePtr);
+        }
+};
+
+class CSequenceOfTypeInfoFunctionsI
+{
+public:
+    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
+    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
+
+    struct SData
+    {
+        const CSequenceOfTypeInfo* m_Type;
+        TObjectPtr* m_NodePtrPtr;
+        SData(const CSequenceOfTypeInfo* type, TObjectPtr* nodePtrPtr)
+            : m_Type(type), m_NodePtrPtr(nodePtrPtr)
+            {
+            }
+    };
+
+    static SData& Get(void* data)
+        {
+            return *static_cast<SData*>(data);
+        }
+
+    static TNewIteratorResult InitIterator(const CContainerTypeInfo* cType,
+                                           TObjectPtr containerPtr)
+        {
+            const CSequenceOfTypeInfo* seqType =
+                CTypeConverter<CSequenceOfTypeInfo>::SafeCast(cType);
+            TObjectPtr* nodePtrPtr = &seqType->FirstNode(containerPtr);
+            return TNewIteratorResult(new SData(seqType, nodePtrPtr),
+                                      *nodePtrPtr != 0);
+        }
+    static void ReleaseIterator(TIteratorDataPtr data)
+        {
+            delete &Get(data);
+        }
+    static TIteratorDataPtr CopyIterator(TIteratorDataPtr data)
+        {
+            return new SData(Get(data));
+        }
+    static TNewIteratorResult NextElement(TIteratorDataPtr data)
+        {
+            TObjectPtr* nodePtrPtr =
+                &Get(data).m_Type->NextNode(*Get(data).m_NodePtrPtr);
+            Get(data).m_NodePtrPtr = nodePtrPtr;
+            return TNewIteratorResult(data, *nodePtrPtr != 0);
+        }
+    static TObjectPtr GetElementPtr(TIteratorDataPtr data)
+        {
+            return Get(data).m_Type->Data(*Get(data).m_NodePtrPtr);
+        }
+    static TNewIteratorResult EraseElement(TIteratorDataPtr data)
+        {
+            TObjectPtr* nodePtrPtr = Get(data).m_NodePtrPtr;
+            TObjectPtr nodePtr = *nodePtrPtr;
+            TObjectPtr nextNodePtr = Get(data).m_Type->NextNode(nodePtr);
+            *nodePtrPtr = nextNodePtr;
+            Get(data).m_Type->DeleteNode(nodePtr);
+            return TNewIteratorResult(data, nextNodePtr != 0);
+        }
+};
+
+class CSequenceOfTypeInfoFunctions
+{
+public:
+    static void ReadSequence(CObjectIStream& in,
+                             TTypeInfo containerType,
+                             TObjectPtr containerPtr)
+        {
+            const CSequenceOfTypeInfo* seqType =
+                CTypeConverter<CSequenceOfTypeInfo>::SafeCast(containerType);
+
+            BEGIN_OBJECT_FRAME_OF2(in, eFrameArray, seqType);
+            in.BeginContainer(seqType);
+
+            TTypeInfo elementType = seqType->GetElementType();
+            BEGIN_OBJECT_FRAME_OF2(in, eFrameArrayElement, elementType);
+
+            TObjectPtr* nextNodePtr = &seqType->FirstNode(containerPtr);
+
+            while ( in.BeginContainerElement(elementType) ) {
+                // get current node pointer
+                TObjectPtr node = *nextNodePtr;
+        
+                // create node
+                _ASSERT(!node);
+                node = *nextNodePtr = seqType->CreateNode();
+
+                // read node data
+                in.ReadObject(seqType->Data(node), elementType);
+
+                // save next node for next read
+                nextNodePtr = &seqType->NextNode(node);
+        
+                in.EndContainerElement();
+            }
+
+            END_OBJECT_FRAME_OF(in);
+
+            in.EndContainer();
+            END_OBJECT_FRAME_OF(in);
+        }
+};
+
 void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
 {
-    SetReadFunction(&ReadSequence);
-
 	TTypeInfo type = GetElementType();
     _TRACE("SequenceOf(" << type->GetName() << ") " << typeid(*type).name());
     const CAutoPointerTypeInfo* ptrInfo =
@@ -343,6 +505,23 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
                      type->GetName() + ": " + typeid(*type).name() +
                      " size: " + NStr::IntToString(type->GetSize()));
 	}
+
+    {
+        typedef CSequenceOfTypeInfoFunctions TFunc;
+        SetReadFunction(&TFunc::ReadSequence);
+    }
+    {
+        typedef CSequenceOfTypeInfoFunctionsCI TFunc;
+        SetConstIteratorFunctions(&TFunc::InitIterator, &TFunc::ReleaseIterator,
+                                  &TFunc::CopyIterator, &TFunc::NextElement,
+                                  &TFunc::GetElementPtr);
+    }
+    {
+        typedef CSequenceOfTypeInfoFunctionsI TFunc;
+        SetIteratorFunctions(&TFunc::InitIterator, &TFunc::ReleaseIterator,
+                             &TFunc::CopyIterator, &TFunc::NextElement,
+                             &TFunc::GetElementPtr, &TFunc::EraseElement);
+    }
 }
 
 void CSequenceOfTypeInfo::SetChoiceNext(void)
@@ -357,83 +536,7 @@ void CSequenceOfTypeInfo::SetValNodeNext(void)
     m_DataOffset = offsetof(valnode, data);
 }
 
-class CSequenceConstIterator : public CContainerTypeInfo::CConstIterator
-{
-    typedef CContainerTypeInfo::CConstIterator CParent;
-public:
-    CSequenceConstIterator(const CSequenceOfTypeInfo* seqInfo)
-        : m_SequenceInfo(seqInfo)
-        {
-        }
-    CParent* Clone(void) const
-        {
-            return new CSequenceConstIterator(*this);
-        }
-
-    bool Init(TConstObjectPtr objectPtr)
-        {
-            return (m_NodePtr = m_SequenceInfo->FirstNode(objectPtr)) != 0;
-        }
-    bool Next(void)
-        {
-            return (m_NodePtr = m_SequenceInfo->NextNode(m_NodePtr)) != 0;
-        }
-    TConstObjectPtr GetElementPtr(void) const
-        {
-            return m_SequenceInfo->Data(m_NodePtr);
-        }
-private:
-    const CSequenceOfTypeInfo* m_SequenceInfo;
-    TConstObjectPtr m_NodePtr;
-};
-
-class CSequenceIterator : public CContainerTypeInfo::CIterator
-{
-    typedef CContainerTypeInfo::CIterator CParent;
-public:
-    CSequenceIterator(const CSequenceOfTypeInfo* seqInfo)
-        : m_SequenceInfo(seqInfo)
-        {
-        }
-    CParent* Clone(void) const
-        {
-            return new CSequenceIterator(*this);
-        }
-
-    bool Init(TObjectPtr objectPtr)
-        {
-            return
-                *(m_NodePtrPtr = &m_SequenceInfo->FirstNode(objectPtr)) != 0;
-        }
-    bool Next(void)
-        {
-            return
-                *(m_NodePtrPtr = &m_SequenceInfo->NextNode(*m_NodePtrPtr)) != 0;
-        }
-    TObjectPtr GetElementPtr(void) const
-        {
-            return m_SequenceInfo->Data(*m_NodePtrPtr);
-        }
-    bool Erase(void)
-        {
-            THROW1_TRACE(runtime_error, "unimplemented");
-        }
-private:
-    const CSequenceOfTypeInfo* m_SequenceInfo;
-    TObjectPtr* m_NodePtrPtr;
-};
-
-CContainerTypeInfo::CConstIterator* CSequenceOfTypeInfo::NewConstIterator(void) const
-{
-    return new CSequenceConstIterator(this);
-}
-
-CContainerTypeInfo::CIterator* CSequenceOfTypeInfo::NewIterator(void) const
-{
-    return new CSequenceIterator(this);
-}
-
-TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
+TObjectPtr CSequenceOfTypeInfo::CreateNode(void) const
 {
     if ( m_DataOffset == 0 ) {
         _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
@@ -443,6 +546,20 @@ TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
         _ASSERT(m_NextOffset == offsetof(valnode, next));
 		_ASSERT(m_DataOffset == offsetof(valnode, data));
         return Alloc(sizeof(valnode));
+	}
+}
+
+void CSequenceOfTypeInfo::DeleteNode(TObjectPtr node) const
+{
+    _TRACE(Warning << "Erase struct");
+    if ( m_DataOffset == 0 ) {
+        _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
+        GetElementType()->Delete(node);
+	}
+    else {
+        _ASSERT(m_NextOffset == offsetof(valnode, next));
+		_ASSERT(m_DataOffset == offsetof(valnode, data));
+        Free(node);
 	}
 }
 
@@ -465,69 +582,24 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 
     TTypeInfo dataType = GetElementType();
-    dst = FirstNode(dst) = CreateData();
+    dst = FirstNode(dst) = CreateNode();
     dataType->Assign(Data(dst), Data(src));
     while ( (src = NextNode(src)) != 0 ) {
-        dst = NextNode(dst) = CreateData();
+        dst = NextNode(dst) = CreateNode();
         dataType->Assign(Data(dst), Data(src));
     }
 }
 
-void CSequenceOfTypeInfo::AddElement(TObjectPtr /*containerPtr*/,
-                                     TConstObjectPtr /*elementPtr*/) const
-{
-    THROW1_TRACE(runtime_error, "illegal call");
-}
-
-void CSequenceOfTypeInfo::AddElement(TObjectPtr /*containerPtr*/,
-                                     CObjectIStream& /*in*/) const
-{
-    THROW1_TRACE(runtime_error, "illegal call");
-}
-
-void CSequenceOfTypeInfo::ReadSequence(CObjectIStream& in,
-                                       TTypeInfo containerType,
-                                       TObjectPtr containerPtr)
-{
-    const CSequenceOfTypeInfo* seqType =
-        CTypeConverter<CSequenceOfTypeInfo>::SafeCast(containerType);
-
-    BEGIN_OBJECT_FRAME_OF2(in, eFrameArray, seqType);
-    in.BeginContainer(seqType);
-
-    TTypeInfo elementType = seqType->GetElementType();
-    BEGIN_OBJECT_FRAME_OF2(in, eFrameArrayElement, elementType);
-
-    TObjectPtr* nextNodePtr = &seqType->FirstNode(containerPtr);
-
-    while ( in.BeginContainerElement(elementType) ) {
-        // get current node pointer
-        TObjectPtr node = *nextNodePtr;
-        
-        // create node
-        _ASSERT(!node);
-        node = *nextNodePtr = seqType->CreateData();
-
-        // read node data
-        in.ReadObject(seqType->Data(node), elementType);
-
-        // save next node for next read
-        nextNodePtr = &seqType->NextNode(node);
-        
-        in.EndContainerElement();
-    }
-
-    END_OBJECT_FRAME_OF(in);
-
-    in.EndContainer();
-    END_OBJECT_FRAME_OF(in);
-}
-
-static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
+static CTypeInfoMap s_SetOfTypeInfo_map;
 
 TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
 {
-    return CSetOfTypeInfo_map.GetTypeInfo(base);
+    return s_SetOfTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+}
+
+TTypeInfo CSetOfTypeInfo::CreateTypeInfo(TTypeInfo base)
+{
+    return new CSetOfTypeInfo(base);
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
@@ -679,8 +751,10 @@ TTypeInfo COctetStringTypeInfo::GetTypeInfo(void)
 }
 
 COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
-                                 TNewProc newProc, TFreeProc freeProc,
-                                 TReadProc readProc, TWriteProc writeProc)
+                                 TAsnNewProc newProc,
+                                 TAsnFreeProc freeProc,
+                                 TAsnReadProc readProc,
+                                 TAsnWriteProc writeProc)
     : CParent(sizeof(TObjectType), name, ePrimitiveValueSpecial),
       m_NewProc(newProc), m_FreeProc(freeProc),
       m_ReadProc(readProc), m_WriteProc(writeProc)
@@ -690,8 +764,10 @@ COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
 }
 
 COldAsnTypeInfo::COldAsnTypeInfo(const string& name,
-                                 TNewProc newProc, TFreeProc freeProc,
-                                 TReadProc readProc, TWriteProc writeProc)
+                                 TAsnNewProc newProc,
+                                 TAsnFreeProc freeProc,
+                                 TAsnReadProc readProc,
+                                 TAsnWriteProc writeProc)
     : CParent(sizeof(TObjectType), name, ePrimitiveValueSpecial),
       m_NewProc(newProc), m_FreeProc(freeProc),
       m_ReadProc(readProc), m_WriteProc(writeProc)

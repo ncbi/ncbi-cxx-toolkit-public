@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/10/13 16:28:40  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.28  2000/09/18 20:00:25  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -196,8 +202,14 @@ void CPointerTypeInfo::InitPointerTypeInfoFunctions(void)
     SetWriteFunction(&WritePointer);
     SetCopyFunction(&CopyPointer);
     SetSkipFunction(&SkipPointer);
-    m_GetData = &GetPointer;
-    m_SetData = &SetPointer;
+    SetFunctions(&GetPointer, &SetPointer);
+}
+
+void CPointerTypeInfo::SetFunctions(TGetDataFunction getFunc,
+                                    TSetDataFunction setFunc)
+{
+    m_GetData = getFunc;
+    m_SetData = setFunc;
 }
 
 TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)

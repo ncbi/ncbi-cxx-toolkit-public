@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/10/13 16:28:38  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.54  2000/10/03 17:22:41  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -386,6 +392,10 @@ void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
 
 TTypeInfo CClassTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const
 {
+    if ( !m_SubClasses.get() ) {
+        // do not have subclasses -> real type is the same as our type
+        return this;
+    }
     const type_info* ti = GetCPlusPlusTypeInfo(object);
     if ( ti == 0 || ti == &GetId() )
         return this;

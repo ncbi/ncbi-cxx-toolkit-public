@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/10/13 16:28:41  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.31  2000/10/03 17:22:45  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -165,11 +171,83 @@
 * ===========================================================================
 */
 
-#include <serial/stltypes.hpp>
+#include <serial/stltypesimpl.hpp>
 #include <serial/classinfo.hpp>
-#include <serial/serialimpl.hpp>
+#include <serial/classinfohelper.hpp>
+#include <serial/typemap.hpp>
 
 BEGIN_NCBI_SCOPE
+
+static CTypeInfoMap s_TypeMap_auto_ptr;
+static CTypeInfoMap s_TypeMap_CRef;
+static CTypeInfoMap s_TypeMap_AutoPtr;
+static CTypeInfoMap s_TypeMap_list;
+static CTypeInfoMap s_TypeMapSet_list;
+static CTypeInfoMap s_TypeMap_vector;
+static CTypeInfoMap s_TypeMap_set;
+static CTypeInfoMap s_TypeMap_multiset;
+
+TTypeInfo CStlClassInfoUtil::Get_auto_ptr(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_auto_ptr.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_CRef(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_CRef.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_AutoPtr(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_AutoPtr.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_list(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_list.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::GetSet_list(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMapSet_list.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_vector(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_vector.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_set(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_set.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_multiset(TTypeInfo arg, TTypeInfoGetter1 f)
+{
+    return s_TypeMap_multiset.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_map(TTypeInfo arg1, TTypeInfo arg2,
+                                     TTypeInfoGetter2 f)
+{
+    return f(arg1, arg2);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_multimap(TTypeInfo arg1, TTypeInfo arg2,
+                                          TTypeInfoGetter2 f)
+{
+    return f(arg1, arg2);
+}
+
+void CStlClassInfoUtil::CannotGetElementOfSet(void)
+{
+    THROW1_TRACE(runtime_error, "cannot get pointer to element of set");
+}
+
+void CStlClassInfoUtil::ThrowDuplicateElementError(void)
+{
+    THROW1_TRACE(runtime_error, "duplicate element of unique container");
+}
 
 CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
                                        TTypeInfo type, bool randomOrder)
@@ -188,23 +266,46 @@ void CStlOneArgTemplate::SetDataId(const CMemberId& id)
     m_DataId = id;
 }
 
+bool CStlOneArgTemplate::IsDefault(TConstObjectPtr objectPtr) const
+{
+    return m_IsDefault(objectPtr);
+}
+
+void CStlOneArgTemplate::SetDefault(TObjectPtr objectPtr) const
+{
+    m_SetDefault(objectPtr);
+}
+
+void CStlOneArgTemplate::SetMemFunctions(TTypeCreate create,
+                                         TIsDefaultFunction isDefault,
+                                         TSetDefaultFunction setDefault)
+{
+    SetCreateFunction(create);
+    m_IsDefault = isDefault;
+    m_SetDefault = setDefault;
+}
+
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
-                                         const CTypeRef& elementType,
                                          TTypeInfo keyType,
-                                         TTypeInfo dataType,
+                                         TOffset keyOffset,
+                                         TTypeInfo valueType,
+                                         TOffset valueOffset,
                                          bool randomOrder)
-    : CParent(size, elementType, randomOrder),
-      m_KeyType(keyType), m_ValueType(dataType)
+    : CParent(size, CTypeRef(&CreateElementTypeInfo, this), randomOrder),
+      m_KeyType(keyType), m_KeyOffset(keyOffset),
+      m_ValueType(valueType), m_ValueOffset(valueOffset)
 {
 }
 
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
-                                         const CTypeRef& elementType,
                                          const CTypeRef& keyType,
-                                         const CTypeRef& dataType,
+                                         TOffset keyOffset,
+                                         const CTypeRef& valueType,
+                                         TOffset valueOffset,
                                          bool randomOrder)
-    : CParent(size, elementType, randomOrder),
-      m_KeyType(keyType), m_ValueType(dataType)
+    : CParent(size, CTypeRef(&CreateElementTypeInfo, this), randomOrder),
+      m_KeyType(keyType), m_KeyOffset(keyOffset),
+      m_ValueType(valueType), m_ValueOffset(valueOffset)
 {
 }
 
@@ -218,48 +319,20 @@ void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
     m_ValueId = id;
 }
 
-CStlClassInfoMapImpl::CStlClassInfoMapImpl(size_t size,
-                                           TTypeInfo keyType,
-                                           TConstObjectPtr keyOffset,
-                                           TTypeInfo valueType,
-                                           TConstObjectPtr valueOffset)
-    : CParent(size, CTypeRef(&CreateElementClassType, this),
-              keyType, valueType, true),
-      m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
+TTypeInfo CStlTwoArgsTemplate::CreateElementTypeInfo(TTypeInfo argType)
 {
-}
-
-CStlClassInfoMapImpl::CStlClassInfoMapImpl(size_t size,
-                                           const CTypeRef& keyType,
-                                           TConstObjectPtr keyOffset,
-                                           const CTypeRef& valueType,
-                                           TConstObjectPtr valueOffset)
-    : CParent(size, CTypeRef(&CreateElementClassType, this),
-              keyType, valueType, true),
-      m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
-{
-}
-
-TTypeInfo CStlClassInfoMapImpl::CreateElementClassType(TTypeInfo argType)
-{
-    const CStlClassInfoMapImpl* mapType = 
-        CTypeConverter<CStlClassInfoMapImpl>::SafeCast(argType);
+    const CStlTwoArgsTemplate* mapType = 
+        CTypeConverter<CStlTwoArgsTemplate>::SafeCast(argType);
     CClassTypeInfo* classInfo =
         CClassInfoHelper<bool>::CreateAbstractClassInfo("");
     classInfo->SetRandomOrder(false);
     classInfo->AddMember(mapType->GetKeyId(),
                          TConstObjectPtr(mapType->m_KeyOffset),
-                         mapType->GetKeyTypeInfo());
+                         mapType->m_KeyType.Get());
     classInfo->AddMember(mapType->GetValueId(),
                          TConstObjectPtr(mapType->m_ValueOffset),
-                         mapType->GetValueTypeInfo());
+                         mapType->m_ValueType.Get());
     return classInfo;
-}
-
-void CStlElementIterator_set_Functions::CannotGetElementOfSet(const CContainerTypeInfo::CIterator& /*it*/)
-{
-    THROW1_TRACE(runtime_error,
-                 "cannot get pointer to element of set");
 }
 
 END_NCBI_SCOPE

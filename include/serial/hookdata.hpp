@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/13 16:28:30  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.3  2000/10/03 17:22:31  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -58,81 +64,52 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <memory>
+#include <serial/hookdatakey.hpp>
 
 BEGIN_NCBI_SCOPE
 
-template<class Object> class CWeakMap;
-template<class Object> class CWeakMapKey;
-template<class Object> class CHookDataData;
+class CObject;
+class CHookDataData;
 
-template<class Hook, typename Function>
-class CHookData
+class CHookDataBase
 {
 public:
-    typedef Hook THook;
-    typedef CRef<THook> mapped_type;
-    typedef CWeakMapKey<mapped_type> key_type;
-
-    typedef Function TFunction;
-
-private:
-    typedef CHookDataData<mapped_type> TData;
-
-    TData& CreateData(void);
-    void ResetHooks(void);
-
-    TData& GetDataForSet(void)
-        {
-            TData* hooks = m_Data.get();
-            return hooks? *hooks: CreateData();
-        }
-    TData& GetDataForReset(void)
-        {
-            _ASSERT(m_Data.get());
-            return *m_Data.get();
-        }
-    const TData* GetDataForGet(void) const
-        {
-            return m_Data.get();
-        }
-
-public:
-    CHookData(TFunction typeFunction, TFunction hookFunction);
-    ~CHookData(void);
-
-    TFunction GetCurrentFunction(void) const
-        {
-            return m_CurrentFunction;
-        }
+    CHookDataBase(void);
+    ~CHookDataBase(void);
 
     bool HaveHooks(void) const
         {
-            return m_Data.get() != 0;
+            return m_Data != 0;
         }
 
-    TFunction& GetDefaultFunction(void)
+protected:
+    bool Empty(void) const
         {
-            return m_Data.get()? m_SecondaryFunction: m_CurrentFunction;
-        }
-    TFunction GetDefaultFunction(void) const
-        {
-            return m_Data.get()? m_SecondaryFunction: m_CurrentFunction;
+            return m_Data == 0;
         }
 
-    void SetLocalHook(key_type& key, THook* hook);
-    void SetGlobalHook(THook* hook);
+    typedef CHookDataKeyBase TKey;
+    typedef CObject THook;
+    typedef CHookDataData TData;
 
-    void ResetLocalHook(key_type& key);
-    void ResetGlobalHook(void);
+    bool SetLocalHook(TKey& key, THook* hook);
+    bool SetGlobalHook(THook* hook);
+
+    bool ResetLocalHook(TKey& key);
+    bool ResetGlobalHook(void);
 
     THook* GetGlobalHook(void) const;
-    THook* GetHook(key_type& key) const;
+    THook* GetHook(TKey& key) const;
 
 private:
-    TFunction m_CurrentFunction;   // current function
-    TFunction m_SecondaryFunction;
+    void ResetData(void);
+
+    TData& GetDataForSet(void);
+    TData& GetDataForReset(void);
+    const TData* GetDataForGet(void) const
+        {
+            return m_Data;
+        }
 
     // CHookData can be in two states:
     // 1. m_Hooks.get() == 0
@@ -144,10 +121,81 @@ private:
     //     m_CurrentFunction == function checking hooks
     //     m_SecondaryFunction == original type specific function
 
-    auto_ptr<TData> m_Data;
+    TData* m_Data;
 };
 
-//#include <serial/hookdata.inl>
+template<class Hook, typename Function>
+class CHookData : public CHookDataBase
+{
+    typedef CHookDataBase CParent;
+public:
+    typedef Hook THook;
+    typedef Function TFunction;
+    typedef CHookDataKey<THook> TKey;
+
+    CHookData(TFunction typeFunction, TFunction hookFunction)
+        : m_CurrentFunction(typeFunction), m_SecondaryFunction(hookFunction)
+        {
+        }
+
+    TFunction GetCurrentFunction(void) const
+        {
+            return m_CurrentFunction;
+        }
+
+    TFunction GetDefaultFunction(void) const
+        {
+            return HaveHooks()? m_SecondaryFunction: m_CurrentFunction;
+        }
+    TFunction& GetDefaultFunction(void)
+        {
+            return HaveHooks()? m_SecondaryFunction: m_CurrentFunction;
+        }
+
+private:
+    void SwapFunctions(void)
+        {
+            TFunction temp = m_CurrentFunction;
+            m_CurrentFunction = m_SecondaryFunction;
+            m_SecondaryFunction = temp;
+        }
+
+public:
+    void SetLocalHook(TKey& key, THook* hook)
+        {
+            if ( CParent::SetLocalHook(key, hook) )
+                SwapFunctions();
+        }
+    void SetGlobalHook(THook* hook)
+        {
+            if ( CParent::SetGlobalHook(hook) )
+                SwapFunctions();
+        }
+
+    void ResetLocalHook(TKey& key)
+        {
+            if ( CParent::ResetLocalHook(key) )
+                SwapFunctions();
+        }
+    void ResetGlobalHook(void)
+        {
+            if ( CParent::ResetGlobalHook() )
+                SwapFunctions();
+        }
+
+    THook* GetGlobalHook(void) const
+        {
+            return static_cast<THook*>(CParent::GetGlobalHook());
+        }
+    THook* GetHook(TKey& key) const
+        {
+            return static_cast<THook*>(CParent::GetHook(key));
+        }
+
+private:
+    TFunction m_CurrentFunction;   // current function
+    TFunction m_SecondaryFunction;
+};
 
 END_NCBI_SCOPE
 

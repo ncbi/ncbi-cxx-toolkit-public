@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/10/13 16:28:38  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.22  2000/09/26 17:38:20  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -150,11 +156,16 @@ CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo pointerType)
     SetPointerType(pointerType);
 }
 
-static CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo_map;
+static CTypeInfoMap s_ChoicePointerTypeInfo_map;
 
 TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TTypeInfo base)
 {
-    return CChoicePointerTypeInfo_map.GetTypeInfo(base);
+    return s_ChoicePointerTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+}
+
+TTypeInfo CChoicePointerTypeInfo::CreateTypeInfo(TTypeInfo base)
+{
+    return new CChoicePointerTypeInfo(base);
 }
 
 void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
@@ -176,7 +187,7 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
     if ( !classType->IsCObject() )
         THROW1_TRACE(runtime_error,
                      "invalid argument:: choice ptr type must be CObject");
-    const CClassTypeInfoBase::TSubClasses* subclasses =
+    const CClassTypeInfo::TSubClasses* subclasses =
         classType->SubClasses();
     if ( !subclasses )
         return;

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/13 16:28:45  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.13  2000/08/25 15:59:25  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -170,7 +176,7 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
-    return new CStlClassInfo_list<AnyType>(m_ElementType->GetTypeInfo());
+    return CStlClassInfo_list<AnyType>::CreateTypeInfo(m_ElementType->GetTypeInfo().Get());
 }
 
 bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
@@ -200,8 +206,7 @@ const char* CUniSetDataType::GetASNKeyword(void) const
 
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 {
-    return new CStlClassInfo_list<AnyType>(GetElementType()->GetTypeInfo(),
-                                           true);
+    return CStlClassInfo_list<AnyType>::CreateSetTypeInfo(GetElementType()->GetTypeInfo().Get());
 }
 
 AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const

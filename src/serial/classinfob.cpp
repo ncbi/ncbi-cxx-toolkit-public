@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/13 16:28:38  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
 * Revision 1.7  2000/10/03 17:22:42  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -280,11 +286,12 @@ bool CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
 
 class CPostReadHook : public CReadObjectHook
 {
+    typedef CReadObjectHook CParent;
 public:
     typedef CClassTypeInfoBase::TPostReadFunction TPostReadFunction;
 
     CPostReadHook(TPostReadFunction func)
-        : m_PostRead(func)
+        : CParent(eCanDelete), m_PostRead(func)
         {
         }
 
@@ -300,11 +307,12 @@ private:
 
 class CPreWriteHook : public CWriteObjectHook
 {
+    typedef CWriteObjectHook CParent;
 public:
     typedef CClassTypeInfoBase::TPreWriteFunction TPreWriteFunction;
 
     CPreWriteHook(TPreWriteFunction func)
-        : m_PreWrite(func)
+        : CParent(eCanDelete), m_PreWrite(func)
         {
         }
 
