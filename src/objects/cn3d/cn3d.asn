@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -65,7 +65,9 @@ Cn3d-color-scheme ::= ENUMERATED {  -- available color schemes (not all
     fit (12),
     -- other schemes
     temperature (13),
-    hydrophobicity (14)
+    hydrophobicity (14),
+    charge (15),
+    rainbow (16)
 }
 
 -- RGB triplet, interpreted (after division by the scale-factor) as floating
