@@ -39,6 +39,10 @@ $(SUB_MF_IN):
 $(builddir)/%: $(abs_top_srcdir)/src/%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
+# Some versions of Solaris make seem to need an explicit rule here too.
+$(builddir)/Makefile.meta: $(abs_top_srcdir)/src/Makefile.meta.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
 $(config_status): $(abs_top_srcdir)/configure $(abs_top_srcdir)/config.h.in
 	$(abs_top_srcdir)/scripts/maybe_reconfigure.sh $(builddir)
 
