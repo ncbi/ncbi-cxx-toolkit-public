@@ -243,16 +243,21 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
     case CSeq_loc::e_Packed_int:
     {
         ENa_strand strand = eNa_strand_unknown;
+        bool strand_set = false;
         ITERATE(CPacked_seqint::Tdata, i, loc.GetPacked_int().Get()) {
             ENa_strand istrand = (*i)->IsSetStrand() ? (*i)->GetStrand() :
                 eNa_strand_unknown;
             if (strand == eNa_strand_unknown  &&  istrand == eNa_strand_plus) {
                 strand = eNa_strand_plus;
+                strand_set = true;
             } else if (strand == eNa_strand_plus  &&
                 istrand == eNa_strand_unknown) {
                 istrand = eNa_strand_plus;
-            }
-            if (istrand != strand) {
+                strand_set = true;
+            } else if (!strand_set) {
+                strand = istrand;
+                strand_set = true;
+            } else if (istrand != strand) {
                 return eNa_strand_other;
             }
         }
@@ -271,6 +276,7 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
     }
 
     ENa_strand strand = eNa_strand_unknown, cstrand;
+    bool strand_set = false;
     for (CSeq_loc_CI i(loc); i; ++i) {
         switch (i.GetSeq_loc().Which()) {
         case CSeq_loc::e_Mix:
@@ -280,11 +286,15 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
             cstrand = s_GetStrand(i.GetSeq_loc());
             if (strand == eNa_strand_unknown  &&  cstrand == eNa_strand_plus) {
                 strand = eNa_strand_plus;
+                strand_set = true;
             } else if (strand == eNa_strand_plus  &&
                 cstrand == eNa_strand_unknown) {
                 cstrand = eNa_strand_plus;
-            }
-            if (cstrand != strand) {
+                strand_set = true;
+            } else if (!strand_set) {
+                strand = cstrand;
+                strand_set = true;
+            } else if (cstrand != strand) {
                 return eNa_strand_other;
             }
         }
@@ -2911,6 +2921,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2003/05/06 19:34:36  grichenk
+* Fixed GetStrand() (worked fine only for plus and unknown strands)
+*
 * Revision 1.48  2003/05/01 17:55:17  ucko
 * Fix GetLength(const CSeq_id&, CScope*) to return ...::max() rather
 * than throwing if it can't resolve the ID to a handle.
