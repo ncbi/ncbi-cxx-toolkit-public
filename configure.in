@@ -108,8 +108,12 @@ AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
    [ --with-objects          do not generate/build serializeable objects from ASNs])
+AC_ARG_WITH(ctools,
+   [ --without-ctools        do not build NCBI C Toolkit based projects])
+AC_ARG_WITH(gui,
+   [ --without-gui           do not build wxWindows based projects])
 AC_ARG_WITH(internal,
-   [ --with-internal         build all projects including the internal ones])
+   [ --with-internal         build all internal projects])
 
 ## Manuals
 AC_ARG_WITH(manuals,
@@ -120,7 +124,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization dll runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy \
-ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
+ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -921,6 +925,7 @@ AC_MSG_RESULT()
 ### Check for the availability of other packages
 ### --------------------------------------------
 
+
 ### Common-use system and miscellaneous libs
 NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
 MATH_LIBS=${MATH_LIBS:="-lm"}
@@ -1228,17 +1233,12 @@ LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
 
 
-## Optional projects
-if test "$with_internal" = "yes" ; then
-   WithProjects="$WithProjects internal"
-   if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" || test "$no_internal" = "yes" ; then
-      AC_MSG_ERROR(["--with-internal:  Cannot build internal projects"])
-   fi
-   internal="internal"
-else
-   WithoutProjects="$WithoutProjects internal"
-   internal=
-fi
+
+### Optional projects
+### --------------------------------------------
+
+
+## `serial' projects
 
 if test "$with_serial" = "no" ; then
    WithoutProjects="$WithoutProjects serial"
@@ -1247,6 +1247,8 @@ else
    WithProjects="$WithProjects serial"
    serial="serial"
 fi
+
+## `objects' projects
 
 if test "$with_objects" = "yes"  &&  test -n "$serial" ; then
    WithProjects="$WithProjects objects"
@@ -1257,7 +1259,65 @@ else
 fi
 
 
-## Miscellanea
+## `ctools' project group
+
+if test -f src/ctools/Makefile.in  -a  -d include/ctools  -a  "$with_ncbi_c" != "no" ; then
+   if test "$with_ctools" = "yes" ; then
+      AC_MSG_ERROR(["--with-ctools:  Cannot build CTOOLS projects"])
+   fi
+else
+   with_ctools="no"
+fi
+
+if test "$with_ctools" = "no" ; then
+   WithoutProjects="$WithoutProjects ctools"
+else
+   OPT_GROUPS="$OPT_GROUPS ctools"
+fi
+
+
+## `gui' project group
+
+if test -f src/gui/Makefile.in  -a  -d include/gui  -a  "$with_wxwin" != "no" ; then
+   if test "$with_gui" = "yes" ; then
+      AC_MSG_ERROR(["--with-gui:  Cannot build GUI projects"])
+   fi
+else
+   with_gui="no"
+fi
+
+if test "$with_gui" = "no" ; then
+   WithoutProjects="$WithoutProjects gui"
+else
+   OPT_GROUPS="$OPT_GROUPS gui"
+fi
+
+
+## `gui_ctools' project group
+
+if test -f src/gui_ctools/Makefile.in  -a  -d include/gui_ctools  -a  "$with_tools" != "no"  -a  "$with_gui" != "no" ; then
+   OPT_GROUPS="$OPT_GROUPS gui_ctools"
+else
+   WithoutProjects="$WithoutProjects gui_ctools"
+fi
+
+
+## `internal' project group
+
+if test "$with_internal" = "yes" ; then
+   OPT_GROUPS="$OPT_GROUPS internal"
+   if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" || test "$no_internal" = "yes" ; then
+      AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects"])
+   fi
+else
+   WithoutProjects="$WithoutProjects internal"
+fi
+
+
+
+### Miscellanea
+### --------------------------------------------
+
 if test "$with_execopy" = "no" ; then
    APP_NOCOPY="BINCOPY=@:"
 else
@@ -1271,8 +1331,10 @@ else
 fi
 
 
-### Check for C standard types an sizes
-### ---------------------------------
+
+### Check for C standard types and sizes
+### --------------------------------------------
+
 AC_C_BIGENDIAN
 AC_C_CHAR_UNSIGNED
 AC_CHECK_SIZEOF(void*)
@@ -1286,7 +1348,10 @@ AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 
 
+
 ### Cleanup
+### ---------------------------------
+
 case "$compiler" in
  WorkShop* )
    test -d SunWS_cache  &&  rm -r SunWS_cache
@@ -1338,7 +1403,7 @@ AC_SUBST(LINK_DLL)
 AC_SUBST(CFLAGS_DLL)
 AC_SUBST(CXXFLAGS_DLL)
 
-AC_SUBST(internal)
+AC_SUBST(OPT_GROUPS)
 AC_SUBST(serial)
 AC_SUBST(objects)
 
@@ -1440,6 +1505,7 @@ WithoutProjects="$SAVE_WithoutProjects"
 with_extra_action="$SAVE_with_extra_action"
 
 dnl adjust "/$builddir" to "/src"
+echo "Please wait while the makefiles are being adjusted..."
 echo "$x_configurables" | while read x_file ; do
    mv "$x_file" "$x_file.tmp"
    cat "$x_file.tmp" | sed "s%/$builddir%/src%g" > "$x_file"
@@ -1519,7 +1585,7 @@ SAVE_LDFLAGS="$LDFLAGS"
 SAVE_with_dll="$with_dll"
 SAVE_WithPackages="$WithPackages"
 SAVE_WithoutPackages="$WithoutPackages"
-SAVE_WithProjects="$WithProjects"
+SAVE_WithProjects="$WithProjects $OPT_GROUPS"
 SAVE_WithoutProjects="$WithoutProjects"
 SAVE_with_extra_action="$with_extra_action"
 )

@@ -17,11 +17,6 @@
 @make_shell@
 
 
-### Internal projects
-
-INTERNAL = @internal@
-
-
 ### Configurable paths
 
 top_srcdir  = @top_srcdir@
@@ -37,7 +32,15 @@ incdir      = $(exec_prefix)/inc
 libdir      = $(exec_prefix)/lib
 bindir      = $(exec_prefix)/bin
 
-STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/internal
+
+### Optional top-level project groups
+
+OPT_GROUPS = @OPT_GROUPS@
+
+
+### Header dirs to include
+
+STD_INCLUDE = -I$(incdir) -I$(includedir) $(OPT_GROUPS:%=-I$(includedir)/%)
 
 
 ### Auxiliary commands, filters
