@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/18 14:03:30  vasilche
+* Fixed ?: error.
+*
 * Revision 1.2  2000/02/17 20:05:02  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -136,7 +139,12 @@ public:
         }
     CNcbiOstream& MethodStart(bool inl = false)
         {
-            return inl? (m_InlineMethods << "inline\n"): m_Methods;
+			if ( inl ) {
+				m_InlineMethods << "inline\n";
+				return m_InlineMethods;
+			}
+			else
+				return m_Methods;
         }
 
     CNcbiOstream& GenerateHPP(CNcbiOstream& header) const;
