@@ -1034,7 +1034,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                                      const IProjectFilter* filter,
                                      SMakeFiles*           makefiles)
 {
-#if 1
+#if 0
     // Do not collect makefile from root directory
     CDir dir(dir_name);
     CDir::TEntries contents = dir.GetEntries("*");
@@ -1066,79 +1066,110 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     }
 #endif
 
-#if 0
-    CDir dir(dir_name);
-    CDir::TEntries contents = dir.GetEntries("*");
-    
+#if 1
+
     // Node - Makefile.in should present
-    bool node_present = false;
-    ITERATE(CDir::TEntries, p, contents) {
-        const AutoPtr<CDirEntry>& dir_entry = *p;
-        string name = dir_entry->GetName();
-        node_present = (name == GetApp().GetProjectTreeInfo().m_TreeNode);
-        if ( node_present )
-            break;
-    }
-    if ( !node_present )
+    string node_path = 
+        CDirEntry::ConcatPath(dir_name, 
+                              GetApp().GetProjectTreeInfo().m_TreeNode);
+    if ( !CDirEntry(node_path).Exists() )
         return;
     
-    // contents of SUB_PROJ
-    set<string> subprojects;
+    bool process_projects = !is_root && filter->CheckProject(dir_name);
+    
+    // Process Makefile.*.lib
+    if ( process_projects ) {
+        CDir dir(dir_name);
+        CDir::TEntries contents = dir.GetEntries("Makefile.*.lib");
+        ITERATE(CDir::TEntries, p, contents) {
+            const AutoPtr<CDirEntry>& dir_entry = *p;
+            if ( SMakeProjectT::IsMakeLibFile(dir_entry->GetName()) )
+	            ProcessMakeLibFile(dir_entry->GetPath(), makefiles);
+
+        }
+    }
+    // Process Makefile.*.app
+    if ( process_projects ) {
+        CDir dir(dir_name);
+        CDir::TEntries contents = dir.GetEntries("Makefile.*.app");
+        ITERATE(CDir::TEntries, p, contents) {
+            const AutoPtr<CDirEntry>& dir_entry = *p;
+            if ( SMakeProjectT::IsMakeAppFile(dir_entry->GetName()) )
+	            ProcessMakeAppFile(dir_entry->GetPath(), makefiles);
+
+        }
+    }
+    // Process Makefile.*.msvcproj
+    if ( process_projects ) {
+        CDir dir(dir_name);
+        CDir::TEntries contents = dir.GetEntries("Makefile.*.msvcproj");
+        ITERATE(CDir::TEntries, p, contents) {
+            const AutoPtr<CDirEntry>& dir_entry = *p;
+            if ( SMakeProjectT::IsUserProjFile(dir_entry->GetName()) )
+	            ProcessUserProjFile(dir_entry->GetPath(), makefiles);
+
+        }
+    }
 
     // Process Makefile.in
-    if ( !is_root ) {
-        string makefilein_path = 
-            CDirEntry::ConcatPath(dir_name,
-                                  GetApp().GetProjectTreeInfo().m_TreeNode);
-        ProcessMakeInFile(makefilein_path, makefiles);
-        TFiles::const_iterator p = makefiles->m_In.find(makefilein_path);
+    list<string> subprojects;
+    if ( process_projects ) {
+        ProcessMakeInFile(node_path, makefiles);
+        TFiles::const_iterator p = makefiles->m_In.find(node_path);
         const CSimpleMakeFileContents& makefile = p->second;
-
+        // 
         CSimpleMakeFileContents::TContents::const_iterator k = 
             makefile.m_Contents.find("SUB_PROJ");
         if (k != makefile.m_Contents.end()) {
             const list<string>& values = k->second;
             copy(values.begin(), 
                  values.end(), 
-                 inserter(subprojects, subprojects.end()));
+                 back_inserter(subprojects));
         }
         k = makefile.m_Contents.find("EXPENDABLE_SUB_PROJ");
         if (k != makefile.m_Contents.end()) {
             const list<string>& values = k->second;
             copy(values.begin(), 
                  values.end(), 
-                 inserter(subprojects, subprojects.end()));
+                 back_inserter(subprojects));
         }
     }
+    subprojects.sort();
+    subprojects.unique();
 
-    ITERATE(CDir::TEntries, p, contents) {
-        const AutoPtr<CDirEntry>& dir_entry = *p;
-        string name  = dir_entry->GetName();
-        if ( name == "."  ||  name == ".."  ||  
-             name == string(1,CDir::GetPathSeparator()) ) {
-            continue;
-        }
-        string path = dir_entry->GetPath();
-
-        if ( dir_entry->IsFile()  &&  
-             !is_root        &&  
-             filter->CheckProject(CDirEntry(path).GetDir()) ) {
-
-            if ( SMakeProjectT::IsMakeInFile(name) )
-                //ProcessMakeInFile(path, makefiles);
+    // Convert subprojects to subdirs
+    list<string> subprojects_dirs;
+    if ( is_root ) {
+        // for root node we'll take all subdirs
+        CDir dir(dir_name);
+        CDir::TEntries contents = dir.GetEntries("*");
+        ITERATE(CDir::TEntries, p, contents) {
+            const AutoPtr<CDirEntry>& dir_entry = *p;
+            string name  = dir_entry->GetName();
+            if ( name == "."  ||  name == ".."  ||  
+                 name == string(1,CDir::GetPathSeparator()) ) {
                 continue;
-            else if ( SMakeProjectT::IsMakeLibFile(name) )
-	            ProcessMakeLibFile(path, makefiles);
-            else if ( SMakeProjectT::IsMakeAppFile(name) )
-	            ProcessMakeAppFile(path, makefiles);
-            else if ( SMakeProjectT::IsUserProjFile(name) )
-	            ProcessUserProjFile(path, makefiles);
-        } 
-        else if ( dir_entry->IsDir() ) {
-            if (is_root  ||  subprojects.find(name) != subprojects.end())
-                ProcessDir(path, false, filter, makefiles);
+            }
+            if ( dir_entry->IsDir() ) {
+                subprojects_dirs.push_back(dir_entry->GetPath());
+            }
+        }
+    } else {
+        // for non-root only subprojects
+        ITERATE(list<string>, p, subprojects) {
+            const string& subproject = *p;
+            string subproject_dir = 
+                CDirEntry::ConcatPath(dir_name, subproject);
+            subprojects_dirs.push_back(subproject_dir);
         }
     }
+
+    // Process subproj ( e.t. subdirs )
+    ITERATE(list<string>, p, subprojects_dirs) {
+        const string& subproject_dir = *p;
+        ProcessDir(subproject_dir, false, filter, makefiles);
+    }
+
 #endif
 }
 
@@ -1303,6 +1334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/16 14:26:05  gorelenk
+ * Re-designed CProjectTreeBuilder::ProcessDir .
+ *
  * Revision 1.11  2004/06/15 14:14:31  gorelenk
  * Changed CProjectTreeBuilder::ProcessDir - changed procedure of
  * subdirs iteration .
