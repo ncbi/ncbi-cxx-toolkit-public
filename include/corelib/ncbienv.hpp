@@ -73,7 +73,7 @@ BEGIN_NCBI_SCOPE
 /// CArgumentsException inherits its basic functionality from CCoreException
 /// and defines additional error codes for applications.
 
-class NCBI_XNCBI_EXPORT CArgumentsException : public CCoreException
+class CArgumentsException : public CCoreException
 {
 public:
     /// Error types that arguments processing can generate.
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/19 12:44:16  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.15  2004/08/09 19:06:42  ucko
  * CNcbiArguments: add an optional argument for the fully-resolved
  * program name (which is already being cached) to several functions.

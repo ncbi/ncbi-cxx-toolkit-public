@@ -75,7 +75,7 @@ BEGIN_NCBI_SCOPE
 /// CAppException inherits its basic functionality from CCoreException
 /// and defines additional error codes for applications.
 
-class NCBI_XNCBI_EXPORT CAppException : public CCoreException
+class CAppException : public CCoreException
 {
 public:
     /// Error types that an application can generate.
@@ -513,6 +513,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/08/19 12:44:05  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.43  2004/08/09 19:10:17  ucko
  * GetProgram{DisplayName,ExecutablePath}: return a ref rather than a copy.
  * {Find,Get}ProgramExecutablePath: make fully resolved paths available too.
