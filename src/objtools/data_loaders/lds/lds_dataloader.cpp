@@ -72,6 +72,7 @@ public:
         if (dbf.primary_seqid.IsNull())
             return;
         int object_id = dbf.object_id;
+        int tse_id = dbf.TSE_object_id;
 
         string seq_id_str = (const char*)dbf.primary_seqid;
         if (seq_id_str.empty())
@@ -89,8 +90,6 @@ public:
                 CSeq_id_Handle seq_id_hnd = it->first;
                 const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
                 if (seq_id.Match(seq_id_db)) {
-                    int tse_id = dbf.TSE_object_id;
-
                     m_ids.insert(tse_id ? tse_id : object_id);
                     return;
                 }
@@ -125,17 +124,19 @@ public:
                 }
             }
 
-            ITERATE (CHandleRangeMap, it, m_HrMap) {
-                CSeq_id_Handle seq_id_hnd = it->first;
+            {{
+            
+            ITERATE (CHandleRangeMap, it2, m_HrMap) {
+                CSeq_id_Handle seq_id_hnd = it2->first;
                 const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
 
                 if (seq_id.Match(seq_id_db)) {
-                    int tse_id = dbf.TSE_object_id;
-
                     m_ids.insert(tse_id ? tse_id : object_id);
                     return;
                 }
             } // ITERATE
+            
+            }}
 
         } // ITERATE
     }
@@ -236,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/30 19:52:15  kuznets
+ * Cleaned compilation warnings
+ *
  * Revision 1.4  2003/07/30 19:46:54  kuznets
  * Implemented alias search mode
  *
