@@ -26,10 +26,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Common pager box
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/04/15 19:48:24  vasilche
+* Fixed several warnings detected by GCC
+*
 * Revision 1.8  1999/04/14 19:50:28  vasilche
 * Fixed coredump. One more bug with map::const_iterator
 *
@@ -76,8 +79,8 @@ const string CPager::KParam_NextPages = "next pages";
 string CPagerView::sm_DefaultImagesDir = "/images/";
 
 CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
-    : m_PageBlockSize(max(1, pageBlockSize)),
-      m_PageSize(GetPageSize(request, defaultPageSize)),
+    : m_PageSize(GetPageSize(request, defaultPageSize)),
+      m_PageBlockSize(max(1, pageBlockSize)),
       m_PageChanged(false)
 {
     TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
@@ -275,7 +278,7 @@ void CPagerView::AddImageString(CNCBINode* node, int number,
     string s = NStr::IntToString(number + 1);
     string name = CPager::KParam_Page + s;
 
-    for ( int i = 0; i < s.size(); ++i ) {
+    for ( size_t i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_image(name,
                     m_ImagesDir + prefix + s[i] + suffix, 0));
     }
@@ -286,7 +289,7 @@ void CPagerView::AddInactiveImageString(CNCBINode* node, int number,
 {
     string s = NStr::IntToString(number + 1);
 
-    for ( int i = 0; i < s.size(); ++i ) {
+    for ( size_t i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_img(
                     m_ImagesDir + prefix + s[i] + suffix));
     }

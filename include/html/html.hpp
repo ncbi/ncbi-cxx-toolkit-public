@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/04/15 19:48:16  vasilche
+* Fixed several warnings detected by GCC
+*
 * Revision 1.28  1999/04/08 19:00:24  vasilche
 * Added current cell pointer to CHTML_table
 *
@@ -448,9 +451,11 @@ class CHTML_tc : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
+    // type for row and column indexing
+    typedef unsigned TIndex;
 
-    CHTML_tc* SetRowSpan(int span);
-    CHTML_tc* SetColSpan(int span);
+    CHTML_tc* SetRowSpan(TIndex span);
+    CHTML_tc* SetColSpan(TIndex span);
 
 protected:
     CHTML_tc(const string& name)
@@ -568,18 +573,23 @@ class CHTML_table : public CHTML_table_Base
     typedef CHTML_table_Base CParent;
 
 public:
+    // type for row and column indexing
+    typedef unsigned TIndex;
+    // limit of row and column index
+    enum { KMaxIndex = 1024 };
+
     CHTML_table(void);
 
     // returns row, will add rows if needed
     // throws exception if it is not left upper corner of cell
-    CHTML_tr* Row(int row);
+    CHTML_tr* Row(TIndex row);
 
     // current insertion point
-    void SetCurrentCell(int row, int col)
+    void SetCurrentCell(TIndex row, TIndex col)
         { m_CurrentRow = row; m_CurrentCol = col; }
-    int GetCurrentRow(void) const
+    TIndex GetCurrentRow(void) const
         { return m_CurrentRow; }
-    int GetCurrentCol(void) const
+    TIndex GetCurrentCol(void) const
         { return m_CurrentCol; }
 
     enum ECellType {
@@ -591,10 +601,10 @@ public:
     // returns cell, will add rows/columns if needed
     // throws exception if it is not left upper corner of cell
     // also sets current insertion point
-    CHTML_tc* Cell(int row, int column, ECellType type = eAnyCell);
-    CHTML_tc* HeaderCell(int row, int column)
+    CHTML_tc* Cell(TIndex row, TIndex column, ECellType type = eAnyCell);
+    CHTML_tc* HeaderCell(TIndex row, TIndex column)
         { return Cell(row, column, eHeaderCell); }
-    CHTML_tc* DataCell(int row, int column)
+    CHTML_tc* DataCell(TIndex row, TIndex column)
         { return Cell(row, column, eDataCell); }
 
     CHTML_tc* NextCell(ECellType type = eAnyCell);
@@ -612,13 +622,13 @@ public:
     // checks table contents for validaty, throws exception if invalid
     void CheckTable(void) const;
     // returns width of table in columns. Should call CheckTable before
-    int CalculateNumberOfColumns(void) const;
-    int CalculateNumberOfRows(void) const;
+    TIndex CalculateNumberOfColumns(void) const;
+    TIndex CalculateNumberOfRows(void) const;
 
     // return cell of insertion
-    CHTML_tc* InsertAt(int row, int column, CNCBINode* node);
-    CHTML_tc* InsertAt(int row, int column, const string& text);
-    CHTML_tc* InsertTextAt(int row, int column, const string& text);
+    CHTML_tc* InsertAt(TIndex row, TIndex column, CNCBINode* node);
+    CHTML_tc* InsertAt(TIndex row, TIndex column, const string& text);
+    CHTML_tc* InsertTextAt(TIndex row, TIndex column, const string& text);
 
     CHTML_tc* InsertNextCell(CNCBINode* node);
     CHTML_tc* InsertNextCell(const string& text);
@@ -626,7 +636,7 @@ public:
     CHTML_tc* InsertNextRowCell(CNCBINode* node);
     CHTML_tc* InsertNextRowCell(const string& text);
 
-    void ColumnWidth(CHTML_table*, int column, const string & width);
+    void ColumnWidth(CHTML_table*, TIndex column, const string & width);
 
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
@@ -634,28 +644,27 @@ public:
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
 
 protected:
-    // void MakeTable(int, int);
-
-    int m_CurrentRow, m_CurrentCol;
+    TIndex m_CurrentRow, m_CurrentCol;
 
     virtual CNCBINode* CloneSelf(void) const;
 
     struct CTableInfo
     {
-        int m_Rows;
-        int m_Columns;
-        int m_FinalRow;
-        vector<int> m_FinalRowSpans;
-        vector<int> m_RowSizes;
+        TIndex m_Rows;
+        TIndex m_Columns;
+        TIndex m_FinalRow;
+        vector<TIndex> m_FinalRowSpans;
+        vector<TIndex> m_RowSizes;
         bool m_BadNode, m_BadRowNode, m_BadCellNode, m_Overlapped, m_BadSpan;
 
         CTableInfo(void);
-        void AddRowSize(int columns);
-        void SetFinalRowSpans(int rows, const vector<int>& rowSpans);
+        void AddRowSize(TIndex columns);
+        void SetFinalRowSpans(TIndex rows, const vector<TIndex>& rowSpans);
     };
 
     void x_CheckTable(CTableInfo* info) const;
-    static int sx_GetSpan(const CNCBINode* node, const string& attr, CTableInfo* info);
+    static TIndex sx_GetSpan(const CNCBINode* node, const string& attr,
+                             CTableInfo* info);
     static bool sx_IsRow(const CNCBINode* node);
     static bool sx_IsCell(const CNCBINode* node);
     static CHTML_tc* sx_CheckType(CHTMLNode* node, ECellType type);

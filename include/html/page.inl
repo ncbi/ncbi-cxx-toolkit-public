@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/04/15 19:48:18  vasilche
+* Fixed several warnings detected by GCC
+*
 * Revision 1.5  1998/12/28 21:48:14  vasilche
 * Made Lewis's 'tool' compilable
 *
@@ -53,7 +56,7 @@
 * ===========================================================================
 */
 
-static inline CHTMLBasicPage* CHTMLPage::New(void)
+inline CHTMLBasicPage* CHTMLPage::New(void)
 {
     return new CHTMLPage;
 }

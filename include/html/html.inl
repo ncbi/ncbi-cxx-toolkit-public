@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/04/15 19:48:17  vasilche
+* Fixed several warnings detected by GCC
+*
 * Revision 1.13  1999/04/15 16:28:37  vasilche
 * Fixed type in defenition of list HTML tags.
 *
@@ -279,19 +282,19 @@ inline CHTML_tc* CHTML_table::NextRowCell(ECellType type)
     return Cell(m_CurrentRow + 1, 0, type);
 }
 
-inline CHTML_tc* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
+inline CHTML_tc* CHTML_table::InsertAt(TIndex row, TIndex column, CNCBINode* node)
 {
     CHTML_tc* cell = Cell(row, column);
     cell->AppendChild(node);
     return cell;
 }
 
-inline CHTML_tc* CHTML_table::InsertAt(int row, int column, const string& text)
+inline CHTML_tc* CHTML_table::InsertAt(TIndex row, TIndex column, const string& text)
 {
     return InsertAt(row, column, new CHTMLPlainText(text));
 }
 
-inline CHTML_tc* CHTML_table::InsertTextAt(int row, int column,
+inline CHTML_tc* CHTML_table::InsertTextAt(TIndex row, TIndex column,
                                            const string& text)
 {
     return InsertAt(row, column, text);

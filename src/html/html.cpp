@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/04/15 19:48:23  vasilche
+* Fixed several warnings detected by GCC
+*
 * Revision 1.33  1999/04/08 19:00:31  vasilche
 * Added current cell pointer to CHTML_table
 *
@@ -489,34 +492,34 @@ CHTML_table* CHTML_table::SetCellPadding(int padding)
     return this;
 }
 
-CHTML_tc* CHTML_tc::SetRowSpan(int span)
+CHTML_tc* CHTML_tc::SetRowSpan(TIndex span)
 {
     SetAttribute(KHTMLAttributeName_rowspan, span);
     return this;
 }
 
-CHTML_tc* CHTML_tc::SetColSpan(int span)
+CHTML_tc* CHTML_tc::SetColSpan(TIndex span)
 {
     SetAttribute(KHTMLAttributeName_colspan, span);
     return this;
 }
 
-int CHTML_table::sx_GetSpan(const CNCBINode* node,
+CHTML_table::TIndex CHTML_table::sx_GetSpan(const CNCBINode* node,
                             const string& attributeName, CTableInfo* info)
 {
     if ( !node->HaveAttribute(attributeName) )
         return 1;
 
-    int span;
+    TIndex span;
     try {
-        span = NStr::StringToInt(node->GetAttribute(attributeName));
+        span = NStr::StringToUInt(node->GetAttribute(attributeName));
     }
     catch ( runtime_error err ) {
         if ( info )
             info->m_BadSpan = true;
         return 1;
     }
-    if ( span <= 0 ) {
+    if ( span == 0 || span > KMaxIndex ) {
         if ( info )
             info->m_BadSpan = true;
         return 1;
@@ -524,10 +527,10 @@ int CHTML_table::sx_GetSpan(const CNCBINode* node,
     return span;
 }
 
-CHTML_tr* CHTML_table::Row(int needRow)  // todo: exception
+CHTML_tr* CHTML_table::Row(TIndex needRow)  // todo: exception
 {
     // beginning with row 0
-    int row = 0;
+    TIndex row = 0;
     // scan all children (which should be <TR> tags)
     for ( TChildList::const_iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow, ++row ) {
@@ -561,17 +564,20 @@ CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
         if ( cell->GetName() != CHTML_td::s_GetTagName() )
             throw runtime_error("CHTML_table::CheckType: wrong cell type: TH expected");
         break;
+    case eAnyCell:
+        // no check
+        break;
     }
     return static_cast<CHTML_tc*>(cell);
 }
 
-CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
+CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
 {
-    vector<int> rowSpans; // hanging down cells (with rowspan > 1)
+    vector<TIndex> rowSpans; // hanging down cells (with rowspan > 1)
 
     // beginning with row 0
-    int row = 0;
-    int needRowCols = 0;
+    TIndex row = 0;
+    TIndex needRowCols = 0;
     CHTMLNode* needRowNode = 0;
     // scan all children (which should be <TR> tags)
     for ( TChildList::const_iterator iRow = ChildBegin();
@@ -582,7 +588,7 @@ CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
         }
 
         // beginning with column 0
-        int col = 0;
+        TIndex col = 0;
         // scan all children (which should be <TH> or <TD> tags)
         for ( TChildList::iterator iCol = trNode->ChildBegin();
               iCol != trNode->ChildEnd(); ++iCol ) {
@@ -609,13 +615,13 @@ CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
             }
 
             // determine current cell size
-            int rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, 0);
-            int colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, 0);
+            TIndex rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, 0);
+            TIndex colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, 0);
 
             // end of new cell in columns
-            const int colEnd = col + colSpan;
+            const TIndex colEnd = col + colSpan;
             // check that there is enough space
-            for ( int i = col; i < colEnd && i < rowSpans.size(); ++i ) {
+            for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
                 if ( rowSpans[i] ) {
                     throw runtime_error("Table cells are overlapped");
                 }
@@ -628,7 +634,7 @@ CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
                     rowSpans.resize(colEnd);
 
                 // then store span number
-                for ( int i = col; i < colEnd; ++i ) {
+                for ( TIndex i = col; i < colEnd; ++i ) {
                     rowSpans[i] = max(rowSpans[i], rowSpan - 1);
                 }
             }
@@ -650,14 +656,14 @@ CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
         AppendChild(needRowNode = new CHTML_tr);
         ++row;
         // decrement hanging cell sizes
-        for ( int i = 0; i < rowSpans.size(); ++i ) {
+        for ( TIndex i = 0; i < rowSpans.size(); ++i ) {
             if ( rowSpans[i] )
                 --rowSpans[i];
         }
     }
 
     // this row doesn't have enough columns -> add some
-    int addCells = 0;
+    TIndex addCells = 0;
 
     do {
         // skip hanging cells
@@ -673,7 +679,7 @@ CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
 
     // add needed columns
     CHTML_tc* cell;
-    for ( int i = 1; i < addCells; ++i ) {
+    for ( TIndex i = 1; i < addCells; ++i ) {
         needRowNode->AppendChild(cell = new CHTML_td);
     }
     if ( type == eHeaderCell )
@@ -699,10 +705,10 @@ bool CHTML_table::sx_IsCell(const CNCBINode* node)
 
 void CHTML_table::x_CheckTable(CTableInfo *info) const
 {
-    vector<int> rowSpans; // hanging down cells (with rowspan > 1)
+    vector<TIndex> rowSpans; // hanging down cells (with rowspan > 1)
 
     // beginning with row 0
-    int row = 0;
+    TIndex row = 0;
     // scan all children (which should be <TR> tags)
     for ( TChildList::const_iterator iRow = ChildBegin(); iRow != ChildEnd();
           ++iRow ) {
@@ -718,7 +724,7 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
         }
 
         // beginning with column 0
-        int col = 0;
+        TIndex col = 0;
         // scan all children (which should be <TH> or <TD> tags)
         for ( TChildList::iterator iCol = trNode->ChildBegin();
               iCol != trNode->ChildEnd(); ++iCol ) {
@@ -739,13 +745,13 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
             }
 
             // determine current cell size
-            int rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
-            int colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
+            TIndex rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
+            TIndex colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
 
             // end of new cell in columns
-            const int colEnd = col + colSpan;
+            const TIndex colEnd = col + colSpan;
             // check that there is enough space
-            for ( int i = col; i < colEnd && i < rowSpans.size(); ++i ) {
+            for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
                 if ( rowSpans[i] ) {
                     if ( info )
                         info->m_Overlapped = true;
@@ -761,7 +767,7 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
                     rowSpans.resize(colEnd);
 
                 // then store span number
-                for ( int i = col; i < colEnd; ++i ) {
+                for ( TIndex i = col; i < colEnd; ++i ) {
                     rowSpans[i] = max(rowSpans[i], rowSpan - 1);
                 }
             }
@@ -778,39 +784,40 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
 }
 
 CHTML_table::CTableInfo::CTableInfo(void)
-    : m_Columns(0), m_Rows(0), m_FinalRow(0),
+    : m_Rows(0), m_Columns(0), m_FinalRow(0),
       m_BadNode(false), m_BadRowNode(false), m_BadCellNode(false),
       m_Overlapped(false), m_BadSpan(false)
 {
 }
 
-void CHTML_table::CTableInfo::AddRowSize(int columns)
+void CHTML_table::CTableInfo::AddRowSize(TIndex columns)
 {
     m_RowSizes.push_back(columns);
     m_Columns = max(m_Columns, columns);
 }
 
-void CHTML_table::CTableInfo::SetFinalRowSpans(int row, const vector<int>& rowSpans)
+void CHTML_table::CTableInfo::SetFinalRowSpans(TIndex row,
+                                               const vector<TIndex>& rowSpans)
 {
     m_FinalRow = row;
     m_FinalRowSpans = rowSpans;
 
     // check for the rest of rowSpans
-    int addRows = 0;
-    for ( int i = 0; i < rowSpans.size(); ++i ) {
+    TIndex addRows = 0;
+    for ( TIndex i = 0; i < rowSpans.size(); ++i ) {
         addRows = max(addRows, rowSpans[i]);
     }
     m_Rows = row + addRows;
 }
 
-int CHTML_table::CalculateNumberOfColumns(void) const
+CHTML_table::TIndex CHTML_table::CalculateNumberOfColumns(void) const
 {
     CTableInfo info;
     x_CheckTable(&info);
     return info.m_Columns;
 }
 
-int CHTML_table::CalculateNumberOfRows(void) const
+CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 {
     CTableInfo info;
     x_CheckTable(&info);
@@ -822,7 +829,7 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
     CTableInfo info;
     x_CheckTable(&info);
 
-    int row = 0;
+    TIndex row = 0;
     for ( TChildList::iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow ) {
         CNCBINode* rowNode = *iRow;
@@ -832,9 +839,9 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
             rowNode->PrintBegin(out);
             rowNode->PrintChildren(out);
             // determine additional cells to print
-            int addCells = info.m_Columns - info.m_RowSizes[row];
+            TIndex addCells = info.m_Columns - info.m_RowSizes[row];
             // print them
-            for ( int i = 0; i < addCells; ++i )
+            for ( TIndex i = 0; i < addCells; ++i )
                 out << "<TD></TD>";
             rowNode->PrintEnd(out);
             ++row;
@@ -842,7 +849,7 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
     }
 
     // print implicit rows
-    for ( int i = info.m_FinalRow; i < info.m_Rows; ++i )
+    for ( TIndex i = info.m_FinalRow; i < info.m_Rows; ++i )
         out << "<TR></TR>";
 
     return out;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/04/15 19:48:22  vasilche
+* Fixed several warnings detected by GCC
+*
 * Revision 1.25  1999/04/08 19:00:30  vasilche
 * Added current cell pointer to CHTML_table
 *
@@ -301,19 +304,19 @@ void CPageList::x_AddImageString(CNCBINode* node, const string& name, int number
 {
     string s = NStr::IntToString(number);
     
-    for ( int i = 0; i < s.size(); ++i ) {
+    for ( size_t i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_image(name, imageStart + s[i] + imageEnd, 0));
     }
 }
 
-void CPageList::x_AddInactiveImageString(CNCBINode* node, const string& name,
+void CPageList::x_AddInactiveImageString(CNCBINode* node, const string&,
                                          int number,
                                          const string& imageStart,
                                          const string& imageEnd)
 {
     string s = NStr::IntToString(number);
     
-    for ( int i = 0; i < s.size(); ++i ) {
+    for ( size_t i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_img(imageStart + s[i] + imageEnd));
     }
 }
@@ -342,9 +345,13 @@ void CPageList::CreateSubNodes()
 
 // Pager box
 CPagerBox::CPagerBox(void)
-    : m_NumResults(0), m_Width(460)
-    , m_TopButton(new CButtonList), m_LeftButton(new CButtonList), m_RightButton(new CButtonList)
-    , m_PageList(new CPageList), m_BgColor("#c0c0c0")
+    : m_Width(460),
+      m_TopButton(new CButtonList),
+      m_LeftButton(new CButtonList),
+      m_RightButton(new CButtonList),
+      m_PageList(new CPageList),
+      m_NumResults(0),
+      m_BgColor("#c0c0c0")
 {
 }
 
