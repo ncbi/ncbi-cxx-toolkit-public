@@ -197,6 +197,7 @@ CTSE_Info::CTSE_Info(const CTSE_Info& info)
 CTSE_Info::~CTSE_Info(void)
 {
     _ASSERT(m_LockCounter.Get() == 0);
+    _ASSERT(m_DataSource == 0);
 }
 
 
