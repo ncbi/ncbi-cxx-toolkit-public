@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/12/12 17:47:35  grichenk
+* Updated setters/getters generator to avoid using CRef<>s
+*
 * Revision 1.35  2001/12/07 18:56:15  grichenk
 * Most generated class members are stored in CRef<>-s by default
 *
@@ -601,22 +604,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->ref ) {
                 // generate reference setter
                 setters <<
-                    "    void Set"<<i->cName<<"(const "<<ncbiNamespace<<"CRef< "<<cType<<" >& value);\n";
+                    "    void Set"<<i->cName<<"("<<cType<<"& value);\n";
                 methods <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"("<<i->tName<<"& value)\n"
                     "{\n";
                 if ( i->delayed ) {
                     methods <<
                         "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
                 }
-                if ( !i->canBeNull ) {
-                    methods <<
-                        "    "<<i->mName<<".Reset(&*value); // assure non null value\n";
-                }
-                else {
-                    methods <<
-                        "    "<<i->mName<<" = value;\n";
-                }
+                methods <<
+                    "    "<<i->mName<<".Reset(&value);\n";
                 if ( i->haveFlag ) {
                     methods <<
                         "    "SET_PREFIX<<i->cName<<" = true;\n";
