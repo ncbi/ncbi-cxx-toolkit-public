@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.353 2005/03/07 18:52:36 ucko Exp $
+#  $Id: configure.ac,v 1.354 2005/03/08 20:50:30 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1162,7 +1162,7 @@ LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
     linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC \
-    | solaris*:GCC | osf*:* | darwin*:GCC )
+    | solaris*:GCC | osf*:* | darwin*:GCC | freebsd*:GCC )
       ;;
     * )
       echo
