@@ -193,7 +193,7 @@ diff "$b_cfg" "$i_cfg" 2>/dev/null  ||  \
 
 # Remove various unneeded files
 files="\
-status/config.cache status/config.status"
+status/config.cache"
 
 ( cd $install_dir  &&  rm -f $files ) 
 
