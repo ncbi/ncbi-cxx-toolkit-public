@@ -456,6 +456,19 @@ void CondensedColumnUnaligned::AddRowChar(int row, char ch)
     }
 }
 
+static string ShortAndEscapedString(const string& s)
+{
+    string n;
+    for (unsigned int i=0; i<s.size(); ++i) {
+        if (s[i] == '\'')
+            n += '\\';
+        n += s[i];
+        if (i > 500)
+            break;
+    }
+    return n;
+}
+
 int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     int firstCol, int lastCol, int nColumns, double conservationThreshhold,
     const char *titleHTML, int nFeatures, const AlignmentFeature *alnFeatures) const
@@ -634,7 +647,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
                     << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
                     << uids[alnRow] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
-                    << ((indexAlnLocToSeqLocRows[alnRow]->sequence->description.size() > 0) ?
+                    << ShortAndEscapedString((indexAlnLocToSeqLocRows[alnRow]->sequence->description.size() > 0) ?
                             indexAlnLocToSeqLocRows[alnRow]->sequence->description : titles[row])
                     << "';return true\">"
                     << setw(0) << titles[row] << "</a>";
@@ -904,7 +917,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
                     << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
                     << uids[alnRow] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
-                    << ((indexAlnLocToSeqLocRows[alnRow]->sequence->description.size() > 0) ?
+                    << ShortAndEscapedString((indexAlnLocToSeqLocRows[alnRow]->sequence->description.size() > 0) ?
                             indexAlnLocToSeqLocRows[alnRow]->sequence->description : titles[row])
                     << "';return true\">"
                     << setw(0) << titles[row] << "</a>";
@@ -1230,6 +1243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/09/23 19:26:22  thiessen
+* shorten and escape single quotes in status strings
+*
 * Revision 1.6  2004/07/26 19:15:33  thiessen
 * add option to not color HTML paragraphs
 *

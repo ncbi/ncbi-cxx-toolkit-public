@@ -272,6 +272,19 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     }
 }
 
+static string ShortAndEscapedString(const string& s)
+{
+    string n;
+    for (unsigned int i=0; i<s.size(); ++i) {
+        if (s[i] == '\'')
+            n += '\\';
+        n += s[i];
+        if (i > 500)
+            break;
+    }
+    return n;
+}
+
 static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     const vector < int >& rowOrder,
     BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
@@ -417,7 +430,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
                     << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
-                    << ((sequence->description.size() > 0) ? sequence->description : titles[row])
+                    << ShortAndEscapedString((sequence->description.size() > 0) ? sequence->description : titles[row])
                     << "';return true\">"
                     << setw(0) << titles[row] << "</a>";
             } else {
@@ -541,6 +554,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/09/23 19:29:31  thiessen
+* shorten and escape single quotes in status strings
+*
 * Revision 1.67  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
