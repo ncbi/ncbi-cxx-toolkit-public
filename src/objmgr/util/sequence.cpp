@@ -2203,6 +2203,48 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
 }
 
 
+CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope)
+{
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene,
+        eOverlap_Contains, scope);
+}
+
+
+CConstRef<CSeq_feat> GetOverlappingmRNA(const CSeq_loc& loc, CScope& scope)
+{
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_mRNA,
+        eOverlap_Contains, scope);
+}
+
+
+CConstRef<CSeq_feat> GetOverlappingCDS(const CSeq_loc& loc, CScope& scope)
+{
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_cdregion,
+        eOverlap_Contains, scope);
+}
+
+
+CConstRef<CSeq_feat> GetOverlappingPub(const CSeq_loc& loc, CScope& scope)
+{
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_pub,
+        eOverlap_Contains, scope);
+}
+
+
+CConstRef<CSeq_feat> GetOverlappingSource(const CSeq_loc& loc, CScope& scope)
+{
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_biosrc,
+        eOverlap_Contains, scope);
+}
+
+
+CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope)
+{
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_operon,
+        eOverlap_Contains, scope);
+}
+
+
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 {
     unsigned int retval = 0;
@@ -3870,6 +3912,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.71  2004/02/05 19:41:46  shomrat
+* Convenience functions for popular overlapping types
+*
 * Revision 1.70  2004/02/04 18:05:41  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

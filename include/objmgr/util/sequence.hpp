@@ -278,6 +278,32 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope);
 
+// Convenience functions for popular overlapping types
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope);
+
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetOverlappingmRNA(const CSeq_loc& loc, CScope& scope);
+
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetOverlappingCDS(const CSeq_loc& loc, CScope& scope);
+
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetOverlappingPub(const CSeq_loc& loc, CScope& scope);
+
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetOverlappingSource(const CSeq_loc& loc, CScope& scope);
+
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope);
+
+
 enum ESeqlocPartial {
     eSeqlocPartial_Complete   =   0,
     eSeqlocPartial_Start      =   1,
@@ -604,6 +630,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.37  2004/02/05 19:41:10  shomrat
+* Convenience functions for popular overlapping types
+*
 * Revision 1.36  2004/01/30 17:22:52  dicuccio
 * Added sequence::GetId(const CBioseq_Handle&) - returns a selected ID class
 * (best, GI).  Added CSeqTranslator - utility class to translate raw sequence
