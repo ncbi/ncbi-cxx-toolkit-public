@@ -180,6 +180,7 @@ CBlastOptions::SetBlastn()
     // Initial word options
     m_InitWordOpts->ungapped_extension = TRUE;
     m_InitWordOpts->extension_method = eRightAndLeft;
+    m_InitWordOpts->variable_wordsize = FALSE;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_NUCL;
 
@@ -481,6 +482,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/10/21 09:41:14  camacho
+* Initialize variable_wordsize for eBlastn
+*
 * Revision 1.23  2003/10/17 18:21:53  dondosha
 * Use separate variables for different initial word extension options
 *
