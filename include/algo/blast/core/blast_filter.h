@@ -35,12 +35,12 @@
 #ifndef __BLAST_FILTER__
 #define __BLAST_FILTER__
 
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_message.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_message.h>
 
 /** Create and initialize a new sequence interval.
  * @param from Start of the interval [in]

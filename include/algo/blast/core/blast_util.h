@@ -34,10 +34,6 @@
 #ifndef __BLAST_UTIL__
 #define __BLAST_UTIL__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_def.h>
 
 #ifdef NCBI_DLL_BUILD
@@ -45,6 +41,10 @@ extern "C" {
 #endif
 #ifndef NCBI_XBLAST_EXPORT
 #define NCBI_XBLAST_EXPORT
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /** Different types of sequence encodings for sequence retrieval from the 

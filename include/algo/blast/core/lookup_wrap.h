@@ -34,14 +34,14 @@
 #ifndef __LOOKUP_WRAP__
 #define __LOOKUP_WRAP__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/blast_stat.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Wrapper structure for different types of BLAST lookup tables */
 typedef struct LookupTableWrap {

@@ -35,11 +35,11 @@
 #ifndef __BLAST_DUST__
 #define __BLAST_DUST__
 
+#include <algo/blast/core/blast_def.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <algo/blast/core/blast_def.h>
 
 Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 minwin, Int2 linker,

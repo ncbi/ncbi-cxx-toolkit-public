@@ -34,11 +34,11 @@
 #ifndef __LINK_HSPS__
 #define __LINK_HSPS__
 
+#include <algo/blast/core/blast_hits.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <algo/blast/core/blast_hits.h>
 
 /** Link HSPs using sum statistics.
  * @param program_number BLAST program [in]

@@ -35,10 +35,11 @@
 #ifndef __GAPINFO__
 #define __GAPINFO__
 
+#include <algo/blast/core/blast_def.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <algo/blast/core/blast_def.h>
 
 /** Operation types within the edit script*/
 typedef enum EGapAlignOpType { 

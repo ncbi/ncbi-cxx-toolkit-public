@@ -35,13 +35,13 @@
 #ifndef HSPSTREAM_COLLECTOR_H
 #define HSPSTREAM_COLLECTOR_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_hspstream.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Default implementation of BlastHSPStream */
 typedef struct BlastHSPListCollectorData {

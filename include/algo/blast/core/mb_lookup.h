@@ -37,13 +37,13 @@
 #ifndef MBLOOKUP__H
 #define MBLOOKUP__H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_lookup.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** The fraction of sites that must have at least one hit to not use 
  * PV_ARRAY. 

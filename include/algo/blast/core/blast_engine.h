@@ -34,10 +34,6 @@
 #ifndef __BLAST_ENGINE__
 #define __BLAST_ENGINE__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
@@ -45,6 +41,10 @@ extern "C" {
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_diagnostics.h>   
 #include <algo/blast/core/blast_hspstream.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** How many subject sequences to process in one database chunk. */
 #define BLAST_DB_CHUNK_SIZE 1024

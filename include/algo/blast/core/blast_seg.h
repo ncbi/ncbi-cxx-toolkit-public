@@ -35,11 +35,11 @@
 #ifndef __BLAST_SEG__
 #define __BLAST_SEG__
 
+#include <algo/blast/core/blast_def.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <algo/blast/core/blast_def.h>
 
 /*--------------------------------------------------------------(structs)---*/
 

@@ -34,15 +34,15 @@
 #ifndef __BLAST_SETUP__
 #define __BLAST_SETUP__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
  * that is dependent on the ASN.1 structures.
@@ -189,6 +189,9 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.40  2004/06/16 14:53:03  dondosha
+* Moved extern "C" after the #includes
+*
 * Revision 1.39  2004/05/19 14:52:01  camacho
 * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
 * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

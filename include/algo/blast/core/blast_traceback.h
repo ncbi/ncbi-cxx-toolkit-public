@@ -34,13 +34,13 @@
 #ifndef __BLAST_TRACEBACK__
 #define __BLAST_TRACEBACK__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hspstream.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Compute gapped alignment with traceback for all HSPs from a single
  * query/subject sequence pair. 

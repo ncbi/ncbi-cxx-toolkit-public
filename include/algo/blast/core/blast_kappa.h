@@ -35,13 +35,13 @@
 #ifndef __BLAST_KAPPA__
 #define __BLAST_KAPPA__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_hspstream.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Top level routine to recompute alignments for each
  *  match found by the gapped BLAST algorithm
@@ -85,6 +85,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/06/16 14:53:03  dondosha
+ * Moved extern "C" after the #includes
+ *
  * Revision 1.6  2004/06/08 15:09:33  dondosha
  * Use BlastHSPStream interface in the engine instead of saving hits directly
  *
