@@ -127,13 +127,13 @@ _PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment);
  * sequence and those that were not purged. It is used when calculating the
  * sequence weights */
 typedef struct PsiAlignedBlock {
-    SSeqRange* pos_extnt;     /**< Dynamically allocated array of size query_sz
-                                  to keep track of the extents of each aligned
-                                  position */
+    SSeqRange* pos_extnt;       /**< Dynamically allocated array of size 
+                                  query_length to keep track of the extents 
+                                  of each aligned position */
 
-    Uint4* size;     /**< Dynamically allocated array of size query_sz
-                                 that contains the size of the intervals in the
-                                 array above */
+    Uint4* size;                /**< Dynamically allocated array of size 
+                                  query_length that contains the size of the 
+                                  intervals in the array above */
 } PsiAlignedBlock;
 
 PsiAlignedBlock*
@@ -145,7 +145,7 @@ _PSIAlignedBlockFree(PsiAlignedBlock* aligned_blocks);
 /** FIXME: Where are the formulas for these? Need better names */
 typedef struct PsiSequenceWeights {
     double** match_weights; /* observed residue frequencies (fi in paper) 
-                               dimensions are query_sz+1 by BLASTAA_SIZE
+                               dimensions are query_length+1 by BLASTAA_SIZE
                              */
     Uint4 match_weights_size;    /* kept for deallocation purposes */
 
@@ -154,7 +154,7 @@ typedef struct PsiSequenceWeights {
     double* row_sigma;  /**< array of num_seqs + 1 */
     /* Sigma: number of different characters occurring in matches within a
      * multi-alignment block - why is it a double? */
-    double* sigma;      /**< array of query_sz length */
+    double* sigma;      /**< array of query_length length */
 
     double* std_prob;   /**< standard amino acid probabilities */
 
@@ -164,7 +164,7 @@ typedef struct PsiSequenceWeights {
 } PsiSequenceWeights;
 
 PsiSequenceWeights*
-_PSISequenceWeightsNew(const PsiInfo* info, const BlastScoreBlk* sbp);
+_PSISequenceWeightsNew(const PsiMsaDimensions* info, const BlastScoreBlk* sbp);
 
 PsiSequenceWeights*
 _PSISequenceWeightsFree(PsiSequenceWeights* seq_weights);
@@ -312,7 +312,7 @@ _PSIComputeScoreProbabilities(const int** pssm,             /* [in] */
                               const BlastScoreBlk* sbp);    /* [in] */
 
 /** Collects "diagnostic" information from the process of creating the PSSM */
-PsiDiagnostics*
+PsiDiagnosticsResponse*
 _PSISaveDiagnostics(const PsiAlignmentData* alignment,
                     const PsiAlignedBlock* aligned_block,
                     const PsiSequenceWeights* seq_weights,
@@ -320,18 +320,18 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 
 /* Calculates the information content from the scoring matrix
  * @param query query sequence [in]
- * @param query_sz length of the query [in]
+ * @param query_length length of the query [in]
  * @param alphabet_sz length of the alphabet used by the query [in]
  * @param lambda lambda parameter [in] FIXME documentation
  * @param score_mat alphabet by alphabet_sz matrix of scores (const) [in]
  * @param std_prob standard residue probabilities [in]
- * @return array of length query_sz containing the information content per
+ * @return array of length query_length containing the information content per
  * query position or NULL on error (e.g.: out-of-memory or NULL parameters)
  */
 double*
 _PSICalculateInformationContentFromScoreMatrix(
     const Uint1* query,
-    Uint4 query_sz,
+    Uint4 query_length,
     Uint4 alphabet_sz,
     double lambda,
     Int4** score_mat,
@@ -339,17 +339,17 @@ _PSICalculateInformationContentFromScoreMatrix(
 
 /* Calculates the information content from the residue frequencies calculated
  * in stage 5 of the PSSM creation algorithm 
- * @param query_sz length of the query [in]
+ * @param query_length length of the query [in]
  * @param alphabet_sz length of the alphabet used by the query [in]
- * @param res_freqs query_sz by alphabet_sz matrix of residue frequencies
+ * @param res_freqs query_length by alphabet_sz matrix of residue frequencies
  * (const) [in]
  * @param std_prob standard residue probabilities [in]
- * @return array of length query_sz containing the information content per
+ * @return array of length query_length containing the information content per
  * query position or NULL on error (e.g.: out-of-memory or NULL parameters)
  */
 double*
 _PSICalculateInformationContentFromResidueFreqs(
-    Uint4 query_sz,
+    Uint4 query_length,
     Uint4 alphabet_sz,
     double** res_freqs,
     const double* std_prob);
@@ -363,6 +363,10 @@ _PSICalculateInformationContentFromResidueFreqs(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/08/02 13:25:49  camacho
+ * 1. Various renaming of structures, in progress
+ * 2. Addition of PsiDiagnostics structures, in progress
+ *
  * Revision 1.10  2004/07/29 19:16:02  camacho
  * Moved PSIExtractQuerySequenceInfo
  *

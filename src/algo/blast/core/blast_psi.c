@@ -53,16 +53,20 @@ PsiMatrix*
 PSICreatePSSM(PsiAlignmentData* alignment,      /* [in] */
               const PSIBlastOptions* options,   /* [in] */
               BlastScoreBlk* sbp,               /* [in] */
-              PsiDiagnostics* diagnostics)      /* [out] */
+              PsiDiagnosticsResponse* diagnostics)      /* [out] */
 {
     PsiMatrix* retval = NULL;
-
     PsiAlignedBlock* aligned_block = NULL;
     PsiSequenceWeights* seq_weights = NULL; 
 
-    aligned_block = _PSIAlignedBlockNew(alignment->dimensions->query_sz);
+    if ( !alignment || !options || !sbp ) {
+        return NULL;
+    }
+
+    aligned_block = _PSIAlignedBlockNew(alignment->dimensions->query_length);
     seq_weights = _PSISequenceWeightsNew(alignment->dimensions, sbp);
-    retval = PSIMatrixNew(alignment->dimensions->query_sz, sbp->alphabet_size);
+    retval = PSIMatrixNew(alignment->dimensions->query_length, 
+                          sbp->alphabet_size);
 
     PSIPurgeBiasedSegments(alignment);
     PSIComputeAlignmentBlocks(alignment, aligned_block);
@@ -71,7 +75,7 @@ PSICreatePSSM(PsiAlignmentData* alignment,      /* [in] */
                                  options, retval);
     PSIConvertResidueFreqsToPSSM(retval, alignment->query, sbp, 
                                  seq_weights->std_prob);
-    PSIScaleMatrix(alignment->query, alignment->dimensions->query_sz, 
+    PSIScaleMatrix(alignment->query, alignment->dimensions->query_length, 
                    seq_weights->std_prob, NULL, retval, sbp);
 
     if (diagnostics) {
@@ -91,13 +95,13 @@ PSICreatePSSM(PsiAlignmentData* alignment,      /* [in] */
 /****************************************************************************/
 
 PsiAlignmentData*
-PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
+PSIAlignmentDataNew(const Uint1* query, const PsiMsaDimensions* dimensions)
 {
     PsiAlignmentData* retval = NULL;        /* the return value */
     Uint4 s = 0;                            /* index in sequences */
     Uint4 p = 0;                            /* index on positions */
 
-    if ( !query || !info ) {
+    if ( !query || !dimensions ) {
         return NULL;
     }
 
@@ -106,56 +110,58 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
          return NULL;
     }
 
-    if ( !(retval->dimensions = (PsiInfo*) calloc(1, sizeof(PsiInfo)))) {
+    retval->dimensions = (PsiMsaDimensions*) calloc(1, sizeof(PsiMsaDimensions));
+    if ( !retval->dimensions ) {
         return PSIAlignmentDataFree(retval);
     }
-    memcpy((void*) retval->dimensions, (void*) info, sizeof(*info));
+    memcpy((void*) retval->dimensions, (void*) dimensions, sizeof(*dimensions));
 
-    /* This doesn't need to be query_sz + 1 as posSearchItems.posC */
-    retval->res_counts = (Uint4**) _PSIAllocateMatrix(info->query_sz,
+    /* This doesn't need to be query_length + 1 as posSearchItems.posC */
+    retval->res_counts = (Uint4**) _PSIAllocateMatrix(dimensions->query_length,
                                                       BLASTAA_SIZE,
                                                       sizeof(Uint4));
     if ( !(retval->res_counts) ) {
         return PSIAlignmentDataFree(retval);
     }
 
-    retval->match_seqs = (Uint4*) calloc(info->query_sz, sizeof(int));
+    retval->match_seqs = (Uint4*) calloc(dimensions->query_length, sizeof(int));
     if ( !(retval->match_seqs)) {
         return PSIAlignmentDataFree(retval);
     }
 
-    retval->desc_matrix = (PsiDesc**) _PSIAllocateMatrix(info->num_seqs + 1,
-                                                         info->query_sz,
-                                                         sizeof(PsiDesc));
+    retval->desc_matrix = (PsiMsaCell**) 
+        _PSIAllocateMatrix(dimensions->num_seqs + 1, 
+                           dimensions->query_length, 
+                           sizeof(PsiMsaCell));
     if ( !(retval->desc_matrix) ) {
         return PSIAlignmentDataFree(retval);
     }
-    for (s = 0; s < info->num_seqs + 1; s++) {
-        for (p = 0; p < info->query_sz; p++) {
+    for (s = 0; s < dimensions->num_seqs + 1; s++) {
+        for (p = 0; p < dimensions->query_length; p++) {
             retval->desc_matrix[s][p].letter = (unsigned char) -1;
-            retval->desc_matrix[s][p].used = FALSE;
+            retval->desc_matrix[s][p].is_aligned = FALSE;
             retval->desc_matrix[s][p].e_value = kDefaultEvalueForPosition;
             retval->desc_matrix[s][p].extents.left = (unsigned int) -1;
-            retval->desc_matrix[s][p].extents.right = info->query_sz;
+            retval->desc_matrix[s][p].extents.right = dimensions->query_length;
         }
     }
 
-    retval->use_sequences = (Boolean*) calloc(info->num_seqs + 1, 
+    retval->use_sequences = (Boolean*) calloc(dimensions->num_seqs + 1, 
                                               sizeof(Boolean));
     if (!retval->use_sequences) {
         return PSIAlignmentDataFree(retval);
     }
     /* All sequences are valid candidates for taking part in 
        PSSM construction */
-    for (s = 0; s < info->num_seqs + 1; s++) {
+    for (s = 0; s < dimensions->num_seqs + 1; s++) {
         retval->use_sequences[s] = TRUE;
     }
 
-    retval->query = (Uint1*) malloc(info->query_sz * sizeof(Uint1));
+    retval->query = (Uint1*) malloc(dimensions->query_length * sizeof(Uint1));
     if ( !retval->query ) {
         return PSIAlignmentDataFree(retval);
     }
-    memcpy((void*) retval->query, (void*) query, info->query_sz);
+    memcpy((void*) retval->query, (void*) query, dimensions->query_length);
 
     return retval;
 }
@@ -169,7 +175,7 @@ PSIAlignmentDataFree(PsiAlignmentData* alignment)
 
     if (alignment->res_counts) {
         _PSIDeallocateMatrix((void**) alignment->res_counts,
-                             alignment->dimensions->query_sz);
+                             alignment->dimensions->query_length);
         alignment->res_counts = NULL;
     }
 
@@ -200,7 +206,7 @@ PSIAlignmentDataFree(PsiAlignmentData* alignment)
 }
 
 PsiMatrix*
-PSIMatrixNew(Uint4 query_sz, Uint4 alphabet_size)
+PSIMatrixNew(Uint4 query_length, Uint4 alphabet_size)
 {
     PsiMatrix* retval = NULL;
 
@@ -208,23 +214,22 @@ PSIMatrixNew(Uint4 query_sz, Uint4 alphabet_size)
     if ( !retval ) {
         return NULL;
     }
-    /*retval->ncols = query_sz + 1; extra column not really needed */
-    retval->ncols = query_sz;
+    retval->ncols = query_length;
 
-    retval->pssm = (int**) _PSIAllocateMatrix(query_sz, alphabet_size,
+    retval->pssm = (int**) _PSIAllocateMatrix(query_length, alphabet_size,
                                               sizeof(int));
     if ( !(retval->pssm) ) {
         return PSIMatrixFree(retval);
     }
 
-    retval->scaled_pssm = (int**) _PSIAllocateMatrix(query_sz, 
+    retval->scaled_pssm = (int**) _PSIAllocateMatrix(query_length, 
                                                      alphabet_size,
                                                      sizeof(int));
     if ( !(retval->scaled_pssm) ) {
         return PSIMatrixFree(retval);
     }
 
-    retval->res_freqs = (double**) _PSIAllocateMatrix(query_sz, 
+    retval->res_freqs = (double**) _PSIAllocateMatrix(query_length, 
                                                       alphabet_size, 
                                                       sizeof(double));
     if ( !(retval->res_freqs) ) {
@@ -258,32 +263,76 @@ PSIMatrixFree(PsiMatrix* matrix)
     return NULL;
 }
 
-PsiDiagnostics*
-PSIDiagnosticsNew(Uint4 query_sz, Uint4 alphabet_size)
+PsiDiagnosticsResponse*
+PSIDiagnosticsResponseNew(const PsiMsaDimensions* dimensions,
+                          Uint4 alphabet_size,
+                          const PsiDiagnosticsRequest* wants)
 {
-    PsiDiagnostics* retval = NULL;
+    PsiDiagnosticsResponse* retval = NULL;
 
-    retval = (PsiDiagnostics*) calloc(1, sizeof(PsiDiagnostics));
+    retval = (PsiDiagnosticsResponse*) 
+        calloc(1, sizeof(PsiDiagnosticsResponse));
     if ( !retval ) {
         return NULL;
     }
 
-    retval->info_content = (double*) calloc(query_sz, sizeof(double));
-    if ( !(retval->info_content) ) {
-        return PSIDiagnosticsFree(retval);
+    retval->alphabet_size = alphabet_size;
+    retval->dimensions = (PsiMsaDimensions*) calloc(1, sizeof(PsiMsaDimensions));
+    if ( !retval->dimensions ) {
+        return PSIDiagnosticsResponseFree(retval);
+    }
+    memcpy((void*) retval->dimensions, (void*) dimensions, 
+           sizeof(PsiMsaDimensions));
+
+    if (wants->information_content) {
+        retval->info_content = (double*) calloc(dimensions->query_length, 
+                                                sizeof(double));
+        if ( !(retval->info_content) ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
     }
 
-    retval->gapless_column_weights = (double*) 
-        calloc(query_sz, sizeof(double));
-    if ( !(retval->gapless_column_weights) ) {
-        return PSIDiagnosticsFree(retval);
+    if (wants->residue_frequencies) {
+        retval->res_freqs = (double**) 
+            _PSIAllocateMatrix(dimensions->query_length, 
+                               alphabet_size, 
+                               sizeof(double));
+        if ( !(retval->res_freqs) ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
+    if (wants->raw_residue_counts) {
+        retval->res_counts = (Uint4**) 
+            _PSIAllocateMatrix(dimensions->query_length, 
+                               alphabet_size, 
+                               sizeof(Uint4));
+        if ( !(retval->res_counts) ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
+    if (wants->sequence_weights) {
+        retval->sequence_weights = (double*) calloc(dimensions->num_seqs + 1, 
+                                                    sizeof(double));
+        if ( !retval->sequence_weights ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
+    if (wants->gapless_column_weights) {
+        retval->gapless_column_weights = (double*) 
+            calloc(dimensions->query_length, sizeof(double));
+        if ( !(retval->gapless_column_weights) ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
     }
 
     return retval;
 }
 
-PsiDiagnostics*
-PSIDiagnosticsFree(PsiDiagnostics* diags)
+PsiDiagnosticsResponse*
+PSIDiagnosticsResponseFree(PsiDiagnosticsResponse* diags)
 {
     if ( !diags )
         return NULL;
@@ -292,8 +341,26 @@ PSIDiagnosticsFree(PsiDiagnostics* diags)
         sfree(diags->info_content);
     }
 
+    if (diags->res_freqs) {
+        _PSIDeallocateMatrix((void**) diags->res_freqs,
+                             diags->dimensions->query_length);
+    }
+
+    if (diags->res_counts) {
+        _PSIDeallocateMatrix((void**) diags->res_counts,
+                             diags->dimensions->query_length);
+    }
+
+    if (diags->sequence_weights) {
+        sfree(diags->sequence_weights);
+    }
+
     if (diags->gapless_column_weights) {
         sfree(diags->gapless_column_weights);
+    }
+
+    if (diags->dimensions) {
+        sfree(diags->dimensions);
     }
 
     sfree(diags);
