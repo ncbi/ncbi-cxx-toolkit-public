@@ -46,7 +46,7 @@
 #endif
 #include <wx/wx.h>
 
-#include <struct_dp/struct_dp.h>
+#include <algo/structure/struct_dp/struct_dp.h>
 
 #include "cn3d/cn3d_ba_interface.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
@@ -484,6 +484,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/02/19 02:16:06  thiessen
+* fix struct_dp.h path
+*
 * Revision 1.28  2003/08/23 22:26:23  thiessen
 * switch to new dp block aligner, remove Alejandro's
 *
