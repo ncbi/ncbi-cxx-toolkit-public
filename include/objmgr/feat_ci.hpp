@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/04/17 20:57:50  grichenk
+* Added full type for "resolve" argument
+*
 * Revision 1.7  2002/04/16 19:59:45  grichenk
 * Updated comments
 *
@@ -79,7 +82,8 @@ public:
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              SAnnotSelector::TFeatChoice feat_choice,
-                   EResolveMethod resolve = eResolve_None);
+             CAnnotTypes_CI::EResolveMethod resolve =
+             CAnnotTypes_CI::eResolve_None);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
     // the whole bioseq is searched.
     CFeat_CI(CBioseq_Handle& bioseq,

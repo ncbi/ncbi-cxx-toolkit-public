@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/17 20:57:49  grichenk
+* Added full type for "resolve" argument
+*
 * Revision 1.6  2002/04/05 21:26:16  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -71,10 +74,12 @@ public:
     CAlign_CI(void);
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              EResolveMethod resolve = eResolve_None);
+              CAnnotTypes_CI::EResolveMethod resolve =
+              CAnnotTypes_CI::eResolve_None);
     // Search only in TSE, containing the bioseq
     CAlign_CI(CBioseq_Handle& bioseq, int start, int stop,
-              EResolveMethod resolve = eResolve_None);
+              CAnnotTypes_CI::EResolveMethod resolve =
+              CAnnotTypes_CI::eResolve_None);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
 
