@@ -300,7 +300,7 @@ void CTSE_Chunk_Info::x_EnableAnnotIndex(void)
             m_AnnotIndexEnabled = true;
         }
     }
-    _ASSERT(m_AnnotIndexEnabled);
+    _ASSERT(m_AnnotIndexEnabled || IsLoaded());
 }
 
 
@@ -403,6 +403,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/10/12 14:31:48  vasilche
+* Fixed assertion expression - blob can be loaded already.
+*
 * Revision 1.17  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.
