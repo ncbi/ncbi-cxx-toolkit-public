@@ -63,6 +63,12 @@
 #  if defined(NCBI_USE_OLD_IOSTREAM)
 #    undef NCBI_USE_OLD_IOSTREAM
 #  endif
+#  if defined(NCBI_COMPILER_GCC)
+#    if NCBI_COMPILER_VERSION >= 310
+// Don't bug us about including <strstream>.
+#      define _CPP_BACKWARD_BACKWARD_WARNING_H 1
+#    endif
+#  endif
 #  include <iostream>
 #  include <fstream>
 #  include <strstream>
@@ -332,6 +338,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2002/05/22 17:58:20  ucko
+ * Suppress GCC 3.1 warnings about <strstream>.
+ *
  * Revision 1.26  2002/04/11 20:39:19  ivanov
  * CVS log moved to end of the file
  *
