@@ -34,9 +34,13 @@
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seqdesc_ci.hpp>
+
+#include <objects/general/Int_fuzz.hpp>
 
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -1683,6 +1687,213 @@ int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type
     return -1;
 }
 
+int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
+{
+    unsigned int retval = 0;
+    if (!scope) {
+        return retval;
+    }
+
+    // Find first and last Seq-loc
+    const CSeq_loc *first = 0, *last = 0;
+    CTypeConstIterator<CSeq_loc> i1(ConstBegin(loc));
+    for (++i1; i1; ++i1) {
+        if (!first) {
+            first = &(*i1);
+        }
+        last = &(*i1);
+    }
+    if (!first) {
+        return retval;
+    }
+
+    CTypeConstIterator<CSeq_loc> i2(ConstBegin(loc));
+    for (++i2; i2; ++i2) {
+        switch ((*i2).Which()) {
+        case CSeq_loc::e_Null:
+            if (&(*i2) == first) {
+                retval |= eSeqlocPartial_Start;
+            } else if (&(*i2) == last) {
+                retval |= eSeqlocPartial_Stop;
+            } else {
+                retval |= eSeqlocPartial_Internal;
+            }
+            break;
+        case CSeq_loc::e_Int:
+            if ((*i2).GetInt().IsSetFuzz_from()) {
+                const CInt_fuzz& fuzz = (*i2).GetInt().GetFuzz_from();
+                if (fuzz.Which() == CInt_fuzz::e_Lim) {
+                    CInt_fuzz::ELim lim = fuzz.GetLim();
+                    if (lim == CInt_fuzz::eLim_gt) {
+                        retval |= eSeqlocPartial_Limwrong;
+                    } else if (lim == CInt_fuzz::eLim_lt  ||
+                        lim == CInt_fuzz::eLim_unk) {
+                        if ((*i2).GetInt().IsSetStrand()  &&
+                            (*i2).GetInt().GetStrand() == eNa_strand_minus) {
+                            if (&(*i2) == last) {
+                                retval |= eSeqlocPartial_Stop;
+                            } else {
+                                retval |= eSeqlocPartial_Internal;
+                            }
+                            if ((*i2).GetInt().GetFrom() != 0) {
+                                if (&(*i2) == last) {
+                                    retval |= eSeqlocPartial_Nostop;
+                                } else {
+                                    retval |= eSeqlocPartial_Nointernal;
+                                }
+                            }
+                        } else {
+                            if (&(*i2) == first) {
+                                retval |= eSeqlocPartial_Start;
+                            } else {
+                                retval |= eSeqlocPartial_Internal;
+                            }
+                            if ((*i2).GetInt().GetFrom() != 0) {
+                                if (&(*i2) == first) {
+                                    retval |= eSeqlocPartial_Nostart;
+                                } else {
+                                    retval |= eSeqlocPartial_Nointernal;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ((*i2).GetInt().IsSetFuzz_to()) {
+                const CInt_fuzz& fuzz = (*i2).GetInt().GetFuzz_to();
+                CInt_fuzz::ELim lim = fuzz.GetLim();
+                if (lim == CInt_fuzz::eLim_lt) {
+                    retval |= eSeqlocPartial_Limwrong;
+                } else if (lim == CInt_fuzz::eLim_gt  ||
+                    lim == CInt_fuzz::eLim_unk) {
+                    CBioseq_Handle hnd =
+                        scope->GetBioseqHandle((*i2).GetInt().GetId());
+                    CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
+                    bool miss_end = false;
+                    const CSeq_interval& itv = (*i2).GetInt();
+                    if (itv.GetTo() != bc->GetInst().GetLength() - 1) {
+                        miss_end = true;
+                    }
+                    if (itv.IsSetStrand()  &&
+                        itv.GetStrand() == eNa_strand_minus) {
+                        if (&(*i2) == first) {
+                            retval |= eSeqlocPartial_Start;
+                        } else {
+                            retval |= eSeqlocPartial_Internal;
+                        }
+                        if (miss_end) {
+                            if (&(*i2) == first /* was last */) {
+                                retval |= eSeqlocPartial_Nostart;
+                            } else {
+                                retval |= eSeqlocPartial_Nointernal;
+                            }
+                        }
+                    } else {
+                        if (&(*i2) == last) {
+                            retval |= eSeqlocPartial_Stop;
+                        } else {
+                            retval |= eSeqlocPartial_Internal;
+                        }
+                        if (miss_end) {
+                            if (&(*i2) == last) {
+                                retval |= eSeqlocPartial_Nostop;
+                            } else {
+                                retval |= eSeqlocPartial_Nointernal;
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        case CSeq_loc::e_Pnt:
+            if ((*i2).GetPnt().IsSetFuzz()) {
+                const CInt_fuzz& fuzz = (*i2).GetPnt().GetFuzz();
+                if (fuzz.Which() == CInt_fuzz::e_Lim) {
+                    CInt_fuzz::ELim lim = fuzz.GetLim();
+                    if (lim == CInt_fuzz::eLim_gt  ||
+                        lim == CInt_fuzz::eLim_lt  ||
+                        lim == CInt_fuzz::eLim_unk) {
+                        if (&(*i2) == first) {
+                            retval |= eSeqlocPartial_Start;
+                        } else if (&(*i2) == last) {
+                            retval |= eSeqlocPartial_Stop;
+                        } else {
+                            retval |= eSeqlocPartial_Internal;
+                        }
+                    }
+                }
+            }
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            if ((*i2).GetPacked_pnt().IsSetFuzz()) {
+                const CInt_fuzz& fuzz = (*i2).GetPacked_pnt().GetFuzz();
+                if (fuzz.Which() == CInt_fuzz::e_Lim) {
+                    CInt_fuzz::ELim lim = fuzz.GetLim();
+                    if (lim == CInt_fuzz::eLim_gt  ||
+                        lim == CInt_fuzz::eLim_lt  ||
+                        lim == CInt_fuzz::eLim_unk) {
+                        if (&(*i2) == first) {
+                            retval |= eSeqlocPartial_Start;
+                        } else if (&(*i2) == last) {
+                            retval |= eSeqlocPartial_Stop;
+                        } else {
+                            retval |= eSeqlocPartial_Internal;
+                        }
+                    }
+                }
+            }
+            break;
+        case CSeq_loc::e_Whole:
+        {
+            // Get the Bioseq referred to by Whole
+            CBioseq_Handle bsh = scope->GetBioseqHandle((*i2).GetWhole());
+
+            // Check for CMolInfo on the biodseq
+            CSeqdesc_CI di( bsh, CSeqdesc::e_Molinfo );
+            if ( di ) {
+                // If no CSeq_descr, nothing can be done
+                break;
+            }
+            // First try to loop through CMolInfo
+            const CMolInfo& mi = di->GetMolinfo();
+            if (!mi.IsSetCompleteness()) {
+                continue;
+            }
+            switch (mi.GetCompleteness()) {
+            case CMolInfo::eCompleteness_no_left:
+                if (&(*i2) == first) {
+                    retval |= eSeqlocPartial_Start;
+                } else {
+                    retval |= eSeqlocPartial_Internal;
+                }
+                break;
+            case CMolInfo::eCompleteness_no_right:
+                if (&(*i2) == last) {
+                    retval |= eSeqlocPartial_Stop;
+                } else {
+                    retval |= eSeqlocPartial_Internal;
+                }
+                break;
+            case CMolInfo::eCompleteness_partial:
+                retval |= eSeqlocPartial_Other;
+                break;
+            case CMolInfo::eCompleteness_no_ends:
+                retval |= eSeqlocPartial_Start;
+                retval |= eSeqlocPartial_Stop;
+                break;
+            default:
+                break;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    return retval;
+}
+
 
 END_SCOPE(sequence)
 
@@ -2511,6 +2722,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2002/12/20 17:14:18  kans
+* added SeqLocPartialCheck
+*
 * Revision 1.25  2002/12/19 20:24:55  grichenk
 * Updated usage of CRange<>
 *
