@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  Test program for the Compression API classes
+ * File Description:  Test program for the Compression API
  *
  */
 
@@ -50,16 +50,15 @@ const int           kUnknownErr = kMax_Int;
 const unsigned int  kUnknown    = kMax_UInt;
 
 
-//////////////////////////////////////
-// The compressor tester template class
+//////////////////////////////////////////////////////////////////////////////
+//
+// The template class for compressor test
 //
 
 template<class TCompression,
          class TCompressionFile,
-         class TCompressIStream,
-         class TCompressOStream,
-         class TDecompressIStream,
-         class TDecompressOStream>
+         class TStreamCompressor,
+         class TStreamDecompressor>
 class CTestCompressor
 {
 public:
@@ -86,13 +85,11 @@ public:
 
 
 template<class TCompression,
-         class TCompressionFile,
-         class TCompressIStream,
-         class TCompressOStream,
-         class TDecompressIStream,
-         class TDecompressOStream>
-void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
-                     TCompressOStream, TDecompressIStream, TDecompressOStream>
+    class TCompressionFile,
+    class TStreamCompressor,
+    class TStreamDecompressor>
+void CTestCompressor<TCompression, TCompressionFile,
+    TStreamCompressor, TStreamDecompressor>
     ::Run(const char* src_buf)
 {
     char* dst_buf = new char[kBufLen];
@@ -104,7 +101,9 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
     assert(dst_buf);
     assert(cmp_buf);
 
-    // Compress/decomress buffer with default level
+    //------------------------------------------------------------------------
+    // Compress/decomress buffer
+    //------------------------------------------------------------------------
     {{
         cout << "Testing default level compression...\n";
         INIT_BUFFERS;
@@ -114,187 +113,25 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
 
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
-        assert(result);
         PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
+        assert(result);
 
         // Decompress data
         dst_len = out_len;
         result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
                                     &out_len);
-        assert(result  &&  out_len == kDataLen);
         PrintResult(eDecompress, c.GetLastError(), dst_len, kBufLen,out_len);
+        assert(result);
+        assert(out_len == kDataLen);
 
         // Compare original and decompressed data
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
         OK;
     }}
 
-    // Compression output stream test
-    {{
-        cout << "Testing compression with output into a stream...\n";
-        INIT_BUFFERS;
-
-        // Write data to compressing stream
-        CNcbiOstrstream os_str;
-        {{
-            TCompressOStream os_zip(os_str);
-            os_zip.write(src_buf, kDataLen);
-            // Finalize compression stream in the destructor
-        }}
-        // Get compressed size
-        const char* str = os_str.str();
-        size_t os_str_len = os_str.pcount();
-        PrintResult(eCompress, kUnknownErr, kDataLen, kBufLen, os_str_len);
-
-        // Try to decompress data
-        TCompression c;
-        result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen,
-                                    &out_len);
-        assert(result  &&  out_len == kDataLen);
-        PrintResult(eDecompress, c.GetLastError(), os_str_len, kBufLen,
-                    out_len);
-
-        // Compare original and decompressed data
-        assert(memcmp(src_buf, cmp_buf, out_len) == 0);
-        os_str.rdbuf()->freeze(0);
-        OK;
-    }}
-
-    // Decompression input stream test
-    {{
-        cout << "Testing decompression with input from stream...\n";
-        INIT_BUFFERS;
-
-        // Compress the data
-        TCompression c;
-        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
-                                  &out_len);
-        assert(result);
-        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
-
-        // Read decompressed data from decompressing stream
-        CNcbiIstrstream is_str(dst_buf, out_len);
-        size_t ids_zip_len;
-        {{
-            TDecompressIStream ids_zip(is_str);
-            ids_zip.read(cmp_buf, kDataLen);
-            ids_zip_len = ids_zip.gcount();
-            // Finalize decompression stream in the destructor
-        }}
-
-        // Get decompressed size
-        assert(ids_zip_len == kDataLen);
-        PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, ids_zip_len);
-
-        // Compare original and uncompressed data
-        assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
-        OK;
-    }}
-
-    // Decompression output stream test
-    {{
-        cout << "Testing decompression with output into a stream...\n";
-        INIT_BUFFERS;
-
-        // Compress the data
-        TCompression c;
-        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
-                                  &out_len);
-        assert(result);
-        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
-
-        // Write compressed data to decompressing stream
-        CNcbiOstrstream os_str;
-        auto_ptr<TDecompressOStream> os_zip(
-            new TDecompressOStream(os_str));
-        os_zip->write(dst_buf, out_len);
-        // Finalize a compression stream via direct call Finalize()
-        os_zip->Finalize();
-
-        // Get decompressed size
-        const char*  str = os_str.str();
-        size_t os_str_len = os_str.pcount();
-        assert(os_str_len == kDataLen);
-        PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, os_str_len);
-
-        // Compare original and uncompressed data
-        assert(memcmp(src_buf, str, os_str_len) == 0);
-        os_str.rdbuf()->freeze(0);
-        OK;
-    }}
-
-    // Advanced I/O stream test
-    {{
-        cout << "Advanced I/O stream test...\n";
-        INIT_BUFFERS;
-
-        {{
-            int v;
-            // Compression output stream test
-            CNcbiOstrstream os_str;
-            {{
-                TCompressOStream ocs_zip(os_str);
-                for (int i = 0; i < 1000; i++) {
-                    v = i * 2;
-                    ocs_zip << v << endl;
-                }
-            }}
-            const char* str = os_str.str();
-            size_t os_str_len = os_str.pcount();
-            PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,os_str_len);
-
-            // Decompression input stream test
-            CNcbiIstrstream is_str(str, os_str_len);
-            TDecompressIStream ids_zip(is_str);
-            for (int i = 0; i < 1000; i++) {
-                ids_zip >> v;
-                assert(!ids_zip.eof());
-                assert( i*2 == v);
-            }
-
-            ids_zip >> v;
-            assert(ids_zip.eof());
-            PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown,
-                        kUnknown);
-            os_str.rdbuf()->freeze(0);
-        }}
-
-        {{
-            // Compression input stream test 
-            CNcbiIstrstream is_str(src_buf, kDataLen);
-            TCompressIStream ics_zip(is_str);
-            // Read as much as possible
-            ics_zip.read(dst_buf, kBufLen);
-            dst_len = ics_zip.gcount();
-            assert(ics_zip.eof());
-            ics_zip.Finalize();
-            assert(dst_len < kBufLen);
-            // Read the residue of the data after the compression finalization
-            ics_zip.clear();
-            ics_zip.read(dst_buf + dst_len, kBufLen - dst_len);
-            size_t dst_len_residue = ics_zip.gcount();
-            PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown,
-                        dst_len + dst_len_residue);
-
-            // Decompression output stream test 
-            CNcbiOstrstream os_str;
-            TDecompressOStream ods_zip(os_str);
-            ods_zip.write(dst_buf, dst_len + dst_len_residue);
-            ods_zip.Finalize();
-            const char* str = os_str.str();
-            size_t os_str_len = os_str.pcount();
-            PrintResult(eDecompress, kUnknownErr, dst_len + dst_len_residue,
-                        kUnknown, os_str_len);
-
-            // Compare original and uncompressed data
-            assert(os_str_len == kDataLen);
-            assert(memcmp(str, src_buf, kDataLen) == 0);
-            os_str.rdbuf()->freeze(0);
-        }}
-        OK;
-    }}
-
+    //------------------------------------------------------------------------
     // Overflow test
+    //------------------------------------------------------------------------
     {{
         cout << "Output buffer overflow test...\n";
 
@@ -302,15 +139,20 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
         dst_len = 100;
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, dst_len,
                                   &out_len);
-        assert(result == false  &&  out_len == dst_len);
         PrintResult(eCompress, c.GetLastError(), kDataLen, dst_len, out_len);
+        assert(!result);
+        assert(out_len == dst_len);
         OK;
     }}
 
-    // File test
+    //------------------------------------------------------------------------
+    // File compress/decompress test
+    //------------------------------------------------------------------------
     {{
-        cout << "File test...\n";
+        cout << "File compress/decompress test...\n";
         INIT_BUFFERS;
+
+        int n;
 
         TCompressionFile zfile;
         const string kFileName = "compressed.file";
@@ -318,7 +160,8 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
         // Compress data to file
         assert(zfile.Open(kFileName, TCompressionFile::eMode_Write)); 
         for (unsigned int i=0; i < kDataLen/1024; i++) {
-             assert(zfile.Write(src_buf + i*1024, 1024) == 1024);
+            n = zfile.Write(src_buf + i*1024, 1024);
+            assert(n == 1024);
         }
         assert(zfile.Close()); 
         assert(CFile(kFileName).GetLength() > 0);
@@ -336,35 +179,280 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
         {{
             TCompressionFile zf(kFileName, TCompressionFile::eMode_Write,
                                 CCompression::eLevel_Best);
-            assert(zf.Write(src_buf, kDataLen) == (int)kDataLen);
+            n = zf.Write(src_buf, kDataLen);
+            assert(n == (int)kDataLen);
         }}
         {{
             TCompressionFile zf(kFileName, TCompressionFile::eMode_Read);
-            int n, nread = 0;
+            int nread = 0;
             do {
                 n = zf.Read(cmp_buf + nread, 100);
-                assert(n>=0);
+                assert(n >= 0);
                 nread += n;
             } while ( n != 0 );
             assert(nread == (int)kDataLen);
         }}
+
         // Compare original and decompressed data
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
 
         CFile(kFileName).Remove();
         OK;
     }}
+
+    //------------------------------------------------------------------------
+    // Compression input stream test
+    //------------------------------------------------------------------------
+    {{
+        cout << "Testing compression input stream...\n";
+        INIT_BUFFERS;
+
+        // Compression input stream test 
+        CNcbiIstrstream is_str(src_buf, kDataLen);
+        CCompressionIStream ics_zip(is_str, new TStreamCompressor());
+        // Read as much as possible
+        ics_zip.read(dst_buf, kBufLen);
+        dst_len = ics_zip.gcount();
+        assert(ics_zip.eof());
+        ics_zip.Finalize();
+
+        // Read the residue of the data after the compression finalization
+        if ( dst_len < kDataLen ) {
+            ics_zip.clear();
+            ics_zip.read(dst_buf + dst_len, kBufLen - dst_len);
+            dst_len += ics_zip.gcount();
+        }
+        PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, dst_len);
+
+        // Compress the data
+        TCompression c;
+        result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
+                                    &out_len);
+        PrintResult(eDecompress, c.GetLastError(), dst_len, kBufLen, out_len);
+        assert(result);
+
+        // Compare original and uncompressed data
+        assert(out_len == kDataLen);
+        assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+        OK;
+   }}
+
+    //------------------------------------------------------------------------
+    // Decompression input stream test
+    //------------------------------------------------------------------------
+    {{
+        cout << "Testing decompression input stream...\n";
+        INIT_BUFFERS;
+
+        // Compress the data
+        TCompression c;
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
+                                  &out_len);
+        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
+        assert(result);
+
+        // Read decompressed data from stream
+        CNcbiIstrstream is_str(dst_buf, out_len);
+        size_t ids_zip_len;
+        {{
+            CCompressionIStream ids_zip(is_str, new TStreamDecompressor());
+            ids_zip.read(cmp_buf, kDataLen);
+            ids_zip_len = ids_zip.gcount();
+            // Finalize decompression stream in the destructor
+        }}
+
+        // Get decompressed size
+        PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, ids_zip_len);
+
+        // Compare original and uncompressed data
+        assert(ids_zip_len == kDataLen);
+        assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // Compression output stream test
+    //------------------------------------------------------------------------
+    {{
+        cout << "Testing compression output stream...\n";
+        INIT_BUFFERS;
+
+        // Write data to compressing stream
+        CNcbiOstrstream os_str;
+        {{
+            CCompressionOStream os_zip(os_str, new TStreamCompressor());
+            os_zip.write(src_buf, kDataLen);
+            // Finalize compression stream in the destructor
+        }}
+        // Get compressed size
+        const char* str = os_str.str();
+        size_t os_str_len = os_str.pcount();
+        PrintResult(eCompress, kUnknownErr, kDataLen, kBufLen, os_str_len);
+
+        // Try to decompress data
+        TCompression c;
+        result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen,
+                                    &out_len);
+        PrintResult(eDecompress, c.GetLastError(), os_str_len, kBufLen,
+                    out_len);
+        assert(result);
+
+        // Compare original and decompressed data
+        assert(out_len == kDataLen);
+        assert(memcmp(src_buf, cmp_buf, out_len) == 0);
+        os_str.rdbuf()->freeze(0);
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // Decompression output stream test
+    //------------------------------------------------------------------------
+    {{
+        cout << "Testing decompression output stream...\n";
+        INIT_BUFFERS;
+
+        // Compress the data
+        TCompression c;
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
+                                  &out_len);
+        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
+        assert(result);
+
+        // Write compressed data to decompressing stream
+        CNcbiOstrstream os_str;
+
+        CCompressionOStream os_zip(os_str, new TStreamDecompressor());
+
+        os_zip.write(dst_buf, out_len);
+        // Finalize a compression stream via direct call Finalize()
+        os_zip.Finalize();
+
+        // Get decompressed size
+        const char*  str = os_str.str();
+        size_t os_str_len = os_str.pcount();
+        PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, os_str_len);
+
+        // Compare original and uncompressed data
+        assert(os_str_len == kDataLen);
+        assert(memcmp(src_buf, str, os_str_len) == 0);
+        os_str.rdbuf()->freeze(0);
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // IO stream tests
+    //------------------------------------------------------------------------
+    {{
+        cout << "Testing IO stream...\n";
+        {{
+            INIT_BUFFERS;
+
+            CNcbiStrstream stm(dst_buf, kBufLen);
+            CCompressionIOStream zip(stm, new TStreamDecompressor(),
+                                          new TStreamCompressor());
+            zip.write(src_buf, kDataLen);
+            assert(zip.good()  &&  stm.good());
+            zip.Finalize(CCompressionStream::eWrite);
+            assert(!stm.eof()  &&  stm.good());
+            assert(!zip.eof()  &&  zip.good());
+
+            // Read as much as possible
+            zip.read(cmp_buf, kDataLen);
+            out_len = zip.gcount();
+            assert(!stm.eof()  &&  stm.good());
+            assert(!zip.eof()  &&  zip.good());
+            assert(out_len <= kDataLen);
+            zip.Finalize(CCompressionStream::eRead);
+            // Read the residue of the data after finalization
+            if ( out_len < kDataLen ) {
+                zip.clear();
+                zip.read(cmp_buf + out_len, kDataLen - out_len);
+                out_len += zip.gcount();
+                assert(out_len == kDataLen);
+            }
+            assert(!zip.eof());
+
+            char c;
+            zip >> c;
+            assert(zip.eof());
+
+            // Compare buffers
+            assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+        }}
+        {{
+            INIT_BUFFERS;
+
+            CNcbiStrstream stm(dst_buf, kBufLen);
+            CCompressionIOStream zip(stm, new TStreamDecompressor(),
+                                          new TStreamCompressor());
+
+            int v;
+            for (int i = 0; i < 3; i++) {
+                 v = i * 2;
+                 zip << v << endl;
+            }
+            zip.Finalize(CCompressionStream::eWrite);
+            zip.clear();
+
+            for (int i = 0; i < 3; i++) {
+                 zip >> v;
+                 assert(!zip.eof());
+                 assert(v == i * 2);
+            }
+            zip.Finalize();
+            zip >> v;
+            assert(zip.eof());
+        }}
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // Advanced I/O stream test
+    //------------------------------------------------------------------------
+    {{
+        cout << "Advanced I/O stream test...\n";
+        INIT_BUFFERS;
+
+        int v;
+        // Compress output
+        CNcbiOstrstream os_str;
+        {{
+            CCompressionOStream ocs_zip(os_str, new TStreamCompressor());
+            for (int i = 0; i < 1000; i++) {
+                v = i * 2;
+                ocs_zip << v << endl;
+            }
+        }}
+        const char* str = os_str.str();
+        size_t os_str_len = os_str.pcount();
+        PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,os_str_len);
+
+        // Decompress input
+        CNcbiIstrstream is_str(str, os_str_len);
+        CCompressionIStream ids_zip(is_str, new TStreamDecompressor());
+        for (int i = 0; i < 1000; i++) {
+            ids_zip >> v;
+            assert(!ids_zip.eof());
+            assert( i*2 == v);
+        }
+
+        // Check EOF
+        ids_zip >> v;
+        PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown,
+                    kUnknown);
+        assert(ids_zip.eof());
+        os_str.rdbuf()->freeze(0);
+        OK;
+    }}
+    //------------------------------------------------------------------------
 }
 
 
 template<class TCompression,
          class TCompressionFile,
-         class TCompressIStream,
-         class TCompressOStream,
-         class TDecompressIStream,
-         class TDecompressOStream>
-void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
-                     TCompressOStream, TDecompressIStream, TDecompressOStream>
+         class TStreamCompressor,
+         class TStreamDecompressor>
+void CTestCompressor<TCompression, TCompressionFile, TStreamCompressor, TStreamDecompressor>
     ::PrintResult(EPrintType type, int last_errcode, 
                   unsigned int src_len, unsigned int dst_len,
                   unsigned int out_len)
@@ -386,7 +474,8 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
 }
 
 
-//////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//
 // Test application
 //
 
@@ -411,7 +500,7 @@ int CTest::Run(void)
 
     // Preparing a data for compression
     unsigned int seed = time(0);
-    cout << "seed = " << seed << endl << endl;
+    cout << "Random seed = " << seed << endl << endl;
     srand(seed);
     for (size_t i=0; i<kDataLen; i++) {
         // Use a set from 25 chars [A-Z]
@@ -421,17 +510,15 @@ int CTest::Run(void)
     }
 
     // Test compressors
+
     cout << "-------------- BZip2 ---------------\n\n";
     CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
-                    CBZip2CompressIStream, CBZip2CompressOStream,
-                    CBZip2DecompressIStream, CBZip2DecompressOStream>
+                    CBZip2StreamCompressor, CBZip2StreamDecompressor>
         ::Run(src_buf);
 
     cout << "--------------- Zlib ---------------\n\n";
-
     CTestCompressor<CZipCompression, CZipCompressionFile,
-                    CZipCompressIStream, CZipCompressOStream,
-                    CZipDecompressIStream, CZipDecompressOStream>
+                    CZipStreamCompressor, CZipStreamDecompressor>
         ::Run(src_buf);
 
     cout << "\nTEST execution completed successfully!\n\n";
@@ -441,7 +528,8 @@ int CTest::Run(void)
 
 
 
-//////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//
 // MAIN
 //
 
@@ -455,6 +543,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/17 15:53:31  ivanov
+ * Changed tests accordingly the last Compression API changes.
+ * Some tests rearrangemets.
+ *
  * Revision 1.3  2003/06/04 21:12:17  ivanov
  * Added a random seed print out. Minor cosmetic changes.
  *
