@@ -1,99 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Lewis Geer
-*
-* File Description:
-*   Play around with the HTML library
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2001/05/17 15:05:44  lavr
-* Typos corrected
-*
-* Revision 1.17  2000/10/18 13:25:51  vasilche
-* Added missing constructors to CHTML_font.
-*
-* Revision 1.16  2000/07/18 19:09:03  vasilche
-* Fixed uninitialized members.
-* Fixed NextCell to advance to next cell.
-*
-* Revision 1.15  2000/07/18 17:21:42  vasilche
-* Added possibility to force output of empty attribute value.
-* Added caching to CHTML_table, now large tables work much faster.
-* Changed algorithm of emitting EOL symbols in html output.
-*
-* Revision 1.14  1999/10/28 13:40:39  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.13  1999/07/08 16:45:55  vakatov
-* Get rid of the redundant `extern "C"' at "main()
-*
-* Revision 1.12  1999/06/11 20:30:34  vasilche
-* We should catch exception by reference, because catching by value
-* doesn't preserve comment string.
-*
-* Revision 1.11  1999/05/11 02:54:01  vakatov
-* Moved CGI API from "corelib/" to "cgi/"
-*
-* Revision 1.10  1999/04/27 14:50:16  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.9  1999/03/08 22:24:42  lewisg
-* make compilable
-*
-* Revision 1.8  1998/12/28 23:29:13  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.7  1998/12/28 16:48:12  vasilche
-* Removed creation of QueryBox in CHTMLPage::CreateView()
-* CQueryBox extends from CHTML_form
-* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
-*
-* Revision 1.6  1998/12/24 16:15:43  vasilche
-* Added CHTMLComment class.
-* Added TagMappers from static functions.
-*
-* Revision 1.5  1998/12/23 21:21:06  vasilche
-* Added more HTML tags (almost all).
-* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
-*
-* Revision 1.4  1998/12/23 14:28:12  vasilche
-* Most of closed HTML tags made via template.
-*
-* Revision 1.3  1998/12/21 22:25:06  vasilche
-* A lot of cleaning.
-*
-* Revision 1.2  1998/12/11 22:43:35  lewisg
-* added docsum page
-*
-* Revision 1.1  1998/12/11 18:11:17  lewisg
-* frontpage added
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Lewis Geer
+ *
+ * File Description:
+ *   Play around with the HTML library
+ *
+ */
 
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgiapp.hpp>
@@ -103,6 +38,8 @@
 #include <html/factory.hpp>
 #include <html/components.hpp>
 #include <html/querypages.hpp>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 
@@ -256,3 +193,76 @@ int main(int argc, char *argv[])
 {
     return CMyApp().AppMain(argc, argv);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.19  2002/04/16 19:05:21  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
+ * Revision 1.18  2001/05/17 15:05:44  lavr
+ * Typos corrected
+ *
+ * Revision 1.17  2000/10/18 13:25:51  vasilche
+ * Added missing constructors to CHTML_font.
+ *
+ * Revision 1.16  2000/07/18 19:09:03  vasilche
+ * Fixed uninitialized members.
+ * Fixed NextCell to advance to next cell.
+ *
+ * Revision 1.15  2000/07/18 17:21:42  vasilche
+ * Added possibility to force output of empty attribute value.
+ * Added caching to CHTML_table, now large tables work much faster.
+ * Changed algorithm of emitting EOL symbols in html output.
+ *
+ * Revision 1.14  1999/10/28 13:40:39  vasilche
+ * Added reference counters to CNCBINode.
+ *
+ * Revision 1.13  1999/07/08 16:45:55  vakatov
+ * Get rid of the redundant `extern "C"' at "main()
+ *
+ * Revision 1.12  1999/06/11 20:30:34  vasilche
+ * We should catch exception by reference, because catching by value
+ * doesn't preserve comment string.
+ *
+ * Revision 1.11  1999/05/11 02:54:01  vakatov
+ * Moved CGI API from "corelib/" to "cgi/"
+ *
+ * Revision 1.10  1999/04/27 14:50:16  vasilche
+ * Added FastCGI interface.
+ * CNcbiContext renamed to CCgiContext.
+ *
+ * Revision 1.9  1999/03/08 22:24:42  lewisg
+ * make compilable
+ *
+ * Revision 1.8  1998/12/28 23:29:13  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.7  1998/12/28 16:48:12  vasilche
+ * Removed creation of QueryBox in CHTMLPage::CreateView()
+ * CQueryBox extends from CHTML_form
+ * CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+ *
+ * Revision 1.6  1998/12/24 16:15:43  vasilche
+ * Added CHTMLComment class.
+ * Added TagMappers from static functions.
+ *
+ * Revision 1.5  1998/12/23 21:21:06  vasilche
+ * Added more HTML tags (almost all).
+ * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+ *
+ * Revision 1.4  1998/12/23 14:28:12  vasilche
+ * Most of closed HTML tags made via template.
+ *
+ * Revision 1.3  1998/12/21 22:25:06  vasilche
+ * A lot of cleaning.
+ *
+ * Revision 1.2  1998/12/11 22:43:35  lewisg
+ * added docsum page
+ *
+ * Revision 1.1  1998/12/11 18:11:17  lewisg
+ * frontpage added
+ * ===========================================================================
+ */

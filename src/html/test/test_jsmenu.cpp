@@ -36,6 +36,7 @@
 #include <html/page.hpp>
 #include <html/jsmenu.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -246,6 +247,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2002/04/16 19:05:21  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
  * Revision 1.4  2002/02/13 20:19:44  ivanov
  * Added support of dynamic popup menus
  *

@@ -35,6 +35,7 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -203,6 +204,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/16 19:05:21  ivanov
+ * Centralize threatment of assert() in tests.
+ * Added #include <test/test_assert.h>. CVS log moved to end of file.
+ *
  * Revision 1.4  2002/01/17 23:40:28  ivanov
  * Added test to print HTML tables in plain text mode
  *
