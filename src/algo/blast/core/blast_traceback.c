@@ -666,7 +666,6 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
    Int4 query_index, subject_index;
    BlastHitListPtr hit_list;
    BlastHSPListPtr hsp_list;
-   SeqAlignPtr seqalign, last_seqalign = NULL;
    BLAST_ScoreBlkPtr sbp;
    Uint1 encoding=ERROR_ENCODING;
 

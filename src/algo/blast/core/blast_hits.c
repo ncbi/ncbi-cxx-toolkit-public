@@ -741,7 +741,6 @@ BlastHSPListPtr BlastHSPListNew()
 BlastHSPListPtr BlastHSPListFree(BlastHSPListPtr hsp_list)
 {
    Int4 index;
-   BlastHSPPtr hsp;
 
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       BlastHSPFree(hsp_list->hsp_array[index]);
@@ -843,7 +842,6 @@ static BlastHitListPtr BLAST_HitListFree(BlastHitListPtr hitlist)
 
 static BlastHSPListPtr BlastHSPListDup(BlastHSPListPtr hsp_list)
 {
-   Int4 index;
    BlastHSPListPtr new_hsp_list = (BlastHSPListPtr) 
       MemDup(hsp_list, sizeof(BlastHSPList));
    new_hsp_list->hsp_array = (BlastHSPPtr PNTR) 
