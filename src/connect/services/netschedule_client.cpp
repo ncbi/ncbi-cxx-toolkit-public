@@ -247,6 +247,32 @@ void CNetScheduleClient::CancelJob(const string& job_key)
     CheckOK(&m_Tmp);
 }
 
+void CNetScheduleClient::SetRunTimeout(const string& job_key, 
+                                       unsigned      time_to_run)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+    CheckConnect(job_key);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "JRTO ");
+
+    m_Tmp.append(job_key);
+    m_Tmp.append(" ");
+    m_Tmp.append(NStr::IntToString(time_to_run));
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    CheckOK(&m_Tmp);
+}
+
+
 CNetScheduleClient::EJobStatus 
 CNetScheduleClient::GetStatus(const string& job_key,
                               int*          ret_code,
@@ -737,6 +763,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/10 14:17:58  kuznets
+ * +SetRunTimeout()
+ *
  * Revision 1.7  2005/03/07 17:30:49  kuznets
  * Job key parsing changed
  *
