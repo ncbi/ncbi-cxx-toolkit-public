@@ -50,7 +50,7 @@ sub genlists
   print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/\">Text search</a> | ";
   print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/\">File search</a> | ";
   print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/\">Source code</a>";
-  print HEADER "</center></body></html>";
+  print HEADER "</center>";
   close(HEADER);
   
   open(FOOTER, ">footer");
