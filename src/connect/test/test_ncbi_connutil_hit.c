@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/08 22:42:14  lavr
+ * eRequestMethodAny -> eRequestMethod_Any
+ *
  * Revision 6.4  2000/12/29 18:24:40  lavr
  * File size is now discovered without use of stat call.
  *
@@ -112,7 +115,7 @@ int main(int argc, char** argv)
     
     /* Connect */
     sock = URL_Connect(host, port, path, args,
-                       eReqMethodAny, content_length,
+                       eReqMethod_Any, content_length,
                        &timeout, &timeout, user_header, 1/*true*/);
     if ( !sock )
         return 3;
