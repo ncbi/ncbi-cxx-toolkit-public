@@ -93,7 +93,7 @@ void CSplignApp::Init()
 		     " regardless of exon identities.",
 		     true);
       
-  argdescr->AddFlag ("rle", "Encode alignment transcripts.", true);
+  argdescr->AddFlag ("norle", "Do not encode alignment transcripts.", true);
 
   argdescr->AddOptionalKey
     ("index", "index",
@@ -206,7 +206,7 @@ int CSplignApp::Run()
   // read configuration and formatting options
 
   m_SeqQuality = args["quality"].AsString() == "high";
-  m_rle = args["rle"];
+  m_rle = ! args["norle"];
   m_minidty = args["min_idty"].AsDouble();
   m_endgaps = args["endgaps"];
   m_min_query_coverage = args["min_query_cov"].AsDouble();
@@ -563,6 +563,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/10 19:20:26  kapustin
+ * Generate encoded alignment transcript by default
+ *
  * Revision 1.3  2003/11/05 20:32:11  kapustin
  * Include source information into the index
  *
