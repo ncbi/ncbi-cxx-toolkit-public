@@ -166,8 +166,13 @@ typedef struct BlastSeqSrcIterator {
     unsigned int  chunk_sz;
 } BlastSeqSrcIterator;
 
+/** How many database sequences to process in one database chunk. */
+extern const unsigned int kBlastSeqSrcDefaultChunkSize;
+
 /** Allocated and initialized an iterator over a BlastSeqSrc. 
- * @param chunk_sz sets the chunk size of the iterator. [in]
+ * @param chunk_sz sets the chunk size of the iterator, if zero 
+ *    use kBlastSeqSrcDefaultChunkSize (above). [in]
+ * @return pointer to initialized iterator for BlastSeqSrc
  */
 BlastSeqSrcIterator* BlastSeqSrcIteratorNew(unsigned int chunk_sz);
 
