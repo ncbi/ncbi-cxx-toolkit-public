@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/01/27 16:42:24  thiessen
+* remove debugging messages
+*
 * Revision 1.62  2003/01/27 15:52:22  thiessen
 * merge after highlighted row; show rejects; trim rejects from new reject list
 *
@@ -1308,17 +1311,13 @@ void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment
 
             // look for first completely highlighted row - if found, insert after that instead
             if (firstHighlightedRow < 0) {
-            TESTMSG("one");
                 const Sequence *seq = multiple->GetSequenceOfRow(alnRow->row);
                 int i;
                 for (i=0; i<seq->Length(); i++)
                     if (!GlobalMessenger()->IsHighlighted(seq, i))
                         break;
                 if (i == seq->Length())
-                {
-                TESTMSG("two");
                     firstHighlightedRow = r;
-                }
             }
         }
     }
