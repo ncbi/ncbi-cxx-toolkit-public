@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.3  2002/02/07 21:27:35  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -45,9 +48,7 @@
 */
 
 
-#include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
-#include "data_source.hpp"
 #include "annot_object.hpp"
 
 
@@ -74,7 +75,7 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.GetRanges().empty() ) {
             TAnnotMap::iterator ait =
-                m_TSEInfo->m_AnnotMap.find(it->first.GetKey());
+                m_TSEInfo->m_AnnotMap.find(it->first);
             if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
             m_RangeMap = &ait->second;
@@ -200,7 +201,7 @@ void CAnnot_CI::x_Walk(void)
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
         if ( !h->second.GetRanges().empty() ) {
             TAnnotMap::iterator ait =
-                m_TSEInfo->m_AnnotMap.find(h->first.GetKey());
+                m_TSEInfo->m_AnnotMap.find(h->first);
             if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
             m_RangeMap = &ait->second;

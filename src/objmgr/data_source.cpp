@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.11  2002/02/12 19:41:42  grichenk
 * Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
 *
@@ -913,8 +916,8 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat, CTSE_Info& tse)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first.GetKey()].insert(&tse);
-        tse.m_AnnotMap[mapit->first.GetKey()].insert(TRangeMap::value_type(
+        m_TSE_ref[mapit->first].insert(&tse);
+        tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
     }
 }
@@ -927,8 +930,8 @@ void CDataSource::x_MapAlign(const CSeq_align& align, CTSE_Info& tse)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first.GetKey()].insert(&tse);
-        tse.m_AnnotMap[mapit->first.GetKey()].insert(TRangeMap::value_type(
+        m_TSE_ref[mapit->first].insert(&tse);
+        tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
     }
 }
@@ -942,8 +945,8 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph, CTSE_Info& tse)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first.GetKey()].insert(&tse);
-        tse.m_AnnotMap[mapit->first.GetKey()].insert(TRangeMap::value_type(
+        m_TSE_ref[mapit->first].insert(&tse);
+        tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
     }
 }
@@ -955,7 +958,7 @@ void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
     x_ResolveLocationHandles(loc);
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
-        TTSEMap::const_iterator tse_it = m_TSE_ref.find(hit->first.GetKey());
+        TTSEMap::const_iterator tse_it = m_TSE_ref.find(hit->first);
         if (tse_it == m_TSE_ref.end())
             continue; // No this seq-id in the datasource
         _ASSERT(tse_it->second.size() > 0);
@@ -979,13 +982,13 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc) const
     CMutexGuard guard(s_DataSource_Mutex);
     CHandleRangeMap tmp(GetIdMapper());
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
-        CTSE_Info* tse_info = x_FindBestTSE(it->first.m_Value);
+        CTSE_Info* tse_info = x_FindBestTSE(it->first);
         if (tse_info != 0) {
             TBioseqMap::const_iterator info =
-                tse_info->m_BioseqMap.find(it->first.m_Value);
+                tse_info->m_BioseqMap.find(it->first);
             if (info == tse_info->m_BioseqMap.end()) {
                 // Just copy the existing range map
-                tmp.AddRanges(it->first.m_Value, it->second);
+                tmp.AddRanges(it->first, it->second);
             }
             else {
                 // Create range list for each synonym of a seq_id
@@ -997,7 +1000,7 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc) const
         }
         else {
             // Just copy the existing range map
-            tmp.AddRanges(it->first.m_Value, it->second);
+            tmp.AddRanges(it->first, it->second);
         }
     }
     loc = tmp;
@@ -1127,13 +1130,13 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat)
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
-        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first.GetKey());
+        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         _ASSERT(tse_set != m_TSE_ref.end());
         // Find the TSE containing the feature
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
             TAnnotMap::iterator annot = (*tse_info)->m_AnnotMap.find(
-                mapit->first.GetKey());
+                mapit->first);
             if (annot == (*tse_info)->m_AnnotMap.end())
                 continue;
             TRangeMap::iterator rg = annot->second.begin(
@@ -1167,13 +1170,13 @@ void CDataSource::x_DropAlign(const CSeq_align& align)
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
-        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first.GetKey());
+        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         _ASSERT(tse_set != m_TSE_ref.end());
         // Find the TSE containing the align
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
             TAnnotMap::iterator annot = (*tse_info)->m_AnnotMap.find(
-                mapit->first.GetKey());
+                mapit->first);
             if (annot == (*tse_info)->m_AnnotMap.end())
                 continue;
             TRangeMap::iterator rg = annot->second.begin(
@@ -1207,13 +1210,13 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph)
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
-        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first.GetKey());
+        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         _ASSERT(tse_set != m_TSE_ref.end());
         // Find the TSE containing the graph
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
             TAnnotMap::iterator annot = (*tse_info)->m_AnnotMap.find(
-                mapit->first.GetKey());
+                mapit->first);
             if (annot == (*tse_info)->m_AnnotMap.end())
                 continue;
             TRangeMap::iterator rg = annot->second.begin(

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.5  2002/02/07 21:27:35  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -53,7 +56,7 @@
 
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/annot_types_ci.hpp>
-#include "data_source.hpp"
+#include "tse_info.hpp"
 #include "handle_range_map.hpp"
 
 BEGIN_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.2  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -54,7 +57,7 @@ BEGIN_SCOPE(objects)
 //
 
 
-CHandleRange::CHandleRange(const CBioseq_Handle& handle)
+CHandleRange::CHandleRange(const CSeq_id_Handle& handle)
     : m_Handle(handle)
 {
 }

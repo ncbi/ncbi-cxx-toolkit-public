@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/15 20:36:29  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.4  2002/01/28 19:45:34  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -51,8 +54,8 @@
 
 
 #include <objects/seq/Seq_data.hpp>
-
 #include <objects/objmgr1/seq_map.hpp>
+#include <objects/objmgr1/bioseq_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/15 20:36:29  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.3  2002/02/07 21:27:33  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -47,7 +50,6 @@
 */
 
 
-#include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
 #include <set>
 

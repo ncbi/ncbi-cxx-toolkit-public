@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.3  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -54,7 +57,7 @@
 #include <map>
 #include <memory>
 
-#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -67,7 +70,7 @@ public:
     typedef pair<TRange, ENa_strand> TRangeWithStrand;
     typedef list<TRangeWithStrand> TRanges;
 
-    CHandleRange(const CBioseq_Handle& handle);
+    CHandleRange(const CSeq_id_Handle& handle);
     CHandleRange(const CHandleRange& hrange);
     ~CHandleRange(void);
 
@@ -86,7 +89,7 @@ private:
     static void x_CombineRanges(TRange& dest, const TRange& src);
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
 
-    CBioseq_Handle m_Handle;
+    CSeq_id_Handle m_Handle;
     TRanges        m_Ranges;
 
     friend class CDataSource;

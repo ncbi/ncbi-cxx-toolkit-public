@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.4  2002/01/30 22:09:28  gouriano
 * changed CSeqMap interface
 *
@@ -66,7 +69,6 @@
 #include <objects/objmgr1/scope.hpp>
 #include "seq_id_mapper.hpp"
 #include "data_source.hpp"
-#include "annot_object.hpp"
 
 
 BEGIN_NCBI_SCOPE

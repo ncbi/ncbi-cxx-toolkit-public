@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/15 20:36:29  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.4  2002/01/30 22:08:47  gouriano
 * changed CSeqMap interface
 *
@@ -56,7 +59,6 @@
 #include <objects/seq/Seq_data.hpp>
 #include <vector>
 
-#include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/objmgr1/seq_id_handle.hpp>
 
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/15 20:36:29  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.4  2002/02/07 21:27:33  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -55,14 +58,12 @@
 #include <util/rangemap.hpp>
 
 #include <objects/objmgr1/seq_id_handle.hpp>
-#include <objects/objmgr1/bioseq_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CAnnotObject;
-class CDataSource;
 
 // Structure to select type of Seq-annot
 struct SAnnotSelector
@@ -125,7 +126,7 @@ private:
     TRange            m_CoreRange;
     TRangeIter        m_Current;
     CHandleRangeMap*  m_HandleRangeMap;
-    CBioseq_Handle    m_CurrentHandle;
+    CSeq_id_Handle    m_CurrentHandle;
 };
 
 

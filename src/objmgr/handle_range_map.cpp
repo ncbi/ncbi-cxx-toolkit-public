@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
 * Revision 1.2  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -92,7 +95,7 @@ CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
 
 void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
 {
-    CBioseq_Handle h;
+    CSeq_id_Handle h;
     TLocMap::iterator newh;
     ENa_strand strand = eNa_strand_unknown;
     switch ( loc.Which() ) {
@@ -213,7 +216,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
 }
 
 
-void CHandleRangeMap::AddRanges(const CBioseq_Handle& h,
+void CHandleRangeMap::AddRanges(const CSeq_id_Handle& h,
                                 const CHandleRange& range)
 {
     TLocMap::iterator hr = m_LocMap.insert
