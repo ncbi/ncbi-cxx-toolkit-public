@@ -168,7 +168,7 @@ static const SImportEntry kImportTable[] = {
     { "5'clip",              CSeqFeatData::eSubtype_5clip },
     { "CAAT_signal",         CSeqFeatData::eSubtype_CAAT_signal },
     { "C_region",            CSeqFeatData::eSubtype_C_region },
-    { "D_loop",              CSeqFeatData::eSubtype_D_loop },
+    { "D-loop",              CSeqFeatData::eSubtype_D_loop },
     { "D_segment",           CSeqFeatData::eSubtype_D_segment },
     { "GC_signal",           CSeqFeatData::eSubtype_GC_signal },
     { "Imp_CDS",             CSeqFeatData::eSubtype_Imp_CDS },
@@ -1732,8 +1732,25 @@ END_SUBTYPE
 //START_SUBTYPE(bond)
 //END_SUBTYPE
 
-//START_SUBTYPE(site)
-//END_SUBTYPE
+START_SUBTYPE(site)  //  same as misc_feature
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
+    ADD_QUAL(product);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 //START_SUBTYPE(rsite)
 //END_SUBTYPE
@@ -1895,6 +1912,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.16  2004/08/20 16:17:52  shomrat
+* Added legal qualifiers for site; D_loop -> D-loop
+*
 * Revision 6.15  2004/08/19 18:00:13  shomrat
 * Add EC_number as legal qual for mat_peptide_aa
 *
