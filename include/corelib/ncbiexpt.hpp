@@ -602,10 +602,9 @@ public:
 class CStrErrAdapt
 {
 public:
-    static const char* strerror(int errnum)
-    {
-        return ::strerror(errnum);
-    }
+    static const char* strerror(int errnum);
+    // inlined conditionally at end of file due to a weird
+    // platform-specific GCC bug
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -811,6 +810,26 @@ public: \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
 
+// For some reason, making this an inline function fails when building
+// with GCC 2.95 on OSF/1.... :-/
+#ifndef INLINE_CSTRERRADAPT
+# if !defined(NCBI_COMPILER_GCC)
+#  define INLINE_CSTRERRADAPT
+# elif NCBI_COMPILER_VERSION >= 300
+#  define INLINE_CSTRERRADAPT
+# elif !defined(NCBI_OS_OSF1)
+#  define INLINE_CSTRERRADAPT
+# endif
+#endif
+#ifdef INLINE_CSTRERRADAPT
+inline
+const char* CStrErrAdapt::strerror(int errnum)
+{
+    return ::strerror(errnum);
+}
+#endif
+
+
 END_NCBI_SCOPE
 
 
@@ -820,6 +839,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2003/04/29 19:47:02  ucko
+ * KLUDGE: avoid inlining CStrErrAdapt::strerror with GCC 2.95 on OSF/1,
+ * due to a weird, apparently platform-specific, bug.
+ *
  * Revision 1.44  2003/04/25 20:53:53  lavr
  * Add eInvalidArg type of CCoreException
  *

@@ -404,6 +404,15 @@ void CExceptionReporterStream::Report(const char* file, int line,
 }
 
 
+#ifndef INLINE_CSTRERRADAPT
+// We have to make this an external function with GCC 2.95 on OSF/1.
+const char* CStrErrAdapt::strerror(int errnum)
+{
+    return ::strerror(errnum);
+}
+#endif
+
+
 
 END_NCBI_SCOPE
 
@@ -411,6 +420,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/04/29 19:47:10  ucko
+ * KLUDGE: avoid inlining CStrErrAdapt::strerror with GCC 2.95 on OSF/1,
+ * due to a weird, apparently platform-specific, bug.
+ *
  * Revision 1.31  2003/02/24 19:56:05  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
