@@ -143,8 +143,8 @@ static void s_CheckExecArg(const char* arg)
 {
     if  ( sizeof(void*) == 8  &&  sizeof(int) != sizeof(void*) ) {
 #  if defined(WORDS_BIGENDIAN)
-        int lo = int(((Uint8)srg >> 32) & 0xffff);
-        int hi = int((Uint8)srg & 0xffff);
+        int lo = int(((Uint8)arg >> 32) & 0xffff);
+        int hi = int((Uint8)arg & 0xffff);
 #  else
         int hi = int(((Uint8)arg >> 32) & 0xffff);
         int lo = int((Uint8)arg & 0xffff);
@@ -351,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/08/19 17:01:22  ucko
+ * Fix typos in s_CheckExecArg.
+ *
  * Revision 1.20  2004/08/19 12:20:11  ivanov
  * Lines wrapped at 79th column.
  *
