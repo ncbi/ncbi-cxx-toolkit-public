@@ -103,10 +103,8 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 {
     CBioseq_Handle bsh;
     bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    if ( bsh ) {
-        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh.GetBioseq(), "Location", 
-            feat);
-    }
+    const CBioseq* seq = bsh ? &bsh.GetBioseq() : 0;
+    m_Imp.ValidateSeqLoc(feat.GetLocation(), seq, "Location", feat);
     
     if ( feat.IsSetProduct() ) {
         ValidateSeqFeatProduct(feat.GetProduct(), feat);
@@ -177,7 +175,7 @@ static string s_LegalConsSpliceStrings[] = {
   "(5'site:NO, 3'site:ABSENT)",
   "(5'site:ABSENT, 3'site:YES)",
   "(5'site:ABSENT, 3'site:NO)",
-  "(5'site:ABSENT, 3'site:ABSENT)",
+  "(5'site:ABSENT, 3'site:ABSENT)"
 };
 
 
@@ -216,6 +214,22 @@ void CValidError_feat::ValidateSeqFeatData
         // Validate CBioSource
         ValidateFeatBioSource(data.GetBiosrc(), feat);
         break;
+
+    case CSeqFeatData::e_Org:
+    case CSeqFeatData::e_Region:
+    case CSeqFeatData::e_Seq:
+    case CSeqFeatData::e_Comment:
+    case CSeqFeatData::e_Bond:
+    case CSeqFeatData::e_Site:
+    case CSeqFeatData::e_Rsite:
+    case CSeqFeatData::e_User:
+    case CSeqFeatData::e_Txinit:
+    case CSeqFeatData::e_Num:
+    case CSeqFeatData::e_Psec_str:
+    case CSeqFeatData::e_Non_std_residue:
+    case CSeqFeatData::e_Het:
+        break;
+
     default:
         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
             "Invalid SeqFeat type [" + 
@@ -235,10 +249,8 @@ void CValidError_feat::ValidateSeqFeatProduct
 {
     CBioseq_Handle bsh;
     bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-    if ( bsh ) {
-        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product",
-            feat);
-    }
+    const CBioseq* seq = bsh ? &bsh.GetBioseq() : 0;
+    m_Imp.ValidateSeqLoc(feat.GetProduct(), seq, "Product", feat);
     
     if ( IsOneBioseq(prod, m_Scope) ) {
         const CSeq_id& sid = GetId(prod, m_Scope);
@@ -495,8 +507,8 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                     if ( i == 1  &&  j < 2  &&
                         IsPartialAtSpliceSite(feat.GetLocation(), errtype) ) {
                         PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                            parterr[i] + ":" + parterrs[j] + 
-                            "(but is at consensus splice site)", feat);
+                            parterr[i] + ": " + parterrs[j] + 
+                            " (but is at consensus splice site)", feat);
                     } else if ( i == 1  &&  j < 2  &&
                         (feat.GetData().Which() == CSeqFeatData::e_Gene  ||
                         feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
@@ -1514,14 +1526,19 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
     }
     if ( mrna ) {
         // ribosomal slippage exception suppresses CDSmRNArange warning
+        bool supress = false;
+
         if ( feat.CanGetExcept_text() ) {
             const CSeq_feat::TExcept_text& text = feat.GetExcept_text();
             if ( NStr::FindNoCase(text, "ribosomal slippage") != NPOS  ||
                  NStr::FindNoCase(text, "ribosome slippage") != NPOS ) {
-                PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
-                    "mRNA contains CDS but internal intron-exon boundaries "
-                    "do not match", feat);
+                supress = true;
             }
+        }
+        if ( !supress ) {
+            PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
+                "mRNA contains CDS but internal intron-exon boundaries "
+                "do not match", feat);
         }
     } else {
         PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
@@ -2234,6 +2251,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/05/28 16:25:42  shomrat
+* Minor corrections.
+*
 * Revision 1.29  2003/05/15 20:00:44  shomrat
 * Bug fix in ValidateImpGbquals
 *

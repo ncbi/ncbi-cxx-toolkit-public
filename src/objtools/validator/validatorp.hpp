@@ -352,7 +352,7 @@ public:
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
-    void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq& seq,
+    void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq* seq,
         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj);
@@ -509,7 +509,7 @@ private:
 
     // source qulalifiers prefixes
     static const string sm_SourceQualPrefixes[];
-    CTextFsa m_SourceQualTags;
+    static auto_ptr<CTextFsa> m_SourceQualTags;
 
     CValidator::TProgressCallback m_PrgCallback;
     CValidator::CProgressInfo     m_PrgInfo;
@@ -868,6 +868,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/05/28 16:23:45  shomrat
+* Minor corrections.
+*
 * Revision 1.28  2003/05/05 15:35:45  shomrat
 * Added ValidateCdsProductId
 *
