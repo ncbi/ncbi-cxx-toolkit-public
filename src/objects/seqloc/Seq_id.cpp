@@ -376,6 +376,81 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         return eAcc_unknown;
     }
 }
+/*Return seqid string with optional version for text seqid type 
+(default no version).*/ 
+const string CSeq_id::GetSeqIdString(bool with_version) const {
+    const CTextseq_id* tsid=GetTextseq_Id();
+    //text id
+    if (tsid) {
+        if (tsid->IsSetAccession()) {
+            if (with_version) {
+                int ver = 0;
+                if (tsid->IsSetVersion()) {
+                    ver = tsid->GetVersion();
+                }
+                return tsid->GetAccession() + "." + NStr::IntToString(ver);
+            } else {
+                return tsid->GetAccession();
+            }
+        }
+    } else { //non-text id
+        E_Choice the_type = Which();
+        switch (the_type) {   
+        case e_not_set:
+            return NcbiEmptyString;
+        case e_Local:
+            {
+                const CObject_id& oid = GetLocal();
+                if (oid.Which() == CObject_id::e_Id) {
+                    return NStr::IntToString(oid.GetId());
+                } else if (oid.Which() == CObject_id::e_Str) {
+                    return oid.GetStr(); 
+                }
+            }
+        case e_Gibbsq:
+            return NStr::IntToString(GetGibbsq());
+        case e_Gibbmt:
+            return NStr::IntToString(GetGibbmt());
+        case e_Giim:
+            return NStr::IntToString(GetGiim().GetId());
+        case e_General:
+            {
+                const CDbtag& dbt = GetGeneral();
+                if (dbt.GetTag().Which() == CObject_id::e_Id) {
+                    return NStr::IntToString(dbt.GetTag().GetId());
+                } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
+                    return dbt.GetTag().GetStr();
+                }
+            }
+        case e_Patent:
+            {
+                const CId_pat& idp = GetPatent().GetCit();
+                return idp.GetCountry() + (idp.GetId().IsNumber() ?
+                       idp.GetId().GetNumber() : idp.GetId().GetApp_number())
+                       + NStr::IntToString(GetPatent().GetSeqid());
+            }  
+        case e_Gi:
+            return NStr::IntToString(GetGi());
+        case e_Pdb:
+            {
+                const CPDB_seq_id& pid = GetPdb();
+                char chain = (char)pid.GetChain();
+                if (chain == '|') {
+                    return pid.GetMol().Get() + "|VB";
+                } else if (islower(chain) != 0) {
+                    return pid.GetMol().Get() + "-" + (char) toupper(chain);
+                } else if ( chain == '\0' ) {
+                    return pid.GetMol().Get() + "-";
+                } else {
+                    return pid.GetMol().Get() + "-" + chain; 
+                }
+            }
+        default:
+            return NcbiEmptyString;
+        }
+    }
+    return NcbiEmptyString;
+}
 
 
 void CSeq_id::WriteAsFasta(ostream& out)
@@ -826,6 +901,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.39  2002/10/22 20:19:14  jianye
+ * Added GetSeqIdString()
+ *
  * Revision 6.38  2002/10/18 16:03:08  ucko
  * +CA (eAcc_gb_est)
  *

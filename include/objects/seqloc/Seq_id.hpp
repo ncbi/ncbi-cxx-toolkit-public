@@ -236,6 +236,9 @@ public:
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
 
+    //Return seqid string with optional version for text seqid type
+    const string GetSeqIdString(bool with_version = false) const;
+
     // For use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id);
     static int BestRank(const CRef<CSeq_id>& id);
@@ -332,6 +335,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2002/10/22 20:18:30  jianye
+ * Added GetSeqIdString()
+ *
  * Revision 1.25  2002/10/03 18:51:11  clausen
  * Removed extra whitespace
  *
