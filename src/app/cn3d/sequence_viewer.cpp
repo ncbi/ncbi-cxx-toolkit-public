@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2002/04/22 18:01:55  thiessen
+* add default extension for alignment export
+*
 * Revision 1.49  2002/04/22 14:27:28  thiessen
 * add alignment export
 *
@@ -609,9 +612,20 @@ void SequenceViewer::ExportAlignment(bool asFASTA, bool asTEXT, bool asHTML)
     else if (asTEXT) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
     else if (asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
     wxString filename = wxFileSelector("Choose a file for alignment export:",
-        "", "alignment", extension, wildcard, wxSAVE | wxOVERWRITE_PROMPT, sequenceWindow);
+        "", "alignment", extension, wildcard, wxSAVE /*| wxOVERWRITE_PROMPT*/, sequenceWindow);
 
     if (filename.size() > 0) {
+
+        // add extension, check for existence
+        if (asFASTA && filename.Right(6) != ".fasta") filename += ".fasta";
+        else if (asTEXT && filename.Right(4) != ".txt") filename += ".txt";
+        else if (asHTML && filename.Right(5) != ".html") filename += ".html";
+        if (wxFileExists(filename)) {
+            wxString message;
+            message.Printf("The file %s already exists.\nDo you want to overwrite it?", filename.c_str());
+            if (wxMessageBox(message, "Overwrite?", wxYES_NO | wxICON_QUESTION) == wxNO)
+                return;
+        }
 
         // create output stream
         auto_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(filename.c_str(), IOS_BASE::out));
