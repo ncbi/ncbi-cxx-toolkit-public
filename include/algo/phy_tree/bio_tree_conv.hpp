@@ -37,8 +37,9 @@
 
 BEGIN_NCBI_SCOPE
 
+// --------------------------------------------------------------------------
 
-/// Functor to convert bio tree nodes to dynamic tree
+/// Visitor functor to convert bio tree nodes to dynamic tree
 ///
 /// @internal
 
@@ -131,8 +132,9 @@ void BioTreeConvert2Dynamic(TDynamicTree&      dyn_tree,
     TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(n)), func);
 }
 
+// --------------------------------------------------------------------------
 
-/// Functor to convert dynamic tree nodes to ASN.1 BioTree container
+/// Visitor functor to convert dynamic tree nodes to ASN.1 BioTree container
 ///
 /// @internal
 template<class TBioTreeContainer, class TDynamicTree>
@@ -206,7 +208,6 @@ private:
     TBioTreeContainer*   m_Container;
     TNodeList*           m_NodeList;
 };
-
 
 
 /// Convert Dynamic tree to ASN.1 BioTree container
@@ -324,6 +325,210 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 	} // ITERATE TNodeList
 }
 
+// --------------------------------------------------------------------------
+
+
+/// Taxon1 tree visitor functor. Converts taxonomy into dynamic tree.
+///
+/// @internal
+///
+template<class TITaxon4Each,    class TITaxon1Node, 
+         class TITreeIterator,  class TBioTreeContainer>
+class CTaxon1NodeConvertVisitor : public TITaxon4Each   
+{
+	typedef typename TITreeIterator::EAction  EAction;
+
+    typedef typename TBioTreeContainer::TNodes           TCNodeSet;
+    typedef typename TCNodeSet::Tdata                    TNodeList;
+    typedef typename TNodeList::value_type::element_type TCNode;
+    typedef typename TCNode::TFeatures                   TCNodeFeatureSet;
+    typedef typename TCNodeFeatureSet::Tdata             TNodeFeatureList;
+    typedef typename 
+       TNodeFeatureList::value_type::element_type        TCNodeFeature;
+
+public:
+	CTaxon1NodeConvertVisitor(TBioTreeContainer*  tree_container)
+	: m_TreeContainer(tree_container)
+	{
+        m_NodeList = &(tree_container->SetNodes().Set());
+	}
+
+	virtual 
+	EAction Execute(const TITaxon1Node* pNode)
+	{
+
+        TBioTreeNodeId uid = pNode->GetTaxId();
+
+        CRef<TCNode> cnode(new TCNode);
+        cnode->SetId(uid);
+
+		vector<int>::size_type psize = m_Parents.size();
+		if (psize != 0){
+			int parent_tax_id = m_Parents[psize - 1];
+			cnode->SetParent(parent_tax_id);
+		}
+
+
+        TCNodeFeatureSet& fset = cnode->SetFeatures();
+
+		// Convert features
+
+		// Name
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(1);
+			cfeat->SetValue(pNode->GetName());
+
+            fset.Set().push_back(cfeat);
+		}}
+
+		// Blast_name
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(2);
+			cfeat->SetValue(pNode->GetBlastName());
+
+            fset.Set().push_back(cfeat);
+		}}
+
+		// Rank
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(3);
+			int v = pNode->GetRank();
+
+			cfeat->SetValue(NStr::IntToString(v));
+
+            fset.Set().push_back(cfeat);
+		}}
+
+		// Division
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(4);
+			int v = pNode->GetDivision();
+
+			cfeat->SetValue(NStr::IntToString(v));
+
+            fset.Set().push_back(cfeat);
+		}}
+
+		// Genetic code
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(5);
+			int v = pNode->GetGC();
+
+			cfeat->SetValue(NStr::IntToString(v));
+
+            fset.Set().push_back(cfeat);
+		}}
+
+		// Mitocondrial genetic code
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(6);
+			int v = pNode->GetMGC();
+
+			cfeat->SetValue(NStr::IntToString(v));
+
+            fset.Set().push_back(cfeat);
+		}}
+
+		// Uncultured
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(6);
+			int v = pNode->IsUncultured();
+
+			cfeat->SetValue(NStr::IntToString(v));
+
+            fset.Set().push_back(cfeat);
+		}}
+
+        m_NodeList->push_back(cnode);
+
+
+		return ITreeIterator::eOk;
+	}
+	
+	virtual 
+	EAction LevelBegin(const TITaxon1Node* pParent)
+	{
+		m_Parents.push_back(pParent->GetTaxId());
+		return TITreeIterator::eOk; 
+	}
+	
+	virtual 
+	EAction LevelEnd(const TITaxon1Node* /*pParent*/)
+	{ 
+		m_Parents.pop_back();
+		return ITreeIterator::eOk; 
+	}
+private:
+	TBioTreeContainer*  m_TreeContainer;
+    TNodeList*          m_NodeList;
+	vector<int>         m_Parents; //<! Stack of parent tax ids
+};
+
+
+template<class TBioTreeContainer>
+void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
+								  unsigned int        feature_id,
+								  const string&       feature_name)
+{
+    typedef typename TBioTreeContainer::TFdict  TContainerDict;
+	typedef typename TContainerDict::Tdata::value_type::element_type TFeatureDescr;
+
+    TContainerDict& fd = tree_container.SetFdict();
+    TContainerDict::Tdata& feat_list = fd.Set();
+
+
+    CRef<TFeatureDescr> d(new TFeatureDescr);
+    d->SetId(feature_id);
+    d->SetName(feature_name);
+
+    feat_list.push_back(d);
+}
+
+
+
+template<class TBioTreeContainer, class TTaxon1>
+void Taxon1ConvertToBioTreeContainer(TBioTreeContainer&  tree_container,
+									 TTaxon1&            tax, 
+									 int                 tax_id)
+{
+	// Setup features dictionary
+
+	BioTreeAddFeatureToDictionary(tree_container, 1, "name");
+	BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
+	BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
+	BioTreeAddFeatureToDictionary(tree_container, 4, "division");
+	BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
+	BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
+	BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
+
+	// Convert nodes
+
+	class ITaxon1Node;
+	class ITreeIterator;
+
+	const ITaxon1Node* tax_node=0;
+	bool res = tax.LoadSubtree(tax_id, &tax_node);
+	if (res) {
+		CRef<ITreeIterator> tax_tree_iter(tax.GetTreeIterator());
+		tax_tree_iter->GoNode(tax_node);
+
+		typedef typename ITreeIterator::I4Each T4Each;
+
+		CTaxon1NodeConvertVisitor<T4Each, ITaxon1Node,
+			                      ITreeIterator, CBioTreeContainer>
+			tax_vis(&tree_container);
+		tax_tree_iter->TraverseDownward(tax_vis);
+	}
+
+}
+
 
 
 END_NCBI_SCOPE 
@@ -332,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/07 11:54:12  kuznets
+ * + converters for taxon1 protocol
+ *
  * Revision 1.2  2004/06/01 15:20:48  kuznets
  * + coversion function ASN.1 -> dynamic tree
  *
