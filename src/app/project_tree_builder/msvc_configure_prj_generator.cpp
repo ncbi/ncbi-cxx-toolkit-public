@@ -88,6 +88,9 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     project_tree_builder_sln_dir = 
         CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
     project_tree_builder_sln_dir = 
+        CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                              GetApp().GetRegSettings().m_ProjectsSubdir);
+    project_tree_builder_sln_dir = 
         CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
     project_tree_builder_sln_dir = 
         CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
@@ -203,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/13 17:07:16  gorelenk
+ * Changed implementation of class CMsvcConfigureProjectGenerator constructor.
+ *
  * Revision 1.10  2004/04/01 17:31:06  gorelenk
  * Changed "rebuild" to "build"
  * in class CMsvcConfigureProjectGenerator constructor .
