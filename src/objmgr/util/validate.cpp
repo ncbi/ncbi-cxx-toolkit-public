@@ -65,6 +65,7 @@
 
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -535,7 +536,7 @@ private:
     void ValidateSeqAnnot(const CSeq_annot& annot);
     void ValidateSeqSet(const CBioseq_set& set);
     void ValidateNucProt(const CBioseq_set& seqset, int nuccnt, int protcnt);
-    void ValidateSegSet(const CBioseq_set& seqset);
+    void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
     void ValidatePartsSet(const CBioseq_set& seqset);
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
@@ -576,9 +577,10 @@ private:
     void CheckForBothStrands(const CSeq_feat& feat);
     void CdTransCheck(const CSeq_feat& feat);
     void SpliceCheck (const CSeq_feat& feat);
-    void CheckForBadGeneOverlap (const CSeq_feat& feat);
-    void CheckForBadMRNAOverlap (const CSeq_feat& feat);
-    void CheckForCommonCDSProduct (const CSeq_feat& feat);
+    void SpliceCheckEx(const CSeq_feat& feat, bool check_all);
+    void CheckForBadGeneOverlap(const CSeq_feat& feat);
+    void CheckForBadMRNAOverlap(const CSeq_feat& feat);
+    void CheckForCommonCDSProduct(const CSeq_feat& feat);
     void CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
     bool IsEqualSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2) const;
     bool IsEqualSeqAnnotDesc(const CFeat_CI& fi1, const CFeat_CI& fi2) const;
@@ -591,6 +593,7 @@ private:
     typedef const CBioseq& TBioseq;
     typedef const CBioseq_set& TSet;
     typedef const CSeqdesc& TDesc;
+    typedef const CSeq_annot& TAnnot;
 
     // Posts errors.
     void ValidErr(EDiagSev sv, EErrType et, const string& msg,
@@ -603,6 +606,7 @@ private:
     void ValidErr(EDiagSev sv, EErrType et, const string& msg, TSet set);
     void ValidErr(EDiagSev sv, EErrType et, const string& msg, TSet set, 
         TDesc ds);
+    void ValidErr(EDiagSev sv, EErrType et, const string& msg, TAnnot an);
 
     // legal dbxref database strings
     static const char * legalDbXrefs [];
@@ -1666,6 +1670,11 @@ void CValidError_impl::ValidErr
         ValidErr (sv, et, msg, *set);
         return;
     }
+    const CSeq_annot* annot = dynamic_cast < const CSeq_annot* > (&obj);
+    if (annot != 0) {
+        ValidErr (sv, et, msg, *annot);
+        return;
+    }
 }
 
 
@@ -1809,6 +1818,22 @@ void CValidError_impl::ValidErr
     string msg(message + " DESCRIPTOR: ");
     ds.GetLabel(&msg, CSeqdesc::eBoth);
     ValidErr(sv, et, msg, set);
+}
+
+
+void CValidError_impl::ValidErr
+(EDiagSev sv,
+ EErrType et,
+ const string&   message,
+ TAnnot    an)
+{
+    // Append Annotation label
+    string msg(message + " ANNOTAION: ");
+
+    // !!! need to decide on the message
+
+    m_Errors->push_back(CRef<CValidErrItem>
+        (new CValidErrItem(sv, et, msg, an)));
 }
 
 
@@ -2282,7 +2307,7 @@ void CValidError_impl::ValidateNucProt
     iterate( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
         if ( (**se_list_it).IsSeq() ) {
             const CBioseq& seq = (**se_list_it).GetSeq();
-            if ( s_isAa(seq) ) {
+            if ( s_isNa(seq) ) {
                 // IfInGPSmustBeMrnaProduct (vsp, bsp);   !!!
             }
         }
@@ -2306,8 +2331,13 @@ void CValidError_impl::ValidateNucProt
 }
 
 
-void CValidError_impl::ValidateSegSet(const CBioseq_set& seqset)
+void CValidError_impl::ValidateSegSet(const CBioseq_set& seqset, int segcnt)
 {
+    if ( segcnt == 0 ) {
+        ValidErr(eDiag_Error, eErr_SEQ_PKG_SegSetProblem,
+            "No segmented Bioseq in segset", seqset);
+    }
+
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
     
@@ -2539,7 +2569,7 @@ void CValidError_impl::ValidateSeqSet(const CBioseq_set& seqset)
         break;
 
     case CBioseq_set::eClass_segset:
-        ValidateSegSet(seqset);
+        ValidateSegSet(seqset, segcnt);
         break;
 
     case CBioseq_set::eClass_parts:
@@ -2568,9 +2598,25 @@ void CValidError_impl::ValidateSeqSet(const CBioseq_set& seqset)
 }
 
 
-void CValidError_impl::ValidateSeqAnnot(const CSeq_annot& ) //annot)
-{
-    // !!!
+void CValidError_impl::ValidateSeqAnnot(const CSeq_annot& annot)
+{   
+    if ( !annot.GetData().IsAlign() ) return;
+    if ( !annot.IsSetDesc() ) return;
+    
+    iterate( list< CRef< CAnnotdesc > >, iter, annot.GetDesc().Get() ) {
+        
+        if ( (*iter)->IsUser() ) {
+            const CObject_id& oid = (*iter)->GetUser().GetType();
+            if ( oid.IsStr() ) {
+                if ( oid.GetStr() == "Blast Type" ) {
+                    ValidErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
+                        "Record contains BLAST alignments", annot); // !!!
+                    
+                    break;
+                }
+            }
+        }
+    } // iterate
 }
 
 
@@ -2594,8 +2640,18 @@ void CValidError_impl::ValidateSeqFeatContext(const CBioseq& ) //seq)
 
 void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 {
-    //ValidateSeqloc(feat.GetLocation (), ???, "Location");  !!!
-    //ValidateSeqloc(feat.GetProduct (), ???, "Product");    !!!
+    const CBioseq* seq = 0;
+    CBioseq_Handle bsh;
+
+    bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+    seq = &(bsh.GetBioseq());
+    ValidateSeqLoc(feat.GetLocation(), *seq, "Location"); 
+    
+    if ( feat.IsSetProduct() ) {
+        bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+        seq = &(bsh.GetBioseq());
+        ValidateSeqLoc(feat.GetProduct(), *seq, "Product");
+    }
 
     ValidateFeatPartialness(feat);
     
@@ -3542,7 +3598,7 @@ public:
 
 size_t CValidError_impl::SearchNoCase
 (const string& text,
- const string &pat) const {
+ const string& pat) const {
     string str = text, pattern = pat;
     NStr::ToLower(str);
     NStr::ToLower(pattern);
@@ -3619,7 +3675,7 @@ void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (bioseq);
 
     bool fruit_fly = false;
-    const string &taxname = 
+    const string& taxname = 
         CSeqdesc_CI(bsh, CSeqdesc::e_Source)->GetSource().GetOrg().GetTaxname();
     if ( NStr::CompareNocase(taxname, "Drosophila melanogaster") == 0 ) {
         fruit_fly = true;
@@ -4825,7 +4881,7 @@ void CValidError_impl::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     const CRNA_ref::EType& rna_type = rna.GetType ();
 
     if ( rna_type == CRNA_ref::eType_mRNA ) {
-        // 
+        // !!! 
     }
 
     if ( rna.GetExt ().Which() == CRNA_ref::C_Ext::e_TRNA ) {
@@ -4864,6 +4920,22 @@ void CValidError_impl::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                     "RNA type 0 (unknown) not supported", feat);
     }
 
+}
+
+
+static bool s_IsPlastid(int genome)
+{
+    if ( genome == CBioSource::eGenome_chloroplast  ||
+         genome == CBioSource::eGenome_chromoplast  ||
+         genome == CBioSource::eGenome_plastid      ||
+         genome == CBioSource::eGenome_cyanelle     ||
+         genome == CBioSource::eGenome_apicoplast   ||
+         genome == CBioSource::eGenome_leucoplast   ||
+         genome == CBioSource::eGenome_proplastid  ) { 
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -4906,68 +4978,39 @@ void CValidError_impl::ValidateCdregion (
         ValidErr (eDiag_Warning, eErr_SEQ_FEAT_PsuedoCdsHasProduct,
             "A pseudo coding region should not have a product", feat);
     }
-
+    
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation ());
-    for (CSeqdesc_CI diter (bsh, CSeqdesc::e_Source); diter; ++diter) {
-        const CBioSource& src = diter->GetSource ();
-        int genome = 0;
-        int biopgencode = 0;
-        int cdsgencode = 0;
-        bool plastid = false;
-        if (src.IsSetGenome ()) {
-            genome = src.GetGenome ();
-        }
-        const COrg_ref& org = src.GetOrg ();
-        if (org.IsSetOrgname ()) {
-            const COrgName& orn = org.GetOrgname ();
-            if (genome == CBioSource::eGenome_kinetoplast ||
-                genome == CBioSource::eGenome_mitochondrion) {
-                if (orn.IsSetMgcode ()) {
-                    biopgencode = orn.GetMgcode ();
-                }
-            } else if (genome == CBioSource::eGenome_chloroplast ||
-                       genome == CBioSource::eGenome_chromoplast ||
-                       genome == CBioSource::eGenome_plastid ||
-                       genome == CBioSource::eGenome_cyanelle ||
-                       genome == CBioSource::eGenome_apicoplast ||
-                       genome == CBioSource::eGenome_leucoplast ||
-                       genome == CBioSource::eGenome_proplastid) {
-              biopgencode = 11;
-              plastid = true;
-            } else {
-                if (orn.IsSetGcode ()) {
-                    biopgencode = orn.GetGcode ();
-                }
-            }
-        }
+    CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
+    if ( diter ) {
+        const CBioSource& src = diter->GetSource();
+        
+        int biopgencode = src.GetGcode();
+        
         if (cdregion.IsSetCode ()) {
-            const CGenetic_code& gc = cdregion.GetCode ();
-            iterate (CGenetic_code::Tdata, gcd, gc.Get ()) {
-                switch ((*gcd)->Which ()) {
-                    case CGenetic_code::C_E::e_Id :
-                        cdsgencode = (*gcd)->GetId ();
-                        break;
+            int cdsgencode = cdregion.GetCode().GetId();
+            
+            if ( biopgencode != cdsgencode ) {
+                int genome = 0;
+                
+                if ( src.IsSetGenome() ) {
+                    genome = src.GetGenome();
                 }
-            }
-            if (biopgencode != cdsgencode) {
-                if (plastid) {
+
+                if ( s_IsPlastid(genome) ) {
                     ValidErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
-                              "Genetic code conflict between CDS (code " +
-                              NStr::IntToString (cdsgencode) +
-                              ") and BioSource.genome biological context (" +
-                              plastidtxt [genome] + ") (uses code 11)", feat);
+                        "Genetic code conflict between CDS (code " +
+                        NStr::IntToString (cdsgencode) +
+                        ") and BioSource.genome biological context (" +
+                        plastidtxt [genome] + ") (uses code 11)", feat);
                 } else {
                     ValidErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
-                              "Genetic code conflict between CDS (code " +
-                              NStr::IntToString (cdsgencode) +
-                              ") and BioSource (code " +
-                              NStr::IntToString (biopgencode) + ")", feat);
+                        "Genetic code conflict between CDS (code " +
+                        NStr::IntToString (cdsgencode) +
+                        ") and BioSource (code " +
+                        NStr::IntToString (biopgencode) + ")", feat);
                 }
             }
         }
-
-        // only need closest one, not all, so break
-        break;
     }
 
     CheckForBothStrands (feat);
@@ -4992,30 +5035,114 @@ bool CValidError_impl::OverlappingGeneIsPseudo (const CSeq_feat& feat)
 
 void CValidError_impl::CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
 {
-    // !!!
+    // Make sure AA coding is ncbieaa.
+    if ( trna.GetAa().Which() != CTrna_ext::C_Aa::e_Ncbieaa ) {
+        ValidErr (eDiag_Error, eErr_SEQ_FEAT_TrnaCodonWrong,
+            "tRNA AA coding is not match ncbieaa", feat);
+        return;
+    }
+    
+    // Retrive the Genetic code id for the tRna
+    int gcode = 0;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+    for ( CSeqdesc_CI diter (bsh, CSeqdesc::e_Source); diter; ++diter) {
+        gcode = diter->GetSource().GetGcode();
+        break; // need only the closest biosoure.
+    }
+    
+    const string& ncbieaa = CGen_code_table::GetNcbieaa(gcode);
+    if ( ncbieaa.length() != 64 ) {
+        return;  // !!!  need to issue a warning/error?
+    }
+    
+    iterate( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
+        if ( *iter < 64 ) {  // 0-63 = codon,  255=no data in cell
+            char taa = ncbieaa[*iter];
+            char  aa = trna.GetAa().GetNcbieaa();
+            if ( aa > 0 && aa != 255 ) {
+                if ( taa != aa ) {
+                    EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
+                    ValidErr (sev, eErr_SEQ_FEAT_TrnaCodonWrong,
+                        "tRNA codon does not match genetic code", feat);
+                }
+            }
+        }
+    }
 }
 
 
-void CValidError_impl::CheckForCommonCDSProduct (const CSeq_feat& feat)
+void CValidError_impl::CheckForCommonCDSProduct(const CSeq_feat& feat)
 {
     // !!!
 }
 
 
-void CValidError_impl::CheckForBadMRNAOverlap (const CSeq_feat& feat)
+void CValidError_impl::CheckForBadMRNAOverlap(const CSeq_feat& feat)
 {
     // !!!
 }
 
-void CValidError_impl::CheckForBadGeneOverlap (const CSeq_feat& feat)
+void CValidError_impl::CheckForBadGeneOverlap(const CSeq_feat& feat)
 {
+    // !!!
+}
+
+
+void CValidError_impl::SpliceCheckEx(const CSeq_feat& feat, bool check_all)
+{
+    // !!!
+
+    // suppress if NCBISubValidate
+    //if (GetAppProperty ("NcbiSubutilValidation") != NULL)
+    //    return;
+
+    // specific biological exceptions suppress check
+    if ( feat.GetExcept() ) {
+        const string& except_text = feat.GetExcept_text();
+        if ( SearchNoCase(except_text, "ribosomal slippage") != string::npos        ||
+             SearchNoCase(except_text, "ribosome slippage") != string::npos         ||
+             SearchNoCase(except_text, "artificial frameshift") != string::npos     ||
+             SearchNoCase(except_text, "non-consensus splice site") != string::npos ||
+             SearchNoCase(except_text, "nonconsensus splice site") != string::npos) {
+            return;
+        }
+    }
+
+    const CSeq_loc& head = feat.GetLocation();
+
+    int total = 0;
+    /*
+    slp = NULL;
+    
+    while ((slp = SeqLocFindPart (head, slp, EQUIV_IS_ONE)) != NULL) {
+        total++;
+        if (slp->choice == SEQLOC_EQUIV)
+            return;                   // bail on this one
+        if (total == 1)
+            strand = SeqLocStrand (slp);
+        else {
+            if (strand != SeqLocStrand (slp)) // bail on mixed strand
+                return;
+        }
+    }
+    */
+
+    if ( !check_all  &&  total < 2 ) {
+        return;
+    }
+    if ( total < 1 ) {
+        return;
+    }
+
+    // genomic product set or NT_ contig always relaxes to SEV_WARNING
+
     // !!!
 }
 
 
 void CValidError_impl::SpliceCheck (const CSeq_feat& feat)
 {
-    // !!!
+    SpliceCheckEx(feat, false);
 }
 
 
@@ -5836,6 +5963,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2002/11/26 18:56:37  shomrat
+* Implement CheckTrnaCodons
+*
 * Revision 1.28  2002/11/19 19:54:50  shomrat
 * Bug fix in ValidatePopSet
 *
