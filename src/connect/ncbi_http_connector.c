@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/01/23 23:11:20  lavr
+ * Status virtual method implemented
+ *
  * Revision 6.7  2001/01/11 16:38:17  lavr
  * free(connector) removed from s_Destroy function
  * (now always called from outside, in METACONN_Remove)
@@ -60,6 +63,7 @@
  * ==========================================================================
  */
 
+#include "ncbi_priv.h"
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
@@ -232,8 +236,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
                  uuu->info->args, uuu->info->req_method,
                  BUF_Size(uuu->buf), uuu->c_timeout, uuu->w_timeout,
                  uuu->info->http_user_header,
-                 (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs));
-            
+                 (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs),
+                 uuu->info->debug_printout == eDebugPrintout_Data ? eOn :
+                 uuu->info->debug_printout == eDebugPrintout_None ? eOff :
+                 eDefault);
+
             uuu->conn_count++;
             if (uuu->conn_count/(i + 1) > 3)
                 m = (m*2)/3;
@@ -280,6 +287,8 @@ extern "C" {
                                     size_t          size,
                                     size_t*         n_read,
                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status (CONNECTOR       connector,
+                                    EIO_Event       dir);
     static EIO_Status  s_VT_Close  (CONNECTOR       connector,
                                     const STimeout* timeout);
 
@@ -501,7 +510,7 @@ static EIO_Status s_VT_Read
                     
                     if (uuu->info->debug_printout) {
                         fprintf(stderr, "\n\
------ [BEGIN] HTTP Header(%ld bytes follow \\n%s) -----\n",
+----- [BEGIN] HTTP Header(%ld bytes followed by \\n%s) -----\n",
                                 (long) hdrsize,
                                 header ? "" : " {allocation failed}");
                         if (!header) {
@@ -588,13 +597,21 @@ static EIO_Status s_VT_Read
             status = eIO_Unknown;
         }
 
-        if (uuu->info->debug_printout && status != eIO_Success) {
-            fprintf(stderr, "\nHTTP::Read()  Cannot URL-decode data!\n");
-        }
+        if (status != eIO_Success)
+            CORE_LOG(eLOG_Error, "Cannot URL-decode data");
 
         free(peek_buf);
         return status;
     }}
+}
+
+
+static EIO_Status s_VT_Status
+(CONNECTOR connector,
+ EIO_Event dir)
+{
+    SHttpConnector* uuu = (SHttpConnector*) connector->handle;
+    return uuu->sock ? SOCK_Status(uuu->sock, dir) : eIO_Success;
 }
 
 

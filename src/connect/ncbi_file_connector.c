@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/23 23:11:20  lavr
+ * Status virtual method implemented
+ *
  * Revision 6.3  2001/01/11 16:38:16  lavr
  * free(connector) removed from s_Destroy function
  * (now always called from outside, in METACONN_Remove)
@@ -92,6 +95,8 @@ extern "C" {
                                     size_t          size,
                                     size_t*         n_read,
                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status (CONNECTOR       connector,
+                                    EIO_Event       dir);
     static EIO_Status  s_VT_Close  (CONNECTOR       connector,
                                     const STimeout* timeout);
     static void        s_Setup     (SMetaConnector* meta,
@@ -223,6 +228,20 @@ static EIO_Status s_VT_Flush
 }
 
 
+static EIO_Status s_VT_Status
+(CONNECTOR connector,
+ EIO_Event dir)
+{
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
+    assert(dir == eIO_Read || dir == eIO_Write);
+    if (dir == eIO_Read)
+        return feof(xxx->finp) ? eIO_Closed :
+        (ferror(xxx->finp) ? eIO_Unknown : eIO_Success);
+    else
+        return ferror(xxx->fout) ?  eIO_Unknown : eIO_Success;
+}
+
+
 static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -248,6 +267,7 @@ static void s_Setup
     CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
     CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
     CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
+    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
     CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
 #ifdef IMPLEMENTED__CONN_WaitAsync
     CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
