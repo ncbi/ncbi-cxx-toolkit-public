@@ -41,8 +41,8 @@
 int main(int argc, const char* argv[])
 {
     static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
-    const char* service = argc > 1 ? argv[1] : "bounce";
-    const char* host = argc > 2 ? argv[2] : "www.ncbi.nlm.nih.gov";
+    const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
+    const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
     CONNECTOR connector;
     SConnNetInfo *info;
     EIO_Status status;
@@ -60,6 +60,7 @@ int main(int argc, const char* argv[])
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = 0;
     }
+    strcpy(info->args, "testarg=testval&service=none");
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info, 0);
     ConnNetInfo_Destroy(info);
@@ -81,21 +82,23 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Error writing to connection");
     }
 
-    if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
-        CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error waiting for reading");
-    }
-
-    status = CONN_Read(conn, ibuf, n, &n, eIO_ReadPersist);
-    if (status != eIO_Success) {
-        if (!n)
+    for (;;) {
+        if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
             CONN_Close(conn);
-        CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Error reading from connection");
-    }
+            CORE_LOG(eLOG_Fatal, "Error waiting for reading");
+        }
 
-    CORE_LOGF(eLOG_Note,
-              ("%d bytes read from service (%s):\n%.*s",
-               (int) n, CONN_GetType(conn), (int) n, ibuf));
+        status = CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPersist);
+        if (n) {
+            CORE_DATAF(ibuf, n, ("%lu bytes read from service (%s):",
+                                 (unsigned long) n, CONN_GetType(conn)));
+        }
+        if (status != eIO_Success) {
+            if (status != eIO_Closed)
+                CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Read error");
+            break;
+        }
+    }
     CONN_Close(conn);
 
 #if 0
@@ -133,6 +136,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/04/04 21:01:06  lavr
+ * Modify readout procedure
+ *
  * Revision 6.22  2002/10/28 15:47:12  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
