@@ -97,7 +97,7 @@ void CThreadedServer::Run(void)
                 if (pool.IsFull()  &&  m_TemporarilyStopListening) {
                     lsock.Close();
                 }
-            } catch (CBlockingQueueException) {
+            } catch (CBlockingQueueException&) {
                 _ASSERT(!m_TemporarilyStopListening);
                 ProcessOverflow(sock.GetSOCK());
             }
@@ -119,6 +119,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.14  2004/10/18 18:18:20  ucko
+ * Catch exceptions by reference rather than value.
+ *
  * Revision 6.13  2004/10/08 12:41:49  lavr
  * Cosmetics
  *
