@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/09 15:35:20  lavr
+ * Removed header <unistd.h>, unknown on WinNT
+ *
  * Revision 6.5  2001/01/08 23:13:19  lavr
  * C/C++ -> C only
  *
@@ -58,7 +61,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 int main(int argc, const char* argv[])
 {
@@ -84,8 +86,6 @@ int main(int argc, const char* argv[])
         printf("Failed to create service connector\n");
         exit(-1);
     }
-
-    /* sleep(7); */
 
     if (CONN_Create(connector, &conn) != eIO_Success) {
         printf("Connection creation failed\n");
