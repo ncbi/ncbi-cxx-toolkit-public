@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/12 22:57:34  kimelman
+* warnings cleanup(linux-gcc)
+*
 * Revision 1.9  2002/04/12 21:10:35  kimelman
 * traps for coredumps
 *
@@ -113,21 +116,21 @@ using namespace objects;
 class CTestThread : public CThread
 {
 public:
-    CTestThread(int id, CObjectManager& objmgr, CScope& scope,int start,int stop);
+    CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop);
   
 protected:
     virtual void* Main(void);
 
 private:
-  int m_mode;
+  unsigned m_mode;
   CRef<CScope> m_Scope;
   CRef<CObjectManager> m_ObjMgr;
   int m_Start;
   int m_Stop;
 };
 
-CTestThread::CTestThread(int id, CObjectManager& objmgr, CScope& scope,int start,int stop)
-    : m_mode(id), m_ObjMgr(&objmgr), m_Scope(&scope), m_Start(start), m_Stop(stop)
+CTestThread::CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop)
+    : m_mode(id), m_Scope(&scope), m_ObjMgr(&objmgr), m_Start(start), m_Stop(stop)
 {
     //### Initialize the thread
 }
@@ -190,14 +193,14 @@ class CTestApplication : public CNcbiApplication
 {
 public:
     virtual int Run(void);
-    int Test(const int test_id,const int thread_count);
+    int Test(const unsigned test_id,const unsigned thread_count);
 };
 
 const unsigned c_TestFrom = 1;
 const unsigned c_TestTo   = 201;
 const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
-int CTestApplication::Test(const int test_mode,const int thread_count)
+int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
 {
   CRef<CTestThread>  *thr = new CRef<CTestThread>[thread_count];
   int step= c_GI_count/thread_count;
@@ -213,20 +216,20 @@ int CTestApplication::Test(const int test_mode,const int thread_count)
 
   scope->AddDefaults();
   
-  for (int i=0; i<thread_count; ++i)
+  for (unsigned i=0; i<thread_count; ++i)
     {
       thr[i] = new CTestThread(test_mode, *pOm, *scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
       thr[i]->Run();
     }
   
-  for (unsigned int i=0; i<thread_count; i++) {
+  for (unsigned i=0; i<thread_count; i++) {
     thr[i]->Join();
   }
   
   scope->ResetHistory();
   
   // Destroy all threads
-  for (unsigned int i=0; i<thread_count; i++) {
+  for (unsigned i=0; i<thread_count; i++) {
     thr[i].Reset();
   }
   
@@ -236,19 +239,19 @@ int CTestApplication::Test(const int test_mode,const int thread_count)
 
 int CTestApplication::Run()
 {
-  int timing[4/*threads*/][2/*om*/][3/*scope*/];
-  int tc = sizeof(timing)/sizeof(*timing);
+  unsigned timing[4/*threads*/][2/*om*/][3/*scope*/];
+  unsigned tc = sizeof(timing)/sizeof(*timing);
 
-  CPubseqReader q(1);
+  //CPubseqReader q(1);
   memset(timing,0,sizeof(timing));
   
   LOG_POST("START: " << time(0) );;
   
-  for(int thr=tc-1,i=0 ; thr >= 0 ; --thr)
-    for(int global_om=0;global_om<=(thr>0?1:0); ++global_om)
-      for(int global_scope=0;global_scope<=(thr==0?1:(global_om==0?1:2)); ++global_scope)
+  for(unsigned thr=tc-1,i=0 ; thr >= 0 ; --thr)
+    for(unsigned global_om=0;global_om<=(thr>0?1:0); ++global_om)
+      for(unsigned global_scope=0;global_scope<=(thr==0?1:(global_om==0?1:2)); ++global_scope)
         {
-          int mode = (global_om<<2) + global_scope ;
+          unsigned mode = (global_om<<2) + global_scope ;
           LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
                    ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")));
           time_t start=time(0);
@@ -258,9 +261,9 @@ int CTestApplication::Run()
           LOG_POST("Test(" << i++ << ") completed  ===============");
         }
   
-  for(int global_om=0;global_om<=1; ++global_om)
-    for(int global_scope=0;global_scope<=2; ++global_scope)
-      for(int thr=0; thr < tc ; ++thr)
+  for(unsigned global_om=0;global_om<=1; ++global_om)
+    for(unsigned global_scope=0;global_scope<=2; ++global_scope)
+      for(unsigned thr=0; thr < tc ; ++thr)
         {
           LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
                    ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
