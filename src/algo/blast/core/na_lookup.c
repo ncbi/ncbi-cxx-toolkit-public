@@ -297,7 +297,7 @@ Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
    Boolean full_byte_scan = (lookup->scan_step % COMPRESSION_RATIO == 0);
    
    abs_start = subject->sequence;
-   s_start = abs_start + start_offset;
+   s_start = abs_start + start_offset/COMPRESSION_RATIO;
    /* s_end points to the place right after the last full sequence byte */ 
    s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
    index = 0;

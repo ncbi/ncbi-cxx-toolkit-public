@@ -656,7 +656,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
    Uint1Ptr q_start = query->sequence;
    Uint1Ptr q_end = query->sequence + query->length;
    Int4 hitsfound, total_hits = 0;
-   Uint4 compressed_wordsize, reduced_word_length;
+   Uint4 word_size, compressed_wordsize, reduced_word_length;
    Uint4 extra_bytes_needed;
    Uint2 extra_bases, left, right;
    Uint1Ptr q;
@@ -664,7 +664,8 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
    Int4 max_bases;
    Int4 bases_in_last_byte;
 
-   last_start = subject->length - lookup->word_length;
+   word_size = COMPRESSION_RATIO*lookup->wordsize;
+   last_start = subject->length - word_size;
    s_end = subject->sequence + subject->length/COMPRESSION_RATIO;
    start_offset = 0;
    bases_in_last_byte = subject->length % COMPRESSION_RATIO;
@@ -672,8 +673,8 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
    compressed_wordsize = lookup->reduced_wordsize;
    extra_bytes_needed = lookup->wordsize - compressed_wordsize;
    reduced_word_length = COMPRESSION_RATIO*compressed_wordsize;
-   extra_bases = lookup->word_length - COMPRESSION_RATIO*lookup->wordsize;
-   last_end = subject->length - (lookup->word_length - reduced_word_length);
+   extra_bases = lookup->word_length - word_size;
+   last_end = subject->length - (word_size - reduced_word_length);
 
    while (start_offset <= last_start) {
       /* Pass the last word ending offset */
@@ -713,7 +714,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
 
 	 if (left + right >= extra_bases) {
 	    /* Check if this diagonal has already been explored. */
-	    BlastnExtendInitialHit(query, subject, word_params, matrix, ewp,
+	    BlastnExtendInitIalhit(query, subject, word_params, matrix, ewp,
                q_offsets[i], s_offsets[i] - reduced_word_length - left, 
                s_offsets[i], init_hitlist);
          }

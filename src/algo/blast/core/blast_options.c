@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.5  2003/04/11 22:35:48  dondosha
+ * Minor corrections for blastn
+ *
  * Revision 1.4  2003/04/03 22:57:50  dondosha
  * Uninitialized variable fix
  *
@@ -751,6 +754,7 @@ LookupTableOptionsNew(const Char *program, Boolean is_megablast, Int4 threshold,
 		{
 			(*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
 			(*options)->lut_type = MB_LOOKUP_TABLE;
+                        (*options)->max_positions = INT4_MAX;
 		}
 		else
 		{

@@ -522,13 +522,11 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
       hsp_start_is_contained = FALSE;
       hsp_end_is_contained = FALSE;
       hsp = hsp_array[index];
-      if (hsp->context) {
-         context_offset = query_info->context_offsets[hsp->context];
-         query = &(query_blk->sequence[context_offset]);
-         query_length =
-            query_info->context_offsets[hsp->context+1] - context_offset - 1;
-      }
-
+      context_offset = query_info->context_offsets[hsp->context];
+      query = &(query_blk->sequence[context_offset]);
+      query_length =
+         query_info->context_offsets[hsp->context+1] - context_offset - 1;
+      
       for (index1=0; index1<index; index1++) {
          hsp_start_is_contained = FALSE;
          hsp_end_is_contained = FALSE;
@@ -910,6 +908,9 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
                   last_seqalign = last_seqalign->next);
          }
       }
+      /* Re-sort the hit lists according to their best e-values, because
+         they could have changed */
+      
    }
 
    return status;
