@@ -37,25 +37,50 @@
 
 BEGIN_NCBI_SCOPE
 
+
+static unsigned char donor[splice_type_count][2] = {
+    {'G','T'}, {'G','C'}, {'A','T'}
+};
+
+static unsigned char acceptor[splice_type_count][2] = {
+    {'A','G'}, {'A','G'}, {'A','C'}
+};
+
+
 CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
     throw(CNWAlignerException)
     : CNWAligner(seq1, len1, seq2, len2, eNucl),
-    m_Wi(GetDefaultWi()),
     m_IntronMinSize(GetDefaultIntronMinSize())
 {
+    for(unsigned char st = 0; st < splice_type_count; ++st) {
+        m_Wi[st] = GetDefaultWi(st);
+    }
+}
+
+CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
+    throw(CNWAlignerException)
+{
+    switch(splice_type) {
+    default: return -10;
+    }
+    NCBI_THROW(
+               CNWAlignerException,
+               eInvalidSpliceTypeIndex,
+               "Invalid splice type index");
 }
 
 
 // evaluate score for each possible alignment;
 // fill out backtrace matrix
-// bit coding (six bits per value): D E Ec Fc Acc Dnr
+// bit coding (eight bits per value): D E Ec Fc Acc Dnr
 // D:    1 if diagonal; 0 - otherwise
 // E:    1 if space in 1st sequence; 0 if space in 2nd sequence
 // Ec:   1 if gap in 1st sequence was extended; 0 if it is was opened
 // Fc:   1 if gap in 2nd sequence was extended; 0 if it is was opened
 // Acc:  1 if acceptor; 0 - otherwise
 // Dnr:  1 if the best donor (so far from left to right); 0 otherwise
+// The two remaining higher bits indicate splice type, if any
 
 const unsigned char kMaskFc    = 0x01;
 const unsigned char kMaskEc    = 0x02;
@@ -107,10 +132,14 @@ int CNWAlignerMrna2Dna::Run()
     TScore E, G, n0;
     unsigned char tracer;
 
-    size_t* jAllDonors = new size_t [N2];
-    TScore* vAllDonors = new TScore [N2];
-    size_t  jTail, jHead;
-    TScore  vBestDonor;
+    size_t* jAllDonors [splice_type_count];
+    TScore* vAllDonors [splice_type_count];
+    for(unsigned char st = 0; st < splice_type_count; ++st) {
+        jAllDonors[st] = new size_t [N2];
+        vAllDonors[st] = new TScore [N2];
+    }
+    size_t  jTail[splice_type_count], jHead[splice_type_count];
+    TScore  vBestDonor [splice_type_count];
 
     size_t i, j, k0;
     char ci;
@@ -122,8 +151,10 @@ int CNWAlignerMrna2Dna::Run()
         backtrace_matrix[k++] = kMaskFc;
         ci = seq1[i];
 
-        jTail = jHead = 0;
-        vBestDonor = kInfMinus;
+        for(unsigned char st = 0; st < splice_type_count; ++st) {
+            jTail[st] = jHead[st] = 0;
+            vBestDonor[st] = kInfMinus;
+        }
 
         if(i == N1 - 1 && bFreeGapRight1) {
                 wg1 = ws1 = 0;
@@ -178,51 +209,64 @@ int CNWAlignerMrna2Dna::Run()
                 }
             }
 
-            // check the best donor
-            if(jTail > jHead)  {
-                if(j - jAllDonors[jHead] >= m_IntronMinSize) {
-                    if(vAllDonors[jHead] > vBestDonor) {
-                        vBestDonor = vAllDonors[jHead];
-                        backtrace_matrix[k0 + jAllDonors[jHead]] |= kMaskDnr;
+            // find out if there are new donors
+            for(unsigned char st = 0; st < splice_type_count; ++st) {
+
+                if(jTail[st] > jHead[st])  {
+                    if(j - jAllDonors[st][jHead[st]] >= m_IntronMinSize) {
+                        if(vAllDonors[st][jHead[st]] > vBestDonor[st]) {
+                            vBestDonor[st] = vAllDonors[st][jHead[st]];
+                            backtrace_matrix[k0 + jAllDonors[st][jHead[st]]]
+                                |= kMaskDnr | st << 6;
+                        }
+                        ++(jHead[st]);
                     }
-                    ++jHead;
                 }
             }
+                
+            // check splice signal
+            for(unsigned char st = 0; st < splice_type_count; ++st) {
 
-            if(seq2[j-1] == 'A' && seq2[j] == 'G' // acceptor
-               && i < N1 - 1 && vBestDonor > kInfMinus) {
-                TScore vAcc = vBestDonor + m_Wi;
-                if(vAcc > V) {
-                    V = vAcc;
-                    tracer = kMaskAcc;
+                if(seq2[j-1] == acceptor[st][0] && seq2[j] == acceptor[st][1]
+                   && i < N1 - 1 && vBestDonor[st] > kInfMinus) {
+                    TScore vAcc = vBestDonor[st] + m_Wi[st];
+                    if(vAcc > V) {
+                        V = vAcc;
+                        tracer = kMaskAcc | st << 6;
+                    }
                 }
             }
-
+            
             backtrace_matrix[k] = tracer;
             
             // detect donor candidate
-            if( j < N2 - 2 && i < N1 - 1 &&
-                seq2[j+1] == 'G' && seq2[j+2] == 'T' )  {
-
-                jAllDonors[jTail] = j;
-                vAllDonors[jTail++] = V;
+            for(unsigned char st = 0; st < splice_type_count; ++st) {
+                if( j < N2 - 2 && i < N1 - 1 &&
+                    seq2[j+1] == donor[st][0] && seq2[j+2] == donor[st][1] ) {
+                    jAllDonors[st][jTail[st]] = j;
+                    vAllDonors[st][jTail[st]] = V;
+                    ++(jTail[st]);
+                }
             }
-            
         }
 
         pV[j] = V;
     }
-    
-    x_DoBackTrace(backtrace_matrix);
 
-    delete[] vAllDonors;
-    delete[] jAllDonors;
-    delete[] backtrace_matrix;
+    for(unsigned char st = 0; st < splice_type_count; ++st) {
+        delete[] jAllDonors[st];
+        delete[] vAllDonors[st];
+    }
     delete[] rowV;
     delete[] rowF;
+   
+    x_DoBackTrace(backtrace_matrix);
+
+    delete[] backtrace_matrix;
 
     return V;
 }
+
 
 // perform backtrace step;
 // create transcript in member variable
@@ -240,12 +284,16 @@ void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace)
         unsigned char Key = backtrace[k];
 
         if(Key & kMaskAcc) {  // insert intron
-            while(!(Key & kMaskDnr)) {
-                m_Transcript.push_back(eIntron);
-                Key = backtrace[--k];
+            unsigned char acc_type = Key & 0xC0, dnr_type = ~acc_type;
+            for( ; acc_type != dnr_type; dnr_type = Key & 0xC0 ) {
+                Key = 0; // make sure we enter the loop
+                while(!(Key & kMaskDnr)) {
+                    m_Transcript.push_back(eIntron);
+                    Key = backtrace[--k];
+                }
             }
         }
-
+        
         if (Key & kMaskD) {
             m_Transcript.push_back(eMatch);  // or eReplace
             k -= N2 + 1;
@@ -278,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/03/25 22:06:01  kapustin
+ * Support non-canonical splice signals
+ *
  * Revision 1.9  2003/03/18 15:15:51  kapustin
  * Implement virtual memory checking function. Allow separate free end gap specification
  *

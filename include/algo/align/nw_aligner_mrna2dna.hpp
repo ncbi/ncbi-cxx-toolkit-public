@@ -40,6 +40,7 @@
 
 #include "nw_aligner.hpp"
 
+const unsigned char splice_type_count = 3;
 
 BEGIN_NCBI_SCOPE
 
@@ -55,16 +56,20 @@ public:
     virtual TScore Run();
 
     // Setters
-    void SetWi  (TScore value)  { m_Wi  = value; }
+    void SetWi  (unsigned char splice_type, TScore value)
+    {
+        m_Wi[splice_type]  = value;
+    }
     void SetIntronMinSize  (size_t s)  { m_IntronMinSize  = s; }
 
     // Getters
-    static TScore GetDefaultWi  () { return -10; }
+    static TScore GetDefaultWi  (unsigned char splice_type)
+        throw(CNWAlignerException);
     static size_t GetDefaultIntronMinSize () { return 50; }
 
 protected:
 
-    TScore   m_Wi;            // intron weight
+    TScore   m_Wi [splice_type_count];  // intron weights
     size_t   m_IntronMinSize; // intron min size
 
     virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix);
@@ -77,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/03/25 22:06:25  kapustin
+ * Support non-canonical splice signals
+ *
  * Revision 1.3  2003/02/21 16:41:11  dicuccio
  * Added Win32 export specifier
  *

@@ -91,9 +91,19 @@ void CAppNWA::Init()
          NStr::IntToString(CNWAligner::GetDefaultWs()).c_str());
 
     argdescr->AddDefaultKey
-        ("Wi", "intron", "intron weight",
+        ("Wi0", "intron0", "type 0 (GT/AG) intron weight",
          CArgDescriptions::eInteger,
-         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi()).c_str());
+         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(0)).c_str());
+
+    argdescr->AddDefaultKey
+        ("Wi1", "intron1", "type 1 (GC/AG) intron weight",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(1)).c_str());
+
+    argdescr->AddDefaultKey
+        ("Wi2", "intron2", "type 2 (AT/AC) intron weight",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(2)).c_str());
 
     int intron_min_size = CNWAlignerMrna2Dna::GetDefaultIntronMinSize();
     argdescr->AddDefaultKey
@@ -225,12 +235,15 @@ void CAppNWA::x_RunOnPair() const
     if( bMrna2Dna ) {
         CNWAlignerMrna2Dna *aligner_mrna2dna = 
             static_cast<CNWAlignerMrna2Dna *> (aligner.get());
-        
-        aligner_mrna2dna->SetWi (args["Wi"]. AsInteger());
+
+        aligner_mrna2dna->SetWi (0, args["Wi0"]. AsInteger());
+        aligner_mrna2dna->SetWi (1, args["Wi1"]. AsInteger());
+        aligner_mrna2dna->SetWi (2, args["Wi2"]. AsInteger());
+
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
     }
 
-    if( bMT && bMM) {
+    if(bMT && bMM) {
         CMMAligner* pmma = static_cast<CMMAligner*> (aligner.get());
         pmma -> EnableMultipleThreads();
     }
@@ -265,8 +278,8 @@ void CAppNWA::x_RunOnPair() const
     
     {{  // setup end penalties
         string ends = args["esf"].AsString();
-        bool L1 = bMrna2Dna || ends[0] == 'z';
-        bool R1 = bMrna2Dna || ends[1] == 'z';
+        bool L1 = ends[0] == 'z';
+        bool R1 = ends[1] == 'z';
         bool L2 = ends[2] == 'z';
         bool R2 = ends[3] == 'z';
         aligner->SetEndSpaceFree(L1, R1, L2, R2);
@@ -348,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/03/25 22:06:02  kapustin
+ * Support non-canonical splice signals
+ *
  * Revision 1.14  2003/03/18 15:14:54  kapustin
  * Allow separate free end gap specification
  *
