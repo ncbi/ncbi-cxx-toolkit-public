@@ -48,17 +48,27 @@ class NCBI_XALGOALIGN_EXPORT CSplicedAligner: public CNWAligner
 {
 public:
 
-    // set intron penalty and min size
-    virtual void SetWi( unsigned char splice_type, TScore value );
-    void SetIntronMinSize( size_t s )  { m_IntronMinSize  = s; }
+    // Setters and getters
+    void   SetWi(unsigned char splice_type, TScore value);
+    TScore GetWi(unsigned char splice_type);
 
-    // Getters
-    static size_t GetDefaultIntronMinSize () {
-        return 50;
+    void SetIntronMinSize(size_t s) {
+        m_IntronMinSize  = s;
     }
 
-    // Simple pattern generator-use with care and with quality sequences only.
-    // For sequences with errors build pattern differently.
+    size_t GetIntronMinSize(void) const {
+        return m_IntronMinSize;
+    }
+
+    static size_t GetDefaultIntronMinSize (void) {
+        return 30;
+    }
+
+    virtual size_t GetSpliceTypeCount(void)  = 0;
+
+    // A naive pattern generator-use cautiously.
+    // Do not use on sequences with repeats or error.
+
     size_t MakePattern(const size_t hit_size = 30);
 
 protected:
@@ -68,7 +78,7 @@ protected:
                      const char* seq2, size_t len2);
 
     size_t  m_IntronMinSize;
-    virtual size_t  x_GetSpliceTypeCount()  = 0;
+
     virtual TScore* x_GetSpliceScores() = 0;
   
     // Guides
@@ -90,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/23 14:16:32  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.6  2003/12/12 19:41:46  kapustin
  * Valuable comments added
  *

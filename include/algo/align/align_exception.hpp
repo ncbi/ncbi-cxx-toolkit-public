@@ -55,7 +55,9 @@ public:
         eInvalidCharacter,
         eIncorrectSequenceOrder,
         eInvalidSpliceTypeIndex,
-	eNoData
+	eNoData,
+	eNotInitialized,
+        eFormat
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -73,6 +75,10 @@ public:
             return "Splice type index out of range";
 	case eNoData:
 	    return "No data available";
+        case eNotInitialized:
+            return "Object not properly initialized";
+        case eFormat:
+            return "Unexpected format";
         default:
             return CException::GetErrCodeString();
         }
@@ -90,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/23 14:16:32  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.10  2003/10/27 20:45:47  kapustin
  * Minor code cleanup
  *

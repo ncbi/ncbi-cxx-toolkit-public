@@ -53,12 +53,16 @@ public:
 
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type);
-    static TScore GetDefaultWd1 (void) { return  -5; }
-    static TScore GetDefaultWd2 (void) { return  -8; }
+    static TScore GetDefaultWd1 (void) { return  -3; }
+    static TScore GetDefaultWd2 (void) { return  -5; }
 
     // returns the size of a single backtrace matrix element
     virtual size_t GetElemSize(void) const {
         return 4;
+    }
+
+    virtual size_t GetSpliceTypeCount(void) {
+        return splice_type_count_32;
     }
 
 protected:
@@ -68,9 +72,6 @@ protected:
     TScore m_Wd1; // applies if only one donor/acceptor char damaged
     TScore m_Wd2; // applies if both chars damaged
 
-    virtual size_t  x_GetSpliceTypeCount(void) {
-        return splice_type_count_32;
-    }
     virtual TScore* x_GetSpliceScores(void) {
         return m_Wi;
     }
@@ -94,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/23 14:16:32  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.4  2003/12/29 13:02:03  kapustin
  * Make x_GetElemSize() public and rename.
  *

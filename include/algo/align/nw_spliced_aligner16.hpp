@@ -60,13 +60,14 @@ public:
         return 2;
     }
 
+    virtual size_t GetSpliceTypeCount(void) {
+        return splice_type_count_16;
+    }
+    
 protected:
 
     TScore m_Wi [splice_type_count_16];
 
-    virtual size_t  x_GetSpliceTypeCount(void) {
-        return splice_type_count_16;
-    }
     virtual TScore* x_GetSpliceScores(void) {
         return m_Wi;
     }
@@ -90,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/23 14:16:32  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.4  2003/12/29 13:02:03  kapustin
  * Make x_GetElemSize() public and rename.
  *
