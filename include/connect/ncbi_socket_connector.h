@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/01/12 22:15:28  lavr
+ * Fixed function description to use not former but current parameter names
+ *
  * Revision 6.3  2001/12/04 15:54:29  lavr
  * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
  *
@@ -73,7 +76,7 @@ typedef unsigned int TSCC_Flags;  /* binary OR of "ESCC_Flags */
 
 
 /* Create new CONNECTOR structure to handle connection to a socket.
- * Make up to "conn_try" attempts to connect to the "host:port" before
+ * Make up to "max_try" attempts to connect to the "host:port" before
  * giving up.
  * On successful connect, send the first "init_size" bytes from buffer
  * "init_data"(can be NULL -- then send nothing) to the opened connection.
@@ -104,7 +107,7 @@ extern CONNECTOR SOCK_CreateConnectorOnTop
  * that might have been set already in it. Timeout values will be taken from
  * connection (CONN), after the connector is used in CONN_Create() call.
  * Please note that this function revokes all ownership of the socket, and
- * further assumes the socket being in exclusive use of the connector.
+ * further assumes the passed socket is for the sole use of the connector.
  * A socket obtained as a result of accepting connection on a listening socket
  * (aka server-side socket) is not allowed to have reconnects (max_try = 0).
  */
@@ -122,4 +125,3 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 #endif
 
 #endif /* NCBI_SOCKET_CONNECTOR__H */
-
