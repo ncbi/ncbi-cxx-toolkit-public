@@ -128,7 +128,7 @@ PROJECTS = @PROJECTS@ # File listing relevant project directories.
 # prepending "build/" to each original pattern as an anchor.
 RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS)
-	@sed -e 's@^@build/@' $< >> $@
+	@sed -e 's@^@build/@' $(PROJECTS) > $(RELEVANT_FILE)
 
 # Commands to see whether project directories are relevant.
 RELEVANT = egrep -f $(RELEVANT_FILE) > /dev/null
