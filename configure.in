@@ -143,17 +143,49 @@ if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_ou
 if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
-changequote(, )dnl
+#### GNU compiler
 if test "$GCC" = "yes" ; then
    # GNU compiler
    CFLAGS="-Wall -ansi -D__EXTENSIONS__ $CFLAGS"
-   CXXFLAGS=`echo $CXXFLAGS | sed 's/-O.//g'`
    CXXFLAGS="-Wall -ansi -D__EXTENSIONS__ $CXXFLAGS"
-   LDFLAGS="-g $LDFLAGS"
-elif test "$CXX" = "cl.exe /TP" ; then
+fi
+
+#### MSVC++ compiler
+if test "$CXX" = "cl.exe /TP" ; then
    # MSVC++ compiler
    script_shell=""
    make_shell=""
+   msvc="yes"
+fi
+
+#### Do not include debug info to the libs and executables("--without-debug")
+changequote(, )dnl
+if test "$msvc" != "yes" ; then
+   if test "$with_debug" = "no" ; then
+      NCBI_C_LIB="$NCBI_C_RELEASE_LIB"
+
+      CFLAGS=`echo $CFLAGS     | sed 's/-g[0-9]*//g'`" -DNDEBUG"
+      if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
+         CFLAGS="$CFLAGS -O" ; fi
+      CXXFLAGS=`echo $CXXFLAGS | sed 's/-g[0-9]*//g'`" -DNDEBUG"
+      if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
+         CXXFLAGS="$CXXFLAGS -O" ; fi
+      LDFLAGS=`echo $LDFLAGS   | sed 's/-g[0-9]*//g'`" -DNDEBUG"
+      if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
+         LDFLAGS="$LDFLAGS -O"   ; fi
+   else
+      NCBI_C_LIB="$NCBI_C_DEBUG_LIB"
+
+      CFLAGS=`echo $CFLAGS     | sed 's/-O[0-9]*//g'`" -D_DEBUG"
+      if echo "$CFLAGS"   |grep -v >/dev/null '\-g' ; then
+         CFLAGS="$CFLAGS -g"     ; fi
+      CXXFLAGS=`echo $CXXFLAGS | sed 's/-O[0-9]*//g'`" -D_DEBUG"
+      if echo "$CXXFLAGS" |grep -v >/dev/null '\-g' ; then
+         CXXFLAGS="$CXXFLAGS -g" ; fi
+      LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`" -D_DEBUG"
+      if echo "$LDFLAGS"  |grep -v >/dev/null '\-g' ;
+         then LDFLAGS="$LDFLAGS -g"   ; fi
+   fi
 fi
 changequote([, ])dnl
 
@@ -225,6 +257,28 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(if Fast-CGI library is available and not disabled)
+FASTCGI_OBJS=
+if test -x "$FASTCGI_LIBS"  ||  test "$with_fastcgi" = "no" ; then
+   FASTCGI_LIBS=
+else
+   FASTCGI_LIBS="-L$NCBI_C_LIB $FASTCGI_LIBS"
+   orig_CPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS -I$NCBI_C_INCLUDE"
+   orig_LIBS="$LIBS" ; LIBS="$FASTCGI_LIBS $LIBS  $NETWORK_LIBS"
+   AC_TRY_LINK(
+      [#include <fcgiapp.h>],
+      [return FCGX_IsCGI(); ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBFASTCGI, 1)
+       FASTCGI_OBJS="fcgibuf"
+      ],
+      [FASTCGI_LIBS= ]
+   )
+   AC_MSG_RESULT()
+   LIBS="$orig_LIBS"
+   CPPFLAGS="$orig_CPPFLAGS"
+fi
+
+
 dnl Check for C standard types
 dnl ---------------------------------
 AC_C_BIGENDIAN
@@ -291,6 +345,11 @@ AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
 AC_SUBST(f_outexe)
 
+AC_SUBST(THREAD_LIBS)
+AC_SUBST(NETWORK_LIBS)
+AC_SUBST(FASTCGI_LIBS)
+AC_SUBST(FASTCGI_OBJS)
+
 AC_SUBST(PM_PATH)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIB)
@@ -340,10 +399,14 @@ mv config.status config.cache config.log "$status_dir"/
 
 echo "Configuration completed."
 echo ""
+echo "Optional configure flags:"
+echo " --without-debug    to build the release versions of libs and apps"
+echo " --without-fastcgi  to explicitely prohibit the use of Fast-CGI library"
+echo ""
 echo "Tools / flags / paths:  $builddir/Makefile.mk"
 echo "Preprocessor defines:   $ncbiconf"
 echo ""
-echo "To build everything:  cd $builddir ; make all_r",
+echo "To build everything:    cd $builddir ; make all_r",
 
 SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
