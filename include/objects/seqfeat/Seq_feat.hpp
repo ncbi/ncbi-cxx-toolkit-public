@@ -49,42 +49,52 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE /// namespace ncbi::objects::
 
 class NCBI_SEQFEAT_EXPORT CSeq_feat : public CSeq_feat_Base
 {
     typedef CSeq_feat_Base Tparent;
 public:
-    // constructor
+    /// constructor
     CSeq_feat(void);
-    // destructor
+    /// destructor
     ~CSeq_feat(void);
     
     //
-    // See related function in util/feature.hpp
+    /// See related function in util/feature.hpp
     //
-    //   void GetLabel (const CSeq_feat&, string*, ELabelType, CScope*)
+    ///   void GetLabel (const CSeq_feat&, string*, ELabelType, CScope*)
     //
 
-    // get gene (if present) from Seq-feat.xref list
+    /// get gene (if present) from Seq-feat.xref list
     const CGene_ref* GetGeneXref(void) const;
     void SetGeneXref(CGene_ref& value);
     CGene_ref& SetGeneXref(void);
 
-    // get protein (if present) from Seq-feat.xref list
+    /// get protein (if present) from Seq-feat.xref list
     const CProt_ref* GetProtXref(void) const;
     void SetProtXref(CProt_ref& value);
     CProt_ref& SetProtXref(void);
 
-    // Add a qualifier to this feature
+    /// Add a qualifier to this feature
     void AddQualifier(const string& qual_name, const string& qual_val);
 
-    // add a DB xref to this feature
+    /// add a DB xref to this feature
     void AddDbxref(const string& db_name, const string& db_key);
     void AddDbxref(const string& db_name, int db_key);
 
-    // Optional locations are used for features with locations
-    // re-mapped to a master sequence
+    /// Return a specified DB xref.  This will find the *first* item in the
+    /// given referenced database.  If no item is found, an empty CConstRef<>
+    /// is returned.
+    CConstRef<CDbtag> GetNamedDbxref(const string& db);
+
+    /// Return a named qualifier.  This will return the first item matching the
+    /// qualifier name.  If no such qualifier is found, an empty string is
+    /// returned.
+    string GetNamedQual(const string& qual_name);
+
+    /// Optional locations are used for features with locations
+    /// re-mapped to a master sequence
     int CompareNonLocation(const CSeq_feat& f2,
                            const CSeq_loc& loc1, const CSeq_loc& loc2) const;
     int GetTypeSortingOrder(void) const;
@@ -96,7 +106,7 @@ public:
 
 private:
 
-    // Prohibit copy constructor and assignment operator
+    /// Prohibit copy constructor and assignment operator
     CSeq_feat(const CSeq_feat& value);
     CSeq_feat& operator=(const CSeq_feat& value);        
 };
@@ -146,17 +156,20 @@ bool operator< (const CSeq_feat& f1, const CSeq_feat& f2)
 /////////////////// end of CSeq_feat inline methods
 
 
-END_objects_SCOPE // namespace ncbi::objects::
+END_objects_SCOPE /// namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
 
-#endif // OBJECTS_SEQFEAT_SEQ_FEAT_HPP
+#endif /// OBJECTS_SEQFEAT_SEQ_FEAT_HPP
 /* Original file checksum: lines: 90, chars: 2388, CRC32: c285198b */
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2004/10/04 17:20:45  dicuccio
+* Doxygen-ated comments.  Added GetNamedDbxref() / GetNamedQual()
+*
 * Revision 1.16  2004/01/05 19:16:36  dicuccio
 * Added APIs to ease adding qualifiers and dbxrefs
 *

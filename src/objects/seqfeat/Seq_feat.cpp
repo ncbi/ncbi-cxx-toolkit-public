@@ -257,6 +257,34 @@ void CSeq_feat::AddDbxref(const string& db, int tag)
 }
 
 
+CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db)
+{
+    if (IsSetDbxref()) {
+        ITERATE (TDbxref, iter, GetDbxref()) {
+            if ( (*iter)->GetDb() == db) {
+                return *iter;
+            }
+        }
+    }
+
+    return CConstRef<CDbtag>();
+}
+
+
+string CSeq_feat::GetNamedQual(const string& qual_name)
+{
+    if (IsSetQual()) {
+        ITERATE (TQual, iter, GetQual()) {
+            if ( (*iter)->GetQual() == qual_name) {
+                return (*iter)->GetVal();
+            }
+        }
+    }
+
+    return string();
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -265,6 +293,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.20  2004/10/04 17:20:45  dicuccio
+ * Doxygen-ated comments.  Added GetNamedDbxref() / GetNamedQual()
+ *
  * Revision 6.19  2004/05/19 17:26:04  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
