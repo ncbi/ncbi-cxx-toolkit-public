@@ -111,7 +111,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
     } \
 } while (0)
 
-#define CORE_LOG_ERRNO(x_errno, level, message)  do { \
+#define CORE_LOG_ERRNO(level, x_errno, message)  do { \
     if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, message, x_errno, 0); \
@@ -119,11 +119,28 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
     } \
 } while (0)
 
-#define CORE_LOGF_ERRNO(x_errno, level, fmt_args)  do { \
+#define CORE_LOGF_ERRNO(level, x_errno, fmt_args)  do { \
     if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, g_CORE_Sprintf fmt_args, \
                            x_errno, 0); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
+#define CORE_LOG_ERRNO_EX(level, x_errno, x_descr, message)  do { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
+        CORE_LOCK_READ; \
+        LOG_WRITE_ERRNO_EX(g_CORE_Log, level, message, x_errno, x_descr); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
+#define CORE_LOGF_ERRNO_EX(level, x_errno, x_descr, fmt_args)  do { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
+        CORE_LOCK_READ; \
+        LOG_WRITE_ERRNO_EX(g_CORE_Log, level, g_CORE_Sprintf fmt_args, \
+                           x_errno, x_descr); \
         CORE_UNLOCK; \
     } \
 } while (0)
@@ -166,6 +183,9 @@ extern char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/12/05 21:43:00  lavr
+ * Swap level and errno in CORE_LOG[F]_ERRNO(); add CORE_LOG[F]_ERRNO_EX()
+ *
  * Revision 6.8  2002/12/04 21:00:43  lavr
  * -CORE_LOG[F]_SYS_ERRNO()
  *
