@@ -8,11 +8,14 @@
 # Execute check command
 #
 # Usage:
-#    check_exec.sh <timeout> <cmd-line>
-#
-#    timeout - maximal time of execution "cmd-line" in seconds
+#    check_exec.sh <cmd-line>
 #
 # Note:
+#    The <cmd-line> can contains any program or scripts.
+#
+#    The CHECK_TIMEOUT environment variable defines a "timeout" seconds
+#    to execute specified command line. By default timeout is 200 sec.
+#
 #    For protect infinity execution <cmd-line>, this script terminate 
 #    check process if it still executing after "timeout" seconds.
 #    Script return <cmd-line> exit code or value above 0 in case error
@@ -22,8 +25,8 @@
 
 
 # Get parameters
-timeout=$1
-shift
+timeout="$CHECK_TIMEOUT"
+test -z $timeout  &&  timeout=200
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
