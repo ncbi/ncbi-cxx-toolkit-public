@@ -238,6 +238,7 @@ CSeq_align::CreateDensegFromStdseg() const
     }
 
     CRef<CSeq_align> sa(new CSeq_align);
+    sa->SetType(eType_not_set);
     CDense_seg& ds = sa->SetSegs().SetDenseg();
 
     typedef CDense_seg::TDim    TNumrow;
@@ -454,6 +455,7 @@ CSeq_align::CreateTranslatedDensegFromNADenseg() const
     }
     
     CRef<CSeq_align> sa(new CSeq_align);
+    sa->SetType(eType_not_set);
 
     if (GetSegs().GetDenseg().IsSetWidths()) {
         NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
@@ -502,6 +504,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/01/09 16:32:06  todorov
+* +SetType(eType_not_set)
+*
 * Revision 1.6  2003/12/16 22:54:31  todorov
 * +CreateTranslatedDensegFromNADenseg
 *
