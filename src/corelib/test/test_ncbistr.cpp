@@ -591,6 +591,21 @@ int CTestApplication::Run(void)
 
     NcbiCout << " completed successfully!" << NcbiEndl;
 
+    {{
+        string s1("1234567890");
+        string s2(s1);
+        if ( s1.data() != s2.data() ) {
+            NcbiCout << NcbiEndl <<
+                "BAD: string reference counter is OFF" << NcbiEndl;
+        }
+        else {
+            NcbiCout << NcbiEndl <<
+                "GOOD: string reference counter is ON" << NcbiEndl;
+            s1[0];
+            assert(s1.data() != s2.data());
+        }
+    }}
+
     NcbiCout << NcbiEndl << "TEST_NCBISTR execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
 
@@ -616,6 +631,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/07/09 20:52:20  vasilche
+ * Added test for string's reference counter.
+ *
  * Revision 6.18  2003/03/25 22:16:11  lavr
  * Conform to new NUL char representation from NStr::PrintableString()
  *
