@@ -123,6 +123,7 @@ void CDll::Load(void)
         return;
     }
     // Load DLL
+    _TRACE("Loading dll: "<<m_Name);
 #if defined(NCBI_OS_MSWIN)
     HMODULE handle = LoadLibrary(m_Name.c_str());
 #elif defined(NCBI_OS_UNIX)
@@ -146,6 +147,7 @@ void CDll::Unload(void)
     if ( !m_Handle ) {
         return;
     }
+    _TRACE("Unloading dll: "<<m_Name);
     // Unload DLL
 #if defined(NCBI_OS_MSWIN)
     BOOL unloaded = FreeLibrary(m_Handle->handle);
@@ -171,6 +173,7 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
     if ( !m_Handle ) {
         Load();
     }
+    _TRACE("Getting entry point: "<<name);
     // Add leading underscore on Darwin platform
 #if defined(NCBI_OS_DARWIN)
     const string entry_name = "_" + name;
@@ -391,6 +394,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/03/23 14:43:19  vasilche
+ * Added trace output about DLL loading.
+ *
  * Revision 1.27  2005/03/03 19:03:43  ssikorsk
  * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
  *
