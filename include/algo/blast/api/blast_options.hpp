@@ -2085,7 +2085,7 @@ CBlastOptionsLocal::SetFilterString(const char* f)
     m_QueryOpts->filter_string = strdup(f);
 
     m_QueryOpts->filtering_options = 
-            FilterOptionsFree(m_QueryOpts->filtering_options);
+            SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
 
     BlastFilteringOptionsFromString(GetProgramType(), f, 
        &(m_QueryOpts->filtering_options), NULL);
@@ -2127,12 +2127,12 @@ CBlastOptionsLocal::SetDustFiltering(bool val)
 
    if (m_QueryOpts->filtering_options->dustOptions)  // free previous structure so we provide defaults.
         m_QueryOpts->filtering_options->dustOptions = 
-             DustOptionsFree(m_QueryOpts->filtering_options->dustOptions);
+             SDustOptionsFree(m_QueryOpts->filtering_options->dustOptions);
      
    if (val == false)  // filtering should be turned off
        return;
 
-   DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+   SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
 
    return;
 }
@@ -2141,7 +2141,7 @@ inline int
 CBlastOptionsLocal::GetDustFilteringLevel() const
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
 
     return m_QueryOpts->filtering_options->dustOptions->level;
 }
@@ -2150,7 +2150,7 @@ inline void
 CBlastOptionsLocal::SetDustFilteringLevel(int level)
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
+       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
       
     m_QueryOpts->filtering_options->dustOptions->level = level;
 
@@ -2161,7 +2161,7 @@ inline int
 CBlastOptionsLocal::GetDustFilteringWindow() const
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
 
     return m_QueryOpts->filtering_options->dustOptions->window;
 }
@@ -2170,7 +2170,7 @@ inline void
 CBlastOptionsLocal::SetDustFilteringWindow(int window)
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
+       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
       
     m_QueryOpts->filtering_options->dustOptions->window = window;
 
@@ -2181,7 +2181,7 @@ inline int
 CBlastOptionsLocal::GetDustFilteringLinker() const
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
 
     return m_QueryOpts->filtering_options->dustOptions->linker;
 }
@@ -2190,7 +2190,7 @@ inline void
 CBlastOptionsLocal::SetDustFilteringLinker(int linker)
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
+       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
       
     m_QueryOpts->filtering_options->dustOptions->linker = linker;
 
@@ -2212,12 +2212,12 @@ CBlastOptionsLocal::SetSegFiltering(bool val)
 
    if (m_QueryOpts->filtering_options->segOptions)  // free previous structure so we provide defaults.
         m_QueryOpts->filtering_options->segOptions = 
-             SegOptionsFree(m_QueryOpts->filtering_options->segOptions);
+             SSegOptionsFree(m_QueryOpts->filtering_options->segOptions);
      
    if (val == false)  // filtering should be turned off
        return;
 
-   SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions));
+   SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions));
 
    return;
 }
@@ -2226,7 +2226,7 @@ inline int
 CBlastOptionsLocal::GetSegFilteringWindow() const
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
       
     return m_QueryOpts->filtering_options->segOptions->window;
 }
@@ -2235,7 +2235,7 @@ inline void
 CBlastOptionsLocal::SetSegFilteringWindow(int window)
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
       
     m_QueryOpts->filtering_options->segOptions->window = window;
 
@@ -2246,7 +2246,7 @@ inline double
 CBlastOptionsLocal::GetSegFilteringLocut() const
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
       
     return m_QueryOpts->filtering_options->segOptions->locut;
 }
@@ -2255,7 +2255,7 @@ inline void
 CBlastOptionsLocal::SetSegFilteringLocut(double locut)
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
       
     m_QueryOpts->filtering_options->segOptions->locut = locut;
 
@@ -2266,7 +2266,7 @@ inline double
 CBlastOptionsLocal::GetSegFilteringHicut() const
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
       
     return m_QueryOpts->filtering_options->segOptions->hicut;
 }
@@ -2275,7 +2275,7 @@ inline void
 CBlastOptionsLocal::SetSegFilteringHicut(double hicut)
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
       
     m_QueryOpts->filtering_options->segOptions->hicut = hicut;
 
@@ -2297,12 +2297,12 @@ CBlastOptionsLocal::SetRepeatFiltering(bool val)
 
    if (m_QueryOpts->filtering_options->repeatFilterOptions)  // free previous structure so we provide defaults.
         m_QueryOpts->filtering_options->repeatFilterOptions = 
-             RepeatOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
+             SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
      
    if (val == false)  // filtering should be turned off
        return;
 
-   RepeatSetUpOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
+   SRepeatFilterOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
 
    return;
 }
@@ -2311,7 +2311,7 @@ inline const char*
 CBlastOptionsLocal::GetRepeatFilteringDB() const
 {
     if (m_QueryOpts->filtering_options->repeatFilterOptions == NULL)
-      RepeatSetUpOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
+      SRepeatFilterOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
 
     return m_QueryOpts->filtering_options->repeatFilterOptions->database;
 }
@@ -2323,7 +2323,7 @@ CBlastOptionsLocal::SetRepeatFilteringDB(const char* db)
    if (!db)
       return;
 
-   RepeatOptionsResetDB(&(m_QueryOpts->filtering_options->repeatFilterOptions), db);
+   SRepeatFilterOptionsResetDB(&(m_QueryOpts->filtering_options->repeatFilterOptions), db);
 
    return;
 }
@@ -2809,6 +2809,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2005/03/02 13:56:49  madden
+* Rename Filtering option funcitons to standard naming convention
+*
 * Revision 1.84  2005/02/24 13:46:20  madden
 * Add setters and getters for filtering options
 *

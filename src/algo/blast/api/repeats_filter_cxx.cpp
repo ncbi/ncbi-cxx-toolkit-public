@@ -201,13 +201,13 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
 
     if (filtering_options == NULL || filtering_options->repeatFilterOptions == NULL)
     {
-        filtering_options = FilterOptionsFree(filtering_options);
+        filtering_options = SBlastFilterOptionsFree(filtering_options);
         return;
     }
 
     SRepeatFilterOptions* repeat_options = filtering_options->repeatFilterOptions;
     BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(repeat_options->database, kIsProt);
-    filtering_options = FilterOptionsFree(filtering_options);
+    filtering_options = SBlastFilterOptionsFree(filtering_options);
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
         string msg(error_str);
@@ -249,6 +249,9 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.17  2005/03/02 13:56:25  madden
+ *  Rename Filtering option funcitons to standard naming convention
+ *
  *  Revision 1.16  2005/02/24 13:46:54  madden
  *  Changes to use structured filteing options instead of string
  *

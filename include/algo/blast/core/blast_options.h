@@ -456,50 +456,50 @@ typedef struct BlastDatabaseOptions {
  * @param dust_options object to free
  * @return NULL pointer
  */
-SDustOptions* DustOptionsFree(SDustOptions* dust_options);
+SDustOptions* SDustOptionsFree(SDustOptions* dust_options);
 
 /** Allocates memory for SDustOptions, fills in defaults.
  * @param dust_options options that are being returned [in|out]
  * @return zero on sucess
  */
-Int2 DustSetUpOptionsNew(SDustOptions* *dust_options);
+Int2 SDustOptionsNew(SDustOptions* *dust_options);
 
 /** Frees SSegOptions.
  * @param seg_options object to free [in]
  * @return NULL pointer
  */
-SSegOptions* SegOptionsFree(SSegOptions* seg_options);
+SSegOptions* SSegOptionsFree(SSegOptions* seg_options);
 
 /** Allocates memory for SSegOptions, fills in defaults. [in|out]
  * @param seg_options options that are being returned [in|out]
  * @return zero on sucess
  */
-Int2 SegSetUpOptionsNew(SSegOptions* *seg_options);
+Int2 SSegOptionsNew(SSegOptions* *seg_options);
 
 /** Resets name of db for repeat filtering.
  * @param repeat_options already allocated options constaining field to be reset [in|out]
  * @param dbname name of the database(s) [in]
  * @return zero on sucess
  */
-Int2 RepeatOptionsResetDB(SRepeatFilterOptions* *repeat_options, const char* dbname);
+Int2 SRepeatFilterOptionsResetDB(SRepeatFilterOptions* *repeat_options, const char* dbname);
 
 /** Frees SRepeatFilterOptions.
  * @param repeat_options object to free [in]
  * @return NULL pointer
  */
-SRepeatFilterOptions* RepeatOptionsFree(SRepeatFilterOptions* repeat_options);
+SRepeatFilterOptions* SRepeatFilterOptionsFree(SRepeatFilterOptions* repeat_options);
 
 /** Allocates memory for SRepeatFilterOptions, fills in defaults.
  * @param repeat_options options that are being returned [in|out]
  * @return zero on sucess
  */
-Int2 RepeatSetUpOptionsNew(SRepeatFilterOptions* *repeat_options);
+Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options);
 
 /** Frees SBlastFilterOptions and all subservient structures.
  * @param filter_options object to free
  * @return NULL pointer
  */
-SBlastFilterOptions* FilterOptionsFree(SBlastFilterOptions* filter_options);
+SBlastFilterOptions* SBlastFilterOptionsFree(SBlastFilterOptions* filter_options);
 
 typedef enum EFilterOptions {
     eSeg,            /**< low-complexity for proteins. */
@@ -514,21 +514,23 @@ typedef enum EFilterOptions {
  * @param type specify either dust or seg (now) with EFilterOptions [in]
  * @return zero on sucess
  */
-Int2 FilterSetUpOptionsNew(SBlastFilterOptions* *filter_options, EFilterOptions type);
-
-/** Adds SRepeatFilterOptions to SBlastFilterOptions with database specified.
- * SBlastFilterOptions should already be allocated with FilterSetUpOptionsNew
- * @param filter_options options to add to [in]
- * @param database database for SRepeatFilterOptions [in]
- * @return zero on sucess
- */
-Int2 FilterSetUpResetRepeatDB(SBlastFilterOptions* filter_options, const char* database);
+Int2 SBlastFilterOptionsNew(SBlastFilterOptions* *filter_options, EFilterOptions type);
 
 /** Queries whether masking should be done only for the lookup table or for the entire search.
  * @param filter_options the object to be queried [in]
  * @return TRUE or FALSE, FALSE if filter_options is NULL.
  */
-Boolean FilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options);
+Boolean SBlastFilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options);
+
+/** Validates filter options to ensure that program and options are consistent
+ * and that options have valid values.
+ * @param program Program number (blastn, blastp, etc.) [in]
+ * @param filter_options options to add to [in]
+ * @param blast_message error or warning (optional) [out] 
+ * @return zero on success
+ */
+Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastFilterOptions* filter_options, 
+       Blast_Message* *blast_message);
 
 
 /** Deallocate memory for QuerySetUpOptions. 

@@ -412,6 +412,12 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     SBlastFilterOptions* filter_options = NULL;
 
 
+    if (maskInfo)
+    {
+       maskInfo->filter_slp = NULL;
+       maskInfo->mask_at_hash = FALSE;
+    }
+
     if (qsup_options->filtering_options == NULL && qsup_options->filter_string)
     {
          status = BlastFilteringOptionsFromString(program_number, qsup_options->filter_string, &filter_options, blast_message);
@@ -431,9 +437,9 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         return status;
     } 
 
-    mask_at_hash = FilterOptionsMaskAtHash(filter_options ? filter_options : qsup_options->filtering_options);
+    mask_at_hash = SBlastFilterOptionsMaskAtHash(filter_options ? filter_options : qsup_options->filtering_options);
 
-    filter_options = FilterOptionsFree(filter_options);
+    filter_options = SBlastFilterOptionsFree(filter_options);
 
     if (!mask_at_hash)
     {
