@@ -37,8 +37,6 @@
 
 #include "blast_setup.hpp"
 
-#include <sstream>
-
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -391,10 +389,9 @@ GetNumberOfFrames(EProgram p)
     default:
         {
             int debug_value = static_cast<int>(p);
-            ostringstream os;
-            os << "Cannot get number of frames for invalid program type: ";
-            os << debug_value;
-            NCBI_THROW(CBlastException, eBadParameter, os.str());
+            string msg = "Cannot get number of frames for invalid program ";
+            msg += "type: " + NStr::IntToString(debug_value);
+            NCBI_THROW(CBlastException, eBadParameter, msg);
         }
     }
 
@@ -410,6 +407,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2004/12/29 17:15:42  camacho
+ * Use NStr utility functions
+ *
  * Revision 1.77  2004/12/20 20:17:00  camacho
  * + PSI-BLAST
  *
