@@ -41,6 +41,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <util/format_guess.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -309,6 +311,37 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
 }
 
 
+static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
+                       TReadFastaFlags flags, istream& in)
+{
+    if (mol != CSeq_inst::eMol_not_set) {
+        return; // already known; no need to guess
+    }
+
+    if (mol == CSeq_inst::eMol_not_set  &&  !(flags & fReadFasta_ForceType)) {
+        switch (CFormatGuess::SequenceType(data.c_str(), data.size())) {
+        case CFormatGuess::eNucleotide:  mol = CSeq_inst::eMol_na;  return;
+        case CFormatGuess::eProtein:     mol = CSeq_inst::eMol_aa;  return;
+        default:                         break;
+        }
+    }
+
+    // ForceType was set, or CFormatGuess failed, so we have to rely on
+    // explicit assumptions
+    if (flags & fReadFasta_AssumeNuc) {
+        _ASSERT(!(flags & fReadFasta_AssumeProt));
+        mol = CSeq_inst::eMol_na;
+    } else if (flags & fReadFasta_AssumeProt) {
+        mol = CSeq_inst::eMol_aa;
+    } else { 
+        NCBI_THROW2(CSeqsetParseException, eFormat,
+                    "ReadFasta: unable to deduce molecule type"
+                    " from IDs, flags, or sequence",
+                    in.tellg());
+    }
+}
+
+
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
 {
     CRef<CSeq_entry>       entry(new CSeq_entry);
@@ -343,12 +376,11 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             CSeq_inst::EMol mol = s_ParseFastaDefline(seq->SetId(), title,
                                                       line, flags);
             if (mol == CSeq_inst::eMol_not_set
-                &&  !(flags & fReadFasta_NoSeqData)) {
+                &&  (flags & fReadFasta_NoSeqData)) {
                 if (flags & fReadFasta_AssumeNuc) {
                     _ASSERT(!(flags & fReadFasta_AssumeProt));
                     mol = CSeq_inst::eMol_na;
-                } else {
-                    _ASSERT(flags & fReadFasta_AssumeProt);
+                } else if (flags & fReadFasta_AssumeProt) {
                     mol = CSeq_inst::eMol_aa;
                 }
             }
@@ -379,6 +411,9 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                         }
                     }
                     if ( !residues.empty() ) {
+                        if (inst.GetMol() == CSeq_inst::eMol_not_set) {
+                            s_GuessMol(inst.SetMol(), residues, flags, in);
+                        }
                         CSeq_data& data = s_LastData(inst);
                         if (inst.GetMol() == CSeq_inst::eMol_aa) {
                             data.SetIupacaa().Set() += residues;
@@ -392,6 +427,10 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                         d.push_back(gap);
                     }}
                 }
+            }
+
+            if (inst.GetMol() == CSeq_inst::eMol_not_set) {
+                s_GuessMol(inst.SetMol(), residues, flags, in);
             }
             
             // Add the accumulated data...
@@ -430,6 +469,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.22  2003/05/14 15:06:30  ucko
+ * ReadFasta: if unable to conclude anything from the IDs, try passing the
+ * first line of data to CFormatGuess::SequenceType (unless ForceType is set)
+ *
  * Revision 6.21  2003/05/09 21:46:27  ucko
  * ReadFasta: fix initial data assignment to avoid ten leading "A"s;
  * also, fix some typos (including one that identified everything as NA)
