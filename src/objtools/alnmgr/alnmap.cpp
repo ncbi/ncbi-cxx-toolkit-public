@@ -658,7 +658,8 @@ CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type,
     if ((left_type & fSeq) != (right_type & fSeq)) {
         return false;
     }
-    if ((left_type & fUnalignedOnRight) && !(flags & fIgnoreUnaligned)) {
+    if (!(flags & fIgnoreUnaligned)  &&
+        (left_type & fUnalignedOnRight || right_type & fUnalignedOnLeft)) {
         return false;
     }
     if ((left_type & fNotAlignedToSeqOnAnchor) ==
@@ -684,6 +685,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/01/08 23:04:47  todorov
+* Fixed a bug in x_CompareAdjacentSegTypes
+*
 * Revision 1.21  2003/01/03 17:00:41  todorov
 * Fixed negative strand handling in GetRawSeg
 *
