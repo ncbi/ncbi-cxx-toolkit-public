@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.5  2003/09/26 19:01:59  madden
+* Prefix ncbimath functions with BLAST_
+*
 * Revision 1.4  2003/09/10 21:36:29  dondosha
 * Removed Nlm_ prefix from math functions definitions
 *
@@ -107,12 +110,38 @@
 extern char * g_corelib;
 static char * _this_file = __FILE__;
 
+
+#define FACTORIAL_PRECOMPUTED   36
+
+static double BLAST_Factorial(Int4 n)
+{
+        static double      precomputed[FACTORIAL_PRECOMPUTED]
+                = { 1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.};
+        static Int4     nlim = 10;
+        Int4   m;
+        double    x;
+
+        if (n >= 0) {
+                if (n <= nlim)
+                        return precomputed[n];
+                if (n < DIM(precomputed)) {
+                        for (x = precomputed[m = nlim]; m < n; ) {
+                                ++m;
+                                precomputed[m] = (x *= m);
+                        }
+                        nlim = m;
+                        return x;
+                }
+                return exp(LnGamma((double)(n+1)));
+        }
+        return 0.0; /* Undefined! */
+}
 /*
-    Expm1(x)
+    BLAST_Expm1(x)
     Return values accurate to approx. 16 digits for the quantity exp(x)-1
     for all x.
 */
-extern double Expm1(double	x)
+extern double BLAST_Expm1(double	x)
 {
   double	absx;
 
@@ -144,7 +173,7 @@ extern double Expm1(double	x)
     Log1p(x)
     Return accurate values for the quantity log(x+1) for all x > -1.
 */
-extern double Log1p(double x)
+extern double BLAST_Log1p(double x)
 {
 	Int4	i;
 	double	sum, y;
@@ -264,10 +293,10 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
                                 value += *--coef / --tmp;
                 }
                 else {
-                        value = *--coef / Powi(tmp, i + 1);
+                        value = *--coef / BLAST_Powi(tmp, i + 1);
                         while (coef > _default_gamma_coef)
-                                value += *--coef / Powi(--tmp, i + 1);
-                        tmp = Factorial(i);
+                                value += *--coef / BLAST_Powi(--tmp, i + 1);
+                        tmp = BLAST_Factorial(i);
                         value *= (i%2 == 0 ? tmp : -tmp);
                 }
                 y[i] = value;
@@ -293,7 +322,7 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
                 value += 2. * (1. + 3.*xgamma_dim / tmp) / (tmp * tmp * tmp);
                 break;
         default:
-                tmp = Factorial(order - 2) * Powi(tmp, 1 - order)
+                tmp = BLAST_Factorial(order - 2) * BLAST_Powi(tmp, 1 - order)
                                 * (1. + (order - 1) * xgamma_dim / tmp);
                 if (order % 2 == 0)
                         value += tmp;
@@ -367,7 +396,7 @@ of order is truly the order of the derivative.  */
 			value -= log(x);
 		}
 		else {
-			tmp = Factorial(order - 1) * Powi(x,  -order);
+			tmp = BLAST_Factorial(order - 1) * BLAST_Powi(x,  -order);
 			value += (order % 2 == 0 ? tmp : - tmp);
 		}
 	}
@@ -381,35 +410,9 @@ its of accuracy */
 }
 
 
-#define FACTORIAL_PRECOMPUTED   36
-
-extern double Factorial(Int4 n)
-{
-        static double      precomputed[FACTORIAL_PRECOMPUTED]
-                = { 1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.};
-        static Int4     nlim = 10;
-        Int4   m;
-        double    x;
-
-        if (n >= 0) {
-                if (n <= nlim)
-                        return precomputed[n];
-                if (n < DIM(precomputed)) {
-                        for (x = precomputed[m = nlim]; m < n; ) {
-                                ++m;
-                                precomputed[m] = (x *= m);
-                        }
-                        nlim = m;
-                        return x;
-                }
-                return exp(LnGamma((double)(n+1)));
-        }
-        return 0.0; /* Undefined! */
-}
-
 
 /* LnGammaInt(n) -- return log(Gamma(n)) for integral n */
-extern double LnGammaInt(Int4 n)
+extern double BLAST_LnGammaInt(Int4 n)
 {
 	static double	precomputed[FACTORIAL_PRECOMPUTED];
 	static Int4	nlim = 1; /* first two entries are 0 */
@@ -420,7 +423,7 @@ extern double LnGammaInt(Int4 n)
 			return precomputed[n];
 		if (n < DIM(precomputed)) {
 			for (m = nlim; m < n; ++m) {
-				precomputed[m+1] = log(Factorial(m));
+				precomputed[m+1] = log(BLAST_Factorial(m));
 			}
 			return precomputed[nlim = m];
 		}
@@ -445,7 +448,7 @@ extern double LnGammaInt(Int4 n)
 #define F(x)  ((*f)((x), fargs))
 #define ROMBERG_ITMAX 20
 
-extern double RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
+extern double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
 
 {
 	double	romb[ROMBERG_ITMAX];	/* present list of Romberg values */
@@ -515,7 +518,7 @@ extern double RombergIntegrate(double (*f) (double,void*), void* fargs, double p
 
 	Adapted 8-15-90 by WRG from code by S. Altschul.
 */
-long Gcd(long a, long b)
+long BLAST_Gcd(long a, long b)
 {
 	long	c;
 
@@ -532,7 +535,7 @@ long Gcd(long a, long b)
 }
 
 /* Round a floating point number to the nearest integer */
-long Nint(double x)	/* argument */
+long BLAST_Nint(double x)	/* argument */
 {
 	x += (x >= 0. ? 0.5 : -0.5);
 	return (long)x;
@@ -544,7 +547,7 @@ integer power function
 Original submission by John Spouge, 6/25/90
 Added to shared library by WRG
 */
-extern double Powi(double x, Int4 n)	/* power */
+extern double BLAST_Powi(double x, Int4 n)	/* power */
 {
 	double	y;
 
@@ -589,7 +592,7 @@ Loop2:
 	return y * x;
 }
 
-extern double LnFactorial (double x) {
+extern double BLAST_LnFactorial (double x) {
 
     if(x<=0.0)
         return 0.0;

@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.35  2003/09/26 19:01:59  madden
+ * Prefix ncbimath functions with BLAST_
+ *
  * Revision 1.34  2003/09/09 14:21:39  coulouri
  * change blastkar.h to blast_stat.h
  *
@@ -968,7 +971,7 @@ static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty,
 		{
 			if (blastna_to_ncbi4na[index1] & blastna_to_ncbi4na[index2])
 			{ /* round up for positive scores, down for negatives. */
-				matrix[index1][index2] = Nint( (double) ((degeneracy[index2]-1)*penalty + reward))/degeneracy[index2];
+				matrix[index1][index2] = BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty + reward))/degeneracy[index2];
 				if (index1 != index2)
 				{
 				      matrix[index2][index1] = matrix[index1][index2];
@@ -1841,7 +1844,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
            Karlin&Altschul (1990) */
     	for (i = 1, d = -low; i <= range && d > 1; ++i)
            if (p[i])
-              d = Gcd(d, i);
+              d = BLAST_Gcd(d, i);
         
         high /= d;
         low /= d;
@@ -1902,7 +1905,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
               if (ptrP - P0 <= range)
                  --last;
            }
-           etolami = Powi((double)etolam, lo - 1);
+           etolami = BLAST_Powi((double)etolam, lo - 1);
            for (sum = 0., i = lo; i != 0; ++i) {
               etolami *= etolam;
               sum += *++ptrP * etolami;
@@ -1933,7 +1936,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
            K = exp((double)-2.0*Sum) / (av*(1.0 - etolami));
 	}
 	else
-           K = -exp((double)-2.0*Sum) / (av*Expm1(-(double)lambda));
+           K = -exp((double)-2.0*Sum) / (av*BLAST_Expm1(-(double)lambda));
 
 CleanUp:
 #ifndef BLAST_KARLIN_K_STACKP
@@ -1978,7 +1981,7 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
         /* Find greatest common divisor of all scores */
     	for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
            if (sprob[i+low] != 0)
-              d = Gcd(d, i);
+              d = BLAST_Gcd(d, i);
         }
 
         high = high / d;
@@ -1988,7 +1991,7 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 	for (lambda=0.; ; ) {
 		up *= 2;
 		x0 = exp((double)up);
-		x1 = Powi((double)x0, low - 1);
+		x1 = BLAST_Powi((double)x0, low - 1);
 		if (x1 > 0.) {
 			for (sum=0., i=low; i<=high; ++i)
 				sum += sprob[i*d] * (x1 *= x0);
@@ -2005,7 +2008,7 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 	for (j=0; j<BLAST_KARLIN_LAMBDA_ITER_DEFAULT; ++j) {
 		newval = (lambda + up) / 2.;
 		x0 = exp((double)newval);
-		x1 = Powi((double)x0, low - 1);
+		x1 = BLAST_Powi((double)x0, low - 1);
 		if (x1 > 0.) {
 			for (sum=0., i=low; i<=high; ++i)
 				sum += sprob[i*d] * (x1 *= x0);
@@ -2046,7 +2049,7 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
         /* Find greatest common divisor of all scores */
     	for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
            if (sprob[i+low] != 0)
-              d = Gcd(d, i);
+              d = BLAST_Gcd(d, i);
         }
 
         high = high / d;
@@ -2059,7 +2062,7 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 		if (lambda0 < 0.01)
 			break;
 		x0 = exp((double)lambda0);
-		x1 = Powi((double)x0, low - 1);
+		x1 = BLAST_Powi((double)x0, low - 1);
 		if (x1 == 0.)
 			break;
 		for (i=low; i<=high; i++) {
@@ -2098,7 +2101,7 @@ BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
 		return -1.;
 
 	etolam = exp((double)lambda);
-	etolami = Powi((double)etolam, sfp->obs_min - 1);
+	etolami = BLAST_Powi((double)etolam, sfp->obs_min - 1);
 	if (etolami > 0.) 
 	{
 	    av = 0.0;
@@ -2640,10 +2643,10 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
 	{
 		for (index=0; index<max_number_values; index++)
 		{
-			if (Nint(values[index][2]) == INT2_MAX)
-				sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
+			if (BLAST_Nint(values[index][2]) == INT2_MAX)
+				sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
 			else
-				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
+				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
 			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
 		}
 	}
@@ -2744,9 +2747,9 @@ BLAST_KarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, In
 	{
 		for (index=0; index<max_number_values; index++)
 		{
-			if (Nint(values[index][0]) == gap_open &&
-				Nint(values[index][1]) == gap_extend &&
-				(Nint(values[index][2]) == INT2_MAX || Nint(values[index][2]) == decline_align))
+			if (BLAST_Nint(values[index][0]) == gap_open &&
+				BLAST_Nint(values[index][1]) == gap_extend &&
+				(BLAST_Nint(values[index][2]) == INT2_MAX || BLAST_Nint(values[index][2]) == decline_align))
 			{
 				if (kbp)
 				{
@@ -2845,10 +2848,10 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
 	{
 		for (index=0; index<max_number_values; index++)
 		{
-			if (Nint(values[index][2]) == INT2_MAX)
-				sprintf(ptr, "%ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
+			if (BLAST_Nint(values[index][2]) == INT2_MAX)
+				sprintf(ptr, "%ld, %ld\n", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
 			else
-				sprintf(ptr, "%ld, %ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
+				sprintf(ptr, "%ld, %ld, %ld\n", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
 			ptr += strlen(ptr);
 		}
 	}
@@ -2864,7 +2867,7 @@ BlastGapDecayInverse(double pvalue, unsigned nsegs, double decayrate)
 	if (decayrate <= 0. || decayrate >= 1. || nsegs == 0)
 		return pvalue;
 
-	return pvalue * (1. - decayrate) * Powi(decayrate, nsegs - 1);
+	return pvalue * (1. - decayrate) * BLAST_Powi(decayrate, nsegs - 1);
 }
 
 static double
@@ -2873,7 +2876,7 @@ BlastGapDecay(double pvalue, unsigned nsegs, double decayrate)
 	if (decayrate <= 0. || decayrate >= 1. || nsegs == 0)
 		return pvalue;
 
-	return pvalue / ((1. - decayrate) * Powi(decayrate, nsegs - 1));
+	return pvalue / ((1. - decayrate) * BLAST_Powi(decayrate, nsegs - 1));
 }
 
 /*
@@ -3007,7 +3010,7 @@ BlastKarlinPtoE(double p)
 	if (p == 1)
 		return INT4_MAX;
 
-        return -Log1p(-p);
+        return -BLAST_Log1p(-p);
 }
 
 static double	tab2[] = { /* table for r == 2 */
@@ -3054,14 +3057,14 @@ BlastSumP(Int4 r, double s)
 	double	a;
 
 	if (r == 1)
-		return -Expm1(-exp(-s));
+		return -BLAST_Expm1(-exp(-s));
 
 	if (r <= 4) {
 		if (r < 1)
 			return 0.;
 		r1 = r - 1;
 		if (s >= r*r+r1) {
-			a = LnGammaInt(r+1);
+			a = BLAST_LnGammaInt(r+1);
 			return r * exp(r1*log(s)-s-a-a);
 		}
 		if (s > -2*r) {
@@ -3103,7 +3106,7 @@ BlastSumPCalc(int r, double s)
 	if (r == 1) {
 		if (s > 8.)
 			return exp(-s);
-		return -Expm1(-exp(-s));
+		return -BLAST_Expm1(-exp(-s));
 	}
 	if (r < 1)
 		return 0.;
@@ -3168,11 +3171,11 @@ BlastSumPCalc(int r, double s)
 
 	ARG_R = xr;
 	ARG_R2 = xr2 = r - 2;
-	ARG_ADJ1 = xr2*logr - LnGammaInt(r1) - LnGammaInt(r);
+	ARG_ADJ1 = xr2*logr - BLAST_LnGammaInt(r1) - BLAST_LnGammaInt(r);
 	ARG_EPS = epsilon;
 
 	do {
-		d = RombergIntegrate(g, args, s, t, epsilon, 0, itmin);
+		d = BLAST_RombergIntegrate(g, args, s, t, epsilon, 0, itmin);
 #ifdef BLASTKAR_HUGE_VAL
 		if (d == BLASTKAR_HUGE_VAL)
 			return d;
@@ -3191,7 +3194,7 @@ g(double	s, void*	vp)
 	ARG_ADJ2 = ARG_ADJ1 - s;
 	ARG_SDIVR = s / ARG_R;	/* = s / r */
 	mx = (s > 0. ? ARG_SDIVR + 3. : 3.);
-	return RombergIntegrate(f, vp, 0., mx, ARG_EPS, 0, 1);
+	return BLAST_RombergIntegrate(f, vp, 0., mx, ARG_EPS, 0, 1);
 }
 
 static double
@@ -3233,13 +3236,13 @@ BLAST_SmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_d
 	double sum_p, sum_e;
 		
 	score_prime -= kbp->logK + log((double)subject_length*(double)query_length) + (num-1)*(kbp->logK + 2*log((double)gap));
-	score_prime -= LnFactorial((double) num); 
+	score_prime -= BLAST_LnFactorial((double) num); 
 
 	sum_p = BlastSumP(num, score_prime);
 
 	sum_e = BlastKarlinPtoE(sum_p);
 
-	sum_e = sum_e/((1.0-gap_decay_rate)*Powi(gap_decay_rate, (num-1)));
+	sum_e = sum_e/((1.0-gap_decay_rate)*BLAST_Powi(gap_decay_rate, (num-1)));
 
 	if (num > 1)
 	{
@@ -3268,13 +3271,13 @@ BLAST_UnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_pro
 	double sum_p, sum_e;
 		
 	score_prime -= kbp->logK + log((double)subject_length*(double)query_length) + (num-1)*(kbp->logK + log((double)p_gap) + log((double)n_gap));
-	score_prime -= LnFactorial((double) num); 
+	score_prime -= BLAST_LnFactorial((double) num); 
 
 	sum_p = BlastSumP(num, score_prime);
 
 	sum_e = BlastKarlinPtoE(sum_p);
 
-	sum_e = sum_e/((1.0-gap_decay_rate)*Powi(gap_decay_rate, (num-1)));
+	sum_e = sum_e/((1.0-gap_decay_rate)*BLAST_Powi(gap_decay_rate, (num-1)));
 
 	if (num > 1)
 	{
@@ -3305,13 +3308,13 @@ BLAST_LargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate,
         lcl_subject_length = (double) subject_length;
 
 	score_prime -= num*(kbp->logK + log(lcl_subject_length*lcl_query_length)) 
-	    - LnFactorial((double) num); 
+	    - BLAST_LnFactorial((double) num); 
 
 	sum_p = BlastSumP(num, score_prime);
 
 	sum_e = BlastKarlinPtoE(sum_p);
 
-	sum_e = sum_e/((1.0-gap_decay_rate)*Powi(gap_decay_rate, (num-1)));
+	sum_e = sum_e/((1.0-gap_decay_rate)*BLAST_Powi(gap_decay_rate, (num-1)));
 
 	if (num > 1)
 	{

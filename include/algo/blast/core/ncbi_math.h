@@ -40,6 +40,9 @@
 * -------  ----------  -----------------------------------------------------
 *
 * $Log$
+* Revision 1.5  2003/09/26 19:02:31  madden
+* Prefix ncbimath functions with BLAST_
+*
 * Revision 1.4  2003/09/10 21:35:20  dondosha
 * Removed Nlm_ prefix from math functions
 *
@@ -94,31 +97,28 @@ extern "C" {
 #endif
 
 /* log(x+1) for all x > -1 */
-extern double Log1p (double);
+extern double BLAST_Log1p (double);
 
 /* exp(x)-1 for all x */
-extern double Expm1 (double);
-
-/* Factorial function */
-extern double Factorial(Int4 n);
+extern double BLAST_Expm1 (double);
 
 /* Logarithm of the factorial Fn */
-extern double LnFactorial (double x);
+extern double BLAST_LnFactorial (double x);
 
 /* log(gamma(n)), integral n */
-extern double LnGammaInt (Int4);
+extern double BLAST_LnGammaInt (Int4);
 
 /* Romberg numerical integrator */
-extern double RombergIntegrate (double (*f) (double, void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin);
+extern double BLAST_RombergIntegrate (double (*f) (double, void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin);
 
 /* Greatest common divisor */
-extern long Gcd (long, long);
+extern long BLAST_Gcd (long, long);
 
 /* Nearest integer */
-extern long Nint (double);
+extern long BLAST_Nint (double);
 
 /* Integral power of x */
-extern double Powi (double x, Int4 n);
+extern double BLAST_Powi (double x, Int4 n);
 
 /* Error codes for the CTX_NCBIMATH context */
 #define ERR_NCBIMATH_INVAL	1 /* invalid parameter */
