@@ -159,12 +159,21 @@ void FilterOutDllHostedProjects(const CProjectItemsTree& tree_src,
 }
 
 
-static void s_InitalizeDllProj(const string& dll_id, CProjItem* dll)
+static void s_InitalizeDllProj(const string&                  dll_id, 
+                               const CMsvcDllsInfo::SDllInfo& dll_info,
+                               CProjItem*                     dll)
 {
     dll->m_Name           = dll_id;
     dll->m_ID             = dll_id;
     dll->m_ProjType       = CProjKey::eDll;
-    
+
+    ITERATE(list<string>, p, dll_info.m_Depends) {
+
+        const string& depend_dll_id = *p;
+        dll->m_Depends.push_back(CProjKey(CProjKey::eDll, 
+                                           depend_dll_id));    
+    }
+
     string dll_project_dir = GetApp().GetProjectTreeInfo().m_Compilers;
     dll_project_dir = 
         CDirEntry::ConcatPath(dll_project_dir, 
@@ -175,6 +184,7 @@ static void s_InitalizeDllProj(const string& dll_id, CProjItem* dll)
     dll_project_dir = CDirEntry::AddTrailingPathSeparator(dll_project_dir);
 
     dll->m_SourcesBaseDir = dll_project_dir;
+
 }
 
 
@@ -309,7 +319,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         GetApp().GetDllsInfo().GetDllInfo(dll_id, &dll_info);
 
         CProjItem dll;
-        s_InitalizeDllProj(dll_id, &dll);
+        s_InitalizeDllProj(dll_id, dll_info, &dll);
 
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
@@ -359,6 +369,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/10 22:54:58  gorelenk
+ * Changed implementation of s_InitalizeDllProj - added dependencies from
+ * other dll.
+ *
  * Revision 1.4  2004/03/10 16:36:39  gorelenk
  * Implemented functions FilterOutDllHostedProjects,
  * CreateDllBuildTree and CreateDllsList.
