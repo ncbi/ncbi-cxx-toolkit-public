@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.81  2004/02/17 22:10:30  dondosha
+ * Set preliminary hitlist size in options initialization
+ *
  * Revision 1.80  2004/02/07 15:48:30  ucko
  * PSIBlastOptionsNew: rearrange slightly so that declarations come first.
  *
@@ -1123,6 +1126,7 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
       return 1;
 
    (*options)->hitlist_size = 500;
+   (*options)->prelim_hitlist_size = 500;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
 
    if (program_number != blast_type_blastn && 
@@ -1143,7 +1147,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       return 1;
 
    if (hitlist_size)
-      options->hitlist_size = hitlist_size;
+      options->hitlist_size = options->prelim_hitlist_size = hitlist_size;
    if (evalue)
       options->expect_value = evalue;
 
@@ -1158,7 +1162,7 @@ BlastHitSavingOptionsValidate(Uint1 program_number,
 	if (options == NULL)
 		return 1;
 
-	if (options->hitlist_size < 1)
+	if (options->hitlist_size < 1 || options->prelim_hitlist_size < 1)
 	{
 		Int4 code=1;
 		Int4 subcode=1;
@@ -1240,7 +1244,6 @@ BlastHitSavingParametersNew(Uint1 program_number,
    params->gap_size = BLAST_GAP_SIZE;
    params->cutoff_big_gap = 0;
    params->cutoff_small_gap = params->cutoff_score;
-
       
    return 0;
 }
