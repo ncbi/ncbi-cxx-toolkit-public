@@ -185,7 +185,7 @@ esac
 # Run
 
 # Add current, build and scripts directories to PATH
-PATH=".:\$build_dir:\$root_dir/scripts:\$PATH"
+PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
 export PATH
 
 count_ok=0
@@ -310,7 +310,7 @@ saved_path="\$PATH"
 for x_conf in \$configurations; do
 
 # Add current configuration's build and dll build directories to PATH
-PATH=".:\$build_dir/bin/\$x_conf:\$build_dir/lib/\$x_conf:\$build_dir/dll/bin/\$x_conf:\$saved_path"
+PATH=".:\${build_dir}/bin/\${x_conf}:\${build_dir}/lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
 export PATH
 
 # Create directory for tests output

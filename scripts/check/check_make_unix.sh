@@ -212,7 +212,7 @@ esac
 
 
 # Add current, build and scripts directories to PATH
-PATH=".:$x_build_dir:$x_root_dir/scripts:\$PATH"
+PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
 export PATH
 
 EOF
@@ -221,7 +221,7 @@ if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
    cat >> $x_out <<EOF
 # Adjust PATH and LD_LIBRARY_PATH for running tests
 if [ -n "\$LD_LIBRARY_PATH" ]; then
-   LD_LIBRARY_PATH="$x_conf_dir/lib:\$LD_LIBRARY_PATH"
+   LD_LIBRARY_PATH="${x_conf_dir/lib}:\${LD_LIBRARY_PATH}"
 else
    LD_LIBRARY_PATH="$x_conf_dir/lib"
 fi
@@ -287,7 +287,8 @@ RunTest() {
 
          # Get application execution time
          if [ \$result -eq 0 ]; then
-            exec_time=\`tail -3 $x_tmp/\$\$.out | tr '\n	' '? ' | sed -e 's/?$//' -e 's/?/, /g'\`
+            exec_time=\`tail -3 $x_tmp/\$\$.out | tr '\n' '?'\`
+            exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
          fi
          rm -f $x_tmp/\$\$.out
 
