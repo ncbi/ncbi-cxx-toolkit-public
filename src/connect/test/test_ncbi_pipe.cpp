@@ -34,6 +34,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <stdio.h>
 #include <string.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -361,6 +362,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2003/11/15 15:35:36  ucko
+ * +<stdio.h> (no longer included by ncbi_pipe.hpp)
+ *
  * Revision 6.19  2003/11/12 16:43:36  ivanov
  * Using SetReadHandle() through GetPipe()
  *

@@ -39,6 +39,7 @@
 #include <connect/ncbi_pipe_connector.hpp>
 #include "../ncbi_priv.h"
 #include <connect/ncbi_connection.h>
+#include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
@@ -255,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/15 15:35:36  ucko
+ * +<stdio.h> (no longer included by ncbi_pipe.hpp)
+ *
  * Revision 1.5  2003/09/09 19:47:34  ivanov
  * Fix for previous commit
  *
