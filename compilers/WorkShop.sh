@@ -29,7 +29,7 @@ fi
 
 
 ## 5.0, 5.1, 5.2, 5.3, or 5.4?
-CC_version=`CC -V 2>&1`
+CC_version=`$CXX -V 2>&1`
 case "$CC_version" in
  "CC: WorkShop Compilers 5"* )
     NCBI_COMPILER="WorkShop5"
