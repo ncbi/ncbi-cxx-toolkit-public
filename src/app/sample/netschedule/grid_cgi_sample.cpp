@@ -64,13 +64,13 @@ protected:
     virtual bool CollectParams(void);
 
     // Prepare the job's input data
-    virtual void PrepareJobData(CNcbiOstream& os);
+    virtual void PrepareJobData(CGridJobSubmiter& submiter);
 
     // Show an information page
     virtual void OnJobSubmitted(CGridCgiContext& ctx);
 
     // Get the job's result.
-    virtual void OnJobDone(CNcbiIstream& is, CGridCgiContext& ctx);
+    virtual void OnJobDone(CGridJobStatus& status, CGridCgiContext& ctx);
     
     // Report the job's failure.
     virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx);
@@ -176,8 +176,9 @@ bool CGridCgiSampleApplication::CollectParams()
 }
 
 
-void CGridCgiSampleApplication::PrepareJobData(CNcbiOstream& os)
+void CGridCgiSampleApplication::PrepareJobData(CGridJobSubmiter& submiter)
 {   
+    CNcbiOstream& os = submiter.GetOStream();
     // Send jobs input data
     os << m_Doubles.size() << ' ';
     for (size_t j = 0; j < m_Doubles.size(); ++j) {
@@ -199,9 +200,11 @@ void CGridCgiSampleApplication::OnJobSubmitted(CGridCgiContext& ctx)
 
 
 
-void CGridCgiSampleApplication::OnJobDone(CNcbiIstream& is, 
+void CGridCgiSampleApplication::OnJobDone(CGridJobStatus& status, 
                                           CGridCgiContext& ctx)
 {
+
+    CNcbiIstream& is = status.GetIStream();
     int count;
                 
     // Get the result
@@ -336,6 +339,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/05 18:21:08  didenko
+ * Changed interface of OnJobDone and PrepareJobData methods
+ *
  * Revision 1.5  2005/04/04 14:15:15  didenko
  * Cosmetcis
  *

@@ -138,9 +138,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             bool remove_cookie = false;
             // A job is done here
             if (status == CNetScheduleClient::eDone) {
-                // Get an input stream
-                CNcbiIstream& is = job_status.GetIStream();               
-                OnJobDone(is, grid_ctx);
+                OnJobDone(job_status, grid_ctx);
 
                 remove_cookie = true;
             }
@@ -181,9 +179,9 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
 
                 // Get an ouptut stream
-                CNcbiOstream& os = job_submiter.GetOStream();
+                //                CNcbiOstream& os = job_submiter.GetOStream();
                 
-                PrepareJobData(os);
+                PrepareJobData(job_submiter);
 
                 // Submit a job
                 string job_key = job_submiter.Submit();
@@ -235,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/05 18:20:39  didenko
+ * Changed interface of OnJobDone and PrepareJobData methods
+ *
  * Revision 1.4  2005/04/01 15:06:59  didenko
  * Divided OnJobSubmit methos onto two PrepareJobData and OnJobSubmitted
  *

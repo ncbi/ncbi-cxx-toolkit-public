@@ -133,7 +133,7 @@ protected:
     /// This method is called when a job is ready to be send to a the queue.
     /// Override this method to prepare input data for the worker node.
     /// 
-    virtual void PrepareJobData(CNcbiOstream& os) = 0;
+    virtual void PrepareJobData(CGridJobSubmiter& submiter) = 0;
 
     /// This method is called just after a job has been submitted.
     /// Override this method to render information HTML page.
@@ -145,7 +145,7 @@ protected:
     /// Override this method to get a result from a worker node 
     /// and render a result HTML page
     ///
-    virtual void OnJobDone(CNcbiIstream& is, CGridCgiContext& ctx) = 0;
+    virtual void OnJobDone(CGridJobStatus& status, CGridCgiContext& ctx) = 0;
 
     /// This method is called when worker node repored a failure.
     /// Override this method to get a error message and render 
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/05 18:19:58  didenko
+ * Changed interface of OnJobDone and PrepareJobData methods
+ *
  * Revision 1.5  2005/04/01 15:06:21  didenko
  * Divided OnJobSubmit methos onto two PrepareJobData and OnJobSubmitted
  *
