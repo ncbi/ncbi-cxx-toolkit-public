@@ -16,16 +16,20 @@ include $(builddir)/Makefile.rules
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %.d: ./%.cpp
 	$(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
+	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
+	test -s $@.tmp  &&  mv -f $@.tmp $@
 %.d: $(srcdir)/%.cpp
 	$(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
+	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
+	test -s $@.tmp  &&  mv -f $@.tmp $@
 %.d: ./%.c
 	$(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
+	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
+	test -s $@.tmp  &&  mv -f $@.tmp $@
 %.d: $(srcdir)/%.c
 	$(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
+	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
+	test -s $@.tmp  &&  mv -f $@.tmp $@
 
 
 ifeq ($(MAKECMDGOALS),clean)
