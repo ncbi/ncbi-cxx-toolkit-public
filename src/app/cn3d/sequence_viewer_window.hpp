@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/06/13 13:32:39  thiessen
+* add self-hit calculation
+*
 * Revision 1.16  2002/06/05 14:28:40  thiessen
 * reorganize handling of window titles
 *
@@ -113,6 +116,7 @@ private:
         // view menu
         MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
         MID_SCORE_THREADER,
+        MID_SELF_HIT,
         MID_EXPORT,
             MID_EXPORT_FASTA,
             MID_EXPORT_TEXT,
@@ -143,6 +147,7 @@ private:
     void OnScoreThreader(wxCommandEvent& event);
     void OnMarkBlock(wxCommandEvent& event);
     void OnExport(wxCommandEvent& event);
+    void OnSelfHit(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation

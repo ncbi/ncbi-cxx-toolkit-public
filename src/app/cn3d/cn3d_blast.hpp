@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/06/13 13:32:39  thiessen
+* add self-hit calculation
+*
 * Revision 1.5  2002/05/22 17:17:09  thiessen
 * progress on BLAST interface ; change custom spin ctrl implementation
 *
@@ -54,6 +57,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include <list>
+#include <vector>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -78,6 +82,11 @@ public:
     // to locations based on the multiple and alignTo/From values.
     void CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
         const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM);
+
+    // calculate the self-hits for the given alignment - e.g., the score of each row when
+    // aligned with the multiple using BLAST/PSSM. The scores will be placed in each row, -1.0
+    // if no significant alignment is found.
+    void CalculateSelfHitScores(const BlockMultipleAlignment *multiple);
 };
 
 END_SCOPE(Cn3D)

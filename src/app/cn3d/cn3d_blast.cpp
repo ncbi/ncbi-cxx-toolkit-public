@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/06/13 13:32:39  thiessen
+* add self-hit calculation
+*
 * Revision 1.10  2002/05/22 17:17:08  thiessen
 * progress on BLAST interface ; change custom spin ctrl implementation
 *
@@ -354,6 +357,116 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
     BLASTOptionDelete(options);
     if (BLASTmatrix) BLAST_MatrixDestruct(BLASTmatrix);
+    masterSeqInt->id = NULL;    // don't free Seq-id, since it belongs to the Bioseq
+    SeqIntFree(masterSeqInt);
+    MemFree(masterSeqLoc);
+    slaveSeqInt->id = NULL;
+    SeqIntFree(slaveSeqInt);
+    MemFree(slaveSeqLoc);
+}
+
+void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
+{
+    if (!multiple) {
+        ERR_POST(Error << "NULL multiple alignment");
+        return;
+    }
+
+    // set up BLAST stuff
+    BLAST_OptionsBlkPtr options = BLASTOptionNew("blastp", true);
+    if (!options) {
+        ERR_POST(Error << "BLASTOptionNew() failed");
+        return;
+    }
+
+    // get master sequence
+    const Sequence *masterSeq = multiple->GetMaster();
+    Bioseq *masterBioseq = masterSeq->parentSet->GetOrCreateBioseq(masterSeq);
+
+    // create Seq-loc interval for master
+    SeqLocPtr masterSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
+    masterSeqLoc->choice = SEQLOC_INT;
+    SeqIntPtr masterSeqInt = SeqIntNew();
+    masterSeqLoc->data.ptrvalue = masterSeqInt;
+    masterSeqInt->id = masterBioseq->id;
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+        uaBlocks(multiple->GetUngappedAlignedBlocks());
+    if (uaBlocks->size() == 0) {
+        ERR_POST(Error << "Self-hit requires at least one aligned block");
+        return;
+    }
+    masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from;
+    masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to;
+    SeqLocPtr slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
+    slaveSeqLoc->choice = SEQLOC_INT;
+    SeqIntPtr slaveSeqInt = SeqIntNew();
+    slaveSeqLoc->data.ptrvalue = slaveSeqInt;
+
+    // create BLAST_Matrix if using PSSM from multiple
+    BLAST_Matrix *BLASTmatrix = CreateBLASTMatrix(multiple);
+
+    std::string err;
+    for (int row=0; row<multiple->NRows(); row++) {
+
+        // get C Bioseq for each slave
+        const Sequence *slaveSeq = multiple->GetSequenceOfRow(row);
+        Bioseq *slaveBioseq = slaveSeq->parentSet->GetOrCreateBioseq(slaveSeq);
+
+        // setup Seq-loc interval for slave
+        slaveSeqInt->id = slaveBioseq->id;
+        slaveSeqInt->from = uaBlocks->front()->GetRangeOfRow(row)->from;
+        slaveSeqInt->to = uaBlocks->back()->GetRangeOfRow(row)->to;
+//        TESTMSG("for BLAST: master range " <<
+//                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
+//                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
+
+        // actually do the BLAST alignment
+//        TESTMSG("calling BlastTwoSequencesByLocWithCallback()");
+        SeqAlign *salp = BlastTwoSequencesByLocWithCallback(
+            masterSeqLoc, slaveSeqLoc,
+            "blastp", options,
+            NULL, NULL, NULL,
+            BLASTmatrix);
+
+        // process the result
+        double score = -1.0;
+        if (salp) {
+            // convert C SeqAlign to C++ for convenience
+            CSeq_align sa;
+            bool okay = ConvertAsnFromCToCPP(salp, (AsnWriteFunc) SeqAlignAsnWrite, &sa, &err);
+            SeqAlignFree(salp);
+            if (!okay) {
+                ERR_POST(Error << "Conversion of SeqAlign to C++ object failed");
+                continue;
+            }
+
+            // get score
+            if (sa.IsSetScore()) {
+                CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
+                for (sc=sa.GetScore().begin(); sc!=sce; sc++) {
+                    if ((*sc)->GetValue().IsReal() && (*sc)->IsSetId() &&
+                        (*sc)->GetId().IsStr() && (*sc)->GetId().GetStr() == "e_value") {
+                        score = (*sc)->GetValue().GetReal();
+                        break;
+                    }
+                }
+            }
+            if (score < 0.0) ERR_POST(Error << "Got back Seq-align with no E-value");
+
+        }
+
+        // set score in row
+        multiple->SetRowDouble(row, score);
+        wxString status;
+        if (score >= 0.0)
+            status.Printf("Self hit E-value: %g", score);
+        else
+            status = "No significant self hit";
+        multiple->SetRowStatusLine(row, status.c_str());
+    }
+
+    BLASTOptionDelete(options);
+    BLAST_MatrixDestruct(BLASTmatrix);
     masterSeqInt->id = NULL;    // don't free Seq-id, since it belongs to the Bioseq
     SeqIntFree(masterSeqInt);
     MemFree(masterSeqLoc);

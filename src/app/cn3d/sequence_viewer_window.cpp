@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/06/13 13:32:39  thiessen
+* add self-hit calculation
+*
 * Revision 1.32  2002/06/05 17:25:47  thiessen
 * change 'update' to 'import' in GUI
 *
@@ -148,6 +151,7 @@
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -168,6 +172,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
+    EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -178,6 +183,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
 
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
     viewMenu->Append(MID_SCORE_THREADER, "Show PSSM+Contact &Scores");
+    viewMenu->Append(MID_SELF_HIT, "Show Se&lf-Hits");
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_EXPORT_FASTA, "&FASTA");
     subMenu->Append(MID_EXPORT_TEXT, "&Text");
@@ -236,8 +242,9 @@ void SequenceViewerWindow::SetWindowTitle(void)
 void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
 {
     if (menuBar->FindItem(MID_SHOW_HIDE_ROWS)) {
-        if (sequenceViewer->GetCurrentDisplay() &&
-            sequenceViewer->GetCurrentDisplay()->IsEditable())
+        bool editable = (sequenceViewer->GetCurrentDisplay() &&
+            sequenceViewer->GetCurrentDisplay()->IsEditable());
+        if (editable)
             menuBar->Enable(MID_SHOW_HIDE_ROWS, !enabled);  // can't show/hide when editor is on
         else
             menuBar->Enable(MID_SHOW_HIDE_ROWS, false);     // can't show/hide in non-alignment display
@@ -248,6 +255,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
+        menuBar->Enable(MID_SELF_HIT, editable);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
@@ -497,6 +505,26 @@ void SequenceViewerWindow::OnExport(wxCommandEvent& event)
         event.GetId() == MID_EXPORT_FASTA,
         event.GetId() == MID_EXPORT_TEXT,
         event.GetId() == MID_EXPORT_HTML);
+}
+
+void SequenceViewerWindow::OnSelfHit(wxCommandEvent& event)
+{
+    if (sequenceViewer->GetCurrentAlignments()) {
+
+        const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments()->front();
+        sequenceViewer->alignmentManager->blaster->CalculateSelfHitScores(multiple);
+
+        // print out overall self-hit rate
+        int nSelfHits = 0;
+        static const double threshold = 0.01;
+        for (int row=0; row<multiple->NRows(); row++) {
+            if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
+                nSelfHits++;
+        }
+        ERR_POST(Info << "Self hits with E-value < " << setprecision(3) << threshold << ": "
+            << (100.0*nSelfHits/multiple->NRows()) << "% ("
+            << nSelfHits << '/' << multiple->NRows() << ')');
+    }
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/06/13 13:32:38  thiessen
+* add self-hit calculation
+*
 * Revision 1.28  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -365,7 +368,7 @@ public:
     double GetRowDouble(int row) const { return rowDoubles[row]; }
     void SetRowDouble(int row, double value) const { rowDoubles[row] = value; }
     const std::string& GetRowStatusLine(int row) const { return rowStrings[row]; }
-    void SetRowStatusLine(int row, std::string value) const { rowStrings[row] = value; }
+    void SetRowStatusLine(int row, const std::string& value) const { rowStrings[row] = value; }
 
     // empties all rows' infos
     void ClearRowInfo(void) const
