@@ -118,7 +118,7 @@ protected:
     void x_GatherDescInfo(const CSeqdesc& desc);
     void x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx);
 
-    void x_SetComment(const string& comment) { m_Comment = comment; }
+    void x_SetComment(const string& comment);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
         const string& suffix);
     string& x_GetComment(void) { return m_Comment; }
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/10/05 15:26:13  shomrat
+* Changed x_SetComment
+*
 * Revision 1.8  2004/08/30 13:31:43  shomrat
 * made constructor protected
 *
