@@ -136,7 +136,9 @@ CBlastOption::SetBlastp()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
+    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
+    SetMatrixPath(path);
+    sfree(path);
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -194,7 +196,9 @@ CBlastOption::SetBlastn()
 
     // Scoring options
     SetMatrixName(NULL);
-    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), false));
+    char* path = BLASTGetMatrixPath(GetMatrixName(), false);
+    SetMatrixPath(path);
+    sfree(path);
     m_ScoringOpts->penalty = BLAST_PENALTY;
     m_ScoringOpts->reward = BLAST_REWARD;
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_NUCL;
@@ -256,7 +260,9 @@ void CBlastOption::SetMegablast()
 
     // Scoring options
     SetMatrixName(NULL);
-    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), false));
+    char* path = BLASTGetMatrixPath(GetMatrixName(), false);
+    SetMatrixPath(path);
+    sfree(path);
     m_ScoringOpts->penalty = BLAST_PENALTY;
     m_ScoringOpts->reward = BLAST_REWARD;
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_MEGABLAST;
@@ -307,7 +313,9 @@ CBlastOption::SetBlastx()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
+    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
+    SetMatrixPath(path);
+    sfree(path);
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -357,7 +365,9 @@ CBlastOption::SetTblastn()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
+    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
+    SetMatrixPath(path);
+    sfree(path);
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -414,7 +424,9 @@ CBlastOption::SetTblastx()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
+    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
+    SetMatrixPath(path);
+    sfree(path);
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -500,6 +512,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/09/02 21:15:11  camacho
+* Fix small memory leak
+*
 * Revision 1.15  2003/08/27 15:05:56  camacho
 * Use symbolic name for alphabet sizes
 *

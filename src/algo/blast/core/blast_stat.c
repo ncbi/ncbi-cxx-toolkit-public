@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.33  2003/09/02 21:12:07  camacho
+ * Fix small memory leak
+ *
  * Revision 1.32  2003/08/26 15:23:51  dondosha
  * Rolled back previous change as it is not necessary any more
  *
@@ -1295,6 +1298,7 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
             if ( (fp=fopen(full_matrix_path, "r")) == NULL) {
                return -1;
             }
+            sfree(full_matrix_path);
 
             if ( (status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
                fclose(fp);
