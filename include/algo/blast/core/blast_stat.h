@@ -50,27 +50,6 @@ extern "C" {
 #define BLAST_MATRIX_BEST 2
 
 
-/****************************************************************************
-For more accuracy in the calculation of K, set K_SUMLIMIT to 0.00001.
-For high speed in the calculation of K, use a K_SUMLIMIT of 0.001
-Note:  statistical significance is often not greatly affected by the value
-of K, so high accuracy is generally unwarranted.
-*****************************************************************************/
-/* K_SUMLIMIT_DEFAULT == sumlimit used in BlastKarlinLHtoK() */
-#define BLAST_KARLIN_K_SUMLIMIT_DEFAULT 0.0001
-
-/* LAMBDA_ACCURACY_DEFAULT == accuracy to which Lambda should be calc'd */
-#define BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT    (1.e-5)
-
-/* LAMBDA_ITER_DEFAULT == no. of iterations in LambdaBis = ln(accuracy)/ln(2)*/
-#define BLAST_KARLIN_LAMBDA_ITER_DEFAULT        17
-
-/* Initial guess for the value of Lambda in BlastKarlinLambdaNR */
-#define BLAST_KARLIN_LAMBDA0_DEFAULT    0.5
-
-#define BLAST_KARLIN_K_ITER_MAX 100
-#define BLAST_SUMP_EPSILON_DEFAULT 0.002 /* accuracy for SumP calculations */
-
 /* 
 	Where are the BLAST matrices located?
 */
@@ -106,15 +85,6 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 #define BLAST_SCORE_MIN	INT2_MIN
 #define BLAST_SCORE_MAX	INT2_MAX
 
-
-#if defined(OS_DOS) || defined(OS_MAC)
-#define BLAST_SCORE_1MIN (-100)
-#define BLAST_SCORE_1MAX ( 100)
-#else
-#define BLAST_SCORE_1MIN (-10000)
-#define BLAST_SCORE_1MAX ( 10000)
-#endif
-#define BLAST_SCORE_RANGE_MAX	(BLAST_SCORE_1MAX - BLAST_SCORE_1MIN)
 
 /** Holds score frequencies used in calculation
 of Karlin-Altschul parameters for an ungapped search.
@@ -400,6 +370,16 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues,
 /* Please see comment on blast_stat.c  */
 Int2
 Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
+
+/**  Given a sequence of 'length' amino acid residues, compute the
+ *   probability of each residue and put that in the array resProb
+ *
+ * @param sequence the sequence to be computed upon [in]
+ * @param length the length of the sequence [in]
+ * @param resProb the object to be filled in [in|out]
+ */
+void
+Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb);
 
 #ifdef __cplusplus
 }
