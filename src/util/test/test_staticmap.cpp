@@ -163,10 +163,10 @@ void CTestStaticMap::TestStaticSet(void) const
 
     TRef ref;
     while ( int(ref.size()) < m_NumberOfElements ) {
-        ref.insert(random());
+        ref.insert(rand());
     }
 
-    int* arr(new int[m_NumberOfElements]);
+    int* arr = new int[m_NumberOfElements];
     {{
         int index = 0;
         ITERATE ( TRef, it, ref ) {
@@ -180,7 +180,7 @@ void CTestStaticMap::TestStaticSet(void) const
     _ASSERT(ref.size() == tst.size());
 
     for ( int i = 0; i < m_LookupCount; ++i ) {
-        int key = random();
+        int key = rand();
 
         TestAll(key, ref, tst, arr);
     }
@@ -199,15 +199,14 @@ void CTestStaticMap::TestStaticMap(void) const
 
     TRef ref;
     while ( int(ref.size()) < m_NumberOfElements ) {
-        ref.insert(TRef::value_type(random(), random()));
+        ref.insert(TRef::value_type(rand(), rand()));
     }
 
-    pair<int, int>* arr(new pair<int, int>[m_NumberOfElements]);
+    pair<int, int>* arr = new pair<int, int>[m_NumberOfElements];
     {{
         int index = 0;
         ITERATE ( TRef, it, ref ) {
-            arr[index].first = it->first;
-            arr[index++].second = it->second;
+            arr[index++] = TTst::value_type(it->first, it->second);
         }
         if ( m_NumberOfElements >= 2 ) {
             switch ( m_TestBadData ) {
@@ -235,7 +234,7 @@ void CTestStaticMap::TestStaticMap(void) const
     _ASSERT(ref.size() == tst.size());
 
     for ( int i = 0; i < m_LookupCount; ++i ) {
-        int key = random();
+        int key = rand();
 
         TestAll(key, ref, tst, arr);
     }
@@ -329,6 +328,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/23 18:50:48  vasilche
+ * Fixed for MSVC compiler.
+ *
  * Revision 1.3  2004/01/23 18:15:48  vasilche
  * Fixed initialization of test map.
  *
