@@ -216,6 +216,7 @@ private:
     
     bool   m_Pending;
     bool   m_Verbose;
+    int    m_ErrIgn;
     
     // Initialize request (called by constructors)
     void x_Init(CBlastOptionsHandle * algo_opts, const char * program, const char * service);
@@ -250,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/05 19:21:05  bealer
+ * - Add retry capability to API code.
+ *
  * Revision 1.4  2004/02/05 00:38:07  bealer
  * - Polling optimization.
  *

@@ -340,7 +340,15 @@ void CBlast4Options::x_SubmitSearch(void)
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetQueue_search(*m_Qsr);
     
-    CRef<CBlast4_reply> reply = s_SendRequest(body, m_Verbose);
+    CRef<CBlast4_reply> reply;
+    
+    try {
+        reply = s_SendRequest(body, m_Verbose);
+    }
+    catch(CEofException & e) {
+        m_Err = "Unexpected EOF when contacting netblast server - unable to submit request.";
+        return;
+    }
     
     if (reply->CanGetBody()  &&
         reply->GetBody().GetQueue_search().CanGetRequest_id()) {
@@ -379,11 +387,24 @@ void CBlast4Options::x_CheckResults(void)
     
     CRef<CBlast4_reply> r;
     
-    try {
-        r = s_GetSearchResults(m_RID, m_Verbose);
-        m_Pending = s_SearchPending(r);
-    }
-    catch(CEofException &) {
+    bool try_again = true;
+    
+    while(try_again) {
+        try {
+            r = s_GetSearchResults(m_RID, m_Verbose);
+            m_Pending = s_SearchPending(r);
+            try_again = false;
+        }
+        catch(CEofException & e) {
+            --m_ErrIgn;
+            
+            if (m_ErrIgn == 0) {
+                m_Err = "Unexpected EOF when contacting netblast server - unable to submit request.";
+                return;
+            }
+            
+            SleepSec(10);
+        }
     }
     
     if (! m_Pending) {
@@ -472,6 +493,7 @@ void CBlast4Options::x_Init(CBlastOptionsHandle * algo_opts,
 {
     m_Verbose   = false;
     m_Pending   = false;
+    m_ErrIgn    = 5;
     
     m_Qsr.Reset(new objects::CBlast4_queue_search_request);
     m_Qsr->SetProgram(program);
@@ -536,6 +558,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/05 19:20:39  bealer
+* - Add retry capability to API code.
+*
 * Revision 1.3  2004/02/05 00:37:43  bealer
 * - Polling optimization.
 *
