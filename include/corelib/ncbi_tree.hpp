@@ -185,6 +185,10 @@ public:
     /// @return pointer to new subtree
     CTreeNode<TValue>* AddNode(const TValue& val = TValue());
 
+    /// Remove all subnodes from the source node and attach them to the
+    /// current tree (node). Source node cannot be an ancestor of the 
+    /// current node
+    void MoveSubnodes(TTreeType* src_tree_node);
 
     /// Insert new subnode before the specified location in the subnode list
     ///
@@ -196,9 +200,16 @@ public:
 
     /// Report whether this is a leaf node
     ///
-    /// @return true if this is a leaf node (has no children),
+    /// @return TRUE if this is a leaf node (has no children),
     /// false otherwise
     bool IsLeaf() const { return m_Nodes.empty(); };
+
+    /// Check if node is a direct or indirect parent of this node
+    ///
+    /// @param  tree_node
+    ///    Node candidate
+    /// @return TRUE if tree_node is a direct or indirect parent
+    bool IsParent(const TTreeType& tree_node) const;
 
 protected:
     void CopyFrom(const TTreeType& tree);
@@ -540,7 +551,9 @@ void TreeReRoot(TTreeNode& new_root_node)
 }
 
 
-/// Check if two nodes have the same common root
+/// Check if two nodes have the same common root.
+///
+/// Algorithm finds first common ancestor (farthest from the root)
 /// @param tree_node_a
 ///     Node A
 /// @param tree_node_b
@@ -590,6 +603,8 @@ const TTreeNode* TreeFindCommonParent(const TTreeNode& tree_node_a,
 
     return node_candidate;
 }
+
+
 
 /// Tree print functor used as a tree traversal payload
 /// @internal
@@ -785,6 +800,19 @@ CTreeNode<TValue>* CTreeNode<TValue>::AddNode(const TValue& val)
     return subnode;
 }
 
+
+template<class TValue>
+void CTreeNode<TValue>::MoveSubnodes(TTreeType* src_tree_node)
+{
+    _ASSERT(!IsParent(*src_tree_node));
+    TNodeList& src_nodes = src_tree_node->m_Nodes;
+    ITERATE(TNodeList, it, src_nodes) {
+        AddNode(*it);
+    }
+    src_nodes.clear();
+}
+
+
 template<class TValue>
 void CTreeNode<TValue>::InsertNode(TNodeList_I it,
                                    TTreeType* subnode)
@@ -832,6 +860,22 @@ typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot()
     }
     return node_ptr;
 }
+
+template<class TValue>
+bool CTreeNode<TValue>::IsParent(const TTreeType& tree_node) const
+{
+    _ASSERT(this != &tree_node);
+
+    const TTreeType* node_ptr = GetParent();
+
+    while (node_ptr) {
+        if (node_ptr == &tree_node)
+            return true;
+        node_ptr = node_ptr->GetParent();
+    }
+    return false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -943,6 +987,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/04/12 13:28:25  kuznets
+ * + MoveSubnodes
+ *
  * Revision 1.29  2004/04/09 15:27:30  gorelenk
  * Added missed 'typename' (s) .
  *
