@@ -127,6 +127,10 @@ public:
     EBDB_ErrCode FetchFirst();    
     EBDB_ErrCode Fetch(EFetchDirection fdir = eDefault);
 
+    EBDB_ErrCode Update(CBDB_File::EAfterWrite = CBDB_File::eDiscardData);
+    EBDB_ErrCode Delete(CBDB_File::EIgnoreError on_error = 
+                        CBDB_File::eThrowOnError);
+
 protected:
     /// Test "TO" search criteria. Return "true" if current value satisfies it
     bool TestTo() const;
@@ -136,7 +140,8 @@ protected:
 
     /// Return next field's IBDB_FieldConvert interface 
     /// (hidden cast to non-public parent class)
-    IBDB_FieldConvert& GetFieldConvert(CBDB_BufferManager& buf, unsigned int n);
+    IBDB_FieldConvert& GetFieldConvert(CBDB_BufferManager& buf, 
+                                       unsigned int n);
 
 protected:
     /// Reference on the "mother" file
@@ -220,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/06 18:17:58  rotmistr
+ * Cursor Update/Delete implemented
+ *
  * Revision 1.8  2003/12/29 13:23:24  kuznets
  * Added support for transaction protected cursors.
  *

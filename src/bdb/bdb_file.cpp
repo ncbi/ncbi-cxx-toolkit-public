@@ -751,6 +751,23 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
     return eBDB_Ok;
 }
 
+EBDB_ErrCode CBDB_File::WriteCursor(DBC* dbc, unsigned int bdb_flag, 
+                                    EAfterWrite write_flag)
+{
+    CheckNullDataConstraint();
+    return x_Write(bdb_flag, write_flag, dbc);
+}
+
+EBDB_ErrCode CBDB_File::DeleteCursor(DBC* dbc, EIgnoreError on_error)
+{
+    int ret = dbc->c_del(dbc,0);
+
+    if (on_error != CBDB_File::eIgnoreError) {
+        BDB_CHECK(ret, FileName().c_str());
+    }
+
+    return eBDB_Ok;
+}
 
 void CBDB_File::x_CheckConstructBuffers()
 {
@@ -793,7 +810,9 @@ void CBDB_File::x_EndRead()
 }
 
 
-EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
+EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, 
+                                EAfterWrite write_flag, 
+                                DBC * dbc)
 {
     m_KeyBuf->PrepareDBT_ForWrite(m_DBT_Key);
 
@@ -802,14 +821,26 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
             m_DataBuf->PrepareDBT_ForWrite(m_DBT_Data);
         }
     }
-    DB_TXN* txn = GetTxn();
+
+    int ret=0;
+    if(dbc) {
+        ret = dbc->c_put(dbc,
+                         m_DBT_Key,
+                         m_DBT_Data,
+                         flags
+            );
+        
+    } else {
+        DB_TXN* txn = GetTxn();
     
-    int ret = m_DB->put(m_DB,
+        ret = m_DB->put(m_DB,
                         txn,
                         m_DBT_Key,
                         m_DBT_Data,
                         flags
-                        );
+            );
+    }
+    
     if (ret == DB_KEYEXIST)
         return eBDB_KeyDup;
 
@@ -848,6 +879,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/05/06 18:18:14  rotmistr
+ * Cursor Update/Delete implemented
+ *
  * Revision 1.35  2004/03/12 15:08:36  kuznets
  * Removed unnecessary DB_NODUPDATA flag (db->put)
  *

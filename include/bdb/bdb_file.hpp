@@ -329,6 +329,13 @@ protected:
     /// Read DB cursor
     EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag);
 
+    /// Write DB cursor
+    EBDB_ErrCode WriteCursor(DBC* dbc, unsigned int bdb_flag, 
+                             EAfterWrite write_flag);
+
+    /// Delete DB cursor
+    EBDB_ErrCode DeleteCursor(DBC* dbc, EIgnoreError);
+
     /// Check if all NOT NULL fields are assigned. 
     /// Throw an exception if constraint check failed.
     void CheckNullDataConstraint() const;
@@ -352,7 +359,8 @@ private:
     /// Record reading epilog function
     void x_EndRead();
 
-    EBDB_ErrCode x_Write(unsigned int flags, EAfterWrite write_flag);
+    EBDB_ErrCode x_Write(unsigned int flags, EAfterWrite write_flag, 
+                         DBC * dbc = 0);
 
     void x_CheckConstructBuffers();
 
@@ -478,6 +486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/05/06 18:17:58  rotmistr
+ * Cursor Update/Delete implemented
+ *
  * Revision 1.29  2004/03/08 13:31:58  kuznets
  * CBDB_File some methods made public
  *

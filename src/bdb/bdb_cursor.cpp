@@ -231,6 +231,18 @@ void CBDB_FileCursor::SetCondition(ECondition cond_from, ECondition cond_to)
     To.m_Condition.ResetUnassigned();
 }
 
+EBDB_ErrCode CBDB_FileCursor::Update(CBDB_File::EAfterWrite write_flag)
+{
+    if(m_DBC == 0) 
+        BDB_THROW(eInvalidValue, "Try to use invalid cursor");
+    
+    return m_Dbf.WriteCursor(m_DBC, DB_CURRENT, write_flag);
+}
+
+EBDB_ErrCode CBDB_FileCursor::Delete(CBDB_File::EIgnoreError on_error)
+{
+    return m_Dbf.DeleteCursor(m_DBC, on_error);
+}
 
 EBDB_ErrCode CBDB_FileCursor::FetchFirst()
 {
@@ -459,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/06 18:18:14  rotmistr
+ * Cursor Update/Delete implemented
+ *
  * Revision 1.10  2004/02/17 19:05:21  kuznets
  * GCC warnings fix
  *
