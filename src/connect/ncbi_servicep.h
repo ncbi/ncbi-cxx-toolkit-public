@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/05 21:37:51  lavr
+ * Mapper-specific private data field added
+ *
  * Revision 6.2  2000/05/22 16:53:12  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -69,6 +72,8 @@ struct SSERV_IterTag {
     size_t       n_max_skip;     /* number of allocated slots in the array */
 
     const SSERV_VTable* op;      /* table of virtual functions */
+
+    void*        data;           /* private data field */
 };
 
 
