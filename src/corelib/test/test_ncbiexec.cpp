@@ -167,19 +167,25 @@ int CTest::Run(void)
 // APPLICATION OBJECT  and  MAIN
 //
 
-int main(int argc, const char* argv[])
+int main(int argc, const char* argv[], const char* envp[])
 {
      // Exec from test?
     if ( argc > 1) {
-        // Check environment
         assert(argv[1] && *argv[1]);
         cout << endl << "Exec: " << argv[1] << endl;
+        // View environment
+        const char** env_var = &envp[0];
+        while (*env_var) {
+            cout << *env_var << endl;
+            env_var++;
+        }
+        // Check environment
         if ( strstr(argv[1],"E_e")) {
-           char* ptr = getenv("TEST_NCBI_EXEC");
-           if (!ptr) {
-               cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
-               exit(1);
-           }
+            char* ptr = getenv("TEST_NCBI_EXEC");
+            if (!ptr) {
+                cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
+                exit(1);
+            }
         }
         exit(TEST_RESULT_C);
     }
@@ -191,6 +197,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2002/07/23 13:30:30  ivanov
+ * Added output of environment for each test
+ *
  * Revision 6.5  2002/07/17 15:14:21  ivanov
  * Minor changes in the test exec branch
  *
