@@ -3263,7 +3263,7 @@ extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
 #ifdef TCP_NODELAY
     if (sock->sock != SOCK_INVALID) {
         int n = (int) on_off;
-        if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY, &n, sizeof(n))) {
+        if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY, (void*)&n, sizeof(n))) {
             int x_errno = SOCK_ERRNO;
             char _id[32];
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
@@ -4104,6 +4104,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.152  2004/10/19 18:50:16  lavr
+ * Heed setsockopt() type mismatch for CodeWarrior
+ *
  * Revision 6.151  2004/10/19 18:12:15  lavr
  * Fix compilation problems with previous commit
  *
