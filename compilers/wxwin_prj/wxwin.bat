@@ -32,31 +32,29 @@ REM ---------------------------------------------------------------------------
 REM $Log$
 REM ===========================================================================
 
-IF NOT _%1% == _ GOTO DLL
-SET DSWFILE=
+IF NOT _%1% == _ GOTO SETARG
+ECHO INFO: Missing target name, assuming ALL.
+SET TARGET=ALL
 GOTO NEXTARG
-:DLL
-IF NOT _%1% == _DLL GOTO LIB
-SET DSWFILE=wxvc_dll.dsw
-GOTO NEXTARG
-:LIB
-IF NOT _%1% == _LIB GOTO ERR
-SET DSWFILE=wxvc.dsw
-GOTO NEXTARG
-:ERR
-ECHO FATAL: Unknown parameter "%1%". Please specify ALL, LIB or DLL.
+:SETARG
+SET TARGET=%1%
+IF %TARGET% == ALL GOTO NEXTARG
+IF %TARGET% == DLL GOTO NEXTARG
+IF %TARGET% == LIB GOTO NEXTARG
+ECHO INFO: The following target names are recognized:
+ECHO       ALL   LIB   DLL
+ECHO FATAL: Unknown target name "%1%". Please correct.
 GOTO EXIT
 
 :NEXTARG
 IF _%2% == _ GOTO DEFAULT
-IF NOT _%FILE% == _ GOTO SETCFG
-ECHO ERROR: Target ALL. Configuration(s) ignored.
-GOTO DEFAULT
-:SETCFG
-SET CFG=%2%
-GOTO LOOP
+IF NOT %TARGET% == ALL GOTO SETCFG
+ECHO ERROR: Target ALL. Configuration specification(s) ignored.
 :DEFAULT
 SET CFG=ALL
+GOTO LOOP
+:SETCFG
+SET CFG=%2%
 
 :LOOP
 IF %CFG% == ALL GOTO CONTINUE
@@ -67,20 +65,19 @@ IF %CFG% == Release GOTO CONTINUE
 IF %CFG% == ReleaseMT GOTO CONTINUE
 IF %CFG% == ReleaseDLL GOTO CONTINUE
 ECHO INFO: The following configuration names are recognized:
-ECHO       Debug DebugMT DebugDLL Release ReleaseMT ReleaseDLL ALL
-ECHO FATAL: Unknown configuration name %CFG%. Please correct.
+ECHO       ALL Debug DebugMT DebugDLL Release ReleaseMT ReleaseDLL
+ECHO FATAL: Unknown configuration name "%CFG%". Please correct.
 GOTO EXIT
 
 :CONTINUE
-IF NOT _%DSWFILE% == _ GOTO BUILD
-IF _%CFG% == _ GOTO SETDLL
-SET FILE=wxvc.dsw
-GOTO BUILD
+IF _%TARGET% == _LIB GOTO SETLIB
+IF _%TARGET% == _DLL GOTO SETDLL
+IF NOT _%TARGET% == _ GOTO SETLIB
 :SETDLL
-SET DSWFILE=dummy
 SET FILE=wxvc_dll.dsw
-SET CFG=ALL
 GOTO BUILD
+:SETLIB
+SET FILE=wxvc.dsw
 
 :BUILD
 ECHO INFO: Building "all - %CFG%" using %FILE%.
@@ -92,8 +89,8 @@ msdev.exe %FILE% /MAKE "all - %CFG%"
 IF NOT ERRORLEVEL 0 GOTO ABORT
 
 IF NOT %CFG% == ALL GOTO ITERATE
-IF NOT _%DSWFILE% == _ GOTO COMPLETE
-SET CFG=
+IF NOT _%TARGET% == _ALL GOTO COMPLETE
+SET TARGET=
 GOTO CONTINUE
 
 :ITERATE
