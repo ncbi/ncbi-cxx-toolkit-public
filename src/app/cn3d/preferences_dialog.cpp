@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/11/01 19:05:12  thiessen
+* use wxDirSelector
+*
 * Revision 1.6  2001/10/30 02:54:12  thiessen
 * add Biostruc cache
 *
@@ -313,10 +316,16 @@ void PreferencesDialog::OnButton(wxCommandEvent& event)
         // cache page stuff
         case ID_B_CACHE_BROWSE: {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
+            wxString path;
+#if wxVERSION_NUMBER >= 2302
+            path = wxDirSelector("Select a cache folder:", tCache->GetValue());
+#else
             wxDirDialog dirDialog(this, "Select a cache folder:", tCache->GetValue());
             int result = dirDialog.ShowModal();
-            if (result == wxID_OK && wxDirExists(dirDialog.GetPath().c_str()))
-                tCache->SetValue(dirDialog.GetPath());
+            if (result == wxID_OK) path = dirDialog.GetPath();
+#endif
+            if (path.size() > 0 && wxDirExists(path.c_str()))
+                tCache->SetValue(path);
             break;
         }
         case ID_B_CACHE_CLEAR:
