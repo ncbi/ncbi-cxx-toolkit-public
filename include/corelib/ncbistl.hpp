@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/03 15:47:50  vakatov
+* Scope fixes for #NPOS and #SIZE_TYPE;  redesigned the std:: and ncbi::
+* scope usage policy definitions(also, added #NCBI_NS_STD and #NCBI_NS_NCBI)
+*
 * Revision 1.8  1998/12/01 01:18:42  vakatov
 * [HAVE_NAMESPACE]  Added an empty fake "ncbi" namespace -- MSVC++ 6.0
 * compiler starts to recognize "std::" scope only after passing through at
@@ -84,10 +88,6 @@
 #  if !defined(NCBI_NO_NAMESPACES)  &&  (!defined(__STL_NAMESPACES)  ||  defined(__STL_NO_NAMESPACES))
 #    define NCBI_NO_NAMESPACES
 #  endif
-#else
-// these macros are used in STLport's Modena string library
-#  define SIZE_TYPE string::size_type
-#  define NPOS string::npos
 #endif
 
 // get rid of long identifier warning in visual c++ 5 and 6
@@ -100,29 +100,36 @@
 #  define NCBI_NO_NAMESPACES
 #endif
 
-// Using the STL namespace
-#if defined(NCBI_NO_NAMESPACES)
-#  define NCBI_USING_NAMESPACE_STD
-#else
-#  define NCBI_USING_NAMESPACE_STD using namespace std
-#endif
 
-
-// Using the NCBI namespace
+// Using the STL and NCBI namespaces
 // To avoid the annoying(and potentially dangerous -- e.g. when dealing with a
 // non-namespace-capable compiler) use of "std::" prefix in NCBI header files
 // and "std::" and/or "ncbi::" prefixes in the source files
-#if defined(HAVE_NAMESPACE)
-namespace std { /* the fake one */ }
-namespace ncbi { /* the fake one, plus "std" */ NCBI_USING_NAMESPACE_STD; }
-namespace ncbi { /* the fake one */ }
-#  define BEGIN_NCBI_SCOPE namespace ncbi {
-#  define END_NCBI_SCOPE }
-#  define USING_NCBI_SCOPE using namespace ncbi
-#else
+#if defined(NCBI_NO_NAMESPACES)
+#  define NCBI_NS_STD
+#  define NCBI_NS_NCBI
+#  define NCBI_USING_NAMESPACE_STD
 #  define BEGIN_NCBI_SCOPE
 #  define END_NCBI_SCOPE
 #  define USING_NCBI_SCOPE
+#else
+#  define NCBI_NS_STD  std
+#  define NCBI_NS_NCBI ncbi
+#  define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
+namespace NCBI_NS_STD  { /* the fake one */ }
+namespace NCBI_NS_NCBI { /* the fake one, +"std" */ NCBI_USING_NAMESPACE_STD; }
+namespace NCBI_NS_NCBI { /* the fake one */ }
+#  define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
+#  define END_NCBI_SCOPE }
+#  define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI
+#endif
+
+// These two macros are used in STLport's Modena string library
+#if !defined(SIZE_TYPE)
+#  define SIZE_TYPE NCBI_NS_STD::string::size_type
+#endif
+#if !defined(NPOS)
+#  define NPOS NCBI_NS_STD::string::npos
 #endif
 
 #endif /* NCBISTL__HPP */
