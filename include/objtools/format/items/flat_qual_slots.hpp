@@ -54,6 +54,7 @@ enum EFeatureQualifier {
     eFQ_coded_by,
     eFQ_codon,
     eFQ_codon_start,
+    eFQ_compare,
     eFQ_cons_splice,
     eFQ_db_xref,
     eFQ_derived_from,
@@ -87,6 +88,7 @@ enum EFeatureQualifier {
     eFQ_mod_base,
     eFQ_modelev,
     eFQ_number,
+    eFQ_old_locus_tag,
     eFQ_operon,
     eFQ_organism,
     eFQ_partial,
@@ -229,6 +231,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/08/19 16:24:40  shomrat
+* Added qualifiers compare and old_locus_tag
+*
 * Revision 1.3  2004/05/19 14:43:27  shomrat
 * added comment
 *
