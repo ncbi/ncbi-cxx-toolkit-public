@@ -160,10 +160,10 @@ PROJECTS = @PROJECTS@ # File listing relevant project directories.
 RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS)
 	@if test -n "$(PROJECTS)" ; then \
-	    sed -e 's@^@build/@' $(PROJECTS) > $(RELEVANT_FILE); \
+	    sed -e '/ update-only$$/d; s@^@build/@' $(PROJECTS); \
 	else \
-	    echo '.*' > $(RELEVANT_FILE); \
-	fi
+	    echo '.*'; \
+	fi > $(RELEVANT_FILE)
 
 # Commands to see whether project directories are relevant.
 RELEVANT = egrep -f $(RELEVANT_FILE) > /dev/null
