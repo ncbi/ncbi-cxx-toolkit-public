@@ -486,16 +486,15 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   m_LookupMutex.Unlock();
   if(!local_lock) m_Pool.GetMutex(sr).Lock();
 
-  //cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
   
   bool calibrating = m_Timer.NeedCalibration();
   if(calibrating) m_Timer.Start();
   
   SSeqrefs::TSeqrefs *osr=sr->m_Sr;
   sr->m_Sr=0;
-  for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h))); ! srs.Eof(); )
+  for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h)));! srs.Eof();)
     {
-      srs.setf(0, ios_base::skipws);
       CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
       if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
       sr->m_Sr->push_back(seqRef);
@@ -634,6 +633,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/03/22 18:51:18  kimelman
+* stream WS skipping fix
+*
 * Revision 1.9  2002/03/22 18:15:47  grichenk
 * Unset "skipws" flag in binary stream
 *
