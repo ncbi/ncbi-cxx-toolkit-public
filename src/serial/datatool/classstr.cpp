@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/06/13 14:40:02  grichenk
+* Modified class and choice info generation code to avoid warnings
+*
 * Revision 1.31  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -870,9 +873,6 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         map<int, bool> tag_map;
 
         iterate ( TMembers, i, m_Members ) {
-            methods << "    {{\n" <<
-                "        NCBI_NS_NCBI::CMemberInfo* member = ";
-
             if ( i->memberTag >= 0 ) {
                 if ( hasUntagged ) {
                     THROW1_TRACE(runtime_error,
@@ -896,7 +896,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
 
-            methods << "ADD_NAMED_";
+            methods << "    ADD_NAMED_";
             
             bool addNamespace = false;
             bool addCType = false;
@@ -945,10 +945,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << ", "<<i->type->GetEnumName();
             if ( addRef )
                 methods << ", "<<i->type->GetRef(code.GetNamespace());
-            methods << ");\n";
+            methods << ")";
 
             if ( !i->defaultValue.empty() ) {
-                methods << "        member->SetDefault(";
+                methods << "->SetDefault(";
                 if ( ref )
                     methods << "new NCBI_NS_NCBI::CRef< "+i->tName+" >(";
                 methods << "new "<<i->tName<<"("<<i->defaultValue<<')';
@@ -958,27 +958,30 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( i->haveFlag )
                     methods <<
                         "->SetSetFlag(MEMBER_PTR("SET_PREFIX<<i->cName<<"))";
-                methods << ";\n";
             }
             else if ( i->optional ) {
-                methods << "        member->SetOptional(";
+                methods << "->SetOptional(";
                 if ( i->haveFlag )
                     methods << "MEMBER_PTR("SET_PREFIX<<i->cName<<')';
-                methods << ");\n";
+                methods << ")";
             }
             if ( i->delayed ) {
                 methods <<
-                    "        member->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
-                    i->cName<<"));\n";
+                    "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
+                    i->cName<<"))";
             }
             if ( i->memberTag >= 0 ) {
-                methods << "        member->GetId().SetTag(" << i->memberTag << ");\n";
+                methods << "->GetId().SetTag(" << i->memberTag << ")";
             }
-            methods << "    }}\n";
+            methods << ";\n";
         }
         if ( useTags ) {
             // Tagged class is not sequential
             methods << "    info->SetRandomOrder(true);\n";
+        }
+        else {
+            // Just query the flag to avoid warnings.
+            methods << "    info->RandomOrder();\n";
         }
     }
     methods <<

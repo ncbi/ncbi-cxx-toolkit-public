@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/06/13 14:40:02  grichenk
+* Modified class and choice info generation code to avoid warnings
+*
 * Revision 1.27  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -866,9 +869,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
         iterate ( TVariants, i, m_Variants ) {
             // Save member info
-            methods << "    {{\n" <<
-                "        NCBI_NS_NCBI::CVariantInfo* variant = ";
-
             if ( i->memberTag >= 0 ) {
                 if ( hasUntagged ) {
                     THROW1_TRACE(runtime_error,
@@ -893,7 +893,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
 
-            methods << "ADD_NAMED_";
+            methods << "    ADD_NAMED_";
             
             bool addNamespace = false;
             bool addCType = false;
@@ -961,15 +961,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << ", "<<i->type->GetEnumName();
             if ( addRef )
                 methods << ", "<<i->type->GetRef(code.GetNamespace());
-            methods <<");\n";
+            methods <<")";
             
             if ( i->delayed ) {
-                methods << "        variant->SetDelayBuffer(MEMBER_PTR(m_delayBuffer));\n";
+                methods << "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
             }
             if ( i->memberTag >= 0 ) {
-                methods << "        variant->GetId().SetTag(" << i->memberTag << ");\n";
+                methods << "->GetId().SetTag(" << i->memberTag << ")";
             }
-            methods << "    }}\n";
+            methods << ";\n";
         }
     }
     methods <<
