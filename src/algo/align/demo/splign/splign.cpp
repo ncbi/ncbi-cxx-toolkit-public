@@ -203,7 +203,7 @@ double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
 {
   // first estimate whether we want to evaluate it
   const size_t dimq = 1 + q1 - q0, dims = 1 + s1 - s0;
-  if(double(dimq)*dims > 10000000) {
+  if(double(dimq)*dims > 100000000) {
     return -1;
   }
   
@@ -279,14 +279,15 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
       // align
       m_aligner->Run();
 
-      /*
+      // #define DBG_DUMP_TYPE2
+#ifdef  DBG_DUMP_TYPE2
 	{{
 	CNWFormatter fmt (*m_aligner);
 	string txt;
 	fmt.AsText(&txt, CNWFormatter::eFormatType2);
 	cerr << txt;
 	}}
-      */
+#endif
 
       // create list of segments
       CNWFormatter formatter (*m_aligner);
@@ -694,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/20 14:33:42  kapustin
+ * Increase space allowance for gap pre-alignment
+ *
  * Revision 1.3  2003/11/10 19:22:31  kapustin
  * Change esf mode to full
  *
