@@ -427,7 +427,11 @@ OSErr xUDPRelease(SocketPtr sp) {
 
 ip_addr xIPAddr(void) 
 {
+#ifndef __GETMYIPADDR__
 	struct IPParamBlock pbr;
+#else
+	struct GetAddrParamBlock pbr;
+#endif
 	OSErr io;
 	
 	pbr.ioCRefNum = driver;
@@ -440,7 +444,11 @@ ip_addr xIPAddr(void)
 
 long xNetMask() 
 {
+#ifndef __GETMYIPADDR__
 	struct IPParamBlock pbr;
+#else
+	struct GetAddrParamBlock pbr;
+#endif
 	OSErr io;
 	
 	pbr.ioCRefNum = driver;
