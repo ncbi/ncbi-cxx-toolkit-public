@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
 * Revision 1.1  2001/10/30 02:54:12  thiessen
 * add Biostruc cache
 *
@@ -56,7 +59,8 @@ BEGIN_SCOPE(Cn3D)
 //   eModel_type_ncbi_all_atom (one coordinate per atom),
 //   eModel_type_ncbi_pdb_model (all models from PDB, including alternate conformer ensembles)
 
-bool LoadBiostrucViaCache(int mmdbID, int modelType, ncbi::objects::CBiostruc *biostruc);
+bool LoadBiostrucViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
+    ncbi::objects::CBiostruc *biostruc);
 
 
 // Remove older entries until the cache is <= the given size (in MB).

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
 * Revision 1.6  2002/02/19 14:59:39  thiessen
 * add CDD reject and purge sequence
 *
@@ -69,6 +72,7 @@
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/cdd/Reject_id.hpp>
+#include <objects/mmdb2/Model_type.hpp>
 
 #include <list>
 #include <vector>
@@ -104,6 +108,7 @@ private:
     ncbi::objects::CBiostruc *masterBiostruc;
     BiostrucList *biostrucList;
     bool isSingleStructure;     // IFF single MMDB is viewed, then we can show alt confs
+    ncbi::objects::EModel_type biostrucModelType;
     ncbi::objects::CBiostruc_annot_set *structureAlignments;
     SeqAnnotList *sequenceAlignments;
     SeqAnnotList *bundleImports;
@@ -127,6 +132,7 @@ public:
     bool IsGeneralMime(void) const { return (mimeData.NotEmpty() && mimeData->IsGeneral()); }
     const ncbi::objects::CBiostruc * GetMasterStructure(void) const { return masterBiostruc; }
     const BiostrucList * GetStructureList(void) const { return biostrucList; }
+    ncbi::objects::EModel_type GetBiostrucModelType(void) const { return biostrucModelType; }
 
     // store new structure, if appropriate
     bool AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc);

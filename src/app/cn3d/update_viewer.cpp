@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/02/27 16:29:42  thiessen
+* add model type flag to general mime type
+*
 * Revision 1.28  2002/02/22 14:24:01  thiessen
 * sort sequences in reject dialog ; general identifier comparison
 *
@@ -555,6 +558,10 @@ void UpdateViewer::ImportStructure(void)
     if (!master) return;
     if (!master->molecule) {
         ERR_POST(Error << "Can't import another structure unless master sequence has structure");
+        return;
+    }
+    if (master->parentSet->objects.size() == 1 && master->parentSet->frameMap.size() != 1) {
+        ERR_POST(Error << "Can't import another structure when current structure has multiple models");
         return;
     }
 

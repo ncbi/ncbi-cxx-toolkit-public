@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
 * Revision 1.7  2002/02/19 14:59:39  thiessen
 * add CDD reject and purge sequence
 *
@@ -105,6 +108,7 @@ void ASNDataManager::Load(void)
     seqEntryList = NULL;
     masterBiostruc = NULL;
     biostrucList = NULL;
+    biostrucModelType = eModel_type_ncbi_all_atom;  // default, for CDD's
     sequenceAlignments = NULL;
     structureAlignments = NULL;
     bundleImports = NULL;
@@ -145,6 +149,10 @@ void ASNDataManager::Load(void)
         else if (mimeData->IsGeneral()) {
             if (mimeData->GetGeneral().IsSetStructures())
                 biostrucList = &(mimeData->SetGeneral().SetStructures());
+
+            if (mimeData->GetGeneral().IsSetStructure_type())
+                // assume structure-type values match MMDB's Model-type
+                biostrucModelType = (EModel_type) mimeData->GetGeneral().GetStructure_type();
 
             if (mimeData->GetGeneral().GetSeq_align_data().IsBundle()) {
                 if (mimeData->GetGeneral().GetSeq_align_data().GetBundle().IsSetSequences())

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/27 16:29:40  thiessen
+* add model type flag to general mime type
+*
 * Revision 1.4  2002/01/11 15:48:49  thiessen
 * update for Mac CW7
 *
@@ -67,7 +70,7 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static std::string GetCacheFilePath(int mmdbID, int modelType)
+static std::string GetCacheFilePath(int mmdbID, EModel_type modelType)
 {
     std::string cachePath;
     if (RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cachePath)) {
@@ -89,7 +92,7 @@ static bool CreateCacheFolder(void)
     return okay;
 }
 
-static bool GetBiostrucFromCacheFolder(int mmdbID, int modelType, CBiostruc *biostruc)
+static bool GetBiostrucFromCacheFolder(int mmdbID, EModel_type modelType, CBiostruc *biostruc)
 {
     // try to load from cache
     TESTMSG("looking for " << mmdbID << " (model type " << modelType << ") in cache:");
@@ -108,7 +111,7 @@ static bool GetBiostrucFromCacheFolder(int mmdbID, int modelType, CBiostruc *bio
     return true;
 }
 
-static bool GetBiostrucViaHTTPAndAddToCache(int mmdbID, int modelType, CBiostruc *biostruc)
+static bool GetBiostrucViaHTTPAndAddToCache(int mmdbID, EModel_type modelType, CBiostruc *biostruc)
 {
     bool gotBiostruc = false;
 
@@ -152,7 +155,7 @@ static bool GetBiostrucViaHTTPAndAddToCache(int mmdbID, int modelType, CBiostruc
     return gotBiostruc;
 }
 
-bool LoadBiostrucViaCache(int mmdbID, int modelType, ncbi::objects::CBiostruc *biostruc)
+bool LoadBiostrucViaCache(int mmdbID, EModel_type modelType, ncbi::objects::CBiostruc *biostruc)
 {
     bool gotBiostruc = false;
 

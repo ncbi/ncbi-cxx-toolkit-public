@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
 * Revision 1.96  2002/02/19 14:59:40  thiessen
 * add CDD reject and purge sequence
 *
@@ -460,7 +463,7 @@ bool StructureSet::LoadMaster(int masterMMDBID)
     }
     if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && objects.size() == 0) {
         CBiostruc biostruc;
-        if (LoadBiostrucViaCache(masterMMDBID, eModel_type_ncbi_all_atom, &biostruc))
+        if (LoadBiostrucViaCache(masterMMDBID, dataManager->GetBiostrucModelType(), &biostruc))
             objects.push_back(new StructureObject(this, biostruc, true));
     }
     return (objects.size() > 0);
@@ -700,7 +703,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
                     if (biostruc.Empty()) {
                         biostruc.Reset(new CBiostruc());
                         if (!LoadBiostrucViaCache((*l)->slave->identifier->mmdbID,
-                                eModel_type_ncbi_all_atom, biostruc.GetPointer())) {
+                                dataManager->GetBiostrucModelType(), biostruc.GetPointer())) {
                             ERR_POST(Error << "Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
                             continue;
                         }
