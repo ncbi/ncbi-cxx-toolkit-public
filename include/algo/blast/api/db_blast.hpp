@@ -57,10 +57,12 @@ public:
 
     /// Contructor, creating default options for a given program
     CDbBlast(const TSeqLocVector& queries, 
-             BlastSeqSrc* bssp, EProgram p, RPSInfo* rps_info=0);
+             BlastSeqSrc* bssp, EProgram p, RPSInfo* rps_info=0,
+             BlastHSPStream* hsp_stream=0);
     // Constructor using a prebuilt options handle
     CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp, 
-             CBlastOptionsHandle& opts, RPSInfo* rps_info=0);
+             CBlastOptionsHandle& opts, RPSInfo* rps_info=0,
+             BlastHSPStream* hsp_stream=0);
 
     virtual ~CDbBlast();
 
@@ -77,6 +79,10 @@ public:
     virtual TSeqAlignVector Run();
     // Run BLAST search without traceback
     virtual void PartialRun();
+    // Just perform the search setup
+    virtual int SetupSearch();
+    // Run the search engine; assumes that setup has already been performed
+    virtual void RunSearchEngine();
     
     // Remove extra results if a limit is provided on total number of HSPs
     void TrimBlastHSPResults();
@@ -87,49 +93,40 @@ public:
 
     void SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src=false);
     BlastSeqSrc* GetSeqSrc() const;
+    BlastHSPStream* GetHSPStream() const;
     BlastHSPResults* GetResults() const;
     BlastDiagnostics* GetDiagnostics() const;
     BlastScoreBlk* GetScoreBlk() const;
     const CBlastQueryInfo& GetQueryInfo() const;
+    const CBLAST_SequenceBlk& GetQueryBlk() const;
     TBlastError& GetErrorMessage();
 
 protected:
-    virtual int SetupSearch();
-    virtual void RunSearchEngine();
     virtual TSeqAlignVector x_Results2SeqAlign();
     virtual void x_ResetQueryDs();
     virtual void x_ResetResultDs();
     virtual void x_InitFields();
-
-    BlastScoringOptions* GetScoringOpts() const;
-    BlastEffectiveLengthsOptions* GetEffLenOpts() const;
-    BlastExtensionOptions * GetExtnOpts() const;
-    BlastHitSavingOptions * GetHitSaveOpts() const;
-    QuerySetUpOptions * GetQueryOpts() const;
-    BlastDatabaseOptions * GetDbOpts() const;
-    PSIBlastOptions * GetPSIBlastOpts() const;    
     RPSInfo * GetRPSInfo() const;    
 
     /// Internal data structures used in this and all derived classes 
-    bool                m_ibQuerySetUpDone;
-    CBLAST_SequenceBlk  m_iclsQueries;  // one for all queries
-    CBlastQueryInfo     m_iclsQueryInfo; // one for all queries
-    BlastScoreBlk*      m_ipScoreBlock; // Karlin-Altschul parameters
-    /// Statistical return structures
-    BlastDiagnostics*    m_ipDiagnostics;
-    /// Error (info, warning) messages
-    TBlastError         m_ivErrors;
+    bool                m_ibQuerySetUpDone; ///< Has the query set-up been done?
+    CBLAST_SequenceBlk  m_iclsQueries;    ///< one for all queries
+    CBlastQueryInfo     m_iclsQueryInfo;  ///< one for all queries
+    BlastScoreBlk*      m_ipScoreBlock;   ///< Karlin-Altschul parameters
+    BlastDiagnostics*    m_ipDiagnostics; ///< Statistical return structures
+    TBlastError         m_ivErrors;       ///< Error (info, warning) messages
    
-    /// Results structure - not private, because derived class will need to
-    /// set it
-    BlastHSPResults*    m_ipResults;
-
+    BlastHSPResults*    m_ipResults;      /**< Results structure - not private, 
+                                             because derived class will need to
+                                             set it. */
 private:
-    // Data members received from client code
-    TSeqLocVector        m_tQueries;         //< query sequence(s)
-    BlastSeqSrc*         m_pSeqSrc;          //< Subject sequences sorce
-    RPSInfo*             m_pRpsInfo; ///< RPS BLAST database information
-    CRef<CBlastOptionsHandle>  m_OptsHandle; //< Blast options
+    /// Data members received from client code
+    TSeqLocVector        m_tQueries;      ///< query sequence(s)
+    BlastSeqSrc*         m_pSeqSrc;       ///< Subject sequences sorce
+    RPSInfo*             m_pRpsInfo;      ///< RPS BLAST database information
+    BlastHSPStream*      m_pHspStream;    /**< Placeholder for streaming HSP 
+                                             lists out of the engine. */
+    CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
 
     /// Prohibit copy constructor
     CDbBlast(const CDbBlast& rhs);
@@ -137,11 +134,11 @@ private:
     CDbBlast& operator=(const CDbBlast& rhs);
 
     /************ Internal data structures (m_i = internal members)**********/
-    LookupTableWrap*    m_ipLookupTable; // one for all queries
-    ListNode*           m_ipLookupSegments; /* Intervals for which lookup 
-                                               table is created: complement of
-                                               filtered regions */
-    BlastMaskLoc*       m_ipFilteredRegions; // Filtered regions
+    LookupTableWrap*    m_ipLookupTable;   ///< Lookup table, one for all queries
+    ListNode*           m_ipLookupSegments;/**< Intervals for which lookup 
+                                              table is created: complement of
+                                              filtered regions */
+    BlastMaskLoc*       m_ipFilteredRegions;///< Filtered regions
 };
 
 inline void
@@ -203,6 +200,11 @@ inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
     return m_pSeqSrc;
 }
 
+inline BlastHSPStream* CDbBlast::GetHSPStream() const
+{
+    return m_pHspStream;
+}
+
 inline BlastHSPResults* CDbBlast::GetResults() const
 {
     return m_ipResults;
@@ -224,6 +226,12 @@ inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
 
 }
 
+inline const CBLAST_SequenceBlk& CDbBlast::GetQueryBlk() const
+{
+    return m_iclsQueries;
+
+}
+
 inline TBlastError& CDbBlast::GetErrorMessage()
 {
     return m_ivErrors;
@@ -234,35 +242,6 @@ inline RPSInfo * CDbBlast::GetRPSInfo() const
     return m_pRpsInfo;
 }
 
-inline BlastScoringOptions* CDbBlast::GetScoringOpts() const
-{
-    return m_OptsHandle->GetOptions().GetScoringOpts();
-}
-inline BlastEffectiveLengthsOptions* CDbBlast::GetEffLenOpts() const
-{
-    return m_OptsHandle->GetOptions().GetEffLenOpts();
-}
-inline BlastExtensionOptions * CDbBlast::GetExtnOpts() const
-{
-    return m_OptsHandle->GetOptions().GetExtnOpts();
-}
-inline BlastHitSavingOptions * CDbBlast::GetHitSaveOpts() const
-{
-    return m_OptsHandle->GetOptions().GetHitSaveOpts();
-}
-inline QuerySetUpOptions * CDbBlast::GetQueryOpts() const
-{
-    return m_OptsHandle->GetOptions().GetQueryOpts();
-}
-inline BlastDatabaseOptions * CDbBlast::GetDbOpts() const
-{
-    return m_OptsHandle->GetOptions().GetDbOpts();
-}
-inline PSIBlastOptions * CDbBlast::GetPSIBlastOpts() const
-{
-    return m_OptsHandle->GetOptions().GetPSIBlastOpts();
-}
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -270,6 +249,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/06/15 18:45:51  dondosha
+* 1. Added optional BlastHSPStream argument to constructors;
+* 2. Made SetupSearch and RunSearchEngine methods public;
+* 3. Added getter methods for HSP stream and results;
+* 4. Removed getter methods for individual options.
+*
 * Revision 1.18  2004/05/17 18:07:19  bealer
 * - Add PSI Blast support.
 *
