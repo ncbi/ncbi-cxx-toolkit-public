@@ -195,9 +195,12 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static unsigned int SoftStringToUInt(const string& str, int base = 10,
-                                     ECheckEndPtr   check    = eCheck_Need,
-                                     EConvErrAction on_error = eConvErr_Throw);
+    static 
+    unsigned int 
+    StringToUInt_DataSize(const string&  str, 
+                          int            base = 10,
+                          ECheckEndPtr   check    = eCheck_Need,
+                          EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to long.
     ///
@@ -2396,6 +2399,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.62  2004/09/21 18:44:55  kuznets
+ * SoftStringToUInt renamed StringToUInt_DataSize
+ *
  * Revision 1.61  2004/09/21 18:23:32  kuznets
  * +NStr::SoftStringToUInt KB, MB converter
  *

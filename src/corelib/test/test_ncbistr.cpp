@@ -834,9 +834,9 @@ int CTestApplication::Run(void)
     const char* k10_1 = "10KB";
     const char* k10_2 = "10K";
     unsigned v;
-    v = NStr::SoftStringToUInt(k10_1);
+    v = NStr::StringToUInt_DataSize(k10_1);
     assert(v == 10 * 1024);
-    v = NStr::SoftStringToUInt(k10_2);
+    v = NStr::StringToUInt_DataSize(k10_2);
     assert(v == 10 * 1024);
     }}
 
@@ -844,9 +844,9 @@ int CTestApplication::Run(void)
     const char* m10_1 = "10MB";
     const char* m10_2 = "10M";
     unsigned v;
-    v = NStr::SoftStringToUInt(m10_1);
+    v = NStr::StringToUInt_DataSize(m10_1);
     assert(v == 10 * 1024 * 1024);
-    v = NStr::SoftStringToUInt(m10_2);
+    v = NStr::StringToUInt_DataSize(m10_2);
     assert(v == 10 * 1024 * 1024);
     }}
 
@@ -854,9 +854,9 @@ int CTestApplication::Run(void)
     const char* g10_1 = "10GB";
     const char* g10_2 = "10G";
     unsigned v;
-    v = NStr::SoftStringToUInt(g10_1);
+    v = NStr::StringToUInt_DataSize(g10_1);
     assert(v == 10 * 1024 * 1024 * 1024);
-    v = NStr::SoftStringToUInt(g10_2);
+    v = NStr::StringToUInt_DataSize(g10_2);
     assert(v == 10 * 1024 * 1024 * 1024);
     }}
 
@@ -865,7 +865,7 @@ int CTestApplication::Run(void)
     try {
         const char* g10_1 = "10GBx";
         unsigned v;
-        v = NStr::SoftStringToUInt(g10_1);
+        v = NStr::StringToUInt_DataSize(g10_1);
     }
     catch (exception&)
     {
@@ -899,6 +899,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.32  2004/09/21 18:45:20  kuznets
+ * SoftStringToUInt renamed StringToUInt_DataSize
+ *
  * Revision 6.31  2004/09/21 18:24:41  kuznets
  * +test NStr::SoftStringToUInt
  *

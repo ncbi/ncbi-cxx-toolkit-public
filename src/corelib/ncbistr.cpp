@@ -340,10 +340,10 @@ NStr::StringToUInt(const string& str, int base  /* =10 */,
 
 /// @internal
 static
-unsigned int SoftConvertQual(const char* qual, 
-                             unsigned int value,
-                             NStr::ECheckEndPtr check_endptr,
-                             NStr::EConvErrAction on_error)
+unsigned int DataSizeConvertQual(const char* qual, 
+                                 unsigned int value,
+                                 NStr::ECheckEndPtr check_endptr,
+                                 NStr::EConvErrAction on_error)
 {
     if (!qual || !*qual)
         return value;
@@ -383,9 +383,9 @@ throw_err:
 
 
 unsigned int
-NStr::SoftStringToUInt(const string& str, int base  /* =10 */,
-                       ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                       EConvErrAction on_error      /* = eConvErr_Throw */)
+NStr::StringToUInt_DataSize(const string& str, int base  /* =10 */,
+                            ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                            EConvErrAction on_error      /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
@@ -400,7 +400,7 @@ NStr::SoftStringToUInt(const string& str, int base  /* =10 */,
         return 0;
     }
     if (endptr && *endptr != '\0') { // some trailer (KB, MB) ?
-        value = SoftConvertQual(endptr, value, check_endptr, on_error);
+        value = DataSizeConvertQual(endptr, value, check_endptr, on_error);
     }
     return (unsigned int) value;
 }
@@ -1600,6 +1600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2004/09/21 18:45:03  kuznets
+ * SoftStringToUInt renamed StringToUInt_DataSize
+ *
  * Revision 1.114  2004/09/21 18:23:59  kuznets
  * +NStr::SoftStringToUInt KB, MB converter
  *
