@@ -41,7 +41,11 @@
 #include <objtools/data_loaders/genbank/split_parser.hpp>
 
 #include <corelib/ncbistre.hpp>
-#include <corelib/ncbitime.hpp>
+
+#define ID1_COLLECT_STATS
+#ifdef ID1_COLLECT_STATS
+# include <corelib/ncbitime.hpp>
+#endif
 #include <corelib/plugin_manager_impl.hpp>
 
 #include <objects/general/Dbtag.hpp>
@@ -72,6 +76,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#ifdef ID1_COLLECT_STATS
 static int resolve_id_count = 0;
 static double resolve_id_time = 0;
 
@@ -107,12 +112,16 @@ static int s_GetCollectStatistics(void)
         return 0;
     }
 }
-
+#endif
 
 int CId1Reader::CollectStatistics(void)
 {
+#ifdef ID1_COLLECT_STATS
     static int ret = s_GetCollectStatistics();
     return ret;
+#else
+    return 0;
+#endif
 }
 
 
@@ -137,9 +146,11 @@ CId1Reader::CId1Reader(TConn noConn)
 CId1Reader::~CId1Reader()
 {
     SetParallelLevel(0);
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
         PrintStatistics();
     }
+#endif
 }
 
 
@@ -148,6 +159,7 @@ void CId1Reader::PrintStat(const char* type,
                            const char* what,
                            double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( !count ) {
         return;
     }
@@ -156,6 +168,7 @@ void CId1Reader::PrintStat(const char* type,
              setprecision(3)<<
              (time)<<" s "<<
              (time*1000/count)<<" ms/one");
+#endif
 }
 
 
@@ -164,6 +177,7 @@ void CId1Reader::PrintBlobStat(const char* type,
                                double bytes,
                                double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( !count ) {
         return;
     }
@@ -175,11 +189,13 @@ void CId1Reader::PrintBlobStat(const char* type,
              (time)<<" s "<<
              setprecision(2)<<
              (bytes/time/1024)<<" kB/s");
+#endif
 }
 
 
 void CId1Reader::LogStat(const char* type, const string& name, double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() <= 1 ) {
         return;
     }
@@ -187,12 +203,14 @@ void CId1Reader::LogStat(const char* type, const string& name, double time)
              setiosflags(ios::fixed)<<
              setprecision(3)<<
              (time*1000)<<" ms");
+#endif
 }
 
 
 void CId1Reader::LogStat(const char* type,
                          const string& name, const string& subkey, double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() <= 1 ) {
         return;
     }
@@ -200,11 +218,13 @@ void CId1Reader::LogStat(const char* type,
              setiosflags(ios::fixed)<<
              setprecision(3)<<
              (time*1000)<<" ms");
+#endif
 }
 
 
 void CId1Reader::LogStat(const char* type, const CSeq_id& id, double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() <= 1 ) {
         return;
     }
@@ -212,12 +232,14 @@ void CId1Reader::LogStat(const char* type, const CSeq_id& id, double time)
              setiosflags(ios::fixed)<<
              setprecision(3)<<
              (time*1000)<<" ms");
+#endif
 }
 
 
 void CId1Reader::LogStat(const char* type,
                          const CID1server_maxcomplex& maxplex, double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() <= 1 ) {
         return;
     }
@@ -225,11 +247,13 @@ void CId1Reader::LogStat(const char* type,
              setiosflags(ios::fixed)<<
              setprecision(3)<<
              (time*1000)<<" ms");
+#endif
 }
 
 
 void CId1Reader::LogStat(const char* type, int gi, double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() <= 1 ) {
         return;
     }
@@ -237,12 +261,14 @@ void CId1Reader::LogStat(const char* type, int gi, double time)
              setiosflags(ios::fixed)<<
              setprecision(3)<<
              (time*1000)<<" ms");
+#endif
 }
 
 
 void CId1Reader::LogBlobStat(const char* type,
                              const CSeqref& seqref, double bytes, double time)
 {
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() <= 1 ) {
         return;
     }
@@ -254,11 +280,13 @@ void CId1Reader::LogBlobStat(const char* type,
              (time*1000)<<" ms "<<
              setprecision(2)<<
              (bytes/1024/time)<<" kB/s");
+#endif
 }
 
 
 void CId1Reader::PrintStatistics(void) const
 {
+#ifdef ID1_COLLECT_STATS
     PrintStat("ID1 resolution: resolved",
               resolve_id_count, "ids", resolve_id_time);
     PrintStat("ID1 resolution: resolved",
@@ -289,6 +317,7 @@ void CId1Reader::PrintStatistics(void) const
                   main_blob_count + snp_blob_count,
                   main_bytes + snp_compressed,
                   main_time + snp_time);
+#endif
 }
 
 
@@ -493,10 +522,12 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
                              const CID1server_request& id1_request,
                              TConn conn)
 {
+#ifdef ID1_COLLECT_STATS
     CStopWatch sw;
     if ( CollectStatistics() ) {
         sw.Start();
     }
+#endif
 
     CConn_ServiceStream* stream = x_GetConnection(conn);
     {{
@@ -521,6 +552,7 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
     }
     */
 
+#ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
         if ( id1_request.Which() == CID1server_request::e_Getgi ) {
@@ -542,6 +574,7 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
             }
         }
     }
+#endif
 }
 
 
@@ -624,16 +657,19 @@ void CId1Reader::x_GetTSEBlob(CID1server_back& id1_reply,
                               const CSeqref& seqref,
                               TConn conn)
 {
+#ifdef ID1_COLLECT_STATS
     CStopWatch sw;
     if ( CollectStatistics() ) {
         sw.Start();
     }
     
     try {
+#endif
         CConn_ServiceStream* stream = x_GetConnection(conn);
         x_SendRequest(seqref, stream, false);
         x_ReadTSEBlob(id1_reply, seqref, *stream);
         
+#ifdef ID1_COLLECT_STATS
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
             LogBlobStat("CId1Reader: read blob",
@@ -653,6 +689,7 @@ void CId1Reader::x_GetTSEBlob(CID1server_back& id1_reply,
         }
         throw;
     }
+#endif
 }
 
 
@@ -660,6 +697,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                const CSeqref& seqref,
                                TConn conn)
 {
+#ifdef ID1_COLLECT_STATS
     CStopWatch sw;
 
     if ( CollectStatistics() ) {
@@ -667,12 +705,15 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
     }
 
     try {
+#endif
         CConn_ServiceStream* stream = x_GetConnection(conn);
         x_SendRequest(seqref, stream, true);
 
+#ifdef ID1_COLLECT_STATS
         size_t compressed;
         double decompression_time;
         double total_read_time;
+#endif
         {{
             const size_t kSkipHeader = 2, kSkipFooter = 2;
         
@@ -684,13 +725,16 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         
             x_ReadSNPAnnot(snp_info, seqref, src2);
 
+#ifdef ID1_COLLECT_STATS
             compressed = src2.GetCompressedSize();
             decompression_time = src2.GetDecompressionTime();
             total_read_time = src2.GetTotalReadTime();
+#endif
         
             Id1ReaderSkipBytes(src, kSkipFooter);
         }}
 
+#ifdef ID1_COLLECT_STATS
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
             LogBlobStat("CId1Reader: read SNP blob",
@@ -713,6 +757,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         }
         throw;
     }
+#endif
 }
 
 
@@ -780,7 +825,9 @@ void CId1Reader::x_ReadTSEBlob(CID1server_back& id1_reply,
 
     stream >> id1_reply;
 
+#ifdef ID1_COLLECT_STATS
     last_object_bytes = stream.GetStreamOffset();
+#endif
 }
 
 
@@ -792,7 +839,9 @@ void CId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
     CSeq_annot_SNP_Info_Reader::Parse(in, snp_info);
 
+#ifdef ID1_COLLECT_STATS
     last_object_bytes = in.GetStreamOffset();
+#endif
 }
 
 
@@ -834,6 +883,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.76  2004/02/19 19:24:09  vasilche
+ * Added conditional compilation of statistics collection code.
+ *
  * Revision 1.75  2004/02/19 17:06:57  dicuccio
  * Use sat, sat-key in seq-ref, not sat-key, sat
  *
