@@ -260,13 +260,15 @@ CBlast2seqApplication::GetOutputFilePtr(void)
 // Should go into something like blast_input.cpp
 vector< CConstRef<CSeq_loc> >
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
-        CSeq_loc* lcase_mask = NULL)
+                         vector< CRef<CSeq_loc> >* lcase_mask_vector = NULL)
 {
     _ASSERT(scope);
     vector< CConstRef<CSeq_loc> > retval;
+    int ctr = 0;
     CRef<CSeq_entry> seq_entry;
 
-    if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, lcase_mask)))
+    if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, &ctr, 
+                                 lcase_mask_vector)))
         throw runtime_error("Could not retrieve seq entry");
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
@@ -389,6 +391,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/08 20:46:08  camacho
+ * Fix to use new ReadFasta arguments
+ *
  * Revision 1.7  2003/08/08 20:24:31  dicuccio
  * Adjustments for Unix build: rename 'ncmimath' -> 'ncbi_math'; fix #include in demo app
  *
