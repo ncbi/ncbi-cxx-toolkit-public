@@ -10,7 +10,7 @@ REQUIRES = dbapi
 
 APP = test_title
 SRC = test_title
-LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
+LIB = xobjutil xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       dbapi_driver xser xutil xncbi xconnect
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
