@@ -61,7 +61,9 @@ clean:
 	-$(RM) *@obj_ext@
 	-$(RM) $(XAPP)
 	-$(RM) *~
-	-$(RM) *.dep
+	-$(RM) *.lib_dep
+	-$(RM) *.dll_dep
+	-$(RM) *.d
 	-$(RM) core
 
 purge: clean

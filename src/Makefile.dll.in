@@ -71,6 +71,9 @@ clean:
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB)
+	-$(RM) *.lib_dep
+	-$(RM) *.dll_dep
+	-$(RM) *.d
 	-$(RM) *~
 
 purge: clean
