@@ -383,10 +383,18 @@ void CObject::RemoveLastReference(void) const
 {
     TCount count = m_Counter.Get();
     if ( ObjectStateCanBeDeleted(count) ) {
-        if ( count == TCount(eCounterInHeap) ) {
-            // last reference to heap object -> delete
-            delete this;
-            return;
+        if ( ObjectStateValid(count) ) {
+            if ( count == TCount(eCounterInHeap) ) {
+                // last reference to heap object -> delete
+                delete this;
+                return;
+            }
+            else {
+                // the reference can be temporarily acquired in
+                // AddReferenceIfAlreadyReferenced()
+                delete this;
+                return;
+            }
         }
     }
     else {
@@ -782,6 +790,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/09/30 18:35:17  vasilche
+ * Relax check for ref counter to allow temporary references.
+ *
  * Revision 1.46  2004/08/04 14:35:33  vasilche
  * Renamed debug alloc functions to avoid name clash with system libraries. Changed memory filling constants.
  *
