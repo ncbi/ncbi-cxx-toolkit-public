@@ -262,8 +262,8 @@ protected:
             m_vRanges.erase(it_right, end()); // erase ranges to the right
         }
 
-        position_type pos_from = R.GetFrom();
-        iterator it_left = lower_bound(begin(), end(), pos_from, P);
+        position_type pos_from = this->R.GetFrom();
+        iterator it_left = lower_bound(begin(), end(), pos_from, this->P);
         if(it_left != end()) {        
             if(it_left->GetFrom() < pos_from)    
                 it_left->SetFrom(pos_from);
@@ -326,19 +326,19 @@ protected:
     }
     void    x_IntersectWith(const TThisType &c)
     {
-        ITERATE(TThisType, it, c)   {
+        ITERATE(typename TThisType, it, c)   {
             x_IntersectWith(*it);
         }
     }
     void    x_CombineWith(const TThisType &c)
     {
-        ITERATE(TThisType, it, c)   {
+        ITERATE(typename TThisType, it, c)   {
             x_CombineWith(*it);
         }
     }
     void    x_Subtract(const TThisType &c)
     {
-        ITERATE(TThisType, it, c)   {
+        ITERATE(typename TThisType, it, c)   {
             x_Subtract(*it);
         }
     }
@@ -352,6 +352,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/26 14:51:43  ucko
+ * Add "typename" and "this->" to accommodate GCC 3.4's stricter
+ * treatment of templates.
+ *
  * Revision 1.3  2004/02/12 20:51:52  yazhuk
  * Fixed GetFrom()
  *
