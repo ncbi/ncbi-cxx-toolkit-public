@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/01 19:10:39  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.1  1998/11/23 23:45:21  lewisg
 * *** empty log message ***
 *
@@ -40,45 +43,66 @@
 #include <ncbistd.hpp>
 #include <ncbi.h>
 #include <ncbienv.h>
+#include <ncbicgi.hpp>
 #include <html.hpp>
 #include <page.hpp>
 #include <toolpages.hpp>
-#include <cgic.h>
-#include <runtime.hpp>
+#include <factory.hpp>
+#include <ncbiapp.hpp>
 BEGIN_NCBI_SCOPE
  
 
-extern "C" int cgiMain(int argc, char *argv[])
+extern "C" int main(int argc, char *argv[])
 {
-    string output("");
-    CToolFactory Factory;
-    multimap < string, string > cgi;
-    CHTMLBasicPage * page;
-    CRuntime Runtime;
-    char buf[4096];
+    int result;
 
-    cgiHeaderContentType("text/html");
+    CCgiApplication app( argc, argv );
+    try {
+	app.Init(); 
+	result = app.Run(); 
+	app.Exit(); 
+    } catch(...) {}
 
-    try {    
-	if(cgiFormString( "toolname", buf, 4096) == cgiFormSuccess) cgi.insert(pair<const string, string>("toolname", buf));
-	if(cgiFormString( "supplemental_input", buf, 4096) == cgiFormSuccess) cgi.insert(pair<const string, string>("supplemental_input", buf));
-	if (argc > 1) cgi.insert(pair<const string, string>("notcgi", ""));
+    return result;
+}
 
-	Runtime.m_Cgi = & cgi;
-	Factory.Init();
-	page = Factory.Create(cgi);
-	page->m_Runtime = & Runtime;
-	page->Create();
+
+void CCgiApplication::Init(void) {}  // probably should be defined in corelib
+void CCgiApplication::Exit(void) {}
+
+// the list of pages to be instantiated and their CGI parameters
+
+SFactoryList < CHTMLBasicPage > PageList [] = {
+    { CToolReportPage::New, "notcgi=", 0 },
+    { CToolOptionPage::New, "toolname=", 0 },
+    { CToolFastaPage::New, "", 0 }
+};
+
+
+int CCgiApplication::Run(void) 
+{
+    CFactory < CHTMLBasicPage > Factory;
+    int i;
+    CHTMLBasicPage * Page;
+    // CRuntime Runtime;
+
+    NcbiCout << "Content-TYPE: text/html\n\n";  // CgiResponse
+
+    try {    	
+	//	Runtime.m_Cgi = & m_CgiEntries;
+	i = Factory.CgiFactory(m_CgiEntries, PageList);
+	Page = (PageList[i].pFactory)();
+	Page->m_CgiApplication = this;
+	Page->Create(PageList[i].Style);
       
-	page->Print(output);  // serialize it
-	//	NcbiCout << output.c_str() << NcbiEndl;
-	fprintf(cgiOut, "%s", output.c_str());
+	Page->Print(NcbiCout);  // serialize it
+
     }
     catch (...) {
-	delete page;
-	exit (1);
+	delete Page;
+	throw;
     }
-    delete page;
+    delete Page;
     return 0;  
 }
 

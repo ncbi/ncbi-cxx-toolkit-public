@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/01 19:10:39  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.2  1998/11/23 23:42:37  lewisg
 * *** empty log message ***
 *
@@ -42,46 +45,11 @@
 #include <ncbistd.hpp>
 #include <components.hpp>
 #include <page.hpp>
+
+
 BEGIN_NCBI_SCOPE
-
-CHTMLBasicPage * CHTMLPageFactory::Create( multimap < string, string > & Cgi)
-{
-    list <CHTMLBasicPage *>::iterator iPage;
-    multimap < string, string >:: iterator iCgi, iRange;
-    map < string, string >:: iterator iPageCgi;
-    pair <multimap < string, string >:: iterator, multimap < string, string >:: iterator > Range;
-
-    for ( iPage = m_Pages.begin(); iPage != m_Pages.end(); iPage++) {
-	bool ThisPage = true;
-	for (iPageCgi = ((*iPage)->m_Cgi).begin(); iPageCgi != ((*iPage)->m_Cgi).end(); iPageCgi++) { 
-	    Range = Cgi.equal_range(iPageCgi->first);
-	    for(iRange = Range.first; iRange != Range.second; iRange++) {
-		if( iRange->second == ((*iPage)->m_Cgi)[iRange->first]) goto equality;
-		if(((*iPage)->m_Cgi)[iRange->first] == "") goto equality;
-	    }
-	    ThisPage = false;
-	equality:  // ugh
-	    ;
-	}
-	if(ThisPage) break;
-    }
-    if( iPage != m_Pages.end()) return (*iPage)->New();
-    else return m_DefaultPage->New();
-}
-
-
-	    
-CHTMLPageFactory::~CHTMLPageFactory()
-{
-    list <CHTMLBasicPage *>::iterator iPage;
-    for ( iPage = m_Pages.begin(); iPage != m_Pages.end(); iPage++) {
-	delete *iPage;
-    }
-    delete m_DefaultPage;
-}	    
+ 
 	
-
-
 void CHTMLPage::InitMembers(int style)
 {
     ////////// section for initializing members

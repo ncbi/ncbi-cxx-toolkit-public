@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/01 19:09:05  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.3  1998/11/23 23:47:49  lewisg
 * *** empty log message ***
 *
@@ -59,6 +62,7 @@ public:
     string GetAttributes(const string& aname) { return m_Attributes[aname]; }  // how to make const with non-const []?
     void SetAttributes(const string & aname, string avalue) { m_Attributes[aname] = avalue; }
     virtual void Print(string &);   // prints the tag and children
+    virtual void Print(CNcbiOstream &);   // prints the tag and children
     virtual void Rfind(const string & tagname, CNCBINode * replacenode);  // finds and replaces text with a node    
     CHTMLNode(void) { m_Name = ""; }
     CNCBINode * AppendText(const string &);  // convenient way to add CHTMLText
@@ -76,6 +80,7 @@ public:
     void Data(const string & datain) { m_Datamember = datain; }
     CNCBINode * Split(SIZE_TYPE); // splits a node in two
     virtual void Print(string &);
+    virtual void Print(CNcbiOstream &);   // prints the tag and children
     virtual void Rfind(const string & tagname, CNCBINode * replacenode);  
     CHTMLText(void) {};
     CHTMLText(const string & text) { m_Datamember = text; };
@@ -89,6 +94,7 @@ protected:
 class CHTMLElement: public CHTMLNode {
 public:
     virtual void Print(string&);
+    virtual void Print(CNcbiOstream &);   // prints the tag and children
     CHTMLElement(void) { m_EndTag = true; }
 protected:
     bool m_EndTag;  // is there a closing tag for the element?

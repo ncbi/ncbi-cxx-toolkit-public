@@ -2,11 +2,12 @@
 
 CCC = CC -g
 SUFFIXES = .o .c .h .hpp .cpp
+.SUFFIXES:
 .SUFFIXES: $(SUFFIXES)
 
 CFLAGS = -I../include -I../../corelib/include -I/netopt/ncbi_tools/ver0.0/ncbi/include 
 
-LDFLAGS = -L./ -lcgic -lncbi
+LDFLAGS = -L./ -lncbi -lxncbi
 
 #CFLAGS = $(iLOCALINCPATH) $(iINCPATH) $(iCFLAGS)
 #LDFLAGS = $(iLDFLAGS) -L../../libs $(iLOCALLIBS) $(iLIBS) -lm

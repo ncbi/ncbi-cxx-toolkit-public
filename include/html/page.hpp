@@ -33,15 +33,19 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/01 19:09:06  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.1  1998/10/29 16:15:53  lewisg
 * version 2
 *
 * ===========================================================================
 */
 
-
-
+#include <ncbistd.hpp>
 #include <html.hpp>
+#include <ncbiapp.hpp>
+BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is
@@ -51,13 +55,20 @@
   
 class CHTMLBasicPage: public CHTMLNode {
 public: 
-    virtual void Create() { Create(0); }
-    virtual void Create(int style) { Init(style); Draw(style); }
-    virtual void Init(int style) {}  // initialize members
-    virtual void Draw(int) = 0;  // create and aggregate sub pages + other html
+    CHTMLBasicPage(): m_CgiApplication(0) {}
+    virtual void Create(void) { Create(0); }
+    virtual void Create(int style) { InitMembers(style); InitSubPages(style); Draw(style); }
+    virtual void InitMembers(int style) {}  
+    virtual void InitSubPages(int style) {}  // initialize members
+    virtual void Draw(int style) = 0;  // create and aggregate sub pages + other html
+    virtual void Finish(int style) {}  // take down the page
 
+    CCgiApplication * m_CgiApplication;  // pointer to runtime information  
 };
 
+
+////////////////////////////////////
+//  this is the basic 3 section NCBI page
 
 const int kNoTITLE = 0x1;
 const int kNoVIEW = 0x2;
@@ -67,25 +78,32 @@ public:
 
     ////////// how to make the page
 
-    virtual void Init(int);
+    virtual void InitMembers(int);
+    virtual void InitSubPages(int);
     virtual void Draw(int);
 
-    ////////// the individual components of the page
+    ////////// page parameters
 
-    virtual CHTMLNode * CreateTemplate();
+    string m_PageName;
+    string m_TemplateFile;
+
+    ////////// the individual sub pages
+
+    virtual CHTMLNode * CreateTemplate(void);
     CHTMLNode * m_Template;
 
-    virtual CHTMLNode * CreateTitle();
+    virtual CHTMLNode * CreateTitle(void);
     CHTMLNode * m_Title;
 
-    virtual CHTMLNode * CreateView();
+    virtual CHTMLNode * CreateView(void);
     CHTMLNode * m_View;
 
-    ////////// 'tor
+    ////////// 'tors
 
-    CHTMLPage() { m_Title = NULL; m_View = NULL; m_Template = NULL;}
-
-
+    CHTMLPage() { m_Title = NULL; m_View = NULL; m_Template = NULL; }
+    static CHTMLBasicPage * New(void) { return new CHTMLPage;}  // for the page factory
 };
 
+
+END_NCBI_SCOPE
 #endif

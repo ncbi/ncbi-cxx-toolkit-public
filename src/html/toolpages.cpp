@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/01 19:10:40  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.1  1998/11/23 23:45:20  lewisg
 * *** empty log message ***
 *
@@ -84,9 +87,9 @@ CHTMLNode * CToolFastaPage::CreateView(void)
     try {
 	Form = new CHTML_form( "http://ray/cgi-bin/tools/tool", "GET", "toolform");
 	Form->AppendText("Enter Fasta (and later on, Accession #):<br>");
-	map <string, string>:: iterator iCgi = m_Runtime->m_Cgi->find("supplemental_input");
+	map <string, string>:: iterator iCgi = m_CgiApplication->m_CgiEntries.find("supplemental_input");
 
-	if(iCgi != m_Runtime->m_Cgi->end()) {
+	if(iCgi != m_CgiApplication->m_CgiEntries.end()) {
 	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", (*iCgi).second);
 	    Form->AppendChild(Textarea);
 	    Textarea->SetAttributes("wrap", "virtual");
@@ -150,7 +153,7 @@ CHTMLNode * CToolOptionPage::CreateView(void)
 	Options->m_ParamFile = "tool";
 	Options->m_SectionName = "seg";
 	Options->m_ActionURL = "http://ray/cgi-bin/tools/segify";
-	Options->m_Runtime = m_Runtime;
+	Options->m_CgiApplication = m_CgiApplication;
 	Options->Create();
     } 
     catch(...) {
@@ -218,18 +221,6 @@ CHTMLNode * CToolReportPage::CreateView(void)
 }
 
 
-// this is the list of pages to instantiate via CGI
-
-void CToolFactory::Init(void)
-{
-
-    SetDefault(new CToolFastaPage);
-
-    Append(new CToolOptionPage);
-    Append(new CToolReportPage);
-
-}
-
 
 ///////////////////////////
 // functions to retrieve options
@@ -260,8 +251,8 @@ void CHTMLOptionForm::Draw(int style)
     try {
 	Form = new CHTML_form("http://ray/cgi-bin/tools/segify", "GET");
 	AppendChild(Form);
-	map <string, string>:: iterator iCgi = m_Runtime->m_Cgi->find("supplemental_input");
-	if(iCgi != m_Runtime->m_Cgi->end()) Form->AppendChild(new CHTML_input("hidden", "supplemental_input", "\""+(*iCgi).second+"\""));
+	map <string, string>:: iterator iCgi = m_CgiApplication->m_CgiEntries.find("supplemental_input");
+	if(iCgi != m_CgiApplication->m_CgiEntries.end()) Form->AppendChild(new CHTML_input("hidden", "supplemental_input", "\""+(*iCgi).second+"\""));
 	Form->AppendChild(new CHTML_input("hidden", "toolpage_output", "TRUE"));
 	Form->AppendChild(new CHTML_input("hidden", "toolpage_options", "notcgi"));
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/01 19:09:07  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.1  1998/11/23 23:47:20  lewisg
 * *** empty log message ***
 *
@@ -59,10 +62,8 @@ public:
     CHTMLNode * m_Sidebar;
     virtual CHTMLNode * CreateSidebar(void);
 
-    virtual CHTMLBasicPage * New(void) {return new CToolFastaPage;}
-
     CToolFastaPage() { m_Sidebar = NULL; }
-    // fasta is kept in supplemental_input field
+    static CHTMLBasicPage * New(void) { return new CToolFastaPage;}
 
 };
 
@@ -75,8 +76,7 @@ public:
     virtual void InitMembers(int);
     virtual CHTMLNode * CreateView(void);
     virtual CHTMLNode * CreateSidebar(void);
-    virtual CHTMLBasicPage * New(void) {return new CToolOptionPage;}
-    virtual void InitCgi(void) {m_Cgi["toolname"] = "";}
+    static CHTMLBasicPage * New(void) { return new CToolOptionPage;}
 
 };
 
@@ -88,18 +88,8 @@ class CToolReportPage: public CToolFastaPage {
 public:
     virtual void InitMembers(int);
     virtual CHTMLNode * CreateView(void);  // can be fasta, pretty, or error
-    virtual CHTMLBasicPage * New(void) {return new CToolReportPage;}
-    virtual void InitCgi(void) {m_Cgi["notcgi"] = "";}
+    static CHTMLBasicPage * New(void) { return new CToolReportPage;}
 
-};
-
-
-////////////////////////////////
-///// used to create the pages
-
-class CToolFactory: public CHTMLPageFactory {
-public:
-    virtual void Init(void);
 };
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/01 19:10:38  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.3  1998/11/23 23:42:17  lewisg
 * *** empty log message ***
 *
@@ -56,6 +59,12 @@ void CHTMLNode::Print(string & output)
     for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * ) (*iChildren))->Print(output);
 }
 
+
+void CHTMLNode::Print(CNcbiOstream & output)  
+{
+    list <CNCBINode *>::iterator iChildren = m_ChildNodes.begin();
+    for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * ) (*iChildren))->Print(output);
+}
 
 // this function searches for a text string in a Text node and replaces it with a node
 void CHTMLNode::Rfind(const string & tagname, CNCBINode * replacenode)
@@ -89,6 +98,15 @@ void CHTMLText::Print(string& output)
     output.append(m_Datamember);
     for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode *)(* iChildren))->Print(output);
 }
+
+
+void CHTMLText::Print(CNcbiOstream & output)  
+{
+    list <CNCBINode *> :: iterator iChildren = m_ChildNodes.begin();
+    output << m_Datamember.c_str();
+    for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode *)(* iChildren))->Print(output);
+}
+
 
 // splits a text node after the iSplit position
 
@@ -131,8 +149,6 @@ void CHTMLText::Rfind(const string & tagname, CNCBINode * replacenode)
 }
 
 
-
-
 void CHTMLElement::Print(string& output)  
 {
     list <CNCBINode *>::iterator iChildren;
@@ -152,7 +168,31 @@ void CHTMLElement::Print(string& output)
     output.append(">");
     
     for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * )(*iChildren))->Print(output);
-    if(m_EndTag) output.append( "</" + m_Name + ">");
+    if(m_EndTag) output.append( "</" + m_Name + ">\n");
+}
+
+
+
+void CHTMLElement::Print(CNcbiOstream & output)  
+{
+    list <CNCBINode *>::iterator iChildren;
+    map <string, string, less<string> > :: iterator iAttributes = m_Attributes.begin();
+    
+    output << "<" << m_Name.c_str();
+    while (iAttributes != m_Attributes.end()) {
+        if ((*iAttributes).second == "") {
+            output << " " << (*iAttributes).first.c_str();
+            iAttributes++;
+        }
+        else {
+            output << " " << (*iAttributes).first.c_str() << "=" << (*iAttributes).second.c_str();
+            iAttributes++;
+        }
+    }
+    output << ">";
+    
+    for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * )(*iChildren))->Print(output);
+    if(m_EndTag) output << "</" << m_Name.c_str() << ">\n";
 }
 
 

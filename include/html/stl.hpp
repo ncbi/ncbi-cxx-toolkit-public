@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/01 19:09:06  lewisg
+* uses CCgiApplication and new page factory
+*
 * Revision 1.3  1998/11/23 23:47:50  lewisg
 * *** empty log message ***
 *
@@ -49,19 +52,9 @@
 // don't know if some of these are nested inside of each other
 // also don't know if I missed some.  please feel free to add or delete.
 
-#include <algorithm>
-#include <deque>
-#include <functional>
-#include <memory>
-#include <numeric>
-#include <iterator>
 #include <list>
 #include <map>
-#include <queue>
-#include <set>
-#include <stack>
 #include <string>
-#include <utility>
-#include <vector>
+
 
 #endif
