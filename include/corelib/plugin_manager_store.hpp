@@ -97,9 +97,17 @@ public:
 
 };
     
-        
 
-
+template<class TInterface>
+void RegisterEntryPoint(typename CPluginManager<TInterface>::
+                        FNCBI_EntryPoint plugin_entry_point)
+{
+    typedef CPluginManager<TInterface> TPluginManager;
+    typedef CPluginManagerStore::CPMMaker<TInterface> TPMStore;
+    CRef<TPluginManager> manager(TPMStore::Get());
+    _ASSERT(manager);
+    manager->RegisterWithEntryPoint(plugin_entry_point);
+}
 
 
 END_NCBI_SCOPE
@@ -108,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2004/12/22 19:25:49  grichenk
+ * +RegisterEntryPoint() template
+ *
  * Revision 1.4  2004/12/21 21:40:15  grichenk
  * Moved obj_store and plugin_manager_store to corelib
  *
