@@ -151,14 +151,21 @@ CBioTreeFeatureDictionary::HasFeature(TBioTreeFeatureId id)
 TBioTreeFeatureId 
 CBioTreeFeatureDictionary::Register(const string& feature_name)
 {
-    ++m_IdCounter;
+    Register(++m_IdCounter, feature_name);
 
-    m_Dict.insert(
-           pair<TBioTreeFeatureId, string>(m_IdCounter, feature_name));
-    m_Name2Id.insert(
-           pair<string, TBioTreeFeatureId>(feature_name, m_IdCounter));
     return m_IdCounter;
 }
+
+void CBioTreeFeatureDictionary::Register(TBioTreeFeatureId id, 
+										 const string& feature_name)
+{
+    m_Dict.insert(
+           pair<TBioTreeFeatureId, string>(id, feature_name));
+    m_Name2Id.insert(
+           pair<string, TBioTreeFeatureId>(feature_name, id));
+
+}
+
 
 TBioTreeFeatureId 
 CBioTreeFeatureDictionary::GetId(const string& feature_name) const
@@ -176,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/07 15:22:13  kuznets
+ * + Register
+ *
  * Revision 1.4  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
