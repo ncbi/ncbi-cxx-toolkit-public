@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2002/11/27 17:09:52  kholodov
+* Fixed: Resolved version conflict.
+*
 * Revision 1.10  2002/11/27 16:59:38  ucko
 * Drop definitions of CToMultiExHandler methods now found in err_handler.cpp.
 *
@@ -73,8 +76,9 @@
 
 #include "ds_impl.hpp"
 #include "conn_impl.hpp"
-#include "dbexception.hpp"
+#include "err_handler.hpp"
 
+BEGIN_NCBI_SCOPE
 
 CDataSource::CDataSource(I_DriverContext *ctx)
     : m_loginTimeout(30), m_context(ctx), m_poolUsed(false),
@@ -173,3 +177,8 @@ void CDataSource::Action(const CDbapiEvent& e)
         RemoveListener(e.GetSource());
     }
 }
+
+
+END_NCBI_SCOPE
+
+
