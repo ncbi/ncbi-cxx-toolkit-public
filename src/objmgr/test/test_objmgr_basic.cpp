@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/08/06 21:16:50  grichenk
+* Fixed problem with MIPS.
+*
 * Revision 1.25  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
@@ -251,12 +254,10 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
     {
         CRef< CObjectManager> pOm = CObjectManager::GetInstance();
         {
-            CTestDataLoader *pLoader1 =
-                CTestDataLoader::RegisterInObjectManager(
-                *pOm, name1, CObjectManager::eNonDefault).GetLoader();
-            CTestDataLoader *pLoader2 =
-                CTestDataLoader::RegisterInObjectManager(
-                *pOm, name2, CObjectManager::eDefault).GetLoader();
+            CTestDataLoader::RegisterInObjectManager
+                (*pOm, name1, CObjectManager::eNonDefault);
+            CTestDataLoader::RegisterInObjectManager
+                (*pOm, name2, CObjectManager::eDefault);
 
             // scope in CRef container
             CRef< CScope> pScope1(new CScope(*pOm));
@@ -309,14 +310,12 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
             try {
                 pScope1->AddDataLoader( name1);
                 NcbiCout << "ERROR: AddDataLoader has succeeded" << NcbiEndl;
-                error = 1;
+                error += 1;
             }
             catch (exception& e) {
                 NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
             }
-            CTestDataLoader *pLoader1 =
-                CTestDataLoader::RegisterInObjectManager(*pOm, name1)
-                .GetLoader();
+            CTestDataLoader::RegisterInObjectManager(*pOm, name1);
             pScope1->AddDefaults(); // nothing added
             pScope1->AddDataLoader( name1); // ok
             // must fail - dataloader1 is in use
@@ -324,7 +323,7 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
             if (pOm->RevokeDataLoader( name1))
             {
                 NcbiCout << "ERROR: RevokeDataLoader has succeeded" << NcbiEndl;
-                error = 1;
+                error += 2;
             }
             delete pScope1; // loader1 alive
             // delete dataloader1
@@ -334,7 +333,7 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
             try {
                 pOm->RevokeDataLoader( name1);
                 NcbiCout << "ERROR: RevokeDataLoader has succeeded" << NcbiEndl;
-                error = 1;
+                error += 4;
             }
             catch (exception& e) {
                 NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
@@ -342,9 +341,9 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
         }
     }
 }
-if ( error ) {
+if ( error > 0 ) {
 NcbiCout << "==================================================" << NcbiEndl;
-NcbiCout << "ERROR: Some tests failed." << NcbiEndl;
+ NcbiCout << "ERROR " << error << ": Some tests failed." << NcbiEndl;
 }
 else {
 NcbiCout << "==================================================" << NcbiEndl;
