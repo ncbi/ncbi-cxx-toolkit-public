@@ -727,12 +727,12 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
         return;
     }
     
-    ITERATE(TSubNodeList, iter, m_SubNodes) {
-        (*iter)->WalkNodes( walker, volset );
+    ITERATE(TSubNodeList, itr, m_SubNodes) {
+        (*itr)->WalkNodes( walker, volset );
     }
     
-    ITERATE(TVolNames, iter, m_VolNames) {
-        if (const CSeqDBVol * vptr = volset.GetVol(*iter)) {
+    ITERATE(TVolNames, itr, m_VolNames) {
+        if (const CSeqDBVol * vptr = volset.GetVol(*itr)) {
             walker->Accumulate( *vptr );
         }
     }
