@@ -180,10 +180,12 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
 }
 
 
+#ifdef NCBI_OS_MSWIN
 CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val)
 {
     return (out << NStr::Int8ToString(val));
 }
+#endif
 
 
 static const char s_Hex[] = "0123456789ABCDEF";
@@ -338,6 +340,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/08/19 17:06:12  ucko
+ * Actually conditionalize the Windows-specific operator<<....
+ *
  * Revision 1.24  2003/08/19 15:41:55  dicuccio
  * Added conditionally compiled prototype for operator<<(ostream&, __int64)
  *
