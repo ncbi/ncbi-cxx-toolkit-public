@@ -92,14 +92,14 @@ DECLARE_MUTATOR(member_type, member, data_structure_type)
 member_type Get##member(data_structure_type var) \
 { \
     if (var) \
-        return var->##member; \
+        return var->member; \
     else \
         return (member_type) NULL; \
 }
 
 #define DECLARE_MUTATOR(member_type, member, data_structure_type) \
 void Set##member(data_structure_type var, member_type arg) \
-{ if (var) var->##member = arg; }
+{ if (var) var->member = arg; }
 
 /* Note there's no ; after these macros! */
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrcPtr)
