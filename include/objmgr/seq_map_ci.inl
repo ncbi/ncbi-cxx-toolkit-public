@@ -232,6 +232,13 @@ TSeqPos CSeqMap_CI::GetEndPosition(void) const
 
 
 inline
+bool CSeqMap_CI::IsInvalid(void) const
+{
+    return m_Stack.empty();
+}
+
+
+inline
 CSeqMap_CI::operator bool(void) const
 {
     return m_Stack.front().InRange();
@@ -345,6 +352,9 @@ CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/27 21:24:16  vasilche
+ * Added CSeqMap_CI::IsInvalid() method.
+ *
  * Revision 1.4  2003/07/14 21:13:22  grichenk
  * Added possibility to resolve seq-map iterator withing a single TSE
  * and to skip intermediate references during this resolving.

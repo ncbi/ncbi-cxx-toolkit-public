@@ -183,6 +183,7 @@ public:
 
     ~CSeqMap_CI(void);
 
+    bool IsInvalid(void) const;
     operator bool(void) const;
 
     bool operator==(const CSeqMap_CI& seg) const;
@@ -281,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/27 21:24:16  vasilche
+* Added CSeqMap_CI::IsInvalid() method.
+*
 * Revision 1.8  2003/07/14 21:13:22  grichenk
 * Added possibility to resolve seq-map iterator withing a single TSE
 * and to skip intermediate references during this resolving.
