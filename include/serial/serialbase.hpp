@@ -283,7 +283,6 @@ class CStringAliasBase : public CAliasBase<TString>
 public:
     CStringAliasBase(void)
         {
-            m_Data.resize(0);
         }
     explicit CStringAliasBase(const TString& value)
         : TParent(value) {}
@@ -424,6 +423,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/02/02 14:39:52  vasilche
+* Removed call to string::resize(0) in constructor - it's empty by default.
+*
 * Revision 1.28  2004/01/20 14:58:46  dicuccio
 * FIxed use of export specifiers - located before return type of function
 *
