@@ -1,3 +1,4 @@
+#include <blast_def.h> /* for sfree() macro */
 #include <ncbi_std.h>
 
 void * MemDup (const void *orig, size_t size)
