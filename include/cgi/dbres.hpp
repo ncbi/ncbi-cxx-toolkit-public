@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/18 20:42:44  vakatov
+* Fixed tiny compilation warnings
+*
 * Revision 1.4  1999/05/24 20:52:57  pubmed
 * minor changes
 *
@@ -270,9 +273,8 @@ public:
     const TFilterList& GetFilterList( void ) const
         { return m_filter; }
 
-    virtual CNcbiQueryResult* Execute( CCgiContext& ctx )
+    virtual CNcbiQueryResult* Execute(CCgiContext&)
         { return 0; }
-
 protected:
 
     const CNcbiDatabaseInfo& m_dbinfo;

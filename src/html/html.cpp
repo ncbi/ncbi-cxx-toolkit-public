@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  1999/06/18 20:42:50  vakatov
+* Fixed tiny compilation warnings
+*
 * Revision 1.45  1999/06/11 20:30:29  vasilche
 * We should catch exception by reference, because catching by value
 * doesn't preserve comment string.
@@ -571,7 +574,7 @@ CHTML_table::TIndex CHTML_table::sx_GetSpan(const CNCBINode* node,
     try {
         span = NStr::StringToUInt(node->GetAttribute(attributeName));
     }
-    catch ( runtime_error& err ) {
+    catch (runtime_error&) {
         if ( info )
             info->m_BadSpan = true;
         return 1;
