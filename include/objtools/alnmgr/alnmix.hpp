@@ -104,8 +104,6 @@ private:
     void x_CreateRowsVector    (void);
     void x_CreateSegmentsVector(void);
     void x_CreateDenseg        (void);
-    int  x_CalculateScore      (const string& s1, const string& s2,
-                                bool s1_is_prot, bool s2_is_prot);
     void x_ConsolidateGaps     (TSegments& gapped_segs);
 
 
@@ -131,7 +129,6 @@ private:
     TSeqs                       m_Rows;
     list<CRef<CAlnMixSeq> >     m_ExtraRows;
     bool                        m_SingleRefseq;
-    map<char, map<char, int> >  m_Blosum62Map;
     TBioseqHandleMap            m_BioseqHandles;
 
 };
@@ -287,6 +284,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/01/23 16:30:36  todorov
+* Moved calc score to alnvec
+*
 * Revision 1.15  2003/01/22 20:13:02  vasilche
 * Changed use of CBioseqHandle::GetSeqVector() method.
 *

@@ -49,7 +49,6 @@ CAlnMix::CAlnMix(void)
     : m_SingleRefseq(false)
 {
     x_CreateScope();
-    x_InitBlosum62Map();
 }
 
 
@@ -57,7 +56,6 @@ CAlnMix::CAlnMix(CScope& scope)
     : m_Scope(&scope),
       m_SingleRefseq(false)
 {
-    x_InitBlosum62Map();
 }
 
 
@@ -151,74 +149,6 @@ void CAlnMix::Merge(TMergeFlags flags)
     }
 }
 
-#define BLOSUMSIZE 24
-
-static const char Blosum62Fields[BLOSUMSIZE] =
-    { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K',
-      'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X', '*' };
-
-static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
-    /*       A,  R,  N,  D,  C,  Q,  E,  G,  H,  I,  L,  K,
-             M,  F,  P,  S,  T,  W,  Y,  V,  B,  Z,  X,  * */
-    /*A*/ {  4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1,
-            -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0, -4 },
-    /*R*/ { -1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2,
-            -1, -3, -2, -1, -1, -3, -2, -3, -1,  0, -1, -4 },
-    /*N*/ { -2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0,
-            -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1, -4 },
-    /*D*/ { -2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1,
-            -3, -3, -1,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
-    /*C*/ {  0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3,
-            -1, -2, -3, -1, -1, -2, -2, -1, -3, -3, -2, -4 },
-    /*Q*/ { -1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,
-             0, -3, -1,  0, -1, -2, -1, -2,  0,  3, -1, -4 },
-    /*E*/ { -1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1,
-            -2, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
-    /*G*/ {  0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2,
-            -3, -3, -2,  0, -2, -2, -3, -3, -1, -2, -1, -4 },
-    /*H*/ { -2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1,
-            -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1, -4 },
-    /*I*/ { -1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,
-             1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1, -4 },
-    /*L*/ { -1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,
-             2,  0, -3, -2, -1, -2, -1,  1, -4, -3, -1, -4 },
-    /*K*/ { -1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5,
-            -1, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1, -4 },
-    /*M*/ { -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,
-             5,  0, -2, -1, -1, -1, -1,  1, -3, -1, -1, -4 },
-    /*F*/ { -2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,
-             0,  6, -4, -2, -2,  1,  3, -1, -3, -3, -1, -4 },
-    /*P*/ { -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1,
-            -2, -4,  7, -1, -1, -4, -3, -2, -2, -1, -2, -4 },
-    /*S*/ {  1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0,
-            -1, -2, -1,  4,  1, -3, -2, -2,  0,  0,  0, -4 },
-    /*T*/ {  0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1,
-            -1, -2, -1,  1,  5, -2, -2,  0, -1, -1,  0, -4 },
-    /*W*/ { -3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3,
-            -1,  1, -4, -3, -2, 11,  2, -3, -4, -3, -2, -4 },
-    /*Y*/ { -2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2,
-            -1,  3, -3, -2, -2,  2,  7, -1, -3, -2, -1, -4 },
-    /*V*/ {  0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,
-             1, -1, -2, -2,  0, -3, -1,  4, -3, -2, -1, -4 },
-    /*B*/ { -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0,
-            -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
-    /*Z*/ { -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1,
-            -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
-    /*X*/ {  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1, -4 },
-    /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,
-            -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
-};
-
-void CAlnMix::x_InitBlosum62Map()
-{
-    for (int row=0; row<BLOSUMSIZE; row++) {
-        for (int col=0; col<BLOSUMSIZE; col++) {
-            m_Blosum62Map[Blosum62Fields[row]][Blosum62Fields[col]] =
-                Blosum62Matrix[row][col];
-        }
-    }
-}
 
 void CAlnMix::Add(const CDense_seg &ds)
 {
@@ -356,7 +286,7 @@ void CAlnMix::Add(const CDense_seg &ds)
 
 
                             match->m_Score = 
-                                x_CalculateScore
+                                CAlnVec::CalculateScore
                                 (s1, s2, aln_seq1->m_IsAA, aln_seq2->m_IsAA);
                         }}
                         aln_seq1->m_Score += match->m_Score;
@@ -380,39 +310,6 @@ void CAlnMix::Add(const CDense_seg &ds)
         }
         seg_off += ds.GetDim();
     }
-}
-
-
-int CAlnMix::x_CalculateScore(const string& s1, const string& s2,
-                              bool s1_is_prot, bool s2_is_prot)
-{
-    int score = 0;
-
-    string::const_iterator res1 = s1.begin();
-    string::const_iterator res2 = s2.begin();
-
-    if (s1_is_prot  &&  s2_is_prot) {
-        // use BLOSUM62 matrix
-        for ( ;  res1 != s1.end();  res1++, res2++) {
-            score += m_Blosum62Map[*res1][*res2];
-        }
-    } else if ( !s1_is_prot  &&  !s2_is_prot ) {
-        // use match score/mismatch penalty
-        for ( ; res1 != s1.end();  res1++, res2++) {
-            if (*res1 && *res2) {
-                if (*res1 == *res2) {
-                    score += 1;
-                } else {
-                    score -= 3;
-                }
-            }
-        }
-    } else {
-        NCBI_THROW(CAlnException, eMergeFailure,
-                   "CAlnMix::x_CalculateScore(): "
-                   "Mixing prot and nucl not implemented yet.");
-    }
-    return score;
 }
 
 
@@ -1049,8 +946,8 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
                         GetSeqData(start1, start1 + seg1->m_Len, s1);
 
                     score1 = 
-                        x_CalculateScore(s1, s1,
-                                         seq1->m_IsAA, seq1->m_IsAA);
+                        CAlnVec::CalculateScore(s1, s1,
+                                                  seq1->m_IsAA, seq1->m_IsAA);
 
                     cache = true;
                 }
@@ -1066,7 +963,7 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
                     GetSeqData(start2, start2 + seg2->m_Len, s2);
 
                 int score2 = 
-                    x_CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
+                    CAlnVec::CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
 
                 if (score2 < 75 * score1 / 100) {
                     possible = false;
@@ -1196,6 +1093,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/01/23 16:30:18  todorov
+* Moved calc score to alnvec
+*
 * Revision 1.25  2003/01/22 21:00:21  dicuccio
 * Fixed compile error - transposed #endif and }
 *
