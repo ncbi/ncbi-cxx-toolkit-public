@@ -1395,6 +1395,157 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
 
 
 //-----------------------------------------------------------------------------
+void CCyclicDepends::FindCycles(const TProjects& tree,
+                                TDependsCycles*  cycles)
+{
+    cycles->clear();
+
+    ITERATE(TProjects, p, tree) {
+        // Look throgh all projects in tree.
+        const CProjKey& project_id = p->first;
+        // If this proj_id was already reported in some cycle, 
+        // it's no need to test it again.
+        if ( !IsInAnyCycle(project_id, *cycles) ) {
+            // Analyze for cycles
+            AnalyzeProjItem(project_id, tree, cycles);
+        }
+    }
+}
+
+
+bool CCyclicDepends::IsInAnyCycle(const CProjKey&       proj_id,
+                                  const TDependsCycles& cycles)
+{
+    ITERATE(TDependsCycles, p, cycles) {
+        const TDependsChain& cycle = *p;
+        if (find(cycle.begin(), cycle.end(), proj_id) != cycle.end())
+            return true;
+    }
+    return false;
+}
+
+
+void CCyclicDepends::AnalyzeProjItem(const CProjKey&  proj_id,
+                                     const TProjects& tree,
+                                     TDependsCycles*  cycles)
+{
+    TProjects::const_iterator p = tree.find(proj_id);
+    if (p == tree.end()) {
+        LOG_POST( Error << "Unknown project: " << proj_id.Id() );
+        return;
+    }
+    
+    const CProjItem& project = p->second;
+    // No depends - no cycles
+    if ( project.m_Depends.empty() )
+        return;
+
+    TDependsChains chains;
+    ITERATE(list<CProjKey>, n, project.m_Depends) {
+
+        // Prepare initial state of depends chains
+        // one depend project in each chain
+        const CProjKey& depend_id = *n;
+        if ( !IsInAnyCycle(depend_id, *cycles) ) {
+            TDependsChain one_chain;
+            one_chain.push_back(depend_id);
+            chains.push_back(one_chain);
+        }
+    }
+    // Try to extend this chains
+    TDependsChain cycle_found;
+    bool cycles_found = ExtendChains(proj_id, tree, &chains, &cycle_found);
+    if ( cycles_found ) {
+        // Report chains as a cycles
+        cycles->insert(cycle_found);
+    }
+}
+
+
+bool CCyclicDepends::ExtendChains(const CProjKey&  proj_id, 
+                                  const TProjects& tree,
+                                  TDependsChains*  chains,
+                                  TDependsChain*   cycle_found)
+{
+    for (TDependsChains::iterator p = chains->begin(); 
+          p != chains->end();  ) {
+        // Iterate through all chains
+        TDependsChain& one_chain = *p;
+        // we'll consider last element.
+        const CProjKey& depend_id = one_chain.back();
+        TProjects::const_iterator n = tree.find(depend_id);
+        if (n == tree.end()) {
+            //LOG_POST( Error << "Unknown project: " << depend_id.Id() );
+            return false;
+        }
+        const CProjItem& depend_project = n->second;
+        if ( depend_project.m_Depends.empty() ) {
+            // If nobody depends from this project - remove this chain
+            p = chains->erase(p);
+        } else {
+            // We'll create new chains 
+            // by adding depend_project dependencies to old_chain
+            TDependsChain old_chain = one_chain;
+            p = chains->erase(p);
+
+            ITERATE(list<CProjKey>, k, depend_project.m_Depends) {
+                const CProjKey& new_depend_id = *k;
+                // add each new depends to the end of the old_chain.
+                TDependsChain new_chain = old_chain;
+                new_chain.push_back(new_depend_id);
+                p = chains->insert(p, new_chain);
+                ++p;
+            }
+        }
+    }
+    // No chains - no cycles
+    if ( chains->empty() )
+        return false;
+    // got cycles in chains - we done
+    if ( IsCyclic(proj_id, *chains, cycle_found) )
+        return true;
+    // otherwise - continue search.
+    return ExtendChains(proj_id, tree, chains, cycle_found);
+}
+
+
+bool CCyclicDepends::IsCyclic(const CProjKey&       proj_id, 
+                              const TDependsChains& chains,
+                              TDependsChain*        cycle_found)
+{
+    // First iteration - we'll try to find project to
+    // consider inside depends chains. If we found - we have a cycle.
+    ITERATE(TDependsChains, p, chains) {
+        const TDependsChain& one_chain = *p;
+        if (find(one_chain.begin(), 
+                 one_chain.end(), 
+                 proj_id) != one_chain.end()) {
+            *cycle_found = one_chain;
+            return true;
+        }
+    }
+
+    // We look into all chais
+    ITERATE(TDependsChains, p, chains) {
+        TDependsChain one_chain = *p;
+        // remember original size of chain
+        size_t orig_size = one_chain.size();
+        // remove all non-unique elements
+        one_chain.sort();
+        one_chain.unique();
+        // if size of the chain is altered - we have a cycle.
+        if (one_chain.size() != orig_size) {
+            *cycle_found = one_chain;
+            return true;
+        }
+    }
+    
+    // Got nothing - no cycles
+    return false;
+}
+
+
+//-----------------------------------------------------------------------------
 CProjectTreeFolders::CProjectTreeFolders(const CProjectItemsTree& tree)
 :m_RootParent("/", NULL)
 {
@@ -1479,6 +1630,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/03/01 17:59:35  gorelenk
+ * Added implementation of class CCyclicDepends member-functions.
+ *
  * Revision 1.20  2004/02/27 18:08:25  gorelenk
  * Changed implementation of CProjectTreeBuilder::ProcessDir.
  *
