@@ -45,7 +45,7 @@ typedef struct BlastSeqSrc BlastSeqSrc;
  * First argument is a pointer to the structure to be populated (allocated for
  * client implementations), second argument should be typecast'd to the 
  * correct type by user-defined constructor function */
-typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (BlastSeqSrc*, void*);
+typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (const BlastSeqSrc*, const void*);
 
 /** Function pointer typedef to deallocate a BlastSeqSrc structure.
  * Argument is the BlastSeqSrc structure to free, always returns NULL. */
@@ -105,7 +105,7 @@ typedef struct BlastSeqSrcNewInfo {
  * @param bssn_info Structure defining constructor and its argument to be
  *        invoked from this function [in]
  */
-BlastSeqSrc* BlastSeqSrcNew(BlastSeqSrcNewInfo* bssn_info);
+BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
 
 /** Frees the BlastSeqSrc structure by invoking the destructor function set by
  * the user-defined constructor function when the structure is initialized
@@ -129,25 +129,25 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
 #define BLASTSeqSrcGetSeqIdStr(bssp, arg) \
     (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
 
-#define DEFINE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
-DEFINE_ACCESSOR(member_type, member, data_structure_type); \
-DEFINE_MUTATOR(member_type, member, data_structure_type)
+#define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
+DECLARE_ACCESSOR(member_type, member, data_structure_type); \
+DECLARE_MUTATOR(member_type, member, data_structure_type)
 
-#define DEFINE_ACCESSOR(member_type, member, data_structure_type) \
-member_type Get##member(data_structure_type var)
+#define DECLARE_ACCESSOR(member_type, member, data_structure_type) \
+member_type Get##member(const data_structure_type var)
 
-#define DEFINE_MUTATOR(member_type, member, data_structure_type) \
+#define DECLARE_MUTATOR(member_type, member, data_structure_type) \
 void Set##member(data_structure_type var, member_type arg) \
 
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*);
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);
 
-DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
-DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
-DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
-DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }

@@ -50,7 +50,7 @@ struct BlastSeqSrc {
 
 };
 
-BlastSeqSrc* BlastSeqSrcNew(BlastSeqSrcNewInfo* bssn_info)
+BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
 {
     BlastSeqSrc* retval = NULL;
 
@@ -78,21 +78,20 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp)
 
     /* This could leave a memory leak if destructor function pointer is not
      * initialized! It is the implementation's resposibility to provide this */
-    if ( !(destructor_fnptr = (*bssp->DeleteFnPtr)))
-      {
-	sfree(bssp);
-	return NULL;
-      }
+    if ( !(destructor_fnptr = (*bssp->DeleteFnPtr))) {
+        sfree(bssp);
+        return NULL;
+    }
 
     return (BlastSeqSrc*) (*destructor_fnptr)(bssp);
 }
 
-#define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
-DECLARE_ACCESSOR(member_type, member, data_structure_type) \
-DECLARE_MUTATOR(member_type, member, data_structure_type)
+#define DEFINE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
+DEFINE_ACCESSOR(member_type, member, data_structure_type) \
+DEFINE_MUTATOR(member_type, member, data_structure_type)
 
-#define DECLARE_ACCESSOR(member_type, member, data_structure_type) \
-member_type Get##member(data_structure_type var) \
+#define DEFINE_ACCESSOR(member_type, member, data_structure_type) \
+member_type Get##member(const data_structure_type var) \
 { \
     if (var) \
         return var->member; \
@@ -100,17 +99,17 @@ member_type Get##member(data_structure_type var) \
         return (member_type) NULL; \
 }
 
-#define DECLARE_MUTATOR(member_type, member, data_structure_type) \
+#define DEFINE_MUTATOR(member_type, member, data_structure_type) \
 void Set##member(data_structure_type var, member_type arg) \
 { if (var) var->member = arg; }
 
 /* Note there's no ; after these macros! */
-DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*)
-DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*)
 
-DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*)
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
-DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
-DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
-DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*)
