@@ -31,6 +31,7 @@
  */
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include "../ncbi_ansi_ext.h"
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
 #include <stdlib.h>
@@ -256,6 +257,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2005/03/21 17:30:28  lavr
+ * Include "../ncbi_ansi_ext.h" (essential for Windows)
+ *
  * Revision 6.12  2005/03/18 16:36:10  lavr
  * Additional test for \r\n in body; debug output provision
  *
