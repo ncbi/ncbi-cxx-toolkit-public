@@ -27,7 +27,6 @@
 */
 
 #include <ncbi.h>
-#include <objloc.h>
 #include <blast_def.h>
 #include <blast_options.h>
 #include <aa_lookup.h>

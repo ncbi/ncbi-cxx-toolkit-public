@@ -36,9 +36,11 @@ $Revision$
 ******************************************************************************/
 
 #include <blast_setup.h>
-#include <seg.h>
+#include <blast_seg.h>
+#if COIL_COIL_IMPLEMENTED
 #include <urkpcc.h>
-#include <dust.h>
+#endif
+#include <blast_dust.h>
 #include <blast_util.h>
 #include <blast_filter.h>
 
