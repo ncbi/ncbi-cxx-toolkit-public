@@ -9,3 +9,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) $(NCBI_C_INCLUDE)
 SRC = SpectrumSet msladder msms mspeak nrutil omssa
 
 LIB = xomssa
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
