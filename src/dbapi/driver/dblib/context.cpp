@@ -416,6 +416,7 @@ I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 {
     DBINT version= DBVERSION_UNKNOWN;
 
+#ifndef NCBI_OS_MSWIN
     if(attr) {
 	string vers= (*attr)["version"];
 	if(vers.find("46") != string::npos)
@@ -424,6 +425,8 @@ I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 	    version= DBVERSION_100;
 
     }
+#endif
+
     return (I_DriverContext*)(new CDBLibContext(version));
 }
 
@@ -448,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/01/15 15:45:50  sapojnik
+ * Use DBVERSION_46/100 constants only ifndef NCBI_OS_MSWIN
+ *
  * Revision 1.7  2002/01/11 20:25:08  soussov
  * driver manager support added
  *
