@@ -630,7 +630,7 @@ TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromList(
             drv = CreateInstance(drv_name, version, driver_params);
         }
         catch ( exception& e ) {
-            LOG_POST(drv_name << " reader is not available ::" << e.what());
+            LOG_POST(drv_name << " is not available ::" << e.what());
         }
         if ( drv ) {
             break;
@@ -930,6 +930,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/03/10 20:49:57  vasilche
+ * Fixed error message.
+ *
  * Revision 1.43  2005/03/07 14:43:15  ssikorsk
  * Do not unload PluginManager drivers by default
  *
