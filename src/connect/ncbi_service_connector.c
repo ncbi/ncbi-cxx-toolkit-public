@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2001/06/05 14:11:29  lavr
+ * SERV_MIME_UNDEFINED split into 2 (typed) constants:
+ * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
+ *
  * Revision 6.23  2001/06/04 17:02:17  lavr
  * Insert MIME type/subtype in Content-Type for servers,
  * which have this feature configured
@@ -296,7 +300,8 @@ static char* s_AdjustNetInfo(SConnNetInfo* net_info,
         }
     }
 
-    if (mime_s == SERV_MIME_UNDEFINED || mime_t == SERV_MIME_UNDEFINED ||
+    if (mime_t == SERV_MIME_TYPE_UNDEFINED ||
+        mime_s == SERV_MIME_SUBTYPE_UNDEFINED ||
         !MIME_ComposeContentTypeEx(mime_t, mime_s, eENCOD_None,
                                    content_type, sizeof(content_type))) {
         *content_type = 0;
@@ -492,8 +497,8 @@ static CONNECTOR s_Open
                                       0, 0,
                                       second_try ? 0 : "service", uuu->serv,
                                       user_header,
-                                      SERV_MIME_UNDEFINED,
-                                      SERV_MIME_UNDEFINED, 0);
+                                      SERV_MIME_TYPE_UNDEFINED,
+                                      SERV_MIME_SUBTYPE_UNDEFINED, 0);
     }
 
     if (user_header) {

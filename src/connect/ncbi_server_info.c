@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2001/06/05 14:11:29  lavr
+ * SERV_MIME_UNDEFINED split into 2 (typed) constants:
+ * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
+ *
  * Revision 6.27  2001/06/04 17:01:06  lavr
  * MIME type/subtype added to server descriptor
  *
@@ -272,8 +276,8 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     size_t reserve;
     char* str;
 
-    if (info->mime_t != SERV_MIME_UNDEFINED &&
-        info->mime_s != SERV_MIME_UNDEFINED) {
+    if (info->mime_t != SERV_MIME_TYPE_UNDEFINED &&
+        info->mime_s != SERV_MIME_SUBTYPE_UNDEFINED) {
         char* p;
         if (!MIME_ComposeContentTypeEx(info->mime_t, info->mime_s,
                                        eENCOD_None, c_t, sizeof(c_t)))
@@ -536,8 +540,8 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->time         = 0;
         info->coef         = 0.0;
         info->rate         = 0.0;
-        info->mime_t       = SERV_MIME_UNDEFINED;
-        info->mime_s       = SERV_MIME_UNDEFINED;
+        info->mime_t       = SERV_MIME_TYPE_UNDEFINED;
+        info->mime_s       = SERV_MIME_SUBTYPE_UNDEFINED;
         info->u.ncbid.args = sizeof(info->u.ncbid);
         if (strcmp(args, "''") == 0) /* special case */
             args = 0;
@@ -597,8 +601,8 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
-        info->mime_t = SERV_MIME_UNDEFINED;
-        info->mime_s = SERV_MIME_UNDEFINED;
+        info->mime_t = SERV_MIME_TYPE_UNDEFINED;
+        info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
     }
     return info;
 }
@@ -706,8 +710,8 @@ SSERV_Info* SERV_CreateHttpInfo
         info->time        = 0;
         info->coef        = 0.0;
         info->rate        = 0.0;
-        info->mime_t      = SERV_MIME_UNDEFINED;
-        info->mime_s      = SERV_MIME_UNDEFINED;
+        info->mime_t      = SERV_MIME_TYPE_UNDEFINED;
+        info->mime_s      = SERV_MIME_SUBTYPE_UNDEFINED;
         info->u.http.path = sizeof(info->u.http);
         info->u.http.args = info->u.http.path + strlen(path ? path : "")+1;
         strcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "");

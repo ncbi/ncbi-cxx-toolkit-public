@@ -39,6 +39,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2001/06/05 14:10:20  lavr
+ * SERV_MIME_UNDEFINED split into 2 (typed) constants:
+ * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
+ *
  * Revision 6.21  2001/06/04 16:59:56  lavr
  * MIME type/subtype added to server descriptor
  *
@@ -140,8 +144,9 @@ typedef enum {
 } ESERV_Flags;
 typedef int TSERV_Flags;
 
-#define SERV_DEFAULT_FLAG       fSERV_Regular
-#define SERV_MIME_UNDEFINED     ((unsigned)(-1))
+#define SERV_DEFAULT_FLAG           fSERV_Regular
+#define SERV_MIME_TYPE_UNDEFINED    ((EMIME_Type)(-1))
+#define SERV_MIME_SUBTYPE_UNDEFINED ((EMIME_SubType)(-1))
 
 
 /* Verbal representation of a server type (no internal spaces allowed)
