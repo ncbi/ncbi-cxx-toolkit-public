@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJMGR_EXPORT CBioseq_CI
+class CBioseq_CI
 {
 public:
     // 'ctors
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/02/04 16:01:48  dicuccio
+* Removed export specification so that MSVC won't try to export an inlined class
+*
 * Revision 1.5  2002/12/26 20:42:55  dicuccio
 * Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
 *
