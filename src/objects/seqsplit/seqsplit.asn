@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -16,7 +16,7 @@
 NCBI-Seq-split DEFINITIONS ::=
 BEGIN
 
-EXPORTS ID2S-Chunk-Id;
+EXPORTS ID2S-Chunk-Id, ID2S-Seq-annot-Info;
 
 IMPORTS Seq-loc                                 FROM NCBI-Seqloc
         Seq-annot, Seq-descr, Seq-literal       FROM NCBI-Sequence
@@ -83,7 +83,7 @@ ID2S-Seq-annot-Info ::= SEQUENCE {
         align           NULL OPTIONAL,
         graph           NULL OPTIONAL,
         feat            SET OF ID2S-Feat-type-Info OPTIONAL,
-        seq-loc         ID2-Seq-loc
+        seq-loc         ID2-Seq-loc OPTIONAL
 }
 
 
