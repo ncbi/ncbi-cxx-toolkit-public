@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.20  2003/05/21 22:31:53  dondosha
+ * Added forcing of ungapped search for tblastx to option validation
+ *
  * Revision 1.19  2003/05/18 21:57:37  camacho
  * Use Uint1 for program name whenever possible
  *
@@ -1010,11 +1013,15 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options,
 }
 
 Int2
-BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, Blast_MessagePtr *blast_msg)
+BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, 
+   Uint1 program, Blast_MessagePtr *blast_msg)
 
 {
 	if (options == NULL)
 		return 1;
+
+        if (program == blast_type_tblastx && options->is_gapped)
+           options->is_gapped = FALSE;
 
 	if (options->hitlist_size < 1)
 	{

@@ -567,11 +567,13 @@ BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options);
 
 /** Validate BlastHitSavingOptions
  * @param options The options that have are being returned [in]
+ * @param program BLAST program [in]
  * @param blast_msg The options that have are being returned [out]
 */
 
 Int2
-BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, Blast_MessagePtr *blast_msg);
+BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, 
+   Uint1 program, Blast_MessagePtr *blast_msg);
 
 /*************************************************************************
 
