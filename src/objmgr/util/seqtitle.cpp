@@ -730,6 +730,12 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
             result += *it;
             first = false;
         }
+        if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
+            // XXX - gene_feat might not always be exactly what we want
+            if (gene->IsSetLocus_tag()) {
+                result += ' ' + gene->GetLocus_tag();
+            }
+        }
     } else if (prot.NotEmpty()  &&  prot->IsSetDesc()
                &&  !prot->GetDesc().empty()) {
         result = prot->GetDesc();
@@ -852,6 +858,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2003/07/25 17:45:05  ucko
+* Add locus tags to hypothetical proteins' titles, per the C Toolkit.
+*
 * Revision 1.25  2003/07/24 16:36:57  ucko
 * As in the C version, check both GenBank and EMBL blocks for keywords
 * indicating HTGS sequencing progress.
