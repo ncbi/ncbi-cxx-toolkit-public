@@ -24,7 +24,10 @@ Reference Manual</a>.
 <ul>
   <li> <a href="#checkout"> Check out the source tree and build the libraries</a> 
   <li> <a href="#makefiles"> The project's directories and makefiles </a>
+  <li> <a href="#make_in"> <i>Makefile.in</i></a>
+  <li> <a href="#projdefs"> Macro defintions in <i>Makefile.in</i></a>
   <li> <a href="#proj_makes"> Makefile.*.app and Makefile.*.lib</a>
+  <li> <a href="#exec">  Executing <i>make</i></a>
   <li> <a href="#config"> The <i>configure</i> scripts</a>
 </ul>
 
@@ -34,13 +37,13 @@ Reference Manual</a>.
 libraries</h3></a> Since you will be working inside the C++ source tree you will first
 need to checkout <i>$CVSROOT/internal/c++</i>. If you do not wish to include all of the
 subprojects contained in <i>$CVSROOT/internal/c++/internal</i>, you may want to use
-<i>cvs_core.sh</i> or <i>cvs_core_msvc.bat</i> (provided in the <a
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/scripts/cvs_core.sh">
+<i>cvs_core.sh</i></a> or <i>cvs_core_msvc.bat</i> (provided in the <a
 href="../new_proj.html#ref_Checkout"><i>scripts</i></a> directory) for checking out. 
 
-Once you have done so, you will
-need to run one of the configure scripts in the <i>internal/c++</i> directory.
-For example, to configure your environment to work with the <i>gcc</i> compiler
-on Solaris, use: <i>./configure</i>.
+Once you have done so, you will need to run one of the configure scripts in the
+<i>internal/c++</i> directory.  For example, to configure your environment to work with the
+<i>gcc</i> compiler on Solaris, use: <i>./configure</i>.
 
 The <a href="../config.html#ref_Configure"><i>configure script</i></a> is a multi-platform
 configuration shell script (generated from <i>configure.in</i> using
@@ -70,7 +73,10 @@ In addition to the C++ source files, the <i>src</i> subtrees contain <i>meta-mak
 named <i>Makefile*.in</i>, which are used by the <i>configure</i> script to generate
 corresponding <i>makefiles</i> in the <i>build</i> subtrees. Figure 1 shows slices of the
 directory structure reflecting the correspondences between the <i>meta-makefiles</i> in the <i>src</i>
-subtrees and makefiles in the <i>build</i> subtrees. Each of the <i>meta-makefiles</i> in the
+subtrees and makefiles in the <i>build</i> subtrees. Figure 2 is a sketch of the entire C++ tree
+in which these directories are defined.<p>
+
+Each of the <i>meta-makefiles</i> in the
 top-level <i>src</i> tree has a corresponding <i>Makefile*</i> in the top-level of the build
 tree. Thus, you will also need to create a <i>meta-makefile</i> in the newly created
 <i>src/myProj</i> directory before reconfiguring your build directory to include the new
@@ -79,7 +85,8 @@ project. The <i>configure</i> script will then create the corresponding subtree 
 you created.
 
 <center><img SRC="make.gif"></center>
-
+<center><img SRC="cpptree2.gif"></center>
+<a name="make_in"> <h3> Makefile.in</h3>
 The file <i>myProj/Makefile.in</i> should contain macros whose definitions have 
 the following interpretation:
 
@@ -97,12 +104,12 @@ the <i>$SUB_PROJ</i> targets to be built. Copies of the resulting  executables w
 placed in the <i>bin</i> directory at the top of the <i>build</i> tree; libraries are copied
 to the <i>lib</i> directory.<p>
 
-Executing <i>make all_r</i> will build the <i>$SUB_PROJ</i> targets as well. Similarly, <i>make
-clean</i> removes all object modules, libraries, and executables from the project's
-<i>build</i> directory, while <i>make clean_r</i> removes all object files, libraries, and
-executables from the subproject directories as well.  Finally, <i>make purge</i> and <i>make
-purge_r</i> do the same work as <i>make clean</i> and <i>make clean_r</i>, and then remove the
-libraries and executables from the <i>lib</i> and <i>bin</i> directories as well.
+Executing <i>make all_r</i> will build targets in the <i>$SUB_PROJ</i> subdirectories as
+well. Similarly, <i>make clean</i> removes all object modules, libraries, and executables from
+the project's <i>build</i> directory, while <i>make clean_r</i> removes all object files,
+libraries, and executables from the subproject directories as well.  Finally, <i>make purge</i>
+and <i>make purge_r</i> do the same work as <i>make clean</i> and <i>make clean_r</i>, and then
+remove the libraries and executables from the <i>lib</i> and <i>bin</i> directories as well.
 <p>
 The last two lines in <i>Makefile.in</i> should always be:
 
@@ -114,7 +121,7 @@ include @builddir@/Makefile.meta
 These two lines specify <i>make</i> variable templates using the <i>@var_name@</i> syntax. When
 generating the corresponding <i>Makefile</i> in the <i>build</i> directory, the <i>configure</i> script
 will substitute each identifier name bearing that notation with full path definitions. 
-
+<p>
 Assuming that <i>myProj</i> is used to develop an application named <i>myProj</i>,
 <i>myProj/Makefile.in</i> should contain the following:
 
@@ -136,21 +143,24 @@ include /home/zimmerma/internal/c++/myBuild/build/Makefile.meta
 
 As demonstrated in this example, the <i>@srcdir@</i> and <i>@builddir@</i> aliases in the
 makefile template have been replaced with absolute paths in the generated <i>Makefile</i>,
-while the definition of <i>APP_PROJ</i> is copied verbatim. For each application listed (<i>p1,
-p2, ..., pN</i>), you must have created a corresponding <a href="#proj_makes"> project
-makefile</a> named <i>Makefile.p*.app</i> in the project's source directory.  Similarly, each
-library (<i>l1, l2, ..., lN</i>) listed in the <i>LIB_PROJ</i> macro must have a corresponding
-<i>Makefile.l*.lib</i>.
+while the definition of <i>APP_PROJ</i> is copied verbatim. 
+
+<a name="projdefs"> <h3>The project defintions in <i>Makefile.in</i></h3>
+
+For each application (<i>p1, p2, ..., pN</i>) listed in <i><b>APP_PROJ</b></i>, you must have created
+a corresponding <a href="#proj_makes"> project makefile</a> named <i>Makefile.p*.app</i> in the
+project's source directory.  Similarly, each library (<i>l1, l2, ..., lN</i>) listed in the
+<b><i>LIB_PROJ</i></b> macro must have a corresponding <i>Makefile.l*.lib</i>.
 <p>
 
-The <i>SUB_PROJ</i> macro is used to define recursive build targets; items listed here
+The <i><b>SUB_PROJ</b></i> macro is used to define recursive build targets; items listed here
 define the subdirectories rooted in the project's source directory where <i>make</i> should be executed
-recursively.  The configure script will create these relative subdirectories inside the
+recursively.  The <i>configure</i> script will create these relative subdirectories inside the
 new <i>build</i> project directory, and generate the new subdirectories' makefiles
 from the corresponding meta-makefiles in the <i>src</i> subtrees.  A recursive
 build can then be invoked by using "<i>make all_r</i>". <p>
 
-The <i>USR_PROJ</i> macro is provided for the execution of individually defined makefiles which
+The <b><i>USR_PROJ</i></b> macro is provided for the execution of individually defined makefiles which
 do not follow the conventions described in this section. In general, executing <i>make</i> in a
 build subdirectory causes <i>build/Makefile.meta</i> (located in the top level of the
 <i>build</i> tree), to be executed.  For each <i>target_name</i> listed in <i>USR_PROJ</i>,
@@ -172,7 +182,7 @@ In either case, although the target's specific makefile is executed directly, th
 <i>srcdir, builddir</i>, and <i>MFLAGS</i> are still available to <i>Makefile.target_name</i>.
 Note also that because <i>make</i> is executed directly from a different directory than the one
 in which the source files are located, complete paths to those source files must be given in
-<i>Makefile,target_name</i>. For example:
+<i>Makefile.target_name</i>. For example:
 <font color=#000080><pre>####### Makefile.progname
 
 include $(NCBI)/ncbi.mk
@@ -181,6 +191,11 @@ INCPATH = $(NCBI_INCDIR)
 
 all: $(srcdir)/progname.c
 	$(CC) -o progname $(srcdir)/progname.c
+
+clean:
+	rm progname progname.o
+
+purge: clean
 </pre></font>
 <p>
 will cause the C program <i>progname</i> to be built directly from
@@ -188,6 +203,7 @@ will cause the C program <i>progname</i> to be built directly from
 from the targets specified in <i>USR_PROJ</i> are written to the current <i>build</i> 
 directory only - they are <i>not</i> copied to the <i>bin</i> or <i>lib</i> directories. <p>
 
+<a name = "exec"> <h3> Executing <i>make</i></h3>
 Given these makefile definitions, executing <i>make all_r</i> in the <i>build</i> project
 subdirectory causes <i>build/Makefile.meta</i> to be executed, which sets the following chain
 of events in motion:
@@ -251,9 +267,9 @@ selected compiler and environment for a multitude of features and generates <i>#
 directories and creates the corresponding <i>build</i> subtrees and makefiles accordingly. <p>
 
 Frequently during development it is necessary to make minor adjustments to the <i>Makefile.in</i> files,
-such as adding additional source files or compilation objects to the list of targets. In these contexts
+such as adding new projects or subprojects to the list of targets. In these contexts
 however, the compiler, environment, and source directory structures remain unchanged, and 
-<i>configure</i> is actually doing more work than is necessary. In fact there is even some risk of 
+<i>configure</i> is actually doing more work than is necessary. In fact, there is even some risk of 
 failing to recreate the same configuration environment if the user does not exactly duplicate the
 same set of configure flags when re-running <i>configure</i>. In these situations it is preferable
 to run an auxilliary script named <a href="../config.html#ref_Reconf"><i>config.status</i></a>, located
@@ -261,7 +277,7 @@ at the top level of the <i>build</i> directory in a subdirectory named <i>status
 <p>
 In contrast, changes to the <i>src</i> directory structure, or the addition/deletion of 
 <i>Makefile.in</i> files, all require re-running the <i>configure</i> script, as these actions require
-the creation/deletion of subdirectories in the <i>build</i> tree and the creation/deletion of the 
+the creation/deletion of subdirectories in the <i>build</i> tree and/or the creation/deletion of the 
 associated <i>Makefile</i> in those directories.
 
 <p>
