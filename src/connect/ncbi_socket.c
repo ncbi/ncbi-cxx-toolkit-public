@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2000/12/26 21:40:03  lavr
+ * SOCK_Read modified to handle properly the case of 0 byte reading
+ *
  * Revision 6.11  2000/12/05 23:27:09  lavr
  * Added SOCK_gethostaddr
  *
@@ -912,13 +915,16 @@ static EIO_Status s_Recv(SOCK        sock,
     }
 
     *n_read = 0;
+    if (size == 0)
+        return sock->r_status;
+
     for (;;) {
         /* try to read */
         int buf_read = s_NCBI_Recv(sock, buf, size, peek);
         if (buf_read > 0) {
             assert(buf_read <= (int) size);
             *n_read = buf_read;
-            return eIO_Success; /* success */
+            return eIO_Success;  /* success */
         }
 
         if (sock->r_status == eIO_Unknown) {
@@ -1251,7 +1257,8 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 
     case eIO_Persist: {
         EIO_Status status = eIO_Success;
-        for (*n_read = 0;  size; ) {
+        *n_read = 0;
+        do {
             size_t x_read;
             status = SOCK_Read(sock, (char*) buf + *n_read, size, &x_read,
                                eIO_Plain);
@@ -1260,7 +1267,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 
             *n_read += x_read;
             size    -= x_read;
-        }
+        } while (size);
         return eIO_Success;
     }
     }

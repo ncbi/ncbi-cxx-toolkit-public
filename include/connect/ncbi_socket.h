@@ -78,6 +78,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/12/26 21:40:01  lavr
+ * SOCK_Read modified to handle properly the case of 0 byte reading
+ *
  * Revision 6.7  2000/12/05 23:27:44  lavr
  * Added SOCK_gethostaddr
  *
@@ -283,7 +286,7 @@ extern EIO_Status SOCK_Reconnect
 
 
 /* Shutdown the connection in only one direction (specified by "direction").
- * Later attempts to I/O (or to wait) in the shutdowned direction will
+ * Later attempts to I/O (or to wait) in the shutdown direction will
  * do nothing, and immediately return with "eIO_Closed" status.
  */
 extern EIO_Status SOCK_Shutdown
@@ -338,8 +341,11 @@ extern const STimeout* SOCK_GetTimeout
  * If there is no data available to read (also, if eIO_Persist and cannot
  * read exactly "size" bytes) and the timeout(see SOCK_SetTimeout) is expired
  * then return eIO_Timeout.
- * NOTE: Theoretically, eIO_Closed may indicate an empty message
- *       rather than a real closure of the connection...
+ * NOTE1: Theoretically, eIO_Closed may indicate an empty message
+ *        rather than a real closure of the connection...
+ * NOTE2: If on input "size" == 0, then "*n_read" is set to 0, and
+ *        return value can be either of eIO_Success, eIO_Closed and
+ *        eIO_Unknown depending on connection status of the socket.
  */
 extern EIO_Status SOCK_Read
 (SOCK           sock,
@@ -411,7 +417,7 @@ extern void SOCK_GetAddress
 extern EIO_Status SOCK_GetOSHandle
 (SOCK   sock,
  void*  handle_buf,  /* pointer to a memory area to put the OS handle at */
- size_t handle_size  /* the exact(!) size of the expected OS handle */
+ size_t handle_size  /* the exact(!) size of the expected OS handle      */
  );
 
 
@@ -434,7 +440,7 @@ extern int SOCK_gethostname
 extern int SOCK_ntoa
 (unsigned int host,     /* [in]  must be in the network byte-order           */
  char*        buf,      /* [out] to be filled by smth. like "123.45.67.89\0" */
- size_t       buf_size  /* [in]  max # of bytes to put to "buf", >= 16 */
+ size_t       buf_size  /* [in]  max # of bytes to put to "buf", >= 16       */
  );
 
 
