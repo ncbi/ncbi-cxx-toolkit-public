@@ -38,6 +38,7 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <serial/serialdef.hpp>
 #include <connect/ncbi_types.h>
+#include <connect/ncbi_limits.hpp>
 
 #include <list>
 #include <vector>
@@ -565,6 +566,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.9  2003/05/06 22:20:43  vakatov
+// + <ncbi_limits.hpp> (for MSVC++)
+//
 // Revision 1.8  2003/05/06 19:54:18  domrach
 // New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
 //
