@@ -220,6 +220,7 @@ public:
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t* bytes_written = 0)
     {
+        *bytes_written = 0;
         if (count == 0)
             return eRW_Success;
 
@@ -229,7 +230,7 @@ public:
 
         if (m_Buffer) {
             // Filling the buffer while we can
-            if (new_buf_length < s_WriterBufferSize) {
+            if (new_buf_length <= s_WriterBufferSize) {
                 ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
                 m_BytesInBuffer = new_buf_length;
                 *bytes_written = count;
@@ -241,11 +242,9 @@ public:
                     if (m_BytesInBuffer) {
                         m_OverflowFile->write((char*)m_Buffer, 
                                               m_BytesInBuffer);
-                        m_OverflowFile->write((char*)buf, count);
                         delete m_Buffer;
                         m_Buffer = 0;
-                        *bytes_written = count;
-                        return eRW_Success;
+                        m_BytesInBuffer = 0;
                     }
                 }
             }
@@ -253,10 +252,32 @@ public:
 
         if (m_OverflowFile) {
             m_OverflowFile->write((char*)buf, count);
-            *bytes_written = count;
-            return eRW_Success;
+            if ( m_OverflowFile->good() ) {
+                *bytes_written = count;
+                return eRW_Success;
+            }
         }
 
+        return eRW_Error;
+    }
+
+    /// Flush pending data (if any) down to output device.
+    virtual ERW_Result Flush(void)
+    {
+        if (m_Buffer) {
+            LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
+            delete m_Buffer;
+            m_Buffer = 0;
+            m_BytesInBuffer = 0;
+        }
+        m_BlobDB.Sync();
+        if ( m_OverflowFile ) {
+            m_OverflowFile->flush();
+            if ( m_OverflowFile->bad() ) {
+                return eRW_Error;
+            }
+        }
         return eRW_Success;
     }
 private:
@@ -861,6 +882,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/10/22 19:08:29  vasilche
+ * Added Flush() implementation.
+ *
  * Revision 1.21  2003/10/21 12:11:27  kuznets
  * Fixed non-updated timestamp in Int cache.
  *
