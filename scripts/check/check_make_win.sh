@@ -79,8 +79,8 @@ fi
 
 # Change script's command interpreter from /bin/sh to /bin/bash.
 # Cygwin's shell don't works correctly with process pids.
-echo "Changing scripts command interpreter..."
-script_dirs="src scripts"
+# echo "Changing scripts command interpreter..."
+script_dirs="scripts"
 tmp="$x_tmp/check_make_win.$$"
 
 for d in $script_dirs; do
