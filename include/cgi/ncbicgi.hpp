@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/05/04 16:14:04  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
 * Revision 1.34  1999/04/14 19:52:20  vakatov
 * + <time.h>
 *
@@ -121,6 +125,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbienv.hpp>
 #include <list>
 #include <map>
 #include <time.h>
@@ -308,13 +313,13 @@ public:
     // By default(when "istr" is null) use standard input stream("NcbiCin")
     // If "indexes_as_entries" is "true" then interpret indexes as regular
     // FORM entries(with empty value)
-    CCgiRequest(CNcbiIstream* istr=0, bool indexes_as_entries=true);
     // (Mostly for the debugging) If "$REQUEST_METHOD" is undefined then
     // try to retrieve request's entries from the 1st cmd.-line argument, and
     // do not use "$QUERY_STRING" and "istr" at all
     // See above for description of "istr" and "indexes_as_entries"
-    CCgiRequest(int argc, char* argv[], CNcbiIstream* istr=0,
-                bool indexes_as_entries=true);
+    CCgiRequest(int argc = 0, char* argv[] = 0,
+                const CNcbiEnvironment* env = 0, CNcbiIstream* istr = 0,
+                bool indexes_as_entries = true);
     // Destructor
     ~CCgiRequest(void);
 
@@ -358,8 +363,9 @@ public:
     static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& indexes);
 
 private:
-    // set of the request properties(already retrieved; cached)
-    TCgiProperties m_Properties;
+    // set of environment variables
+    const CNcbiEnvironment* m_Env;
+    auto_ptr<CNcbiEnvironment> m_OwnEnv;
     // set of the request FORM-like entries(already retrieved; cached)
     TCgiEntries m_Entries;
     // set of the request ISINDEX-like indexes(already retrieved; cached)
@@ -368,10 +374,11 @@ private:
     CCgiCookies m_Cookies;
 
     // the real constructor code
-    void x_Init(CNcbiIstream* istr, int argc, char** argv,
+    void x_Init(const CNcbiEnvironment* env, CNcbiIstream* istr,
+                int argc, char** argv,
                 bool indexes_as_entries);
     // retrieve(and cache) a property of given name
-    const string& x_GetPropertyByName(const string& name);
+    const string& x_GetPropertyByName(const string& name) const;
 
     // prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&) { _TROUBLE; }

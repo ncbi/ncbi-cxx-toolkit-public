@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/04 16:14:44  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
 * Revision 1.4  1999/05/04 00:03:11  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -60,8 +64,16 @@ BEGIN_NCBI_SCOPE
 // class CCgiContext
 //
 
-CCgiContext::CCgiContext(CCgiApplication& app, CNcbiIstream* in, CNcbiOstream* out)
-    : m_app(app), m_request(in), m_response(out)
+CCgiContext::CCgiContext(CCgiApplication& app, CNcbiEnvironment* env,
+                         CNcbiIstream* in, CNcbiOstream* out)
+    : m_app(app), m_request(0, 0, env, in), m_response(out)
+{
+}
+
+CCgiContext::CCgiContext(int argc, char** argv,
+                         CCgiApplication& app, CNcbiEnvironment* env,
+                         CNcbiIstream* in, CNcbiOstream* out)
+    : m_app(app), m_request(argc, argv, env, in), m_response(out)
 {
 }
 

@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/04 16:14:03  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
 * Revision 1.2  1999/04/28 16:54:18  vasilche
 * Implemented stream input processing for FastCGI applications.
 *
@@ -84,6 +88,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CNcbiEnvironment;
 class CNcbiRegistry;
 class CNcbiResource;
 class CCgiContext;
@@ -109,7 +114,11 @@ class CCgiContext
 public:
     typedef list<string> TMsgList;
 
-    CCgiContext(CCgiApplication& app, CNcbiIstream* in = 0, CNcbiOstream* out = 0);
+    CCgiContext(CCgiApplication& app, CNcbiEnvironment* env = 0,
+                CNcbiIstream* in = 0, CNcbiOstream* out = 0);
+    CCgiContext(int argc, char** argv,
+                CCgiApplication& app, CNcbiEnvironment* env = 0,
+                CNcbiIstream* in = 0, CNcbiOstream* out = 0);
 
     const CCgiApplication& GetApp(void) const;
 

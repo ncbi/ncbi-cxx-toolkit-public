@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/05/04 16:14:43  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
 * Revision 1.5  1999/05/04 00:03:11  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -52,6 +56,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbires.hpp>
 #include <corelib/cgiapp.hpp>
@@ -102,35 +107,23 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
             _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
                    << " iteration of " << iterations);
             // obtaining request data
-            FCGX_Stream *fin, *fout, *ferr;
-            FCGX_ParamArray env;
-            if ( FCGX_Accept(&fin, &fout, &ferr, &env) != 0 ) {
+            FCGX_Stream *pfin, *pfout, *pferr;
+            FCGX_ParamArray penv;
+            if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
                 _TRACE("CCgiApplication::Run: no more requests");
                 break;
             }
 
             // default exit status (error)
-            FCGX_SetExitStatus(-1, fout);
-
-            // setting new environment
-            _TRACE("CCgiApplication::Run: Loading arguments");
-            for ( int i = 0; env[i]; ++i ) {
-                _TRACE("arg[" << i << "]=\"" << env[i] << "\"");
-                if ( putenv(env[i]) != 0 ) {
-                    // error
-                    ERR_POST("CCgiApplication::Run: cannot set env: "
-                             << env[i]);
-                    FCGX_Finish();
-                    return 1;
-                }
-            } 
+            FCGX_SetExitStatus(-1, pfout);
 
             try {
-                CCgiObuffer obuf(fout);
+                CNcbiEnvironment env(penv);
+                CCgiObuffer obuf(pfout);
                 CNcbiOstream ostr(&obuf);
-                CCgiIbuffer ibuf(fin);
+                CCgiIbuffer ibuf(pfin);
                 CNcbiIstream istr(&ibuf);
-                CCgiContext ctx(*this, &istr, &ostr);
+                CCgiContext ctx(*this, &env, &istr, &ostr);
 
                 // checking for exit request
                 if ( ctx.GetRequest().GetEntries().find("exitfastcgi") !=
@@ -148,7 +141,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                 }
 
                 _TRACE("CCgiApplication::Run: calling ProcessRequest");
-                FCGX_SetExitStatus(ProcessRequest(ctx), fout);
+                FCGX_SetExitStatus(ProcessRequest(ctx), pfout);
             }
             catch (exception e) {
                 ERR_POST("CCgiApplication::ProcessCGIRequest() failed: "
@@ -165,11 +158,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
 #endif
         {
             _TRACE("CCgiApplication::Run: calling ProcessRequest");
-            if ( m_Argc > 1 && !getenv("QUERY_STRING") ) {
-                string s = string("QUERY_STRING=") + m_Argv[1];
-                putenv(s.c_str());
-            }
-            CCgiContext ctx(*this);
+            CCgiContext ctx(m_Argc, m_Argv, *this);
             int result = ProcessRequest(ctx);
             _TRACE("CCgiApplication::Run: flushing");
             ctx.GetResponse().Flush();

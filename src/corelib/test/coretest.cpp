@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  1999/05/04 16:14:50  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
 * Revision 1.41  1999/05/04 00:03:16  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -666,7 +670,7 @@ static void TestCgi_Request_Static(void)
 static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0,
                                  bool indexes_as_entries=true)
 {
-    CCgiRequest CCR(argc, argv, istr, indexes_as_entries);
+    CCgiRequest CCR(argc, argv, 0, istr, indexes_as_entries);
 
     NcbiCout << "\n\nCCgiRequest::\n";
 

@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/05/04 16:14:45  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
 * Revision 1.28  1999/05/04 00:03:12  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -136,6 +140,7 @@
 */
 
 #include <corelib/ncbicgi.hpp>
+#include <corelib/ncbienv.hpp>
 #include <stdio.h>
 #include <time.h>
 
@@ -639,9 +644,20 @@ static void s_ParsePostQuery(const string& contentType, const string& str,
     }
 }
 
-void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
-                         bool indexes_as_entries)
+CCgiRequest::~CCgiRequest(void)
 {
+}
+
+CCgiRequest::CCgiRequest(int argc, char* argv[],
+                         const CNcbiEnvironment* env, CNcbiIstream* istr,
+                         bool indexes_as_entries)
+    : m_Env(env)
+{
+    if ( !m_Env ) {
+        m_OwnEnv.reset(new CNcbiEnvironment);
+        m_Env = m_OwnEnv.get();
+    }
+
     // cache "standard" properties
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
         x_GetPropertyByName(GetPropertyName((ECgiProp)prop));
@@ -725,31 +741,15 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
     m_Entries.insert(TCgiEntries::value_type(NcbiEmptyString, imageName));
 }
 
-const string& CCgiRequest::x_GetPropertyByName(const string& name)
+const string& CCgiRequest::x_GetPropertyByName(const string& name) const
 {
-    TCgiProperties::const_iterator find_iter = m_Properties.find(name);
-
-    if (find_iter != m_Properties.end())
-        return (*find_iter).second;  // already retrieved(cached)
-
-    // retrieve and cache for the later use
-    const char* env_str = ::getenv(name.c_str());
-    pair<TCgiProperties::iterator, bool> ins_pair =
-        m_Properties.insert(TCgiProperties::value_type
-                            (name, env_str ? env_str : NcbiEmptyCStr));
-    _ASSERT( ins_pair.second );
-    return (*ins_pair.first).second;
+    return m_Env->Get(name);
 }
 
 
-const string& CCgiRequest::GetProperty(ECgiProp property)
-const
+const string& CCgiRequest::GetProperty(ECgiProp property) const
 {
-    // This does not work on SunPro 5.0 by some reason:
-    //    return m_Properties.find(GetPropName(property)))->second;
-    // and this is the workaround [BW_01]:
-    TCgiProperties& xx_Properties = const_cast<TCgiProperties&>(m_Properties);
-    return xx_Properties.find(GetPropertyName(property))->second;
+    return x_GetPropertyByName(GetPropertyName(property));
 }
 
 
