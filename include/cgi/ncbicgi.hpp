@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1998/11/24 21:31:30  vakatov
+* Updated with the ISINDEX-related code for CCgiRequest::
+* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
+*
 * Revision 1.17  1998/11/24 17:52:14  vakatov
 * Starting to implement CCgiRequest::
 * Fully implemented CCgiRequest::ParseEntries() static function
@@ -200,6 +204,7 @@ enum ECgiProp {
     eCgi_ContentLength,     // see also "GetContentLength()"
 
     // request properties
+    eCgi_RequestMethod,
     eCgi_PathInfo,
     eCgi_PathTranslated,
     eCgi_ScriptName,
@@ -225,13 +230,16 @@ enum ECgiProp {
 // Typedefs
 typedef map<string, string>      TCgiProperties;
 typedef multimap<string, string> TCgiEntries;
+typedef list<string>             TCgiIndexes;
 
 
 //
 class CCgiRequest {
 public:
-    // Startup initialization
-    CCgiRequest(void);
+    // Startup initialization:
+    //   retrieve request's properties and cookies from environment
+    //   retrieve request's entries from environment and/or stream "istr"
+    CCgiRequest(CNcbiIstream& istr);
     // Destructor
     ~CCgiRequest(void);
 
@@ -247,37 +255,39 @@ public:
     // Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;
 
+    // Return "true" if this is ISINDEX query, -- so use "GetIndexes()"
+    // (rather than "GetEntries()") to retrieve the set of index-like entries
+    // Note:  "GetEntries()" and "GetIndexes()" are mutually exclusive -- in
+    //        a sense that these two cannot be non-empty at the same time
+    bool GetISIndex(void) const;
+
     // Get a set of entries(decoded) received from the client
     const TCgiEntries& GetEntries(void) const;
 
-    /* DANGER!!!  Direct access to the data received from client
-     * NOTE 1: m_Entries() would not work(return an empty set) if
-     *         this function was called
-     * NOTE 2: the stream content is guaranteed to be valid as long as
-     *         "*this" class exists(not destructed yet)
-     * NOTE 3: if called after m_Entries(), the m_Content() will return
-     *         a reference to an empty string; in other words,
-     *         m_Entries() and m_Content() are mutially exclusive
-     */
-    CNcbiIstream& GetContent(void);
+    // Get a set of entries(decoded) received from the client
+    const TCgiIndexes& GetIndexes(void) const;
 
     // Decode the URL-encoded string "str" into a set of entries
     // (<name, value>) and add them to the "entries" set
     // The new entries are added without overriding the original ones, even
     // if they have the same names
-    // On success, return zero, otherwise return location(in "str") of error
+    // On success, return zero, otherwise return location(1-based) of error
+    // "name1=value1&name2=value2&....."
     static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
 
+    // Decode the URL-encoded string "str" into a set of ISINDEX-like entries
+    // and add them to the "indexes" set
+    // On success, return zero, otherwise return location(1-based) of error
+    // "val1+val2+val3+....."
+    static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& entries);
+
 private:
-    // "true" after m_Entries() or m_Content() call
-    bool m_IsContentFetched;
-    // "istream"-based wrapper for the QueryString(for GET method);
-    // only needed if m_Content() gets called
-    CNcbiIstrstream m_QueryStream;
     // set of the request properties(already retrieved; cached)
     TCgiProperties m_Properties;
     // set of the request entries(already retrieved; cached)
     TCgiEntries m_Entries;
+    // set of the request indexes(already retrieved; cached)
+    TCgiIndexes m_Indexes;
     // set of the request cookies(already retrieved; cached)
     CCgiCookies m_Cookies;
 

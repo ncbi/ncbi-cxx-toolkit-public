@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/11/24 21:31:34  vakatov
+* Updated with the ISINDEX-related code for CCgiRequest::
+* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
+*
 * Revision 1.11  1998/11/24 17:52:38  vakatov
 * + TestException_Aux() -- tests for CErrnoException:: and CErrnoException::
 * + TestCgi_Request()   -- tests for CCgiRequest::ParseEntries()
@@ -294,14 +298,30 @@ static bool TestEntries(TCgiEntries& entries, const string& str)
         NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
         return false;
     }
+    return true;
+}
 
+static bool TestIndexes(TCgiIndexes& indexes, const string& str)
+{
+    NcbiCout << "\n Indexes: `" << str.c_str() << "'\n";
+    SIZE_TYPE err_pos = CCgiRequest::ParseIndexes(str, indexes);
+
+    for (TCgiIndexes::iterator iter = indexes.begin();
+         iter != indexes.end();  ++iter) {
+        NcbiCout << "  \"" << iter->c_str() << "\"    ";
+    }
+
+    if ( err_pos ) {
+        NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
+        return false;
+    }
     return true;
 }
 
 static void TestCgi_Request(void)
 {
+    // Test CCgiRequest::ParseEntries()
     TCgiEntries entries;
-
     _ASSERT(  TestEntries(entries, "aa=bb&cc=dd") );
     _ASSERT(  TestEntries(entries, "e%20e=f%26f&g%2Ag=h+h%2e") );
     entries.clear();
@@ -312,8 +332,26 @@ static void TestCgi_Request(void)
     entries.clear();
     _ASSERT( !TestEntries(entries, "&zz=qq") );
     _ASSERT( !TestEntries(entries, "tt=qq=pp") );
-    _ASSERT(  TestEntries(entries, "ggg=ppp&") );
+    _ASSERT( !TestEntries(entries, "=ggg&ppp=PPP") );
     _ASSERT( !TestEntries(entries, "a=d&eee") );
+    _ASSERT(  TestEntries(entries, "a%21%2f%25aa=%2Fd%2c&eee=%3f") );
+
+    // Test CCgiRequest::ParseIndexes()
+    TCgiIndexes indexes;
+    _ASSERT(  TestIndexes(indexes, "a+bb+ccc+d") );
+    _ASSERT(  TestIndexes(indexes, "e%20e+f%26f+g%2Ag+hh%2e") );
+    indexes.clear();
+    _ASSERT( !TestIndexes(indexes, " jhg") );
+    _ASSERT( !TestIndexes(indexes, "e%h%2e+3") );
+    _ASSERT(  TestIndexes(indexes, "aa+%20+bb") );
+    _ASSERT( !TestIndexes(indexes, "aa++bb") );
+    indexes.clear();
+    _ASSERT( !TestIndexes(indexes, "+1") );
+    _ASSERT( !TestIndexes(indexes, "aa+") );
+    _ASSERT( !TestIndexes(indexes, "aa+bb  ") );
+    _ASSERT( !TestIndexes(indexes, "+") );
+    _ASSERT( !TestIndexes(indexes, "+ ") );
+    _ASSERT( !TestIndexes(indexes, "++") );
 }
 
 static void TestCgi(void)

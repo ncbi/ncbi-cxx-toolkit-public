@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/11/24 21:31:32  vakatov
+* Updated with the ISINDEX-related code for CCgiRequest::
+* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
+*
 * Revision 1.7  1998/11/24 17:52:17  vakatov
 * Starting to implement CCgiRequest::
 * Fully implemented CCgiRequest::ParseEntries() static function
@@ -288,6 +292,7 @@ static const string s_PropName[eCgi_NProperties + 1] = {
     "CONTENT_TYPE",
     "CONTENT_LENGTH",
 
+    "REQUEST_METHOD",
     "PATH_INFO",
     "PATH_TRANSLATED",
     "SCRIPT_NAME",
@@ -306,8 +311,7 @@ static const string s_PropName[eCgi_NProperties + 1] = {
 };
 
 
-CCgiRequest::CCgiRequest(void)
-    : m_QueryStream(0)
+CCgiRequest::CCgiRequest(CNcbiIstream& istr)
 {
     // cache "standard" properties
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
@@ -317,10 +321,12 @@ CCgiRequest::CCgiRequest(void)
     // compose cookies
     m_Cookies.Add(GetProperty(eCgi_HttpCookie));
 
-    // compose entries
+    // determine the request method, parse and compose entries
+    if (GetProperty(eCgi_RequestMethod).compare("GET") == 0) {
+    }
+    else if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
+    }
 
-
-    m_IsContentFetched = false;
 }
 
 
@@ -447,37 +453,38 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     if ( !len )
         return 0;
 
+    // At least one '=' must present in the parsed string
+    if (str.find_first_of('=') == NPOS)
+        return 1;
+
+    // No spaces must present in the parsed string
+    SIZE_TYPE err_pos = str.find_first_of(" \t\r\n");
+    if (err_pos != NPOS)
+        return err_pos + 1;
+
     // Parse into entries
-    SIZE_TYPE err_pos = 0;
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
         // parse and URL-decode name
         SIZE_TYPE mid = str.find_first_of(" =&", beg);
-        if (mid == beg  ||  mid == NPOS  ||  str[mid] != '=') {
-            err_pos = (mid == NPOS) ? len : (mid ? mid : 1);
-            break;  // error
-        }
+        if (mid == beg  ||  mid == NPOS  ||  str[mid] != '=')
+            return ((mid == NPOS) ? len : mid) + 1;  // error
 
         string name = str.substr(beg, mid - beg);
-        if ((err_pos = s_URL_Decode(name)) != 0) {
-            err_pos += (beg || err_pos) ? beg : 1;
-            break; // error
-        }
+        if ((err_pos = s_URL_Decode(name)) != 0)
+            return beg + err_pos + 1;  // error
 
         // parse and URL-decode value
         mid++;
         SIZE_TYPE end = str.find_first_of(" =&", mid);
-        if (end != NPOS  &&  str[end] != '&') {
-            err_pos = end;
-            break;  // error
-        }
+        if (end != NPOS  &&  (str[end] != '&'  ||  end == len-1))
+            return end + 1;  // error
+
         if (end == NPOS)
             end = len;
 
         string value = str.substr(mid, end - mid);
-        if ((err_pos = s_URL_Decode(value)) != 0) {
-            err_pos += mid;
-            break; // error
-        }
+        if ((err_pos = s_URL_Decode(value)) != 0)
+            return mid + err_pos + 1;  // error
 
         // compose & store the name-value pair
         pair<const string, string> entry(name,value);
@@ -486,7 +493,42 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
         // continue
         beg = end + 1;
     }
-    return err_pos;
+    return 0;
+}
+
+
+SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
+{
+    SIZE_TYPE len = str.length();
+    if ( !len )
+        return 0;
+
+    // No '=' and spaces must present in the parsed string
+    SIZE_TYPE err_pos = str.find_first_of("= \t\r\n");
+    if (err_pos != NPOS)
+        return err_pos + 1;
+
+    // Parse into indexes
+    for (SIZE_TYPE beg = 0;  beg < len;  ) {
+        // parse and URL-decode value
+        SIZE_TYPE end = str.find_first_of('+', beg);
+        if (end == beg  ||  end == len-1)
+            return end + 1;  // error
+
+        if (end == NPOS)
+            end = len;
+
+        string value = str.substr(beg, end - beg);
+        if ((err_pos = s_URL_Decode(value)) != 0)
+            return beg + err_pos + 1;  // error
+
+        // store
+        indexes.push_back(value);
+
+        // continue
+        beg = end + 1;
+    }
+    return 0;
 }
 
 
