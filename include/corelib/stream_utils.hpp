@@ -71,20 +71,20 @@ protected:
     unsigned int        m_MIPSPRO_ReadsomeGptrSetLevel;
 };
 
-
+inline
 CMIPSPRO_ReadsomeTolerantStreambuf::CMIPSPRO_ReadsomeTolerantStreambuf() :
     m_MIPSPRO_ReadsomeGptrSetLevel(0)
 {
 }
 
-
+inline
 void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeBegin(void)
 {
     if (!m_MIPSPRO_ReadsomeGptrSetLevel++)
         m_MIPSPRO_ReadsomeGptr = gptr();
 }
 
-
+inline
 void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeEnd(void)
 {
     --m_MIPSPRO_ReadsomeGptrSetLevel;
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2003/10/23 16:16:46  vasilche
+ * Added Windows export modifiers.
+ *
  * Revision 1.13  2003/10/22 18:14:16  lavr
  * Change base class of CPushback_Streambuf into CNcbiStreambuf
  *

@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 
 /// Reader-writer based stream buffer.
 
-class CRWStreambuf : public CRWStreambufBase
+class NCBI_XUTIL_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
     static const streamsize kDefaultBufferSize;
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/23 16:16:46  vasilche
+ * Added Windows export modifiers.
+ *
  * Revision 1.1  2003/10/22 18:14:31  lavr
  * Initial revision
  *
