@@ -36,8 +36,6 @@
 
 #include <corelib/ncbitime.hpp>
 
-#include <util/cache/blob_cache.hpp>
-#include <util/cache/int_cache.hpp>
 #include <util/cache/icache.hpp>
 
 #include <util/rwstream.hpp>
