@@ -70,6 +70,34 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
     is.isfx();
     return is;
 #endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
+
+}
+
+// Platform-specific EndOfLine
+#if   defined(NCBI_OS_MAC)
+const char s_Endl[] = "\r";
+#elif defined(NCBI_OS_MSWIN)
+const char s_Endl[] = "\r\n";
+#else /* assume UNIX-like EOLs */
+const char s_Endl[] = "\n";
+#endif
+
+// Get the next line taking into account platform specifics of End-of-Line
+CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
+{
+#if   defined(NCBI_OS_MAC)
+    NcbiGetline(is, str, '\r');
+#elif defined(NCBI_OS_MSWIN)
+    NcbiGetline(is, str, '\n');
+    if (!str.empty()  &&  str[str.length()-1] == '\r')
+        str.resize(str.length() - 1);
+#else /* assume UNIX-like EOLs */
+    NcbiGetline(is, str, '\n');
+#endif
+    // special case -- an empty line
+    if (is.fail()  &&  !is.eof()  &&  !is.gcount()  &&  str.empty())
+        is.clear(is.rdstate() & ~NcbiFailbit);
+    return is;
 }
 
 
@@ -269,6 +297,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/08/01 18:42:17  ivanov
+ * + NcbiGetlineEOL() -- moved from ncbireg and renamed
+ *
  * Revision 1.15  2002/04/11 21:08:03  ivanov
  * CVS log moved to end of the file
  *

@@ -150,6 +150,11 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 // Read from "is" to "str" up to the delimiter symbol "delim"(or EOF)
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
 
+// Read from "is" to "str" the next line 
+// (taking into account platform specifics of End-of-Line)
+extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
+
+
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
 #if defined(HAVE_NO_CHAR_TRAITS)
 #  define CT_INT_TYPE     int
@@ -321,8 +326,9 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
 END_NCBI_SCOPE
+
 
 // Provide formatted I/O of standard C++ "string" by "old-fashioned" IOSTREAMs
 // NOTE:  these must have been inside the _NCBI_SCOPE and without the
@@ -335,9 +341,13 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 #endif
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/08/01 18:42:48  ivanov
+ * + NcbiGetlineEOL() -- moved from ncbireg and renamed
+ *
  * Revision 1.27  2002/05/22 17:58:20  ucko
  * Suppress GCC 3.1 warnings about <strstream>.
  *
