@@ -1492,7 +1492,8 @@ public:
     /// How to wrap the words in a string to a new line.
     enum EWrapFlags {
         fWrap_Hyphenate  = 0x1, ///< Add a hyphen when breaking words?
-        fWrap_HTMLPre    = 0x2  ///< Wrap as preformatted HTML?
+        fWrap_HTMLPre    = 0x2, ///< Wrap as preformatted HTML?
+        fWrap_FlatFile   = 0x4  ///< Wrap for flat file use.
     };
     typedef int TWrapFlags;     ///< Binary OR of "EWrapFlags"
 
@@ -2508,6 +2509,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.72  2004/11/24 15:16:13  shomrat
+ * + fWrap_FlatFile - perform flat-file specific line wrap
+ *
  * Revision 1.71  2004/11/05 16:30:02  shomrat
  * Fixed implementation (inline) of Equal methods
  *
