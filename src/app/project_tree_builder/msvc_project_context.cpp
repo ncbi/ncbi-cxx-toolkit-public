@@ -144,6 +144,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
             }
         }
     }
+
+    // Libraries from NCBI C Toolkit
+    m_NcbiCLibs = project.m_NcbiCLibs;
 }
 
 
@@ -202,9 +205,9 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
 string CMsvcPrjProjectContext::AdditionalLinkerOptions
                                             (const SConfigInfo& cfg_info) const
 {
-    string libs_str("");
+    list<string> additional_libs;
 
-    // Take into account default libs from site:
+    // Take into account requires, default and makefiles libs
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
@@ -212,12 +215,21 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_Libs.empty() ) {
-            libs_str += " ";
-            libs_str += NStr::Join(lib_info.m_Libs, " ");
+            copy(lib_info.m_Libs.begin(), 
+                 lib_info.m_Libs.end(), 
+                 back_inserter(additional_libs));
         }
     }
 
-    return libs_str;
+    // NCBI C Toolkit libs
+    ITERATE(list<string>, p, m_NcbiCLibs) {
+        string ncbi_lib = *p + ".lib";
+        additional_libs.push_back(ncbi_lib);        
+    }
+    additional_libs.sort();
+    additional_libs.unique();
+
+    return NStr::Join(additional_libs, " ");
 }
 
 
@@ -233,14 +245,14 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
 {
     string dirs_str("");
 
-    // Take into account default libs from site:
+    // Take into account requires, default and makefiles libs
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( !lib_info.IsEmpty() ) {
+        if ( !lib_info.m_LibPath.empty() ) {
             dirs_str += lib_info.m_LibPath;
             dirs_str += ", ";
         }
@@ -695,6 +707,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/24 18:13:26  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext constructor.
+ * Changed implementation of member-function AdditionalLinkerOptions of
+ * class CMsvcPrjProjectContext.
+ *
  * Revision 1.14  2004/02/23 20:58:41  gorelenk
  * Fixed double properties apperience in generated MSVC projects.
  *
