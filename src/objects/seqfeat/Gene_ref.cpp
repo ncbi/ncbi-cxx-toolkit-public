@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/01/27 17:35:40  shomrat
+ * Added Locus_tag to GetLabel
+ *
  * Revision 6.3  2002/12/27 23:01:02  kans
  * added IsSuppressed
  *
@@ -73,6 +76,8 @@ void CGene_ref::GetLabel(string* label) const
         *label += GetLocus();
     } else if (IsSetDesc()) {
         *label += GetDesc();
+    } else if (IsSetLocus_tag()) {
+        *label += GetLocus_tag();
     } else if (IsSetSyn() && !GetSyn().empty()) {
         *label += *GetSyn().begin();
     } else if (IsSetDb() && GetDb().size() > 0) {
