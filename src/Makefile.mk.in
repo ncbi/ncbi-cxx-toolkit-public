@@ -120,8 +120,10 @@ LDFLAGS  = $(CONF_LDFLAGS)
 LIBS     = $(CONF_LIBS)
 PRE_LIBS =
 
+# Debug for debugging, Release for release
+DEBUG_SFX = @DEBUG_SFX@
 # d for debugging, empty for release
-DBG_SFX=@DBG_SFX@
+D_SFX=@D_SFX@
 
 ### DLL specifics
 LIB_OR_DLL = @LIB_OR_DLL@

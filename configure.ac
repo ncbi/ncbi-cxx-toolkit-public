@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.12 2001/10/12 19:46:01 ucko Exp $
+#  $Id: configure.ac,v 1.13 2001/10/12 20:09:47 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -826,12 +826,12 @@ fi
 #### Release/Debug
    if test "$with_debug" = "no" ; then
       release_debug="Release"
-      DBG_SFX=
+      D_SFX=
    else
       release_debug="Debug"
-      DBG_SFX=d
+      D_SFX=d
    fi
-
+   DEBUG_SFX=${release_debug}
 
 #### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${exec_prefix}"
 if test "$with_suffix" != "no" ; then
@@ -2208,7 +2208,8 @@ AC_SUBST(DEPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
-AC_SUBST(DBG_SFX)
+AC_SUBST(D_SFX)
+AC_SUBST(DEBUG_SFX)
 
 AC_SUBST(LIB_OR_DLL)
 AC_SUBST(FORCE_STATIC_LIB)
