@@ -39,12 +39,10 @@ $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
 Makefile.in:
-	@echo Creating $@
-	@( echo "LIB_PROJ = $(MODULE)"; echo "srcdir = @srcdir@"; echo "include @builddir@/Makefile.meta"; ) > $@
+	@if test ! -f $@ ; then echo Creating $@ ;  ( echo "LIB_PROJ = $(MODULE)"; echo "srcdir = @srcdir@"; echo "include @builddir@/Makefile.meta"; ) > $@ ; fi
 
 Makefile.$(MODULE).lib:
-	@echo Creating $@
-	@( echo 'LIB = $$(TMPL)'; echo 'LIBOBJ = $$(LIB)__ $$(LIB)___'; ) > $@
+	@if test ! -f $@ ; then echo Creating $@ ; ( echo 'LIB = $$(TMPL)'; echo 'LIBOBJ = $$(LIB)__ $$(LIB)___'; ) > $@ ; fi
 
 $(MODULE).def:
 
