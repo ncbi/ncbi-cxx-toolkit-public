@@ -1,227 +1,37 @@
-#ifndef HTML__HPP
-#define HTML__HPP
+#ifndef HTML__HTML__HPP
+#define HTML__HTML__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Lewis Geer
-*
-* File Description:
-*   CHTMLNode defines
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.54  2001/08/14 16:51:33  ivanov
-* Change mean for init JavaScript popup menu & add it to HTML document.
-* Remove early redefined classes for tags HEAD and BODY.
-*
-* Revision 1.53  2001/07/16 19:45:22  ivanov
-* Changed default value for JS menu lib path in CHTML_html::InitPopupMenus().
-*
-* Revision 1.52  2001/07/16 13:54:42  ivanov
-* Added support JavaScript popups menu (jsmenu.[ch]pp)
-*
-* Revision 1.51  2001/06/08 19:01:41  ivanov
-* Added base classes: CHTMLDualNode, CHTMLSpecialChar
-*     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
-* Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
-* Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
-* Added tags: OBJECT, NOSCRIPT
-* Added attribute "alt" for CHTML_img
-* Added CHTMLComment::Print() for disable print html-comments in plaintext mode
-*
-* Revision 1.50  2001/06/05 15:36:10  ivanov
-* Added attribute "alt" to CHTML_image
-*
-* Revision 1.49  2001/05/17 14:55:24  lavr
-* Typos corrected
-*
-* Revision 1.48  2000/10/18 13:25:46  vasilche
-* Added missing constructors to CHTML_font.
-*
-* Revision 1.47  2000/09/27 14:11:10  vasilche
-* Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
-* KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
-*
-* Revision 1.46  2000/08/15 19:40:16  vasilche
-* Added CHTML_label::SetFor() method for setting HTML attribute FOR.
-*
-* Revision 1.45  2000/07/25 15:26:00  vasilche
-* Added newline symbols before table and after each table row in text mode.
-*
-* Revision 1.44  2000/07/18 19:08:48  vasilche
-* Fixed uninitialized members.
-* Fixed NextCell to advance to next cell.
-*
-* Revision 1.43  2000/07/18 17:21:34  vasilche
-* Added possibility to force output of empty attribute value.
-* Added caching to CHTML_table, now large tables work much faster.
-* Changed algorithm of emitting EOL symbols in html output.
-*
-* Revision 1.42  2000/07/12 16:37:37  vasilche
-* Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
-* Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
-*
-* Revision 1.41  1999/12/28 21:01:03  vasilche
-* Fixed conflict on MS VC between bool and const string& arguments by
-* adding const char* argument.
-*
-* Revision 1.40  1999/12/28 18:55:28  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.39  1999/10/29 18:28:53  vakatov
-* [MSVC]  bool vs. const string& arg confusion
-*
-* Revision 1.38  1999/10/28 13:40:29  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.37  1999/08/20 16:14:36  golikov
-* 'non-<TR> tag' bug fixed
-*
-* Revision 1.36  1999/05/28 18:04:05  vakatov
-* CHTMLNode::  added attribute "CLASS"
-*
-* Revision 1.35  1999/05/20 16:49:11  pubmed
-* Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
-*
-* Revision 1.34  1999/05/10 17:01:11  vasilche
-* Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().
-*
-* Revision 1.33  1999/05/10 14:26:09  vakatov
-* Fixes to compile and link with the "egcs" C++ compiler under Linux
-*
-* Revision 1.32  1999/04/27 14:49:57  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.31  1999/04/22 14:20:10  vasilche
-* Now CHTML_select::AppendOption and CHTML_option constructor accept option
-* name always as first argument.
-*
-* Revision 1.30  1999/04/15 22:05:16  vakatov
-* Include NCBI C++ headers before the standard ones
-*
-* Revision 1.29  1999/04/15 19:48:16  vasilche
-* Fixed several warnings detected by GCC
-*
-* Revision 1.28  1999/04/08 19:00:24  vasilche
-* Added current cell pointer to CHTML_table
-*
-* Revision 1.27  1999/03/01 21:03:27  vasilche
-* Added CHTML_file input element.
-* Changed CHTML_form constructors.
-*
-* Revision 1.26  1999/02/26 21:03:30  vasilche
-* CAsnWriteNode made simple node. Use CHTML_pre explicitly.
-* Fixed bug in CHTML_table::Row.
-* Added CHTML_table::HeaderCell & DataCell methods.
-*
-* Revision 1.25  1999/02/02 17:57:46  vasilche
-* Added CHTML_table::Row(int row).
-* Linkbar now have equal image spacing.
-*
-* Revision 1.24  1999/01/28 21:58:05  vasilche
-* QueryBox now inherits from CHTML_table (not CHTML_form as before).
-* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
-*
-* Revision 1.23  1999/01/28 16:58:58  vasilche
-* Added several constructors for CHTML_hr.
-* Added CHTMLNode::SetSize method.
-*
-* Revision 1.22  1999/01/25 19:34:14  vasilche
-* String arguments which are added as HTML text now treated as plain text.
-*
-* Revision 1.21  1999/01/21 21:12:54  vasilche
-* Added/used descriptions for HTML submit/select/text.
-* Fixed some bugs in paging.
-*
-* Revision 1.20  1999/01/14 21:25:16  vasilche
-* Changed CPageList to work via form image input elements.
-*
-* Revision 1.19  1999/01/11 22:05:48  vasilche
-* Fixed CHTML_font size.
-* Added CHTML_image input element.
-*
-* Revision 1.18  1999/01/11 15:13:32  vasilche
-* Fixed CHTML_font size.
-* CHTMLHelper extracted to separate file.
-*
-* Revision 1.17  1999/01/07 16:41:53  vasilche
-* CHTMLHelper moved to separate file.
-* TagNames of CHTML classes ara available via s_GetTagName() static
-* method.
-* Input tag types ara available via s_GetInputType() static method.
-* Initial selected database added to CQueryBox.
-* Background colors added to CPagerBax & CSmallPagerBox.
-*
-* Revision 1.16  1999/01/05 21:47:10  vasilche
-* Added 'current page' to CPageList.
-* CPageList doesn't display forward/backward if empty.
-*
-* Revision 1.15  1999/01/04 20:06:09  vasilche
-* Redesigned CHTML_table.
-* Added selection support to HTML forms (via hidden values).
-*
-* Revision 1.13  1998/12/28 21:48:12  vasilche
-* Made Lewis's 'tool' compilable
-*
-* Revision 1.12  1998/12/28 16:48:05  vasilche
-* Removed creation of QueryBox in CHTMLPage::CreateView()
-* CQueryBox extends from CHTML_form
-* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
-*
-* Revision 1.11  1998/12/24 16:15:36  vasilche
-* Added CHTMLComment class.
-* Added TagMappers from static functions.
-*
-* Revision 1.10  1998/12/23 21:20:56  vasilche
-* Added more HTML tags (almost all).
-* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
-*
-* Revision 1.9  1998/12/23 14:28:07  vasilche
-* Most of closed HTML tags made via template.
-*
-* Revision 1.8  1998/12/21 22:24:56  vasilche
-* A lot of cleaning.
-*
-* Revision 1.7  1998/12/09 23:02:55  lewisg
-* update to new cgiapp class
-*
-* Revision 1.6  1998/12/08 00:34:55  lewisg
-* cleanup
-*
-* Revision 1.5  1998/12/03 22:49:10  lewisg
-* added HTMLEncode() and CHTML_img
-*
-* Revision 1.4  1998/12/01 19:09:05  lewisg
-* uses CCgiApplication and new page factory
-* ===========================================================================
-*/
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Lewis Geer
+ *
+ * File Description:  CHTMLNode defines
+ *
+ */
 
 #include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
@@ -757,11 +567,13 @@ public:
 
     void ResetTableCache(void);
 
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
 
 protected:
     virtual void DoAppendChild(CNCBINode* node);
     void AppendCell(CHTML_tc* cell);
+    size_t GetTextLength(TMode mode);
 
     friend class CHTML_table;
     friend class CHTML_tr_Cache;
@@ -846,16 +658,33 @@ public:
 
     void ResetTableCache(void);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);   
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
+
+    // If to print horizontal row separator (affects ePlainText mode only)
+    enum ERowPlainSep {
+        ePrintRowSep,   // print
+        eSkipRowSep     // do not print
+    };
+    // Set rows and cols separators (affects ePlainText mode only)
+    void SetPlainSeparators(const string& col_left     = kEmptyStr,
+                            const string& col_middle   = "\t|\t",
+                            const string& col_right    = kEmptyStr,
+                            const char    row_sep_char = '-',
+                            ERowPlainSep  is_row_sep   = eSkipRowSep);
 
 protected:
     TIndex m_CurrentRow, m_CurrentCol;
     mutable auto_ptr<CHTML_table_Cache> m_Cache;
     CHTML_table_Cache& GetCache(void) const;
     friend class CHTML_table_Cache;
+    friend class CHTML_tr;
 
     virtual void DoAppendChild(CNCBINode* node);
     void AppendRow(CHTML_tr* row);
+
+    string       m_ColSepL, m_ColSepM, m_ColSepR;
+    char         m_RowSepChar;
+    ERowPlainSep m_IsRowSep;
 };
 
 // the <form> tag
@@ -1393,4 +1222,201 @@ DECLARE_HTML_SPECIAL_CHAR( reg,  "(r)");
 
 END_NCBI_SCOPE
 
-#endif
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.55  2002/01/17 23:39:35  ivanov
+ * Added means to print HTML tables in plain text mode
+ *
+ * Revision 1.54  2001/08/14 16:51:33  ivanov
+ * Change mean for init JavaScript popup menu & add it to HTML document.
+ * Remove early redefined classes for tags HEAD and BODY.
+ *
+ * Revision 1.53  2001/07/16 19:45:22  ivanov
+ * Changed default value for JS menu lib path in CHTML_html::InitPopupMenus().
+ *
+ * Revision 1.52  2001/07/16 13:54:42  ivanov
+ * Added support JavaScript popups menu (jsmenu.[ch]pp)
+ *
+ * Revision 1.51  2001/06/08 19:01:41  ivanov
+ * Added base classes: CHTMLDualNode, CHTMLSpecialChar
+ *     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
+ * Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
+ * Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
+ * Added tags: OBJECT, NOSCRIPT
+ * Added attribute "alt" for CHTML_img
+ * Added CHTMLComment::Print() for disable print html-comments in plaintext mode
+ *
+ * Revision 1.50  2001/06/05 15:36:10  ivanov
+ * Added attribute "alt" to CHTML_image
+ *
+ * Revision 1.49  2001/05/17 14:55:24  lavr
+ * Typos corrected
+ *
+ * Revision 1.48  2000/10/18 13:25:46  vasilche
+ * Added missing constructors to CHTML_font.
+ *
+ * Revision 1.47  2000/09/27 14:11:10  vasilche
+ * Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
+ * KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
+ *
+ * Revision 1.46  2000/08/15 19:40:16  vasilche
+ * Added CHTML_label::SetFor() method for setting HTML attribute FOR.
+ *
+ * Revision 1.45  2000/07/25 15:26:00  vasilche
+ * Added newline symbols before table and after each table row in text mode.
+ *
+ * Revision 1.44  2000/07/18 19:08:48  vasilche
+ * Fixed uninitialized members.
+ * Fixed NextCell to advance to next cell.
+ *
+ * Revision 1.43  2000/07/18 17:21:34  vasilche
+ * Added possibility to force output of empty attribute value.
+ * Added caching to CHTML_table, now large tables work much faster.
+ * Changed algorithm of emitting EOL symbols in html output.
+ *
+ * Revision 1.42  2000/07/12 16:37:37  vasilche
+ * Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
+ * Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
+ *
+ * Revision 1.41  1999/12/28 21:01:03  vasilche
+ * Fixed conflict on MS VC between bool and const string& arguments by
+ * adding const char* argument.
+ *
+ * Revision 1.40  1999/12/28 18:55:28  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.39  1999/10/29 18:28:53  vakatov
+ * [MSVC]  bool vs. const string& arg confusion
+ *
+ * Revision 1.38  1999/10/28 13:40:29  vasilche
+ * Added reference counters to CNCBINode.
+ *
+ * Revision 1.37  1999/08/20 16:14:36  golikov
+ * 'non-<TR> tag' bug fixed
+ *
+ * Revision 1.36  1999/05/28 18:04:05  vakatov
+ * CHTMLNode::  added attribute "CLASS"
+ *
+ * Revision 1.35  1999/05/20 16:49:11  pubmed
+ * Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
+ *
+ * Revision 1.34  1999/05/10 17:01:11  vasilche
+ * Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().
+ *
+ * Revision 1.33  1999/05/10 14:26:09  vakatov
+ * Fixes to compile and link with the "egcs" C++ compiler under Linux
+ *
+ * Revision 1.32  1999/04/27 14:49:57  vasilche
+ * Added FastCGI interface.
+ * CNcbiContext renamed to CCgiContext.
+ *
+ * Revision 1.31  1999/04/22 14:20:10  vasilche
+ * Now CHTML_select::AppendOption and CHTML_option constructor accept option
+ * name always as first argument.
+ *
+ * Revision 1.30  1999/04/15 22:05:16  vakatov
+ * Include NCBI C++ headers before the standard ones
+ *
+ * Revision 1.29  1999/04/15 19:48:16  vasilche
+ * Fixed several warnings detected by GCC
+ *
+ * Revision 1.28  1999/04/08 19:00:24  vasilche
+ * Added current cell pointer to CHTML_table
+ *
+ * Revision 1.27  1999/03/01 21:03:27  vasilche
+ * Added CHTML_file input element.
+ * Changed CHTML_form constructors.
+ *
+ * Revision 1.26  1999/02/26 21:03:30  vasilche
+ * CAsnWriteNode made simple node. Use CHTML_pre explicitly.
+ * Fixed bug in CHTML_table::Row.
+ * Added CHTML_table::HeaderCell & DataCell methods.
+ *
+ * Revision 1.25  1999/02/02 17:57:46  vasilche
+ * Added CHTML_table::Row(int row).
+ * Linkbar now have equal image spacing.
+ *
+ * Revision 1.24  1999/01/28 21:58:05  vasilche
+ * QueryBox now inherits from CHTML_table (not CHTML_form as before).
+ * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+ *
+ * Revision 1.23  1999/01/28 16:58:58  vasilche
+ * Added several constructors for CHTML_hr.
+ * Added CHTMLNode::SetSize method.
+ *
+ * Revision 1.22  1999/01/25 19:34:14  vasilche
+ * String arguments which are added as HTML text now treated as plain text.
+ *
+ * Revision 1.21  1999/01/21 21:12:54  vasilche
+ * Added/used descriptions for HTML submit/select/text.
+ * Fixed some bugs in paging.
+ * 
+ * Revision 1.20  1999/01/14 21:25:16  vasilche
+ * Changed CPageList to work via form image input elements.
+ *
+ * Revision 1.19  1999/01/11 22:05:48  vasilche
+ * Fixed CHTML_font size.
+ * Added CHTML_image input element.
+ *
+ * Revision 1.18  1999/01/11 15:13:32  vasilche
+ * Fixed CHTML_font size.
+ * CHTMLHelper extracted to separate file.
+ *
+ * Revision 1.17  1999/01/07 16:41:53  vasilche
+ * CHTMLHelper moved to separate file.
+ * TagNames of CHTML classes ara available via s_GetTagName() static
+ * method.
+ * Input tag types ara available via s_GetInputType() static method.
+ * Initial selected database added to CQueryBox.
+ * Background colors added to CPagerBax & CSmallPagerBox.
+ *
+ * Revision 1.16  1999/01/05 21:47:10  vasilche
+ * Added 'current page' to CPageList.
+ * CPageList doesn't display forward/backward if empty.
+ *
+ * Revision 1.15  1999/01/04 20:06:09  vasilche
+ * Redesigned CHTML_table.
+ * Added selection support to HTML forms (via hidden values).
+ *
+ * Revision 1.13  1998/12/28 21:48:12  vasilche
+ * Made Lewis's 'tool' compilable
+ *
+ * Revision 1.12  1998/12/28 16:48:05  vasilche
+ * Removed creation of QueryBox in CHTMLPage::CreateView()
+ * CQueryBox extends from CHTML_form
+ * CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+ *
+ * Revision 1.11  1998/12/24 16:15:36  vasilche
+ * Added CHTMLComment class.
+ * Added TagMappers from static functions.
+ *
+ * Revision 1.10  1998/12/23 21:20:56  vasilche
+ * Added more HTML tags (almost all).
+ * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+ *
+ * Revision 1.9  1998/12/23 14:28:07  vasilche
+ * Most of closed HTML tags made via template.
+ *
+ * Revision 1.8  1998/12/21 22:24:56  vasilche
+ * A lot of cleaning.
+ *
+ * Revision 1.7  1998/12/09 23:02:55  lewisg
+ * update to new cgiapp class
+ *
+ * Revision 1.6  1998/12/08 00:34:55  lewisg
+ * cleanup
+ *
+ * Revision 1.5  1998/12/03 22:49:10  lewisg
+ * added HTMLEncode() and CHTML_img
+ *
+ * Revision 1.4  1998/12/01 19:09:05  lewisg
+ * uses CCgiApplication and new page factory
+ * ===========================================================================
+ */
+
+#endif  /* HTML__HTNL__HPP */

@@ -1,271 +1,33 @@
-/*  $RCSfile$  $Revision$  $Date$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Lewis Geer
-*
-* File Description:
-*   code for CHTMLNode
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.67  2001/08/14 16:51:05  ivanov
-* Change mean for init JavaScript popup menu & add it to HTML document.
-* Remove early redefined classes for tags HEAD and BODY.
-*
-* Revision 1.66  2001/07/16 13:54:09  ivanov
-* Added support JavaScript popups menu (jsmenu.[ch]pp)
-*
-* Revision 1.65  2001/06/08 19:00:22  ivanov
-* Added base classes: CHTMLDualNode, CHTMLSpecialChar
-*     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
-* Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
-* Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
-* Added tags: OBJECT, NOSCRIPT
-* Added attribute "alt" for CHTML_img
-* Added CHTMLComment::Print() for disable print html-comments in plaintext mode
-*
-* Revision 1.64  2001/06/05 15:35:48  ivanov
-* Added attribute "alt" to CHTML_image
-*
-* Revision 1.63  2001/05/17 15:05:42  lavr
-* Typos corrected
-*
-* Revision 1.62  2000/10/13 19:55:15  vasilche
-* Fixed error with static html node object.
-*
-* Revision 1.61  2000/09/27 14:11:17  vasilche
-* Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
-* KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
-*
-* Revision 1.60  2000/08/15 19:40:48  vasilche
-* Added CHTML_label::SetFor() method for setting HTML attribute FOR.
-*
-* Revision 1.59  2000/08/01 20:05:11  golikov
-* Removed _TRACE
-*
-* Revision 1.58  2000/07/25 15:27:38  vasilche
-* Added newline symbols before table and after each table row in text mode.
-*
-* Revision 1.57  2000/07/20 20:37:19  vasilche
-* Fixed null pointer dereference.
-*
-* Revision 1.56  2000/07/18 19:08:55  vasilche
-* Fixed uninitialized members.
-* Fixed NextCell to advance to next cell.
-*
-* Revision 1.55  2000/07/18 17:21:39  vasilche
-* Added possibility to force output of empty attribute value.
-* Added caching to CHTML_table, now large tables work much faster.
-* Changed algorithm of emitting EOL symbols in html output.
-*
-* Revision 1.54  2000/07/12 16:37:42  vasilche
-* Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
-* Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
-*
-* Revision 1.53  2000/03/07 15:26:12  vasilche
-* Removed second definition of CRef.
-*
-* Revision 1.52  1999/12/28 21:01:08  vasilche
-* Fixed conflict on MS VC between bool and const string& arguments by
-* adding const char* argument.
-*
-* Revision 1.51  1999/12/28 18:55:45  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.50  1999/10/28 13:40:35  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.49  1999/08/20 16:14:54  golikov
-* 'non-<TR> tag' bug fixed
-*
-* Revision 1.48  1999/08/09 16:20:07  golikov
-* Table output in plaintext fixed
-*
-* Revision 1.47  1999/07/08 18:05:15  vakatov
-* Fixed compilation warnings
-*
-* Revision 1.46  1999/06/18 20:42:50  vakatov
-* Fixed tiny compilation warnings
-*
-* Revision 1.45  1999/06/11 20:30:29  vasilche
-* We should catch exception by reference, because catching by value
-* doesn't preserve comment string.
-*
-* Revision 1.44  1999/06/09 20:57:58  golikov
-* RowSpan fixed by Vasilche
-*
-* Revision 1.43  1999/06/07 15:21:05  vasilche
-* Fixed some warnings.
-*
-* Revision 1.42  1999/05/28 18:03:51  vakatov
-* CHTMLNode::  added attribute "CLASS"
-*
-* Revision 1.41  1999/05/27 21:43:02  vakatov
-* Get rid of some minor compiler warnings
-*
-* Revision 1.40  1999/05/24 13:57:55  pubmed
-* Save Command; MEDLINE, FASTA format changes
-*
-* Revision 1.39  1999/05/20 16:52:31  pubmed
-* SaveAsText action for query; minor changes in filters,labels, tabletemplate
-*
-* Revision 1.38  1999/05/17 20:09:58  vasilche
-* Removed generation of implicit table cells.
-*
-* Revision 1.37  1999/04/16 17:45:35  vakatov
-* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
-*
-* Revision 1.36  1999/04/15 22:09:26  vakatov
-* "max" --> "NcbiMax"
-*
-* Revision 1.35  1999/04/15 19:56:24  vasilche
-* More warnings fixed
-*
-* Revision 1.34  1999/04/15 19:48:23  vasilche
-* Fixed several warnings detected by GCC
-*
-* Revision 1.33  1999/04/08 19:00:31  vasilche
-* Added current cell pointer to CHTML_table
-*
-* Revision 1.32  1999/03/26 22:00:01  sandomir
-* checked option in Radio button fixed; minor fixes in Selection
-*
-* Revision 1.31  1999/03/01 21:03:09  vasilche
-* Added CHTML_file input element.
-* Changed CHTML_form constructors.
-*
-* Revision 1.30  1999/02/26 21:03:33  vasilche
-* CAsnWriteNode made simple node. Use CHTML_pre explicitly.
-* Fixed bug in CHTML_table::Row.
-* Added CHTML_table::HeaderCell & DataCell methods.
-*
-* Revision 1.29  1999/02/02 17:57:49  vasilche
-* Added CHTML_table::Row(int row).
-* Linkbar now have equal image spacing.
-*
-* Revision 1.28  1999/01/28 21:58:08  vasilche
-* QueryBox now inherits from CHTML_table (not CHTML_form as before).
-* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
-*
-* Revision 1.27  1999/01/28 16:59:01  vasilche
-* Added several constructors for CHTML_hr.
-* Added CHTMLNode::SetSize method.
-*
-* Revision 1.26  1999/01/25 19:34:18  vasilche
-* String arguments which are added as HTML text now treated as plain text.
-*
-* Revision 1.25  1999/01/21 21:12:59  vasilche
-* Added/used descriptions for HTML submit/select/text.
-* Fixed some bugs in paging.
-*
-* Revision 1.24  1999/01/21 16:18:05  sandomir
-* minor changes due to NStr namespace to contain string utility functions
-*
-* Revision 1.23  1999/01/14 21:25:20  vasilche
-* Changed CPageList to work via form image input elements.
-*
-* Revision 1.22  1999/01/11 22:05:52  vasilche
-* Fixed CHTML_font size.
-* Added CHTML_image input element.
-*
-* Revision 1.21  1999/01/11 15:13:35  vasilche
-* Fixed CHTML_font size.
-* CHTMLHelper extracted to separate file.
-*
-* Revision 1.20  1999/01/07 16:41:56  vasilche
-* CHTMLHelper moved to separate file.
-* TagNames of CHTML classes ara available via s_GetTagName() static
-* method.
-* Input tag types ara available via s_GetInputType() static method.
-* Initial selected database added to CQueryBox.
-* Background colors added to CPagerBax & CSmallPagerBox.
-*
-* Revision 1.19  1999/01/05 20:23:29  vasilche
-* Fixed HTMLEncode.
-*
-* Revision 1.18  1999/01/04 20:06:14  vasilche
-* Redesigned CHTML_table.
-* Added selection support to HTML forms (via hidden values).
-*
-* Revision 1.16  1998/12/28 21:48:16  vasilche
-* Made Lewis's 'tool' compilable
-*
-* Revision 1.15  1998/12/28 16:48:09  vasilche
-* Removed creation of QueryBox in CHTMLPage::CreateView()
-* CQueryBox extends from CHTML_form
-* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
-*
-* Revision 1.14  1998/12/24 16:15:41  vasilche
-* Added CHTMLComment class.
-* Added TagMappers from static functions.
-*
-* Revision 1.13  1998/12/23 21:51:44  vasilche
-* Added missing constructors to checkbox.
-*
-* Revision 1.12  1998/12/23 21:21:03  vasilche
-* Added more HTML tags (almost all).
-* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
-*
-* Revision 1.11  1998/12/23 14:28:10  vasilche
-* Most of closed HTML tags made via template.
-*
-* Revision 1.10  1998/12/21 22:25:03  vasilche
-* A lot of cleaning.
-*
-* Revision 1.9  1998/12/10 19:21:51  lewisg
-* correct error handling in InsertInTable
-*
-* Revision 1.8  1998/12/10 00:17:27  lewisg
-* fix index in InsertInTable
-*
-* Revision 1.7  1998/12/09 23:00:54  lewisg
-* use new cgiapp class
-*
-* Revision 1.6  1998/12/08 00:33:43  lewisg
-* cleanup
-*
-* Revision 1.5  1998/12/03 22:48:00  lewisg
-* added HTMLEncode() and CHTML_img
-*
-* Revision 1.4  1998/12/01 19:10:38  lewisg
-* uses CCgiApplication and new page factory
-*
-* Revision 1.3  1998/11/23 23:42:17  lewisg
-* *** empty log message ***
-*
-* Revision 1.2  1998/10/29 16:13:06  lewisg
-* version 2
-*
-* Revision 1.1  1998/10/06 20:36:05  lewisg
-* new html lib and test program
-*
-* ===========================================================================
-*/
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Lewis Geer
+ *
+ * File Description:  code for CHTMLNode
+ *
+ */
 
 
 #include <html/html.hpp>
@@ -401,7 +163,7 @@ void CHTMLNode::AppendHTMLText(const char* appendstring)
         AppendChild(new CHTMLText(appendstring));
 }
 
-void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute name, 
+void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute name,
                                 const string& value)
 {
     if ( value.empty() )
@@ -496,25 +258,25 @@ CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
 // dual text node
 
 CHTMLDualNode::CHTMLDualNode(const char* html, const char* plain)
-{ 
+{
     AppendChild(new CHTMLText(html));
-    m_Plain = plain; 
+    m_Plain = plain;
 }
 
 CHTMLDualNode::CHTMLDualNode(CNCBINode* child, const char* plain)
 {
    AppendChild(child);
-   m_Plain = plain; 
+   m_Plain = plain;
 }
 
-CHTMLDualNode::~CHTMLDualNode(void) 
-{ 
+CHTMLDualNode::~CHTMLDualNode(void)
+{
 }
 
 CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText ) 
-        return out << m_Plain; 
+    if ( mode == ePlainText )
+        return out << m_Plain;
     else
         return CParent::PrintChildren(out, mode);
 }
@@ -541,7 +303,7 @@ void CHTMLPlainText::SetText(const string& text)
     m_Name = text;
 }
 
-CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)  
+CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText || NoEncode() ) {
         return out << GetText();
@@ -585,7 +347,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     if ( tagStart == NPOS ) {
         return out << text;
     }
-    
+
     out << text.substr(0, tagStart);
     SIZE_TYPE last = tagStart;
     do {
@@ -600,7 +362,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
             if ( last != tagStart ) {
                 out << text.substr(last, tagStart - last);
             }
-            
+
             CNodeRef tag = MapTagAll(text.substr(tagNameStart,
                                                  tagNameEnd - tagNameStart),
                                      mode);
@@ -611,7 +373,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
             tagStart = text.find(KTagStart, last);
         }
     } while ( tagStart != NPOS );
-    
+
     if ( last != text.size() ) {
         out << text.substr(last);
     }
@@ -630,7 +392,7 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
     else {
         out << '<' << m_Name;
         if ( HaveAttributes() ) {
-            for ( TAttributes::const_iterator i = Attributes().begin(); 
+            for ( TAttributes::const_iterator i = Attributes().begin();
                   i != Attributes().end(); ++i ) {
                 out << ' ' << i->first;
                 if ( !i->second.IsOptional() ||
@@ -738,22 +500,22 @@ CHTMLListElement* CHTMLListElement::SetCompact(void)
 
 // Special char
 
-CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain, 
+CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain,
                                    int count)
     : CParent("", plain)
-{ 
+{
     m_Name  = html;
-    m_Count = count; 
+    m_Count = count;
 }
 
-CHTMLSpecialChar::~CHTMLSpecialChar(void) 
-{ 
+CHTMLSpecialChar::~CHTMLSpecialChar(void)
+{
 }
 
 CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
-        for ( int i = 0; i < m_Count; i++ ) 
+        for ( int i = 0; i < m_Count; i++ )
             out << m_Plain;
     } else {
         for ( int i = 0; i < m_Count; i++ )
@@ -840,12 +602,12 @@ public:
         : m_Used(false), m_Node(0)
         {
         }
-        
+
     bool IsUsed(void) const
         {
             return m_Used;
         }
-        
+
     bool IsNode(void) const
         {
             return m_Node != 0;
@@ -854,15 +616,15 @@ public:
         {
             return m_Node;
         }
-        
+
     void SetUsed(void);
     void SetCellNode(CHTML_tc* node);
-        
+
 private:
     bool m_Used;
     CHTML_tc* m_Node;
 };
-    
+
 class CHTML_tr_Cache
 {
 public:
@@ -917,7 +679,7 @@ public:
 
     CHTML_table_Cache(CHTML_table* table);
     ~CHTML_table_Cache(void);
-        
+
     TIndex GetRowCount(void) const
         {
             return m_RowCount;
@@ -988,9 +750,68 @@ void CHTML_tr::ResetTableCache(void)
 CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-    if ( mode == ePlainText )
-        out << CHTMLHelper::GetNL();
+    if ( mode == ePlainText  &&  HaveChildren() ) {
+        size_t seplen = GetTextLength(mode);
+        if (seplen > m_Parent->m_ColSepL.length() + m_Parent->m_ColSepR.length()) {
+            out << CHTMLHelper::GetNL();
+            if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
+                out << string(seplen, m_Parent->m_RowSepChar)
+                    << CHTMLHelper::GetNL();
+            }
+        }
+    }
     return out;
+}
+
+CNcbiOstream& CHTML_tr::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    if ( !HaveChildren() ) {
+        return out;
+    }
+
+    if ( mode != ePlainText ) {
+        return CParent::PrintChildren(out, mode);
+    }
+
+    out << m_Parent->m_ColSepL;
+
+    non_const_iterate ( TChildren, i, Children() ) {
+        if ( i != Children().begin() ) {
+            out << m_Parent->m_ColSepM;
+        }
+        Node(i)->Print(out, mode);
+    }
+
+    out << m_Parent->m_ColSepR;
+
+    return out;
+}
+
+size_t CHTML_tr::GetTextLength(TMode mode)
+{
+    if ( !HaveChildren() ) {
+        return 0;
+    }
+
+    CNcbiOstrstream sout;
+    size_t cols = 0;
+
+    non_const_iterate ( TChildren, i, Children() ) {
+        Node(i)->Print(sout, mode);
+        cols++;
+    }
+    sout << '\0';
+
+    size_t textlen = strlen(sout.str());
+    if ( mode == ePlainText ) {
+        textlen += m_Parent->m_ColSepL.length() +
+                   m_Parent->m_ColSepR.length();
+        if ( cols ) {
+            textlen += m_Parent->m_ColSepM.length() * (cols - 1);
+        }
+    }
+
+    return textlen;
 }
 
 CHTML_tc::~CHTML_tc(void)
@@ -1171,19 +992,19 @@ void CHTML_table_Cache::InitRow(TIndex row, CHTML_tr* rowNode)
               iCol != iColEnd; ++iCol ) {
             CHTML_tc* cellNode =
                 dynamic_cast<CHTML_tc*>(rowNode->Node(iCol));
-            
+
             if ( !cellNode )
                 continue;
-            
+
             // skip all used cells
             while ( rowCache.GetCellCache(col).IsUsed() ) {
                 ++col;
             }
-            
+
             // determine current cell size
             TIndex rowSpan = x_GetSpan(cellNode, "rowspan");
             TIndex colSpan = x_GetSpan(cellNode, "colspan");
-            
+
             // end of new cell in columns
             rowCache.SetUsedCells(cellNode, col, col + colSpan);
             if ( rowSpan > 1 )
@@ -1274,7 +1095,6 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
                                          CHTML_table::ECellType type,
                                          TIndex rowSpan, TIndex colSpan)
 {
-    _TRACE("Cell("<<row<<", "<<col<<", "<<rowSpan<<", "<<colSpan<<")");
     CHTML_tr_Cache& rowCache = GetRowCache(row);
     if ( col < rowCache.GetCellCount() ) {
         CHTML_tc_Cache& cellCache = rowCache.GetCellCache(col);
@@ -1302,7 +1122,7 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
         if ( cellCache.IsUsed() )
             THROW1_TRACE(runtime_error, "invalid use of big table cell");
     }
-    
+
     CHTML_tc* cell;
     if ( type == CHTML_table::eHeaderCell )
         cell = new CHTML_th;
@@ -1320,7 +1140,9 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
 }
 
 CHTML_table::CHTML_table(void)
-    : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1))
+    : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1)),
+      m_ColSepL(kEmptyStr), m_ColSepM("\t|\t"), m_ColSepR(kEmptyStr),
+      m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
 }
 
@@ -1411,9 +1233,31 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 
 CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText )
-        out << CHTMLHelper::GetNL();
+    if ( mode == ePlainText  &&  HaveChildren() ) {
+        size_t seplen = 0;
+        CHTML_tr* tr = dynamic_cast<CHTML_tr*>(&**Children().begin());
+        if ( tr ) {
+            seplen = tr->GetTextLength(mode);
+        }
+        if (seplen > m_ColSepL.length() + m_ColSepR.length() &&
+            m_IsRowSep == ePrintRowSep) {
+            out << string(seplen, m_RowSepChar) << CHTMLHelper::GetNL();
+        }
+    }
     return CParent::PrintBegin(out, mode);
+}
+
+void CHTML_table::SetPlainSeparators(const string& col_left,
+                                     const string& col_middle,
+                                     const string& col_right,
+                                     const char    row_sep_char,
+                                     ERowPlainSep  is_row_sep)
+{
+    m_ColSepL    = col_left;
+    m_ColSepM    = col_middle;
+    m_ColSepR    = col_right;
+    m_RowSepChar = row_sep_char;
+    m_IsRowSep   = is_row_sep;
 }
 
 
@@ -1565,7 +1409,7 @@ CHTML_input::~CHTML_input(void)
 {
 }
 
-// checkbox tag 
+// checkbox tag
 
 const char CHTML_checkbox::sm_InputType[] = "checkbox";
 
@@ -1601,11 +1445,11 @@ CHTML_checkbox::~CHTML_checkbox(void)
 {
 }
 
-// image tag 
+// image tag
 
 const char CHTML_image::sm_InputType[] = "image";
 
-CHTML_image::CHTML_image(const string& name, const string& src, 
+CHTML_image::CHTML_image(const string& name, const string& src,
                          const string& alt)
     : CParent(sm_InputType, name)
 {
@@ -1613,7 +1457,7 @@ CHTML_image::CHTML_image(const string& name, const string& src,
     SetOptionalAttribute("alt", alt);
 }
 
-CHTML_image::CHTML_image(const string& name, const string& src, int border, 
+CHTML_image::CHTML_image(const string& name, const string& src, int border,
                          const string& alt)
     : CParent(sm_InputType, name)
 {
@@ -1626,7 +1470,7 @@ CHTML_image::~CHTML_image(void)
 {
 }
 
-// radio tag 
+// radio tag
 
 const char CHTML_radio::sm_InputType[] = "radio";
 
@@ -1648,7 +1492,7 @@ CHTML_radio::~CHTML_radio(void)
 {
 }
 
-// hidden tag 
+// hidden tag
 
 const char CHTML_hidden::sm_InputType[] = "hidden";
 
@@ -1756,7 +1600,7 @@ CHTML_button::~CHTML_button(void)
 }
 */
 
-// text tag 
+// text tag
 
 const char CHTML_text::sm_InputType[] = "text";
 
@@ -1785,7 +1629,7 @@ CHTML_text::~CHTML_text(void)
 {
 }
 
-// text tag 
+// text tag
 
 const char CHTML_file::sm_InputType[] = "file";
 
@@ -1857,7 +1701,7 @@ CHTML_br::~CHTML_br(void)
 {
 }
 
-CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)  
+CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out << CHTMLHelper::GetNL();
@@ -1876,12 +1720,12 @@ CHTML_img::CHTML_img(const string& url, const string& alt)
     SetOptionalAttribute("alt", alt);
 }
 
-CHTML_img::CHTML_img(const string& url, int width, int height, 
+CHTML_img::CHTML_img(const string& url, int width, int height,
                      const string& alt)
     : CParent("img")
 {
     SetAttribute("src", url);
-    SetOptionalAttribute("alt", alt);    
+    SetOptionalAttribute("alt", alt);
     SetWidth(width);
     SetHeight(height);
 }
@@ -2017,7 +1861,7 @@ CHTML_hr* CHTML_hr::SetNoShade(void)
     return this;
 }
 
-CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)  
+CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
@@ -2039,8 +1883,8 @@ CHTML_meta::CHTML_meta(EType mtype, const string& var, const string& content)
     SetAttribute("content", content);
 }
 
-CHTML_meta::~CHTML_meta(void) 
-{ 
+CHTML_meta::~CHTML_meta(void)
+{
 }
 
 
@@ -2061,8 +1905,8 @@ CHTML_script::CHTML_script(const string& stype, const string& url)
     SetAttribute("src", url);
 }
 
-CHTML_script::~CHTML_script(void) 
-{ 
+CHTML_script::~CHTML_script(void)
+{
 }
 
 CHTML_script* CHTML_script::AppendScript(const string& script)
@@ -2140,3 +1984,246 @@ DEFINE_HTML_ELEMENT(area);
 
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.68  2002/01/17 23:40:01  ivanov
+ * Added means to print HTML tables in plain text mode
+ *
+ * Revision 1.67  2001/08/14 16:51:05  ivanov
+ * Change means for init JavaScript popup menu & add it to HTML document.
+ * Remove early redefined classes for tags HEAD and BODY.
+ *
+ * Revision 1.66  2001/07/16 13:54:09  ivanov
+ * Added support JavaScript popups menu (jsmenu.[ch]pp)
+ *
+ * Revision 1.65  2001/06/08 19:00:22  ivanov
+ * Added base classes: CHTMLDualNode, CHTMLSpecialChar
+ *     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
+ * Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
+ * Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
+ * Added tags: OBJECT, NOSCRIPT
+ * Added attribute "alt" for CHTML_img
+ * Added CHTMLComment::Print() for disable print html-comments in plaintext mode
+ *
+ * Revision 1.64  2001/06/05 15:35:48  ivanov
+ * Added attribute "alt" to CHTML_image
+ *
+ * Revision 1.63  2001/05/17 15:05:42  lavr
+ * Typos corrected
+ *
+ * Revision 1.62  2000/10/13 19:55:15  vasilche
+ * Fixed error with static html node object.
+ *
+ * Revision 1.61  2000/09/27 14:11:17  vasilche
+ * Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
+ * KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
+ *
+ * Revision 1.60  2000/08/15 19:40:48  vasilche
+ * Added CHTML_label::SetFor() method for setting HTML attribute FOR.
+ *
+ * Revision 1.59  2000/08/01 20:05:11  golikov
+ * Removed _TRACE
+ *
+ * Revision 1.58  2000/07/25 15:27:38  vasilche
+ * Added newline symbols before table and after each table row in text mode.
+ *
+ * Revision 1.57  2000/07/20 20:37:19  vasilche
+ * Fixed null pointer dereference.
+ *
+ * Revision 1.56  2000/07/18 19:08:55  vasilche
+ * Fixed uninitialized members.
+ * Fixed NextCell to advance to next cell.
+ *
+ * Revision 1.55  2000/07/18 17:21:39  vasilche
+ * Added possibility to force output of empty attribute value.
+ * Added caching to CHTML_table, now large tables work much faster.
+ * Changed algorithm of emitting EOL symbols in html output.
+ *
+ * Revision 1.54  2000/07/12 16:37:42  vasilche
+ * Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
+ * Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
+ *
+ * Revision 1.53  2000/03/07 15:26:12  vasilche
+ * Removed second definition of CRef.
+ *
+ * Revision 1.52  1999/12/28 21:01:08  vasilche
+ * Fixed conflict on MS VC between bool and const string& arguments by
+ * adding const char* argument.
+ *
+ * Revision 1.51  1999/12/28 18:55:45  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.50  1999/10/28 13:40:35  vasilche
+ * Added reference counters to CNCBINode.
+ *
+ * Revision 1.49  1999/08/20 16:14:54  golikov
+ * 'non-<TR> tag' bug fixed
+ *
+ * Revision 1.48  1999/08/09 16:20:07  golikov
+ * Table output in plaintext fixed
+ *
+ * Revision 1.47  1999/07/08 18:05:15  vakatov
+ * Fixed compilation warnings
+ *
+ * Revision 1.46  1999/06/18 20:42:50  vakatov
+ * Fixed tiny compilation warnings
+ *
+ * Revision 1.45  1999/06/11 20:30:29  vasilche
+ * We should catch exception by reference, because catching by value
+ * doesn't preserve comment string.
+ *
+ * Revision 1.44  1999/06/09 20:57:58  golikov
+ * RowSpan fixed by Vasilche
+ *
+ * Revision 1.43  1999/06/07 15:21:05  vasilche
+ * Fixed some warnings.
+ *
+ * Revision 1.42  1999/05/28 18:03:51  vakatov
+ * CHTMLNode::  added attribute "CLASS"
+ *
+ * Revision 1.41  1999/05/27 21:43:02  vakatov
+ * Get rid of some minor compiler warnings
+ *
+ * Revision 1.40  1999/05/24 13:57:55  pubmed
+ * Save Command; MEDLINE, FASTA format changes
+ *
+ * Revision 1.39  1999/05/20 16:52:31  pubmed
+ * SaveAsText action for query; minor changes in filters,labels, tabletemplate
+ *
+ * Revision 1.38  1999/05/17 20:09:58  vasilche
+ * Removed generation of implicit table cells.
+ *
+ * Revision 1.37  1999/04/16 17:45:35  vakatov
+ * [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
+ *
+ * Revision 1.36  1999/04/15 22:09:26  vakatov
+ * "max" --> "NcbiMax"
+ *
+ * Revision 1.35  1999/04/15 19:56:24  vasilche
+ * More warnings fixed
+ *
+ * Revision 1.34  1999/04/15 19:48:23  vasilche
+ * Fixed several warnings detected by GCC
+ *
+ * Revision 1.33  1999/04/08 19:00:31  vasilche
+ * Added current cell pointer to CHTML_table
+ *
+ * Revision 1.32  1999/03/26 22:00:01  sandomir
+ * checked option in Radio button fixed; minor fixes in Selection
+ *
+ * Revision 1.31  1999/03/01 21:03:09  vasilche
+ * Added CHTML_file input element.
+ * Changed CHTML_form constructors.
+ *
+ * Revision 1.30  1999/02/26 21:03:33  vasilche
+ * CAsnWriteNode made simple node. Use CHTML_pre explicitly.
+ * Fixed bug in CHTML_table::Row.
+ * Added CHTML_table::HeaderCell & DataCell methods.
+ *
+ * Revision 1.29  1999/02/02 17:57:49  vasilche
+ * Added CHTML_table::Row(int row).
+ * Linkbar now have equal image spacing.
+ *
+ * Revision 1.28  1999/01/28 21:58:08  vasilche
+ * QueryBox now inherits from CHTML_table (not CHTML_form as before).
+ * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+ *
+ * Revision 1.27  1999/01/28 16:59:01  vasilche
+ * Added several constructors for CHTML_hr.
+ * Added CHTMLNode::SetSize method.
+ *
+ * Revision 1.26  1999/01/25 19:34:18  vasilche
+ * String arguments which are added as HTML text now treated as plain text.
+ *
+ * Revision 1.25  1999/01/21 21:12:59  vasilche
+ * Added/used descriptions for HTML submit/select/text.
+ * Fixed some bugs in paging.
+ *
+ * Revision 1.24  1999/01/21 16:18:05  sandomir
+ * minor changes due to NStr namespace to contain string utility functions
+ *
+ * Revision 1.23  1999/01/14 21:25:20  vasilche
+ * Changed CPageList to work via form image input elements.
+ *
+ * Revision 1.22  1999/01/11 22:05:52  vasilche
+ * Fixed CHTML_font size.
+ * Added CHTML_image input element.
+ *
+ * Revision 1.21  1999/01/11 15:13:35  vasilche
+ * Fixed CHTML_font size.
+ * CHTMLHelper extracted to separate file.
+ *
+ * Revision 1.20  1999/01/07 16:41:56  vasilche
+ * CHTMLHelper moved to separate file.
+ * TagNames of CHTML classes ara available via s_GetTagName() static
+ * method.
+ * Input tag types ara available via s_GetInputType() static method.
+ * Initial selected database added to CQueryBox.
+ * Background colors added to CPagerBax & CSmallPagerBox.
+ *
+ * Revision 1.19  1999/01/05 20:23:29  vasilche
+ * Fixed HTMLEncode.
+ *
+ * Revision 1.18  1999/01/04 20:06:14  vasilche
+ * Redesigned CHTML_table.
+ * Added selection support to HTML forms (via hidden values).
+ *
+ * Revision 1.16  1998/12/28 21:48:16  vasilche
+ * Made Lewis's 'tool' compilable
+ *
+ * Revision 1.15  1998/12/28 16:48:09  vasilche
+ * Removed creation of QueryBox in CHTMLPage::CreateView()
+ * CQueryBox extends from CHTML_form
+ * CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+ *
+ * Revision 1.14  1998/12/24 16:15:41  vasilche
+ * Added CHTMLComment class.
+ * Added TagMappers from static functions.
+ *
+ * Revision 1.13  1998/12/23 21:51:44  vasilche
+ * Added missing constructors to checkbox.
+ *
+ * Revision 1.12  1998/12/23 21:21:03  vasilche
+ * Added more HTML tags (almost all).
+ * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+ *
+ * Revision 1.11  1998/12/23 14:28:10  vasilche
+ * Most of closed HTML tags made via template.
+ *
+ * Revision 1.10  1998/12/21 22:25:03  vasilche
+ * A lot of cleaning.
+ *
+ * Revision 1.9  1998/12/10 19:21:51  lewisg
+ * correct error handling in InsertInTable
+ *
+ * Revision 1.8  1998/12/10 00:17:27  lewisg
+ * fix index in InsertInTable
+ *
+ * Revision 1.7  1998/12/09 23:00:54  lewisg
+ * use new cgiapp class
+ *
+ * Revision 1.6  1998/12/08 00:33:43  lewisg
+ * cleanup
+ *
+ * Revision 1.5  1998/12/03 22:48:00  lewisg
+ * added HTMLEncode() and CHTML_img
+ *
+ * Revision 1.4  1998/12/01 19:10:38  lewisg
+ * uses CCgiApplication and new page factory
+ *
+ * Revision 1.3  1998/11/23 23:42:17  lewisg
+ * *** empty log message ***
+ *
+ * Revision 1.2  1998/10/29 16:13:06  lewisg
+ * version 2
+ *
+ * Revision 1.1  1998/10/06 20:36:05  lewisg
+ * new html lib and test program
+ *
+ * ===========================================================================
+ */
