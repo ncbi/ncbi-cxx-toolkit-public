@@ -540,7 +540,7 @@ if test "$with_runpath" != "no" ; then
       CONF_f_runpath="-R"
       ;;
     linux*:GCC )
-      CONF_f_runpath="-Xlinker -rpath "
+      CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
     irix*:* | linux*:KCC | linux:ICC )
       CONF_f_runpath="-rpath "
@@ -1158,12 +1158,22 @@ AC_MSG_RESULT([$RPCSVC_LIBS])
 AC_MSG_CHECKING(if SYBASE libraries are available)
 if test "$with_sybase" != "no" ; then
    SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
-   SYBASE_INCLUDE="-I$SYBASE_PATH/include"
-   SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
-   SYBASE_DLLLIST="-ltli"
+   SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
+   SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include -I$SYBASE_PATH/include"
+   case "$host_os" in
+     linux* )
+       SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl -ldl"
+       SYBASE_DLLLIST=""
+       sybase_r="no"
+       ;;
+     solaris* | * )
+       SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
+       SYBASE_DLLLIST="-ltli"
+       ;;
+   esac
    SYBASE_DBLIBS="-lsybdb"
    changequote(<<, >>)dnl
-   if test "$with_mt" = "yes" ; then
+   if test "$with_mt" = "yes"  -a  "$sybase_r" != "no" ; then
       SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
       SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
    fi
@@ -1174,9 +1184,9 @@ if test "$with_sybase" != "no" ; then
       SYBASE_DBLIBS="${SYBASE_DBLIBS}${bit64_sfx}"
    fi
    changequote([, ])dnl
-   SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} -R/export/home/sybase/clients/current/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
+   SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
    SYBASE_DLLS="$SYBASE_DLLLIST"
-   SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} -R/export/home/sybase/clients/current/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} ${SYBASE_DBLIBS}"
+   SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} ${SYBASE_DBLIBS}"
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
@@ -1193,10 +1203,14 @@ if test "$with_sybase" = "no" ; then
    SYBASE_DLLS=
    SYBASE_DBLIBS=
    WithoutPackages="$WithoutPackages Sybase"
+   AC_MSG_RESULT([no])
 else
    WithPackages="$WithPackages Sybase"
+   AC_MSG_RESULT([$SYBASE_PATH])
+   if test "$with_mt" = "yes"  -a  "$sybase_r" = "no" ; then
+       AC_MSG_WARN(["Using non-reentrant Sybase libraries"])
+   fi
 fi
-AC_MSG_RESULT([$SYBASE_PATH])
 
 
 ## NCBI C Toolkit
