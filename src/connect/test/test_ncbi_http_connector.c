@@ -28,39 +28,12 @@
  * File Description:
  *   Standard test for the HTTP-based CONNECTOR
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2002/03/22 19:47:16  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.7  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.6  2001/01/11 16:42:50  lavr
- * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
- *
- * Revision 6.5  2001/01/08 23:48:51  lavr
- * REQ_METHOD "any" added to SConnNetInfo
- *
- * Revision 6.4  2000/11/15 17:29:52  vakatov
- * Fixed path to the test CGI application.
- *
- * Revision 6.3  2000/09/27 15:58:17  lavr
- * Registry entries adjusted
- *
- * Revision 6.2  2000/05/30 23:25:03  vakatov
- * Cosmetic fix for the C++ compilation
- *
- * Revision 6.1  2000/04/21 19:57:02  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_conntest.h"
+#include "../ncbi_ansi_ext.h"
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
-#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -96,11 +69,10 @@ static void s_REG_Get
         return;
     }
 
-#define X_GET_VALUE(x_name, x_value) \
-  if (strcmp(name, x_name) == 0) { \
-      strncpy(value, x_value, value_size); \
-      value[value_size - 1] = '\0'; \
-      return; \
+#define X_GET_VALUE(x_name, x_value)            \
+  if (strcmp(name, x_name) == 0) {              \
+      strncpy0(value, x_value, value_size - 1); \
+      return;                                   \
   }
 
     X_GET_VALUE(REG_CONN_HOST,           TEST_HOST);
@@ -166,3 +138,37 @@ int main(void)
     CORE_SetLOG(0);
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.9  2002/10/28 15:47:12  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
+ * Revision 6.8  2002/03/22 19:47:16  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.7  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.6  2001/01/11 16:42:50  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
+ * Revision 6.5  2001/01/08 23:48:51  lavr
+ * REQ_METHOD "any" added to SConnNetInfo
+ *
+ * Revision 6.4  2000/11/15 17:29:52  vakatov
+ * Fixed path to the test CGI application.
+ *
+ * Revision 6.3  2000/09/27 15:58:17  lavr
+ * Registry entries adjusted
+ *
+ * Revision 6.2  2000/05/30 23:25:03  vakatov
+ * Cosmetic fix for the C++ compilation
+ *
+ * Revision 6.1  2000/04/21 19:57:02  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

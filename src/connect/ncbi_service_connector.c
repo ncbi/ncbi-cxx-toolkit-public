@@ -30,10 +30,10 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
-#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_service_connector.h>
@@ -41,7 +41,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 typedef struct SServiceConnectorTag {
@@ -235,15 +234,11 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
 
     net_info->req_method = req_method;
 
-    if (cgi_name) {
-        strncpy(net_info->path, cgi_name, sizeof(net_info->path) - 1);
-        net_info->path[sizeof(net_info->path) - 1] = 0;
-    }
+    if (cgi_name)
+        strncpy0(net_info->path, cgi_name, sizeof(net_info->path) - 1);
 
-    if (cgi_args) {
-        strncpy(net_info->args, cgi_args, sizeof(net_info->args) - 1);
-        net_info->args[sizeof(net_info->args) - 1] = 0;
-    }
+    if (cgi_args)
+        strncpy0(net_info->args, cgi_args, sizeof(net_info->args) - 1);
 
     if (service) {
         ConnNetInfo_PrependArg(net_info, args, 0);
@@ -794,6 +789,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2002/10/28 15:44:00  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.45  2002/10/22 15:11:24  lavr
  * Zero connector's handle to crash if revisited
  *

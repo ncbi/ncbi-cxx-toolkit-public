@@ -33,11 +33,11 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
-#include <string.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,10 +55,8 @@ static void s_REG_Get(void* user_data,
         string result = static_cast<CNcbiRegistry*> (user_data)->
             Get(section, name);
 
-        if ( !result.empty() ) {
-            strncpy(value, result.c_str(), value_size - 1);
-            value[value_size - 1] = '\0';
-        }
+        if ( !result.empty() )
+            strncpy0(value, result.c_str(), value_size - 1);
     }
     STD_CATCH_ALL("s_REG_Get() failed");
 }
@@ -228,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/10/28 15:42:57  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.12  2002/10/21 18:31:31  lavr
  * Take advantage of eNewLine_Passthru in data dumping
  *

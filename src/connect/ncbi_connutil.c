@@ -31,15 +31,14 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 #define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
@@ -68,11 +67,8 @@ static const char* s_GetValue(const char* service, const char* param,
         /* First, environment search for 'service_CONN_param' */
         sprintf(key, "%s_" DEF_CONN_REG_SECTION "_%s", service, param);
         strupr(key);
-        if ((val = getenv(key)) != 0) {
-            strncpy(value, val, value_size);
-            value[value_size - 1] = '\0';
-            return value;
-        }
+        if ((val = getenv(key)) != 0)
+            return strncpy0(value, val, value_size - 1);
         /* Next, search for 'CONN_param' in '[service]' registry section */
         sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
         sec = key + strlen(key) + 1;
@@ -91,11 +87,8 @@ static const char* s_GetValue(const char* service, const char* param,
     }
 
     /* Environment search for 'CONN_param' */
-    if ((val = getenv(key)) != 0) {
-        strncpy(value, val, value_size);
-        value[value_size - 1] = '\0';
-        return value;
-    }
+    if ((val = getenv(key)) != 0)
+        return strncpy0(value, val, value_size - 1);
 
     /* Last resort: Search for 'param' in default registry section */
     strcpy(key, param);
@@ -263,8 +256,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     }}
 
     assert(sizeof(info->host) >= sizeof(info->http_proxy_host));
-    strncpy(info->host, info->http_proxy_host, sizeof(info->host));
-    info->host[sizeof(info->host) - 1] = '\0';
+    strncpy0(info->host, info->http_proxy_host, sizeof(info->host) - 1);
     info->port = info->http_proxy_port;
     info->http_proxy_adjusted = 1/*true*/;
     return 1/*true*/;
@@ -319,10 +311,9 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         s = url;
 
     /* arguments */
-    if ((a = strchr(s, '?')) != 0) {
-        strncpy(info->args, a + 1, sizeof(info->args));
-        info->args[sizeof(info->args) - 1] = '\0';
-    } else
+    if ((a = strchr(s, '?')) != 0)
+        strncpy0(info->args, a + 1, sizeof(info->args) - 1);
+    else
         a = s + strlen(s);
 
     /* path (NB: can be relative) */
@@ -1248,8 +1239,7 @@ extern char* MIME_ComposeContentTypeEx
 
     assert(strlen(x_buf) < sizeof(x_buf));
     assert(strlen(x_buf) < buflen);
-    strncpy(buf, x_buf, buflen);
-    buf[buflen - 1] = '\0';
+    strncpy0(buf, x_buf, buflen - 1);
     return buf;
 }
 
@@ -1387,8 +1377,7 @@ extern const char* StringToHostPort(const char*     str,
     if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
         return str;
     if (alen) {
-        strncpy(abuf, str, alen);
-        abuf[alen] = '\0';
+        strncpy0(abuf, str, alen);
         if (!(h = SOCK_gethostbyname(abuf)))
             return str;
     } else
@@ -1431,6 +1420,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2002/10/28 15:42:38  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.39  2002/10/21 18:30:59  lavr
  * +ConnNetInfo_AppendArg()
  * +ConnNetInfo_PrependArg()

@@ -30,20 +30,12 @@
  *
  */
 
-#include "ncbi_config.h"
-
-/* OS must be specified in the command-line ("-D....") or in the conf. header
- */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
-#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
-#endif
-
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <string.h>
 #ifdef NCBI_OS_UNIX
 #include <pwd.h>
 #include <unistd.h>
@@ -153,8 +145,7 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
             break;
         }
         assert(message);
-        strncpy(buffer, message, buffer_len - 1);
-        buffer[buffer_len - 1] = '\0';
+        strncpy0(buffer, message, buffer_len - 1);
     } else if (c == code || (alt_code && c == alt_code))
         return 1/*success*/;
     return 0/*failure*/;
@@ -196,11 +187,10 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
     /* Temporary solution for login name */
     const char* login_name = "anonymous";
 #endif
-    strncpy(buf, login_name, buf_size - 1);
+    strncpy0(buf, login_name, buf_size - 1);
 #ifdef NCBI_OS_UNIX
     CORE_UNLOCK;
 #endif
-    buf[buf_size - 1] = '\0';
     buf_len = strlen(buf);
     hostname_len = buf_size - buf_len;
     if (hostname_len-- > 1) {
@@ -450,6 +440,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/10/28 15:43:29  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.15  2002/09/24 15:05:45  lavr
  * Log moved to end
  *

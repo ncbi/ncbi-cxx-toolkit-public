@@ -30,9 +30,8 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include <connect/ncbi_core.h>
-
-#include <string.h>
 #include <stdlib.h>
 
 
@@ -417,15 +416,13 @@ extern char* REG_Get
  size_t      value_size,
  const char* def_value)
 {
-    if (value_size < 1  ||  !value)
+    if (value_size <= 0  ||  !value)
         return 0;
 
-    if ( def_value ) {
-        strncpy(value, def_value, value_size - 1);
-        value[value_size - 1] = '\0';
-    } else {
+    if ( def_value )
+        strncpy0(value, def_value, value_size - 1);
+    else
         *value = '\0';
-    }
 
     if ( !rg )
         return value;
@@ -464,6 +461,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/10/28 15:42:48  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.9  2002/08/13 19:30:13  lavr
  * Verbal representation of eIO_Interrupt; log moved to end
  *

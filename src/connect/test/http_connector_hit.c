@@ -30,9 +30,9 @@
  *
  */
 
+#include "../ncbi_ansi_ext.h"
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
-#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -70,11 +70,10 @@ static void s_REG_Get
         return;
     }
 
-#define X_GET_VALUE(x_name, x_value) \
-    if (strcmp(name, x_name) == 0) { \
-                                         strncpy(value, x_value, value_size); \
-    value[value_size - 1] = '\0'; \
-    return; \
+#define X_GET_VALUE(x_name, x_value)              \
+    if (strcmp(name, x_name) == 0) {              \
+        strncpy0(value, x_value, value_size - 1); \
+        return;                                   \
     }
 
     X_GET_VALUE(REG_CONN_HOST,           s_Args.host);
@@ -198,6 +197,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/10/28 15:47:12  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.8  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *

@@ -32,7 +32,7 @@
  *
  */
 
-
+#include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -102,17 +102,10 @@ static CONNECTOR s_HttpConnectorBuilder(const char*    host,
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     if (!net_info)
         return 0;
-    strncpy(net_info->host, host, sizeof(net_info->host) - 1);
-    net_info->host[sizeof(net_info->host) - 1] = '\0';
+    strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
     net_info->port = port;
-    strncpy(net_info->path, path, sizeof(net_info->path) - 1);
-    net_info->path[sizeof(net_info->path) - 1] = '\0';
-    if (args) {
-        strncpy(net_info->args, args, sizeof(net_info->args) - 1);
-        net_info->args[sizeof(net_info->args) - 1] = '\0';
-    } else {
-        *net_info->args = '\0';
-    }
+    strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
+    strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
     CONNECTOR c = HTTP_CreateConnector(net_info, user_hdr, flags);
     ConnNetInfo_Destroy(net_info);
     return c;
@@ -186,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/10/28 15:42:18  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.14  2002/06/06 19:02:32  lavr
  * Some housekeeping: log moved to the end
  *

@@ -116,6 +116,7 @@ extern void bzero(char* target, long numbytes);
 
 /* NCBI core headers
  */
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket.h>
@@ -1983,11 +1984,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 # endif
             return name;
         }
-        strncpy(name, he->h_name, namelen - 1);
+        strncpy0(name, he->h_name, namelen - 1);
 # if !defined(HAVE_GETHOSTBYADDR_R)
         CORE_UNLOCK;
 # endif
-        name[namelen - 1] = '\0';
         return name;
 #endif /* HAVE_GETNAMEINFO */
     }
@@ -1999,6 +1999,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.66  2002/10/28 15:45:58  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.65  2002/10/11 19:50:55  lavr
  * Few renames of internal functions (s_NCBI_Recv, s_Recv, etc)
  * Interface change: SOCK_gethostbyaddr() returns dotted IP address

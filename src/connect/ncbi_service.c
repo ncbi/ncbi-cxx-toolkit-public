@@ -30,15 +30,14 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include "ncbi_servicep_lbsmd.h"
 #include "ncbi_servicep_dispd.h"
-#include <connect/ncbi_ansi_ext.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
 #define SERV_SERVICE_NAME "SERVICE_NAME"
@@ -70,10 +69,8 @@ char* SERV_ServiceName(const char* service)
         CORE_REG_GET(service, key, srv, sizeof(srv), 0);
         if (!*srv)
             return strdup(service);
-    } else {
-        strncpy(srv, p, sizeof(srv) - 1);
-        srv[sizeof(srv) - 1] = '\0';
-    }
+    } else
+        strncpy0(srv, p, sizeof(srv) - 1);
 
     /* No cycle detection in service name redefinition */
     return SERV_ServiceName(srv);
@@ -432,6 +429,9 @@ char* SERV_Print(SERV_ITER iter)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2002/10/28 15:43:49  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.39  2002/10/11 19:48:10  lavr
  * +SERV_GetConfig()
  * const dropped in return value of SERV_ServiceName()

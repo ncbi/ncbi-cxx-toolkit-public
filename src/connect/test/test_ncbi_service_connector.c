@@ -30,10 +30,10 @@
  *
  */
 
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
 #include <connect/ncbi_service_connector.h>
 #include <stdlib.h>
-#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -56,8 +56,7 @@ int main(int argc, const char* argv[])
     info = ConnNetInfo_Create(service);
     strcpy(info->host, host);
     if (argc > 3) {
-        strncpy(obuf, argv[3], sizeof(obuf) - 2);
-        obuf[sizeof(obuf) - 2] = 0;
+        strncpy0(obuf, argv[3], sizeof(obuf) - 2);
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = 0;
     }
@@ -134,6 +133,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2002/10/28 15:47:12  lavr
+ * Use "ncbi_ansi_ext.h" privately and use strncpy0()
+ *
  * Revision 6.21  2002/09/24 15:10:09  lavr
  * Fix test not to dereference NULL pointer resulting from failed connection
  *
