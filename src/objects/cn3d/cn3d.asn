@@ -1,4 +1,4 @@
---$Revision: 1.11 $
+--$Revision: 1.12 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -63,6 +63,7 @@ Cn3d-color-scheme ::= ENUMERATED {  -- available color schemes (not all
     weighted-variety (10),
     information-content (11),
     fit (12),
+    block-fit (17)
     -- other schemes
     temperature (13),
     hydrophobicity (14),
