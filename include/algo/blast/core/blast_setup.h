@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.2  2003/04/02 17:21:23  dondosha
+* Changed functions parameters to accommodate calculation of ungapped cutoff score
+*
 * Revision 1.1  2003/03/31 18:18:31  camacho
 * Moved from parent directory
 *
@@ -163,7 +166,6 @@ BlastSetUp_GetSequence(SeqLocPtr slp, Boolean use_blastna, Boolean concatenate,
  * @param sbpp Contains scoring information. [out]
  * @param lookup_wrap Lookup table [out]
  * @param query_info The query information block [out]
- * @param word_parameters Parsed word_options. [out]
  * @param hit_parameters Parsed hit saving options [out]
  * @param blast_message error or warning [out] 
  */
@@ -187,7 +189,6 @@ SeqLocPtr *filter_slp_out,
 BLAST_ExtendWordPtr *ewp,
 BLAST_ScoreBlkPtr *sbpp,                
 LookupTableWrapPtr *lookup_wrap,
-BlastInitialWordParametersPtr *word_parameters,
 BlastHitSavingParametersPtr *hit_parameters,  
 Blast_MessagePtr *blast_message              
 );
