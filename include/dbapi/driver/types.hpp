@@ -408,24 +408,26 @@ protected:
     char*  m_Val;
 };
 
+#define K8_1 8191
+
 class NCBI_DBAPIDRIVER_EXPORT CDB_LongChar : public CDB_Object
 {
 public:
 
-    CDB_LongChar(size_t s = 1) : CDB_Object(true) {
+    CDB_LongChar(size_t s = K8_1) : CDB_Object(true) {
         m_Size = (s < 1) ? 1 : s;
         m_Val  = new char[m_Size + 1];
     }
 
     CDB_LongChar(size_t s, const string& v) :  CDB_Object(false) {
-        m_Size = (s < 1) ? 1 : s;
+        m_Size = (s < 1) ? K8_1 : s;
         m_Val = new char[m_Size + 1];
         size_t l = v.copy(m_Val, m_Size);
         m_Val[l] = '\0';
     }
 
     CDB_LongChar(size_t len, const char* str) :  CDB_Object(str == 0) {
-        m_Size = (len < 1) ? 1 : len;
+        m_Size = (len < 1) ? K8_1 : len;
         m_Val = new char[m_Size + 1];
 
 		if(str) strncpy(m_Val, str, m_Size);
@@ -604,14 +606,14 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_LongBinary : public CDB_Object
 {
 public:
 
-    CDB_LongBinary(size_t s = 1) : CDB_Object(true) {
+    CDB_LongBinary(size_t s = K8_1) : CDB_Object(true) {
         m_Size = (s < 1) ? 1 : s;
         m_Val = new unsigned char[m_Size];
 		m_DataSize= 0;
     }
 
     CDB_LongBinary(size_t s, const void* v, size_t v_size) {
-        m_Size = (s == 0) ? 1 : s;
+        m_Size = (s == 0) ? K8_1 : s;
         m_Val  = new unsigned char[m_Size];
         SetValue(v, v_size);
     }
@@ -1040,6 +1042,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/05/05 15:56:15  soussov
+ * new default size 8K-1 for CDB_LongChar, CDB_LongBinary
+ *
  * Revision 1.15  2003/04/29 21:12:29  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *
