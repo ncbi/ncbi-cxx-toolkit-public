@@ -30,8 +30,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/03/24 00:50:06  lavr
+ * Log typo correction
+ *
  * Revision 6.8  2001/03/24 00:35:21  lavr
- * Two more tests added: random sized readback test, and binary (-1) read test
+ * Two more tests added: randomly sized read test, and binary (-1) read test
  *
  * Revision 6.7  2001/03/22 19:19:17  lavr
  * Buffer size extended; random number generator seeded with current time
@@ -205,7 +208,7 @@ int main(void)
     LOG_POST("Test 3 of 3: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
-        buf1[i] = 255/*rand()%255*/;
+        buf1[i] = 255/*rand()%256*/;
 
     ios.write(buf1, kBufferSize);
     
