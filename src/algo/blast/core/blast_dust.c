@@ -53,9 +53,9 @@ typedef struct localcurrents {
 
 /* local functions */
 
-static Int4 wo PROTO ((Int4, Uint1Ptr, Int4, DCURLOC PNTR, UcharPtr seq));
-static void wo1 PROTO ((Int4, UcharPtr, Int4, DCURLOC PNTR));
-static Int4 dust_triplet_find PROTO ((Uint1Ptr, Int4, Int4, UcharPtr));
+static Int4 wo (Int4, Uint1Ptr, Int4, DCURLOC PNTR, Uint1Ptr seq);
+static void wo1 (Int4, Uint1Ptr, Int4, DCURLOC PNTR);
+static Int4 dust_triplet_find (Uint1Ptr, Int4, Int4, Uint1Ptr);
 
 /* entry point for dusting */
 
@@ -66,7 +66,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
    Int4    len;
    Int4	i;
    Int4 retlen;
-   UcharPtr seq;
+   Uint1Ptr seq;
    DREGION	PNTR regold = NULL;
    DCURLOC	cloc;
    Int4	nreg, windowhalf;
@@ -79,7 +79,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
    windowhalf = windowsize / 2;
    
    nreg = 0;
-   seq = MemNew (windowsize);			/* triplets */
+   seq = (Uint1Ptr) MemNew (windowsize);			/* triplets */
    if (!seq) {
       return -1;
    }
@@ -115,7 +115,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
                Interactive means wrapping stuff up in a graphics shell
             */
             regold = reg;
-            reg = MemNew (sizeof (DREGION));
+            reg = (DREGION PNTR) MemNew (sizeof (DREGION));
             if (!reg) {
                MemFree(seq);
                return -1;
@@ -134,7 +134,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
 }
 
 static Int4 wo (Int4 len, Uint1Ptr seq_start, Int4 iseg, DCURLOC PNTR cloc, 
-                UcharPtr seq)
+                Uint1Ptr seq)
 {
 	Int4 i, flen;
 
@@ -156,7 +156,7 @@ static Int4 wo (Int4 len, Uint1Ptr seq_start, Int4 iseg, DCURLOC PNTR cloc,
 	return flen;
 }
 
-static void wo1 (Int4 len, UcharPtr seq, Int4 iwo, DCURLOC PNTR cloc)
+static void wo1 (Int4 len, Uint1Ptr seq, Int4 iwo, DCURLOC PNTR cloc)
 {
    Uint4 sum;
 	Int4 loop;
@@ -291,7 +291,7 @@ Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
    Int2 status = 0;
 
         /* place for dusted regions */
-	regold = reg = MemNew (sizeof (DREGION));
+	regold = reg = (DREGION PNTR) MemNew (sizeof (DREGION));
 	if (!reg)
            return -1;
 
