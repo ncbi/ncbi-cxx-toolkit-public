@@ -458,15 +458,15 @@ Parse::Parse(const SeqScores& ss) : seqscr(ss)
 template<class T> void Out(T t, int w, ostream& to = cout)
 {
     to.width(w);
-    to.setf(ios_base::right,ios_base::adjustfield);
+    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
     to << t;
 }
 
 void Out(double t, int w, ostream& to = cout, int prec = 1)
 {
     to.width(w);
-    to.setf(ios_base::right,ios_base::adjustfield);
-    to.setf(ios_base::fixed,ios_base::floatfield);
+    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
+    to.setf(IOS_BASE::fixed,IOS_BASE::floatfield);
     to.precision(prec);
 
     if(t > 1000000000) to << "+Inf";
@@ -1184,7 +1184,7 @@ void LogicalCheck(const HMM_State& st, const SeqScores& ss)
 
         if(out && !exons.empty())
         {
-            IVec seq;
+            CVec seq;
 
             if(strand == Plus)
             {
@@ -1230,6 +1230,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2004/07/28 17:28:53  ucko
+ * Use macros from ncbistre.hpp for portability.
+ * Use CVec rather than IVec in LogicalCheck to deal with WorkShop,
+ * which doesn't have full templatized insert.
+ *
  * Revision 1.4  2004/07/28 12:33:19  dicuccio
  * Sync with Sasha's working tree
  *
