@@ -244,22 +244,7 @@ static void s_Destroy
 
 extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock)
 {
-    CONNECTOR         ccc = (SConnector*) malloc(sizeof(SConnector));
-    SMemoryConnector* xxx = (SMemoryConnector*) malloc(sizeof(*xxx));
-
-    /* initialize internal data structures */
-    xxx->buf     = 0;
-    xxx->lock    = lock;
-    xxx->own_buf = 1/*true*/;
-
-    /* initialize connector data */
-    ccc->handle  = xxx;
-    ccc->next    = 0;
-    ccc->meta    = 0;
-    ccc->setup   = s_Setup;
-    ccc->destroy = s_Destroy;
-
-    return ccc;
+    return MEMORY_CreateConnectorEx(0, lock);
 }
 
 
@@ -287,6 +272,9 @@ extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf, MT_LOCK lock)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2004/10/27 19:16:33  lavr
+ * Reuse MEMORY_CreateConnectorEx() in MEMORY_CreateConnector()
+ *
  * Revision 6.6  2004/10/27 18:44:56  lavr
  * +MEMORY_CreateConnectorEx() and not-owned buffer management
  *
