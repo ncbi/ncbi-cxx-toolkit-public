@@ -25,6 +25,9 @@
  * Authors:  Anton Butanayev, Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/07/23 15:51:46  ivanov
+ * Changed test for work with DB-time formats
+ *
  * Revision 6.8  2001/07/06 15:08:36  ivanov
  * Added tests for DataBase-time's
  *
@@ -216,6 +219,13 @@ static void s_TestMisc(void)
     cout << "Time from DBU        = " << t10.AsString() << endl;
     t10.SetTimeDBI(dbi);
     cout << "Time from DBI        = " << t10.AsString() << endl;
+
+    CTime::SetFormat("M/D/Y h:m:s");
+    dbi.days = 37093;
+    dbi.time = 12301381;
+    t10.SetTimeDBI(dbi);
+    cout << "Time from DBI        = " << t10.AsString() << endl;
+    _ASSERT(t10.AsString() == "07/23/2001 11:23:24");
 
     cout << endl;
 }
