@@ -4,49 +4,31 @@
 
 
 <div align="Center">
-<H1>Setup the framework for the C++ <i>Object Manager</i> learning task</H1>
+<h1>Setup the framework for the C++ <i>Object Manager</i> learning task</h1>
 </div>
 
 <h2>Starting point</h2>
 <p>
-To help jump-start your first project utilizing the new C++
-<var>Object Manager </var> in the C++ Toolkit framework, we have created
-a sample project (makefile and a source file), which could be used
-as a starting point. In order to do so, you have to create a folder for your
-new project, generate a makefile, copy sample source and compile it:
+To jump-start your first project utilizing the new C++
+<var>Object Manager </var> in the C++ Toolkit framework on a UNIX platform,
+we suggest using <tt>new_project.sh</tt> shell script, which will create
+a sample application and a makefile:
 </p>
 
 <ol>
 <li>
-  Create a new project called <i>app</i> in the folder <i>task</i>
-  using <tt>new_project.sh</tt> shell script:
+  Create a new project called <i>task</i> in the folder <i>task</i>
+  using <tt>new_project.sh</tt> shell script (this will create the folder, the source file and the makefile):
   <pre>
-  $NCBI/c++/scripts/new_project.sh <i>task</i> <i>app</i>
-  cd <i>task</i>
-  cp -p $NCBI/c++/src/internal/objmgr_lab/sample/task.cpp .
-  </pre>
-</li>
-<li>
-  In your model makefile <tt>Makefile.<i>task_app</i></tt>, replace the whole
-  <tt>settings</tt> section, exactly this way:
-  <pre>
-  #############################################################################
-  ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
-  APP = omtask1
-  SRC = task
-  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
-        xser xutil xconnect xncbi
-
-  LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
-  # CPPFLAGS =  $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
-  ####################################################################
+  $NCBI/c++/scripts/new_project.sh <i>task</i> app/objmgr
   </pre>
 </li>
 <li>
   Build the sample project and run the application:
   <pre>
-  make -f Makefile.<i>task_app</i>
-  ./omtask1 -gi 333
+  cd <i>task</i>
+  make -f Makefile.<i>task</i>_app
+  ./<i>task</i> -gi 333
   </pre>
 The output should look like this:
 <pre>
@@ -91,9 +73,9 @@ In order to do this:
   Edit the makefile for the CGI application (<i>Makefile.task_cgiapp</i>):
   change application name, name of the source file,  add <tt>cgi</tt> libraries:
   <pre>
-  APP = <b>omtask1.cgi</b>
+  APP = <b>task.cgi</b>
   SRC = <b>task_cgi</b>
-  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+  LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       xser <b>xhtml xcgi</b> xutil xconnect xncbi
   LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) <b>$(FASTCGI_LIBS)</b> $(NETWORK_LIBS) $(ORIG_LIBS)
   </pre>
@@ -122,7 +104,7 @@ Edit the CGI project makefile - <i>Makefile.task_cgiapp</i>:
   <li>
 Replace <tt>xcgi</tt> library by <tt>xfcgi</tt> one in the <tt>LIB=...</tt> section.
   <pre>
-  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+  LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       xser xhtml <b>xfcgi</b> xutil xconnect xncbi
   </pre>
   </li>
