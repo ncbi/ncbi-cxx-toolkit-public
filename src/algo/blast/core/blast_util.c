@@ -48,9 +48,8 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
       *seq_blk = MemNew(sizeof(BLAST_SequenceBlk));
    }
 
-   (*seq_blk)->sequence_allocated = buffer_allocated;
-   
    if (buffer_allocated) {
+      (*seq_blk)->sequence_start_allocated = TRUE;
       (*seq_blk)->sequence_start = buffer;
       /* The first byte is a sentinel byte. */
       (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
@@ -93,12 +92,11 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
    if (!seq_blk)
       return NULL;
 
-   if (seq_blk->sequence_allocated) {
-      if (seq_blk->sequence_start)
-         MemFree(seq_blk->sequence_start);
-      else
-         MemFree(seq_blk->sequence);
-   }
+   if (seq_blk->sequence_allocated) 
+      seq_blk->sequence = MemFree(seq_blk->sequence);
+   if (seq_blk->sequence_start_allocated)
+      seq_blk->sequence_start = MemFree(seq_blk->sequence_start);
+
    return 0;
 }
 
@@ -165,14 +163,6 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
 	}
 
 	return 0;
-}
-
-
-BLAST_SequenceBlkPtr BLAST_SequenceBlkDestruct(BLAST_SequenceBlkPtr seq_blk)
-{
-   if (seq_blk->sequence_allocated)
-      MemFree(seq_blk->sequence_start);
-   return (BLAST_SequenceBlkPtr) MemFree(seq_blk);
 }
 
 Uint1Ptr LIBCALL
