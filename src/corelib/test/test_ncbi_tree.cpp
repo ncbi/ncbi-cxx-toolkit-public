@@ -136,6 +136,35 @@ static void s_TEST_Tree()
 }
 
 
+static void s_TEST_IdTree()
+{
+    typedef CTreePairNWay<int, int> TTree;
+
+    TTree* tr = new TTree(0, 0);
+    
+    tr->AddNode(1, 10);
+    TTree* tr2 = tr->AddNode(2, 20);
+    tr2->AddNode(20, 21);    
+    tr2->AddNode(22, 22);
+
+    list<int> npath;
+    npath.push_back(2);
+    npath.push_back(22);
+
+    TTree::TConstPairTreeNodeList res;
+    tr->FindNodes(npath, &res);
+    assert(!res.empty());
+    TTree::TConstPairTreeNodeList::const_iterator it = res.begin();
+    const TTree* ftr = *it;
+
+    cout << ftr->GetValue() << endl; 
+
+    assert(ftr->GetValue() == 22);
+
+
+    delete tr;
+}
+
 int CTestApplication::Run(void)
 {
 
@@ -147,8 +176,7 @@ int CTestApplication::Run(void)
     //        CExceptionReporter::SetDefault(0);
     
     SetupDiag(eDS_ToStdout);
-    /*
-      
+    /*      
     CExceptionReporter::EnableDefault(true);
     cerr << endl;
     NCBI_REPORT_EXCEPTION(
@@ -160,7 +188,9 @@ int CTestApplication::Run(void)
     "****** default reporter (diag) ******",e);
     */
     
-    s_TEST_Tree();    
+    s_TEST_Tree();
+
+    s_TEST_IdTree();
 
     return 0;
 }
@@ -180,6 +210,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/01/12 15:02:48  kuznets
+ * + test for CTreePairNWay
+ *
  * Revision 1.1  2004/01/09 19:00:40  kuznets
  * Added test for tree
  *
