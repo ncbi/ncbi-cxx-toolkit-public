@@ -10,7 +10,7 @@ tblastx_options \
 tblastn_options \
 blast_nucl_options \
 disc_nucl_options \
-blast4_options
+remote_blast
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
