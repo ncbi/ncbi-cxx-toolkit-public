@@ -142,7 +142,7 @@ inline CNcbiOstream* CBlastFormatOptions::GetOstream() const
 
 int
 BLAST_FormatResults(TSeqAlignVector &seqalign, 
-    EProgram program, TSeqLocVector &query,
+    EProgram program, const TSeqLocVector &query,
     TSeqLocInfoVector& maskv, const CBlastFormatOptions* format_options, 
     bool is_ooframe);
 

@@ -126,7 +126,7 @@ SetDisplayParameters(CDisplaySeqalign &display,
 
 int
 BLAST_FormatResults(TSeqAlignVector &seqalignv, 
-    EProgram program, TSeqLocVector &query,
+    EProgram program, const TSeqLocVector &query,
     TSeqLocInfoVector &maskv, const CBlastFormatOptions* format_options, 
     bool is_ooframe)
 {
