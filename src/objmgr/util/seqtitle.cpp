@@ -701,7 +701,7 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
             result = gene_name + " gene product";
         }
     } else {
-        return kEmptyStr;
+        result = "unnamed protein product";
     }
 
     {{ // Find organism name 
@@ -813,6 +813,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2002/12/02 16:22:14  ucko
+* s_TitleFromProtein: fall back to "unnamed protein product" if nothing
+* better is present.
+*
 * Revision 1.10  2002/11/18 19:48:44  grichenk
 * Removed "const" from datatool-generated setters
 *
