@@ -38,6 +38,7 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
@@ -498,57 +499,28 @@ Int2 Blast_FillRPSInfo( BlastRPSInfo **ppinfo, CMemoryFile **rps_mmap,
                  "RPSInfo allocation failed");
    }
 
-   /* construct the full path to the DB file. Look in
-      the local directory, then .ncbirc */
-
-   CFile LUTfile(dbname + ".loo");
-
-   if (!LUTfile.Exists()) {
-      CMetaRegistry::SEntry config = CMetaRegistry::Load("ncbi", 
-                                        CMetaRegistry::eName_RcOrIni);
-      string dbpath(config.registry->Get("BLAST", "BLASTDB"));
-      char c[2] = {0};
-      c[0] = CDirEntry::GetPathSeparator();
-      string full_dbname = dbpath + string(c) + dbname;
-
-      // Check if .loo file exists here; if not, check if there is an alias file.
-      // If alias file exists, find the new path, and look for .loo file there.
-      CFile lutfile(full_dbname + ".loo");
-      if (!lutfile.Exists()) {
-          CFile aliasfile(full_dbname + ".pal");
-          if (!aliasfile.Exists()) {
-              NCBI_THROW(CBlastException, eBadParameter, 
-                         "BLAST database does not exist");
-          } else {
-              /// @todo FIXME: Need to get a relative path from the alias file
-              /// At this time just try the "cdsearch" subdirectory
-              full_dbname = 
-                  dbpath + string(c) + "cdsearch" + string(c) + dbname;
-              CFile testLUTfile(full_dbname + ".loo");
-              if (!testLUTfile.Exists()) {
-                  NCBI_THROW(CBlastException, eBadParameter, 
-                             "RPS BLAST database does not exist");
-              }
-          }
-      }
-      dbname = full_dbname;
+   vector<string> dbpath;
+   CSeqDB::FindVolumePaths(dbname, 'p', dbpath);
+   if (dbpath.empty()) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "Cannot retrieve path to RPS database");
    }
 
-   CMemoryFile *lut_mmap = new CMemoryFile(dbname + ".loo");
+   CMemoryFile *lut_mmap = new CMemoryFile(dbpath[0] + ".loo");
    if (lut_mmap == NULL) {
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot map RPS BLAST lookup file");
    }
    info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
 
-   CMemoryFile *pssm_mmap = new CMemoryFile(dbname + ".rps");
+   CMemoryFile *pssm_mmap = new CMemoryFile(dbpath[0] + ".rps");
    if (pssm_mmap == NULL) {
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot map RPS BLAST profile file");
    }
    info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
 
-   CNcbiIfstream auxfile( (dbname + ".aux").c_str() );
+   CNcbiIfstream auxfile( (dbpath[0] + ".aux").c_str() );
    if (auxfile.bad() || auxfile.fail()) {
        NCBI_THROW(CBlastException, eBadParameter, 
                    "Cannot open RPS BLAST parameters file");
@@ -601,6 +573,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.65  2005/01/10 19:23:02  papadopo
+ * Use SeqDB to recover the path to RPS blast data files
+ *
  * Revision 1.64  2005/01/10 13:33:18  madden
  * Fix calls to ddc.Log for added/deleted options
  *
