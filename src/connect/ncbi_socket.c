@@ -702,7 +702,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
                            "[LSOCK::Accept]  Failed accept()");
             return eIO_Unknown;
         }
-        if ( !s_SetNonBlock(x_sock, 1/*true*/) ) {
+        if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
             CORE_LOG(eLOG_Error, "[LSOCK::Accept]  "
                      "Cannot set accepted socket to non-blocking mode");
             SOCK_CLOSE(x_sock);
@@ -1987,6 +1987,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2002/08/13 19:51:44  lavr
+ * Fix letter case in s_SetNonblock() call
+ *
  * Revision 6.57  2002/08/13 19:39:04  lavr
  * Set accepted socket in non-blocking mode after accept (not inherited)
  *
