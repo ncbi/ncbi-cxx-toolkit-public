@@ -207,6 +207,12 @@ static void s_TEST_IdTree()
     assert(node);
     cout << node->GetId() << " " << node->GetValue() << endl;
     assert(node->GetValue() == 110);
+
+
+    node = PairTreeBackTraceNode(*tr3, 1);
+    assert(node);
+    cout << node->GetId() << " " << node->GetValue() << endl;
+    assert(node->GetValue() == 10);
     }}
 
     {{
@@ -269,6 +275,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2004/01/14 17:03:28  kuznets
+ * + test case for PairTreeTraceNode
+ *
  * Revision 1.5  2004/01/14 15:26:24  kuznets
  * Added test case for PairTreeTraceNode
  *
