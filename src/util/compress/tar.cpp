@@ -216,7 +216,7 @@ void CTar::Extract(const string& dst_dir)
 //        m_Stream->seekg(aligned_size, IOS_BASE::cur);
 //???
         pos += aligned_size;
-        m_Stream->rdbuf()->PUBSEEKPOS(pos);
+//        m_Stream->rdbuf()->PUBSEEKPOS(pos);
     }
 }
 
@@ -367,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/02 18:01:13  ivanov
+ * Comment out unused seekpos()
+ *
  * Revision 1.1  2004/12/02 17:49:16  ivanov
  * Initial draft revision
  *
