@@ -54,6 +54,7 @@ CSplign::CSplign( void )
     m_strand = true;
     m_max_genomic_ext = 100000;
     m_nopolya = false;
+    m_model_id = 0;
 }
 
 
@@ -207,7 +208,8 @@ void CSplign::x_SetPattern(vector<CHit>* hits)
         m_pattern.clear();
         
         // copy from pattern0 to pattern so that each hit is not too large
-        const size_t max_len = 500;
+        const size_t max_len = kMax_UInt; // turn this off: sometimes we really
+                                          // need just the longest perf match
         vector<size_t> pattern;
         for(size_t i = 0; i < dim; i += 4) {
             size_t lenq = 1 + pattern0[i+1] - pattern0[i];
@@ -255,8 +257,8 @@ void CSplign::x_SetPattern(vector<CHit>* hits)
             if(max_seg_size) {
                 
                 const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
-                const size_t hlq4 = hitlen_q/4;
-                const size_t sh = hlq4 < 30? hlq4: 30;
+                const size_t hlq3 = hitlen_q/3;
+                const size_t sh = hlq3; // hlq3 < 30? hlq3: 30;
                 
                 size_t delta = sh > L1? sh - L1: 0;
                 size_t q0 = pattern[i] + L1 + delta;
@@ -295,15 +297,14 @@ void CSplign::x_SetPattern(vector<CHit>* hits)
 }
 
 
-void CSplign::Run( size_t* pmodel_id, vector<CHit>* phits )
+void CSplign::Run( vector<CHit>* phits )
 {
-    if(!pmodel_id || !phits) {
+    if(!phits) {
         NCBI_THROW( CAlgoAlignException,
                     eInternal,
                     "Unexpected NULL pointers" );
     }
 
-    size_t& model_id = *pmodel_id;
     vector<CHit>& hits = *phits;
   
     if(m_sa.IsNull()) {
@@ -337,7 +338,8 @@ void CSplign::Run( size_t* pmodel_id, vector<CHit>* phits )
     const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
     
     // iterate through compartments
-    CCompartmentAccessor comps (hits.begin(), hits.end(), comp_penalty_bps, min_coverage);
+    CCompartmentAccessor comps (hits.begin(), hits.end(),
+                                comp_penalty_bps, min_coverage);
     vector<CHit> comp_hits;
 
     size_t smin = 0, smax = kMax_UInt;
@@ -396,7 +398,7 @@ void CSplign::Run( size_t* pmodel_id, vector<CHit>* phits )
      
       try {
         SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
-        ac.m_id = ++model_id;
+        ac.m_id = ++m_model_id;
         ac.m_query = query;
         ac.m_subj = subj;
         ac.m_segments = m_segments;
@@ -1144,6 +1146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/26 15:38:45  kapustin
+ * Add model_id as a CSplign member
+ *
  * Revision 1.5  2004/04/23 18:43:47  ucko
  * <cmath> -> <math.h>, since some older compilers (MIPSpro) lack the wrappers.
  *

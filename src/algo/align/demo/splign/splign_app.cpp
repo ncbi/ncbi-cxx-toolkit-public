@@ -317,6 +317,7 @@ int CSplignApp::Run()
   CSplignFormatter formatter (splign);
 
   size_t model_id = 0;
+  splign.SetStartModelId(model_id);
 
   while(x_GetNextPair(ifs_hits, &hits) ) {
 
@@ -327,7 +328,7 @@ int CSplignApp::Run()
     const string query (hits[0].m_Query);
     const string subj (hits[0].m_Subj);
 
-    splign.Run(&model_id, &hits);
+    splign.Run(&hits);
 
     cout << formatter.AsText();
 
@@ -423,6 +424,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/04/26 15:38:46  kapustin
+ * Add model_id as a CSplign member
+ *
  * Revision 1.17  2004/04/23 14:33:32  kapustin
  * *** empty log message ***
  *
