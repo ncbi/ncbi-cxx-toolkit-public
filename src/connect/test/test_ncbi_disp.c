@@ -69,13 +69,12 @@ int main(int argc, const char* argv[])
                 CORE_LOGF(eLOG_Note, ("    Number of tasks: %d",
                                       HINFO_TaskCount(hinfo)));
                 if (HINFO_LoadAverage(hinfo, array)) {
-                    CORE_LOGF(eLOG_Note, ("    Load average: %f",
-                                          array[0]));
+                    CORE_LOGF(eLOG_Note, ("    Load averages: %f, %f (BLAST)",
+                                          array[0], array[1]));
                 } else
-                    CORE_LOG(eLOG_Note, "    Load average: unavailable");
+                    CORE_LOG (eLOG_Note,  "    Load average: unavailable");
                 CORE_LOGF(eLOG_Note, ("    Host environment: %s%s%s",
-                                      e ? "\"" : "", e ? e : "NULL",
-                                      e ? "\"" : ""));
+                                      e? "\"": "", e? e: "NULL", e? "\"": ""));
                 free(hinfo);
             }
             free(info_str);
@@ -121,6 +120,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/10/29 22:15:52  lavr
+ * Host info output slightly modified
+ *
  * Revision 6.13  2002/10/29 00:35:47  lavr
  * Added tests for host info API
  *
