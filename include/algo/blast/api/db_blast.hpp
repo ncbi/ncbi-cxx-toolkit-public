@@ -37,6 +37,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_engine.h>
+#include <connect/ncbi_core.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,11 +59,11 @@ public:
     /// Contructor, creating default options for a given program
     CDbBlast(const TSeqLocVector& queries, 
              BlastSeqSrc* bssp, EProgram p, RPSInfo* rps_info=0,
-             BlastHSPStream* hsp_stream=0);
+             BlastHSPStream* hsp_stream=0, MT_LOCK lock=0);
     // Constructor using a prebuilt options handle
     CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp, 
              CBlastOptionsHandle& opts, RPSInfo* rps_info=0,
-             BlastHSPStream* hsp_stream=0);
+             BlastHSPStream* hsp_stream=0, MT_LOCK lock=0);
 
     virtual ~CDbBlast();
 
@@ -126,6 +127,9 @@ private:
     RPSInfo*             m_pRpsInfo;      ///< RPS BLAST database information
     BlastHSPStream*      m_pHspStream;    /**< Placeholder for streaming HSP 
                                              lists out of the engine. */
+    MT_LOCK              m_pLock;         /**< Locking mechanism for writing
+                                             results. */
+
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
 
     /// Prohibit copy constructor
@@ -249,6 +253,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/06/23 14:02:36  dondosha
+* Added MT_LOCK argument with default 0 value in constructors
+*
 * Revision 1.19  2004/06/15 18:45:51  dondosha
 * 1. Added optional BlastHSPStream argument to constructors;
 * 2. Made SetupSearch and RunSearchEngine methods public;
