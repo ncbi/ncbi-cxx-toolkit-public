@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.18  2001/06/04 14:58:00  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -104,6 +107,7 @@
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/wx_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -187,6 +191,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
+        if (!enabled) CancelDerivedSpecialModes();
     }
 }
 
@@ -266,13 +271,13 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
     wxString *titleStrs = new wxString[slaveSequences.size()];
     for (int i=0; i<slaveSequences.size(); i++)
-        titleStrs[i] = slaveSequences[i]->GetTitle().c_str();
+        titleStrs[i] = slaveSequences[i]->identifier->ToString().c_str();
 
     std::vector < bool > visibilities;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
     wxString title = "Show/Hide Slaves of ";
-    title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->GetTitle().c_str());
+    title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
         titleStrs,
         &visibilities,
@@ -334,12 +339,12 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     wxString *titleStrs = new wxString[sequences.size() - 1];
     int i;
     for (i=1; i<sequences.size(); i++)  // assuming master is first sequence
-        titleStrs[i - 1] = sequences[i]->GetTitle().c_str();
+        titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
 
     std::vector < bool > selectedSlaves(sequences.size() - 1, false);
 
     wxString title = "Realign Slaves of ";
-    title.Append(alignment->GetMaster()->GetTitle().c_str());
+    title.Append(alignment->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
         titleStrs,
         &selectedSlaves,

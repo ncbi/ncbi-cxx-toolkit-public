@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/06/21 02:01:07  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.15  2001/06/15 14:52:30  thiessen
 * fix minor syntax errors
 *
@@ -109,7 +112,8 @@ public:
     virtual bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
-    virtual void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
+    virtual void SelectedRange(int from, int to,
+        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const = 0;
 
     virtual DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const = 0;
 };
@@ -143,9 +147,10 @@ public:
         return alignment->GetSequenceOfRow(row);
     }
 
-    void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const
+    void SelectedRange(int from, int to,
+        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const
     {
-        alignment->SelectedRange(row, from, to, justification);
+        alignment->SelectedRange(row, from, to, justification, altDown);
     }
 };
 
@@ -170,7 +175,8 @@ public:
     const Sequence * GetSequence(void) const
         { return sequence; }
 
-    void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const;
+    void SelectedRange(int from, int to,
+        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const;
 };
 
 class DisplayRowFromString : public DisplayRow
@@ -203,7 +209,9 @@ public:
 
     const Sequence * GetSequence(void) const { return NULL; }
 
-    void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const { } // do nothing
+    void SelectedRange(int from, int to,
+        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const
+        { } // do nothing
 };
 
 
@@ -280,7 +288,7 @@ private:
     void UpdateMaxRowWidth(void);
     void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
-    bool controlDown;
+    bool controlDown, altDown;
 
     void SortRows(void);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.20  2001/06/02 17:22:45  thiessen
 * fixes for GCC
 *
@@ -109,6 +112,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -122,14 +126,12 @@ typedef std::list < CRef < CSeq_id > > SeqIdList;
 static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
 {
     if (sid.IsGi()) {
-        if (sid.GetGi() == seq->gi)
-            return true;
-        return false;
+        return (sid.GetGi() == seq->identifier->gi);
     }
     if (sid.IsPdb()) {
-        if (sid.GetPdb().GetMol().Get() == seq->pdbID) {
+        if (sid.GetPdb().GetMol().Get() == seq->identifier->pdbID) {
             if (sid.GetPdb().IsSetChain()) {
-                if (sid.GetPdb().GetChain() != seq->pdbChain) {
+                if (sid.GetPdb().GetChain() != seq->identifier->pdbChain) {
                     return false;
                 }
             }
@@ -138,19 +140,13 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
         return false;
     }
     if (sid.IsLocal() && sid.GetLocal().IsStr()) {
-        if (sid.GetLocal().GetStr() == seq->pdbID)
-            return true;
-        return false;
+        return (sid.GetLocal().GetStr() == seq->identifier->accession);
     }
     if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession()) {
-        if (sid.GetGenbank().GetAccession() == seq->accession)
-            return true;
-        return false;
+        return (sid.GetGenbank().GetAccession() == seq->identifier->accession);
     }
     if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession()) {
-        if (sid.GetSwissprot().GetAccession() == seq->accession)
-            return true;
-        return false;
+        return (sid.GetSwissprot().GetAccession() == seq->identifier->accession);
     }
     ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
     return false;
@@ -257,7 +253,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
     }
 
     if (master) {
-        TESTMSG("determined that master sequence is " << master->GetTitle());
+        TESTMSG("determined that master sequence is " << master->identifier->ToString());
     } else {
         ERR_POST(Error << "AlignmentSet::AlignmentSet() - couldn't determine which is master sequence");
         return;
@@ -477,7 +473,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         }
     }
 
-    //TESTMSG("got alignment for slave gi " << slave->gi);
+    //TESTMSG("got alignment for slave gi " << slave->identifier->gi);
 }
 
 END_SCOPE(Cn3D)

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/21 02:01:07  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.12  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -94,6 +97,8 @@ class Sequence;
 class Cn3DMainFrame;
 class StructureObject;
 class Molecule;
+class MoleculeIdentifier;
+class StructureSet;
 
 class Messenger
 {
@@ -127,28 +132,30 @@ public:
 
     // these next few are related to highlighting:
 
-    // clear all highlight stores - and optionally post redraws. Returns 'true'
-    // if there were actually any highlights to remove
-    bool RemoveAllHighlights(bool postRedraws);
-
     // check for highlight
     bool IsHighlighted(const Molecule *molecule, int residueID) const;
     bool IsHighlighted(const Sequence *sequence, int seqIndex) const;
 
-    // highlight any 'ole residue, regardless of molecule type
-    void ToggleHighlightOnAnyResidue(const Molecule *molecule, int residueID);
+    // clear all highlight stores - and optionally post redraws. Returns 'true'
+    // if there were actually any highlights to remove
+    bool RemoveAllHighlights(bool postRedraws);
 
     // add/remove highlights based on sequence
     void AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
     void RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
+    // toggle highlights on each individual residue in given region
+    void ToggleHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
+
+    // highlight any 'ole residue, regardless of molecule type
+    void ToggleHighlight(const Molecule *molecule, int residueID);
 
 private:
 
     // lists of registered viewers
     typedef std::list < ViewerBase * > SequenceViewerList;
     SequenceViewerList sequenceViewers;
-    typedef std::list < Cn3DMainFrame * > StructureWindowList;
-    StructureWindowList structureWindows;
+    // currently can only have one structure viewer
+    Cn3DMainFrame * structureWindow;
 
     // to keep track of messages posted
     typedef std::map < const Molecule *, bool > RedrawMoleculeList; // use map to preclude redundant redraws
@@ -158,33 +165,31 @@ private:
     bool redrawAllStructures;
     bool redrawAllSequenceViewers;
 
-    void RedrawMoleculesOfSameSequence(const Sequence *sequence);
+    void RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifier, const StructureSet *set);
 
-    // to store lists of highlighted stuff
-    typedef std::pair < const Molecule *, int > ResidueIdentifier;
-    typedef std::map < ResidueIdentifier, bool > PerResidueHighlightStore;
-    PerResidueHighlightStore residueHighlights;
+    // To store lists of highlighted entities
+    typedef std::map < const MoleculeIdentifier *, std::vector < bool > > HighlightStore;
+    HighlightStore highlights;
 
-    typedef std::map < const Sequence *, std::vector < bool > > PerSequenceHighlightStore;
-    PerSequenceHighlightStore sequenceHighlights;
+    bool IsHighlighted(const MoleculeIdentifier *identifier, int index) const;
+    void ToggleHighlights(const MoleculeIdentifier *identifier, int indexFrom, int indexTo,
+        const StructureSet *set);
 
 public:
     Messenger(void) : redrawAllStructures(false), redrawAllSequenceViewers(false) { }
 
-    bool IsAnythingHighlighted(void) const
-        { return (residueHighlights.size() > 0 || sequenceHighlights.size() > 0); }
+    bool IsAnythingHighlighted(void) const { return (highlights.size() > 0); }
 
     // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(ViewerBase *sequenceViewer)
         { sequenceViewers.push_back(sequenceViewer); }
 
-    void AddStructureWindow(Cn3DMainFrame *structureWindow)
-        { structureWindows.push_back(structureWindow); }
+    void AddStructureWindow(Cn3DMainFrame *window)
+        { structureWindow = window; }
 
     // to unregister viewers
     void RemoveStructureWindow(const Cn3DMainFrame *structureWindow);
     void RemoveSequenceViewer(const ViewerBase *sequenceViewer);
-
 };
 
 END_SCOPE(Cn3D)

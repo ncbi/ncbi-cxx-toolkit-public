@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.26  2001/04/04 00:27:14  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -125,21 +128,25 @@
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
 #include "cn3d/chemical_graph.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 BEGIN_SCOPE(Cn3D)
 
-const int Molecule::VALUE_NOT_SET = -1;
+const int Molecule::NO_DOMAIN_SET = -1;
 
 Molecule::Molecule(ChemicalGraph *parentGraph,
     const CMolecule_graph& graph,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parentGraph), type(eOther), sequence(NULL),
-    gi(VALUE_NOT_SET), pdbChain(' '), nDomains(0)
+    StructureBase(parentGraph), type(eOther), sequence(NULL), nDomains(0)
 {
+    int gi = MoleculeIdentifier::VALUE_NOT_SET, pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
+    std::string pdbID, accession;
+
     // get ID, name, and type
     id = graph.GetId().Get();
     CMolecule_graph::TDescr::const_iterator k, ke=graph.GetDescr().end();
@@ -161,21 +168,26 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
                 pdbID = graph.GetSeq_id().GetPdb().GetMol().Get();
                 if (graph.GetSeq_id().GetPdb().IsSetChain())
                     pdbChain = graph.GetSeq_id().GetPdb().GetChain();
+                else
+                    pdbChain = ' ';
             }
             else if (graph.GetSeq_id().IsLocal() &&
                 graph.GetSeq_id().GetLocal().IsStr())
-                pdbID = graph.GetSeq_id().GetLocal().GetStr();
+                accession = graph.GetSeq_id().GetLocal().GetStr();
         }
-        if (gi == VALUE_NOT_SET && pdbID.size() == 0) {
+        if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
             ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
             return;
         }
-        // assign default identifier from parent, and assuming 'name' is actually the chainID
-        if (pdbID.size() == 0) {
-            const StructureObject *object;
-            if (GetParentOfType(&object)) pdbID = object->pdbID;
-            if (name.size() >= 1) pdbChain = name[0];
-        }
+    }
+
+    // if no id assigned to biopolymer, assign default PDB identifier from parent, assuming 'name'
+    // is actually the chainID if this is a biopolymer
+    if ((IsProtein() || IsNucleotide()) &&
+        gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
+        const StructureObject *object;
+        if (GetParentOfType(&object)) pdbID = object->pdbID;
+        if (name.size() >= 1) pdbChain = name[0];
     }
 
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
@@ -243,7 +255,8 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
         prevResidue = residue;
     }
 
-    residueDomains.resize(residues.size(), VALUE_NOT_SET);
+    residueDomains.resize(residues.size(), NO_DOMAIN_SET);
+
     // keep s.s. maps only for protein chains
     if (IsProtein()) residueSecondaryStructures.resize(residues.size(), eCoil);
 
@@ -272,6 +285,9 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
             }
         }
     }
+
+    // get identifier
+    identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, gi, accession);
 }
 
 Vector Molecule::GetResidueColor(int sequenceIndex) const
@@ -310,14 +326,16 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         ResidueMap::const_iterator r = residues.find(rID);
         if (r == residues.end()) {
             ERR_POST(Error << "Can't find residueID " << rID
-                << " in " << pdbID << " chain '" << (char) pdbChain << "'");
+                << " in " << identifier->pdbID << " chain '"
+                << (char) identifier->pdbChain << "'");
             return false;
         }
 
         int aID = (r->second->alphaID);
         if (aID == Residue::NO_ALPHA_ID) {
             ERR_POST(Warning << "No alpha atom in residueID " << rID
-                << " from " << pdbID << " chain '" << (char) pdbChain << "'");
+                << " from " << identifier->pdbID << " chain '"
+                << (char) identifier->pdbChain << "'");
             coords[i] = NULL;
             continue;
         }
@@ -335,17 +353,6 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
     }
 
     return true;
-}
-
-std::string Molecule::GetTitle(void) const
-{
-    std::string str;
-    str = pdbID;
-    if (pdbChain != ' ') {
-        str += '_';
-        str += (char) pdbChain;
-    }
-    return str;
 }
 
 END_SCOPE(Cn3D)

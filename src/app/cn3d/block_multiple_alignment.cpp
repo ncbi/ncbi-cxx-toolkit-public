@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.22  2001/06/02 17:22:45  thiessen
 * fixes for GCC
 *
@@ -584,7 +587,7 @@ int BlockMultipleAlignment::GetAlignedSlaveIndex(int masterSeqIndex, int slaveRo
 }
 
 void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
-    eUnalignedJustification justification) const
+    eUnalignedJustification justification, bool altDown) const
 {
     // translate from,to (alignment columns) into sequence indexes
     const Sequence *sequence;
@@ -609,7 +612,10 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
         to--;
     }
 
-    GlobalMessenger()->AddHighlights(sequence, fromIndex, toIndex);
+    if (altDown)
+        GlobalMessenger()->ToggleHighlights(sequence, fromIndex, toIndex);
+    else
+        GlobalMessenger()->AddHighlights(sequence, fromIndex, toIndex);
 }
 
 void BlockMultipleAlignment::GetAlignedBlockPosition(int alignmentIndex,

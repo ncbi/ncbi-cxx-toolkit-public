@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/06/21 02:01:07  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.23  2001/05/31 18:46:26  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -119,6 +122,7 @@
 #include "cn3d/residue.hpp"
 #include "cn3d/vector_math.hpp"
 
+
 BEGIN_SCOPE(Cn3D)
 
 // A Molecule is generally a fully connected set of atoms - e.g. a protein chain,
@@ -130,6 +134,7 @@ typedef std::list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphLis
 class ChemicalGraph;
 class Bond;
 class Sequence;
+class MoleculeIdentifier;
 
 class Molecule : public StructureBase
 {
@@ -138,7 +143,6 @@ public:
         const ncbi::objects::CMolecule_graph& graph,
         const ResidueGraphList& standardDictionary,
         const ResidueGraphList& localDictionary);
-    //~Molecule(void);
 
     // public data
     enum eType {
@@ -151,9 +155,9 @@ public:
         eOther = ncbi::objects::CBiomol_descr::eMolecule_type_other
     };
     eType type;
-    static const int VALUE_NOT_SET;
-    int id, gi, pdbChain;
-    std::string name, pdbID;
+    int id;
+    std::string name;
+    const MoleculeIdentifier *identifier;
 
     typedef std::map < int, const Residue * > ResidueMap;
     ResidueMap residues;
@@ -165,6 +169,7 @@ public:
     DisulfideMap disulfideMap;
 
     // maps of sequence location ( = residueID - 1) to secondary structure and domains
+    static const int NO_DOMAIN_SET;
     enum eSecStruc {
         eHelix,
         eStrand,
@@ -194,8 +199,6 @@ public:
         ERR_POST(ncbi::Warning << "Molecule #" << id << ": can't find residue #" << rID);
         return NULL;
     }
-
-    std::string GetTitle(void) const;
 
     // residue color method - called by sequence/alignment viewer - note
     // that sequenceIndex is numbered from zero.

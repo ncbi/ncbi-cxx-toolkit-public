@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.26  2001/06/07 19:05:38  thiessen
 * functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
 *
@@ -135,6 +138,7 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/conservation_colorer.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -218,7 +222,8 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(
     return true;
 }
 
-void DisplayRowFromSequence::SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const
+void DisplayRowFromSequence::SelectedRange(int from, int to,
+    BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const
 {
     int len = sequence->Length();
 
@@ -232,7 +237,10 @@ void DisplayRowFromSequence::SelectedRange(int from, int to, BlockMultipleAlignm
     if (to < 0) to = 0;
     else if (to >= len) to = len - 1;
 
-    GlobalMessenger()->AddHighlights(sequence, from, to);
+    if (altDown)
+        GlobalMessenger()->ToggleHighlights(sequence, from, to);
+    else
+        GlobalMessenger()->AddHighlights(sequence, from, to);
 }
 
 bool DisplayRowFromString::GetCharacterTraitsAt(int column,
@@ -344,7 +352,7 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
     if (!sequence) return false;
 
     // set title
-    *title = sequence->GetTitle().c_str();
+    *title = sequence->identifier->ToString().c_str();
 
     // set color - by object if there's an associated molecule
     const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment*>(displayRow);
@@ -466,7 +474,8 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     }
 
     controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
-    if (!controlDown && column == -1)
+    altDown = ((controls & ViewableAlignment::eAltOrMetaDown) > 0);
+    if (!controlDown && !altDown && column == -1)
         GlobalMessenger()->RemoveAllHighlights(true);
 
     // process events in sequence area
@@ -629,11 +638,11 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
         }
     }
 
-    if (!controlDown)
+    if (!controlDown && !altDown)
         GlobalMessenger()->RemoveAllHighlights(true);
 
     for (int i=rowTop; i<=rowBottom; i++)
-        rows[i]->SelectedRange(columnLeft, columnRight, justification);
+        rows[i]->SelectedRange(columnLeft, columnRight, justification, altDown);
 }
 
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
@@ -875,32 +884,32 @@ static bool CompareRowsByIdentifier(const DisplayRowFromAlignment *a, const Disp
         *seqB = b->alignment->GetSequenceOfRow(b->row);
 
     // identifier sort - float sequences with PDB id's to the top, then gi's, then accessions
-    if (seqA->pdbID.size() > 0) {
-        if (seqB->pdbID.size() > 0) {
-            if (seqA->pdbID < seqB->pdbID)
+    if (seqA->identifier->pdbID.size() > 0) {
+        if (seqB->identifier->pdbID.size() > 0) {
+            if (seqA->identifier->pdbID < seqB->identifier->pdbID)
                 return true;
-            else if (seqA->pdbID > seqB->pdbID)
+            else if (seqA->identifier->pdbID > seqB->identifier->pdbID)
                 return false;
             else
-                return (seqA->pdbChain < seqB->pdbChain);
+                return (seqA->identifier->pdbChain < seqB->identifier->pdbChain);
         } else
             return true;
     }
 
-    else if (seqA->gi != Sequence::VALUE_NOT_SET) {
-        if (seqB->pdbID.size() > 0)
+    else if (seqA->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        if (seqB->identifier->pdbID.size() > 0)
             return false;
-        else if (seqB->gi != Sequence::VALUE_NOT_SET)
-            return (seqA->gi < seqB->gi);
+        else if (seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
+            return (seqA->identifier->gi < seqB->identifier->gi);
         else
             return true;
     }
 
-    else if (seqA->accession.size() > 0) {
-        if (seqB->pdbID.size() > 0 || seqB->gi != Sequence::VALUE_NOT_SET)
+    else if (seqA->identifier->accession.size() > 0) {
+        if (seqB->identifier->pdbID.size() > 0 || seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
             return false;
-        else if (seqB->accession.size() > 0)
-            return (seqA->accession < seqB->accession);
+        else if (seqB->identifier->accession.size() > 0)
+            return (seqA->identifier->accession < seqB->identifier->accession);
     }
 
     ERR_POST(Error << "CompareRowsByIdentifier() - unrecognized identifier");
@@ -914,8 +923,8 @@ static bool CompareRowsByScore(const DisplayRowFromAlignment *a, const DisplayRo
 
 static bool CompareRowsFloatPDB(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
 {
-    return (a->alignment->GetSequenceOfRow(a->row)->pdbID.size() > 0 &&
-            b->alignment->GetSequenceOfRow(b->row)->pdbID.size() == 0);
+    return (a->alignment->GetSequenceOfRow(a->row)->identifier->pdbID.size() > 0 &&
+            b->alignment->GetSequenceOfRow(b->row)->identifier->pdbID.size() == 0);
 }
 
 static CompareRows rowComparisonFunction = NULL;
@@ -1063,7 +1072,7 @@ bool SequenceDisplay::ProximitySort(int displayRow)
 
     // finally, highlight the key row and scroll approximately there
     GlobalMessenger()->RemoveAllHighlights(false);
-    GlobalMessenger()->AddHighlights(seq1, 0, seq1->sequenceString.size() - 1);
+    GlobalMessenger()->AddHighlights(seq1, 0, seq1->Length() - 1);
     (*viewerWindow)->ScrollToRow(M - 3);
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
     return true;

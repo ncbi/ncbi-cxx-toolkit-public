@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.25  2001/05/31 18:47:07  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -315,9 +318,9 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     for (m=molecules.begin(); m!=me; m++) {
         if (m->second->IsProtein() || m->second->IsNucleotide()) {
             bool firstUnassigned = true;
-            int domainID = Molecule::VALUE_NOT_SET;
+            int domainID = Molecule::NO_DOMAIN_SET;
             for (int r=0; r<m->second->residues.size(); r++) {
-                if (m->second->residueDomains[r] == Molecule::VALUE_NOT_SET) {
+                if (m->second->residueDomains[r] == Molecule::NO_DOMAIN_SET) {
                     if (firstUnassigned) {
                         domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
                         (const_cast<Molecule*>(m->second))->nDomains++;
@@ -365,7 +368,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                         ERR_POST(Error << "Bad residue range in domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
                         break;
-                    } else if (molecule->residueDomains[r] != Molecule::VALUE_NOT_SET) {
+                    } else if (molecule->residueDomains[r] != Molecule::NO_DOMAIN_SET) {
                         ERR_POST(Warning << "Overlapping domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
                         break;

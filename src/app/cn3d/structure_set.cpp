@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.66  2001/06/15 14:06:40  thiessen
 * save/load asn styles now complete
 *
@@ -275,17 +278,13 @@
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
-
-// check match by gi or pdbID (not accession, since molecules presumably won't be identified that way)
-#define SAME_SEQUENCE(a, b) \
-    (((a)->gi > 0 && (a)->gi == (b)->gi) || \
-     ((a)->pdbID.size() > 0 && (a)->pdbID == (b)->pdbID && (a)->pdbChain == (b)->pdbChain))
 
 static bool VerifyMatch(const Sequence *sequence, const StructureObject *object, const Molecule *molecule)
 {
@@ -295,12 +294,12 @@ static bool VerifyMatch(const Sequence *sequence, const StructureObject *object,
                 << object->pdbID << " moleculeID " << molecule->id);
             return false;
         }
-        TESTMSG("matched sequence gi " << sequence->gi << " with object "
+        TESTMSG("matched sequence " << " gi " << sequence->identifier->gi << " with object "
             << object->pdbID << " moleculeID " << molecule->id);
         return true;
     } else {
         ERR_POST(Error << "VerifyMatch() - length mismatch between sequence gi "
-            << sequence->gi << " and matching molecule");
+            << sequence->identifier->gi << " and matching molecule");
     }
     return false;
 }
@@ -330,26 +329,12 @@ void StructureSet::MatchSequencesToMolecules(void)
                 for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
                     if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
 
-                    if (SAME_SEQUENCE(m->second, *s)) {
+                    if (m->second->identifier == (*s)->identifier) {
 
                         if (VerifyMatch(*s, *o, m->second)) {
                             (const_cast<Molecule*>(m->second))->sequence = *s;
                             (const_cast<Sequence*>(*s))->molecule = m->second;
                             nSequenceMatches++;
-
-                            // see if we can fill out gi/pdbID any further once we've verified the match
-                            if (m->second->gi == Molecule::VALUE_NOT_SET && (*s)->gi != Molecule::VALUE_NOT_SET)
-                                (const_cast<Molecule*>(m->second))->gi = (*s)->gi;
-                            if (m->second->pdbID.size() == 0 && (*s)->pdbID.size() > 0) {
-                                (const_cast<Molecule*>(m->second))->pdbID = (*s)->pdbID;
-                                (const_cast<Molecule*>(m->second))->pdbChain = (*s)->pdbChain;
-                            }
-                            if ((*s)->gi == Molecule::VALUE_NOT_SET && m->second->gi != Molecule::VALUE_NOT_SET)
-                                (const_cast<Sequence*>(*s))->gi = m->second->gi;
-                            if ((*s)->pdbID.size() == 0 && m->second->pdbID.size() > 0) {
-                                (const_cast<Sequence*>(*s))->pdbID = m->second->pdbID;
-                                (const_cast<Sequence*>(*s))->pdbChain = m->second->pdbChain;
-                            }
 
                             // if this is the master structure, then assume that the first sequence
                             // found for this structure is master sequence for all sequence alignments
@@ -531,9 +516,9 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
     vector < int > mmdbIDs;
     SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
     for (s=sequenceSet->sequences.begin(); s!=se; s++)
-        if ((*s)->mmdbLink != Sequence::VALUE_NOT_SET &&
+        if ((*s)->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
                 (structureLimit < 0 || mmdbIDs.size() < structureLimit))
-            mmdbIDs.push_back((*s)->mmdbLink);
+            mmdbIDs.push_back((*s)->identifier->mmdbID);
 
     // if more than one structure, the Biostruc-annot-set should contain structure alignments
     // for slaves->master - and thus also the identity of the master.
@@ -561,11 +546,11 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
         else {
             SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
             for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-                if ((*s)->pdbID.size() > 0 && (*s)->mmdbLink != Sequence::VALUE_NOT_SET) {
+                if ((*s)->identifier->pdbID.size() > 0 && (*s)->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
                     ERR_POST(Error << "Warning: no structure alignments, "
                          << "so the first sequence with MMDB link ("
-                         << (*s)->GetTitle() << ") is assumed to be the master structure");
-                    masterMMDBID = (*s)->mmdbLink;
+                         << (*s)->identifier->ToString() << ") is assumed to be the master structure");
+                    masterMMDBID = (*s)->identifier->mmdbID;
                     // create a new (empty) "features" area for the structure alignments
                     InitStructureAlignments(masterMMDBID);
                     break;
@@ -647,6 +632,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
 
 StructureSet::~StructureSet(void)
 {
+    MoleculeIdentifier::ClearIdentifiers();
     delete showHideManager;
     delete styleManager;
     if (alignmentManager) delete alignmentManager;
@@ -997,7 +983,7 @@ void StructureSet::SelectedAtom(unsigned int name)
     if (!molecule->GetParentOfType(&object)) return;
 
     // add highlight
-    GlobalMessenger()->ToggleHighlightOnAnyResidue(molecule, residue->id);
+    GlobalMessenger()->ToggleHighlight(molecule, residue->id);
 
     TESTMSG("rotating about " << object->pdbID
         << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
@@ -1150,7 +1136,7 @@ static void AddDomain(int *domain, const Molecule *molecule, const Block::Range 
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return;
     for (int l=range->from; l<=range->to; l++) {
-        if (molecule->residueDomains[l] != Molecule::VALUE_NOT_SET) {
+        if (molecule->residueDomains[l] != Molecule::NO_DOMAIN_SET) {
             if (*domain == NO_DOMAIN)
                 *domain = object->domainID2MMDB.find(molecule->residueDomains[l])->second;
             else if (*domain != MULTI_DOMAIN &&
@@ -1304,10 +1290,10 @@ void StructureObject::RealignStructure(int nCoords,
 
     // for backward-compatibility with Cn3D 3.5, need name to encode chain/domain
     CNcbiOstrstream oss;
-    oss << masterMolecule->pdbID << ((char) masterMolecule->pdbChain) << masterDomain << ' '
-        << slaveMolecule->pdbID << ((char) slaveMolecule->pdbChain) << slaveDomain << ' '
-        << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->GetTitle()
-        << " with master " << multiple->GetSequenceOfRow(0)->GetTitle()
+    oss << masterMolecule->identifier->pdbID << ((char) masterMolecule->identifier->pdbChain) << masterDomain << ' '
+        << slaveMolecule->identifier->pdbID << ((char) slaveMolecule->identifier->pdbChain) << slaveDomain << ' '
+        << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->identifier->ToString()
+        << " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
         << ", as computed by Cn3D" << '\0';
     feature->SetName(std::string(oss.str()));
     delete oss.str();

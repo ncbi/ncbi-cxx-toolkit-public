@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.12  2001/06/02 17:22:46  thiessen
 * fixes for GCC
 *
@@ -78,6 +81,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 #include <corelib/ncbistre.hpp>
 #include <vector>
@@ -121,10 +125,10 @@ private:
 public:
     ShowHideMolecule(const Molecule *m) : molecule(m)
     {
-        label = indent + m->pdbID;
-        if (m->pdbChain != ' ') {
+        label = indent + m->identifier->pdbID;
+        if (m->identifier->pdbChain != ' ') {
             label += '_';
-            label += (char) m->pdbChain;
+            label += (char) m->identifier->pdbChain;
         }
     }
     bool IsVisible(const ShowHideManager *shm) const { return shm->IsVisible(molecule); }
@@ -140,8 +144,8 @@ public:
     ShowHideDomain(const Molecule *m, int d, int labelNum) : molecule(m), domainID(d)
     {
         CNcbiOstrstream oss;
-        oss << indent << indent << m->pdbID;
-        if (m->pdbChain != ' ') oss << '_' << (char) m->pdbChain;
+        oss << indent << indent << m->identifier->pdbID;
+        if (m->identifier->pdbChain != ' ') oss << '_' << (char) m->identifier->pdbChain;
         oss << " d" << labelNum << '\0';
         label = oss.str();
         delete oss.str();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.63  2001/06/07 19:05:37  thiessen
 * functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
 *
@@ -241,6 +244,7 @@
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -496,11 +500,11 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
     CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
     if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
         ERR_POST(Warning << "Can't get master alpha coords");
-    } else if (masterSeq->GetOrSetMMDBLink() == Sequence::VALUE_NOT_SET) {
+    } else if (masterSeq->GetOrSetMMDBLink() == MoleculeIdentifier::VALUE_NOT_SET) {
         ERR_POST(Warning << "Don't know master MMDB ID");
     } else {
 
-        masterMol->parentSet->InitStructureAlignments(masterSeq->mmdbLink);
+        masterMol->parentSet->InitStructureAlignments(masterSeq->identifier->mmdbID);
 
         int nStructureAlignments = 0;
         for (int i=1; i<multiple->NRows(); i++) {
@@ -521,7 +525,7 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
                     weights[j] = 1.0; // for now, just use flat weighting
             }
 
-            TESTMSG("realigning slave " << slaveSeq->pdbID << " against master " << masterSeq->pdbID);
+            TESTMSG("realigning slave " << slaveSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID);
             (const_cast<StructureObject*>(slaveObj))->
                 RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
             nStructureAlignments++;

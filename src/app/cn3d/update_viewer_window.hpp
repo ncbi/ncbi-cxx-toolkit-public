@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/21 02:01:07  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.12  2001/06/14 18:59:27  thiessen
 * left out 'class' in 'friend ...' statments
 *
@@ -149,6 +152,7 @@ public:
     {
         if (DoThreadSingle()) ThreadSingleOff();
         if (DoDeleteSingle()) DeleteSingleOff();
+        if (DoMergeSingle()) MergeSingleOff();
     }
 };
 

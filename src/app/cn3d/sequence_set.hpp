@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/21 02:01:07  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.20  2001/05/31 18:46:27  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -115,6 +118,7 @@ typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
 class Sequence;
 class Molecule;
 class MasterSlaveAlignment;
+class MoleculeIdentifier;
 
 class SequenceSet : public StructureBase
 {
@@ -140,17 +144,15 @@ public:
     // keep a reference to the original asn Bioseq
     const ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
 
-    static const int VALUE_NOT_SET;
-    int gi, pdbChain, mmdbLink;
-    std::string pdbID, sequenceString, accession, description;
-    bool isProtein;
+    std::string sequenceString, description;
+    const MoleculeIdentifier *identifier;
 
-    // corresponding protein chain (if any)
+    // corresponding biopolymer chain (if any)
     const Molecule *molecule;
+    bool isProtein;
 
     int Length(void) const { return sequenceString.size(); }
 	ncbi::objects::CSeq_id * CreateSeqId(void) const;
-    std::string GetTitle(void) const;
     int GetOrSetMMDBLink(void) const;
 
     // launch web browser with entrez page for this sequence

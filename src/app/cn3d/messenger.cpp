@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.16  2001/05/11 02:10:42  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -92,6 +95,7 @@
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -158,7 +162,6 @@ void Messenger::ProcessRedraws(void)
         for (q=sequenceViewers.begin(); q!=qe; q++) (*q)->Refresh();
         redrawAllSequenceViewers = false;
     }
-
     else if (redrawSequenceViewers.size() > 0) {
         RedrawSequenceViewerList::const_iterator q, qe = redrawSequenceViewers.end();
         for (q=redrawSequenceViewers.begin(); q!=qe; q++) q->first->Refresh();
@@ -166,15 +169,11 @@ void Messenger::ProcessRedraws(void)
     }
 
     if (redrawAllStructures) {
-        StructureWindowList::const_iterator t, te = structureWindows.end();
-        for (t=structureWindows.begin(); t!=te; t++) {
-            (*t)->glCanvas->renderer->Construct();
-            (*t)->glCanvas->Refresh(false);
-        }
-        redrawAllStructures = false;
+		structureWindow->glCanvas->renderer->Construct();
+		structureWindow->glCanvas->Refresh(false);
+		redrawAllStructures = false;
     }
-
-    else if (redrawMolecules.size() > 0 && structureWindows.size() > 0) {
+    else if (redrawMolecules.size() > 0 && structureWindow != NULL) {
         std::map < const StructureObject * , bool > hetsRedrawn;
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
         for (m=redrawMolecules.begin(); m!=me; m++) {
@@ -189,20 +188,15 @@ void Messenger::ProcessRedraws(void)
             hetsRedrawn[object] = true;
         }
         redrawMolecules.clear();
-
-        StructureWindowList::const_iterator t, te = structureWindows.end();
-        for (t=structureWindows.begin(); t!=te; t++)
-            (*t)->glCanvas->Refresh(false);
+        structureWindow->glCanvas->Refresh(false);
     }
 }
 
-void Messenger::RemoveStructureWindow(const Cn3DMainFrame *structureWindow)
+void Messenger::RemoveStructureWindow(const Cn3DMainFrame *window)
 {
-    StructureWindowList::iterator t, te = structureWindows.end();
-    for (t=structureWindows.begin(); t!=te; t++) {
-        if (*t == structureWindow) structureWindows.erase(t);
-        break;
-    }
+    if (window != structureWindow)
+        ERR_POST(Error << "Messenger::RemoveStructureWindow() - window mismatch");
+    structureWindow = NULL;
 }
 
 void Messenger::RemoveSequenceViewer(const ViewerBase *sequenceViewer)
@@ -224,56 +218,36 @@ void Messenger::SequenceWindowsSave(void)
 
 ///// highlighting functions /////
 
-// check match by gi or pdbID or accession
-#define SAME_SEQUENCE(a, b) \
-    (((a)->gi > 0 && (a)->gi == (b)->gi) || \
-     ((a)->pdbID.size() > 0 && (a)->pdbID == (b)->pdbID && (a)->pdbChain == (b)->pdbChain) || \
-     ((a)->accession.size() > 0 && (a)->accession == (b)->accession))
+bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, int index) const
+{
+    HighlightStore::const_iterator h = highlights.find(identifier);
+    if (h == highlights.end()) return false;
+
+    if (index < 0 || index >= h->second.size()) {
+        ERR_POST(Error << "Messenger::IsHighlighted() - index out of range");
+        return false;
+    } else
+        return h->second[index];
+}
 
 bool Messenger::IsHighlighted(const Molecule *molecule, int residueID) const
 {
-    // use sequence-wise highlight stores
-    if (molecule->sequence) {
-        return IsHighlighted(molecule->sequence, residueID - 1);
-    }
-
-    // use residue-wise highlight stores
-    else {
-        ResidueIdentifier rid = std::make_pair(molecule, residueID);
-        PerResidueHighlightStore::const_iterator rh = residueHighlights.find(rid);
-        if (rh != residueHighlights.end())
-            return true;
-        else
-            return false;
-    }
+    return IsHighlighted(molecule->identifier, residueID - 1);  // assume index = id - 1
 }
 
 bool Messenger::IsHighlighted(const Sequence *sequence, int seqIndex) const
 {
-    if (seqIndex < 0 || seqIndex >= sequence->Length()) {
-        ERR_POST(Error << "Messenger::IsHighlighted() - seqIndex out of range");
-        return false;
-    }
-
-    PerSequenceHighlightStore::const_iterator sh, she = sequenceHighlights.end();
-    for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
-        if (SAME_SEQUENCE(sequence, sh->first)) {
-            if (sh->second[seqIndex])
-                return true;
-            else
-                return false;
-        }
-    }
-    return false;
+    return IsHighlighted(sequence->identifier, seqIndex);
 }
 
-void Messenger::RedrawMoleculesOfSameSequence(const Sequence *sequence)
+void Messenger::RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifier, const StructureSet *set)
 {
-    SequenceSet::SequenceList::const_iterator s,
-        se = sequence->molecule->parentSet->sequenceSet->sequences.end();
-    for (s=sequence->molecule->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
-        if ((*s)->molecule && SAME_SEQUENCE(sequence, *s)) {
-            PostRedrawMolecule((*s)->molecule);
+    StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
+    ChemicalGraph::MoleculeMap::const_iterator m, me;
+    for (o=set->objects.begin(); o!=oe; o++) {
+        for (m=(*o)->graph->molecules.begin(), me=(*o)->graph->molecules.end(); m!=me; m++) {
+            if (m->second->identifier == identifier)
+                PostRedrawMolecule(m->second);
         }
     }
 }
@@ -287,19 +261,16 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
         return;
     }
 
-    PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
-    for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
-        if (SAME_SEQUENCE(sequence, sh->first)) break;
-    }
-    if (sh == she) {
-        sequenceHighlights[sequence].resize(sequence->Length());
-        sh = sequenceHighlights.find(sequence);
+    HighlightStore::iterator h = highlights.find(sequence->identifier);
+    if (h == highlights.end()) {
+        highlights[sequence->identifier].resize(sequence->Length(), false);
+        h = highlights.find(sequence->identifier);
     }
 
-    for (int i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = true;
+    for (int i=seqIndexFrom; i<=seqIndexTo; i++) h->second[i] = true;
 
     PostRedrawAllSequenceViewers();
-    if (sequence->molecule) RedrawMoleculesOfSameSequence(sequence);
+    RedrawMoleculesWithIdentifier(sequence->identifier, sequence->parentSet);
 }
 
 void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
@@ -311,69 +282,67 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
         return;
     }
 
-    PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
-    for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
-        if (SAME_SEQUENCE(sequence, sh->first)) break;
-    }
-    if (sh != she) {
+    HighlightStore::iterator h = highlights.find(sequence->identifier);
+    if (h != highlights.end()) {
         int i;
-        for (i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = false;
+        for (i=seqIndexFrom; i<=seqIndexTo; i++) h->second[i] = false;
 
         // remove sequence from store if no highlights left
         for (i=0; i<sequence->Length(); i++)
-            if (sh->second[i] == true) break;
+            if (h->second[i] == true) break;
         if (i == sequence->Length())
-            sequenceHighlights.erase(sh);
+            highlights.erase(h);
 
         PostRedrawAllSequenceViewers();
-        if (sequence->molecule) RedrawMoleculesOfSameSequence(sequence);
+        RedrawMoleculesWithIdentifier(sequence->identifier, sequence->parentSet);
     }
 }
 
-void Messenger::ToggleHighlightOnAnyResidue(const Molecule *molecule, int residueID)
+void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int indexFrom, int indexTo,
+    const StructureSet *set)
 {
-    // use sequence-wise highlight stores
-    if (molecule->sequence) {
-        int seqIndex = residueID - 1;
-        if (IsHighlighted(molecule->sequence, seqIndex))
-            RemoveHighlights(molecule->sequence, seqIndex, seqIndex);
-        else
-            AddHighlights(molecule->sequence, seqIndex, seqIndex);
+    if (indexFrom < 0 || indexTo < 0 || indexFrom > indexTo ||
+        indexFrom >= identifier->nResidues || indexTo >= identifier->nResidues) {
+        ERR_POST(Error << "Messenger::ToggleHighlights() - index out of range");
+        return;
     }
 
-    // use residue-wise highlight stores
-    else {
-        ResidueIdentifier rid = std::make_pair(molecule, residueID);
-        PerResidueHighlightStore::iterator rh = residueHighlights.find(rid);
-        if (rh != residueHighlights.end())
-            residueHighlights.erase(rh);    // remove highlight
-        else
-            residueHighlights[rid] = true;  // add highlight
+    HighlightStore::iterator h = highlights.find(identifier);
+    if (h == highlights.end()) {
+        highlights[identifier].resize(identifier->nResidues, false);
+        h = highlights.find(identifier);
     }
 
-    PostRedrawMolecule(molecule);
+    for (int i=indexFrom; i<=indexTo; i++) h->second[i] = !h->second[i];
+
+    PostRedrawAllSequenceViewers();
+    RedrawMoleculesWithIdentifier(identifier, set);
+}
+
+void Messenger::ToggleHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
+{
+    ToggleHighlights(sequence->identifier, seqIndexFrom, seqIndexTo, sequence->parentSet);
+}
+
+void Messenger::ToggleHighlight(const Molecule *molecule, int residueID)
+{
+    // assume index = id - 1
+    ToggleHighlights(molecule->identifier, residueID - 1, residueID - 1, molecule->parentSet);
 }
 
 bool Messenger::RemoveAllHighlights(bool postRedraws)
 {
-    bool anyRemoved = (sequenceHighlights.size() > 0 || residueHighlights.size() > 0);
+    bool anyRemoved = highlights.size() > 0;
 
     if (postRedraws) {
         if (anyRemoved) PostRedrawAllSequenceViewers();
 
-        PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
-        for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
-            if (sh->first->molecule) RedrawMoleculesOfSameSequence(sh->first);
-        }
-
-        PerResidueHighlightStore::const_iterator rh, rhe = residueHighlights.end();
-        for (rh = residueHighlights.begin(); rh!=rhe; rh++) {
-            PostRedrawMolecule(rh->first.first);
-        }
+        HighlightStore::iterator h, he = highlights.end();
+        for (h=highlights.begin(); h!=he; h++)
+            RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
     }
 
-    sequenceHighlights.clear();
-    residueHighlights.clear();
+    highlights.clear();
 
     return anyRemoved;
 }

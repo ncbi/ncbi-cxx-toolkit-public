@@ -20,6 +20,7 @@ OBJ = \
 	coord_set \
 	messenger \
 	molecule \
+	molecule_identifier \
 	object_3d \
 	opengl_renderer \
 	periodic_table \

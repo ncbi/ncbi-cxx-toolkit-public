@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.21  2001/06/02 17:22:45  thiessen
 * fixes for GCC
 *
@@ -118,6 +121,7 @@
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -187,20 +191,20 @@ Threader::~Threader(void)
 
 static void AddSeqId(const Sequence *sequence, SeqIdPtr *id, bool addAllTypes)
 {
-    if (sequence->pdbID.size() > 0) {
+    if (sequence->identifier->pdbID.size() > 0) {
         PDBSeqIdPtr pdbid = PDBSeqIdNew();
-        pdbid->mol = StrSave(sequence->pdbID.c_str());
-        pdbid->chain = (Uint1) sequence->pdbChain;
+        pdbid->mol = StrSave(sequence->identifier->pdbID.c_str());
+        pdbid->chain = (Uint1) sequence->identifier->pdbChain;
         ValNodeAddPointer(id, SEQID_PDB, pdbid);
         if (!addAllTypes) return;
     }
-    if (sequence->gi != Sequence::VALUE_NOT_SET) {
-        ValNodeAddInt(id, SEQID_GI, sequence->gi);
+    if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        ValNodeAddInt(id, SEQID_GI, sequence->identifier->gi);
         if (!addAllTypes) return;
     }
-    if (sequence->accession.size() > 0) {
+    if (sequence->identifier->accession.size() > 0) {
         TextSeqIdPtr gbid = TextSeqIdNew();
-        gbid->accession = StrSave(sequence->accession.c_str());
+        gbid->accession = StrSave(sequence->identifier->accession.c_str());
         ValNodeAddPointer(id, SEQID_GENBANK, gbid);
         if (!addAllTypes) return;
     }
@@ -904,7 +908,7 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     // fill out min. loop lengths
     GetMinimumLoopLengths(mol, atomSet, fldMtf);
 
-    TESTMSG("created Fld_Mtf for " << mol->pdbID << " chain '" << (char) mol->pdbChain << "'");
+    TESTMSG("created Fld_Mtf for " << mol->identifier->pdbID << " chain '" << (char) mol->identifier->pdbChain << "'");
     contacts[mol] = fldMtf;
     return fldMtf;
 }
@@ -1072,7 +1076,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
         thdTbl = NewThdTbl(options.nResultAlignments, corDef->sll.n);
 
         // actually run the threader (finally!)
-        TESTMSG("threading " << (*p)->GetSequenceOfRow(1)->GetTitle());
+        TESTMSG("threading " << (*p)->GetSequenceOfRow(1)->identifier->ToString());
         success = atd(fldMtf, corDef, qrySeq, rcxPtl, gibScd, thdTbl, seqMtf,
             trajectory, zscs, SCALING_FACTOR, options.weightPSSM);
 

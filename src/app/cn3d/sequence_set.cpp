@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.31  2001/06/18 21:48:27  thiessen
 * add [PACC] to Entrez query for PDB id's
 *
@@ -166,6 +169,7 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -220,8 +224,6 @@ SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) 
         UnpackSeqEntry(s->GetObject(), this, sequences);
     TESTMSG("number of sequences: " << sequences.size());
 }
-
-const int Sequence::VALUE_NOT_SET = -1;
 
 #define FIRSTOF2(byte) (((byte) & 0xF0) >> 4)
 #define SECONDOF2(byte) ((byte) & 0x0F)
@@ -292,9 +294,12 @@ static void StringFromStdaa(const std::vector < char >& vec, std::string *str)
 }
 
 Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), bioseqASN(&bioseq),
-    gi(VALUE_NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(VALUE_NOT_SET), isProtein(false)
+    StructureBase(parent), bioseqASN(&bioseq), molecule(NULL), isProtein(false)
 {
+    int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,
+        pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
+    std::string pdbID, accession;
+
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
     for (s=bioseq.GetId().begin(); s!=se; s++) {
@@ -304,15 +309,17 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
             pdbID = s->GetObject().GetPdb().GetMol().Get();
             if (s->GetObject().GetPdb().IsSetChain())
                 pdbChain = s->GetObject().GetPdb().GetChain();
+            else
+                pdbChain = ' ';
         } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
-            pdbID = s->GetObject().GetLocal().GetStr();
+            accession = s->GetObject().GetLocal().GetStr();
         } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
             accession = s->GetObject().GetGenbank().GetAccession();
         } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
             accession = s->GetObject().GetSwissprot().GetAccession();
         }
     }
-    if (gi == VALUE_NOT_SET && pdbID.size() == 0) {
+    if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
         ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
         return;
     }
@@ -341,7 +348,7 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
                     if (i->GetObject().IsGeneral() &&
                         i->GetObject().GetGeneral().GetDb() == "mmdb" &&
                         i->GetObject().GetGeneral().GetTag().IsId()) {
-                        mmdbLink = i->GetObject().GetGeneral().GetTag().GetId();
+                        mmdbID = i->GetObject().GetGeneral().GetTag().GetId();
                         break;
                     }
                 }
@@ -349,9 +356,9 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
             }
         }
     }
-    if (mmdbLink != VALUE_NOT_SET)
+    if (mmdbID != MoleculeIdentifier::VALUE_NOT_SET)
         TESTMSG("sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
-            "', is from MMDB id " << mmdbLink);
+            "', is from MMDB id " << mmdbID);
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
@@ -398,48 +405,36 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
                 << ": confused by sequence representation");
         return;
     }
+
+    // get identifier
+    identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
 }
 
 CSeq_id * Sequence::CreateSeqId(void) const
 {
     CSeq_id *sid = new CSeq_id();
-    if (pdbID.size() > 0) {
-        sid->SetPdb().SetMol().Set(pdbID);
-        if (pdbChain != ' ') sid->SetPdb().SetChain(pdbChain);
+    if (identifier->pdbID.size() > 0) {
+        sid->SetPdb().SetMol().Set(identifier->pdbID);
+        if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
     } else { // use gi
-        sid->SetGi(gi);
+        sid->SetGi(identifier->gi);
     }
     return sid;
 }
 
-std::string Sequence::GetTitle(void) const
-{
-    CNcbiOstrstream oss;
-    if (pdbID.size() > 0) {
-        oss << pdbID;
-        if (pdbChain != ' ') {
-            oss <<  '_' << (char) pdbChain;
-        }
-    } else if (gi != VALUE_NOT_SET)
-        oss << "gi " << gi;
-    else if (accession.size() > 0)
-        oss << "acc " << accession;
-    else
-        oss << '?';
-    oss << '\0';
-    auto_ptr<char> chars(oss.str());    // frees memory upon function return
-    return std::string(oss.str());
-}
-
 int Sequence::GetOrSetMMDBLink(void) const
 {
-    if (mmdbLink != VALUE_NOT_SET || !molecule)
-        return mmdbLink;
-
-    const StructureObject *object;
-    if (!molecule->GetParentOfType(&object)) return mmdbLink;
-    const_cast<Sequence*>(this)->mmdbLink = object->mmdbID;
-    return mmdbLink;
+    if (molecule) {
+        const StructureObject *object;
+        if (!molecule->GetParentOfType(&object)) return identifier->mmdbID;
+        if (identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
+            identifier->mmdbID != object->mmdbID)
+            ERR_POST(Error << "Sequence::GetOrSetMMDBLink() - mismatched MMDB ID: identifier says "
+                << identifier->mmdbID << ", StructureObject says " << object->mmdbID);
+        else
+            const_cast<MoleculeIdentifier*>(identifier)->mmdbID = object->mmdbID;
+    }
+    return identifier->mmdbID;
 }
 
 
@@ -485,15 +480,15 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
 {
     CNcbiOstrstream oss;
     oss << "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?form=6&db=p&Dopt=g&uid=";
-    if (pdbID.size() > 0) {
-        oss << pdbID.c_str();
-        if (pdbChain != ' ')
-            oss << (char) pdbChain;
+    if (identifier->pdbID.size() > 0) {
+        oss << identifier->pdbID.c_str();
+        if (identifier->pdbChain != ' ')
+            oss << (char) identifier->pdbChain;
         oss << "[PACC]";
-    } else if (gi != VALUE_NOT_SET)
-        oss << gi;
-    else if (accession.size() > 0)
-        oss << accession.c_str();
+    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
+        oss << identifier->gi;
+    else if (identifier->accession.size() > 0)
+        oss << identifier->accession.c_str();
     oss << '\0';
     LaunchWebPage(oss.str());
     delete oss.str();

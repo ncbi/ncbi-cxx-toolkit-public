@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/06/21 02:01:06  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.17  2001/06/02 17:22:58  thiessen
 * fixes for GCC
 *
@@ -192,7 +195,8 @@ public:
         const Sequence **sequence, int *index, bool *isAligned) const;
 
     // called when user selects some part of a row
-    void SelectedRange(int row, int from, int to, eUnalignedJustification justification) const;
+    void SelectedRange(int row, int from, int to,
+        eUnalignedJustification justification, bool altDown) const;
 
     // get a list of UngappedAlignedBlocks; should be destroyed by called when done
     typedef std::list < const UngappedAlignedBlock * > UngappedAlignedBlockList;

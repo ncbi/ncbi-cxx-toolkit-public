@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.41  2001/06/15 14:06:40  thiessen
 * save/load asn styles now complete
 *
@@ -201,7 +204,7 @@ static void Vector2ASNColor(const Vector &vec, CCn3d_color *asnColor)
 static bool SaveBackboneStyleToASN(
     const StyleSettings::BackboneStyle bbSettings, CCn3d_backbone_style *bbASN)
 {
-    // these static_casts rely on correspondence of enumerated values!
+    // these casts rely on correspondence of enumerated values!
     bbASN->SetType((ECn3d_backbone_type) bbSettings.type);
     bbASN->SetStyle((ECn3d_drawing_style) bbSettings.style);
     bbASN->SetColor_scheme((ECn3d_color_scheme) bbSettings.colorScheme);
@@ -212,7 +215,7 @@ static bool SaveBackboneStyleToASN(
 static bool SaveGeneralStyleToASN(
     const StyleSettings::GeneralStyle gSettings, CCn3d_general_style *gASN)
 {
-    // these static_casts rely on correspondence of enumerated values!
+    // these casts rely on correspondence of enumerated values!
     gASN->SetIs_on(gSettings.isOn);
     gASN->SetStyle((ECn3d_drawing_style) gSettings.style);
     gASN->SetColor_scheme((ECn3d_color_scheme) gSettings.colorScheme);
@@ -265,7 +268,7 @@ static void ASNColor2Vector(const CCn3d_color& asnColor, Vector *vec)
 static bool LoadBackboneStyleFromASN(
     const CCn3d_backbone_style& bbASN, StyleSettings::BackboneStyle *bbSettings)
 {
-    // these static_casts rely on correspondence of enumerated values!
+    // these casts rely on correspondence of enumerated values!
     bbSettings->type = (StyleSettings::eBackboneType) bbASN.GetType();
     bbSettings->style = (StyleSettings::eDrawingStyle) bbASN.GetStyle();
     bbSettings->colorScheme = (StyleSettings::eColorScheme) bbASN.GetColor_scheme();
@@ -276,7 +279,7 @@ static bool LoadBackboneStyleFromASN(
 static bool LoadGeneralStyleFromASN(
     const CCn3d_general_style& gASN, StyleSettings::GeneralStyle *gSettings)
 {
-    // these static_casts rely on correspondence of enumerated values!
+    // these casts rely on correspondence of enumerated values!
     gSettings->isOn = gASN.GetIs_on();
     gSettings->style = (StyleSettings::eDrawingStyle) gASN.GetStyle();
     gSettings->colorScheme = (StyleSettings::eColorScheme) gASN.GetColor_scheme();
@@ -676,7 +679,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             break;
 
         case StyleSettings::eDomain:
-            atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::VALUE_NOT_SET) ?
+            atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::NO_DOMAIN_SET) ?
                 GlobalColors()->Get(Colors::eCycle1, 0) :
                 GlobalColors()->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1]);
             break;
@@ -989,7 +992,7 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
                 int domainID = molecule->residueDomains[object3D.fromResidueID - 1];
                 objectStyle->color =
                     GlobalColors()->
-                        Get(Colors::eCycle1, (domainID == Molecule::VALUE_NOT_SET) ? 0 : domainID);
+                        Get(Colors::eCycle1, (domainID == Molecule::NO_DOMAIN_SET) ? 0 : domainID);
             }
             break;
         case StyleSettings::eUserSelect:

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
 * Revision 1.53  2001/06/15 14:06:40  thiessen
 * save/load asn styles now complete
 *
@@ -847,7 +850,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     wxString outputFilename = wxFileSelector(
         "Choose a filename for output", userDir.c_str(), "",
-        ".prt", "Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
+        ".prt", "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
         wxSAVE | wxOVERWRITE_PROMPT);
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
     if (!outputFilename.IsEmpty())
