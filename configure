@@ -1357,7 +1357,7 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
 #### old object/lib/binary file with the new one -- they will always be
 #### different because of some timestamp or smth. else ("--without-bincopy")
-BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/src/if_diff.sh \"cp -p\""
+BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/src/if_diff.sh \"cp -p\" -q"
 if test "$with_bincopy" = "no" ; then
    BINCOPY="cp -p"
 fi
