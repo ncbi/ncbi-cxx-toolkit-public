@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: favor-static,v 1.2 2003/03/12 19:50:38 ucko Exp $
+# $Id: favor-static,v 1.3 2003/03/12 22:01:18 ucko Exp $
 # Author: Aaron Ucko, NCBI
 
 linker=$1
@@ -106,7 +106,7 @@ if test -n "$extra_libs"; then
 fi
 
 
-echo "$new_cmd"
+echo "$new_cmd" >&2
 case "$linker" in
     */CC) $new_cmd 2>&1 | `dirname $linker`/c++filt -stderr ;;
     CC)   $new_cmd 2>&1 | c++filt -stderr ;;
