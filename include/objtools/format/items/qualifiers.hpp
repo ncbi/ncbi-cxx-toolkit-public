@@ -148,9 +148,9 @@ class CQualContainer : public CObject
 public:
     // typedef
     typedef multimap<Key, CConstRef<IFlatQVal> > TQualMMap;
-    typedef TQualMMap::const_iterator            const_iterator;
-    typedef TQualMMap::iterator                  iterator;
-    typedef TQualMMap::size_type                 size_type;
+    typedef typename TQualMMap::const_iterator   const_iterator;
+    typedef typename TQualMMap::iterator         iterator;
+    typedef typename TQualMMap::size_type        size_type;
 
     // constructor
     CQualContainer(void) {}
@@ -495,6 +495,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/31 15:57:49  ucko
+* Add missing "typename"s in CQualContainer's typedefs.
+*
 * Revision 1.6  2004/03/30 20:25:26  shomrat
 * + class CQualContainer
 *
