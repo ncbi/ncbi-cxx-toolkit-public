@@ -354,14 +354,14 @@ public:
 private:
     void OpenOverflowFile()
     {
-        m_OverflowFile = new CNcbiOfstream();
         string path;
         s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version, m_SubKey);
         _TRACE("LC: Making overflow file " << path);
-        m_OverflowFile->open(path.c_str(), 
-                             IOS_BASE::out | 
-                             IOS_BASE::trunc | 
-                             IOS_BASE::binary);
+        m_OverflowFile =
+            new CNcbiOfstream(path.c_str(), 
+                              IOS_BASE::out | 
+                              IOS_BASE::trunc | 
+                              IOS_BASE::binary);
         if (!m_OverflowFile->is_open()) {
             ERR_POST("LC Error:Cannot create overflow file " << path);
             delete m_OverflowFile;
@@ -548,15 +548,13 @@ void CBDB_Cache::Store(const string&  key,
         overflow = 0;
 
     } else { // overflow BLOB
-        CNcbiOfstream     oveflow_file;
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version, subkey);
-
         _TRACE("LC: Making overflow file " << path);
-        oveflow_file.open(path.c_str(), 
-                          IOS_BASE::out | 
-                          IOS_BASE::trunc | 
-                          IOS_BASE::binary);
+        CNcbiOfstream oveflow_file(path.c_str(), 
+                                   IOS_BASE::out | 
+                                   IOS_BASE::trunc | 
+                                   IOS_BASE::binary);
         if (!oveflow_file.is_open()) {
             ERR_POST("LC Error:Cannot create overflow file " << path);
             return;
@@ -599,7 +597,7 @@ size_t CBDB_Cache::GetSize(const string&  key,
     }
 
     // check expiration here
-    if (m_TimeStampFlag & fTimeStampOnRead) {
+    if (m_TimeStampFlag & fCheckExpirationAlways) {
         if (x_CheckTimestampExpired()) {
             return 0;
         }
@@ -650,7 +648,7 @@ bool CBDB_Cache::Read(const string& key,
     }
 
     // check expiration
-    if (m_TimeStampFlag & fTimeStampOnRead) {
+    if (m_TimeStampFlag & fCheckExpirationAlways) {
         if (x_CheckTimestampExpired()) {
             return false;
         }
@@ -662,8 +660,9 @@ bool CBDB_Cache::Read(const string& key,
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version, subkey);
 
-        auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        auto_ptr<CNcbiIfstream>
+            overflow_file(new CNcbiIfstream(path.c_str(),
+                                            IOS_BASE::in | IOS_BASE::binary));
         if (!overflow_file->is_open()) {
             return false;
         }
@@ -687,7 +686,9 @@ bool CBDB_Cache::Read(const string& key,
         }
     }
 
-    x_UpdateAccessTime(key, version, subkey);
+    if ( m_TimeStampFlag & fTimeStampOnRead ) {
+        x_UpdateAccessTime(key, version, subkey);
+    }
     return true;
 
 }
@@ -709,7 +710,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     }
 
     // check expiration
-    if (m_TimeStampFlag & fTimeStampOnRead) {
+    if (m_TimeStampFlag & fCheckExpirationAlways) {
         if (x_CheckTimestampExpired()) {
             return 0;
         }
@@ -722,10 +723,14 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     if (overflow) {
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version, subkey);
-        auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        auto_ptr<CNcbiIfstream> 
+            overflow_file(new CNcbiIfstream(path.c_str(),
+                                            IOS_BASE::in | IOS_BASE::binary));
         if (!overflow_file->is_open()) {
             return 0;
+        }
+        if ( m_TimeStampFlag & fTimeStampOnRead ) {
+            x_UpdateAccessTime(key, version, subkey);
         }
         return new CBDB_CacheIReader(overflow_file.release());
 
@@ -751,6 +756,9 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
         return 0;
     }
 
+    if ( m_TimeStampFlag & fTimeStampOnRead ) {
+        x_UpdateAccessTime(key, version, subkey);
+    }
     return new CBDB_CacheIReader(buf, bsize);
 
 /*
@@ -1350,14 +1358,14 @@ public:
 private:
     void OpenOverflowFile()
     {
-        m_OverflowFile = new CNcbiOfstream();
         string path;
         s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version);
         _TRACE("LC: Making overflow file " << path);
-        m_OverflowFile->open(path.c_str(), 
-                             IOS_BASE::out | 
-                             IOS_BASE::trunc | 
-                             IOS_BASE::binary);
+        m_OverflowFile =
+            new CNcbiOfstream(path.c_str(), 
+                              IOS_BASE::out | 
+                              IOS_BASE::trunc | 
+                              IOS_BASE::binary);
         if (!m_OverflowFile->is_open()) {
             ERR_POST("LC Error:Cannot create overflow file " << path);
             delete m_OverflowFile;
@@ -1465,15 +1473,14 @@ void CBDB_BLOB_Cache::Store(const string& key,
         m_AttrDB.overflow = 0;
 
     } else { // overflow BLOB
-        CNcbiOfstream     oveflow_file;
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version);
-
         _TRACE("LC: Making overflow file " << path);
-        oveflow_file.open(path.c_str(), 
-                          IOS_BASE::out | 
-                          IOS_BASE::trunc | 
-                          IOS_BASE::binary);
+
+        CNcbiOfstream oveflow_file(path.c_str(), 
+                                   IOS_BASE::out | 
+                                   IOS_BASE::trunc | 
+                                   IOS_BASE::binary);
         if (!oveflow_file.is_open()) {
             ERR_POST("LC Error:Cannot create overflow file " << path);
             return;
@@ -1555,8 +1562,9 @@ bool CBDB_BLOB_Cache::Read(const string& key,
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version);
 
-        auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        auto_ptr<CNcbiIfstream> 
+            overflow_file(new CNcbiIfstream(path.c_str(),
+                                            IOS_BASE::in | IOS_BASE::binary));
         if (!overflow_file->is_open()) {
             return false;
         }
@@ -1718,8 +1726,9 @@ IReader* CBDB_BLOB_Cache::GetReadStream(const string& key,
     if (overflow) {
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version);
-        auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        auto_ptr<CNcbiIfstream> 
+            overflow_file(new CNcbiIfstream(path.c_str(),
+                                            IOS_BASE::in | IOS_BASE::binary));
         if (!overflow_file->is_open()) {
             return 0;
         }
@@ -2001,6 +2010,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/02/02 21:24:29  vasilche
+ * Fixed buffering of overflow file streams - open file in constructor.
+ * Fixed processing of timestamps when fTimeStampOnRead flag is not set.
+ *
  * Revision 1.40  2004/01/29 20:31:06  vasilche
  * Removed debug messages.
  *
