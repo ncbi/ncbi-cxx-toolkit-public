@@ -65,49 +65,30 @@ public:
 private:
     void x_NextCacheSeg(void);
     void x_PrevCacheSeg(void);
-    void x_UpdateCache(void);
-    void x_FillCache(TSeqPos pos, TSeqPos end);
+    void x_UpdateCache(TSeqPos pos);
+    void x_FillCache(TSeqPos count);
 
     friend class CSeqVector;
 
-    struct SCacheData {
-        typedef vector<char> TCacheData;
-        typedef char* TCache_I;
-        SCacheData(void);
-        SCacheData(const SCacheData& data);
-        SCacheData& operator=(const SCacheData& data);
-
-        bool CacheContains(TSeqPos pos);
-        bool SegContains(TSeqPos pos);
-
-        TSeqPos                 m_CachePos;
-        TSeqPos                 m_CacheLen;
-        TCacheData              m_CacheData;
-        TCache_I                m_Cache;
-        CSeqMap::const_iterator m_Seg;
-    };
-
-    typedef SCacheData::TCacheData TCacheData;
-    typedef SCacheData::TCache_I TCache_I;
+    typedef vector<char> TCacheData;
+    typedef char* TCache_I;
     typedef CSeqVector::TCoding TCoding;
 
-    // TResidue x_GetResidue(TSeqPos pos);
     void x_ResizeCache(size_t size);
     void x_UpdateCachePtr(void);
-
-    // Getters for current cache members
-    TSeqPos& x_CachePos(void) const { return m_CurrentCache->m_CachePos; }
-    TSeqPos& x_CacheLen(void) const { return m_CurrentCache->m_CacheLen; }
-    TCacheData& x_CacheData(void) const { return m_CurrentCache->m_CacheData; }
-    TCache_I& x_Cache(void) const { return m_CurrentCache->m_Cache; }
-    CSeqMap::const_iterator& x_Seg(void) { return m_CurrentCache->m_Seg; }
-
+    TSeqPos x_CacheEnd(void) const;
+    TSeqPos x_BackupEnd(void) const;
 
     CConstRef<CSeqVector>   m_Vector;
-    TSeqPos                 m_Position;
     TCoding                 m_Coding;
-    SCacheData*             m_CurrentCache;
-    SCacheData*             m_BackupCache;
+    CSeqMap::const_iterator m_Seg;
+    // Current cache
+    TSeqPos                 m_CachePos;
+    TCacheData              m_CacheData;
+    TCache_I                m_Cache;
+    // Backup cache
+    TSeqPos                 m_BackupPos;
+    TCacheData              m_BackupData;
 };
 
 
@@ -118,57 +99,12 @@ private:
 /////////////////////////////////////////////////////////////////////
 
 inline
-CSeqVector_CI::SCacheData::SCacheData(void)
-    : m_CachePos(kInvalidSeqPos),
-      m_CacheLen(0),
-      m_Cache(0)
-{
-    return;
-}
-
-inline
-CSeqVector_CI::SCacheData::SCacheData(const SCacheData& data)
-    : m_CachePos(data.m_CachePos),
-      m_CacheLen(data.m_CacheLen),
-      m_CacheData(data.m_CacheData),
-      m_Seg(data.m_Seg)
-{
-    m_Cache = m_CacheData.empty() ? 0 : &m_CacheData[0];
-}
-
-inline
-CSeqVector_CI::SCacheData&
-CSeqVector_CI::SCacheData::operator=(const SCacheData& data)
-{
-    if (this != &data) {
-        m_CachePos = data.m_CachePos;
-        m_CacheLen = data.m_CacheLen;
-        m_CacheData = data.m_CacheData;
-        m_Cache = m_CacheData.empty() ? 0 : &m_CacheData[0];
-        m_Seg = data.m_Seg;
-    }
-    return *this;
-}
-
-inline
-bool CSeqVector_CI::SCacheData::CacheContains(TSeqPos pos)
-{
-    return pos >= m_CachePos  &&  pos < m_CachePos + m_CacheLen;
-}
-
-inline
-bool CSeqVector_CI::SCacheData::SegContains(TSeqPos pos)
-{
-    return pos >= m_Seg.GetPosition()  &&  pos < m_Seg.GetEndPosition();
-}
-
-inline
 CSeqVector_CI::CSeqVector_CI(void)
     : m_Vector(0),
-      m_Position(kInvalidSeqPos),
       m_Coding(CSeq_data::e_not_set),
-      m_CurrentCache(new SCacheData),
-      m_BackupCache(new SCacheData)
+      m_CachePos(kInvalidSeqPos),
+      m_Cache(0),
+      m_BackupPos(kInvalidSeqPos)
 {
     return;
 }
@@ -176,19 +112,22 @@ CSeqVector_CI::CSeqVector_CI(void)
 inline
 CSeqVector_CI::~CSeqVector_CI(void)
 {
-    delete m_CurrentCache;
-    delete m_BackupCache;
+    return;
 }
 
 inline
 CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
     : m_Vector(sv_it.m_Vector),
-      m_Position(sv_it.m_Position),
       m_Coding(sv_it.m_Coding),
-      m_CurrentCache(new SCacheData(*sv_it.m_CurrentCache)),
-      m_BackupCache(new SCacheData(*sv_it.m_BackupCache))
+      m_CachePos(sv_it.m_CachePos),
+      m_CacheData(sv_it.m_CacheData),
+      m_BackupPos(sv_it.m_BackupPos),
+      m_BackupData(sv_it.m_BackupData)
 {
     x_UpdateCachePtr();
+    if ( sv_it.m_Cache ) {
+        m_Cache += sv_it.m_Cache - sv_it.m_CacheData.begin();
+    }
 }
 
 inline
@@ -197,22 +136,24 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
     if (this == &sv_it)
         return *this;
     m_Vector = sv_it.m_Vector;
-    m_Position = sv_it.m_Position;
     m_Coding = sv_it.m_Coding;
-    *m_CurrentCache = *sv_it.m_CurrentCache;
-    *m_BackupCache = *sv_it.m_BackupCache;
+    m_CachePos = sv_it.m_CachePos;
+    m_CacheData = sv_it.m_CacheData;
+    m_BackupPos = sv_it.m_BackupPos;
+    m_BackupData = sv_it.m_BackupData;
     x_UpdateCachePtr();
+    if ( sv_it.m_Cache ) {
+        m_Cache += sv_it.m_Cache - sv_it.m_CacheData.begin();
+    }
     return *this;
 }
 
 inline
 CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
-    if (bool(m_Vector)  &&  m_Position < m_Vector->size()) {
-        ++m_Position;
-        if (m_Position >= x_CachePos() + x_CacheLen()) {
+    _ASSERT(bool(m_Vector)  &&  m_Cache);
+    if (++m_Cache >= m_CacheData.end()) {
             x_NextCacheSeg();
-        }
     }
     return *this;
 }
@@ -220,11 +161,9 @@ CSeqVector_CI& CSeqVector_CI::operator++(void)
 inline
 CSeqVector_CI& CSeqVector_CI::operator--(void)
 {
-    if (bool(m_Vector)  &&  m_Position < m_Vector->size()) {
-        --m_Position;
-        if (m_Position < x_CachePos()) {
+    _ASSERT(bool(m_Vector)  &&  m_Cache);
+    if (--m_Cache < m_CacheData.begin()) {
             x_PrevCacheSeg();
-        }
     }
     return *this;
 }
@@ -232,22 +171,32 @@ CSeqVector_CI& CSeqVector_CI::operator--(void)
 inline
 TSeqPos CSeqVector_CI::GetPos(void) const
 {
-    return m_Position;
+    return m_Cache ? m_Cache - m_CacheData.begin() + m_CachePos : kInvalidSeqPos;
 }
 
 inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
-    _ASSERT(m_Position != kInvalidSeqPos);
-    return x_Cache()[m_Position - x_CachePos()];
+    _ASSERT(m_Cache);
+    return *m_Cache;
 }
 
 inline
 CSeqVector_CI::operator bool(void) const
 {
-    return bool(m_Vector)  &&
-        m_Position != kInvalidSeqPos  &&
-        m_Position < m_Vector->size();
+    return bool(m_Vector)  &&  m_Cache;
+}
+
+inline
+TSeqPos CSeqVector_CI::x_CacheEnd(void) const
+{
+    return m_CachePos + m_CacheData.size();
+}
+
+inline
+TSeqPos CSeqVector_CI::x_BackupEnd(void) const
+{
+    return m_BackupPos + m_BackupData.size();
 }
 
 
@@ -257,6 +206,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/05/30 18:00:26  grichenk
+* Fixed caching bugs in CSeqVector_CI
+*
 * Revision 1.1  2003/05/27 19:42:23  grichenk
 * Initial revision
 *
