@@ -298,6 +298,13 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
         // nucleotide formats
         else if (bioseq.GetInst().GetSeq_data().IsIupacna()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
+            // convert 'T' to 'U' for RNA
+            if (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+                for (int i=0; i<sequenceString.size(); i++) {
+                    if (sequenceString[i] == 'T')
+                        sequenceString[i] = 'U';
+                }
+            }
         } else if (bioseq.GetInst().GetSeq_data().IsNcbi4na()) {
             StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi4na().Get(), &sequenceString,
                 (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
@@ -619,6 +626,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/03/01 22:56:09  thiessen
+* convert 'T' to 'U' for RNA with IUPACna
+*
 * Revision 1.64  2004/02/19 17:05:06  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
