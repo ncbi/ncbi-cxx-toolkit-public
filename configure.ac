@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.348 2005/02/03 18:42:09 ucko Exp $
+#  $Id: configure.ac,v 1.349 2005/02/03 20:59:21 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3698,6 +3698,11 @@ test -d "$vpath"  &&  LIBXML_PATH=$vpath
 NCBI_CHECK_THIRD_PARTY_LIB_(libxml, LIBXML, xml2,
  AC_LANG_PROGRAM([#include <libxml/parser.h>],
     [xmlDocPtr doc = xmlParseFile("foo.xml");]))
+if test -f "${LIBXML_PATH}/lib${bit64_sfx}/libxml-static.a"; then
+   LIBXML_STATIC_LIBS="-L${LIBXML_PATH}/lib -lxml2-static"
+else
+   LIBXML_STATIC_LIBS=${LIBXML_LIBS}
+fi
 
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite}
@@ -4337,6 +4342,7 @@ AC_SUBST(LIBOB)
 AC_SUBST(LIBIMR)
 AC_SUBST(EXPAT_STATIC_LIBS)
 AC_SUBST(SABLOT_STATIC_LIBS)
+AC_SUBST(LIBXML_STATIC_LIBS)
 
 AC_SUBST(NCBI_C_ncbi)
 
