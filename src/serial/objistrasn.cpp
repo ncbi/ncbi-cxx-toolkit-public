@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2001/10/16 17:15:47  grichenk
+* Fixed bug in CObjectIStreamAsn::ReadString()
+*
 * Revision 1.71  2001/08/02 22:28:42  grichenk
 * Added memory pre-allocation on \n for long strings
 *
@@ -857,6 +860,11 @@ void CObjectIStreamAsn::ReadString(string& s)
                     // end of string
                     s.append(m_Input.GetCurrentPos(), i);
                     m_Input.SkipChars(i + 1);
+                    s.reserve(s.size());
+                    // Check the string for non-printable characters
+                    for (i = 0; i < s.length(); i++) {
+                        CheckVisibleChar(s[i], m_FixMethod, startLine);
+                    }
                     return;
                 }
                 break;
@@ -884,11 +892,6 @@ void CObjectIStreamAsn::ReadString(string& s)
     catch ( CEofException& ) {
         UnendedString(startLine);
         throw;
-    }
-    s.reserve(s.size());
-    // Check the string for non-printable characters
-    for (i = 0; i < s.length(); i++) {
-        CheckVisibleChar(s[i], m_FixMethod, startLine);
     }
 }
 
