@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/08/24 18:53:43  thiessen
+* add filename to sequence viewer window titles
+*
 * Revision 1.19  2001/08/06 20:22:01  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -123,7 +126,9 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
-    ViewerWindowBase(thisUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,50), wxSize(1000,300)),
+    ViewerWindowBase(thisUpdateViewer,
+        wxString(GetWorkingFilename().c_str()) + " - Update Viewer",
+        wxPoint(0,50), wxSize(1000,300)),
     updateViewer(thisUpdateViewer)
 {
     wxMenu *menu = new wxMenu;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/08/24 18:53:43  thiessen
+* add filename to sequence viewer window titles
+*
 * Revision 1.19  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -108,6 +111,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -128,7 +132,9 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
-    ViewerWindowBase(parentSequenceViewer, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(1000,200)),
+    ViewerWindowBase(parentSequenceViewer,
+        wxString(GetWorkingFilename().c_str()) + " - Sequence Viewer",
+        wxPoint(0,500), wxSize(1000,200)),
     sequenceViewer(parentSequenceViewer)
 {
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");

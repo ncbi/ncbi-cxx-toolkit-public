@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/08/24 18:53:13  thiessen
+* add filename to sequence viewer window titles
+*
 * Revision 1.8  2001/08/16 19:21:16  thiessen
 * add face name info to fonts
 *
@@ -78,6 +81,7 @@ extern const std::string& GetWorkingDir(void); // current working directory
 extern const std::string& GetUserDir(void);    // directory of latest user-selected file
 extern const std::string& GetProgramDir(void); // directory where Cn3D executable lives
 extern const std::string& GetDataDir(void);    // 'data' directory with external data files
+extern const std::string& GetWorkingFilename(void); // name of curruent working file
 
 // bring the log window forward (implemented in cn3d_main_wxwin.cpp)
 extern void RaiseLogWindow(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/08/24 18:53:42  thiessen
+* add filename to sequence viewer window titles
+*
 * Revision 1.49  2001/08/24 13:29:28  thiessen
 * header and GTK font tweaks
 *
@@ -460,7 +463,7 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 void OpenGLRenderer::SetSize(int width, int height) const
 {
     glViewport(0, 0, width, height);
-    TESTMSG("viewport " << width << ' ' << height);
+//    TESTMSG("viewport " << width << ' ' << height);
     NewView();
 }
 

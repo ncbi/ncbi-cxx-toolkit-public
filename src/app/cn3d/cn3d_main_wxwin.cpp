@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2001/08/24 18:53:42  thiessen
+* add filename to sequence viewer window titles
+*
 * Revision 1.70  2001/08/24 13:29:27  thiessen
 * header and GTK font tweaks
 *
@@ -359,11 +362,13 @@ std::string
     workingDir,     // current working directory
     userDir,        // directory of latest user-selected file
     programDir,     // directory where Cn3D executable lives
-    dataDir;        // 'data' directory with external data files
+    dataDir,        // 'data' directory with external data files
+    currentFile;    // name of curruent working file
 const std::string& GetWorkingDir(void) { return workingDir; }
 const std::string& GetUserDir(void) { return userDir; }
 const std::string& GetProgramDir(void) { return programDir; }
 const std::string& GetDataDir(void) { return dataDir; }
+const std::string& GetWorkingFilename(void) { return currentFile; }
 
 // top-level window (the main structure window)
 static wxFrame *topWindow = NULL;
@@ -519,23 +524,48 @@ Cn3DApp::Cn3DApp() : wxApp()
     SetUseBestVisual(true);
 }
 
-#define SET_DEFAULT_INTEGER_REGISTRY_VALUE(section, name, defval) \
-    if (!RegistryIsValidInteger((section), (name))) \
-        RegistrySetInteger((section), (name), (defval));
-
-#define SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(section, name, defval) \
-    if (!RegistryIsValidBoolean((section), (name))) \
-        RegistrySetBoolean((section), (name), (defval), true);
-
-#define SET_DEFAULT_STRING_REGISTRY_VALUE(section, name, defval) \
-    if (!RegistryIsValidString((section), (name))) \
-        RegistrySetString((section), (name), (defval));
-
 bool Cn3DApp::OnInit(void)
 {
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
+
+    // default quality settings
+    RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
+    RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, 8);
+    RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, 6);
+    RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, 6);
+    RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, 6);
+    RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, 12);
+    RegistrySetBoolean(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, true);
+
+    // default font for OpenGL (structure window)
+#if defined(__WXMSW__)
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
+#elif defined(__WXGTK__)
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
+#endif
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, wxSWISS);
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, wxBOLD);
+    RegistrySetBoolean(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, false);
+    RegistrySetString(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
+
+    // default font for sequence viewers
+#if defined(__WXMSW__)
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
+#elif defined(__WXGTK__)
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 14);
+#endif
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, wxROMAN);
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, wxNORMAL);
+    RegistrySetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
+    RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
+
+    // create the main frame window
+    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
+    SetTopWindow(structureWindow);
 
     TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
     RaiseLogWindow();
@@ -559,7 +589,7 @@ bool Cn3DApp::OnInit(void)
     TESTMSG("program dir: " << programDir.c_str());
     TESTMSG("data dir: " << dataDir.c_str());
 
-    // load program registry
+    // load program registry - overriding defaults if present
     registryFile = dataDir + "cn3d.ini";
     auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
     if (*iniIn) {
@@ -570,46 +600,9 @@ bool Cn3DApp::OnInit(void)
     // favorite styles
     LoadFavorites();
 
-    // initial quality settings if not already present in registry
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, 8);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, 6);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, 6);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, 6);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, 12);
-    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, true);
-
-    // initial font for OpenGL (structure window)
-#if defined(__WXMSW__)
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
-#elif defined(__WXGTK__)
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
-#endif
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, wxSWISS);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, wxBOLD);
-    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, false);
-    SET_DEFAULT_STRING_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
-
-    // initial font for sequence viewers
-#if defined(__WXMSW__)
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
-#elif defined(__WXGTK__)
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 14);
-#endif
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, wxROMAN);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
-    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, wxNORMAL);
-    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
-    SET_DEFAULT_STRING_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
-
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
     LoadStandardDictionary(dictFile.c_str());
-
-    // create the main frame window
-    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
-    SetTopWindow(structureWindow);
 
     // get file name from command line, if present
     if (argc > 2)
@@ -1229,6 +1222,8 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         ERR_POST(Error << "Cannot open file '" << filename << "' for reading");
         return;
     }
+    currentFile = wxFileNameFromPath(filename);
+
     std::string firstWord;
     *inStream >> firstWord;
     delete inStream;
@@ -1283,7 +1278,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
-    SetTitle(wxString(wxFileNameFromPath(filename)) + " - Cn3D++");
+    SetTitle(wxString(currentFile.c_str()) + " - Cn3D++");
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
