@@ -495,6 +495,7 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   sr->m_Sr=0;
   for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h))); ! srs.Eof(); )
     {
+      srs.setf(0, ios_base::skipws);
       CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
       if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
       sr->m_Sr->push_back(seqRef);
@@ -633,6 +634,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/22 18:15:47  grichenk
+* Unset "skipws" flag in binary stream
+*
 * Revision 1.8  2002/03/21 23:16:32  kimelman
 * GC bugfixes
 *
