@@ -44,14 +44,14 @@ private:
     size_t m_Size;
 };
 
-inline
-string Identifier(const string& typeName)
+static
+string Identifier(const string& typeName, bool capitalize = true)
 {
     string s;
     s.reserve(typeName.size());
     string::const_iterator i = typeName.begin();
     if ( i != typeName.end() ) {
-        s += toupper(*i);
+        s += capitalize? toupper(*i): *i;
         while ( ++i != typeName.end() ) {
             char c = *i;
             if ( c == '-' || c == '.' )
@@ -161,7 +161,7 @@ string ASNType::ClassName(const CNcbiRegistry& registry) const
     const ASNType* parent = config.GetParentType();
     if ( parent ) {
         return parent->ClassName(registry) +
-            '_' + Identifier(config.GetCurrentMember());
+            "__" + Identifier(config.GetCurrentMember(), false);
     }
     return Identifier(config.GetCurrentMember());
 }
@@ -175,7 +175,7 @@ string ASNType::FileName(const CNcbiRegistry& registry) const
     const ASNType* parent = config.GetParentType();
     if ( parent ) {
         return parent->FileName(registry) +
-            '_' + Identifier(config.GetCurrentMember());
+            "__" + Identifier(config.GetCurrentMember(), false);
     }
     return Identifier(config.GetCurrentMember());
 }

@@ -107,6 +107,14 @@ void CCodeGenerator::GenerateCode(void)
             fileList << ' ' << filei->first << "_Base";
         }
         fileList << endl;
+
+        fileList << "GENUSERFILES =";
+        for ( TOutputFiles::const_iterator filei = m_Files.begin();
+              filei != m_Files.end();
+              ++filei ) {
+            fileList << ' ' << filei->first;
+        }
+        fileList << endl;
     }
 }
 
