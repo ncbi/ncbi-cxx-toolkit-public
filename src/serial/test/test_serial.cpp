@@ -24,16 +24,20 @@ int CTestSerial::Run(void)
     ofstream diag("test.log");
     SetDiagStream(&diag);
     try {
-        WebEnv* env = (WebEnv*)GetTypeInfo_struct_Web_Env()->Create();
+        WebEnv* env = 0;
         {
             {
+                CObjectIStreamAsn(ifstream("webenv.ent")).
+                    Read(&env, GetSequenceTypeRef(&env).Get());
+            }
+            {
                 CObjectOStreamAsnBinary(ofstream("webenv.bino")).
-                    Write(env, GetTypeRef(env).Get());
-                //                CObjectOStreamAsnBinary(ofstream("webenv.bino")) << *env;
+                    Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
 /*
-                CObjectIStreamAsnBinary(ifstream("webenv.bini")) >> *env;
+                CObjectIStreamAsnBinary(ofstream("webenv.bini")).
+                    Read(&env, GetSequenceTypeRef(&env).Get());
 */
             }
         }

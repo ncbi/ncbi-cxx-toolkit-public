@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/06/30 18:54:59  vasilche
+* Fixed some errors under MSVS
+*
 * Revision 1.11  1999/06/30 16:04:48  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -244,30 +247,36 @@ const CClassInfoTmpl::TMembersByOffset& CClassInfoTmpl::GetMembersByOffset(void)
 {
     TMembersByOffset* members = m_MembersByOffset.get();
     if ( !members ) {
+        // create map
         m_MembersByOffset.reset(members = new TMembersByOffset);
         const CMembers::TMembers& mlist = m_Members.GetMembers();
-        for ( CMembers::TMembers::const_iterator i = mlist.begin();
-              i != mlist.end(); ++i ) {
-            const CMemberInfo* info = i->second;
-            size_t offset = info->GetOffset();
-            if ( !members->insert(TMembersByOffset::
-                                  value_type(offset,
-                                             make_pair(&i->first,
+        // fill map
+        {
+            for ( CMembers::TMembers::const_iterator i = mlist.begin();
+                  i != mlist.end(); ++i ) {
+                const CMemberInfo* info = i->second;
+                size_t offset = info->GetOffset();
+                if ( !members->insert(TMembersByOffset::
+                          value_type(offset, make_pair(&i->first,
                                                        i->second))).second ) {
-                THROW1_TRACE(runtime_error,
-                             "conflict member offset: " +
-                             NStr::UIntToString(offset));
+                    THROW1_TRACE(runtime_error,
+                                 "conflict member offset: " +
+                                 NStr::UIntToString(offset));
+                }
             }
         }
-        size_t nextOffset = 0;
-        for ( TMembersByOffset::const_iterator i = members->begin();
-              i != members->end(); ++i ) {
-            size_t offset = i->first;
-            if ( offset < nextOffset ) {
-                THROW1_TRACE(runtime_error,
-                             "overlapping members");
+        // check overlaps
+        {
+            size_t nextOffset = 0;
+            for ( TMembersByOffset::const_iterator i = members->begin();
+                  i != members->end(); ++i ) {
+                size_t offset = i->first;
+                if ( offset < nextOffset ) {
+                    THROW1_TRACE(runtime_error,
+                                 "overlapping members");
+                }
+                nextOffset = offset + i->second.second->GetSize();
             }
-            nextOffset = offset + i->second.second->GetSize();
         }
     }
     return *members;

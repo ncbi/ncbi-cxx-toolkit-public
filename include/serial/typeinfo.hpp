@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/30 18:54:55  vasilche
+* Fixed some errors under MSVS
+*
 * Revision 1.8  1999/06/30 16:04:39  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -76,6 +79,13 @@ class CMemberInfo;
 
 struct CTypeInfoOrder
 {
+    // to avoid warning under MSVS, where type_info::before() erroneously
+    // returns int, we'll define overloaded functions:
+    static bool ToBool(bool b)
+        { return b; }
+    static bool ToBool(int i)
+        { return i != 0; }
+
     bool operator()(const type_info* i1, const type_info* i2) const
         { return i1->before(*i2); }
 };
@@ -137,6 +147,7 @@ protected:
     friend class CObjectIStream;
     friend class CClassInfoTmpl;
 
+public:
     // read object
     virtual void ReadData(CObjectIStream& in,
                           TObjectPtr object) const = 0;

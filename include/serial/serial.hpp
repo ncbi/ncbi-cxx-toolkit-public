@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/06/30 18:54:54  vasilche
+* Fixed some errors under MSVS
+*
 * Revision 1.13  1999/06/30 16:04:35  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -212,6 +215,12 @@ CTypeRef GetTypeRef(char* const* object)
 }
 
 inline
+CTypeRef GetTypeRef(const char* const* object)
+{
+    return GetStdTypeRef(object);
+}
+/*
+inline
 CTypeRef GetTypeRef(unsigned char* const* object)
 {
     return GetStdTypeRef(object);
@@ -219,12 +228,6 @@ CTypeRef GetTypeRef(unsigned char* const* object)
 
 inline
 CTypeRef GetTypeRef(signed char* const* object)
-{
-    return GetStdTypeRef(object);
-}
-
-inline
-CTypeRef GetTypeRef(const char* const* object)
 {
     return GetStdTypeRef(object);
 }
@@ -240,7 +243,7 @@ CTypeRef GetTypeRef(const signed char* const* object)
 {
     return GetStdTypeRef(object);
 }
-
+*/
 // define type info getter for user classes
 template<typename CLASS>
 inline

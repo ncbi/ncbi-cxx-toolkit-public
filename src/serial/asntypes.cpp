@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/30 18:54:58  vasilche
+* Fixed some errors under MSVS
+*
 * Revision 1.1  1999/06/30 16:04:46  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -90,16 +93,30 @@ void CSequenceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 void CSequenceTypeInfo::CollectExternalObjects(COObjectList& list,
                                                TConstObjectPtr object) const
 {
+    TConstObjectPtr obj = Get(object);
+    if ( obj == 0 )
+        THROW1_TRACE(runtime_error, "null sequence pointer"); 
+    GetDataTypeInfo()->CollectExternalObjects(list, obj);
 }
 
 void CSequenceTypeInfo::WriteData(CObjectOStream& out,
-                                  TConstObjectPtr obejct) const
+                                  TConstObjectPtr object) const
 {
+    TConstObjectPtr obj = Get(object);
+    if ( obj == 0 )
+        THROW1_TRACE(runtime_error, "null sequence pointer"); 
+    GetDataTypeInfo()->WriteData(out, obj);
 }
 
 void CSequenceTypeInfo::ReadData(CObjectIStream& in,
                                  TObjectPtr object) const
 {
+    TObjectPtr obj = Get(object);
+    if ( obj == 0 ) {
+        ERR_POST("null sequence pointer"); 
+        obj = Get(object) = GetDataTypeInfo()->Create();
+    }
+    GetDataTypeInfo()->ReadData(in, obj);
 }
 
 CSetTypeInfo::CSetTypeInfo(const CTypeRef& typeRef)

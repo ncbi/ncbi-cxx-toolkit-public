@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/30 18:54:53  vasilche
+* Fixed some errors under MSVS
+*
 * Revision 1.1  1999/06/30 16:04:18  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -77,9 +80,9 @@ public:
         {
             return *static_cast<TObjectPtr*>(object);
         }
-    static TConstObjectPtr& Get(TConstObjectPtr object)
+    static const TConstObjectPtr& Get(TConstObjectPtr object)
         {
-            return *static_cast<TConstObjectPtr*>(object);
+            return *static_cast<const TObjectPtr*>(object);
         }
 
     virtual size_t GetSize(void) const;
