@@ -353,11 +353,10 @@ CSeq_align::CreateDensegFromStdseg() const
                 SerialAssign(*id, *seq_id);
                 ds.SetIds().push_back(id);
             } else {
-                if (!SerialEquals(*ds.GetIds()[row], *seq_id)) {
-                    NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
-                               "CreateDensegFromStdseg(): "
-                               "Inconsistent seq-ids!");
-                }
+                // if (!SerialEquals(*ds.GetIds()[row], *seq_id)) {
+                //     Do nothing. Without using OM
+                //     there's no guarantee that the seqs are different.
+                // }
             }
 
             // next row
@@ -504,6 +503,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/02/13 17:10:24  todorov
+* - inconsistent ids exception in CreateDensegFromStdseg
+*
 * Revision 1.7  2004/01/09 16:32:06  todorov
 * +SetType(eType_not_set)
 *
