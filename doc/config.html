@@ -251,9 +251,11 @@ to adopt for his local environment.
 
 <p>
 It is even possible to use <b><i>configure</i></b> under Windows NT,
-e.g. for the MSVC++ compiler -- if there is a "sh" or
-<a href="http://www.lns.cornell.edu/public/COMP/info/bash/bashref_toc.html">"bash"</a>
-<a href="http://www.gci-net.com/~users/c/cteeple/windowsnttrueshells.htp">emulators for MS Windows</a>.
+e.g. for the MSVC++ compiler -- if there is a "<i>sh</i>" or
+<a href="http://www.lns.cornell.edu/public/COMP/info/bash/bashref_toc.html">
+"<i>bash</i>"</a>
+<a href="http://www.gci-net.com/~users/c/cteeple/windowsnttrueshells.htp">
+emulators for MS Windows</a>.
 <i>Wrapper script</i> <b><i>compilers/msvc_nt.bash</i></b> sets
 MSVC++-specific environment variables, paths and flags, and then
 executes <b><i>configure</i></b>.
@@ -269,12 +271,14 @@ enviroment and "egc" GNU C/C++ compiler on your NT, then you can use
 
 <p>
 <a name="ref_PreBuiltHeaders"></a>
-However, most NT users have neither <b><i>sh</b></i>-like interpreter nor
-GNU <b><i>make</i></b> installed on their PCs. -- They can use pre-built
-<i>"ncbiconf.ms6"</i> configuration header (also located in the
-<b><i>"compilers/"</b></i> directory),
-and compose a hierarchy of projects with the MS Visual C++ Studio.
+However, most of NT users have neither <b><i>sh</b></i>-like interpreter nor
+GNU <b><i>make</i></b> installed on their PCs. They can use pre-built
+<b><i>ncbiconf.ms6</i></b> configuration header, and compose a hierarchy of
+projects with the MS Visual C++ Studio.
 
+<p>
+The same is for Mac users -- we have a (manually maintained) 
+<b><i>compilers/ncbiconf.mac</i></b> configuration header.
 
 <br></br>
 <a name="ref_Example">
@@ -314,11 +318,13 @@ libraries and tools:
   <li> WorkShop Compilers 5.0 for Solaris 2.6 on Sun
   <li> egcs-2.91.57 for CYGWIN_NT-4.0 on PC
   <li> egcs-2.91.66 for RedHat Linux 5.2 on PC
-  <li> egcs-2.91.66 for Solaris 2.6 on SUN(but this one has some weird linker bug...)
+  <li> Metrowerks CodeWarrior for MacOS
 </ul>
+NOTE: Some projects(e.g. "query") are very platform-specific, and they cannot
+be adopted(or even compiled) for all supported platforms.
 
 
-<br>
+<br></br>
 <hr>
 <table border=0 width="100%" cellspacing=0>
 <tr>
