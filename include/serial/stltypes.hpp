@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/09/01 18:16:47  vasilche
+* Added files to MSVC project.
+* Fixed errors on MSVC.
+*
 * Revision 1.48  2000/09/01 13:16:03  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -556,8 +560,7 @@ protected:
             TTypeInfo elementType = GetDataTypeInfo();
             {
                 // push empty element
-                value_type value;
-                container.push_back(value);
+                container.push_back(value_type());
             }
             in.ReadObject(&container.back(), elementType);
         }
@@ -776,7 +779,9 @@ public:
     typedef Map TObjectType;
     typedef typename TObjectType::value_type value_type;
     typedef typename TObjectType::key_type key_type;
-    typedef typename TObjectType::mapped_type mapped_type;
+	// MSVC named standard STL's map<>::mapped_type as referent_type
+    //typedef typename TObjectType::mapped_type mapped_type;
+	typedef typename value_type::second_type mapped_type;
 
     CStlClassInfoMapBase(TTypeInfo keyType, TTypeInfo dataType)
         : CParent(keyType, &static_cast<const value_type*>(0)->first,

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/01 18:16:48  vasilche
+* Added files to MSVC project.
+* Fixed errors on MSVC.
+*
 * Revision 1.3  2000/09/01 13:16:20  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -119,10 +123,16 @@ CObjectStack::TFrame& CObjectStack::PushFrameLong(void)
     size_t newSize = oldSize * 2;
     TFrame* newStack = new TFrame[newSize];
 
-    for ( size_t i = 0; i < oldSize; ++i )
-        newStack[i] = m_Stack[i];
-    for ( size_t i = oldSize; i < newSize; ++i )
-        newStack[i].Reset();
+	{
+		// copy old stack
+		for ( size_t i = 0; i < oldSize; ++i )
+			newStack[i] = m_Stack[i];
+	}
+	{
+		// clear new area of new stack
+		for ( size_t i = oldSize; i < newSize; ++i )
+			newStack[i].Reset();
+	}
 
     delete[] m_Stack;
 
