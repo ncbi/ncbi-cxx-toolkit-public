@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/19 18:52:41  thiessen
+* add structure summary
+*
 * Revision 1.5  2002/12/07 01:38:36  thiessen
 * fix header problem
 *
@@ -67,6 +70,9 @@
 #include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/chemical_graph.hpp"
+#include "cn3d/molecule_identifier.hpp"
+#include "cn3d/sequence_set.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +160,7 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
 
     // summarize annotations
     const CAlign_annot_set *annots = structureSet->GetCDDAnnotSet();
-    if (annots) {
+    if (annots && annots->Get().size() > 0) {
         *tDescr << "Annotation summary:\n\n";
         CAlign_annot_set::Tdata::const_iterator a, ae = annots->Get().end();
         for (a=annots->Get().begin(); a!=ae; a++) {
@@ -190,6 +196,70 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
                 }
             }
             *tDescr << '\n';
+        }
+    }
+
+    // summarize structures
+    if (structureSet->objects.size() > 0) {
+        *tDescr << "Structure summary:";
+        StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
+        for (o=structureSet->objects.begin(); o!=oe; o++) {
+            *tDescr << "\n\nPDB " << (*o)->pdbID.c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
+
+            // make lists of biopolymer chains and heterogens
+            typedef std::list < std::string > ChainList;
+            ChainList chainList;
+            typedef std::map < std::string , int > HetList;
+            HetList hetList;
+            ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+            for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+                if (m->second->IsProtein() || m->second->IsNucleotide()) {
+                    wxString descr;
+                    SequenceSet::SequenceList::const_iterator
+                        s, se = structureSet->sequenceSet->sequences.end();
+                    for (s=structureSet->sequenceSet->sequences.begin(); s!=se; s++) {
+                        if ((*s)->identifier == m->second->identifier) {
+                            descr.Printf("%s: gi %i (%s)", m->second->identifier->ToString().c_str(),
+                                (*s)->identifier->gi, (*s)->description.c_str());
+                            break;
+                        }
+                    }
+                    if (s == se)
+                        descr.Printf("%s: gi %i", m->second->identifier->ToString().c_str(),
+                            m->second->identifier->gi);
+                    chainList.push_back(descr.c_str());
+                } else if (m->second->IsHeterogen()) {
+                    // get name from local graph name of first (should be only) residue
+                    const std::string& name = m->second->residues.find(1)->second->nameGraph;
+                    HetList::iterator n = hetList.find(name);
+                    if (n == hetList.end())
+                        hetList[name] = 1;
+                    else
+                        n->second++;
+                }
+            }
+            chainList.sort();
+
+            // print chains
+            ChainList::const_iterator c, ce = chainList.end();
+            for (c=chainList.begin(); c!=ce; c++)
+                *tDescr << "    " << c->c_str() << '\n';
+
+            // print hets
+            if (hetList.size() > 0) {
+                *tDescr << "Heterogens: ";
+                HetList::const_iterator h, he = hetList.end();
+                for (h=hetList.begin(); h!=he; h++) {
+                    if (h != hetList.begin())
+                        *tDescr << ", ";
+                    wxString descr;
+                    if (h->second > 1)
+                        descr.Printf("%s (x%i)", h->first.c_str(), h->second);
+                    else
+                        descr = h->first.c_str();
+                    *tDescr << descr;
+                }
+            }
         }
     }
 
