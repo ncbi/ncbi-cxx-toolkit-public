@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>traverseBS.cpp</title>
+  </head>
+
+  <body BGCOLOR="#FFFFFF">
+  <pre><font color = "red">// File name:   applic.cpp
+// Description: Using the CNcbiApplication class with CNcbiDiag, CArgs 
+//		and CArgDescription classes
+<font color = "green">
+#include &lt;corelib/ncbistd.hpp>
+#include &lt;corelib/ncbiutil.hpp>
+#include &lt;corelib/ncbiargs.hpp>
+#include &lt;corelib/ncbiapp.hpp>
+
+<font color = "blue">USING_NCBI_SCOPE;<font color = "black">
+
+class CTestApp : public CNcbiApplication {
+public:
+    virtual int Run ();
+};
+
+int CTestApp::Run() {
+
+    auto_ptr&lt;CArgs> args;
+<font color=red>
+    // create a CArgDescriptions object to constrain the input arguments;
+    // Argument descriptions are added using:
+
+    //  void AddKey(string& name, string& synopsis, string& comment, EType, TFlags); 
+    //  void AddOptionalKey(string& name, string& synopsis, string& comment, EType,
+    //			    TFlags, string default);
+    //  void AddFlag(string& name, string& comment);
+</font>
+    {
+        CArgDescriptions argDesc;
+
+<font color=red>	// Required arguments:</font>
+
+        argDesc.AddKey("n", "integer", "integer between 1 and 10", argDesc.eInteger, 0);
+        argDesc.AddKey("f", "float", "float between 0.0 and 1.0", argDesc.eDouble, 0);
+	argDesc.AddKey("i", "inputFile", "data file in", argDesc.eInputFile, 
+		       argDesc.fDelayOpen);
+
+<font color=red>	// optional arguments:</font>
+
+        argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
+			       argDesc.eOutputFile);
+
+<font color=red>	// optional flags</font>
+
+        argDesc.AddFlag("it", "input text");
+        argDesc.AddFlag("ib", "input binary");
+
+        args.reset(argDesc.CreateArgs(GetArguments()));
+    }
+
+    int   intIn   = (*args)["n"].AsInteger();
+    float floatIn = (*args)["f"].AsDouble();
+    string inFile = (*args)["i"].AsString();
+    
+<font color=red>    // process optional args</font>
+
+    if ( args->Exist("l") ) {
+        SetDiagStream(&(*args)["l"].AsOutputFile());
+    }
+
+    bool textIn = args->Exist("it");
+    bool binIn = args->Exist("ib");
+
+    if (! (textIn ^ binIn) ) {
+       ERR_POST(Error << "input type must be specified using -it or -ib");
+    }
+
+    string InputType;
+    if (textIn) 
+      InputType = "text";
+    else if (binIn) 
+      InputType = "binary";
+    
+    ERR_POST(Info << "intIn = " << intIn << " floatIn = " << floatIn << " inFile = "
+	     << inFile << " input type = " << InputType);
+    
+    return 0;
+}
+
+int main(int argc, const char* argv[]) 
+{
+      CNcbiOfstream diag("moreApp.log");
+      SetDiagStream(&diag);
+
+<font color=red>      // Set the global severity level to Info </font>
+
+      SetDiagPostLevel(eDiag_Info);
+
+      CTestApp theTestApp;
+      return theTestApp.AppMain(argc, argv);
+}
+

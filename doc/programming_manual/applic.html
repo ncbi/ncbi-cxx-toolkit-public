@@ -20,8 +20,7 @@ you to the foundation classes of the library.
 <a name="using">
 <h3> Using the NCBI Application Class </h3>
 
-Five fundamental classes form the foundation of the C++ toolkit and more generally, the C++
-libraries at NCBI:
+Five fundamental classes form the foundation of the C++ toolkit:
 
 <ul>
  <li> class <a href="#CNcbiApplication"> CNcbiApplication</a>
@@ -61,18 +60,25 @@ after it has initialized its
 <a name="CNcbiArguments"> The 
 <a href="../docxx/CNcbiArguments.html">
 <i> CNcbiArguments </i></a> class provides a data structure for holding the application's
-command-line arguments, along with methods for accessing and modifying these.  The data
-structure is a simple C++ vector of strings. Thus access to it is implemented by member
-functions using the built-in [] operator for arrays and vectors. Four additional class member
-functions support retrieval and modification of the program name (intitially
-<i>argv</i>[0]). <p>
+command-line arguments, along with methods for accessing and modifying these.  The data structure is
+a simple C++ vector of strings. Thus access to it is implemented by member functions using the
+built-in [] operator for arrays and vectors. For example, the first argument in <i>argv</i>
+(following the program name) can be retrieved using the <i>CNcbiApplication::GetArguments()</i>
+method, as: <i>GetArguments()[1]</i>. Here, <i>GetArguments()</i> returns the <i>CNcbiArguments</i>
+object, whose argument values can then be retrieved using the <i>[]</i> operator.
+Four additional <i>CNcbiArgument</i> member functions support retrieval and
+modification of the program name (intitially <i>argv</i>[0]). <p>
 
-<a name="CNcbiEnvironment"> Similarly, the 
-<a href="../docxx/CNcbiEnvironment.html">
-<i> CNcbiEnvironment </i></a> class provides a data structure for
-storing, accessing, and modifying the environment variables accessed by the C library
-routine <i>getenv()</i>. In this case the data structure is an associative array - a
-C++ map container, that allows <i>[]</i> access with string rather than integer indexes. <p>
+A helper class, <a href="../docxx/CArgDescriptions.html"> CArgDescriptions</a>, supports the
+generation of <i>usage</i> messages and the imposition of constraints on the values of the input
+arguments. 
+
+<p>
+<a name="CNcbiEnvironment">
+The <a href="../docxx/CNcbiEnvironment.html"> <i> CNcbiEnvironment </i></a> class provides a data
+structure for storing, accessing, and modifying the environment variables accessed by the C library
+routine <i>getenv()</i>. In this case the data structure is an associative array - a C++ map
+container, that allows <i>[]</i> access with string rather than integer indexes. <p>
 
 <a name="CNcbiRegistry"> The
 <a href="../docxx/CNcbiRegistry.html">
@@ -95,12 +101,14 @@ handle a <i>single</i> message, along with private severity level and post flags
 associated get/set methods.<p>
 
 The <i>CNcbiDiag</i> message buffer is initialized when the class is first instantiated. Additional
-information can then be appended to the message using the overloaded stream operator <i><<</i>. Messages
-can then be terminated explicitly using <i>CNcbiDiag's</i> stream manipulator <i>Endm</i>, or implicitly,
-when the <i>CNcbiDiag</i> object exits scope. When the message is finally posted, a user-installed
-callback function may be invoked to handle the message. The default is to post errors to <i>stderr</i>,
-with the action determined by the severity level of the message. See also the discussion in the Reference Manual
-section on <a href="../libs/err_msg.html#ref_Message"> message posting</a> for a more in-depth coverage.
+information can then be appended to the message using the overloaded stream operator
+<i><<</i>. Messages can then be terminated explicitly using <i>CNcbiDiag's</i> stream manipulator
+<i>Endm</i>, or implicitly, when the <i>CNcbiDiag</i> object exits scope. When the message is
+finally posted, a user-installed callback function may be invoked to handle the message. The default
+is to post errors to <i>stderr</i>, with the action determined by the severity level of the
+message. See also the <a href="diag.html"> next</a> section in this manual, as well as the discussion
+in the Reference Manual section on <a href="../libs/err_msg.html#ref_Message"> <i>message
+posting</i></a>.
 <p>
 <a name="creating">
 <h3> Creating a Simple Application Class </h3>
@@ -187,8 +195,13 @@ The <i> SCOPE</i> statements are actually macros defined in
 
 All code occurring between the <i>BEGIN</i> and <i> END</i> statements will be added to a
 namespace called <i>NCBI_NS_NCBI</i>. The <i>USING</i> macro allows you to access everything
-currently defined in the namespace without requiring the :: scope operator.
+currently defined in the namespace without requiring the :: scope operator.<p>
 
+A more elaborate example, <a href="applic_cpp.html"> <i>applic.cpp</i></a>, combines the 
+usage of the <i>CNcbiApplication</i> class with the <i>CArgs, CArgDescriptions</i>, and
+<i>CNcbiDiag</i> classes. For a more realistic usage of these classes, see also the test program, 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">
+<i> asn2asn.cpp</i></a>.
 
 
 <a name="inside">
@@ -270,7 +283,7 @@ should <i>always</i> be <i>#included</i>. <p>
 </body>
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
-<a href="cref.html"> <i> next </i> </a>
+<a href="diag.html"> <i> next </i> </a>
 </html>
 
 
