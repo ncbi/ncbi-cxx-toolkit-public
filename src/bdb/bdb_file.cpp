@@ -257,6 +257,15 @@ unsigned int CBDB_RawFile::Truncate()
 }
 
 
+void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
+{
+    if (!m_DB) {
+        int ret = m_DB->set_cachesize(m_DB, 0, m_CacheSize, 1);
+        BDB_CHECK(ret, 0);
+    }
+    m_CacheSize = cache_size;
+}
+
 void CBDB_RawFile::x_CreateDB()
 {
     _ASSERT(m_DB == 0);
@@ -671,6 +680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/07/23 18:08:48  kuznets
+ * SetCacheSize function implemented
+ *
  * Revision 1.17  2003/07/22 19:21:19  kuznets
  * Implemented support of attachable berkeley db files
  *
