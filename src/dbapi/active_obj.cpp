@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/10/22 22:14:01  vakatov
+* Get rid of a compilation warning
+*
 * Revision 1.4  2002/09/18 18:47:30  kholodov
 * Modified: CActiveObject inherits directly from IEventListener
 * Added: Additional trace output
@@ -94,7 +97,7 @@ void CActiveObject::Notify(const CDbapiEvent& e)
   }
 }
 
-void CActiveObject::Action(const CDbapiEvent& e)
+void CActiveObject::Action(const CDbapiEvent&)
 {
 
 }

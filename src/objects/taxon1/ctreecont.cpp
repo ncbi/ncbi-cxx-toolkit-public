@@ -392,7 +392,7 @@ CTreeCont::DeleteSubtree(CTreeContNodeBase*, CTreeIterator*)
 ////////////////////////////////////////////////////////////
 // notify others that operation completed (private method)
 ////////////////////////////////////////////////////////////
-void CTreeCont::Done(CTreeContNodeBase* node)
+void CTreeCont::Done(CTreeContNodeBase* /*node*/)
 {
     //     int n= m_spyPot.nof();
 
@@ -944,6 +944,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.3  2002/10/22 22:15:41  vakatov
+ * Get rid of a compilation warning
+ *
  * Revision 6.2  2002/01/31 00:31:26  vakatov
  * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
  * Get rid of "std::" which is unnecessary and sometimes un-compilable.
