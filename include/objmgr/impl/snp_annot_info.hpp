@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/08/14 21:26:04  kans
+* fixed inconsistent line endings that stopped Mac compiler
+*
 * Revision 1.1  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.
@@ -231,3 +234,4 @@ END_NCBI_SCOPE
 */
 
 #endif  // SNP_ANNOT_INFO__HPP
+
