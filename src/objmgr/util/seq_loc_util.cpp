@@ -322,6 +322,7 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
                 return eNa_strand_other;
             }
         }
+        return strand;
     }
     default:
         return eNa_strand_unknown;
@@ -2840,6 +2841,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2004/11/22 19:56:57  shomrat
+* Bug fix (s_GetStrand for mix location)
+*
 * Revision 1.6  2004/11/22 16:10:30  dicuccio
 * Optimized sequence::GetId(const CSeq_loc&) and sequence::GetStrand(const
 * CSeq_loc&)
