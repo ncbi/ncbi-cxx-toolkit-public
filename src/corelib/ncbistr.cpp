@@ -1370,6 +1370,10 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 }
             }
 
+            if (pos2 == NPOS) {
+                break;
+            }
+
             if (score >= best_score) {
                 best_pos   = score_pos;
                 best_score = score;
@@ -1675,6 +1679,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.125  2004/10/21 18:16:24  ucko
+ * NStr::Wrap: don't loop forever in HTML mode if the string ends with
+ * an unterminated entity reference.
+ *
  * Revision 1.124  2004/10/15 12:01:12  ivanov
  * Added 's_' to names of local static functions.
  * Renamed NStr::StringToUInt_DataSize -> NStr::StringToUInt8_DataSize.
