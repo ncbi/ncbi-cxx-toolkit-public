@@ -161,7 +161,7 @@ int CTest::Run(void)
     // At success code below never been executed
     cout << endl << "TEST execution fails!" << endl << endl;
 
-    return 0;
+    return 1;
 }
 
 
@@ -191,6 +191,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2002/06/25 20:17:58  ivanov
+ * Changed default exit code from 0 to 1
+ *
  * Revision 6.1  2002/05/30 16:29:15  ivanov
  * Initial revision
  *
