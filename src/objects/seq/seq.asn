@@ -1,4 +1,4 @@
---$Revision: 6.5 $
+--$Revision: 6.6 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -127,13 +127,21 @@ MolInfo ::= SEQUENCE {
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
+    --
+    -- Completeness is not indicated in most records.  For genomes, assume
+    -- the sequences are incomplete unless specifically marked as complete.
+    -- For mRNAs, assume the ends are not known exactly unless marked as
+    -- having the left or right end.
+    --
     completeness INTEGER {
       unknown (0) ,
       complete (1) ,                   -- complete biological entity
       partial (2) ,                    -- partial but no details given
-      no-left (3),                     -- missing 5' or NH3 end
+      no-left (3) ,                    -- missing 5' or NH3 end
       no-right (4) ,                   -- missing 3' or COOH end
       no-ends (5) ,                    -- missing both ends
+      has-left (6) ,                   -- 5' or NH3 end present
+      has-right (7) ,                  -- 3' or COOH end present
       other (255) } DEFAULT unknown }
 
 
