@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/10/17 17:46:27  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.58  2001/10/09 18:57:27  thiessen
 * add CDD references editing dialog
 *
@@ -255,10 +258,10 @@ class Sequence;
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime);
+    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime, OpenGLRenderer *r);
     // to load in a CDD, need "dataDir" to be pathname to dir. that contains MMDB Biostrucs,
     // must end with trailing path separator; load at most structureLimit # Biostrucs
-    StructureSet(ncbi::objects::CCdd *cdd, const char *dataDir, int structureLimit);
+    StructureSet(ncbi::objects::CCdd *cdd, const char *dataDir, int structureLimit, OpenGLRenderer *r);
     ~StructureSet(void);
 
     // public data

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/10/17 17:46:27  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.48  2001/10/16 21:48:28  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -302,6 +305,7 @@ public:
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
+            MID_RESTORE,
             MID_NEXT_FRAME,
             MID_PREV_FRAME,
             MID_FIRST_FRAME,

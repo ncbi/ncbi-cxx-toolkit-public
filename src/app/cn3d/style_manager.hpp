@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/10/17 17:46:27  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.35  2001/09/04 14:40:26  thiessen
 * add rainbow and charge coloring
 *
@@ -398,7 +401,7 @@ public:
     bool RemoveUserStyle(int id);
 
     // load/save asn user annotations
-    ncbi::objects::CCn3d_user_annotations * CreateASNUserAnnotations(void) const;
+    bool SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotations *annotations) const;
     bool LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_annotations& annotations);
 
     // various typedefs

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2001/10/17 17:46:22  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.83  2001/10/09 18:57:05  thiessen
 * add CDD references editing dialog
 *
@@ -422,7 +425,6 @@ void StructureSet::MatchSequencesToMolecules(void)
 
 void StructureSet::Init(void)
 {
-    renderer = NULL;
     lastAtomName = OpenGLRenderer::NO_NAME;
     lastDisplayList = OpenGLRenderer::NO_LIST;
     sequenceSet = NULL;
@@ -441,8 +443,8 @@ void StructureSet::Init(void)
     structureAlignments = NULL;
 }
 
-StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
-    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc())
+StructureSet::StructureSet(CNcbi_mime_asn1 *mime, OpenGLRenderer *r) :
+    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc()), renderer(r)
 {
     Init();
     mimeData = mime;
@@ -529,8 +531,9 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
 
     // load user annotations
     if (userAnnotations) {
-        if (!styleManager->LoadFromASNUserAnnotations(*userAnnotations))
-            ERR_POST(Error << "Error loading user annotations from mime");
+        if (!styleManager->LoadFromASNUserAnnotations(*userAnnotations) ||
+            !renderer->LoadFromASNViewSettings(*userAnnotations))
+            ERR_POST(Error << "Error loading user annotations and camera settings from mime");
         // remove now; recreated with current settings upon save
         if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetUser_annotations();
         else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetUser_annotations();
@@ -539,8 +542,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
     dataChanged = 0;
 }
 
-StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
-    StructureBase(NULL), isMultipleStructure(true)
+StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit, OpenGLRenderer *r) :
+    StructureBase(NULL), isMultipleStructure(true), renderer(r)
 {
     Init();
     cddData = cdd;
@@ -677,8 +680,9 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
     }
 
     if (cdd->IsSetUser_annotations()) {
-        if (!styleManager->LoadFromASNUserAnnotations(cdd->GetUser_annotations()))
-            ERR_POST(Error << "Error loading user annotations from cdd");
+        if (!styleManager->LoadFromASNUserAnnotations(cdd->GetUser_annotations()) ||
+            !renderer->LoadFromASNViewSettings(cdd->GetUser_annotations()))
+            ERR_POST(Error << "Error loading user annotations or camera settings from cdd");
         cdd->ResetUser_annotations();   // remove now; recreated with current settings upon save
     }
     dataChanged = 0;
@@ -929,24 +933,29 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     GlobalMessenger()->SequenceWindowsSave();
     if (dataChanged) RemoveUnusedSequences();
 
-    // create and temporarily attach a style dictionary and annotation set to the data
-    // (and then remove it again, so it's never out of date)
+    // create and temporarily attach a style dictionary, and annotation set + camera info
+    // to the data (and then remove it again, so it's never out of date)
     CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
-    CRef < CCn3d_user_annotations > userAnnotations(styleManager->CreateASNUserAnnotations());
+    CRef < CCn3d_user_annotations > userAnnotations(new CCn3d_user_annotations());
+    if (!styleManager->SaveToASNUserAnnotations(userAnnotations.GetPointer()) ||
+        !renderer->SaveToASNViewSettings(userAnnotations.GetPointer())) {
+        ERR_POST(Error << "StructureSet::SaveASNData() - error creating user annotations blob");
+        return false;
+    }
     if (mimeData) {
         if (mimeData->IsAlignstruc()) {
             mimeData->SetAlignstruc().SetStyle_dictionary(styleDictionary);
-            if (!userAnnotations.IsNull()) mimeData->SetAlignstruc().SetUser_annotations(userAnnotations);
+            mimeData->SetAlignstruc().SetUser_annotations(userAnnotations);
         } else if (mimeData->IsStrucseq()) {
             mimeData->SetStrucseq().SetStyle_dictionary(styleDictionary);
-            if (!userAnnotations.IsNull()) mimeData->SetStrucseq().SetUser_annotations(userAnnotations);
+            mimeData->SetStrucseq().SetUser_annotations(userAnnotations);
         } else if (mimeData->IsStrucseqs()) {
             mimeData->SetStrucseqs().SetStyle_dictionary(styleDictionary);
-            if (!userAnnotations.IsNull()) mimeData->SetStrucseqs().SetUser_annotations(userAnnotations);
+            mimeData->SetStrucseqs().SetUser_annotations(userAnnotations);
         }
     } else if (cddData) {
         cddData->SetStyle_dictionary(styleDictionary);
-        if (!userAnnotations.IsNull()) cddData->SetUser_annotations(userAnnotations);
+        cddData->SetUser_annotations(userAnnotations);
     }
 
     std::string err;
@@ -1050,9 +1059,6 @@ void StructureSet::SetCenter(const Vector *given)
     }
     TESTMSG("center: " << center << ", maxDistFromCenter " << maxDistFromCenter);
     rotationCenter = center;
-
-    // set camera to center on the selected point
-    if (renderer) renderer->ResetCamera();
 }
 
 bool StructureSet::Draw(const AtomSet *atomSet) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/10/17 17:46:22  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.51  2001/09/06 18:15:44  thiessen
 * fix OpenGL window initialization/OnSize to work on Mac
 *
@@ -213,16 +216,19 @@
 #include <math.h>
 #include <stdlib.h> // for rand, srand
 
+#include <objects/cn3d/Cn3d_GL_matrix.hpp>
+
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_tools.hpp"
-
+#include "cn3d/asn_converter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -280,7 +286,7 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
 
 OpenGLRenderer::OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas) :
     structureSet(NULL), glCanvas(parentGLCanvas),
-    selectMode(false), currentDisplayList(NO_LIST), cameraAngleRad(0.0)
+    selectMode(false), currentDisplayList(NO_LIST), cameraAngleRad(0.0), rotateSpeed(0.5)
 {
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
@@ -361,11 +367,10 @@ void OpenGLRenderer::NewView(int selectX, int selectY) const
 
 void OpenGLRenderer::ResetCamera(void)
 {
-    glLoadIdentity();
-    rotateSpeed = 0.5;
-
     // set up initial camera
+    glLoadIdentity();
     cameraLookAtX = cameraLookAtY = 0.0;
+
     if (structureSet) { // for structure
         cameraAngleRad = DegreesToRad(35.0);
         // calculate camera distance so that structure fits exactly in
@@ -389,6 +394,7 @@ void OpenGLRenderer::ResetCamera(void)
         cameraClipFar = 1.5*cameraDistance;
     }
 
+    // reset matrix
     glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
     NewView();
 }
@@ -575,8 +581,7 @@ void OpenGLRenderer::Display(void)
         glClearColor(0.0, 0.0, 0.0, 1.0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-    glMultMatrixd(viewMatrix);
+    glLoadMatrixd(viewMatrix);
 
     if (selectMode) {
         glInitNames();
@@ -662,16 +667,11 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
 void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
 {
     structureSet = targetStructureSet;
-    if (structureSet) {
-        structureSet->renderer = this;
-        structureSet->SetCenter();
-    }
-
-    // make sure general GL stuff is set up
-    Init();
-    ResetCamera();
-    Construct();
     currentFrame = ALL_FRAMES;
+
+    Init();             // init GL system
+    Construct();        // draw structures
+    RestoreSavedView(); // load initial view if present
 }
 
 void OpenGLRenderer::Construct(void)
@@ -712,13 +712,7 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
         pt = GL_NONE;
         return;
     }
-
-//#ifdef _DEBUG
-//    if (red == 0.0 && green == 0.0 && blue == 0.0)
-//        ERR_POST(Warning << "SetColor request color (0,0,0)");
-    if (alpha <= 0.0)
-        ERR_POST(Warning << "SetColor request alpha <= 0.0");
-//#endif
+    if (alpha <= 0.0) ERR_POST(Warning << "SetColor request alpha <= 0.0");
 
     if (red != pr || green != pg || blue != pb || type != pt || alpha != pa) {
         if (type != pt) {
@@ -1502,6 +1496,100 @@ void OpenGLRenderer::DrawLabel(const std::string& text, const Vector& center, co
     glCallLists(text.size(), GL_UNSIGNED_BYTE, text.data());
     glListBase(0);
     displayListEmpty[currentDisplayList] = false;
+}
+
+bool OpenGLRenderer::SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations *annotations)
+{
+    // save current camera settings
+    initialViewFromASN.Reset(new CCn3d_view_settings());
+    initialViewFromASN->SetCamera_distance(cameraDistance);
+    initialViewFromASN->SetCamera_angle_rad(cameraAngleRad);
+    initialViewFromASN->SetCamera_look_at_X(cameraLookAtX);
+    initialViewFromASN->SetCamera_look_at_Y(cameraLookAtY);
+    initialViewFromASN->SetCamera_clip_near(cameraClipNear);
+    initialViewFromASN->SetCamera_clip_far(cameraClipFar);
+    initialViewFromASN->SetMatrix().SetM0(viewMatrix[0]);
+    initialViewFromASN->SetMatrix().SetM1(viewMatrix[1]);
+    initialViewFromASN->SetMatrix().SetM2(viewMatrix[2]);
+    initialViewFromASN->SetMatrix().SetM3(viewMatrix[3]);
+    initialViewFromASN->SetMatrix().SetM4(viewMatrix[4]);
+    initialViewFromASN->SetMatrix().SetM5(viewMatrix[5]);
+    initialViewFromASN->SetMatrix().SetM6(viewMatrix[6]);
+    initialViewFromASN->SetMatrix().SetM7(viewMatrix[7]);
+    initialViewFromASN->SetMatrix().SetM8(viewMatrix[8]);
+    initialViewFromASN->SetMatrix().SetM9(viewMatrix[9]);
+    initialViewFromASN->SetMatrix().SetM10(viewMatrix[10]);
+    initialViewFromASN->SetMatrix().SetM11(viewMatrix[11]);
+    initialViewFromASN->SetMatrix().SetM12(viewMatrix[12]);
+    initialViewFromASN->SetMatrix().SetM13(viewMatrix[13]);
+    initialViewFromASN->SetMatrix().SetM14(viewMatrix[14]);
+    initialViewFromASN->SetMatrix().SetM15(viewMatrix[15]);
+    initialViewFromASN->SetRotation_center().SetX(structureSet->rotationCenter.x);
+    initialViewFromASN->SetRotation_center().SetY(structureSet->rotationCenter.y);
+    initialViewFromASN->SetRotation_center().SetZ(structureSet->rotationCenter.z);
+
+    // store copy in given annotations
+    std::string err;
+    CRef < CCn3d_view_settings > copy(CopyASNObject(*initialViewFromASN, &err));
+    if (copy.Empty()) {
+        ERR_POST(Error << "OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
+        return false;
+    }
+    annotations->SetView(copy);
+    return true;
+}
+
+bool OpenGLRenderer::LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_annotations& annotations)
+{
+    initialViewFromASN.Reset();
+    if (!annotations.IsSetView()) return true;
+
+    // save a copy of the view settings
+    std::string err;
+    initialViewFromASN.Reset(CopyASNObject(annotations.GetView(), &err));
+    if (initialViewFromASN.Empty()) {
+        ERR_POST(Error << "OpenGLRenderer::LoadFromASNViewSettings() - failed to copy settings:\n" << err);
+        return false;
+    }
+    return true;
+}
+
+void OpenGLRenderer::RestoreSavedView(void)
+{
+    if (initialViewFromASN.Empty() || !structureSet) {
+        ResetCamera();
+        return;
+    }
+
+    // restore current camera settings
+    cameraDistance = initialViewFromASN->GetCamera_distance();
+    cameraAngleRad = initialViewFromASN->GetCamera_angle_rad();
+    cameraLookAtX = initialViewFromASN->GetCamera_look_at_X();
+    cameraLookAtY = initialViewFromASN->GetCamera_look_at_Y();
+    cameraClipNear = initialViewFromASN->GetCamera_clip_near();
+    cameraClipFar = initialViewFromASN->GetCamera_clip_far();
+    viewMatrix[0] = initialViewFromASN->GetMatrix().GetM0();
+    viewMatrix[1] = initialViewFromASN->GetMatrix().GetM1();
+    viewMatrix[2] = initialViewFromASN->GetMatrix().GetM2();
+    viewMatrix[3] = initialViewFromASN->GetMatrix().GetM3();
+    viewMatrix[4] = initialViewFromASN->GetMatrix().GetM4();
+    viewMatrix[5] = initialViewFromASN->GetMatrix().GetM5();
+    viewMatrix[6] = initialViewFromASN->GetMatrix().GetM6();
+    viewMatrix[7] = initialViewFromASN->GetMatrix().GetM7();
+    viewMatrix[8] = initialViewFromASN->GetMatrix().GetM8();
+    viewMatrix[9] = initialViewFromASN->GetMatrix().GetM9();
+    viewMatrix[10] = initialViewFromASN->GetMatrix().GetM10();
+    viewMatrix[11] = initialViewFromASN->GetMatrix().GetM11();
+    viewMatrix[12] = initialViewFromASN->GetMatrix().GetM12();
+    viewMatrix[13] = initialViewFromASN->GetMatrix().GetM13();
+    viewMatrix[14] = initialViewFromASN->GetMatrix().GetM14();
+    viewMatrix[15] = initialViewFromASN->GetMatrix().GetM15();
+    structureSet->rotationCenter.Set(
+        initialViewFromASN->GetRotation_center().GetX(),
+        initialViewFromASN->GetRotation_center().GetY(),
+        initialViewFromASN->GetRotation_center().GetZ());
+
+    NewView();
 }
 
 END_SCOPE(Cn3D)

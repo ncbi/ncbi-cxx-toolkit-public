@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2001/10/17 17:46:22  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.54  2001/09/18 03:10:46  thiessen
 * add preliminary sequence import pipeline
 *
@@ -1599,10 +1602,11 @@ static bool CreateObjectLocation(
     return true;
 }
 
-ncbi::objects::CCn3d_user_annotations * StyleManager::CreateASNUserAnnotations(void) const
+bool StyleManager::SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotations *annotations) const
 {
-    if (userAnnotations.size() == 0) return NULL;
-    auto_ptr < CCn3d_user_annotations > annotations(new CCn3d_user_annotations());
+    if (!annotations) return false;
+    annotations->ResetAnnotations();
+    if (userAnnotations.size() == 0) return true;
 
     AnnotationList::const_iterator a, ae = userAnnotations.end();
     AnnotationPtrList::const_iterator d, de = userAnnotationsDisplayed.end();
@@ -1622,13 +1626,13 @@ ncbi::objects::CCn3d_user_annotations * StyleManager::CreateASNUserAnnotations(v
         // fill out residues list
         if (!CreateObjectLocation(&(annotation->SetResidues()), a->residues)) {
             ERR_POST(Error << "StyleManager::CreateASNUserAnnotations() - error creating object location");
-            return NULL;
+            return false;
         }
 
         annotations->SetAnnotations().push_back(annotation);
     }
 
-    return annotations.release();
+    return true;
 }
 
 static bool ExtractObjectLocation(
@@ -1678,6 +1682,8 @@ static bool ExtractObjectLocation(
 
 bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_annotations& annotations)
 {
+    if (!annotations.IsSetAnnotations()) return true;
+
     CCn3d_user_annotations::TAnnotations::const_iterator a, ae = annotations.GetAnnotations().end();
     for (a=annotations.GetAnnotations().begin(); a!=ae; a++) {
         UserAnnotation *userAnnot = AddUserAnnotation();

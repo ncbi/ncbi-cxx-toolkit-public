@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2001/10/17 17:46:22  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.96  2001/10/16 21:49:07  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -744,12 +747,12 @@ bool Cn3DApp::OnInit(void)
 #endif
 
     // get file name from command line, if present
-    if (argc > 2)
-        ERR_POST(Fatal << "\nUsage: cn3d [filename]");
-    else if (argc == 2)
+    if (argc == 2)
         structureWindow->LoadFile(argv[1]);
-    else
+    else {
+        if (argc > 2) ERR_POST(Error << "\nUsage: cn3d [filename]");
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
+    }
 
     // give structure window initial focus
     structureWindow->Raise();
@@ -858,7 +861,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu = new wxMenu;
     menu->Append(MID_ZOOM_IN, "Zoom &In\tz");
     menu->Append(MID_ZOOM_OUT, "Zoom &Out\tx");
-    menu->Append(MID_RESET, "&Reset");
+    menu->Append(MID_RESTORE, "&Restore");
+    menu->Append(MID_RESET, "Rese&t");
     menu->AppendSeparator();
 #ifdef __WXMSW__
     menu->Append(MID_NEXT_FRAME, "&Next Frame\tRight");
@@ -1337,6 +1341,7 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
         case MID_ZOOM_IN:       glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomIn); break;
         case MID_ZOOM_OUT:      glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomOut); break;
         case MID_RESET:         glCanvas->renderer->ResetCamera(); break;
+        case MID_RESTORE:       glCanvas->renderer->RestoreSavedView(); break;
         case MID_FIRST_FRAME:   glCanvas->renderer->ShowFirstFrame(); break;
         case MID_LAST_FRAME:    glCanvas->renderer->ShowLastFrame(); break;
         case MID_NEXT_FRAME:    glCanvas->renderer->ShowNextFrame(); break;
@@ -1511,7 +1516,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, mime, isBinary, &err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            glCanvas->structureSet = new StructureSet(mime);
+            glCanvas->structureSet = new StructureSet(mime, glCanvas->renderer);
         } else {
             ERR_POST(Warning << "error: " << err);
             delete mime;
@@ -1525,7 +1530,8 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, cdd, isBinary, &err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            glCanvas->structureSet = new StructureSet(cdd, userDir.c_str(), structureLimit);
+            glCanvas->structureSet = new StructureSet(cdd,
+                userDir.c_str(), structureLimit, glCanvas->renderer);
         } else {
             ERR_POST(Warning << "error: " << err);
             delete cdd;
@@ -1538,6 +1544,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     SetTitle(wxString(currentFile.c_str()) + " - Cn3D++");
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
+    glCanvas->structureSet->SetCenter();
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
 }

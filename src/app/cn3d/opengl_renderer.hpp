@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/10/17 17:46:27  thiessen
+* save camera setup and rotation center in files
+*
 * Revision 1.33  2001/09/06 18:17:01  thiessen
 * fix OpenGL window initialization/OnSize to work on Mac
 *
@@ -139,11 +142,15 @@
 // access this without potential name conflicts
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 #include <list>
 #include <map>
 #include <vector>
 #include <string>
+
+#include <objects/cn3d/Cn3d_user_annotations.hpp>
+#include <objects/cn3d/Cn3d_view_settings.hpp>
 
 #include "cn3d/vector_math.hpp"
 
@@ -178,7 +185,7 @@ public:
     // get the name
     bool GetSelected(int x, int y, unsigned int *name);
 
-    // reset camera to original state
+    // reset camera to full-view state
     void ResetCamera(void);
 
     // called to change view (according to mouse movements)
@@ -229,6 +236,13 @@ public:
         const Vector& unitNormal, const StrandStyle& strandStyle);
     void DrawLabel(const std::string& text, const Vector& center, const Vector& color);
 
+    // load/save camera angle from/to asn data
+    bool SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations *annotations);
+    bool LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_annotations& annotations);
+
+    // restore to saved view settings
+    void RestoreSavedView(void);
+
 private:
 
     StructureSet *structureSet;
@@ -242,6 +256,7 @@ private:
         cameraLookAtX, cameraLookAtY,
         cameraClipNear, cameraClipFar,
         viewMatrix[16];
+    ncbi::CRef < ncbi::objects::CCn3d_view_settings > initialViewFromASN;
 
     // controls for view changes
     double rotateSpeed;
