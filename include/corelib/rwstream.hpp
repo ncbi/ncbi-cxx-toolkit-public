@@ -50,7 +50,7 @@ class CRStream : public CNcbiIstream
 {
 public:
     CRStream(IReader*       r,
-             streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
+             streamsize     buf_size = 0,
              CT_CHAR_TYPE*  buf = 0) :
         CNcbiIstream(0), m_Sb(r, 0, buf_size, buf)
     {
@@ -68,7 +68,7 @@ class CWStream : public CNcbiOstream
 {
 public:
     CWStream(IWriter*       w,
-             streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
+             streamsize     buf_size = 0,
              CT_CHAR_TYPE*  buf = 0) :
         CNcbiOstream(0), m_Sb(0, w, buf_size, buf)
     {
@@ -86,7 +86,7 @@ class CRWStream : public CNcbiIostream
 {
 public:
     CRWStream(IReaderWriter* rw,
-              streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
+              streamsize     buf_size = 0,
               CT_CHAR_TYPE*  buf = 0) :
         CNcbiIostream(0), m_Sb(rw, buf_size, buf)
     {
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/15 20:05:32  lavr
+ * Use 0 as a default buffer size in stream constructors
+ *
  * Revision 1.3  2003/11/12 17:44:26  lavr
  * Uniformed file layout
  *
