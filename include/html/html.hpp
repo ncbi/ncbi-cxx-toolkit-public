@@ -1,7 +1,6 @@
 #ifndef HTML__HTML__HPP
 #define HTML__HTML__HPP
 
-
 /*  $Id$
  * ===========================================================================
  *
@@ -227,8 +226,9 @@ public:
 
     // Attach the specified popup menu to HTML node. Popup menu will be shown 
     // when the "event" occures. 
-    // NOTE: For eKurdin menu type the parameter "event" will be ignored and
-    //       an eHTML_EH_MouseOver value will be used always.
+    // NOTE: For eKurdin menu type the parameter "event" is ignored and
+    //       an eHTML_EH_MouseOver value is used always.
+    // NOTE: For eKurdinSide menu type the parameter "event" is not used.
     void AttachPopupMenu(const CHTMLPopupMenu* menu, 
                          EHTML_EH_Attribute event = eHTML_EH_MouseOver);
 };
@@ -1307,6 +1307,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2003/10/01 15:54:31  ivanov
+ * Added comments for AttachPopupMenu
+ *
  * Revision 1.64  2003/04/25 13:45:26  siyan
  * Added doxygen groupings
  *
