@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/04/24 21:36:50  lavr
+ * More structured code to re-try abrupted connection/mapping attempts
+ *
  * Revision 6.13  2001/03/07 23:01:07  lavr
  * fSERV_Any used instead of 0 in SERVICE_CreateConnector
  *
@@ -134,12 +137,17 @@ static const char* s_VT_GetType
 
 static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
-    unsigned int addr = SOCK_gethostbyname(0);
-    if (!addr || !(uuu->iter = SERV_OpenEx(uuu->serv, uuu->type,
-                                           addr, uuu->info, 0, 0))) {
+    if (!(uuu->iter = SERV_OpenEx(uuu->serv, uuu->type,
+                                  SERV_LOCALHOST, uuu->info, 0, 0)))
         return 0/*false*/;
-    }
     return 1/*true*/;
+}
+
+
+static void s_CloseDispatcher(SServiceConnector* uuu)
+{
+    SERV_Close(uuu->iter);
+    uuu->iter = 0;
 }
 
 
@@ -254,8 +262,19 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
     const char* header = 0;
     const SSERV_Info* info;
     
-    if (!n || !(info = SERV_GetNextInfo(uuu->iter)))
-        return 0/*false - not adjusted*/;
+    /* This callback is only for services called via direct HTTP */
+    assert(n != 0);
+
+    while (1) {
+        if (!(info = SERV_GetNextInfo(uuu->iter)))
+            return 0/*false - not adjusted*/;
+        /* Skip any 'stateful_capable' issues here */
+        if (!info->sful)
+            break;
+    }
+    
+    SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
+    net_info->port = info->port;
     
     switch (info->type) {
     case fSERV_Ncbid:
@@ -263,7 +282,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                         NCBID_NAME,
                         SERV_NCBID_ARGS(&info->u.ncbid),
                         "service", uuu->serv);
-        /* Required NCBID tag */
+        /* NCBID tag, optional but good to have */
         header = "Connection-Mode: STATELESS\r\n";
         break;
     case fSERV_Http:
@@ -297,33 +316,17 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
 }
 
 
-static EIO_Status s_VT_Open
-(CONNECTOR       connector,
- const STimeout* timeout)
+static CONNECTOR s_Open
+(SServiceConnector* uuu,
+ const STimeout*    timeout,
+ const SSERV_Info*  info,
+ SConnNetInfo*      net_info)
 {
-    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    SMetaConnector* meta = connector->meta;
-    SConnNetInfo* net_info = 0;
-    const SSERV_Info* info = 0;
     const char* header = 0;
-    EIO_Status status;
-    CONNECTOR conn;
 
-    assert(!uuu->conn && !uuu->name);
-    
-    if (!uuu->iter && !s_OpenDispatcher(uuu))
-        return eIO_Unknown;
-    
-    if (!uuu->info->firewall && !(info = SERV_GetNextInfo(uuu->iter)))
-        return eIO_Unknown;
-    
-    if (!(net_info = ConnNetInfo_Clone(uuu->info)))
-        return eIO_Unknown;
-    
     if (info) {
         /* Not a firewall/relay connection here */
         EReqMethod req_method;
-        
         /* We know the connection point, let's try to use it! */
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
@@ -373,17 +376,17 @@ static EIO_Status s_VT_Open
             break;
         }
     } else {
-        /* Firewall, connection to dispatcher, spec. tags */
+        /* Firewall, connection to dispatcher, special tags */
         s_AdjustNetInfo(net_info,
                         net_info->stateless ? eReqMethod_Post : eReqMethod_Get,
                         0, 0, "service", uuu->serv);
         header = net_info->stateless
             ? "Client-Mode: STATELESS_ONLY\r\n"
-              "Relay-Mode: FIREWALL\r\n"
+            "Relay-Mode: FIREWALL\r\n"
             : "Client-Mode: STATEFUL_CAPABLE\r\n"
-              "Relay-Mode: FIREWALL\r\n";
+            "Relay-Mode: FIREWALL\r\n";
     }
-    
+
     if (header) {
         /* We create HTTP connector here */
         char* user_header = SERV_Print(uuu->iter);
@@ -402,90 +405,134 @@ static EIO_Status s_VT_Open
         assert(!header || strcmp(net_info->http_user_header, header) == 0);
         if (user_header)
             free(user_header);
-        /* Clear connection info */
-        uuu->host = 0;
-        uuu->port = 0;
-        uuu->tckt = 0;
-        conn = HTTP_CreateConnectorEx(net_info, fHCC_AutoReconnect,
-                                      s_ParseHeader, s_AdjustInfo,
-                                      uuu/*adj.data*/, 0/*cleanup.data*/);
-        /* What do we expect now? */
+
         if (!net_info->stateless &&
             (net_info->firewall || info->type == fSERV_Ncbid)) {
-            /* We'll wait for connection-info back */
+            /* HTTP connector is auxiliary only */
+            CONNECTOR conn;
             CONN c;
-            
+
+            /* Clear connection info */
+            uuu->host = 0;
+            uuu->port = 0;
+            uuu->tckt = 0;
+            net_info->max_try = 1;
+            conn = HTTP_CreateConnectorEx(net_info, 0/*flags*/,
+                                          s_ParseHeader, 0/*adj.info*/,
+                                          uuu/*adj.data*/, 0/*cleanup.data*/);
+            /* We'll wait for connection-info back */
             if (conn && CONN_Create(conn, &c) == eIO_Success) {
                 CONN_SetTimeout(c, eIO_Open, timeout);
                 CONN_SetTimeout(c, eIO_ReadWrite, timeout);
                 CONN_SetTimeout(c, eIO_Close, timeout);
-                /* With this dummy read we'll get a callback */
+                /* With this dummy read we'll get a parse header callback */
                 CONN_Read(c, 0, 0, &n, eIO_Plain);
                 CONN_Close(c);            
             }
-            if (uuu->host) {
-                SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
-                net_info->port = uuu->port;
-                /* Replace HTTP connector with SOCKET connector */
-                conn = SOCK_CreateConnectorEx(net_info->host, net_info->port,
-                                              net_info->max_try,
-                                              &uuu->tckt, sizeof(uuu->tckt),
-                                              net_info->debug_printout ==
-                                              eDebugPrintout_Data
-                                              ? eSCC_DebugPrintout
-                                              : 0);
-            } else
-                conn = 0;
+            if (!uuu->host)
+                return 0;
+            SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
+            net_info->port = uuu->port;
+            /* Build and return target SOCKET connector */
+            return SOCK_CreateConnectorEx(net_info->host, net_info->port,
+                                          1/*max.try*/,
+                                          &uuu->tckt, sizeof(uuu->tckt),
+                                          net_info->debug_printout ==
+                                          eDebugPrintout_Data
+                                          ? eSCC_DebugPrintout
+                                          : 0);
         }
-    } else {
-        /* We create SOCKET connector here */
-        conn = SOCK_CreateConnectorEx(net_info->host, net_info->port,
-                                      net_info->max_try, 0, 0,
-                                      net_info->debug_printout ==
-                                      eDebugPrintout_Data
-                                      ? eSCC_DebugPrintout
-                                      : 0);
+        net_info->max_try = 1000000000/*very large number*/;
+        return HTTP_CreateConnectorEx(net_info, fHCC_AutoReconnect,
+                                      s_ParseHeader, s_AdjustInfo,
+                                      uuu/*adj.data*/, 0/*cleanup.data*/);
     }
-    
-    ConnNetInfo_Destroy(net_info);
-    
-    if (!conn)
-        return eIO_Unknown;
-    
-    status = METACONN_Add(&uuu->meta, conn);
-    assert(status == eIO_Success);
-    conn->meta = meta;
-    conn->next = meta->list;
-    meta->list = conn;
-    
-    CONN_SET_METHOD(meta, wait,  uuu->meta.wait,  uuu->meta.c_wait);
-    CONN_SET_METHOD(meta, write, uuu->meta.write, uuu->meta.c_write);
-    CONN_SET_METHOD(meta, flush, uuu->meta.flush, uuu->meta.c_flush);
-    CONN_SET_METHOD(meta, read,  uuu->meta.read,  uuu->meta.c_read);
-    CONN_SET_METHOD(meta, status,uuu->meta.status,uuu->meta.c_status);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async,
-                    uuu->meta.wait_async, uuu->meta.c_wait_async);
-#endif
-    if (uuu->meta.open)
-        status = (*uuu->meta.open)(uuu->meta.c_open, timeout);
-    
-    if (uuu->meta.get_type) {
-        const char* type;
-        if ((type = (*uuu->meta.get_type)(uuu->meta.c_get_type)) != 0) {
-            static const char prefix[] = "SERVICE/";
-            char* name = (char*) malloc(strlen(type) + sizeof(prefix));
-            if (name) {
-                strcpy(name, prefix);
-                strcat(name, type);
-                uuu->name = name;
-            }
-        }
-    }
-    
-    return status;
+    /* We create SOCKET connector here */
+    return SOCK_CreateConnectorEx(net_info->host, net_info->port,
+                                  1/*max.try*/, 0/*init.data*/, 0/*data.size*/,
+                                  net_info->debug_printout ==
+                                  eDebugPrintout_Data
+                                  ? eSCC_DebugPrintout
+                                  : 0);
 }
 
+
+static EIO_Status s_VT_Open
+(CONNECTOR       connector,
+ const STimeout* timeout)
+{
+    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    SMetaConnector* meta = connector->meta;
+    const SSERV_Info* info;
+    SConnNetInfo* net_info;
+    CONNECTOR conn;
+    
+    assert(!uuu->conn && !uuu->name);
+    
+    for (;;) {
+        if (!uuu->iter && !s_OpenDispatcher(uuu))
+            return eIO_Unknown;
+        
+        if (uuu->info->firewall)
+            info = 0;
+        else if (!(info = SERV_GetNextInfo(uuu->iter)))
+            return eIO_Unknown;
+        
+        if (!(net_info = ConnNetInfo_Clone(uuu->info)))
+            return eIO_Unknown;
+        
+        conn = s_Open(uuu, timeout, info, net_info);
+        
+        ConnNetInfo_Destroy(net_info);
+        
+        if (uuu->info->firewall)
+            return eIO_Unknown;
+        
+        if (!conn)
+            continue;
+        
+        METACONN_Add(&uuu->meta, conn);
+        conn->meta = meta;
+        conn->next = meta->list;
+        meta->list = conn;
+        
+        CONN_SET_METHOD(meta, wait,  uuu->meta.wait,  uuu->meta.c_wait);
+        CONN_SET_METHOD(meta, write, uuu->meta.write, uuu->meta.c_write);
+        CONN_SET_METHOD(meta, flush, uuu->meta.flush, uuu->meta.c_flush);
+        CONN_SET_METHOD(meta, read,  uuu->meta.read,  uuu->meta.c_read);
+        CONN_SET_METHOD(meta, status,uuu->meta.status,uuu->meta.c_status);
+#ifdef IMPLEMENTED__CONN_WaitAsync
+        CONN_SET_METHOD(meta, wait_async,
+                        uuu->meta.wait_async, uuu->meta.c_wait_async);
+#endif
+        if (uuu->meta.get_type) {
+            const char* type;
+            if ((type = (*uuu->meta.get_type)(uuu->meta.c_get_type)) != 0) {
+                static const char prefix[] = "SERVICE/";
+                char* name = (char*) malloc(strlen(type) + sizeof(prefix));
+                if (name) {
+                    strcpy(name, prefix);
+                    strcat(name, type);
+                    uuu->name = name;
+                }
+            }
+        }
+        
+        if (uuu->meta.open) {
+            EIO_Status status = (*uuu->meta.open)(uuu->meta.c_open, timeout);
+            if (status != eIO_Success) {
+                s_VT_Close(connector, timeout);
+                continue;
+            }
+        }
+        
+        return eIO_Success;
+    }
+
+    s_CloseDispatcher(uuu);
+    return eIO_Unknown;
+}
+    
 
 static EIO_Status s_VT_Status
 (CONNECTOR connector,
@@ -510,8 +557,7 @@ static EIO_Status s_VT_Close
         uuu->name = 0;
     }
 
-    SERV_Close(uuu->iter);
-    uuu->iter = 0;
+    s_CloseDispatcher(uuu);
     
     if (uuu->conn) {
         SMetaConnector* meta = connector->meta;
@@ -558,6 +604,7 @@ extern CONNECTOR SERVICE_CreateConnector
     return SERVICE_CreateConnectorEx(service, fSERV_Any, 0);
 }
 
+
 extern CONNECTOR SERVICE_CreateConnectorEx
 (const char*         service,
  TSERV_Type          type,
@@ -590,9 +637,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc->setup   = s_Setup;
     ccc->destroy = s_Destroy;
 
-    /* Now make the first probing dispatching */
+    /* Now make the first probe dispatching */
     if (!s_OpenDispatcher(xxx)) {
-        s_VT_Close(ccc, &xxx->info->timeout);
+        s_CloseDispatcher(xxx);
         s_Destroy(ccc);
         return 0;
     }
