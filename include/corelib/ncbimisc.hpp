@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/14 18:49:40  vasilche
+* Added forward declaration of CTypeInfo class.
+*
 * Revision 1.25  1999/07/08 14:44:52  vakatov
 * Tiny fix in EndsWith()
 *
@@ -178,6 +181,7 @@ bool AStrEquiv( const string& x, const string& y, Pred pr )
   return !( pr( x, y ) || pr( y, x ) );
 }
 
+class CTypeInfo;
 
 // auto_ptr
 
