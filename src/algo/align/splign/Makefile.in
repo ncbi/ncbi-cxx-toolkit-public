@@ -1,12 +1,9 @@
 # $Id$
 
-# Meta-makefile (algo/align)
+# Meta-makefile (algo/align/splign)
 #################################
 
-LIB_PROJ = xalgoalign
-SUB_PROJ = splign demo
-
-REQUIRES = objects
+LIB_PROJ = xalgosplign
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -1,0 +1,11 @@
+# $Id$
+
+ASN_DEP = seq
+
+SRC = splign splign_util splign_hit splign_hitparser \
+      splign_compartment_finder splign_formatter splign_simple
+
+LIB = xalgosplign
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)

@@ -32,8 +32,8 @@
 * ---------------------------------------------------------------------------
 */
 
-#include <algo/align/splign_simple.hpp>
-#include <algo/align/splign_formatter.hpp>
+#include <algo/align/splign/splign_simple.hpp>
+#include <algo/align/splign/splign_formatter.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.2  2004/05/04 15:23:45  ucko
+* Split splign code out of xalgoalign into new xalgosplign.
+*
 * Revision 1.1  2004/05/03 15:39:11  johnson
 * initial revision
 *

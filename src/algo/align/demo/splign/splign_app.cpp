@@ -39,8 +39,8 @@
 
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
-#include <algo/align/splign.hpp>
-#include <algo/align/splign_formatter.hpp>
+#include <algo/align/splign/splign.hpp>
+#include <algo/align/splign/splign_formatter.hpp>
 
 #include <iostream>
 #include <memory>
@@ -452,6 +452,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/05/04 15:23:45  ucko
+ * Split splign code out of xalgoalign into new xalgosplign.
+ *
  * Revision 1.20  2004/04/30 15:00:47  kapustin
  * Support ASN formatting
  *

@@ -34,7 +34,7 @@
 */
 
 
-#include <algo/align/splign_hit.hpp>
+#include <algo/align/splign/splign_hit.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <vector>
 
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/04 15:23:45  ucko
+ * Split splign code out of xalgoalign into new xalgosplign.
+ *
  * Revision 1.3  2004/04/23 14:37:44  kapustin
  * *** empty log message ***
  *

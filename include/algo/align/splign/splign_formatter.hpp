@@ -32,7 +32,7 @@
 *   Splign formatter
 */
 
-#include <algo/align/splign.hpp>
+#include <algo/align/splign/splign.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/05/04 15:23:44  ucko
+ * Split splign code out of xalgoalign into new xalgosplign.
+ *
  * Revision 1.6  2004/04/30 15:00:32  kapustin
  * Support ASN formatting
  *

@@ -34,7 +34,7 @@
 */
 
 
-#include <algo/align/splign.hpp>
+#include <algo/align/splign/splign.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/04 15:23:45  ucko
+ * Split splign code out of xalgoalign into new xalgosplign.
+ *
  * Revision 1.7  2004/04/23 14:33:32  kapustin
  * *** empty log message ***
  *

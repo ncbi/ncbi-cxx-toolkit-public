@@ -30,7 +30,7 @@
 *
 */
 
-#include <algo/align/splign_hit.hpp>
+#include <algo/align/splign/splign_hit.hpp>
 #include <algo/align/align_exception.hpp>
 #include <corelib/ncbistre.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -448,6 +448,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/04 15:23:45  ucko
+* Split splign code out of xalgoalign into new xalgosplign.
+*
 * Revision 1.4  2004/05/03 15:23:08  johnson
 * Added CHit constructor that takes a CSeq_align
 *

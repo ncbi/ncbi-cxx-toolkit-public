@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <algo/align/nw_spliced_aligner.hpp>
-#include <algo/align/splign_hit.hpp>
+#include <algo/align/splign/splign_hit.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/05/04 15:23:44  ucko
+ * Split splign code out of xalgoalign into new xalgosplign.
+ *
  * Revision 1.9  2004/05/03 15:22:18  johnson
  * added typedefs for public stl types
  *

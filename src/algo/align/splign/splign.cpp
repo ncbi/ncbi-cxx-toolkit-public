@@ -34,7 +34,7 @@
 #include "splign_compartment_finder.hpp"
 #include "splign_util.hpp"
 
-#include <algo/align/splign.hpp>
+#include <algo/align/splign/splign.hpp>
 #include <algo/align/nw_formatter.hpp>
 #include <algo/align/align_exception.hpp>
 
@@ -1144,6 +1144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/04 15:23:45  ucko
+ * Split splign code out of xalgoalign into new xalgosplign.
+ *
  * Revision 1.8  2004/05/03 15:22:18  johnson
  * added typedefs for public stl types
  *
