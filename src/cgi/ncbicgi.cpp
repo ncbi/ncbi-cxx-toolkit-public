@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/11/27 19:44:34  vakatov
+* CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
+*
 * Revision 1.11  1998/11/27 15:54:05  vakatov
 * Cosmetics in the ParseEntries() diagnostics
 *
@@ -341,7 +344,7 @@ const string& CCgiRequest::GetPropertyName(ECgiProp prop)
 }
 
 
-CCgiRequest::CCgiRequest(CNcbiIstream& istr)
+void CCgiRequest::x_Init(CNcbiIstream& istr, int argc, char** argv)
 {
     // cache "standard" properties
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
@@ -352,17 +355,27 @@ CCgiRequest::CCgiRequest(CNcbiIstream& istr)
     m_Cookies.Add(GetProperty(eCgi_HttpCookie));
 
     // parse entries or indexes, if any
-    const string& query_string = GetProperty(eCgi_QueryString);
-    if (query_string.find_first_of('=') == NPOS) { // ISINDEX
-        SIZE_TYPE err_pos = ParseIndexes(query_string, m_Indexes);
+    const string* query_string = 0;
+    string arg_string;
+    if ( GetProperty(eCgi_RequestMethod).empty() ) {
+        // special case("$REQUEST METHOD" undefined, so use cmd.-line args)
+        if (argc > 1  &&  argv  &&  argv[1]  &&  *argv[1])
+            arg_string = argv[1];
+        query_string = &arg_string;
+    }
+    else // regular case -- read from "$QUERY_STRING"
+        query_string = &GetProperty(eCgi_QueryString);
+
+    if (query_string->find_first_of('=') == NPOS) { // ISINDEX
+        SIZE_TYPE err_pos = ParseIndexes(*query_string, m_Indexes);
         if (err_pos != 0)
             throw CParseException("Init CCgiRequest::ParseIndexes(\"" +
-                                  query_string + "\"", err_pos);
+                                  *query_string + "\"", err_pos);
     } else {  // regular(non-ISINDEX) entries
-        SIZE_TYPE err_pos = ParseEntries(query_string, m_Entries);
+        SIZE_TYPE err_pos = ParseEntries(*query_string, m_Entries);
         if (err_pos != 0)
             throw CParseException("Init(ENV) CCgiRequest::ParseEntries(\"" +
-                                  query_string + "\"", err_pos);
+                                  *query_string + "\")", err_pos);
     }
 
     // POST method?
@@ -380,7 +393,6 @@ CCgiRequest::CCgiRequest(CNcbiIstream& istr)
                                   str + "\")", err_pos);
     }
 }
-
 
 const string& CCgiRequest::x_GetPropertyByName(const string& name)
 {

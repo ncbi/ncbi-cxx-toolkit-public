@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1998/11/27 19:44:31  vakatov
+* CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
+*
 * Revision 1.20  1998/11/26 00:29:50  vakatov
 * Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
 *
@@ -255,6 +258,10 @@ public:
     //   retrieve request's properties and cookies from environment
     //   retrieve request's entries from environment and/or stream "istr"
     CCgiRequest(CNcbiIstream& istr);
+    // (Mostly for the debugging) When "$REQUEST_METHOD" is undefined then
+    // try to retrieve request's entries from the 1st cmd.-line argument, and
+    // do not use "$QUERY_STRING" and "istr" at all
+    CCgiRequest(CNcbiIstream& istr, int argc, char* argv[]);
     // Destructor
     ~CCgiRequest(void);
 
@@ -262,7 +269,7 @@ public:
     static const string& GetPropertyName(ECgiProp prop);
     // Get value of a "standard" property(empty string if not specified)
     const string& GetProperty(ECgiProp prop) const;
-    // Get value of a random client propertiy("HTTP_<key>")
+    // Get value of a random client propertiy("$HTTP_<key>")
     const string& GetRandomProperty(const string& key);
     // Auxiliaries(to convert from the "string" representation)
     Uint2  GetServerPort(void) const;
@@ -302,6 +309,8 @@ private:
     // set of the request cookies(already retrieved; cached)
     CCgiCookies m_Cookies;
 
+    // the real constructor code
+    void x_Init(CNcbiIstream& istr, int argc, char** argv);
     // retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name);
 
