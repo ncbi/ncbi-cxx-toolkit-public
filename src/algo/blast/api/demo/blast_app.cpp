@@ -48,8 +48,7 @@ Contents: C++ driver for running BLAST
 
 #include <algo/blast/api/blast_option.hpp>
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/blast_setup.hpp>
-#include <algo/blast/api/blast_seq.hpp>
+#include <blast_setup.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_input.hpp>
 #include <algo/blast/api/seqsrc_readdb.h>
@@ -214,6 +213,10 @@ void CBlastApplication::Init(void)
                             "Ending offset in query location",
                             CArgDescriptions::eInteger, "0");
 
+    arg_desc->AddOptionalKey("pattern", "phipattern",
+                            "Pattern for PHI-BLAST",
+                             CArgDescriptions::eString);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -251,6 +254,7 @@ void CBlastApplication::SetOptions(const CArgs& args)
     Int8 totlen = 0;
     int numseqs = 0;
     bool db_is_na, translated_db;
+    bool use_pssm = FALSE;
     
     db_is_na = (program == eBlastn || 
                 program == eTblastn || 
@@ -280,7 +284,7 @@ void CBlastApplication::SetOptions(const CArgs& args)
 
     BLAST_FillLookupTableOptions(m_Options->GetLookupTableOpts(), program, mb_lookup,
         args["thresh"].AsInteger(), args["word"].AsInteger(), 
-        ag_blast, variable_wordsize);
+        ag_blast, variable_wordsize, use_pssm);
     /* Fill the rest of the lookup table options */
     m_Options->SetMBTemplateLength(args["templen"].AsInteger());
     m_Options->SetMBTemplateType(args["templtype"].AsInteger());
@@ -307,8 +311,8 @@ void CBlastApplication::SetOptions(const CArgs& args)
         args["matrix"].AsString().c_str(), args["gopen"].AsInteger(),
         args["gext"].AsInteger());
 
-    m_Options->SetMatrixPath(BLASTGetMatrixPath(m_Options->GetMatrixName(), 
-                                 (program != eBlastn)));
+    m_Options->SetMatrixPath((FindMatrixPath(m_Options->GetMatrixName(), 
+                                 (program != eBlastn))).c_str());
 
     m_Options->SetFrameShiftPenalty(args["frameshift"].AsInteger());
 
@@ -331,9 +335,12 @@ void CBlastApplication::SetOptions(const CArgs& args)
     if (translated_db &&
         ((gen_code = args["dbgencode"].AsInteger()) != BLAST_GENETIC_CODE))
     {
-        m_Options->SetDbGeneticCode(gen_code);
-        Uint1* gen_code_string = BLASTFindGeneticCode(gen_code);
-        m_Options->SetDbGeneticCodeStr(gen_code_string);
+        m_Options->SetDbGeneticCodeAndStr(gen_code);
+    }
+
+    if (args["pattern"]) {
+        m_Options->SetPHIPattern(args["pattern"].AsString().c_str(),
+                                 (program == eBlastn));
     }
 }
 
@@ -357,8 +364,8 @@ int CBlastApplication::BlastSearch()
         BlastMaskDNAToProtein(&query_options->lcase_mask, m_query);
     }
 
-    status = BLAST_SetUpQuery(program, m_query, query_options,
-                              &m_query_info, &query_blk);
+    SetupQueryInfo(m_query, *m_Options, &m_query_info);
+    SetupQueries(m_query, *m_Options, m_query_info, &query_blk);
     m_sbp = 0;
     status = 
         BLAST_MainSetUp(program, query_options,
