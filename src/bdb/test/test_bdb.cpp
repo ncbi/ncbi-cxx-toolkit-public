@@ -385,6 +385,30 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     } // for
 
+    string s = "123";
+    s.append(1, (char)0);
+    s.append("123");
+
+    cout << "(" << s << ")" << s.length() << endl;
+
+    dbf11.IdKey = 1000;
+    dbf11.idata = 1000;
+    dbf11.str = s;
+
+    dbf11.Insert();
+
+    dbf11.IdKey = 1000;
+    EBDB_ErrCode ret = dbf11.Fetch();
+    assert (ret == eBDB_Ok);
+
+    string s2 = dbf11.str;
+    string s3 = dbf11.str.GetString();
+    size_t l2 = s2.length();
+    size_t l3 = s3.length();
+    assert(s3 == s);
+    assert(s2 == s);
+    assert(l2 == l3);
+
     // Dumping the database to screen
 
     CBDB_FileDumper dump;
@@ -1541,6 +1565,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/02/04 15:13:11  kuznets
+ * + test case for length prefixed strings, when source std::string
+ * contains zero chars.
+ *
  * Revision 1.33  2003/12/23 22:32:24  ucko
  * Rename the second s_TEST_BDB_IdTable_Fill, but don't run it yet
  * because it crashes. :-/
