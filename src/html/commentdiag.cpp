@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/10/05 14:56:38  ucko
+* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
+*
 * Revision 1.1  2001/10/04 18:17:57  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -52,21 +55,19 @@ class CCgiCommentDiagHandler : public CCgiDiagHandler
 public:
     CCgiCommentDiagHandler() : m_Node(NULL) {}
     virtual void SetDiagNode(CNCBINode* node) { m_Node = node; }
-    virtual CCgiCommentDiagHandler& operator <<(const SDiagMessage& mess);
+    virtual void operator <<(const SDiagMessage& mess);
 
 private:
     CNCBINode* m_Node;
 };
 
-CCgiCommentDiagHandler&
-CCgiCommentDiagHandler::operator <<(const SDiagMessage& mess)
+void CCgiCommentDiagHandler::operator <<(const SDiagMessage& mess)
 {
     if (m_Node != NULL) {
         string s;
         mess.Write(s);
         m_Node->AppendChild(new CHTMLComment(s));
     }
-    return *this;
 }
 
 

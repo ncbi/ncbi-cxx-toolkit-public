@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/10/05 14:56:26  ucko
+* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
+*
 * Revision 1.25  2001/10/04 18:17:52  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -227,21 +230,9 @@ static void s_CgiDiagHandler(const SDiagMessage& mess)
 }
 
 
-class CCgiStreamDiagHandler : public CCgiDiagHandler
-{
-public:
-    CCgiStreamDiagHandler(CNcbiOstream& os) : m_Stream(&os) {}
-
-    virtual CCgiStreamDiagHandler& operator <<(const SDiagMessage& mess)
-        { *m_Stream << mess;  return *this; }
-private:
-    CNcbiOstream* m_Stream;
-};
-
-
 static CCgiDiagHandler* s_StderrDiagHandlerFactory(const string&, CCgiContext&)
 {
-    return new CCgiStreamDiagHandler(NcbiCerr);
+    return new CCgiStreamDiagHandler(&NcbiCerr);
 }
 
 
@@ -249,7 +240,7 @@ static CCgiDiagHandler* s_AsBodyDiagHandlerFactory(const string&,
                                                    CCgiContext& context)
 {
     CCgiResponse&    response = context.GetResponse();
-    CCgiDiagHandler* result   = new CCgiStreamDiagHandler(response.out());
+    CCgiDiagHandler* result   = new CCgiStreamDiagHandler(&response.out());
     response.SetContentType("text/plain");
     response.WriteHeader();
     response.SetOutput(NULL); // suppress normal output

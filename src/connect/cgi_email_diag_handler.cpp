@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2001/10/05 14:56:33  ucko
+* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
+*
 * Revision 6.1  2001/10/04 18:17:56  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -46,27 +49,26 @@
 BEGIN_NCBI_SCOPE
 
 
-class CCgiEmailDiagHandler : public CCgiDiagHandler
+class CCgiEmailDiagHandler : public CCgiStreamDiagHandler
 {
 public:
     CCgiEmailDiagHandler(const string& to,
                          const string& subject = "NCBI CGI log")
-        : m_To(to), m_Sub(subject) {}
-
-    virtual CCgiEmailDiagHandler& operator <<(const SDiagMessage& mess)
-        { m_Stream << mess;  return *this; }
-    virtual void                  Flush(void);
+        : CCgiStreamDiagHandler(new CNcbiOstrstream), m_To(to), m_Sub(subject)
+        {}
+    virtual ~CCgiEmailDiagHandler() { delete m_Stream; }
+    virtual void Flush(void);
 
 private:
-    string          m_To;
-    string          m_Sub;
-    CNcbiOstrstream m_Stream;
+    string m_To;
+    string m_Sub;
 };
 
 
 void CCgiEmailDiagHandler::Flush(void)
 {
-    string body = CNcbiOstrstreamToString(m_Stream);
+    CNcbiOstrstream* oss = dynamic_cast<CNcbiOstrstream*>(m_Stream);
+    string body = CNcbiOstrstreamToString(*oss);
     const char* msg = CORE_SendMail(m_To.c_str(), m_Sub.c_str(), body.c_str());
     if (msg) {
         // Need to report by other means, obviously...

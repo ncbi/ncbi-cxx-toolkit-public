@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/10/05 14:56:20  ucko
+* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
+*
 * Revision 1.23  2001/10/04 18:17:51  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -128,10 +131,23 @@ class CNCBINode;
 class CCgiDiagHandler
 {
 public:
-    virtual void             SetDiagNode(CNCBINode* node) {}
-    virtual CCgiDiagHandler& operator <<(const SDiagMessage& mess) = 0;
-    virtual void             Flush(void) {}
+    virtual ~CCgiDiagHandler() {}
+    virtual void SetDiagNode(CNCBINode* node) {}
+    virtual void operator <<(const SDiagMessage& mess) = 0;
+    virtual void Flush(void) {}
 };
+
+
+class CCgiStreamDiagHandler : public CCgiDiagHandler
+{
+public:
+    CCgiStreamDiagHandler(CNcbiOstream* os) : m_Stream(os) {}
+
+    virtual void operator <<(const SDiagMessage& mess) { *m_Stream << mess; }
+protected:
+    CNcbiOstream* m_Stream;
+};
+
 
 // Should return a newly allocated handler, which the caller then owns
 typedef CCgiDiagHandler* (*FCgiDiagHandlerFactory)(const string& s,
