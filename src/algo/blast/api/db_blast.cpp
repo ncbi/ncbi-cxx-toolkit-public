@@ -201,16 +201,87 @@ void CDbBlast::x_InitFields()
     m_ibTracebackOnly = false;
 }
 
+void CDbBlast::x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo, 
+                                   CMemoryFile **rps_mmap,
+                                   CMemoryFile **rps_pssm_mmap,
+                                   string dbname)
+{
+   BlastRPSInfo *info = new BlastRPSInfo;
+   if (info == NULL) {
+      NCBI_THROW(CBlastException, eOutOfMemory, 
+                 "RPSInfo allocation failed");
+   }
+
+   vector<string> dbpath;
+   CSeqDB::FindVolumePaths(dbname, 'p', dbpath);
+   if (dbpath.empty()) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "Cannot retrieve path to RPS database");
+   }
+
+   CMemoryFile *lut_mmap = new CMemoryFile(dbpath[0] + ".loo");
+   if (lut_mmap == NULL) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "Cannot map RPS BLAST lookup file");
+   }
+   info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
+
+   CMemoryFile *pssm_mmap = new CMemoryFile(dbpath[0] + ".rps");
+   if (pssm_mmap == NULL) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "Cannot map RPS BLAST profile file");
+   }
+   info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
+
+   CNcbiIfstream auxfile( (dbpath[0] + ".aux").c_str() );
+   if (auxfile.bad() || auxfile.fail()) {
+       NCBI_THROW(CBlastException, eBadParameter, 
+                   "Cannot open RPS BLAST parameters file");
+   }
+
+   string matrix;
+   auxfile >> matrix;
+   info->aux_info.orig_score_matrix = strdup(matrix.c_str());
+
+   auxfile >> info->aux_info.gap_open_penalty;
+   auxfile >> info->aux_info.gap_extend_penalty;
+   auxfile >> info->aux_info.ungapped_k;
+   auxfile >> info->aux_info.ungapped_h;
+   auxfile >> info->aux_info.max_db_seq_length;
+   auxfile >> info->aux_info.db_length;
+   auxfile >> info->aux_info.scale_factor;
+
+   int num_db_seqs = info->profile_header->num_profiles;
+   info->aux_info.karlin_k = new double[num_db_seqs];
+   if (info->aux_info.karlin_k == NULL) {
+      NCBI_THROW(CBlastException, eOutOfMemory, 
+                  "RPS setup: karlin_k array allocation failed");
+   }
+   int i;
+
+   for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
+      int seq_size;
+      auxfile >> seq_size;  // not used
+      auxfile >> info->aux_info.karlin_k[i];
+   }
+
+   if (i < num_db_seqs) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                  "RPS setup: Aux file missing Karlin parameters");
+   }
+
+   *ppinfo = info;
+   *rps_mmap = lut_mmap;
+   *rps_pssm_mmap = pssm_mmap;
+}
+
 void CDbBlast::x_InitRPSFields()
 {
     EProgram program = m_OptsHandle->GetOptions().GetProgram();
     if (program == eRPSBlast || program == eRPSTblastn) {
         string dbname(BLASTSeqSrcGetName(m_pSeqSrc));
-        if (Blast_FillRPSInfo(&m_ipRpsInfo, &m_ipRpsMmap, 
-                              &m_ipRpsPssmMmap, dbname) != 0) {
-            NCBI_THROW(CBlastException, eBadParameter, 
-                       "Cannot initialize RPS BLAST database");
-        }
+        x_Blast_FillRPSInfo(&m_ipRpsInfo, &m_ipRpsMmap, 
+                            &m_ipRpsPssmMmap, dbname);
         m_OptsHandle->SetOptions().SetMatrixName(m_ipRpsInfo->aux_info.orig_score_matrix);
         m_OptsHandle->SetOptions().SetGapOpeningCost(m_ipRpsInfo->aux_info.gap_open_penalty);
         m_OptsHandle->SetOptions().SetGapExtensionCost(m_ipRpsInfo->aux_info.gap_extend_penalty);
@@ -224,9 +295,6 @@ void CDbBlast::x_InitRPSFields()
         m_ipRpsMmap = NULL;
         m_ipRpsPssmMmap = NULL;
     }
-
-
-
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
@@ -590,6 +658,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2005/01/14 18:00:59  papadopo
+ * move FillRPSInfo into CDbBlast, to remove some xblast dependencies on SeqDB
+ *
  * Revision 1.51  2005/01/11 17:50:44  dondosha
  * Removed TrimBlastHSPResults method: will be a static function in blastsrv4.REAL code
  *

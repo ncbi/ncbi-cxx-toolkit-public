@@ -38,7 +38,6 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
@@ -490,80 +489,6 @@ EProgram ProgramNameToEnum(const std::string& program_name)
                "Program type '" + program_name + "' not supported");
 }
 
-Int2 Blast_FillRPSInfo( BlastRPSInfo **ppinfo, CMemoryFile **rps_mmap,
-                        CMemoryFile **rps_pssm_mmap, string dbname )
-{
-   BlastRPSInfo *info = new BlastRPSInfo;
-   if (info == NULL) {
-      NCBI_THROW(CBlastException, eOutOfMemory, 
-                 "RPSInfo allocation failed");
-   }
-
-   vector<string> dbpath;
-   CSeqDB::FindVolumePaths(dbname, 'p', dbpath);
-   if (dbpath.empty()) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "Cannot retrieve path to RPS database");
-   }
-
-   CMemoryFile *lut_mmap = new CMemoryFile(dbpath[0] + ".loo");
-   if (lut_mmap == NULL) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "Cannot map RPS BLAST lookup file");
-   }
-   info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
-
-   CMemoryFile *pssm_mmap = new CMemoryFile(dbpath[0] + ".rps");
-   if (pssm_mmap == NULL) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                   "Cannot map RPS BLAST profile file");
-   }
-   info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
-
-   CNcbiIfstream auxfile( (dbpath[0] + ".aux").c_str() );
-   if (auxfile.bad() || auxfile.fail()) {
-       NCBI_THROW(CBlastException, eBadParameter, 
-                   "Cannot open RPS BLAST parameters file");
-   }
-
-   string matrix;
-   auxfile >> matrix;
-   info->aux_info.orig_score_matrix = strdup(matrix.c_str());
-
-   auxfile >> info->aux_info.gap_open_penalty;
-   auxfile >> info->aux_info.gap_extend_penalty;
-   auxfile >> info->aux_info.ungapped_k;
-   auxfile >> info->aux_info.ungapped_h;
-   auxfile >> info->aux_info.max_db_seq_length;
-   auxfile >> info->aux_info.db_length;
-   auxfile >> info->aux_info.scale_factor;
-
-   int num_db_seqs = info->profile_header->num_profiles;
-   info->aux_info.karlin_k = new double[num_db_seqs];
-   if (info->aux_info.karlin_k == NULL) {
-      NCBI_THROW(CBlastException, eOutOfMemory, 
-                  "karlin_k array allocation failed");
-   }
-   int i;
-
-   for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
-      int seq_size;
-      auxfile >> seq_size;  // not used
-      auxfile >> info->aux_info.karlin_k[i];
-   }
-
-   if (i < num_db_seqs) {
-       NCBI_THROW(CBlastException, eBadParameter,
-                  "Aux file missing Karlin parameters");
-   }
-
-   *ppinfo = info;
-   *rps_mmap = lut_mmap;
-   *rps_pssm_mmap = pssm_mmap;
-
-   return 0;
-}
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -573,6 +498,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.66  2005/01/14 18:00:59  papadopo
+ * move FillRPSInfo into CDbBlast, to remove some xblast dependencies on SeqDB
+ *
  * Revision 1.65  2005/01/10 19:23:02  papadopo
  * Use SeqDB to recover the path to RPS blast data files
  *
