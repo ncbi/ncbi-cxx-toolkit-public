@@ -354,8 +354,8 @@ void CValidError_bioseq::ValidateSeqIds
         case CSeq_id::e_Pdb:
             break;
         case CSeq_id::e_Gi:
-            if ((**k).GetGi() == 0) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_ZeroGiNumber,
+            if ((*k)->GetGi() <= 0) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_ZeroGiNumber,
                          "Invalid GI number", seq);
             }
             gi_count++;
@@ -615,8 +615,8 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     // Check for duplicate features and overlapping peptide features.
     ValidateDupOrOverlapFeats(seq);
 
-    // Check for colliding gene names
-    ValidateCollidingGeneNames(seq);
+    // Check for colliding genes
+    ValidateCollidingGenes(seq);
 
     if ( seq.IsSetDescr() ) {
         ValidateSeqDescContext(seq);
@@ -2735,7 +2735,7 @@ void CValidError_bioseq::ValidateOrgContext
     }
 }
 
-
+/*
 class CNoCaseCompare
 {
 public:
@@ -2744,45 +2744,61 @@ public:
         return NStr::CompareNocase(s1, s2) < 0;
     }
 };
-
-
-void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& seq)
+*/
+void CValidError_bioseq::x_CompareStrings
+(const TStrFeatMap& str_feat_map,
+ const string& type,
+ EErrType err,
+ EDiagSev sev)
 {
-    typedef multimap<string, const CSeq_feat*, CNoCaseCompare> TStrFeatMap;
-
-    // Loop through genes and insert into multimap sorted by
-    // gene label--case insensitive      
-    TStrFeatMap label_map;
-
-    CFeat_CI fi(m_Scope->GetBioseqHandle(seq),
-                0, 0,
-                CSeqFeatData::e_Gene);
-    for ( ; fi; ++fi ) {
-        string label;
-        GetLabel(fi->GetOriginalFeature(), &label, feature::eContent, m_Scope);
-        label_map.insert(TStrFeatMap::value_type(label,
-                                                 &fi->GetOriginalFeature()));
-    }
-
-    // Iterate through multimap and compare labels
+    // iterate through multimap and compare strings
     bool first = true;
-    const string* plabel = 0;
-    ITERATE ( TStrFeatMap, it, label_map ) {
-        if (first) {
+    const string* strp = 0;
+    ITERATE (TStrFeatMap, it, str_feat_map) {
+        if ( first ) {
             first = false;
-            plabel = &(it->first);
+            strp = &(it->first);
             continue;
         }
-        if ( NStr::Compare(*plabel, it->first) == 0 ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CollidingGeneNames,
-                "Colliding names in gene features", *it->second);
-        } else if ( NStr::CompareNocase(*plabel, it->first) == 0 ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CollidingGeneNames,
-                "Colliding names (with different capitalization) in gene"
-                "features", *it->second);
+        CNcbiOstrstream msg;
+        if ( NStr::Compare(*strp, it->first) == 0 ) {
+            msg << "Colliding " << type << " in gene features";
+        } else if ( NStr::CompareNocase(*strp, it->first) == 0 ) {
+            msg << "Colliding " << type
+                << " (with different capitalization) in gene features";
         }
-        plabel = &(it->first);
+        if ( msg.pcount() > 0 ) {
+            PostErr(sev, err, CNcbiOstrstreamToString(msg), *it->second);
+        }
+        strp = &(it->first);
     }
+}
+
+
+void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
+{
+    TStrFeatMap label_map;
+    TStrFeatMap locus_tag_map;
+
+    // Loop through genes and insert into multimap sorted by
+    // gene label / locus_tag -- case insensitive
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
+        const CSeq_feat& feat = fi->GetOriginalFeature();
+        // record label
+        string label;
+        GetLabel(feat, &label, feature::eContent, m_Scope);
+        label_map.insert(TStrFeatMap::value_type(label, &feat));
+        // record locus_tag
+        const CGene_ref& gene = feat.GetData().GetGene();
+        if ( gene.CanGetLocus_tag()  &&  !gene.GetLocus_tag().empty() ) {
+            locus_tag_map.insert(TStrFeatMap::value_type(gene.GetLocus_tag(), &feat));
+        }
+    }
+    x_CompareStrings(label_map, "names", eErr_SEQ_FEAT_CollidingGeneNames,
+        eDiag_Warning);
+    x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
+        eDiag_Error);
 }
 
 
@@ -3407,6 +3423,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/02/25 15:54:43  shomrat
+* Added checks for colliding gene locus_tag; Changed illegal GI severity to Critical
+*
 * Revision 1.60  2004/02/09 19:18:57  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.
