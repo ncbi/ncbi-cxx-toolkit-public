@@ -41,7 +41,6 @@
 
 #include <algorithm>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/keywords_item.hpp>
@@ -273,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/25 20:44:42  shomrat
+* remove redundant include directive
+*
 * Revision 1.2  2003/12/18 17:43:35  shomrat
 * context.hpp moved
 *

@@ -40,7 +40,6 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/source_item.hpp>
@@ -298,6 +297,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/25 20:46:49  shomrat
+* remove redundant include directive
+*
 * Revision 1.4  2004/03/05 22:02:47  shomrat
 * fixed gathering of common name
 *

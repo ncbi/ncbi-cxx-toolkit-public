@@ -33,7 +33,6 @@
 
 #include <objects/seq/Bioseq.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/version_item.hpp>
@@ -118,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/25 20:48:19  shomrat
+* remove redundant include directive
+*
 * Revision 1.3  2004/03/10 21:28:06  shomrat
 * Limit Seq-id type for version
 *
