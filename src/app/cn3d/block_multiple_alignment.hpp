@@ -155,7 +155,7 @@ public:
     int GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification) const;
 
     // called when user selects some part of a row
-    void SelectedRange(int row, int from, int to,
+    void SelectedRange(int row, int alnIndexFrom, int alnIndexTo,
         eUnalignedJustification justification, bool toggle) const;
 
     // fill in a vector of UngappedAlignedBlocks
@@ -433,6 +433,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.46  2004/10/01 13:07:44  thiessen
 * add ZipAlignResidue
 *

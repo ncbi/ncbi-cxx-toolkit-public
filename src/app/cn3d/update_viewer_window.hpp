@@ -64,6 +64,7 @@ private:
     // menu identifiers - additional items beyond base class items
     enum {
         MID_DELETE_ALL_BLOCKS = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_DELETE_BLOCKS_ALL_ROWS,
         MID_SORT_UPDATES,
         MID_SORT_UPDATES_IDENTIFIER,
         MID_IMPORT_SEQUENCES,
@@ -244,6 +245,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.38  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *

@@ -122,6 +122,9 @@ public:
     // highlights a sequence and moves viewer to that row
     void HighlightAndShowSequence(const Sequence *sequence);
 
+    // remove all highlights except those on the given sequence
+    void KeepHighlightsOnlyOnSequence(const Sequence *sequence);
+
     // temporarily turns off highlighting (suspend==true) - but doesn't erase highlight stores,
     // so when called with suspend==false, highlights will come back on
     void SuspendHighlighting(bool suspend);
@@ -199,6 +202,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.28  2004/09/27 21:40:46  thiessen
 * add highlight cache
 *

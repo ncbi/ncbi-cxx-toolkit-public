@@ -274,6 +274,29 @@ void Messenger::HighlightAndShowSequence(const Sequence *sequence)
         (*q)->MakeSequenceVisible(sequence->identifier);
 }
 
+void Messenger::KeepHighlightsOnlyOnSequence(const Sequence *sequence)
+{
+    if (highlights.size() == 0 || (highlights.size() == 1 && highlights.begin()->first == sequence->identifier))
+        return;
+
+    MoleculeHighlightMap newHighlights;
+    MoleculeHighlightMap::const_iterator h, he = highlights.end();
+    for (h=highlights.begin(); h!=he; ++h) {
+        if (h->first == sequence->identifier) {
+            newHighlights[sequence->identifier] = h->second;
+            break;
+        }
+    }
+    if (h == he) {
+        ERRORMSG("Selected sequence has no highlights!");
+        return;
+    }
+    highlights.clear();
+    highlights = newHighlights;
+    PostRedrawAllStructures();
+    PostRedrawAllSequenceViewers();
+}
+
 void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
@@ -561,6 +584,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.44  2004/09/27 22:06:22  thiessen
 * fix restore cache highlights bug
 *

@@ -63,17 +63,17 @@ BEGIN_SCOPE(Cn3D)
 
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
-    EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
-    EVT_MENU      (MID_DELETE_ALL_BLOCKS,               UpdateViewerWindow::OnDelete)
-    EVT_MENU      (MID_SORT_UPDATES_IDENTIFIER,         UpdateViewerWindow::OnSortUpdates)
-    EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,      UpdateViewerWindow::OnRunThreader)
-    EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
-    EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
-    EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
-    EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_NEIGHBOR,   UpdateViewerWindow::OnRunBlast)
-    EVT_MENU_RANGE(MID_SET_REGION, MID_RESET_REGIONS,   UpdateViewerWindow::OnSetRegion)
-    EVT_MENU_RANGE(MID_BLOCKALIGN_ONE, MID_BLOCKALIGN_ALL,  UpdateViewerWindow::OnBlockAlign)
-    EVT_MENU_RANGE(MID_EXTEND_ONE, MID_EXTEND_ALL,      UpdateViewerWindow::OnExtend)
+    EVT_CLOSE     (                                                     UpdateViewerWindow::OnCloseWindow)
+    EVT_MENU_RANGE(MID_DELETE_ALL_BLOCKS, MID_DELETE_BLOCKS_ALL_ROWS,   UpdateViewerWindow::OnDelete)
+    EVT_MENU      (MID_SORT_UPDATES_IDENTIFIER,                         UpdateViewerWindow::OnSortUpdates)
+    EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,                      UpdateViewerWindow::OnRunThreader)
+    EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,                        UpdateViewerWindow::OnMerge)
+    EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,                      UpdateViewerWindow::OnDelete)
+    EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,          UpdateViewerWindow::OnImport)
+    EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_NEIGHBOR,                   UpdateViewerWindow::OnRunBlast)
+    EVT_MENU_RANGE(MID_SET_REGION, MID_RESET_REGIONS,                   UpdateViewerWindow::OnSetRegion)
+    EVT_MENU_RANGE(MID_BLOCKALIGN_ONE, MID_BLOCKALIGN_ALL,              UpdateViewerWindow::OnBlockAlign)
+    EVT_MENU_RANGE(MID_EXTEND_ONE, MID_EXTEND_ALL,                      UpdateViewerWindow::OnExtend)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -92,6 +92,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     editMenu->Append(MID_IMPORT_STRUCTURE, "Import S&tructure");
     // insert at hard-coded location, since FindItem doesn't seem to work...
     editMenu->Insert(8, MID_DELETE_ALL_BLOCKS, "Delete A&ll Blocks", "", true);
+    editMenu->Insert(9, MID_DELETE_BLOCKS_ALL_ROWS, "Delete All Blocks in All Ali&gnments");
 
     // Mouse mode menu
     menuBar->Enable(MID_SELECT_COLS, false);
@@ -245,6 +246,20 @@ void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
             else
                 DeleteAllBlocksOff();
             break;
+        case MID_DELETE_BLOCKS_ALL_ROWS: {
+            const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+            if (currentUpdates.size() > 0) {
+                UpdateViewer::AlignmentList newAlignments;
+                ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
+                for (u=currentUpdates.begin(); u!=ue; ++u) {
+                    BlockMultipleAlignment *newAlignment = (*u)->Clone();
+                    newAlignment->DeleteAllBlocks();
+                    newAlignments.push_back(newAlignment);
+                }
+                updateViewer->ReplaceAlignments(newAlignments);
+            }
+            break;
+        }
         case MID_DELETE_ONE:
             CancelAllSpecialModesExcept(MID_DELETE_ONE);
             if (DoDeleteSingle())
@@ -644,6 +659,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.62  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *

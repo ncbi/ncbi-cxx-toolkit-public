@@ -464,6 +464,15 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         SequenceViewerWindow *sequenceWindow = dynamic_cast<SequenceViewerWindow*>(*viewerWindow);
         if (sequenceWindow && row >= 0) {
 
+            if (sequenceWindow->DoRestrictHighlights()) {
+                DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+                if (selectedRow) {
+                    GlobalMessenger()->KeepHighlightsOnlyOnSequence(alignment->GetSequenceOfRow(selectedRow->row));
+                    sequenceWindow->RestrictHighlightsOff();
+                }
+                return false;
+            }
+
             if (sequenceWindow->DoMarkBlock()) {
                 if (alignment->MarkBlock(column)) {
                     if (!controlDown) sequenceWindow->MarkBlockOff();
@@ -490,8 +499,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 if (sequenceWindow->DoRealignRow()) {
                     vector < int > selectedSlaves(1);
                     selectedSlaves[0] = selectedRow->row;
-                    sequenceWindow->sequenceViewer->alignmentManager->
-                        RealignSlaveSequences(alignment, selectedSlaves);
+                    sequenceWindow->sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, selectedSlaves);
                     if (!controlDown) sequenceWindow->RealignRowOff();
                     return false;
                 }
@@ -1309,6 +1317,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.77  2004/10/01 13:07:44  thiessen
 * add ZipAlignResidue
 *

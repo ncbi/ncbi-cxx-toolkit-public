@@ -692,36 +692,36 @@ int BlockMultipleAlignment::GetAlignedSlaveIndex(int masterSeqIndex, int slaveRo
     return (slaveRange->from + masterSeqIndex - masterRange->from);
 }
 
-void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
+void BlockMultipleAlignment::SelectedRange(int row, int alnIndexFrom, int alnIndexTo,
     eUnalignedJustification justification, bool toggle) const
 {
     // translate from,to (alignment columns) into sequence indexes
     const Sequence *sequence;
-    int fromIndex, toIndex;
+    int fromSeqIndex, toSeqIndex;
     bool ignored;
 
     // trim selection area to size of this alignment
-    if (to >= totalWidth) to = totalWidth - 1;
+    if (alnIndexTo >= totalWidth) alnIndexTo = totalWidth - 1;
 
     // find first residue within range
-    while (from <= to) {
-        GetSequenceAndIndexAt(from, row, justification, &sequence, &fromIndex, &ignored);
-        if (fromIndex >= 0) break;
-        ++from;
+    while (alnIndexFrom <= alnIndexTo) {
+        GetSequenceAndIndexAt(alnIndexFrom, row, justification, &sequence, &fromSeqIndex, &ignored);
+        if (fromSeqIndex >= 0) break;
+        ++alnIndexFrom;
     }
-    if (from > to) return;
+    if (alnIndexFrom > alnIndexTo) return;
 
     // find last residue within range
-    while (to >= from) {
-        GetSequenceAndIndexAt(to, row, justification, &sequence, &toIndex, &ignored);
-        if (toIndex >= 0) break;
-        --to;
+    while (alnIndexTo >= alnIndexFrom) {
+        GetSequenceAndIndexAt(alnIndexTo, row, justification, &sequence, &toSeqIndex, &ignored);
+        if (toSeqIndex >= 0) break;
+        --alnIndexTo;
     }
 
     if (toggle)
-        GlobalMessenger()->ToggleHighlights(sequence, fromIndex, toIndex);
+        GlobalMessenger()->ToggleHighlights(sequence, fromSeqIndex, toSeqIndex);
     else
-        GlobalMessenger()->AddHighlights(sequence, fromIndex, toIndex);
+        GlobalMessenger()->AddHighlights(sequence, fromSeqIndex, toSeqIndex);
 }
 
 void BlockMultipleAlignment::GetAlignedBlockPosition(int alignmentIndex,
@@ -1964,6 +1964,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.63  2004/10/01 13:07:44  thiessen
 * add ZipAlignResidue
 *

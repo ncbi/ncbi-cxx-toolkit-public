@@ -77,8 +77,8 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
-    EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,    SequenceViewerWindow::OnTaxonomy)
-    EVT_MENU      (MID_HIGHLIGHT_BLOCKS,                SequenceViewerWindow::OnHighlightBlocks)
+    EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,            SequenceViewerWindow::OnTaxonomy)
+    EVT_MENU_RANGE(MID_HIGHLIGHT_BLOCKS, MID_RESTRICT_HIGHLIGHTS,   SequenceViewerWindow::OnHighlight)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -101,7 +101,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_TAXONOMY_FULL, "&Full");
     subMenu->Append(MID_TAXONOMY_ABBR, "&Abbreviated");
     viewMenu->Append(MID_TAXONOMY, "Show Ta&xonomy...", subMenu);
+    viewMenu->AppendSeparator();
     viewMenu->Append(MID_HIGHLIGHT_BLOCKS, "&Highlight blocks");
+    viewMenu->Append(MID_EXPAND_HIGHLIGHTS, "Exp&and Highlights to Aligned Columns");
+    viewMenu->Append(MID_RESTRICT_HIGHLIGHTS, "Restr&ict Highlights to Row", "", true);
 
     editMenu->AppendSeparator();
     subMenu = new wxMenu;
@@ -474,25 +477,87 @@ void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
             (event.GetId() == MID_TAXONOMY_ABBR));
 }
 
-void SequenceViewerWindow::OnHighlightBlocks(wxCommandEvent& event)
+void SequenceViewerWindow::OnHighlight(wxCommandEvent& event)
 {
     if (sequenceViewer->GetCurrentAlignments().size() == 0) return;
-    GlobalMessenger()->RemoveAllHighlights(true);
 
-    const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments().front();
-    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
-    multiple->GetUngappedAlignedBlocks(&blocks);
-    if (blocks.size() == 0) return;
+    if (event.GetId() == MID_HIGHLIGHT_BLOCKS) {
+        GlobalMessenger()->RemoveAllHighlights(true);
 
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-    const Sequence *seq;
-    const Block::Range *range;
-    for (int row=0; row<multiple->NRows(); ++row) {
-        seq = multiple->GetSequenceOfRow(row);
-        for (b = blocks.begin(); b!=be; ++b) {
-            range = (*b)->GetRangeOfRow(row);
-            GlobalMessenger()->AddHighlights(seq, range->from, range->to);
+        const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments().front();
+        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+        multiple->GetUngappedAlignedBlocks(&blocks);
+        if (blocks.size() == 0) return;
+
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
+        const Sequence *seq;
+        const Block::Range *range;
+        for (int row=0; row<multiple->NRows(); ++row) {
+            seq = multiple->GetSequenceOfRow(row);
+            for (b = blocks.begin(); b!=be; ++b) {
+                range = (*b)->GetRangeOfRow(row);
+                GlobalMessenger()->AddHighlights(seq, range->from, range->to);
+            }
         }
+    }
+
+    else if (event.GetId() == MID_EXPAND_HIGHLIGHTS) {
+        if (!GlobalMessenger()->IsAnythingHighlighted())
+            return;
+        const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments().front();
+        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+        multiple->GetUngappedAlignedBlocks(&blocks);
+        if (blocks.size() == 0)
+            return;
+
+        // first find all alignment indexes (columns) that have highlights in any row
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
+        int row, blockColumn, seqIndex;
+        typedef list < pair < int, int > > IntPairList;     // pair is < start, len >
+        IntPairList alignmentIndexesWithHighlights;
+        bool inHighlightedRange;
+        for (b = blocks.begin(); b!=be; ++b) {
+            inHighlightedRange = false;
+            for (blockColumn=0; blockColumn<(*b)->width; ++blockColumn) {
+                for (row=0; row<multiple->NRows(); ++row) {
+                    seqIndex = (*b)->GetRangeOfRow(row)->from + blockColumn;
+                    if (GlobalMessenger()->IsHighlighted(multiple->GetSequenceOfRow(row), seqIndex))
+                        break;
+                }
+                if (row < multiple->NRows()) {  // found highlight in some row
+                    if (inHighlightedRange) {
+                        ++(alignmentIndexesWithHighlights.back().second);
+                    } else {
+                        alignmentIndexesWithHighlights.push_back(make_pair(
+                            multiple->GetAlignmentIndex(row, seqIndex,
+                                BlockMultipleAlignment::eLeft),     // justification irrelevant since block is aligned
+                            1));
+                        inHighlightedRange = true;
+                    }
+                } else
+                    inHighlightedRange = false;
+            }
+        }
+
+        // now highlight all contiguous columns
+        IntPairList::const_iterator h, he = alignmentIndexesWithHighlights.end();
+        for (h=alignmentIndexesWithHighlights.begin(); h!=he; ++h) {
+            TRACEMSG("highlighting from alignment index " << h->first << " to " << (h->first + h->second - 1));
+            for (row=0; row<multiple->NRows(); ++row) {
+                multiple->SelectedRange(row, h->first, h->first + h->second - 1,
+                    BlockMultipleAlignment::eLeft, false);      // justification irrelevant since block is aligned
+            }
+        }
+    }
+
+    else if (event.GetId() == MID_RESTRICT_HIGHLIGHTS) {
+        if (!GlobalMessenger()->IsAnythingHighlighted())
+            return;
+        CancelAllSpecialModesExcept(MID_RESTRICT_HIGHLIGHTS);
+        if (DoRestrictHighlights())
+            SetCursor(*wxCROSS_CURSOR);
+        else
+            RestrictHighlightsOff();
     }
 }
 
@@ -502,6 +567,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.55  2004/09/27 21:40:46  thiessen
 * add highlight cache
 *

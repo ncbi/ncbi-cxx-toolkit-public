@@ -75,6 +75,8 @@ private:
             MID_EXPORT_TEXT,
             MID_EXPORT_HTML,
         MID_HIGHLIGHT_BLOCKS,
+        MID_EXPAND_HIGHLIGHTS,
+        MID_RESTRICT_HIGHLIGHTS,
         // edit menu
         MID_DELETE_ROW,
         MID_SORT_ROWS,   // sort rows submenu
@@ -106,7 +108,7 @@ private:
     void OnExport(wxCommandEvent& event);
     void OnSelfHit(wxCommandEvent& event);
     void OnTaxonomy(wxCommandEvent& event);
-    void OnHighlightBlocks(wxCommandEvent& event);
+    void OnHighlight(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
@@ -116,6 +118,11 @@ private:
 
     wxMenu *updateMenu;
 
+    void RestrictHighlightsOff(void)
+    {
+        menuBar->Check(MID_RESTRICT_HIGHLIGHTS, false);
+        SetCursor(wxNullCursor);
+    }
     void DeleteRowOff(void)
     {
         menuBar->Check(MID_DELETE_ROW, false);
@@ -148,6 +155,7 @@ public:
 
     bool SaveDialog(bool prompt, bool canCancel);
 
+    bool DoRestrictHighlights(void) const { return menuBar->IsChecked(MID_RESTRICT_HIGHLIGHTS); }
     bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
     bool DoRealignRow(void) const { return menuBar->IsChecked(MID_REALIGN_ROW); }
     bool DoMarkBlock(void) const { return menuBar->IsChecked(MID_MARK_BLOCK); }
@@ -155,6 +163,7 @@ public:
 
     void CancelDerivedSpecialModesExcept(int id)
     {
+        if (id != MID_RESTRICT_HIGHLIGHTS && DoRestrictHighlights()) RestrictHighlightsOff();
         if (id != MID_DELETE_ROW && DoDeleteRow()) DeleteRowOff();
         if (id != MID_REALIGN_ROW && DoRealignRow()) RealignRowOff();
         if (id != MID_MARK_BLOCK && DoMarkBlock()) MarkBlockOff();
@@ -171,6 +180,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/10/04 17:00:54  thiessen
+* add expand/restrict highlights, delete all blocks/all rows in updates
+*
 * Revision 1.29  2004/02/19 17:05:10  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
