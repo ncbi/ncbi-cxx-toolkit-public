@@ -136,7 +136,8 @@ public:
     static TMemberIndex WhichChoice(const CChoiceTypeInfo* /*choiceType*/,
                                     const void* choicePtr)
         {
-            return Get(choicePtr).Which() + eGeneratedChoiceToMemberIndex;
+            return static_cast<TMemberIndex>(Get(choicePtr).Which())
+                + eGeneratedChoiceToMemberIndex;
         }
     static void ResetChoice(const CChoiceTypeInfo* choiceType,
                             void* choicePtr)
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/27 19:26:48  ucko
+* WhichChoice(): cast Which() to TMemberIndex.  (Avoids new WorkShop warnings.)
+*
 * Revision 1.4  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
