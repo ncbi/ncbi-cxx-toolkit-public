@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = dbapi-unit-test
+APP_PROJ = dbapi_unit_test
 
 REQUIRES = CPPUNIT
 

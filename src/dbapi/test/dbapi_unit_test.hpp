@@ -81,6 +81,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.1  2005/02/04 17:25:02  ssikorsk
+ * Renamed dbapi-unit-test to dbapi_unit_test.
+ * Added dbapi_unit_test to the test suite.
+ *
  * Revision 1.1  2005/02/03 16:06:46  ssikorsk
  * Added: initial version of a cppunit test for the DBAPI
  *
