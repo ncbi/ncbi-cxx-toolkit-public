@@ -76,6 +76,7 @@ public:
         }
     }
     
+    /// Include standard NCBI exception behavior.
     NCBI_EXCEPTION_DEFAULT(CSeqDBException,CException);
 };
 
