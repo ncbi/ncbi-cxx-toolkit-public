@@ -273,6 +273,9 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
     // rotate relative to rotationCenter
     if (doTranslation) glTranslated(rotCenter.x, rotCenter.y, rotCenter.z);
 
+#define MIN_CAMERA_ANGLE 0.001
+#define MAX_CAMERA_ANGLE (0.999 * PI)
+
     switch (control) {
         case eXYRotateHV:
             glRotated(rotateSpeed*dY, 1.0, 0.0, 0.0);
@@ -293,8 +296,8 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 
         case eZoomH:
             cameraAngleRad *= 1.0 - 0.01 * dX;
-            if (cameraAngleRad < 0.001) cameraAngleRad = 0.001;
-            else if (cameraAngleRad > 2*PI) cameraAngleRad = 2*PI;
+            if (cameraAngleRad < MIN_CAMERA_ANGLE) cameraAngleRad = MIN_CAMERA_ANGLE;
+            else if (cameraAngleRad > MAX_CAMERA_ANGLE) cameraAngleRad = MAX_CAMERA_ANGLE;
             NewView();
             break;
 
@@ -303,13 +306,13 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 
         case eZoomOut:
             cameraAngleRad *= 1.5;
-            if (cameraAngleRad > 2*PI) cameraAngleRad = 2*PI;
+            if (cameraAngleRad > MAX_CAMERA_ANGLE) cameraAngleRad = MAX_CAMERA_ANGLE;
             NewView();
             break;
 
         case eZoomIn:
             cameraAngleRad /= 1.5;
-            if (cameraAngleRad < 0.001) cameraAngleRad = 0.001;
+            if (cameraAngleRad < MIN_CAMERA_ANGLE) cameraAngleRad = MIN_CAMERA_ANGLE;
             NewView();
             break;
 
@@ -1547,6 +1550,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/10/06 22:05:52  thiessen
+* fix max camera angle to < PI
+*
 * Revision 1.70  2003/05/22 19:08:17  thiessen
 * add limits to camera angle
 *
