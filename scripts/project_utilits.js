@@ -3,7 +3,7 @@
 		
 		////////////////////////////////////////////////////////////////////////////////////
 		// Utility functions :
-		// create cmd, execute command in cmd and redirect output to console stdout
+		// create cmd, execute command in cmd and redirect output to console stdou2t
 		function execute(oShell, command)
 		{
 			var oExec = oShell.Exec("cmd /c " + command);
@@ -127,13 +127,38 @@
 			CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
 			CreateFolderIfAbsent(oFso, oTree.SrcProjectBranch      );
 		}
+		// fill-in tree structure
+		function FillTreeStructure(oShell, oTree)
+		{
+			var temp_dir = oTree.TreeRoot + "\\temp";
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			
+			// Fill-in infra-structure for build tree
+			
+			GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.in",                                oTree.SrcRootBranch);
+			GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in",                             oTree.SrcRootBranch);
+			GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in.msvc",                        oTree.SrcRootBranch);
+			
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/Makefile.FLTK.app.msvc",   oTree.CompilersBranch);
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/ncbi.rc",                  oTree.CompilersBranch);
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/ncbilogo.ico",             oTree.CompilersBranch);
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/project_tree_builder.ini", oTree.CompilersBranch);
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/winmain.cpp",              oTree.CompilersBranch);
+			
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/dll_info.ini",         oTree.CompilersBranchDll);
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/dll_main.cpp",         oTree.CompilersBranchDll);
+			GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/Makefile.mk",          oTree.CompilersBranchDll);
+
+			GetFileFromTree(oShell, oTree, oTask, "/include/corelib/config/ncbiconf_msvc_site.h",    oTree.IncludeConfig);
+		}
+
 		// check-out a subdir from CVS - oTree is supposed to have TreeRoot property
 		function CheckoutSubDir(oShell, oTree, sub_dir)
 		{
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			
 			var dir_local_path  = oTree.TreeRoot + "\\" + sub_dir;
-			var repository_path = "internal/c++/" + sub_dir;
+			var repository_path = "" + GetCvsTreeRoot()+"/" + sub_dir;
 			var dir_local_path_parent = oFso.GetParentFolderName(dir_local_path);
 			var base_name = oFso.GetBaseName(dir_local_path);
 			
@@ -333,6 +358,56 @@
 		function GetDefaultCXX_ToolkitSubFolder()
 		{
 			return "cxx.current";
+		}
+		
+		// Copy pre-built C++ Toolkit DLLs'
+		function CopyDlls(oShell, oTree, oTask)
+		{
+			if ( oTask.CopyDlls ) {
+				var configs = GetConfigs(oTask);
+				for( var config_i = 0; config_i < configs.length; config_i++ ) {
+					var config = configs[config_i];
+					var dlls_bin_path  = oTask.ToolkitPath + "\\" + config;
+					var local_bin_path = oTree.BinPathDll  + "\\" + config;
+					
+					execute(oShell, "copy /Y " + dlls_bin_path + "\\*.dll " + local_bin_path);
+				}
+			}
+		}
+		// Copy gui resources
+		function CopyRes(oShell, oTree, oTask)
+		{
+			if ( oTask.CopyRes ) {
+				var oFso = new ActiveXObject("Scripting.FileSystemObject");
+				var res_target_dir = oTree.SrcRootBranch + "\\gui\\res"
+				CreateFolderIfAbsent(oFso, res_target_dir);
+				execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/gui/res");
+				execute(oShell, "copy /Y temp\\*.* " + res_target_dir);
+				RemoveTempFolder(oShell, oFso, oTree);
+			}
+		}
+		// CVS tree root
+		function GetCvsTreeRoot()
+		{
+			return "internal/c++";
+		}
+		// Get file from CVS tree
+		function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			
+			// 1. Try to get file from pre-buit toolkit first
+			var toolkit_file_path = BackSlashes(oTask.ToolkitPath + cvs_rel_path);
+			if ( oFso.FileExists(toolkit_file_path) ) {
+				oFso.CopyFile(toolkit_file_path, target_abs_dir + "\\", true);
+				return;
+			}
+			
+			// 2. Last attempt - get it from CVS tree.
+			RemoveTempFolder(oShell, oFso, oTree);
+			execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+ cvs_rel_path);
+			execute(oShell, "copy /Y temp\\*.* " + target_abs_dir);
+			RemoveTempFolder(oShell, oFso, oTree);
 		}
 								
 		

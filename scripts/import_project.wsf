@@ -13,12 +13,12 @@
 			var usage_str;
 			//usage_str  = "Usage:\n";
 			//usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-			usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll]\n";
+			usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll [-b] [-r]]\n";
 			usage_str += "SYNOPSIS:\n";
 			usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
 			usage_str += "    CVS tree at:\n";
-			usage_str += "      internal/c++/src/<cvs_tree_path>\n";
-			usage_str += "      internal/c++/include/<cvs_tree_path>\n";
+			usage_str += "      " + GetCvsTreeRoot()+"/src/<cvs_tree_path>\n";
+			usage_str += "      " + GetCvsTreeRoot()+"/include/<cvs_tree_path>\n";
 			usage_str += "    Create local build tree structure. Fill-in local tree.\n";
 			usage_str += "    Adjust Makefile.in in src/<cvs_tree_path> to require NCBI C++ toolkit.\n";
 			usage_str += "    Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
@@ -30,6 +30,8 @@
 			usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
 			usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
 			usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+			usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
+			usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
 			usage_str += "EXAMPLES:\n";
 			usage_str += "    cscript import_project.wsf objmgr/test\n";
 			usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
@@ -44,7 +46,7 @@
 			if (oArgs.Length < 1) {
 				return false;
 			}
-			if (oArgs.Length > 3) {
+			if (oArgs.Length > 5) {
 				return false;
 			}
 			
@@ -90,6 +92,17 @@
 			//}
 			this.ProjectName = GetPositionalValue(oArgs, 0);
 			this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
+			if ( this.DllBuild ) {
+				this.CopyDlls    = GetFlagValue(oArgs, "-b", false);
+			} else {
+				this.CopyDlls    = false;
+			}
+			if ( this.DllBuild ) {
+				this.CopyRes    = GetFlagValue(oArgs, "-r", false);
+			} else {
+				this.CopyRes    = false;
+			}
+			
 			var toolkit_path = GetOptionalPositionalValue(oArgs, 
 			                                              1, 
 			                                              GetDefaultCXX_ToolkitFolder() +
@@ -107,48 +120,14 @@
 			WScript.Echo(oTask.ProjectName        );
 			WScript.Echo(oTask.ToolkitPath        );
 			WScript.Echo(oTask.DllBuild.toString());
+			WScript.Echo(oTask.CopyDlls.toString());
 		}
 		
 		// Fill local tree
 		function FillTree(oShell, oTree, oTask)
 		{
-			var temp_dir = oTree.TreeRoot + "\\temp";
-			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			FillTreeStructure(oShell, oTree);
 			
-			RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.in");
-			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.mk.in");
-			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.mk.in.msvc");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.SrcRootBranch);
-			RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/Makefile.FLTK.app.msvc");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/ncbi.rc");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/ncbilogo.ico");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/project_tree_builder.ini");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/winmain.cpp");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranch);
-			RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/dll_info.ini");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/dll_main.cpp");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/Makefile.mk");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/third_party_dll_install.mak");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/third_party_dll_install.vcproj");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranchDll);
-			RemoveTempFolder(oShell, oFso, oTree);
-
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/Makefile.mk");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/third_party_static_install.mak");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/third_party_static_install.vcproj");
-			//execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranchStatic);
-			//RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/include/corelib/config/ncbiconf_msvc_site.h");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.IncludeConfig);
-			RemoveTempFolder(oShell, oFso, oTree);
-		
 			var include_dir = "include/" + oTask.ProjectName;
 			var src_dir     = "src/"     + oTask.ProjectName;
 			CheckoutSubDir(oShell, oTree, include_dir);
@@ -160,9 +139,12 @@
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			
 			// Makefile.in - open for appending
-			var makefile = oFso.OpenTextFile(oTree.SrcProjectBranch + "\\Makefile.in", 8);
-			makefile.WriteLine("REQUIRES = CXX_Toolkit");
-			makefile.Close();
+			var makefile_path = oTree.SrcProjectBranch + "\\Makefile.in";
+			if ( oFso.FileExists(makefile_path) ) {
+				var makefile = oFso.OpenTextFile(makefile_path, 8);
+				makefile.WriteLine("REQUIRES = CXX_Toolkit");
+				makefile.Close();
+			}
 		}
 		// Generate solution name. Must be the same as we can import more projects
 		function SolutionName(oTask)
@@ -215,7 +197,7 @@
 		var oShell = WScript.CreateObject("WScript.shell");
 		
 		var oTask  = new Task();
-		DumpTask(oTask);
+		//DumpTask(oTask);
 		VerifyTask(oTask);
 		
 		var oTree  = new Tree(oShell, oTask);
@@ -227,6 +209,8 @@
 		CopyDatatool       (oShell, oTree, oTask);
 		AdjustProject      (oShell, oTree, oTask);
 		AdjustLocalSite    (oShell, oTree, oTask);
+		CopyDlls		   (oShell, oTree, oTask);
+		CopyRes		       (oShell, oTree, oTask);
 		
  		RunPtb             (oShell, oTree, oTask);
  		LoadSolution       (oShell, oTree, oTask);

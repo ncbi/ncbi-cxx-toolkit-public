@@ -66,7 +66,7 @@
 			var usage_str;
 			//usage_str  = "Usage:\n";
 			//usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-			usage_str  = "USAGE: cscript new_project.wsf <name> <type> <builddir> [-dll]\n";
+			usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll]\n";
 			usage_str += "SYNOPSIS:\n";
 			usage_str += "    Create new MSVC7.1 application project from sample template:\n";
 			usage_str += "      Create local build tree structure. Fill-in local tree.\n";
@@ -131,42 +131,7 @@
 		// Fill local tree
 		function FillTree(oShell, oTree)
 		{
-			var temp_dir = oTree.TreeRoot + "\\temp";
-			var oFso = new ActiveXObject("Scripting.FileSystemObject");
-			
-			RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.in");
-			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.mk.in");
-			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.mk.in.msvc");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.SrcRootBranch);
-			RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/Makefile.FLTK.app.msvc");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/ncbi.rc");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/ncbilogo.ico");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/project_tree_builder.ini");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/winmain.cpp");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranch);
-			RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/dll_info.ini");
-			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/dll_main.cpp");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/Makefile.mk");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/third_party_dll_install.mak");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/third_party_dll_install.vcproj");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranchDll);
-			RemoveTempFolder(oShell, oFso, oTree);
-
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/Makefile.mk");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/third_party_static_install.mak");
-			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/third_party_static_install.vcproj");
-			//execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranchStatic);
-			//RemoveTempFolder(oShell, oFso, oTree);
-			
-			execute(oShell, "cvs checkout -d temp internal/c++/include/corelib/config/ncbiconf_msvc_site.h");
-			execute(oShell, "copy /Y temp\\*.* " + oTree.IncludeConfig);
-			RemoveTempFolder(oShell, oFso, oTree);
+			FillTreeStructure(oShell, oTree);
 		}
 		// Copy project template from CVS
 		function CopyProjectTemplate(oShell, oTree, oTask)
@@ -175,7 +140,7 @@
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			
 			RemoveTempFolder(oShell, oFso, oTree);
-			execute(oShell, "cvs checkout -d temp internal/c++/src/" + oTask.ProjectTemplate);
+			execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/" + oTask.ProjectTemplate);
 			execute(oShell, "copy /Y temp\\*.* " + oTree.SrcProjectBranch);
 			RemoveTempFolder(oShell, oFso, oTree);
 		}
