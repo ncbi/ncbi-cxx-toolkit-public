@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/12/10 15:13:39  gouriano
+* Create unnamed TypeInfo in CUniSequenceDataType::CreateTypeInfo
+*
 * Revision 1.31  2004/05/19 17:24:18  gouriano
 * Corrected generation of C++ code by DTD for containers
 *
@@ -328,7 +331,8 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
     return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(
-        m_ElementType->GetTypeInfo().Get(), GlobalName()));
+        m_ElementType->GetTypeInfo().Get()));
+//        m_ElementType->GetTypeInfo().Get(), GlobalName()));
 }
 
 bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
