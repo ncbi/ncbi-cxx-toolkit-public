@@ -384,7 +384,7 @@ int test1(int argc, char ** argv)
             
             CSeqDB ab("alpha beta", CSeqDB::eProtein);
             
-            for(Uint4 i = 0; i < ab.GetNumSeqs(); i++) {
+            for(int i = 0; i < ab.GetNumSeqs(); i++) {
                 cout << "-----seq " << i << " length " << ab.GetSeqLength(i) << " ------------" << endl;
             }
             

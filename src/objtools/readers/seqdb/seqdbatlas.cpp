@@ -243,7 +243,7 @@ void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
 
 void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 {
-    if (m_CurAlloc <= reduce_to) {
+    if (Uint8(m_CurAlloc) <= reduce_to) {
         return;
     }
     
@@ -306,7 +306,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
             
             delete mr;
             
-            if (m_CurAlloc < reduce_to) {
+            if (Uint8(m_CurAlloc) < reduce_to) {
                 return;
             }
         }
@@ -538,7 +538,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
 
 void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
 {
-    if (m_Regions.size() >= m_OpenRegionsTrigger) {
+    if ((int) m_Regions.size() >= m_OpenRegionsTrigger) {
         // If we are collecting because of the number of open regions,
         // we use zero as the size.  This kind of flush is probably
         // due to extensive alias node forests, and it is better to
@@ -1012,7 +1012,7 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
     istr.seekg(m_Begin);
     
     Uint8 rdsize8 = m_End - m_Begin;
-    _ASSERT((TIndx(rdsize8) & TIndx(-1)) == rdsize8);
+    _ASSERT((TIndx(rdsize8) & TIndx(-1)) == TIndx(rdsize8));
     
     TIndx rdsize = (TIndx) rdsize8;
     

@@ -445,7 +445,7 @@ public:
     {
         int rec_indx = m_RecentVol;
         
-        if (rec_indx < m_VolList.size()) {
+        if (rec_indx < (int) m_VolList.size()) {
             const CSeqDBVolEntry & rvol = m_VolList[rec_indx];
             
             if ((rvol.OIDStart() <= oid) &&
@@ -457,7 +457,7 @@ public:
             }
         }
         
-        for(int index = 0; index < m_VolList.size(); index++) {
+        for(int index = 0; index < (int) m_VolList.size(); index++) {
             if ((m_VolList[index].OIDStart() <= oid) &&
                 (m_VolList[index].OIDEnd()   >  oid)) {
                 
@@ -487,7 +487,7 @@ public:
             return 0;
         }
         
-        if (i >= m_VolList.size()) {
+        if (i >= (int) m_VolList.size()) {
             return 0;
         }
         
@@ -511,7 +511,7 @@ public:
             return 0;
         }
         
-        if (i >= m_VolList.size()) {
+        if (i >= (int) m_VolList.size()) {
             return 0;
         }
         
@@ -565,7 +565,7 @@ public:
     /// volumes with the GetVol(int) method.
     /// @return
     ///   The number of volumes available from this set.
-    size_t GetNumVols() const
+    int GetNumVols() const
     {
         return m_VolList.size();
     }
@@ -579,7 +579,7 @@ public:
     ///   true if any filtering is present.
     bool HasFilter() const
     {
-        for(int i = 0; i < m_VolList.size(); i++) {
+        for(int i = 0; i < (int) m_VolList.size(); i++) {
             if (0 != m_VolList[i].HasFilter()) {
                 return true;
             }
@@ -729,7 +729,7 @@ public:
     /// be reacquired by the volumes if the data is requested again.
     void UnLease()
     {
-        for(int index = 0; index < m_VolList.size(); index++) {
+        for(int index = 0; index < (int) m_VolList.size(); index++) {
             m_VolList[index].Vol()->UnLease();
         }
     }
@@ -749,7 +749,7 @@ public:
             return 0;
         }
         
-        if (i >= m_VolList.size()) {
+        if (i >= (int) m_VolList.size()) {
             return 0;
         }
         
@@ -771,7 +771,7 @@ public:
     {
         Uint8 vol_total = 0;
         
-        for(int index = 0; index < m_VolList.size(); index++) {
+        for(int index = 0; index < (int) m_VolList.size(); index++) {
             vol_total += m_VolList[index].Vol()->GetVolumeLength();
         }
         
@@ -866,7 +866,7 @@ private:
     ///   A const pointer to the CSeqDBVolEntry object, or NULL.
     const CSeqDBVolEntry * x_FindVolName(const string & volname) const
     {
-        for(int i = 0; i<m_VolList.size(); i++) {
+        for(int i = 0; i< (int) m_VolList.size(); i++) {
             if (volname == m_VolList[i].Vol()->GetVolName()) {
                 return & m_VolList[i];
             }
@@ -886,7 +886,7 @@ private:
     ///   A non-const pointer to the CSeqDBVolEntry object, or NULL.
     CSeqDBVolEntry * x_FindVolName(const string & volname)
     {
-        for(int i = 0; i<m_VolList.size(); i++) {
+        for(int i = 0; i < (int) m_VolList.size(); i++) {
             if (volname == m_VolList[i].Vol()->GetVolName()) {
                 return & m_VolList[i];
             }

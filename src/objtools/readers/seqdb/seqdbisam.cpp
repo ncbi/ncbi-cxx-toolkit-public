@@ -190,7 +190,7 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
         
         // If this is an exact match, return the master term number.
         
-        if (Key == Number) {
+        if ((int) Key == Number) {
             if (Data != NULL) {
                 if (NoData) {
                     *Data = SampleNum * m_PageSize;
@@ -208,7 +208,7 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
         
         // Otherwise, search for the next sample.
         
-        if ( Number < Key )
+        if ( Number < (int) Key )
             Stop = --SampleNum;
         else
             Start = SampleNum +1;
@@ -298,9 +298,9 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
             
             Uint4 Key = SeqDB_GetStdOrd(& KeyPage[current]);
             
-            if (Key > Number)
+            if ((int) Key > Number)
                 last = --current;
-            else if (Key < Number)
+            else if ((int) Key < Number)
                 first = ++current;
             else {
                 found = true;
@@ -311,9 +311,9 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
         while (first <= last) {
             current = (first+last)/2;
             Uint4 Key = SeqDB_GetStdOrd(& KeyDataPage[current].key);
-            if (Key > Number) {
+            if ((int) Key > Number) {
                 last = --current;
-            } else if (Key < Number) {
+            } else if ((int) Key < Number) {
                 first = ++current;
             } else {
                 found = true;
@@ -465,7 +465,7 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
     const char * file_data = begin;
     int bytes = int(end - begin);
     
-    for(i = 0; (i < bytes) && i < term_in.size(); i++) {
+    for(i = 0; (i < bytes) && i < (int) term_in.size(); i++) {
         char ch1 = term_in[i];
         char ch2 = file_data[i];
         
@@ -490,7 +490,7 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
         p++;
     }
     
-    if (((p == end) || ENDS_ISAM_KEY(*p)) && (i == term_in.size())) {
+    if (((p == end) || ENDS_ISAM_KEY(*p)) && (i == (int) term_in.size())) {
         result = -1;
     } else {
         result = i;

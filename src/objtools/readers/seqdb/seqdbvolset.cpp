@@ -43,7 +43,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     CSeqDBLockHold locked(atlas);
     
     try {
-        for(int i = 0; i < vol_names.size(); i++) {
+        for(int i = 0; i < (int) vol_names.size(); i++) {
             x_AddVolume(atlas, vol_names[i], prot_nucl, locked);
         
             if (prot_nucl == kSeqTypeUnkn) {
@@ -58,7 +58,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     catch(CSeqDBException&) {
         // For SeqDB's own exceptions, we'll keep the error message.
         
-        for(int i = 0; i < m_VolList.size(); i++) {
+        for(int i = 0; i < (int) m_VolList.size(); i++) {
             m_VolList[i].Free();
         }
         throw;
@@ -66,7 +66,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     catch(...) {
         // For other exceptions, we'll provide a message.
         
-        for(int i = 0; i < m_VolList.size(); i++) {
+        for(int i = 0; i < (int) m_VolList.size(); i++) {
             m_VolList[i].Free();
         }
         NCBI_THROW(CSeqDBException,
@@ -77,7 +77,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
 
 CSeqDBVolSet::~CSeqDBVolSet()
 {
-    for(int i = 0; i < m_VolList.size(); i++) {
+    for(int i = 0; i < (int) m_VolList.size(); i++) {
         m_VolList[i].Free();
     }
 }

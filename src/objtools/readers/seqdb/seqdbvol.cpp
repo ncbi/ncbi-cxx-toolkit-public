@@ -244,7 +244,7 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
         }
     }
     
-    _ASSERT(estimated_length == buf4bit.size());
+    _ASSERT(estimated_length == (int)buf4bit.size());
 }
 
 /// Build NA2 to Ncbi-NA8 translation table
@@ -348,7 +348,7 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
         buf8bit.push_back((unsigned char)(0));
     }
     
-    _ASSERT(base_length == (buf8bit.size() - sreserve));
+    _ASSERT(base_length == int(buf8bit.size() - sreserve));
 }
 
 /// Convert sequence data from Ncbi-NA8 to Blast-NA8 format
@@ -381,7 +381,7 @@ s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
         14  /* N,  15 */
     };
     
-    for(size_t i = 0; i < buf.size(); i++) {
+    for(int i = 0; i < (int)buf.size(); i++) {
         buf[i] = trans_ncbina8_to_blastna8[ (size_t) buf[i] ];
     }
 }
@@ -987,7 +987,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                     // the cache may be hurting more than helping.  It
                     // would be easy to make this more sophisticated.
                     
-                    if (m_TaxCache.size() > max_taxcache_size) {
+                    if ((int) m_TaxCache.size() > max_taxcache_size) {
                         m_TaxCache.clear();
                     }
                     
@@ -1291,7 +1291,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
             }
         }
         
-        size_t bytelen = buffer_na8.size();
+        int bytelen = (int) buffer_na8.size();
         char * uncomp_buf = x_AllocType(bytelen, alloc_type, locked);
         
         for(int i = 0; i < bytelen; i++) {

@@ -164,7 +164,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
         state_obj = & m_NextChunkOID;
     }
     
-    size_t max_oids = oid_list.size();
+    int max_oids = (int) oid_list.size();
     
     // This has to be done before ">=end" check, to insure correctness
     // in empty-range cases.
@@ -475,7 +475,7 @@ const string & CSeqDBImpl::GetDBNameList() const
 
 string CSeqDBImpl::x_FixString(const string & s) const
 {
-    for(int i = 0; i < s.size(); i++) {
+    for(int i = 0; i < (int) s.size(); i++) {
         if (s[i] == char(0)) {
             return string(s,0,i);
         }

@@ -273,7 +273,8 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
     }
     
     bool range_filter =
-        ((vol_start != oid_start) || ((oid_end - oid_start) < num_oids));
+        ((vol_start != oid_start) ||
+         ((oid_end - oid_start) < ((int) num_oids)));
     
     // Fold bitmap/bitend into m_Bits/m_BitEnd at bit offset oid_start.
     
@@ -373,7 +374,7 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
         }
         
         if (! trimmed_last_byte) {
-            if ((oid_end - oid_start) < num_oids) {
+            if ((oid_end - oid_start) < ((int) num_oids)) {
                 Uint4 oids_in_last_byte = (oid_end % 8);
                 
                 Uint4 last_byte_mask =
@@ -609,7 +610,7 @@ bool CSeqDBOIDList::x_FindNext(TOID & oid) const
     
     // OPTIONAL portion
     
-    Uint4 whole_word_oids = m_NumOIDs & -32;
+    int whole_word_oids = m_NumOIDs & -32;
     
     while(oid < whole_word_oids) {
         if (x_IsSet(oid)) {
