@@ -28,8 +28,7 @@
  */
 
 /** @file gapinfo.h
- * Structures definitions from gapxdrop.h in ncbitools 
- * @todo FIXME: doxygen comments
+ * Definitions of structures used for saving traceback information.
  */
 
 #ifndef __GAPINFO__
