@@ -122,6 +122,35 @@
 /* ========================================================================= */
 
 
+/**
+ *  @defgroup CGI 
+ *  CGI Members
+ */
+
+/** @defgroup CGIBase CGI Base Classes
+ *  @ingroup CGI
+ */
+
+/** @defgroup CGICmd CGI Command APIs
+ *  @ingroup CGI
+ */
+
+/** @defgroup CGIExcep CGI Exception
+ *  @ingroup CGI
+ */
+
+/** @defgroup CGIReqRes CGI Request/Response APIs
+ *  @ingroup CGI
+ */
+
+/** @defgroup CookieAffinity Cookie Affinity Services 
+ *  @ingroup CGI
+ */
+
+
+/* ========================================================================= */
+
+
 /** @defgroup CONNECT
  *  Connect Library members
  */
@@ -174,10 +203,7 @@
 /* ========================================================================= */
 
 
-/**
- *  @defgroup CGI 
- *  CGI Members
- */
+
 
 /** @defgroup OBJECTMANAGER OBJECT MANAGER
  *  Object Manager members
