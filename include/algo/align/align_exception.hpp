@@ -55,7 +55,8 @@ public:
         eInvalidCharacter,
         eIncorrectSequenceOrder,
         eInvalidSpliceTypeIndex,
-	eMatrixTypeNotSet
+	eMatrixTypeNotSet,
+	eNoData
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -73,6 +74,8 @@ public:
             return "Splice type index out of range";
 	case eMatrixTypeNotSet:
 	    return "Matrix type not set";
+	case eNoData:
+	    return "No data available";
         default:
             return CException::GetErrCodeString();
         }
@@ -90,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/09/12 19:38:27  kapustin
+ * Add eNoData subtype
+ *
  * Revision 1.7  2003/09/02 22:28:44  kapustin
  * Get rid of CAlgoException
  *
