@@ -82,8 +82,27 @@ struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
     
     typedef CRange<TSeqPos>                                  TRange;
     typedef CRangeMultimap<SAnnotObject_Index, TSeqPos>      TRangeMap;
-    typedef vector<TRangeMap>                                TAnnotSet;
+    typedef vector<TRangeMap*>                               TAnnotSet;
     typedef vector<CConstRef<CSeq_annot_SNP_Info> >          TSNPSet;
+
+    size_t x_GetRangeMapCount(void) const
+        {
+            return m_AnnotSet.size();
+        }
+    bool x_RangeMapIsEmpty(size_t index) const
+        {
+            _ASSERT(index < x_GetRangeMapCount());
+            TRangeMap* slot = m_AnnotSet[index];
+            return !slot || slot->empty();
+        }
+    const TRangeMap& x_GetRangeMap(size_t index) const
+        {
+            _ASSERT(!x_RangeMapIsEmpty(index));
+            return *m_AnnotSet[index];
+        }
+
+    TRangeMap& x_GetRangeMap(size_t index);
+    bool x_CleanRangeMaps(void);
 
     TAnnotSet m_AnnotSet;
     TSNPSet   m_SNPSet;
@@ -160,7 +179,7 @@ public:
 
     // indexes types
     typedef map<int, CBioseq_set_Info*>                      TBioseq_sets;
-    typedef pair<CBioseq_Info*, TChunkId>                    TBioseqInfo;
+    typedef CBioseq_Info*                                    TBioseqInfo;
     typedef map<CSeq_id_Handle, TBioseqInfo>                 TBioseqs;
 
     typedef SIdAnnotObjs::TRange                             TRange;
@@ -173,7 +192,7 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
-    typedef map<CSeq_id_Handle, TChunkId>                    TSeqIdToChunks;
+    typedef vector< pair<CSeq_id_Handle, TChunkId> >         TSeqIdToChunks;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
 
     bool ContainsSeqid(const CSeq_id_Handle& id) const;
@@ -184,11 +203,15 @@ public:
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(CTSE_Info_Object& object);
 
+    void x_UpdateAnnotIndexContents(CTSE_Info& tse);
+
     void x_DSAttachContents(CDataSource& ds);
     void x_DSDetachContents(CDataSource& ds);
     
     virtual void x_SetDirtyAnnotIndexNoParent(void);
     virtual void x_ResetDirtyAnnotIndexNoParent(void);
+
+    void x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
 
     CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
     CTSE_Chunk_Info& GetSkeletonChunk(void);
@@ -213,10 +236,12 @@ private:
     void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
+    void x_SetBioseqChunkId(TChunkId chunk_id);
+
     void x_SetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
-    void x_SetBioseqChunk(const CSeq_id_Handle& id, TChunkId chunk_id);
-    void x_SetBioseqInfo(const CSeq_id_Handle& id, const TBioseqInfo& info);
     void x_ResetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
+
+    void x_SetContainedId(const CSeq_id_Handle& id, TChunkId chunk_id);
 
     void x_SetBioseq_setId(int key, CBioseq_set_Info* info);
     void x_ResetBioseq_setId(int key, CBioseq_set_Info* info);
@@ -278,6 +303,8 @@ private:
     void x_IndexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
     void x_UnindexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
 
+    bool x_ContainsMatchingSeqid(const CSeq_id_Handle& id) const;
+
     void x_DoUpdate(TNeedUpdateFlags flags);
 
     friend class CTSE_Lock;
@@ -335,7 +362,9 @@ private:
 
     // Split chunks
     TChunks                m_Chunks;
+    CRef<CTSE_Chunk_Info>  m_BioseqChunk;
     TSeqIdToChunks         m_SeqIdToChunks;
+    bool                   m_SeqIdToChunksSorted;
 
     // SNP info set: temporarily used in SetSeq_entry()
     TSNP_InfoMap           m_SNP_InfoMap;

@@ -44,7 +44,6 @@
 #include <vector>
 #include <list>
 #include <map>
-#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -73,8 +72,8 @@ public:
     typedef int TPlaceId;
     typedef pair<EPlaceType, TPlaceId> TPlace;
     typedef vector<TPlace> TPlaces;
-    typedef set<CSeq_id_Handle> TBioseqIds;
-    typedef map<TPlaceId, TBioseqIds> TBioseqPlaces;
+    typedef vector<TPlaceId> TBioseqPlaces;
+    typedef vector<CSeq_id_Handle> TBioseqIds;
 
     // annot contents identification
     typedef CSeq_id_Handle TLocationId;
@@ -104,13 +103,14 @@ public:
 
     void x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id);
     void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
-    void x_AddBioseqPlace(TPlaceId place_id, const CSeq_id_Handle& id);
+    void x_AddBioseqPlace(TPlaceId place_id);
     CBioseq_Base_Info& x_GetBase(const TPlace& place);
     CBioseq_Info& x_GetBioseq(const TPlace& place);
     CBioseq_set_Info& x_GetBioseq_set(const TPlace& place);
     CBioseq_Info& x_GetBioseq(TPlaceId place_id);
     CBioseq_set_Info& x_GetBioseq_set(TPlaceId place_id);
 
+    void x_AddBioseqId(const CSeq_id_Handle& id);
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
                         const TLocationId& location_id,
@@ -123,6 +123,9 @@ public:
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
     void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
+
+    // return true if chunk is loaded
+    bool x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
 
     typedef list< CRef<CSeq_literal> > TSequence;
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
@@ -151,11 +154,17 @@ private:
     CTSE_Info*      m_TSE_Info;
     TChunkId        m_ChunkId;
 
-    bool            m_DirtyAnnotIndex;
+    enum EAnnotIndexState {
+        eAnnotIndex_disabled,
+        eAnnotIndex_dirty,
+        eAnnotIndex_indexed
+    };
+    EAnnotIndexState m_AnnotIndexState;
 
     TPlaces         m_DescrPlaces;
     TPlaces         m_AnnotPlaces;
     TBioseqPlaces   m_BioseqPlaces;
+    TBioseqIds      m_BioseqIds;
     TAnnotContents  m_AnnotContents;
     TLocationSet    m_Seq_data;
 
@@ -200,6 +209,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/31 14:22:56  vasilche
+* Postpone indexing of split blobs.
+*
 * Revision 1.10  2004/08/19 14:20:58  vasilche
 * Added splitting of whole Bioseqs.
 *

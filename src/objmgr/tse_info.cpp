@@ -56,6 +56,40 @@ SIdAnnotObjs::SIdAnnotObjs(void)
 
 SIdAnnotObjs::~SIdAnnotObjs(void)
 {
+    NON_CONST_ITERATE ( TAnnotSet, it, m_AnnotSet ) {
+        delete *it;
+        *it = 0;
+    }
+}
+
+
+SIdAnnotObjs::TRangeMap& SIdAnnotObjs::x_GetRangeMap(size_t index)
+{
+    if ( index >= m_AnnotSet.size() ) {
+        m_AnnotSet.resize(index+1);
+    }
+    TRangeMap*& slot = m_AnnotSet[index];
+    if ( !slot ) {
+        slot = new TRangeMap;
+    }
+    return *slot;
+}
+
+
+bool SIdAnnotObjs::x_CleanRangeMaps(void)
+{
+    while ( !m_AnnotSet.empty() ) {
+        TRangeMap*& slot = m_AnnotSet.back();
+        if ( slot ) {
+            if ( !slot->empty() ) {
+                return false;
+            }
+            delete slot;
+            slot = 0;
+        }
+        m_AnnotSet.pop_back();
+    }
+    return true;
 }
 
 
@@ -81,7 +115,8 @@ CTSE_Info::CTSE_Info(void)
       m_SuppressionLevel(eSuppression_none),
       m_UsedMemory(0),
       m_LoadState(eNotLoaded),
-      m_CacheState(eNotInCache)
+      m_CacheState(eNotInCache),
+      m_SeqIdToChunksSorted(true)
 {
     m_LockCounter.Set(0);
     x_TSEAttach(*this);
@@ -96,7 +131,8 @@ CTSE_Info::CTSE_Info(const TBlobId& blob_id,
       m_SuppressionLevel(eSuppression_none),
       m_UsedMemory(0),
       m_LoadState(eNotLoaded),
-      m_CacheState(eNotInCache)
+      m_CacheState(eNotInCache),
+      m_SeqIdToChunksSorted(true)
 {
     m_LockCounter.Set(0);
     x_TSEAttach(*this);
@@ -113,7 +149,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
       m_SuppressionLevel(level),
       m_UsedMemory(0),
       m_LoadState(eLoaded),
-      m_CacheState(eNotInCache)
+      m_CacheState(eNotInCache),
+      m_SeqIdToChunksSorted(true)
 {
     m_LockCounter.Set(0);
     entry.Parentize();
@@ -130,7 +167,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
       m_SuppressionLevel(level),
       m_UsedMemory(0),
       m_LoadState(eLoaded),
-      m_CacheState(eNotInCache)
+      m_CacheState(eNotInCache),
+      m_SeqIdToChunksSorted(true)
 {
     m_LockCounter.Set(0);
     entry.Parentize();
@@ -148,7 +186,8 @@ CTSE_Info::CTSE_Info(const CTSE_Info& info)
       m_Name(info.m_Name),
       m_UsedMemory(info.m_UsedMemory),
       m_LoadState(eLoaded),
-      m_CacheState(eNotInCache)
+      m_CacheState(eNotInCache),
+      m_SeqIdToChunksSorted(true)
 {
     m_LockCounter.Set(0);
     x_TSEAttach(*this);
@@ -315,6 +354,9 @@ void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
                                 const CSeq_id_Handle& id)
 {
+    if ( x_ContainsMatchingSeqid(id) ) {
+        return;
+    }
     TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
     if ( iter == m_SeqIdToNames.end() || iter->first != id ) {
         iter = m_SeqIdToNames.insert(iter,
@@ -331,6 +373,9 @@ void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
                                   const CSeq_id_Handle& id)
 {
     TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
+    if ( iter == m_SeqIdToNames.end() || iter->first != id ) {
+        return;
+    }
     _ASSERT(iter != m_SeqIdToNames.end() && iter->first == id);
     _VERIFY(iter->second.erase(name) == 1);
     if ( iter->second.empty() ) {
@@ -345,13 +390,33 @@ void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
 void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & (fNeedUpdate_core|fNeedUpdate_children_core) ) {
-        ITERATE ( TBioseqs, it, m_Bioseqs ) {
-            if ( !it->second.first ) {
-                GetChunk(it->second.second).Load();
-            }
+        if ( m_BioseqChunk ) {
+            m_BioseqChunk->Load();
         }
     }
     TParent::x_DoUpdate(flags);
+}
+
+
+bool CTSE_Info::x_ContainsMatchingSeqid(const CSeq_id_Handle& id) const
+{
+    // Filter out TSEs which contain the sequence
+    if ( ContainsSeqid(id) ) {
+        return true;
+    }
+
+    CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
+    if ( mapper->HaveMatchingHandles(id) ) {
+        TSeq_id_HandleSet hset;
+        mapper->GetMatchingHandles(id, hset);
+        ITERATE ( TSeq_id_HandleSet, match_it, hset ) {
+            if ( ContainsSeqid(*match_it) ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 
@@ -366,34 +431,49 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
     CConstRef<CBioseq_Info> ret;
     TBioseqs::const_iterator it = m_Bioseqs.find(id);
     if ( it != m_Bioseqs.end() ) {
-        ret = it->second.first;
-        if ( !ret ) {
-            const_cast<CTSE_Info*>(this)->GetChunk(it->second.second).Load();
-            ret = it->second.first;
-        }
+        ret = it->second;
     }
     return ret;
 }
 
 
-void CTSE_Info::x_SetBioseqChunk(const CSeq_id_Handle& id, TChunkId chunk_id)
+void CTSE_Info::x_SetBioseqChunkId(TChunkId chunk_id)
 {
+    m_BioseqChunk = &GetChunk(chunk_id);
     x_SetNeedUpdate(fNeedUpdate_core);
-    x_SetBioseqInfo(id, TBioseqInfo(0, chunk_id));
+}
+
+
+void CTSE_Info::x_SetContainedId(const CSeq_id_Handle& id, TChunkId chunk_id)
+{
+    m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
+    m_SeqIdToChunksSorted = false;
+}
+
+
+void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
+{
+    if ( m_SeqIdToChunks.empty() ) {
+        return;
+    }
+    TAnnotWriteLockGuard guard(m_AnnotObjsLock);
+    if ( !m_SeqIdToChunksSorted ) {
+        sort(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end());
+        m_SeqIdToChunksSorted = true;
+    }
+    pair<CSeq_id_Handle, TChunkId> key(id, -1);
+    for ( TSeqIdToChunks::iterator iter =
+              lower_bound(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end(), key);
+          iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
+        GetChunk(iter->second).x_GetRecords(id, bioseq);
+    }
 }
 
 
 void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
                               CBioseq_Info* info)
 {
-    x_SetBioseqInfo(id, TBioseqInfo(info, -1));
-}
-
-
-void CTSE_Info::x_SetBioseqInfo(const CSeq_id_Handle& id,
-                                const TBioseqInfo& info)
-{
-    _ASSERT(info.first || info.second >= 0);
+    _ASSERT(info);
     pair<TBioseqs::iterator, bool> ins =
         m_Bioseqs.insert(TBioseqs::value_type(id, info));
     if ( ins.second ) {
@@ -401,20 +481,11 @@ void CTSE_Info::x_SetBioseqInfo(const CSeq_id_Handle& id,
         x_IndexSeqTSE(id);
     }
     else {
-        if ( info.first ) {
-            if ( ins.first->second.first ) {
-                // No duplicate bioseqs in the same TSE
-                NCBI_THROW(CObjMgrException, eAddDataError,
-                           "duplicate Bioseq id "+id.AsString()+" present in"+
-                           "\n  seq1: " + ins.first->second.first->IdString()+
-                           "\n  seq2: " + info.first->IdString());
-            }
-            ins.first->second.first = info.first;
-        }
-        if ( info.second >= 0 ) {
-            _ASSERT(!ins.first->first && ins.first->second.second < 0);
-            ins.first->second.second = info.second;
-        }
+        // No duplicate bioseqs in the same TSE
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "duplicate Bioseq id "+id.AsString()+" present in"+
+                   "\n  seq1: " + ins.first->second->IdString()+
+                   "\n  seq2: " + info->IdString());
     }
 }
 
@@ -424,7 +495,7 @@ void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& id,
 {
     TBioseqs::iterator iter = m_Bioseqs.lower_bound(id);
     if ( iter != m_Bioseqs.end() && iter->first == id ) {
-        _ASSERT(iter->second.first == info);
+        _ASSERT(iter->second == info);
         m_Bioseqs.erase(iter);
         x_UnindexSeqTSE(id);
     }
@@ -499,11 +570,18 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetTSE_Info() == this);
     CTSE_Info::TAnnotWriteLockGuard guard(m_AnnotObjsLock);
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        it->second->x_UpdateAnnotIndex(*this);
-    }
     object.x_UpdateAnnotIndex(*this);
     _ASSERT(!object.x_DirtyAnnotIndex());
+}
+
+
+void CTSE_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
+{
+    _ASSERT(this == &tse);
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        it->second->x_UpdateAnnotIndex(tse);
+    }
+    TParent::x_UpdateAnnotIndexContents(tse);
 }
 
 
@@ -664,19 +742,13 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
         key.m_AnnotObject_Info->GetLocsTypes(idx_set);
         ITERATE(CAnnotObject_Info::TTypeIndexSet, idx_rg, idx_set) {
             for (size_t idx = idx_rg->first; idx < idx_rg->second; ++idx) {
-                if ( idx >= objs.m_AnnotSet.size() ) {
-                    objs.m_AnnotSet.resize(idx+1);
-                }
-                x_MapAnnotObject(objs.m_AnnotSet[idx], key, annotRef);
+                x_MapAnnotObject(objs.x_GetRangeMap(idx), key, annotRef);
             }
         }
     }
     else {
         size_t index = CAnnotType_Index::GetTypeIndex(key);
-        if ( index >= objs.m_AnnotSet.size() ) {
-            objs.m_AnnotSet.resize(index+1);
-        }
-        x_MapAnnotObject(objs.m_AnnotSet[index], key, annotRef);
+        x_MapAnnotObject(objs.x_GetRangeMap(index), key, annotRef);
     }
 }
 
@@ -685,13 +757,10 @@ bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
                                    const SAnnotObject_Key& key)
 {
     size_t index = CAnnotType_Index::GetTypeIndex(key);
-    _ASSERT(index < objs.m_AnnotSet.size());
-    if ( x_UnmapAnnotObject(objs.m_AnnotSet[index], key) ) {
-        while ( objs.m_AnnotSet.back().empty() ) {
-            objs.m_AnnotSet.pop_back();
-            if ( objs.m_AnnotSet.empty() ) {
-                return objs.m_SNPSet.empty();
-            }
+    _ASSERT(index < objs.x_GetRangeMapCount());
+    if ( x_UnmapAnnotObject(objs.x_GetRangeMap(index), key) ) {
+        if ( objs.x_CleanRangeMaps() ) {
+            return objs.m_SNPSet.empty();
         }
     }
     return false;
@@ -798,11 +867,11 @@ CBioseq_Info& CTSE_Info::x_GetBioseq(int gi)
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot find Bioseq by gi");
     }
-    if ( !iter->second.first ) {
+    if ( !iter->second ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot get split Bioseq by gi");
     }
-    return *iter->second.first;
+    return *iter->second;
 }
 
 

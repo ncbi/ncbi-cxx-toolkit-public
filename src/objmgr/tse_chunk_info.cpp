@@ -41,6 +41,7 @@
 #include <objmgr/impl/annot_object.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objmgr/seq_map.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -53,9 +54,10 @@ BEGIN_SCOPE(objects)
 CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
     : m_TSE_Info(0),
       m_ChunkId(id),
-      m_DirtyAnnotIndex(true)
+      m_AnnotIndexState(eAnnotIndex_disabled)
 {
 }
+
 
 CTSE_Chunk_Info::~CTSE_Chunk_Info(void)
 {
@@ -64,30 +66,78 @@ CTSE_Chunk_Info::~CTSE_Chunk_Info(void)
 
 void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
 {
+    // attach to tse
+    TChunkId chunk_id = GetChunkId();
     _ASSERT(!m_TSE_Info);
-    _ASSERT(tse_info.m_Chunks.find(GetChunkId()) == tse_info.m_Chunks.end());
+    _ASSERT(tse_info.m_Chunks.find(chunk_id) == tse_info.m_Chunks.end());
     m_TSE_Info = &tse_info;
-    tse_info.m_Chunks[GetChunkId()].Reset(this);
-    // attach descrs
+    tse_info.m_Chunks[chunk_id].Reset(this);
+
+    // register descrs places
     ITERATE ( TPlaces, it, m_DescrPlaces ) {
-        x_GetBase(*it).x_AddDescrChunkId(GetChunkId());
+        x_GetBase(*it).x_AddDescrChunkId(chunk_id);
     }
-    // attach annots
+
+    // register annots places
     ITERATE ( TPlaces, it, m_AnnotPlaces ) {
-        x_GetBase(*it).x_AddAnnotChunkId(GetChunkId());
+        x_GetBase(*it).x_AddAnnotChunkId(chunk_id);
     }
+
+    // register bioseqs places
     ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
-        TPlaceId bioseq_set_id = it->first;
-        if ( bioseq_set_id != 0 ) {
-            x_GetBioseq_set(bioseq_set_id).x_AddBioseqChunkId(GetChunkId());
+        TPlaceId bioseq_set_id = *it;
+        if ( bioseq_set_id ) {
+            x_GetBioseq_set(*it).x_AddBioseqChunkId(chunk_id);
         }
-        ITERATE ( TBioseqIds, idit, it->second ) {
-            tse_info.x_SetBioseqChunk(*idit, GetChunkId());
+        else {
+            tse_info.x_SetBioseqChunkId(chunk_id);
         }
     }
-    tse_info.x_SetDirtyAnnotIndex();
-    // attach seq-data
+
+    // register bioseq ids
+    {{
+        set<CSeq_id_Handle> ids;
+        sort(m_BioseqIds.begin(), m_BioseqIds.end());
+        ITERATE ( TBioseqIds, it, m_BioseqIds ) {
+            tse_info.x_SetContainedId(*it, chunk_id);
+            _VERIFY(ids.insert(*it).second);
+        }
+        ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+            ITERATE ( TAnnotTypes, tit, it->second ) {
+                ITERATE ( TLocationSet, lit, tit->second ) {
+                    if ( ids.insert(lit->first).second ) {
+                        tse_info.x_SetContainedId(lit->first, chunk_id);
+                    }
+                }
+            }
+        }
+    }}
+
+    // register seq-data
     x_TSEAttachSeq_data();
+}
+
+
+bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
+{
+    if ( IsLoaded() ) {
+        return true;
+    }
+    if ( binary_search(m_BioseqIds.begin(), m_BioseqIds.end(), id) ) {
+        // contains Bioseq -> always load
+        Load();
+        return true;
+    }
+    if ( !bioseq && m_AnnotIndexState == eAnnotIndex_disabled ) {
+        if ( m_AnnotContents.empty() ) {
+            m_AnnotIndexState = eAnnotIndex_indexed;
+        }
+        else {
+            m_AnnotIndexState = eAnnotIndex_dirty;
+            m_TSE_Info->x_SetDirtyAnnotIndex();
+        }
+    }
+    return false;
 }
 
 
@@ -99,6 +149,9 @@ void CTSE_Chunk_Info::Load(void) const
     if ( init ) {
         ds.GetDataLoader()->GetChunk(Ref(chunk));
         _ASSERT(!NotLoaded());
+        if ( chunk->m_AnnotIndexState == eAnnotIndex_dirty ) {
+            chunk->m_AnnotIndexState = eAnnotIndex_disabled;
+        }
     }
 }
 
@@ -114,29 +167,38 @@ void CTSE_Chunk_Info::SetLoaded(CObject* obj)
 
 void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
 {
-    if ( m_DirtyAnnotIndex ) {
+    if ( m_AnnotIndexState == eAnnotIndex_dirty ) {
         x_UpdateAnnotIndexContents(tse);
-        m_DirtyAnnotIndex = false;
+        m_AnnotIndexState = eAnnotIndex_indexed;
     }
 }
 
 
 void CTSE_Chunk_Info::x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id)
 {
+    _ASSERT(!m_TSE_Info);
     m_DescrPlaces.push_back(TPlace(place_type, place_id));
 }
 
 
 void CTSE_Chunk_Info::x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id)
 {
+    _ASSERT(!m_TSE_Info);
     m_AnnotPlaces.push_back(TPlace(place_type, place_id));
 }
 
 
-void CTSE_Chunk_Info::x_AddBioseqPlace(TPlaceId place_id,
-                                       const CSeq_id_Handle& id)
+void CTSE_Chunk_Info::x_AddBioseqPlace(TPlaceId place_id)
 {
-    m_BioseqPlaces[place_id].insert(id);
+    _ASSERT(!m_TSE_Info);
+    m_BioseqPlaces.push_back(place_id);
+}
+
+
+void CTSE_Chunk_Info::x_AddBioseqId(const CSeq_id_Handle& id)
+{
+    _ASSERT(!m_TSE_Info);
+    m_BioseqIds.push_back(id);
 }
 
 
@@ -145,6 +207,7 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
                                      const TLocationId& location_id,
                                      const TLocationRange& location_range)
 {
+    _ASSERT(!m_TSE_Info);
     TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
     dst.push_back(TLocation(location_id, location_range));
 }
@@ -154,6 +217,7 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
                                      const SAnnotTypeSelector& annot_type,
                                      const TLocationSet& location)
 {
+    _ASSERT(!m_TSE_Info);
     TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
     dst.insert(dst.end(), location.begin(), location.end());
 }
@@ -161,6 +225,7 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
 
 void CTSE_Chunk_Info::x_AddSeq_data(const TLocationSet& location)
 {
+    _ASSERT(!m_TSE_Info);
     m_Seq_data.insert(m_Seq_data.end(), location.begin(), location.end());
 }
 
@@ -330,6 +395,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/08/31 14:26:14  vasilche
+* Postpone indexing of split blobs.
+*
 * Revision 1.15  2004/08/19 16:54:56  vasilche
 * Treat Bioseq-set zero as anonymous set.
 *
