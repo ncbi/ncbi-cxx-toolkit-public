@@ -84,6 +84,31 @@ BEGIN_NCBI_SCOPE
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
 
 
+#define LOG_POST_N_TIMES(count, message) \
+    do { \
+        static volatile int sx_to_show = count; \
+        int to_show = sx_to_show; \
+        if ( to_show > 0 ) { \
+            LOG_POST(message); \
+            sx_to_show = to_show - 1; \
+        } \
+    } while ( false )
+
+
+#define ERR_POST_N_TIMES(count, message) \
+    do { \
+        static volatile int sx_to_show = count; \
+        int to_show = sx_to_show; \
+        if ( to_show > 0 ) { \
+            ERR_POST(message); \
+            sx_to_show = to_show - 1; \
+        } \
+    } while ( false )
+
+#define LOG_POST_ONCE(message) LOG_POST_N_TIMES(1, message)
+#define ERR_POST_ONCE(message) ERR_POST_N_TIMES(1, message)
+
+
 /// Severity level for the posted diagnostics.
 enum EDiagSev {
     eDiag_Info = 0, ///< Informational message
@@ -889,6 +914,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.69  2004/03/16 15:35:19  vasilche
+ * Added LOG_POST_ONCE and ERR_POST_ONCE macros
+ *
  * Revision 1.68  2004/03/12 21:16:56  gorelenk
  * Added NCBI_XNCBI_EXPORT to member-function SetFile of class CNcbiDiag.
  *
