@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/04 15:09:41  vasilche
+ * Added missing include.
+ *
  * Revision 6.4  2000/11/30 22:08:18  ostell
  * finished Match()
  *
@@ -60,6 +63,7 @@
 #include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
 
 // generated classes
 
