@@ -1,4 +1,4 @@
 # $Id$
 
 LIB = xobjread
-SRC = fasta readfeat
+SRC = fasta readfeat gff_reader
