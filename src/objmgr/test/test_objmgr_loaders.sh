@@ -15,10 +15,7 @@ for method in $methods; do
     echo "Checking GenBank loader $method:"
     GENBANK_LOADER_METHOD="$method"
     export GENBANK_LOADER_METHOD
-    "$@" &
-    pid=$!
-    trap 'kill $pid' 1 2 15
-    wait $pid > /dev/null 2>&1
+    $CHECK_EXEC "$@"
     error=$?
     if test $error -ne 0; then
         echo "Test of GenBank loader $method failed: $error"

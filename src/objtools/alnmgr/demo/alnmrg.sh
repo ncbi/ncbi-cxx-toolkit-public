@@ -3,12 +3,11 @@
 #
 unset GENBANK_ID1_STATS
 test_dir="./data"
-prg="./alnmrg"
 tmp_out=$test_dir/out.asn
 return_status=0
 
 run_prg() {
-  $prg -in $test_dir/$1.asn $2 > $tmp_out
+  $CHECK_EXEC alnmrg -in $test_dir/$1.asn $2 > $tmp_out
   if test "$?" != 0; then
       echo "FAILURE:"
       return_status=1
@@ -60,5 +59,6 @@ test2 iterator_minus_minus "" "iterator minus minus"
 # test2 blast "-queryseqmergeonly t" "blast output merge"
 
 rm $tmp_out
+
 echo "Done!"
 exit $return_status

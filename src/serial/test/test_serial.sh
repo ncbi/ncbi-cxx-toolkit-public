@@ -14,7 +14,7 @@ done
 mv ${testprefix}test_serial.asn test_serial.asn
 mv ${testprefix}test_serial.asb test_serial.asb
 
-test_serial > test_serial.out 2> test_serial.err  ||  exit 1
+$CHECK_EXEC test_serial > test_serial.out 2> test_serial.err  ||  exit 1
 
 status=0
 

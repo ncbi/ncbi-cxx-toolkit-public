@@ -1,5 +1,5 @@
 #! /bin/sh
 #$Id$
 
-echo "test string" | test_ncbi_buffer
+echo "test string" | $CHECK_EXEC test_ncbi_buffer
 exit $?

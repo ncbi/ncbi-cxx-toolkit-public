@@ -20,7 +20,7 @@ RunTest()
   reg_exp="$2"
 
   echo
-  $cmd "$sql" > $res_file 2>&1
+  $CHECK_EXEC $cmd "$sql" > $res_file 2>&1
 
   if test $? -eq 0 ; then
     if grep "$reg_exp" $res_file > /dev/null 2>&1 ; then
@@ -41,7 +41,7 @@ RunTest()
 
 
 # Check existence of the "dbapi_driver_check"
-dbapi_driver_check
+$CHECK_EXEC dbapi_driver_check
 if test $? -ne 99 ; then
   echo "The DBAPI driver existence check application not found."
   echo
@@ -58,7 +58,7 @@ for driver in $driver_list ; do
 ******************* DRIVER:  $driver ************************
 
 EOF
-  if dbapi_driver_check $driver ; then
+  if $CHECK_EXEC dbapi_driver_check $driver ; then
     for server in $server_list ; do
       if test $driver = "ctlib"  -a  $server = $server_mssql ; then
          continue

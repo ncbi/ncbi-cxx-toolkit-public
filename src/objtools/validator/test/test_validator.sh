@@ -1,4 +1,4 @@
 #! /bin/sh
 # $Id$
 
-./test_validator ${1+"$@"}
+$CHECK_EXEC test_validator ${1+"$@"}
