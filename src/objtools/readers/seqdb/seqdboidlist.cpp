@@ -229,6 +229,8 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
     int gis_size = gis.Size();
     
     if (0 == gis_size) {
+        x_ClearBitRange(0, m_NumOIDs);
+        m_NumOIDs = 0;
         return;
     }
     
@@ -272,9 +274,12 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
     
     gis.InsureOrder(CSeqDBGiList::eOid);
     
-    // Clear and OID bits between the valid OIDs.
+    // Clear any OID bits between the valid OIDs.
     
-    if (gis[gis_size-1].oid != -1) {
+    if (gis[gis_size-1].oid == -1) {
+        x_ClearBitRange(0, m_NumOIDs);
+        m_NumOIDs = 0;
+    } else {
         int prev_oid = -1;
         
         for(int j = 0; j < gis_size; j++) {
