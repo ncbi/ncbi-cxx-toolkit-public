@@ -43,21 +43,19 @@ BEGIN_NCBI_SCOPE
 //  CBDB_BLobFile::
 //
 
-CBDB_BLobFile::CBDB_BLobFile() 
+CBDB_BLobFile::CBDB_BLobFile()
 { 
-    DisableDataBufProcessing(); 
+    DisableDataBufProcessing();
 }
 
 
 EBDB_ErrCode CBDB_BLobFile::Fetch()
 {
-    return Fetch(0, 0, eReallocForbidden);
-}
+    return Fetch(0, 0, eReallocForbidden); }
 
 EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf, 
                                   size_t       buf_size, 
-                                  EReallocMode allow_realloc)
-{
+                                  EReallocMode allow_realloc) {
     m_DBT_Data->data = buf ? *buf : 0;
     m_DBT_Data->ulen = (unsigned)buf_size;
     m_DBT_Data->size = 0;
@@ -86,14 +84,11 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
 }
 
 
-EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size)
-{
-    return Fetch(&buf, size, eReallocForbidden);
-}
+EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size) {
+    return Fetch(&buf, size, eReallocForbidden); }
 
 
-EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size)
-{
+EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size) {
     m_DBT_Data->data = const_cast<void*> (data);
     m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
 
@@ -101,14 +96,13 @@ EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size)
     return ret;
 }
 
-size_t CBDB_BLobFile::LobSize() const 
+size_t CBDB_BLobFile::LobSize() const
 { 
-    return m_DBT_Data->size; 
+    return m_DBT_Data->size;
 }
 
 
-CBDB_BLobStream* CBDB_BLobFile::CreateStream()
-{
+CBDB_BLobStream* CBDB_BLobFile::CreateStream() {
     EBDB_ErrCode ret = Fetch();
 
     DBT* dbt = CloneDBT_Key();
@@ -117,8 +111,7 @@ CBDB_BLobStream* CBDB_BLobFile::CreateStream()
         return new CBDB_BLobStream(m_DB, dbt, LobSize(), GetTxn());
     }
     // no lob yet (write stream)
-    return new CBDB_BLobStream(m_DB, dbt, 0, GetTxn());
-}
+    return new CBDB_BLobStream(m_DB, dbt, 0, GetTxn()); }
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_BLobFile::
@@ -136,8 +129,7 @@ CBDB_BLobStream::CBDB_BLobStream(DB* db,
   m_BlobSize(blob_size)
 {
     m_DBT_Data = new DBT;
-    ::memset(m_DBT_Data, 0, sizeof(DBT));
-}
+    ::memset(m_DBT_Data, 0, sizeof(DBT)); }
 
 
 CBDB_BLobStream::~CBDB_BLobStream()
@@ -147,8 +139,7 @@ CBDB_BLobStream::~CBDB_BLobStream()
 }
 
 
-void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans)
-{
+void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans) {
     if (trans) {
         m_Txn = trans->GetTxn();
     } else {
@@ -156,8 +147,7 @@ void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans)
     }
 }
 
-void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read)
-{
+void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read) {
     m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
 
     m_DBT_Data->data = buf;
@@ -177,8 +167,7 @@ void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read)
     *bytes_read = m_DBT_Data->size;
 }
 
-void CBDB_BLobStream::Write(const void* buf, size_t buf_size)
-{
+void CBDB_BLobStream::Write(const void* buf, size_t buf_size) {
 /*    if (m_Pos == 0)
         m_DBT_Data->flags = 0;
     else*/
@@ -227,7 +216,11 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
     _ASSERT(m_DBT_Key->data == &m_LobKey);
     _ASSERT(m_DBT_Key->size == sizeof(m_LobKey));
 
-    m_LobKey = lob_id;
+    if (IsByteSwapped()) {
+        m_LobKey = (unsigned int) CByteSwap::GetInt4((unsigned char*)&lob_id);
+    } else {
+        m_LobKey = lob_id;
+    }
 
     m_DBT_Data->data = const_cast<void*> (data);
     m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
@@ -249,8 +242,7 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
 EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
                                  void**       buf,
                                  size_t       buf_size,
-                                 EReallocMode allow_realloc)
-{
+                                 EReallocMode allow_realloc) {
     _ASSERT(lob_id);
     _ASSERT(m_DB);
 
@@ -259,9 +251,13 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
     _ASSERT(m_DBT_Key->size  == sizeof(m_LobKey));
     _ASSERT(m_DBT_Key->ulen  == sizeof(m_LobKey));
     _ASSERT(m_DBT_Key->flags == DB_DBT_USERMEM);
-
-    m_LobKey = lob_id;
-
+    
+    if (IsByteSwapped()) {
+        m_LobKey = (unsigned int) CByteSwap::GetInt4((unsigned char*)&lob_id);
+    } else {
+        m_LobKey = lob_id;
+    }
+    
     // Here we attempt to read only key value and get information
     // about LOB size. In this case get operation fails with ENOMEM
     // error message (ignored)
@@ -309,8 +305,7 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
 
 
 
-EBDB_ErrCode CBDB_LobFile::GetData(void* buf, size_t size)
-{
+EBDB_ErrCode CBDB_LobFile::GetData(void* buf, size_t size) {
     _ASSERT(m_LobKey);
     _ASSERT(m_DB);
     _ASSERT(size >= m_DBT_Data->size);
@@ -363,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/06/04 16:10:32  kuznets
+ * Fixed bug with byteswapping when writin/reading LOBs
+ *
  * Revision 1.17  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
