@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -318,7 +318,7 @@ ID2S-Split-Info ::= SEQUENCE {
 ID2S-Bioseqs-Info ::= SEQUENCE {
         info            ID2S-Bioseq-Info,
         bioseqs         ID2-Id-Range
-}        
+}
 
 
 ID2S-Bioseq-Info ::= SEQUENCE {
@@ -346,7 +346,8 @@ ID2S-Chunk-Content ::= CHOICE {
         seq-annot       ID2S-Seq-annot-Info,
         seq-assembly    ID2S-Seq-assembly-Info,
         seq-map         ID2S-Seq-map-Info,
-        seq-data        ID2S-Seq-data-Info
+        seq-data        ID2S-Seq-data-Info,
+        seq-annot-place ID2S-Seq-annot-place-Info
 }
 
 
@@ -365,6 +366,13 @@ ID2S-Seq-annot-Info ::= SEQUENCE {
         graph           NULL OPTIONAL,
         feat            SET OF ID2S-Feat-type-Info OPTIONAL,
         seq-loc         ID2-Seq-loc
+}
+
+
+ID2S-Seq-annot-place-Info ::= SEQUENCE {
+        name            VisibleString OPTIONAL,
+        bioseqs         SET OF ID2-Id-Range OPTIONAL,
+        bioseq-sets     SET OF ID2-Id-Range OPTIONAL
 }
 
 
