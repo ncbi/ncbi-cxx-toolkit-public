@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.4  2003/09/10 21:36:29  dondosha
+* Removed Nlm_ prefix from math functions definitions
+*
 * Revision 1.3  2003/08/25 22:32:51  dondosha
 * Added #ifndef for definition of DBL_EPSILON
 *
@@ -61,7 +64,7 @@
 * Fixed errors and warnings issued by C and C++ (GNU and Sun) compilers
 *
 * Revision 6.1  1997/10/31 16:22:49  madden
-* Limited the loop in Nlm_Log1p to 500 iterations
+* Limited the loop in Log1p to 500 iterations
 *
 * Revision 6.0  1997/08/25 18:16:35  madden
 * Revision changed to 6.0
@@ -77,7 +80,7 @@
  * Adopted for 32-bit MS-Windows DLLs
  *
  * Revision 5.1  1996/06/20  14:08:00  madden
- * Changed int to Int4, double to Nlm_FloatHi
+ * Changed int to Int4, double to FloatHi
  *
  * Revision 5.0  1996/05/28  13:18:57  ostell
  * Set to revision 5.0
@@ -105,11 +108,11 @@ extern char * g_corelib;
 static char * _this_file = __FILE__;
 
 /*
-    Nlm_Expm1(x)
+    Expm1(x)
     Return values accurate to approx. 16 digits for the quantity exp(x)-1
     for all x.
 */
-extern double Nlm_Expm1(double	x)
+extern double Expm1(double	x)
 {
   double	absx;
 
@@ -138,10 +141,10 @@ extern double Nlm_Expm1(double	x)
 #endif
 
 /*
-    Nlm_Log1p(x)
+    Log1p(x)
     Return accurate values for the quantity log(x+1) for all x > -1.
 */
-extern double Nlm_Log1p(double x)
+extern double Log1p(double x)
 {
 	Int4	i;
 	double	sum, y;
@@ -163,7 +166,7 @@ extern double Nlm_Log1p(double x)
 	return sum;
 }
 
-static double Nlm_LogDerivative(Int4 order, double* u) /* nth derivative of ln(u) */
+static double LogDerivative(Int4 order, double* u) /* nth derivative of ln(u) */
         /* order is order of the derivative */
         /* u is values of u, u', u", etc. */
 {
@@ -261,16 +264,16 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
                                 value += *--coef / --tmp;
                 }
                 else {
-                        value = *--coef / Nlm_Powi(tmp, i + 1);
+                        value = *--coef / Powi(tmp, i + 1);
                         while (coef > _default_gamma_coef)
-                                value += *--coef / Nlm_Powi(--tmp, i + 1);
-                        tmp = Nlm_Factorial(i);
+                                value += *--coef / Powi(--tmp, i + 1);
+                        tmp = Factorial(i);
                         value *= (i%2 == 0 ? tmp : -tmp);
                 }
                 y[i] = value;
         }
         ++y[0];
-        value = Nlm_LogDerivative(order, y);
+        value = LogDerivative(order, y);
         tmp = tx + 0.5;
         switch (order) {
         case 0:
@@ -290,7 +293,7 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
                 value += 2. * (1. + 3.*xgamma_dim / tmp) / (tmp * tmp * tmp);
                 break;
         default:
-                tmp = Nlm_Factorial(order - 2) * Nlm_Powi(tmp, 1 - order)
+                tmp = Factorial(order - 2) * Powi(tmp, 1 - order)
                                 * (1. + (order - 1) * xgamma_dim / tmp);
                 if (order % 2 == 0)
                         value += tmp;
@@ -302,7 +305,7 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
 }
 
 
-extern double Nlm_PolyGamma(double x, Int4 order) /* ln(ABS[gamma(x)]) - 10 digits of accuracy */
+extern double PolyGamma(double x, Int4 order) /* ln(ABS[gamma(x)]) - 10 digits of accuracy */
 	/* x is and derivatives */
 	/* order is order of the derivative */
 /* order = 0, 1, 2, ...  ln(gamma), digamma, trigamma, ... */
@@ -348,7 +351,7 @@ of order is truly the order of the derivative.  */
 				tmp *= NCBIMATH_PI;
 				y[k] = tmp * sin(x += (NCBIMATH_PI/2.));
 			}
-			value -= Nlm_LogDerivative(order, y);
+			value -= LogDerivative(order, y);
 		}
 	}
 	else {
@@ -364,23 +367,23 @@ of order is truly the order of the derivative.  */
 			value -= log(x);
 		}
 		else {
-			tmp = Nlm_Factorial(order - 1) * Nlm_Powi(x,  -order);
+			tmp = Factorial(order - 1) * Powi(x,  -order);
 			value += (order % 2 == 0 ? tmp : - tmp);
 		}
 	}
 	return value;
 }
 
-extern double Nlm_LnGamma(double x)               /* ln(ABS[gamma(x)]) - 10 dig
+extern double LnGamma(double x)               /* ln(ABS[gamma(x)]) - 10 dig
 its of accuracy */
 {
-        return Nlm_PolyGamma(x, 0);
+        return PolyGamma(x, 0);
 }
 
 
 #define FACTORIAL_PRECOMPUTED   36
 
-extern double Nlm_Factorial(Int4 n)
+extern double Factorial(Int4 n)
 {
         static double      precomputed[FACTORIAL_PRECOMPUTED]
                 = { 1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.};
@@ -399,14 +402,14 @@ extern double Nlm_Factorial(Int4 n)
                         nlim = m;
                         return x;
                 }
-                return exp(Nlm_LnGamma((double)(n+1)));
+                return exp(LnGamma((double)(n+1)));
         }
         return 0.0; /* Undefined! */
 }
 
 
-/* Nlm_LnGammaInt(n) -- return log(Gamma(n)) for integral n */
-extern double Nlm_LnGammaInt(Int4 n)
+/* LnGammaInt(n) -- return log(Gamma(n)) for integral n */
+extern double LnGammaInt(Int4 n)
 {
 	static double	precomputed[FACTORIAL_PRECOMPUTED];
 	static Int4	nlim = 1; /* first two entries are 0 */
@@ -417,12 +420,12 @@ extern double Nlm_LnGammaInt(Int4 n)
 			return precomputed[n];
 		if (n < DIM(precomputed)) {
 			for (m = nlim; m < n; ++m) {
-				precomputed[m+1] = log(Nlm_Factorial(m));
+				precomputed[m+1] = log(Factorial(m));
 			}
 			return precomputed[nlim = m];
 		}
 	}
-	return Nlm_LnGamma((double)n);
+	return LnGamma((double)n);
 }
 
 
@@ -442,7 +445,7 @@ extern double Nlm_LnGammaInt(Int4 n)
 #define F(x)  ((*f)((x), fargs))
 #define ROMBERG_ITMAX 20
 
-extern double Nlm_RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
+extern double RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
 
 {
 	double	romb[ROMBERG_ITMAX];	/* present list of Romberg values */
@@ -506,13 +509,13 @@ extern double Nlm_RombergIntegrate(double (*f) (double,void*), void* fargs, doub
 }
 
 /*
-	Nlm_Gcd(a, b)
+	Gcd(a, b)
 
 	Return the greatest common divisor of a and b.
 
 	Adapted 8-15-90 by WRG from code by S. Altschul.
 */
-long Nlm_Gcd(long a, long b)
+long Gcd(long a, long b)
 {
 	long	c;
 
@@ -529,7 +532,7 @@ long Nlm_Gcd(long a, long b)
 }
 
 /* Round a floating point number to the nearest integer */
-long Nlm_Nint(double x)	/* argument */
+long Nint(double x)	/* argument */
 {
 	x += (x >= 0. ? 0.5 : -0.5);
 	return (long)x;
@@ -541,7 +544,7 @@ integer power function
 Original submission by John Spouge, 6/25/90
 Added to shared library by WRG
 */
-extern double Nlm_Powi(double x, Int4 n)	/* power */
+extern double Powi(double x, Int4 n)	/* power */
 {
 	double	y;
 
@@ -586,11 +589,11 @@ Loop2:
 	return y * x;
 }
 
-extern double Nlm_LnFactorial (double x) {
+extern double LnFactorial (double x) {
 
     if(x<=0.0)
         return 0.0;
     else
-        return Nlm_LnGamma(x+1.0);
+        return LnGamma(x+1.0);
         
 }
