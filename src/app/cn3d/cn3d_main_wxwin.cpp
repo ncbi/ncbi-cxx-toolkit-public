@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2001/12/15 03:15:58  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
 * Revision 1.110  2001/12/14 14:52:38  thiessen
 * add apple event handler for open document
 *
@@ -455,6 +458,8 @@
 #include <wx/file.h>
 #include <wx/fontdlg.h>
 #include <wx/image.h>
+#include <wx/confbase.h>
+#include <wx/fileconf.h>
 
 #include <ncbienv.h>
 
@@ -740,7 +745,7 @@ void Cn3DApp::InitRegistry(void)
     RegistrySetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, 25);
 
     // load program registry - overriding defaults if present
-    registryFile = dataDir + "cn3d.ini";
+    registryFile = wxFileConfig::GetLocalFileName("cn3d");
     auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
     if (*iniIn) {
         TESTMSG("loading program registry " << registryFile);
@@ -891,7 +896,7 @@ OSErr Cn3DApp::MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply)
     if ( stat ) return ( stat );
 
     stat = AEGetAttributePtr (event, keyMissedKeywordAttr, typeWildCard, &dtype, 0, 0, &size );
-    if ( stat != errAEDescNotFound ) {   
+    if ( stat != errAEDescNotFound ) {
         AEDisposeDesc( &list );
         return ( stat? stat : errAEEventNotHandled );
     }
@@ -899,17 +904,17 @@ OSErr Cn3DApp::MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply)
     // try to extract a file name to open
     *filename = '\0';
     AECountItems ( &list, &count );
-    for ( i = 1; i <= count; i++ ) {   
+    for ( i = 1; i <= count; i++ ) {
         stat = AEGetNthPtr (&list, i, typeFSS, &keywd, &dtype, (Ptr) &fss, sizeof (fss), &size);
-        if ( !stat ) {   
+        if ( !stat ) {
             ConvertFilename (&fss, filename);
             break;
         }
     }
-    
+
     // actually open the file
     if (*filename) structureWindow->LoadFile(filename);
-    
+
     // borrowed from wxApp::MacHandleAEODoc
     ProcessSerialNumber PSN ;
     PSN.highLongOfPSN = 0 ;

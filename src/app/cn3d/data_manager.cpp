@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
 * Revision 1.3  2001/12/06 23:13:45  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -151,7 +154,7 @@ void ASNDataManager::Load(void)
                     for (i=mimeData->GetGeneral().GetSeq_align_data().GetBundle().GetImports().begin();
                          i!= ie; i++) {
                         CRef < CUpdate_align > update(new CUpdate_align());
-                        update->SetSeqannot(i->GetPointer());
+                        update->SetSeqannot(**i);
                         update->SetType(CUpdate_align::eType_other);
                         bundleImportsFaked.push_back(update);
                     }
@@ -289,7 +292,7 @@ const CCn3d_style_dictionary * ASNDataManager::GetStyleDictionary(void) const
     return NULL;
 }
 
-void ASNDataManager::SetStyleDictionary(ncbi::CRef < ncbi::objects::CCn3d_style_dictionary >& styles)
+void ASNDataManager::SetStyleDictionary(ncbi::objects::CCn3d_style_dictionary& styles)
 {
     if (mimeData.NotEmpty()) {
         if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().SetStyle_dictionary(styles);
@@ -304,6 +307,23 @@ void ASNDataManager::SetStyleDictionary(ncbi::CRef < ncbi::objects::CCn3d_style_
         }
     } else
         cddData->SetStyle_dictionary(styles);
+}
+
+void ASNDataManager::RemoveStyleDictionary(void)
+{
+    if (mimeData.NotEmpty()) {
+        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
+        else if (mimeData->IsAlignseq()) mimeData->SetAlignseq().ResetStyle_dictionary();
+        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
+        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
+        else if (mimeData->IsGeneral()) {
+            if (mimeData->GetGeneral().GetSeq_align_data().IsBundle())
+                mimeData->SetGeneral().SetSeq_align_data().SetBundle().ResetStyle_dictionary();
+            else
+                mimeData->SetGeneral().SetSeq_align_data().SetCdd().ResetStyle_dictionary();
+        }
+    } else
+        cddData->ResetStyle_dictionary();
 }
 
 const CCn3d_user_annotations * ASNDataManager::GetUserAnnotations(void) const
@@ -331,7 +351,7 @@ const CCn3d_user_annotations * ASNDataManager::GetUserAnnotations(void) const
     return NULL;
 }
 
-void ASNDataManager::SetUserAnnotations(ncbi::CRef < ncbi::objects::CCn3d_user_annotations >& annots)
+void ASNDataManager::SetUserAnnotations(ncbi::objects::CCn3d_user_annotations& annots)
 {
     if (mimeData.NotEmpty()) {
         if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().SetUser_annotations(annots);
@@ -348,15 +368,37 @@ void ASNDataManager::SetUserAnnotations(ncbi::CRef < ncbi::objects::CCn3d_user_a
         cddData->SetUser_annotations(annots);
 }
 
+void ASNDataManager::RemoveUserAnnotations(void)
+{
+    if (mimeData.NotEmpty()) {
+        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetUser_annotations();
+        else if (mimeData->IsAlignseq()) mimeData->SetAlignseq().ResetUser_annotations();
+        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetUser_annotations();
+        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetUser_annotations();
+        else if (mimeData->IsGeneral()) {
+            if (mimeData->GetGeneral().GetSeq_align_data().IsBundle())
+                mimeData->SetGeneral().SetSeq_align_data().SetBundle().ResetUser_annotations();
+            else
+                mimeData->SetGeneral().SetSeq_align_data().SetCdd().ResetUser_annotations();
+        }
+    } else
+        cddData->ResetUser_annotations();
+}
+
 void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *structureAlignments)
 {
-    if (mimeData.NotEmpty() && mimeData->IsGeneral() && mimeData->GetGeneral().GetSeq_align_data().IsBundle())
-        mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetStrucaligns(
-            CRef < CBiostruc_annot_set > (structureAlignments));
-    else if (cddData.NotEmpty())
-        cddData->SetFeatures(CRef < CBiostruc_annot_set > (structureAlignments));
-    else
-        ERR_POST(Error << "ASNDataManager::AddStructureAlignments() - can't add to this data type");
+    if (mimeData.NotEmpty() && mimeData->IsGeneral() && mimeData->GetGeneral().GetSeq_align_data().IsBundle()) {
+        if (structureAlignments)
+            mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetStrucaligns(*structureAlignments);
+        else
+            mimeData->SetGeneral().SetSeq_align_data().SetBundle().ResetStrucaligns();
+    } else if (cddData.NotEmpty()) {
+        if (structureAlignments)
+            cddData->SetFeatures(*structureAlignments);
+        else
+            cddData->ResetFeatures();
+    } else
+        ERR_POST(Error << "ASNDataManager::SetStructureAlignments() - can't add to this data type");
 }
 
 bool ASNDataManager::ConvertMimeToGeneral(void)
@@ -367,14 +409,12 @@ bool ASNDataManager::ConvertMimeToGeneral(void)
     }
 
     CNcbi_mime_asn1 *newMime = new CNcbi_mime_asn1();
-    std::string err;
 
     // copy structures
     if (biostrucList)
         newMime->SetGeneral().SetStructures() = *biostrucList;
     if (masterBiostruc) {
-        newMime->SetGeneral().SetStructures().push_front(CRef<CBiostruc>(
-            CopyASNObject(*masterBiostruc, &err)));
+        newMime->SetGeneral().SetStructures().push_front(CRef<CBiostruc>(masterBiostruc));
         masterBiostruc = NULL;
     }
     biostrucList = (newMime->SetGeneral().SetStructures().size() > 0) ?
@@ -387,16 +427,12 @@ bool ASNDataManager::ConvertMimeToGeneral(void)
         bundle->SetSequences() = *seqEntryList;
         seqEntryList = &(bundle->SetSequences());
     }
-    if (structureAlignments) {
-        structureAlignments = CopyASNObject(*structureAlignments, &err);
-        bundle->SetStrucaligns(CRef<CBiostruc_annot_set>(structureAlignments));
-    }
+    if (structureAlignments)
+        bundle->SetStrucaligns(*structureAlignments);
     if (sequenceAlignments) {
         bundle->SetSeqaligns() = *sequenceAlignments;
         sequenceAlignments = &(bundle->SetSeqaligns());
     }
-    if (err.size() > 0)
-        ERR_POST(Error << "CopyASNObject() - error: " << err);
 
     // install new root mime structure
     mimeData.Reset(newMime);
@@ -641,7 +677,7 @@ ncbi::objects::CCdd_descr_set * ASNDataManager::GetCDDDescrSet(void)
         // make a new descr set if not present
         if (!cdd->IsSetDescription()) {
             CRef < CCdd_descr_set > ref(new CCdd_descr_set());
-            cdd->SetDescription(ref);
+            cdd->SetDescription(*ref);
         }
         return &(cdd->SetDescription());
     } else
@@ -655,7 +691,7 @@ ncbi::objects::CAlign_annot_set * ASNDataManager::GetCDDAnnotSet(void)
         // make a new annot set if not present
         if (!cdd->IsSetAlignannot()) {
 			CRef < CAlign_annot_set > ref(new CAlign_annot_set());
-            cdd->SetAlignannot(ref);
+            cdd->SetAlignannot(*ref);
         }
         return &(cdd->SetAlignannot());
     } else

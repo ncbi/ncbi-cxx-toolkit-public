@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
 * Revision 1.21  2001/12/12 14:58:10  thiessen
 * change URL to viewer.fcgi
 *
@@ -300,7 +303,7 @@ void UpdateViewer::SaveAlignments(void)
             // create a new Seq-annot
             CRef < CSeq_annot > seqAnnotRef(new CSeq_annot());
             seqAnnotRef->SetData().SetAlign();
-            updateAlign->SetSeqannot(seqAnnotRef);
+            updateAlign->SetSeqannot(*seqAnnotRef);
         }
 
         // get Seq-align list

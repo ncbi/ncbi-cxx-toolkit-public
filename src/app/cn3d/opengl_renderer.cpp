@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
 * Revision 1.56  2001/12/12 14:04:14  thiessen
 * add missing object headers after object loader change
 *
@@ -1556,7 +1559,7 @@ bool OpenGLRenderer::SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations
         ERR_POST(Error << "OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
         return false;
     }
-    annotations->SetView(copy);
+    annotations->SetView(*copy);
     return true;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
 * Revision 1.3  2001/12/06 23:13:45  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -134,19 +137,11 @@ public:
 
     // style dictionary and user annotations
     const ncbi::objects::CCn3d_style_dictionary * GetStyleDictionary(void) const;
-    void SetStyleDictionary(ncbi::CRef < ncbi::objects::CCn3d_style_dictionary >& styles);
-    void RemoveStyleDictionary(void)
-    {
-        ncbi::CRef < ncbi::objects::CCn3d_style_dictionary > ref(NULL);
-        SetStyleDictionary(ref);
-    }
+    void SetStyleDictionary(ncbi::objects::CCn3d_style_dictionary& styles);
+    void RemoveStyleDictionary(void);
     const ncbi::objects::CCn3d_user_annotations * GetUserAnnotations(void) const;
-    void SetUserAnnotations(ncbi::CRef < ncbi::objects::CCn3d_user_annotations >& annots);
-    void RemoveUserAnnotations(void)
-    {
-        ncbi::CRef < ncbi::objects::CCn3d_user_annotations > ref(NULL);
-        SetUserAnnotations(ref);
-    }
+    void SetUserAnnotations(ncbi::objects::CCn3d_user_annotations& annots);
+    void RemoveUserAnnotations(void);
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates

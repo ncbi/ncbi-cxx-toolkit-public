@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
 * Revision 1.89  2001/12/12 14:04:15  thiessen
 * add missing object headers after object loader change
 *
@@ -883,7 +886,7 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
             slaveDomainID++;
     }
     CRef<CBiostruc_feature_id> id(new CBiostruc_feature_id(slaveDomainID));
-    feature->SetId(id);
+    feature->SetId(*id);
 
     CRef<CBiostruc_feature> featureRef(feature);
     structureAlignments->SetFeatures().front().GetObject().SetFeatures().resize(
@@ -947,7 +950,7 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     // create and temporarily attach a style dictionary, and annotation set + camera info
     // to the data (and then remove it again, so it's never out of date)
     CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
-    dataManager->SetStyleDictionary(styleDictionary);
+    dataManager->SetStyleDictionary(*styleDictionary);
     CRef < CCn3d_user_annotations > userAnnotations(new CCn3d_user_annotations());
     if (!styleManager->SaveToASNUserAnnotations(userAnnotations.GetPointer()) ||
         (objects.size() >= 1 && !renderer->SaveToASNViewSettings(userAnnotations.GetPointer()))) {
@@ -955,7 +958,7 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
         return false;
     }
     if (userAnnotations->IsSetAnnotations() || userAnnotations->IsSetView())
-        dataManager->SetUserAnnotations(userAnnotations);
+        dataManager->SetUserAnnotations(*userAnnotations);
 
     std::string err;
     bool writeOK = dataManager->WriteDataToFile(filename, doBinary, &err, eFNP_Replace);
@@ -1313,7 +1316,7 @@ void StructureObject::RealignStructure(int nCoords,
     CBiostruc_feature *feature = new CBiostruc_feature();
     feature->SetType(CBiostruc_feature::eType_alignment);
     CRef<CBiostruc_feature::C_Location> location(new CBiostruc_feature::C_Location());
-    feature->SetLocation(location);
+    feature->SetLocation(*location);
     CRef<CChem_graph_alignment> graphAlignment(new CChem_graph_alignment());
     location.GetObject().SetAlignment(graphAlignment);
 
