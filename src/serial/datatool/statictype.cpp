@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/08/13 18:22:31  gouriano
+* added conversion of ANY type DTD element to schema
+*
 * Revision 1.28  2003/08/13 15:45:54  gouriano
 * implemented generation of code, which uses AnyContent objects
 *
@@ -690,7 +693,14 @@ void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out) const
 
 void CAnyContentDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
 {
-    out << "<xs:any/>";
+    out << 
+        "<xs:element name=\"" << XmlTagName() << "\">\n"
+        "  <xs:complexType>\n"
+        "    <xs:sequence>\n"
+        "      <xs:any processContext=\"lax\"/>\n"
+        "    </xs:sequence>\n"
+        "  </xs:complexType>\n"
+        "</xs:element>\n";
 }
 
 TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
