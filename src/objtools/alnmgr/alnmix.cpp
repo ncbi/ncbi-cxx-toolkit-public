@@ -201,7 +201,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
             if ( !bioseq_handle ) {
                 string errstr = string("CAlnMix::Add(): ") 
-                    + "Seq-id cannot be rosolved: "
+                    + "Seq-id cannot be resolved: "
                     + (ds.GetIds())[row]->AsFastaString();
                 
                 NCBI_THROW(CAlnException, eMergeFailure, errstr);
@@ -1440,6 +1440,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2003/06/19 18:37:19  todorov
+* typo fixed
+*
 * Revision 1.55  2003/06/09 20:54:20  todorov
 * Use of ObjMgr is now optional
 *
