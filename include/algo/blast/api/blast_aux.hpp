@@ -43,12 +43,14 @@
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_hits.h>
-#include <algo/blast/core/blast_filter.h>       // Needed for BlastMask & BlastSeqLoc
+#include <algo/blast/core/blast_filter.h> // Needed for BlastMask & BlastSeqLoc
 #include <algo/blast/core/blast_util.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+typedef pair<const CSeq_loc*, CScope*>  TSeqLoc;
+typedef vector<TSeqLoc>                 TSeqLocVector;
 
 /** Converts a CSeq_loc into a BlastMaskPtr structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
@@ -62,11 +64,9 @@ CSeqLoc2BlastMask(const CSeq_loc *slp, int index);
 CRef<CSeq_loc>
 BlastMask2CSeqLoc(BlastMask* mask);
 
-void BlastMaskDNAToProtein(BlastMask** mask, 
-         vector< CConstRef<CSeq_loc> >& slp, CRef<CScope>& scope);
+void BlastMaskDNAToProtein(BlastMask** mask, TSeqLocVector & slp);
 
-void BlastMaskProteinToDNA(BlastMask** mask_ptr, 
-         vector< CConstRef<CSeq_loc> > &slp, CRef<CScope>& scope);
+void BlastMaskProteinToDNA(BlastMask** mask, TSeqLocVector &slp);
 
 
 /** Declares class to handle deallocating of the structure using the appropriate
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/12 19:17:58  dondosha
+* Added TSeqLocVector typedef so it can be used from all sources; removed scope argument from functions
+*
 * Revision 1.10  2003/08/11 19:55:04  camacho
 * Early commit to support query concatenation and the use of multiple scopes.
 * Compiles, but still needs work.
