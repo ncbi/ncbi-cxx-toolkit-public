@@ -47,6 +47,43 @@ public:
     typedef CSingletonObjectStore<string, CPluginManagerBase> TParent;
 public:
     CPluginManagerStore();
+
+    /// Utility class to get plugin manager from the store
+    /// If it is not there, class will create and add new instance 
+    /// to the store.
+    ///
+    /// @note
+    ///   Created plugin manager should be considered under-constructed
+    ///   since it has no regisitered entry points or dll resolver.
+    template<class TInterface>
+    struct CPMMaker
+    {
+        typedef CPluginManager<TInterface> TPluginManager;
+
+        /// @param created
+        ///    assigned TRUE if new plugin manager was added to the store
+        ///    FALSE - if it existed before
+        static
+        CPluginManager<TInterface>* Get(bool* created = 0)
+        {
+            bool pm_created = false;
+            string pm_name = CInterfaceVersion<TInterface>::GetName();
+            TPluginManager* pm = 
+                dynamic_cast<TPluginManager*>
+                    (CPluginManagerStore::GetObject(pm_name));
+
+            if (!pm) {
+                pm = new TPluginManager;
+                CPluginManagerStore::PutObject(pm_name, pm);
+                pm_created = true;
+            }
+            if (created)
+                *created = pm_created;
+            return pm;
+        }
+    };
+    
+
 };
 
 
@@ -56,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/08/05 18:10:04  kuznets
+ * Added plugin manager maker template
+ *
  * Revision 1.1  2004/08/02 13:43:46  kuznets
  * Initial revision
  *
