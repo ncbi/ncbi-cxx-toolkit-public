@@ -384,6 +384,7 @@ null_compare_hsps(const void* v1, const void* v2)
 
 /** Are the two HSPs within a given diagonal distance of each other? */
 #define MB_HSP_CLOSE(q1, q2, s1, s2, c) (ABS(((q1)-(s1)) - ((q2)-(s2))) < (c))
+#define MIN_DIAG_DIST 60
 
 /** Sort the HSPs in an HSP list by diagonal and remove redundant HSPs */
 static Int2
@@ -421,7 +422,7 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
            hsp_array[index1]->context == context && new_hspcnt-index1 < 10 && 
            MB_HSP_CLOSE(q_off, hsp_array[index1]->query.offset,
                         s_off, hsp_array[index1]->subject.offset, 
-                        2*MB_DIAG_NEAR);
+                        MIN_DIAG_DIST);
            index1--) {
          if (q_off >= hsp_array[index1]->query.offset && 
              s_off >= hsp_array[index1]->subject.offset && 
