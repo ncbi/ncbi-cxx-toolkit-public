@@ -46,8 +46,8 @@
 USING_NCBI_SCOPE;
 
 
-#define TEST_RESULT    99   // Test exit code
-#define BUFFER_SIZE  4096   // Size of read buffer
+#define TEST_RESULT       99   // Test exit code
+#define BUFFER_SIZE  1024*10   // Size of read buffer
 
 
 ////////////////////////////////
@@ -86,7 +86,7 @@ static string s_ReadFile(FILE* fs)
 }
 
 // Writing to file stream
-void s_WriteFile(FILE* fs, string message) 
+static void s_WriteFile(FILE* fs, string message) 
 {
     write(fileno(fs), message.c_str(), message.length());
     cerr << "Wrote to file stream: " << message << endl;
@@ -103,7 +103,7 @@ static string s_ReadStream(istream& ios)
         size_t cnt = ios.gcount();
         read += cnt;
         size -= cnt;
-        if (cnt == 0 && ios.eof())
+        if (size == 0  ||  (cnt == 0 && ios.eof()))
             break;
         ios.clear();
     }
@@ -111,13 +111,6 @@ static string s_ReadStream(istream& ios)
     string str = buf;
     cerr << "Read from iostream: " << str << endl;
     return str;
-}
-
-// Writing to iostream
-void s_WriteFile(ostream& ios, string message) 
-{
-    ios << message;
-    cerr << "Wrote to file stream: " << message << endl;
 }
 
 
@@ -274,6 +267,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/06/12 14:01:38  ivanov
+ * Increased size of read buffer. Fixed s_ReadStream().
+ *
  * Revision 6.4  2002/06/11 19:25:56  ivanov
  * Added tests for CPipeIOStream
  *
