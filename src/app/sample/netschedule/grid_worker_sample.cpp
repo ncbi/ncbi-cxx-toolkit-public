@@ -135,10 +135,10 @@ public:
     }
 };
 
-//// Sample Job Factory
-//// Creates new job class every time worker node receives a request 
+/// Sample Job Factory
+/// Creates new job class every time worker node receives a request 
 ///  from the queue
-////
+///
 class CSampleJobFactory : public IWorkerNodeJobFactory
 {
 public:
@@ -164,6 +164,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/24 17:48:51  kuznets
+ * Minor cleanup...
+ *
  * Revision 1.3  2005/03/24 17:45:44  kuznets
  * Comments, formatting...
  *
