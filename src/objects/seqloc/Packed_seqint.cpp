@@ -77,13 +77,19 @@ TSeqPos CPacked_seqint::GetLength(void) const
 bool CPacked_seqint::IsPartialLeft (void) const
 
 {
-    return Get ().front ()->IsPartialLeft ();
+    if ( !Get().empty() ) {
+        return Get ().front ()->IsPartialLeft ();
+    }
+    return false;
 }
 
 bool CPacked_seqint::IsPartialRight (void) const
 
 {
-    return Get ().back ()->IsPartialRight ();
+    if ( !Get().empty() ) {
+        return Get ().back ()->IsPartialRight ();
+    }
+    return false;
 }
 
 
@@ -184,6 +190,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.9  2004/10/22 16:01:20  kans
+ * protect IsPartialXXX with Get empty test
+ *
  * Revision 6.8  2004/10/22 15:12:28  kans
  * implemented functions for getting and setting partial flags for packed int and packed point
  *

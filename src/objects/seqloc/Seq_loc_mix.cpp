@@ -56,13 +56,19 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 bool CSeq_loc_mix::IsPartialLeft (void) const
 
 {
-    return Get ().front ()->IsPartialLeft ();
+    if ( !Get().empty() ) {
+        return Get ().front ()->IsPartialLeft ();
+    }
+    return false;
 }
 
 bool CSeq_loc_mix::IsPartialRight (void) const
 
 {
-    return Get ().back ()->IsPartialRight ();
+    if ( !Get().empty() ) {
+        return Get ().back ()->IsPartialRight ();
+    }
+    return false;
 }
 
 
@@ -174,6 +180,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.15  2004/10/22 16:01:20  kans
+ * protect IsPartialXXX with Get empty test
+ *
  * Revision 6.14  2004/10/21 21:45:07  kans
  * CSeq_loc_mix::SetPartialRight was incorrectly using front instead of back
  *
