@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <list>
+#include <stack>
 
 BEGIN_NCBI_SCOPE
 
@@ -316,6 +317,78 @@ const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_pa
     return pfnd;
 }
 
+/// Depth-first tree traversal algorithm.
+///
+/// Takes tree and visitor function and calls function for every 
+/// node in the tree.
+///
+/// Functor should have the next prototype:
+/// bool Func(TreeNode& node, int delta_level)
+///  where node is a reference to the visited node and delta_level 
+///  reflects the current traverse direction(depth wise) in the tree, 
+///   0  - algorithm stays is on the same level
+///   1  - we are going one level deep into the tree (from the root)
+///  -1  - we are traveling back by one level (getting close to the root)
+///
+/// Algorithm calls the visitor function on the way back so it revisits
+/// some tree nodes. It is possible to implement both variants of tree 
+/// traversal (pre-order and post-order)
+/// When visitor decides to stop the traverse it returns TRUE.
+///
+template<class TTreeNode, class Fun>
+Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
+{
+    int delta_level = 0;
+    bool stop_scan = false;
+
+    stop_scan = func(tree_node, delta_level);
+    if (stop_scan)
+        return func;
+
+    delta_level = 1;
+    TTreeNode* tr = &tree_node;
+
+    typedef typename TTreeNode::TNodeList_I TTreeNodeIterator;
+
+    TTreeNodeIterator it = tr->SubNodeBegin();
+    TTreeNodeIterator it_end = tr->SubNodeEnd();
+
+    stack<TTreeNodeIterator> tree_stack;
+
+    while (true) {
+        tr = *it;
+        if (tr) {
+            stop_scan = func(*tr, delta_level);
+            if (stop_scan)
+                return func;
+        }
+        if ((delta_level >= 0) && (!tr->IsLeaf())) {  // sub-node, going down
+            tree_stack.push(it);
+            it = tr->SubNodeBegin();
+            it_end = tr->SubNodeEnd();
+            delta_level = 1;
+            continue;
+        }
+        ++it;
+        if (it == it_end) { // end of level, going up
+            if (tree_stack.empty()) {
+                break;
+            }
+            it = tree_stack.top();
+            tree_stack.pop();
+            tr = *it;
+            it_end = tr->GetParent()->SubNodeEnd();
+            delta_level = -1;
+            continue;
+        }
+        // same level 
+        delta_level = 0;
+    } // while
+
+    func(tree_node, -1);
+    return func;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -549,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/01/14 14:18:21  kuznets
+ * +TreeDepthFirstTraverse algorithm
+ *
  * Revision 1.14  2004/01/12 22:04:03  ucko
  * Fix typo caught by MIPSpro.
  *
