@@ -84,10 +84,11 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
 
 void CTSE_Chunk_Info::Load(void) const
 {
-    if ( NotLoaded() ) {
-        CTSE_Chunk_Info* chunk = const_cast<CTSE_Chunk_Info*>(this);
-        chunk->GetTSE_Info().GetDataSource().GetDataLoader()->
-            GetChunk(Ref(chunk));
+    CTSE_Chunk_Info* chunk = const_cast<CTSE_Chunk_Info*>(this);
+    CDataSource& ds = chunk->GetTSE_Info().GetDataSource();
+    CInitGuard init(chunk->m_LoadLock, ds.m_MutexPool);
+    if ( init ) {
+        ds.GetDataLoader()->GetChunk(Ref(chunk));
         _ASSERT(!NotLoaded());
     }
 }
@@ -233,6 +234,8 @@ void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
             (tse.GetDataSource().m_DSMainLock);
         x_GetBase(place).AddAnnot(annot);
     }}
+    CDataSource::TAnnotLock::TWriteLockGuard guard2
+        (GetTSE_Info().GetDataSource().m_DSAnnotLock);
     GetTSE_Info().UpdateAnnotIndex(*annot);
 }
 
@@ -278,6 +281,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/17 15:56:34  vasilche
+* Use load mutex and correctly lock CDataSource mutex while loading chunk.
+*
 * Revision 1.12  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
