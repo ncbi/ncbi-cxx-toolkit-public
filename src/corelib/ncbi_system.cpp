@@ -36,6 +36,10 @@
 #  include <windows.h>
 #endif
 
+#ifdef NCBI_OS_MAC
+#  include <OpenTransport.h>
+#endif
+
 #ifdef NCBI_OS_UNIX
 #  include <sys/time.h>
 #  include <sys/resource.h>
@@ -363,8 +367,8 @@ void SleepMicroSec(unsigned long mc_sec)
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
     select(0, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL, &delay);
-#else
-    ?
+#elif defined(NCBI_OS_MAC)
+    OTDelay(mc_sec / 1000);
 #endif
 }
 
@@ -391,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/07/19 18:39:02  lebedev
+ * NCBI_OS_MAC: SleepMicroSec implementation added
+ *
  * Revision 1.21  2002/07/16 13:37:48  ivanov
  * Little modification and optimization of the Sleep* functions
  *
