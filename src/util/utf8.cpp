@@ -1,48 +1,33 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Aleksey Vinokurov, Vladimir Ivanov
-*
-* File Description:
-*   UTF8 converter functions
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2001/05/17 15:07:15  lavr
-* Typos corrected
-*
-* Revision 1.2  2001/04/18 16:31:59  ivanov
-* Change types TUnicodeChar, TUnicodeString to simple types.
-* TUnicode char to long, TUnicodeString to vector<long>.
-*
-* Revision 1.1  2001/04/06 19:14:37  ivanov
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Aleksey Vinokurov, Vladimir Ivanov
+ *
+ * File Description:  UTF8 converter functions
+ *
+ */
 
 #include <util/utf8.hpp>
 
@@ -132,7 +117,7 @@ static unsigned char tblTransA[] =
 
 };
 
-// Macro for return character tohether with status
+// Macro for return character together with status
 // Using in functions returning status their work
 //
 #define RETURN_S(ch,res)\
@@ -141,7 +126,7 @@ static unsigned char tblTransA[] =
     return ch;\
 }
 
-// Macro for return character tohether with status and length 
+// Macro for return character together with status and length 
 // Using in functions returning status and length their work
 //
 #define RETURN_LS(ch,len,res)\
@@ -165,27 +150,28 @@ char StringToChar(const string&      src,
                   bool               ascii_table,
                   EConversionStatus* status)
 {
-    long dst_code;            // UTF-code symbol code
-    unsigned char dst_char;   // Result character
-    EConversionStatus stat;   // Temporary status     
+    long              dst_code;  // UTF-code symbol code
+    unsigned char     dst_char;  // Result character
+    EConversionStatus stat;      // Temporary status     
 
     // Process one UTF character
-    dst_code=StringToCode(src,seq_len,&stat);
-    if (status) *status=stat;
+    dst_code = StringToCode(src, seq_len, &stat);
+    if (status) *status = stat;
     // If it was happily
-    if (stat==eSuccess)
-    {
+    if (stat == eSuccess) {
         // Conversion
         if (ascii_table) {
             // Convert into appropriate 7-bit character via conversion table 
-            dst_char = CodeToChar(dst_code,status);
+            dst_char = CodeToChar(dst_code, status);
             return dst_char;
         }    
         else
         {
-            // if character greater than 255 (0xFF) than substitute it 
+            // if character greater than 127 (0x7F) than substitute it 
             // with kOutrangeChar, else leave it as is.
-            if (dst_code > 0xFF) RETURN_S (kOutrangeChar,eOutrange);
+            if (dst_code > 0x7F) {
+                RETURN_S (kOutrangeChar, eOutrange);
+            }
         }
     }
     // Was error translate char
@@ -204,15 +190,15 @@ string StringToAscii(const string& src, bool ascii_table)
     size_t  utf_len;  // Length of UTF symbol
     size_t  src_len;  // Length source string
 
-    src_len=src.size();
+    src_len = src.size();
 
-    for (size_t i=0; i<src_len; )
+    for (size_t i = 0; i < src_len; )
     {
         // Process one UTF character
-        ch=StringToChar(src.data()+i, &utf_len, ascii_table);
+        ch = StringToChar(src.data() + i, &utf_len, ascii_table);
         // Add character to the result vector
-        dst+=ch;
-        i+=utf_len;
+        dst += ch;
+        i += utf_len;
     }
     return dst;
 }
@@ -236,12 +222,12 @@ long StringToCode(const string&      src,
     // If character less then 0x80 we put it as is
     if (ch < 0x80)
     {
-        RETURN_LS (ch,1,eSuccess)
+        RETURN_LS (ch, 1, eSuccess)
     } 
     else
     {
         // Determine the length of the UTF-8 symbol in bytes
-        if ((ch & 0xFC) == 0xFC) utf_len = 6;      // 6 bytes length
+        if      ((ch & 0xFC) == 0xFC) utf_len = 6; // 6 bytes length
         else if ((ch & 0xF8) == 0xF8) utf_len = 5; // 5 bytes length
         else if ((ch & 0xF0) == 0xF0) utf_len = 4; // 4 bytes length
         else if ((ch & 0xE0) == 0xE0) utf_len = 3; // 3 bytes length
@@ -249,18 +235,20 @@ long StringToCode(const string&      src,
         else
         {
             // Bad character. Save it as kOutrangeChar
-            RETURN_LS (kOutrangeChar,1,eOutrange)
+            RETURN_LS (kOutrangeChar, 1, eOutrange)
         }
     }
 
     // Broken unicode sequence
-    if (utf_len > src.size()) RETURN_LS ((long)kSkipChar,1,eSkip);
+    if (utf_len > src.size()) {
+        RETURN_LS ((long)kSkipChar, 1, eSkip);
+    }
         
     unsigned char mask = 0xFF;
     mask = mask >> utf_len; 
     dst_code = ch & mask;
 
-    for (size_t j=1; j < utf_len; j++)
+    for (size_t j = 1; j < utf_len; j++)
     {
         dst_code = dst_code << 6;
         ch = src.data()[j];
@@ -268,7 +256,7 @@ long StringToCode(const string&      src,
         dst_code = dst_code | ch;
     }
     // Return result
-    RETURN_LS (dst_code,utf_len,eSuccess)
+    RETURN_LS (dst_code, utf_len, eSuccess)
 }
 
 
@@ -283,15 +271,15 @@ vector<long> StringToVector (const string& src)
     size_t       utf_len;  // Length of Unicode symbol
     size_t       src_len;  // Length of source string
 
-    src_len=src.size();
+    src_len = src.size();
 
-    for (size_t i=0; i<src_len; )
+    for (size_t i = 0; i < src_len; )
     {
         // Process one UTF character
-        ch=StringToCode(src.data()+i,&utf_len);
+        ch = StringToCode(src.data()+i, &utf_len);
         // Add character to the result vector
         dst.push_back(ch);
-        i+=utf_len;
+        i += utf_len;
     }
     return dst;
 }
@@ -307,52 +295,41 @@ char CodeToChar(const long src, EConversionStatus* status)
 {
     unsigned char ch;
 
-    if (src < 0x80) {RETURN_S ((char)src,eSuccess)};
-    if ((src >= 0x0300) && (src <= 0x036F)) RETURN_S (kSkipChar,eSkip);
+    if (src < 0x80) RETURN_S ((char)src, eSuccess);
+    if ((src >= 0x0300) && (src <= 0x036F)) RETURN_S (kSkipChar, eSkip);
     if ((src >= 0x1E00) && (src <= 0x1EFF))
     {
       ch = tblTransA[src-0x1E00];
-      if (!ch) RETURN_S (kOutrangeChar,eOutrange)
-         else  RETURN_S ((char)ch,eSuccess);
+      if (!ch) RETURN_S (kOutrangeChar, eOutrange)
+      else     RETURN_S ((char)ch, eSuccess);
     }
-    if ((src >= 0xFE20) && (src <= 0xFE2F)) RETURN_S (kSkipChar,eSkip);
-    if (src > 0x2FF) RETURN_S (kOutrangeChar,eOutrange);
+    if ((src >= 0xFE20) && (src <= 0xFE2F)) RETURN_S (kSkipChar, eSkip);
+    if (src > 0x2FF) RETURN_S (kOutrangeChar, eOutrange);
+
     ch = tblTrans[src-0x80];
-    if (!ch) RETURN_S (kOutrangeChar,eOutrange)
-    RETURN_S ((char)ch,eSuccess);
+    if (!ch) RETURN_S (kOutrangeChar, eOutrange);
+
+    RETURN_S ((char)ch, eSuccess);
 }
 
-
-
-/*
-
-// This function convert UTF-8 into ASCII-7 character.
-// May be it needs some improvements.
-// On entry:  pointer to the very first character of UTF-8 sequence
-// On return: ASCII-7 character.
-// seq_len - length of the UTF-8 sequence
-//
-char UTF::get_utf8_char( const char* src, int *seq_len)
-{
-    const char *p = src;
-    char counter = *p++;
-    unsigned char c;
-    unsigned long acc = counter & 037;
-
-    while((counter <<= 1) < 0) {
-      c = *p++;
-      if((c & ~077) != 0200) { // Broken UTF-8 chain
-        *seq_len = p - src;
-        return UTF_OUTRANGE_CHAR;
-      }
-      acc = (acc << 6) | (c & 077);
-    } // while
-
-    *seq_len = p - src;
-    c = asciiConvert(acc);
-    return (char)(c == UTF_SKIP_CHAR? ' ' : c);
-}
-*/
 
 END_SCOPE(utf8)
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2002/01/18 19:24:13  ivanov
+ * Changed result char's upper limit from 0xFF to 0x7F in StringToChar()
+ *
+ * Revision 1.3  2001/05/17 15:07:15  lavr
+ * Typos corrected
+ *
+ * Revision 1.2  2001/04/18 16:31:59  ivanov
+ * Change types TUnicodeChar, TUnicodeString to simple types.
+ * TUnicode char to long, TUnicodeString to vector<long>.
+ *
+ * Revision 1.1  2001/04/06 19:14:37  ivanov
+ * Initial revision
+ * ===========================================================================
+ */
