@@ -93,6 +93,7 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
     seq_blk->sequence_start = (Uint1*) sequence;
     seq_blk->sequence = (Uint1*) sequence + 1;
     seq_blk->length = seqlen;
+    seq_blk->oof_sequence = NULL;
 
     return 0;
 }
@@ -106,6 +107,7 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
 
     seq_blk->sequence_allocated = TRUE;
     seq_blk->sequence = (Uint1*) sequence;
+    seq_blk->oof_sequence = NULL;
 
     return 0;
 }
@@ -136,12 +138,14 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlk** seq_blk,
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
 {
    if (!seq_blk)
-      return 1;
+       return 1;
 
    if (seq_blk->sequence_allocated) 
-      sfree(seq_blk->sequence);
+       sfree(seq_blk->sequence);
    if (seq_blk->sequence_start_allocated)
-      sfree(seq_blk->sequence_start);
+       sfree(seq_blk->sequence_start);
+   if (seq_blk->oof_sequence)
+       sfree(seq_blk->oof_sequence);
 
    return 0;
 }
