@@ -1,11 +1,14 @@
 # $Id$
 
 SRC = image image_io image_util image_io_handler image_io_jpeg image_io_png \
-    image_io_bmp image_io_tiff image_io_sgi image_io_gif image_io_raw
+      image_io_bmp image_io_tiff image_io_sgi image_io_gif image_io_raw
 
 LIB = ximage
 
 DLL_LIB = xutil $(Z_LIB) xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(JPEG_INCLUDE) $(PNG_INCLUDE) $(GIF_INCLUDE) $(TIFF_INCLUDE) $(XPM_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+           $(Z_INCLUDE) $(JPEG_INCLUDE) $(PNG_INCLUDE) $(GIF_INCLUDE) \
+           $(TIFF_INCLUDE) $(XPM_INCLUDE)
+
 LIBS  = $(IMAGE_LIBS) $(ORIG_LIBS)
