@@ -70,11 +70,11 @@ public:
     eShowMiddleLine = (1 << 4),  //show line that indicates identity between query and hit. 
     eShowGi = (1 << 6),
     eShowIdentity = (1 << 7),  //show dot as identity to master
-    eShowBlastInfo = (1 << 8),  //show blast type defline and score info for pairwise alignment
+    eShowBlastInfo = (1 << 8),  //show defline and score info for blast pairwise alignment
     eShowBlastStyleId = (1 << 9),  //show seqid as "Query" and "Sbjct" respectively for pairwise alignment.  Default shows seqid as is
     eNewTargetWindow = (1 << 10),  //clicking url link will open a new window
-    eShowCdsFeature = (1 << 11),  //show cds for sequence 
-    eShowGeneFeature = (1 << 12), //show gene for sequence
+    eShowCdsFeature = (1 << 11),  //show cds for sequence.  Need to fetch from id server, a bit slow. 
+    eShowGeneFeature = (1 << 12), //show gene for sequence.  Need to fetch from id server, a bit slow.
     eMasterAnchored = (1 << 13)  //Query anchored, for multialignment only, default not anchored
   };
 
@@ -84,7 +84,7 @@ public:
     eBar       //show bar as identity between query and hit
   };
 
-  //character used to display seqloc
+  //character used to display seqloc, such as masked sequence
   enum SeqLocCharOption {
     eX = 0,  //use X to replace sequence character. Default 
     eN, //use n to replace sequence character
@@ -125,7 +125,7 @@ public:
   void SetMiddleLineStyle (MiddleLineStyle option = eBar) {m_MidLineStyle = option;}
 
   /*These are for blast alignment style display only*/
-  void SetAlignType (AlignType type) {m_AlignType = type;}  //Needed only if you want to display blast-related information  
+  void SetAlignType (AlignType type) {m_AlignType = type;}  //Needed only if you want to display positives and strand  
   void SetDbName (string name) {m_DbName = name;}  //blastdb name.  
   void SetDbType(bool isNa) {m_IsDbNa = isNa;}  //for seq fetching from blast db
   void SetQueryType(bool isNa) {m_IsQueryNa = isNa;} //type for query sequence
@@ -135,6 +135,9 @@ public:
   void SetQueryNumber(int number){m_QueryNumber = number;}  //for linking to mapviewer
   void SetBlastType(string type) {m_BlastType = type;} //refer to blobj->adm->trace->created_by
 
+  //static
+  /*Need to call this if the seqalign is stdseg or dendiag for ungapped blast alignment display as each stdseg ro dendiag is a distinct alignment.  Don't call it for other case as it's a waste of time.*/
+  static  CRef<CSeq_align_set> PrepareBlastUngappedSeqalign(CSeq_align_set& alnset);
   //display seqalign
   void DisplaySeqalign(CNcbiOstream& out) ;
   
@@ -212,7 +215,7 @@ private:
   const void fillIdentityInfo(const string& sequenceStandard, const string& sequence , int& match, int& positive, string& middleLine);
   void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;  
   void setDbGi();
-
+  
 };
 
 

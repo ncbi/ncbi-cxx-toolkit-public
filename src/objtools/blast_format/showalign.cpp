@@ -76,6 +76,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
 
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
@@ -89,7 +90,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
 USING_SCOPE (sequence);
 
-
+static const int k_NumFrame = 6;
+static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
 #define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%ld&dopt=%s\" %s>"
 #define TRACE_URL  "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=raw&query=retrieve+fasta+%s\">"
 
@@ -146,7 +148,7 @@ CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo>& 
   m_IsQueryNa = true;
   m_IsDbGi = false;
   m_DbName = NcbiEmptyString;
-  m_NumAlignToShow = 100000;
+  m_NumAlignToShow = 10000;
   m_AlignType = eNotSet;
   m_Rid = "0";
   m_CddRid = "0";
@@ -209,11 +211,90 @@ static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
 
 static string MakeURLSafe(char* src);
 static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue);
-static int s_GetStdsegFrame(const CStd_seg& ss, CScope& scope);
+template<class container>
+static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue);
 static bool s_canDoMultiAlign(const CSeq_align& aln, CScope scope);
 static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
+static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 
+template<class container>
+static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
+  bool hasScore = false;
+  for(container::const_iterator iter = scoreList.begin(); iter != scoreList.end(); iter ++){
+    const CObject_id& id=(*iter)->GetId();
+    if (id.IsStr()) {
+      hasScore = true;
+      if (id.GetStr()=="score"){
+	score = (*iter)->GetValue().GetInt();
+      
+      } else if (id.GetStr()=="bit_score"){
+	bits = (*iter)->GetValue().GetReal();
+	
+      } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
+	evalue = (*iter)->GetValue().GetReal();
+      } 
+    }
+  }
+  return hasScore;
+}
+static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln) {
+  CRef<CSeq_align> sa(new CSeq_align);
+  if ( !aln.GetSegs().IsDendiag()) {
+    NCBI_THROW(CException, eUnknown, "Input Seq-align should be Dendiag!");
+  }
+  
+  if(aln.CanGetType()){
+    sa->SetType(aln.GetType());
+  }
+  if(aln.CanGetDim()){
+    sa->SetDim(aln.GetDim());
+  }
+  if(aln.CanGetScore()){
+    sa->SetScore() = aln.GetScore();
+  }
+  if(aln.CanGetBounds()){
+    sa->SetBounds() = aln.GetBounds();
+  }
+  
+  CDense_seg& ds = sa->SetSegs().SetDenseg();
+
+  int counter = 0;
+  ds.SetNumseg() = 0;
+  ITERATE (CSeq_align::C_Segs::TDendiag, iter, aln.GetSegs().GetDendiag()){
+     
+    if(counter == 0){//assume all dendiag segments have same dim and ids
+      if((*iter)->CanGetDim()){
+	ds.SetDim((*iter)->GetDim());
+      }
+      if((*iter)->CanGetIds()){
+	ds.SetIds() = (*iter)->GetIds();
+      }
+    }
+    ds.SetNumseg() ++;
+    if((*iter)->CanGetStarts()){
+      ITERATE(CDense_diag::TStarts, iterStarts, (*iter)->GetStarts()){
+	ds.SetStarts().push_back(*iterStarts);
+      }
+    }
+    if((*iter)->CanGetLen()){
+      ds.SetLens().push_back((*iter)->GetLen());
+    }
+    if((*iter)->CanGetStrands()){
+      ITERATE(CDense_diag::TStrands, iterStrands, (*iter)->GetStrands()){
+	ds.SetStrands().push_back(*iterStrands);
+      }
+    }
+    if((*iter)->CanGetScores()){
+      ITERATE(CDense_diag::TScores, iterScores, (*iter)->GetScores()){
+	ds.SetScores().push_back(*iterScores); //this might not have right meaning
+      }
+    }
+    counter ++;
+  }
+  
+  return sa;
+}
 static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope){
   const CRef<CSeq_loc> slc = ss.GetLoc().front();
   ENa_strand strand = GetStrand(*slc);
@@ -262,21 +343,21 @@ static bool s_canDoMultiAlign(const CSeq_align_set& aln, CScope& scope){
 
 
 static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue){
-  for (CSeq_align::TScore::const_iterator iter = aln.GetScore().begin(); iter != aln.GetScore().end(); iter++){
-	    
-    const CObject_id& id=(*iter)->GetId();
-    if (id.IsStr()) {
-      if (id.GetStr()=="score"){
-	score = (*iter)->GetValue().GetInt();
-	
-      } else if (id.GetStr()=="bit_score"){
-	bits = (*iter)->GetValue().GetReal();
-	
-      } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
-	evalue = (*iter)->GetValue().GetReal();
-      } 
-    }          
-  }
+  bool hasScore = false;
+  //look for scores at seqalign level first
+  hasScore = s_GetBlastScore(aln.GetScore(),  score, bits, evalue);
+
+  //look at the seg level
+  if(!hasScore){
+    const CSeq_align::TSegs& seg = aln.GetSegs();
+    if(seg.Which() == CSeq_align::C_Segs::e_Std){
+      s_GetBlastScore(seg.GetStd().front()->GetScores(),  score, bits, evalue);
+    } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
+      s_GetBlastScore(seg.GetDendiag().front()->GetScores(),  score, bits, evalue);
+    }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
+       s_GetBlastScore(seg.GetDenseg().GetScores(),  score, bits, evalue);
+    }
+  }	
 }
 
 string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int row) const{
@@ -733,7 +814,11 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 
 //To display the seqalign
 void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
-
+  
+  if(m_SeqalignSetRef->Get().empty()){
+    return;
+  }
+  
   string previous_id = NcbiEmptyString, subid = NcbiEmptyString;
   //scope for feature fetching
   if(m_AlignOption & eShowCdsFeature || m_AlignOption & eShowGeneFeature){
@@ -742,7 +827,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     m_featScope = new CScope(*m_FeatObj);  //for seq feature fetch
     m_featScope->AddDefaults();	     
   }	
-  
+ 
   setDbGi(); //for whether to add get sequence feature
   if(m_AlignOption & eHtml){
     out<<"<script src=\"blastResult.js\"></script>";
@@ -759,12 +844,21 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   if(!(m_AlignOption&eMultiAlign)){//pairwise alignment
 
     list<alnInfo*> avList;  
-    // if(!(m_AlignOption&eMultiAlign)){ //construct aln vector and store alignment start and stop for dumpgnl
-      for (CTypeConstIterator<CSeq_align> sa_it2 = ConstBegin(*m_SeqalignSetRef); sa_it2&&num_align<m_NumAlignToShow; ++sa_it2, num_align++) {
-	
-	CTypeConstIterator<CDense_seg> ds = ConstBegin(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Std ? *(sa_it2->CreateDensegFromStdseg()) : *sa_it2);
-	CRef<CAlnVec> avRef( new CAlnVec(*ds, m_Scope));
-	
+    for (CTypeConstIterator<CSeq_align> sa_it2 = ConstBegin(*m_SeqalignSetRef); sa_it2&&num_align<m_NumAlignToShow; ++sa_it2, num_align++) {
+      CRef<CAlnVec> avRef;
+      if(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
+	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*(sa_it2->CreateDensegFromStdseg()));
+	avRef = new CAlnVec(*ds, m_Scope);
+      } else if(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
+	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*sa_it2);
+	avRef = new CAlnVec(*ds, m_Scope);
+      } else if(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
+	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*(CreateDensegFromDendiag(*sa_it2)));
+	avRef = new CAlnVec(*ds, m_Scope);
+      } else {
+	NCBI_THROW(CException, eUnknown, "Seq-align should be Denseg, Stdseg or Dendiag!");
+      }
+      if(!(avRef.Empty())){
 	try{
 	  const CBioseq_Handle& handle = avRef->GetBioseqHandle(1);	
 	  if(handle){
@@ -786,7 +880,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	  continue;
 	}
       }
-      //} 
+    }
+    
     //display
   
     for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
@@ -817,25 +912,95 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   } else if(m_AlignOption&eMultiAlign){ //multiple alignment
        
     auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
-    CAlnMix mix(m_Scope);
-    num_align = 0;
-    for (CTypeConstIterator<CSeq_align> sa_it = ConstBegin(*m_SeqalignSetRef); sa_it&&num_align<m_NumAlignToShow; ++sa_it, num_align++) {
-      CTypeConstIterator<CDense_seg> ds = ConstBegin(sa_it->GetSegs().Which() == CSeq_align::C_Segs::e_Std ? *(sa_it->CreateDensegFromStdseg()) : *sa_it);
-      if(m_Scope.GetBioseqHandle(*((*ds).GetIds())[1])){
-	mix.Add(*ds);
-      }
-    
-      //   *out2<<*sa_it;
-    }  
-    
-    mix.Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
-  
-    //  *out2<<mix.GetDenseg();
-    out<<endl;
-    CRef<CAlnVec> avRef (new CAlnVec (mix.GetDenseg(), m_Scope));
-    m_AV = avRef;
-    DisplayAlnvec(out); 
+    CRef<CAlnMix>* mix = new CRef<CAlnMix>[k_NumFrame]; //each for one frame for translated alignment
+    for(int i = 0; i < k_NumFrame; i++){
+      mix[i] = new CAlnMix(m_Scope);
+    }
 
+    num_align = 0;
+    vector<CRef<CSeq_align_set> > alnVector(k_NumFrame);
+    for(int i = 0; i <  k_NumFrame; i ++){
+      alnVector[i] = new CSeq_align_set;
+    }
+    for (CSeq_align_set::Tdata::const_iterator alnIter = m_SeqalignSetRef->Get().begin(); alnIter != m_SeqalignSetRef->Get().end()&&num_align<m_NumAlignToShow; alnIter ++, num_align++) {
+      //need to convert to denseg for stdseg
+      if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std) {
+	CTypeConstIterator<CStd_seg> ss = ConstBegin(**alnIter); 
+	CRef<CSeq_align> convertedDs = (*alnIter)->CreateDensegFromStdseg();
+	if(convertedDs->GetSegs().GetDenseg().CanGetWidths() && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3){//only do this for translated alignment
+	  int frame = s_GetStdsegMasterFrame(*ss, m_Scope);
+	  switch(frame){
+	  case 1:
+	    alnVector[0]->Set().push_back(convertedDs);
+	    break;
+	  case 2:
+	    alnVector[1]->Set().push_back(convertedDs);
+	    break;
+	  case 3:
+	    alnVector[2]->Set().push_back(convertedDs);
+	    break;
+	  case -1:
+	    alnVector[3]->Set().push_back(convertedDs);
+	    break;
+	  case -2:
+	    alnVector[4]->Set().push_back(convertedDs);
+	    break;
+	  case -3:
+	    alnVector[5]->Set().push_back(convertedDs);
+	    break;
+	  default:
+	    break;
+	  }
+	}
+	else {
+	  alnVector[0]->Set().push_back(convertedDs);
+	}
+      } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
+	alnVector[0]->Set().push_back(*alnIter);
+      } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
+	alnVector[0]->Set().push_back(CreateDensegFromDendiag(**alnIter));
+      } else {
+	NCBI_THROW(CException, eUnknown, "Input Seq-align should be Denseg, Stdseg or Dendiag!");
+      }
+    }
+   
+    for(int i = 0; i < alnVector.size(); i ++){
+      for(CTypeConstIterator<CSeq_align> alnRef = ConstBegin(*alnVector[i]); alnRef; ++alnRef){
+	CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
+	try{
+	  mix[i]->Add(*ds);
+	} catch (CException& e){
+	  continue;
+	}
+      }
+      //   *out2<<*sa_it;
+      
+      mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
+      
+      //  *out2<<mix.GetDenseg();
+    }
+    
+    int numDistinctFrames = 0;
+    for(int i = 0; i < alnVector.size(); i ++){
+      if(!alnVector[i]->Get().empty()){
+	numDistinctFrames ++;
+      }
+    }
+    
+    out<<endl;
+    for(int i = 0; i < k_NumFrame; i ++){
+      try{
+	CRef<CAlnVec> avRef (new CAlnVec (mix[i]->GetDenseg(), m_Scope));
+	m_AV = avRef;
+	if(numDistinctFrames > 1){
+	 out << "For reading frame " << k_FrameConversion[i] << " of query sequence:" << endl << endl;
+	}
+	DisplayAlnvec(out);
+      } catch (CException e){
+	continue;
+      }
+    } 
+    delete [] mix;
   }
   if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_IsDbGi){
     out<<"</form>\n";
@@ -1458,34 +1623,76 @@ void CDisplaySeqalign::setDbGi() {
   //determine if the database has gi by looking at the 1st hit.  Could be wrong but simple for now
  
   CTypeConstIterator<CSeq_align> saTemp = ConstBegin(*m_SeqalignSetRef);
-  if(saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
-    CTypeConstIterator<CDense_seg> dsTemp = ConstBegin(*saTemp); 
-    const vector< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
-    vector< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
-    iterTemp++;
-    const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
-    if(handleTemp){
-      int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
-      if(giTemp >0 ) { 
-	m_IsDbGi = true;
+  if(saTemp->IsSetSegs()){ 
+    if(saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
+      CTypeConstIterator<CDense_seg> dsTemp = ConstBegin(*saTemp); 
+      const vector< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
+      vector< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
+      iterTemp++;
+      const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
+      if(handleTemp){
+	int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
+	if(giTemp >0 ) { 
+	  m_IsDbGi = true;
+	}
       }
-    }
-  } else if (saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
-    CTypeConstIterator<CStd_seg> dsTemp = ConstBegin(*saTemp); 
-    const list< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
-    list< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
-    iterTemp++;
-    const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
-    if(handleTemp){
-      int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
-      if(giTemp >0 ) { 
-	m_IsDbGi = true;
+    } else if (saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
+      CTypeConstIterator<CStd_seg> dsTemp = ConstBegin(*saTemp); 
+      const list< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
+      list< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
+      iterTemp++;
+      const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
+      if(handleTemp){
+	int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
+	if(giTemp >0 ) { 
+	  m_IsDbGi = true;
+	}
       }
     }
   }
 
 }
+//Need to call this if the seqalign is stdseg or dendiag for ungapped blast alignment display as each stdseg ro dendiag is a distinct alignment.  Don't call it for other case as it's a waste of time.
+CRef<CSeq_align_set>CDisplaySeqalign::PrepareBlastUngappedSeqalign(CSeq_align_set& alnset) {
+  CRef<CSeq_align_set> alnSetRef(new CSeq_align_set);
 
+  ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()){
+    const CSeq_align::TSegs& seg = (*iter)->GetSegs();
+    if(seg.Which() == CSeq_align::C_Segs::e_Std){
+      if(seg.GetStd().size() > 1){ //has more than one stdseg. Need to seperate as each is a distinct HSP
+	ITERATE (CSeq_align::C_Segs::TStd, iterStdseg, seg.GetStd()){
+	  CRef<CSeq_align> aln(new CSeq_align);
+	  if((*iterStdseg)->CanGetScores()){
+	    aln->SetScore() = (*iterStdseg)->GetScores();
+	  }
+	  aln->SetSegs().SetStd().push_back(*iterStdseg);
+	  alnSetRef->Set().push_back(aln);
+	}
 
+      } else {
+	alnSetRef->Set().push_back(*iter);
+      }
+    } else if(seg.Which() == CSeq_align::C_Segs::e_Dendiag){
+      if(seg.GetDendiag().size() > 1){ //has more than one dendiag. Need to seperate as each is a distinct HSP
+	ITERATE (CSeq_align::C_Segs::TDendiag, iterDendiag, seg.GetDendiag()){
+	  CRef<CSeq_align> aln(new CSeq_align);
+	  if((*iterDendiag)->CanGetScores()){
+	    aln->SetScore() = (*iterDendiag)->GetScores();
+	  }
+	  aln->SetSegs().SetDendiag().push_back(*iterDendiag);
+	  alnSetRef->Set().push_back(aln);
+	}
+
+      } else {
+	alnSetRef->Set().push_back(*iter);
+      }
+    } else { //Denseg, doing nothing.
+
+      alnSetRef->Set().push_back(*iter);
+    }
+  }
+  
+  return alnSetRef;
+}
 END_SCOPE(objects)
 END_NCBI_SCOPE
