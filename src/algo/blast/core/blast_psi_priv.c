@@ -59,7 +59,7 @@ _PSIAllocateMatrix(unsigned int ncols, unsigned int nrows,
 
     for (i = 0; i < ncols; i++) {
         retval[i] = (void*) calloc(nrows, data_type_sz);
-        if ( !retval ) {
+        if ( !retval[i] ) {
             retval = _PSIDeallocateMatrix(retval, i);
             break;
         }
@@ -1575,6 +1575,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/07/02 19:40:48  camacho
+ * Fixes for handling out-of-memory conditions
+ *
  * Revision 1.15  2004/07/02 18:00:25  camacho
  * 1. Document rationale for order in which sequences are compared in
  *    _PSIPurgeNearIdenticalAlignments.

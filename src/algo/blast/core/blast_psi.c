@@ -112,6 +112,11 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
          return NULL;
     }
 
+    if ( !(retval->dimensions = (PsiInfo*) calloc(1, sizeof(PsiInfo)))) {
+        return PSIAlignmentDataFree(retval);
+    }
+    memcpy((void*) retval->dimensions, (void*) info, sizeof(*info));
+
     /* This doesn't need to be query_sz + 1 (posC) */
     retval->res_counts = (Uint4**) _PSIAllocateMatrix(info->query_sz,
                                                       BLASTAA_SIZE,
@@ -128,7 +133,7 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
     retval->desc_matrix = (PsiDesc**) _PSIAllocateMatrix(info->num_seqs + 1,
                                                          info->query_sz,
                                                          sizeof(PsiDesc));
-    if (!retval->desc_matrix) {
+    if ( !(retval->desc_matrix) ) {
         return PSIAlignmentDataFree(retval);
     }
     for (s = 0; s < info->num_seqs + 1; s++) {
@@ -151,11 +156,6 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
     for (s = 0; s < info->num_seqs + 1; s++) {
         retval->use_sequences[s] = TRUE;
     }
-
-    if ( !(retval->dimensions = (PsiInfo*) calloc(1, sizeof(PsiInfo)))) {
-        return PSIAlignmentDataFree(retval);
-    }
-    memcpy((void*) retval->dimensions, (void*) info, sizeof(*info));
 
     retval->query = (Uint1*) malloc(info->query_sz * sizeof(Uint1));
     if ( !retval->query ) {
