@@ -117,6 +117,7 @@ public:
 
     int line;
     string name; // for named type
+    const ASNType* parent;
 
 protected:
     virtual CTypeInfo* CreateTypeInfo(void);

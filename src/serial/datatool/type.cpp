@@ -32,7 +32,57 @@ string replace(string s, char from, char to)
 inline
 string Identifier(const string& typeName)
 {
-    return replace(typeName, '-', '_');
+    string s;
+    s.reserve(typeName.size());
+    string::const_iterator i = typeName.begin();
+    if ( i != typeName.end() ) {
+        s += toupper(*i);
+        while ( ++i != typeName.end() ) {
+            char c = *i;
+            if ( c == '-' )
+                c = '_';
+            s += c;
+        }
+    }
+    return s;
+}
+
+static
+string GetTemplateHeader(const string& tmpl)
+{
+    if ( tmpl == "multiset" )
+        return "<set>";
+    if ( tmpl == "multimap" )
+        return "<map>";
+    if ( tmpl == "auto_ptr" )
+        return "<memory>";
+    if ( tmpl == "AutoPtr" )
+        return "<corelib/autoptr.hpp>";
+    return '<' + tmpl + '>';
+}
+
+static
+bool IsSimpleTemplate(const string& tmpl)
+{
+    if ( tmpl == "AutoPtr" )
+        return true;
+    return false;
+}
+
+static
+string GetTemplateNamespace(const string& tmpl)
+{
+    if ( tmpl == "AutoPtr" )
+        return "NCBI_NS_NCBI";
+    return "NCBI_NS_STD";
+}
+
+static
+string GetTemplateMacro(const string& tmpl)
+{
+    if ( tmpl == "auto_ptr" )
+        return "STL_CHOICE_auto_ptr";
+    return "STL_" + tmpl;
 }
 
 const string& ASNType::GetVar(const CNcbiRegistry& registry,
@@ -189,7 +239,7 @@ inline
 void CTypeStrings::AddMember(CClassCode& code,
                              const string& member) const
 {
-    x_AddMember(code, "NcbiEmptyString", member);
+    x_AddMember(code, "NCBI_NS_NCBI::NcbiEmptyString", member);
 }
 
 inline
@@ -239,7 +289,7 @@ private:
 };
 
 ASNType::ASNType(ASNModule& module, const string& n)
-    : line(0), name(n), m_Module(module)
+    : line(0), name(n), parent(0), m_Module(module)
 {
 }
 
@@ -321,13 +371,6 @@ ostream& ASNFixedType::Print(ostream& out, int ) const
 {
     return out << keyword;
 }
-
-/*
-bool ASNFixedType::SimpleType(void) const
-{
-    return true;
-}
-*/
 
 void ASNFixedType::GetCType(CTypeStrings& tType,
                             CClassCode& code, const string& key) const
@@ -464,7 +507,7 @@ TTypeInfo ASNVisibleStringType::GetTypeInfo(void)
 
 string ASNVisibleStringType::GetDefaultCType(void) const
 {
-    return "std::string";
+    return "NCBI_NS_STD::string";
 }
 
 ASNStringStoreType::ASNStringStoreType(ASNModule& module)
@@ -510,7 +553,7 @@ void ASNOctetStringType::GetCType(CTypeStrings& tType,
     string charType = code.GetVar(key + "._char");
     if ( charType.empty() )
         charType = "char";
-    tType.SetComplex("std::vector<" + charType + '>',
+    tType.SetComplex("NSBI_NS_STD::vector<" + charType + '>',
                      "STL_CHAR_vector, (" + charType + ')');
     tType.AddHPPInclude("<vector>");
 }
@@ -670,12 +713,17 @@ void ASNUserType::GetCType(CTypeStrings& tType,
     tType.AddForwardDeclaration(className, userType->Namespace(code));
 
     string memberType = code.GetVar(key + "._type");
-    if ( memberType == "*" ) {
-        tType.ToSimple();
-    }
-    else if ( !memberType.empty() ) {
-        tType.SetComplex("std::" + memberType, "STL_" + memberType,
-                         tType);
+    if ( !memberType.empty() ) {
+        if ( memberType == "*" ) {
+            tType.ToSimple();
+        }
+        else {
+            tType.AddHPPInclude(GetTemplateHeader(memberType));
+            tType.SetComplex(GetTemplateNamespace(memberType) + "::" + memberType,
+                             GetTemplateMacro(memberType), tType);
+            if ( IsSimpleTemplate(memberType) )
+                tType.type = tType.ePointerType;
+        }
     }
 }
 
@@ -755,28 +803,23 @@ void ASNSetOfType::GetCType(CTypeStrings& tType,
             CTypeStrings tValue;
             seq->members.back()->type->GetCType(tValue, code, key + "._value");
             tValue.ToSimple();
-            if ( templ.empty() ) {
+            if ( templ.empty() )
                 templ = "multimap";
-                tType.AddHPPInclude("<map>");
-            }
-            else {
-                tType.AddHPPInclude('<' + templ + '>');
-            }
-            tType.SetComplex("std::" + templ, "STL_" + templ, tKey, tValue);
+
+            tType.AddHPPInclude(GetTemplateHeader(templ));
+            tType.SetComplex(GetTemplateNamespace(templ) + "::" + templ,
+                             GetTemplateMacro(templ), tKey, tValue);
             return;
         }
     }
     CTypeStrings tData;
     type->GetCType(tData, code, key + "._data");
     tData.ToSimple();
-    if ( templ.empty() ) {
+    if ( templ.empty() )
         templ = "multiset";
-        tType.AddHPPInclude("<set>");
-    }
-    else {
-        tType.AddHPPInclude('<' + templ + '>');
-    }
-    tType.SetComplex("std::" + templ, "STL_" + templ, tData);
+    tType.AddHPPInclude(GetTemplateHeader(templ));
+    tType.SetComplex(GetTemplateNamespace(templ) + "::" + templ,
+                     GetTemplateMacro(templ), tData);
 }
 
 ASNSequenceOfType::ASNSequenceOfType(const AutoPtr<ASNType>& type)
@@ -798,8 +841,9 @@ void ASNSequenceOfType::GetCType(CTypeStrings& tType,
     tData.ToSimple();
     if ( templ.empty() )
         templ = "list";
-    tType.AddHPPInclude('<' + templ + '>');
-    tType.SetComplex("std::" + templ, "STL_" + templ, tData);
+    tType.AddHPPInclude(GetTemplateHeader(templ));
+    tType.SetComplex(GetTemplateNamespace(templ) + "::" + templ,
+                     GetTemplateMacro(templ), tData);
 }
 
 ASNMemberContainerType::ASNMemberContainerType(ASNModule& module,
@@ -1036,10 +1080,12 @@ void ASNChoiceType::GenerateCode(CClassCode& code) const
         if ( fieldName.empty() ) {
             continue;
         }
-        code.AddCPPInclude(m->type->FileName(code));
+        ASNType* variant = m->type.get();
+        variant->parent = this;
+        code.AddCPPInclude(variant->FileName(code));
         code.CPP() <<
             "    ADD_SUB_CLASS2(\"" << m->name << "\", " <<
-            m->type->ClassName(code) << ");" << endl;
+            variant->ClassName(code) << ");" << endl;
     }
 }
 
@@ -1050,7 +1096,8 @@ void ASNChoiceType::GetCType(CTypeStrings& tType,
     tType.SetClass(className);
     tType.AddHPPInclude(FileName(code));
     tType.AddForwardDeclaration(className, Namespace(code));
-    tType.SetComplex("std::auto_ptr", "STL_CHOICE_auto_ptr", tType);
+    tType.AddHPPInclude(GetTemplateHeader("<memory>"));
+    tType.SetComplex("NCBI_NS_STD::auto_ptr", "STL_CHOICE_auto_ptr", tType);
 }
 
 ostream& ASNMember::Print(ostream& out, int indent) const

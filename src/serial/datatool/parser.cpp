@@ -5,17 +5,17 @@
 #include "type.hpp"
 #include "value.hpp"
 
-void ASNParser::Modules(CModuleSet& modules)
+void ASNParser::Modules(CModuleSet& moduleSet)
 {
     while ( Next() != T_EOF ) {
-        Module(modules);
+        Module(moduleSet);
     }
 }
 
-void ASNParser::Module(CModuleSet& modules)
+void ASNParser::Module(CModuleSet& moduleSet)
 {
     AutoPtr<ASNModule> module(new ASNModule());
-    module->moduleSet = &modules;
+    module->moduleSet = &moduleSet;
     module->name = ModuleReference();
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
@@ -26,7 +26,7 @@ void ASNParser::Module(CModuleSet& modules)
     if ( !module->Check() )
         Warning("Errors was found in module " + module->name);
 
-    modules.modules.push_back(module);
+    moduleSet.modules.push_back(module);
 }
 
 void ASNParser::Imports(ASNModule* module)

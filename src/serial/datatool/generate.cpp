@@ -1,7 +1,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
-#include <fstream>
 #include <algorithm>
+#include <set>
 #include "moduleset.hpp"
 #include "module.hpp"
 #include "type.hpp"
@@ -19,12 +19,13 @@ string MkDir(const string& s)
         return s + '/';
 }
 
-void GenerateCode(const CModuleSet& types, const string& fileName,
-                  const string& sourcesListName,
+void GenerateCode(const CModuleSet& types, const set<string>& typeNames,
+                  const string& fileName, const string& sourcesListName,
                   const string& headersDir, const string& sourcesDir)
 {
     CNcbiRegistry def;
-    { // load descriptions from registry file
+    if ( !fileName.empty() ) {
+        // load descriptions from registry file
         ifstream fileIn;
         CNcbiIstream* in;
         if ( fileName == "stdin" || fileName == "-" ) {
@@ -47,6 +48,7 @@ void GenerateCode(const CModuleSet& types, const string& fileName,
     typedef map<string, TClasses> TOutputFiles;
     TOutputFiles outputFiles;
     // sort types by output file
+/*
     for ( CModuleSet::TModules::const_iterator modp = types.modules.begin();
           modp != types.modules.end();
           ++modp ) {
@@ -62,9 +64,22 @@ void GenerateCode(const CModuleSet& types, const string& fileName,
             outputFiles[type->FileName(def)].push_back(type);
         }
     }
+*/
+    for ( set<string>::const_iterator ti = typeNames.begin();
+          ti != typeNames.end();
+          ++ti ) {
+        const ASNModule::TypeInfo* typeInfo = types.FindType(*ti);
+        const ASNType* type = typeInfo->type;
+        if ( !type ) {
+            ERR_POST("Type " << *ti << " not found");
+            continue;
+        }
+        if ( type->ClassName(def) == "-" )
+            continue;
+        
+        outputFiles[type->FileName(def)].push_back(type);
+    }
     
-    //    auto_ptr<ofstream> files;
-    //    ofstream files((sourcesPath + fileName + );
     // generate output files
     for ( TOutputFiles::const_iterator filei = outputFiles.begin();
           filei != outputFiles.end();

@@ -20,8 +20,8 @@ public:
         {
         }
 
-    void Modules(CModuleSet& modules);
-    void Module(CModuleSet& modules);
+    void Modules(CModuleSet& moduleSet);
+    void Module(CModuleSet& moduleSet);
     void Imports(ASNModule* module);
     void Exports(ASNModule* module);
     void ModuleBody(ASNModule* module);

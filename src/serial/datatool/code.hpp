@@ -103,10 +103,7 @@ public:
         {
             return m_ClassName;
         }
-    string GetParentClass(void) const
-        {
-            return m_ParentClass;
-        }
+    string GetParentClass(void) const;
     const ASNType* GetParentType(void) const
         {
             return m_ParentType;
@@ -180,9 +177,10 @@ public:
     
     void Set(const string& ns);
 
+    void End(void);
+
 private:
     void Begin(void);
-    void End(void);
 
     CNcbiOstream& m_Out;
     string m_Namespace;

@@ -4,11 +4,12 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <memory>
-#include <fstream>
+#include <set>
 #include "parser.hpp"
 #include "lexer.hpp"
 #include "moduleset.hpp"
 #include "module.hpp"
+#include "type.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -107,6 +108,20 @@ enum EFileType {
     eXMLText
 };
 
+struct FileInfo {
+    FileInfo(void)
+        : type(eNone)
+        { }
+    FileInfo(const string& n, EFileType t)
+        : name(n), type(t)
+        { }
+
+    operator bool(void) const
+        { return !name.empty(); }
+    string name;
+    EFileType type;
+};
+
 typedef pair<TObjectPtr, TTypeInfo> TObject;
 
 static void Help(void)
@@ -114,9 +129,11 @@ static void Help(void)
     NcbiCout << endl <<
         "DataTool 1.0 arguments:" << endl <<
         endl <<
-        "  -m  ASN.1 module file [File In]" << endl <<
+        "  -m  ASN.1 module file [File In] Optional" << endl <<
+        "  -mx XML module file [File In] Optional" << endl <<
+        "  -M  external ASN.1 module files [File In] Optional" << endl <<
+        "  -Mx external XML module files [File In] Optional" << endl <<
         "  -f  ASN.1 module file [File Out]  Optional" << endl <<
-        "  -mx XML module file [File In]" << endl <<
         "  -fx XML module file [File Out]  Optional" << endl <<
         "  -v  Read value in ASN.1 text format [File In]  Optional" << endl <<
         "  -p  Print value in ASN.1 text format [File Out]  Optional" << endl <<
@@ -125,13 +142,16 @@ static void Help(void)
         "  -d  Read value in ASN.1 binary format (type required) [File In]  Optional" << endl <<
         "  -t  Binary value type [String]  Optional" << endl <<
         "  -e  Write value in ASN.1 binary format [File Out]  Optional" << endl <<
-        "  -o  C++ code definition file [File In] Optional" << endl <<
+        "  -o  generate C++ files for all types Optional" << endl <<
+        "  -ot generate C++ files for listed types [Types] Optional" << endl <<
+        "  -od C++ code definition file [File In] Optional" << endl <<
         "  -oh Directory for generated C++ headers [Directory] Optional" << endl <<
         "  -oc Directory for generated C++ code [Directory] Optional" << endl <<
         "  -of File for list of generated C++ files [File Out] Optional" << endl;
 }
 
-static const char* StringArgument(const char* arg)
+static
+const char* StringArgument(const char* arg)
 {
     if ( !arg || !arg[0] ) {
         Error("argument expected");
@@ -139,34 +159,35 @@ static const char* StringArgument(const char* arg)
     return arg;
 }
 
-static const char* DirArgument(const char* arg)
+inline
+const char* DirArgument(const char* arg)
 {
     return StringArgument(arg);
 }
 
-static const char* FileInArgument(const char* arg)
+inline
+const char* FileInArgument(const char* arg)
 {
     return StringArgument(arg);
 }
 
-static const char* FileOutArgument(const char* arg)
+inline
+const char* FileOutArgument(const char* arg)
 {
     return StringArgument(arg);
 }
 
-static void LoadDefinition(CModuleSet& types,
-                           const string& fileName, EFileType fileType);
-static void StoreDefinition(const CModuleSet& types,
-                            const string& fileName, EFileType fileType);
-static TObject LoadValue(CModuleSet& types, const string& typeName,
-                         const string& fileName, EFileType fileType);
-static void StoreValue(const TObject& object,
-                       const string& fileName, EFileType fileType);
-void GenerateCode(const CModuleSet& types, const string& fileName,
-                  const string& sourcesListName,
+static void LoadDefinition(CModuleSet& types, const FileInfo& file);
+static void StoreDefinition(const CModuleSet& types, const FileInfo& file);
+static TObject LoadValue(CModuleSet& types, const FileInfo& file,
+                         const string& typeName);
+static void StoreValue(const TObject& object, const FileInfo& file);
+void GenerateCode(const CModuleSet& types, const set<string>& typeNames,
+                  const string& fileName, const string& sourcesListName,
                   const string& headersDir, const string& sourcesDir);
 
-inline EFileType FileType(const char* arg, EFileType defType = eASNText)
+inline
+EFileType FileType(const char* arg, EFileType defType = eASNText)
 {
     switch ( arg[2] ) {
     case 0:
@@ -179,23 +200,80 @@ inline EFileType FileType(const char* arg, EFileType defType = eASNText)
     }
 }
 
+static
+void GetFileIn(FileInfo& info, const char* typeArg, const char* name,
+               EFileType defType = eASNText)
+{
+    info.type = FileType(typeArg, defType);
+    info.name = FileInArgument(name);
+}
+
+static
+void GetFilesIn(list<FileInfo>& files, const char* typeArg, const char* namesIn)
+{
+    EFileType type = FileType(typeArg);
+    string names = StringArgument(namesIn);
+    SIZE_TYPE pos = 0;
+    SIZE_TYPE next = names.find(',');
+    while ( next != NPOS ) {
+        files.push_back(FileInfo(names.substr(pos, next - pos), type));
+        pos = next + 1;
+        next = names.find(',', pos);
+    }
+    files.push_back(FileInfo(names.substr(pos), type));
+}
+
+static
+void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
+               EFileType defType = eASNText)
+{
+    info.type = FileType(typeArg, defType);
+    info.name = FileOutArgument(name);
+}
+
+static
+void GetTypes(set<string>& typeSet, const char* typesIn)
+{
+    string types = StringArgument(typesIn);
+    SIZE_TYPE pos = 0;
+    SIZE_TYPE next = types.find(',');
+    while ( next != NPOS ) {
+        typeSet.insert(types.substr(pos, next - pos));
+        pos = next + 1;
+        next = types.find(',', pos);
+    }
+    typeSet.insert(types.substr(pos));
+}
+
+static
+void GetTypes(set<string>& typeSet, const CModuleSet& moduleSet)
+{
+    for ( CModuleSet::TModules::const_iterator mi = moduleSet.modules.begin();
+          mi != moduleSet.modules.end();
+          ++mi ) {
+        const ASNModule* module = mi->get();
+        for ( ASNModule::TDefinitions::const_iterator ti =
+                  module->definitions.begin();
+              ti != module->definitions.end();
+              ++ti ) {
+            typeSet.insert(module->name + '.' + (*ti)->name);
+        }
+    }
+}
+
 int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
 
-    string sourceInFile;
-    EFileType sourceInType = eNone;
+    FileInfo moduleIn;
+    list<FileInfo> importModules;
+    FileInfo moduleOut;
+    FileInfo dataIn;
+    string dataInTypeName;
+    FileInfo dataOut;
 
-    string sourceOutFile;
-    EFileType sourceOutType = eNone;
-
-    string dataInFile;
-    EFileType dataInType = eNone;
-    string dataInName;
-
-    string dataOutFile;
-    EFileType dataOutType = eNone;
-
+    bool generateAllTypes = false;
+    set<string> generateTypes;
     string codeInFile;
     string headersDir;
     string sourcesDir;
@@ -213,35 +291,38 @@ int main(int argc, const char*argv[])
             }
             switch ( arg[1] ) {
             case 'm':
-                sourceInType = FileType(arg);
-                sourceInFile = FileInArgument(argv[++i]);
+                GetFileIn(moduleIn, arg, argv[++i]);
+                break;
+            case 'M':
+                GetFilesIn(importModules, arg, argv[++i]);
                 break;
             case 'f':
-                sourceOutType = FileType(arg);
-                sourceOutFile = FileOutArgument(argv[++i]);
+                GetFileOut(moduleOut, arg, argv[++i]);
                 break;
             case 'v':
-                dataInType = FileType(arg);
-                dataInFile = FileInArgument(argv[++i]);
+                GetFileIn(dataIn, arg, argv[++i]);
                 break;
             case 'p':
-                dataOutType = FileType(arg);
-                dataOutFile = FileOutArgument(argv[++i]);
+                GetFileOut(dataOut, arg, argv[++i]);
                 break;
             case 'd':
-                dataInType = FileType(arg, eASNBinary);
-                dataInFile = FileInArgument(argv[++i]);
+                GetFileIn(dataIn, arg, argv[++i], eASNBinary);
                 break;
             case 'e':
-                dataOutType = FileType(arg, eASNBinary);
-                dataOutFile = FileOutArgument(argv[++i]);
+                GetFileOut(dataOut, arg, argv[++i], eASNBinary);
                 break;
             case 't':
-                dataInName = StringArgument(argv[++i]);
+                dataInTypeName = StringArgument(argv[++i]);
                 break;
             case 'o':
                 switch ( arg[2] ) {
-                case 0:
+                case 'A':
+                    generateAllTypes = true;
+                    break;
+                case 't':
+                    GetTypes(generateTypes, argv[++i]);
+                    break;
+                case 'd':
                     codeInFile = FileInArgument(argv[++i]);
                     break;
                 case 'h':
@@ -264,26 +345,35 @@ int main(int argc, const char*argv[])
     }
 
     try {
-        if ( sourceInFile.empty() )
+        if ( !moduleIn )
             Error("Module file not specified");
 
         CModuleSet types;
-        LoadDefinition(types, sourceInFile, sourceInType);
-    
-        if ( !sourceOutFile.empty() )
-            StoreDefinition(types, sourceOutFile, sourceOutType);
+        LoadDefinition(types, moduleIn);
 
-        if ( !dataInFile.empty() ) {
-            TObject object =
-                LoadValue(types, dataInName, dataInFile, dataInType);
-            
-            if ( !dataOutFile.empty() )
-                StoreValue(object, dataOutFile, dataOutType);
+        if ( moduleOut )
+            StoreDefinition(types, moduleOut);
+
+        if ( generateAllTypes ) {
+            GetTypes(generateTypes, types);
         }
 
-        if ( !codeInFile.empty() )
-            GenerateCode(types, codeInFile, sourcesListFile,
-                         headersDir, sourcesDir);
+        for ( list<FileInfo>::const_iterator fi = importModules.begin();
+              fi != importModules.end();
+              ++fi ) {
+            LoadDefinition(types, *fi);
+        }
+    
+        if ( dataIn ) {
+            TObject object = LoadValue(types, dataIn, dataInTypeName);
+            
+            if ( dataOut )
+                StoreValue(object, dataOut);
+        }
+
+        if ( !generateTypes.empty() )
+            GenerateCode(types, generateTypes, codeInFile,
+                         sourcesListFile, headersDir, sourcesDir);
     }
     catch (exception& e) {
         Error("Error: ", e.what());
@@ -297,13 +387,12 @@ int main(int argc, const char*argv[])
 }
 
 
-void LoadDefinition(CModuleSet& types,
-                    const string& fileName, EFileType fileType)
+void LoadDefinition(CModuleSet& types, const FileInfo& file)
 {
-    if ( fileType != eASNText )
+    if ( file.type != eASNText )
         Error("data definition format not supported");
 
-    SourceFile in(fileName);
+    SourceFile in(file.name);
     ASNLexer lexer(in);
     ASNParser parser(lexer);
     try {
@@ -317,13 +406,12 @@ void LoadDefinition(CModuleSet& types,
     }
 }
 
-void StoreDefinition(const CModuleSet& types,
-                     const string& fileName, EFileType fileType)
+void StoreDefinition(const CModuleSet& types, const FileInfo& file)
 {
-    if ( fileType != eASNText )
+    if ( file.type != eASNText )
         Error("data definition format not supported");
     
-    DestinationFile out(fileName);
+    DestinationFile out(file.name);
     
     for ( CModuleSet::TModules::const_iterator i = types.modules.begin();
           i != types.modules.end(); ++i ) {
@@ -331,13 +419,12 @@ void StoreDefinition(const CModuleSet& types,
     }
 }
 
-TObject LoadValue(CModuleSet& types, const string& typeName,
-                  const string& fileName, EFileType fileType)
+TObject LoadValue(CModuleSet& types, const FileInfo& file, const string& typeName)
 {
-    SourceFile in(fileName, fileType == eASNBinary);
+    SourceFile in(file.name, file.type == eASNBinary);
 
     auto_ptr<CObjectIStream> objIn;
-    switch ( fileType ) {
+    switch ( file.type ) {
     case eASNText:
         objIn.reset(new CObjectIStreamAsn(in));
         break;
@@ -363,13 +450,12 @@ TObject LoadValue(CModuleSet& types, const string& typeName,
     return make_pair(object, typeInfo);
 }
 
-void StoreValue(const TObject& object,
-                const string& fileName, EFileType fileType)
+void StoreValue(const TObject& object, const FileInfo& file)
 {
-    DestinationFile out(fileName, fileType == eASNBinary);
+    DestinationFile out(file.name, file.type == eASNBinary);
 
     auto_ptr<CObjectOStream> objOut;
-    switch ( fileType ) {
+    switch ( file.type ) {
     case eASNText:
         objOut.reset(new CObjectOStreamAsn(out));
         break;

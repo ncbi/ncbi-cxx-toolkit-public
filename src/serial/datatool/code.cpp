@@ -77,7 +77,8 @@ void CFileCode::AddCPPIncludes(const TIncludes& includes)
 
 void CFileCode::AddForwardDeclarations(const TForwards& forwards)
 {
-	for ( TForwards::const_iterator i = forwards.begin(); i != forwards.end(); ++i )
+	for ( TForwards::const_iterator i = forwards.begin();
+          i != forwards.end(); ++i )
 		m_ForwardDeclarations.insert(*i);
 }
 
@@ -97,6 +98,13 @@ void CFileCode::GenerateHPP(const string& path) const
         "// standard includes" << endl <<
         "#include <corelib/ncbistd.hpp>" << endl;
 
+    // resolve parent classes
+    for ( TClasses::const_iterator ci = m_Classes.begin();
+          ci != m_Classes.end();
+          ++ci) {
+        (*ci)->GetParentClass();
+    }
+
     if ( !m_HPPIncludes.empty() ) {
         header << endl <<
             "// generated includes" << endl;
@@ -108,33 +116,32 @@ void CFileCode::GenerateHPP(const string& path) const
         }
     }
 
-    {
-        CNamespace ns(header);
-
-        if ( !m_ForwardDeclarations.empty() ) {
-            header << endl <<
-                "// forward declarations" << endl;
-            for ( TForwards::const_iterator fi = m_ForwardDeclarations.begin();
-                  fi != m_ForwardDeclarations.end();
-                  ++fi) {
-                ns.Set(fi->second);
-                header <<
-                    "class " << fi->first << ';'<< endl;
-            }
-        }
-        
-        if ( !m_Classes.empty() ) {
-            header << endl <<
-                "// generated classes" << endl;
-            for ( TClasses::const_iterator ci = m_Classes.begin();
-                  ci != m_Classes.end();
-                  ++ci) {
-                ns.Set((*ci)->GetNamespace());
-                (*ci)->GenerateHPP(header);
-            }
+    CNamespace ns(header);
+    
+    if ( !m_ForwardDeclarations.empty() ) {
+        header << endl <<
+            "// forward declarations" << endl;
+        for ( TForwards::const_iterator fi = m_ForwardDeclarations.begin();
+              fi != m_ForwardDeclarations.end();
+              ++fi) {
+            ns.Set(fi->second);
+            header <<
+                "class " << fi->first << ';'<< endl;
         }
     }
-
+    
+    if ( !m_Classes.empty() ) {
+        header << endl <<
+            "// generated classes" << endl;
+        for ( TClasses::const_iterator ci = m_Classes.begin();
+              ci != m_Classes.end();
+              ++ci) {
+            ns.Set((*ci)->GetNamespace());
+            (*ci)->GenerateHPP(header);
+        }
+    }
+    ns.End();
+    
     header << endl <<
         "#endif // " << m_HeaderDefineName << endl;
 }
@@ -167,18 +174,16 @@ void CFileCode::GenerateCPP(const string& path) const
         }
     }
 
-    {
-        CNamespace ns(code);
-        
-        if ( !m_Classes.empty() ) {
-            code << endl <<
-                "// generated classes" << endl;
-            for ( TClasses::const_iterator ci = m_Classes.begin();
-                  ci != m_Classes.end();
-                  ++ci) {
-                ns.Set((*ci)->GetNamespace());
-                (*ci)->GenerateCPP(code);
-            }
+    CNamespace ns(code);
+    
+    if ( !m_Classes.empty() ) {
+        code << endl <<
+            "// generated classes" << endl;
+        for ( TClasses::const_iterator ci = m_Classes.begin();
+              ci != m_Classes.end();
+              ++ci) {
+            ns.Set((*ci)->GetNamespace());
+            (*ci)->GenerateCPP(code);
         }
     }
 }
@@ -212,6 +217,7 @@ void CNamespace::End(void)
     if ( !m_Namespace.empty() ) {
         m_Out << endl <<
             "};" << endl;
+        m_Namespace.erase();
     }
 }
 
@@ -226,24 +232,28 @@ void CNamespace::Set(const string& ns)
 
 CClassCode::CClassCode(CFileCode& code, const ASNType* type)
     : m_Code(code), m_Type(type),
-      m_ParentType(type->ParentType(code)),
       m_Namespace(type->Namespace(code)),
       m_ClassName(type->ClassName(code)),
       m_Abstract(false)
 {
-    if ( m_ParentType ) {
-        m_ParentClass = m_ParentType->ClassName(code);
-        code.AddHPPInclude(m_ParentType->FileName(code));
-    }
-    else {
-        m_ParentClass = type->ParentClass(code);
-    }
     string include = type->GetVar(code, "_include");
     if ( !include.empty() )
         code.AddHPPInclude(include);
     type->GenerateCode(*this);
     m_HPP << endl << '\0';
     m_CPP << endl << '\0';
+}
+
+string CClassCode::GetParentClass(void) const
+{
+    const ASNType* parent = GetType()->ParentType(*this);
+    if ( parent ) {
+        m_Code.AddHPPInclude(parent->FileName(*this));
+        return parent->ClassName(*this);
+    }
+    else {
+        return GetType()->ParentClass(*this);
+    }
 }
 
 CClassCode::~CClassCode(void)
