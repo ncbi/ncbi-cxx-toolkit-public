@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.2  1999/11/15 19:36:20  vasilche
 * Fixed warnings on GCC
 *
@@ -42,64 +47,92 @@
 inline
 string CTypeStrings::GetRef(void) const
 {
-    switch ( type ) {
+    switch ( GetType() ) {
     case eStdType:
-        return "STD, (" + cType + ')';
+        return "STD, (" + GetCType() + ')';
+    case eEnumType:
+        return "ENUM, (" + GetCType() + ',' + GetMacro() + ')';
     case eClassType:
-        return "CLASS, (" + cType + ')';
+        return "CLASS, (" + GetCType() + ')';
     default:
-        return macro;
+        return GetMacro();
     }
 }
 
-void CTypeStrings::SetStd(const string& c)
+string CTypeStrings::GetInitializer(void) const
 {
-    type = eStdType;
-    cType = c;
+    switch ( GetType() ) {
+    case eStdType:
+    case ePointerType:
+        return "0";
+    case eEnumType:
+        return GetCType() + "(0)";
+    default:
+        return NcbiEmptyString;
+    }
+}
+
+void CTypeStrings::SetStd(const string& c, bool stringType)
+{
+    m_Type = stringType? eStringType: eStdType;
+    m_CType = c;
 }
 
 void CTypeStrings::SetClass(const string& c)
 {
-    type = eClassType;
-    cType = c;
+    m_Type = eClassType;
+    m_CType = c;
 }
 
 void CTypeStrings::SetEnum(const string& c, const string& e)
 {
-    type = eEnumType;
-    cType = c;
-    macro = "ENUM, (" + c + ", " + e + ")";
+    m_Type = eEnumType;
+    m_CType = c;
+    m_Macro = e;
 }
 
-void CTypeStrings::SetComplex(const string& c, const string& m)
+void CTypeStrings::SetTemplate(const string& c, const string& m)
 {
-    type = eComplexType;
-    cType = c;
-    macro = m;
+    m_Type = eTemplateType;
+    m_CType = c;
+    m_Macro = m;
 }
 
-void CTypeStrings::SetComplex(const string& c, const string& m,
-                              const CTypeStrings& arg)
+void CTypeStrings::SetTemplate(const string& c, const string& m,
+                               const CTypeStrings& arg, bool simplePointer)
 {
-    string cc = c + "< " + arg.cType + " >";
+    string cc;
+    if ( c == "*" )
+        cc = arg.GetCType() + '*';
+    else
+        cc = c + "< " + arg.GetCType() + " >";
     string mm = m + ", (" + arg.GetRef() + ')';
     AddIncludes(arg);
-    type = eComplexType;
-    cType = cc;
-    macro = mm;
+    m_Type = simplePointer? ePointerTemplateType: eTemplateType;
+    m_CType = cc;
+    m_Macro = mm;
 }
 
-void CTypeStrings::SetComplex(const string& c, const string& m,
-                              const CTypeStrings& arg1,
-                              const CTypeStrings& arg2)
+void CTypeStrings::SetTemplate(const string& c, const string& m,
+                               const CTypeStrings& arg1,
+                               const CTypeStrings& arg2)
 {
-    string cc = c + "< " + arg1.cType + ", " + arg2.cType + " >";
+    string cc = c + "< " + arg1.GetCType() + ", " + arg2.GetCType() + " >";
     string mm = m + ", (" + arg1.GetRef() + ", " + arg2.GetRef() + ')';
     AddIncludes(arg1);
     AddIncludes(arg2);
-    type = eComplexType;
-    cType = cc;
-    macro = mm;
+    m_Type = eTemplateType;
+    m_CType = cc;
+    m_Macro = mm;
+}
+
+void CTypeStrings::ToPointer(void)
+{
+    m_Macro = "POINTER, (" + GetRef() + ')';
+    m_CType += '*';
+    m_CPPIncludes = m_HPPIncludes;
+    m_HPPIncludes.clear();
+    m_Type = ePointerType;
 }
 
 template<class C>
@@ -117,21 +150,29 @@ void CTypeStrings::AddIncludes(const CTypeStrings& arg)
     insert(m_ForwardDeclarations, arg.m_ForwardDeclarations);
 }
 
-void CTypeStrings::ToSimple(void)
+bool CTypeStrings::CanBeKey(void) const
 {
-    switch (type ) {
+    switch ( GetType() ) {
     case eStdType:
-    case ePointerType:
     case eEnumType:
-        return;
-    case eClassType:
-    case eComplexType:
-        macro = "POINTER, (" + GetRef() + ')';
-        cType += '*';
-        m_CPPIncludes = m_HPPIncludes;
-        m_HPPIncludes.clear();
-        type = ePointerType;
-        break;
+    case eStringType:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool CTypeStrings::CanBeInSTL(void) const
+{
+    switch ( GetType() ) {
+    case eStdType:
+    case eEnumType:
+    case eStringType:
+    case ePointerType:
+    case ePointerTemplateType:
+        return true;
+    default:
+        return false;
     }
 }
 
@@ -154,14 +195,18 @@ void CTypeStrings::x_AddMember(CClassCode& code,
     code.AddHPPIncludes(m_HPPIncludes);
     code.AddCPPIncludes(m_CPPIncludes);
     code.ClassPrivate() <<
-        "    " << cType << ' ' << member << ';' << NcbiEndl;
+        "    " << GetCType() << ' ' << member << ';' << NcbiEndl;
 
-    if ( type == eStdType || type == eClassType ) {
+    switch ( GetType() ) {
+    case eStdType:
+    case eStringType:
+    case eClassType:
         code.TypeInfoBody() <<
             "    ADD_N_STD_M(" << name << ", " << member << ')';
-    }
-    else {
+        break;
+    default:
         code.TypeInfoBody() <<
-            "    ADD_N_M(" << name << ", " << member << ", " << macro << ')';
+            "    ADD_N_M(" << name << ", " << member << ", " << GetMacro() << ')';
+        break;
     }
 }

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.2  1999/11/15 19:36:21  vasilche
 * Fixed warnings on GCC
 *
@@ -54,27 +59,43 @@ public:
 
     enum ETypeType {
         eStdType,
+        eStringType,
+        eEnumType,
         eClassType,
-        eComplexType,
         ePointerType,
-        eEnumType
+        eTemplateType,
+        ePointerTemplateType
     };
-    void SetStd(const string& c);
-    void SetClass(const string& c);
+    void SetStd(const string& c, bool stringType = false);
     void SetEnum(const string& c, const string& e);
-    void SetComplex(const string& c, const string& m);
-    void SetComplex(const string& c, const string& m,
-                    const CTypeStrings& arg);
-    void SetComplex(const string& c, const string& m,
-                    const CTypeStrings& arg1, const CTypeStrings& arg2);
+    void SetClass(const string& c);
+    void SetTemplate(const string& c, const string& m);
+    void SetTemplate(const string& c, const string& m,
+                     const CTypeStrings& arg,
+                     bool simplePointer = false);
+    void SetTemplate(const string& c, const string& m,
+                     const CTypeStrings& arg1, const CTypeStrings& arg2);
 
-    ETypeType type;
-    string cType;
-    string macro;
 
-    void ToSimple(void);
+    bool CanBeKey(void) const;
+    bool CanBeInSTL(void) const;
+    void ToPointer(void);
         
+    ETypeType GetType(void) const
+        {
+            return m_Type;
+        }
+    const string& GetCType(void) const
+        {
+            return m_CType;
+        }
+    const string& GetMacro(void) const
+        {
+            return m_Macro;
+        }
     string GetRef(void) const;
+    string GetInitializer(void) const;
+    string GetDestructorCode(void) const;
 
     void AddHPPInclude(const string& s)
         {
@@ -97,6 +118,10 @@ public:
 private:
     void x_AddMember(CClassCode& code,
                      const string& name, const string& member) const;
+
+    ETypeType m_Type;
+    string m_CType;
+    string m_Macro;
 
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;

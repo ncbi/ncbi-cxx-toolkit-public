@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/16 15:41:18  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.2  1999/11/15 19:36:21  vasilche
 * Fixed warnings on GCC
 *
@@ -109,12 +114,13 @@ void CUniSequenceDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
     string templ = GetVar("_type");
     CTypeStrings tData;
     GetElementType()->GetCType(tData, code);
-    tData.ToSimple();
+    if ( !tData.CanBeInSTL() )
+        tData.ToPointer();
     if ( templ.empty() )
         templ = "list";
     tType.AddHPPInclude(GetTemplateHeader(templ));
-    tType.SetComplex(GetTemplateNamespace(templ) + "::" + templ,
-                     GetTemplateMacro(templ), tData);
+    tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
+                      GetTemplateMacro(templ), tData);
 }
 
 CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
@@ -143,26 +149,28 @@ void CUniSetDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
     if ( seq && seq->GetMembers().size() == 2 ) {
         CTypeStrings tKey;
         seq->GetMembers().front()->GetType()->GetCType(tKey, code);
-        if ( tKey.type == tKey.eStdType ) {
+        if ( tKey.CanBeKey() ) {
             CTypeStrings tValue;
             seq->GetMembers().back()->GetType()->GetCType(tValue, code);
-            tValue.ToSimple();
+            if ( !tValue.CanBeInSTL() )
+                tValue.ToPointer();
             if ( templ.empty() )
                 templ = "multimap";
 
             tType.AddHPPInclude(GetTemplateHeader(templ));
-            tType.SetComplex(GetTemplateNamespace(templ) + "::" + templ,
-                             GetTemplateMacro(templ), tKey, tValue);
+            tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
+                              GetTemplateMacro(templ), tKey, tValue);
             return;
         }
     }
     CTypeStrings tData;
     GetElementType()->GetCType(tData, code);
-    tData.ToSimple();
+    if ( !tData.CanBeInSTL() )
+        tData.ToPointer();
     if ( templ.empty() )
         templ = "multiset";
     tType.AddHPPInclude(GetTemplateHeader(templ));
-    tType.SetComplex(GetTemplateNamespace(templ) + "::" + templ,
-                     GetTemplateMacro(templ), tData);
+    tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
+                      GetTemplateMacro(templ), tData);
 }
 

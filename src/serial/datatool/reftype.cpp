@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/11/16 15:41:16  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.3  1999/11/15 19:36:18  vasilche
 * Fixed warnings on GCC
 *
@@ -122,14 +127,13 @@ void CReferenceDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
     string memberType = GetVar("_type");
     if ( !memberType.empty() ) {
         if ( memberType == "*" ) {
-            tType.ToSimple();
+            tType.ToPointer();
         }
         else {
             tType.AddHPPInclude(GetTemplateHeader(memberType));
-            tType.SetComplex(GetTemplateNamespace(memberType) + "::" + memberType,
-                             GetTemplateMacro(memberType), tType);
-            if ( IsSimpleTemplate(memberType) )
-                tType.type = tType.ePointerType;
+            tType.SetTemplate(GetTemplateNamespace(memberType)+"::"+memberType,
+                              GetTemplateMacro(memberType), tType,
+                              IsSimplePointerTemplate(memberType));
         }
     }
 }

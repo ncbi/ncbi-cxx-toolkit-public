@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.30  1999/11/15 19:36:19  vasilche
 * Fixed warnings on GCC
 *
@@ -84,7 +89,7 @@ string CDataType::GetTemplateHeader(const string& tmpl)
     return '<' + tmpl + '>';
 }
 
-bool CDataType::IsSimpleTemplate(const string& tmpl)
+bool CDataType::IsSimplePointerTemplate(const string& tmpl)
 {
     if ( tmpl == "AutoPtr" )
         return true;
@@ -316,11 +321,11 @@ void CDataType::GenerateCode(CClassCode& code) const
     tType.AddMember(code, memberName);
     code.TypeInfoBody() << ';' << NcbiEndl;
     code.ClassPublic() <<
-        "    operator "<<tType.cType<<"&(void)"<<NcbiEndl<<
+        "    operator "<<tType.GetCType()<<"&(void)"<<NcbiEndl<<
         "    {"<<NcbiEndl<<
         "        return "<<memberName<<';'<<NcbiEndl<<
         "    }"<<NcbiEndl<<
-        "    operator const "<<tType.cType<<"&(void) const"<<NcbiEndl<<
+        "    operator const "<<tType.GetCType()<<"&(void) const"<<NcbiEndl<<
         "    {"<<NcbiEndl<<
         "        return "<<memberName<<';'<<NcbiEndl<<
         "    }"<<NcbiEndl<<

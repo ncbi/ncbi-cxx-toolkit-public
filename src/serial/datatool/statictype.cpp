@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/16 15:41:16  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.2  1999/11/15 19:36:19  vasilche
 * Fixed warnings on GCC
 *
@@ -254,8 +259,8 @@ void COctetStringDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
     string charType = GetVar("_char");
     if ( charType.empty() )
         charType = "char";
-    tType.SetComplex("NCBI_NS_STD::vector<" + charType + '>',
-                     "STL_CHAR_vector, (" + charType + ')');
+    tType.SetTemplate("NCBI_NS_STD::vector<" + charType + '>',
+                      "STL_CHAR_vector, (" + charType + ')');
     tType.AddHPPInclude("<vector>");
 }
 

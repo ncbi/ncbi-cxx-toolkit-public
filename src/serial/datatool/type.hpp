@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.19  1999/11/15 19:36:20  vasilche
 * Fixed warnings on GCC
 *
@@ -155,7 +160,7 @@ public:
 
     static string Identifier(const string& typeName, bool capitalize = true);
     static string GetTemplateHeader(const string& tmpl);
-    static bool IsSimpleTemplate(const string& tmpl);
+    static bool IsSimplePointerTemplate(const string& tmpl);
     static string GetTemplateNamespace(const string& tmpl);
     static string GetTemplateMacro(const string& tmpl);
 

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/11/16 15:41:16  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
 * Revision 1.3  1999/11/15 20:31:37  vasilche
 * Fixed error on GCC
 *
@@ -379,7 +384,7 @@ void CChoiceDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
     tType.AddHPPInclude(FileName());
     tType.AddForwardDeclaration(className, Namespace());
     tType.AddHPPInclude(GetTemplateHeader("memory"));
-    tType.SetComplex("NCBI_NS_STD::auto_ptr", "STL_CHOICE_auto_ptr", tType);
+    tType.SetTemplate("*", "STL_CHOICE_POINTER", tType, true);
 }
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
