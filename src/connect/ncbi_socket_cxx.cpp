@@ -32,7 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_socket_unix.hpp>
 #include <limits.h>                     // for PATH_MAX
 #if defined(NCBI_OS_MSWIN) && !defined(PATH_MAX)
 #  define PATH_MAX 512                  // will actually use less than 32 chars
@@ -62,13 +62,50 @@ CSocket::CSocket(const string&   host,
     : m_IsOwned(eTakeOwnership),
       r_timeout(0), w_timeout(0), c_timeout(0)
 {
-    const char* x_host = host.c_str();
     if (timeout && timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout  = &oo_timeout;
     } else
         o_timeout  = 0;
-    if (SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, log)
+    if (SOCK_CreateEx(host.c_str(), port, o_timeout, &m_Socket, 0, 0, log)
+        != eIO_Success) {
+        m_Socket = 0;
+    }
+}
+
+
+CSocket::CSocket(unsigned int    host,
+                 unsigned short  port,
+                 const STimeout* timeout,
+                 ESwitch         log)
+    : m_IsOwned(eTakeOwnership),
+      r_timeout(0), w_timeout(0), c_timeout(0)
+{
+    char x_host[16/*sizeof("255.255.255.255")*/];
+    if (timeout && timeout != kDefaultTimeout) {
+        oo_timeout = *timeout;
+        o_timeout = &oo_timeout;
+    } else
+        o_timeout = 0;
+    if (SOCK_ntoa(host, x_host, sizeof(x_host)) != 0  ||
+        SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, log)
+        != eIO_Success) {
+        m_Socket = 0;
+    }
+}
+
+
+CUNIXSocket::CUNIXSocket(const string&   filename,
+                         const STimeout* timeout,
+                         ESwitch         log)
+    : CSocket()
+{
+    if (timeout && timeout != kDefaultTimeout) {
+        oo_timeout = *timeout;
+        o_timeout = &oo_timeout;
+    } else
+        o_timeout = 0;
+    if (SOCK_CreateUNIX(filename.c_str(), o_timeout, &m_Socket, 0, 0, log)
         != eIO_Success) {
         m_Socket = 0;
     }
@@ -128,8 +165,6 @@ EIO_Status CSocket::Connect(const string&   host,
             return eIO_Unknown;
         SOCK_Close(m_Socket);
     }
-
-    const char* x_host = host.c_str();
     if (timeout != kDefaultTimeout) {
         if ( timeout ) {
             oo_timeout = *timeout;
@@ -137,9 +172,37 @@ EIO_Status CSocket::Connect(const string&   host,
         } else
             o_timeout = 0;
     }
-    EIO_Status status = SOCK_CreateEx(x_host, port, o_timeout,
+    EIO_Status status = SOCK_CreateEx(host.c_str(), port, o_timeout,
                                       &m_Socket, 0, 0, log);
     if (status == eIO_Success) {
+        SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
+    } else
+        m_Socket = 0;
+    return status;
+}
+
+
+EIO_Status CUNIXSocket::Connect(const string&   filename,
+                                const STimeout* timeout,
+                                ESwitch         log)
+{
+    if ( m_Socket ) {
+        if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
+            return eIO_Unknown;
+        SOCK_Close(m_Socket);
+    }
+    if (timeout != kDefaultTimeout) {
+        if ( timeout ) {
+            oo_timeout = *timeout;
+            o_timeout = &oo_timeout;
+        } else
+            o_timeout = 0;
+    }
+    EIO_Status status = SOCK_CreateUNIX(filename.c_str(), o_timeout,
+                                        &m_Socket, 0, 0, log);
+    if (status != eIO_Success) {
         SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
@@ -375,8 +438,21 @@ CListeningSocket::CListeningSocket(unsigned short port,
     : m_Socket(0),
       m_IsOwned(eTakeOwnership)
 {
-    if (LSOCK_CreateEx(port, backlog, &m_Socket, flags) != eIO_Success)
+    if (LSOCK_CreateEx(port, backlog, &m_Socket, flags) != eIO_Success) {
         m_Socket = 0;
+    }
+}
+
+
+CUNIXListeningSocket::CUNIXListeningSocket(const string&  filename,
+                                           unsigned short backlog,
+                                           ESwitch        log)
+    : CListeningSocket()
+{
+    if (LSOCK_CreateUNIX(filename.c_str(), backlog,
+                         &m_Socket, log) != eIO_Success) {
+        m_Socket = 0;
+    }
 }
 
 
@@ -394,6 +470,20 @@ EIO_Status CListeningSocket::Listen(unsigned short port,
         return eIO_Unknown;
 
     EIO_Status status = LSOCK_CreateEx(port, backlog, &m_Socket, flags);
+    if (status != eIO_Success)
+        m_Socket = 0;
+    return status;
+}
+
+
+EIO_Status CUNIXListeningSocket::Listen(const string&  filename,
+                                        unsigned short backlog,
+                                        ESwitch        log)
+{
+    if ( m_Socket )
+        return eIO_Unknown;
+    EIO_Status status = LSOCK_CreateUNIX(filename.c_str(), backlog,
+                                         &m_Socket, log);
     if (status != eIO_Success)
         m_Socket = 0;
     return status;
@@ -541,6 +631,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2004/10/26 14:48:28  lavr
+ * Implement UNIX socket extensions to the socket API
+ *
  * Revision 6.26  2004/09/24 18:43:55  lavr
  * CSocketAPI::gethostbyaddr(): to try to do 'ntoa' if no name was found
  *
