@@ -37,6 +37,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CBDB_BLobStream;
+
 //////////////////////////////////////////////////////////////////
 //
 // Berkeley DB BLob File class. 
@@ -69,6 +71,37 @@ public:
     // Throw an exception if buffer size 'size' is less than LOB size. 
     EBDB_ErrCode GetData(void* buf, size_t size);
 
+    CBDB_BLobStream* CreateStream();
+
+};
+
+//////////////////////////////////////////////////////////////////
+//
+// Berkeley DB BLob File stream. 
+//
+//
+
+class NCBI_BDB_EXPORT CBDB_BLobStream
+{
+protected:
+    CBDB_BLobStream(DB* db, DBT* dbt_key);
+public:
+
+    ~CBDB_BLobStream();
+
+    void Read(void *buf, size_t buf_size, size_t *bytes_read);
+    void Write(const void* buf, size_t buf_size);
+
+private:
+    CBDB_BLobStream(const CBDB_BLobStream&);
+    CBDB_BLobStream& operator=(const CBDB_BLobStream&);
+private:
+    DB*        m_DB;
+    DBT*       m_DBT_Key;
+    DBT*       m_DBT_Data;
+    unsigned   m_Pos;
+private:
+    friend class CBDB_BLobFile;
 };
 
 
@@ -147,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/09/17 18:17:15  kuznets
+ * +CBDB_BLobStream class
+ *
  * Revision 1.7  2003/07/02 17:53:59  kuznets
  * Eliminated direct dependency from <db.h>
  *
