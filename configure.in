@@ -176,6 +176,12 @@ case "$host:$compiler" in
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
+ mips-sgi-irix6\.*:GCC )
+   if test "$with_debug" != "no" ; then
+      LDFLAGS="-LD_LAYOUT:lgot_buffer=20 $LDFLAGS"
+   fi
+   ;;
+
  *:WorkShop* )
    with_bincopy=${with_bincopy:="no"}
    if test -n "$WS64_CFLAGS" ; then
