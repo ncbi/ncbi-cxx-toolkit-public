@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/03/07 16:45:22  ucko
+* Add missing call to CPubMedId::Get needed on Windows.
+*
 * Revision 1.17  2002/03/06 22:18:25  ucko
 * Whoops, accidentally committed old unfinished publication-ordering
 * changes; clarify their status in a comment.
@@ -1033,7 +1036,7 @@ CReference::CReference(const CPubdesc& pub, const CSeq_loc& loc)
             if (gen.IsSetSerial_number()  &&  m_Serial == 0) {
                 m_Serial = gen.GetSerial_number();
             } else if (gen.IsSetPmid()  &&  m_Pmid == 0) {
-                m_Serial = gen.GetPmid();
+                m_Serial = gen.GetPmid().Get();
             } else if (gen.IsSetMuid()  &&  m_Muid == 0) {
                 m_Serial = gen.GetMuid();
             }
