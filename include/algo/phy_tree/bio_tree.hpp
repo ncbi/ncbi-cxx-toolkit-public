@@ -239,6 +239,8 @@ public:
        m_TreeNode(0)
     {}
 
+	virtual ~CBioTree() {}
+
     CBioTree(const CBioTree<TBioNode>& btr)
     : m_FeatureDict(btr.m_FeatureDict),
       m_NodeIdCounter(btr.m_NodeIdCounter),
@@ -412,6 +414,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/09 13:38:05  kuznets
+ * Fixed compile warning (GCC)
+ *
  * Revision 1.11  2004/06/05 13:36:53  jcherry
  * Fix to CBioTree::SetNodeId
  *
