@@ -461,6 +461,41 @@ public: \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
 
+// Helper macro added to support templatized exceptions
+// GCC starting from 3.2.2 warns about implicit typenames
+// this macro fixes the warning
+
+
+#define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(exception_class, base_class) \
+    { \
+        x_Init(file,line,message, prev_exception); \
+        x_InitErrCode((typename CException::EErrCode) err_code); \
+    } \
+    exception_class(const exception_class& other) throw() \
+       : base_class(other) \
+    { \
+        x_Assign(other); \
+    } \
+    virtual ~exception_class(void) throw() {} \
+    virtual const char* GetType(void) const {return #exception_class;} \
+    typedef typename base_class::EErrCode BaseClassEErrCode; \
+    BaseClassEErrCode GetErrCode(void) const \
+    { \
+        return typeid(*this) == typeid(exception_class) ? \
+            (typename exception_class::EErrCode) x_GetErrCode() : \
+            (typename exception_class::EErrCode) CException::eInvalid; \
+    } \
+protected: \
+    exception_class(void) throw() {} \
+    virtual const CException* x_Clone(void) const \
+    { \
+        return new exception_class(*this); \
+    } \
+private: \
+    /* for the sake of semicolon at the end of macro...*/ \
+   // static void xx_unused_##exception_class(void)
+
+
 
 // GCC compiler v.2.95 has a bug:
 // one should not use virtual base class in exception declarations -
@@ -558,14 +593,30 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// Auxiliary class to wrap up strerror function
+//   CStrErrAdapt
+//
+
+class CStrErrAdapt
+{
+public:
+    static const char* strerror(int errnum)
+    {
+        return ::strerror(errnum);
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // Auxiliary exception classes:
 //   CErrnoException
 //   CParseException
 //
 
 
-template <class TBase>
-class CErrnoTemplException : EXCEPTION_VIRTUAL_BASE public TBase
+typedef const char* (*TStrerror)(int errnum);
+
+template <class TBase, TStrerror PErrstr=CStrErrAdapt::strerror >
+class CErrnoTemplExceptionEx : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
     enum EErrCode {
@@ -579,7 +630,7 @@ public:
         }
     }
 
-    CErrnoTemplException(const char* file,int line,
+    CErrnoTemplExceptionEx(const char* file,int line,
         const CException* prev_exception,
         EErrCode err_code, const string& message) throw()
           : TBase(file, line, prev_exception,
@@ -587,16 +638,31 @@ public:
             message)
     {
         m_Errno = errno;
-        x_Init(file,line,message + ": " + ::strerror(m_Errno),prev_exception);
+        x_Init(file,line,message + ": " + PErrstr(m_Errno),prev_exception);
         x_InitErrCode((CException::EErrCode) err_code);
     }
-    CErrnoTemplException(const CErrnoTemplException<TBase>& other) throw()
+
+    CErrnoTemplExceptionEx(const char* file,int line,
+        const CException* prev_exception,
+        EErrCode err_code, const string& message, 
+        int errnum
+        ) throw()
+          : TBase(file, line, prev_exception,
+            (typename TBase::EErrCode)(CException::eInvalid),
+            message),
+            m_Errno(errnum)
+    {
+        x_Init(file,line,message + ": " + PErrstr(m_Errno),prev_exception);
+        x_InitErrCode((CException::EErrCode) err_code);
+    }
+
+    CErrnoTemplExceptionEx(const CErrnoTemplExceptionEx<TBase, PErrstr>& other) throw()
         : TBase( other)
     {
         m_Errno = other.m_Errno;
         x_Assign(other);
     }
-    virtual ~CErrnoTemplException(void) throw() {}
+    virtual ~CErrnoTemplExceptionEx(void) throw() {}
 
     virtual void ReportExtra(ostream& out) const
     {
@@ -607,23 +673,39 @@ public:
     virtual const char* GetType(void) const {return "CErrnoTemplException";}
     EErrCode GetErrCode(void) const
     {
-        return typeid(*this) == typeid(CErrnoTemplException<TBase>) ?
-            (CErrnoTemplException<TBase>::EErrCode) x_GetErrCode() :
-            (CErrnoTemplException<TBase>::EErrCode) CException::eInvalid;
+        return typeid(*this) == typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
+            (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) x_GetErrCode() :
+            (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) CException::eInvalid;
     }
     int GetErrno(void) const throw() { return m_Errno; }
 
 protected:
-    CErrnoTemplException(void) throw()
+    CErrnoTemplExceptionEx(void) throw()
     {
         m_Errno = errno;
     }
     virtual const CException* x_Clone(void) const
     {
-        return new CErrnoTemplException<TBase>(*this);
+        return new CErrnoTemplExceptionEx<TBase, PErrstr>(*this);
     }
 private:
     int m_Errno;
+};
+
+
+
+template<class TBase> class CErrnoTemplException :
+                        public CErrnoTemplExceptionEx<TBase, CStrErrAdapt::strerror>
+{
+public:
+    typedef CErrnoTemplExceptionEx<TBase, CStrErrAdapt::strerror> CParent;
+public:
+    CErrnoTemplException<TBase>(const char* file,int line,
+        const CException* prev_exception,
+        typename CParent::EErrCode err_code,const string& message) throw()
+        : CParent(file, line, prev_exception,
+                 (typename CParent::EErrCode) CException::eInvalid, message)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>, CParent)
 };
 
 
@@ -736,6 +818,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2003/04/24 16:25:32  kuznets
+ * Farther templatefication of CErrnoTemplException, added CErrnoTemplExceptionEx.
+ * This will allow easy creation of Errno-like exception classes.
+ * Added NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL macro
+ * (fixes some warning with templates compilation (gcc 3.2.2)).
+ *
  * Revision 1.42  2003/03/31 16:40:21  siyan
  * Added doxygen support
  *
