@@ -38,6 +38,9 @@
 
 #include <algo/blast/core/blast_options.h>
 
+// Forward declaration of a unit test class
+class CBlastGapAlignTest;
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
@@ -45,7 +48,6 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-
 
 /// Encapsulates all blast input parameters
 class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
@@ -292,6 +294,9 @@ private:
 
     friend class CBl2Seq;
     friend class CDbBlast;
+
+    friend class CBlastGapAlignTest;
+
     friend bool operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
     friend bool operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs);
 };
@@ -989,6 +994,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/01/13 14:54:54  dondosha
+* Grant friendship to class CBlastGapAlignTest for gapped alignment unit test
+*
 * Revision 1.36  2003/12/17 21:09:33  camacho
 * Add comments to reward/mismatch; gap open/extension costs
 *
