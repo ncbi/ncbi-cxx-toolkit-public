@@ -281,7 +281,7 @@ void CCachedDictionary::SuggestAlternates(const string& word,
 void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                                    size_t max_chars)
 {
-    out->clear();
+    out->erase();
     if (in.empty()) {
         return;
     }
@@ -610,7 +610,7 @@ void CDictionaryUtil::GetSoundex(const string& in, string* out,
     };
 
     // basic sanity
-    out->clear();
+    out->erase();
     if (in.empty()) {
         return;
     }
@@ -745,6 +745,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/16 18:36:12  ucko
+ * Use string::erase() rather than string::clear(), which some older
+ * compilers lack.
+ *
  * Revision 1.1  2004/07/16 15:33:07  dicuccio
  * Initial revision
  *
