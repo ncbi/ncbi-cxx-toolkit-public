@@ -60,7 +60,7 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* con,
 
 bool CDBL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
-    return m_Params.BindParam(column_num, 0, param_ptr);
+    return m_Params.BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
 
@@ -438,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/22 18:38:49  soussov
+ * sending NULL instead of emty string fixed
+ *
  * Revision 1.1  2001/10/22 15:19:55  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally

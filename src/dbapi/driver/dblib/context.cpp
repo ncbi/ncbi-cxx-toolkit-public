@@ -49,7 +49,8 @@ extern "C" {
                                     char*      dberrstr, char* oserrstr)
     {
         return CDBLibContext::DBLIB_dberr_handler
-            (dblink, severity, dberr, oserr, dberrstr, oserrstr);
+            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "", 
+	     oserrstr? oserrstr : "");
     }
 
     static int s_DBLIB_msg_callback(DBPROCESS* dblink,   DBINT msgno,
@@ -59,7 +60,8 @@ extern "C" {
     {
         CDBLibContext::DBLIB_dbmsg_handler
             (dblink, msgno,   msgstate, severity,
-             msgtxt, srvname, procname, line);
+             msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "", 
+	     line);
         return 0;
     }
 }
@@ -368,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/22 18:38:49  soussov
+ * sending NULL instead of emty string fixed
+ *
  * Revision 1.1  2001/10/22 15:19:55  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally
