@@ -32,17 +32,6 @@
 
 #include <app/project_tree_builder/proj_item.hpp>
 
-#include "VisualStudioProject.hpp"
-#include "Platforms.hpp"
-#include "Platform.hpp"
-#include "Configurations.hpp"
-#include "Configuration.hpp"
-#include "Tool.hpp"
-#include "File.hpp"
-#include "Files.hpp"
-#include "Filter.hpp"
-#include "FileConfiguration.hpp"
-
 #include <set>
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
@@ -71,13 +60,14 @@ public:
 
     ~CMsvcMasterProjectGenerator(void);
 
-    const CProjectItemsTree& m_Tree;
-    list<SConfigInfo> m_Configs;
-
     // base name
     void SaveProject(const string& base_name);
 
 private:
+    const CProjectItemsTree& m_Tree;
+    list<SConfigInfo> m_Configs;
+
+
   	const string m_Name;
 
     const string m_ProjectDir;
@@ -85,6 +75,8 @@ private:
     const string m_ProjectItemExt;
 
     string m_CustomBuildCommand;
+
+    const string m_FilesSubdir;
 
     
    
@@ -109,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/12 16:22:39  gorelenk
+ * Changed generation of command line for custom build info.
+ *
  * Revision 1.6  2004/02/10 18:14:31  gorelenk
  * Implemented overwriting of the _MasterProject only in case when it was
  * realy changed.

@@ -58,11 +58,9 @@ public:
 
 protected:
     CNcbiRegistry m_MakeFile;
+    string        m_MakeFileBaseDir;
 
 private:
-     //Prohibited to
-    CMsvcMetaMakefile(void);
-    CMsvcMetaMakefile(const CMsvcMetaMakefile&);
     CMsvcMetaMakefile& operator= (const CMsvcMetaMakefile&);
 };
 
@@ -142,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/12 16:22:39  gorelenk
+ * Changed generation of command line for custom build info.
+ *
  * Revision 1.3  2004/02/10 18:02:01  gorelenk
  * + GetAdditionalLIB.
  * + GetExcludedLIB - customization of depends.

@@ -31,7 +31,6 @@
  */
 
 #include <app/project_tree_builder/proj_item.hpp>
-#include "VisualStudioProject.hpp"
 #include <app/project_tree_builder/msvc_project_context.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 
@@ -89,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/12 16:22:40  gorelenk
+ * Changed generation of command line for custom build info.
+ *
  * Revision 1.6  2004/01/26 19:25:41  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

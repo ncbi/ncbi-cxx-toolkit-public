@@ -54,7 +54,8 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddMasterProject(const string& base_name);
+    void AddMasterProject   (const string& base_name);
+    void AddConfigureProject(const string& base_name);
 
     void SaveSolution(const string& file_path);
     
@@ -64,8 +65,13 @@ private:
     string m_SolutionDir;
 
     /// Basename / GUID
-    pair<string, string> m_MasterProject;
+    typedef pair<string, string> TUtilityProject;
+    TUtilityProject m_MasterProject;
     bool IsSetMasterProject(void) const;
+
+    /// Basename / GUID
+    TUtilityProject m_ConfigureProject;
+    bool IsSetConfigureProject(void) const;
 
     class CPrjContext
     {
@@ -95,12 +101,14 @@ private:
     void WriteProjectAndSection(CNcbiOfstream&     ofs, 
                                 const CPrjContext& project);
     
-    void WriteMasterProject(CNcbiOfstream& ofs);
+    void WriteUtilityProject   (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
 
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
                                     const CPrjContext& project);
 
-    void WriteMasterProjectConfiguration(CNcbiOfstream& ofs);
+    void WriteUtilityProjectConfiguration(const TUtilityProject& project, 
+                                          CNcbiOfstream& ofs);
 
     // Prohibited to:
     CMsvcSolutionGenerator(void);
@@ -115,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/12 16:22:40  gorelenk
+ * Changed generation of command line for custom build info.
+ *
  * Revision 1.5  2004/01/26 19:25:42  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

@@ -122,7 +122,7 @@ struct SConfigInfo
 
 struct SCustomBuildInfo
 {
-    string m_SourceFile;
+    string m_SourceFile; // absolut path!
     string m_CommandLine;
     string m_Description;
     string m_Outputs;
@@ -212,6 +212,7 @@ string ConfigName(const string& config);
 /// CMsvcMasterProjectGenerator and CMsvcProjectGenerator
 void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
                                 const list<SConfigInfo> configs,
+                                const string&           project_dir,
                                 const SCustomBuildInfo& build_info);
 
 /// Checks if 2 dirs has the same root
@@ -222,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/12 16:22:40  gorelenk
+ * Changed generation of command line for custom build info.
+ *
  * Revision 1.10  2004/02/10 18:08:16  gorelenk
  * Added declaration of functions SaveIfNewer and PromoteIfDifferent
  * - support for file overwriting only if it was changed.
