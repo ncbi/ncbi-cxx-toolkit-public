@@ -68,6 +68,9 @@ public:
 
     virtual CRef<CSeq_align_set> Run();
 
+    /// Retrieves regions filtered on the query
+    CRef<CSeq_loc> GetFilteredQueryRegions() const;
+
 #if 0
     // Temporary: Accessors for internal structures
     const BLAST_ScoreBlkPtr GetScoreBlkPtr() const { return mi_Sbp; }
@@ -121,6 +124,9 @@ private:
     vector<BlastResultsPtr>             mi_vResults;
     /// Vector of statistical return structures, one per subject
     vector<BlastReturnStat>             mi_vReturnStats;
+
+    /// Regions filtered out from the query sequence
+    CRef<CSeq_loc>                      mi_FilteredRegions;
 
     void x_SetupQuery();
     void x_SetupQueryInfo();
@@ -188,12 +194,22 @@ CBl2Seq::GetOptions() const
 {
     return m_Options;
 }
+
+inline CRef<CSeq_loc> 
+CBl2Seq::GetFilteredQueryRegions() const
+{
+    return mi_FilteredRegions;
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/14 22:16:37  camacho
+* Added interface to retrieve masked regions
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *

@@ -290,7 +290,7 @@ CBl2Seq::x_SetupQuery()
 
     }
 
-    BlastMaskPtr filter_mask;
+    BlastMaskPtr filter_mask = NULL;
     Blast_MessagePtr blmsg = NULL;
     short st;
 
@@ -298,10 +298,15 @@ CBl2Seq::x_SetupQuery()
             m_Options->GetScoringOpts(), m_Options->GetLookupTableOpts(),
             m_Options->GetHitSavingOpts(), mi_Query, mi_QueryInfo,
             &mi_LookupSegments, &filter_mask, &mi_Sbp, &blmsg);
+    // TODO: Check that lookup_segments are not filtering the whole sequence
+    // (DoubleInt set to -1 -1)
     if (st != 0) {
         string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
         NCBI_THROW(CBlastException, eInternal, msg.c_str());
     }
+
+    // Convert the BlastMaskPtr into a CSeq_loc
+    mi_FilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
 }
 
 void
@@ -436,15 +441,10 @@ CBl2Seq::x_Results2SeqAlign()
 
     // Clean up structures
     mi_InitWordParams.CBlastInitialWordParametersPtr::~CBlastInitialWordParametersPtr();
-    _ASSERT(mi_InitWordParams.operator->() == NULL);
     mi_HitSavingParams.CBlastHitSavingParametersPtr::~CBlastHitSavingParametersPtr();
-    _ASSERT(mi_HitSavingParams.operator->() == NULL);
     mi_ExtnWord.CBLAST_ExtendWordPtr::~CBLAST_ExtendWordPtr();
-    _ASSERT(mi_ExtnWord.operator->() == NULL);
     mi_ExtnParams.CBlastExtensionParametersPtr::~CBlastExtensionParametersPtr();
-    _ASSERT(mi_ExtnParams.operator->() == NULL);
     mi_GapAlign.CBlastGapAlignStructPtr::~CBlastGapAlignStructPtr();
-    _ASSERT(mi_GapAlign.operator->() == NULL);
 
     return retval;
 }
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/14 22:16:37  camacho
+* Added interface to retrieve masked regions
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *
