@@ -46,6 +46,12 @@
 BEGIN_NCBI_SCOPE
 
 
+enum ECopyTimeout {
+    eCopyTimeoutsFromSOCK,
+    eCopyTimeoutsToSOCK
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSocket::
@@ -56,13 +62,19 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CSocket
 {
 public:
+    // Special values for timeouts as accepted by member functions below:
+    static const STimeout *const kDefaultTimeout;  // use value last set
+    static const STimeout *const kInfiniteTimeout; // ad infinitum
+    // Initially, all timeouts are infinite.
+
     CSocket(void);
 
     // Create a client-side socket connected to "host:port".
-    // NOTE: the created underlying "SOCK" will be owned by the "CSocket".
+    // NOTE 1:  the created underlying "SOCK" will be owned by the "CSocket";
+    // NOTE 2:  timeout from the argument becomes new eIO_Open timeout.
     CSocket(const string&   host,
             unsigned short  port,      // always in host byte order
-            const STimeout* timeout = 0/*infinite*/,
+            const STimeout* timeout = kInfiniteTimeout,
             ESwitch         do_log  = eDefault);
 
     // Call Close(), then self-destruct
@@ -77,16 +89,18 @@ public:
     EIO_Status GetStatus(EIO_Event direction) const;
 
     // Connect to "host:port".
-    // NOTE:  should not be called if already connected.
+    // NOTE 1:  should not be called if already connected;
+    // NOTE 2:  timeout from the argument becomes new eIO_Open timeout.
     EIO_Status Connect(const string&   host,
                        unsigned short  port,      // always in host byte order
-                       const STimeout* timeout = 0/*infinite*/,
+                       const STimeout* timeout = kDefaultTimeout,
                        ESwitch         do_log  = eDefault);
 
     // Reconnect to the same address.
-    // NOTE 1:  the socket must not be closed by the time this call is made.
-    // NOTE 2:  not for the sockets created by CListeningSocket::Accept().
-    EIO_Status Reconnect(const STimeout* timeout = 0/*infinite*/);
+    // NOTE 1:  the socket must not be closed by the time this call is made;
+    // NOTE 2:  not for the sockets created by CListeningSocket::Accept();
+    // NOTE 3:  timeout from the argument becomes new eIO_Open timeout.
+    EIO_Status Reconnect(const STimeout* timeout = kDefaultTimeout);
 
     EIO_Status Shutdown(EIO_Event how);
 
@@ -96,6 +110,8 @@ public:
     // NOTE:  use CSocketAPI::Poll() to wait on several sockets at once
     EIO_Status Wait(EIO_Event event, const STimeout* timeout);
 
+    // NOTE 1:  by default, initially all timeouts are infinite;
+    // NOTE 2:  SetTimeout(..., kDefaultTimeout) has no effect.
     EIO_Status      SetTimeout(EIO_Event event, const STimeout* timeout);
     const STimeout* GetTimeout(EIO_Event event) const;
 
@@ -118,15 +134,15 @@ public:
     // Return previous ownership mode.
     EOwnership SetOwnership(EOwnership if_to_own);
 
-    // Access to the underlying "SOCK" and the system-specific socket handle
+    // Access to the underlying "SOCK" and the system-specific socket handle.
     SOCK       GetSOCK     (void) const;
     EIO_Status GetOSHandle (void* handle_buf, size_t handle_size) const;
 
-    // use CSocketAPI::SetReadOnWrite() to set the default value
+    // NOTE:  use CSocketAPI::SetReadOnWrite() to set the default value
     void SetReadOnWrite(ESwitch read_on_write = eOn);
-    // use CSocketAPI::SetDataLogging() to set the default value
+    // NOTE:  use CSocketAPI::SetDataLogging() to set the default value
     void SetDataLogging(ESwitch log_data = eOn);
-    // use CSocketAPI::SetInterruptOnSignal() to set the default value
+    // NOTE:  use CSocketAPI::SetInterruptOnSignal() to set the default value
     void SetInterruptOnSignal(ESwitch interrupt = eOn);
 
     bool IsClientSide(void) const;
@@ -135,8 +151,8 @@ public:
 
     // Close the current underlying "SOCK" (if any, and if owned),
     // and from now on use "sock" as the underlying "SOCK" instead.
-    // NOTE:  "if_to_own" applies to the (new) "sock".
-    void Reset(SOCK sock, EOwnership if_to_own);
+    // NOTE:  "if_to_own" applies to the (new) "sock"
+    void Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence);
 
 protected:
     SOCK       m_Socket;
@@ -146,6 +162,16 @@ private:
     // disable copy constructor and assignment
     CSocket(const CSocket&);
     CSocket& operator= (const CSocket&);
+
+    // Timeouts
+    STimeout* o_timeout;  // eIO_Open
+    STimeout* r_timeout;  // eIO_Read
+    STimeout* w_timeout;  // eIO_Write
+    STimeout* c_timeout;  // eIO_Close
+    STimeout oo_timeout;  // storage for o_timeout
+    STimeout rr_timeout;  // storage for r_timeout
+    STimeout ww_timeout;  // storage for w_timeout
+    STimeout cc_timeout;  // storage for c_timeout
 };
 
 
@@ -164,7 +190,7 @@ class NCBI_XCONNECT_EXPORT CDatagramSocket : public CSocket
 public:
     CDatagramSocket(void);
 
-    // NOTE: the created underlying "SOCK" will be owned by the object.
+    // NOTE:  the created underlying "SOCK" will be owned by the object
     CDatagramSocket(unsigned short  port,  // always in host byte order
                     ESwitch         do_log = eDefault);
 
@@ -314,22 +340,17 @@ public:
 //  CSocket::
 //
 
+
+inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
+{
+    return m_Socket ? SOCK_PushBack(m_Socket, buf, size) : eIO_Closed;
+}
+
+
 inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
 {
     return direction == eIO_Open ? (m_Socket ? eIO_Success : eIO_Closed)
         : (m_Socket ? SOCK_Status(m_Socket, direction) : eIO_Closed);
-}
-
-
-inline EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
-{
-    return m_Socket ? SOCK_SetTimeout(m_Socket, event, timeout) : eIO_Closed;
-}
-
-
-inline const STimeout* CSocket::GetTimeout(EIO_Event event) const
-{
-    return m_Socket ? SOCK_GetTimeout(m_Socket, event) : 0;
 }
 
 
@@ -347,10 +368,9 @@ inline SOCK CSocket::GetSOCK(void) const
 }
 
 
-inline EIO_Status CSocket::GetOSHandle(void* handle_buf, size_t handle_size) const
+inline EIO_Status CSocket::GetOSHandle(void* hnd_buf, size_t hnd_siz) const
 {
-    return m_Socket
-        ? SOCK_GetOSHandle(m_Socket, handle_buf, handle_size) : eIO_Closed;
+    return m_Socket? SOCK_GetOSHandle(m_Socket, hnd_buf, hnd_siz) : eIO_Closed;
 }
 
  
@@ -530,6 +550,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/02/14 22:03:32  lavr
+ * Add internal CSocket timeouts and document them
+ *
  * Revision 6.18  2003/01/28 19:29:07  lavr
  * DSOCK: Remove reference to kEmptyStr and thus to xncbi
  *

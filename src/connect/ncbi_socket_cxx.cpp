@@ -41,9 +41,14 @@ BEGIN_NCBI_SCOPE
 //  CSocket::
 //
 
+const STimeout *const CSocket::kDefaultTimeout  = (const STimeout*)(-1);
+const STimeout *const CSocket::kInfiniteTimeout = (const STimeout*)( 0);
+
+
 CSocket::CSocket(void)
     : m_Socket(0),
-      m_IsOwned(eTakeOwnership)
+      m_IsOwned(eTakeOwnership),
+      o_timeout(0), r_timeout(0), w_timeout(0), c_timeout(0)
 {
     return;
 }
@@ -53,10 +58,16 @@ CSocket::CSocket(const string&   host,
                  unsigned short  port,
                  const STimeout* timeout,
                  ESwitch         log)
-    : m_IsOwned(eTakeOwnership)
+    : m_IsOwned(eTakeOwnership),
+      r_timeout(0), w_timeout(0), c_timeout(0)
 {
     const char* x_host = host.c_str();
-    if (SOCK_CreateEx(x_host, port, timeout, &m_Socket, log) != eIO_Success)
+    if (timeout && timeout != kDefaultTimeout) {
+        oo_timeout = *timeout;
+        o_timeout  = &oo_timeout;
+    } else
+        o_timeout  = 0;
+    if (SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, log) != eIO_Success)
         m_Socket = 0;
 }
 
@@ -67,12 +78,39 @@ CSocket::~CSocket(void)
 }
 
 
-void CSocket::Reset(SOCK sock, EOwnership if_to_own)
+void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 {
     if ( m_Socket )
         Close();
     m_Socket  = sock;
     m_IsOwned = if_to_own;
+    if ( sock ) {
+        if (whence == eCopyTimeoutsFromSOCK) {
+            const STimeout* timeout;
+            timeout = SOCK_GetTimeout(sock, eIO_Read);
+            if ( timeout ) {
+                rr_timeout = *timeout;
+                r_timeout  = &rr_timeout;
+            } else
+                r_timeout  = 0;
+            timeout = SOCK_GetTimeout(sock, eIO_Write);
+            if ( timeout ) {
+                ww_timeout = *timeout;
+                w_timeout  = &ww_timeout;
+            } else
+                w_timeout  = 0;
+            timeout = SOCK_GetTimeout(sock, eIO_Close);
+            if ( timeout ) {
+                cc_timeout = *timeout;
+                c_timeout  = &cc_timeout;
+            } else
+                c_timeout  = 0;
+        } else {
+            SOCK_SetTimeout(sock, eIO_Read,  r_timeout);
+            SOCK_SetTimeout(sock, eIO_Write, w_timeout);
+            SOCK_SetTimeout(sock, eIO_Close, c_timeout);
+        }
+    }
 }
 
 
@@ -85,8 +123,19 @@ EIO_Status CSocket::Connect(const string&   host,
         return eIO_Unknown;
 
     const char* x_host = host.c_str();
-    EIO_Status status = SOCK_CreateEx(x_host, port, timeout, &m_Socket, log);
-    if (status != eIO_Success)
+    if (timeout != kDefaultTimeout) {
+        if ( timeout ) {
+            oo_timeout = *timeout;
+            o_timeout  = &oo_timeout;
+        } else
+            o_timeout = 0;
+    }
+    EIO_Status status = SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, log);
+    if (status == eIO_Success) {
+        SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
+    } else
         m_Socket = 0;
     return status;
 }
@@ -94,7 +143,14 @@ EIO_Status CSocket::Connect(const string&   host,
 
 EIO_Status CSocket::Reconnect(const STimeout* timeout)
 {
-    return m_Socket ? SOCK_Reconnect(m_Socket, 0, 0, timeout) : eIO_Closed;
+    if (timeout != kDefaultTimeout) {
+        if ( timeout ) {
+            oo_timeout = *timeout;
+            o_timeout  = &oo_timeout;
+        } else
+            o_timeout = 0;
+    }
+    return m_Socket ? SOCK_Reconnect(m_Socket, 0, 0, o_timeout) : eIO_Closed;
 }
 
 
@@ -122,6 +178,75 @@ EIO_Status CSocket::Wait(EIO_Event event, const STimeout* timeout)
 }
 
 
+EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
+{
+    if (timeout == kDefaultTimeout)
+        return eIO_Success;
+    switch (event) {
+    case eIO_Open:
+        if ( timeout ) {
+            oo_timeout = *timeout;
+            o_timeout  = &oo_timeout;
+        } else
+            o_timeout  = 0;
+        break;
+    case eIO_Read:
+        if ( timeout ) {
+            rr_timeout = *timeout;
+            r_timeout  = &rr_timeout;
+        } else
+            r_timeout  = 0;
+        break;
+    case eIO_Write:
+        if ( timeout ) {
+            ww_timeout = *timeout;
+            w_timeout  = &ww_timeout;
+        } else
+            w_timeout  = 0;
+        break;
+    case eIO_ReadWrite:
+        if ( timeout ) {
+            rr_timeout = *timeout;
+            ww_timeout = *timeout;
+            r_timeout  = &rr_timeout;
+            w_timeout  = &ww_timeout;
+        } else {
+            r_timeout  = 0;
+            w_timeout  = 0;
+        }
+        break;
+    case eIO_Close:
+        if ( timeout ) {
+            cc_timeout = *timeout;
+            c_timeout  = &cc_timeout;
+        } else
+            c_timeout  = 0;
+        break;
+    default:
+        return eIO_InvalidArg;
+    }
+    return m_Socket ? SOCK_SetTimeout(m_Socket, event, timeout) : eIO_Success;
+}
+
+
+inline const STimeout* CSocket::GetTimeout(EIO_Event event) const
+{
+    switch (event) {
+    case eIO_Open:
+        return o_timeout;
+    case eIO_Read:
+        return r_timeout;
+    case eIO_Write:
+        return w_timeout;
+    case eIO_Close:
+        return c_timeout;
+    default:
+        break;
+    }
+    return kDefaultTimeout;
+}
+
+
 EIO_Status CSocket::Read(void*          buf,
                          size_t         size,
                          size_t*        n_read,
@@ -129,16 +254,9 @@ EIO_Status CSocket::Read(void*          buf,
 {
     if ( m_Socket )
         return SOCK_Read(m_Socket, buf, size, n_read, how);
-
     if ( n_read )
         *n_read = 0;
     return eIO_Closed;
-}
-
-
-EIO_Status CSocket::PushBack(const void* buf, size_t size)
-{
-    return m_Socket ? SOCK_PushBack(m_Socket, buf, size) : eIO_Closed;
 }
 
 
@@ -149,7 +267,6 @@ EIO_Status CSocket::Write(const void*     buf,
 {
     if ( m_Socket )
         return SOCK_Write(m_Socket, buf, size, n_written, how);
-
     if ( n_written )
         *n_written = 0;
     return eIO_Closed;
@@ -164,9 +281,8 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
             *host = 0;
         if ( port )
             *port = 0;
-    } else {
+    } else
         SOCK_GetPeerAddress(m_Socket, host, port, byte_order);
-    }
 }
 
 
@@ -278,9 +394,8 @@ EIO_Status CListeningSocket::Accept(CSocket*&       sock,
     } else if ( !(sock = new CSocket) ) {
         SOCK_Close(x_sock);
         status = eIO_Unknown;
-    } else {
-        sock->Reset(x_sock, eTakeOwnership);
-    }
+    } else
+        sock->Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
     return status;
 }
 
@@ -294,7 +409,7 @@ EIO_Status CListeningSocket::Accept(CSocket&        sock,
     SOCK x_sock;
     EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
     if (status == eIO_Success)
-        sock.Reset(x_sock, eTakeOwnership);
+        sock.Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
     return status;
 }
 
@@ -392,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/02/14 22:03:43  lavr
+ * Add internal CSocket timeouts and document them
+ *
  * Revision 6.10  2003/01/24 23:01:19  lavr
  * Added class CDatagramSocket
  *
