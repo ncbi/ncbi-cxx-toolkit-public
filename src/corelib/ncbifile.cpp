@@ -573,8 +573,19 @@ bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
         return false;
     }
     bool locked = (err == fLckdErr);
-    *user_mode = fRead | (locked ? 0 : fWrite);
-    *group_mode = *other_mode = *user_mode;
+    TMode mode = fRead | (locked ? 0 : fWrite);
+    // User
+    if (user_mode) {
+        *user_mode = mode;
+    }
+    // Group
+    if (group_mode) {
+        *group_mode = mode;
+    }
+    // Other
+    if (other_mode) {
+        *other_mode = mode;
+    }
     return true;
 #else
     struct stat st;
@@ -1145,8 +1156,8 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
         while ( _findnext(desc, &entry) != -1 ) {
             contents.push_back(new CDirEntry(path_base + entry.name));
         }
+        _findclose(desc);
     }
-    _findclose(desc);
 
 #elif defined(NCBI_OS_UNIX)
     DIR* dir = opendir(GetPath().c_str());
@@ -1156,8 +1167,8 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
                 contents.push_back(new CDirEntry(path_base + entry->d_name));
             }
         }
+        closedir(dir);
     }
-    closedir(dir);
 
 #elif defined(NCBI_OS_MAC)
     try {
@@ -1523,6 +1534,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2003/04/11 14:04:49  ivanov
+ * Fixed CDirEntry::GetMode (Mac OS) - store a mode only for a notzero pointers.
+ * Fixed CDir::GetEntries -- do not try to close a dir handle if it was
+ * not opened.
+ *
  * Revision 1.46  2003/04/04 16:02:37  lavr
  * Lines wrapped at 79th column; some minor reformatting
  *
