@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/01/30 21:42:29  vasilche
+* Added passing arguments via file.
+*
 * Revision 1.36  2001/01/23 00:12:02  vakatov
 * Added comments and usage directions
 *
@@ -206,6 +209,10 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
+#ifdef NCBI_OS_MAC
+#  define MAIN_ARGS_FROM_FILE 1
+#endif
+
 using namespace NCBI_NS_NCBI::objects;
 
 #if CSEQ_ENTRY_REF_CHOICE
@@ -216,6 +223,27 @@ typedef CSeq_entry TSeqEntry;
 
 int main(int argc, char** argv)
 {
+#ifdef MAIN_ARGS_FROM_FILE
+#define MAX_ARGC 256
+#define MAX_ARG_LEN 1024
+    CNcbiIfstream in("main_args");
+    if ( in ) {
+        argv = new char*[MAX_ARGC];
+        argv[0] = "ASN2ASN"; // program name
+        argc = 1;
+        char arg[MAX_ARG_LEN];
+        while ( in.getline(arg, sizeof(arg)) ) {
+            if ( argc >= MAX_ARGC )
+                ERR_POST(Fatal << "too many arguments");
+            argv[argc++] = strdup(arg);
+        }
+        if ( in.gcount() )
+            ERR_POST(Fatal << "partial final line");
+        in.close();
+    }
+    else
+        ERR_POST("main_args file not found");
+#endif
     return CAsn2Asn().AppMain(argc, argv, 0, eDS_Default, 0, "asn2asn");
 }
 
