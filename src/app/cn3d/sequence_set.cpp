@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2002/09/06 18:56:48  thiessen
+* add taxonomy to description
+*
 * Revision 1.47  2002/09/05 17:14:14  thiessen
 * create new netscape window on unix
 *
@@ -216,6 +219,8 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqblock/PDB_block.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 #include <regex.h>  // regex from C-toolkit
 
@@ -381,17 +386,31 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
         return;
     }
 
-    // try to get description from title or compound
     if (bioseq.IsSetDescr()) {
+        std::string defline, taxid;
         CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
         for (d=bioseq.GetDescr().Get().begin(); d!=de; d++) {
-            if (d->GetObject().IsTitle()) {
-                description = d->GetObject().GetTitle();
-                break;
-            } else if (d->GetObject().IsPdb() && d->GetObject().GetPdb().GetCompound().size() > 0) {
-                description = d->GetObject().GetPdb().GetCompound().front();
-                break;
+
+            // get "defline" from title or compound
+            if ((*d)->IsTitle()) {              // prefer title over compound
+                defline = (*d)->GetTitle();
+            } else if (defline.size() == 0 && (*d)->IsPdb() && (*d)->GetPdb().GetCompound().size() > 0) {
+                defline = (*d)->GetPdb().GetCompound().front();
             }
+
+            // get taxonomy
+            if ((*d)->IsSource()) {
+                if ((*d)->GetSource().GetOrg().IsSetTaxname())
+                    taxid = (*d)->GetSource().GetOrg().GetTaxname();
+                else if ((*d)->GetSource().GetOrg().IsSetCommon())
+                    taxid = (*d)->GetSource().GetOrg().GetCommon();
+            }
+        }
+        if (taxid.size() > 0)
+            description = std::string("[") + taxid + ']';
+        if (defline.size() > 0) {
+            if (taxid.size() > 0) description += ' ';
+            description += defline;
         }
     }
 
