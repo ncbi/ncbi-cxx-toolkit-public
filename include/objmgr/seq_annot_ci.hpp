@@ -53,6 +53,10 @@ public:
     const CSeq_annot& GetSeq_annot(void) const;
     operator bool(void) const;
 
+    bool operator==(const CSeq_annot_Handle& annot) const;
+    bool operator!=(const CSeq_annot_Handle& annot) const;
+    bool operator<(const CSeq_annot_Handle& annot) const;
+
 private:
     void x_Set(CScope& scope, const CSeq_annot_Info& annot);
     void x_Reset(void);
@@ -62,6 +66,7 @@ private:
 
     friend class CSeq_annot_CI;
     friend class CAnnotTypes_CI;
+    friend class CAnnot_CI;
 };
 
 
@@ -160,6 +165,26 @@ const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
     return m_Seq_annot->GetSeq_annot();
 }
 
+inline
+bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& annot) const
+{
+    return m_Seq_annot == annot.m_Seq_annot  &&
+        m_Scope == annot.m_Scope;
+}
+
+inline
+bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& annot) const
+{
+    return m_Seq_annot != annot.m_Seq_annot  ||
+        m_Scope != annot.m_Scope;
+}
+
+inline
+bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& annot) const
+{
+    return m_Scope < annot.m_Scope ? true :
+        m_Seq_annot < annot.m_Seq_annot;
+}
 
 inline
 CSeq_annot_CI::CSeq_annot_CI(void)
@@ -224,6 +249,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/08/22 14:59:25  grichenk
+* + operators ==, !=, <
+*
 * Revision 1.3  2003/08/04 17:02:57  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.
