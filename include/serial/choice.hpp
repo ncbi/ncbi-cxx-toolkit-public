@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/09/26 18:03:21  vasilche
+* Added missing class keyword.
+*
 * Revision 1.17  2000/09/26 17:38:06  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -201,7 +204,7 @@ public:
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);
 
-    friend CChoiceTypeInfoFunctions;
+    friend class CChoiceTypeInfoFunctions;
 
 private:
     void InitChoiceTypeInfoFunctions(void);
