@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/04/26 14:18:45  lavr
+ * SERV_MapperName moved to the private header
+ *
  * Revision 6.8  2001/04/24 21:33:58  lavr
  * Added members of mapper V-table: penalize(method) and name(data).
  * Service iterator has got new field 'last' to keep the latest given info.
@@ -110,6 +113,11 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text);
  * Return value must be 'free'd.
  */
 char* SERV_Print(SERV_ITER iter);
+
+
+/* Get name of underlying service mapper.
+ */
+const char* SERV_MapperName(SERV_ITER iter);
 
 
 #ifdef __cplusplus
