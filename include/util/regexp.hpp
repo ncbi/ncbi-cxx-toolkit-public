@@ -39,7 +39,11 @@
 /// For more details see PCRE documentation: http://www.pcre.org/pcre.txt
 
 #include <corelib/ncbistd.hpp>
+#ifdef NCBI_COMPILER_MSVC
+#include <util/regexp/pcre.h>
+#else
 #include <pcre.h>
+#endif
 
 
 /** @addtogroup Regexp
@@ -564,6 +568,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/04/05 16:54:26  ucko
+ * Include the internal pcre.h when using MSVC until its build system
+ * catches up.
+ *
  * Revision 1.9  2004/04/05 15:54:12  ucko
  * Default to using external versions of zlib, bzlib, and libpcre if available.
  *
