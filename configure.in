@@ -288,18 +288,20 @@ if test "$exec_prefix" != "$top_srcdir" ; then
 
    src_dir="$top_srcdir"/src
    cd "$src_dir"  &&  find . -name 'Makefile*' -print |
-   grep -v 'Makefile.*\.in' |
+   grep -v 'Makefile.*\.in' | grep -v 'Makefile*~' | 
    while read x_makefile ; do
       dest_dir="$builddir"/`dirname "$x_makefile"`
       if test ! -d "$dest_dir" ; then
          mkdir -p "$dest_dir"
       fi
-      mv "$src_dir/$x_makefile" "$dest_dir/"
+      cp -p "$src_dir/$x_makefile" "$dest_dir/"
    done
+   rm ${SAVE_makefiles}
 fi,
 
 SAVE_incdir="$incdir"
 SAVE_libdir="$libdir"
 SAVE_bindir="$bindir"
 SAVE_builddir="$builddir"
+SAVE_makefiles="${makefiles}"
 )
