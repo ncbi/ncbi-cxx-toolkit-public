@@ -2567,8 +2567,8 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
       continue;
     }
 
-    /* Make sure the HSPs in this HSP list are sorted. */
-    Blast_HSPListCheckIfSorted(thisMatch);
+    /* Make sure the HSPs in this HSP list are sorted by score. */
+    Blast_HSPListSortByScore(thisMatch);
 
     if (thisMatch->query_index != current_query_index) {
        /* This HSP list is for a new query sequence. Save results for 
