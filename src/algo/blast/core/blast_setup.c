@@ -546,7 +546,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    if (program_number == blast_type_tblastn || 
        program_number == blast_type_tblastx)
       db_length = db_length/3;	
-   
+
    if (eff_len_options->dbseq_num > 0)
       db_num_seqs = eff_len_options->dbseq_num;
    else
@@ -594,8 +594,15 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
          }        
      
          effective_search_space =
-             (query_length - length_adjustment) *
+             (query_length - length_adjustment) * 
              (db_length - db_num_seqs*length_adjustment);
+
+         /* For translated RPS blast, the DB size is left unchanged
+            and the query size is divided by 3 (for conversion to 
+            a protein sequence) and multiplied by 6 (for 6 frames) */
+
+         if (program_number == blast_type_rpstblastn)
+            effective_search_space *= (Int8)(NUM_FRAMES / CODON_LENGTH);
       }
       query_info->eff_searchsp_array[index] = effective_search_space;
       query_info->length_adjustments[index] = length_adjustment;
