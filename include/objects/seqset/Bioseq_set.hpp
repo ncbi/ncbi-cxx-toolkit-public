@@ -33,16 +33,6 @@
  *   using specifications from the ASN data definition file
  *   'seqset.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.14  2001/06/25 18:52:03  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.13  2000/11/01 20:35:13  vasilche
- * Removed ECanDelete enum and related constructors.
- *
- *
- * ===========================================================================
  */
 
 #ifndef OBJECTS_SEQSET_BIOSEQ_SET_HPP
@@ -66,6 +56,16 @@ public:
     CBioseq_set(void);
     // destructor
     ~CBioseq_set(void);
+    
+    enum ELabelType {
+        eType,
+        eContent,
+        eBoth
+    };
+    
+    // Append a label to label based on type or content of CBioseq_set
+    void GetLabel(string* label, ELabelType type) const;
+    
 private:
     // Prohibit copy constructor & assignment operator
     CBioseq_set(const CBioseq_set&);
@@ -91,4 +91,19 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.15  2002/10/03 17:19:23  clausen
+ * Added GetLabel()
+ *
+ * Revision 1.14  2001/06/25 18:52:03  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
+ * Revision 1.13  2000/11/01 20:35:13  vasilche
+ * Removed ECanDelete enum and related constructors.
+ *
+ *
+ * ===========================================================================
+ */
 #endif // OBJECTS_SEQSET_BIOSEQ_SET_HPP

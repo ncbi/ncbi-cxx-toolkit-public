@@ -33,19 +33,19 @@
  *   using specifications from the ASN data definition file
  *   'seqset.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.4  2000/11/01 20:38:33  vasilche
- * Removed ECanDelete enum and related constructors.
- *
- *
- * ===========================================================================
  */
 
 // standard includes
+#include <serial/serial.hpp>
+#include <serial/iterator.hpp>
+#include <serial/enumvalues.hpp>
 
 // generated includes
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 // generated classes
 
@@ -58,7 +58,152 @@ CBioseq_set::~CBioseq_set(void)
 {
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+static bool s_is_na(const CBioseq& seq)
+{
+    switch (seq.GetInst().GetMol()) {
+    case CSeq_inst::eMol_dna:
+    case CSeq_inst::eMol_rna:
+    case CSeq_inst::eMol_na:
+        return true;
+    default:
+        return false;
+    }
+}
+
+
+static bool s_has_gb(const CSeq_id& id)
+{
+    switch (id.Which()) {
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Other:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+        return true;
+    default:
+        return false;
+    }
+}
+
+
+static bool s_has_accession(const CSeq_id& id)
+{
+    if (!id.GetTextseq_Id()) {
+        return false;
+    } else if (id.GetTextseq_Id()->IsSetAccession()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void CBioseq_set::GetLabel(string* label, ELabelType type) const
+{
+    // If no label, just return
+    if (!label) {
+        return;
+    }
+    
+    // Get type label
+    if (IsSetClass()  &&  type != eContent) {
+        const CEnumeratedTypeValues* tv =
+            CBioseq_set::GetTypeInfo_enum_EClass();
+        const string& cn = tv->FindName(GetClass(), true);
+        *label += cn;
+        
+        if (type != eType) {
+            *label += ": ";
+        }
+    }
+    
+    if (type == eType) {
+        return;
+    }
+    
+    // Loop through CBioseqs looking for the best one to use for a label
+    bool best_is_na = false, best_has_gb = false, best_has_accession = false;
+    const CBioseq* best = 0;
+    for (CTypeConstIterator<CBioseq> si(ConstBegin(*this)); si; ++si) {
+        bool takeit = false, is_na, has_gb = false, has_accession = false;
+        is_na = s_is_na(*si);
+        for (CTypeConstIterator<CSeq_id> ii(ConstBegin(*si)); ii; ++ii) {
+            has_gb = has_gb ? true : s_has_gb(*ii);
+            has_accession = has_accession ? true : s_has_accession(*ii);
+        }
+        
+        if (!best) {
+            takeit = true;
+        } else {
+            bool longer = false;
+            if (si->GetInst().GetLength() > best->GetInst().GetLength()) {
+                longer = true;
+            }
+            if(best_has_accession) {
+                if (has_accession) {
+                    if(longer) {
+                        takeit = true;
+                    }
+                }
+            } else if (has_accession) {
+                takeit = true;
+            } else if (best_has_gb) {
+                if (has_gb) {
+                    if (longer) {
+                        takeit = true;
+                    }
+                }
+            } else if (has_gb) {
+                takeit = true;
+            } else if (best_is_na) {
+                if (is_na) {
+                    if (longer) {
+                        takeit = true;
+                    }
+                }
+            } else if (is_na) {
+                takeit = true;
+            } else if (longer) {
+                takeit = true;
+            }
+        }
+        
+        if (takeit) {
+            best = &(*si);
+            best_has_accession = has_accession;
+            best_has_gb = has_gb;
+            best_is_na = is_na;
+        }
+    }
+    
+    // Add content to label.
+    if (!best) {
+        *label += "(No Bioseqs)";
+    } else {
+        CNcbiOstrstream os;
+        if (best->GetFirstId()) {
+            os << best->GetFirstId()->DumpAsFasta();
+            *label += os.str();
+        }
+    }
+}
+
+
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2002/10/03 17:18:19  clausen
+ * Added GetLabel()
+ *
+ * Revision 1.4  2000/11/01 20:38:33  vasilche
+ * Removed ECanDelete enum and related constructors.
+ *
+ *
+ * ===========================================================================
+ */
