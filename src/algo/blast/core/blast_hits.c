@@ -448,13 +448,14 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    Int2 status = 0;
    Int4 align_length;
    BLAST_KarlinBlkPtr PNTR kbp;
-   GetSeqArg seq_arg = { NULLB };
+   GetSeqArg seq_arg;
 
    if (!hsp_list)
       return status;
 
    hspcnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
+   MemSet((void*) &seq_arg, 0, sizeof(seq_arg));
 
    /* In case of no traceback, return without doing anything */
    if (!hsp_list->traceback_done && hit_options->is_gapped) {

@@ -1215,7 +1215,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
    BlastHSPListPtr hsp_list;
    BLAST_ScoreBlkPtr sbp;
    Uint1 encoding;
-   GetSeqArg seq_arg = { NULLB };
+   GetSeqArg seq_arg;
    
    if (!results || !query_info || !bssp) {
       return 0;
@@ -1231,6 +1231,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
    sbp = gap_align->sbp;
    
    encoding = GetTracebackEncoding(program_number);
+   MemSet((void*) &seq_arg, 0, sizeof(seq_arg));
 
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
       hit_list = results->hitlist_array[query_index];
