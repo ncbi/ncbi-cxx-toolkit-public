@@ -296,16 +296,15 @@ protected:
     void HideStdArgs(THideStdArgs hide_mask);
 
     /// Flags to adjust standard I/O streams' behaviour.
-    ///
-    /// Set these flags if you insist on using compiler-specific defaults
-    /// for standard "C++" I/O streams (Cin/Cout/Cerr).
     enum EStdioSetup {
         fDefault_SyncWithStdio  = 0x01,
         ///< Use compiler-specific default as pertains to the synchronizing
         ///< of "C++" Cin/Cout/Cerr streams with their "C" counterparts.
 
-        fDefault_CinBufferSize  = 0x02
+        fDefault_CinBufferSize  = 0x02,
         ///< Use compiler-specific default of Cin buffer size.
+        fBinaryCin   = 0x04,  ///< treat standard  input as binary
+        fBinaryCout  = 0x08   ///< treat standard output as binary
     };
     typedef int TStdioSetupFlags;  ///< Binary OR of "EStdioSetup"
 
@@ -513,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/09/24 17:48:19  gouriano
+ * Enable treating standard input and output as binary
+ *
  * Revision 1.44  2004/08/19 12:44:05  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *

@@ -42,6 +42,8 @@
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
 #  include <corelib/ncbidll.hpp>
+#  include <io.h> 
+#  include <fcntl.h> 
 #endif
 
 #if defined(NCBI_OS_UNIX)
@@ -720,6 +722,14 @@ void CNcbiApplication::x_SetupStdio(void)
 #  endif
 #endif
     }
+#if defined(NCBI_OS_MSWIN)
+    if ((m_StdioFlags & fBinaryCin) != 0) {
+        setmode( fileno( stdin ), O_BINARY );
+    }
+    if ((m_StdioFlags & fBinaryCout) != 0) {
+        setmode( fileno( stdout ), O_BINARY );
+    }
+#endif
 }
 
 
@@ -969,6 +979,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2004/09/24 17:47:46  gouriano
+ * Enable treating standard input and output as binary
+ *
  * Revision 1.95  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
