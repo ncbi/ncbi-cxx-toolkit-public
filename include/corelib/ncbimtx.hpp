@@ -794,7 +794,7 @@ struct SSimpleWriteLock
 };
 
 typedef CGuard<CRWLock, SSimpleWriteLock<CRWLock> > TWriteLockGuard;
-typedef TReadLockGuard                              CWriteLockGuard;
+typedef TWriteLockGuard                              CWriteLockGuard;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -942,6 +942,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/06/16 21:22:20  vasilche
+ * Fixed Read/Write typo.
+ *
  * Revision 1.36  2004/06/16 11:37:33  dicuccio
  * Refactored CMutexGuard, CFastMutexGuard, CReadLockGuard, and CWriteLockGuard to
  * use a templated implementation (CGuard<>).  Provided typedefs for forward and
