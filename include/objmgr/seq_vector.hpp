@@ -76,6 +76,9 @@ public:
     CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
+    CSeqVector(const CSeq_loc& loc, CScope& scope,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeqVector& vec);
 
     virtual ~CSeqVector(void);
@@ -280,6 +283,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/02/25 18:58:17  shomrat
+* Added a new construtor based on Seq-loc in scope
+*
 * Revision 1.48  2003/12/02 18:28:07  grichenk
 * Pass const_iterator to GetSeqData by reference.
 *

@@ -99,6 +99,20 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
 }
 
 
+CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
+                       EVectorCoding coding, ENa_strand strand)
+    : m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &scope)),
+      m_Scope(&scope),
+      m_Size(m_SeqMap->GetLength(&scope)),
+      m_Mol(m_SeqMap->GetMol()),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
+{
+    m_Iterator.x_SetVector(*this);
+    SetCoding(coding);
+}
+
+
 CSeqVector::~CSeqVector(void)
 {
 }
@@ -278,6 +292,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/02/25 18:58:47  shomrat
+* Added a new construtor based on Seq-loc in scope
+*
 * Revision 1.65  2003/11/19 22:18:04  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".
