@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/21 17:44:18  vasilche
+* Fixed compilation on SunPro C++
+*
 * Revision 1.2  1999/12/21 17:18:34  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -42,7 +45,7 @@
 #include "fileutil.hpp"
 #include <corelib/ncbistre.hpp>
 
-static const CNcbiOstream::streamsize BUFFER_SIZE = 4096;
+static const int BUFFER_SIZE = 4096;
 
 SourceFile::SourceFile(const string& name, bool binary)
 {
@@ -178,7 +181,7 @@ void CDelayedOfstream::close(void)
     if ( !is_open() )
         return;
     if ( !equals() ) {
-        if ( !write() )
+        if ( !rewrite() )
             setstate(m_Ostream->rdstate());
         m_Ostream.reset(0);
     }
@@ -217,7 +220,7 @@ bool CDelayedOfstream::equals(void)
     return true;
 }
 
-bool CDelayedOfstream::write(void)
+bool CDelayedOfstream::rewrite(void)
 {
     if ( !m_Ostream.get() ) {
         m_Ostream.reset(new CNcbiOfstream(m_FileName.c_str()));

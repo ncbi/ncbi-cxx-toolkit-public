@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/21 17:44:19  vasilche
+* Fixed compilation on SunPro C++
+*
 * Revision 1.2  1999/12/21 17:18:34  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -117,7 +120,7 @@ public:
 
 protected:
     bool equals(void);
-    bool write(void);
+    bool rewrite(void);
 
 private:
     string m_FileName;
