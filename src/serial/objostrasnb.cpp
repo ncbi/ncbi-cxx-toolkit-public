@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2001/12/10 16:57:24  grichenk
+* Fixed WriteLongTag()
+*
 * Revision 1.62  2001/12/09 07:45:08  vakatov
 * Fixed a warning
 *
@@ -510,8 +513,11 @@ void CObjectOStreamAsnBinary::WriteLongTag(EClass c, bool constructed,
     
     // beginning of tag
     WriteByte(bits | 0x80); // write high bits
+    if ( shift == 0 )
+        return;
     // write remaining bits
-    while ( (shift -= 7) != 0 ) {
+    while ( shift != 0 ) {
+        shift -= 7;
         WriteByte((tag >> shift) | 0x80);
     }
     WriteByte(tag & 0x7f);
