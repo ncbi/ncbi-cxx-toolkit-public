@@ -59,7 +59,7 @@ BEGIN_SCOPE(blast)
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
                    EProgram p)
-    : mi_bQuerySetUpDone(false), m_pSeqSrc(bssp)
+    : m_pSeqSrc(bssp), mi_bQuerySetUpDone(false) 
 {
     m_tQueries = queries;
     mi_pScoreBlock = NULL;
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2003/12/03 17:41:19  camacho
+ * Fix incorrect member initializer list
+ *
  * Revision 1.4  2003/12/03 16:45:03  dondosha
  * Use CBlastOptionsHandle class
  *
