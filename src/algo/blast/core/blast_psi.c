@@ -102,19 +102,19 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         return PSIERR_OUTOFMEM;
     }
 
-    /*** Enable structure group customization if needed ***/
-    if (options->nsg_ignore_consensus) {
-        _PSIPurgeAlignedRegion(msa, kQueryIndex, 0,
-                               msa->dimensions->query_length);
-        ASSERT(msa->use_sequence[kQueryIndex] == FALSE);
-    }
-
     /*** Run the engine's stages ***/
     status = _PSIPurgeBiasedSegments(msa, options->nsg_identity_threshold);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
+    }
+
+    /*** Enable structure group customization if needed ***/
+    if (options->nsg_ignore_consensus) {
+        _PSIPurgeAlignedRegion(msa, kQueryIndex, 0,
+                               msa->dimensions->query_length);
+        ASSERT(msa->use_sequence[kQueryIndex] == FALSE);
     }
 
     status = _PSIValidateMSA(msa, options->nsg_ignore_consensus);
