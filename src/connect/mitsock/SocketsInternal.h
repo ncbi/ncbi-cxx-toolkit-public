@@ -52,8 +52,8 @@
 
 /* External Types, Function Prototypes and Definitions */
 #include "s_socket.h"
+#include "IdleInternal.h" /* must be before sock_ext.h to avoid write becoming MIT_write */
 #include "sock_ext.h"
-#include "IdleInternal.h"
 
 
 /* The constant that sets the maximum number of sockets that can be 
