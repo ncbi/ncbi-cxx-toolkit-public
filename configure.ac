@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.275 2004/03/11 17:30:10 ucko Exp $
+#  $Id: configure.ac,v 1.276 2004/03/12 15:20:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -214,6 +214,10 @@ AC_ARG_WITH(sablot,
    [ --with-sablot=DIR       use Sablotron installation in DIR])
 AC_ARG_WITH(sablot2,
    [ --without-sablot,       do not use Sablotron])
+AC_ARG_WITH(oechem,
+   [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
+AC_ARG_WITH(oechem2,
+   [ --without-oechem        do not use OEChem])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
 AC_ARG_WITH(gif2,
@@ -268,7 +272,7 @@ check static-exe strip version lfs \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo sp pubmed \
 sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc sqlite \
-expat sablot gif jpeg tiff png xpm \
+expat sablot oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -305,7 +309,7 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-sqlite=* | --with-expat=* | --with-sablot=* \
+      | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-oechem=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* \
@@ -3236,6 +3240,14 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
  AC_LANG_PROGRAM([#include <sqlite.h>],
     [char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);]))
+
+
+### OEChem
+NCBI_CHECK_THIRD_PARTY_LIB(oechem,
+ AC_LANG_PROGRAM([#include <oechem.h>],
+    [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
+ -loesystem -loeplatform -lz)
+test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ### Image libraries

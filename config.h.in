@@ -112,6 +112,9 @@
    the standard libraries. */
 #undef HAVE_LIBKSTAT
 
+/* Define to 1 if liboechem is available. */
+#undef HAVE_LIBOECHEM
+
 /* Define to 1 if you have libOSMesa. */
 #undef HAVE_LIBOSMESA
 
