@@ -74,6 +74,7 @@ typedef struct PSIMsa {
  * to allocate [in]
  * @return allocated PSIMsa structure or NULL if out of memory.
  */
+NCBI_XBLAST_EXPORT
 PSIMsa*
 PSIMsaNew(const PSIMsaDimensions* dimensions);
 
@@ -81,6 +82,7 @@ PSIMsaNew(const PSIMsaDimensions* dimensions);
  * @param msa multiple sequence alignment structure to deallocate [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 PSIMsa*
 PSIMsaFree(PSIMsa* msa);
 
