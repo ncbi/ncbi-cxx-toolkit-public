@@ -133,6 +133,7 @@ public:
 class FileMessagingManager
 {
 private:
+    friend class FileMessenger;
     const std::string applicationName;
 
     typedef std::list < FileMessenger * > FileMessengerList;
@@ -140,6 +141,7 @@ private:
 
 public:
     FileMessagingManager(const std::string& appName);
+    // stops all monitoring and destroys all messenger objects, but does not delete any message files
     ~FileMessagingManager(void);
 
     // to create a new message file connection; if readOnly==false then replies are sent through
@@ -147,10 +149,11 @@ public:
     FileMessenger * CreateNewFileMessenger(const std::string& messageFilename,
         MessageResponder *responderObject, bool readOnly);
 
+    // stop monitoring a connection (and destroy the messenger), and optionally delete the message file.
+    void DeleteFileMessenger(FileMessenger *messenger, bool deleteMessageFile);
+
     // for all FileMessengers, receives any new commands/replies and sends any pending ones
     void PollMessageFiles(void);
-
-    const std::string& GetAppName(void) const { return applicationName; }
 };
 
 END_NCBI_SCOPE
@@ -160,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/13 18:55:04  thiessen
+* add messenger destroy function
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

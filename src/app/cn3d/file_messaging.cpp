@@ -276,7 +276,7 @@ void FileMessenger::ReceiveCommands(void)
         // get To: (ignore if not this app)
         if (!ReadSingleLine(*inStream, &line)) return;
         GET_ITEM("To: ")
-        if (item != manager->GetAppName()) {
+        if (item != manager->applicationName) {
             SKIP_THROUGH_END_OF_COMMAND;
             continue;
         }
@@ -368,7 +368,7 @@ void FileMessenger::SendPendingCommands(void)
         bool isReply = (c->command == "OKAY" || c->command == "ERROR");
         *outStream
             << "To: " << c->to << '\n'
-            << "From: " << manager->GetAppName() << '\n'
+            << "From: " << manager->applicationName << '\n'
             << "ID: " << c->id << '\n'
             << (isReply ? "Reply: " : "Command: ") << c->command << '\n'
             << c->data << '\n'
@@ -403,6 +403,23 @@ FileMessenger * FileMessagingManager::CreateNewFileMessenger(
     return newMessenger;
 }
 
+void FileMessagingManager::DeleteFileMessenger(FileMessenger *messenger, bool deleteMessageFile)
+{
+    FileMessengerList::iterator f, fe = messengers.end();
+    for (f=messengers.begin(); f!=fe; f++) {
+        if (*f == messenger) {
+            if (deleteMessageFile && !(*f)->readOnly)
+                if (!(*f)->messageFile.Remove())
+                    ERRORMSG("DeleteFileMessenger() - error deleting message file "
+                        << (*f)->messageFile.GetPath() << '!');
+            delete *f;
+            messengers.erase(f);
+            return;
+        }
+    }
+    ERRORMSG("DeleteFileMessenger() - given FileMessenger* not created by this FileMessagingManager!");
+}
+
 void FileMessagingManager::PollMessageFiles(void)
 {
     FileMessengerList::iterator f, fe = messengers.end();
@@ -415,6 +432,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/13 18:55:04  thiessen
+* add messenger destroy function
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *
