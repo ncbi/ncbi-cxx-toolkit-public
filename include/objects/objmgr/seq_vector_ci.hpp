@@ -71,7 +71,7 @@ private:
     friend class CSeqVector;
 
     typedef vector<char> TCacheData;
-    typedef char* TCache_I;
+    typedef TCacheData::iterator TCache_I;
     typedef CSeqVector::TCoding TCoding;
 
     void x_ResizeCache(size_t size);
@@ -125,9 +125,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
       m_BackupData(sv_it.m_BackupData)
 {
     x_UpdateCachePtr();
-    if ( sv_it.m_Cache ) {
-        m_Cache += sv_it.m_Cache - sv_it.m_CacheData.begin();
-    }
+    m_Cache = m_CacheData.begin() + (&*sv_it.m_Cache - &*sv_it.m_CacheData.begin());
 }
 
 inline
@@ -142,16 +140,14 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
     m_BackupPos = sv_it.m_BackupPos;
     m_BackupData = sv_it.m_BackupData;
     x_UpdateCachePtr();
-    if ( sv_it.m_Cache ) {
-        m_Cache += sv_it.m_Cache - sv_it.m_CacheData.begin();
-    }
+    m_Cache = m_CacheData.begin() + (&*sv_it.m_Cache - &*sv_it.m_CacheData.begin());
     return *this;
 }
 
 inline
 CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
-    _ASSERT(bool(m_Vector)  &&  m_Cache);
+    _ASSERT(bool(m_Vector)  &&  m_Cache < m_CacheData.end());
     if (++m_Cache >= m_CacheData.end()) {
             x_NextCacheSeg();
     }
@@ -161,7 +157,7 @@ CSeqVector_CI& CSeqVector_CI::operator++(void)
 inline
 CSeqVector_CI& CSeqVector_CI::operator--(void)
 {
-    _ASSERT(bool(m_Vector)  &&  m_Cache);
+    _ASSERT(bool(m_Vector)  &&  m_Cache > m_CacheData.begin());
     if (--m_Cache < m_CacheData.begin()) {
             x_PrevCacheSeg();
     }
@@ -171,20 +167,20 @@ CSeqVector_CI& CSeqVector_CI::operator--(void)
 inline
 TSeqPos CSeqVector_CI::GetPos(void) const
 {
-    return m_Cache ? m_Cache - m_CacheData.begin() + m_CachePos : kInvalidSeqPos;
+    return (&*m_Cache - &*m_CacheData.begin()) + m_CachePos;
 }
 
 inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
-    _ASSERT(m_Cache);
+    _ASSERT(m_Cache < m_CacheData.end());
     return *m_Cache;
 }
 
 inline
 CSeqVector_CI::operator bool(void) const
 {
-    return bool(m_Vector)  &&  m_Cache;
+    return bool(m_Vector)  &&  m_Cache < m_CacheData.end();
 }
 
 inline
@@ -206,6 +202,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/05/30 19:30:08  vasilche
+* Fixed compilation on GCC 3.
+*
 * Revision 1.2  2003/05/30 18:00:26  grichenk
 * Fixed caching bugs in CSeqVector_CI
 *

@@ -152,7 +152,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
 
 void CSeqVector_CI::x_UpdateCachePtr(void)
 {
-    m_Cache = m_CacheData.empty() ? 0 : &m_CacheData[0];
+    m_Cache = m_CacheData.begin();
 }
 
 
@@ -223,7 +223,7 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
         x_ResizeCache(newCacheLen);
         x_FillCache(newCacheLen);
     }
-    m_Cache = &m_CacheData[pos - m_CachePos];
+    m_Cache = m_CacheData.begin() + (pos - m_CachePos);
 }
 
 
@@ -288,7 +288,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos count)
             const char* table = m_Vector->sx_GetConvertTable(dataCoding,
                                                              cacheCoding);
             if ( table ) {
-                translate(m_Cache, count, table);
+                translate(&*m_Cache, count, table);
             }
             else {
                 THROW1_TRACE(runtime_error,
@@ -300,7 +300,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos count)
             reverse(m_Cache, m_Cache + count);
             const char* table = m_Vector->sx_GetComplementTable(cacheCoding);
             if ( table ) {
-                translate(m_Cache, count, table);
+                translate(&*m_Cache, count, table);
             }
         }
         break;
@@ -354,7 +354,7 @@ void CSeqVector_CI::SetPos(TSeqPos pos)
             x_UpdateCache(pos);
         }
     }
-    m_Cache = &m_CacheData[pos - m_CachePos];
+    m_Cache = m_CacheData.begin() + (pos - m_CachePos);
 }
 
 
@@ -364,12 +364,14 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
     buffer.erase();
     if ( start < stop ) {
         buffer.reserve(stop-start);
-        if (!m_Cache  ||  start < m_CachePos  ||  start >= x_CacheEnd()) {
+        if ( m_Cache >= m_CacheData.end() ||
+             start < m_CachePos  ||
+             start >= x_CacheEnd() ) {
             x_UpdateCache(start);
         }
         do {
-            TCache_I cacheEnd = min(m_CacheData.end(),
-                &m_CacheData[stop - m_CachePos]);
+            size_t end_offset = min(m_CacheData.size(), stop - m_CachePos);
+            TCache_I cacheEnd = m_CacheData.begin() + end_offset;
             buffer.append(m_Cache, cacheEnd);
             m_Cache = cacheEnd;
             x_NextCacheSeg();
@@ -408,8 +410,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
     _ASSERT(m_Vector);
     if (m_CachePos == 0) {
         // Can not go further
-        m_Cache = 0;
-        return;
+        THROW1_TRACE(runtime_error, "CSeqVector_CI::x_PrevCacheSeg: no more data");
     }
     TSeqPos newPos = m_CachePos - 1;
     swap(m_CachePos, m_BackupPos);
@@ -440,6 +441,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/05/30 19:30:08  vasilche
+* Fixed compilation on GCC 3.
+*
 * Revision 1.3  2003/05/30 18:00:29  grichenk
 * Fixed caching bugs in CSeqVector_CI
 *
