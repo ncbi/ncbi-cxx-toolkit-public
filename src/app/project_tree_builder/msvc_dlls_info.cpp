@@ -180,7 +180,6 @@ static bool s_IsDllProject(const string& project_id)
 
 static void s_InitalizeDllProj(const string&                  dll_id, 
                                const CMsvcDllsInfo::SDllInfo& dll_info,
-                               const CProjectItemsTree&       whole_tree,
                                CProjItem*                     dll,
                                CProjectItemsTree*             tree_dst)
 {
@@ -197,19 +196,23 @@ static void s_InitalizeDllProj(const string&                  dll_id,
             dll->m_Depends.push_back(CProjKey(CProjKey::eDll, 
                                                depend_id));    
         } else  {
-            if ( s_IsInTree(CProjKey::eApp, depend_id, whole_tree) ) {
+            if ( s_IsInTree(CProjKey::eApp, 
+                            depend_id, 
+                            GetApp().GetWholeTree()) ) {
 
                 CProjKey depend_key(CProjKey::eApp, depend_id);
                 dll->m_Depends.push_back(depend_key);
                 tree_dst->m_Projects[depend_key] = 
-                    (whole_tree.m_Projects.find(depend_key))->second;
+                 (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
             }
-            else if ( s_IsInTree(CProjKey::eLib, depend_id, whole_tree) ) {
+            else if ( s_IsInTree(CProjKey::eLib, 
+                                 depend_id, 
+                                 GetApp().GetWholeTree()) ) {
 
                 CProjKey depend_key(CProjKey::eLib, depend_id);
                 dll->m_Depends.push_back(depend_key); 
                 tree_dst->m_Projects[depend_key] = 
-                    (whole_tree.m_Projects.find(depend_key))->second;
+                 (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
 
             } else  {
                 LOG_POST(Error << "Can not find project : " + depend_id);
@@ -355,13 +358,6 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
 void CreateDllBuildTree(const CProjectItemsTree& tree_src, 
                         CProjectItemsTree*       tree_dst)
 {
-    // Build whole tree to get all hostee(s)
-    CProjectItemsTree whole_tree;
-    CProjectDummyFilter pass_all_filter;
-    CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
-                                          GetApp().GetProjectTreeInfo().m_Src, 
-                                          &whole_tree);
-
     tree_dst->m_RootSrc = tree_src.m_RootSrc;
 
     FilterOutDllHostedProjects(tree_src, tree_dst);
@@ -406,12 +402,13 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         GetApp().GetDllsInfo().GetDllInfo(dll_id, &dll_info);
 
         CProjItem dll;
-        s_InitalizeDllProj(dll_id, dll_info, whole_tree, &dll, tree_dst);
+        s_InitalizeDllProj(dll_id, dll_info, &dll, tree_dst);
 
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
             CProjectItemsTree::TProjects::const_iterator k = 
-                whole_tree.m_Projects.find(CProjKey(CProjKey::eLib, lib_id));
+             GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
+                                                              lib_id));
             if (k == tree_src.m_Projects.end()) {
                 LOG_POST(Error << "No project " +
                                    lib_id + " hosted in dll : " + dll_id);
@@ -493,6 +490,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/23 14:39:41  gorelenk
+ * Changed implementation of functions s_InitalizeDllProj and
+ * CreateDllBuildTree to use whole build tree by GetApp().GetWholeTree().
+ *
  * Revision 1.10  2004/03/16 23:51:43  gorelenk
  * Changed implementation of s_AddProjItemToDll .
  *
