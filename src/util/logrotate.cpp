@@ -53,8 +53,9 @@ CRotatingLogStreamBuf::CRotatingLogStreamBuf(CRotatingLogStream* stream,
 }
 
 
-void CRotatingLogStreamBuf::Rotate(void)
+CNcbiStreamoff CRotatingLogStreamBuf::Rotate(void)
 {
+    CNcbiStreampos old_size = m_Size;
     close();
     string old_name = m_FileName; // Copy in case x_BackupName mutates.
     string new_name = m_Stream->x_BackupName(m_FileName);
@@ -64,6 +65,7 @@ void CRotatingLogStreamBuf::Rotate(void)
     }
     open(m_FileName.c_str(), m_Mode);
     m_Size = seekoff(0, IOS_BASE::cur, IOS_BASE::out);
+    return m_Size - old_size;
 }
 
 
@@ -73,22 +75,25 @@ void CRotatingLogStreamBuf::Rotate(void)
 
 CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
 {
-    // The only operators CT_POS_TYPE reliably seems to support
+    // The only operators CNcbiStreampos reliably seems to support
     // are += and -=, so stick to those. :-/
-    CT_POS_TYPE new_size = m_Size;
+    CNcbiStreampos new_size = m_Size, old_size = m_Size;
     new_size += pptr() - pbase();
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         new_size += 1;
     }
     // Perform output first, in case switching files discards data.
     CT_INT_TYPE result = CNcbiFilebuf::overflow(c);
+    if (m_Size - old_size < 0) {
+        return result; // assume filebuf::overflow called Rotate via sync.
+    }
     // Don't assume the buffer's actually empty; some implementations
     // seem to handle the case of pptr() being null by setting the
     // pointers and writing c to the buffer but not actually flushing
     // it to disk. :-/
     new_size -= pptr() - pbase();
     m_Size = new_size;
-    if (m_Size - CT_POS_TYPE(0) >= m_Limit) {
+    if (m_Size - CNcbiStreampos(0) >= m_Limit) {
         Rotate();
     }
     return result;
@@ -98,13 +103,16 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
 int CRotatingLogStreamBuf::sync(void)
 {
     // Perform output first, in case switching files discards data.
-    CT_POS_TYPE new_size = m_Size;
+    CNcbiStreampos new_size = m_Size, old_size = m_Size;
     new_size += pptr() - pbase();
     int result = CNcbiFilebuf::sync();
+    if (m_Size - old_size < 0) {
+        return result; // assume filebuf::sync called Rotate via overflow.
+    }
     // pptr() ought to equal pbase() now, but just in case...
     new_size -= pptr() - pbase();
     m_Size = new_size;
-    if (m_Size - CT_POS_TYPE(0) >= m_Limit) {
+    if (m_Size - CNcbiStreampos(0) >= m_Limit) {
         Rotate();
     }
     return result;
@@ -130,6 +138,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/09/01 15:46:47  ucko
+* Use more appropriate typedefs (CNcbiStreamfoo, not CT_FOO_TYPE).
+* Rotate now indicates how much data it rotated.
+* CRotatingLogStreamBuf::{overflow,sync}: make sure not to double-rotate.
+*
 * Revision 1.8  2004/05/17 21:06:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
