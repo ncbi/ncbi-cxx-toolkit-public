@@ -110,7 +110,7 @@ public:
      matrix: customized matrix for computing positive protein matchs.  Note the matrix must exactly consist of "ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62
      scope: scope to fetch your sequence
   */
-  CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo>& maskSeqloc, list <FeatureInfo>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope);  
+  CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope);  
 
   //Destructor
   ~CDisplaySeqalign();
@@ -162,8 +162,8 @@ private:
     CRange<TSignedSeqPos> alnRange;
   };
   
-  list <SeqlocInfo>& m_Seqloc;  //display character option for list of seqloc 
-  list <FeatureInfo>& m_QueryFeature;  //external feature such as phiblast pattern
+  list <SeqlocInfo*>& m_Seqloc;  //display character option for list of seqloc 
+  list <FeatureInfo*>& m_QueryFeature;  //external feature such as phiblast pattern
   CScope& m_Scope;
   CConstRef<CSeq_align_set> m_SeqalignSetRef;  //reference to seqalign set for displaying
  

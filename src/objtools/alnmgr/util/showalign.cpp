@@ -136,7 +136,7 @@ const int CDisplaySeqalign::m_Blosum62[m_PMatrixSize][m_PMatrixSize] = {
   };
 
 //Constructor
-CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo>& maskSeqloc, list <FeatureInfo>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
+CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
   m_AlignOption = 0;
   m_SeqLocChar = eX;
   m_SeqLocColor = eBlack;
@@ -551,28 +551,28 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 
   //conver to aln coordinates for mask seqloc
   list<alnSeqlocInfo*> alnLocList;
-  for (list<SeqlocInfo>::iterator iter=m_Seqloc.begin();  iter!=m_Seqloc.end(); iter++){
+  for (list<SeqlocInfo*>::iterator iter=m_Seqloc.begin();  iter!=m_Seqloc.end(); iter++){
     alnSeqlocInfo* alnloc = new alnSeqlocInfo;    
    
     for (int i=0; i<rowNum; i++){
-      if((*iter).seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
-        alnloc->alnRange.Set(m_AV->GetAlnPosFromSeqPos(i, (*iter).seqloc->GetInt().GetFrom()), m_AV->GetAlnPosFromSeqPos(i, (*iter).seqloc->GetInt().GetTo()));      
+      if((*iter)->seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
+        alnloc->alnRange.Set(m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetFrom()), m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetTo()));      
 	break;
       }
     }
-    alnloc->seqloc = &(*iter);   
+    alnloc->seqloc = *iter;   
     alnLocList.push_back(alnloc);
   }
   m_Alnloc = alnLocList;
   //Add external query feature info such as phi blast pattern
-  for (list<FeatureInfo>::iterator iter=m_QueryFeature.begin();  iter!=m_QueryFeature.end(); iter++){
+  for (list<FeatureInfo*>::iterator iter=m_QueryFeature.begin();  iter!=m_QueryFeature.end(); iter++){
     for(int i = 0; i < rowNum; i++){
-      if(iter->seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
-	int alnFrom = m_AV->GetAlnPosFromSeqPos(i, iter->seqloc->GetInt().GetFrom() < m_AV->GetSeqStart(i) ? m_AV->GetSeqStart(i):iter->seqloc->GetInt().GetFrom());
-	int alnTo = m_AV->GetAlnPosFromSeqPos(i, iter->seqloc->GetInt().GetTo() > m_AV->GetSeqStop(i) ? m_AV->GetSeqStop(i):iter->seqloc->GetInt().GetTo());
+      if((*iter)->seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
+	int alnFrom = m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetFrom() < m_AV->GetSeqStart(i) ? m_AV->GetSeqStart(i):(*iter)->seqloc->GetInt().GetFrom());
+	int alnTo = m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetTo() > m_AV->GetSeqStop(i) ? m_AV->GetSeqStop(i):(*iter)->seqloc->GetInt().GetTo());
 	
 	alnFeatureInfo* featInfo = new alnFeatureInfo;
-	setFeatureInfo(featInfo, *(iter->seqloc), alnFrom, alnTo, aln_stop, iter->featureChar, iter->featureId);    
+	setFeatureInfo(featInfo, *((*iter)->seqloc), alnFrom, alnTo, aln_stop, (*iter)->featureChar, (*iter)->featureId);    
 	bioseqFeature[i].push_back(featInfo);
       }
     }
