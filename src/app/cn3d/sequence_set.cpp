@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.6  2000/09/03 18:46:49  thiessen
 * working generalized sequence viewer
 *
@@ -54,6 +57,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
@@ -183,7 +187,14 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             pdbID = s->GetObject().GetPdb().GetMol().Get();
             if (s->GetObject().GetPdb().IsSetChain())
                 pdbChain = s->GetObject().GetPdb().GetChain();
+        } else if (s->GetObject().IsLocal() &&
+            s->GetObject().GetLocal().IsStr()) {
+            pdbID = s->GetObject().GetLocal().GetStr();
         }
+    }
+    if (gi == NOT_SET && pdbID.size() == 0) {
+        ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
+        return;
     }
     //TESTMSG("sequence gi " << gi << ", PDB " << pdbID << " chain " << pdbChain);
 

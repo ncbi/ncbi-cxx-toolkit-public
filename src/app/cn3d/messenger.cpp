@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.4  2000/09/14 14:55:34  thiessen
 * add row reordering; misc fixes
 *
@@ -194,6 +197,19 @@ bool Messenger::IsHighlighted(const Sequence *sequence, int seqIndex) const
     return false;
 }
 
+void Messenger::RedrawMoleculesOfSameSequence(const Sequence *sequence)
+{
+    SequenceSet::SequenceList::const_iterator s,
+        se = sequence->molecule->parentSet->sequenceSet->sequences.end();
+    for (s=sequence->molecule->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
+        if ((*s)->molecule && SAME_SEQUENCE(sequence, *s)) {
+            const StructureObject *object;
+            if (!(*s)->molecule->GetParentOfType(&object)) return;
+            PostRedrawMolecule(object, (*s)->molecule->id);
+        }
+    }
+}
+
 void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
@@ -215,11 +231,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
     for (int i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = true;
 
     PostRedrawSequenceViewers();
-    if (sequence->molecule) {
-        const StructureObject *object;
-        if (!sequence->molecule->GetParentOfType(&object)) return;
-        PostRedrawMolecule(object, sequence->molecule->id);
-    }
+    if (sequence->molecule) RedrawMoleculesOfSameSequence(sequence);
 }
 
 void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
@@ -246,11 +258,7 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
             sequenceHighlights.erase(sh);
 
         PostRedrawSequenceViewers();
-        if (sequence->molecule) {
-            const StructureObject *object;
-            if (!sequence->molecule->GetParentOfType(&object)) return;
-            PostRedrawMolecule(object, sequence->molecule->id);
-        }
+        if (sequence->molecule) RedrawMoleculesOfSameSequence(sequence);
     }
 }
 
@@ -291,10 +299,7 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
 
         PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
         for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
-            if (sh->first->molecule) {
-                if (!sh->first->molecule->GetParentOfType(&object)) continue;
-                PostRedrawMolecule(object, sh->first->molecule->id);
-            }
+            if (sh->first->molecule) RedrawMoleculesOfSameSequence(sh->first);
         }
 
         PerResidueHighlightStore::const_iterator rh, rhe = residueHighlights.end();

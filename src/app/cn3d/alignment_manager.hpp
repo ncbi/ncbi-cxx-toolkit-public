@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/15 19:24:33  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.7  2000/09/11 22:57:55  thiessen
 * working highlighting
 *
@@ -99,6 +102,13 @@ public:
 
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const;
+
+    // given a sequence, return row number in this alignment (or -1 if not found)
+    int GetRowForSequence(const Sequence *sequence) const;
+
+    // get a color for an aligned residue that's dependent on the entire alignment
+    // (e.g., for coloring by sequence conservation)
+    const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
 
     // will be used to control padding of unaligned blocks
     enum eUnalignedJustification {
@@ -253,6 +263,15 @@ public:
         else
             return false;
     }
+
+    // get a color for an aligned residue that's dependent on the entire alignment
+    // (e.g., for coloring by sequence conservation)
+    const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const
+    {
+        if (!currentMultipleAlignment) return NULL;
+        return currentMultipleAlignment->GetAlignmentColor(sequence, seqIndex);
+    }
+
 };
 
 END_SCOPE(Cn3D)

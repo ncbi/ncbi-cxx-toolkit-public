@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.14  2000/09/11 22:57:34  thiessen
 * working highlighting
 *
@@ -403,7 +406,12 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
                     IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
-                atomStyle->color.Set(1,0,0);   // red
+                const Vector * color = molecule->parentSet->alignmentManager->
+                    GetAlignmentColor(molecule->sequence, residue->id - 1);
+                if (color)
+                    atomStyle->color = *color;
+                else
+                    atomStyle->color.Set(1,0,0);
                 break;
             } // if not aligned, then use eObject coloring
         case StyleSettings::eMolecule:

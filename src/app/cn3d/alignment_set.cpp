@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.4  2000/09/03 18:46:48  thiessen
 * working generalized sequence viewer
 *
@@ -49,6 +52,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/sequence_set.hpp"
@@ -79,6 +83,11 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
             }
             return true;
         }
+        return false;
+    }
+    if (sid.IsLocal() && sid.GetLocal().IsStr()) {
+        if (sid.GetLocal().GetStr() == seq->pdbID)
+            return true;
         return false;
     }
     ERR_POST(Error << "VerifyMatch - can't match this type of Seq-id");
@@ -161,19 +170,20 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
         return;
     }
 
-    // then make an alignment from each Seq-align
+    // then make an alignment from each Seq-align; for any sequence that has structure, make
+    // sure that that sequence only appears once in the alignment
+    MasterSlaveAlignment::UsedSequenceList usedStructuredSequences;
     SeqAlignList::const_iterator s, se = seqaligns.end();
     for (s=seqaligns.begin(); s!=se; s++) {
         const MasterSlaveAlignment *alignment =
-            new MasterSlaveAlignment(this, master, **s);
+            new MasterSlaveAlignment(this, master, **s, &usedStructuredSequences);
         alignments.push_back(alignment);
     }
     TESTMSG("number of alignments: " << alignments.size());
 }
 
-MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
-    const Sequence *masterSequence,
-    const ncbi::objects::CSeq_align& seqAlign) :
+MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence, 
+    const ncbi::objects::CSeq_align& seqAlign, UsedSequenceList *usedStructuredSequences) :
     StructureBase(parent), master(masterSequence), slave(NULL)
 {
     // resize alignment vector
@@ -190,11 +200,17 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
         
     bool masterFirst = true;
     for (; s!=se; s++) {
-        if (*s == master) continue;
+
+        if (*s == master ||
+            ((*s)->molecule != NULL && usedStructuredSequences->find(*s) != usedStructuredSequences->end()))
+            continue;
+
         if (IsAMatch(*s, sids.back().GetObject())) {
+            if ((*s)->molecule != NULL) (*usedStructuredSequences)[*s] = true;
             break;
         } else if (IsAMatch(*s, sids.front().GetObject())) {
             masterFirst = false;
+            if ((*s)->molecule != NULL) (*usedStructuredSequences)[*s] = true;
             break;
         }
     }

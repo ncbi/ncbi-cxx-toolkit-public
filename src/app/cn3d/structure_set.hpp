@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/09/15 19:24:33  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.24  2000/09/11 22:57:56  thiessen
 * working highlighting
 *
@@ -186,6 +189,9 @@ public:
     typedef LIST_TYPE < unsigned int > DisplayLists;
     typedef std::vector < DisplayLists > FrameMap;
     FrameMap frameMap;
+
+    // for ensuring unique structure<->structure alignments for repeated structures
+    std::map < int, bool > usedFeatures;
 
 private:
     void MatchSequencesToMolecules(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.15  2000/09/11 22:57:32  thiessen
 * working highlighting
 *
@@ -82,6 +85,7 @@
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
@@ -120,11 +124,14 @@ Molecule::Molecule(StructureBase *parent,
         if (graph.IsSetSeq_id()) {
             if (graph.GetSeq_id().IsGi())
                 gi = graph.GetSeq_id().GetGi();
-            if (graph.GetSeq_id().IsPdb()) {
+            else if (graph.GetSeq_id().IsPdb()) {
                 pdbID = graph.GetSeq_id().GetPdb().GetMol().Get();
                 if (graph.GetSeq_id().GetPdb().IsSetChain())
                     pdbChain = graph.GetSeq_id().GetPdb().GetChain();
             }
+            else if (graph.GetSeq_id().IsLocal() &&
+                graph.GetSeq_id().GetLocal().IsStr())
+                pdbID = graph.GetSeq_id().GetLocal().GetStr();
         }
         if (gi == NOT_SET && pdbID.size() == 0) {
             ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");

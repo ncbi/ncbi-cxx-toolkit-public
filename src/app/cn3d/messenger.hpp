@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/15 19:24:33  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.2  2000/09/11 22:57:55  thiessen
 * working highlighting
 *
@@ -113,6 +116,8 @@ private:
 
     bool redrawAllStructures;
     bool redrawSequenceViewers;
+
+    void RedrawMoleculesOfSameSequence(const Sequence *sequence);
 
     // to store lists of highlighted stuff
     typedef std::pair < const Molecule *, int > ResidueIdentifier;

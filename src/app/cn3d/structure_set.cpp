@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.29  2000/09/11 22:57:33  thiessen
 * working highlighting
 *
@@ -131,6 +134,7 @@
 #include <objects/mmdb2/Model_type.hpp>
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/mmdb3/Biostruc_feature_id.hpp>
 #include <objects/mmdb3/Chem_graph_alignment.hpp>
 #include <objects/mmdb3/Transform.hpp>
 #include <objects/mmdb3/Move.hpp>
@@ -505,9 +509,18 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
         CBiostruc_feature_set::TFeatures::const_iterator f2, f2e=f1->GetObject().GetFeatures().end();
         for (f2=f1->GetObject().GetFeatures().begin(); f2!=f2e; f2++) {
         
+            // skip if already used
+            if (f2->GetObject().IsSetId()) {
+                if (parentSet->usedFeatures.find(f2->GetObject().GetId().Get()) != parentSet->usedFeatures.end())
+                    continue;
+                parentSet->usedFeatures[f2->GetObject().GetId().Get()] = true;
+                TESTMSG("using feature " << f2->GetObject().GetId().Get());
+            }
+
             // look for alignment feature
             if (f2->GetObject().IsSetType() &&
 				f2->GetObject().GetType() == CBiostruc_feature::eType_alignment &&
+                f2->GetObject().IsSetLocation() &&
                 f2->GetObject().GetLocation().IsAlignment()) {
                 const CChem_graph_alignment& graphAlign =
 					f2->GetObject().GetLocation().GetAlignment();

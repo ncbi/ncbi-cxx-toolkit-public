@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/15 19:24:33  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.3  2000/08/30 19:49:03  thiessen
 * working sequence window
 *
@@ -47,6 +50,7 @@
 
 #include <list>
 #include <vector>
+#include <map>
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -78,8 +82,9 @@ public:
 class MasterSlaveAlignment : public StructureBase
 {
 public:
+    typedef std::map < const Sequence *, bool > UsedSequenceList;
     MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
-        const ncbi::objects::CSeq_align& seqAlign);
+        const ncbi::objects::CSeq_align& seqAlign, UsedSequenceList *usedStructuredSequences);
 
     // pointers to the sequences in this pairwise alignment
     const Sequence *master, *slave;

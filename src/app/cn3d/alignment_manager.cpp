@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.9  2000/09/12 01:47:38  thiessen
 * fix minor but obscure bug
 *
@@ -395,23 +398,43 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
     return seqIndex;
 }
 
-bool BlockMultipleAlignment::IsAligned(const Sequence *sequence, int seqIndex) const
+int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
 {
-    // find first occurrence of this sequence in the alignment
+    // this only works for structured sequences, since non-structure sequences can
+    // be repeated any number of times in the alignment; assumes repeated structures 
+    // will each have a unique Sequence object
+    if (!sequence || !sequence->molecule) {
+        ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - Sequence must have associated structure");
+        return -1; 
+    }
+
     if (prevRow < 0 || sequence != sequences->at(prevRow)) {
         for (int row=0; row<NRows(); row++) if (sequences->at(row) == sequence) break;
         if (row == NRows()) {
-            ERR_POST(Error << "BlockMultipleAlignment::IsAligned() - can't find given Sequence");
-            return false;
+            ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
+            return -1;
         }
         (const_cast<BlockMultipleAlignment*>(this))->prevRow = row;
     }
+    return prevRow;
+}
 
-    const Block *block = GetBlock(prevRow, seqIndex);
+bool BlockMultipleAlignment::IsAligned(const Sequence *sequence, int seqIndex) const
+{
+    int row = GetRowForSequence(sequence);
+    if (row < 0) return false;
+
+    const Block *block = GetBlock(row, seqIndex);
     if (block && block->isAligned)
         return true;
     else
         return false;
+}
+
+const Vector * BlockMultipleAlignment::GetAlignmentColor(const Sequence *sequence, int seqIndex) const
+{
+    static const Vector red(1,0,0);
+    return &red;
 }
 
 const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
 * Revision 1.10  2000/09/14 14:55:34  thiessen
 * add row reordering; misc fixes
 *
@@ -443,7 +446,9 @@ void SequenceDisplay::MouseOver(int column, int row) const
                         if (sequence->molecule) {
                             wxString pdbID(sequence->molecule->pdbID.data(),
                             sequence->molecule->pdbID.size());
-                            if (sequence->molecule->name.size() > 0 && sequence->molecule->name[0] != ' ')
+                            if (sequence->molecule->name.size() > 0 && 
+                                sequence->molecule->pdbChain != Molecule::NOT_SET &&
+                                sequence->molecule->name[0] != ' ')
                                 message.Printf("_%c, loc %i", sequence->molecule->name[0], index);
                             else
                                 message.Printf(", loc %i", index);
