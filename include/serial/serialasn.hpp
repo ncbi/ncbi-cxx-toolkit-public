@@ -74,9 +74,23 @@ CTypeRef GetOctetStringTypeRef(const void* const* )
     return &COctetStringTypeInfoGetTypeInfo;
 }
 
+inline
+CTypeRef GetOctetStringTypeRef(void* const* )
+{
+    return &COctetStringTypeInfoGetTypeInfo;
+}
+
 template<typename T>
 inline
 CTypeRef GetSetTypeRef(const T* const* )
+{
+    const T* p = 0;
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
+}
+
+template<typename T>
+inline
+CTypeRef GetSetTypeRef(T* const* )
 {
     const T* p = 0;
     return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
@@ -92,6 +106,14 @@ CTypeRef GetSequenceTypeRef(const T* const* )
 
 template<typename T>
 inline
+CTypeRef GetSequenceTypeRef(T* const* )
+{
+    const T* p = 0;
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
+}
+
+template<typename T>
+inline
 CTypeRef GetSetOfTypeRef(const T* const* p)
 {
     //    const T* p = 0;
@@ -100,7 +122,23 @@ CTypeRef GetSetOfTypeRef(const T* const* p)
 
 template<typename T>
 inline
+CTypeRef GetSetOfTypeRef(T* const* p)
+{
+    //    const T* p = 0;
+    return CTypeRef(&CSetOfTypeInfoGetTypeInfo, GetSetTypeRef(p));
+}
+
+template<typename T>
+inline
 CTypeRef GetSequenceOfTypeRef(const T* const* p)
+{
+    //    const T* p = 0;
+    return CTypeRef(&CSequenceOfTypeInfoGetTypeInfo, GetSetTypeRef(p));
+}
+
+template<typename T>
+inline
+CTypeRef GetSequenceOfTypeRef(T* const* p)
 {
     //    const T* p = 0;
     return CTypeRef(&CSequenceOfTypeInfoGetTypeInfo, GetSetTypeRef(p));
