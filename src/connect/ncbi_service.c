@@ -388,8 +388,9 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 }
 
 
-char* SERV_Print(SERV_ITER iter)
+char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer)
 {
+    static const char referrer_header[] = "Referer: "/*standard misspelling*/;
     static const char client_revision[] = "Client-Revision: %hu.%hu\r\n";
     static const char accepted_types[] = "Accepted-Server-Types:";
     char buffer[128], *str;
@@ -406,6 +407,43 @@ char* SERV_Print(SERV_ITER iter)
         return 0;
     }
     if (iter) {
+        int/*bool*/ refer = referrer && iter->op && iter->op->name;
+        if (refer && strcasecmp(iter->op->name, "DISPD") == 0) {
+            const char* host = referrer->host;
+            const char* path = referrer->path;
+            const char* args = referrer->args;
+            const char* service = iter->service;
+            char port[8];
+            if (referrer->port && referrer->port != DEF_CONN_PORT)
+                sprintf(port, ":%hu", referrer->port);
+            else
+                port[0] = '\0';
+            if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
+                !BUF_Write(&buf, "http://", 7)                               ||
+                !BUF_Write(&buf, host, strlen(host))                         ||
+                !BUF_Write(&buf, port, strlen(port))                         ||
+                !BUF_Write(&buf, path, strlen(path))                         ||
+                !BUF_Write(&buf, "?service=", 9)                             ||
+                !BUF_Write(&buf, service, strlen(service))                   ||
+                (args[0] && (!BUF_Write(&buf, "&", 1)                        ||
+                             !BUF_Write(&buf, args, strlen(args))))          ||
+                !BUF_Write(&buf, "\r\n", 2)) {
+                BUF_Destroy(buf);
+                return 0;
+            }
+        } else if (refer && strcasecmp(iter->op->name, "LBSMD") == 0) {
+            const char* host = referrer->client_host;
+            const char* service = iter->service;
+            if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
+                !BUF_Write(&buf, "lbsm://", 7)                               ||
+                !BUF_Write(&buf, host, strlen(host))                         ||
+                !BUF_Write(&buf, "/dispatch?service=", 18)                   ||
+                !BUF_Write(&buf, service, strlen(service))                   ||
+                !BUF_Write(&buf, "\r\n", 2)) {
+                BUF_Destroy(buf);
+                return 0;
+            }
+        }
         /* Form accepted server types */
         buflen = sizeof(accepted_types) - 1;
         memcpy(buffer, accepted_types, buflen);
@@ -466,6 +504,15 @@ char* SERV_Print(SERV_ITER iter)
 }
 
 
+#ifdef SERV_Print
+#  undef SERV_Print
+#endif
+char* SERV_Print(SERV_ITER iter)
+{
+    return SERV_PrintEx(iter, 0);
+}
+
+
 /*
  * Note parameters' ranges here:
  * 0.0 <= pref <= 1.0
@@ -490,6 +537,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2004/07/01 16:28:19  lavr
+ * +SERV_PrintEx(): "Referer:" tag impelemented
+ *
  * Revision 6.53  2004/06/14 16:37:09  lavr
  * Allow no more than one firewall server info in the skip list
  *
