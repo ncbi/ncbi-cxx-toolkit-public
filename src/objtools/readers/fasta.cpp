@@ -322,6 +322,20 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                            int* counter, vector<CConstRef<CSeq_loc> >* lcv)
 {
+    if ( !in ) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "ReadFasta: Input stream no longer valid",
+                    in.tellg());
+    } else {
+        CT_INT_TYPE c = in.peek();
+        if ( !strchr(">#!\n\r", CT_TO_CHAR_TYPE(c)) ) {
+            NCBI_THROW2
+                (CObjReaderParseException, eFormat,
+                 "ReadFasta: Input doesn't start with a defline or comment",
+                 in.tellg());
+        }
+    }
+
     CRef<CSeq_entry>       entry(new CSeq_entry);
     CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
     CRef<CBioseq>          seq(0); // current Bioseq
@@ -344,6 +358,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
         NcbiGetlineEOL(in, line);
         if (in.eof()  &&  line.empty()) {
             break;
+        } else if (line.empty()) {
+            continue;
         }
         if (line[0] == '>') {
             // new sequence
@@ -395,7 +411,11 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             }
         } else if (line[0] == '#'  ||  line[0] == '!') {
             continue; // comment
-        } else if (!(flags & fReadFasta_NoSeqData)) {
+        } else if ( !seq ) {
+            NCBI_THROW2
+                (CObjReaderParseException, eFormat,
+                 "ReadFasta: No defline preceding data", in.tellg());
+        } else if ( !(flags & fReadFasta_NoSeqData) ) {
             // These don't change, but the calls may be relatively expensive,
             // esp. with ref-counted implementations.
             SIZE_TYPE   line_size = line.size();
@@ -524,6 +544,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/12/05 03:00:36  ucko
+* Validate input better.
+*
 * Revision 1.9  2003/10/03 15:09:18  ucko
 * Tweak sequence string allocation to avoid O(n^2) performance from
 * linear resizing.
