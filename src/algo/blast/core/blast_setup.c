@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.25  2003/06/06 17:52:17  dondosha
+* Reordered arguments in BLAST_MainSetUp
+*
 * Revision 1.24  2003/06/06 17:12:09  dondosha
 * Use BLAST_GetQueryLength function to calculate length of one query within a concatenated set
 *
@@ -520,7 +523,7 @@ Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp,
  * @param buffer the sequence to be masked (will be modified). [out]
  * @param max_length the sequence to be masked (will be modified). [in]
  * @param is_na nucleotide if TRUE [in]
- * @param mask_slp the SeqLoc to use for masking [in] 
+ * @param mask_loc the SeqLoc to use for masking [in] 
  * @param reverse minus strand if TRUE [in]
  * @param offset how far along sequence is 1st residuse in buffer [in]
  *
@@ -938,8 +941,8 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
         const LookupTableOptionsPtr lookup_options,	
         const BlastHitSavingOptionsPtr hit_options,
         BLAST_SequenceBlkPtr query_blk,
-        BlastSeqLocPtr *lookup_segments,
-        BlastQueryInfoPtr query_info, BlastMaskPtr *filter_out,
+        BlastQueryInfoPtr query_info, BlastSeqLocPtr *lookup_segments,
+        BlastMaskPtr *filter_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message)
 {
    BLAST_ScoreBlkPtr sbp;
