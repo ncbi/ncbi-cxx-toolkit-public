@@ -178,7 +178,8 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
         case SQL_NULL_DATA: 
             return 0;
         default:
-            m_Reporter.ReportErrors();
+			if(f < 0)  
+				m_Reporter.ReportErrors();
             return (int)f;
         }
     case SQL_SUCCESS:
@@ -459,7 +460,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, 2048, &f)) {
                 case SQL_SUCCESS_WITH_INFO:
                     if(f == SQL_NO_TOTAL) f= 2047;
-                    else m_Reporter.ReportErrors();
+                    else if(f < 0) m_Reporter.ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
                         val->Append(buffer, f);
@@ -619,7 +620,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, 2048, &f)) {
             case SQL_SUCCESS_WITH_INFO:
                 if(f == SQL_NO_TOTAL) f= 2047;
-                else m_Reporter.ReportErrors();
+                else if(f < 0) m_Reporter.ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
                     val->Append(buffer, f);
@@ -644,7 +645,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, 2048, &f)) {
             case SQL_SUCCESS_WITH_INFO:
                 if(f == SQL_NO_TOTAL) f= 2048;
-                else m_Reporter.ReportErrors();
+                else if(f < 0) m_Reporter.ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
                     val->Append(buffer, f);
@@ -703,8 +704,9 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
             if(is_null) *is_null= true;
             return 0;
         default:
+			if(f >= 0) return (size_t)f;
             m_Reporter.ReportErrors();
-            return (f >= 0)? ((size_t)f) : 0;
+            return 0;
         }
     case SQL_SUCCESS:
         ++m_CurrItem;
@@ -986,8 +988,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2002/06/18 22:06:24  soussov
- * initial commit
+ * Revision 1.2  2002/07/05 15:15:10  soussov
+ * fixes bug in ReadItem
  *
  *
  * ===========================================================================
