@@ -37,6 +37,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
@@ -50,6 +51,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/general/Name_std.hpp>
+#include <objects/biblio/Auth_list.hpp>
 
 // Object manager includes
 #include <objmgr/scope.hpp>
@@ -65,6 +68,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
+
+#include <serial/iterator.hpp>
 
 #ifdef HAVE_BERKELEY_DB
 # include <bdb/bdb_blobcache.hpp>
@@ -96,6 +101,8 @@ public:
 
 void CDemoApp::Init(void)
 {
+    CONNECT_Init(&GetConfig());
+
     // Prepare command line descriptions
     //
 
@@ -149,6 +156,9 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
     arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
+    arg_desc->AddOptionalKey("desc_type", "DescType",
+                             "look only descriptors of specified type",
+                             CArgDescriptions::eString);
     arg_desc->AddFlag("print_descr", "print all found descriptors");
     arg_desc->AddFlag("print_cds", "print CDS");
     arg_desc->AddFlag("print_features", "print all found features");
@@ -156,6 +166,8 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("by_product", "Search features by their product");
     arg_desc->AddFlag("count_types",
                       "print counts of different feature types");
+    arg_desc->AddFlag("count_subtypes",
+                      "print counts of different feature subtypes");
     arg_desc->AddOptionalKey("range_from", "RangeFrom",
                              "features starting at this point on the sequence",
                              CArgDescriptions::eInteger);
@@ -191,12 +203,13 @@ void CDemoApp::Init(void)
                              "exclude features from named Seq-annots"
                              "(comma separated list)",
                              CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("feat_type", "FeatType",
-                            "Type of features to select",
-                            CArgDescriptions::eInteger, "-1");
+    arg_desc->AddOptionalKey("feat_type", "FeatType",
+                             "Type of features to select",
+                             CArgDescriptions::eString);
     arg_desc->AddDefaultKey("feat_subtype", "FeatSubType",
                             "Subtype of features to select",
-                            CArgDescriptions::eInteger, "-1");
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(CSeqFeatData::eSubtype_any));
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
 
@@ -221,6 +234,23 @@ void CDemoApp::Init(void)
 
 
 extern CAtomicCounter newCObjects;
+
+
+template<class C>
+typename C::E_Choice GetVariant(const CArgValue& value)
+{
+    typedef typename C::E_Choice E_Choice;
+    if ( !value ) {
+        return C::e_not_set;
+    }
+    for ( int e = C::e_not_set; e < C::e_MaxChoice; ++e ) {
+        if ( C::SelectionName(E_Choice(e)) == value.AsString() ) {
+            return E_Choice(e);
+        }
+    }
+    return E_Choice(NStr::StringToInt(value.AsString()));
+}
+
 
 int CDemoApp::Run(void)
 {
@@ -276,8 +306,11 @@ int CDemoApp::Run(void)
     bool only_features = args["only_features"];
     bool by_product = args["by_product"];
     bool count_types = args["count_types"];
+    bool count_subtypes = args["count_subtypes"];
     bool print_tse = args["print_tse"];
     bool print_descr = args["print_descr"];
+    CSeqdesc::E_Choice desc_type =
+        GetVariant<CSeqdesc>(args["desc_type"]);
     bool print_cds = args["print_cds"];
     bool print_features = args["print_features"];
     bool get_mapped_location = args["get_mapped_location"];
@@ -294,14 +327,18 @@ int CDemoApp::Run(void)
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
     bool adaptive = args["adaptive"];
-    int feat_type = args["feat_type"].AsInteger();
-    int feat_subtype = args["feat_subtype"].AsInteger();
+    CSeqFeatData::E_Choice feat_type =
+        GetVariant<CSeqFeatData>(args["feat_type"]);
+    CSeqFeatData::ESubtype feat_subtype =
+        CSeqFeatData::ESubtype(args["feat_subtype"].AsInteger());
     bool nosnp = args["nosnp"];
     bool include_unnamed = args["unnamed"];
     bool include_allnamed = args["allnamed"];
     bool whole_tse = args["whole_tse"];
     bool whole_sequence = args["whole_sequence"];
     bool used_memory_check = args["used_memory_check"];
+    bool get_synonyms = false;
+    bool get_ids = true;
     set<string> include_named;
     if ( args["named"] ) {
         string names = args["named"].AsString();
@@ -324,7 +361,7 @@ int CDemoApp::Run(void)
     }
     bool scan_seq_map = args["seq_map"];
 
-    vector<int> types_counts;
+    vector<int> types_counts, subtypes_counts;
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
@@ -442,6 +479,13 @@ int CDemoApp::Run(void)
     }
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
+    if ( get_ids ) {
+        NcbiCout << "Ids:" << NcbiEndl;
+        vector<CSeq_id_Handle> ids = scope.GetIds(idh);
+        ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
+            NcbiCout << "    " << it->AsString() << NcbiEndl;
+        }
+    }
     {{
         CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
         if ( !blob_id ) {
@@ -459,19 +503,20 @@ int CDemoApp::Run(void)
     if ( !handle ) {
         ERR_POST(Fatal << "Bioseq not found");
     }
-    {{
+    if ( get_synonyms ) {
         NcbiCout << "Synonyms:" << NcbiEndl;
         CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
         ITERATE ( CSynonymsSet, it, *syns ) {
             CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(it);
             NcbiCout << "    " << idh.AsString() << NcbiEndl;
         }
-    }}
+    }
 
     if ( print_tse ) {
+        CConstRef<CSeq_entry> entry =
+            handle.GetTopLevelEntry().GetCompleteSeq_entry();
         NcbiCout << "-------------------- TSE --------------------\n";
-        NcbiCout << MSerial_AsnText <<
-            *handle.GetTopLevelEntry().GetCompleteSeq_entry() << '\n';
+        NcbiCout << MSerial_AsnText << *entry << '\n';
         NcbiCout << "-------------------- END --------------------\n";
     }
 
@@ -506,34 +551,6 @@ int CDemoApp::Run(void)
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
             SleepSec(pause);
-        }
-
-        if ( scan_seq_map ) {
-            TSeqRange range(0, handle.GetBioseqLength()-1);
-            for (size_t levels = 0;  levels < 4;  ++levels) {
-                CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
-                CSeqMap::const_iterator seg =
-                    seq_map->ResolvedRangeIterator(&handle.GetScope(),
-                                                   range.GetFrom(),
-                                                   range.GetLength(),
-                                                   eNa_strand_plus, levels);
-                
-                for ( ;  seg;  ++seg ) {
-                    switch (seg.GetType()) {
-                    case CSeqMap::eSeqRef:
-                        break;
-                    case CSeqMap::eSeqData:
-                    case CSeqMap::eSeqGap:
-                        break;
-                    case CSeqMap::eSeqEnd:
-                        _ASSERT("Unexpected END segment" && 0);
-                        break;
-                    default:
-                        _ASSERT("Unexpected segment type" && 0);
-                        break;
-                    }
-                }
-            }
         }
 
         string sout;
@@ -598,7 +615,7 @@ int CDemoApp::Run(void)
             // from the bioseq and going the seq-entries tree up to the
             // top-level seq-entry.
             count = 0;
-            for (CSeqdesc_CI desc_it(handle); desc_it; ++desc_it) {
+            for (CSeqdesc_CI desc_it(handle, desc_type); desc_it; ++desc_it) {
                 if ( print_descr ) {
                     NcbiCout << "\n" << MSerial_AsnText << *desc_it;
                 }
@@ -684,23 +701,29 @@ int CDemoApp::Run(void)
             base_sel.ExcludeNamedAnnots(*it);
         }
         string sel_msg = "any";
-        if ( feat_type >= 0 ) {
-            base_sel.SetFeatType(SAnnotSelector::TFeatType(feat_type));
+        if ( feat_type != CSeqFeatData::e_not_set ) {
+            base_sel.SetFeatType(feat_type);
             sel_msg = "req";
         }
-        if ( feat_subtype >= 0 ) {
-            base_sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
+        if ( feat_subtype != CSeqFeatData::eSubtype_any ) {
+            base_sel.SetFeatSubtype(feat_subtype);
             sel_msg = "req";
         }
         base_sel.SetByProduct(by_product);
 
         {{
             if ( count_types ) {
-                types_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
+                types_counts.assign(CSeqFeatData::e_MaxChoice, 0);
+            }
+            if ( count_subtypes ) {
+                subtypes_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
             }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
-                    ++types_counts[it->GetData().GetSubtype()];
+                    ++types_counts[it->GetData().Which()];
+                }
+                if ( count_subtypes ) {
+                    ++subtypes_counts[it->GetData().GetSubtype()];
                 }
                 ++count;
                 if ( get_mapped_location )
@@ -741,9 +764,26 @@ int CDemoApp::Run(void)
             if ( count_types ) {
                 ITERATE ( vector<int>, it, types_counts ) {
                     if ( *it ) {
-                        int subtype = it-types_counts.begin();
-                        NcbiCout << "  subtype " << subtype <<
-                            ": " << *it << NcbiEndl;
+                        CSeqFeatData::E_Choice type =
+                            CSeqFeatData::E_Choice(it-types_counts.begin());
+                        NcbiCout << "  type " <<
+                            setw(2) << type <<
+                            setw(10) << CSeqFeatData::SelectionName(type) <<
+                            " : " << *it << NcbiEndl;
+                    }
+                }
+            }
+            if ( count_subtypes ) {
+                ITERATE ( vector<int>, it, subtypes_counts ) {
+                    if ( *it ) {
+                        CSeqFeatData::ESubtype subtype =
+                            CSeqFeatData::ESubtype(it-subtypes_counts.begin());
+                        CSeqFeatData::E_Choice type =
+                            CSeqFeatData::GetTypeFromSubtype(subtype);
+                        NcbiCout << "  subtype " <<
+                            setw(3) << subtype <<
+                            setw(10) << CSeqFeatData::SelectionName(type) <<
+                            " : " << *it << NcbiEndl;
                     }
                 }
             }
@@ -851,6 +891,45 @@ int CDemoApp::Run(void)
             }
         }
 
+        if ( scan_seq_map ) {
+            size_t name_cnt = 0;
+            TSeqRange range(0, handle.GetBioseqLength()-1);
+            for (size_t levels = 0;  levels < 4;  ++levels) {
+                CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+                CSeqMap::const_iterator seg =
+                    seq_map->ResolvedRangeIterator(&scope,
+                                                   range.GetFrom(),
+                                                   range.GetLength(),
+                                                   eNa_strand_plus, levels);
+                
+                for ( ;  seg;  ++seg ) {
+                    switch (seg.GetType()) {
+                    case CSeqMap::eSeqRef:
+                    {{
+                        CBioseq_Handle bh =
+                            scope.GetBioseqHandle(seg.GetRefSeqid());
+                        CConstRef<CBioseq> seq = bh.GetCompleteBioseq();
+                        for( CTypeConstIterator<CName_std> i(ConstBegin(*seq));
+                             i; ++i ) {
+                            ++name_cnt;
+                        }
+                        break;
+                    }}
+                    case CSeqMap::eSeqData:
+                    case CSeqMap::eSeqGap:
+                        break;
+                    case CSeqMap::eSeqEnd:
+                        _ASSERT("Unexpected END segment" && 0);
+                        break;
+                    default:
+                        _ASSERT("Unexpected segment type" && 0);
+                        break;
+                    }
+                }
+            }
+            NcbiCout << " Name-std count: " << name_cnt << NcbiEndl;
+        }
+
         if ( used_memory_check ) {
             if ( args["reset_scope"] ) {
                 scope.ResetHistory();
@@ -885,6 +964,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2004/10/07 14:09:48  vasilche
+* More options to control demo application.
+*
 * Revision 1.85  2004/10/05 21:05:35  vasilche
 * Added option -by_product.
 *
