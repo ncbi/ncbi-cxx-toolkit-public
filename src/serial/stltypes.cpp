@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/15 19:35:31  vasilche
+* Implemented map<K, V>.
+* Changed ASN.1 text formatting.
+*
 * Revision 1.5  1999/07/15 16:54:50  vasilche
 * Implemented vector<X> & vector<char> as special case.
 *
@@ -95,6 +99,10 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
         CObjectIStream::Member m(in);
         GetValueTypeInfo()->ReadData(in, value);
     }
+}
+
+CStlClassInfoCharVector::CStlClassInfoCharVector(void)
+{
 }
 
 size_t CStlClassInfoCharVector::GetSize(void) const
