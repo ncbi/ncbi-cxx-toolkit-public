@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/11/13 00:18:08  vakatov
+* Added a test for the "unexpected" exception.
+* Turned off "hardware" exception tests for UNIX.
+*
 * Revision 1.7  1998/11/10 01:17:38  vakatov
 * Cleaned, adopted to the standard NCBI C++ framework and incorporated
 * the "hardware exceptions" code and tests(originally written by
@@ -105,32 +109,33 @@ static void TE_none(void) THROWS_NONE {
     return;
 }
 
-
 static void TE_logic(void) THROWS((runtime_error,logic_error)) {
     throw logic_error("TE_logic::logic_error");
 }
 
+static void TE_unexpected(void) THROWS((logic_error)) {
+    throw runtime_error("TE_unexpected::runtime_error");
+}
 
-static void TestException(void)
+
+static void TestException_Soft(void)
 {
-    SetDiagStream(&NcbiCout);
-
     try { TE_runtime(); }
     catch (runtime_error& e) {
-        NcbiCerr << "CATCH TE_runtime::runtime_error&: " << e.what()<<NcbiEndl;
+        NcbiCerr << "CATCH TE_runtime::runtime_error : " << e.what()<<NcbiEndl;
     }
 
     try { TE_runtime(); }
     catch (exception& e) {
-        NcbiCerr << "CATCH TE_runtime::exception&: " << e.what() << NcbiEndl;
+        NcbiCerr << "CATCH TE_runtime::exception " << e.what() << NcbiEndl;
     }
 
     try { TE_runtime(); }
-    STD_CATCH ("STD_CATCH" << ' ' << "TE_runtime");
+    STD_CATCH ("STD_CATCH" << ' ' << "TE_runtime ");
 
     try { TE_runtime(); }
     catch (logic_error& e) {
-        NcbiCerr << "CATCH TE_runtime::logic_error&" << e.what() << NcbiEndl;
+        NcbiCerr << "CATCH TE_runtime::logic_error " << e.what() << NcbiEndl;
         _TROUBLE; }
     STD_CATCH_ALL ("STD_CATCH_ALL" << " " << "TE_runtime");
 
@@ -138,14 +143,25 @@ static void TestException(void)
 
     try { TE_logic(); }
     catch (logic_error& e) {
-        NcbiCerr << "CATCH TE_logic" << e.what() << NcbiEndl; }
+        NcbiCerr << "CATCH TE_logic " << e.what() << NcbiEndl; }
     STD_CATCH_ALL ("try { TE_logic(); }  SOMETHING IS WRONG!");
 
+    try { // Unexpected
+        TE_unexpected();
+    }
+    catch (logic_error& e) {
+        NcbiCerr << "CATCH logic " << e.what() << NcbiEndl; }
+    catch (runtime_error& e) {
+        NcbiCerr << "CATCH runtime " << e.what() << NcbiEndl; }
+    catch (bad_exception& e) {
+        NcbiCerr << "CATCH bad " << NcbiEndl; }
+    STD_CATCH_ALL ("try { TE_unexpected(); }");
+}
 
-    // CNcbiOSException
 
-    CNcbiOSException::Initialize();  // Initialize
-
+static void TestException_Hard(void)
+{
+#if defined(NCBI_OS_MSWIN)
     try { // Memory Access Violation
         int* i_ptr = 0;
         int i_val = *i_ptr;
@@ -171,6 +187,16 @@ static void TestException(void)
     } catch (exception& e) {
         NcbiCerr << e.what() << NcbiEndl;
     }
+#endif  /* NCBI_OS_MSWIN */
+}
+
+static void TestException(void)
+{
+    SetDiagStream(&NcbiCout);
+    CNcbiOSException::Initialize();
+
+    TestException_Soft();
+    TestException_Hard();
 }
 
 
