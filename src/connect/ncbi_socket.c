@@ -650,13 +650,15 @@ static void s_DoLog
             assert(sa == 0);
             *tail = 0;
         }
-        sprintf(head, "%s%s at offset %lu%s%s", s_ID(sock, _id),
+        sprintf(head, "%s%s%s at offset %lu%s%s", s_ID(sock, _id),
                 event == eIO_Read
                 ? (sock->type != eSOCK_Datagram  &&  !size
                    ? (data ? "EOF hit" : SOCK_STRERROR(SOCK_ERRNO))
                    : "Read")
                 : (sock->type != eSOCK_Datagram  &&  !size
                    ? SOCK_STRERROR(SOCK_ERRNO) : "Written"),
+                sock->type == eSOCK_Datagram  ||  size ? "" :
+                (event == eIO_Read ? " while reading" : " while writing"),
                 (unsigned long) (event == eIO_Read
                                  ? sock->n_read : sock->n_written),
                 sa ? (event == eIO_Read ? " from " : " to ") : "", tail);
@@ -952,9 +954,9 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 
 
 /* Select on the socket I/O (multiple sockets).
- * "Event" field is not considered for entries, which "sock" field is 0,
+ * "Event" field is not considered for entries, whose "sock" field is 0,
  * "revent" for those entries is always "eIO_Open". For all other entries
- * only those sockets will be considered, which "revent" field does not
+ * only those sockets will be considered, whose "revent" field does not
  * contain "eIO_Open" value. If at least one non-"eIO_Open" status found
  * in "revent", the call terminates with "eIO_Success" status (after,
  * however checking all other entries for validity). No additional checks
@@ -1643,10 +1645,7 @@ static int s_Recv(SOCK        sock,
             if (x_read <= 0) {
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
-                if (x_read == 0)
-                    sock->r_status = eIO_Success;
-                else
-                    sock->r_status = sock->w_status = eIO_Closed;
+                sock->r_status = x_read == 0 ? eIO_Success : eIO_Closed;
                 break;
             }
         } else {
@@ -1882,9 +1881,7 @@ static EIO_Status s_Send(SOCK        sock,
                                     " Failed send()", s_ID(sock, _id)));
                 break;
             }
-            sock->r_status = sock->w_status = eIO_Closed;
-            if ( sock->eof )
-                sock->eof = 0;
+            sock->w_status = eIO_Closed;
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
                 s_DoLog(sock, eIO_Write, 0, 0, 0);
             break;
@@ -3821,6 +3818,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.118  2003/07/17 18:28:50  lavr
+ * On I/O errors in connected socket: modify only direction affected, not both
+ *
  * Revision 6.117  2003/07/15 18:09:07  lavr
  * Fix MS-Win compilation
  *
