@@ -95,14 +95,14 @@ Int4 CSeqDBRawFile::x_GetOpenedLength(void)
 {
     // Should this cache the length?
         
-    size_t p = m_Stream.tellg();
+    CT_POS_TYPE p = m_Stream.tellg();
         
     m_Stream.seekg(0, ios::end);
-    size_t retval = m_Stream.tellg();
+    CT_POS_TYPE retval = m_Stream.tellg();
         
     m_Stream.seekg(p);
         
-    return retval;
+    return retval - CT_POS_TYPE(0);
 }
 
 const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end)
