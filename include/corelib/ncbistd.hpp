@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/10/07 23:05:18  vakatov
+* Do not "using namespace std;" here. -- Instead, provide NCBI_USING_STL
+* macro to be included(only when neceassary) in the user modules
+*
 * Revision 1.2  1998/10/05 21:04:34  vakatov
 * Introduced #NCBI_SGI_STL_PORT and #NCBI_NO_NAMESPACES flags
 *
@@ -63,11 +67,13 @@
 #endif
 
 
-// Namespace or quasi-namespace support
+// Using the STL namespace
+// Provide at least quasi-namespace(based on "struct") functionality
 #if defined(NCBI_NO_NAMESPACES)
-#define namespace class
+#define namespace struct
+#define NCBI_USING_STL
 #else
-using namespace std;
+#define NCBI_USING_STL using namespace std
 #endif
 
 
