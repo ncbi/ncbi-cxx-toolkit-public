@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/04/30 15:45:38  gouriano
+* added catching all exceptions when flashing stream in ThrowError
+*
 * Revision 1.79  2003/04/30 15:38:43  gouriano
 * added Flush stream when throwing an exception
 *
@@ -562,7 +565,10 @@ void CObjectOStream::ThrowError1(const char* file, int line,
 {
     CSerialException::EErrCode err;
     SetFailFlags(fail, message.c_str());
-    Flush();
+    try {
+        Flush();
+    } catch(...) {
+    }
     switch(fail)
     {
     case fNoError:
