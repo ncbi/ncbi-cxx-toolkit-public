@@ -588,14 +588,13 @@ Int2 BlastHitSavingOptionsNew(const Char *program,
 
 /** Allocate memory for BlastHitSavingOptions.
  * @param options The options [in] [out]
- * @param program Program name (blastn, blastp, etc.) [in]
  * @param is_gapped Specifies that search is gapped [in]
  * @param evalue The expected value threshold [in]
  * @param hitlist_size How many database sequences to save per query? [in]
 */
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options, 
-   const Char *program, Boolean is_gapped, FloatHi evalue, Int4 hitlist_size);
+   Boolean is_gapped, FloatHi evalue, Int4 hitlist_size);
 
 /** Deallocate memory for BlastHitSavingOptionsPtr. */
 BlastHitSavingParametersPtr

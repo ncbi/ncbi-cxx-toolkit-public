@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.6  2003/05/01 16:57:02  dondosha
+* Fixes for strict compiler warnings
+*
 * Revision 1.5  2003/05/01 15:31:54  dondosha
 * Reorganized the setup of BLAST search
 *
@@ -194,9 +197,7 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
  * @param program blastn, blastp, blastx, etc. [in]
  * @param qsup_options options for query setup. [in]
  * @param scoring_options options for scoring. [in]
- * @param eff_len_options  used to calc. eff len. [in]
  * @param lookup_options options for lookup table. [in]
- * @param word_options options for initial word finding. [in]
  * @param hit_options options for saving hits. [in]
  * @param frame frame info. (blastx/tblastx) [in]
  * @param query_blk_ptr BLAST_SequenceBlkPtr for the query. [out]
@@ -210,9 +211,7 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
 Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
-        const BlastEffectiveLengthsOptionsPtr eff_len_options,
         const LookupTableOptionsPtr lookup_options,	
-        const BlastInitialWordOptionsPtr word_options,
         const BlastHitSavingOptionsPtr hit_options,
         const Int4Ptr frame, BLAST_SequenceBlkPtr *query_blk_ptr,
         ValNodePtr PNTR lookup_segments,
