@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/10/12 19:49:08  ucko
+* Whoops, use break rather than BREAK for STL iterators.
+*
 * Revision 1.6  2001/10/12 19:32:58  ucko
 * move BREAK to a central location; move CBioseq::GetTitle to object manager
 *
@@ -534,11 +537,11 @@ bool CGenbankWriter::WriteID(const CBioseqHandle& handle)
         return true;
     }
 
-    iterate(CBioseq::TId, it, m_Scope.GetBioseq(handle).GetId()) {
+    iterate (CBioseq::TId, it, m_Scope.GetBioseq(handle).GetId()) {
         if ((*it)->IsGi()) {
             m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << (*it)->GetGi()
                      << NcbiEndl;
-            BREAK(it);
+            break;
         }
     }
     return true;
