@@ -669,7 +669,7 @@ CBioseq_EditHandle::MoveToSeq(const CSeq_entry_EditHandle& entry) const
 
 void CBioseq_EditHandle::Remove(void) const
 {
-    GetParentEntry().Remove();
+    m_Scope->RemoveBioseq(*this);
 }
 
 
@@ -753,6 +753,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/03/31 19:54:08  vasilche
+* Fixed removal of bioseqs and bioseq-sets.
+*
 * Revision 1.59  2004/03/31 19:23:13  vasilche
 * Fixed scope in CBioseq_Handle::GetEditHandle().
 *

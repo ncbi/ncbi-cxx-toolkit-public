@@ -586,6 +586,18 @@ void CScope_Impl::RemoveBioseq(const CBioseq_EditHandle& seq)
 }
 
 
+void CScope_Impl::RemoveBioseq_set(const CBioseq_set_EditHandle& seqset)
+{
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    CBioseq_set_Info& info = seqset.x_GetInfo();
+    x_ClearAnnotCache();
+    x_ClearCacheOnRemoveData(info);
+
+    info.GetParentSeq_entry_Info().Reset();
+}
+
+
 CScope_Impl::TSeq_idMapValue&
 CScope_Impl::x_GetSeq_id_Info(const CSeq_id_Handle& id)
 {
@@ -769,8 +781,7 @@ CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
                    "CScope::GetEditHandle: detach is not implemented");
     }
     
-    return CSeq_entry_EditHandle(*m_HeapScope,
-                                 const_cast<CSeq_entry_Info&>(h.x_GetInfo()));
+    return CSeq_entry_EditHandle(h);
 }
 
 
@@ -786,8 +797,7 @@ CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
                    "CScope::GetEditHandle: detach is not implemented");
     }
     
-    return CSeq_annot_EditHandle(*m_HeapScope,
-                                 const_cast<CSeq_annot_Info&>(h.x_GetInfo()));
+    return CSeq_annot_EditHandle(h);
 }
 
 
@@ -803,8 +813,7 @@ CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
                    "CScope::GetEditHandle: detach is not implemented");
     }
     
-    return CBioseq_set_EditHandle(*m_HeapScope,
-                                  const_cast<CBioseq_set_Info&>(h.x_GetInfo()));
+    return CBioseq_set_EditHandle(h);
 }
 
 
@@ -1311,6 +1320,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/31 19:54:08  vasilche
+* Fixed removal of bioseqs and bioseq-sets.
+*
 * Revision 1.8  2004/03/31 19:23:13  vasilche
 * Fixed scope in CBioseq_Handle::GetEditHandle().
 *

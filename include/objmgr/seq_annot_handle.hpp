@@ -103,13 +103,22 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_EditHandle : public CSeq_annot_Handle
 {
 public:
     CSeq_annot_EditHandle(void);
-    CSeq_annot_EditHandle(CScope& scope, CSeq_annot_Info& info);
 
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     // remove current annot
     void Remove(void) const;
 
+protected:
+    friend class CScope_Impl;
+    friend class CBioseq_EditHandle;
+    friend class CBioseq_set_EditHandle;
+    friend class CSeq_entry_EditHandle;
+
+    CSeq_annot_EditHandle(const CSeq_annot_Handle& h);
+    CSeq_annot_EditHandle(CScope& scope, CSeq_annot_Info& info);
+
+public: // non-public section
     CSeq_annot_Info& x_GetInfo(void) const;
 };
 
@@ -192,6 +201,13 @@ CSeq_annot_EditHandle::CSeq_annot_EditHandle(void)
 
 
 inline
+CSeq_annot_EditHandle::CSeq_annot_EditHandle(const CSeq_annot_Handle& h)
+    : CSeq_annot_Handle(h)
+{
+}
+
+
+inline
 CSeq_annot_EditHandle::CSeq_annot_EditHandle(CScope& scope,
                                              CSeq_annot_Info& info)
     : CSeq_annot_Handle(scope, info)
@@ -205,6 +221,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/31 19:54:07  vasilche
+* Fixed removal of bioseqs and bioseq-sets.
+*
 * Revision 1.6  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -205,6 +205,7 @@ protected:
     friend class CBioseq_EditHandle;
     friend class CSeq_entry_EditHandle;
 
+    CBioseq_set_EditHandle(const CBioseq_set_Handle& h);
     CBioseq_set_EditHandle(CScope& scope, CBioseq_set_Info& info);
 
 public: // non-public section
@@ -295,6 +296,13 @@ CBioseq_set_EditHandle::CBioseq_set_EditHandle(void)
 
 
 inline
+CBioseq_set_EditHandle::CBioseq_set_EditHandle(const CBioseq_set_Handle& h)
+    : CBioseq_set_Handle(h)
+{
+}
+
+
+inline
 CBioseq_set_EditHandle::CBioseq_set_EditHandle(CScope& scope,
                                                CBioseq_set_Info& info)
     : CBioseq_set_Handle(scope, info)
@@ -315,6 +323,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/31 19:54:07  vasilche
+* Fixed removal of bioseqs and bioseq-sets.
+*
 * Revision 1.4  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

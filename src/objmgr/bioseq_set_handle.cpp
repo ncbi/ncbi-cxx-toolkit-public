@@ -336,7 +336,7 @@ CBioseq_set_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 
 void CBioseq_set_EditHandle::Remove(void) const
 {
-    GetParentEntry().Remove();
+    m_Scope->RemoveBioseq_set(*this);
 }
 
 
@@ -346,6 +346,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/31 19:54:08  vasilche
+* Fixed removal of bioseqs and bioseq-sets.
+*
 * Revision 1.5  2004/03/31 17:08:07  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *
