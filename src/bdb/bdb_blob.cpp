@@ -191,13 +191,6 @@ CBDB_LobFile::CBDB_LobFile()
 }
 
 
-void CBDB_LobFile::SetCmp(DB* db)
-{
-    int ret = db->set_bt_compare(db, BDB_UintCompare);
-    BDB_CHECK(ret, 0);
-}
-
-
 EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
                                   const void*  data,
                                   size_t       size)
@@ -334,6 +327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/09/26 18:48:30  kuznets
+ * Removed dead SetCmp function
+ *
  * Revision 1.9  2003/09/17 18:18:42  kuznets
  * Implemented BLOB streaming
  *
