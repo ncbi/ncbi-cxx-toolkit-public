@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/29 17:05:53  grichenk
+* GetHandle() -> GetKey()
+*
 * Revision 1.4  2002/01/28 19:45:33  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -128,7 +131,7 @@ private:
     CBioseq_Handle(CSeq_id_Handle value);
 
     // Get the internal seq-id handle
-    const CSeq_id_Handle  GetHandle(void) const;
+    const CSeq_id_Handle  GetKey(void) const;
     // Get data source
     CDataSource& x_GetDataSource(void) const;
     // Set the handle seq-entry and datasource
@@ -140,12 +143,8 @@ private:
     mutable CDataSource* m_DataSource;  // Data source for resolved handles
     mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
 
-/*
-    friend class CDesc_CI;
-    friend class CScope;
     friend class CSeqVector;
     friend class CHandleRangeMap;
-*/
     friend class CDataSource;
 };
 
@@ -168,7 +167,7 @@ CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
 }
 
 inline
-const CSeq_id_Handle CBioseq_Handle::GetHandle(void) const
+const CSeq_id_Handle CBioseq_Handle::GetKey(void) const
 {
     return m_Value;
 }
