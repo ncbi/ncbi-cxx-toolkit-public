@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/11/20 22:34:39  vakatov
+* Reset diag. stream to get rid of a mem.leak
+*
 * Revision 1.9  1998/11/19 23:41:14  vakatov
 * Tested version of "CCgiCookie::" and "CCgiCookies::"
 *
@@ -275,6 +278,7 @@ extern int main(void)
     TestException();
     TestCgi();
 
+    SetDiagStream(0);
     return 0;
 }
 
