@@ -134,10 +134,12 @@ while(first_offset <= last_offset)
       while(i<hits)
       {
 	Int4 last_hit;
+        Int4 level_diff;
 
 	/* if we have previously extended past this hit, */
 
-	if ( DiagCheckLevel(diag, query_offsets[i], subject_offsets[i]) )
+	if ( (level_diff = DiagCheckLevel(diag, query_offsets[i],
+                                          subject_offsets[i])) < 0 )
 	  {
 	    /* skip it. */
 	    DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
@@ -152,7 +154,8 @@ while(first_offset <= last_offset)
 
 	diff = subject_offsets[i] - last_hit;
 
-	if ( (window == 0) || ( (diff < window) && (diff >= lookup->wordsize )) )
+	if ( (window == 0) || 
+             ( (diff < window) && (level_diff >= lookup->wordsize )) )
 	  {
 	    hsp_len=0;
 	    
@@ -174,12 +177,16 @@ while(first_offset <= last_offset)
 	    
 	      if (score > cutoff)
                 BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, hsp_len, score);
-	  } /* end two-hit extension case */
+              /* end two-hit extension case */
+	  } else if (diff >= window) {
+             /* Update level, but only if it is a new hit */
+             DiagUpdateLevel(diag, query_offsets[i], subject_offsets[i], 
+                             subject_offsets[i]);
+          }
 	
 	
 	/* update the diagonal array to reflect this hit. */
-        if (diff >= lookup->wordsize)
-           DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
+        DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
 	i++;
 	
       } /* end while - done with this batch of hits, call scansubject again. */
@@ -319,7 +326,8 @@ static inline Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, In
 static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
-  
+  Int4 level;
+
   if (diag == NULL)
     return 0;
 
@@ -329,11 +337,11 @@ static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, In
    * if we've previously extended past the current subject offset,
    * we can safely skip this extension.
    */
-
-  if ( (subject_offset + diag->offset ) < diag->diag_array[diag_coord].diag_level )
-    return 1;
+  level = diag->diag_array[diag_coord].diag_level - diag->offset;
+  if (subject_offset < level )
+    return -1;
   else
-    return 0;
+    return subject_offset - level;
 }
 
 static void BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_off, Int4 s_off, Int4 len, Int4 score)
@@ -386,7 +394,7 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
     }
 
   *displacement = i;
-  return score;
+  return maxscore;
 }
 
 Int4 BlastAaExtendLeft(Int4 ** matrix,
@@ -424,7 +432,7 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
     }
 
   *displacement = n-i;
-  return score;
+  return maxscore;
 }
 
 Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
