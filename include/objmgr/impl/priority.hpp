@@ -54,6 +54,52 @@ struct CDataSource_ScopeInfo;
 class CPriorityTree;
 class CPriorityNode;
 
+class NCBI_XOBJMGR_EXPORT CPriorityNode
+{
+public:
+    typedef CDataSource_ScopeInfo TLeaf;
+
+    CPriorityNode(void);
+    explicit CPriorityNode(CDataSource& ds);
+    explicit CPriorityNode(TLeaf& leaf);
+    explicit CPriorityNode(const CPriorityTree& tree);
+
+    CPriorityNode(const CPriorityNode& node);
+    CPriorityNode& operator=(const CPriorityNode& node);
+
+    typedef int TPriority;
+    typedef CPriority_I iterator;
+    typedef multimap<TPriority, CPriorityNode> TPriorityMap;
+
+    // true if the node is a tree, not a leaf
+    bool IsTree(void) const;
+    bool IsLeaf(void) const;
+
+    TLeaf& GetLeaf(void);
+    const TLeaf& GetLeaf(void) const;
+    CPriorityTree& GetTree(void);
+    const CPriorityTree& GetTree(void) const;
+
+    // Set node type to "tree"
+    CPriorityTree& SetTree(void);
+    // Set node type to "leaf"
+    void SetLeaf(TLeaf& leaf);
+
+    //bool Insert(const CPriorityNode& node, TPriority priority);
+    //bool Insert(CDataSource& ds, TPriority priority);
+    bool Erase(const TLeaf& leaf);
+    bool IsEmpty(void) const;
+    void Clear(void);
+
+private:
+
+    void x_CopySubTree(const CPriorityNode& node);
+
+    CRef<CPriorityTree> m_SubTree;
+    CRef<TLeaf>         m_Leaf;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CPriorityTree : public CObject
 {
 public:
@@ -86,51 +132,6 @@ private:
     void x_CopySubTree(const CPriorityNode& node);
 
     TPriorityMap m_Map;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CPriorityNode
-{
-public:
-    typedef CDataSource_ScopeInfo TLeaf;
-
-    CPriorityNode(void);
-    explicit CPriorityNode(CDataSource& ds);
-    explicit CPriorityNode(TLeaf& leaf);
-    explicit CPriorityNode(const CPriorityTree& tree);
-
-    CPriorityNode(const CPriorityNode& node);
-    CPriorityNode& operator=(const CPriorityNode& node);
-
-    typedef CPriorityTree::TPriority TPriority;
-    typedef CPriorityTree::TPriorityMap TPriorityMap;
-
-    // true if the node is a tree, not a leaf
-    bool IsTree(void) const;
-    bool IsLeaf(void) const;
-
-    TLeaf& GetLeaf(void);
-    const TLeaf& GetLeaf(void) const;
-    CPriorityTree& GetTree(void);
-    const CPriorityTree& GetTree(void) const;
-
-    // Set node type to "tree"
-    CPriorityTree& SetTree(void);
-    // Set node type to "leaf"
-    void SetLeaf(TLeaf& leaf);
-
-    //bool Insert(const CPriorityNode& node, TPriority priority);
-    //bool Insert(CDataSource& ds, TPriority priority);
-    bool Erase(const TLeaf& leaf);
-    bool IsEmpty(void) const;
-    void Clear(void);
-
-private:
-
-    void x_CopySubTree(const CPriorityNode& node);
-
-    CRef<CPriorityTree> m_SubTree;
-    CRef<TLeaf>         m_Leaf;
 };
 
 
@@ -263,6 +264,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/06/30 19:12:40  vasilche
+* Changed order of classes to make it compilable on MSVC.
+*
 * Revision 1.9  2003/06/30 18:42:09  vasilche
 * CPriority_I made to use less memory allocations/deallocations.
 *
