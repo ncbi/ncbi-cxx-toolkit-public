@@ -254,7 +254,7 @@ bool s_FilterPubdesc(const CPubdesc& pubdesc, CFFContext& ctx)
 
 void CFlatGatherer::x_GatherReferences(void) const
 {
-    CFFContext::TReferences refs = m_Context->SetReferences();
+    CFFContext::TReferences& refs = m_Context->SetReferences();
 
     // gather references from descriptors
     for (CSeqdesc_CI it(m_Context->GetHandle(), CSeqdesc::e_Pub); it; ++it) {
@@ -1091,6 +1091,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/10 16:22:44  shomrat
+* Use reference to object
+*
 * Revision 1.7  2004/03/05 18:45:19  shomrat
 * changes to feature gathering
 *
