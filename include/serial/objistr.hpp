@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/01/05 13:57:18  vasilche
+* Fixed overloaded method ambiguity on Mac.
+*
 * Revision 1.61  2000/12/26 22:23:44  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -346,8 +349,10 @@ public:
     // root reader
     void Read(const CObjectInfo& object);
     void Read(TObjectPtr object, TTypeInfo type);
-    void Skip(TTypeInfo type);
+    CObjectInfo Read(const CObjectTypeInfo& type);
     CObjectInfo Read(TTypeInfo type);
+    void Skip(const CObjectTypeInfo& type);
+    void Skip(TTypeInfo type);
 
     // file header readers
     virtual string ReadFileHeader(void);

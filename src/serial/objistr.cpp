@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2001/01/05 13:57:31  vasilche
+* Fixed overloaded method ambiguity on Mac.
+*
 * Revision 1.72  2000/12/26 22:24:10  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -592,15 +595,6 @@ void CObjectIStream::Read(const CObjectInfo& object, ENoFileHeader)
     END_OBJECT_FRAME();
 }
 
-CObjectInfo CObjectIStream::Read(TTypeInfo typeInfo)
-{
-    // root object
-    SkipFileHeader(typeInfo);
-    CObjectInfo info(typeInfo->Create(), typeInfo);
-    Read(info, eNoFileHeader);
-    return info;
-}
-
 void CObjectIStream::Read(const CObjectInfo& object)
 {
     // root object
@@ -627,6 +621,20 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
     Read(object, typeInfo, eNoFileHeader);
 }
 
+CObjectInfo CObjectIStream::Read(TTypeInfo typeInfo)
+{
+    // root object
+    SkipFileHeader(typeInfo);
+    CObjectInfo info(typeInfo->Create(), typeInfo);
+    Read(info, eNoFileHeader);
+    return info;
+}
+
+CObjectInfo CObjectIStream::Read(const CObjectTypeInfo& type)
+{
+    return Read(type.GetTypeInfo());
+}
+
 void CObjectIStream::Skip(TTypeInfo typeInfo, ENoFileHeader)
 {
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
@@ -642,6 +650,11 @@ void CObjectIStream::Skip(TTypeInfo typeInfo)
 {
     SkipFileHeader(typeInfo);
     Skip(typeInfo, eNoFileHeader);
+}
+
+void CObjectIStream::Skip(const CObjectTypeInfo& type)
+{
+    Skip(type.GetTypeInfo());
 }
 
 void CObjectIStream::StartDelayBuffer(void)

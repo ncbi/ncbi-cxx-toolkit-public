@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/05 13:57:17  vasilche
+* Fixed overloaded method ambiguity on Mac.
+*
 * Revision 1.1  2000/10/20 15:51:26  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -86,10 +89,6 @@ public:
             return C::GetTypeInfo();
         }
     operator CObjectTypeInfo(void) const
-        {
-            return GetTypeInfo();
-        }
-    operator TTypeInfo(void) const
         {
             return GetTypeInfo();
         }
