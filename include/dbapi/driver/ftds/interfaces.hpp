@@ -44,59 +44,61 @@
 
 BEGIN_NCBI_SCOPE
 
+
 // some defines
 #ifndef SYBEFCON
-#define SYBEFCON        20002   /* SQL Server connection failed. */
+#  define SYBEFCON        20002   /* SQL Server connection failed. */
 #endif
 #ifndef SYBETIME
-#define SYBETIME        20003   /* SQL Server connection timed out. */
+#  define SYBETIME        20003   /* SQL Server connection timed out. */
 #endif
 #ifndef SYBECONN
-#define SYBECONN        20009   /* Unable to connect socket -- SQL Server is
-                                 * unavailable or does not exist.
-                                 */
+#  define SYBECONN        20009   /* Unable to connect socket -- SQL Server is
+                                   * unavailable or does not exist.
+                                   */
 #endif
 #ifndef EXINFO
-#define EXINFO          1       /* informational, non-error */
+#  define EXINFO          1       /* informational, non-error */
 #endif
 #ifndef EXUSER
-#define EXUSER          2       /* user error */
+#  define EXUSER          2       /* user error */
 #endif
 
 #ifndef EXNONFATAL
-#define EXNONFATAL      3       /* non-fatal error */
+#  define EXNONFATAL      3       /* non-fatal error */
 #endif
 #ifndef EXCONVERSION
-#define EXCONVERSION    4       /* Error in DB-LIBRARY data conversion. */
+#  define EXCONVERSION    4       /* Error in DB-LIBRARY data conversion. */
 #endif
 #ifndef EXSERVER
-#define EXSERVER        5       /* The Server has returned an error flag. */
+#  define EXSERVER        5       /* The Server has returned an error flag. */
 #endif
 #ifndef EXTIME
-#define EXTIME          6       /* We have exceeded our timeout period while
+#  define EXTIME          6       /* We have exceeded our timeout period while
                                  * waiting for a response from the Server -
                                  * the DBPROCESS is still alive.
                                  */
 #endif
 #ifndef EXPROGRAM
-#define EXPROGRAM       7       /* coding error in user program */
+#  define EXPROGRAM       7       /* coding error in user program */
 #endif
 #ifndef INT_EXIT
-#define INT_EXIT        0
+#  define INT_EXIT        0
 #endif
 #ifndef INT_CONTINUE
-#define INT_CONTINUE    1
+#  define INT_CONTINUE    1
 #endif
 #ifndef INT_CANCEL
-#define INT_CANCEL      2
+#  define INT_CANCEL      2
 #endif
 #ifndef INT_TIMEOUT
-#define INT_TIMEOUT     3
+#  define INT_TIMEOUT     3
 #endif
+
 
 typedef unsigned char CS_BIT;
 #ifndef DBBIT
-#define DBBIT CS_BIT
+#  define DBBIT CS_BIT
 #endif
 
 extern "C" {
@@ -120,6 +122,7 @@ class CTDS_RowResult;
 class CTDS_ParamResult;
 class CTDS_ComputeResult;
 class CTDS_StatusResult;
+class CTDS_CursorResult;
 class CTDS_BlobResult;
 
 
@@ -165,7 +168,8 @@ public:
     // TDS specific functionality
     //
 
-    // the following methods are optional (driver will use the default values if not called)
+    // the following methods are optional (driver will use the
+    // default values if not called)
     // the values will affect the new connections only
 
     virtual void TDS_SetApplicationName(const string& a_name);
@@ -381,7 +385,8 @@ private:
 //  CTDS_CursorCmd::
 //
 
-class CTDS_CursorCmd : public I_CursorCmd {
+class CTDS_CursorCmd : public I_CursorCmd
+{
     friend class CTDS_Connection;
 protected:
     CTDS_CursorCmd(CTDS_Connection* con, DBPROCESS* cmd,
@@ -406,17 +411,17 @@ private:
     bool x_AssignParams();
     I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
-    CTDS_Connection* m_Connect;
-    DBPROCESS*       m_Cmd;
-    string           m_Name;
-    CDB_LangCmd*     m_LCmd;
-    string           m_Query;
-    CDB_Params       m_Params;
-    bool             m_IsOpen;
-    bool             m_HasFailed;
-    bool             m_IsDeclared;
-    I_Result*        m_Res;
-    int              m_RowCount;
+    CTDS_Connection*   m_Connect;
+    DBPROCESS*         m_Cmd;
+    string             m_Name;
+    CDB_LangCmd*       m_LCmd;
+    string             m_Query;
+    CDB_Params         m_Params;
+    bool               m_IsOpen;
+    bool               m_HasFailed;
+    bool               m_IsDeclared;
+    CTDS_CursorResult* m_Res;
+    int                m_RowCount;
 };
 
 
@@ -718,6 +723,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/03/28 00:45:18  vakatov
+ * CTDS_CursorCmd::  use CTDS_CursorResult rather than I_Result (to fix access)
+ *
  * Revision 1.5  2002/03/26 15:29:30  soussov
  * new image/text operations added
  *
