@@ -195,6 +195,7 @@ void CDiagBuffer::Flush(void)
     EDiagSev sev = m_Diag->GetSeverity();
     if ( ostr->pcount() ) {
         const char* message = ostr->str();
+        size_t size = ostr->pcount();
         ostr->rdbuf()->freeze(false);
         TDiagPostFlags flags = m_Diag->GetPostFlags();
         if (sev == eDiag_Trace) {
@@ -204,8 +205,16 @@ void CDiagBuffer::Flush(void)
             // in for the record...
             flags |= sm_TraceFlags | eDPF_Trace;
         }
+
+        string dest;
+        if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
+            string src(message,0,size);
+            NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
+            message = dest.c_str();
+            size = dest.length();
+        }
         SDiagMessage mess
-            (sev, message, ostr->pcount(),
+            (sev, message, size,
              m_Diag->GetFile(), m_Diag->GetLine(), flags,
              0, m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
         DiagHandler(mess);
@@ -288,8 +297,30 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 }
 
 
-CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os,
+CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
                                   TDiagWriteFlags flags) const
+{
+    if (IsSetDiagPostFlag(eDPF_MergeLines, m_Flags)) {
+        CNcbiOstrstream ostr;
+        string src, dest;
+        x_Write(ostr, fNoEndl);
+        ostr.put('\0');
+        src = ostr.str();
+        ostr.rdbuf()->freeze(false);
+        NStr::Replace(NStr::Replace(src,"\r",""),"\n","", dest);
+        os << dest;
+        if ((flags & fNoEndl) == 0) {
+            os << NcbiEndl;
+        }
+        return os;
+    } else {
+        return x_Write(os, flags);
+    }
+}
+
+
+CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
+                                    TDiagWriteFlags flags) const
 {
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
@@ -740,10 +771,11 @@ const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
 
 const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
 {
+
     {
         ostrstream os;
         os << '\n' << "NCBI C++ Exception:" << '\n';
-        *this << (string)CNcbiOstrstreamToString(os);
+        *this << string(CNcbiOstrstreamToString(os));
     }
     const CException* pex;
     stack<const CException*> pile;
@@ -1149,6 +1181,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.79  2004/03/18 20:19:20  gouriano
+ * make it possible to convert multi-line diagnostic message into single-line
+ *
  * Revision 1.78  2003/11/12 20:30:26  ucko
  * Make extra flags for severity-trace messages tunable.
  *

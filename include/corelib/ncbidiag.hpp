@@ -160,10 +160,14 @@ enum EDiagPostFlag {
     eDPF_ErrCodeExplanation = 0x200, ///< Set by default (always)
     eDPF_ErrCodeUseSeverity = 0x400, ///< Set by default (always)
     eDPF_DateTime           = 0x80,  ///< Include date and time
-    eDPF_OmitInfoSev        = 0x4000,///< No severity indication if eDiag_Info 
 
     /// Set all flags.
     eDPF_All                = 0x3FFF,
+
+    // "Unusual" flags -- not included in eDPF_All
+    eDPF_OmitInfoSev        = 0x4000, ///< No sev. indication if eDiag_Info 
+    eDPF_PreMergeLines      = 0x10000,///< Remove EOLs before calling handler
+    eDPF_MergeLines         = 0x20000,///< Ask diag.handlers to remove EOLs
 
     /// Default flags to use when tracing.
     eDPF_Trace              = 0x1F,
@@ -592,6 +596,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     
     /// Write to stream.
     CNcbiOstream& Write(CNcbiOstream& os, TDiagWriteFlags flags = fNone) const;
+    CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags flags = fNone) const;
 };
 
 /// Insert message in output stream.
@@ -914,6 +919,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.70  2004/03/18 20:19:48  gouriano
+ * make it possible to convert multi-line diagnostic message into single-line
+ *
  * Revision 1.69  2004/03/16 15:35:19  vasilche
  * Added LOG_POST_ONCE and ERR_POST_ONCE macros
  *
