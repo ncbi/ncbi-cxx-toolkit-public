@@ -47,7 +47,7 @@ function EscapeBackSlashes(str)
 // tree object constructor
 function Tree(oShell, oTask)
 {
-    this.TreeRoot              = oShell.CurrentDirectory;
+    this.TreeRoot              = oShell.CurrentDirectory + "\\" + oTask.ProjectName;
     this.CompilersBranch       = this.TreeRoot + "\\compilers\\msvc710_prj";
     this.CompilersBranchStatic = this.CompilersBranch + "\\static";
     this.BinPathStatic         = this.CompilersBranchStatic + "\\bin";
