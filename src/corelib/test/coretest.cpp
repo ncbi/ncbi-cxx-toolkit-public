@@ -304,7 +304,6 @@ n22 = value22\n\
 n31 = value31\n\
 ");
 
-
     reg.Read(is);
     reg.Write(NcbiCout);
     NcbiCout << "---------------------------------------------------" << endl;
@@ -471,6 +470,85 @@ static void TestDiag(void)
     UnsetDiagPostFlag(eDPF_DateTime);
     diag << Warning << "Message without datetime stamp" << Endm;
     SetDiagPostFlag(eDPF_DateTime);
+}
+
+
+static void TestDiag_ErrCodeInfo(void)
+{
+    CNcbiDiag diag;
+
+    CDiagErrCodeInfo        info;
+    SDiagErrCodeDescription desc;
+
+    CNcbiIstrstream is("\
+# Comment line\n\
+\n\
+MODULE coretest\n\
+\n\
+$$ DATE, 1 : Short message for error code (1,0)\n\
+\n\
+$^   NameOfError, 1, 3 : Short message for error code (1,1)\n\
+This is a long message for error code (1,1).\n\
+$^   NameOfWarning, 2, WARNING: Some short text with ':' and ',' characters\n\
+This is first line of the error explanation.\n\
+This is second line of the error explanation.\n\
+\n\
+$$ PRINT, 9, 2\n\
+Error with code (9,0).\n\
+$^   EmptyString, 1, info:Error with subcode 1.\n\
+$^   BadFormat, 2\n\
+Message for warning error PRINT_BadFormat.\n\
+");
+
+    info.Read(is);
+    info.SetDescription(ErrCode(2,3), 
+                        SDiagErrCodeDescription("Err 2.3", "Error 2.3"
+                                                /*, default severity */));
+    info.SetDescription(ErrCode(2,4), 
+                        SDiagErrCodeDescription("Err 2.4", "Error 2.4",
+                                                eDiag_Error));
+
+    assert(info.GetDescription(ErrCode(1,1), &desc));
+    assert(desc.m_Message     == "Short message for error code (1,1)");
+    assert(desc.m_Explanation == "This is a long message for error code (1,1).");
+    assert(desc.m_Severity    == 3);
+
+    assert(info.GetDescription(ErrCode(9,0), &desc));
+    assert(desc.m_Severity    == 2);
+    assert(info.GetDescription(ErrCode(9,1), &desc));
+    assert(desc.m_Severity    == eDiag_Info);
+    assert(info.GetDescription(ErrCode(9,2), &desc));
+    assert(desc.m_Severity    == 2);
+
+    assert(info.GetDescription(ErrCode(2,4), &desc));
+    assert(desc.m_Message     == "Err 2.4");
+    assert(desc.m_Explanation == "Error 2.4");
+    assert(desc.m_Severity    == eDiag_Error);
+
+    assert(!info.GetDescription(ErrCode(1,3), &desc));
+
+    SetDiagErrCodeInfo(&info);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostPrefix("Prefix");
+
+    ERR_POST("This message has default severity \"Error\"");
+    ERR_POST_EX(1,1,"This message has severity \"Critical\"");
+
+    diag << ErrCode(1,1) << Info << "This message has severity \"Critical\"" 
+         << Endm;
+    UnsetDiagPostFlag(eDPF_ErrCodeMessage);
+    diag << ErrCode(1,1) << Info << "This message has severity \"Critical\"" 
+         << Endm;
+    UnsetDiagPostFlag(eDPF_Prefix);
+    diag << ErrCode(1,1) << Info << "This message has severity \"Critical\""
+         << Endm;
+    UnsetDiagPostFlag(eDPF_ErrCode);
+    UnsetDiagPostFlag(eDPF_ErrCodeUseSeverity);
+    diag << ErrCode(1,1) << Info << "This message has severity \"Info\""
+         << Endm;
+    UnsetDiagPostFlag(eDPF_ErrCodeExplanation);
+    SetDiagPostFlag(eDPF_ErrCodeUseSeverity);
+    diag << ErrCode(1,1) << "This message has severity \"Critical\"" << Endm;
 }
 
 
@@ -684,6 +762,7 @@ int CTestApplication::Run(void)
 {
     TestStartup();
     TestDiag();
+    TestDiag_ErrCodeInfo();
     TestException();
     TestException_AuxTrace();
     TestIostream();
@@ -736,6 +815,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2002/08/01 18:52:27  ivanov
+ * Added test for output verbose messages for error codes
+ *
  * Revision 1.83  2002/07/15 18:53:36  gouriano
  * renamed CNcbiException to CException
  *
