@@ -706,7 +706,11 @@ void CNcbiApplication::x_SetupStdio(void)
         IOS_BASE::sync_with_stdio(false);
     }
 
-    if ((m_StdioFlags & fDefault_CinBufferSize) == 0) {
+    if ((m_StdioFlags & fDefault_CinBufferSize) == 0
+#ifdef NCBI_OS_UNIX
+        &&  !isatty(0)
+#endif
+        ) {
 #if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION >= 300
         _ASSERT(!m_CinBuffer);
@@ -903,6 +907,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2003/12/17 20:25:46  ucko
+ * x_SetupStdio: for the sake of interactive applications, don't buffer
+ * cin if it's a terminal.
+ *
  * Revision 1.80  2003/11/21 21:03:37  vakatov
  * Cosmetics
  *
