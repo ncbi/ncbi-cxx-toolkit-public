@@ -133,52 +133,11 @@ public:
     // allocated with "new T" -- it will be destroyed with
     // "delete object" in the end. Set() works only for
     // not yet initialized safe-static variables.
-    void Set(T* object)
-    {
-        bool mutex_locked = false;
-        if ( Init_Lock(&mutex_locked) ) {
-            // Set the new object and register for cleanup
-            try {
-                m_Ptr = object;
-                CSafeStaticGuard::Register(this);
-            }
-            catch (CException& e) {
-                Init_Unlock(mutex_locked);
-                NCBI_RETHROW_SAME(e,
-                    "CSafeStaticPtr::Set: Register() failed");
-            }
-            catch (...) {
-                Init_Unlock(mutex_locked);
-                NCBI_THROW(CCoreException,eCore,
-                    "CSafeStaticPtr::Set: Register() failed");
-            }
-        }
-        Init_Unlock(mutex_locked);
-    }
+    void Set(T* object);
+
 private:
     // Initialize the object
-    void Init(void)
-    {
-        bool mutex_locked = false;
-        if ( Init_Lock(&mutex_locked) ) {
-            // Create the object and register for cleanup
-            try {
-                m_Ptr = new T;
-                CSafeStaticGuard::Register(this);
-            }
-            catch (CException& e) {
-                Init_Unlock(mutex_locked);
-                NCBI_RETHROW_SAME(e,
-                    "CSafeStaticPtr::Init: Register() failed");
-            }
-            catch (...) {
-                Init_Unlock(mutex_locked);
-                NCBI_THROW(CCoreException,eCore,
-                    "CSafeStaticPtr::Init: Register() failed");
-            }
-        }
-        Init_Unlock(mutex_locked);
-    }
+    void Init(void);
 
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
@@ -225,52 +184,11 @@ public:
     // Initialize with an existing object. The object MUST be
     // allocated with "new T" to avoid premature destruction.
     // Set() works only for un-initialized safe-static variables.
-    void Set(T* object)
-    {
-        bool mutex_locked = false;
-        if ( Init_Lock(&mutex_locked) ) {
-            // Set the new object and register for cleanup
-            try {
-                m_Ptr = new CRef<T> (object);
-                CSafeStaticGuard::Register(this);
-            }
-            catch (CException& e) {
-                Init_Unlock(mutex_locked);
-                NCBI_RETHROW_SAME(e,
-                    "CSafeStaticRef::Set: Register() failed");
-            }
-            catch (...) {
-                Init_Unlock(mutex_locked);
-                NCBI_THROW(CCoreException,eCore,
-                    "CSafeStaticRef::Set: Register() failed");
-            }
-        }
-        Init_Unlock(mutex_locked);
-    }
+    void Set(T* object);
+
 private:
     // Initialize the object and the reference
-    void Init(void)
-    {
-        bool mutex_locked = false;
-        if ( Init_Lock(&mutex_locked) ) {
-            // Create the object and register for cleanup
-            try {
-                m_Ptr = new CRef<T> (new T);
-                CSafeStaticGuard::Register(this);
-            }
-            catch (CException& e) {
-                Init_Unlock(mutex_locked);
-                NCBI_RETHROW_SAME(e,
-                    "CSafeStaticRef::Init: Register() failed");
-            }
-            catch (...) {
-                Init_Unlock(mutex_locked);
-                NCBI_THROW(CCoreException,eCore,
-                    "CSafeStaticRef::Init: Register() failed");
-            }
-        }
-        Init_Unlock(mutex_locked);
-    }
+    void Init(void);
 
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
@@ -334,12 +252,123 @@ private:
 
 static CSafeStaticGuard s_CleanupGuard;
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Large inline methods
+
+template <class T>
+inline
+void CSafeStaticPtr<T>::Set(T* object)
+{
+    bool mutex_locked = false;
+    if ( Init_Lock(&mutex_locked) ) {
+        // Set the new object and register for cleanup
+        try {
+            m_Ptr = object;
+            CSafeStaticGuard::Register(this);
+        }
+        catch (CException& e) {
+            Init_Unlock(mutex_locked);
+            NCBI_RETHROW_SAME(e, "CSafeStaticPtr::Set: Register() failed");
+        }
+        catch (...) {
+            Init_Unlock(mutex_locked);
+            NCBI_THROW(CCoreException,eCore,
+                       "CSafeStaticPtr::Set: Register() failed");
+        }
+    }
+    Init_Unlock(mutex_locked);
+}
+
+
+template <class T>
+inline
+void CSafeStaticPtr<T>::Init(void)
+{
+    bool mutex_locked = false;
+    if ( Init_Lock(&mutex_locked) ) {
+        // Create the object and register for cleanup
+        try {
+            m_Ptr = new T;
+            CSafeStaticGuard::Register(this);
+        }
+        catch (CException& e) {
+            Init_Unlock(mutex_locked);
+            NCBI_RETHROW_SAME(e, "CSafeStaticPtr::Init: Register() failed");
+        }
+        catch (...) {
+            Init_Unlock(mutex_locked);
+            NCBI_THROW(CCoreException,eCore,
+                       "CSafeStaticPtr::Init: Register() failed");
+        }
+    }
+    Init_Unlock(mutex_locked);
+}
+
+
+template <class T>
+inline
+void CSafeStaticRef<T>::Set(T* object)
+{
+    bool mutex_locked = false;
+    if ( Init_Lock(&mutex_locked) ) {
+        // Set the new object and register for cleanup
+        try {
+            m_Ptr = new CRef<T> (object);
+            CSafeStaticGuard::Register(this);
+        }
+        catch (CException& e) {
+            Init_Unlock(mutex_locked);
+            NCBI_RETHROW_SAME(e, "CSafeStaticRef::Set: Register() failed");
+        }
+        catch (...) {
+            Init_Unlock(mutex_locked);
+            NCBI_THROW(CCoreException,eCore,
+                       "CSafeStaticRef::Set: Register() failed");
+        }
+    }
+    Init_Unlock(mutex_locked);
+}
+
+
+template <class T>
+inline
+void CSafeStaticRef<T>::Init(void)
+{
+    bool mutex_locked = false;
+    if ( Init_Lock(&mutex_locked) ) {
+        // Create the object and register for cleanup
+        try {
+            m_Ptr = new CRef<T> (new T);
+            CSafeStaticGuard::Register(this);
+        }
+        catch (CException& e) {
+            Init_Unlock(mutex_locked);
+            NCBI_RETHROW_SAME(e, "CSafeStaticRef::Init: Register() failed");
+        }
+        catch (...) {
+            Init_Unlock(mutex_locked);
+            NCBI_THROW(CCoreException,eCore,
+                       "CSafeStaticRef::Init: Register() failed");
+        }
+    }
+    Init_Unlock(mutex_locked);
+}
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/04/26 14:28:59  ucko
+ * Move large inline methods [Set(), Init()] from CSafeStatic{Ptr,Ref}'s
+ * definitions to the end of the file, both to reduce clutter and because
+ * GCC 3.4 insists on seeing CSafeStaticGuard first.
+ *
  * Revision 1.11  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
