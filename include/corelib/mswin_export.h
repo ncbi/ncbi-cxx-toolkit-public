@@ -162,6 +162,7 @@
 #  define NCBI_XALGOGNOMON_EXPORTS
 #  define NCBI_XBLAST_EXPORTS
 #  define NCBI_XALGOPHYTREE_EXPORTS
+#  define NCBI_XALGOSEQQA_EXPORTS
 #endif
 
 /*
@@ -719,6 +720,15 @@
 #endif
 
 /*
+ * Export specifier for library xalgoseqqa
+ */
+#ifdef NCBI_XALGOSEQQA_EXPORTS
+#  define NCBI_XALGOSEQQA_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XALGOSEQQA_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library xalnmgr
  */
 #ifdef NCBI_XALNMGR_EXPORTS
@@ -1048,6 +1058,7 @@
 #  define NCBI_XALGOGNOMON_EXPORT
 #  define NCBI_XALGOPHYTREE_EXPORT
 #  define NCBI_XALGOSEQ_EXPORT
+#  define NCBI_XALGOSEQQA_EXPORT
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
@@ -1102,6 +1113,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.84  2004/10/06 19:50:39  jcherry
+ * Added NCBI_XALGOSEQQA_EXPORT
+ *
  * Revision 1.83  2004/09/07 18:09:21  vakatov
  * DOXIGEN'ization
  *
