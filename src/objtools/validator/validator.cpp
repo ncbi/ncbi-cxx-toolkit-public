@@ -467,6 +467,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_DifferntIdTypesInSeqLoc",
     "SEQ_FEAT_MissingCDSproduct",
     "SEQ_FEAT_MissingLocation",
+    "SEQ_FEAT_OnlyGeneXrefs",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1007,6 +1008,10 @@ amino acids), or those marked with a rearrangement required for product exceptio
 are exempt from needing a product.",
 //  SEQ_FEAT_MissingLocation
 "A feature must specify its location.",
+//  SEQ_FEAT_OnlyGeneXrefs
+"There are gene xrefs but no gene features.  Records should normally have  \
+single-interval gene features covering other biological features.  Gene \
+xrefs are used only to override the inheritance by overlap.",
 
 /* SEQ_ALIGN */
 
@@ -1124,6 +1129,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/10/20 16:07:07  shomrat
+* Added SEQ_FEAT_OnlyGeneXrefs
+*
 * Revision 1.29  2003/10/13 18:45:23  shomrat
 * Added SEQ_FEAT_BadTrnaAA
 *
