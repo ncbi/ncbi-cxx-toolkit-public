@@ -575,7 +575,13 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
 
     for (str_len = 0; str_len < n_read; ++str_len) {
         ch = szBuf[str_len];
-        if (ch == 0 || ch == '\n' || ch == 13) {
+        if (ch == 0)
+            break;
+        if (ch == '\n' || ch == '\r') {
+            // analyse next char for \r\n sequence
+            ++str_len;
+            ch = szBuf[str_len];
+            if (ch == '\n' || ch == '\r') {} else {--str_len;}
             break;
         }
         *str += ch;
@@ -586,34 +592,6 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
     }
     io_st = sock.Read(szBuf, str_len + 1);
     return true;
-
-/*
-    do {
-        do {
-            io_st = sock.Read(&ch, 1, &bytes_read);
-            switch (io_st) 
-            {
-            case eIO_Success:
-                if (ch == 0 || ch == '\n' || ch == 13) {
-                    goto out_of_loop;
-                }
-                *str += ch;
-                break;
-            case eIO_Timeout:
-                // TODO: add repetition counter or another protector here
-                break;
-            default: // invalid socket or request, bailing out
-                return false;
-            };
-        } while (true);
-out_of_loop:
-        if (++loop_cnt > 10) // protection from a client feeding empty strings
-            return false;
-    } while (str->empty());
-
-    return true;
-*/
-
 }
 
 
@@ -778,6 +756,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/10/20 14:50:22  kuznets
+ * Code cleanup
+ *
  * Revision 1.9  2004/10/20 13:45:37  kuznets
  * Disabled TCP/IP delay on write
  *
