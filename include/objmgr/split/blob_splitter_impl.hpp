@@ -39,6 +39,7 @@
 
 #include <memory>
 #include <map>
+#include <set>
 #include <vector>
 #include <list>
 
@@ -74,10 +75,9 @@ class CID2S_Chunk_Data;
 class CID2S_Chunk_Content;
 class CID2S_Seq_descr_Info;
 class CID2S_Seq_annot_place_Info;
-class CID2_Bioseq_set_Ids;
-class CID2_Bioseq_Ids;
-class CID2_Id_Range;
-class CID2_Seq_loc;
+class CID2S_Bioseq_set_Ids;
+class CID2S_Bioseq_Ids;
+class CID2S_Seq_loc;
 class CBlobSplitter;
 class CBlobSplitterImpl;
 class CAnnotObject_SplitInfo;
@@ -97,8 +97,7 @@ public:
     CBlobSplitterImpl(const SSplitterParams& params);
     ~CBlobSplitterImpl(void);
 
-    typedef int TPlaceId;
-    typedef map<TPlaceId, CPlace_SplitInfo> TEntries;
+    typedef map<CPlaceId, CPlace_SplitInfo> TEntries;
     typedef int TChunkId;
     typedef map<TChunkId, SChunkInfo> TChunks;
     typedef map<CID2S_Chunk_Id, CRef<CID2S_Chunk> > TID2Chunks;
@@ -131,7 +130,8 @@ public:
 
     void CollectPieces(void);
     void CollectPieces(const CPlace_SplitInfo& info);
-    void CollectPieces(TPlaceId place_id, const CSeq_annot_SplitInfo& info);
+    void CollectPieces(const CPlaceId& place_id,
+                       const CSeq_annot_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
     void SplitPieces(void);
     void AddToSkeleton(CAnnotPieces& pieces);
@@ -150,28 +150,31 @@ public:
     TSeqPos GetLength(const CSeq_ext& src) const;
     TSeqPos GetLength(const CSeq_inst& src) const;
 
-    TSeqPos GetGiLength(int gi) const;
-    bool IsWholeGi(int gi, const TRange& range) const;
+    TSeqPos GetLength(const CSeq_id_Handle& id) const;
+    bool IsWhole(const CSeq_id_Handle& id, const TRange& range) const;
 
-    void MakeLoc(CID2_Seq_loc& loc, const CHandleRangeMap& ranges) const;
-    void MakeLoc(CID2_Seq_loc& loc, const CSeqsRange& ranges) const;
-    void MakeLoc(CID2_Seq_loc& loc, int gi, const TRange& range) const;
-    CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range) const;
-    CRef<CID2_Seq_loc> MakeLoc(int gi, const TRange& range) const;
+    void SetLoc(CID2S_Seq_loc& loc,
+                const CHandleRangeMap& ranges) const;
+    void SetLoc(CID2S_Seq_loc& loc,
+                const CSeqsRange& ranges) const;
+    void SetLoc(CID2S_Seq_loc& loc,
+                const CSeq_id_Handle& id, const TRange& range) const;
+    CRef<CID2S_Seq_loc> MakeLoc(const CSeqsRange& range) const;
+    CRef<CID2S_Seq_loc> MakeLoc(const CSeq_id_Handle& id,
+                                const TRange& range) const;
 
-    void AddIdRange(CID2_Bioseq_Ids& ids, int start, int end);
-    void AddIdRange(CID2_Bioseq_set_Ids& ids, int start, int end);
-    void AddIdRange(CID2S_Seq_descr_Info& info, int start, int end);
-    void AddIdRange(CID2S_Seq_annot_place_Info& info, int start, int end);
+    CRef<CID2S_Bioseq_Ids> MakeBioseqIds(const set<CSeq_id_Handle>& ids) const;
+    CRef<CID2S_Bioseq_set_Ids> MakeBioseq_setIds(const set<int>& ids) const;
 
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
     CRef<CSeq_annot> MakeSeq_annot(const CSeq_annot& src,
                                    const TAnnotObjects& objs);
     
-    typedef map<TPlaceId, CRef<CID2S_Chunk_Data> > TChunkData;
+    typedef map<CPlaceId, CRef<CID2S_Chunk_Data> > TChunkData;
     typedef vector< CRef<CID2S_Chunk_Content> > TChunkContent;
     
-    CID2S_Chunk_Data& GetChunkData(TChunkData& chunk_data, TPlaceId place_id);
+    CID2S_Chunk_Data& GetChunkData(TChunkData& chunk_data,
+                                   const CPlaceId& place_id);
 
     void MakeID2Chunk(TChunkId id, const SChunkInfo& info);
 
@@ -206,6 +209,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/18 14:00:17  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.11  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

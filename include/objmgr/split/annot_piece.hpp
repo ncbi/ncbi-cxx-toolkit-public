@@ -64,16 +64,20 @@ struct SChunkInfo;
 
 struct SAnnotPiece
 {
-    typedef int TPlaceId;
     typedef CSeqsRange::TRange TRange;
 
     SAnnotPiece(void);
-    explicit SAnnotPiece(TPlaceId place_id, const CSeq_descr_SplitInfo& descr);
-    explicit SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot);
-    explicit SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot,
+    explicit SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_descr_SplitInfo& descr);
+    explicit SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_annot_SplitInfo& annot);
+    explicit SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_annot_SplitInfo& annot,
                          const CAnnotObject_SplitInfo& obj);
-    explicit SAnnotPiece(TPlaceId place_id, const CSeq_data_SplitInfo& data);
-    explicit SAnnotPiece(TPlaceId place_id, const CBioseq_SplitInfo& data);
+    explicit SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_data_SplitInfo& data);
+    explicit SAnnotPiece(const CPlaceId& place_id,
+                         const CBioseq_SplitInfo& data);
     SAnnotPiece(const SAnnotPiece& base, const COneSeqRange& range);
 
     // sort by location first, than by Seq-annot ptr, than by object ptr.
@@ -90,7 +94,7 @@ struct SAnnotPiece
         bioseq
     };
 
-    TPlaceId        m_PlaceId;
+    CPlaceId        m_PlaceId;
     EPieceType      m_ObjectType;
     union {
         const CObject*              m_Object;
@@ -226,6 +230,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/10/18 14:00:17  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.6  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

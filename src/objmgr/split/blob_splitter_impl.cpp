@@ -39,6 +39,7 @@
 
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/object_splitinfo.hpp>
+#include <objmgr/split/place_id.hpp>
 #include <objmgr/split/annot_piece.hpp>
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
@@ -142,7 +143,7 @@ void CBlobSplitterImpl::CollectPieces(void)
 
 void CBlobSplitterImpl::CollectPieces(const CPlace_SplitInfo& info)
 {
-    TPlaceId place_id = info.m_PlaceId;
+    const CPlaceId& place_id = info.m_PlaceId;
     if ( info.m_Descr ) {
         Add(SAnnotPiece(place_id, *info.m_Descr));
     }
@@ -161,7 +162,7 @@ void CBlobSplitterImpl::CollectPieces(const CPlace_SplitInfo& info)
 }
 
 
-void CBlobSplitterImpl::CollectPieces(TPlaceId place_id,
+void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
                                       const CSeq_annot_SplitInfo& info)
 {
     size_t max_size = info.m_Name.IsNamed()? 100: 10;
@@ -437,6 +438,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/10/18 14:00:22  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.12  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

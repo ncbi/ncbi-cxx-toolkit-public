@@ -63,6 +63,7 @@
 #include <objmgr/split/annot_piece.hpp>
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
+#include <objmgr/split/place_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -190,11 +191,14 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
 {
     dst.Reset();
     const CBioseq::TId& ids = src.GetId();
-    int gi = 0;
+    CPlaceId place_id;
     ITERATE ( CBioseq::TId, it, ids ) {
         const CSeq_id& id = **it;
-        if ( id.IsGi() ) {
-            gi = id.GetGi();
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+        if ( !place_id.IsBioseq() ||
+             !place_id.GetBioseqId().IsGi() &&
+             (idh.IsGi() || idh.IsBetter(place_id.GetBioseqId())) ) {
+            place_id = CPlaceId(idh);
         }
         dst.SetId().push_back(Ref(&NonConst(id)));
     }
@@ -254,21 +258,22 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
     CPlace_SplitInfo* info = 0;
 
     if ( need_split ) {
-        if ( gi <= 0 ) {
-            ERR_POST("Bioseq doesn't have gi");
+        if ( !place_id.IsBioseq() ) {
+            ERR_POST("Bioseq doesn't have Seq-id");
         }
         else {
-            info = &m_Entries[gi];
+            info = &m_Entries[place_id];
             
-            if ( info->m_PlaceId != 0 ) {
-                ERR_POST("Several Bioseqs with the same gi: " << gi);
+            if ( info->m_PlaceId.IsBioseq() ) {
+                ERR_POST("Several Bioseqs with the same id: " <<
+                         place_id.GetBioseqId().AsString());
                 info = 0;
             }
             else {
-                _ASSERT(info->m_PlaceId == 0);
+                _ASSERT(info->m_PlaceId.IsNull());
                 _ASSERT(!info->m_Bioseq);
                 _ASSERT(!info->m_Bioseq_set);
-                info->m_PlaceId = gi;
+                info->m_PlaceId = place_id;
                 info->m_Bioseq.Reset(&dst);
             }
         }
@@ -295,7 +300,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
     else {
         dst.SetInst(NonConst(inst));
     }
-
+    
     if ( need_split_annot ) {
         ITERATE ( CBioseq::TAnnot, it, src.GetAnnot() ) {
             if ( !CopyAnnot(*info, **it) ) {
@@ -309,16 +314,17 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
 void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
 {
     dst.Reset();
-    int id = 0;
+    CPlaceId place_id;
     if ( src.IsSetId() ) {
         dst.SetId(NonConst(src.GetId()));
         if ( src.GetId().IsId() ) {
-            id = src.GetId().GetId();
+            place_id = CPlaceId(src.GetId().GetId());
         }
     }
     else {
-        id = m_NextBioseq_set_Id++;
+        int id = m_NextBioseq_set_Id++;
         dst.SetId().SetId(id);
+        place_id = CPlaceId(id);
     }
     if ( src.IsSetColl() ) {
         dst.SetColl(NonConst(src.GetColl()));
@@ -341,7 +347,17 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
         need_split_descr = false;
     }
     else {
-        need_split_descr = src.IsSetDescr() && !src.GetDescr().Get().empty();
+        need_split_descr = false;
+        if ( src.IsSetDescr() ) {
+            ITERATE ( CBioseq_set::TDescr::Tdata, it, src.GetDescr().Get() ) {
+                const CSeqdesc& desc = **it;
+                if ( desc.Which() == CSeqdesc::e_Pub ) {
+                    // only publication descriptors will be split
+                    need_split_descr = true;
+                    break;
+                }
+            }
+        }
     }
 
     bool need_split_annot;
@@ -370,20 +386,21 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
     CPlace_SplitInfo* info = 0;
 
     if ( need_split ) {
-        if ( id <= 0 ) {
+        if ( !place_id.IsBioseq_set() ) {
             ERR_POST("Bioseq_set doesn't have integer id");
         }
         else {
-            info = &m_Entries[-id];
-            if ( info->m_PlaceId != 0 ) {
-                ERR_POST("Several Bioseqs with the same gi: " << id);
+            info = &m_Entries[place_id];
+            if ( info->m_PlaceId.IsBioseq_set() ) {
+                ERR_POST("Several Bioseq-sets with the same id: " <<
+                         place_id.GetBioseq_setId());
                 info = 0;
             }
             else {
-                _ASSERT(info->m_PlaceId == 0);
+                _ASSERT(info->m_PlaceId.IsNull());
                 _ASSERT(!info->m_Bioseq);
                 _ASSERT(!info->m_Bioseq_set);
-                info->m_PlaceId = -id;
+                info->m_PlaceId = place_id;
                 info->m_Bioseq_set.Reset(&dst);
             }
         }
@@ -627,6 +644,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/10/18 14:00:22  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.15  2004/08/19 20:04:10  vasilche
 * Initialize Bioseq-set.seq-set field if it became empty after splitting.
 *

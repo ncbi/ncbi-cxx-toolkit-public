@@ -59,31 +59,31 @@ class CBioseq_SplitInfo;
 struct SAnnotPiece;
 struct SIdAnnotPieces;
 class CAnnotPieces;
+class CPlaceId;
 
 struct SChunkInfo
 {
-    typedef int TPlaceId;
     typedef vector<CSeq_descr_SplitInfo> TPlaceSeq_descr;
-    typedef map<TPlaceId, TPlaceSeq_descr> TChunkSeq_descr;
+    typedef map<CPlaceId, TPlaceSeq_descr> TChunkSeq_descr;
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
     typedef map<CConstRef<CSeq_annot>, TAnnotObjects> TPlaceAnnots;
-    typedef map<TPlaceId, TPlaceAnnots> TChunkAnnots;
+    typedef map<CPlaceId, TPlaceAnnots> TChunkAnnots;
     typedef vector<CSeq_data_SplitInfo> TPlaceSeq_data;
-    typedef map<TPlaceId, TPlaceSeq_data> TChunkSeq_data;
+    typedef map<CPlaceId, TPlaceSeq_data> TChunkSeq_data;
     typedef vector<CBioseq_SplitInfo> TPlaceBioseq;
-    typedef map<TPlaceId, TPlaceBioseq> TChunkBioseq;
+    typedef map<CPlaceId, TPlaceBioseq> TChunkBioseq;
 
     void Add(const SChunkInfo& info);
 
-    void Add(TPlaceId place_id, const CSeq_descr_SplitInfo& info);
-    void Add(TPlaceId place_id, const CSeq_annot_SplitInfo& info);
+    void Add(const CPlaceId& place_id, const CSeq_descr_SplitInfo& info);
+    void Add(const CPlaceId& place_id, const CSeq_annot_SplitInfo& info);
     void Add(TAnnotObjects& objs,
              const CLocObjects_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
     void Add(const SIdAnnotPieces& pieces);
-    void Add(TPlaceId place_id, const CSeq_inst_SplitInfo& info);
-    void Add(TPlaceId place_id, const CSeq_data_SplitInfo& info);
-    void Add(TPlaceId place_id, const CBioseq_SplitInfo& info);
+    void Add(const CPlaceId& place_id, const CSeq_inst_SplitInfo& info);
+    void Add(const CPlaceId& place_id, const CSeq_data_SplitInfo& info);
+    void Add(const CPlaceId& place_id, const CBioseq_SplitInfo& info);
 
     size_t CountAnnotObjects(void) const;
 
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/10/18 14:00:17  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.7  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

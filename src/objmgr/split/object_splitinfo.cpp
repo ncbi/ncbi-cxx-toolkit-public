@@ -297,7 +297,6 @@ EAnnotPriority CBioseq_SplitInfo::GetPriority(void) const
 
 
 CPlace_SplitInfo::CPlace_SplitInfo(void)
-    : m_PlaceId(0)
 {
 }
 
@@ -312,13 +311,20 @@ CPlace_SplitInfo::~CPlace_SplitInfo(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(int gi,
+CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(const CPlaceId& place_id,
                                            TSeqPos seq_length,
                                            const CSeq_descr& descr,
                                            const SSplitterParams& params)
     : m_Descr(&descr)
 {
-    m_Location.Add(gi, CRange<TSeqPos>::GetWhole());
+    if ( place_id.IsBioseq() ) {
+        m_Location.Add(place_id.GetBioseqId(), CRange<TSeqPos>::GetWhole());
+    }
+    else {
+        _ASSERT(place_id.IsBioseq_set()); // it's either Bioseq or Bioseq_set
+        // use dummy handle for Bioseq-sets
+        m_Location.Add(CSeq_id_Handle(), CRange<TSeqPos>::GetWhole());
+    }
     s_Sizer.Set(descr, params);
     m_Size = CSize(s_Sizer);
     m_Priority = eAnnotPriority_regular;
@@ -338,28 +344,21 @@ EAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
     return eAnnotPriority_regular;
 }
 
-/*
-int CSeq_descr_SplitInfo::GetGi(void) const
-{
-    _ASSERT(m_Location.size() == 1);
-    _ASSERT(m_Location.begin()->first.IsGi());
-    return m_Location.begin()->first.GetGi();
-}
-*/
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_data_SplitInfo
 /////////////////////////////////////////////////////////////////////////////
 
 
-void CSeq_data_SplitInfo::SetSeq_data(int gi,
+void CSeq_data_SplitInfo::SetSeq_data(const CPlaceId& place_id,
                                       const TRange& range,
                                       TSeqPos seq_length,
                                       const CSeq_data& data,
                                       const SSplitterParams& params)
 {
+    _ASSERT(place_id.IsBioseq()); // Seq-data is attribute of Bioseqs
     m_Location.clear();
-    m_Location.Add(gi, range);
+    m_Location.Add(place_id.GetBioseqId(), range);
     m_Data.Reset(&data);
     s_Sizer.Set(data, params);
     m_Size = CSize(s_Sizer);
@@ -369,14 +368,6 @@ void CSeq_data_SplitInfo::SetSeq_data(int gi,
     }
 }
 
-/*
-int CSeq_data_SplitInfo::GetGi(void) const
-{
-    _ASSERT(m_Location.size() == 1);
-    _ASSERT(m_Location.begin()->first.IsGi());
-    return m_Location.begin()->first.GetGi();
-}
-*/
 
 CSeq_data_SplitInfo::TRange CSeq_data_SplitInfo::GetRange(void) const
 {
@@ -408,6 +399,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/18 14:00:22  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.11  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

@@ -36,6 +36,7 @@
 
 #include <objmgr/split/object_splitinfo.hpp>
 #include <objmgr/split/chunk_info.hpp>
+#include <objmgr/split/place_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -63,7 +64,7 @@ SAnnotPiece::SAnnotPiece(const SAnnotPiece& piece,
 }
 
 
-SAnnotPiece::SAnnotPiece(TPlaceId place_id,
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
                          const CSeq_annot_SplitInfo& annot,
                          const CAnnotObject_SplitInfo& obj)
     : m_PlaceId(place_id),
@@ -78,7 +79,7 @@ SAnnotPiece::SAnnotPiece(TPlaceId place_id,
 }
 
 
-SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_annot_SplitInfo& annot)
     : m_PlaceId(place_id),
       m_ObjectType(seq_annot),
       m_AnnotObject(0),
@@ -91,7 +92,7 @@ SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot)
 }
 
 
-SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_data_SplitInfo& data)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_data_SplitInfo& data)
     : m_PlaceId(place_id),
       m_ObjectType(seq_data),
       m_AnnotObject(0),
@@ -104,7 +105,7 @@ SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_data_SplitInfo& data)
 }
 
 
-SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_descr_SplitInfo& descr)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_descr_SplitInfo& descr)
     : m_PlaceId(place_id),
       m_ObjectType(seq_descr),
       m_AnnotObject(0),
@@ -117,7 +118,7 @@ SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_descr_SplitInfo& descr)
 }
 
 
-SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CBioseq_SplitInfo& seq)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CBioseq_SplitInfo& seq)
     : m_PlaceId(place_id),
       m_ObjectType(bioseq),
       m_AnnotObject(0),
@@ -258,6 +259,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/10/18 14:00:22  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.7  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

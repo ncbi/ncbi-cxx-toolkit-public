@@ -53,6 +53,7 @@
 
 #include <objmgr/split/id_range.hpp>
 #include <objmgr/split/size.hpp>
+#include <objmgr/split/place_id.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -200,7 +201,8 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_annot_SplitInfo& info)
 class CSeq_descr_SplitInfo : public CObject
 {
 public:
-    CSeq_descr_SplitInfo(int gi, TSeqPos seq_length,
+    CSeq_descr_SplitInfo(const CPlaceId& place_id,
+                         TSeqPos seq_length,
                          const CSeq_descr& descr,
                          const SSplitterParams& params);
 
@@ -219,7 +221,8 @@ class CSeq_data_SplitInfo : public CObject
 {
 public:
     typedef CRange<TSeqPos> TRange;
-    void SetSeq_data(int gi, const TRange& range, TSeqPos seq_length,
+    void SetSeq_data(const CPlaceId& place_id, const TRange& range,
+                     TSeqPos seq_length,
                      const CSeq_data& data,
                      const SSplitterParams& params);
 
@@ -269,7 +272,6 @@ public:
 class CPlace_SplitInfo
 {
 public:
-    typedef int TPlaceId;
     typedef map<CConstRef<CSeq_annot>, CSeq_annot_SplitInfo> TSeq_annots;
     typedef vector<CBioseq_SplitInfo> TBioseqs;
 
@@ -279,7 +281,7 @@ public:
     CRef<CBioseq> m_Bioseq;
     CRef<CBioseq_set> m_Bioseq_set;
 
-    TPlaceId                    m_PlaceId;
+    CPlaceId                    m_PlaceId;
     CRef<CSeq_descr_SplitInfo>  m_Descr;
     TSeq_annots                 m_Annots;
     CRef<CSeq_inst_SplitInfo>   m_Inst;
@@ -293,6 +295,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/10/18 14:00:17  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.10  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *

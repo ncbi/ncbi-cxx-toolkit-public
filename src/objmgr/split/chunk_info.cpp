@@ -36,6 +36,7 @@
 
 #include <objmgr/split/object_splitinfo.hpp>
 #include <objmgr/split/annot_piece.hpp>
+#include <objmgr/split/place_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -66,7 +67,8 @@ void SChunkInfo::Add(const SChunkInfo& chunk)
 }
 
 
-void SChunkInfo::Add(TPlaceId place_id, const CSeq_annot_SplitInfo& info)
+void SChunkInfo::Add(const CPlaceId& place_id,
+                     const CSeq_annot_SplitInfo& info)
 {
     TAnnotObjects& objs = m_Annots[place_id][info.m_Src_annot];
     ITERATE ( CSeq_annot_SplitInfo::TObjects, it, info.m_Objects ) {
@@ -124,7 +126,8 @@ void SChunkInfo::Add(const SIdAnnotPieces& pieces)
 }
 
 
-void SChunkInfo::Add(TPlaceId place_id, const CSeq_inst_SplitInfo& info)
+void SChunkInfo::Add(const CPlaceId& place_id,
+                     const CSeq_inst_SplitInfo& info)
 {
     ITERATE ( CSeq_inst_SplitInfo::TSeq_data, it, info.m_Seq_data ) {
         Add(place_id, *it);
@@ -132,21 +135,24 @@ void SChunkInfo::Add(TPlaceId place_id, const CSeq_inst_SplitInfo& info)
 }
 
 
-void SChunkInfo::Add(TPlaceId place_id, const CSeq_data_SplitInfo& info)
+void SChunkInfo::Add(const CPlaceId& place_id,
+                     const CSeq_data_SplitInfo& info)
 {
     m_Seq_data[place_id].push_back(info);
     m_Size += info.m_Size;
 }
 
 
-void SChunkInfo::Add(TPlaceId place_id, const CSeq_descr_SplitInfo& info)
+void SChunkInfo::Add(const CPlaceId& place_id,
+                     const CSeq_descr_SplitInfo& info)
 {
     m_Seq_descr[place_id].push_back(info);
     m_Size += info.m_Size;
 }
 
 
-void SChunkInfo::Add(TPlaceId place_id, const CBioseq_SplitInfo& info)
+void SChunkInfo::Add(const CPlaceId& place_id,
+                     const CBioseq_SplitInfo& info)
 {
     m_Bioseq[place_id].push_back(info);
     m_Size += info.m_Size;
@@ -171,6 +177,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/10/18 14:00:22  vasilche
+* Updated splitter for new SeqSplit specs.
+*
 * Revision 1.9  2004/08/24 16:45:15  vasilche
 * Removed excessive _TRACEs.
 *
