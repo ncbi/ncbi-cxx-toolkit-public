@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/01/07 05:20:03  vakatov
+ * Workaround for the SUN Forte 6 Update 1,2 compiler's internal bug.
+ *
  * Revision 6.2  2001/01/03 16:39:05  vasilche
  * Added CAbstractObjectManager - stub for object manager.
  * CRange extracted to separate file.
@@ -62,12 +65,23 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // constructor
 CSeq_loc_mix::CSeq_loc_mix(void)
 {
+    return;
 }
+
 
 // destructor
 CSeq_loc_mix::~CSeq_loc_mix(void)
 {
+#if defined(NCBI_COMPILER_WORKSHOP)
+// We have to use two #if's here because KAI C++ cannot handle #if foo == bar
+#  if (NCBI_COMPILER_VERSION == 530)
+    // BW_010::  to workaround (already reported to SUN, CASE ID 62563729)
+    //           internal bug of the SUN Forte 6 Update 1 and Update 2 compiler
+    (void) atoi("5");
+#  endif
+#endif
 }
+
 
 // length calculator
 int CSeq_loc_mix::GetLength(void) const
