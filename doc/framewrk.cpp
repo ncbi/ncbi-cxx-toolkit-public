@@ -30,13 +30,22 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.1  1998/10/05 22:11:49  vakatov
-* Initial revision
+* Revision 1.2  1998/10/07 22:37:40  vakatov
+* + "NCBI_USING_STL;"
 *
 * ===========================================================================
 */
 
+#include <ncbistd.hpp>
 #include <framewrk.hpp>
+
+// This is to use the STL(Standard Template Library)
+NCBI_USING_STL;
 
 
 //  !!! PUT YOUR CODE HERE !!!
+
+
+
+
+
