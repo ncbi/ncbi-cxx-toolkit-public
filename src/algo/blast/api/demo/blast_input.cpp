@@ -67,6 +67,7 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
     }
 
     int index = 0;
+    scope->AddTopLevelSeqEntry(*seq_entry);
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 
@@ -92,13 +93,6 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
             slp = new SSeqLoc (seqloc, s);
         }
         retval.push_back(*slp);
-
-        // Add this seqentry to the scope
-        try {
-            CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
-        } catch (CException&) {
-            scope->AddTopLevelSeqEntry(*seq_entry);
-        }
     }
 
     return retval;
