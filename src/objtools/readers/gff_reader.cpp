@@ -58,6 +58,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+
+
 CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 {
     x_Reset();
@@ -229,7 +231,8 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
         SRecord::SSubLoc subloc;
         subloc.accession = accession;
         subloc.strand    = strand;
-        subloc.ranges   += CRange<TSeqPos>(from, to);
+        subloc.ranges.insert(TSeqRange(from, to));
+
         record->loc.push_back(subloc);
     }}
    
@@ -353,7 +356,7 @@ CRef<CSeq_feat> CGFFReader::x_ParseRecord(const SRecord& record)
         if (x_GetFlags() & fGBQuals) {
             if ( !(x_GetFlags() & fNoGTF) ) { // translate
                 if (tag == "transcript_id") {
-                    continue;
+                    //continue;
                 } else if (tag == "gene_id") {
                     tag = "gene";
                     SIZE_TYPE colon = value.find(':');
@@ -382,7 +385,7 @@ CRef<CSeq_loc> CGFFReader::x_ResolveLoc(const SRecord::TLoc& loc)
     CRef<CSeq_loc> seqloc(new CSeq_loc);
     ITERATE (SRecord::TLoc, it, loc) {
         CRef<CSeq_id> id = x_ResolveSeqName(it->accession);
-        ITERATE (CRangeCollection<TSeqPos>, range, it->ranges) {
+        ITERATE (set<TSeqRange>, range, it->ranges) {
             CRef<CSeq_loc> segment(new CSeq_loc);
             if (range->GetLength() == 1) {
                 CSeq_point& pnt = segment->SetPnt();
@@ -433,20 +436,69 @@ string CGFFReader::x_FeatureID(const SRecord& record)
     if (x_GetFlags() & fNoGTF) {
         return kEmptyStr;
     }
-    SRecord::TAttrs::const_iterator it
-        = record.attrs.lower_bound(vector<string>(1, "transcript_id"));
-    if (it == record.attrs.end()  ||  it->front() != "transcript_id") {
-        return kEmptyStr;
+
+    static const vector<string> sc_GeneId(1, "gene_id");
+    SRecord::TAttrs::const_iterator gene_it
+        = record.attrs.lower_bound(sc_GeneId);
+
+    static const vector<string> sc_TranscriptId(1, "transcript_id");
+    SRecord::TAttrs::const_iterator transcript_it
+        = record.attrs.lower_bound(sc_TranscriptId);
+
+    static const vector<string> sc_ProteinId(1, "protein_id");
+    SRecord::TAttrs::const_iterator protein_it
+        = record.attrs.lower_bound(sc_ProteinId);
+
+    // concatenate our IDs from above, if found
+    string id;
+    if (gene_it != record.attrs.end()  &&
+        gene_it->front() == "gene_id") {
+        id += (*gene_it)[1];
     }
-    string id = (*it)[1] + ' ';
+
+    if (transcript_it != record.attrs.end()  &&
+        transcript_it->front() == "transcript_id") {
+        if ( !id.empty() ) {
+            id += ' ';
+        }
+        id += (*transcript_it)[1];
+    }
+
+    if (protein_it != record.attrs.end()  &&
+        protein_it->front() == "protein_id") {
+        if ( !id.empty() ) {
+            id += ' ';
+        }
+        id += (*protein_it)[1];
+    }
+
+    // look for db xrefs
+    static const vector<string> sc_Dbxref(1, "db_xref");
+    SRecord::TAttrs::const_iterator dbxref_it
+        = record.attrs.lower_bound(sc_Dbxref);
+    for ( ; dbxref_it != record.attrs.end()  &&
+            dbxref_it->front() == "db_xref";  ++dbxref_it) {
+        if ( !id.empty() ) {
+            id += ' ';
+        }
+        id += (*dbxref_it)[1];
+    }
+
+    if ( id.empty() ) {
+        return id;
+    }
+
     if (record.key == "start_codon" ||  record.key == "stop_codon") {
+        //id += " " + record.key;
         id += "CDS";
     } else if (record.key == "CDS"
                ||  NStr::FindNoCase(record.key, "rna") != NPOS) {
+        //id += " " + record.key;
         id += record.key;
     } else { // probably an intron, exon, or single site
         return kEmptyStr;
     }
+    _TRACE("id = " << id);
     return id;
 }
 
@@ -454,6 +506,14 @@ string CGFFReader::x_FeatureID(const SRecord& record)
 void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
 {
     // XXX - perform sanity checks and warn on mismatch
+
+    bool merge_overlaps = false;
+    if ((src.key == "start_codon"  ||  src.key == "stop_codon")  &&
+        dest.key == "CDS") {
+        // start_codon and stop_codon features should be contained inside of
+        // existing CDS locations
+        merge_overlaps = true;
+    }
 
     ITERATE (SRecord::TLoc, slit, src.loc) {
         bool merged = false;
@@ -469,7 +529,31 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
                 }
                 continue;
             } else {
-                dlit->ranges += slit->ranges;
+                if (merge_overlaps) {
+                    ITERATE (set<TSeqRange>, src_iter, slit->ranges) {
+                        TSeqRange range(*src_iter);
+                        set<TSeqRange>::iterator dst_iter =
+                            dlit->ranges.begin();
+                        for ( ;  dst_iter != dlit->ranges.end();  ) {
+                            if (dst_iter->IntersectingWith(range)) {
+                                range += *dst_iter;
+                                _TRACE("merging overlapping ranges: "
+                                       << range.GetFrom() << " - "
+                                       << range.GetTo() << " <-> "
+                                       << dst_iter->GetFrom() << " - "
+                                       << dst_iter->GetTo());
+                                dlit->ranges.erase(dst_iter++);
+                            } else {
+                                ++dst_iter;
+                            }
+                        }
+                        dlit->ranges.insert(range);
+                    }
+                } else {
+                    ITERATE (set<TSeqRange>, set_iter, slit->ranges) {
+                        dlit->ranges.insert(*set_iter);
+                    }
+                }
                 merged = true;
                 break;
             }
@@ -646,6 +730,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/08 12:13:24  dicuccio
+* Switched away from using CRangeCollection<> for locations, as this lead to
+* inadvertent merging of correctly overlapping exons
+*
 * Revision 1.4  2004/01/06 17:02:40  dicuccio
 * (From Aaron Ucko): Fixed ordering of intervals in a seq-loc-mix on the negative
 * strand
