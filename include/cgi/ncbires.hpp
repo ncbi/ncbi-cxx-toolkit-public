@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/17 17:25:02  sandomir
+* minor changes in Report
+*
 * Revision 1.6  1998/12/14 20:25:36  sandomir
 * changed with Command handling
 *
@@ -116,6 +119,8 @@ class CNcbiResPresentation
 {
 public:
 
+  virtual ~CNcbiResPresentation() {}
+
   virtual CNcbiNode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
@@ -158,7 +163,7 @@ public:
     
 protected:
 
-  static string GetEntry();
+  virtual string GetEntry() const;
 
   const CNcbiResource& m_resource;
 };
@@ -172,6 +177,8 @@ class CNcbiDbPresentation;
 class CNcbiDatabaseInfo
 {
 public:
+
+  virtual ~CNcbiDatabaseInfo() {}
 
   virtual const CNcbiDbPresentation* GetPresentation() const
     { return 0; }
@@ -229,10 +236,18 @@ protected:
 //
 
 class CNcbiDatabaseFilter
-{};
+{
+public:
+
+  virtual ~CNcbiDatabaseFilter() {}
+};
 
 class CNcbiDbFilterReport
 {
+public:
+
+  virtual ~CNcbiDbFilterReport() {}
+
   virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
 };
 
@@ -243,6 +258,8 @@ class CNcbiDbFilterReport
 class CNcbiDbPresentation
 {
 public:
+
+  virtual ~CNcbiDbPresentation() {}
 
   virtual CNcbiNode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
@@ -260,6 +277,8 @@ class CNcbiDataObject
 {
 public:
 
+  virtual ~CNcbiDataObject() {}
+
   virtual int GetID( void ) const = 0;
   virtual string GetType( void ) const = 0;
 
@@ -274,6 +293,8 @@ class CNcbiQueryResult
 {
 public:
 
+  virtual ~CNcbiQueryResult() {}
+
 };
 
 //
@@ -284,8 +305,7 @@ class CNcbiDataObjectReport
 {
 public:
 
-  CNcbiDataObjectReport( const CNcbiDataObject& obj );
-  virtual ~CNcbiDataObjectReport( void );
+  virtual ~CNcbiDataObjectReport() {}
 
   virtual CNcbiDataObjectReport* Clone( void ) const = 0;
 
@@ -295,7 +315,7 @@ public:
 
   virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
 
-  virtual bool IsRequested( const CCgiRequest& request ) const = 0;
+  virtual bool IsRequested( const CCgiRequest& request ) const;
 
   class CFind : public unary_function<CNcbiDataObjectReport,bool>
   {
@@ -310,7 +330,8 @@ public:
 
 protected:
 
-  const CNcbiDataObject& m_obj;
+  virtual string GetEntry() const;
+  
 };
 
 END_NCBI_SCOPE

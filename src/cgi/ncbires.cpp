@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/17 17:25:02  sandomir
+* minor changes in Report
+*
 * Revision 1.4  1998/12/14 20:25:37  sandomir
 * changed with Command handling
 *
@@ -102,8 +105,8 @@ bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
   pair<TCgiEntriesI,TCgiEntriesI> it = entries.equal_range( 
                                           CNcbiCommand::GetEntry() );
 
-  for( TCgiEntriesI itCmd = it.first; itCmd != it.second; itCmd++ ) {
-    if( value == itCmd->second ) {
+  for( TCgiEntriesI itEntr = it.first; itEntr != it.second; itEntr++ ) {
+    if( value == itEntr->second ) {
       return true;
     } // if
   } // for
@@ -111,7 +114,7 @@ bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
   return false;
 }
 
-string CNcbiCommand::GetEntry()
+string CNcbiCommand::GetEntry() const
 {
   return "cmd";
 }
@@ -131,11 +134,26 @@ CNcbiDatabase::~CNcbiDatabase( void )
 // class CNcbiDatabaseReport
 //
 
-CNcbiDataObjectReport::CNcbiDataObjectReport( const CNcbiDataObject& obj )
-  : m_obj( obj )
-{}
+bool CNcbiDataObjectReport::IsRequested( const CCgiRequest& request ) const
+{
+  const string value = GetName();
+  
+  TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
+  pair<TCgiEntriesI,TCgiEntriesI> it = entries.equal_range( 
+                                          CNcbiDataObjectReport::GetEntry() );
 
-CNcbiDataObjectReport::~CNcbiDataObjectReport( void )
-{}
+  for( TCgiEntriesI itEntr = it.first; itEntr != it.second; itEntr++ ) {
+    if( value == itEntr->second ) {
+      return true;
+    } // if
+  } // for
+
+  return false;
+}
+
+string CNcbiDataObjectReport::GetEntry() const
+{
+  return "dopt";
+}
 
 END_NCBI_SCOPE
