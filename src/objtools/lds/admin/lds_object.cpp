@@ -207,8 +207,15 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                     SaveObject(file_id, &sniffer, obj_info);
                 }
             }
+            LOG_POST(Info << "LDS: " 
+                          << obj_vector.size() 
+                          << " object(s) found in:" 
+                          << file_name);
+
+            sniffer.ClearObjectsVector();
+
         } else {
-            LOG_POST(Info << "No objects found in:" << file_name);
+            LOG_POST(Info << "LDS: No objects found in:" << file_name);
         }
 
     } else if ( format == CFormatGuess::eFasta ){
@@ -561,6 +568,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/10/09 16:48:01  kuznets
+ * More LDS logging when parsing files + minor bug fix.
+ *
  * Revision 1.16  2003/10/07 20:46:57  kuznets
  * Added diagnostics when some file has been recognized as a file without
  * objects.
