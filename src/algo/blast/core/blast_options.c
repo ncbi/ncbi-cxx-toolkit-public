@@ -380,7 +380,12 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       Int4 avg_qlen = 
          (query_info->context_offsets[query_info->last_context+1] - 1) /
          (query_info->last_context + 1);
-   
+
+   /* include the length of reverse complement */
+   if (program_number == eBlastTypeBlastn) {
+      avg_qlen *= 2;
+      }
+
       cutoff_e = GetCutoffEvalue(program_number);
    
       BLAST_Cutoffs(&cutoff_s, &cutoff_e, kbp, 
@@ -1633,6 +1638,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.137  2004/10/25 16:27:49  coulouri
+ * include the length of the reverse complement strand for blastn
+ *
  * Revision 1.136  2004/10/14 17:10:35  madden
  * BlastHitSavingParametersNew and BlastHitSavingParametersUpdate changes for gapped sum statistics
  *
