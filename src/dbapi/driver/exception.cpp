@@ -307,6 +307,7 @@ CDB_UserHandler* CDB_UserHandler_Default::Set(CDB_UserHandler* h)
 CDB_UserHandler_Default::~CDB_UserHandler_Default()
 {
     delete m_Handler;
+    m_Handler = 0;
 }
 
 
@@ -456,6 +457,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/02/25 17:03:58  vakatov
+ * Quick-fix to avoid problems if double-destructed (when linked in both as
+ * static and as DLL)
+ *
  * Revision 1.9  2002/09/20 20:58:41  vakatov
  * CDB_MultiEx::CDB_MultiEx() -- fix passing zero to "string&"
  *
