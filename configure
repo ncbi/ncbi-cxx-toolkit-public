@@ -2609,16 +2609,17 @@ if test "$exec_prefix" != "$top_srcdir" ; then
 
    cd "$top_srcdir"
    rm ${makefiles} ${scripts}
-
-   status_dir="$exec_prefix/status"
-   echo "Status  directory:  $status_dir"
-   test -d  "$status_dir"  ||  mkdir -p "$status_dir"
-   mv config.status config.cache config.log "$status_dir"/
 else
    find "$src_dir" -name '*.sh' -print | while read x_file ; do
       chmod a+x "$x_file"
    done
 fi
+
+status_dir="$exec_prefix/status"
+echo "Status  directory:  $status_dir"
+test -d  "$status_dir"  ||  mkdir -p "$status_dir"
+mv config.status config.cache config.log "$status_dir"/
+
 echo "Configuration completed."
 exit 0
 EOF
