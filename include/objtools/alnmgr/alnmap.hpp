@@ -239,7 +239,7 @@ public:
         CAlnChunkVec(const CAlnMap& aln_map, TNumrow row)
             : m_AlnMap(aln_map), m_Row(row) { }
 
-        CConstRef<CAlnChunk> operator[] (TNumchunk i) const;
+        CConstRef<CAlnMap::CAlnChunk> operator[] (TNumchunk i) const;
 
         TNumchunk size(void) const { return m_StartSegs.size(); };
 
@@ -281,7 +281,8 @@ public:
         typedef CAlnMap::TSignedRange  TSignedRange;
 
         TSegTypeFlags GetType(void) const { return m_TypeFlags; }
-        CAlnChunk&    SetType(TSegTypeFlags type_flags)
+
+        CAlnMap::CAlnChunk& SetType(TSegTypeFlags type_flags)
             { m_TypeFlags = type_flags; return *this; }
 
         const TSignedRange& GetRange(void) const { return m_SeqRange; }
@@ -677,6 +678,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/06/29 20:24:23  todorov
+* Nested classes fix
+*
 * Revision 1.36  2004/06/29 19:54:36  todorov
 * + typedefs for the nested classes to ease the SWIG support
 *
