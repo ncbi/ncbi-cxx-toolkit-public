@@ -1329,7 +1329,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Int4 hitsfound=0;
    Int4 total_hits=0, index;
-   Int4 start_offset, next_start, last_start, last_end;
+   Int4 start_offset, next_start, last_start=0, last_end=0;
    Int4 subject_length = subject->length;
    Int4 hits_extended = 0;
 
@@ -1353,7 +1353,10 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
          last_start = last_end - mb_lt->word_length;
          last_end = last_start + mb_lt->compressed_wordsize*COMPRESSION_RATIO;
          break;
-      default: break;
+      default: 
+         abort();  /* All the relevant cases should be handled above, otherwise variables may not be properly set
+                      for the rest of the funciton. */ 
+         break;
       }
    }
 
