@@ -144,6 +144,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
     arg_desc->AddFlag("print_descr", "print all found descriptors");
+    arg_desc->AddFlag("print_cds", "print CDS");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddOptionalKey("range_from", "RangeFrom",
@@ -263,6 +264,7 @@ int CDemoApp::Run(void)
     bool only_features = args["only_features"];
     bool print_tse = args["print_tse"];
     bool print_descr = args["print_descr"];
+    bool print_cds = args["print_cds"];
     bool print_features = args["print_features"];
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
@@ -722,8 +724,10 @@ int CDemoApp::Run(void)
                     (it->GetLocation(), CBioseq_Handle::eViewMerged,
                      CBioseq_Handle::eCoding_Iupac);
                 // Print first 10 characters of each cd-region
-                NcbiCout << "cds" << count <<
-                    " len=" << cds_vect.size() << " data=";
+                if ( print_cds ) {
+                    NcbiCout << "cds" << count <<
+                        " len=" << cds_vect.size() << " data=";
+                }
                 if ( cds_vect.size() == 0 ) {
                     NcbiCout << "Zero size from: " << MSerial_AsnText <<
                         it->GetOriginalFeature().GetLocation();
@@ -731,23 +735,26 @@ int CDemoApp::Run(void)
                         it->GetMappedFeature().GetLocation();
                     NcbiCout << "Zero size to: " << MSerial_AsnText <<
                         it->GetLocation();
-
+                    
                     CSeqVector v2 = handle.GetSequenceView
                         (it->GetLocation(), CBioseq_Handle::eViewMerged,
                          CBioseq_Handle::eCoding_Iupac);
                     NcbiCout << v2.size() << NcbiEndl;
-
+                    
                     const CSeq_id* mapped_id = 0;
                     it->GetMappedFeature().GetLocation().CheckId(mapped_id);
                     _ASSERT(mapped_id);
                     _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id)==master_id);
                 }
+                
                 sout = "";
                 for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
                     // Convert sequence symbols to printable form
                     sout += cds_vect[i];
                 }
-                NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+                if ( print_cds ) {
+                    NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+                }
             }
             NcbiCout << "Feat count (loc range, cds):\t" << count << NcbiEndl;
         }
@@ -828,6 +835,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2004/08/11 17:58:17  vasilche
+* Added -print_cds option.
+*
 * Revision 1.77  2004/08/09 15:55:57  vasilche
 * Fine tuning of blob cache.
 *
