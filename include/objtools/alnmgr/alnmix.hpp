@@ -121,6 +121,8 @@ private:
     typedef vector<CRef<CAlnMixMatch> >                   TMatches;
     typedef vector<CAlnMixSegment*>                       TSegments;
     typedef vector<CRef<CAlnMixSegment> >                 TSegmentsContainer;
+    typedef map<TSeqPos, CAlnMixMatch*>                   TTruncateSeqPosMap;
+    typedef map<int, TTruncateSeqPosMap>                  TTruncateDSIndexMap;
 
     void x_Reset               (void);
     void x_InitBlosum62Map     (void);
@@ -162,7 +164,8 @@ private:
     bool                        m_IndependentDSs;
     TBioseqHandleMap            m_BioseqHandles;
     TSeqIdMap                   m_SeqIds;
-
+    TTruncateDSIndexMap         m_TruncateMap;
+    TTruncateDSIndexMap         m_DeleteMap;
 };
 
 
@@ -319,6 +322,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/06/24 15:24:28  todorov
+* added optional truncation of overlaps
+*
 * Revision 1.25  2003/06/09 20:54:12  todorov
 * Use of ObjMgr is now optional
 *

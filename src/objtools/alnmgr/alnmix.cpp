@@ -572,24 +572,78 @@ void CAlnMix::x_Merge()
                     }
                 }
 
+                if (m_MergeFlags & fTruncateOverlaps) {
+
+                    TSignedSeqPos left_diff = 0;
+                    if (start1 >= start_i->first) {
+                        left_diff = lo_start_i->first + 
+                            lo_start_i->second->m_Len -
+                            start1;
+                        if (left_diff < 0) {
+                            left_diff = 0;
+                        }
+                    }
+
+                    TSignedSeqPos right_diff
+                        = (start_i == starts.end() ? 0 :
+                           len - (start_i->first - start1));
+                    if (right_diff < 0) {
+                        right_diff = 0;
+                    }
+                    TSeqPos diff = left_diff + right_diff;
+                    
+                    if (diff) {
+                        if (len - diff > 0) {
+                            // Truncation
+                            // x----)  x---.. becomes  x----x---x---..
+                            //   x-------)
+                            m_TruncateMap[match->m_DSIndex][start1] 
+                                = match;
+                            match->m_Start1 = start1 += left_diff;
+                            if (match->m_StrandsDiffer) {
+                                match->m_Start2 = start2 += right_diff;
+                            } else {
+                                match->m_Start2 = start2 += left_diff;
+                            }
+                            match->m_Len = len -= diff;
+                            
+                            // create the new truncated seg
+                            seg = new CAlnMixSegment;
+                            seg->m_Len = len;
+                            starts[start1] = seg;
+                            // point to the newly created start
+                            seg->m_StartIts[seq1] = hi_start_i = --start_i;
+                            // DONE!
+                            
+                        } else {
+                            // Ignoring
+                            // x----x---.. becomes  x----x---..
+                            //   x-------)
+                            m_DeleteMap[match->m_DSIndex][start1] 
+                                = match;
+                            break;
+                        }
+                    }
+                }
+
                 // look back
-                if (start_i != lo_start_i) {
+                if (hi_start_i == starts.end()  &&  start_i != lo_start_i) {
                     CAlnMixSegment * prev_seg = lo_start_i->second;
                     if (lo_start_i->first + prev_seg->m_Len > start1) {
                         // x----..   becomes  x-x--..
                         //   x--..
-                            
+                        
                         TSeqPos len1 = start1 - lo_start_i->first;
                         TSeqPos len2 = prev_seg->m_Len - len1;
-
+                        
                         // create the second seg
                         seg = new CAlnMixSegment;
                         seg->m_Len = len2;
                         starts[start1] = seg;
-
+                        
                         // create rows info
                         ITERATE (CAlnMixSegment::TStartIterators, it, 
-                                prev_seg->m_StartIts) {
+                                 prev_seg->m_StartIts) {
                             CAlnMixSeq * seq = it->first;
                             tmp_start_i = it->second;
                             if (seq->m_PositiveStrand ==
@@ -605,10 +659,10 @@ void CAlnMix::x_Merge()
                                 prev_seg->m_StartIts[seq] = ++tmp_start_i;
                             }
                         }
-    
+                        
                         // truncate the first seg
                         prev_seg->m_Len = len1;
-
+                        
                         start_i--; // point to the newly created start
                     }
                     lo_start_i++;
@@ -1441,6 +1495,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2003/06/24 15:24:14  todorov
+* added optional truncation of overlaps
+*
 * Revision 1.57  2003/06/20 03:06:39  todorov
 * Setting the seqalign type
 *
