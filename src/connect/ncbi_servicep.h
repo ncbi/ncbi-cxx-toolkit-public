@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/06 22:21:27  lavr
+ * SERV_Print added to private interface
+ *
  * Revision 6.4  2000/10/20 17:22:55  lavr
  * VTable changed to have 'Update' method
  * 'SERV_Update' added to private interface
@@ -69,24 +72,31 @@ typedef struct {
 /* Iterator structure
  */
 struct SSERV_IterTag {
-    const char*  service;        /* requested service name */
-    TSERV_Type   type;           /* requested server type(s) */
-    unsigned int preferred_host; /* preferred host to select */
-    SSERV_Info** skip;           /* servers to skip */
-    size_t       n_skip;         /* number of servers in the array */
+    const char*  service;        /* requested service name                 */
+    TSERV_Type   type;           /* requested server type(s)               */
+    unsigned int preferred_host; /* preferred host to select, network b.o. */
+    SSERV_Info** skip;           /* servers to skip                        */
+    size_t       n_skip;         /* number of servers in the array         */
     size_t       n_max_skip;     /* number of allocated slots in the array */
 
-    const SSERV_VTable* op;      /* table of virtual functions */
+    const SSERV_VTable* op;      /* table of virtual functions             */
 
-    void*        data;           /* private data field */
+    void*        data;           /* private data field                     */
 };
 
 
-/* Private interface: update mapper information from
- * the given text (<CR><LF> separated lines, usually kept from HTTP header).
+/* Private interface: update mapper information from the given text
+ * (<CR><LF> separated lines, usually kept from HTTP header).
  */
 int/*bool*/ SERV_Update(SERV_ITER iter,
                         const char *text);
+
+
+/* Private interface: print and return the HTTP-compliant header portion
+ * (<CR><LF> separated lines) out of the information contained in the iterator;
+ * to be used in mapping requests to DISPD. Return value must be 'free'd.
+ */
+char* SERV_Print(SERV_ITER iter);
 
 
 #ifdef __cplusplus
