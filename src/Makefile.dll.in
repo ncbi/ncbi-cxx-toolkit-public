@@ -57,11 +57,12 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP)
-	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
+	@[ -r $(XDLLDEP) ]  ||  $(TOUCH) -r $(XDLL) $(XDLLDEP)
 	$(BINCOPY) $(XDLL) $(libdir)
 	@has_dll_loadable@$(BINCOPY) $(XDLL_LOADABLE) $(libdir)
 	@$(BINCOPY) $(XDLLDEP) $(status_dir)
-	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
+	@[ -r $(statusdir)/$(XDLLDEP) ]  ||  \
+            $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 
 
 ### Standard targets
