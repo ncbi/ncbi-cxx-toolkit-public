@@ -1,3 +1,5 @@
+#include <ncbi_pch.hpp>
+
 /* A Bison parser, made from newick.ypp
    by GNU bison 1.35.  */
 
@@ -57,7 +59,6 @@
  */
 
 
-#include <ncbi_pch.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 USING_SCOPE(ncbi);
 static int nodecount = 0;
@@ -1251,8 +1252,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
+ * Revision 1.3  2004/05/24 20:48:40  gorelenk
+ * PCH moved upmost
  *
  * ===========================================================================
  */
