@@ -39,6 +39,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2002/03/11 21:51:18  lavr
+ * Modified server info to include MIME encoding and to prepare for
+ * BLAST dispatching to be phased out. Also, new DNS server type defined.
+ *
  * Revision 6.28  2001/09/25 14:47:49  lavr
  * TSERV_Flags reverted to 'int'
  *
@@ -144,7 +148,8 @@ typedef enum {
     fSERV_HttpGet    = 0x4,
     fSERV_HttpPost   = 0x8,
     fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
-    fSERV_Firewall   = 0x10
+    fSERV_Firewall   = 0x10,
+    fSERV_Dns        = 0x20
 } ESERV_Type;
 
 #define fSERV_Any           0
@@ -161,10 +166,11 @@ typedef enum {
 } ESERV_Flags;
 typedef int TSERV_Flags;
 
+
 #define SERV_DEFAULT_FLAG           fSERV_Regular
 #define SERV_MIME_TYPE_UNDEFINED    ((EMIME_Type)(-1))
 #define SERV_MIME_SUBTYPE_UNDEFINED ((EMIME_SubType)(-1))
-
+                                 
 
 /* Verbal representation of a server type (no internal spaces allowed)
  */
@@ -187,7 +193,7 @@ typedef struct {
 } SSERV_NcbidInfo;
 
 typedef struct {
-    char           dummy;       /* placeholder, not used */
+    char           dummy;       /* placeholder, not used                     */
 } SSERV_StandaloneInfo;
 
 typedef struct {
@@ -198,8 +204,12 @@ typedef struct {
 } SSERV_HttpInfo;
 
 typedef struct {
-    ESERV_Type     type;        /* type of original server */
+    ESERV_Type     type;        /* type of original server                   */
 } SSERV_FirewallInfo;
+
+typedef struct {
+    char         pad[8];        /* reserved for the future use, must be zero */
+} SSERV_DNSInfo;
 
 
 /* Generic NCBI server meta-address
@@ -209,6 +219,7 @@ typedef union {
     SSERV_StandaloneInfo standalone;
     SSERV_HttpInfo       http;
     SSERV_FirewallInfo   firewall;
+    SSERV_DNSInfo        dns;
 } USERV_Info;
 
 typedef struct {
@@ -217,13 +228,15 @@ typedef struct {
     unsigned short        port; /* port the server running on, host b.o.     */
     unsigned char/*bool*/ sful; /* true for stateful-only server (default=no)*/
     unsigned char/*bool*/ locl; /* true for local (LBSMD-only) server(def=no)*/
-    ESERV_Flags           flag; /* algorithm flag for the server             */
     TNCBI_Time            time; /* relaxation period / expiration time       */
     double                coef; /* bonus coefficient for server run locally  */
     double                rate; /* rate of the server                        */
-    EMIME_Type          mime_t; /* type and                                  */
-    EMIME_SubType       mime_s; /*     subtype for content-type              */
-    USERV_Info            u;    /* server type-specific data/params          */
+    EMIME_Type          mime_t; /* type,                                     */
+    EMIME_SubType       mime_s; /*     subtype,                              */
+    EMIME_Encoding      mime_e; /*         and encoding for content-type     */
+    ESERV_Flags           flag; /* algorithm flag for the server             */
+    unsigned char reserved[16]; /* zeroed reserved area - do not use!        */
+    USERV_Info               u; /* server type-specific data/params          */
 } SSERV_Info;
 
 
@@ -252,7 +265,11 @@ SSERV_Info* SERV_CreateFirewallInfo
 (unsigned int   host,           /* original server's host in net byte order  */
  unsigned short port,           /* original server's port in host byte order */
  ESERV_Type     type            /* type of original server, wrapped into     */
-);
+ );
+
+SSERV_Info* SERV_CreateDnsInfo
+(unsigned int   host            /* the only parameter                        */
+ );
 
 
 /* Dump server info to a string.
@@ -265,7 +282,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
 /* Server specification consists of the following:
  * TYPE [host][:port] [server-specific_parameters] [tags]
  *
- * TYPE := { STANDALONE | NCBID | HTTP | HTTP_GET | HTTP_POST | FIREWALL }
+ * TYPE := { STANDALONE | NCBID | HTTP{|_GET|_POST} | FIREWALL | DNS }
  *
  * Host should be specified as either an IP address (in dotted notation),
  * or as a host name (using domain notation if necessary).
@@ -292,6 +309,10 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *                      the service exists. Additional parameter the original
  *                      type of the server before conversion. Note that servers
  *                      of type FIREWALL cannot be configured in LBSMD.
+ *
+ *    DNS servers: Experimental (as of now) services for load-balancing
+ *                 DNS mapping at the NCBI Web entry point. Always local
+ *                 and not exported to the outside.
  *
  * Tags may follow in no particular order but no more than one instance
  * of each flag is allowed:
@@ -354,7 +375,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           average status of remaining servers for the same service.
  *
  *    Content type indication:
- *       C=type/subtype [no default]
+ *       C=type/subtype[-encoding] [no default]
  *           specification of Content-Type, which server accepts.
  *           The value of this tag gets added automatically to any packet
  *           which is sent e.g. by SERVICE connector. The client has,
@@ -363,6 +384,13 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           This flag just helps insure that HTTP packets all get proper
  *           content type, defined at service configuration.
  *
+ *    Private server:
+ *       P=no           (default)
+ *       P=yes
+ *           specifies whether the server is private for the host.
+ *           Private server cannot be used from anywhere else but
+ *           this host. When non-private (default) the server lacks
+ *           'P=no' in verbal representation resulted from SERV_WriteInfo().
  *
  * Note that optional arguments can be omitted along with all preceding
  * optional arguments, that is the following 2 server specifications are
