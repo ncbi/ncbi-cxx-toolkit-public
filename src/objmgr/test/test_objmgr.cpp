@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/03/04 17:07:18  grichenk
+* +Testing feature iterators with single TSE restriction
+*
 * Revision 1.14  2002/02/25 21:05:31  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -166,7 +169,8 @@ private:
         string seq_str, string seq_str_compl,
         int seq_desc_cnt,
         int seq_feat_cnt, int seq_featrg_cnt,
-        int seq_align_cnt, int seq_alignrg_cnt);
+        int seq_align_cnt, int seq_alignrg_cnt,
+        bool tse_feat_test = false);
 
     CRef<CObjectManager> m_ObjMgr;
 };
@@ -614,7 +618,8 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
                              string seq_str, string seq_str_compl,
                              int seq_desc_cnt,
                              int seq_feat_cnt, int seq_featrg_cnt,
-                             int seq_align_cnt, int seq_alignrg_cnt)
+                             int seq_align_cnt, int seq_alignrg_cnt,
+                             bool tse_feat_test)
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
     if ( !handle ) {
@@ -714,8 +719,8 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(id);
     count = 0;
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-        feat_it;  ++feat_it) {
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
+        tse_feat_test ? &handle : 0); feat_it;  ++feat_it) {
         count++;
         //### _ASSERT(feat_it->
     }
@@ -727,8 +732,8 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-        feat_it;  ++feat_it) {
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
+        tse_feat_test ? &handle : 0); feat_it;  ++feat_it) {
         count++;
         //### _ASSERT(feat_it->
     }
@@ -737,7 +742,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_align iterator
     loc.SetWhole(id);
     count = 0;
-    for (CAlign_CI align_it( scope, loc);
+    for (CAlign_CI align_it(scope, loc, tse_feat_test ? &handle : 0);
         align_it;  ++align_it) {
         count++;
         //### _ASSERT(align_it->
@@ -750,7 +755,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;
-    for (CAlign_CI align_it(scope, loc);
+    for (CAlign_CI align_it(scope, loc, tse_feat_test ? &handle : 0);
         align_it;  ++align_it) {
         count++;
         //### _ASSERT(align_it->
@@ -779,6 +784,11 @@ int CTestApp::Run(void)
             "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
             "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
             2, 4, 2, 1, 0);
+        ProcessBioseq(Scope, id,
+            40, 40,
+            "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
+            "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
+            2, 1, 0, 0, 0, true);
         id.SetGi(12);
         ProcessBioseq(Scope, id,
             40, 40,
