@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/10/05 22:40:06  lavr
+ * Additional parameter 'info' in a call to 'Open' for service mapper
+ *
  * Revision 6.6  2000/10/05 21:26:30  lavr
  * Log message edited
  *
@@ -83,14 +86,14 @@ SERV_ITER SERV_Open
 (const char*       service,         /* service name */
  TSERV_Type        type,            /* mask of type of servers requested */
  unsigned int      preferred_host,  /* preferred host to use service on */
- SNetConnInfo*     info             /* connection information */
+ SConnNetInfo*     info             /* connection information */
  );
 
 SERV_ITER SERV_OpenEx
 (const char*        service,        /* service name */
  TSERV_Type         type,           /* mask of type of servers requested */
  unsigned int       preferred_host, /* preferred host to use service on */
- SNetConnInfo*      info,           /* connection information */
+ SConnNetInfo*      info,           /* connection information */
  const SSERV_Info** skip,           /* array of servers NOT to select */
  size_t             n_skip          /* number of servers in preceding array */
  );
