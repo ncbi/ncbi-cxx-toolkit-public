@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/11/24 20:18:09  golikov
+* flush moved from CreateSubNodes to PrintChildren -> loose of text fixed
+*
 * Revision 1.5  1999/05/15 23:00:56  vakatov
 * Moved "asnio" and "asnwrite" modules to the (new) library
 * "xasn"(project "asn")
@@ -69,7 +72,7 @@ public:
     operator AsnIoPtr(void)
         { return GetOut(); }
 
-    virtual void CreateSubNodes(void);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 
 private:
     // ASN.1 communication interface

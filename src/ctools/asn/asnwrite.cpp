@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/11/24 20:18:19  golikov
+* flush moved from CreateSubNodes to PrintChildren -> loose of text fixed
+*
 * Revision 1.5  1999/05/15 23:00:59  vakatov
 * Moved "asnio" and "asnwrite" modules to the (new) library
 * "xasn"(project "asn")
@@ -87,9 +90,11 @@ Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
     return size;
 }
 
-void CAsnWriteNode::CreateSubNodes(void)
+CNcbiOstream& CAsnWriteNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     AsnIoFlush(m_Out);
+    CHTMLNode::PrintChildren(out, mode);
+    return out;
 }
 
 END_NCBI_SCOPE
