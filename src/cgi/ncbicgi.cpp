@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/01/10 23:48:55  vakatov
+* s_ParseMultipartEntries() -- allow for empty parts
+*
 * Revision 1.51  2001/12/06 00:19:55  vakatov
 * CCgiRequest::ParseEntries() -- allow leading '&' in the query string (temp.)
 *
@@ -222,10 +225,11 @@
 #include <stdio.h>
 #include <time.h>
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#  include <unistd.h>
 #else
-#define STDIN_FILENO 0
+#  define STDIN_FILENO 0
 #endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -376,8 +380,8 @@ static bool s_CookieLess
 }
 
 
-bool CCgiCookie::operator<(const CCgiCookie& cookie)
-const
+bool CCgiCookie::operator< (const CCgiCookie& cookie)
+    const
 {
     return s_CookieLess(m_Name, m_Domain, m_Path,
                         cookie.m_Name, cookie.m_Domain, cookie.m_Path);
@@ -421,9 +425,8 @@ CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
 
 void CCgiCookies::Add(const CCgiCookies& cookies)
 {
-    for (TCIter iter = cookies.m_Cookies.begin();
-         iter != cookies.m_Cookies.end();  iter++) {
-        Add(*(*iter));
+    iterate (TSet, cookie, cookies.m_Cookies) {
+        Add(**cookie);
     }
 }
 
@@ -443,7 +446,7 @@ void CCgiCookies::Add(const string& str)
         }
         if (str[pos_mid] != '=') {
             Add(str.substr(pos_beg, pos_mid-pos_beg), kEmptyStr);
-            if (str[pos_mid] != ';'  ||  ++pos_mid == str.length()) 
+            if (str[pos_mid] != ';'  ||  ++pos_mid == str.length())
                 return; // done
             pos = pos_mid;
             continue;
@@ -469,10 +472,10 @@ void CCgiCookies::Add(const string& str)
 
 
 CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os)
-const
+    const
 {
-    for (TCIter iter = m_Cookies.begin();  iter != m_Cookies.end();  iter++) {
-        os << *(*iter);
+    iterate (TSet, cookie, m_Cookies) {
+        os << **cookie;
     }
     return os;
 }
@@ -484,8 +487,9 @@ CCgiCookie* CCgiCookies::Find
     TCIter iter = m_Cookies.begin();
     while (iter != m_Cookies.end()  &&
            s_CookieLess((*iter)->GetName(), (*iter)->GetDomain(),
-                        (*iter)->GetPath(), name, domain, path))
+                        (*iter)->GetPath(), name, domain, path)) {
         iter++;
+    }
 
     // find exact match
     if (iter != m_Cookies.end()  &&
@@ -502,7 +506,7 @@ CCgiCookie* CCgiCookies::Find
 
 const CCgiCookie* CCgiCookies::Find
 (const string& name, const string& domain, const string& path)
-const
+    const
 {
     return const_cast<CCgiCookies*>(this)->Find(name, domain, path);
 }
@@ -535,7 +539,7 @@ CCgiCookie* CCgiCookies::Find(const string& name, TRange* range)
 
 
 const CCgiCookie* CCgiCookies::Find(const string& name, TCRange* range)
-const
+    const
 {
     CCgiCookies& nonconst_This = const_cast<CCgiCookies&>(*this);
     if ( range ) {
@@ -574,8 +578,8 @@ size_t CCgiCookies::Remove(TRange& range, bool destroy)
 
 void CCgiCookies::Clear(void)
 {
-    for (TCIter iter = m_Cookies.begin();  iter != m_Cookies.end();  iter++) {
-        delete *iter;
+    iterate (TSet, cookie, m_Cookies) {
+        delete *cookie;
     }
     m_Cookies.clear();
 }
@@ -622,7 +626,7 @@ static const string s_PropName[eCgi_NProperties + 1] = {
 
 const string& CCgiRequest::GetPropertyName(ECgiProp prop)
 {
-    if ((long)prop < 0  ||  (long)eCgi_NProperties <= (long)prop) {
+    if ((long) prop < 0  ||  (long) eCgi_NProperties <= (long) prop) {
         _TROUBLE;
         throw logic_error("CCgiRequest::GetPropertyName(BadPropIdx)");
     }
@@ -687,6 +691,13 @@ static SIZE_TYPE s_URL_Decode(string& str)
 }
 
 
+// Add another entry to the container of entries
+void s_AddEntry(TCgiEntries& entries, const string& name, const string& value)
+{
+    entries.insert(TCgiEntries::value_type(name, value));
+}
+
+
 // Parse ISINDEX-like query string into "indexes" XOR "entries" --
 // whichever is not null
 // Return 0 on success;  return 1-based error position otherwise
@@ -721,8 +732,7 @@ static SIZE_TYPE s_ParseIsIndex(const string& str,
         if ( indexes ) {
             indexes->push_back(name);
         } else {
-            pair<const string, string> entry(name, kEmptyStr);
-            entries->insert(entry);
+            s_AddEntry(*entries, name, kEmptyStr);
         }
 
         // continue
@@ -772,21 +782,19 @@ static void s_ParseMultipartEntries(const string& boundary,
         SIZE_TYPE eol = str.find(s_Eol, pos);
         if (eol == NPOS) {
             throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
-                                  boundary + "\"): unexpected eof: " + 
+                                  boundary + "\"): unexpected eof: " +
                                   str.substr(pos), 0);
         }
         else if (eol == pos + boundary.size()  &&
                  NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
             // boundary
-            if ( partStart == NPOS ) // in header
-                throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
-                                      boundary + "\"): boundary in header: " + 
-                                      str.substr(pos), 0);
-
-            if ( partStart != 0 ) {
+            if (partStart == NPOS) {
+                s_AddEntry(entries, name, kEmptyStr);
+            }
+            else if (partStart != 0) {
                 SIZE_TYPE partEnd = pos - s_Eol.size();
-                entries.insert(TCgiEntries::value_type(name,
-                    str.substr(partStart, partEnd - partStart)));
+                s_AddEntry(entries,
+                           name, str.substr(partStart, partEnd - partStart));
             }
 
             partStart = NPOS;
@@ -796,15 +804,13 @@ static void s_ParseMultipartEntries(const string& boundary,
                  NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
                  str[eol-1] == '-'  &&  str[eol-2] == '-') {
             // last boundary
-            if ( partStart == NPOS ) // in header
-                throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
-                                      boundary + "\"): boundary in header: " + 
-                                      str.substr(pos), 0);
-
+            if (partStart == NPOS) {
+                s_AddEntry(entries, name, kEmptyStr);
+            }
             if ( partStart != 0 ) {
                 SIZE_TYPE partEnd = pos - s_Eol.size();
-                entries.insert(TCgiEntries::value_type(name,
-                    str.substr(partStart, partEnd - partStart)));
+                s_AddEntry(entries,
+                           name, str.substr(partStart, partEnd - partStart));
             }
             return;
         }
@@ -813,16 +819,17 @@ static void s_ParseMultipartEntries(const string& boundary,
             if (pos + s_NameStart.size() <= eol  &&
                 NStr::Compare(str, pos, s_NameStart.size(), s_NameStart) ==0) {
                 SIZE_TYPE nameStart = pos + s_NameStart.size();
-                SIZE_TYPE nameEnd = str.find('\"', nameStart);
-                if ( nameEnd == NPOS )
+                SIZE_TYPE nameEnd   = str.find('\"', nameStart);
+                if (nameEnd == NPOS) {
                     throw CParseException("\
-CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " + 
+CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
                                           str.substr(pos), 0);
-                
+                }
+
                 // new name
                 name = str.substr(nameStart, nameEnd - nameStart);
             }
-            else if ( eol == pos ) {
+            else if (eol == pos) {
                 // end of header
                 partStart = eol + s_Eol.size();
             }
@@ -835,6 +842,7 @@ CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
     }
 }
 
+
 static void s_ParsePostQuery(const string& content_type, const string& str,
                              TCgiEntries& entries)
 {
@@ -844,14 +852,15 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
         // (this can happen if Content-Length: was not specified)
         SIZE_TYPE err_pos;
         SIZE_TYPE eol = str.find_first_of("\r\n");
-        if ( eol != NPOS ) {
-             err_pos = CCgiRequest::ParseEntries(str.substr(0, eol), entries);
+        if (eol != NPOS) {
+            err_pos = CCgiRequest::ParseEntries(str.substr(0, eol), entries);
         } else {
-             err_pos = CCgiRequest::ParseEntries(str, entries);
+            err_pos = CCgiRequest::ParseEntries(str, entries);
         }
-        if ( err_pos != 0 )
+        if ( err_pos != 0 ) {
             throw CParseException("Init CCgiRequest::ParseFORM(\"" +
                                   str + "\")", err_pos);
+        }
         return;
     }
 
@@ -1049,7 +1058,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
         }
         image_name = name;
     }
-    m_Entries.insert(TCgiEntries::value_type(kEmptyStr, image_name));
+    s_AddEntry(m_Entries, kEmptyStr, image_name);
 }
 
 
@@ -1066,7 +1075,7 @@ const string& CCgiRequest::GetProperty(ECgiProp property) const
 
 
 const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
-const
+    const
 {
     if ( http ) {
         return x_GetPropertyByName("HTTP_" + key);
@@ -1077,7 +1086,7 @@ const
 
 
 const string& CCgiRequest::GetEntry(const string& name, bool* is_found)
-const
+    const
 {
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());
@@ -1149,7 +1158,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
 
         // parse and URL-decode value(if any)
         string value;
-        if (str[mid] == '=') { // has a value 
+        if (str[mid] == '=') { // has a value
             mid++;
             SIZE_TYPE end = str.find_first_of(" =&", mid);
             if (end != NPOS  &&  (str[end] != '&'  ||  end == len-1))
@@ -1166,9 +1175,8 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
             beg = mid + 1;
         }
 
-        // compose & store the name-value pair
-        pair<const string, string> entry(name, value);
-        entries.insert(entry);
+        // store the name-value pair
+        s_AddEntry(entries, name, value);
     }
     return 0;
 }
