@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/07/01 15:32:30  grichenk
+* Fixed 'unused variable depth3' warning
+*
 * Revision 1.5  2002/05/31 17:53:00  grichenk
 * Optimized for better performance (CTSE_Info uses atomic counter,
 * delayed annotations indexing, no location convertions in
@@ -104,7 +107,6 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             }
         }
         { //--- m_AnnotMap
-            unsigned int depth3 = depth2-1;
             DebugDumpValue(ddc, "m_AnnotMap.type",
                 "map<CSeq_id_Handle, CRangeMultimap<CRef<CAnnotObject>,"
                 "CRange<TSeqPos>::position_type>>");
