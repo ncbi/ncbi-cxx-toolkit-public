@@ -109,7 +109,9 @@ CBDB_RawFile::~CBDB_RawFile()
 
     // It's illegal to close a file involved in active transactions
     
-    if (m_Trans && (m_Trans->IsInProgress())) {
+    if ( m_Trans != 0 && 
+        (m_TransAssociation == (int) CBDB_Transaction::eFullAssociation) &&
+        (m_Trans->IsInProgress())) {
         _ASSERT(0);
         
         // If we are here we can try to communicate by throwing
@@ -1066,6 +1068,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/02/23 19:42:06  kuznets
+ * Fixed error when closing a file with non-associated transaction
+ *
  * Revision 1.48  2005/02/23 18:35:30  kuznets
  * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
  *
