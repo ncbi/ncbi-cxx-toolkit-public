@@ -833,6 +833,8 @@
 #  define NCBI_GUIOPENGL_EXPORT
 #  define NCBI_GUIUTILS_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
+#  define NCBI_GUIWIDGETSALN_EXPORT
+#  define NCBI_GUIWIDGETSSEQ_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
 #  define NCBI_LDS_EXPORT
@@ -886,6 +888,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.37  2003/09/12 13:01:06  dicuccio
+ * Added dummy export specifiers for non-Win32 platforms
+ *
  * Revision 1.36  2003/09/12 12:56:52  dicuccio
  * Added new export specifiers for gui_widgets_seq, gui_widgets_aln
  *
