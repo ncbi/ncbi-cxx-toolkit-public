@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/17 14:06:52  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.3  2001/03/09 15:48:43  thiessen
 * major changes to add initial update viewer
 *
@@ -47,6 +50,10 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 #include <wx/wx.h>
 

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/03/17 14:06:52  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.19  2001/02/22 00:29:48  thiessen
 * make directories global ; allow only one Sequence per StructureObject
 *
@@ -121,6 +124,10 @@
 
 #ifndef CN3D_MAIN__HPP
 #define CN3D_MAIN__HPP
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 #include <wx/wx.h>
 #if !wxUSE_GLCANVAS

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/17 14:06:53  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.4  2001/03/13 01:24:17  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -50,6 +53,10 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 #include <wx/wx.h>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/17 14:06:49  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.2  2001/03/13 01:25:06  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -73,6 +76,7 @@ void UpdateViewer::CreateUpdateWindow(void)
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
             if (!updateWindow) updateWindow = new UpdateViewerWindow(this);
+            if (displayStack.size() > 2) updateWindow->EnableUndo(true);
             updateWindow->NewDisplay(display, true);
             updateWindow->ScrollToColumn(display->GetStartingColumn());
             updateWindow->Show(true);

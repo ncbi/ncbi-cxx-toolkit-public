@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/17 14:06:49  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.6  2001/03/13 01:25:06  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -53,6 +56,10 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 #include <wx/wx.h>
 
@@ -93,8 +100,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     updateMenu = new wxMenu;
     updateMenu->Append(MID_SHOW_UPDATES, "&Show Updates");
     updateMenu->AppendSeparator();
-    updateMenu->Append(MID_REALIGN_ROW, "&Realign Row", "", true);
-    updateMenu->Append(MID_REALIGN_ROWS, "Realign Rows");
+    updateMenu->Append(MID_REALIGN_ROW, "Realign &Individual Rows", "", true);
+    updateMenu->Append(MID_REALIGN_ROWS, "Realign Rows from &List");
     menuBar->Append(updateMenu, "&Update");
 
     EnableDerivedEditorMenuItems(false);

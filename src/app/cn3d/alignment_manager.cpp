@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/03/17 14:06:48  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.45  2001/03/13 01:25:05  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -566,7 +569,9 @@ void AlignmentManager::RealignSlaveSequences(
         TESTMSG("recreating display");
         sequenceViewer->RecreateFromEditedMultiple(multiple);
         TESTMSG("adding to update window");
+        SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
         updateViewer->AddAlignments(alignments);
+        SetDiagPostLevel(eDiag_Info);
         TESTMSG("done");
     }
 }

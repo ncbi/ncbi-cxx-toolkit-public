@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/03/17 14:06:52  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.13  2000/11/02 16:48:23  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -80,6 +83,10 @@
 
 #ifndef WX_SEQUENCE_VIEWER_WIDGET__HPP
 #define WX_SEQUENCE_VIEWER_WIDGET__HPP
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 #include <wx/wx.h>
 #include <wx/splitter.h>
@@ -140,7 +147,7 @@ public:
     // this is the callback when the the widget is in eSelect mode; it gives the
     // corners of the rectangle of cells selected.
     virtual void SelectedRectangle(
-        int columnLeft, int rowTop, 
+        int columnLeft, int rowTop,
         int columnRight, int rowBottom) { }
 
     // this is the callback when the widget is in eDrag mode; it gives two cells,
@@ -232,7 +239,7 @@ public:
     void TitleAreaOn(void);
     void TitleAreaOff(void);
     void TitleAreaToggle(void);
-    
+
 private:
     SequenceViewerWidget_SequenceArea *sequenceArea;
     SequenceViewerWidget_TitleArea *titleArea;

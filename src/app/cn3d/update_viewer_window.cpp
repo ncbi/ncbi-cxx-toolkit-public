@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/17 14:06:49  thiessen
+* more workarounds for namespace/#define conflicts
+*
 * Revision 1.2  2001/03/13 01:25:06  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -41,6 +44,10 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 #include <wx/wx.h>
 
@@ -78,7 +85,6 @@ UpdateViewerWindow::~UpdateViewerWindow(void)
 void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
 {
     if (viewer) {
-        viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
         viewer->GUIDestroyed(); // make sure UpdateViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
