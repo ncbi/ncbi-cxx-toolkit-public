@@ -52,18 +52,16 @@ typedef struct SHostInfoTag {
 HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env)
 {
     SHOST_Info* host_info;
+    size_t      size;
 
     if (!hinfo)
         return 0;
     if (env && !*env)
         env = 0;
-    hinfo_size += sizeof(*host_info);
-    if (!(host_info = (SHOST_Info*)malloc(hinfo_size + (env ? strlen(env):0))))
+    size = hinfo_size + sizeof(*host_info);
+    if (!(host_info = (SHOST_Info*) malloc(size + (env ? strlen(env) : 0))))
         return 0;
-    if (env)
-        strcpy((char*) host_info + sizeof(*host_info) - 1 + hinfo_size, env);
-    else
-        host_info->env = 0;
+    host_info->env = env ? strcpy((char*) host_info + size - 1, env) : 0;
     host_info->pad = M_PI;
     memcpy(host_info->hinfo, hinfo, hinfo_size);
     return host_info;
@@ -121,6 +119,9 @@ const char* HINFO_Environment(HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/10/29 00:31:08  lavr
+ * Fixed hinfo overflow from the use of precalculated size
+ *
  * Revision 6.3  2002/10/28 21:55:38  lavr
  * LBSM_HINFO introduced for readability to replace plain "const void*"
  *
