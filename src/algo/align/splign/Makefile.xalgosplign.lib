@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq
+ASN_DEP = seq blast
 
 SRC = splign splign_util splign_hit splign_hitparser \
       splign_compartment_finder splign_formatter splign_simple
