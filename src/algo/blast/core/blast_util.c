@@ -307,7 +307,7 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
    register int state;
    Int2 total_remainder;
    Int4 prot_length;
-   register int byte_value, codon;
+   register int byte_value, codon=-1;
    Uint1 last_remainder, last_byte, remainder;
    register Uint1Ptr nt_seq_end, nt_seq_start;
    Uint1Ptr prot_seq_start;
