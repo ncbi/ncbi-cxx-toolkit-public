@@ -35,6 +35,7 @@
  */
 
 #include <util/compress/stream.hpp>
+#include <stdio.h>
 
 /** @addtogroup Compression
  *
@@ -322,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/17 23:24:42  ucko
+ * +<stdio.h> for FILE*
+ *
  * Revision 1.9  2004/11/17 17:59:25  ivanov
  * Moved #include <bzlib.h> from .hpp to .cpp
  *
