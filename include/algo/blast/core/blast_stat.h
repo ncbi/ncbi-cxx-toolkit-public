@@ -121,20 +121,20 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 #endif
 #define BLAST_SCORE_RANGE_MAX	(BLAST_SCORE_1MAX - BLAST_SCORE_1MIN)
 
-typedef struct BLAST_ScoreFreq {
+typedef struct Blast_ScoreFreq {
     Int4	score_min, score_max;
     Int4	obs_min, obs_max;
     double	score_avg;
     double* sprob0,* sprob;
-} BLAST_ScoreFreq;
+} Blast_ScoreFreq;
 
 #define BLAST_MATRIX_SIZE 32
 
 /* Remove me */
-typedef struct BLASTMatrixStructure {
+typedef struct SBLASTMatrixStructure {
     Int4 *matrix[BLAST_MATRIX_SIZE];
     Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE]; /* not used */
-} BLASTMatrixStructure;
+} SBLASTMatrixStructure;
 
 typedef struct BlastScoreBlk {
 	Boolean		protein_alphabet; /* TRUE if alphabet_code is for a 
@@ -142,7 +142,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Uint1		alphabet_code;	/* NCBI alphabet code. */
 	Int2 		alphabet_size;  /* size of alphabet. */
 	Int2 		alphabet_start;  /* numerical value of 1st letter. */
-	BLASTMatrixStructure* matrix_struct;	/* Holds info about matrix. */
+	SBLASTMatrixStructure* matrix_struct;	/* Holds info about matrix. */
 	Int4 **matrix;  /* Substitution matrix */
 	Int4 **posMatrix;  /* Sub matrix for position depend BLAST. */
    double karlinK; /* Karlin-Altschul parameter associated with posMatrix */
@@ -153,7 +153,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
         double  scale_factor; /* multiplier for all cutoff and dropoff scores */
 	Boolean		read_in_matrix; /* If TRUE, matrix is read in, otherwise
 					produce one from penalty and reward above. */
-	BLAST_ScoreFreq** sfp;	/* score frequencies. */
+	Blast_ScoreFreq** sfp;	/* score frequencies. */
 	double **posFreqs; /*matrix of position specific frequencies*/
 	/* kbp & kbp_gap are ptrs that should be set to kbp_std, kbp_psi, etc. */
 	Blast_KarlinBlk** kbp; 	/* Karlin-Altschul parameters. */
@@ -175,11 +175,11 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int8	effective_search_sp;	/* product of above two */
 } BlastScoreBlk;
 
-typedef struct BLAST_ResComp {
+typedef struct Blast_ResComp {
     Uint1	alphabet_code;
     Int4*	comp; 	/* composition of alphabet, array starts at beginning of alphabet. */
     Int4*   comp0;	/* Same array as above, starts at zero. */
-} BLAST_ResComp;
+} Blast_ResComp;
 
 typedef struct Blast_ResFreq {
     Uint1		alphabet_code;
@@ -254,7 +254,7 @@ char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_exten
 
 /** Calculates the parameter Lambda given an initial guess for its value */
 double
-Blast_KarlinLambdaNR(BLAST_ScoreFreq* sfp, double initialLambdaGuess);
+Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess);
 
 double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, double  searchsp);
 double BLAST_GapDecayDivisor(double decayrate, unsigned nsegs );
@@ -328,15 +328,15 @@ Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
  * @param score_min Minimum score [in]
  * @param score_max Maximum score [in]
  */
-BLAST_ScoreFreq*
+Blast_ScoreFreq*
 Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
 
 /** Deallocates the score frequencies structure 
  * @param sfp the structure to deallocate [in]
  * @return NULL
  */
-BLAST_ScoreFreq*
-Blast_ScoreFreqDestruct(BLAST_ScoreFreq* sfp);
+Blast_ScoreFreq*
+Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp);
 
 /** Fills a buffer with the 'standard' alphabet 
  * (given by STD_AMINO_ACID_FREQS[index].ch).
@@ -349,7 +349,7 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues,
 
 /* Please see comment on blast_stat.c */
 Int2
-Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp);
+Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
 
 #ifdef __cplusplus
 }

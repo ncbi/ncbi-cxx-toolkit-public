@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.72  2004/05/17 10:37:38  camacho
+ * Rename BLAST_ScoreFreq, BLASTMatrixStructure and BLAST_ResComp to avoid conflicts with C toolkit
+ *
  * Revision 1.71  2004/05/07 15:23:47  papadopo
  * add initialization of scale factor to ScoreBlkNew
  *
@@ -311,7 +314,7 @@ v * Revision 1.53  2004/04/05 18:53:35  madden
 
 
 /* Allocates and Deallocates the two-dimensional matrix. */
-static BLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
+static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 
 /* performs sump calculation, used by BlastSumPStd */
 static double BlastSumPCalc (int r, double s);
@@ -830,10 +833,10 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 		}
 		sbp->matrix = sbp->matrix_struct->matrix;
 		sbp->maxscore = (Int4 *) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
-                sbp->scale_factor = 1.0;
+        sbp->scale_factor = 1.0;
 		sbp->number_of_contexts = number_of_contexts;
-		sbp->sfp = (BLAST_ScoreFreq**) 
-         calloc(sbp->number_of_contexts, sizeof(BLAST_ScoreFreq*));
+		sbp->sfp = (Blast_ScoreFreq**) 
+         calloc(sbp->number_of_contexts, sizeof(Blast_ScoreFreq*));
 		sbp->kbp_std = (Blast_KarlinBlk**)
          calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
 		sbp->kbp_gap_std = (Blast_KarlinBlk**)
@@ -847,8 +850,8 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 	return sbp;
 }
 
-BLAST_ScoreFreq*
-Blast_ScoreFreqDestruct(BLAST_ScoreFreq* sfp)
+Blast_ScoreFreq*
+Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp)
 {
 	if (sfp == NULL)
 		return NULL;
@@ -871,8 +874,8 @@ Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp)
 	return kbp;
 }
 
-static BLASTMatrixStructure*
-BlastMatrixDestruct(BLASTMatrixStructure* matrix_struct)
+static SBLASTMatrixStructure*
+BlastMatrixDestruct(SBLASTMatrixStructure* matrix_struct)
 
 {
 
@@ -1002,7 +1005,7 @@ static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty,
 	Int2 degeneracy[BLASTNA_SIZE+1];
 	
         if(!matrix) {
-            BLASTMatrixStructure* matrix_struct;
+            SBLASTMatrixStructure* matrix_struct;
             matrix_struct =BlastMatrixAllocate((Int2) BLASTNA_SIZE);
             matrix = matrix_struct->matrix;
         }
@@ -1587,8 +1590,8 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 	return 0;
 }
 
-static BLAST_ResComp*
-BlastResCompDestruct(BLAST_ResComp* rcp)
+static Blast_ResComp*
+BlastResCompDestruct(Blast_ResComp* rcp)
 {
 	if (rcp == NULL)
 		return NULL;
@@ -1601,15 +1604,15 @@ BlastResCompDestruct(BLAST_ResComp* rcp)
 }
 
 /* 
-	Allocated the BLAST_ResComp* for a given alphabet.  Only the
+	Allocated the Blast_ResComp* for a given alphabet.  Only the
 	alphabets ncbistdaa and ncbi4na should be used by BLAST.
 */
-static BLAST_ResComp*
+static Blast_ResComp*
 BlastResCompNew(BlastScoreBlk* sbp)
 {
-	BLAST_ResComp*	rcp;
+	Blast_ResComp*	rcp;
 
-	rcp = (BLAST_ResComp*) calloc(1, sizeof(BLAST_ResComp));
+	rcp = (Blast_ResComp*) calloc(1, sizeof(Blast_ResComp));
 	if (rcp == NULL)
 		return NULL;
 
@@ -1633,7 +1636,7 @@ array is allocated.  */
 	Store the composition of a (query) string.  
 */
 static Int2
-BlastResCompStr(BlastScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length)
+BlastResCompStr(BlastScoreBlk* sbp, Blast_ResComp* rcp, char* str, Int4 length)
 {
 	char*	lp,* lpmax;
 	Int2 index;
@@ -1683,7 +1686,8 @@ Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 	Calculate the residue frequencies associated with the provided ResComp
 */
 static Int2
-Blast_ResFreqResComp(BlastScoreBlk* sbp, Blast_ResFreq* rfp, BLAST_ResComp* rcp)
+Blast_ResFreqResComp(BlastScoreBlk* sbp, Blast_ResFreq* rfp, 
+                     Blast_ResComp* rcp)
 {
 	Int2	alphabet_max, index;
 	double	sum = 0.;
@@ -1712,7 +1716,7 @@ Blast_ResFreqResComp(BlastScoreBlk* sbp, Blast_ResFreq* rfp, BLAST_ResComp* rcp)
 static Int2
 Blast_ResFreqString(BlastScoreBlk* sbp, Blast_ResFreq* rfp, char* string, Int4 length)
 {
-	BLAST_ResComp* rcp;
+	Blast_ResComp* rcp;
 	
 	rcp = BlastResCompNew(sbp);
 
@@ -1738,16 +1742,16 @@ BlastScoreChk(Int4 lo, Int4 hi)
 	return 0;
 }
 
-BLAST_ScoreFreq*
+Blast_ScoreFreq*
 Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 {
-	BLAST_ScoreFreq*	sfp;
+	Blast_ScoreFreq*	sfp;
 	Int4	range;
 
 	if (BlastScoreChk(score_min, score_max) != 0)
 		return NULL;
 
-	sfp = (BLAST_ScoreFreq*) calloc(1, sizeof(BLAST_ScoreFreq));
+	sfp = (Blast_ScoreFreq*) calloc(1, sizeof(Blast_ScoreFreq));
 	if (sfp == NULL)
 		return NULL;
 
@@ -1769,7 +1773,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 }
 
 static Int2
-BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, Blast_ResFreq* rfp1, Blast_ResFreq* rfp2)
+BlastScoreFreqCalc(BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1, Blast_ResFreq* rfp2)
 {
 	Int4 **	matrix;
 	Int4	score, obs_min, obs_max;
@@ -1866,7 +1870,7 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, Blast_ResFreq* rfp1
  */
 
 static double
-BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
+BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
 {
     /*The next array stores the probabilities of getting each possible
       score in an alignment of fixed length; the array is shifted
@@ -2164,7 +2168,7 @@ NlmKarlinLambdaNR( double* probs, Int4 d, Int4 low, Int4 high, double lambda0, d
 
 
 double
-Blast_KarlinLambdaNR(BLAST_ScoreFreq* sfp, double initialLambdaGuess)
+Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess)
 {
 	Int4	low;			/* Lowest score (must be negative)  */
 	Int4	high;			/* Highest score (must be positive) */
@@ -2203,7 +2207,7 @@ Blast_KarlinLambdaNR(BLAST_ScoreFreq* sfp, double initialLambdaGuess)
 	Calculate H, the relative entropy of the p's and q's
 */
 static double 
-BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
+BlastKarlinLtoH(Blast_ScoreFreq* sfp, double	lambda)
 {
 	Int4	score;
 	double	H, etonlam, sum, scale;
@@ -2295,7 +2299,7 @@ See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
 
 *******************************************************************************/
 Int2
-Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
+Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp)
 {
 	
 
@@ -2384,7 +2388,7 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 {
 	Blast_KarlinBlk* kbp_ideal;
 	Blast_ResFreq* stdrfp;
-	BLAST_ScoreFreq* sfp;
+	Blast_ScoreFreq* sfp;
 
 	stdrfp = Blast_ResFreqNew(sbp);
 	Blast_ResFreqStdComp(sbp, stdrfp);
@@ -2441,17 +2445,17 @@ Blast_KarlinBlkCreate(void)
 	return kbp;
 }
 
-static BLASTMatrixStructure*
+static SBLASTMatrixStructure*
 BlastMatrixAllocate(Int2 alphabet_size)
 
 {
-	BLASTMatrixStructure* matrix_struct;
+	SBLASTMatrixStructure* matrix_struct;
 	Int2 index;
 
 	if (alphabet_size <= 0 || alphabet_size >= BLAST_MATRIX_SIZE)
 		return NULL;
 
-	matrix_struct =	(BLASTMatrixStructure*) calloc(1, sizeof(BLASTMatrixStructure));
+	matrix_struct =	(SBLASTMatrixStructure*) calloc(1, sizeof(SBLASTMatrixStructure));
 
 	if (matrix_struct == NULL)
 		return NULL;
@@ -3488,7 +3492,7 @@ RPSfindUngappedLambda(Char *matrixName)
 static void
 RPSFillScores(Int4 **matrix, Int4 matrixLength, 
               double *queryProbArray, double *scoreArray,  
-              BLAST_ScoreFreq* return_sfp, Int4 range)
+              Blast_ScoreFreq* return_sfp, Int4 range)
 {
     Int4 minScore, maxScore;    /*observed minimum and maximum scores */
     Int4 i,j;                   /* indices */
@@ -3574,7 +3578,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 {
     double *scoreArray;         /*array of score probabilities*/
     double *resProb;            /*array of probabilities for each residue*/
-    BLAST_ScoreFreq * return_sfp;/*score frequency pointers to compute lambda*/
+    Blast_ScoreFreq * return_sfp;/*score frequency pointers to compute lambda*/
     Int4* * returnMatrix;        /*the PSSM to return */
     double initialUngappedLambda; 
     double scaledInitialUngappedLambda; 
@@ -3585,7 +3589,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
     resProb = (double *)malloc(PSI_ALPHABET_SIZE * sizeof(double));
     scoreArray = (double *)malloc(BLAST_SCORE_RANGE_MAX * sizeof(double));
-    return_sfp = (BLAST_ScoreFreq *)malloc(sizeof(BLAST_ScoreFreq));
+    return_sfp = (Blast_ScoreFreq *)malloc(sizeof(Blast_ScoreFreq));
 
     RPSFillResidueProbability(rps_query_seq, rps_query_length, resProb);
 
