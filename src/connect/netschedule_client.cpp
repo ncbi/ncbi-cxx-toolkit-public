@@ -530,11 +530,10 @@ bool CNetScheduleClient::GetJob(string*        job_key,
 }
 
 
-
-bool CNetScheduleClient::WaitJob(string*    job_key, 
-                                 string*    input, 
-                                 unsigned   wait_time,
-                                 unsigned short udp_port)
+bool CNetScheduleClient::GetJobWaitNotify(string*    job_key, 
+                                          string*    input, 
+                                          unsigned   wait_time,
+                                          unsigned short udp_port)
 {
     _ASSERT(job_key);
     _ASSERT(input);
@@ -570,6 +569,21 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
         _ASSERT(!input->empty());
 
         return true;
+    }
+    return false;
+}
+
+
+
+bool CNetScheduleClient::WaitJob(string*    job_key, 
+                                 string*    input, 
+                                 unsigned   wait_time,
+                                 unsigned short udp_port)
+{
+    bool job_received = 
+        GetJobWaitNotify(job_key, input, wait_time, udp_port);
+    if (job_received) {
+        return job_received;
     }
 
     WaitQueueNotification(wait_time, udp_port);
@@ -633,7 +647,7 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
         }
 
         size_t msg_len;
-        status = udp_socket.Recv(buf, sizeof(buf), &msg_len, &m_Tmp);
+        status = udp_socket.Recv(buf, sizeof(buf), &msg_len);
         _ASSERT(status != eIO_Timeout); // because we Wait()-ed
         if (eIO_Success == status) {
 
@@ -897,6 +911,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/17 17:18:25  kuznets
+ * Cosmetics
+ *
  * Revision 1.11  2005/03/16 14:25:46  kuznets
  * Fixed connection establishment when job key is known
  *
