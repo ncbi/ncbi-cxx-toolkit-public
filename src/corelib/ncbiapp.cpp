@@ -141,6 +141,16 @@ void CNcbiApplication::Exit(void)
 }
 
 
+const CArgs& CNcbiApplication::GetArgs(void) const
+{
+    if ( !m_Args.get() ) {
+        NCBI_THROW(CAppException, eUnsetArgs,
+                   "Command-line argument description is not found");
+    }
+    return *m_Args;
+}
+
+
 SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
 {
     // dyn.cast to CNcbiOstrstream
@@ -1250,6 +1260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2005/03/10 18:01:53  vakatov
+ * Moved CNcbiApplication::GetArgs() implementation to here from the header
+ *
  * Revision 1.104  2005/02/11 16:04:11  gouriano
  * Distinguish short and detailed help message
  * print detailed one only when requested
