@@ -1,0 +1,378 @@
+(* ================================================================================
+	maketests.met
+
+	An AppleScript to compile some NCBI C++ Toolkit test applications with
+	Metrowerks CodeWarrior.
+
+	$Id$
+	
+   ================================================================================ *)
+
+
+property CREATEDEBUGPROJECTS : "TRUE" (* whether to create debug projects from scratch *)
+property BUILDDEBUGBINS : "TRUE" (* whether to compile debug binaries *)
+
+property CREATERELEASEPROJECTS : "TRUE" (* whether to create release projects from scratch *)
+property BUILDRELEASEBINS : "TRUE" (* whether to compile optimized release binaries *)
+
+property CPPROOT : "internal:c++:" (* head of C++ toolkit tree within CodeWarrior folder *)
+
+--property DOSOCKETS : "FALSE" (* whether to create/compile socket libs *)
+--property NCSASOCKDIR : "ncbi:connect:ncsasock:" (* location of ncsasock files within CodeWarrior folder *)
+
+
+(* ==== These symbols will be derived ==== *)
+
+global HARDDISK
+global METRO
+global METROWERKSCW
+--global OTLIB
+
+global NCBICPP
+
+global SOURCEFILES
+global INCLUDEFILES
+global LIBRARIES
+global BINARIES
+
+global DODEBUG
+--global DOOPENTPT
+--global NCSASOCK
+
+(* ==== These subroutines set paths and other preferences during population ==== *)
+
+on DoSetGlobals()
+	tell application "Finder"
+		
+		set HARDDISK to startup disk as string
+		set METRO to HARDDISK & "CodeWarrior Pro 5:" as string
+		set METROWERKSCW to METRO & "Metrowerks CodeWarrior:" as string
+		--set OTLIB to METROWERKSCW & "MacOS Support:OpenTransport:Open Tpt Client Developer:PPC Libraries:"
+		
+		set NCBICPP to METRO & CPPROOT as string
+		
+		set SOURCEFILES to NCBICPP & "src:" as string
+		set INCLUDEFILES to NCBICPP & "include:" as string
+		set LIBRARIES to NCBICPP & "compilers:mac_prj:lib:" as string
+		set BINARIES to NCBICPP & "compilers:mac_prj:bin:" as string
+		
+		(*
+		if DOSOCKETS = "TRUE" then
+			set NCSASOCK to METRO & NCSASOCKDIR as string
+			if (exists (folder OTLIB)) then
+				set DOOPENTPT to "TRUE"
+			else
+				set DOOPENTPT to "FALSE"
+				display dialog "Did not find OpenTransport folder inside MacOS Support folder" & return & Â
+					return & "Will use MacTCP interfaces to build networking" & return Â
+					buttons "OK" default button 1
+			end if
+		end if
+*)
+		
+	end tell
+end DoSetGlobals
+
+on CreateFolders()
+	tell application "Finder"
+		
+		if not (exists (folder BINARIES)) then
+			make new folder at folder (NCBICPP & "compilers:mac_prj:") with properties {name:"bin"}
+		end if
+		
+	end tell
+end CreateFolders
+
+on DoSetDebugPreferences()
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		(* ==== ONLY settings that are directly relevant to debugging and optimization should go here! ==== *)
+		
+		if DODEBUG = "TRUE" then
+			(* ===== Panel PPC Global Optimizer =====  *)
+			Set Preferences of panel "PPC Global Optimizer" to Â
+				{Optimize For:code_Speed, Level:0}
+			(* ===== Panel PPC Linker ===== *)
+			Set Preferences of panel "PPC Linker" to Â
+				{Generate SYM File:true Â
+					, Suppress Warnings:false}
+			(* ===== Panel C/C++ Language =====  *)
+			Set Preferences of panel "C/C++ Compiler" to Â
+				{Inlining:inline_none Â
+					, AutoInlining:false Â
+					, Prefix File:"debug.pfx"}
+			
+		else
+			(* ==== optimized/release settings ==== *)
+			(* ===== Panel PPC Global Optimizer =====  *)
+			Set Preferences of panel "PPC Global Optimizer" to Â
+				{Optimize For:code_Speed, Level:4}
+			(* ===== Panel PPC Linker ===== *)
+			Set Preferences of panel "PPC Linker" to Â
+				{Generate SYM File:false Â
+					, Suppress Warnings:true}
+			(* ===== Panel C/C++ Language =====  *)
+			Set Preferences of panel "C/C++ Compiler" to Â
+				{Inlining:inline_smart Â
+					, AutoInlining:true Â
+					, Prefix File:"release.pfx"}
+		end if
+		
+	end tell
+end DoSetDebugPreferences
+
+on DoSetPreferences()
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		(* ===== Panel Target ===== *)
+		Set Preferences of panel "Target Settings" to {Linker:"MacOS PPC Linker"}
+		
+		(* ===== Panel Project ===== *)
+		Set Preferences of panel "PPC Project" to {Project Type:standard application}
+		
+		(* ===== Panel C/C++ Warnings ===== *)
+		Set Preferences of panel "C/C++ Warnings" to Â
+			{Treat Warnings As Errors:false Â
+				, Illegal Pragmas:true Â
+				, Empty Declarations:true Â
+				, Possible Errors:true Â
+				, Unused Variables:true Â
+				, Unused Arguments:false Â
+				, Extra Commas:true Â
+				, Extended Error Checking:true Â
+				, Hidden Virtual Functions:true Â
+				, Implicit Arithmetic Conversions:false Â
+				, NonInlined Functions:false Â
+				, Inconsistent Class Struct:true}
+		
+		(* ===== Panel PPC Processor =====  *)
+		Set Preferences of panel "PPC CodeGen" to Â
+			{Struct Alignment:Align_PPC Â
+				, Make Strings ReadOnly:true Â
+				, Store Data in TOC:true Â
+				, Use FMADD Instructions:false Â
+				, Use Profiler:false Â
+				, Traceback Tables:TB_Inline Â
+				, Schedule:false Â
+				, Peephole Optimizer:true}
+		
+		(* ===== Panel PPC PEF =====  *)
+		Set Preferences of panel "PPC PEF" to Â
+			{Export Symbols:none Â
+				, Old Definition:0 Â
+				, Old Implementation:0 Â
+				, Current Version:0 Â
+				, Code Sorting:nosort Â
+				, Share Data Section:false Â
+				, Expand Uninitialized Data:false Â
+				, Fragment Name:""}
+		
+		(* ===== Panel Debugger =====  *)
+		Set Preferences of panel "Debugger Target" to Â
+			{Log System Messages:false Â
+				, Stop At Watchpoints:true}
+		
+		(* ===== Panel C/C++ Language =====  *)
+		Set Preferences of panel "C/C++ Compiler" to Â
+			{Activate CPlusPlus:false Â
+				, ARM Conformance:false Â
+				, Exception Handling:true Â
+				, Inlining:inline_none Â
+				, RTTI:true Â
+				, AutoInlining:false Â
+				, Pool Strings:false Â
+				, Dont Reuse Strings:false Â
+				, Require Function Prototypes:true Â
+				, ANSI Strict:false Â
+				, ANSI Keywords Only:false Â
+				, Expand Trigraph Sequences:false Â
+				, MPW Newlines:false Â
+				, MPW Pointer Type Rules:false Â
+				, Enums Always Ints:false Â
+				, Prefix File:"debug.pfx"}
+		
+		(* ===== Panel PPC Linker ===== *)
+		Set Preferences of panel "PPC Linker" to Â
+			{Generate SYM File:true Â
+				, Full Path In Sym Files:true Â
+				, Generate Link Map:false Â
+				, Suppress Warnings:false Â
+				, Link Mode:fast Â
+				, Initialization Name:Â
+				"", Main Name:Â
+				"__start", Termination Name:""}
+		
+		(* ===== Panel PPC Global Optimizer =====  *)
+		(* ==== ... moved into DoSetDebugPreferences() to allow switching for debug on/off ==== *)
+		my DoSetDebugPreferences()
+		
+		my DoSetPaths1()
+		
+	end tell
+end DoSetPreferences
+
+on DoSetPaths1()
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		(* ===== Panel Access Paths ===== *)
+		-- We need to be able to move the default system compiler folder to the end of the list
+		-- because certain files like "all.h" and "all" are defined by both Metrowerks and NCBI.
+		-- We want to find the NCBI "all.h" first.
+		Set Preferences of panel "Access Paths" to {System Paths:{}} -- This removes the compiler default folder
+		Set Preferences of panel "Access Paths" to {Convert Paths:true}
+		Set Preferences of panel "Access Paths" to {User Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}}
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}} -- Added for speed
+		
+	end tell
+end DoSetPaths1
+
+on DoSetPaths2()
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		-- After we have added all paths, reinsert compiler default at end of list
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Headers:", recursive:true, origin:shell relative}}}
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Libraries:", recursive:true, origin:shell relative}}}
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Universal:", recursive:true, origin:shell relative}}}
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Profiler:", recursive:true, origin:shell relative}}}
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MSL:MSL_C:", recursive:true, origin:shell relative}}}
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MSL:MSL_C++:", recursive:true, origin:shell relative}}}
+		(*
+		if DOSOCKETS = "TRUE" and DOOPENTPT = "TRUE" then
+			Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:OpenTransport:", recursive:true, origin:shell relative}}}
+		end if
+		*)
+		
+	end tell
+end DoSetPaths2
+
+on AddLibraries()
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		Add Files {METROWERKSCW & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.PPC.Lib"} To Segment 1
+		Add Files {METROWERKSCW & "MSL:MSL_C++:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib"} To Segment 1
+		Add Files {METROWERKSCW & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL SIOUX.PPC.Lib"} To Segment 1
+		Add Files {METROWERKSCW & "MacOS Support:Universal:Libraries:StubLibraries:InterfaceLib"} To Segment 1
+		Add Files {METROWERKSCW & "MacOS Support:Universal:Libraries:StubLibraries:MathLib"} To Segment 1
+		Add Files {METROWERKSCW & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib"} To Segment 1
+		
+	end tell
+end AddLibraries
+
+(* ==== This function creates a project with the given name and object files ==== *)
+
+on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		if DODEBUG = "TRUE" then
+			Create Project {BINARIES & projName & " debug.µ"}
+		else
+			Create Project {BINARIES & projName & ".µ"}
+		end if
+		
+		my DoSetPreferences()
+		Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
+		if BUILDRELEASEBINS = "TRUE" then
+			Set Preferences of panel "PPC Project" to {File Name:projName}
+		else
+			Set Preferences of panel "PPC Project" to {File Name:(projName & " debug")}
+		end if
+		my DoSetPaths2()
+		
+		my AddLibraries()
+		
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:LIBRARIES, origin:absolute}}}
+		repeat with i in projNCBILibs
+			if DODEBUG = "TRUE" then
+				Add Files {LIBRARIES & i & " debug"} To Segment 1
+			else
+				Add Files {LIBRARIES & i} To Segment 1
+			end if
+		end repeat
+		
+		repeat with i in projFiles
+			Add Files {SOURCEFILES & projPath & ":" & i & ".cpp"} To Segment 1
+		end repeat
+		
+		Reset File Paths
+		Close Project
+		
+	end tell
+end DoCreateDefaultProject
+
+(* ==== This section populates and builds the libraries ==== *)
+
+on DoCreateProjects()
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		activate
+		
+		(* ==== This subsection populates all the libraries with the appropriate source files and libraries ==== *)
+		
+		my DoCreateDefaultProject("coretest", "corelib:test", Â
+			{"coretest"}, {"corelib"})
+		
+	end tell
+end DoCreateProjects
+
+(* ==== This function compiles a project ==== *)
+
+on DoCompileBinary(projName)
+	tell application "CodeWarrior IDE 4.0.4"
+		
+		if DODEBUG = "TRUE" then
+			open (BINARIES & projName & " debug.µ")
+		else
+			open (BINARIES & projName & ".µ")
+		end if
+		Make Project
+		Close Project
+		
+	end tell
+end DoCompileBinary
+
+on DoCompileBinaries()
+	
+	(*
+	if DOSOCKETS = "TRUE" then
+		my DoCompileBinary("ncsasock")
+		if DOOPENTPT = "TRUE" then
+			my DoCompileBinary("ncsasockOT")
+		end if
+		my DoCompileBinary("connect")
+	end if
+*)
+	
+	my DoCompileBinary("coretest")
+	
+end DoCompileBinaries
+
+(* ==== here's where actual work gets done ! ==== *)
+
+with timeout of 60000 seconds
+	
+	my DoSetGlobals()
+	
+	if CREATEDEBUGPROJECTS = "TRUE" then
+		set DODEBUG to "TRUE"
+		my CreateFolders()
+		my DoCreateProjects()
+	end if
+	
+	if CREATERELEASEPROJECTS = "TRUE" then
+		set DODEBUG to "FALSE"
+		my CreateFolders()
+		my DoCreateProjects()
+	end if
+	
+	if BUILDDEBUGBINS = "TRUE" then
+		set DODEBUG to "TRUE"
+		my DoCompileBinaries()
+	end if
+	
+	if BUILDRELEASEBINS = "TRUE" then
+		set DODEBUG to "FALSE"
+		my DoCompileBinaries()
+	end if
+	
+end timeout
+
