@@ -32,89 +32,50 @@
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
-
-CProjProjects::CProjProjects(void)
+//-----------------------------------------------------------------------------
+CProjectOneNodeFilter::CProjectOneNodeFilter(const string& root_src_dir,
+                                             const string& subtree_dir)
+    :m_RootSrcDir(root_src_dir),
+     m_SubtreeDir(subtree_dir)
 {
-    Clear();
+    CProjectTreeFolders::CreatePath(m_RootSrcDir, 
+                                    m_SubtreeDir, 
+                                    &m_SubtreePath);
+    m_PassAll = NStr::CompareNocase(m_RootSrcDir, m_SubtreeDir) == 0;
 }
 
 
-CProjProjects::CProjProjects(const CProjProjects& projects)
+bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir) const
 {
-    SetFrom(projects);
-}
+    TPath project_path;
+    CProjectTreeFolders::CreatePath(m_RootSrcDir, 
+                                    project_base_dir, 
+                                    &project_path);
 
+    if (project_path.size() < m_SubtreePath.size())
+        return false;
 
-CProjProjects& CProjProjects::operator= (const CProjProjects& projects)
-{
-    if (this != &projects) {
-        Clear();
-        SetFrom(projects);
+    TPath::const_iterator i = project_path.begin();
+    ITERATE(TPath, p, m_SubtreePath) {
+        const string& subtree_i  = *p;
+        const string& project_i = *i;
+        if (NStr::CompareNocase(subtree_i, project_i) != 0)
+            return false;
+        ++i;
     }
-    return *this;
-}
-
-
-CProjProjects::CProjProjects(const string& dir_path)
-{
-    LoadFrom(dir_path, this);
-}
-
-
-CProjProjects::~CProjProjects(void)
-{
-}
-
-
-void CProjProjects::LoadFrom(const string& dir_path, CProjProjects* pr)
-{
-    pr->Clear();
-
-    CDir dir(dir_path);
-    CDir::TEntries contents = dir.GetEntries("*.lst");
-    ITERATE(CDir::TEntries, i, contents) {
-        string name  = (*i)->GetName();
-        if ( name == "."  ||  name == ".."  ||  
-             name == string(1,CDir::GetPathSeparator()) ) {
-            continue;
-        }
-        string path = (*i)->GetPath();
-
-        if ( (*i)->IsFile() ) {
-            // Only files from this dir
-            TFileContents fc;
-            LoadFrom(path, &fc);
-            if ( !fc.empty() ) {
-                string base;
-                CDirEntry::SplitPath(path, NULL, &base);
-                pr->m_Elements[base] = fc;
-            }
-        } 
-    }
+    return true;
 
 }
 
-
-void CProjProjects::Clear(void)
+//-----------------------------------------------------------------------------
+CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
+                                               const string& file_full_path)
 {
-    m_Elements.clear();
-}
+    m_RootSrcDir = root_src_dir;
 
-
-void CProjProjects::SetFrom(const CProjProjects& contents)
-{
-    m_Elements = contents.m_Elements;
-}
-
-
-void CProjProjects::LoadFrom(const string&  file_path, 
-                             TFileContents* fc)
-{
-    fc->clear();
-
-    CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    CNcbiIfstream ifs(file_full_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs )
-        NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
+        NCBI_THROW(CProjBulderAppException, eFileOpen, file_full_path);
 
     string strline;
     while ( NcbiGetlineEOL(ifs, strline) ) {
@@ -124,35 +85,47 @@ void CProjProjects::LoadFrom(const string&  file_path,
             SLstElement elt;
             elt.m_Path      = project_path;
             elt.m_Recursive = strline.find("$") != NPOS;
-            fc->push_back(elt);
+            m_LstFileContents.push_back(elt);
         }
     }
 }
 
-//-----------------------------------------------------------------------------
-static void s_GetSetIds (const CProjectTreeFolders&          folders,
-                         const CProjProjects::TFileContents& set_contents,
-                         CProjProjectsSets::TProjectsSet*    ids)
-{
-    ids->clear();
-    ITERATE(CProjProjects::TFileContents, p, set_contents) {
-        const CProjProjects::SLstElement& elt = *p;
 
+bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt, 
+                                                   const TPath&       path)
+{
+    if (path.size() < elt.m_Path.size())
+        return false;
+
+    if ( !elt.m_Recursive  && path.size() != elt.m_Path.size())
+        return false;
+
+    TPath::const_iterator i = path.begin();
+    ITERATE(TPath, p, elt.m_Path) {
+        const string& elt_i  = *p;
+        const string& path_i = *i;
+        if (NStr::CompareNocase(elt_i, path_i) != 0)
+            return false;
+        ++i;
     }
+    return true;
 }
 
-void CProjProjectsSets::Create(const CProjectItemsTree& tree,
-                               const CProjProjects&     elements, 
-                               TSets*                   sets)
+
+bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir) const
 {
-    sets->clear();
+    TPath project_path;
+    CProjectTreeFolders::CreatePath(m_RootSrcDir, 
+                                    project_base_dir, 
+                                    &project_path);
 
-    CProjectTreeFolders folders(tree);
-
-    ITERATE(CProjProjects::TElements, p, elements.m_Elements) {
-        const string& set_name = p->first;
-        const CProjProjects::TFileContents& set_contents = p->second;
+    ITERATE(TLstFileContents, p, m_LstFileContents) {
+        const SLstElement& elt = *p;
+        if ( CmpLstElementWithPath(elt, project_path) )
+            return true;
     }
+
+    return false;
 }
 
 
@@ -161,6 +134,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/26 21:27:43  gorelenk
+ * Removed all older class implementations. Added implementations of classes:
+ * CProjectDummyFilter, CProjectOneNodeFilter and CProjectsLstFileFilter.
+ *
  * Revision 1.2  2004/02/18 23:38:06  gorelenk
  * Added definitions of class CProjProjectsSets member-functions.
  *
