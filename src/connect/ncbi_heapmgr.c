@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/06/19 22:22:56  juran
+ * Heed warning:  Make s_HEAP_Take() static.
+ *
  * Revision 6.8  2001/06/19 19:12:01  lavr
  * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
  *
@@ -289,7 +292,7 @@ static SHEAP_Block* s_HEAP_Collect(HEAP heap)
  * for use of by at most 'size' bytes (including block header).
  * Return the block to use if taken okay; 0 otherwise.
  */
-SHEAP_Block* s_HEAP_Take(SHEAP_Block* b, TNCBI_Size size)
+static SHEAP_Block* s_HEAP_Take(SHEAP_Block* b, TNCBI_Size size)
 {
     unsigned int last = b->flag & HEAP_LAST;
 
