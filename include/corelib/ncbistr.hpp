@@ -270,20 +270,29 @@ public:
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
+    // Whether to merge adjacent delimiters in Split and Tokenize
+    enum EMergeDelims {
+        eNoMergeDelims,
+        eMergeDelims
+    };
+
+
     /// Split string "str" using symbols from "delim" as delimiters.
     /// Delimiters which immediately follow each other are treated as one
-    /// delimiter (unlike that in Tokenize()).
+    /// delimiter by default (unlike that in Tokenize()).
     /// Add the resultant tokens to the list "arr". Return "arr".
     static list<string>& Split(const string& str,
                                const string& delim,
-                               list<string>& arr);
+                               list<string>& arr,
+                               EMergeDelims  merge = eMergeDelims);
 
     /// Tokenize string "str" using symbols from "delim" as delimeters.
     /// Add the resultant tokens to the vector "arr". Return ref. to "arr".
     /// If delimiter is empty, then input string is appended to "arr" as is.
     static vector<string>& Tokenize(const string&   str,
                                     const string&   delim,
-                                    vector<string>& arr);
+                                    vector<string>& arr,
+                                    EMergeDelims    merge = eNoMergeDelims);
 
     /// Join the strings in "arr" into a single string, separating
     /// each pair with "delim".
@@ -326,8 +335,7 @@ public:
 
     /// Similar to the above, but tries to avoid splitting any elements of l.
     /// Delim only applies between elements on the same line; if you want
-    /// everything to end with commas or such, add them first or join
-    /// the lines with ",\n".
+    /// everything to end with commas or such, you should add them first.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
                                   TWrapFlags flags = 0,
@@ -720,6 +728,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2003/01/24 16:58:54  ucko
+ * Add an optional parameter to Split and Tokenize indicating whether to
+ * merge adjacent delimiters; drop suggestion about joining WrapList's
+ * output with ",\n" because long items may be split across lines.
+ *
  * Revision 1.34  2003/01/21 23:22:06  vakatov
  * NStr::Tokenize() to return reference, and not a new "vector<>".
  *
