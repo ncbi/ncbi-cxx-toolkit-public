@@ -524,7 +524,7 @@
 
 
 /** @defgroup GUI GUI Framework
- *  The GUI framework provides GU support for toolkit functions.
+ *  The GUI framework provides GUI support for toolkit functions.
  */
 
 /** @defgroup GUI_UTILS GUI Utility Classes and Modules
