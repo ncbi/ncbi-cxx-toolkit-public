@@ -1,7 +1,7 @@
 #ifndef ALGO___MM_ALIGNER_THREADS__HPP
 #define ALGO___MM_ALIGNER_THREADS__HPP
 
-/* $Id $
+/* $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE                          
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/03 17:29:20  kapustin
+ * Fix cvs id heading tag
+ *
  * Revision 1.2  2003/06/17 14:51:04  dicuccio
  * Fixed after algo/ rearragnement
  *
