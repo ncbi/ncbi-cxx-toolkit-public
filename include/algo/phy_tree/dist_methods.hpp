@@ -95,7 +95,7 @@ public:
 };
 
 /// Conversion from TPhyTreeNode to CBioTreeContainer
-CRef<objects::CBioTreeContainer>
+NCBI_XALGOPHYTREE_EXPORT CRef<objects::CBioTreeContainer>
 MakeBioTreeContainer(const TPhyTreeNode *tree);
 
 END_NCBI_SCOPE
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/01 21:11:23  jcherry
+ * Added export specifier
+ *
  * Revision 1.6  2004/07/01 19:44:53  jcherry
  * Added function for making CBioTreeContainer from TPhyTreeNode
  *
