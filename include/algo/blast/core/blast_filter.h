@@ -100,15 +100,32 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
 
 /** Runs filtering functions, according to the string "instructions", on the
  * SeqLocPtr. Should combine all SeqLocs so they are non-redundant.
- * @param slp SeqLoc of sequence to be filtered. [in]
+ * @param program_number Type of BLAST program [in]
+ * @param sequence The sequence or part of the sequence to be filtered [in]
+ * @param length Length of the (sub)sequence [in]
+ * @param offset Offset into the full sequence [in]
  * @param instructions String of instructions to filtering functions. [in]
  * @param mask_at_hash If TRUE masking is done while making the lookup table
  *                     only. [out] 
- * @param seqloc_retval Resutling seqloc for filtered region. [out]
+ * @param seqloc_retval Resulting locations for filtered region. [out]
 */
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
-   CharPtr instructions, BoolPtr mask_at_hash, BlastSeqLocPtr *seqloc_retval);
+   Int4 offset, CharPtr instructions, BoolPtr mask_at_hash, 
+   BlastSeqLocPtr *seqloc_retval);
+
+/** Duplicate masks in 6 frames for each nucleotide sequence, converting
+ * all masks' coordinates from DNA to protein.
+ * @param mask_loc_ptr Masks list to be modified [in] [out]
+ * @param slp List of nucleotide query SeqLoc's [in]
+ */
+Int2 BlastMaskDNAToProtein(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp);
+
+/** Convert all masks' protein coordinates to nucleotide.
+ * @param mask_loc_ptr Masks list to be modified [in] [out]
+ * @param slp List of nucleotide query SeqLoc's [in]
+ */
+Int2 BlastMaskProteinToDNA(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp);
 
 #ifdef __cplusplus
 }

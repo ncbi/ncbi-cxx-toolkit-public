@@ -886,3 +886,124 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 
 	return status;
 }
+
+#define NUM_FRAMES 6
+
+Int2 BlastMaskDNAToProtein(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
+{
+   Int2 status = 0;
+   BlastMaskPtr last_mask = NULL, head_mask = NULL, mask_loc; 
+   Int4 dna_length;
+   BlastSeqLocPtr dna_loc, prot_loc_head, prot_loc_last;
+   DoubleIntPtr dip;
+   Int4 index, context;
+   Int2 frame;
+   Int4 from, to;
+
+   if (!mask_loc_ptr)
+      return -1;
+
+   mask_loc = *mask_loc_ptr;
+
+   for (index = 0; slp; ++index, slp = slp->next) {
+      if (index < mask_loc->index)
+         /* Advance to the next nucleotide sequence */
+         continue;
+
+      dna_length = SeqLocLen(slp);
+      /* Reproduce this mask for all 6 frames, with translated 
+         coordinates */
+      for (context = 0; context < NUM_FRAMES; ++context) {
+         if (!last_mask) {
+            head_mask = last_mask = MemNew(sizeof(BlastMask));
+         } else {
+            last_mask->next = MemNew(sizeof(BlastMask));
+            last_mask = last_mask->next;
+         }
+         
+         last_mask->index = NUM_FRAMES * index + context;
+         prot_loc_last = prot_loc_head = NULL;
+         
+         frame = BLAST_ContextToFrame(blast_type_blastx, context);
+
+         for (dna_loc = mask_loc->loc_list; dna_loc; 
+              dna_loc = dna_loc->next) {
+            dip = (DoubleIntPtr) dna_loc->data.ptrvalue;
+            if (frame < 0) {
+               from = (dna_length + frame - dip->i2)/CODON_LENGTH;
+               to = (dna_length + frame - dip->i1)/CODON_LENGTH;
+            } else {
+               from = (dip->i1 - frame + 1)/CODON_LENGTH;
+               to = (dip->i2 - frame + 1)/CODON_LENGTH;
+            }
+            if (!prot_loc_last) {
+               prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
+            } else { 
+               prot_loc_last->next = BlastSeqLocNew(from, to);
+               prot_loc_last = prot_loc_last->next; 
+            }
+         }
+         last_mask->loc_list = prot_loc_head;
+      }
+      /* Go to the next nucleotide mask */
+      mask_loc = mask_loc->next;
+   }
+
+   /* Free the mask with nucleotide coordinates */
+   BlastMaskFree(*mask_loc_ptr);
+   /* Return the new mask with protein coordinates */
+   *mask_loc_ptr = head_mask;
+
+   return status;
+}
+
+
+Int2 BlastMaskProteinToDNA(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
+{
+   Int2 status = 0;
+   Int4 index;
+   BlastMaskPtr mask_loc;
+   BlastSeqLocPtr loc;
+   DoubleIntPtr dip;
+   Int4 dna_length;
+   Int2 frame;
+   Int4 from, to;
+
+   if (!mask_loc_ptr) 
+      return -1;
+
+   mask_loc = *mask_loc_ptr;
+
+   index = NUM_FRAMES;
+
+   while (slp) {
+      if (index <= mask_loc->index) {
+         /* Advance to the next nucleotide sequence */
+         index += NUM_FRAMES;
+         slp = slp->next;
+      } else {
+         dna_length = SeqLocLen(slp);
+         frame = BLAST_ContextToFrame(blast_type_blastx, 
+                                mask_loc->index % NUM_FRAMES);
+
+         for (loc = mask_loc->loc_list; loc; loc = loc->next) {
+            dip = (DoubleIntPtr) loc->data.ptrvalue;
+            if (frame < 0)	{
+               to = dna_length - CODON_LENGTH*dip->i1 + frame;
+               from = dna_length - CODON_LENGTH*dip->i2 + frame + 1;
+            } else {
+               from = CODON_LENGTH*dip->i1 + frame - 1;
+               to = CODON_LENGTH*dip->i2 + frame - 1;
+            }
+            dip->i1 = from;
+            dip->i2 = to;
+         }
+         /* Set index to the DNA sequence index */
+         mask_loc->index = index / NUM_FRAMES;
+
+         /* Advance to the next mask */
+         mask_loc = mask_loc->next;
+      }
+   }
+   return status;
+}
