@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/03/26 18:35:38  lavr
+* CT_* macros aligned in a pretty way
+*
 * Revision 1.21  2001/03/24 00:32:59  lavr
 * Macros added: CT_TO_INT_TYPE, CT_TO_CHAR_TYPE, CT_EQ_INT_TYPE
 *
@@ -210,21 +213,21 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
 
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
 #if defined(HAVE_NO_CHAR_TRAITS)
-#  define CT_INT_TYPE  int
-#  define CT_CHAR_TYPE char
-#  define CT_POS_TYPE  CNcbiStreampos
-#  define CT_OFF_TYPE  CNcbiStreamoff
-#  define CT_EOF       EOF
-inline CT_INT_TYPE ct_not_eof(CT_INT_TYPE i) {
-    return (i == CT_EOF) ? 0 : i;
+#  define CT_INT_TYPE     int
+#  define CT_CHAR_TYPE    char
+#  define CT_POS_TYPE     CNcbiStreampos
+#  define CT_OFF_TYPE     CNcbiStreamoff
+#  define CT_EOF          EOF
+inline CT_INT_TYPE  ct_not_eof(CT_INT_TYPE i) {
+    return i == CT_EOF ? 0 : i;
 }
-#  define CT_NOT_EOF   ct_not_eof
-inline CT_INT_TYPE ct_to_int_type(CT_CHAR_TYPE c) {
-    return (unsigned char)(c);
+#  define CT_NOT_EOF      ct_not_eof
+inline CT_INT_TYPE  ct_to_int_type(CT_CHAR_TYPE c) {
+    return (unsigned char)c;
 }
-#  define CT_TO_INT_TYPE ct_to_int_type
+#  define CT_TO_INT_TYPE  ct_to_int_type
 inline CT_CHAR_TYPE ct_to_char_type(CT_INT_TYPE i) {
-    return (unsigned char)(i);
+    return (unsigned char)i;
 }
 #  define CT_TO_CHAR_TYPE ct_to_char_type
 inline bool ct_eq_int_type(CT_INT_TYPE i1, CT_INT_TYPE i2) {
@@ -232,12 +235,12 @@ inline bool ct_eq_int_type(CT_INT_TYPE i1, CT_INT_TYPE i2) {
 }
 #  define CT_EQ_INT_TYPE ct_eq_int_type
 #else  /* HAVE_NO_CHAR_TRAITS */
-#  define CT_INT_TYPE  NCBI_NS_STD::char_traits<char>::int_type
-#  define CT_CHAR_TYPE NCBI_NS_STD::char_traits<char>::char_type
-#  define CT_POS_TYPE  NCBI_NS_STD::char_traits<char>::pos_type
-#  define CT_OFF_TYPE  NCBI_NS_STD::char_traits<char>::off_type
-#  define CT_EOF       NCBI_NS_STD::char_traits<char>::eof()
-#  define CT_NOT_EOF   NCBI_NS_STD::char_traits<char>::not_eof
+#  define CT_INT_TYPE     NCBI_NS_STD::char_traits<char>::int_type
+#  define CT_CHAR_TYPE    NCBI_NS_STD::char_traits<char>::char_type
+#  define CT_POS_TYPE     NCBI_NS_STD::char_traits<char>::pos_type
+#  define CT_OFF_TYPE     NCBI_NS_STD::char_traits<char>::off_type
+#  define CT_EOF          NCBI_NS_STD::char_traits<char>::eof()
+#  define CT_NOT_EOF      NCBI_NS_STD::char_traits<char>::not_eof
 #  define CT_TO_INT_TYPE  NCBI_NS_STD::char_traits<char>::to_int_type
 #  define CT_TO_CHAR_TYPE NCBI_NS_STD::char_traits<char>::to_char_type
 #  define CT_EQ_INT_TYPE  NCBI_NS_STD::char_traits<char>::eq_int_type
