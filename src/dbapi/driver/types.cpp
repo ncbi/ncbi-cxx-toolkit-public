@@ -234,6 +234,40 @@ CDB_Char::~CDB_Char()
     delete [] m_Val;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_LongChar::
+//
+
+EDB_Type CDB_LongChar::GetType() const
+{
+    return eDB_LongChar;
+}
+
+CDB_Object* CDB_LongChar::Clone() const
+{
+    return m_Null ? new CDB_LongChar : new CDB_LongChar(*this);
+}
+
+void CDB_LongChar::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_LongChar) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_LongChar::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    register CDB_LongChar& cv= (CDB_LongChar&)v;
+    if(m_Size < cv.m_Size) {
+        delete [] m_Val;
+        m_Val= new char[cv.m_Size+1];
+    }
+    m_Size= cv.m_Size;
+    memcpy(m_Val, cv.m_Val, m_Size+1);
+}
+
+CDB_LongChar::~CDB_LongChar()
+{
+    delete [] m_Val;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_VarBinary::
@@ -269,7 +303,7 @@ EDB_Type CDB_Binary::GetType() const
 
 CDB_Object* CDB_Binary::Clone() const
 {
-    return m_Null ? new CDB_Binary : new CDB_Binary(*this);
+    return m_Null ? new CDB_Binary(m_Size) : new CDB_Binary(*this);
 }
 
 void CDB_Binary::AssignValue(CDB_Object& v)
@@ -288,6 +322,36 @@ void CDB_Binary::AssignValue(CDB_Object& v)
 }
 
 CDB_Binary::~CDB_Binary()
+{
+    delete[] m_Val;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_LongBinary::
+//
+
+EDB_Type CDB_LongBinary::GetType() const
+{
+    return eDB_LongBinary;
+}
+
+CDB_Object* CDB_LongBinary::Clone() const
+{
+    return m_Null ? new CDB_LongBinary(m_Size) : new CDB_LongBinary(*this);
+}
+
+void CDB_LongBinary::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_LongBinary) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_LongBinary::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    register CDB_LongBinary& cv= (CDB_LongBinary&)v;
+	m_DataSize= (m_Size < cv.m_DataSize)? m_Size : cv.m_DataSize;
+    memcpy(m_Val, cv.m_Val, m_DataSize);
+}
+
+CDB_LongBinary::~CDB_LongBinary()
 {
     delete[] m_Val;
 }
@@ -810,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/04/29 21:13:57  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.10  2002/09/25 21:47:51  soussov
  * adds check for not-empty append before dropping the Null flag in CDB_Stream
  *

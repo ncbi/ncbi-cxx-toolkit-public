@@ -143,6 +143,8 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
     case CS_REAL_TYPE:      return eDB_Float;
     case CS_TEXT_TYPE:      return eDB_Text;
     case CS_IMAGE_TYPE:     return eDB_Image;
+	case CS_LONGCHAR_TYPE:  return eDB_LongChar;
+	case CS_LONGBINARY_TYPE: return eDB_LongBinary;
     }
 
     return eDB_UnsupportedType;
@@ -221,7 +223,8 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_BINARY_TYPE: {
         if (item_buf  &&
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
-            b_type != eDB_VarChar    &&  b_type != eDB_Char) {
+            b_type != eDB_VarChar    &&  b_type != eDB_Char &&
+			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
             throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
                                "Wrong type of CDB_Object");
         }
@@ -249,6 +252,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                     v[outlen] = '\0';
                     *((CDB_Char*)     item_buf) = v;
                     break;
+                case eDB_LongChar:
+                    v[outlen] = '\0';
+                    *((CDB_LongChar*)     item_buf) = v;
+                    break;
+                case eDB_LongBinary:
+                    ((CDB_LongBinary*)     item_buf)->SetValue(v, outlen);
+                    break;
                 default:
                     break;
                 }
@@ -259,6 +269,54 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             CDB_VarBinary* val = (outlen == 0)
                 ? new CDB_VarBinary() : new CDB_VarBinary(v, outlen);
+
+            if ( v != buffer)  delete[] v;
+            return val;
+        }
+        case CS_CANCELED:
+            if (v != buffer)  delete[] v;
+            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
+                               "the command has been canceled");
+        default:
+            if (v != buffer)  delete[] v;
+            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
+                               "ct_get_data failed");
+        }
+    }
+
+    case CS_LONGBINARY_TYPE: {
+        if (item_buf  &&
+			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
+            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
+                               "Wrong type of CDB_Object");
+        }
+
+        char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
+            ? buffer : new char[fmt.maxlength + 1];
+
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        case CS_SUCCEED:
+        case CS_END_ITEM:
+        case CS_END_DATA: {
+            if ( item_buf ) {
+                switch ( b_type ) {
+                case eDB_LongBinary:
+                    ((CDB_LongBinary*) item_buf)->SetValue(v, outlen);
+                    break;
+				case eDB_LongChar:
+                    v[outlen] = '\0';
+                    *((CDB_LongChar*)     item_buf) = v;
+                default:
+                    break;
+                }
+
+                if (v != buffer)  delete[] v;
+                return item_buf;
+            }
+
+            CDB_LongBinary* val = (outlen == 0)
+                ? new CDB_LongBinary(fmt.maxlength) : 
+			      new CDB_LongBinary(fmt.maxlength, v, outlen);
 
             if ( v != buffer)  delete[] v;
             return val;
@@ -328,7 +386,8 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_CHAR_TYPE: {
         if (item_buf  &&
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
-            b_type != eDB_VarChar    &&  b_type != eDB_Char) {
+            b_type != eDB_VarChar    &&  b_type != eDB_Char &&
+			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
             throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
                                "Wrong type of CDB_Object");
         }
@@ -346,17 +405,23 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 }
                 else {
                     switch ( b_type ) {
+                    case eDB_VarChar:
+                        *((CDB_VarChar*)  item_buf) = v;
+                        break;
+                    case eDB_Char:
+                        *((CDB_Char*)     item_buf) = v;
+                        break;
+                    case eDB_LongChar:
+                        *((CDB_LongChar*)     item_buf) = v;
+                        break;
                     case eDB_VarBinary:
                         ((CDB_VarBinary*) item_buf)->SetValue(v, outlen);
                         break;
                     case eDB_Binary:
                         ((CDB_Binary*)    item_buf)->SetValue(v, outlen);
                         break;
-                    case eDB_VarChar:
-                        *((CDB_VarChar*)  item_buf) = v;
-                        break;
-                    case eDB_Char:
-                        *((CDB_Char*)     item_buf) = v;
+                    case eDB_LongBinary:
+                        ((CDB_LongBinary*)    item_buf)->SetValue(v, outlen);
                         break;
                     default:
                         break;
@@ -369,6 +434,60 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             CDB_VarChar* val = (outlen == 0)
                 ? new CDB_VarChar() : new CDB_VarChar(v, (size_t) outlen);
+
+            if (v != buffer) delete[] v;
+            return val;
+        }
+        case CS_CANCELED: {
+            if (v != buffer) delete[] v;
+            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
+                               "the command has been canceled");
+        }
+        default: {
+            if (v != buffer) delete[] v;
+            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
+                               "ct_get_data failed");
+        }
+        }
+    }
+
+    case CS_LONGCHAR_TYPE: {
+        if (item_buf  &&
+			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
+            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
+                               "Wrong type of CDB_Object");
+        }
+
+        char* v = fmt.maxlength < 2048
+            ? buffer : new char[fmt.maxlength + 1];
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        case CS_SUCCEED:
+        case CS_END_ITEM:
+        case CS_END_DATA: {
+            v[outlen] = '\0';
+            if ( item_buf) {
+                if ( outlen <= 0) {
+                    item_buf->AssignNULL();
+                }
+                else {
+                    switch ( b_type ) {
+                    case eDB_LongChar:
+                        *((CDB_LongChar*)     item_buf) = v;
+                        break;
+                    case eDB_LongBinary:
+                        ((CDB_LongBinary*)    item_buf)->SetValue(v, outlen);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                if ( v != buffer) delete[] v;
+                return item_buf;
+            }
+
+            CDB_LongChar* val = (outlen == 0)
+                ? new CDB_LongChar(fmt.maxlength) : new CDB_LongChar((size_t) outlen, v);
 
             if (v != buffer) delete[] v;
             return val;
@@ -995,6 +1114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/04/29 21:15:35  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.16  2003/04/21 20:18:14  soussov
  * Buffering fetched result to avoid ct_get_data performance issue
  *

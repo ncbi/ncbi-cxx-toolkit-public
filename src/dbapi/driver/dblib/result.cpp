@@ -66,6 +66,14 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 ((CDB_Char*)      item_buff)->SetValue((const char*) d_ptr,
                                                        (size_t) d_len);
                 break;
+			case eDB_LongBinary:
+                ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
+                                                       (size_t) d_len);
+                break;
+            case eDB_LongChar:
+                ((CDB_LongChar*)  item_buff)->SetValue((const char*) d_ptr,
+                                                       (size_t) d_len);
+                break;
             default:
                 throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
                                    "wrong type of CDB_Object");
@@ -117,12 +125,20 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 ((CDB_Char*)      item_buff)->SetValue((const char*) d_ptr,
                                                        (size_t) d_len);
                 break;
+            case eDB_LongChar:
+                ((CDB_LongChar*)  item_buff)->SetValue((const char*) d_ptr,
+                                                       (size_t) d_len);
+                break;
             case eDB_VarBinary:
                 ((CDB_VarBinary*) item_buff)->SetValue((const void*) d_ptr,
                                                        (size_t) d_len);
                 break;
             case eDB_Binary:
                 ((CDB_Binary*)    item_buff)->SetValue((const void*) d_ptr,
+                                                       (size_t) d_len);
+                break;
+            case eDB_LongBinary:
+                ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
                                                        (size_t) d_len);
                 break;
             default:
@@ -280,6 +296,52 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
         return v ? new CDB_Float((float)*v) : new CDB_Float;
     }
 
+    case eDB_LongBinary: {
+        if (item_buff) {
+            switch (b_type) {
+			case eDB_LongBinary:
+                ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
+                                                       (size_t) d_len);
+                break;
+            case eDB_LongChar:
+                ((CDB_LongChar*)  item_buff)->SetValue((const char*) d_ptr,
+                                                       (size_t) d_len);
+                break;
+
+            default:
+                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
+                                   "wrong type of CDB_Object");
+            }
+            return item_buff;
+        }
+
+        return d_ptr ? new CDB_LongBinary((size_t) d_len, (const void*) d_ptr, 
+                                          (size_t) d_len)
+            : new CDB_LongBinary();
+    }
+
+    case eDB_LongChar: {
+        if (item_buff) {
+            switch (b_type) {
+            case eDB_LongChar:
+                ((CDB_LongChar*)  item_buff)->SetValue((const char*) d_ptr,
+                                                       (size_t) d_len);
+                break;
+            case eDB_LongBinary:
+                ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
+                                                       (size_t) d_len);
+                break;
+            default:
+                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
+                                   "wrong type of CDB_Object");
+            }
+            return item_buff;
+        }
+
+        return d_ptr ? new CDB_LongChar((size_t) d_len, (const char*) d_ptr)
+            : new CDB_LongChar();
+    }
+
     default:
         return 0;
     }
@@ -291,9 +353,11 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
 {
     switch (dbcoltype(cmd, n)) {
-    case SYBBINARY:    return eDB_VarBinary;
+    case SYBBINARY:    return (dbcollen(cmd, n) > 255) ? eDB_LongBinary : 
+                                                         eDB_VarBinary;
     case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return eDB_VarChar;
+    case SYBCHAR:      return (dbcollen(cmd, n) > 255) ? eDB_LongChar :
+                                                         eDB_VarChar;
     case SYBDATETIME:  return eDB_DateTime;
     case SYBDATETIME4: return eDB_SmallDateTime;
     case SYBINT1:      return eDB_TinyInt;
@@ -801,9 +865,11 @@ CDBL_BlobResult::~CDBL_BlobResult()
 static EDB_Type s_RetGetDataType(DBPROCESS* cmd, int n)
 {
     switch (dbrettype(cmd, n)) {
-    case SYBBINARY:    return eDB_VarBinary;
+    case SYBBINARY:    return (dbretlen(cmd, n) > 255)? eDB_LongBinary : 
+                                                        eDB_VarBinary;
     case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return eDB_VarChar;
+    case SYBCHAR:      return (dbretlen(cmd, n) > 255)? eDB_LongChar : 
+                                                        eDB_VarChar;
     case SYBDATETIME:  return eDB_DateTime;
     case SYBDATETIME4: return eDB_SmallDateTime;
     case SYBINT1:      return eDB_TinyInt;
@@ -942,9 +1008,11 @@ CDBL_ParamResult::~CDBL_ParamResult()
 static EDB_Type s_AltGetDataType(DBPROCESS* cmd, int id, int n)
 {
     switch (dbalttype(cmd, id, n)) {
-    case SYBBINARY:    return eDB_VarBinary;
+    case SYBBINARY:    return (dbaltlen(cmd, id, n) > 255)? eDB_LongBinary : 
+                                                        eDB_VarBinary;
     case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return eDB_VarChar;
+    case SYBCHAR:      return (dbaltlen(cmd, id, n) > 255)? eDB_LongChar : 
+                                                        eDB_VarChar;
     case SYBDATETIME:  return eDB_DateTime;
     case SYBDATETIME4: return eDB_SmallDateTime;
     case SYBINT1:      return eDB_TinyInt;
@@ -1486,6 +1554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/04/29 21:16:21  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.18  2003/01/31 16:50:12  lavr
  * Remove unused variable "e" from catch() clause
  *

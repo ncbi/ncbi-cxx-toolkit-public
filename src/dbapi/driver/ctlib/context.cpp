@@ -79,7 +79,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     m_AppName         = "CTLibDriver";
     m_LoginRetryCount = 0;
     m_LoginLoopDelay  = 0;
-    m_PacketSize      = 0;
+    m_PacketSize      = 2048;
 
     CS_RETCODE r = reuse_context ? cs_ctx_global(version, &m_Context) :
         cs_ctx_alloc(version, &m_Context);
@@ -713,6 +713,16 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
                             (CS_INT) par.Size(), indicator);
         break;
     }
+    case eDB_LongChar: {
+        CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
+        param_fmt.datatype = CS_LONGCHAR_TYPE;
+        if ( declare_only )
+            break;
+
+        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
+                            (CS_INT) par.Size(), indicator);
+        break;
+    }
     case eDB_VarChar: {
         CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
         param_fmt.datatype = CS_CHAR_TYPE;
@@ -726,6 +736,16 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
     case eDB_Binary: {
         CDB_Binary& par = dynamic_cast<CDB_Binary&> (param);
         param_fmt.datatype = CS_BINARY_TYPE;
+        if ( declare_only )
+            break;
+
+        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
+                            (CS_INT) par.Size(), indicator);
+        break;
+    }
+    case eDB_LongBinary: {
+        CDB_LongBinary& par = dynamic_cast<CDB_LongBinary&> (param);
+        param_fmt.datatype = CS_LONGBINARY_TYPE;
         if ( declare_only )
             break;
 
@@ -815,19 +835,25 @@ I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
     CS_INT version= CS_VERSION_110;
 
     if(attr) {
-    reuse_context= (*attr)["reuse_context"] != "false";
-    string vers= (*attr)["version"];
-    if(vers.find("100") != string::npos) 
-        version= CS_VERSION_100;
-    }
-    CTLibContext* cntx= new CTLibContext(reuse_context, version);
-    if(cntx && attr) {
-      string page_size= (*attr)["packet"];
-      if(!page_size.empty()) {
-	CS_INT s= atoi(page_size.c_str());
-	cntx->CTLIB_SetPacketSize(s);
-      }
-    }
+	  reuse_context= (*attr)["reuse_context"] != "false";
+	  string vers= (*attr)["version"];
+	  if(vers.find("100") != string::npos) {
+		version= CS_VERSION_100;
+	  }
+	  else {
+		char* e;
+		long v= strtol(vers.c_str(), &e, 10);
+		if (v > 0 && (e == 0 || (!isalpha(*e)))) version= v;
+	  }
+	}
+	CTLibContext* cntx= new CTLibContext(reuse_context, version);
+	if(cntx && attr) {
+	  string page_size= (*attr)["packet"];
+	  if(!page_size.empty()) {
+		CS_INT s= atoi(page_size.c_str());
+		cntx->CTLIB_SetPacketSize(s);
+	  }
+	}
     return cntx;
 }
 
@@ -851,6 +877,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/04/29 21:15:35  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.21  2003/04/01 21:49:55  soussov
  * new attribute 'packet=XXX' (where XXX is a packet size) added to CTLIB_CreateContext
  *

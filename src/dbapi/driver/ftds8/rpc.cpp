@@ -263,7 +263,7 @@ CTDS_RPCCmd::~CTDS_RPCCmd()
 bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
 {
     static const char s_hexnum[] = "0123456789ABCDEF";
-    char val_buffer[1024];
+    char val_buffer[16*1024];
 
     if (!param.IsNULL()) {
         switch (param.GetType()) {
@@ -317,6 +317,22 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
             val_buffer[i] = '\0';
             break;
         }
+        case eDB_LongChar: {
+            const CDB_LongChar& val = dynamic_cast<const CDB_LongChar&> (param);
+            const char* c = val.Value();
+            size_t i = 0;
+            val_buffer[i++] = '\'';
+            while (*c && (i < sizeof(val_buffer) - 4)) {
+                if (*c == '\'')
+                    val_buffer[i++] = '\'';
+                val_buffer[i++] = *c++;
+            }
+			if(*c != '\0') return false;
+            val_buffer[i++] = '\'';
+            val_buffer[i++] = '\n';
+            val_buffer[i] = '\0';
+            break;
+        }
         case eDB_Binary: {
             const CDB_Binary& val = dynamic_cast<const CDB_Binary&> (param);
             const unsigned char* c = (const unsigned char*) val.Value();
@@ -336,6 +352,22 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
                 dynamic_cast<const CDB_VarBinary&> (param);
             const unsigned char* c = (const unsigned char*) val.Value();
             size_t i = 0, size = val.Size();
+            val_buffer[i++] = '0';
+            val_buffer[i++] = 'x';
+            for (size_t j = 0; j < size; j++) {
+                val_buffer[i++] = s_hexnum[c[j] >> 4];
+                val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+            }
+            val_buffer[i++] = '\n';
+            val_buffer[i++] = '\0';
+            break;
+        }
+        case eDB_LongBinary: {
+            const CDB_LongBinary& val =
+                dynamic_cast<const CDB_LongBinary&> (param);
+            const unsigned char* c = (const unsigned char*) val.Value();
+            size_t i = 0, size = val.DataSize();
+			if(size*2 > sizeof(val_buffer) - 4) return false;
             val_buffer[i++] = '0';
             val_buffer[i++] = 'x';
             for (size_t j = 0; j < size; j++) {
@@ -385,6 +417,7 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
 
 bool CTDS_RPCCmd::x_AssignOutputParams()
 {
+    char buffer[64];
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
         if ((m_Params.GetParamStatus(n) & CDB_Params::fOutput) == 0)
             continue;
@@ -414,10 +447,22 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
         case eDB_VarChar:
             type = "varchar(255)";
             break;
+		case eDB_LongChar: {
+		    CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
+		    sprintf(buffer, "varchar(%d)", lc.Size());
+		    type= buffer;
+			break;
+		}
         case eDB_Binary:
         case eDB_VarBinary:
             type = "varbinary(255)";
             break;
+		case eDB_LongBinary: {
+		    CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
+		    sprintf(buffer, "varbinary(%d)", lb.Size());
+		    type= buffer;
+			break;
+		}
         case eDB_Float:
             type = "real";
             break;
@@ -483,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/04/29 21:15:03  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.8  2002/11/20 20:36:09  soussov
  * fixed bug in parameters assignment
  *

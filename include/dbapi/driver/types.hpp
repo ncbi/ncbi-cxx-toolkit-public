@@ -67,7 +67,9 @@ enum EDB_Type {
     eDB_Bit,
     eDB_Numeric,
 
-    eDB_UnsupportedType
+    eDB_UnsupportedType,
+	eDB_LongChar,
+	eDB_LongBinary
 };
 
 
@@ -406,6 +408,103 @@ protected:
     char*  m_Val;
 };
 
+class NCBI_DBAPIDRIVER_EXPORT CDB_LongChar : public CDB_Object
+{
+public:
+
+    CDB_LongChar(size_t s = 1) : CDB_Object(true) {
+        m_Size = (s < 1) ? 1 : s;
+        m_Val  = new char[m_Size + 1];
+    }
+
+    CDB_LongChar(size_t s, const string& v) :  CDB_Object(false) {
+        m_Size = (s < 1) ? 1 : s;
+        m_Val = new char[m_Size + 1];
+        size_t l = v.copy(m_Val, m_Size);
+        m_Val[l] = '\0';
+    }
+
+    CDB_LongChar(size_t len, const char* str) :  CDB_Object(str == 0) {
+        m_Size = (len < 1) ? 1 : len;
+        m_Val = new char[m_Size + 1];
+
+		if(str) strncpy(m_Val, str, m_Size);
+        m_Val[m_Size] = '\0';
+    }
+
+    CDB_LongChar(const CDB_LongChar& v) {
+        m_Null = v.m_Null;
+        m_Size = v.m_Size;
+        m_Val = new char[m_Size + 1];
+        memcpy(m_Val, v.m_Val, m_Size + 1);
+    }
+
+
+    CDB_LongChar& operator= (const CDB_LongChar& v) {
+        m_Null = v.m_Null;
+        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+        memmove(m_Val, v.m_Val, l);
+		m_Val[l]= '\0';
+        return *this;
+    }
+
+    CDB_LongChar& operator= (const string& v) {
+        m_Null = false;
+        size_t l = v.copy(m_Val, m_Size);
+		m_Val[l]= '\0';
+        return *this;
+    }
+
+    CDB_LongChar& operator= (const char* v) {
+        if (v == 0) {
+            m_Null = true;
+        }
+        else {
+            m_Null = false;
+            size_t l;
+
+            for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
+                m_Val[l++] = *v;
+            }
+			m_Val[l]= '\0';
+        }
+        return *this;
+    }
+
+    void SetValue(const char* str, size_t len) {
+        if ( str ) {
+            if (len >= m_Size) {
+                memcpy(m_Val, str, m_Size);
+				m_Val[m_Size]= '\0';
+            }
+            else {
+                if ( len ) {
+                    memcpy(m_Val, str, len);
+                }
+                m_Val[len]= '\0';
+            }
+            m_Null = false;
+        }
+        else {
+		    m_Null = true;
+        }
+    }
+
+    const char* Value() const  { return m_Null ? 0 : m_Val; }
+    size_t      Size()  const  { return m_Size; }
+    size_t  DataSize()  const  { return m_Null? 0 : strlen(m_Val); }
+
+    virtual EDB_Type    GetType() const;
+    virtual CDB_Object* Clone()   const;
+
+    virtual void AssignValue(CDB_Object& v);
+    virtual ~CDB_LongChar();
+
+protected:
+    size_t m_Size;
+    char*  m_Val;
+};
+
 
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
@@ -501,6 +600,66 @@ protected:
     unsigned char* m_Val;
 };
 
+class NCBI_DBAPIDRIVER_EXPORT CDB_LongBinary : public CDB_Object
+{
+public:
+
+    CDB_LongBinary(size_t s = 1) : CDB_Object(true) {
+        m_Size = (s < 1) ? 1 : s;
+        m_Val = new unsigned char[m_Size];
+		m_DataSize= 0;
+    }
+
+    CDB_LongBinary(size_t s, const void* v, size_t v_size) {
+        m_Size = (s == 0) ? 1 : s;
+        m_Val  = new unsigned char[m_Size];
+        SetValue(v, v_size);
+    }
+
+    CDB_LongBinary(const CDB_LongBinary& v) {
+        m_Null = v.m_Null;
+        m_Size = v.m_Size;
+		m_DataSize= v.m_DataSize;
+        m_Val = new unsigned char[m_Size];
+        memcpy(m_Val, v.m_Val, m_DataSize);
+    }
+
+    void SetValue(const void* v, size_t v_size) {
+        if (v  &&  v_size) {
+		    m_DataSize= (v_size > m_Size) ? m_Size : v_size;
+            memcpy(m_Val, v, m_DataSize);
+            m_Null = false;
+        } else {
+            m_Null = true;
+			m_DataSize= 0;
+        }
+    }
+
+    CDB_LongBinary& operator= (const CDB_LongBinary& v) {
+        m_Null = v.m_Null;
+        m_DataSize = (m_Size > v.m_DataSize) ? v.m_DataSize : m_Size;
+		if(m_DataSize) {
+		    memmove(m_Val, v.m_Val, m_DataSize);
+		}
+        return *this;
+    }
+
+    //
+    const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
+    size_t      Size()  const  { return m_Size; }
+    size_t  DataSize()  const  { return m_DataSize; }
+
+    virtual EDB_Type    GetType() const;
+    virtual CDB_Object* Clone()   const;
+
+    virtual void AssignValue(CDB_Object& v);
+    virtual ~CDB_LongBinary();
+
+protected:
+    size_t         m_Size;
+    size_t         m_DataSize;
+    unsigned char* m_Val;
+};
 
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Float : public CDB_Object
@@ -881,6 +1040,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/04/29 21:12:29  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.14  2003/04/11 17:46:11  siyan
  * Added doxygen support
  *

@@ -123,6 +123,13 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                              (BYTE*) "", 1, SYBCHAR, i + 1);
             }
             break;
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                             val.IsNULL() ? 0 : -1,
+                             (BYTE*) "", 1, SYBCHAR, i + 1);
+            }
+            break;
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
@@ -134,6 +141,13 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : val.Size(),
+                             0, 0, SYBBINARY, i + 1);
+            }
+            break;
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                             val.IsNULL() ? 0 : val.DataSize(),
                              0, 0, SYBBINARY, i + 1);
             }
             break;
@@ -259,6 +273,14 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
@@ -272,6 +294,14 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
                     == SUCCEED &&
                     bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.Size(), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.DataSize(), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
@@ -464,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/04/29 21:15:03  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.4  2002/12/03 19:20:40  soussov
  * some minor fixes in bcp_batch, bcp_done
  *

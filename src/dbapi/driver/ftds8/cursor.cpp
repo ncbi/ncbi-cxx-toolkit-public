@@ -379,7 +379,7 @@ bool CTDS_CursorCmd::x_AssignParams()
         if (name.empty())
             continue;
         CDB_Object& param = *m_Params.GetParam(n);
-        char val_buffer[1024];
+        char val_buffer[16*1024];
 
         if (!param.IsNULL()) {
             switch (param.GetType()) {
@@ -432,6 +432,21 @@ bool CTDS_CursorCmd::x_AssignParams()
                 val_buffer[i] = '\0';
                 break;
             }
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                const char* c = val.Value(); // NB: 255 bytes at most
+                size_t i = 0;
+                val_buffer[i++] = '\'';
+                while (*c && (i < sizeof(val_buffer) - 2)) {
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
+                    val_buffer[i++] = *c++;
+                }
+				if(*c != '\0') return false; 
+                val_buffer[i++] = '\'';
+                val_buffer[i] = '\0';
+                break;
+            }
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 const unsigned char* c = (const unsigned char*) val.Value();
@@ -449,6 +464,20 @@ bool CTDS_CursorCmd::x_AssignParams()
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 const unsigned char* c = (const unsigned char*) val.Value();
                 size_t i = 0, size = val.Size();
+                val_buffer[i++] = '0';
+                val_buffer[i++] = 'x';
+                for (size_t j = 0; j < size; j++) {
+                    val_buffer[i++] = s_hexnum[c[j] >> 4];
+                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                }
+                val_buffer[i++] = '\0';
+                break;
+            }
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                const unsigned char* c = (const unsigned char*) val.Value();
+                size_t i = 0, size = val.DataSize();
+				if(size*2 > sizeof(val_buffer) - 4) return false;
                 val_buffer[i++] = '0';
                 val_buffer[i++] = 'x';
                 for (size_t j = 0; j < size; j++) {
@@ -504,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/04/29 21:15:03  soussov
+ * new datatypes CDB_LongChar and CDB_LongBinary added
+ *
  * Revision 1.8  2003/02/28 23:27:24  soussov
  * fixes double quote bug in char/varchar parameters substitute
  *
