@@ -33,14 +33,8 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/09/25 22:38:10  vakatov
+* Revision 1.4  1998/09/25 22:58:01  vakatov
 * *** empty log message ***
-*
-* Revision 1.2  1998/09/25 19:35:39  vakatov
-* *** empty log message ***
-*
-* Revision 1.1  1998/09/24 22:10:48  vakatov
-* Initial revision
 *
 * ==========================================================================
 */
@@ -63,44 +57,44 @@ namespace ncbi_err {
 
     class CError {
     public:
-        CError(void);
-        CError(EErrSeverity sev, const char* message=0, bool flush=true);
+        CError(void)  { m_Severity = eE_Error; }
+        CError(EErrSeverity sev, const char* message, bool flush=true);
         ~CError(void) { f_Flush(); }
 
         template<class X> CError& operator << (X& x);  // formatted output
-        CError& f_Clear(void);  // reset the current message
-        CError& f_Flush(void);  // flush out the current message
+        void f_Clear(void);  // reset current message
+        void f_Flush(void);  // flush out current message
         // flush curr. message;  then start new one with the specified severity
-        CError& f_Severity(EErrSeverity severity);
+        void f_Severity(EErrSeverity sev);
 
-        // Write the error diagnostics to output stream "os"
+        // write the error diagnostics to output stream "os"
         extern void f_SetStream(ostream& os=cerr);
-        // Do not post messages which severity is less than "severity"
-        extern void f_SetPostLevel(EErrSeverity severity=eE_Error);
-        // Abrupt the application if severity is >= "severity"
-        extern void f_SetDieLevel(EErrSeverity severity=eE_Fatal);
+        // do not post messages which severity is less than "min_sev"
+        extern void f_SetPostLevel(EErrSeverity min_sev=eE_Error);
+        // abrupt the application if severity is >= "max_sev"
+        extern void f_SetDieLevel(EErrSeverity max_sev=eE_Fatal);
 
         // (for the error stream manipulators)
         CError& operator << (CError& (*f)(CError&)) { return f(*this); }
 
     private:
-        EErrSeverity m_Severity;
-        ostrstream   m_Buffer;
+        EErrSeverity m_Severity;  // severity level for the current message
+        ostrstream   m_Buffer;    // content of the current message
     };
 
     // Set of output manipulators for CError
     //
-    extern CError& Flush  (CError& err) { return err.f_Flush(err); }
-    extern CError& Info   (CError& err) { return err.f_Severity(eE_Info); }
-    extern CError& Warning(CError& err) { return err.f_Severity(eE_Warning); }
-    extern CError& Error  (CError& err) { return err.f_Severity(eE_Error); }
-    extern CError& Fatal  (CError& err) { return err.f_Severity(eE_Fatal); }
+    inline CError& Flush  (CError& e)  { e.f_Flush(err);  return e; }
+    inline CError& Info   (CError& e)  { e.f_Severity(eE_Info);     return e; }
+    inline CError& Warning(CError& e)  { e.f_Severity(eE_Warning);  return e; }
+    inline CError& Error  (CError& e)  { e.f_Severity(eE_Error);    return e; }
+    inline CError& Fatal  (CError& e)  { e.f_Severity(eE_Fatal);    return e; }
 
 
 
 
     ////////////////////////////////////////////////////////////////////
-    // THE BELOW IS MOSTLY FOR INTERNAL USE -- OR FOR ANYBODY WHO
+    // THE API BELOW IS MOSTLY FOR INTERNAL USE -- OR FOR ANYBODY WHO
     // WANT TO PROVIDE HIS OWN ERROR-HANDLE CALLBACKS
     ////////////////////////////////////////////////////////////////////
 

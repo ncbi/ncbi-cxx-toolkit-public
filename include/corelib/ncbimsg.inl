@@ -33,7 +33,7 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/09/25 22:38:11  vakatov
+* Revision 1.4  1998/09/25 22:58:01  vakatov
 * *** empty log message ***
 *
 * ==========================================================================
@@ -43,6 +43,14 @@
 ///////////////////////////////////////////////////////
 //  CError::
 
+CError::CError(EErrSeverity sev, const char* message, bool flush) {
+    m_Severity = sev;
+    if ( message )
+        m_Buffer << sev;
+    if ( flush )
+        f_Flush();
+}
+
 template<class X> CError& CError::operator << (X& x) {
     m_Buffer << x;
     return *this;
@@ -50,7 +58,6 @@ template<class X> CError& CError::operator << (X& x) {
 
 CError& CError::f_Clear(void) {
     VERIFY( !m_Buffer.rdbuf()->seekpos(0); );
-    return *this;
 };
 
 CError& CError::f_Flush(void) {
@@ -61,8 +68,11 @@ CError& CError::f_Flush(void) {
     }
     if (m_Severity == eE_Fatal)
         abort();
-    return *this;
 }
 
+CError& CError::f_Severity(EErrSeverity sev) {
+    f_Flush();
+    m_Severity = sev;
+}
 
 #endif /* def NCBIERR__HPP  &&  ndef NCBIERR__INL */
