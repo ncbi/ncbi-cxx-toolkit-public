@@ -83,7 +83,6 @@
 /* Platform-specific system headers
  */
 #if defined(NCBI_OS_UNIX)
-#  include <errno.h>
 #  include <sys/time.h>
 #  include <unistd.h>
 #  include <netdb.h>
@@ -101,7 +100,6 @@
 #elif defined(NCBI_OS_MAC)
 #  include <unistd.h>
 #  include <sock_ext.h>
-extern void bzero(char* target, long numbytes);
 #  include <netdb.h>
 #  include <s_types.h>
 #  include <s_socket.h>
@@ -123,6 +121,7 @@ extern void bzero(char* target, long numbytes);
 
 /* Portable standard C headers
  */
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -217,6 +216,9 @@ typedef int TSOCK_Handle;
 #  define SOCK_SHUTDOWN_RD    0
 #  define SOCK_SHUTDOWN_WR    1
 #  define SOCK_STRERROR(err)  s_StrError(err)
+#  ifdef NETDB_INTERNAL
+#    undef NETDB_INTERNAL
+#  endif /*NETDB_INTERNAL*/
 
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
@@ -282,9 +284,9 @@ static ESwitch s_InterruptOnSignal = eOff; /* restart I/O by default      */
 static ESwitch s_LogData = eOff;           /* no data logging by default  */
 
 /* Flag to indicate whether API should mask SIGPIPE (during initialization) */
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
 static int/*bool*/ s_AllowSigPipe = 0/*false - mask SIGPIPE out*/;
-#endif
+#endif /*NCBI_OS_UNIX*/
 
 
 /******************************************************************************
@@ -364,24 +366,6 @@ static const char* s_StrError(int error)
         {WSA_E_CANCELLED,        "WSA_E_CANCELLED"},
         {WSAEREFUSED,            "Refused"},
 #endif /*NCBI_OS_MSWIN*/
-#ifdef HOST_NOT_FOUND
-        {HOST_NOT_FOUND, "Host not found"},
-#endif /*HOST_NOT_FOUND*/
-#ifdef TRY_AGAIN
-        {TRY_AGAIN,      "DNS server failure"},        
-#endif /*TRY_AGAIN*/
-#ifdef NO_RECOVERY
-        {NO_RECOVERY,    "Unrecoverable DNS error"},
-#endif /*NO_RECOVERY*/
-#ifdef NO_DATA
-        {NO_DATA,        "No DNS data of requested type"},
-#endif /*NO_DATA*/
-#ifdef NO_ADDRESS
-        {NO_ADDRESS,     "No address found in DNS"},
-#endif /*NO_ADDRESS*/
-#ifdef NETDB_INTERNAL
-        {NETDB_INTERNAL, "Internal NETDB error"},
-#endif /*NETDB_INTERNAL*/
 #ifdef EAI_ADDRFAMILY
         {EAI_ADDRFAMILY, "Address family for nodename not supported"},
 #endif /*EAI_ADDRFAMILY*/
@@ -412,11 +396,26 @@ static const char* s_StrError(int error)
 #ifdef EAI_SOCKTYPE
         {EAI_SOCKTYPE,   "Socket type not supported"},
 #endif /*EAI_SOCKTYPE*/
+#ifdef HOST_NOT_FOUND
+        {HOST_NOT_FOUND, "Host not found"},
+#endif /*HOST_NOT_FOUND*/
+#ifdef TRY_AGAIN
+        {TRY_AGAIN,      "DNS server failure"},
+#endif /*TRY_AGAIN*/
+#ifdef NO_RECOVERY
+        {NO_RECOVERY,    "Unrecoverable DNS error"},
+#endif /*NO_RECOVERY*/
+#ifdef NO_DATA
+        {NO_DATA,        "No DNS data of requested type"},
+#endif /*NO_DATA*/
+#ifdef NO_ADDRESS
+        {NO_ADDRESS,     "No address found in DNS"},
+#endif /*NO_ADDRESS*/
 
         /* Last dummy entry - must present */
         {0, 0}
     };
-    size_t i, n = sizeof(errmap)/sizeof(errmap[0]) - 1;
+    size_t i, n = sizeof(errmap)/sizeof(errmap[0]) - 1/*dummy entry*/;
 
     /* always called on error, so get error number here if not having already*/
     if ( !error )
@@ -505,9 +504,9 @@ extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data)
 
 extern void SOCK_AllowSigPipeAPI(void)
 {
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
     s_AllowSigPipe = 1/*true - API will not mask SIGPIPE out at init*/;
-#endif
+#endif /*NCBI_OS_UNIX*/
     return;
 }
 
@@ -746,12 +745,6 @@ static EIO_Status s_Select(size_t                n,
                 n_fds++;
         }
     }
-
-#if !defined(NCBI_OS_IRIX)
-    /* funny thing -- on IRIX, it may set "n_fds" to e.g. 1, and
-     * forget to set the bit in either or all "r_fds"/"w_fds"/"e_fds"!
-     */
-#endif
     assert(n_fds);
 
     /* success; can do i/o now */
@@ -1080,7 +1073,7 @@ static EIO_Status s_Connect(SOCK            sock,
             poll.sock  = &s;
             poll.event = eIO_Write;
             status = s_Select(1, &poll, s_to2tv(timeout, &tv));
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
             if (status == eIO_Success  &&
                 (getsockopt(x_sock, SOL_SOCKET, SO_ERROR, &x_errno,&x_len) != 0
                  ||  x_errno != 0))
@@ -2054,7 +2047,6 @@ extern int SOCK_ntoa(unsigned int host,
     assert(strlen(str) < sizeof(str));
 
     if (strlen(str) >= buflen) {
-        CORE_LOG(eLOG_Error, "[SOCK_ntoa]  Buffer too small");
         buf[0] = '\0';
         return -1/*failed*/;
     }
@@ -2134,22 +2126,33 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 #  else
         CORE_LOCK_WRITE;
         he = gethostbyname(hostname);
+#    ifdef NCBI_OS_MAC
+        x_errno = SOCK_ERRNO;
+#    else
         x_errno = h_errno;
-#  endif
+#    endif /*NCBI_OS_MAC*/
+#  endif /*HAVE_GETHOSTBYNAME_R*/
+
         if ( he ) {
             memcpy(&host, he->h_addr, sizeof(host));
         } else {
-            if (s_LogData == eOn) {
-                CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno,SOCK_STRERROR(x_errno),
-                                  "[SOCK_gethostbyname]  Failed "
-                                  "gethostbyname[_r]()");
-            }
             host = 0;
         }
 
 #  if !defined(HAVE_GETHOSTBYNAME_R)
         CORE_UNLOCK;
 #  endif
+
+        if (!host  &&  s_LogData == eOn) {
+#  ifdef NETDB_INTERNAL
+            if (x_errno == NETDB_INTERNAL)
+                x_errno = SOCK_ERRNO;
+#  endif /*NETDB_INTERNAL*/
+            CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                              "[SOCK_gethostbyname]  Failed "
+                              "gethostbyname[_r]()");
+        }
+
 #endif /*HAVE_GETADDR_INFO*/
     }
 
@@ -2186,7 +2189,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
             if (s_LogData == eOn) {
                 if (x_errno == EAI_SYSTEM)
                     x_errno = SOCK_ERRNO;
-                CORE_LOG_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
+                CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno,SOCK_STRERROR(x_errno),
                                   "[SOCK_gethostbyaddr]  Failed "
                                   "getnameinfo()");
             }
@@ -2215,8 +2218,12 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #  else
         CORE_LOCK_WRITE;
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
+#    if defined(NCBI_OS_MAC)
+        x_errno = SOCK_ERRNO;
+#    else
         x_errno = h_errno;
-#  endif
+#    endif /*NCBI_OS_MAC*/
+#  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!he  ||  strlen(he->h_name) >= namelen) {
             if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
@@ -2224,18 +2231,26 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
                 name[0] = '\0';
                 name = 0;
             }
-            if (s_LogData == eOn) {
-                CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno,SOCK_STRERROR(x_errno),
-                                  "[SOCK_gethostbyaddr]  Failed "
-                                  "gethostbyaddr[_r]()");
-            }
         } else {
             strcpy(name, he->h_name);
         }
-#  if !defined(HAVE_GETHOSTBYADDR_R)
+
+#  ifndef HAVE_GETHOSTBYADDR_R
         CORE_UNLOCK;
 #  endif
+
+        if (!name  &&  s_LogData == eOn) {
+#ifdef NETDB_INTERNAL
+            if (x_errno == NETDB_INTERNAL)
+                x_errno = SOCK_ERRNO;
+#endif
+            CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                              "[SOCK_gethostbyaddr]  Failed "
+                              "gethostbyaddr[_r]()");
+        }
+
         return name;
+
 #endif /*HAVE_GETNAMEINFO*/
     }
 
@@ -2247,6 +2262,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.75  2002/12/06 16:38:35  lavr
+ * Fix for undefined h_errno on MacOS 9
+ *
  * Revision 6.74  2002/12/06 15:06:54  lavr
  * Add missing x_errno definition in s_Connect() for non-Unix platforms
  *
