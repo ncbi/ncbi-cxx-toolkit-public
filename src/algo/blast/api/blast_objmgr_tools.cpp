@@ -234,14 +234,21 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 {
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
+    CSeqVector_CI iter(vec);
 
-    ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
+    iter.SetRandomizeAmbiguities();
+    iter.SetCoding(CSeq_data::e_Ncbi2na);
+
+    // ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
+
 
     for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
-        buffer[ci] = ((vec[i+0] & NCBI2NA_MASK)<<6) |
-                     ((vec[i+1] & NCBI2NA_MASK)<<4) |
-                     ((vec[i+2] & NCBI2NA_MASK)<<2) |
-                     ((vec[i+3] & NCBI2NA_MASK)<<0);
+        Uint1 a, b, c, d;
+        a = ((*iter & NCBI2NA_MASK)<<6); ++iter;
+        b = ((*iter & NCBI2NA_MASK)<<4); ++iter;
+        c = ((*iter & NCBI2NA_MASK)<<2); ++iter;
+        d = ((*iter & NCBI2NA_MASK)<<0); ++iter;
+        buffer[ci] = a | b | c | d;
     }
 
     buffer[ci] = 0;
@@ -253,7 +260,8 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
                case 2: bit_shift = 2; break;
                default: abort();   // should never happen
             }
-            buffer[ci] |= ((vec[i] & NCBI2NA_MASK)<<bit_shift);
+            buffer[ci] |= ((*iter & NCBI2NA_MASK)<<bit_shift);
+            ++iter;
     }
     // Set the number of bases in the last byte.
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;
@@ -448,10 +456,9 @@ SetupSubjects(const TSeqLocVector& subjects,
                                  eNa_strand_plus, eNoSentinels));
                 BlastSeqBlkSetCompressedSequence(subj, 
                                                  comp_seqbuf.first.release());
-            } catch (const CSeqVectorException&) {
+            } catch (const CSeqVectorException& sve) {
                 BlastSequenceBlkFree(subj);
-                NCBI_THROW(CBlastException, eInvalidCharacter, 
-                           "Gaps found in subject sequence");
+                NCBI_THROW(CBlastException, eInternal, sve.what());
             }
         } else {
             BlastSeqBlkSetSequence(subj, seqbuf.first.release(), 
@@ -551,6 +558,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
                                           eNa_strand_plus, eNoSentinels);
+        sv.SetCoding(CSeq_data::e_Ncbi4na);
         buf = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
         CompressDNA(sv, buf, buflen);
@@ -943,6 +951,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/06/14 17:46:39  madden
+* Use CSeqVector_CI and call SetRandomizeAmbiguities to properly handle gaps in subject sequence
+*
 * Revision 1.3  2004/06/07 21:34:55  dondosha
 * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
 *
