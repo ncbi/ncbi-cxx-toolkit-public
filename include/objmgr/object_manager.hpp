@@ -78,9 +78,17 @@ class CSeq_id_Mapper;
 template<class TLoader>
 struct SRegisterLoaderInfo
 {
+    /// Get pointer to the loader (just created or pre-extisting).
     TLoader* GetLoader(void) const { return m_Loader; }
+    /// Return true if the loader was just created.
     bool     IsCreated(void) const { return m_Created; }
 
+private:
+    TLoader* m_Loader;  // pointer to the loader (created or existing)
+    bool     m_Created; // true only if the loader was just created
+
+public:
+    // Used internally to populate the structure
     void Set(CDataLoader* loader, bool created)
     {
         // Check loader type
@@ -91,10 +99,6 @@ struct SRegisterLoaderInfo
         }
         m_Created = created;
     }
-
-private:
-    TLoader* m_Loader;  // pointer to the loader (created or existing)
-    bool     m_Created; // true only if the loader was just created
 };
 
 
@@ -150,11 +154,6 @@ public:
     /// Throw an exception if the loader is not registered with this ObjMgr.
     bool RevokeDataLoader(CDataLoader& loader);
     bool RevokeDataLoader(const string& loader_name);
-
-    // Register top-level seq_entry
-    //void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
-
-    //CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
@@ -235,6 +234,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.30  2004/09/24 16:25:31  kononenk
 * Added doxygen formating
 *

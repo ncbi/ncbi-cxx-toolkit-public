@@ -469,13 +469,6 @@ bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
     return false;
 }
 
-/*
-CConstRef<CBioseq> CObjectManager::GetBioseq(const CSeq_id& id)
-{
-    CScope* pScope = *(m_setScope.begin());
-    return CConstRef<CBioseq>(&((pScope->GetBioseqHandle(id)).GetBioseq()));
-}
-*/
 
 void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
@@ -507,6 +500,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.43  2004/09/30 18:38:55  vasilche
 * Thread safe CObjectManager::GetInstance().
 *

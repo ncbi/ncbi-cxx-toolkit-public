@@ -93,7 +93,7 @@ public:
     // Assignment
     CBioseq_Handle& operator=(const CBioseq_Handle& bh);
 
-    // Reset handle and make it not to point to any bioseq
+    /// Reset handle and make it not to point to any bioseq
     void Reset(void);
 
     /// Get scope this handle belongs to
@@ -108,7 +108,7 @@ public:
     /// Check if this id can be used to obtain this bioseq handle
     bool IsSynonym(const CSeq_id& id) const;
 
-    /// Check if this id can be used to obtain this bioseq handle
+    /// Get the bioseq's synonyms
     CConstRef<CSynonymsSet> GetSynonyms(void) const;
 
     /// Get parent Seq-entry handle
@@ -607,6 +607,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.65  2004/12/06 17:11:25  grichenk
 * Marked GetSequenceView and GetSeqMapFromSeqLoc as deprecated
 *

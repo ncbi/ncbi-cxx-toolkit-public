@@ -93,11 +93,13 @@ struct SRequestDetails
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Template for data loader construction
+// Template for data loader construction.
 class CLoaderMaker_Base
 {
 public:
+    // Virtual method for creating an instance of the data loader
     virtual CDataLoader* CreateLoader(void) const = 0;
+
     virtual ~CLoaderMaker_Base(void) {}
 
 protected:
@@ -135,8 +137,8 @@ public:
 };
 
 
-// Construction of data loaders with an argument.
-// For multiple arguments a selector class should be used.
+// Construction of data loaders with an argument. A structure
+// may be used to create loaders with multiple arguments.
 template <class TDataLoader, class TParam>
 class CParamLoaderMaker : public CLoaderMaker_Base
 {
@@ -307,6 +309,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.38  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *

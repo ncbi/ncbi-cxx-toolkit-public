@@ -40,18 +40,24 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-// root class for all object manager exceptions
+/** @addtogroup ObjectManagerCore
+ *
+ * @{
+ */
+
+
+/// Base class for all object manager exceptions
 class NCBI_XOBJMGR_EXPORT CObjMgrException : public CException
 {
 public:
     enum EErrCode {
-        eNotImplemented,
-        eRegisterError,   // error while registering a data source/loader
-        eFindConflict,
-        eFindFailed,
-        eAddDataError,
-        eModifyDataError,
-        eInvalidHandle,
+        eNotImplemented,  ///< The method is not implemented
+        eRegisterError,   ///< Error while registering a data source/loader
+        eFindConflict,    ///< Conflicting data found
+        eFindFailed,      ///< The data requested can not be found
+        eAddDataError,    ///< Error while adding new data
+        eModifyDataError, ///< Error while modifying data
+        eInvalidHandle,   ///< Attempt to use an invalid handle
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -59,44 +65,47 @@ public:
 };
 
 
+/// SeqMap related exceptions
 class NCBI_XOBJMGR_EXPORT CSeqMapException : public CObjMgrException
 {
 public:
     enum EErrCode {
-        eUnimplemented,
-        eIteratorTooBig,
-        eSegmentTypeError,
-        eDataError,
-        eOutOfRange,
-        eInvalidIndex,
-        eNullPointer,
-        eFail
+        eUnimplemented,    ///< The method is not implemented
+        eIteratorTooBig,   ///< Bad internal iterator in delta map
+        eSegmentTypeError, ///< Wrong segment type
+        eDataError,        ///< SeqMap data error
+        eOutOfRange,       ///< Iterator is out of range
+        eInvalidIndex,     ///< Invalid segment index
+        eNullPointer,      ///< Attempt to access non-existing object
+        eFail              ///< Operation failed
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CSeqMapException, CObjMgrException);
 };
 
 
+/// SeqVector related exceptions
 class NCBI_XOBJMGR_EXPORT CSeqVectorException : public CObjMgrException
 {
 public:
     enum EErrCode {
-        eCodingError,
-        eDataError,
-        eOutOfRange
+        eCodingError,   ///< Incompatible coding selected
+        eDataError,     ///< Sequence data error
+        eOutOfRange     ///< Attempt to access out-of-range iterator
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CSeqVectorException, CObjMgrException);
 };
 
 
+/// Annotation iterators exceptions
 class NCBI_XOBJMGR_EXPORT CAnnotException : public CObjMgrException
 {
 public:
     enum EErrCode {
-        eBadLocation,
-        eFindFailed,
-        eLimitError,
+        eBadLocation,  ///< Wrong location type while mapping annotations
+        eFindFailed,   ///< Seq-id can not be resolved
+        eLimitError,   ///< Invalid or unknown limit object
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -104,13 +113,14 @@ public:
 };
 
 
+/// Seq-loc mapper exceptions
 class NCBI_XOBJMGR_EXPORT CLocMapperException : public CObjMgrException
 {
 public:
     enum EErrCode {
-        eBadLocation,
-        eUnknownLength,
-        eBadAlignment,
+        eBadLocation,    ///< Attempt to map from/to invalid seq-loc
+        eUnknownLength,  ///< Can not resolve sequence length
+        eBadAlignment,   ///< Unsuported or invalid alignment
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -118,6 +128,7 @@ public:
 };
 
 
+/// Data loader exceptions, used by GenBank loader.
 class NCBI_XOBJMGR_EXPORT CLoaderException : public CObjMgrException
 {
 public:
@@ -135,6 +146,7 @@ public:
 };
 
 
+/// Exceptions for objmgr/util library.
 class NCBI_XOBJMGR_EXPORT CObjmgrUtilException : public CObjMgrException
 {
 public:
@@ -150,6 +162,8 @@ public:
     NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);
 };
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -157,6 +171,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.10  2004/11/22 21:40:01  grichenk
 * Doxygenized comments, replaced exception with CObjmgrUtilException.
 *

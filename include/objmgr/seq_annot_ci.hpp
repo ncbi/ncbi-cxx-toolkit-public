@@ -116,21 +116,6 @@ public:
     const CSeq_annot_Handle& operator*(void) const;
     const CSeq_annot_Handle* operator->(void) const;
 
-    /*
-    struct SEntryLevel_CI
-    {
-        typedef vector< CRef<CSeq_entry_Info> > TEntries;
-        typedef TEntries::const_iterator  TEntry_CI;
-        
-        SEntryLevel_CI(const CBioseq_set_Info& seqset, const TEntry_CI& iter);
-        SEntryLevel_CI(const SEntryLevel_CI&);
-        SEntryLevel_CI& operator=(const SEntryLevel_CI&);
-        ~SEntryLevel_CI(void);
-        
-        CConstRef<CBioseq_set_Info> m_Set;
-        TEntry_CI                   m_Iter;
-    };
-    */
 private:
     void x_Initialize(const CSeq_entry_Handle& entry_handle, EFlags flags);
 
@@ -199,6 +184,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.11  2004/10/01 15:30:33  kononenk
 * Added doxygen formatting
 *

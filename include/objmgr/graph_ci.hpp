@@ -58,17 +58,17 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CMappedGraph
 {
 public:
-    // Original graph with unmapped location/product
+    /// Get original graph with unmapped location/product
     const CSeq_graph& GetOriginalGraph(void) const
         {
             return m_GraphRef->GetGraph();
         }
 
-    // Original graph handle
+    /// Get original graph handle
     CSeq_graph_Handle GetSeq_graph_Handle(void) const;
 
-    // Graph mapped to the master sequence.
-    // WARNING! The function is rather slow and should be used with care.
+    /// Graph mapped to the master sequence.
+    /// WARNING! The function is rather slow and should be used with care.
     const CSeq_graph& GetMappedGraph(void) const
         {
             if ( !m_MappedGraph ) {
@@ -414,6 +414,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.38  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

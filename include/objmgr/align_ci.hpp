@@ -79,15 +79,15 @@ public:
 
     /// Create an iterator that enumerates CSeq_align objects 
     /// related to the given seq-loc
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CAlign_CI(CScope& scope,
               const CSeq_loc& loc,
               const SAnnotSelector& sel);
 
     /// Create an iterator that enumerates CSeq_align objects 
     /// related to the given seq-loc
-    ///
-    /// @sa
-    ///   SAnnotSelector
     CAlign_CI(CScope& scope,
               const CSeq_loc& loc);
 
@@ -271,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.31  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

@@ -68,11 +68,20 @@ public:
     };
 
     CPrefetchToken(void);
+
     /// Find the first loader in the scope, request prefetching from
     /// this loader. Scope may be destroyed after creating token, but
     /// the scope used in NextBioseqHandle() should contain the same
-    /// loader. Depth limits number of TSEs to be prefetched.
+    /// loader.
+    ///
+    /// @param scope
+    ///  Scope used to access data loader and initialize prefetching
+    /// @param ids
+    ///  Set of seq-ids to prefetch
+    /// @param depth
+    ///  Number of TSEs allowed to be prefetched.
     CPrefetchToken(CScope& scope, const TIds& ids, unsigned int depth = 2);
+
     /// Do not lock prefetched TSEs, prefetch depth is ignored.
     CPrefetchToken(CScope& scope, const TIds& ids, ENon_locking_prefetch);
     ~CPrefetchToken(void);
@@ -81,7 +90,10 @@ public:
     CPrefetchToken& operator =(const CPrefetchToken& token);
 
     operator bool(void) const;
+
     /// Get bioseq handle and move to the next requested id
+    /// Scope must contain the loader used for prefetching.
+    /// @sa CPrefetchToken
     CBioseq_Handle NextBioseqHandle(CScope& scope);
 
 private:
@@ -178,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/12/13 15:19:20  grichenk
+* Doxygenized comments
+*
 * Revision 1.6  2004/11/15 22:21:48  grichenk
 * Doxygenized comments, fixed group names.
 *
