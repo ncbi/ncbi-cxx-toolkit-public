@@ -260,6 +260,12 @@ CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq, TPriority priority)
 }
 
 
+CSeq_annot_Handle CScope::AddSeq_annot(CSeq_annot& annot, TPriority priority)
+{
+    return m_Impl->AddAnnot(annot, priority);
+}
+
+
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CSeq_entry& tse)
 {
@@ -331,6 +337,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2004/09/28 14:30:02  vasilche
+* Implemented CScope::AddSeq_annot().
+*
 * Revision 1.109  2004/09/27 14:31:05  grichenk
 * Added GetSynonyms() with get-flag
 *

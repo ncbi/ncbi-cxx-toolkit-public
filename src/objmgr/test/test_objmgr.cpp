@@ -163,6 +163,9 @@ int CTestApp::Run(void)
         // Take the added annotation back
         pScope->RemoveAnnot(*entry1, *annot);
         CTestHelper::TestDataRetrieval( *pScope, idx, 0);
+
+        CSeq_annot_Handle hx = pScope->AddSeq_annot(*annot);
+        _ASSERT(hx.GetCompleteSeq_annot() == annot);
     }
 
     // 1.2.6. Constructed bio sequences
@@ -254,6 +257,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/09/28 14:30:02  vasilche
+* Implemented CScope::AddSeq_annot().
+*
 * Revision 1.43  2004/07/21 15:51:25  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

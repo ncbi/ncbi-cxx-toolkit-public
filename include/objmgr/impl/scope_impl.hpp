@@ -146,7 +146,7 @@ public:
                              TPriority pri = kPriority_NotSet);
 
     // Add Seq-annot.
-    CSeq_annot_Handle AddAnnot(const CSeq_annot& annot,
+    CSeq_annot_Handle AddAnnot(CSeq_annot& annot,
                                TPriority pri = kPriority_NotSet);
 
     //////////////////////////////////////////////////////////////////
@@ -400,6 +400,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/09/28 14:30:02  vasilche
+* Implemented CScope::AddSeq_annot().
+*
 * Revision 1.13  2004/09/27 14:31:05  grichenk
 * Added GetSynonyms() with get-flag
 *

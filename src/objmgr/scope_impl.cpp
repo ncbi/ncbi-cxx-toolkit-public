@@ -64,6 +64,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -176,6 +177,16 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(bioseq);
     return AddTopLevelSeqEntry(*entry, priority).GetSeq();
+}
+
+
+CSeq_annot_Handle CScope_Impl::AddAnnot(CSeq_annot& annot,
+                                        TPriority priority)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set(); // it's not optional
+    entry->SetSet().SetAnnot().push_back(Ref(&annot));
+    return *CSeq_annot_CI(AddTopLevelSeqEntry(*entry, priority));
 }
 
 
@@ -1461,6 +1472,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/09/28 14:30:02  vasilche
+* Implemented CScope::AddSeq_annot().
+*
 * Revision 1.26  2004/09/27 14:31:05  grichenk
 * Added GetSynonyms() with get-flag
 *

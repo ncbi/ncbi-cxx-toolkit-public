@@ -160,7 +160,7 @@ public:
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
     /// Add Seq-annot
-    CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
+    CSeq_annot_Handle AddSeq_annot(CSeq_annot& annot,
                                    TPriority pri = kPriority_NotSet);
 
     /// Get editable Biosec handle by regular one
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2004/09/28 14:30:02  vasilche
+* Implemented CScope::AddSeq_annot().
+*
 * Revision 1.81  2004/09/27 13:55:23  kononenk
 * Added doxygen formating
 *
