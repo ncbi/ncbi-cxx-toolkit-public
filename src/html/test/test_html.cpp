@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/14 16:59:08  ivanov
+* Moved test for JavaScript popup menu in individual file "test_jsmenu"
+*
 * Revision 1.2  2001/07/16 13:57:43  ivanov
 * Added test for JavaScript popup menus (CHTMLPopupMenu).
 * Chanded application skeleton, now it based on CNCBIApplication.
@@ -45,8 +48,6 @@
 
 #include <html/html.hpp>
 #include <html/page.hpp>
-#include <html/jsmenu.hpp>
-
 
 
 USING_NCBI_SCOPE;
@@ -121,66 +122,6 @@ static void s_TEST_Tags(void)
 }
 
 
-/////////////////////////////////
-// JSMenu test
-//
-
-static void s_TEST_JSMenu(void)
-{
-    // Create HTML page skeleton with HEAD and BODY
-    CHTML_html* html = new CHTML_html;
-    CHTML_head* head = new CHTML_head;
-    CHTML_body* body = new CHTML_body;
-
-    // NOTE: the BODY will be added to the HTML automatically in
-    // InitPopupMenus().
-    html->AppendChild(head); 
-
-    // Create one menu
-    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
-
-    m1->AddItem("Red"  , "document.bgColor='red'");
-    m1->AddItem("Blue" , "document.bgColor='blue'");
-    m1->AddSeparator();
-    m1->AddItem("Green", "document.bgColor='green'");
-
-    m1->SetAttribute(eHTML_PM_fontColor, "black");
-    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
-
-    // Create another menu
-    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
-
-    m2->AddItem("url 1", "top.location='http://www.microsoft.com'");
-    m2->AddItem("url 2", "frame.location='http://www.netscape.com'");
-    m2->AddItem("url 3", "location='/index.html'");
-
-    m2->SetAttribute(eHTML_PM_disableHide, "true");
-
-    // Append one paragraph
-    body->AppendChild(new CHTML_p("paragraph 1"));
-
-    // Add menus to the page
-    html->InitPopupMenus(*head, *body, "menu.js");
-    html->AddPopupMenu(*m1);
-    html->AddPopupMenu(*m2);
-
-    // Append another paragraph
-    body->AppendChild(new CHTML_p("paragraph 2"));
-
-    // Add menus call
-    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(), "Menu 1");
-    body->AppendChild(anchor1);
-
-    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "Menu 2");
-    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
-    body->AppendChild(anchor2);
-    
-    // Print in HTML format
-    html->Print(cout);
-    cout << endl << endl;
-}
-
-
 ////////////////////////////////
 // Test application
 //
@@ -211,10 +152,6 @@ int CTestApplication::Run(void)
     cout << "---------------------------------------------" << endl;
 
     s_TEST_Tags();
-
-    cout << "---------------------------------------------" << endl;
-
-    s_TEST_JSMenu();
 
     cout << "---------------------------------------------" << endl;
 
