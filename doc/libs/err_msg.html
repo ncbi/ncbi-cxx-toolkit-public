@@ -43,21 +43,21 @@
 
 		<li> <b><i>_ASSERT(expr)</i></b> --
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
-		otherwise, evaluate logical expression
-		<b><i>expr</i></b> and halt the application if
-		<b><i>expr</i></b> resulted in <i>"false"</i>.
+		otherwise, evaluate expression <b><i>expr</i></b> and halt the
+		application if <b><i>expr</i></b> resulted in zero(or <i>"false"</i>).
 
 		<li> <b><i>_VERIFY(expr)</i></b> --
-		Evaluate logical expression <b><i>expr</i></b> and, if
-		<i>"_DEBUG"</i> is defined and <b><i>expr</i></b> resulted
-		in <i>"false"</i> then halt the application.
+		Evaluate expression <b><i>expr</i></b> and, if <i>"_DEBUG"</i> is defined
+		and <b><i>expr</i></b> resulted in zero(or <i>"false"</i>) then halt the
+		application.
 		
 		<li> <b><i>_TRACE(message)</i></b> --
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
 		otherwise, it outputs the <b><i>message</i></b> using
 		<a href="#ref_Message">Standard NCBI C++ message posting</a>:
 		<ul>#define _TRACE(message)
-		{{CNcbiDiag diag;  diag &lt;&lt; Trace &lt;&lt; message; }}</ul> </ul>
+		{{ CNcbiDiag diag;  diag &lt;&lt; Trace &lt;&lt; message; }}
+	 </ul> </ul>
 
 
 	 <br></br>
