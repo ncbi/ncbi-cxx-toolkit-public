@@ -1458,7 +1458,7 @@ CombineHSPListsByScore(BlastHSPList* hsp_list, BlastHSPList* combined_hsp_list,
       qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
             score_compare_hsps);
       index1 = index2 = 0;
-      for (index = 0; index < combined_hsp_list->allocated; ++index) {
+      for (index = 0; index < new_hspcnt; ++index) {
          if (index1 < combined_hsp_list->hspcnt &&
              (index2 >= hsp_list->hspcnt ||
              (combined_hsp_list->hsp_array[index1]->score >= 
