@@ -108,6 +108,7 @@ protected:
     QuerySetUpOptions * GetQueryOpts() const;
     BlastDatabaseOptions * GetDbOpts() const;
     PSIBlastOptions * GetProtOpts() const;    
+    RPSInfo * GetRPSInfo() const;    
 
     /// Internal data structures used in this and all derived classes 
     bool                m_ibQuerySetUpDone;
@@ -228,6 +229,11 @@ inline TBlastError& CDbBlast::GetErrorMessage()
     return m_ivErrors;
 }
 
+inline RPSInfo * CDbBlast::GetRPSInfo() const
+{
+    return m_pRpsInfo;
+}
+
 inline BlastScoringOptions* CDbBlast::GetScoringOpts() const
 {
     return m_OptsHandle->GetOptions().GetScoringOpts();
@@ -264,6 +270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/05/07 15:39:23  papadopo
+* add getter for the RPSInfo private member, since the scale factor is now explicitly needed in the implementation of this class
+*
 * Revision 1.15  2004/05/05 15:28:31  dondosha
 * Added SetSeqSrc method
 *
