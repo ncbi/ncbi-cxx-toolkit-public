@@ -250,7 +250,7 @@ int CDustApplication::Run(void)
                 // Do dusting
                 dust_loc = NULL;
                 SeqBufferDust(sequence, seq_length, 0, level, window,
-                               minwin, linker, &dust_loc);
+                               linker, &dust_loc);
 
                 if (PrintSegments)
                 {
