@@ -66,6 +66,7 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual void SetPacketSize   (unsigned int packet_size);
 
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
@@ -133,6 +134,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
 
     void DropCmd(CDB_BaseEnt& cmd);
@@ -143,6 +145,7 @@ private:
 
     CMySQLContext* m_Context;
     MYSQL          m_MySQL;
+    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -175,6 +178,7 @@ protected:
     virtual bool        HasMoreResults() const;
     virtual bool        HasFailed() const;
     virtual int         RowCount() const;
+    virtual void        DumpResults();
     virtual void        Release();
     int                 LastInsertId() const;
 
@@ -248,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/05 15:56:54  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.6  2003/05/29 21:23:35  butanaev
  * Added function to return last insert id.
  *

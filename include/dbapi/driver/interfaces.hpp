@@ -67,7 +67,7 @@ class CDB_RPCCmd;
 class CDB_BCPInCmd;
 class CDB_CursorCmd;
 class CDB_SendDataCmd;
-
+class CDB_ResultProcessor;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -177,6 +177,11 @@ public:
     // Special case:  negative on error or if there is no way that this
     //                command could ever affect any rows (like PRINT).
     virtual int RowCount() const = 0;
+
+    // Dump the results of the command
+    // if result processor is installed for this connection, it will be called for
+    // each result set
+    virtual void DumpResults()= 0;
 
     // Destructor
     virtual ~I_BaseCmd();
@@ -545,6 +550,8 @@ protected:
     // Remove the message handler (and all above it) from the stack
     virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
 
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp)=0;
+
     // These methods to allow the children of I_Connection to create
     // various command-objects
     static CDB_LangCmd*     Create_LangCmd     (I_LangCmd&     lang_cmd    );
@@ -580,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/06/05 15:53:31  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.20  2003/04/11 17:46:07  siyan
  * Added doxygen support
  *

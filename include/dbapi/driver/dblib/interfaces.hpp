@@ -184,6 +184,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
 
     virtual ~CDBL_Connection();
@@ -193,6 +194,7 @@ protected:
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
+    RETCODE x_Results(DBPROCESS* pLink);
 
 
     DBPROCESS*      m_Link;
@@ -206,6 +208,7 @@ private:
     bool            m_Reusable;
     bool            m_BCPAble;
     bool            m_SecureLogin;
+    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -233,6 +236,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void Release();
 
     virtual ~CDBL_LangCmd();
@@ -277,6 +281,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const ;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void SetRecompile(bool recompile = true);
     virtual void Release();
 
@@ -426,6 +431,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult : public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
+    friend class CDBL_Connection;
 protected:
     CDBL_RowResult(DBPROCESS* cmd, unsigned int* res_status,
                    bool need_init = true);
@@ -467,6 +473,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
+    friend class CDBL_Connection;
 protected:
     CDBL_BlobResult(DBPROCESS* cmd);
 
@@ -510,6 +517,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ParamResult : public CDBL_RowResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
+    friend class CDBL_Connection;
 protected:
     CDBL_ParamResult(DBPROCESS* cmd, int nof_params);
     virtual EDB_ResType     ResultType() const;
@@ -530,6 +538,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ComputeResult : public CDBL_RowResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
+    friend class CDBL_Connection;
 protected:
     CDBL_ComputeResult(DBPROCESS* cmd, unsigned int* res_stat);
     virtual EDB_ResType     ResultType() const;
@@ -552,6 +561,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
+    friend class CDBL_Connection;
 protected:
     CDBL_StatusResult(DBPROCESS* cmd);
     virtual EDB_ResType     ResultType() const;
@@ -646,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/06/05 15:55:34  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.16  2003/04/01 20:27:17  vakatov
  * Temporarily rollback to R1.14 -- until more backward-incompatible
  * changes (in CException) are ready to commit (to avoid breaking the

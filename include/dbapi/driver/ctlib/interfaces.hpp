@@ -177,6 +177,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
 
     virtual ~CTL_Connection();
@@ -198,6 +199,7 @@ private:
     bool            m_Reusable;
     bool            m_BCPable;
     bool            m_SecureLogin;
+    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -225,6 +227,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void Release();
 
     virtual ~CTL_LangCmd();
@@ -268,6 +271,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void SetRecompile(bool recompile = true);
     virtual void Release();
 
@@ -409,6 +413,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public I_Result
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
     friend class CTL_CursorCmd;
+    friend class CTL_Connection;
+    friend class CTL_SendDataCmd;
 protected:
     CTL_RowResult(CS_COMMAND* cmd);
 
@@ -460,6 +466,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ParamResult : public CTL_RowResult
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
+    friend class CTL_Connection;
+    friend class CTL_SendDataCmd;
+    friend class CTL_CursorCmd;
 protected:
     CTL_ParamResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
     virtual EDB_ResType ResultType() const;
@@ -470,6 +479,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ComputeResult : public CTL_RowResult
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
+    friend class CTL_Connection;
+    friend class CTL_SendDataCmd;
+    friend class CTL_CursorCmd;
 protected:
     CTL_ComputeResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
     virtual EDB_ResType ResultType() const;
@@ -480,6 +492,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_StatusResult :  public CTL_RowResult
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
+    friend class CTL_Connection;
+    friend class CTL_SendDataCmd;
+    friend class CTL_CursorCmd;
 protected:
     CTL_StatusResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
     virtual EDB_ResType ResultType() const;
@@ -554,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/06/05 15:55:26  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.14  2003/04/21 20:17:06  soussov
  * Buffering fetched result to avoid ct_get_data performance issue
  *

@@ -103,6 +103,7 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual void SetPacketSize   (unsigned int packet_size);
 
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
@@ -198,6 +199,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
 
     virtual ~CODBC_Connection();
@@ -226,6 +228,7 @@ private:
     bool            m_Reusable;
     bool            m_BCPable;
     bool            m_SecureLogin;
+    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -255,6 +258,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void Release();
 
     virtual ~CODBC_LangCmd();
@@ -300,6 +304,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void SetRecompile(bool recompile = true);
     virtual void Release();
 
@@ -445,6 +450,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
     friend class CODBC_LangCmd;
     friend class CODBC_RPCCmd;
     friend class CODBC_CursorCmd;
+    friend class CODBC_Connection;
 protected:
     CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd, CODBC_Reporter& r);
 
@@ -501,6 +507,7 @@ protected:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_StatusResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
+    friend class CODBC_Connection;
 protected:
     CODBC_StatusResult(SQLHSTMT cmd, CODBC_Reporter& r) :
         CODBC_RowResult(1, cmd, r){}
@@ -511,6 +518,7 @@ protected:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_ParamResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
+    friend class CODBC_Connection;
 protected:
     CODBC_ParamResult(SQLSMALLINT nof_cols, SQLHSTMT cmd, CODBC_Reporter& r) :
         CODBC_RowResult(nof_cols, cmd, r){}
@@ -555,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/05 15:57:02  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.4  2003/05/05 20:45:51  ucko
  * Lowercase header names for compatibility with Unix.
  *

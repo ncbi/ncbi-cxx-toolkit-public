@@ -91,6 +91,7 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual void SetPacketSize   (unsigned int packet_size);
 
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
@@ -194,6 +195,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
 
     virtual ~CMSDBL_Connection();
@@ -203,6 +205,7 @@ protected:
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
+    RETCODE x_Results(DBPROCESS* pLink);
 
 
     DBPROCESS*      m_Link;
@@ -216,6 +219,7 @@ private:
     bool            m_Reusable;
     bool            m_BCPAble;
     bool            m_SecureLogin;
+    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -243,6 +247,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void Release();
 
     virtual ~CMSDBL_LangCmd();
@@ -287,6 +292,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const ;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void SetRecompile(bool recompile = true);
     virtual void Release();
 
@@ -436,6 +442,7 @@ class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_RowResult : public I_Result
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
+    friend class CMSDBL_Connection;
 protected:
     CMSDBL_RowResult(DBPROCESS* cmd, unsigned int* res_status,
                    bool need_init = true);
@@ -477,6 +484,7 @@ class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_BlobResult : public I_Result
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
+    friend class CMSDBL_Connection;
 protected:
     CMSDBL_BlobResult(DBPROCESS* cmd);
 
@@ -520,6 +528,7 @@ class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_ParamResult : public CMSDBL_RowResu
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
+    friend class CMSDBL_Connection;
 protected:
     CMSDBL_ParamResult(DBPROCESS* cmd, int nof_params);
     virtual EDB_ResType     ResultType() const;
@@ -540,6 +549,7 @@ class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_ComputeResult : public CMSDBL_RowRe
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
+    friend class CMSDBL_Connection;
 protected:
     CMSDBL_ComputeResult(DBPROCESS* cmd, unsigned int* res_stat);
     virtual EDB_ResType     ResultType() const;
@@ -562,6 +572,7 @@ class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_StatusResult : public I_Result
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
+    friend class CMSDBL_Connection;
 protected:
     CMSDBL_StatusResult(DBPROCESS* cmd);
     virtual EDB_ResType     ResultType() const;
@@ -653,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/05 15:56:19  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.2  2003/02/13 15:43:18  ivanov
  * Added export specifier NCBI_DBAPIDRIVER_MSDBLIB_EXPORT for class definitions
  *

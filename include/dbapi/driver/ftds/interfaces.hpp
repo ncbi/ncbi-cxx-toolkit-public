@@ -261,6 +261,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
 
     virtual ~CTDS_Connection();
@@ -276,6 +277,8 @@ private:
         m_Link->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
     }
 
+    RETCODE x_Results(DBPROCESS* pLink);
+
     DBPROCESS*      m_Link;
     CTDSContext*    m_Context;
     CPointerPot     m_CMDs;
@@ -287,6 +290,7 @@ private:
     bool            m_Reusable;
     bool            m_BCPAble;
     bool            m_SecureLogin;
+    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -314,6 +318,7 @@ protected:
     virtual bool HasMoreResults() const;
     virtual bool HasFailed() const;
     virtual int  RowCount() const;
+    virtual void DumpResults();
     virtual void Release();
 
     virtual ~CTDS_LangCmd();
@@ -359,6 +364,7 @@ protected:
     virtual bool HasFailed() const ;
     virtual int  RowCount() const;
     virtual void SetRecompile(bool recompile = true);
+    virtual void DumpResults();
     virtual void Release();
 
     ~CTDS_RPCCmd();
@@ -510,6 +516,7 @@ class CTDS_RowResult : public I_Result
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
+    friend class CTDS_Connection;
 protected:
     CTDS_RowResult(DBPROCESS* cmd, unsigned int* res_status,
                    bool need_init = true);
@@ -551,6 +558,7 @@ class CTDS_BlobResult : public I_Result
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
+    friend class CTDS_Connection;
 protected:
     CTDS_BlobResult(DBPROCESS* cmd);
 
@@ -594,6 +602,7 @@ class CTDS_ParamResult : public CTDS_RowResult
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
+    friend class CTDS_Connection;
 protected:
     CTDS_ParamResult(DBPROCESS* cmd, int nof_params);
     virtual EDB_ResType     ResultType() const;
@@ -614,6 +623,7 @@ class CTDS_ComputeResult : public CTDS_RowResult
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
+    friend class CTDS_Connection;
 protected:
     CTDS_ComputeResult(DBPROCESS* cmd, unsigned int* res_stat);
     virtual EDB_ResType     ResultType() const;
@@ -636,6 +646,7 @@ class CTDS_StatusResult : public I_Result
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
+    friend class CTDS_Connection;
 protected:
     CTDS_StatusResult(DBPROCESS* cmd);
     virtual EDB_ResType     ResultType() const;
@@ -727,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/06/05 15:55:47  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
+ *
  * Revision 1.12  2003/04/01 20:28:20  vakatov
  * Temporarily rollback to R1.10 -- until more backward-incompatible
  * changes (in CException) are ready to commit (to avoid breaking the
