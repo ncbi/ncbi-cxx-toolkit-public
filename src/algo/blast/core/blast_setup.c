@@ -157,7 +157,7 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
          return status;
       }
       sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-      Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
+      Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
    }
    else {
       if (0 == strcmp("PAM30", options->matrix)) { 
@@ -193,7 +193,7 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
             return status;
          }
          sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-         Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
+         Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
       }
       else {
          if (0 == strcmp("PAM70", options->matrix)) { 
@@ -229,7 +229,7 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
                return status;
             }
             sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-            Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
+            Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
          }
          else {
             if (0 == strcmp("BLOSUM80", options->matrix)) { 
@@ -265,7 +265,7 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
                   return status;
                }
                sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-               Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
+               Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
             }
             else {
                if (0 == strcmp("BLOSUM45", options->matrix)) { 
@@ -331,11 +331,11 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
                      return status;
                   }
                   sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
-                  Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
+                  Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
                }
                else {
                   sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
-                  Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
+                  Blast_MessageWrite(blast_message, BLAST_SEV_WARNING, 2, 1, buffer);
                }
             }
          }
@@ -548,7 +548,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
             if (!hit_options->phi_align &&
                 (status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
                                              query_length, context))) {
-               Blast_MessageWrite(blast_message, 2, 2, 1, 
+               Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
                   "Query completely filtered; nothing left to search");
                return status;
             }

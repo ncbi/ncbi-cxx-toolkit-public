@@ -479,7 +479,8 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
               wildcard spaces required */
             patternSearch->inputPatternMasked[j++] = allone; 
             if (j >= MaxP) {
-               Blast_MessageWrite(error_msg, 1, 2, 1, "pattern too long");
+               Blast_MessageWrite(error_msg, BLAST_SEV_WARNING, 2, 1, 
+                                  "pattern too long");
                return(-1);
             }
 	      }
@@ -526,7 +527,9 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
             add its probability to positionProbability*/
 	  while ((c=pattern[++i]) != ']') { /*end of set*/
         if ((c < 'A') || (c > 'Z') || (c == '\0')) {
-           Blast_MessageWrite(error_msg, 1, 2, 1, "pattern description has a non-alphabetic character inside a bracket");
+           Blast_MessageWrite(error_msg, BLAST_SEV_WARNING, 2, 1, 
+                              "pattern description has a non-alphabetic"
+                              "character inside a bracket");
            
            return(-1);
         }
@@ -571,7 +574,8 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
          patternSearch->patternProbability *= positionProbability;
       }
       if (j >= MaxP) {
-         Blast_MessageWrite(error_msg, 1, 2, 1, "pattern too long");
+         Blast_MessageWrite(error_msg, BLAST_SEV_WARNING, 2, 1, 
+                            "pattern too long");
       }
     }
     localPattern[j-1] = 1;

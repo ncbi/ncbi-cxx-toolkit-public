@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.11  2004/02/19 21:16:00  dondosha
+ * Use enum type for severity argument in Blast_MessageWrite
+ *
  * Revision 1.10  2003/08/11 15:01:59  dondosha
  * Added algo/blast/core to all #included headers
  *
@@ -93,8 +96,8 @@ Blast_MessageFree(Blast_Message* blast_msg)
 */
 
 Int2 
-Blast_MessageWrite(Blast_Message* *blast_msg, Int4 severity, Int4 code,
-	Int4 subcode, const char *message)
+Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity, 
+                   Int4 code,	Int4 subcode, const char *message)
 {
 	if (blast_msg == NULL)
 		return 1;

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.82  2004/02/19 21:16:48  dondosha
+ * Use enum type for severity argument in Blast_MessageWrite
+ *
  * Revision 1.81  2004/02/17 22:10:30  dondosha
  * Set preliminary hitlist size in options initialization
  *
@@ -642,7 +645,8 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 		{
 			Int4 code=2;
 			Int4 subcode=1;
-			Blast_MessageWrite(blast_msg, 1, code, subcode, "Greedy extension only supported for BLASTN");
+			Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "Greedy extension only supported for BLASTN");
 			return (Int2) code;
 		}
 	}
@@ -784,7 +788,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
    {
 		Int4 code=2;
 		Int4 subcode=1;
-      Blast_MessageWrite(blast_msg, 2, code, subcode, 
+      Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
          "Gapped search is not allowed for tblastx");
 		return (Int2) code;
    }
@@ -795,14 +799,16 @@ BlastScoringOptionsValidate(Uint1 program_number,
 		{
 			Int4 code=2;
 			Int4 subcode=1;
-			Blast_MessageWrite(blast_msg, 1, code, subcode, "BLASTN penalty must be negative");
+			Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "BLASTN penalty must be negative");
 			return (Int2) code;
 		}
                 if (options->gap_open > 0 && options->gap_extend == 0) 
                 {
                         Int4 code=2;
                         Int4 subcode=1;
-                        Blast_MessageWrite(blast_msg, 1, code, subcode, 
+                        Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, 
+                           code, subcode, 
                            "BLASTN gap extension penalty cannot be 0");
                         return (Int2) code;
                 }
@@ -811,7 +817,9 @@ BlastScoringOptionsValidate(Uint1 program_number,
 	{
 		Int2 status=0;
 
-		if ((status=BLAST_KarlinkGapBlkFill(NULL, options->gap_open, options->gap_extend, options->decline_align, options->matrix)) != 0)
+		if ((status=BLAST_KarlinkGapBlkFill(NULL, options->gap_open, 
+                     options->gap_extend, options->decline_align, 
+                     options->matrix)) != 0)
 		{
 			if (status == 1)
 			{
@@ -820,7 +828,8 @@ BlastScoringOptionsValidate(Uint1 program_number,
 				Int4 subcode=1;
 
 				buffer = BLAST_PrintMatrixMessage(options->matrix); 
-                                Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
+            Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR,
+                               code, subcode, buffer);
 				sfree(buffer);
 				return (Int2) code;
 				
@@ -831,8 +840,11 @@ BlastScoringOptionsValidate(Uint1 program_number,
 				Int4 code=2;
 				Int4 subcode=1;
 
-				buffer = BLAST_PrintAllowedValues(options->matrix, options->gap_open, options->gap_extend, options->decline_align); 
-                                Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
+				buffer = BLAST_PrintAllowedValues(options->matrix, 
+                        options->gap_open, options->gap_extend, 
+                        options->decline_align); 
+            Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                               buffer);
 				sfree(buffer);
 				return (Int2) code;
 			}
@@ -845,7 +857,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 	{
       Int4 code=2;
       Int4 subcode=1;
-      Blast_MessageWrite(blast_msg, 1, code, subcode, 
+      Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
          "Out-of-frame only permitted for blastx and tblastn");
       return (Int2) code;
 	}
@@ -1049,23 +1061,26 @@ LookupTableOptionsValidate(Uint1 program_number,
 
 	if (program_number != blast_type_blastn && options->threshold <= 0)
 	{
-		Blast_MessageWrite(blast_msg, 2, code, subcode, "Non-zero threshold required");
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                         "Non-zero threshold required");
 		return (Int2) code;
 	}
 
 	if (options->word_size <= 0)
 	{
-		Blast_MessageWrite(blast_msg, 2, code, subcode, 
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Word-size must be greater than zero");
 		return (Int2) code;
 	} else if (program_number == blast_type_blastn && options->word_size < 7)
 	{
-		Blast_MessageWrite(blast_msg, 2, code, subcode, "Word-size must be 7" 
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                         "Word-size must be 7" 
                          "or greater for nucleotide comparison");
 		return (Int2) code;
 	} else if (program_number != blast_type_blastn && options->word_size > 5)
 	{
-		Blast_MessageWrite(blast_msg, 2, code, subcode, "Word-size must be less"
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                         "Word-size must be less"
                          "than 6 for protein comparison");
 		return (Int2) code;
 	}
@@ -1074,13 +1089,14 @@ LookupTableOptionsValidate(Uint1 program_number,
 	if (program_number != blast_type_blastn && 
        options->lut_type == MB_LOOKUP_TABLE)
 	{
-		Blast_MessageWrite(blast_msg, 2, code, subcode, "Megablast lookup table only supported with blastn");
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                         "Megablast lookup table only supported with blastn");
 		return (Int2) code;
 	}
 
    if (options->lut_type == MB_LOOKUP_TABLE && options->word_size < 12 && 
        options->mb_template_length == 0) {
-      Blast_MessageWrite(blast_msg, 2, code, subcode, 
+      Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Word size must be 12 or greater with megablast"
                          " lookup table");
       return (Int2) code;
@@ -1090,16 +1106,16 @@ LookupTableOptionsValidate(Uint1 program_number,
        options->mb_template_length > 0) {
       if (!DiscWordOptionsValidate(options->word_size,
             options->mb_template_length, options->mb_template_type)) {
-         Blast_MessageWrite(blast_msg, 2, code, subcode, 
+         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
             "Invalid discontiguous template parameters");
          return (Int2) code;
       } else if (options->lut_type != MB_LOOKUP_TABLE) {
-         Blast_MessageWrite(blast_msg, 2, code, subcode, 
+         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
             "Invalid lookup table type for discontiguous Mega BLAST");
          return (Int2) code;
       } else if (options->scan_step != 1 && 
                  options->scan_step != COMPRESSION_RATIO) {
-         Blast_MessageWrite(blast_msg, 2, code, subcode, 
+         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
             "Invalid scanning stride for discontiguous Mega BLAST");
          return (Int2) code;
       }
@@ -1166,7 +1182,8 @@ BlastHitSavingOptionsValidate(Uint1 program_number,
 	{
 		Int4 code=1;
 		Int4 subcode=1;
-		Blast_MessageWrite(blast_msg, 2, code, subcode, "No hits are being saved");
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                         "No hits are being saved");
 		return (Int2) code;
 	}
 
@@ -1174,8 +1191,8 @@ BlastHitSavingOptionsValidate(Uint1 program_number,
 	{
 		Int4 code=2;
 		Int4 subcode=1;
-		Blast_MessageWrite(blast_msg, 
-			2, code, subcode, "expect value or cutoff score must be greater than zero");
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+         "expect value or cutoff score must be greater than zero");
 		return (Int2) code;
 	}	
 

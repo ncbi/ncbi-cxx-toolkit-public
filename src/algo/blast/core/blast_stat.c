@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.46  2004/02/19 21:16:48  dondosha
+ * Use enum type for severity argument in Blast_MessageWrite
+ *
  * Revision 1.45  2003/12/05 16:03:57  camacho
  * Remove compiler warnings
  *
@@ -2672,7 +2675,7 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
 				sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
 			else
 				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
-			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+			Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
 		}
 	}
 
@@ -2704,13 +2707,13 @@ BLAST_KarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 			vnp = head = BlastLoadMatrixValues();
 
 			sprintf(buffer, "%s is not a supported matrix", matrix_name);
-			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+			Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
 
 			while (vnp)
 			{
 				matrix_info = vnp->ptr;
 				sprintf(buffer, "%s is a supported matrix", matrix_info->name);
-            Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+            Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
 				vnp = vnp->next;
 			}
 
@@ -2722,7 +2725,7 @@ BLAST_KarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 				sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
 			else
 				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
-			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
+			Blast_MessageWrite(error_return, BLAST_SEV_ERROR, 0, 0, buffer);
 			BlastKarlinReportAllowedValues(matrix_name, error_return);
 		}
 	}
