@@ -2453,9 +2453,8 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
       tmp_hsp.subject.end = s_end;
       tmp_hsp.subject.frame = 1;
 
-      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp,
-                  query_info->contexts[context].query_offset,
-                  MB_DIAG_CLOSE))
+      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
+                                        MB_DIAG_CLOSE))
       {
          Boolean good_hit = TRUE;
          Int4 hsp_length;
@@ -3273,8 +3272,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       tmp_hsp.subject.end = s_end;
       tmp_hsp.subject.frame = subject->frame;
 
-      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp,
-                  query_info->contexts[context].query_offset,
+      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
                   hit_options->min_diag_separation))
       {
          BlastHSP* new_hsp;

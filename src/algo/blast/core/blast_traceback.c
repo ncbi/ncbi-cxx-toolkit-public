@@ -518,8 +518,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
           are applied there. Such corrections should be added */
 
       if (program_number == eBlastTypeRpsBlast ||
-          !BlastIntervalTreeContainsHSP(tree, hsp,
-                       query_info->contexts[hsp->context].query_offset, 0)) {
+          !BlastIntervalTreeContainsHSP(tree, hsp, query_info, 0)) {
 
          Int4 start_shift = 0;
          Int4 adjusted_s_length;
@@ -657,8 +656,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    for (index = 0; index < hsp_list->hspcnt; index++) {
        hsp = hsp_array[index];
 
-       if (BlastIntervalTreeContainsHSP(tree, hsp,
-                        query_info->contexts[hsp->context].query_offset, 0)) {
+       if (BlastIntervalTreeContainsHSP(tree, hsp, query_info, 0)) {
            hsp_array[index] = Blast_HSPFree(hsp);
        }
        else {
