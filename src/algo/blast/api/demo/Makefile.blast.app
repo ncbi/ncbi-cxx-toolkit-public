@@ -1,5 +1,5 @@
 APP = blast
-SRC = blast_app blast_input
+SRC = blast_app blast_input blast_tabular
 LIB = xblast xnetblastcli xnetblast scoremat ncbi_xloader_blastdb \
       xalnutil seqdb blastdb xalnmgr xobjutil xobjread tables $(OBJMGR_LIBS)
 
