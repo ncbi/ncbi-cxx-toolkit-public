@@ -63,6 +63,7 @@ asn1: true if source is generated from ASN1 files. Will add a shell script build
 property xncbi : {name:"xncbi", path:"corelib", exc:{"test_mt.cpp", "ncbi_os_mac.cpp"}}
 property xcgi : {name:"xcgi", path:"cgi", exc:{"fcgi_run.cpp", "fcgibuf.cpp"}}
 property dbapi : {name:"dbapi", path:"dbapi"}
+property dbapi_cache : {name:"dbapi_cache", path:"dbapi:cache"}
 property dbapi_driver : {name:"dbapi_driver", path:"dbapi:driver"}
 property xhtml : {name:"xhtml", path:"html"}
 property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"}}
@@ -250,7 +251,7 @@ property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbenc
 property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, tables, sequtil, creaders, xutil, xregexp, xconnect, xser}}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core"}
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core"}
-property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi}, dep:"ncbi_core ncbi_dbapi_driver"}
+property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver"}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core"}
 property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core"}
 
@@ -332,6 +333,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/07/19 16:02:43  lebedev
+ * dbapi_cache added
+ *
  * Revision 1.9  2004/07/19 12:57:45  lebedev
  * +ncbi_misc for view_phylotree
  *
