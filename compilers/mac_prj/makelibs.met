@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.1 2000/06/23 17:56:51 thiessen Exp $
+	$Id: makelibs.met,v 1.2 2000/06/23 18:34:06 thiessen Exp $
 	
 	Revision History:
 	----------------
@@ -391,14 +391,14 @@ on DoCreateProjects()
 		
 		my DoCreateDefaultProject("serial", "serial", Â
 			{"asntypes", "autoptrinfo", "bytesrc", "choice", Â
-				"choiceptr", "classinfo", "classinfob", "delaybuf", Â
-				"enumerated", "exception", "iterator", "member", Â
-				"memberid", "memberlist", "object", "objistr", Â
-				"objistrasn", "objistrasnb", "objistrxml", "objlist", Â
-				"objostr", "objostrasn", "objostrasnb", "objostrxml", Â
-				"objstack", "objstrb", "ptrinfo", "rtti", Â
-				"serial", "serialasn", "stdtypes", "stltypes", Â
-				"strbuffer", "typeinfo", "typeref"})
+				"choiceptr", "classinfo", "classinfob", "continfo", Â
+				"delaybuf", "enumerated", "exception", "iterator", Â
+				"member", "memberid", "memberlist", "object", Â
+				"objistr", "objistrasn", "objistrasnb", "objistrxml", Â
+				"objlist", "objostr", "objostrasn", "objostrasnb", Â
+				"objostrxml", "objstack", "objstrb", "ptrinfo", Â
+				"rtti", "serial", "serialasn", "stdtypes", Â
+				"stltypes", "strbuffer", "typeinfo", "typeref"})
 		
 		my DoCreateDefaultProject("html", "html", Â
 			{"components", "html", "htmlhelper", "linkbar", Â
