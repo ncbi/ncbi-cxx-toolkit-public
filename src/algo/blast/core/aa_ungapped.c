@@ -109,8 +109,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    DiagStruct* diag_array;
    Boolean right_extend;
    Int4 hits_extended = 0;
-   Uint4 subject_offset, query_offset, next_subject_offset, next_query_offset;
-   BlastOffsetPair* offset_ptr;
+   Uint4 subject_offset, query_offset;
 
    ASSERT(diag != NULL);
 
@@ -143,20 +142,12 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                                    offset_pairs, array_size);
 
       totalhits += hits;
-      offset_ptr = offset_pairs;
-      next_query_offset = offset_ptr->qs_offsets.q_off;
-      next_subject_offset = offset_ptr->qs_offsets.s_off;
-
       /* for each hit, */
       for (i = 0; i < hits; ++i)
       {
-         query_offset = next_query_offset;
-         subject_offset = next_subject_offset;
-         /* Prefetch the next offset values to improve performance. */
-         ++offset_ptr;
-         next_query_offset = offset_ptr->qs_offsets.q_off;
-         next_subject_offset = offset_ptr->qs_offsets.s_off; 
-
+         query_offset = offset_pairs[i].qs_offsets.q_off;
+         subject_offset = offset_pairs[i].qs_offsets.s_off;
+         
          /* calculate the diagonal associated with this query-subject
             pair, and find the distance to the last hit on this diagonal */
 
@@ -259,8 +250,6 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    Int4 diag_offset, diag_coord, diag_mask, diff;
    DiagStruct* diag_array;
    Int4 hits_extended = 0;
-   Uint4 subject_offset, query_offset, next_subject_offset, next_query_offset;
-   BlastOffsetPair* offset_ptr;
 
    ASSERT(diag != NULL);
    
@@ -292,20 +281,10 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 				   offset_pairs, array_size);
 
       totalhits += hits;
-
-      offset_ptr = offset_pairs;
-      next_query_offset = offset_ptr->qs_offsets.q_off;
-      next_subject_offset = offset_ptr->qs_offsets.s_off;
-
       /* for each hit, */
       for (i = 0; i < hits; ++i) {
-         query_offset = next_query_offset;
-         subject_offset = next_subject_offset;
-         /* Prefetch the next offset values to improve performance. */
-         ++offset_ptr;
-         next_query_offset = offset_ptr->qs_offsets.q_off;
-         next_subject_offset = offset_ptr->qs_offsets.s_off; 
-
+         Uint4 subject_offset = offset_pairs[i].qs_offsets.s_off;
+         Uint4 query_offset = offset_pairs[i].qs_offsets.q_off;
          diag_coord = 
             (subject_offset  - query_offset) & diag_mask;
          diff = subject_offset - 
