@@ -173,6 +173,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
  * @param q_off query offset [in]
  * @param dropoff the X dropoff parameter [in]
  * @param displacement the length of the extension [out]
+ * @param score the score so far (probably from initial word hit) [in]
  * @return The score of the extension
  */
 
@@ -182,14 +183,16 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,
-		       Int4* displacement);
+		       Int4* displacement,
+                       Int4 score);
 
 Int4 BlastPSSMExtendLeft(Int4 ** matrix,
 		       const BLAST_SequenceBlk* subject,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,
-		       Int4* displacement);
+		       Int4* displacement,
+                       Int4 score);
 
 
 /** Perform a one-hit extension. Beginning at the specified hit,
@@ -204,6 +207,7 @@ Int4 BlastPSSMExtendLeft(Int4 ** matrix,
  * @param hsp_q the offset in the query where the HSP begins [out]
  * @param hsp_s the offset in the subject where the HSP begins [out]
  * @param hsp_len the length of the HSP [out]
+ * @param word_size number of letters in the initial word hit [in]
  * @param use_pssm TRUE if the scoring matrix is position-specific [in]
  * @param s_last_off the rightmost subject offset examined [out]
  * @return the score of the hsp.
@@ -218,6 +222,7 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
 			 Int4* hsp_q,
 			 Int4* hsp_s,
 			 Int4* hsp_len,
+                         Int4 word_size,
 	                 Boolean use_pssm,
 	                 Int4* s_last_off);
 	                 
