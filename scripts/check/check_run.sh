@@ -38,7 +38,6 @@ res_log="${CHECK_RUN_FILE}.log"
 res_log="${CHECK_RUN_FILE}.log"
 res_concat="${CHECK_RUN_FILE}.out"
 
-PATH=".:\$PATH"
 
 ##  Printout USAGE info and exit
 
@@ -76,6 +75,7 @@ method="\$1"
 ### Action
 
 case "\$method" in
+#----------------------------------------------------------
   run )
     ;;
 #----------------------------------------------------------
@@ -128,6 +128,30 @@ case "\$method" in
     Usage "Invalid method name."
     ;;
 esac
+
+
+# Adjust PATH and LD_LIBRARY_PATH for running tests
+PATH=".:\$PATH"
+builddir=\`pwd\`
+while test ! -f "\$builddir/inc/ncbiconf.h"
+do
+   up_dir=\`dirname "\$builddir"\`
+   if test "\$up_dir" = "\$builddir" ; then
+      builddir=""
+      break
+   fi
+   builddir="\$up_dir"
+done
+if test -n "\$builddir"  -a  -d "\$builddir/lib";  then
+    if test -n "\$LD_LIBRARY_PATH" ; then
+       LD_LIBRARY_PATH="\$builddir/lib:\$LD_LIBRARY_PATH"
+    else
+       LD_LIBRARY_PATH="\$builddir/lib"
+    fi
+    export LD_LIBRARY_PATH
+else
+    echo "WARNING:  cannot find path to the library dir"
+fi
 
 
 # Run
