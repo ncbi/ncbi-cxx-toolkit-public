@@ -145,6 +145,9 @@ public:
     /// Defines like USE_MS_DBLIB
     list<string>  m_Defines;
 
+    /// Libraries from NCBI C Toolkit to link with
+    list<string>  m_NcbiCLibs;
+
 
 private:
     void Clear(void);
@@ -282,6 +285,10 @@ struct SMakeProjectT
 
 struct SAppProjectT : public SMakeProjectT
 {
+    static void CreateNcbiCToolkitLibs(const string& applib_mfilepath,
+                                       const TFiles& makeapp,
+                                       list<string>* libs_list);
+
     static CProjKey DoCreate(const string& source_base_dir,
                              const string& proj_name,
                              const string& applib_mfilepath,
@@ -456,6 +463,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/24 17:15:25  gorelenk
+ * Added member m_NcbiCLibs to class CProjItem.
+ * Added declaration of member function CreateNcbiCToolkitLibs
+ * to struct SAppProjectT.
+ *
  * Revision 1.10  2004/02/20 22:55:12  gorelenk
  * Added analysis of ASN projects depends.
  *
