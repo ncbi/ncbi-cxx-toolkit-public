@@ -88,7 +88,7 @@ print "Max. No. of files to be concatnated into a file => $maxNo_Files\noutput f
   my $outFile = "$outputPath"."$batch_index".".txt"; # output file full name
   open(FileOut,">$outFile") || die "cannot create output file"."$outFile";
                 
-  while(defined($inFile = glob("$inputPath")))
+  while(defined($inFile = glob("$inputPath\*")))
   {
         if ($inFile =~ /\.dta$/i && -s $inFile)
 	{
@@ -106,9 +106,33 @@ print "Max. No. of files to be concatnated into a file => $maxNo_Files\noutput f
 	     $iteration +=1;
              open(FileIn,"<$inFile");	     
 	     print FileOut "<dta id=\"$iteration\" name=\"$inFile\" batchFile=\"$outFile\">\n";
-             while (<FileIn>) 
- 	     {
-  		      print FileOut $_;
+	     
+	     # modify the code to allow this program take mascot format files as input 
+	     # to generated merged dta file --- Wenyao Shi.
+	     my $pepmass = 0;				#initialize the variable for PEPMASS in mascot format file header
+	     my $charge = "";				#initialize the variable for CHARGE in mascot format file header
+	     my $first_line_printed = 0;	#flag for printing the first line when convert from mascot format file
+            while (<FileIn>) 
+ 	     	{
+ 	     		if ($_ =~ /^PEPMASS/){
+ 	     			$pepmass = (split(/=/,$_))[1];	# get pepmass from mascot formated header
+ 	     			chomp($pepmass);
+ 	     			$pepmass =~ s/^\s+//;         # remove space at beginning of line
+    				$pepmass =~ s/\s+$//;         # remove space at end of line
+ 	     		}
+ 	     		if ($_ =~ /^CHARGE/){
+ 	     			$charge = (split(/=/,$_))[1];	# get charge from mascot formated header
+ 	     			chomp($charge); 			
+ 	     			$charge =~ s/^\s+//;         # remove space at beginning of line
+    				$charge =~ s/\s+$//;         # remove space at end of line	
+ 	     		}
+ 	     		
+ 	     		if ($pepmass != 0 && $charge ne "" && $first_line_printed != 1){
+ 	     			$charge = (split(/\+|\-/, $charge))[0];		# remove the "+" or "-" sign after the charge number
+ 	     			print FileOut "$pepmass $charge\n";			# print "mass/charge" pair as the first line to make it a regular dta format
+ 	     			$first_line_printed = 1;
+ 	     		}
+  		      	print FileOut $_ if ($_ =~ /^\d+/);
              }
 	     print FileOut "</dta>\n\n";
              close FileIn;
