@@ -297,58 +297,56 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
     const CSeqMap::CSegment& seg = info.x_GetSegment();
     CSeqMap::ESegmentType type = CSeqMap::ESegmentType(seg.m_SegType);
 
-    CConstRef<CSeqMap> push_map;
-    CTSE_Handle push_tse;
-
     switch ( type ) {
     case CSeqMap::eSeqSubMap:
-        push_map = 
-            static_cast<const CSeqMap*>(info.m_SeqMap->x_GetObject(seg));
-        // copy old m_TSE
-        push_tse = info.m_TSE;
+    {{
+        CConstRef<CSeqMap> push_map
+            (static_cast<const CSeqMap*>(info.m_SeqMap->x_GetObject(seg)));
+        // We have to copy the info.m_TSE into local variable push_tse because
+        // of TSegmentInfo referenced by info can be moved inside x_Push() call.
+        CTSE_Handle push_tse = info.m_TSE;
+        x_Push(push_map, info.m_TSE,
+               GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
         break;
+    }}
     case CSeqMap::eSeqRef:
+    {{
         if ( !resolveExternal ) {
             return false;
         }
-        else {
-            const CSeq_id& seq_id =
-                static_cast<const CSeq_id&>(*info.m_SeqMap->x_GetObject(seg));
-            CBioseq_Handle bh;
-            if ( m_Selector.x_HasLimitTSE() ) {
-                // Check TSE limit
-                bh = m_Selector.x_GetLimitTSE().GetBioseqHandle(seq_id);
-                if ( !bh ) {
-                    return false;
-                }
-            }
-            else {
-                if ( !GetScope() ) {
-                    NCBI_THROW(CSeqMapException, eNullPointer,
-                               "Cannot resolve "+
-                               seq_id.AsFastaString()+": null scope pointer");
-                }
-                bh = GetScope()->GetBioseqHandle(seq_id);
-                if ( !bh ) {
-                    NCBI_THROW(CSeqMapException, eFail,
-                               "Cannot resolve "+
-                               seq_id.AsFastaString()+": unknown");
-                }
-            }
-            push_map = &bh.GetSeqMap();
-            push_tse = bh.GetTSE_Handle();
-            if ( info.m_TSE ) {
-                info.m_TSE.AddUsedTSE(push_tse);
+        const CSeq_id& seq_id =
+            static_cast<const CSeq_id&>(*info.m_SeqMap->x_GetObject(seg));
+        CBioseq_Handle bh;
+        if ( m_Selector.x_HasLimitTSE() ) {
+            // Check TSE limit
+            bh = m_Selector.x_GetLimitTSE().GetBioseqHandle(seq_id);
+            if ( !bh ) {
+                return false;
             }
         }
+        else {
+            if ( !GetScope() ) {
+                NCBI_THROW(CSeqMapException, eNullPointer,
+                           "Cannot resolve "+
+                           seq_id.AsFastaString()+": null scope pointer");
+            }
+            bh = GetScope()->GetBioseqHandle(seq_id);
+            if ( !bh ) {
+                NCBI_THROW(CSeqMapException, eFail,
+                           "Cannot resolve "+
+                           seq_id.AsFastaString()+": unknown");
+            }
+        }
+        if ( info.m_TSE ) {
+            info.m_TSE.AddUsedTSE(bh.GetTSE_Handle());
+        }
+        x_Push(ConstRef(&bh.GetSeqMap()), bh.GetTSE_Handle(),
+               GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
+        m_Selector.PushResolve();
         break;
+    }}
     default:
         return false;
-    }
-    x_Push(push_map, push_tse,
-           GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
-    if ( type == CSeqMap::eSeqRef ) {
-        m_Selector.PushResolve();
     }
     return true;
 }
@@ -568,6 +566,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/04/05 13:41:41  vasilche
+* Avoid creation of CTSE_Handle until necessary.
+*
 * Revision 1.37  2005/03/18 16:16:13  grichenk
 * Throw exception on TSeqPos overflow
 *
