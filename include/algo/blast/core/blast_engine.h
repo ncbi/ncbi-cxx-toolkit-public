@@ -54,7 +54,7 @@ extern "C" {
  * @param program_number Type of BLAST program [in]
  * @param query The query sequence [in]
  * @param query_info Additional query information [in]
- * @param bssp Structure containing BLAST database [in]
+ * @param seq_src Structure containing BLAST database [in]
  * @param sbp Scoring and statistical parameters [in]
  * @param score_options Hit scoring options [in]
  * @param lookup_wrap The lookup table, constructed earlier [in] 
@@ -64,15 +64,15 @@ extern "C" {
  * @param eff_len_options Options for setting effective lengths [in]
  * @param psi_options Options specific to PSI-BLAST [in]
  * @param db_options Options for handling BLAST database [in]
- * @param results Structure holding all saved results [in] [out]
+ * @param hsp_stream Structure for streaming results [in] [out]
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search [out]
  * @param results Results of the BLAST search [out]
  */
 Int4 
-BLAST_SearchEngine(Uint1 program_number, 
+BLAST_SearchEngine(EBlastProgramType program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrc* bssp, BlastScoreBlk* sbp, 
+   const BlastSeqSrc* seq_src, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap, 
    const BlastInitialWordOptions* word_options, 
@@ -88,7 +88,7 @@ BLAST_SearchEngine(Uint1 program_number,
  * @param program_number Type of BLAST program [in]
  * @param query The query sequence [in]
  * @param query_info Additional query information [in]
- * @param bssp Structure containing BLAST database [in]
+ * @param seq_src Structure containing BLAST database [in]
  * @param sbp Scoring and statistical parameters [in]
  * @param score_options Hit scoring options [in]
  * @param lookup_wrap The lookup table, constructed earlier [in] 
@@ -104,9 +104,9 @@ BLAST_SearchEngine(Uint1 program_number,
  * @param results Structure holding all saved results [in] [out]
  */
 Int4 
-BLAST_RPSSearchEngine(Uint1 program_number, 
+BLAST_RPSSearchEngine(EBlastProgramType program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrc* bssp, BlastScoreBlk* sbp, 
+   const BlastSeqSrc* seq_src, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap, 
    const BlastInitialWordOptions* word_options, 
@@ -118,9 +118,43 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
    BlastHSPResults** results);
 
+/** Perform the preliminary stage of the BLAST search.
+ * @param  program_number Type of BLAST program [in]
+ * @param query The query sequence [in]
+ * @param query_info Additional query information [in]
+ * @param seq_src Structure containing BLAST database [in]
+ * @param gap_align Structure containing scoring block and memory allocated
+ *                  for gapped alignment. [in]
+ * @param score_params Hit scoring parameters [in]
+ * @param lookup_wrap The lookup table, constructed earlier [in] 
+ * @param word_options Options for processing initial word hits [in]
+ * @param ext_params Parameters for the gapped extension [in]
+ * @param hit_params Parameters for saving the HSPs [in]
+ * @param eff_len_params Parameters for setting effective lengths [in]
+ * @param psi_options Options specific to PSI-BLAST [in]
+ * @param db_options Options for handling BLAST database [in]
+ * @param diagnostics Return statistics containing numbers of hits on 
+ *                    different stages of the search. Statistics saved only 
+ *                    for the allocated parts of the structure. [in] [out]
+ * @param itr Iterator over the subject sequences source [in]
+ */
+Int4 
+BLAST_PreliminarySearchEngine(EBlastProgramType program_number, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
+   const BlastSeqSrc* seq_src, BlastGapAlignStruct* gap_align,
+   BlastScoringParameters* score_params, 
+   LookupTableWrap* lookup_wrap,
+   const BlastInitialWordOptions* word_options, 
+   BlastExtensionParameters* ext_params, 
+   BlastHitSavingParameters* hit_params,
+   BlastEffectiveLengthsParameters* eff_len_params,
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options,
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics);
+
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
-     (Uint1, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
+     (EBlastProgramType, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
       BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringParameters*,
       const BlastExtensionParameters*, const BlastHitSavingParameters*,
       BlastInitHitList*, BlastHSPList**, BlastGappedStats*);
