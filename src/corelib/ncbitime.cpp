@@ -411,7 +411,7 @@ void CTime::x_Init(const string& str, const string& fmt)
         // Set time part
         switch ( *fff ) {
         case 'Y':
-            m_Year = (int) value;
+            m_Year = (int)value;
             break;
         case 'y':
             if (value >= 0  &&  value < 50) {
@@ -419,7 +419,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             } else if (value >= 50  &&  value < 100) {
                 value += 1900;
             }
-            m_Year = (int) value;
+            m_Year = (int)value;
             break;
         case 'M':
             m_Month = (unsigned char) value;
@@ -618,7 +618,7 @@ int CTime::YearDayNumber(void) const
     unsigned first = s_Date2Number(CTime(Year(), 1, 1));
     unsigned self  = s_Date2Number(*this);
     _ASSERT(first <= self  &&  self < first + (IsLeap() ? 366 : 365));
-    return (int) (self - first + 1);
+    return int(self - first + 1);
 }
 
 
@@ -841,7 +841,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
                           TimeZone() : out_tz;
                       str += (tz > 0) ? '-' : '+';
                       if (tz < 0) tz = -tz;
-                      int tzh = tz / 3600;
+                      int tzh = int(tz / 3600);
                       s_AddZeroPadInt(str, tzh);
                       s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
 #endif
@@ -866,7 +866,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
 time_t CTime::GetTimeT(void) const
 {
     struct tm t;
-    t.tm_sec   = Second() + (int) (IsGmtTime() ? +TimeZone() : 0);
+    t.tm_sec   = Second() + (int)(IsGmtTime() ? +TimeZone() : 0);
     t.tm_min   = Minute();
     t.tm_hour  = Hour();
     t.tm_mday  = Day();
@@ -887,7 +887,7 @@ time_t CTime::GetTimeT(void) const
 #if defined(HAVE_TIMEGM)  ||  (defined(NCBI_OS_DARWIN)  &&  ! defined(NCBI_COMPILER_MW_MSL))
     t.tm_sec   = Second();
 #else
-    t.tm_sec   = Second() + (int) (IsGmtTime() ? -TimeZone() : 0);
+    t.tm_sec   = Second() + (int)(IsGmtTime() ? -TimeZone() : 0);
 #endif
     t.tm_min   = Minute();
     t.tm_hour  = Hour();
@@ -1085,7 +1085,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
     int newYear = Year();
     s_Offset(&newMonth, months, 12, &newYear);
     m_Year = newYear;
-    m_Month = (int) newMonth + 1;
+    m_Month = (int)newMonth + 1;
     x_AdjustDay();
     if ( aflag ) {
         x_AdjustTime(*pt);
@@ -1141,7 +1141,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
     int dayOffset = 0;
     long newHour = Hour();
     s_Offset(&newHour, hours, 24, &dayOffset);
-    m_Hour = (int) newHour;
+    m_Hour = (int)newHour;
     AddDay(dayOffset, eIgnoreDaylight);
     if ( aflag ) {
         x_AdjustTime(*pt, shift_time);
@@ -1168,7 +1168,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
     int hourOffset = 0;
     long newMinute = Minute();
     s_Offset(&newMinute, minutes, 60, &hourOffset);
-    m_Minute = (int) newMinute;
+    m_Minute = (int)newMinute;
     AddHour(hourOffset, eIgnoreDaylight);
     if ( aflag ) {
         x_AdjustTime(*pt);
@@ -1178,7 +1178,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 }
 
 
-CTime& CTime::AddSecond(int seconds)
+CTime& CTime::AddSecond(long seconds)
 {
     if ( !seconds ) {
         return *this;
@@ -1186,7 +1186,7 @@ CTime& CTime::AddSecond(int seconds)
     int minuteOffset = 0;
     long newSecond = Second();
     s_Offset(&newSecond, seconds, 60, &minuteOffset);
-    m_Second = (int) newSecond;
+    m_Second = (int)newSecond;
     return AddMinute(minuteOffset);
 }
 
@@ -1960,6 +1960,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/02/07 16:01:04  ivanov
+ * Changed parameter type in the CTime::AddSecons() to long.
+ * Fixed Workshop 64bits compiler warnings.
+ *
  * Revision 1.57  2004/12/29 21:41:30  vasilche
  * Fixed parsing and formatting of twelfth hour in AM/PM mode.
  *

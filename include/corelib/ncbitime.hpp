@@ -708,7 +708,7 @@ public:
     /// @param seconds
     ///   Seconds to add. Default is 1 second.
     ///   If negative, it will result in a "subtraction" operation.
-    CTime& AddSecond(int seconds = 1);
+    CTime& AddSecond(long seconds = 1);
 
     /// Add specified nanoseconds.
     ///
@@ -1352,7 +1352,7 @@ CTime AddMinute(const CTime& t, int  minutes = 1)
 }
 
 inline
-CTime AddSecond(const CTime& t, int  seconds = 1)
+CTime AddSecond(const CTime& t, long seconds = 1)
 {
     CTime tmp(t);
     return tmp.AddSecond(seconds);
@@ -1934,6 +1934,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/02/07 16:01:04  ivanov
+ * Changed parameter type in the CTime::AddSecons() to long.
+ * Fixed Workshop 64bits compiler warnings.
+ *
  * Revision 1.42  2005/01/06 16:37:24  ivanov
  * Fixed comments for CTimeSpan
  *
