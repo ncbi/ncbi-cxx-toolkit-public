@@ -31,7 +31,7 @@
 
 <h3><a name="Object_manager"></a>Object manager.</h3>
 <p>
-Before being able to use any Scopes, client must 
+Before being able to use any Scopes, a client must 
 create and initialize Object Manager
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CObjectManager">CObjectManager</a>).
 Initialization functions include registration of Data loaders,
@@ -50,11 +50,13 @@ a default  data object.
     // register existing data loader.
     // data loader must be created in the heap (ie using operator new)
     void RegisterDataLoader(CDataLoader&amp; loader, EIsDefault is_default=eNonDefault);
+
     // Revoke previously registered data loader.
     // Return FALSE if the loader is still in use (by some scope).
     // Throw an exception if the loader is not registered with this ObjMgr.
     bool RevokeDataLoader(CDataLoader&amp; Loader);
     bool RevokeDataLoader(string LoaderName);
+
     // register top-level seq_entry
     bool RegisterTopLevelSeqEntry(CSeq_entry&amp; TopEntry);
 </pre>
@@ -85,14 +87,24 @@ good  reason is impractical in most cases.
 <pre>
     // Constructor:
     CScope( CObjectManager&amp; ObjMgr);
+
     // Add default data loaders from object manager
     bool AddDefaults(void);
     // Add data loader by name (the loader must be known to Object Manager)
     bool AddDataLoader(string LoaderName);
     // Add seq_entry    
     bool AddTopLevelSeqEntry(CSeq_entry&amp; TopEntry);
+
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry&amp; entry, CSeq_annot&amp; annot);
+    // Add new sub-entry to the existing tree if it is in this scope
+    bool AttachEntry(const CSeq_entry&amp; parent, CSeq_entry&amp; entry);
+    // Add sequence map for a bioseq if it is in this scope
+    bool AttachMap(const CSeq_entry&amp; bioseq, CSeqMap&amp; seqmap);
+    // Add seq-data to a bioseq if it is in this scope
+    bool AttachSeqData(const CSeq_entry&amp; bioseq, CSeq_data&amp; seq,
+                      TSeqPosition start, TSeqLength length);
+
     // Construct BioseqHandle
     CBioseqHandle  GetBioseqHandle(const CSeq_id&amp; id);
 </pre>
@@ -117,13 +129,16 @@ to compare Bioseq   handles created by different Scopes.
     // public constructors
     CBioseq_Handle(const CBioseq_Handle&amp; h);
     CBioseq_Handle&amp; operator= (const CBioseq_Handle&amp; h);
+
     // Comparison
+    // Handles must belong to the same scope
     bool operator== (const CBioseq_Handle&amp; h) const;
     bool operator!= (const CBioseq_Handle&amp; h) const;
-    bool operator&lt; (const CBioseq_Handle&amp; h) const;
+
     // Validity check
     operator bool(void) const;
     bool operator!(void) const;
+
     // Get Seq_id
     const CSeq_id* GetSeqId(void)  const;
     // Get the complete bioseq (as loaded by now)
@@ -132,12 +147,20 @@ to compare Bioseq   handles created by different Scopes.
     const CSeq_entry&amp; GetTopLevelSeqEntry(void) const;
     // Get bioseq core structure
     TBioseqCore GetBioseqCore(void) const;
-    // Get sequence map.
+
+    // Get sequence map. References to the whole bioseqs may have
+    // length of 0 unless GetSeqVector() has been called for the handle.
     const CSeqMap&amp; GetSeqMap(void) const;
+    // Get sequence map with resolved multi-level references.
+    // The resulting map should contain regions of literals, gaps
+    // and references to literals only (but no gaps or refs) to other
+    // sequences.
+    const CSeqMap&amp GetResolvedSeqMap(void) const;
+
     // construct SeqVector
-    virtual CSeqVector GetSeqVector(bool plus_strand = true);
+    CSeqVector GetSeqVector(bool plus_strand = true);
     // Get sequence's title (used in various flat-file formats.)
-    virtual string GetTitle(TGetTitleFlags flags = 0);
+    string GetTitle(TGetTitleFlags flags = 0);
 </pre>
 
 
@@ -167,6 +190,9 @@ the same   Scope. It may not access other Scopes.
     TResidue operator[] (int pos);
     // Target sequence coding.
     TCoding GetCoding(void);
+	// Set target coding. In case this function was never called
+	// SeqVector does not perform any conversion, returning the data
+	// in the original format (in which it receives it from the database)
     void SetCoding(TCoding coding);
     // Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
@@ -215,7 +241,9 @@ by   a Bioseq handle.
 
 
 <h3><a name="Data_loader"></a>Data loader.</h3>
-
+<p>
+Data loader is never used by a client application directly.
+</p>
 
 
 
@@ -245,6 +273,32 @@ data objects the sequence refers to.
     // Data access operators 
     const CSeq_descr&amp; operator*  (void) const;
     const CSeq_descr* operator-&gt; (void) const;
+</pre>
+<p>
+There is also another type of description iterator - 
+<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqdesc_CI">CSeqdesc_CI</a>.
+It is provided for convenience. Since
+<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_descr">CSeq_descr</a>
+object is actually a container - list of
+<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqdesc">CSeqdesc</a>
+objects, it would be more convenient to enumerate the latters directly.
+</p>
+
+<h4>Object methods:</h4>
+<pre>
+    // Constructors 
+    CSeqdesc_CI(const CDesc_CI&amp; desc_it,
+                CSeqdesc::E_Choice choice = CSeqdesc::e_not_set);
+    CSeqdesc_CI(const CSeqdesc_CI&amp; iter);
+    CSeqdesc_CI&amp; operator= (const CSeqdesc_CI&amp; iter);
+    // Search for data 
+    CSeqdesc_CI&amp; operator++ (void);
+    CSeqdesc_CI  operator++ (int);
+    // Validity check 
+    operator bool (void) const;
+    // Data access operators 
+    const CSeqdesc&amp; operator*  (void) const;
+    const CSeqdesc* operator-> (void) const;
 </pre>
 
 
@@ -329,7 +383,14 @@ data objects the sequence refers to.
 <h4>Object methods:</h4>
 <pre>
     // Constructors
-    CFeat_CI(CScope&amp; scope, const CSeq_loc&amp; loc, SAnnotSelector::TFeatChoice feat_choice);
+    // Search all TSEs in all datasources
+    CFeat_CI(CScope&amp; scope, const CSeq_loc&amp; loc,
+             SAnnotSelector::TFeatChoice feat_choice,
+             EResolveMethod resolve = eResolve_None);
+    // Search only in TSE, which contains the bioseq
+    CFeat_CI(CBioseq_Handle&amp; bioseq, int start, int stop,
+             SAnnotSelector::TFeatChoice feat_choice,
+             EResolveMethod resolve = eResolve_None);
     CFeat_CI(const CFeat_CI&amp; iter);
     CFeat_CI&amp; operator= (const CFeat_CI&amp; iter);
     // Search for data
@@ -360,7 +421,12 @@ data objects the sequence refers to.
 <h4>Object methods:</h4>
 <pre>
     // Constructors
-    CGraph_CI(CScope&amp; scope, const CSeq_loc&amp; loc);
+    // Search all TSEs in all datasources
+    CGraph_CI(CScope&amp; scope, const CSeq_loc&amp; loc,
+              EResolveMethod resolve = eResolve_None);
+    // Search only in TSE, which contains the bioseq
+    CGraph_CI(CBioseq_Handle&amp; bioseq, int start, int stop,
+              EResolveMethod resolve = eResolve_None);
     CGraph_CI(const CGraph_CI&amp; iter);
     CGraph_CI&amp; operator= (const CGraph_CI&amp; iter);
     // Search for data
@@ -390,7 +456,12 @@ data objects the sequence refers to.
 <h4>Object methods:</h4>
 <pre>
     // Constructors
-    CAlign_CI(CScope&amp; scope, const CSeq_loc&amp; loc);
+    // Search all TSEs in all datasources
+    CAlign_CI(CScope&amp; scope, const CSeq_loc&amp; loc,
+              EResolveMethod resolve = eResolve_None);
+    // Search only in TSE, which contains the bioseq
+    CAlign_CI(CBioseq_Handle&amp; bioseq, int start, int stop,
+              EResolveMethod resolve = eResolve_None);
     CAlign_CI(const CAlign_CI&amp; iter);
     CAlign_CI&amp; operator= (const CAlign_CI&amp; iter);
     // Search for data
