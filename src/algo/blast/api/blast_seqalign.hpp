@@ -35,10 +35,8 @@
 #define BLASTSEQALIGN__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <ctools/asn_converter.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/seqalign__.hpp>
-#include <readdb.h>
 
 // NewBlast includes
 #include <blast_hits.h>
@@ -60,7 +58,7 @@ USING_SCOPE(objects);
  * @param prog type of BLAST program [in]
  * @param query_seqids list of sequence identifiers (to allow query
  * concatenation) [in]
- * @param rdfp handle to BLAST database [in]
+ * @param bssp handle to BLAST Sequence Source ADT [in]
  * @param subject_seqid sequence identifier (for 2 sequences search) [in]
  * @param score_options contains scoring options [in]
  * @param sbp scoring and statistical information [in]
@@ -70,7 +68,7 @@ CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
         CBlastOption::EProgram prog,
         vector< CConstRef<CSeq_id> >& query_seqids, 
-        const ReadDBFILEPtr rdfp, 
+        const BlastSeqSrcPtr bssp, 
         CConstRef<CSeq_id>& subject_seqid,
         const BlastScoringOptionsPtr score_options, 
         const BLAST_ScoreBlkPtr sbp);
@@ -79,6 +77,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/25 22:12:46  camacho
+* Use BLAST Sequence Source to retrieve sequence identifier
+*
 * Revision 1.2  2003/07/23 21:28:23  camacho
 * Use new local gapinfo structures
 *

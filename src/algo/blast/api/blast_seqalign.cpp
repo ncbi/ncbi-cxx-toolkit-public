@@ -33,18 +33,15 @@
 */
 
 #include <BlastSeqalign.hpp>
-#include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
-
 #include <objects/general/Object_id.hpp>
-#include <serial/serial.hpp>
-#include <serial/objostr.hpp>
 
-// NewBlast includes
-#include <blast_seqalign.h>
-
+#ifndef SMALLEST_EVALUE
 #define SMALLEST_EVALUE 1.0e-180
+#endif
+#ifndef GAP_VALUE
 #define GAP_VALUE -1
+#endif
 
 // Converts a frame into the appropriate strand
 static ENa_strand
@@ -555,7 +552,7 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSPPtr hsp,
 static CRef<CSeq_align_set>
 x_ProcessBlastHitList(BlastHitListPtr hit_list, 
         CConstRef<CSeq_id>& query_seqid,
-        const ReadDBFILEPtr rdfp, CConstRef<CSeq_id>& subject_id, 
+        const BlastSeqSrcPtr bssp, CConstRef<CSeq_id>& subject_id, 
         const BlastScoringOptionsPtr score_options, const BLAST_ScoreBlkPtr sbp,
         CBlastOption::EProgram program)
 {
@@ -571,13 +568,11 @@ x_ProcessBlastHitList(BlastHitListPtr hit_list,
         if (!hsp_list)
             continue;
 
-        if (rdfp) {
-            // Get C SeqId and convert it to C++ Seq_id
-            SeqIdPtr c_subject_id = NULL;
-            readdb_get_descriptor(rdfp, hsp_list->oid, &c_subject_id, NULL);
-            DECLARE_ASN_CONVERTER(CSeq_id, SeqId, sic);
-            curr_subject = sic.FromC(c_subject_id);
-            SeqIdSetFree(c_subject_id);
+        if (bssp) {
+            char* id = BLASTSeqSrcGetSeqIdStr(bssp, (void*) &hsp_list->oid);
+            string seqid(id);
+            curr_subject.Reset(new CSeq_id(seqid));
+            free(id);
         } else {
             curr_subject.Reset(subject_id);
         }
@@ -603,7 +598,7 @@ CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
         CBlastOption::EProgram prog,
         vector< CConstRef<CSeq_id> >& query_seqids, 
-        const ReadDBFILEPtr rdfp, 
+        const BlastSeqSrcPtr bssp,
         CConstRef<CSeq_id>& subject_seqid,
         const BlastScoringOptionsPtr score_options, 
         const BLAST_ScoreBlkPtr sbp)
@@ -622,7 +617,7 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
         // matching sequence (each sequence can have more than one HSP) or for
         // each HSP in subject_seqid (i.e.: bl2seq)
         CRef<CSeq_align_set> seqaligns = 
-            x_ProcessBlastHitList(hit_list, query_seqids[i], rdfp, 
+            x_ProcessBlastHitList(hit_list, query_seqids[i], bssp, 
                     subject_seqid, score_options, sbp, prog);
         if (seqaligns)
             retval->Set().merge(seqaligns->Set());
@@ -640,6 +635,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/25 22:12:46  camacho
+* Use BLAST Sequence Source to retrieve sequence identifier
+*
 * Revision 1.4  2003/07/25 13:55:58  camacho
 * Removed unnecessary #includes
 *
