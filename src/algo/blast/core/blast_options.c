@@ -653,9 +653,17 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 	if (options == NULL)
 		return 1;
 
-        if (program_number == eBlastTypeRpsBlast ||
-            program_number == eBlastTypeRpsTblastn)
-                return 0;
+    if (options->phi_pattern && 
+        program_number != eBlastTypeBlastp && 
+        program_number != eBlastTypeBlastn) {
+        Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+            "PHI pattern can be specified only for blastp and blastn");
+        return (Int2) code;
+    }
+
+    if (program_number == eBlastTypeRpsBlast ||
+        program_number == eBlastTypeRpsTblastn)
+        return 0;
 
 	if (program_number != eBlastTypeBlastn && options->threshold <= 0)
 	{
@@ -962,6 +970,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.154  2005/02/08 18:32:49  dondosha
+ * Added check in lookup table options validation that program and PHI pattern are compatible
+ *
  * Revision 1.153  2005/02/03 21:37:03  dondosha
  * Tiny memory leak fix
  *
