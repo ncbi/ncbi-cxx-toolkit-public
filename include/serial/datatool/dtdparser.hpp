@@ -40,6 +40,7 @@
 #include <serial/datatool/moduleset.hpp>
 #include <list>
 #include <map>
+#include <stack>
 
 BEGIN_NCBI_SCOPE
 
@@ -116,6 +117,40 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// DTDEntity
+
+class DTDEntity
+{
+public:
+    DTDEntity(void);
+    DTDEntity(const DTDEntity& other);
+    virtual ~DTDEntity(void);
+
+    void SetName(const string& name);
+    const string& GetName(void) const;
+
+    void SetData(const string& data);
+    const string& GetData(void) const;
+
+private:
+    string m_Name;
+    string m_Data;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// DTDEntityLexer
+
+class DTDEntityLexer : public DTDLexer
+{
+public:
+    DTDEntityLexer(CNcbiIstream& in, bool autoDelete=true);
+    virtual ~DTDEntityLexer(void);
+protected:
+    bool m_AutoDelete;
+    CNcbiIstream* m_Str;
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // DTDParser
 
 class DTDParser : public AbstractParser
@@ -141,22 +176,36 @@ protected:
     AutoPtr<CDataTypeModule> Module(const string& name);
 
     void BuildDocumentTree(void);
-#ifdef _DEBUG
-    void PrintDocumentTree(void);
-    void PrintDocumentNode(const string& name, DTDElement& node);
-#endif
+
+    void BeginElementContent(void);
     void ParseElementContent(const string& name, bool embedded);
     void ConsumeElementContent(DTDElement& node);
+    void AddElementContent(DTDElement& node, string& id_name,
+                           char separator=0);
     void EndElementContent(DTDElement& node);
     void FixEmbeddedNames(DTDElement& node);
 
+    void BeginEntityContent(void);
+    void PushEntityLexer(const string& name);
+    void PopEntityLexer(void);
+
     void GenerateDataTree(CDataTypeModule& module);
     void ModuleType(CDataTypeModule& module, const DTDElement& node);
-    AutoPtr<CDataType> Type(const DTDElement& node, DTDElement::EOccurrence occ, bool in_elem);
-    CDataType* x_Type(const DTDElement& node, DTDElement::EOccurrence occ, bool in_elem);
-    CDataType* TypesBlock(CDataMemberContainerType* containerType,const DTDElement& node);
+    AutoPtr<CDataType> Type(const DTDElement& node,
+                            DTDElement::EOccurrence occ, bool in_elem);
+    CDataType* x_Type(const DTDElement& node,
+                      DTDElement::EOccurrence occ, bool in_elem);
+    CDataType* TypesBlock(CDataMemberContainerType* containerType,
+                          const DTDElement& node);
 
-    map<string,DTDElement> m_mapElement;
+#ifdef _DEBUG
+    void PrintDocumentTree(void);
+    void PrintEntities(void);
+    void PrintDocumentNode(const string& name, DTDElement& node);
+#endif
+    map<string,DTDElement> m_MapElement;
+    map<string,DTDEntity>  m_MapEntity;
+    stack<AbstractLexer*>  m_StackLexer;
 /*
     void Imports(CDataTypeModule& module);
     void Exports(CDataTypeModule& module);
@@ -190,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2002/10/18 14:35:42  gouriano
+ * added parsing of internal parsed entities
+ *
  * Revision 1.1  2002/10/15 13:50:15  gouriano
  * DTD lexer and parser. first version
  *

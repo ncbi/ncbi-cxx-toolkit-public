@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 DTDLexer::DTDLexer(CNcbiIstream& in)
     : AbstractLexer(in)
 {
+    m_CharsToSkip = 0;
 }
 
 DTDLexer::~DTDLexer(void)
@@ -70,6 +71,16 @@ TToken DTDLexer::LookupToken(void)
         tok = LookupIdentifier();
         _ASSERT(tok != T_IDENTIFIER);
         return tok;
+    case '%':
+        tok = LookupEntity();
+        return tok;
+    case '\"':
+    case '\'':
+        if (!EndPrevToken()) {
+            tok = LookupString();
+            return tok;
+        }
+        break;
     default:
         if (isalpha(c)) {
             tok = LookupIdentifier();
@@ -83,6 +94,7 @@ TToken DTDLexer::LookupToken(void)
 //  find all comments and insert them into Lexer
 void DTDLexer::LookupComments(void)
 {
+    EndPrevToken();
     char c;
     for (;;) {
         c = Char();
@@ -148,7 +160,7 @@ TToken DTDLexer::LookupIdentifier(void)
     StartToken();
 // something (not comment) started
 // find where it ends
-    for (char c = Char(); ; c = Char()) {
+    for (char c = Char(); c != 0; c = Char()) {
 
 // complete specification is here:
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-common-syn
@@ -189,12 +201,65 @@ TToken DTDLexer::LookupKeyword(void)
     return T_IDENTIFIER;
 }
 
+TToken DTDLexer::LookupEntity(void)
+{
+// Entity declaration:
+// http://www.w3.org/TR/2000/REC-xml-20001006#sec-entity-decl
+
+    char c = Char();
+    _ASSERT(c == '%');
+    if (isspace(Char(1))) {
+        return T_SYMBOL;
+    } else if (isalpha(Char(1))) {
+        SkipChar();
+        StartToken();
+        for (c = Char(); c != ';'; c = Char()) {
+            AddChar();
+        }
+        m_CharsToSkip = 1;
+    } else {
+        _ASSERT(0);
+    }
+    return T_ENTITY;
+}
+
+TToken DTDLexer::LookupString(void)
+{
+// Entity value:
+// http://www.w3.org/TR/2000/REC-xml-20001006#NT-EntityValue
+
+    _ASSERT(m_CharsToSkip==0);
+    char c0 = Char();
+    _ASSERT(c0 == '\"' || c0 == '\'');
+    SkipChar();
+    StartToken();
+    m_CharsToSkip = 1;
+    for (char c = Char(); c != c0; c = Char()) {
+        AddChar();
+    }
+    return T_STRING;
+}
+
+bool  DTDLexer::EndPrevToken(void)
+{
+    if (m_CharsToSkip != 0) {
+        SkipChars(m_CharsToSkip);
+        m_CharsToSkip = 0;
+        return true;
+    }
+    return false;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2002/10/18 14:38:56  gouriano
+ * added parsing of internal parsed entities
+ *
  * Revision 1.1  2002/10/15 13:54:01  gouriano
  * DTD lexer and parser, first version
  *

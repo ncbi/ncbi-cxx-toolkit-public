@@ -52,6 +52,12 @@ protected:
     bool ProcessComment(void);
     TToken LookupIdentifier(void);
     TToken LookupKeyword(void);
+    TToken LookupEntity(void);
+    TToken LookupString(void);
+    bool   EndPrevToken(void);
+
+private:
+    size_t m_CharsToSkip;
 };
 
 END_NCBI_SCOPE
@@ -62,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2002/10/18 14:35:42  gouriano
+ * added parsing of internal parsed entities
+ *
  * Revision 1.1  2002/10/15 13:50:15  gouriano
  * DTD lexer and parser. first version
  *

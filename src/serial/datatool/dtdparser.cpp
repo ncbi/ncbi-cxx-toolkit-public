@@ -174,7 +174,55 @@ string DTDElement::CreateEmbeddedName(int depth) const
     return name;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// DTDEntity
 
+DTDEntity::DTDEntity(void)
+{
+}
+DTDEntity::DTDEntity(const DTDEntity& other)
+{
+    m_Name = other.m_Name;
+    m_Data = other.m_Data;
+}
+DTDEntity::~DTDEntity(void)
+{
+}
+
+void DTDEntity::SetName(const string& name)
+{
+    m_Name = name;
+}
+const string& DTDEntity::GetName(void) const
+{
+    return m_Name;
+}
+
+void DTDEntity::SetData(const string& data)
+{
+    m_Data = data;
+}
+const string& DTDEntity::GetData(void) const
+{
+    return m_Data;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// DTDEntityLexer
+
+DTDEntityLexer::DTDEntityLexer(CNcbiIstream& in, bool autoDelete)
+    : DTDLexer(in)
+{
+    m_Str = &in;
+    m_AutoDelete = autoDelete;
+}
+DTDEntityLexer::~DTDEntityLexer(void)
+{
+    if (m_AutoDelete) {
+        delete m_Str;
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDParser
@@ -182,6 +230,7 @@ string DTDElement::CreateEmbeddedName(int depth) const
 DTDParser::DTDParser(DTDLexer& lexer)
     : AbstractParser(lexer)
 {
+    m_StackLexer.push(&lexer);
 }
 
 DTDParser::~DTDParser(void)
@@ -239,101 +288,22 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
     return module;
 }
 
-#ifdef _DEBUG
-void DTDParser::PrintDocumentTree(void)
-{
-    map<string,DTDElement>::iterator i;
-    for (i = m_mapElement.begin(); i != m_mapElement.end(); ++i) {
-        DTDElement& node = i->second;
-        DTDElement::EType type = node.GetType();
-        if (((type == DTDElement::eSequence) ||
-            (type == DTDElement::eChoice)) && !node.IsEmbedded()) {
-            PrintDocumentNode(i->first,i->second);
-        }
-    }
-    bool started = false;
-    for (i = m_mapElement.begin(); i != m_mapElement.end(); ++i) {
-        DTDElement& node = i->second;
-        if (node.IsEmbedded()) {
-            if (!started) {
-                cout << " === embedded elements ===" << endl;
-                started = true;
-            }
-            PrintDocumentNode(i->first,i->second);
-        }
-    }
-    started = false;
-    for (i = m_mapElement.begin(); i != m_mapElement.end(); ++i) {
-        DTDElement& node = i->second;
-        DTDElement::EType type = node.GetType();
-        if (((type != DTDElement::eSequence) &&
-            (type != DTDElement::eChoice)) && !node.IsReferenced()) {
-            if (!started) {
-                cout << " === UNREFERENCED elements ===" << endl;
-                started = true;
-            }
-            PrintDocumentNode(i->first,i->second);
-        }
-    }
-}
-
-void DTDParser::PrintDocumentNode(const string& name, DTDElement& node)
-{
-    cout << name << ": ";
-    switch (node.GetType()) {
-    default:
-    case DTDElement::eUnknown:  cout << "unknown"; break;
-    case DTDElement::eString:   cout << "string";  break;
-    case DTDElement::eAny:      cout << "any";     break;
-    case DTDElement::eEmpty:    cout << "empty";   break;
-    case DTDElement::eSequence: cout << "sequence";break;
-    case DTDElement::eChoice:   cout << "choice";  break;
-    }
-    switch (node.GetOccurrence()) {
-    default:
-    case DTDElement::eOne:         cout << "(1)";    break;
-    case DTDElement::eOneOrMore:   cout << "(1..*)"; break;
-    case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
-    case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
-    }
-    const list<string>& refs = node.GetContent();
-    if (!refs.empty()) {
-        cout << ": " << endl;
-        for (list<string>::const_iterator ir= refs.begin();
-            ir != refs.end(); ++ir) {
-            cout << "        " << *ir;
-            switch (node.GetOccurrence(*ir)) {
-            default:
-            case DTDElement::eOne:         cout << "(1)"; break;
-            case DTDElement::eOneOrMore:   cout << "(1..*)"; break;
-            case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
-            case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
-            }
-            cout << endl;
-        }
-    }
-    cout << endl;
-}
-#endif
 
 void DTDParser::BuildDocumentTree(void)
 {
-    string name;
     for (;;) {
         try {
             switch ( Next() ) {
             case K_ELEMENT:
                 Consume();
-                // element name
-                name = NextToken().GetText();
-                Consume();
-                ParseElementContent(name, false);
+                BeginElementContent();
                 break;
             case K_ATTLIST:
                 Consume();
                 break;
             case K_ENTITY:
                 Consume();
+                BeginEntityContent();
                 break;
             case T_EOF:
                 return;
@@ -350,10 +320,20 @@ void DTDParser::BuildDocumentTree(void)
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// DTDParser - elements
+
+void DTDParser::BeginElementContent(void)
+{
+    // element name
+    string name = NextToken().GetText();
+    Consume();
+    ParseElementContent(name, false);
+}
 
 void DTDParser::ParseElementContent(const string& name, bool embedded)
 {
-    DTDElement& node = m_mapElement[ name];
+    DTDElement& node = m_MapElement[ name];
     node.SetName(name);
     switch (Next()) {
     case T_IDENTIFIER:
@@ -375,6 +355,7 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
         }
         break;
     default:           // ???
+        _ASSERT(0);
         break;
     }
     // element description is ended
@@ -421,25 +402,12 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
                 skip = true;
                 break;
             case ')':
-                // id_name could be empty if the prev token was K_PCDATA
-                if (!id_name.empty()) {
-                    node.AddContent(id_name);
-                    node.SetTypeIfUnknown(DTDElement::eSequence);
-                    m_mapElement[ id_name].SetReferenced();
-                    id_name.erase();
-                }
+                AddElementContent(node, id_name);
                 EndElementContent( node);
                 return;
             case ',':
             case '|':
-                // id_name could be empty if the prev token was K_PCDATA
-                if (!id_name.empty()) {
-                    node.AddContent(id_name);
-                    node.SetType(symbol == ',' ?
-                        DTDElement::eSequence : DTDElement::eChoice);
-                    m_mapElement[ id_name].SetReferenced();
-                    id_name.erase();
-                }
+                AddElementContent(node, id_name, symbol);
                 break;
             case '+':
             case '*':
@@ -455,7 +423,33 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
                 break;
             }
             break;
+        case T_ENTITY:
+            id_name = NextToken().GetText();
+            PushEntityLexer(id_name);
+            skip = true;
+            break;
+        case T_EOF:
+            AddElementContent(node, id_name);
+            PopEntityLexer();
+            break;
         }
+    }
+}
+
+void DTDParser::AddElementContent(DTDElement& node, string& id_name,
+    char separator)
+{
+    // id_name could be empty if the prev token was K_PCDATA
+    if (!id_name.empty()) {
+        node.AddContent(id_name);
+        if (separator != 0) {
+            node.SetType(separator == ',' ?
+                DTDElement::eSequence : DTDElement::eChoice);
+        } else {
+            node.SetTypeIfUnknown(DTDElement::eSequence);
+        }
+        m_MapElement[ id_name].SetReferenced();
+        id_name.erase();
     }
 }
 
@@ -491,7 +485,7 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
 {
     const list<string>& refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
-        DTDElement& refNode = m_mapElement[*i];
+        DTDElement& refNode = m_MapElement[*i];
         if (refNode.IsEmbedded()) {
             for ( int depth=1; depth<100; ++depth) {
                 string testName = refNode.CreateEmbeddedName(depth);
@@ -505,12 +499,60 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
  }
 
 /////////////////////////////////////////////////////////////////////////////
+// DTDParser - entities
+
+void DTDParser::BeginEntityContent(void)
+{
+    TToken tok = Next();
+    if (tok == T_SYMBOL) {
+        _ASSERT(NextToken().GetSymbol() == '%');
+        Consume();
+
+        tok = Next();
+        _ASSERT(tok == T_IDENTIFIER);
+        string name = NextToken().GetText();
+        Consume();
+
+        tok = Next();
+        _ASSERT(tok == T_STRING);
+        DTDEntity& node = m_MapEntity[name];
+        node.SetName(name);
+        node.SetData(NextToken().GetText());
+        Consume();
+    } else {
+        // not implemented
+        _ASSERT(0);
+    }
+    // entity description is ended
+    ConsumeSymbol('>');
+}
+
+void DTDParser::PushEntityLexer(const string& name)
+{
+    map<string,DTDEntity>::iterator i = m_MapEntity.find(name);
+    _ASSERT (i != m_MapEntity.end());
+    DTDEntityLexer *lexer = new DTDEntityLexer(
+        *(new CNcbiIstrstream(m_MapEntity[name].GetData().c_str())));
+    m_StackLexer.push(lexer);
+    SetLexer(lexer);
+}
+
+void DTDParser::PopEntityLexer(void)
+{
+    _ASSERT(m_StackLexer.size() > 1);
+    delete m_StackLexer.top();
+    m_StackLexer.pop();
+    SetLexer(m_StackLexer.top());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // model generation
 
 void DTDParser::GenerateDataTree(CDataTypeModule& module)
 {
     map<string,DTDElement>::iterator i;
-    for (i = m_mapElement.begin(); i != m_mapElement.end(); ++i) {
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 //        if (!i->second.IsReferenced()) {
         DTDElement::EType type = i->second.GetType();
         if (((type == DTDElement::eSequence) ||
@@ -539,6 +581,18 @@ CDataType* DTDParser::x_Type(
     const DTDElement& node, DTDElement::EOccurrence occ, bool in_elem)
 {
     CDataType* type;
+
+// if the node contains single embedded element - prune it
+    if (!in_elem) {
+        const list<string>& refs = node.GetContent();
+        if (refs.size() == 1) {
+            string refName = refs.front();
+            if (m_MapElement[refName].IsEmbedded() &&
+                (node.GetOccurrence(refName) == DTDElement::eOne)) {
+                return x_Type(m_MapElement[refName],occ,in_elem);
+            }
+        }
+    }
     switch (node.GetType()) {
     case DTDElement::eSequence:
         if (in_elem && !node.IsEmbedded()) {
@@ -580,7 +634,7 @@ CDataType* DTDParser::TypesBlock(
     AutoPtr<CDataMemberContainerType> container(containerType);
     const list<string>& refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
-        DTDElement& refNode = m_mapElement[*i];
+        DTDElement& refNode = m_MapElement[*i];
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
         AutoPtr<CDataType> type(Type(refNode, occ, true));
         AutoPtr<CDataMember> member(new CDataMember(refNode.GetName(), type));
@@ -594,12 +648,112 @@ CDataType* DTDParser::TypesBlock(
     return container.release();
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// debug printing
+
+#ifdef _DEBUG
+void DTDParser::PrintDocumentTree(void)
+{
+    PrintEntities();
+
+    cout << " === Elements ===" << endl;
+    map<string,DTDElement>::iterator i;
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+        DTDElement& node = i->second;
+        DTDElement::EType type = node.GetType();
+        if (((type == DTDElement::eSequence) ||
+            (type == DTDElement::eChoice)) && !node.IsEmbedded()) {
+            PrintDocumentNode(i->first,i->second);
+        }
+    }
+    bool started = false;
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+        DTDElement& node = i->second;
+        if (node.IsEmbedded()) {
+            if (!started) {
+                cout << " === Embedded elements ===" << endl;
+                started = true;
+            }
+            PrintDocumentNode(i->first,i->second);
+        }
+    }
+    started = false;
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+        DTDElement& node = i->second;
+        DTDElement::EType type = node.GetType();
+        if (((type != DTDElement::eSequence) &&
+            (type != DTDElement::eChoice)) && !node.IsReferenced()) {
+            if (!started) {
+                cout << " === UNREFERENCED elements ===" << endl;
+                started = true;
+            }
+            PrintDocumentNode(i->first,i->second);
+        }
+    }
+    cout << endl;
+}
+
+void DTDParser::PrintEntities(void)
+{
+    if (!m_MapEntity.empty()) {
+        cout << " === Entities ===" << endl;
+        map<string,DTDEntity>::iterator i;
+        for (i = m_MapEntity.begin(); i != m_MapEntity.end(); ++i) {
+            cout << i->second.GetName() << " = \"" << i->second.GetData() << "\"" << endl;
+        }
+        cout << endl;
+    }
+}
+
+void DTDParser::PrintDocumentNode(const string& name, DTDElement& node)
+{
+    cout << name << ": ";
+    switch (node.GetType()) {
+    default:
+    case DTDElement::eUnknown:  cout << "unknown"; break;
+    case DTDElement::eString:   cout << "string";  break;
+    case DTDElement::eAny:      cout << "any";     break;
+    case DTDElement::eEmpty:    cout << "empty";   break;
+    case DTDElement::eSequence: cout << "sequence";break;
+    case DTDElement::eChoice:   cout << "choice";  break;
+    }
+    switch (node.GetOccurrence()) {
+    default:
+    case DTDElement::eOne:         cout << "(1)";    break;
+    case DTDElement::eOneOrMore:   cout << "(1..*)"; break;
+    case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
+    case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
+    }
+    const list<string>& refs = node.GetContent();
+    if (!refs.empty()) {
+        cout << ": " << endl;
+        for (list<string>::const_iterator ir= refs.begin();
+            ir != refs.end(); ++ir) {
+            cout << "        " << *ir;
+            switch (node.GetOccurrence(*ir)) {
+            default:
+            case DTDElement::eOne:         cout << "(1)"; break;
+            case DTDElement::eOneOrMore:   cout << "(1..*)"; break;
+            case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
+            case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
+            }
+            cout << endl;
+        }
+    }
+    cout << endl;
+}
+#endif
+
 END_NCBI_SCOPE
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2002/10/18 14:38:56  gouriano
+ * added parsing of internal parsed entities
+ *
  * Revision 1.1  2002/10/15 13:54:01  gouriano
  * DTD lexer and parser, first version
  *
