@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/04/15 01:18:42  lavr
+* Check if status is less than 100
+*
 * Revision 1.14  2002/03/19 00:34:56  vakatov
 * Added convenience method CCgiResponse::SetStatus().
 * Treat the status right in WriteHeader() for both plain and "raw CGI" cases.
@@ -173,6 +176,10 @@ void CCgiResponse::SetHeaderValue(const string& name, const tm& date)
 
 void CCgiResponse::SetStatus(unsigned int code, const string& reason)
 {
+    if (code < 100) {
+        THROW1_TRACE(runtime_error,
+                     "CCgiResponse::SetStatus() -- code too small, below 100");
+    }
     if (code > 999) {
         THROW1_TRACE(runtime_error,
                      "CCgiResponse::SetStatus() -- code too big, exceeds 999");
