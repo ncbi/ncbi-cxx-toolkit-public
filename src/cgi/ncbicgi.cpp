@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/02/02 20:55:13  vakatov
+* CCgiRequest::GetEntry() -- "const"
+*
 * Revision 1.45  2001/01/30 23:17:31  vakatov
 * + CCgiRequest::GetEntry()
 *
@@ -1021,6 +1024,7 @@ const
 
 
 const string& CCgiRequest::GetEntry(const string& name, bool* is_found)
+const
 {
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());

@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/02/02 20:55:11  vakatov
+* CCgiRequest::GetEntry() -- "const"
+*
 * Revision 1.46  2001/01/30 23:17:30  vakatov
 * + CCgiRequest::GetEntry()
 *
@@ -477,7 +480,7 @@ public:
     // NOTE:  There can be more than one entry with the same name;
     //        only one of these entry will be returned.
     // To get all matches, use GetEntries() and "multimap::" member functions.
-    const string& GetEntry(const string& name, bool* is_found = 0);
+    const string& GetEntry(const string& name, bool* is_found = 0) const;
 
     // Get a set of indexes(decoded) received from the client.
     // It will always be empty if "indexes_as_entries" in the constructor
