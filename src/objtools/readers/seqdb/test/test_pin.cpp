@@ -1847,7 +1847,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-chunk]";
         
         if (s == "-lib") {
-            CSeqDB phil("nt nt month est", 'n');
+            CSeqDB phil(dbname, seqtype);
             phil.GetSeqLength(123);
             phil.GetSeqLengthApprox(123);
             phil.GetHdr(123);
@@ -1857,14 +1857,14 @@ int test1(int argc, char ** argv)
             phil.GetSequence(123, & buffer);
             phil.RetSequence(& buffer);
 
-            cout << "\nSeq type:    " << phil.GetSeqType();
-            cout << "\nTitle:       " << phil.GetTitle();
-            cout << "\nDate:        " << phil.GetDate();
-            cout << "\nNumSeqs:     " << phil.GetNumSeqs();
-            cout << "\nNumOIDs:     " << phil.GetNumOIDs();
-            cout << "\nTotalLength: " << phil.GetVolumeLength();
-            cout << "\nTotalLength: " << phil.GetTotalLength();
-            cout << "\nMax Length:  " << phil.GetMaxLength() << endl;
+            cout << "\nSeq type:     " << phil.GetSeqType();
+            cout << "\nTitle:        " << phil.GetTitle();
+            cout << "\nDate:         " << phil.GetDate();
+            cout << "\nNumSeqs:      " << phil.GetNumSeqs();
+            cout << "\nNumOIDs:      " << phil.GetNumOIDs();
+            cout << "\nVolumeLength: " << phil.GetVolumeLength();
+            cout << "\nTotalLength:  " << phil.GetTotalLength();
+            cout << "\nMax Length:   " << phil.GetMaxLength() << endl;
             cout << endl;
             
             return 0;
