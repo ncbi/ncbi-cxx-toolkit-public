@@ -1,4 +1,4 @@
---$Revision: 1.9 $ 
+--$Revision: 1.10 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -46,7 +46,6 @@ Entrezgene ::= SEQUENCE {
     prot Prot-ref OPTIONAL , 
     rna RNA-ref OPTIONAL , 
     summary VisibleString OPTIONAL ,    -- short summary 
-    chromosome VisibleString OPTIONAL , -- new
     location SEQUENCE OF Maps OPTIONAL,
     gene-source Gene-source OPTIONAL ,             -- NCBI source to Entrez 
     locus SEQUENCE OF Gene-commentary OPTIONAL ,   -- where is the gene on a chromosome 
@@ -65,7 +64,7 @@ Gene-track ::= SEQUENCE {
         secondary (1) ,  -- synonym with merged
         discontinued (2) -- 'deleted', still index and display to public
     } DEFAULT live ,
-    current-id SEQUENCE OF INTEGER OPTIONAL , -- see note 1 below
+    current-id SEQUENCE OF Dbtag OPTIONAL , -- see note 1 below
     create-date Date ,   -- date created in Entrez 
     update-date Date }   -- last date updated in Entrez 
  
@@ -135,8 +134,9 @@ END
 -- 
 --  Comments, notes, etc.
 --   
---  1)  Ignored unless status = secondary.  This is where gene_ids are
---      placed toward which the interface will direct users.
+--  1)  Ignored unless status = secondary.  This is where gene_ids (db = "GeneID")
+--      are placed toward which the interface will direct users.  It is also
+--      available for placing other source-db specific tags (i.e., db = "LocusID").
 --
 --  2)  These 'xtra' objects are for submitting data for Entrez indexing
 --      that might not fit anywhere in the Entrezgene specification but
