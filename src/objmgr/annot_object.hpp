@@ -172,7 +172,11 @@ bool CAnnotObject::IsFeat(void) const
 inline
 const CSeq_feat& CAnnotObject::GetFeat(void) const
 {
+#if defined(NCBI_COMPILER_ICC)
+    return *dynamic_cast<const CSeq_feat*>(m_Object.GetPointer());
+#else
     return dynamic_cast<const CSeq_feat&>(*m_Object);
+#endif
 }
 
 inline
@@ -184,7 +188,11 @@ bool CAnnotObject::IsAlign(void) const
 inline
 const CSeq_align& CAnnotObject::GetAlign(void) const
 {
+#if defined(NCBI_COMPILER_ICC)
+    return *dynamic_cast<const CSeq_align*>(m_Object.GetPointer());
+#else
     return dynamic_cast<const CSeq_align&>(*m_Object);
+#endif
 }
 
 inline
@@ -196,7 +204,11 @@ bool CAnnotObject::IsGraph(void) const
 inline
 const CSeq_graph& CAnnotObject::GetGraph(void) const
 {
+#if defined(NCBI_COMPILER_ICC)
+    return *dynamic_cast<const CSeq_graph*>(m_Object.GetPointer());
+#else
     return dynamic_cast<const CSeq_graph&>(*m_Object);
+#endif
 }
 
 inline
@@ -256,6 +268,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/10/09 19:17:41  grichenk
+* Fixed ICC problem with dynamic_cast<>
+*
 * Revision 1.8  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
