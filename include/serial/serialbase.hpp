@@ -53,9 +53,16 @@ enum EResetVariant {
 typedef void (*TPostReadFunction)(const CTypeInfo* info, void* object);
 typedef void (*TPreWriteFunction)(const CTypeInfo* info, const void* object);
 
+NCBI_XSERIAL_EXPORT
 void SetPostRead(CClassTypeInfo*  info, TPostReadFunction function);
+
+NCBI_XSERIAL_EXPORT
 void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction function);
+
+NCBI_XSERIAL_EXPORT
 void SetPreWrite(CClassTypeInfo*  info, TPreWriteFunction function);
+
+NCBI_XSERIAL_EXPORT
 void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction function);
 
 template<class Class>
@@ -209,6 +216,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/03/28 18:52:04  dicuccio
+* Added Win32 exports for postread/postwrite set hooks
+*
 * Revision 1.16  2003/03/25 13:08:42  dicuccio
 * Added missing NCBI_NS_NCBI:: in PostRead()/PostWrite() macros
 *
