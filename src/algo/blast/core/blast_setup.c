@@ -776,8 +776,8 @@ BLAST_GapAlignSetUp(Uint1 program_number,
                     const BlastEffectiveLengthsOptions* eff_len_options,
                     const BlastExtensionOptions* ext_options,
                     const BlastHitSavingOptions* hit_options,
-                    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-                    BlastScoreBlk* sbp, Uint4 subject_length, 
+                    BlastQueryInfo* query_info, 
+                    BlastScoreBlk* sbp, 
                     BlastExtensionParameters** ext_params,
                     BlastHitSavingParameters** hit_params,
                     BlastEffectiveLengthsParameters** eff_len_params,
@@ -785,15 +785,12 @@ BLAST_GapAlignSetUp(Uint1 program_number,
 {
    Int2 status = 0;
    Uint4 max_subject_length;
-   Int8 total_length = 0;
+   Int8 total_length;
    Int4 num_seqs;
 
-   if (seq_src)
-     total_length = BLASTSeqSrcGetTotLen(seq_src);
-   else
-     total_length = subject_length;
+   total_length = BLASTSeqSrcGetTotLen(seq_src);
    
-   if (total_length > 0 && seq_src) {
+   if (total_length > 0) {
       num_seqs = BLASTSeqSrcGetNumSeqs(seq_src);
    } else {
       /* Not a database search; each subject sequence is considered
@@ -805,8 +802,6 @@ BLAST_GapAlignSetUp(Uint1 program_number,
       database length and number of sequences */
    BlastEffectiveLengthsParametersNew(eff_len_options, total_length, num_seqs, 
                                       eff_len_params);
-
-
    if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
                     *eff_len_params, sbp, query_info)) != 0)
       return status;
@@ -819,11 +814,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */
-   if (seq_src) {
-      max_subject_length = BLASTSeqSrcGetMaxSeqLen(seq_src);
-   } else {
-      max_subject_length = subject_length;
-   }
+   max_subject_length = BLASTSeqSrcGetMaxSeqLen(seq_src);
 
    if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 
                     max_subject_length, query_info->max_length, sbp, 
