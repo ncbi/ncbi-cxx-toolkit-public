@@ -379,7 +379,7 @@ public:
     
     BlastEffectiveLengthsOptions * GetEffLenOpts() const
     {
-        return m_EffLenOpts.get();
+        return m_EffLenOpts;
     }
     
     bool operator==(const CBlastOptionsLocal& rhs) const;
@@ -412,9 +412,7 @@ protected:
     CBlastScoringOptions          m_ScoringOpts;
 
     /// Effective lengths options
-    //CBlastEffectiveLengthsOptions m_EffLenOpts;
-    AutoPtr<BlastEffectiveLengthsOptions,
-    CDeleter<BlastEffectiveLengthsOptions> > m_EffLenOpts;
+    CBlastEffectiveLengthsOptions m_EffLenOpts;
 
     /// Blast program
     EProgram                             m_Program;
@@ -2480,6 +2478,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2004/12/28 16:42:19  camacho
+* Consistently use the RAII idiom for C structures using wrapper classes in CBlastOptions
+*
 * Revision 1.80  2004/12/28 13:36:17  madden
 * [GS]etWordSize is now an int rather than a short
 *

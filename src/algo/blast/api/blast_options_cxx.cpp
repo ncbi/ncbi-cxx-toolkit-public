@@ -332,7 +332,7 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     m_ExtnOpts.Reset((BlastExtensionOptions*)calloc(1, sizeof(BlastExtensionOptions)));
     m_HitSaveOpts.Reset((BlastHitSavingOptions*)calloc(1, sizeof(BlastHitSavingOptions)));
     m_ScoringOpts.Reset((BlastScoringOptions*)calloc(1, sizeof(BlastScoringOptions)));
-    m_EffLenOpts.reset((BlastEffectiveLengthsOptions*)calloc(1, sizeof(BlastEffectiveLengthsOptions)));
+    m_EffLenOpts.Reset((BlastEffectiveLengthsOptions*)calloc(1, sizeof(BlastEffectiveLengthsOptions)));
     m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
     m_PSIBlastOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
 }
@@ -568,10 +568,8 @@ CBlastOptionsLocal::operator==(const CBlastOptionsLocal& rhs) const
     if ( !x_BlastScoringOptions_cmp(m_ScoringOpts, rhs.m_ScoringOpts) )
         return false;
     
-    a = static_cast<void*>( (BlastEffectiveLengthsOptions*)
-                            m_EffLenOpts.get());
-    b = static_cast<void*>( (BlastEffectiveLengthsOptions*)
-                            rhs.m_EffLenOpts.get());
+    a = static_cast<void*>( (BlastEffectiveLengthsOptions*) m_EffLenOpts);
+    b = static_cast<void*>( (BlastEffectiveLengthsOptions*) rhs.m_EffLenOpts);
     if ( x_safe_memcmp(a, b, sizeof(BlastEffectiveLengthsOptions)) != 0 )
          return false;
     
@@ -612,6 +610,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/12/28 16:42:32  camacho
+* Consistently use the RAII idiom for C structures using wrapper classes in CBlastOptions
+*
 * Revision 1.55  2004/11/09 20:07:35  camacho
 * Fix CBlastOptionsLocal::GetProgramType for PSI-BLAST
 *
