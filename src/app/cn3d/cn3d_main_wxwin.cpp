@@ -262,7 +262,8 @@ Cn3DApp::Cn3DApp() : wxGLApp()
 {
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
-    SetDiagPostLevel(eDiag_Info); // report all messages
+    SetDiagPostLevel(eDiag_Info);   // report all messages
+    SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
     SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
     if (!InitGLVisual(NULL)) FATALMSG("InitGLVisual failed");
@@ -2040,6 +2041,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.181  2003/03/06 19:23:18  thiessen
+* minor tweaks
+*
 * Revision 1.180  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *

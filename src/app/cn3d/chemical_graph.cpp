@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#include <serial/serial.hpp>
-#include <serial/objistrasnb.hpp>
+#include <corelib/ncbistd.hpp>
+
 #include <objects/mmdb1/Biostruc_residue_graph_set.hpp>
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -57,6 +57,7 @@
 #include "cn3d/object_3d.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -70,22 +71,11 @@ void LoadStandardDictionary(const char *filename)
 {
     standardDictionary = new CBiostruc_residue_graph_set;
 
-    // initialize the binary input stream
-    auto_ptr<CNcbiIstream> inStream;
-    inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
-    if (!(*inStream))
-        FATALMSG("Cannot open dictionary file '" << filename << "'");
-
-    // Associate ASN.1 binary serialization methods with the input
-    auto_ptr<CObjectIStream> inObject;
-    inObject.reset(new CObjectIStreamAsnBinary(*inStream));
-
-    // Read the dictionary data
-    try {
-        *inObject >> *(const_cast<CBiostruc_residue_graph_set *>(standardDictionary));
-    } catch (exception& e) {
-        FATALMSG("Error reading file '" << filename << "':\n" << e.what());
-    }
+    // read dictionary file
+    string err;
+    if (!ReadASNFromFile(filename,
+            const_cast<CBiostruc_residue_graph_set*>(standardDictionary), true, &err))
+        FATALMSG("Error reading standard residue dictionary: " << err);
 
     // make sure it's the right thing
     if (!standardDictionary->IsSetId() ||
@@ -534,6 +524,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/03/06 19:23:18  thiessen
+* minor tweaks
+*
 * Revision 1.34  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
