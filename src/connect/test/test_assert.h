@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/04/23 16:23:46  lavr
+ * Yet another tweak for Windows :-(
+ *
  * Revision 6.15  2002/04/23 14:35:16  lavr
  * Another round of moving things to get tests to link on Windows (Release)
  *
@@ -89,9 +92,6 @@
 
 
 #ifdef NCBI_OS_MSWIN
-#  ifndef   _DEBUG
-#    define _DEBUG
-#  endif
 #  ifdef    _ASSERT
 #    undef  _ASSERT
 #  endif
