@@ -403,8 +403,7 @@ inline EIO_Status CSocket::Abort(void)
 
 inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
 {
-    return m_Socket ? (direction == eIO_Open ? eIO_Success :
-                       SOCK_Status(m_Socket, direction))   : eIO_Closed;
+    return m_Socket ? SOCK_Status(m_Socket, direction) : eIO_Closed;
 }
 
 
@@ -614,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2003/11/25 15:07:40  lavr
+ * CSocket::GetStatus() to pass eIO_Open to SOCK_Status()
+ *
  * Revision 6.35  2003/11/24 19:22:24  lavr
  * SetSelectInternalRestartTimeout() to accept ptr to STimeout
  *
