@@ -279,13 +279,13 @@ extern char* strdup(const char* str);
 // Useful macro to write 'for' statements with the STL container iterator as
 // a variable.
 //
-/*
+
 #define iterate(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 #define non_const_iterate(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
-*/
+
 
 #define ITERATE(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
@@ -322,6 +322,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2003/04/21 14:31:12  kuznets
+ * lower case iterate returned back to the header
+ *
  * Revision 1.63  2003/04/18 18:10:08  kuznets
  * + enum ENullable
  *
