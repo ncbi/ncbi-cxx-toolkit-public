@@ -94,8 +94,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     CFeat_CI it(xcript_hand, 0, xcript_hand.GetBioseqLength() - 1, sel);
 
     const CSeq_loc& loc = it->GetLocation();
-    TSeqPos cds_from = loc.GetInt().GetFrom();
-    TSeqPos cds_to   = loc.GetInt().GetTo();
+    TSeqPos cds_from = sequence::GetStart(loc);
+    TSeqPos cds_to   = sequence::GetStop(loc);
 
 
     TSeqPos last_genomic_end = 0;
@@ -451,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/12 22:10:10  jcherry
+ * Don't assume that a CDS location is an interval
+ *
  * Revision 1.3  2004/10/10 21:56:45  jcherry
  * Don't call CMappedFeat::GetMappedFeature; as of recent changes, this
  * apparently doesn't work when the feature has not been mapped.
