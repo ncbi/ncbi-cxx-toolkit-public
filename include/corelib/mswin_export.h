@@ -128,6 +128,7 @@
 #  define NCBI_TINYSEQ_EXPORTS
 #  define NCBI_ENTREZGENE_EXPORTS
 #  define NCBI_BIOTREE_EXPORTS
+#  define NCBI_REMAP_EXPORTS
 #endif
 
 
@@ -477,6 +478,15 @@
 #  define NCBI_PUBMED_EXPORT        __declspec(dllexport)
 #else
 #  define NCBI_PUBMED_EXPORT        __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_remap
+ */
+#ifdef NCBI_REMAP_EXPORTS
+#  define NCBI_REMAP_EXPORT        __declspec(dllexport)
+#else
+#  define NCBI_REMAP_EXPORT        __declspec(dllimport)
 #endif
 
 /*
@@ -1489,6 +1499,7 @@
 #  define NCBI_OMSSA_EXPORT
 #  define NCBI_PUBMED_EXPORT
 #  define NCBI_PUB_EXPORT
+#  define NCBI_REMAP_EXPORT
 #  define NCBI_SCOREMAT_EXPORT
 #  define NCBI_SEQALIGN_EXPORT
 #  define NCBI_SEQBLOCK_EXPORT
@@ -1555,6 +1566,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.77  2004/07/22 20:23:53  jcherry
+ * Added NCBI_REMAP_EXPORT specifier
+ *
  * Revision 1.76  2004/07/06 13:19:56  jcherry
  * Added NCBI_XOBJWRITE_EXPORT specifier (in NCBI_SEQEXT_EXPORTS)
  *
