@@ -60,9 +60,9 @@ protected:
 
     // status log
     ofstream m_logstream;
-    void   x_LogStatus(size_t model_id, const string& query,
+    void   x_LogStatus(size_t model_id, bool query_strand, const string& query,
                        const string& subj, bool error, const string& msg);
-
+    
 private:
 
     string       m_firstline;
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/21 18:16:45  kapustin
+ * Support computation on both query strands
+ *
  * Revision 1.9  2004/05/10 16:40:12  kapustin
  * Support a pairwise mode
  *

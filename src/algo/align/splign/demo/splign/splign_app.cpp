@@ -61,13 +61,17 @@ USING_SCOPE(objects);
 const char kQuality_high[] = "high";
 const char kQuality_low[] = "low";
 
+const char kStrandPlus[] = "plus";
+const char kStrandMinus[] = "minus";
+const char kStrandBoth[] = "both";
+
 void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.07");
+  string program_name ("Splign v.1.08");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -106,7 +110,7 @@ void CSplignApp::Init()
 
   argdescr->AddDefaultKey
     ("strand", "strand", "Spliced sequence's strand.",
-     CArgDescriptions::eString, "plus");
+     CArgDescriptions::eString, kStrandPlus);
 
   argdescr->AddFlag ("noendgaps",
 		     "Skip detection of unaligning regions at the ends.",
@@ -187,7 +191,8 @@ void CSplignApp::Init()
 #endif
     
   CArgAllow_Strings* constrain_strand = new CArgAllow_Strings;
-  constrain_strand->Allow("plus")->Allow("minus");
+  constrain_strand->Allow(kStrandPlus)->Allow(kStrandMinus)
+      ->Allow(kStrandBoth);
   argdescr->SetConstraint("strand", constrain_strand);
 
   CArgAllow* constrain01 = new CArgAllow_Doubles(0,1);
@@ -273,20 +278,20 @@ bool CSplignApp::x_GetNextPair(istream* ifs, vector<CHit>* hits)
 }
 
 
-void CSplignApp::x_LogStatus(size_t model_id, const string& query,
-                             const string& subj,
+void CSplignApp::x_LogStatus(size_t model_id, bool query_strand,
+                             const string& query, const string& subj,
 			     bool error, const string& msg)
 {
-  string error_tag (error? "Error: ": "");
-  if(model_id == 0) {
-    m_logstream << '-';
-  }
-  else {
-    m_logstream << model_id;
-  }
-
-  m_logstream << '\t' << query << '\t' << subj 
-              << '\t' << error_tag << msg << endl;
+    string error_tag (error? "Error: ": "");
+    if(model_id == 0) {
+        m_logstream << '-';
+    }
+    else {
+        m_logstream << (query_strand? '+': '-') << model_id;
+    }
+    
+    m_logstream << '\t' << query << '\t' << subj 
+                << '\t' << error_tag << msg << endl;
 }
 
 
@@ -454,7 +459,6 @@ int CSplignApp::Run()
   splign.SetMinExonIdentity(args["min_idty"].AsDouble());
   splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
   splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
-  splign.SetStrand(args["strand"].AsString() == "plus");
   splign.SetEndGapDetection(!(args["noendgaps"]));
   splign.SetMaxGenomicExtension(75000);
 
@@ -476,9 +480,9 @@ int CSplignApp::Run()
       if(hit_stream.get() == 0) {
           NCBI_THROW(CSplignAppException,
                      eNoHits,
-                     "No hits returned from Blast with the default set of parameters. "
-                     "Try running Blast externally and use the batch mode "
-                     "to feed hits to Splign.");
+                     "No hits returned from Blast with the default "
+                     "set of parameters. "
+                     "Try running Blast externally and run the batch mode.");
       }
   }
   else {
@@ -488,7 +492,7 @@ int CSplignApp::Run()
 
   // iterate over input hits
 
-  vector<CHit> hits;
+  CSplign::THits hits;
   while(x_GetNextPair(hit_stream.get(), &hits) ) {
 
     if(hits.size() == 0) {
@@ -497,24 +501,60 @@ int CSplignApp::Run()
 
     const string query (hits[0].m_Query);
     const string subj (hits[0].m_Subj);
-
-    splign.Run(&hits);
-
     formatter.SetSeqIds(query, subj);
-    cout << formatter.AsText();
+
+    const string strand = args["strand"].AsString();
+    CSplign::TResults splign_results;
+    if(strand == kStrandPlus) {
+
+        splign.SetStrand(true);
+        splign.Run(&hits);
+        const CSplign::TResults& results = splign.GetResult();
+        copy(results.begin(), results.end(), back_inserter(splign_results));
+    }
+    else if(strand == kStrandMinus) {
+
+        splign.SetStrand(false);
+        splign.Run(&hits);
+        const CSplign::TResults& results = splign.GetResult();
+        copy(results.begin(), results.end(), back_inserter(splign_results));
+    }
+    else {
+
+        CSplign::THits hits0 (hits.begin(), hits.end());
+        size_t mid = 0;
+        {{
+        splign.SetStrand(true);
+        splign.Run(&hits);
+        const CSplign::TResults& results = splign.GetResult();
+        copy(results.begin(), results.end(), back_inserter(splign_results));
+        mid = splign.GetLastModelId();
+        }}
+        {{
+        splign.SetStrand(false);
+        splign.SetStartModelId(mid);
+        splign.Run(&hits0);
+        const CSplign::TResults& results = splign.GetResult();
+        copy(results.begin(), results.end(), back_inserter(splign_results));
+        }}
+    }
+
+    cout << formatter.AsText(&splign_results);
 
     if(asn_ofs.get()) {
-        CRef<CSeq_align_set> sa_set = formatter.AsSeqAlignSet();
+        CRef<CSeq_align_set> sa_set = formatter.AsSeqAlignSet(&splign_results);
         auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText,
                                                          *asn_ofs));
         *os << *sa_set;
     }
 
-    ITERATE(vector<CSplign::SAlignedCompartment>, ii, splign.GetResult()) {
-      x_LogStatus(ii->m_id, query, subj, ii->m_error, ii->m_msg);
+    ITERATE(CSplign::TResults, ii, splign_results) {
+      x_LogStatus(ii->m_id, ii->m_QueryStrand, query, subj,
+                  ii->m_error, ii->m_msg);
     }
-    if(splign.GetResult().size() == 0) {
-      x_LogStatus(0, query, subj, true, "No compartment found");
+
+    if(splign_results.size() == 0) {
+      x_LogStatus(0, true, query, subj, true, "No compartment found");
     }
   }
 
@@ -602,6 +642,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/06/21 18:16:45  kapustin
+ * Support computation on both query strands
+ *
  * Revision 1.26  2004/06/07 13:47:37  kapustin
  * Throw when no hits returned from Blast
  *
