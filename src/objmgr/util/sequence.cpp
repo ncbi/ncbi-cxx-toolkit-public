@@ -1483,35 +1483,6 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
 }
 
 
-static
-CSeq_inst::EMol s_DeduceMol(const CSeq_id& id, CScope* scope,
-                            CSeq_inst::EMol fallback) {
-    if (scope) {
-        CBioseq_Handle handle = scope->GetBioseqHandle(id);
-        if (handle) {
-            return handle.GetBioseqCore()->GetInst().GetMol();
-        }
-    }
-
-    CSeq_id::EAccessionInfo info = id.IdentifyAccession();
-    if (info & CSeq_id::fAcc_nuc) {
-        // can potentially be more specific in some cases, but need not
-        return CSeq_inst::eMol_na;
-    } else if (info & CSeq_id::fAcc_prot) {
-        return CSeq_inst::eMol_aa;
-    } else {
-        return fallback;
-    }
-}
-
-
-static inline
-CSeq_inst::EMol s_DeduceMol(const CSeq_loc& loc, CScope* scope,
-                            CSeq_inst::EMol fallback) {
-    return s_DeduceMol(*CTypeConstIterator<CSeq_id>(loc), scope, fallback);
-}
-
-
 // XXX - handle fuzz?
 CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
                                const CSeq_loc& source_loc, TS2PFlags flags,
@@ -1524,11 +1495,8 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
     SRelLoc rl(feat.GetLocation(), source_loc, scope, rl_flags);
     _ASSERT(!rl.m_Ranges.empty());
     rl.m_ParentLoc.Reset(&feat.GetProduct());
-    if ((s_DeduceMol(feat.GetLocation(), scope, CSeq_inst::eMol_na)
-         != CSeq_inst::eMol_aa)
-        &&  (s_DeduceMol(feat.GetProduct(), scope, CSeq_inst::eMol_aa)
-             == CSeq_inst::eMol_aa)) {
-        // looks like nucleotide to protein; adjust offsets accordingly
+    if (feat.GetData().IsCdregion()) {
+        // 3:1 ratio
         const CCdregion& cds         = feat.GetData().GetCdregion();
         int              base_frame  = cds.GetFrame();
         if (base_frame > 0) {
@@ -1567,11 +1535,8 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
     SRelLoc rl(feat.GetProduct(), prod_loc, scope);
     _ASSERT(!rl.m_Ranges.empty());
     rl.m_ParentLoc.Reset(&feat.GetLocation());
-    if ((s_DeduceMol(feat.GetLocation(), scope, CSeq_inst::eMol_na)
-         != CSeq_inst::eMol_aa)
-        &&  (s_DeduceMol(feat.GetProduct(), scope, CSeq_inst::eMol_aa)
-             == CSeq_inst::eMol_aa)) {
-        // looks like protein to nucleotide; adjust offsets accordingly
+    if (feat.GetData().IsCdregion()) {
+        // 3:1 ratio
         const CCdregion& cds        = feat.GetData().GetCdregion();
         int              base_frame = cds.GetFrame();
         if (base_frame > 0) {
@@ -2499,6 +2464,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2002/12/04 15:38:22  ucko
+* SourceToProduct, ProductToSource: just check whether the feature is a coding
+* region rather than attempting to determine molecule types; drop s_DeduceMol.
+*
 * Revision 1.19  2002/11/26 15:14:04  dicuccio
 * Changed CFastaOStream::WriteTitle() to make use of CSeq_id::GetStringDescr().
 *
