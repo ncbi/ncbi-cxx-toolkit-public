@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/06/24 14:16:33  vasilche
+ * Moved auto_ptr<> variable after class definition.
+ *
  * Revision 6.7  2003/04/16 11:46:25  dicuccio
  * Implemented delayed instantiation for internal interface class
  *
@@ -71,8 +74,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
-
-auto_ptr<CGencode_implementation> CGencode::sm_Implementation;
 
 // Singleton object holding needed state.
 
@@ -156,6 +157,8 @@ private:
     const string& GetSncbieaa(const string& name) const;
 };
 
+
+auto_ptr<CGencode_implementation> CGencode::sm_Implementation;
 
 
 // Implement the public interface.
