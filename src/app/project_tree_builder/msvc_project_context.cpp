@@ -91,6 +91,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         m_ProjectDir = 
             CDirEntry::ConcatPath(m_ProjectDir, 
                                   GetApp().GetBuildType().GetTypeStr());
+        m_ProjectDir =
+            CDirEntry::ConcatPath(m_ProjectDir,
+                                  GetApp().GetRegSettings().m_ProjectsSubdir);
         m_ProjectDir = 
             CDirEntry::ConcatPath(m_ProjectDir, 
                                   CDirEntry::CreateRelativePath
@@ -813,6 +816,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/04/13 17:08:55  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext constructor.
+ *
  * Revision 1.24  2004/03/22 14:50:50  gorelenk
  * Removed implementation of
  * CMsvcPrjProjectContext::AdditionalLibrarianOptions .
