@@ -29,6 +29,7 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
@@ -99,9 +100,12 @@ CDBLibContext* CDBLibContext::m_pDBLibContext = 0;
 CDBLibContext::CDBLibContext(DBINT /*version*/) :
     m_AppName("DBLibDriver"), m_HostName(""), m_PacketSize(0)
 {
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
     if (m_pDBLibContext != 0) {
         throw CDB_ClientEx(eDB_Error, 200000, "CDBLibContext::CDBLibContext",
-                           "You cannot use more than one dblib contexts "
+                           "You cannot use more than one dblib context "
                            "concurrently");
     }
 
@@ -469,6 +473,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/04/12 22:13:09  soussov
+ * mutex protection for contex constructor added
+ *
  * Revision 1.11  2002/03/26 15:37:52  soussov
  * new image/text operations added
  *

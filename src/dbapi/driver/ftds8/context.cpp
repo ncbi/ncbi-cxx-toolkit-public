@@ -29,6 +29,7 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -72,9 +73,12 @@ CTDSContext* CTDSContext::m_pTDSContext = 0;
 CTDSContext::CTDSContext(DBINT version) :
     m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0)
 {
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
     if (m_pTDSContext != 0) {
         throw CDB_ClientEx(eDB_Error, 200000, "CTDSContext::CTDSContext",
-                           "You cannot use more than one dblib contexts "
+                           "You cannot use more than one ftds contexts "
                            "concurrently");
     }
 
@@ -430,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/04/12 22:13:01  soussov
+ * mutex protection for contex constructor added
+ *
  * Revision 1.8  2002/03/26 15:35:10  soussov
  * new image/text operations added
  *
