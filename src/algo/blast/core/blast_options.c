@@ -310,6 +310,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
                    BLAST_GAP_X_DROPOFF_FINAL_PROT;
 		(*options)->gap_trigger = BLAST_GAP_TRIGGER_PROT;
 		(*options)->ePrelimGapExt = eDynProgExt;
+		(*options)->eTbackExt = eDynProgTbck;
 	}
 	else
 	{
@@ -321,21 +322,30 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
 
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   Uint1 program, Boolean greedy, double x_dropoff, double x_dropoff_final)
+   Uint1 program, Int4 greedy, double x_dropoff, double x_dropoff_final)
 {
    if (!options)
       return 1;
 
    if (program == blast_type_blastn) {
-      if (greedy) {
+      switch (greedy) {
+      case 1:
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
          options->ePrelimGapExt = eGreedyWithTracebackExt;
+         options->eTbackExt = eSkipTbck;
+         break;
+      case 2:
+         options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
+         options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
+         options->ePrelimGapExt = eGreedyExt;
          options->eTbackExt = eGreedyTbck;
-      }	else {
+         break;
+      default: /* Non-greedy */
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
          options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
          options->ePrelimGapExt = eDynProgExt;
          options->eTbackExt = eDynProgTbck;
+         break;
       }
    }
 
@@ -364,7 +374,8 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 	if (program_number != blast_type_blastn)
 	{
 		if (options->ePrelimGapExt == eGreedyWithTracebackExt || 
-            	options->ePrelimGapExt == eGreedyExt)
+          options->ePrelimGapExt == eGreedyExt ||
+          options->eTbackExt == eGreedyTbck)
 		{
 			Int4 code=2;
 			Int4 subcode=1;
@@ -1339,6 +1350,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.113  2004/06/08 15:12:51  dondosha
+ * Removed skip_traceback option; added eSkipTbck type to traceback extension types enum
+ *
  * Revision 1.112  2004/06/07 15:44:47  dondosha
  * do_sum_stats option is now an enum; set do_sum_stats parameter only if option is not set;
  *
