@@ -57,7 +57,7 @@ class NCBI_XBLAST_EXPORT CDiscNucleotideOptionsHandle :
 public:
 
     /// Creates object with default options set
-    CDiscNucleotideOptionsHandle(EAPILocality locality);
+    CDiscNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CDiscNucleotideOptionsHandle() {}
     CDiscNucleotideOptionsHandle(const CDiscNucleotideOptionsHandle& rhs);
     CDiscNucleotideOptionsHandle& operator=(const CDiscNucleotideOptionsHandle& rhs);
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/20 15:19:25  camacho
+ * Provide missing default parameters to default ctor
+ *
  * Revision 1.3  2004/01/16 20:44:08  bealer
  * - Add locality flag for options handle classes.
  *

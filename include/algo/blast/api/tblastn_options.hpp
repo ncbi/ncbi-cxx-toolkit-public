@@ -55,7 +55,7 @@ class NCBI_XBLAST_EXPORT CTBlastnOptionsHandle :
 public:
 
     /// Creates object with default options set
-    CTBlastnOptionsHandle(EAPILocality locality);
+    CTBlastnOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CTBlastnOptionsHandle() {}
     CTBlastnOptionsHandle(const CTBlastnOptionsHandle& rhs);
     CTBlastnOptionsHandle& operator=(const CTBlastnOptionsHandle& rhs);
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/20 15:19:25  camacho
+ * Provide missing default parameters to default ctor
+ *
  * Revision 1.5  2004/01/16 20:42:57  bealer
  * - Add locality flag for blast options handle classes.
  *
