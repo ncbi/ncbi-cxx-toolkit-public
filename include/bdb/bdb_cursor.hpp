@@ -1,5 +1,5 @@
-#ifndef BDB_CURSOR_HPP__
-#define BDB_CURSOR_HPP__
+#ifndef BDB___CURSOR_HPP__
+#define BDB___CURSOR_HPP__
 
 /* $Id$
  * ===========================================================================
@@ -31,6 +31,8 @@
  * File Description: Berkeley DB Cursor.
  *
  */
+/// @file bdb_cursor.hpp
+/// Berkeley BDB file cursor
 
 #include <bdb/bdb_file.hpp>
 #include <algorithm>
@@ -38,28 +40,30 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB_Files
+ *
+ * @{
+ */
 
 class CBDB_FileCursor;
 class CBDB_FC_Condition;
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// File cursor condition handle.
-//
-// Used for assigning search conditions to a cursor. 
-//
-// <pre>
-//
-// Example:
-// 
-//    CBDB_FileCursor  cursor(bdb_file);
-//    cursor.From << 10;
-//    cursor.To << 20;
-//
-// </pre>
-//
+/// File cursor condition handle.
+///
+/// Used for assigning search conditions to a cursor. 
+///
+/// <pre>
+///
+/// Example:
+/// 
+///    CBDB_FileCursor  cursor(bdb_file);
+///    cursor.From << 10;
+///    cursor.To << 20;
+///
+/// </pre>
+///
 
 class NCBI_BDB_EXPORT CBDB_ConditionHandle
 {
@@ -82,12 +86,10 @@ protected:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Berkeley DB file cursor class. 
-//
-// BDB btree cursors can retrieve values using FROM-TO range criteria.
-//
+/// Berkeley DB file cursor class. 
+///
+/// BDB btree cursors can retrieve values using FROM-TO range criteria.
+///
 
 class NCBI_BDB_EXPORT CBDB_FileCursor
 {
@@ -124,18 +126,18 @@ public:
     EBDB_ErrCode Fetch(EFetchDirection fdir = eDefault);
 
 protected:
-    // Test "TO" search criteria. Return "true" if current value satisfies it
+    /// Test "TO" search criteria. Return "true" if current value satisfies it
     bool TestTo() const;
 
-    // Set m_FirstFetched field to FALSE.
+    /// Set m_FirstFetched field to FALSE.
     void ResetFirstFetched();
 
-    // Return next field's IBDB_FieldConvert interface 
-    // (hidden cast to non-public parent class)
+    /// Return next field's IBDB_FieldConvert interface 
+    /// (hidden cast to non-public parent class)
     IBDB_FieldConvert& GetFieldConvert(CBDB_BufferManager& buf, unsigned int n);
 
 protected:
-    // Reference on the "mother" file
+    /// Reference on the "mother" file
     CBDB_File&                   m_Dbf;
        
 public:
@@ -147,21 +149,22 @@ private:
     CBDB_FileCursor& operator= (const CBDB_FileCursor&);
 
 private:
-    // Berkeley DB DBC thing
+    /// Berkeley DB DBC thing
     DBC*                   m_DBC;
-    // From condition proxy-object
+    /// From condition proxy-object
     ECondition             m_CondFrom;
-    // To condition proxy-object
+    /// To condition proxy-object
     ECondition             m_CondTo;
-    // Fetch direction (forward/backward)
+    /// Fetch direction (forward/backward)
     EFetchDirection        m_FetchDirection;
-    // Flag if FetchFirst is already been done
+    /// Flag if FetchFirst is already been done
     bool                   m_FirstFetched;
 
     friend class CBDB_FC_Condition;
 };
 
 
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -215,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/26 21:01:05  kuznets
+ * Comments changed to meet doxygen format requirements
+ *
  * Revision 1.6  2003/07/18 20:09:38  kuznets
  * Added several FetchDirection manipulation functions.
  *
