@@ -151,7 +151,7 @@
  *  @ingroup CONNECT
  */
 
-/** @defgroup EmailDiag Email Diagnostic Handler
+/** @defgroup Pipes Portable Pipes
  *  @ingroup CONNECT
  */
 
@@ -171,11 +171,15 @@
  *  @ingroup CONNECT
  */
 
-/** @defgroup ThreadedServer Threaded Server
+/** @defgroup UtilityFunc Utility Functions
  *  @ingroup CONNECT
  */
 
-/** @defgroup UtilityFunc Utility Functions
+/** @defgroup EmailDiag Email Diagnostic Handler
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup ThreadedServer Threaded Server
  *  @ingroup CONNECT
  */
 
