@@ -533,7 +533,7 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     CBioseq_Handle ret;
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     CRef<CBioseq_ScopeInfo> info = x_FindBioseq_Info(id);
-    if ( info ) {
+    if ( bool(info)  &&  info->HasBioseq() ) {
         if ( &info->GetTSE_Info() == &tse ) {
             ret.m_Bioseq_Info = info;
         }
@@ -1059,6 +1059,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2003/12/03 20:55:12  grichenk
+* Check value returned by x_GetBioseq_Info()
+*
 * Revision 1.91  2003/11/21 20:33:03  grichenk
 * Added GetBioseqHandleFromTSE(CSeq_id, CSeq_entry)
 *
