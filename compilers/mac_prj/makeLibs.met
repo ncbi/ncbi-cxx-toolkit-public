@@ -1,5 +1,3 @@
-
-
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -240,10 +238,11 @@ on SetProjectData()
 	
 	if pCreateSocketLibs then
 		-- Not needed or wanted under Mach-O
-		my HideFolder(gSourceDir & "connect:mitsock")
+		-- my HideFolder(gSourceDir & "connect:mitsock")
 		
 		AddSimpleProjectExceptFiles("xconnect", {}, "connect", Â
-			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c"})
+			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"})
+		AddSimpleProjectListFiles("xthrserv", {}, "connect", {"threaded_server.cpp"})
 	end if
 	
 	if pCreateCoreLibs then
@@ -554,10 +553,14 @@ on FindSpecialFolder(default, pattern)
 	if aSpecialFolder is "" then
 		-- look next to the C++ toolkit directory.
 		set aSpecialFolder to IsSpecialFolder(pRootFolderPath, true, pattern)
-		if aSpecialFolder is "" then
-			-- look in our home directory.
-			set aSpecialFolder to IsSpecialFolder(gHomeDir, true, pattern)
-		end if
+	end if
+	if aSpecialFolder is "" then
+		-- look IN the C++ toolkit directory.
+		set aSpecialFolder to IsSpecialFolder(gDistribRoot, true, pattern)
+	end if
+	if aSpecialFolder is "" then
+		-- look in our home directory.
+		set aSpecialFolder to IsSpecialFolder(gHomeDir, true, pattern)
 	end if
 	return aSpecialFolder
 end FindSpecialFolder
@@ -662,7 +665,7 @@ on CopyHeaders()
 		set confFolder to folder "compilers" of folder (my ModuleRoot())
 		set prefixFolder to folder "mac_prj" of confFolder
 		
-		my UpdateRenameHeader("ncbiconf.mac", confFolder, "ncbiconf.h", "")
+		-- my UpdateRenameHeader("ncbiconf.mac", confFolder, "ncbiconf.h", "")
 		if gFLTKRootFolder is not "" then
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
@@ -905,8 +908,6 @@ on SetupTarget(proj, targetIndex)
 		end repeat
 		
 		Add Files filesToAdd
-		
-		Reset File Paths
 		
 	end tell
 end SetupTarget
