@@ -142,7 +142,7 @@ del /Q $(InputName).bat
 set PTB_PATH=$(ProjectDir)..\..\..\compilers\msvc7_prj\bin\$(ConfigurationName)
 set TREE_ROOT=$(ProjectDir)..\..\..\
 set SLN_PATH=$(SolutionPath)
-devenv /rebuild $(ConfigurationName) /project project_tree_builder ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
+devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
 cd $(InputDir)
 copy /Y $(InputFileName) $(InputName).bat
 call $(InputName).bat
@@ -160,7 +160,7 @@ del /Q $(InputName).bat
 set PTB_PATH=$(ProjectDir)..\..\..\compilers\msvc7_prj\bin\$(ConfigurationName)
 set TREE_ROOT=$(ProjectDir)..\..\..\
 set SLN_PATH=$(SolutionPath)
-devenv /rebuild $(ConfigurationName) /project project_tree_builder ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
+devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
 cd $(InputDir)
 copy /Y $(InputFileName) $(InputName).bat
 call $(InputName).bat
@@ -178,7 +178,7 @@ del /Q $(InputName).bat
 set PTB_PATH=$(ProjectDir)..\..\..\compilers\msvc7_prj\bin\$(ConfigurationName)
 set TREE_ROOT=$(ProjectDir)..\..\..\
 set SLN_PATH=$(SolutionPath)
-devenv /rebuild $(ConfigurationName) /project project_tree_builder ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
+devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
 cd $(InputDir)
 copy /Y $(InputFileName) $(InputName).bat
 call $(InputName).bat
@@ -196,7 +196,7 @@ del /Q $(InputName).bat
 set PTB_PATH=$(ProjectDir)..\..\..\compilers\msvc7_prj\bin\$(ConfigurationName)
 set TREE_ROOT=$(ProjectDir)..\..\..\
 set SLN_PATH=$(SolutionPath)
-devenv /rebuild $(ConfigurationName) /project project_tree_builder ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
+devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
 cd $(InputDir)
 copy /Y $(InputFileName) $(InputName).bat
 call $(InputName).bat
@@ -214,7 +214,7 @@ del /Q $(InputName).bat
 set PTB_PATH=$(ProjectDir)..\..\..\compilers\msvc7_prj\bin\$(ConfigurationName)
 set TREE_ROOT=$(ProjectDir)..\..\..\
 set SLN_PATH=$(SolutionPath)
-devenv /rebuild $(ConfigurationName) /project project_tree_builder ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
+devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ..\..\..\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
 cd $(InputDir)
 copy /Y $(InputFileName) $(InputName).bat
 call $(InputName).bat
