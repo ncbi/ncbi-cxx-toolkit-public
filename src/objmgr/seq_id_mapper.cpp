@@ -1316,7 +1316,7 @@ void CSeq_id_Patent_Tree::FindMatch(const CSeq_id& id,
 void CSeq_id_Patent_Tree::FindMatchStr(string sid,
                                        TSeq_id_MatchList& id_list) const
 {
-    (TByCountry, cit, m_CountryMap) {
+    ITERATE (TByCountry, cit, m_CountryMap) {
         SPat_idMap::TByNumber::const_iterator nit =
             cit->second.m_ByNumber.find(sid);
         if (nit != cit->second.m_ByNumber.end()) {
@@ -1796,6 +1796,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/03/11 16:15:04  kuznets
+* Misprint corrected
+*
 * Revision 1.30  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *
