@@ -32,20 +32,11 @@
  *
  */
 
+#include <util/readerwriter.hpp>
+
+
 BEGIN_NCBI_SCOPE
 
-//////////////////////////////////////////////////////////////////
-//
-// ICacheStream - interface to sequentially read-write cache BLOBs 
-//
-
-struct ICacheStream
-{
-    virtual ~ICacheStream() {}
-
-    virtual void Read(void *buf, size_t buf_size, size_t *bytes_read)=0;
-    virtual void Write(const void* buf, size_t buf_size)=0;
-};
 
 
 //////////////////////////////////////////////////////////////////
@@ -85,15 +76,15 @@ public:
                       void* buf, 
                       size_t buf_size) = 0;
 
-    // Return sequential stream interface pointer to read BLOB data.
+    // Return sequential stream interface to read BLOB data.
     // Function returns NULL if BLOB does not exist
-    virtual ICacheStream* GetReadStream(const string& key, 
+    virtual IReader* GetReadStream(const string& key, 
                                         int version) = 0;
 
-    // Return sequential stream interface pointer to write BLOB data.
-    virtual ICacheStream* GetWriteStream(const string& key, 
-                                         int version,
-                                         EKeepOldVersions flag=eDropOld) = 0;
+    // Return sequential stream interface to write BLOB data.
+    virtual IWriter* GetWriteStream(const string& key, 
+                                    int version,
+                                    EKeepOldVersions flag=eDropOld) = 0;
 
     // Remove all versions of the specified BLOB
     virtual void Remove(const string& key) = 0;
@@ -118,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/22 19:15:13  kuznets
+ * Added support of reader-writer interface (util/readerwriter.hpp)
+ *
  * Revision 1.2  2003/09/22 18:40:34  kuznets
  * Minor cosmetics fixed
  *
