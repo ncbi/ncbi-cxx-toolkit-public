@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *
@@ -35,15 +35,37 @@
 #include <objects/objmgr/impl/handle_range.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/scope.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/general/Object_id.hpp>
 #include <serial/typeinfo.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/objmgr/impl/bioseq_info.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/objmgr/impl/synonyms.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+CBioseq_Handle::CBioseq_Handle(void)
+    : m_Scope(0)
+{
+}
+
+
+CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value,
+                               CScope& scope,
+                               const CBioseq_Info& bioseq)
+    : m_Value(value),
+      m_Scope(&scope),
+      m_Bioseq_Info(&bioseq)
+{
+}
 
 
 CBioseq_Handle::~CBioseq_Handle(void)
@@ -51,9 +73,20 @@ CBioseq_Handle::~CBioseq_Handle(void)
 }
 
 
+CDataSource& CBioseq_Handle::x_GetDataSource(void) const
+{
+    // m_TSE_Info and its m_DataSource should never be null
+    if ( !m_Bioseq_Info ) {
+        THROW1_TRACE(runtime_error,
+            "CBioseq_Handle::x_GetDataSource() -- "
+            "Can not resolve data source for bioseq handle.");
+    }
+    return m_Bioseq_Info->GetDataSource();
+}
+
+
 const CSeq_id* CBioseq_Handle::GetSeqId(void) const
 {
-    if (!m_Value) return 0;
     return m_Value.x_GetSeqId();
 }
 
@@ -210,23 +243,24 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 
 void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
 {
-    _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
-    x_GetDataSource().AttachAnnot(*m_Bioseq_Info->m_Entry, annot);
+    _ASSERT(bool(m_Bioseq_Info));
+    x_GetDataSource().AttachAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetSeq_entry()), annot);
 }
 
 
-void CBioseq_Handle::RemoveAnnot(const CSeq_annot& annot)
+void CBioseq_Handle::RemoveAnnot(CSeq_annot& annot)
 {
-    _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
-    x_GetDataSource().RemoveAnnot(*m_Bioseq_Info->m_Entry, annot);
+    _ASSERT(bool(m_Bioseq_Info));
+    x_GetDataSource().RemoveAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetSeq_entry()), annot);
 }
 
 
-void CBioseq_Handle::ReplaceAnnot(const CSeq_annot& old_annot,
+void CBioseq_Handle::ReplaceAnnot(CSeq_annot& old_annot,
                                   CSeq_annot& new_annot)
 {
-    _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
-    x_GetDataSource().ReplaceAnnot(*m_Bioseq_Info->m_Entry, old_annot, new_annot);
+    _ASSERT(bool(m_Bioseq_Info));
+    x_GetDataSource().ReplaceAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetSeq_entry()),
+                                   old_annot, new_annot);
 }
 
 
@@ -286,6 +320,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.35  2003/03/27 19:39:36  grichenk
 * +CBioseq_Handle::GetComplexityLevel()
 *

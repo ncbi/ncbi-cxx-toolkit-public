@@ -29,6 +29,7 @@
 *
 */
 
+#include <objects/objmgr/gbloader.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/impl/tse_info.hpp>
@@ -36,11 +37,12 @@
 #include <objects/objmgr/impl/data_source.hpp>
 #include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/reader_pubseq.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/interfaces.hpp>
-#include <objects/objmgr/gbloader.hpp>
 #include "gbload_util.hpp"
 #include <bitset>
 #include <set>
@@ -273,7 +275,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
     }
     ITERATE(TTSESet, sit, tse_set) {
         CTSE_Info *ti = const_cast<CTSE_Info*>(*sit);
-        const CSeq_entry *sep = ti->m_TSE;
+        CSeq_entry *sep = &ti->GetSeq_entry();
         TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
         if(it==m_Tse2TseInfo.end()) continue;
         STSEinfo *tse = it->second;
@@ -282,24 +284,25 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
 
         g.Lock(tse);
 
-        if(tse->mode.test(STSEinfo::eDead) && !ti->m_Dead)
-            ti->m_Dead = true;
+        if(tse->mode.test(STSEinfo::eDead) && !ti->IsDead()) {
+            GetDataSource()->x_UpdateTSEStatus(*sep, true);
+        }
         if(tse->m_SeqIds.find(sih)!=tse->m_SeqIds.end()) {
             // listed for given TSE
             if(!best) {
                 best=ti; conflict=false;
             }
-            else if(!ti->m_Dead && best->m_Dead) {
+            else if(!ti->IsDead() && best->IsDead()) {
                 best=ti; conflict=false;
             }
-            else if(ti->m_Dead && best->m_Dead) {
+            else if(ti->IsDead() && best->IsDead()) {
                 conflict=true;
             }
-            else if(ti->m_Dead && !best->m_Dead) {
+            else if(ti->IsDead() && !best->IsDead()) {
             }
             else {
                 conflict=true;
-                //_VERIFY(ti->m_Dead || best->m_Dead);
+                //_VERIFY(ti->IsDead() || best->IsDead());
             }
         }
         g.Unlock(tse);
@@ -316,7 +319,8 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
         if (tsep == m_Sr2TseInfo.end()) continue;
         ITERATE(TTSESet, sit, tse_set) {
             CTSE_Info *ti = const_cast<CTSE_Info*>(*sit);;
-            TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE.GetPointer());
+            TTse2TSEinfo::iterator it =
+                m_Tse2TseInfo.find(&ti->GetSeq_entry());
             if(it==m_Tse2TseInfo.end()) continue;
             if(it->second==tsep->second) {
                 if ( !best )
@@ -419,7 +423,7 @@ CGBDataLoader::GC(void)
         if (tse_to_drop->locked) continue;
         if (tse_to_drop->tseinfop && tse_to_drop->tseinfop->Locked()) continue;
 
-        const CSeq_entry *sep = tse_to_drop->m_upload.m_tse;
+        CSeq_entry *sep = tse_to_drop->m_upload.m_tse;
         if ( !sep ) {
             if (tse_to_drop->m_upload.m_mode != CTSEUpload::eNone) {
                 g.Lock(tse_to_drop);
@@ -433,7 +437,7 @@ CGBDataLoader::GC(void)
         if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end()) continue;
         
         GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE() << ")");
-        CConstRef<CSeq_entry> se(sep);
+        CRef<CSeq_entry> se(sep);
         g.Unlock();
         if(GetDataSource()->DropTSE(*se) ) {
             skip--;
@@ -810,6 +814,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.59  2003/04/18 17:38:01  grichenk
 * Use GENBANK_LOADER_METHOD env. variable to specify GB readers.
 * Default is "PUBSEQOS:ID1".

@@ -26,20 +26,17 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
 *
 * File Description:
 *
 */
 
-#include <objects/objmgr/seq_id_handle.hpp>
-#include <objects/objmgr/impl/bioseq_info.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Na_strand.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/objmgr/impl/bioseq_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,24 +45,24 @@ class CDataSource;
 class CSeqMap;
 class CSeqVector;
 class CScope;
-
+class CSeq_id;
+class CSeq_loc;
+class CBioseq_Info;
+class CTSE_Info;
+class CSeq_entry;
+class CSeq_annot;
 
 // Bioseq handle -- must be a copy-safe const type.
 class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 {
 public:
     // Destructor
+    CBioseq_Handle(void);
     virtual ~CBioseq_Handle(void);
 
     // Bioseq core -- using partially populated CBioseq
     typedef CConstRef<CBioseq> TBioseqCore;
 
-
-    CBioseq_Handle(void)
-        : m_Scope(0),
-          m_Bioseq_Info(0) {}
-    CBioseq_Handle(const CBioseq_Handle& h);
-    CBioseq_Handle& operator= (const CBioseq_Handle& h);
 
     // Comparison
     bool operator== (const CBioseq_Handle& h) const;
@@ -161,13 +158,13 @@ public:
     // Modification functions
     // Add/remove/replace annotations:
     void AddAnnot(CSeq_annot& annot);
-    void RemoveAnnot(const CSeq_annot& annot);
-    void ReplaceAnnot(const CSeq_annot& old_annot, CSeq_annot& new_annot);
+    void RemoveAnnot(CSeq_annot& annot);
+    void ReplaceAnnot(CSeq_annot& old_annot, CSeq_annot& new_annot);
 
 private:
     CBioseq_Handle(const CSeq_id_Handle& value,
                    CScope& scope,
-                   CBioseq_Info& bioseq);
+                   const CBioseq_Info& bioseq);
 
     // Get the internal seq-id handle
     const CSeq_id_Handle&  GetKey(void) const;
@@ -179,8 +176,8 @@ private:
 
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
     CScope*              m_Scope;
-    CRef<CBioseq_Info>   m_Bioseq_Info;
-    TTSE_Lock            m_TSE_Lock;
+    CConstRef<CBioseq_Info>   m_Bioseq_Info;
+    CConstRef<CObject>        m_TSE_Lock;
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
@@ -191,44 +188,11 @@ private:
 
 
 inline
-CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value,
-                               CScope& scope,
-                               CBioseq_Info& bioseq)
-    : m_Value(value),
-      m_Scope(&scope),
-      m_Bioseq_Info(&bioseq)
-{
-}
-
-inline
-CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
-    : m_Value(h.m_Value),
-      m_Scope(h.m_Scope),
-      m_Bioseq_Info(h.m_Bioseq_Info)
-{
-    // m_TSE_Info should never be null
-    if ( m_Bioseq_Info )
-        m_TSE_Lock.Reset(m_Bioseq_Info->m_TSE_Info);
-}
-
-inline
-CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
-{
-    if (&h != this) {
-        m_Value = h.m_Value;
-        m_Scope = h.m_Scope;
-        m_Bioseq_Info = h.m_Bioseq_Info;
-        if ( m_Bioseq_Info )
-            m_TSE_Lock.Reset(m_Bioseq_Info->m_TSE_Info);
-    }
-    return *this;
-}
-
-inline
 const CSeq_id_Handle& CBioseq_Handle::GetKey(void) const
 {
     return m_Value;
 }
+
 
 inline
 bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
@@ -244,11 +208,13 @@ bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
     return m_Value == h.m_Value;
 }
 
+
 inline
 bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 {
     return !(*this == h);
 }
+
 
 inline
 bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
@@ -263,17 +229,6 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
     return m_Value < h.m_Value;
 }
 
-inline
-CDataSource& CBioseq_Handle::x_GetDataSource(void) const
-{
-    // m_TSE_Info and its m_DataSource should never be null
-    if ( !m_Bioseq_Info ) {
-        THROW1_TRACE(runtime_error,
-            "CBioseq_Handle::x_GetDataSource() -- "
-            "Can not resolve data source for bioseq handle.");
-    }
-    return *m_Bioseq_Info->m_TSE_Info->m_DataSource;
-}
 
 inline
 CScope& CBioseq_Handle::GetScope(void) const 
@@ -288,6 +243,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.36  2003/03/27 19:39:34  grichenk
 * +CBioseq_Handle::GetComplexityLevel()
 *

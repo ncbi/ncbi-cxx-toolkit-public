@@ -28,9 +28,11 @@
  *
  */
 
-#include <corelib/ncbistre.hpp>
 #include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/impl/seqref_id1.hpp>
+#include <corelib/ncbistre.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/id1/id1__.hpp>
 
 #include <serial/enumvalues.hpp>
@@ -371,6 +373,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.36  2003/04/24 16:12:38  vasilche
+ * Object manager internal structures are splitted more straightforward.
+ * Removed excessive header dependencies.
+ *
  * Revision 1.35  2003/04/15 15:30:15  vasilche
  * Added include <memory> when needed.
  * Removed buggy buffer in printing methods.

@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Sequence data container for object manager
@@ -691,6 +691,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.45  2003/02/07 16:28:05  vasilche
 * Fixed delayed seq vector coding setting.
 *

@@ -98,7 +98,7 @@ inline
 const CSeq_id&
 CSeq_id_Which_Tree::x_GetSeq_id(const CSeq_id_Handle& handle) const
 {
-    return *handle.x_GetSeqId();
+    return handle.GetSeqId();
 }
 
 inline
@@ -1682,7 +1682,19 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
 
 const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& handle)
 {
-    return *handle.x_GetSeqId();
+    if ( !handle.m_Mapper ) {
+        THROW1_TRACE(runtime_error, 
+                     "CSeq_id_Mapper::GetSeq_id() -- "
+                     "wrong CSeq_id_Handle mapper");
+    }
+    TKeyToIdMap::const_iterator ref =
+        handle.m_Mapper->m_KeyMap.find(handle.m_Value);
+    if ( ref == handle.m_Mapper->m_KeyMap.end() ) {
+        THROW1_TRACE(runtime_error,
+                     "CSeq_id_Mapper::GetSeq_id() -- "
+                     "wrong CSeq_id_Handle value");
+    }
+    return *ref->second;
 }
 
 
@@ -1796,6 +1808,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.32  2003/04/18 13:45:48  grichenk
 * Fixed bug in CSeq_id_Mapper::IsBetter()
 *

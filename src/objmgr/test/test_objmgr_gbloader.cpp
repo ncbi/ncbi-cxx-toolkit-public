@@ -29,89 +29,6 @@
 * File Description:
 *           Basic test of GenBank data loader
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.27  2003/04/15 14:23:11  vasilche
-* Added missing includes.
-*
-* Revision 1.26  2003/03/18 21:48:33  grichenk
-* Removed obsolete class CAnnot_CI
-*
-* Revision 1.25  2003/03/11 15:51:06  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.24  2002/12/06 15:36:03  grichenk
-* Added overlap type for annot-iterators
-*
-* Revision 1.23  2002/11/04 21:29:14  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.22  2002/06/04 17:18:33  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.21  2002/05/09 22:26:11  kimelman
-* test more than one record
-*
-* Revision 1.20  2002/05/08 22:32:00  kimelman
-* log flags
-*
-* Revision 1.19  2002/05/06 03:28:53  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.18  2002/05/03 21:28:12  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.17  2002/04/16 18:32:37  grichenk
-* +feature iterator tests
-*
-* Revision 1.16  2002/04/10 22:47:58  kimelman
-* added pubseq_reader as default one
-*
-* Revision 1.15  2002/04/09 19:05:02  kimelman
-* make gcc happy
-*
-* Revision 1.14  2002/04/09 18:48:17  kimelman
-* portability bugfixes: to compile on IRIX, sparc gcc
-*
-* Revision 1.13  2002/04/04 01:35:37  kimelman
-* more MT tests
-*
-* Revision 1.12  2002/04/02 16:02:33  kimelman
-* MT testing
-*
-* Revision 1.11  2002/03/30 19:37:07  kimelman
-* gbloader MT test
-*
-* Revision 1.10  2002/03/29 02:47:07  kimelman
-* gbloader: MT scalability fixes
-*
-* Revision 1.9  2002/03/26 17:24:58  grichenk
-* Removed extra ++i
-*
-* Revision 1.8  2002/03/26 15:40:31  kimelman
-* get rid of catch clause
-*
-* Revision 1.7  2002/03/26 00:15:52  vakatov
-* minor beautification
-*
-* Revision 1.6  2002/03/25 15:44:47  kimelman
-* proper logging and exception handling
-*
-* Revision 1.5  2002/03/22 21:53:07  kimelman
-* bugfix: skip missed gi's
-*
-* Revision 1.4  2002/03/21 19:15:53  kimelman
-* GB related bugfixes
-*
-* Revision 1.3  2002/03/21 19:14:55  kimelman
-* GB related bugfixes
-*
-* Revision 1.2  2002/03/21 16:18:21  gouriano
-* *** empty log message ***
-*
-* Revision 1.1  2002/03/20 21:25:00  gouriano
-* *** empty log message ***
-*
 * ===========================================================================
 */
 
@@ -123,7 +40,6 @@
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 
@@ -244,3 +160,94 @@ int main(int argc, const char* argv[])
     return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.28  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
+* Revision 1.27  2003/04/15 14:23:11  vasilche
+* Added missing includes.
+*
+* Revision 1.26  2003/03/18 21:48:33  grichenk
+* Removed obsolete class CAnnot_CI
+*
+* Revision 1.25  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
+* Revision 1.24  2002/12/06 15:36:03  grichenk
+* Added overlap type for annot-iterators
+*
+* Revision 1.23  2002/11/04 21:29:14  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
+* Revision 1.22  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.21  2002/05/09 22:26:11  kimelman
+* test more than one record
+*
+* Revision 1.20  2002/05/08 22:32:00  kimelman
+* log flags
+*
+* Revision 1.19  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.18  2002/05/03 21:28:12  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.17  2002/04/16 18:32:37  grichenk
+* +feature iterator tests
+*
+* Revision 1.16  2002/04/10 22:47:58  kimelman
+* added pubseq_reader as default one
+*
+* Revision 1.15  2002/04/09 19:05:02  kimelman
+* make gcc happy
+*
+* Revision 1.14  2002/04/09 18:48:17  kimelman
+* portability bugfixes: to compile on IRIX, sparc gcc
+*
+* Revision 1.13  2002/04/04 01:35:37  kimelman
+* more MT tests
+*
+* Revision 1.12  2002/04/02 16:02:33  kimelman
+* MT testing
+*
+* Revision 1.11  2002/03/30 19:37:07  kimelman
+* gbloader MT test
+*
+* Revision 1.10  2002/03/29 02:47:07  kimelman
+* gbloader: MT scalability fixes
+*
+* Revision 1.9  2002/03/26 17:24:58  grichenk
+* Removed extra ++i
+*
+* Revision 1.8  2002/03/26 15:40:31  kimelman
+* get rid of catch clause
+*
+* Revision 1.7  2002/03/26 00:15:52  vakatov
+* minor beautification
+*
+* Revision 1.6  2002/03/25 15:44:47  kimelman
+* proper logging and exception handling
+*
+* Revision 1.5  2002/03/22 21:53:07  kimelman
+* bugfix: skip missed gi's
+*
+* Revision 1.4  2002/03/21 19:15:53  kimelman
+* GB related bugfixes
+*
+* Revision 1.3  2002/03/21 19:14:55  kimelman
+* GB related bugfixes
+*
+* Revision 1.2  2002/03/21 16:18:21  gouriano
+* *** empty log message ***
+*
+* Revision 1.1  2002/03/20 21:25:00  gouriano
+* *** empty log message ***
+*
+* ===========================================================================
+*/

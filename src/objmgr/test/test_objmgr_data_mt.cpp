@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.6  2003/04/15 14:23:11  vasilche
 * Added missing includes.
 *
@@ -67,7 +71,6 @@
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 

@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Bioseq info for data source
@@ -32,6 +32,10 @@
 
 
 #include <objects/objmgr/impl/bioseq_info.hpp>
+#include <objects/objmgr/impl/seq_entry_info.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
+#include <objects/objmgr/seq_map.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -47,50 +51,62 @@ BEGIN_SCOPE(objects)
 //
 
 
-CBioseq_Info::CBioseq_Info(void)
-    : m_Entry(0)
+CBioseq_Info::CBioseq_Info(CBioseq& seq, CSeq_entry_Info& entry_info)
+    : m_Seq_entry_Info(&entry_info), m_Bioseq(&seq)
 {
-    return;
-}
-
-
-CBioseq_Info::CBioseq_Info(CSeq_entry& entry)
-    : m_Entry(&entry)
-{
-    return;
-}
-
-
-CBioseq_Info::CBioseq_Info(const CBioseq_Info& info)
-{
-    if ( &info != this )
-        *this = info;
+    _ASSERT(entry_info.m_Children.empty());
+    _ASSERT(!entry_info.m_Bioseq);
+    entry_info.m_Bioseq.Reset(this);
 }
 
 
 CBioseq_Info::~CBioseq_Info(void)
 {
-    return;
 }
 
 
-CBioseq_Info& CBioseq_Info::operator= (const CBioseq_Info& info)
+CDataSource& CBioseq_Info::GetDataSource(void) const
 {
-    if (this != &info) {
-        m_Entry.Reset(const_cast<CBioseq_Info&>(info).m_Entry);
-        ITERATE ( TSynonyms, it, info.m_Synonyms ) {
-            m_Synonyms.insert(*it);
-        }
-    }
-    return *this;
+    return m_Seq_entry_Info->GetDataSource();
 }
+
+
+const CSeq_entry& CBioseq_Info::GetTSE(void) const
+{
+    return m_Seq_entry_Info->GetTSE();
+}
+
+
+const CTSE_Info& CBioseq_Info::GetTSE_Info(void) const
+{
+    return m_Seq_entry_Info->GetTSE_Info();
+}
+
+
+CTSE_Info& CBioseq_Info::GetTSE_Info(void)
+{
+    return m_Seq_entry_Info->GetTSE_Info();
+}
+
+
+const CSeq_entry& CBioseq_Info::GetSeq_entry(void) const
+{
+    return m_Seq_entry_Info->GetSeq_entry();
+}
+
+
+CSeq_entry& CBioseq_Info::GetSeq_entry(void)
+{
+    return m_Seq_entry_Info->GetSeq_entry();
+}
+
 
 void CBioseq_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CBioseq_Info");
     CObject::DebugDump( ddc, depth);
 
-    ddc.Log("m_Entry", m_Entry.GetPointer(),0);
+    ddc.Log("m_Bioseq", m_Bioseq.GetPointer(),0);
     if (depth == 0) {
         DebugDumpValue(ddc, "m_Synonyms.size()", m_Synonyms.size());
     } else {
@@ -114,6 +130,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.9  2003/03/14 19:10:41  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *

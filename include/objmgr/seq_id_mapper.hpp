@@ -177,13 +177,16 @@ private:
 };
 
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.14  2003/03/10 16:31:29  vasilche
 * Moved implementation constant to .cpp file.
 *

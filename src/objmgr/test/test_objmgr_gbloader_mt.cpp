@@ -29,98 +29,6 @@
 * File Description:
 *           Basic test of GenBank data loader
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.21  2003/04/15 14:23:11  vasilche
-* Added missing includes.
-*
-* Revision 1.20  2003/03/27 21:54:58  grichenk
-* Renamed test applications and makefiles, updated references
-*
-* Revision 1.19  2003/03/11 15:51:06  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.18  2002/07/23 15:32:49  kimelman
-* tuning test
-*
-* Revision 1.17  2002/07/22 22:49:05  kimelman
-* test fixes for confidential data retrieval
-*
-* Revision 1.16  2002/06/06 20:42:17  kimelman
-* cosmetics
-*
-* Revision 1.15  2002/06/06 06:17:07  vakatov
-* Workaround a weird compiler bug (WorkShop 5.3 on INTEL in ReleaseMT mode)
-*
-* Revision 1.14  2002/06/04 17:18:33  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.13  2002/05/08 22:23:49  kimelman
-* MT fixes
-*
-* Revision 1.12  2002/05/06 03:28:53  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.11  2002/04/18 23:24:24  kimelman
-* bugfix: out of bounds...
-*
-* Revision 1.10  2002/04/12 22:57:34  kimelman
-* warnings cleanup(linux-gcc)
-*
-* Revision 1.9  2002/04/12 21:10:35  kimelman
-* traps for coredumps
-*
-* Revision 1.8  2002/04/11 20:03:29  kimelman
-* switch to pubseq
-*
-* Revision 1.7  2002/04/09 18:48:17  kimelman
-* portability bugfixes: to compile on IRIX, sparc gcc
-*
-* Revision 1.6  2002/04/05 23:47:20  kimelman
-* playing around tests
-*
-* Revision 1.5  2002/04/05 19:53:13  gouriano
-* reset scope history more accurately (was incorrect)
-*
-* Revision 1.4  2002/04/04 01:35:38  kimelman
-* more MT tests
-*
-* Revision 1.3  2002/04/02 17:24:54  gouriano
-* skip useless test passes
-*
-* Revision 1.2  2002/04/02 16:02:33  kimelman
-* MT testing
-*
-* Revision 1.1  2002/03/30 19:37:08  kimelman
-* gbloader MT test
-*
-* Revision 1.9  2002/03/26 17:24:58  grichenk
-* Removed extra ++i
-*
-* Revision 1.8  2002/03/26 15:40:31  kimelman
-* get rid of catch clause
-*
-* Revision 1.7  2002/03/26 00:15:52  vakatov
-* minor beautification
-*
-* Revision 1.6  2002/03/25 15:44:47  kimelman
-* proper logging and exception handling
-*
-* Revision 1.5  2002/03/22 21:53:07  kimelman
-* bugfix: skip missed gi's
-*
-* Revision 1.4  2002/03/21 19:15:53  kimelman
-* GB related bugfixes
-*
-* Revision 1.3  2002/03/21 19:14:55  kimelman
-* GB related bugfixes
-*
-* Revision 1.2  2002/03/21 16:18:21  gouriano
-* *** empty log message ***
-*
-* Revision 1.1  2002/03/20 21:25:00  gouriano
-* *** empty log message ***
-*
 * ===========================================================================
 */
 
@@ -130,9 +38,8 @@
 
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
-#include <objects/objmgr/reader_pubseq.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -351,3 +258,103 @@ int main(int argc, const char* argv[])
   return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.22  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
+* Revision 1.21  2003/04/15 14:23:11  vasilche
+* Added missing includes.
+*
+* Revision 1.20  2003/03/27 21:54:58  grichenk
+* Renamed test applications and makefiles, updated references
+*
+* Revision 1.19  2003/03/11 15:51:06  kuznets
+* iterate -> ITERATE
+*
+* Revision 1.18  2002/07/23 15:32:49  kimelman
+* tuning test
+*
+* Revision 1.17  2002/07/22 22:49:05  kimelman
+* test fixes for confidential data retrieval
+*
+* Revision 1.16  2002/06/06 20:42:17  kimelman
+* cosmetics
+*
+* Revision 1.15  2002/06/06 06:17:07  vakatov
+* Workaround a weird compiler bug (WorkShop 5.3 on INTEL in ReleaseMT mode)
+*
+* Revision 1.14  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.13  2002/05/08 22:23:49  kimelman
+* MT fixes
+*
+* Revision 1.12  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.11  2002/04/18 23:24:24  kimelman
+* bugfix: out of bounds...
+*
+* Revision 1.10  2002/04/12 22:57:34  kimelman
+* warnings cleanup(linux-gcc)
+*
+* Revision 1.9  2002/04/12 21:10:35  kimelman
+* traps for coredumps
+*
+* Revision 1.8  2002/04/11 20:03:29  kimelman
+* switch to pubseq
+*
+* Revision 1.7  2002/04/09 18:48:17  kimelman
+* portability bugfixes: to compile on IRIX, sparc gcc
+*
+* Revision 1.6  2002/04/05 23:47:20  kimelman
+* playing around tests
+*
+* Revision 1.5  2002/04/05 19:53:13  gouriano
+* reset scope history more accurately (was incorrect)
+*
+* Revision 1.4  2002/04/04 01:35:38  kimelman
+* more MT tests
+*
+* Revision 1.3  2002/04/02 17:24:54  gouriano
+* skip useless test passes
+*
+* Revision 1.2  2002/04/02 16:02:33  kimelman
+* MT testing
+*
+* Revision 1.1  2002/03/30 19:37:08  kimelman
+* gbloader MT test
+*
+* Revision 1.9  2002/03/26 17:24:58  grichenk
+* Removed extra ++i
+*
+* Revision 1.8  2002/03/26 15:40:31  kimelman
+* get rid of catch clause
+*
+* Revision 1.7  2002/03/26 00:15:52  vakatov
+* minor beautification
+*
+* Revision 1.6  2002/03/25 15:44:47  kimelman
+* proper logging and exception handling
+*
+* Revision 1.5  2002/03/22 21:53:07  kimelman
+* bugfix: skip missed gi's
+*
+* Revision 1.4  2002/03/21 19:15:53  kimelman
+* GB related bugfixes
+*
+* Revision 1.3  2002/03/21 19:14:55  kimelman
+* GB related bugfixes
+*
+* Revision 1.2  2002/03/21 16:18:21  gouriano
+* *** empty log message ***
+*
+* Revision 1.1  2002/03/20 21:25:00  gouriano
+* *** empty log message ***
+*
+* ===========================================================================
+*/

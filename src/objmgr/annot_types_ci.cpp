@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Object manager iterators
@@ -37,12 +37,18 @@
 #include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/objmgr/impl/synonyms.hpp>
 #include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/seq_map.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -107,6 +113,13 @@ public:
     bool operator ()(const CAnnotObject_Ref& x,
                      const CAnnotObject_Ref& y) const;
 };
+
+
+const CSeq_loc& CAnnotObject_Ref::GetFeatLoc(void) const
+{
+    const CSeq_loc* loc = m_MappedLoc.GetPointerOrNull();
+    return loc? *loc: GetFeatFast().GetLocation();
+}
 
 
 CAnnotObject_Ref::TRange CAnnotObject_Ref::x_UpdateTotalRange(void) const
@@ -776,7 +789,7 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
             const CSeqMap& seqMap = bh.GetSeqMap();
             CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
                                                 m_Scope,
-                                                size_t(-1),
+                                                m_ResolveDepth,
                                                 CSeqMap::fFindRef));
             while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
                 _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
@@ -787,6 +800,13 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
                         continue;
                     }
                 }
+/*
+                if ( m_SegmentSelect == eSegmentSelect_First &&
+                     x_HaveAnnot(smit, idit) ) {
+                    smit.Next(false);
+                    continue;
+                }
+*/
                 x_SearchMapped(smit, idit);
                 ++smit;
             }
@@ -842,6 +862,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         entries = &m_Scope->GetTSESetWithAnnots(id);
         break;
     }
+
     ITERATE ( TTSESet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
@@ -881,7 +902,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                  !hr.IntersectingWith(annot_index.m_HandleRange->second) ) {
                 continue;
             }
-                
+            
             m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
             if ( cvt ) {
                 cvt->Convert(m_AnnotSet.back(), m_FeatProduct);
@@ -899,17 +920,24 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
     case eLimit_Entry:
     {
         // Limit update to one seq-entry
-        const CSeq_entry* tse = 
-            static_cast<const CSeq_entry*>(m_LimitObject.GetPointer());
-        m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice, tse);
+        const CSeq_entry& entry = 
+            dynamic_cast<const CSeq_entry&>(*m_LimitObject);
+        m_Scope->UpdateAnnotIndex(loc, *this, entry);
         break;
     }
     case eLimit_Annot:
         // Do not update datasources: if we have seq-annot,
         // it's already loaded and indexed (?)
+    {
+        // Limit update to one seq-entry
+        const CSeq_annot& annot = 
+            dynamic_cast<const CSeq_annot&>(*m_LimitObject);
+        m_Scope->UpdateAnnotIndex(loc, *this, annot);
+        break;
+    }
     default:
         // eLimit_None
-        m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice);
+        m_Scope->UpdateAnnotIndex(loc, *this);
         break;
     }
 
@@ -990,6 +1018,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.63  2003/03/31 21:48:29  grichenk
 * Added possibility to select feature subtype through SAnnotSelector.
 *

@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
 *
 * File Description:
 *   Sequence data container for object manager
@@ -181,6 +181,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.28  2003/02/27 20:56:03  vasilche
 * kTypeUnknown bit made fitting in 8 bit integer.
 *

@@ -29,6 +29,8 @@
 
 #include <objects/objmgr/reader_pubseq.hpp>
 #include <objects/objmgr/impl/seqref_pubseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <memory>
@@ -491,6 +493,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.26  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.25  2003/04/15 16:33:29  dicuccio
 * Minor logic reorganization to appease MSVC - wasn't dealing well with a verbose
 * cast

@@ -36,9 +36,12 @@
 */
 
 #include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/impl/data_source.hpp>
 #include <objects/objmgr/scope.hpp>
-#include <corelib/ncbithr.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -429,6 +432,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.21  2003/04/09 16:04:32  grichenk
 * SDataSourceRec replaced with CPriorityNode
 * Added CScope::AddScope(scope, priority) to allow scope nesting

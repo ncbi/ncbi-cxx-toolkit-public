@@ -34,7 +34,7 @@
 */
 
 
-#include <corelib/ncbiobj.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -99,8 +99,6 @@ private:
     CSeq_id_Mapper* m_Mapper;
     // Handle value
     TSeq_id_Key m_Value;
-    //### Reference to the seq-id used by a group of equal handles
-    //### CRef<CSeq_id> m_SeqId;
 
     friend class CSeq_id_Mapper;
     friend class CSeq_id_Which_Tree;
@@ -119,51 +117,32 @@ private:
 
 inline
 CSeq_id_Handle::CSeq_id_Handle(void)
-    : m_Mapper(0), m_Value(0) //### , m_SeqId(0)
+    : m_Mapper(0), m_Value(0)
 {
 }
 
 inline
 bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
 {
-    if (m_Mapper != handle.m_Mapper) {
-        // THROW1_TRACE(runtime_error,
-        LOG_POST(Warning <<
-            "CSeq_id_Handle::operator==() -- "
-            "Can not compare seq-id handles from different mappers");
-    }
     return m_Value == handle.m_Value;
 }
 
 inline
 bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
 {
-    if (m_Mapper != handle.m_Mapper) {
-        // THROW1_TRACE(runtime_error,
-        LOG_POST(Warning <<
-            "CSeq_id_Handle::operator<() -- "
-            "Can not compare seq-id handles from different mappers");
-    }
     return m_Value < handle.m_Value;
 }
 
 inline
 CSeq_id_Handle::operator bool (void) const
 {
-    return m_Mapper != 0; //### !m_SeqId.Empty();
+    return m_Value != 0;
 }
 
 inline
 bool CSeq_id_Handle::operator! (void) const
 {
-    return m_Mapper == 0; //### m_SeqId.Empty();
-}
-
-
-inline
-const CSeq_id& CSeq_id_Handle::GetSeqId(void) const
-{
-    return *x_GetSeqId();
+    return m_Value == 0;
 }
 
 
@@ -175,12 +154,16 @@ END_NCBI_SCOPE
 // This is done because CSeq_id_Mapper has a circular #include dependency
 // with seq_if_handle.hpp; we skirt the circular reference by placing the
 // #include at the bottom
-#include <objects/objmgr/seq_id_mapper.hpp>
+//#include <objects/objmgr/seq_id_mapper.hpp>
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.12  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

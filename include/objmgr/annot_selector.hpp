@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
 *
 * File Description:
 *   Annotations selector structure.
@@ -34,19 +34,73 @@
 */
 
 
+#include <corelib/ncbi_limits.h>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-// Structure to select type of Seq-annot
-struct NCBI_XOBJMGR_EXPORT SAnnotSelector
+class CSeq_annot;
+class CSeq_entry;
+class CTSE_Info;
+
+struct NCBI_XOBJMGR_EXPORT SAnnotTypeSelector
 {
     typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
     typedef CSeqFeatData::E_Choice       TFeatChoice;
+
+    SAnnotTypeSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
+                       TFeatChoice  feat  = CSeqFeatData::e_not_set,
+                       int feat_product = false)
+        : m_AnnotChoice(annot),
+          m_FeatChoice(feat),
+          m_FeatProduct(feat_product)
+    {
+    }
+
+    SAnnotTypeSelector(TFeatChoice  feat,
+                   int feat_product = false)
+        : m_AnnotChoice(CSeq_annot::C_Data::e_Ftable),
+          m_FeatChoice(feat),
+          m_FeatProduct(feat_product)
+    {
+    }
+   
+    TAnnotChoice GetAnnotChoice(void) const
+        {
+            return m_AnnotChoice;
+        }
+
+    TFeatChoice GetFeatChoice(void) const
+        {
+            return m_FeatChoice;
+        }
+
+    int GetFeatProduct(void) const
+        {
+            return m_FeatProduct;
+        }
+
+    bool operator<(const SAnnotTypeSelector& s) const
+        {
+            return m_AnnotChoice < s.m_AnnotChoice ||
+                m_AnnotChoice == s.m_AnnotChoice &&
+                (m_FeatChoice < s.m_FeatChoice ||
+                 m_FeatChoice == s.m_FeatChoice &&
+                 (m_FeatProduct < s.m_FeatProduct));
+        }
+
+    TAnnotChoice          m_AnnotChoice;  // Annotation type
+    TFeatChoice           m_FeatChoice;   // Seq-feat subtype
+    int                   m_FeatProduct;  // "true" for searching products
+};
+
+// Structure to select type of Seq-annot
+struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
+{
     typedef CSeqFeatData::ESubtype       TFeatSubtype;
+
     // Flag to indicate location overlapping method
     enum EOverlapType {
         eOverlap_Intervals,  // default - overlapping of individual intervals
@@ -57,6 +111,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         eResolve_None, // Do not search annotations on segments
         eResolve_TSE,  // default - search only on segments in the same TSE
         eResolve_All   // Search annotations for all referenced sequences
+    };
+    // Flag to indicate adaptive segment selection
+    enum ESegmentSelect {
+        eSegmentSelect_All,
+        eSegmentSelect_First,
+        eSegmentSelect_Last
     };
     // Flag to indicate sorting method
     enum ESortOrder {
@@ -83,12 +143,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
     SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
                    TFeatChoice  feat  = CSeqFeatData::e_not_set,
                    int feat_product = false)
-        : m_AnnotChoice(annot),
-          m_FeatChoice(feat),
+        : SAnnotTypeSelector(annot, feat, feat_product),
+          m_ResolveDepth(kMax_Int),
           m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatProduct(feat_product),
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
+          m_SegmentSelect(eSegmentSelect_All),
           m_SortOrder(eSortOrder_Normal),
           m_CombineMethod(eCombine_None),
           m_IdResolving(eIgnoreUnresolved)
@@ -97,12 +157,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
 
     SAnnotSelector(TFeatChoice  feat,
                    int feat_product = false)
-        : m_AnnotChoice(CSeq_annot::C_Data::e_Ftable),
-          m_FeatChoice(feat),
+        : SAnnotTypeSelector(CSeq_annot::C_Data::e_Ftable, feat, feat_product),
+          m_ResolveDepth(kMax_Int),
           m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatProduct(feat_product),
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
+          m_SegmentSelect(eSegmentSelect_All),
           m_SortOrder(eSortOrder_Normal),
           m_CombineMethod(eCombine_None),
           m_IdResolving(eIgnoreUnresolved)
@@ -114,19 +174,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
             m_AnnotChoice = choice;
             return *this;
         }
-    TAnnotChoice GetAnnotChoice(void) const
-        {
-            return m_AnnotChoice;
-        }
-
     SAnnotSelector& SetFeatChoice(TFeatChoice choice)
         {
             m_FeatChoice = choice;
             return *this;
-        }
-    TFeatChoice GetFeatChoice(void) const
-        {
-            return m_FeatChoice;
         }
 
     SAnnotSelector& SetFeatSubtype(TFeatSubtype subtype)
@@ -143,10 +194,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         {
             m_FeatProduct = byProduct;
             return *this;
-        }
-    int GetFeatProduct(void) const
-        {
-            return m_FeatProduct;
         }
 
     SAnnotSelector& SetOverlapType(EOverlapType overlap_type)
@@ -192,31 +239,35 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         {
             return SetResolveMethod(eResolve_All);
         }
+    SAnnotSelector& SetResolveDepth(int depth)
+        {
+            m_ResolveDepth = depth;
+            return *this;
+        }
 
-    SAnnotSelector& SetLimitNone(void)
+    SAnnotSelector& SetSegmentSelect(ESegmentSelect ss)
         {
-            m_LimitObjectType = eLimit_None;
-            m_LimitObject.Reset();
+            m_SegmentSelect = ss;
             return *this;
         }
-    SAnnotSelector& SetLimitTSE(const CSeq_entry* tse)
+    SAnnotSelector& SetSegmentSelectAll(void)
         {
-            m_LimitObjectType = tse ? eLimit_TSE : eLimit_None;
-            m_LimitObject.Reset(tse);
-            return *this;
+            return SetSegmentSelect(eSegmentSelect_All);
         }
-    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* entry)
+    SAnnotSelector& SetSegmentSelectFirst(void)
         {
-            m_LimitObjectType = entry ? eLimit_Entry : eLimit_None;
-            m_LimitObject.Reset(entry);
-            return *this;
+            return SetSegmentSelect(eSegmentSelect_First);
         }
-    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* annot)
+    SAnnotSelector& SetSegmentSelectLast(void)
         {
-            m_LimitObjectType = annot ? eLimit_Annot : eLimit_None;
-            m_LimitObject.Reset(annot);
-            return *this;
+            return SetSegmentSelect(eSegmentSelect_Last);
         }
+
+    SAnnotSelector& SetLimitNone(void);
+    SAnnotSelector& SetLimitTSE(const CSeq_entry* tse);
+    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* entry);
+    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* annot);
+
     SAnnotSelector& SetIdResolvingLoaded(void)
         {
             m_IdResolving = eLoadedOnly;
@@ -234,12 +285,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         }
 
 protected:
-    TAnnotChoice          m_AnnotChoice;  // Annotation type
-    TFeatChoice           m_FeatChoice;   // Seq-feat subtype
+    int                   m_ResolveDepth;
     TFeatSubtype          m_FeatSubtype;  // Seq-feat subtype
-    int                   m_FeatProduct;  // "true" for searching products
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
+    ESegmentSelect        m_SegmentSelect;
     ESortOrder            m_SortOrder;
     ECombineMethod        m_CombineMethod;
     ELimitObject          m_LimitObjectType;
@@ -254,6 +304,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.8  2003/03/31 21:48:17  grichenk
 * Added possibility to select feature subtype through SAnnotSelector.
 *

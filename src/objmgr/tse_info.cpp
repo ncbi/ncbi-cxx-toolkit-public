@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   TSE info -- entry for data source seq-id to TSE map
@@ -32,7 +32,7 @@
 
 
 #include <objects/objmgr/impl/tse_info.hpp>
-
+#include <objects/objmgr/impl/bioseq_info.hpp>
 #include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/objmgr/annot_selector.hpp>
 
@@ -48,32 +48,22 @@ BEGIN_SCOPE(objects)
 //
 
 
-CTSE_Info::CTSE_Info(void)
-    : m_DataSource(0), m_Dead(false)
+CTSE_Info::CTSE_Info(CDataSource* source, CSeq_entry& entry, bool dead)
+    : CSeq_entry_Info(entry), m_DataSource(source), m_Dead(dead),
+      m_DirtyAnnotIndex(true)
 {
+    m_Parent = this;
+    m_TSE_Info = this;
 }
-
 
 CTSE_Info::~CTSE_Info(void)
 {
 }
 
 
-inline
-CTSE_Info::TAnnotSelectorKey
-CTSE_Info::x_GetAnnotSelectorKey(const SAnnotSelector& sel)
-{
-    _ASSERT(size_t(sel.GetAnnotChoice()) < 0x100);
-    _ASSERT(size_t(sel.GetFeatChoice()) < 0x100);
-    _ASSERT(size_t(sel.GetFeatProduct()) < 0x10000);
-    return (sel.GetAnnotChoice()) |
-        (sel.GetFeatChoice() << 8) |
-        (sel.GetFeatProduct() << 16);
-}
-
 const CTSE_Info::TRangeMap*
 CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
-                         const SAnnotSelector& sel) const
+                         const SAnnotTypeSelector& sel) const
 {
     TAnnotMap::const_iterator amit = m_AnnotMap.find(id);
     if (amit == m_AnnotMap.end()) {
@@ -82,7 +72,7 @@ CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
     
     
     TAnnotSelectorMap::const_iterator sit =
-        amit->second.find(x_GetAnnotSelectorKey(sel));
+        amit->second.find(sel);
     if ( sit == amit->second.end() ) {
         return 0;
     }
@@ -92,28 +82,28 @@ CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
 
 
 CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(TAnnotSelectorMap& selMap,
-                                               const SAnnotSelector& sel)
+                                               const SAnnotTypeSelector& sel)
 {
-    return selMap[x_GetAnnotSelectorKey(sel)];
+    return selMap[sel];
 }
 
 
 CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(const CSeq_id_Handle& id,
-                                               const SAnnotSelector& sel)
+                                               const SAnnotTypeSelector& sel)
 {
     return x_SetRangeMap(m_AnnotMap[id], sel);
 }
 
 
 void CTSE_Info::x_DropRangeMap(TAnnotSelectorMap& selMap,
-                               const SAnnotSelector& sel)
+                               const SAnnotTypeSelector& sel)
 {
-    selMap.erase(x_GetAnnotSelectorKey(sel));
+    selMap.erase(sel);
 }
 
 
 void CTSE_Info::x_DropRangeMap(const CSeq_id_Handle& id,
-                               const SAnnotSelector& sel)
+                               const SAnnotTypeSelector& sel)
 {
     x_DropRangeMap(m_AnnotMap[id], sel);
 }
@@ -124,7 +114,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.SetFrame("CTSE_Info");
     CObject::DebugDump( ddc, depth);
 
-    ddc.Log("m_TSE", m_TSE.GetPointer(),0);
+    ddc.Log("m_TSE", m_Seq_entry.GetPointer(),0);
     ddc.Log("m_Dead", m_Dead);
     if (depth == 0) {
         DebugDumpValue(ddc, "m_BioseqMap.size()", m_BioseqMap.size());
@@ -193,6 +183,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.22  2003/03/21 19:22:51  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

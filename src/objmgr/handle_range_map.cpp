@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   CHandle_Range_Map is a substitute for seq-loc to make searching
@@ -241,6 +241,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.14  2003/03/14 19:10:41  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *

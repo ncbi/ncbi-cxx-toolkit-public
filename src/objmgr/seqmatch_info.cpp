@@ -47,33 +47,15 @@ CSeqMatch_Info::CSeqMatch_Info(void)
 
 
 CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
-                               CTSE_Info& tse)
+                               const CTSE_Info& tse)
     : m_Handle(h), m_TSE(&tse)
 {
 }
 
 
-CSeqMatch_Info::CSeqMatch_Info(const CSeqMatch_Info& info)
-    : m_Handle(info.m_Handle),
-      m_TSE(info.m_TSE)
-{
-}
-
-
-CSeqMatch_Info&
-CSeqMatch_Info::operator= (const CSeqMatch_Info& info)
-{
-    if (&info != this) {
-        m_Handle = info.m_Handle;
-        m_TSE = info.m_TSE;
-    }
-    return *this;
-}
-
-
 bool CSeqMatch_Info::operator< (const CSeqMatch_Info& info) const
 {
-    if (m_TSE->m_Dead  &&  !info.m_TSE->m_Dead)
+    if (m_TSE->IsDead()  &&  !info.m_TSE->IsDead())
         return false; // info is better;
     return true;
 }
@@ -91,12 +73,22 @@ bool CSeqMatch_Info::operator! (void)
 }
 
 
+CDataSource& CSeqMatch_Info::GetDataSource(void) const
+{
+    return GetTSE_Info().GetDataSource();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.10  2003/03/21 19:22:51  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

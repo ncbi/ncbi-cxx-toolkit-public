@@ -26,23 +26,18 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
 *
 * File Description:
 *   Object manager iterators
 *
 */
 
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/objmgr/impl/annot_object.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
-#include <map>
-#include <memory>
-#include <deque>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,6 +52,7 @@ class CFeat_Reverse_Less;
 class CAnnotObject_Less;
 class CAnnotObject_Reverse_Less;
 class CSeq_loc_Conversion;
+class CBioseq_Handle;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
@@ -147,6 +143,7 @@ public:
     // immediately after construction.
     void Rewind(void);
 
+    typedef CConstRef<CTSE_Info> TTSE_Lock;
     typedef set<TTSE_Lock> TTSESet;
 
     const CSeq_annot& GetSeq_annot(void) const;
@@ -267,13 +264,6 @@ const CSeq_feat& CAnnotObject_Ref::GetFeatFast(void) const
 }
 
 inline
-const CSeq_loc& CAnnotObject_Ref::GetFeatLoc(void) const
-{
-    const CSeq_loc* loc = m_MappedLoc.GetPointerOrNull();
-    return loc? *loc: GetFeatFast().GetLocation();
-}
-
-inline
 bool CAnnotObject_Ref::IsMappedProd(void) const
 {
     return bool(m_MappedProd);
@@ -340,6 +330,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.37  2003/03/27 19:40:10  vasilche
 * Implemented sorting in CGraph_CI.
 * Added Rewind() method to feature/graph/align iterators.

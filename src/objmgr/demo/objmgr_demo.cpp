@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.22  2003/04/15 14:24:08  vasilche
 * Changed CReader interface to not to use fake streams.
 *
@@ -113,14 +117,18 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
+#include <serial/iterator.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 
 // Object manager includes
@@ -182,6 +190,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("reverse", "reverse order of features");
+    arg_desc->AddFlag("split", "split record");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -194,6 +203,71 @@ void CDemoApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
+class CSplit
+{
+public:
+    CSplit(const CSeq_entry& entry);
+    ~CSplit();
+    
+    void Save(const string& prefix) const;
+
+private:
+    static CRef<CSeq_entry> NewSeqEntry(void);
+
+    CRef<CSeq_entry> core;
+    CRef<CSeq_entry> inst;
+    CRef<CSeq_entry> ftable;
+    CRef<CSeq_entry> align;
+    CRef<CSeq_entry> graph;
+    vector<CRef<CSeq_entry> > snp;
+};
+
+CSplit::CSplit(const CSeq_entry& entry)
+{
+    /*
+    core.Reset(&entry);
+    for ( CTypeConstIterator<CSeq_annot> i(entry); i; ++i ) {
+        const CSeq_annot& annot = *i;
+        CNcbiOstrstream s;
+        s << base_name;
+        switch ( annot.GetData().Which() ) {
+        case CSeq_annot::C_Data::e_Ftable:
+        {
+            CTypeConstIterator<CSeq_feat> fi(annot);
+            if ( fi &&
+                 fi->GetData().GetSubtype() ==
+                 CSeqFeatData::eSubtype_variation ) {
+                s << "snp." << ++cnt[3];
+            }
+            else {
+                s << "ftable." << ++cnt[0];
+            }
+            break;
+        }
+        case CSeq_annot::C_Data::e_Graph:
+            s << "graph." << ++cnt[1];
+            break;
+        case CSeq_annot::C_Data::e_Align:
+            s << "align." << ++cnt[2];
+            break;
+        }
+        s << ".asn";
+        string file_name = CNcbiOstrstreamToString(s);
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, file_name));
+        *out << annot;
+    }
+    */
+}
+
+CSplit::~CSplit(void)
+{
+}
+
+void CSplit::Save(const string& prefix) const
+{
+}
 
 int CDemoApp::Run(void)
 {
@@ -212,6 +286,7 @@ int CDemoApp::Run(void)
     int repeat_count = args["count"].AsInteger();
     bool only_features = args["only_features"];
     bool print_features = args["print_features"];
+    bool split = args["split"];
     SAnnotSelector::ESortOrder order =
         args["reverse"]?
         SAnnotSelector::eSortOrder_Reverse: SAnnotSelector::eSortOrder_Normal;
@@ -260,6 +335,12 @@ int CDemoApp::Run(void)
     for ( int c = 0; c < repeat_count; ++c ) {
         string sout;
         int count;
+        if ( c == 0 && split ) {
+            CSplit s(handle.GetTopLevelSeqEntry());
+            CNcbiOstrstream name;
+            name << gi << '.';
+            s.Save(CNcbiOstrstreamToString(name));
+        }
         if ( !only_features ) {
             // List other sequences in the same TSE
             NcbiCout << "TSE sequences:" << NcbiEndl;

@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
 *
 * File Description:
 *   Data loader base class for object manager
@@ -139,6 +139,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.14  2003/03/21 19:22:48  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

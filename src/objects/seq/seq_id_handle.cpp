@@ -84,10 +84,11 @@ CSeq_id_Handle& CSeq_id_Handle::operator= (const CSeq_id_Handle& handle)
 
 void CSeq_id_Handle::Reset(void)
 {
-    if ( m_Mapper )
+    if ( m_Mapper ) {
         m_Mapper->ReleaseHandleReference(*this);
-    m_Mapper = 0;
-    m_Value = 0;
+        m_Mapper = 0;
+        m_Value = 0;
+    }
 }
 
 bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
@@ -102,9 +103,10 @@ bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
 bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
 {
     // Different mappers -- handle can not be equal
-    if (m_Mapper != handle.m_Mapper)
-        return false;
-    return x_GetSeqId()->Match(*handle.x_GetSeqId());
+    if ( !*this ) {
+        return !handle;
+    }
+    return handle && GetSeqId().Match(handle.GetSeqId());
 }
 
 
@@ -116,18 +118,25 @@ bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 }
 
 
+const CSeq_id& CSeq_id_Handle::GetSeqId(void) const
+{
+    return *m_Mapper->x_GetSeq_id(m_Value);
+}
+
+
 const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
 {
-    return m_Mapper ? m_Mapper->x_GetSeq_id(m_Value) : 0;
-};
+    return *this? m_Mapper->x_GetSeq_id(m_Value): 0;
+}
+
 
 string CSeq_id_Handle::AsString() const
 {
     CNcbiOstrstream os;
-    const CSeq_id* seqid = x_GetSeqId();
-    if (seqid) {
-        seqid->WriteAsFasta(os);
-    } else {
+    if ( *this ) {
+        GetSeqId().WriteAsFasta(os);
+    }
+    else {
         os << "unknown";
     }
     return CNcbiOstrstreamToString(os);
@@ -139,6 +148,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.10  2003/03/14 19:10:41  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *

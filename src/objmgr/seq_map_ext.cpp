@@ -38,6 +38,7 @@
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
@@ -322,6 +323,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.4  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

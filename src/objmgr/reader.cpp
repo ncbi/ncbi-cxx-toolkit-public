@@ -28,8 +28,6 @@
  */
 
 #include <objects/objmgr/reader.hpp>
-#include <util/stream_utils.hpp>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -88,6 +86,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.15  2003/04/24 16:12:38  vasilche
+ * Object manager internal structures are splitted more straightforward.
+ * Removed excessive header dependencies.
+ *
  * Revision 1.14  2003/04/15 16:25:39  vasilche
  * Added initialization of int members.
  *

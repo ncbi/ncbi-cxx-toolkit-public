@@ -36,6 +36,10 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbitime.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
 #include "test_helper.hpp"
 
 #include <objects/general/Date.hpp>
@@ -230,6 +234,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.30  2003/03/27 21:54:58  grichenk
 * Renamed test applications and makefiles, updated references
 *

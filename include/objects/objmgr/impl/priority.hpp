@@ -35,6 +35,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <set>
+#include <map>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -369,6 +372,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.3  2003/04/18 20:08:53  kans
 * changed iterate to ITERATE
 *

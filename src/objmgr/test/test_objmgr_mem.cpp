@@ -11,7 +11,6 @@
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -240,6 +239,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.5  2003/03/28 15:15:45  vasilche
 * Added file header comments.
 *

@@ -32,9 +32,12 @@
 
 #include <objects/objmgr/desc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/objmgr/impl/annot_object.hpp>
+#include <objects/objmgr/impl/bioseq_info.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -148,6 +151,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.8  2003/03/14 19:10:41  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *

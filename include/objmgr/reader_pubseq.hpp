@@ -30,9 +30,7 @@
 *
 */
 
-#include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/reader.hpp>
-#include <vector>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -86,6 +84,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.14  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.13  2003/04/15 15:30:14  vasilche
 * Added include <memory> when needed.
 * Removed buggy buffer in printing methods.

@@ -31,12 +31,14 @@
 *
 */
 
-#include <iostream>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CSeq_id;
+class CSeq_entry;
 
 class NCBI_XOBJMGR_EXPORT CBlob : public CObject
 {
@@ -139,6 +141,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.22  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.21  2003/04/15 15:30:14  vasilche
 * Added include <memory> when needed.
 * Removed buggy buffer in printing methods.

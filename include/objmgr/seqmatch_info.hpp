@@ -56,44 +56,37 @@ class CDataSource;
 class NCBI_XOBJMGR_EXPORT CSeqMatch_Info {
 public:
     CSeqMatch_Info(void);
-    CSeqMatch_Info(const CSeq_id_Handle& h, CTSE_Info& tse);
-    CSeqMatch_Info(const CSeqMatch_Info& info);
+    CSeqMatch_Info(const CSeq_id_Handle& h, const CTSE_Info& tse);
     
-    CSeqMatch_Info& operator= (const CSeqMatch_Info& info);
     // Return true if "info" is better than "this"
     bool operator< (const CSeqMatch_Info& info) const;
     operator bool (void);
     bool operator! (void);
 
-    const CSeq_id_Handle& GetIdHandle(void) const
-        {
-            return m_Handle;
-        }
-    CTSE_Info& operator*(void)
-        {
-            return *m_TSE;
-        }
-    const CTSE_Info& operator*(void) const
-        {
-            return *m_TSE;
-        }
-    CTSE_Info* operator->(void)
-        {
-            return &*m_TSE;
-        }
-    const CTSE_Info* operator->(void) const
-        {
-            return &*m_TSE;
-        }
-    CDataSource* GetDataSource(void) const
-        {
-            return m_TSE->m_DataSource;
-        }
+    CDataSource& GetDataSource(void) const;
+
+    const CTSE_Info& GetTSE_Info(void) const;
+
+    const CSeq_id_Handle& GetIdHandle(void) const;
+
 private:
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
-    CRef<CTSE_Info>   m_TSE;        // TSE, containing the best match
+    CConstRef<CTSE_Info>   m_TSE;   // TSE, containing the best match
 };
 
+
+inline
+const CTSE_Info& CSeqMatch_Info::GetTSE_Info(void) const
+{
+    return *m_TSE;
+}
+
+
+inline
+const CSeq_id_Handle& CSeqMatch_Info::GetIdHandle(void) const
+{
+    return m_Handle;
+}
 
 
 END_SCOPE(objects)
@@ -102,6 +95,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.11  2003/03/21 19:22:48  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

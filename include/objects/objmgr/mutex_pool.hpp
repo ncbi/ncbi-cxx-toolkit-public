@@ -35,7 +35,7 @@
 */
 
 
-#include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -82,6 +82,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.3  2003/03/03 18:46:45  dicuccio
 * Removed unnecessary Win32 export specifier
 *

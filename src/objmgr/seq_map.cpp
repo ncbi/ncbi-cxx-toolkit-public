@@ -23,11 +23,8 @@
 *
 * ===========================================================================
 *
-* Authors:
-*           Aleksey Grichenko
-*           Michael Kimelman
-*           Andrei Gourianov
-*           Eugene Vasilchenko
+* Authors: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko,
+*          Andrei Gourianov
 *
 * File Description:
 *   Sequence map for the Object Manager. Describes sequence as a set of
@@ -42,6 +39,8 @@
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -522,36 +521,45 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
                                                   CDataSource* source)
 {
     CConstRef<CSeqMap> ret;
-    CSeq_inst& inst = seq.SetInst();
-    if ( inst.IsSetSeq_data() ) {
-        ret.Reset(new CSeqMap(inst.SetSeq_data(), inst.GetLength(), source));
-    }
-    else if ( inst.IsSetExt() ) {
-        CSeq_ext& ext = inst.SetExt();
-        switch (ext.Which()) {
-        case CSeq_ext::e_Seg:
-            ret.Reset(new CSeqMap_Seq_locs(ext.SetSeg(), ext.SetSeg().Set(),
-                                           source));
-            break;
-        case CSeq_ext::e_Ref:
-            ret = CreateSeqMapForSeq_loc(ext.SetRef().Set(), source);
-            break;
-        case CSeq_ext::e_Delta:
-            ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta(), source));
-            break;
-        case CSeq_ext::e_Map:
-            //### Not implemented
-            THROW1_TRACE(runtime_error, "CSeq_ext::e_Map -- not implemented");
-        default:
-            //### Not implemented
-            THROW1_TRACE(runtime_error, "CSeq_ext::??? -- not implemented");
+    if ( true /*seq.IsSetInst()*/ ) {
+        CSeq_inst& inst = seq.SetInst();
+        if ( inst.IsSetSeq_data() ) {
+            ret.Reset(new CSeqMap(inst.SetSeq_data(),
+                                  inst.GetLength(),
+                                  source));
         }
-    }
-    else {
-        // Virtual sequence -- no data, no segments
-        _ASSERT(inst.GetRepr() == CSeq_inst::eRepr_virtual);
-        // The total sequence is gap
-        ret.Reset(new CSeqMap(inst.GetLength()));
+        else if ( inst.IsSetExt() ) {
+            CSeq_ext& ext = inst.SetExt();
+            switch (ext.Which()) {
+            case CSeq_ext::e_Seg:
+                ret.Reset(new CSeqMap_Seq_locs(ext.SetSeg(),
+                                               ext.SetSeg().Set(),
+                                               source));
+                break;
+            case CSeq_ext::e_Ref:
+                ret = CreateSeqMapForSeq_loc(ext.SetRef().Set(), source);
+                break;
+            case CSeq_ext::e_Delta:
+                ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta(), source));
+                break;
+            case CSeq_ext::e_Map:
+                //### Not implemented
+                THROW1_TRACE(runtime_error,
+                             "CSeq_ext::e_Map -- not implemented");
+            default:
+                //### Not implemented
+                THROW1_TRACE(runtime_error,
+                             "CSeq_ext::??? -- not implemented");
+            }
+        }
+        else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
+            // Virtual sequence -- no data, no segments
+            // The total sequence is gap
+            ret.Reset(new CSeqMap(inst.GetLength()));
+        }
+        else {
+            _ASSERT(inst.GetRepr() == CSeq_inst::eRepr_not_set);
+        }
     }
     return ret;
 }
@@ -758,6 +766,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.32  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

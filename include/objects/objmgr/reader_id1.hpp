@@ -30,7 +30,6 @@
 *
 */
 
-#include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/reader.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -72,6 +71,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.15  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.14  2003/04/15 14:24:07  vasilche
 * Changed CReader interface to not to use fake streams.
 *

@@ -26,21 +26,27 @@
  *
  * ===========================================================================
  *
- * Author: Aleksey Grichenko
+ * Author: Aleksey Grichenko, Eugene Vasilchenko
  *
  * File Description:
  *   Bioseq info for data source
  *
  */
 
-#include <objects/objmgr/seq_id_handle.hpp>
-#include <objects/seqset/Seq_entry.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CSeq_entry;
+class CSeq_entry_Info;
+class CBioseq;
+class CSeq_id_Handle;
+class CSeqMap;
+class CTSE_Info;
+class CDataSource;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -51,29 +57,47 @@ BEGIN_SCOPE(objects)
 //
 
 
-// forward declaration
-class CSeq_entry;
-class CSeq_id_Handle;
-class CTSE_Info;
-
 class NCBI_XOBJMGR_EXPORT CBioseq_Info : public CObject
 {
 public:
     typedef set<CSeq_id_Handle> TSynonyms;
 
     // 'ctors
-    CBioseq_Info(void);
-    CBioseq_Info(CSeq_entry& entry);
-    CBioseq_Info(const CBioseq_Info& info);
+    CBioseq_Info(CBioseq& seq, CSeq_entry_Info& entry_info);
     virtual ~CBioseq_Info(void);
 
-    CBioseq_Info& operator= (const CBioseq_Info& info);
+    CDataSource& GetDataSource(void) const;
+
+    const CSeq_entry& GetTSE(void) const;
+    const CTSE_Info& GetTSE_Info(void) const;
+    CTSE_Info& GetTSE_Info(void);
+
+    const CSeq_entry& GetSeq_entry(void) const;
+    CSeq_entry& GetSeq_entry(void);
+
+    const CSeq_entry_Info& GetSeq_entry_Info(void) const;
+    CSeq_entry_Info& GetSeq_entry_Info(void);
+
+    const CBioseq& GetBioseq(void) const;
+    CBioseq& GetBioseq(void);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    CTSE_Info*       m_TSE_Info;  // Top-level seq-entry for the sequence
-    CRef<CSeq_entry> m_Entry;     // Parent seq-entry for the bioseq
-    TSynonyms        m_Synonyms;  // Set of bioseq synonyms
+private:
+    friend class CDataSource;
+    friend class CScope;
+
+    // Parent seq-entry for the bioseq
+    CSeq_entry_Info*         m_Seq_entry_Info;
+
+    // Bioseq object
+    CRef<CBioseq>            m_Bioseq;
+
+    // SeqMap object
+    CConstRef<CSeqMap>       m_SeqMap;
+
+    // Set of bioseq synonyms
+    TSynonyms                m_Synonyms;
 };
 
 
@@ -85,12 +109,44 @@ public:
 /////////////////////////////////////////////////////////////////////
 
 
+inline
+const CSeq_entry_Info& CBioseq_Info::GetSeq_entry_Info(void) const
+{
+    return *m_Seq_entry_Info;
+}
+
+
+inline
+CSeq_entry_Info& CBioseq_Info::GetSeq_entry_Info(void)
+{
+    return *m_Seq_entry_Info;
+}
+
+
+inline
+const CBioseq& CBioseq_Info::GetBioseq(void) const
+{
+    return *m_Bioseq;
+}
+
+
+inline
+CBioseq& CBioseq_Info::GetBioseq(void)
+{
+    return *m_Bioseq;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2003/04/24 16:12:37  vasilche
+ * Object manager internal structures are splitted more straightforward.
+ * Removed excessive header dependencies.
+ *
  * Revision 1.9  2003/04/14 21:31:05  grichenk
  * Removed operators ==(), !=() and <()
  *

@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   TSE info -- entry for data source seq-id to TSE map
@@ -34,17 +34,19 @@
 */
 
 
-#include <objects/objmgr/impl/bioseq_info.hpp>
+#include <objects/objmgr/impl/seq_entry_info.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <objects/objmgr/annot_selector.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbicntr.hpp>
-#include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CBioseq_Info;
+class CSeq_entry_Info;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -60,7 +62,6 @@ class CSeq_entry;
 class CBioseq;
 class CDataSource;
 class CAnnotObject_Info;
-struct SAnnotSelector;
 
 struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
     CRef<CAnnotObject_Info>                   m_AnnotObject;
@@ -68,50 +69,54 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
     CHandleRangeMap::TLocMap::const_iterator  m_HandleRange;
 };
 
-typedef CRef<CTSE_Info> TTSE_Lock;
-
-class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
 public:
     // 'ctors
-    CTSE_Info(void);
+    CTSE_Info(CDataSource* data_source, CSeq_entry& tse, bool dead);
     virtual ~CTSE_Info(void);
 
-    bool IsIndexed(void) const { return m_Indexed; }
-    void SetIndexed(bool value) { m_Indexed = value; }
+    CDataSource& GetDataSource(void) const;
 
-    bool operator< (const CTSE_Info& info) const;
-    bool operator== (const CTSE_Info& info) const;
+    const CSeq_entry& GetTSE(void) const;
+    CSeq_entry& GetTSE(void);
 
+    const CTSE_Info& GetTSE_Info(void) const;
+    CTSE_Info& GetTSE_Info(void);
+
+    bool IsDead(void) const;
+    bool Locked(void) const;
+
+    // indexes types
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >         TBioseqMap;
 
     typedef CRange<TSeqPos>                                  TRange;
-    typedef CRangeMultimap<SAnnotObject_Index, TRange::position_type> TRangeMap;
+    typedef CRangeMultimap<SAnnotObject_Index,
+                           TRange::position_type>            TRangeMap;
 
-    typedef unsigned TAnnotSelectorKey;
+    typedef SAnnotTypeSelector TAnnotSelectorKey;
     typedef map<TAnnotSelectorKey, TRangeMap>                TAnnotSelectorMap;
     typedef map<CSeq_id_Handle, TAnnotSelectorMap>           TAnnotMap;
 
-    static TAnnotSelectorKey x_GetAnnotSelectorKey(const SAnnotSelector& sel);
-    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
-                                   const SAnnotSelector& selector) const;
-    TRangeMap& x_SetRangeMap(const CSeq_id_Handle& id,
-                             const SAnnotSelector& selector);
-    void x_DropRangeMap(const CSeq_id_Handle& id,
-                        const SAnnotSelector& sel);
-    static TRangeMap& x_SetRangeMap(TAnnotSelectorMap& selMap,
-                                    const SAnnotSelector& selector);
-    static void x_DropRangeMap(TAnnotSelectorMap& selMap,
-                               const SAnnotSelector& selector);
 
-    bool Locked(void) const { return !ReferencedOnlyOnce(); }
+    // index access methods
+    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
+                                   const SAnnotTypeSelector& selector) const;
+    TRangeMap& x_SetRangeMap(const CSeq_id_Handle& id,
+                             const SAnnotTypeSelector& selector);
+    void x_DropRangeMap(const CSeq_id_Handle& id,
+                        const SAnnotTypeSelector& sel);
+    static TRangeMap& x_SetRangeMap(TAnnotSelectorMap& selMap,
+                                    const SAnnotTypeSelector& selector);
+    static void x_DropRangeMap(TAnnotSelectorMap& selMap,
+                               const SAnnotTypeSelector& selector);
+
+
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+private:
     // Parent data-source
     CDataSource* m_DataSource;
-
-    // Reference to the TSE
-    CRef<CSeq_entry> m_TSE;
 
     // Dead seq-entry flag
     bool m_Dead;
@@ -125,17 +130,21 @@ public:
     typedef CRef<CObject> TBlob_ID;
     TBlob_ID   m_Blob_ID;
 
-private:
     friend class CTSE_Guard;
+    friend class CDataSource;
+    friend class CScope;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
 
-    bool m_Indexed;
+    bool m_DirtyAnnotIndex;
 
     mutable CMutex m_TSE_Mutex;
 };
+
+
+typedef CConstRef<CTSE_Info> TTSE_Lock;
 
 
 class NCBI_XOBJMGR_EXPORT CTSE_Guard
@@ -161,18 +170,6 @@ private:
 
 
 inline
-bool CTSE_Info::operator< (const CTSE_Info& info) const
-{
-    return m_TSE < info.m_TSE;
-}
-
-inline
-bool CTSE_Info::operator== (const CTSE_Info& info) const
-{
-    return m_TSE == info.m_TSE;
-}
-
-inline
 CTSE_Guard::CTSE_Guard(const CTSE_Info& tse)
     : m_Guard(tse.m_TSE_Mutex)
 {
@@ -186,12 +183,65 @@ CTSE_Guard::~CTSE_Guard(void)
 }
 
 
+inline
+CDataSource& CTSE_Info::GetDataSource(void) const
+{
+    return *m_DataSource;
+}
+
+
+inline
+const CTSE_Info& CTSE_Info::GetTSE_Info(void) const
+{
+    return *this;
+}
+
+
+inline
+CTSE_Info& CTSE_Info::GetTSE_Info(void)
+{
+    return *this;
+}
+
+
+inline
+const CSeq_entry& CTSE_Info::GetTSE(void) const
+{
+    return GetSeq_entry();
+}
+
+
+inline
+CSeq_entry& CTSE_Info::GetTSE(void)
+{
+    return GetSeq_entry();
+}
+
+
+inline
+bool CTSE_Info::IsDead(void) const
+{
+    return m_Dead;
+}
+
+
+inline
+bool CTSE_Info::Locked(void) const
+{
+    return !ReferencedOnlyOnce();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.26  2003/03/21 19:22:50  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

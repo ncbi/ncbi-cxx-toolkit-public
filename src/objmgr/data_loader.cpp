@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Data loader base class for object manager
@@ -110,6 +110,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.5  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

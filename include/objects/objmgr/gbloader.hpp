@@ -26,7 +26,8 @@
 *
 *  ===========================================================================
 *
-*  Author: Aleksey Grichenko, Michael Kimelman, Anton Butanayev
+*  Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko,
+*          Anton Butanayev
 *
 *  File Description:
 *   Data loader base class for object manager
@@ -35,8 +36,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbithr.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #include <map>
 #include <time.h>
@@ -52,6 +52,11 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CReader;
+class CSeqref;
+class CHandleRange;
+class CSeq_entry;
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
 #  if defined(NCBI_THREADS)
@@ -70,8 +75,6 @@ BEGIN_SCOPE(objects)
 //
 // GBDataLoader
 //
-
-class CHandleRange;
 
 class NCBI_XOBJMGR_EXPORT CTimer
 {
@@ -246,6 +249,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.31  2003/04/24 16:12:37  vasilche
+ * Object manager internal structures are splitted more straightforward.
+ * Removed excessive header dependencies.
+ *
  * Revision 1.30  2003/04/15 14:24:07  vasilche
  * Changed CReader interface to not to use fake streams.
  *

@@ -28,84 +28,6 @@
 * File Description:
 *   Test the functionality of C++ object manager in MT mode
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.20  2003/03/04 16:43:53  grichenk
-* +Test CFeat_CI with eResolve_All flag
-*
-* Revision 1.19  2002/12/26 16:39:24  vasilche
-* Object manager class CSeqMap rewritten.
-*
-* Revision 1.18  2002/11/04 21:29:14  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.17  2002/07/12 18:34:56  grichenk
-* m_ObjMgr member should live longer than m_Scope - fixed
-*
-* Revision 1.16  2002/05/09 14:21:50  grichenk
-* Turned GetTitle() test on, removed unresolved seq-map test
-*
-* Revision 1.15  2002/04/25 18:15:26  grichenk
-* Adjusted tests to work with the updated CSeqVector
-*
-* Revision 1.14  2002/04/23 15:26:47  gouriano
-* use test_mt library
-*
-* Revision 1.13  2002/04/22 20:07:45  grichenk
-* Commented calls to CBioseq::ConstructExcludedSequence()
-*
-* Revision 1.12  2002/04/21 05:16:59  vakatov
-* Decreased the # of threads from 40 to 34 to avoid triggering guard-bomb
-* on SCHROEDER
-*
-* Revision 1.11  2002/03/18 21:47:16  grichenk
-* Moved most includes to test_helper.cpp
-* Added test for CBioseq::ConstructExcludedSequence()
-*
-* Revision 1.10  2002/03/13 18:06:31  gouriano
-* restructured MT test. Put common functions into a separate file
-*
-* Revision 1.9  2002/03/07 21:42:06  grichenk
-* +Test for GetSeq_annot()
-*
-* Revision 1.8  2002/03/05 16:08:16  grichenk
-* Moved TSE-restriction to new constructors
-*
-* Revision 1.7  2002/03/04 17:07:19  grichenk
-* +Testing feature iterators with single TSE restriction
-*
-* Revision 1.6  2002/02/25 21:05:31  grichenk
-* Removed seq-data references caching. Increased MT-safety. Fixed typos.
-*
-* Revision 1.5  2002/02/07 21:27:36  grichenk
-* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
-*
-* Revision 1.4  2002/01/23 21:59:34  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.3  2002/01/16 18:56:30  grichenk
-* Removed CRef<> argument from choice variant setter, updated sources to
-* use references instead of CRef<>s
-*
-* Revision 1.2  2002/01/16 16:28:47  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:29  gouriano
-* restructured objmgr
-*
-* Revision 1.4  2001/12/20 20:00:30  grichenk
-* CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
-*
-* Revision 1.3  2001/12/12 22:39:12  grichenk
-* Added test for minus-strand intervals in constructed bioseqs
-*
-* Revision 1.2  2001/12/12 17:48:45  grichenk
-* Fixed code using generated classes to work with the updated datatool
-*
-* Revision 1.1  2001/12/07 19:08:58  grichenk
-* Initial revision
-*
-*
 * ===========================================================================
 */
 
@@ -116,6 +38,10 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/test_mt.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 #include "test_helper.hpp"
 
@@ -264,3 +190,90 @@ int main(int argc, const char* argv[])
 {
     return CTestObjectManager().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.21  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
+* Revision 1.20  2003/03/04 16:43:53  grichenk
+* +Test CFeat_CI with eResolve_All flag
+*
+* Revision 1.19  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
+* Revision 1.18  2002/11/04 21:29:14  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
+* Revision 1.17  2002/07/12 18:34:56  grichenk
+* m_ObjMgr member should live longer than m_Scope - fixed
+*
+* Revision 1.16  2002/05/09 14:21:50  grichenk
+* Turned GetTitle() test on, removed unresolved seq-map test
+*
+* Revision 1.15  2002/04/25 18:15:26  grichenk
+* Adjusted tests to work with the updated CSeqVector
+*
+* Revision 1.14  2002/04/23 15:26:47  gouriano
+* use test_mt library
+*
+* Revision 1.13  2002/04/22 20:07:45  grichenk
+* Commented calls to CBioseq::ConstructExcludedSequence()
+*
+* Revision 1.12  2002/04/21 05:16:59  vakatov
+* Decreased the # of threads from 40 to 34 to avoid triggering guard-bomb
+* on SCHROEDER
+*
+* Revision 1.11  2002/03/18 21:47:16  grichenk
+* Moved most includes to test_helper.cpp
+* Added test for CBioseq::ConstructExcludedSequence()
+*
+* Revision 1.10  2002/03/13 18:06:31  gouriano
+* restructured MT test. Put common functions into a separate file
+*
+* Revision 1.9  2002/03/07 21:42:06  grichenk
+* +Test for GetSeq_annot()
+*
+* Revision 1.8  2002/03/05 16:08:16  grichenk
+* Moved TSE-restriction to new constructors
+*
+* Revision 1.7  2002/03/04 17:07:19  grichenk
+* +Testing feature iterators with single TSE restriction
+*
+* Revision 1.6  2002/02/25 21:05:31  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
+* Revision 1.5  2002/02/07 21:27:36  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
+* Revision 1.4  2002/01/23 21:59:34  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.3  2002/01/16 18:56:30  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
+* Revision 1.2  2002/01/16 16:28:47  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:29  gouriano
+* restructured objmgr
+*
+* Revision 1.4  2001/12/20 20:00:30  grichenk
+* CObjectManager::ConstructBioseq(CSeq_loc) -> CBioseq::CBioseq(CSeq_loc ...)
+*
+* Revision 1.3  2001/12/12 22:39:12  grichenk
+* Added test for minus-strand intervals in constructed bioseqs
+*
+* Revision 1.2  2001/12/12 17:48:45  grichenk
+* Fixed code using generated classes to work with the updated datatool
+*
+* Revision 1.1  2001/12/07 19:08:58  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/
+

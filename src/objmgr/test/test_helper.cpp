@@ -779,7 +779,14 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         ce->SetId(999);
         gcode.push_back(ce);
         feat->SetComment() = "Feature attached after indexing the entry";
-        feat->SetLocation().SetWhole().SetGi(11+index*1000);
+        //feat->SetLocation().SetWhole().SetGi(11+index*1000);
+
+        CSeq_interval& interval = feat->SetLocation().SetInt();
+        interval.SetId().SetGi(11+index*1000);
+        interval.SetFrom(1);
+        interval.SetTo(9);
+        interval.SetStrand(eNa_strand_unknown);
+
         ftable.push_back(feat);
     }}
     if ( sm_DumpEntries ) {
@@ -1218,6 +1225,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/04/24 16:12:39  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.30  2003/03/26 14:30:23  lavr
 * Conform to modified representation of NUL char in NStr::PrintableString()
 *

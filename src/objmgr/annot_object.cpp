@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *
@@ -37,15 +37,186 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/objmgr/impl/handle_range_map.hpp>
+#include <objects/objmgr/impl/seq_entry_info.hpp>
+#include <objects/objmgr/impl/seq_annot_info.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqres/Seq_graph.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+////////////////////////////////////////////////////////////////////
+//
+//  SAnnotSelector
+//
+
+SAnnotSelector& SAnnotSelector::SetLimitNone(void)
+{
+    m_LimitObjectType = eLimit_None;
+    m_LimitObject.Reset();
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::SetLimitTSE(const CSeq_entry* tse)
+{
+    m_LimitObjectType = tse ? eLimit_TSE : eLimit_None;
+    m_LimitObject.Reset(tse);
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* entry)
+{
+    m_LimitObjectType = entry ? eLimit_Entry : eLimit_None;
+    m_LimitObject.Reset(entry);
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* annot)
+{
+    m_LimitObjectType = annot ? eLimit_Annot : eLimit_None;
+    m_LimitObject.Reset(annot);
+    return *this;
+}
 
 
 ////////////////////////////////////////////////////////////////////
 //
 //  CAnnotObject_Info::
 //
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
+                                     CSeq_annot_Info& annot)
+    : m_Choice(CSeq_annot::C_Data::e_Ftable),
+      m_Object(&feat),
+      m_Seq_annot_Info(&annot)
+{
+    m_RangeMap.AddLocation(feat.GetLocation());
+    if ( feat.IsSetProduct() ) {
+        m_ProductMap.reset(new CHandleRangeMap());
+        m_ProductMap->AddLocation(feat.GetProduct());
+    }
+    return;
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
+                                     CSeq_annot_Info& annot)
+    : m_Choice(CSeq_annot::C_Data::e_Align),
+      m_Object(&align),
+      m_Seq_annot_Info(&annot)
+{
+    x_ProcessAlign(align);
+    return;
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
+                                     CSeq_annot_Info& annot)
+    : m_Choice(CSeq_annot::C_Data::e_Graph),
+      m_Object(&graph),
+      m_Seq_annot_Info(&annot)
+{
+    m_RangeMap.AddLocation(graph.GetLoc());
+    return;
+}
+
+
+CAnnotObject_Info::~CAnnotObject_Info(void)
+{
+    return;
+}
+
+
+const CSeq_annot& CAnnotObject_Info::GetSeq_annot(void) const
+{
+    return GetSeq_annot_Info().GetSeq_annot();
+}
+
+
+const CSeq_entry& CAnnotObject_Info::GetSeq_entry(void) const
+{
+    return GetSeq_annot_Info().GetSeq_entry();
+}
+
+
+const CSeq_entry_Info& CAnnotObject_Info::GetSeq_entry_Info(void) const
+{
+    return GetSeq_annot_Info().GetSeq_entry_Info();
+}
+
+
+const CSeq_entry& CAnnotObject_Info::GetTSE(void) const
+{
+    return GetSeq_annot_Info().GetTSE();
+}
+
+
+const CTSE_Info& CAnnotObject_Info::GetTSE_Info(void) const
+{
+    return GetSeq_annot_Info().GetTSE_Info();
+}
+
+
+CTSE_Info& CAnnotObject_Info::GetTSE_Info(void)
+{
+    return GetSeq_annot_Info().GetTSE_Info();
+}
+
+
+CDataSource& CAnnotObject_Info::GetDataSource(void) const
+{
+    return GetSeq_annot_Info().GetDataSource();
+}
+
+
+const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
+{
+    return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
+}
+
+
+const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
+{
+    return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
+}
+
+
+const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
+{
+#if defined(NCBI_COMPILER_ICC)
+    return *dynamic_cast<const CSeq_feat*>(m_Object.GetPointer());
+#else
+    return dynamic_cast<const CSeq_feat&>(*m_Object);
+#endif
+}
+
+
+const CSeq_align& CAnnotObject_Info::GetAlign(void) const
+{
+#if defined(NCBI_COMPILER_ICC)
+    return *dynamic_cast<const CSeq_align*>(m_Object.GetPointer());
+#else
+    return dynamic_cast<const CSeq_align&>(*m_Object);
+#endif
+}
+
+
+const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
+{
+#if defined(NCBI_COMPILER_ICC)
+    return *dynamic_cast<const CSeq_graph*>(m_Object.GetPointer());
+#else
+    return dynamic_cast<const CSeq_graph&>(*m_Object);
+#endif
+}
 
 
 void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
@@ -80,7 +251,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                         loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap->AddLocation(loc);
+                    m_RangeMap.AddLocation(loc);
                     ++it_id;
                     ++it_start;
                 }
@@ -125,7 +296,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                         loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap->AddLocation(loc);
+                    m_RangeMap.AddLocation(loc);
                 }
             }
             break;
@@ -138,7 +309,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                 //### Ignore Seq-id, assuming it is also set in Seq-loc?
                 ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     // Create CHandleRange from an align element
-                    m_RangeMap->AddLocation(**it_loc);
+                    m_RangeMap.AddLocation(**it_loc);
                 }
             }
             break;
@@ -187,7 +358,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
                         }
                         ++it_id;
                         ++it_start;
-                        m_RangeMap->AddLocation(loc);
+                        m_RangeMap.AddLocation(loc);
                     }
                 }
             }
@@ -204,6 +375,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
         }
     }
 }
+
 
 void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
@@ -225,9 +397,9 @@ void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     ddc.Log("m_Object", m_Object.GetPointer(),0);
 //    ddc.Log("m_Annot", m_Annot.GetPointer(),0);
     // m_RangeMap is not dumpable
-    if (m_RangeMap.get()) {
+    if ( true ) {
         CDebugDumpContext ddc2(ddc,"m_RangeMap");
-        const CHandleRangeMap::TLocMap& rm = m_RangeMap->GetMap();
+        const CHandleRangeMap::TLocMap& rm = m_RangeMap.GetMap();
         if (depth == 0) {
             DebugDumpValue(ddc2, "m_LocMap.size()", rm.size());
         } else {
@@ -281,6 +453,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.19  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author: Aleksey Grichenko, Michael Kimelman
+ * Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
  *
  * File Description:
  *
@@ -108,6 +108,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2003/04/24 16:12:37  vasilche
+ * Object manager internal structures are splitted more straightforward.
+ * Removed excessive header dependencies.
+ *
  * Revision 1.16  2003/02/25 14:48:07  vasilche
  * Added Win32 export modifier to object manager classes.
  *

@@ -5,12 +5,14 @@
 
 REQUIRES = dbapi
 
-SRC = seq_map seq_map_ext seq_map_ci \
-      align_ci annot_object annot_types_ci bioseq_handle \
-      data_loader data_source desc_ci feat_ci graph_ci handle_range \
-      handle_range_map object_manager reader reader_id1 reader_pubseq scope \
+SRC = data_source bioseq_handle scope \
+      tse_info seq_entry_info bioseq_info seq_annot_info seqmatch_info \
+      seq_map seq_map_ext seq_map_ci \
+      align_ci annot_object annot_types_ci \
+      data_loader desc_ci feat_ci graph_ci handle_range \
+      handle_range_map object_manager reader reader_id1 reader_pubseq \
       seq_vector seqdesc_ci seq_id_handle seq_id_mapper \
-      bioseq_info tse_info seqmatch_info gbload_util gbloader
+      gbload_util gbloader
 
 LIB    = xobjmgr
 

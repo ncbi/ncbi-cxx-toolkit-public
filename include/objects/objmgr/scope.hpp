@@ -31,6 +31,7 @@
 *           Aleksey Grichenko
 *           Michael Kimelman
 *           Denis Vakatov
+*           Eugene Vasilchenko
 *
 * File Description:
 *           Scope is top-level object available to a client.
@@ -39,26 +40,39 @@
 *
 */
 
-#include <objects/objmgr/annot_types_ci.hpp>
-#include <objects/objmgr/seq_map.hpp>
-#include <objects/objmgr/seqmatch_info.hpp>
-#include <objects/objmgr/impl/synonyms.hpp>
 #include <objects/objmgr/impl/priority.hpp>
-#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 // fwd decl
+// objects
+class CSeq_entry;
+class CSeq_annot;
+class CSeq_data;
+class CSeq_id;
+class CSeq_loc;
+class CBioseq;
+
+// objmgr
 class CObjectManager;
 class CDataLoader;
 class CDataSource;
 class CTSE_Info;
-struct SSeqData;
+class CSeq_id_Handle;
+class CSeq_id_Mapper;
+class CSeqMap;
+class CSeqMatch_Info;
+class CSynonymsSet;
+class CBioseq_Handle;
+class CHandleRangeMap;
+class SAnnotTypeSelector;
 
 typedef CRef<CObject> TBlob_ID;
 
@@ -102,6 +116,8 @@ public:
     CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
 
+    typedef CConstRef<CTSE_Info> TTSE_Lock;
+
     // Add default data loaders from object manager
     void AddDefaults(CPriorityNode::TPriority priority = 99);
     // Add data loader by name.
@@ -116,18 +132,17 @@ public:
     void AddScope(CScope& scope, CPriorityNode::TPriority priority = 9);
 
     // Add annotations to a seq-entry (seq or set)
-    bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
-    bool RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot);
-    bool ReplaceAnnot(const CSeq_entry& entry,
-                      const CSeq_annot& old_annot,
-                      CSeq_annot& new_annot);
+    bool AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    bool RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    bool ReplaceAnnot(CSeq_entry& entry,
+                      CSeq_annot& old_annot, CSeq_annot& new_annot);
 
     // Add new sub-entry to the existing tree if it is in this scope
-    bool AttachEntry(const CSeq_entry& parent, CSeq_entry& entry);
+    bool AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
     // Add sequence map for a bioseq if it is in this scope
-    bool AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap);
+    bool AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
     // Add seq-data to a bioseq if it is in this scope
-    bool AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
+    bool AttachSeqData(CSeq_entry& bioseq, CSeq_data& seq,
                        size_t index,
                        TSeqPos start, TSeqPos length);
 
@@ -176,19 +191,24 @@ public:
     const CSynonymsSet& GetSynonyms(const CSeq_id_Handle& id);
 
 private:
-    typedef CAnnotTypes_CI::TTSESet       TTSE_Set;
+    typedef set<TTSE_Lock>                TTSESet;
     typedef set<CSeqMatch_Info>           TSeqMatchSet;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          CSeq_annot::C_Data::E_Choice sel,
-                          const CSeq_entry* limit_entry = 0);
-    const TTSE_Set& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
+                          const SAnnotTypeSelector& sel);
+    void UpdateAnnotIndex(const CHandleRangeMap& loc,
+                          const SAnnotTypeSelector& sel,
+                          const CSeq_entry& limit_entry);
+    void UpdateAnnotIndex(const CHandleRangeMap& loc,
+                          const SAnnotTypeSelector& sel,
+                          const CSeq_annot& limit_annot);
+    const TTSESet& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
     void x_DetachFromOM(void);
     // Get requests history (used by data sources to process requests)
     const TRequestHistory& x_GetHistory(void);
     // Add an entry to the requests history, lock the TSE by default
-    void x_AddToHistory(CTSE_Info& tse);
+    void x_AddToHistory(const CTSE_Info& tse);
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(CSeq_id_Handle idh);
@@ -231,7 +251,7 @@ private:
 
     typedef map<CSeq_id_Handle, CBioseq_Handle> TCache;
     typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
-    typedef map<CSeq_id_Handle, TTSE_Set> TAnnotCache;
+    typedef map<CSeq_id_Handle, TTSESet> TAnnotCache;
 
     TCache m_Cache;
     TSynCache m_SynCache;
@@ -255,6 +275,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.41  2003/04/09 16:04:29  grichenk
 * SDataSourceRec replaced with CPriorityNode
 * Added CScope::AddScope(scope, priority) to allow scope nesting

@@ -26,64 +26,63 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko, Michael Kimelman, Eugene Vasilchenko
 *
 * File Description:
 *   Annotation object wrapper
 *
 */
 
-#include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/objmgr/annot_selector.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqres/Seq_graph.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/objmgr/annot_selector.hpp>
+#include <objects/objmgr/impl/handle_range_map.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CDataSource;
-
-class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
-{
-public:
-    CSeq_annot_Info(CDataSource* data_source,
-                   const CSeq_annot& annot,
-                   const CSeq_entry* entry);
-    ~CSeq_annot_Info(void);
-
-    CDataSource*      GetDataSource(void) const;
-    const CSeq_annot* GetSeq_annot(void) const;
-    const CSeq_entry* GetSeq_entry(void) const;
-
-private:
-    CSeq_annot_Info(const CSeq_annot_Info&);
-    CSeq_annot_Info& operator=(const CSeq_annot_Info&);
-
-    CDataSource*          m_DataSource;
-    CConstRef<CSeq_annot> m_Annot;
-    CConstRef<CSeq_entry> m_Entry;
-};
-
+class CHandleRangeMap;
+class CSeq_align;
+class CSeq_graph;
+class CSeq_feat;
+class CSeq_entry;
+class CSeq_entry_Info;
+class CSeq_annot;
+class CSeq_annot_Info;
 
 // General Seq-annot object
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Info : public CObject
 {
 public:
-    CAnnotObject_Info(CSeq_annot_Info& annot_ref,
-                      const CSeq_feat&  feat);
-    CAnnotObject_Info(CSeq_annot_Info& annot_ref,
-                      const CSeq_align& align);
-    CAnnotObject_Info(CSeq_annot_Info& annot_ref,
-                      const CSeq_graph& graph);
+    CAnnotObject_Info(CSeq_feat& feat,
+                      CSeq_annot_Info& annot);
+    CAnnotObject_Info(CSeq_align& align,
+                      CSeq_annot_Info& annot);
+    CAnnotObject_Info(CSeq_graph& graph,
+                      CSeq_annot_Info& annot);
     virtual ~CAnnotObject_Info(void);
 
-    SAnnotSelector::TAnnotChoice Which(void) const;
+    // Get Seq-annot, containing the element
+    const CSeq_annot& GetSeq_annot(void) const;
+    const CSeq_annot_Info& GetSeq_annot_Info(void) const;
+    CSeq_annot_Info& GetSeq_annot_Info(void);
 
-    const CConstRef<CObject>& GetObject(void) const;
+    // Get Seq-entry, containing the annotation
+    const CSeq_entry& GetSeq_entry(void) const;
+    const CSeq_entry_Info& GetSeq_entry_Info(void) const;
+
+    // Get top level Seq-entry, containing the annotation
+    const CSeq_entry& GetTSE(void) const;
+    const CTSE_Info& GetTSE_Info(void) const;
+    CTSE_Info& GetTSE_Info(void);
+
+    // Get CDataSource object
+    CDataSource& GetDataSource(void) const;
+
+    SAnnotTypeSelector::TAnnotChoice Which(void) const;
+
+    const CRef<CObject>& GetObject(void) const;
+    const CObject* GetObjectPointer(void) const;
 
     bool IsFeat(void) const;
     const CSeq_feat& GetFeat(void) const;
@@ -99,14 +98,11 @@ public:
     const CHandleRangeMap& GetRangeMap(void) const;
     const CHandleRangeMap* GetProductMap(void) const; // may be null
 
-    // Get Seq-annot, containing the element
-    const CSeq_annot& GetSeq_annot(void) const;
-    // Get Seq-entry, containing the annotation
-    const CSeq_entry& GetSeq_entry(void) const;
-
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
+    friend class CDataSource;
+
     CAnnotObject_Info(const CAnnotObject_Info&);
     CAnnotObject_Info& operator=(const CAnnotObject_Info&);
 
@@ -116,22 +112,12 @@ private:
     friend class CAnnotTypes_CI;
     friend class CAnnotObject_Less;
 
-    CAnnotObject_Info(const CSeq_feat&  feat,
-                      const CSeq_annot& annot,
-                      const CSeq_entry* entry);
-    CAnnotObject_Info(const CSeq_align& align,
-                      const CSeq_annot& annot,
-                      const CSeq_entry* entry);
-    CAnnotObject_Info(const CSeq_graph& graph,
-                      const CSeq_annot& annot,
-                      const CSeq_entry* entry);
-
     void x_ProcessAlign(const CSeq_align& align);
 
-    CRef<CSeq_annot_Info>         m_AnnotRef;
-    SAnnotSelector::TAnnotChoice m_Choice;
-    CConstRef<CObject>           m_Object;
-    auto_ptr<CHandleRangeMap>    m_RangeMap;   // may be null for fake objects
+    SAnnotTypeSelector::TAnnotChoice m_Choice;
+    CRef<CObject>                m_Object;
+    CSeq_annot_Info*             m_Seq_annot_Info;
+    CHandleRangeMap              m_RangeMap;   // 
     auto_ptr<CHandleRangeMap>    m_ProductMap; // non-null for features with product
 };
 
@@ -144,101 +130,23 @@ private:
 
 
 inline
-CSeq_annot_Info::CSeq_annot_Info(CDataSource* data_source,
-                               const CSeq_annot& annot,
-                               const CSeq_entry* entry)
-    : m_DataSource(data_source),
-      m_Annot(&annot),
-      m_Entry(entry)
-{
-    return;
-}
-
-
-inline
-CSeq_annot_Info::~CSeq_annot_Info(void)
-{
-    return;
-}
-
-inline
-CDataSource* CSeq_annot_Info::GetDataSource(void) const
-{
-    return m_DataSource;
-}
-
-inline
-const CSeq_annot* CSeq_annot_Info::GetSeq_annot(void) const
-{
-    return m_Annot;
-}
-
-inline
-const CSeq_entry* CSeq_annot_Info::GetSeq_entry(void) const
-{
-    return m_Entry;
-}
-
-
-inline
-CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot_ref,
-                                     const CSeq_feat& feat)
-    : m_AnnotRef(&annot_ref),
-      m_Choice(CSeq_annot::C_Data::e_Ftable),
-      m_Object(&feat),
-      m_RangeMap(new CHandleRangeMap()),
-      m_ProductMap(0)
-{
-    m_RangeMap->AddLocation(feat.GetLocation());
-    if ( feat.IsSetProduct() ) {
-        m_ProductMap.reset(new CHandleRangeMap());
-        m_ProductMap->AddLocation(feat.GetProduct());
-    }
-    return;
-}
-
-inline
-CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot_ref,
-                                     const CSeq_align& align)
-    : m_AnnotRef(&annot_ref),
-      m_Choice(CSeq_annot::C_Data::e_Align),
-      m_Object(&align),
-      m_RangeMap(new CHandleRangeMap()),
-      m_ProductMap(0)
-{
-    x_ProcessAlign(align);
-    return;
-}
-
-inline
-CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot_ref,
-                                     const CSeq_graph& graph)
-    : m_AnnotRef(&annot_ref),
-      m_Choice(CSeq_annot::C_Data::e_Graph),
-      m_Object(&graph),
-      m_RangeMap(new CHandleRangeMap()),
-      m_ProductMap(0)
-{
-    m_RangeMap->AddLocation(graph.GetLoc());
-    return;
-}
-
-inline
-CAnnotObject_Info::~CAnnotObject_Info(void)
-{
-    return;
-}
-
-inline
 SAnnotSelector::TAnnotChoice CAnnotObject_Info::Which(void) const
 {
     return m_Choice;
 }
 
+
 inline
-const CConstRef<CObject>& CAnnotObject_Info::GetObject(void) const
+const CRef<CObject>& CAnnotObject_Info::GetObject(void) const
 {
     return m_Object;
+}
+
+
+inline
+const CObject* CAnnotObject_Info::GetObjectPointer(void) const
+{
+    return m_Object.GetPointer();
 }
 
 
@@ -248,21 +156,6 @@ bool CAnnotObject_Info::IsFeat(void) const
     return m_Choice == CSeq_annot::C_Data::e_Ftable;
 }
 
-inline
-const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
-{
-#if defined(NCBI_COMPILER_ICC)
-    return *dynamic_cast<const CSeq_feat*>(m_Object.GetPointer());
-#else
-    return dynamic_cast<const CSeq_feat&>(*m_Object);
-#endif
-}
-
-inline
-const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
-{
-    return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
-}
 
 inline
 bool CAnnotObject_Info::IsAlign(void) const
@@ -270,15 +163,6 @@ bool CAnnotObject_Info::IsAlign(void) const
     return m_Choice == CSeq_annot::C_Data::e_Align;
 }
 
-inline
-const CSeq_align& CAnnotObject_Info::GetAlign(void) const
-{
-#if defined(NCBI_COMPILER_ICC)
-    return *dynamic_cast<const CSeq_align*>(m_Object.GetPointer());
-#else
-    return dynamic_cast<const CSeq_align&>(*m_Object);
-#endif
-}
 
 inline
 bool CAnnotObject_Info::IsGraph(void) const
@@ -286,27 +170,13 @@ bool CAnnotObject_Info::IsGraph(void) const
     return m_Choice == CSeq_annot::C_Data::e_Graph;
 }
 
-inline
-const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
-{
-#if defined(NCBI_COMPILER_ICC)
-    return *dynamic_cast<const CSeq_graph*>(m_Object.GetPointer());
-#else
-    return dynamic_cast<const CSeq_graph&>(*m_Object);
-#endif
-}
-
-inline
-const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
-{
-    return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
-}
 
 inline
 const CHandleRangeMap& CAnnotObject_Info::GetRangeMap(void) const
 {
-    return *m_RangeMap;
+    return m_RangeMap;
 }
+
 
 inline
 const CHandleRangeMap* CAnnotObject_Info::GetProductMap(void) const
@@ -314,56 +184,18 @@ const CHandleRangeMap* CAnnotObject_Info::GetProductMap(void) const
     return m_ProductMap.get();
 }
 
-inline
-const CSeq_annot& CAnnotObject_Info::GetSeq_annot(void) const
-{
-    return *m_AnnotRef->GetSeq_annot();
-}
 
 inline
-const CSeq_entry& CAnnotObject_Info::GetSeq_entry(void) const
+const CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void) const
 {
-    return *m_AnnotRef->GetSeq_entry();
+    return *m_Seq_annot_Info;
 }
 
 
 inline
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
-                                     const CSeq_annot& annot,
-                                     const CSeq_entry* entry)
-    : m_AnnotRef(new CSeq_annot_Info(0, annot, entry)),
-      m_Choice(CSeq_annot::C_Data::e_Ftable),
-      m_Object(&feat),
-      m_RangeMap(0),
-      m_ProductMap(0)
+CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void)
 {
-    return;
-}
-
-inline
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
-                                     const CSeq_annot& annot,
-                                     const CSeq_entry* entry)
-    : m_AnnotRef(new CSeq_annot_Info(0, annot, entry)),
-      m_Choice(CSeq_annot::C_Data::e_Align),
-      m_Object(&align),
-      m_RangeMap(0),
-      m_ProductMap(0)
-{
-    return;
-}
-
-inline
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
-                                     const CSeq_annot& annot,
-                                     const CSeq_entry* entry)
-    : m_AnnotRef(new CSeq_annot_Info(0, annot, entry)),
-      m_Choice(CSeq_annot::C_Data::e_Graph),
-      m_Object(&graph),
-      m_RangeMap(0),
-      m_ProductMap(0)
-{
-    return;
+    return *m_Seq_annot_Info;
 }
 
 
@@ -373,6 +205,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/24 16:12:37  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
 * Revision 1.5  2003/03/27 19:40:11  vasilche
 * Implemented sorting in CGraph_CI.
 * Added Rewind() method to feature/graph/align iterators.
