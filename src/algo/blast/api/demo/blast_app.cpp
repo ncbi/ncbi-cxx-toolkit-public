@@ -95,9 +95,11 @@ private:
     void InitOptions(void);
     void SetOptions(const CArgs& args);
     void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
-                                BlastSeqSrc* seq_src, RPSInfo *rps_info);
+                                BlastSeqSrc* seq_src);
     int BlastSearch(void);
     void FormatResults(const CDbBlast* blaster, TSeqAlignVector& seqalignv);
+    /// NB: The object manager member field must be put in front of the scope
+    /// member field, to guarantee the correct order of destruction.
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
 };
@@ -282,11 +284,10 @@ CBlastApplication::InitScope(void)
 
 void
 CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
-                                          BlastSeqSrc* seq_src, RPSInfo *rps_info)
+                                          BlastSeqSrc* seq_src)
 {
     CArgs args = GetArgs();
     CBlastOptions& opt = opts_handle->SetOptions();
-    EProgram program_number = opt.GetProgram();
 
     if (args["strand"].AsInteger()) {
         switch (args["strand"].AsInteger()) {
@@ -309,23 +310,14 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         break;
     }
 
-    if (program_number == eRPSBlast ||
-        program_number == eRPSTblastn) {
-        ASSERT(rps_info != NULL);
-        opt.SetMatrixName(rps_info->aux_info.orig_score_matrix);
-        opt.SetGapOpeningCost(rps_info->aux_info.gap_open_penalty);
-        opt.SetGapExtensionCost(rps_info->aux_info.gap_extend_penalty);
+    if (args["matrix"]) {
+        opt.SetMatrixName(args["matrix"].AsString().c_str());
     }
-    else {
-        if (args["matrix"]) {
-            opt.SetMatrixName(args["matrix"].AsString().c_str());
-        }
-        if (args["gopen"].AsInteger() || args["greedy"].AsInteger() > 0) {
-            opt.SetGapOpeningCost(args["gopen"].AsInteger());
-        }
-        if (args["gext"].AsInteger() || args["greedy"].AsInteger() > 0) {
-            opt.SetGapExtensionCost(args["gext"].AsInteger());
-        }
+    if (args["gopen"].AsInteger() || args["greedy"].AsInteger() > 0) {
+        opt.SetGapOpeningCost(args["gopen"].AsInteger());
+    }
+    if (args["gext"].AsInteger() || args["greedy"].AsInteger() > 0) {
+        opt.SetGapExtensionCost(args["gext"].AsInteger());
     }
 
     if (args["mismatch"].AsInteger()) {
@@ -638,88 +630,6 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
     }
 }
 
-static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
-                           CMemoryFile **rps_pssm_mmap, string dbname )
-{
-   RPSInfo *info = new RPSInfo;
-   if (info == NULL) {
-      ERR_POST_EX(CBlastException::eOutOfMemory, 2, 
-                  "RPSInfo allocation failed");
-   }
-
-   /* construct the full path to the DB file. Look in
-      the local directory, then .ncbirc */
-
-   CFile LUTfile(dbname + ".loo");
-
-   if (LUTfile.Exists() == false) {
-      CMetaRegistry::SEntry config = CMetaRegistry::Load("ncbi", 
-                                        CMetaRegistry::eName_RcOrIni);
-      string dbpath(config.registry->Get("BLAST", "BLASTDB"));
-      char c[2] = {0};
-      c[0] = CDirEntry::GetPathSeparator();
-      dbname = dbpath + string(c) + dbname;
-   }
-
-   CMemoryFile *lut_mmap = new CMemoryFile(dbname + ".loo");
-   if (lut_mmap == NULL) {
-       ERR_POST_EX(CBlastException::eBadParameter, 2,
-                   "Cannot map RPS BLAST lookup file");
-   }
-   info->lookup_header = (RPSLookupFileHeader *)lut_mmap->GetPtr();
-
-   CMemoryFile *pssm_mmap = new CMemoryFile(dbname + ".rps");
-   if (pssm_mmap == NULL) {
-       ERR_POST_EX(CBlastException::eBadParameter, 2,
-                   "Cannot map RPS BLAST profile file");
-   }
-   info->profile_header = (RPSProfileHeader *)pssm_mmap->GetPtr();
-
-   CNcbiIfstream auxfile( (dbname + ".aux").c_str() );
-   if (auxfile.bad() || auxfile.fail()) {
-       ERR_POST_EX(CBlastException::eBadParameter, 2, 
-                   "Cannot open RPS BLAST parameters file");
-   }
-
-   string matrix;
-   auxfile >> matrix;
-   info->aux_info.orig_score_matrix = strdup(matrix.c_str());
-
-   auxfile >> info->aux_info.gap_open_penalty;
-   auxfile >> info->aux_info.gap_extend_penalty;
-   auxfile >> info->aux_info.ungapped_k;
-   auxfile >> info->aux_info.ungapped_h;
-   auxfile >> info->aux_info.max_db_seq_length;
-   auxfile >> info->aux_info.db_length;
-   auxfile >> info->aux_info.scale_factor;
-
-   int num_db_seqs = info->profile_header->num_profiles;
-   info->aux_info.karlin_k = new double[num_db_seqs];
-   if (info->aux_info.karlin_k == NULL) {
-      ERR_POST_EX(CBlastException::eOutOfMemory, 2, 
-                  "karlin_k array allocation failed");
-   }
-   int i;
-
-   for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
-      int seq_size;
-      auxfile >> seq_size;  // not used
-      auxfile >> info->aux_info.karlin_k[i];
-   }
-
-   if (i < num_db_seqs) {
-       ERR_POST_EX(CBlastException::eBadParameter, 2,
-                   "Aux file missing Karlin parameters");
-       exit(CBlastException::eBadParameter);
-   }
-
-   *ppinfo = info;
-   *rps_mmap = lut_mmap;
-   *rps_pssm_mmap = pssm_mmap;
-
-   return 0;
-}
-
 int CBlastApplication::Run(void)
 {
     int status = 0;
@@ -797,21 +707,7 @@ int CBlastApplication::Run(void)
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
 
-    CMemoryFile *rps_mmap = NULL;
-    CMemoryFile *rps_pssm_mmap = NULL;
-    RPSInfo *rps_info = NULL;
-    // Need to set up the RPS database information structure too
-    if (program == eRPSBlast || program == eRPSTblastn) {
-        if (x_FillRPSInfo(&rps_info, &rps_mmap,
-            &rps_pssm_mmap, args["db"].AsString()) != 0) 
-        {
-            ERR_POST_EX(CBlastException::eBadParameter, 2, 
-                       "Cannot initialize RPS BLAST database");
-            exit(CBlastException::eBadParameter);
-        }        
-    }
-    
-    ProcessCommandLineArgs(opts, seq_src, rps_info);
+    ProcessCommandLineArgs(opts, seq_src);
 
     // Perform repeats filtering if required
     char* repeat_filter_string = 
@@ -832,14 +728,14 @@ int CBlastApplication::Run(void)
 
        if (!tabular_output) {
 	  CDbBlast blaster(query_loc, seq_src, *opts, 
-                           rps_info, hsp_stream, num_threads);
+                           hsp_stream, num_threads);
 	  seqalignv = blaster.Run();
 	  FormatResults(&blaster, seqalignv);
        } else {
 	  hsp_stream = Blast_HSPListCQueueInit();
 	  
 	  CDbBlast blaster(query_loc, seq_src, *opts, 
-                           rps_info, hsp_stream, num_threads);
+                           hsp_stream, num_threads);
 	  blaster.SetupSearch();
 	  
           CSeqDbSeqInfoSrc seqinfo_src(args["db"].AsString(), db_is_aa);
@@ -869,15 +765,6 @@ int CBlastApplication::Run(void)
     }
 
     BlastSeqSrcFree(seq_src);
-
-    if (rps_info) {
-        delete rps_mmap;
-        delete rps_pssm_mmap;
-        delete [] rps_info->aux_info.karlin_k;
-        sfree(rps_info->aux_info.orig_score_matrix);
-        delete rps_info;
-        rps_info = NULL;
-    }
 
     return status;
 }
