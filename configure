@@ -3898,37 +3898,37 @@ fi
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
       with_optimization=${with_optimization:="yes"}
-      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]\-\<g[0-9]*\>//g'`
-      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]\-\<g[0-9]*\>//g'`
-      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]\-\<g[0-9]*\>//g'`
+      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
+      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
+      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
    else
       with_optimization=${with_optimization:="no"}
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]\-\<g[0-9]*\>' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CFLAGS="$CFLAGS -g"     ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]\-\<g[0-9]*\>' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
       if test "$with_optimization" = "no" ; then
          CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]\-\<g[0-9]*\>' ;
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP=":"
    fi
 
-   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]\-\<O[0-9]*\>//g'`
-   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]\-\<O[0-9]*\>//g'`
+   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-O[0-9]*//g'`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-O[0-9]*//g'`
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
-      LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]\-\<O[0-9]*\>//g'`
+      LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
       FAST_CFLAGS="$CFLAGS"
       FAST_CXXFLAGS="$CXXFLAGS"
    else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]\-\<O[0-9]*\>' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]\-\<O[0-9]*\>' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]\-\<O[0-9]*\>' ; then
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
