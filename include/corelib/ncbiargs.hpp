@@ -245,10 +245,6 @@ private:
 
 
 
-//
-// Base class for the description of various types of argument
-//
-
 class CArgDesc;
 
 
@@ -662,6 +658,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2002/12/26 12:51:41  dicuccio
+ * Fixed some minor niggling errors with export specifiers in the wrong places.
+ *
  * Revision 1.25  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp

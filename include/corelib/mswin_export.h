@@ -87,6 +87,7 @@
 //
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_FEATDEF_EXPORTS
+#  define NCBI_GBSEQ_EXPORTS
 #  define NCBI_ID1_EXPORTS
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
@@ -110,7 +111,6 @@
 #  define NCBI_ACCESS_EXPORTS
 #  define NCBI_DOCSUM_EXPORTS
 #  define NCBI_ENTREZ2_EXPORTS
-#  define NCBI_GBSEQ_EXPORTS
 #  define NCBI_MIM_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
 #endif
@@ -122,7 +122,7 @@
 #ifdef NCBI_MMDB_EXPORTS
 #  define NCBI_CDD_EXPORTS
 #  define NCBI_CN3D_EXPORTS
-#  define NCBI_MIME_EXPORTS
+#  define NCBI_NCBIMIME_EXPORTS
 #  define NCBI_MMDB1_EXPORTS
 #  define NCBI_MMDB2_EXPORTS
 #  define NCBI_MMDB3_EXPORTS
@@ -456,10 +456,10 @@
 //
 // Export specifier for library objects_mime
 //
-#ifdef NCBI_MIME_EXPORTS
-#  define NCBI_MIME_EXPORT          __declspec(dllexport)
+#ifdef NCBI_NCBIMIME_EXPORTS
+#  define NCBI_NCBIMIME_EXPORT      __declspec(dllexport)
 #else
-#  define NCBI_MIME_EXPORT          __declspec(dllimport)
+#  define NCBI_NCBIMIME_EXPORT      __declspec(dllimport)
 #endif
 
 //
@@ -541,11 +541,11 @@
 #  define NCBI_ID1_EXPORT
 #  define NCBI_MEDLARS_EXPORT
 #  define NCBI_MEDLINE_EXPORT
-#  define NCBI_MIME_EXPORT
 #  define NCBI_MIM_EXPORT
 #  define NCBI_MMDB1_EXPORT
 #  define NCBI_MMDB2_EXPORT
 #  define NCBI_MMDB3_EXPORT
+#  define NCBI_NCBIMIME_EXPORT
 #  define NCBI_OBJPRT_EXPORT
 #  define NCBI_PUBMED_EXPORT
 #  define NCBI_PUB_EXPORT
@@ -575,6 +575,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2002/12/26 12:51:41  dicuccio
+ * Fixed some minor niggling errors with export specifiers in the wrong places.
+ *
  * Revision 1.1  2002/12/18 22:52:19  dicuccio
  * Initial revision.
  *
