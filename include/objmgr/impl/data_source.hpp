@@ -397,7 +397,7 @@ private:
 };
 
 
-class CDSAnnotLockReadGuard
+class NCBI_XOBJMGR_EXPORT CDSAnnotLockReadGuard
 {
 public:
     CDSAnnotLockReadGuard(CDataSource& ds);
@@ -408,7 +408,7 @@ private:
 };
 
 
-class CDSAnnotLockWriteGuard
+class NCBI_XOBJMGR_EXPORT CDSAnnotLockWriteGuard
 {
 public:
     CDSAnnotLockWriteGuard(CDataSource& ds);

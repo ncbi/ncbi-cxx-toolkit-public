@@ -63,7 +63,7 @@ class CSeq_annot_SNP_Info;
 class CSeq_point;
 class CSeq_interval;
 
-class CIndexedStrings
+class NCBI_XOBJMGR_EXPORT CIndexedStrings
 {
 public:
     void ClearIndices(void)
@@ -293,6 +293,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/03/28 20:40:44  jcherry
+* Added export specifiers
+*
 * Revision 1.17  2005/03/15 19:09:52  vasilche
 * SSNP_Info structure is defined in separate header.
 *

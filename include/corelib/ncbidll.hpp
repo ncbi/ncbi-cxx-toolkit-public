@@ -409,6 +409,7 @@ public:
     ///   Which "standard" paths to add.
     /// @sa
     ///   FindCandidates
+    NCBI_XNCBI_EXPORT
     void AddExtraDllPath(vector<string>& paths, TExtraDllPath which);
 
     /// Try to resolve all files matching the specified masks in the
@@ -494,6 +495,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/03/28 20:41:43  jcherry
+ * Added export specifiers
+ *
  * Revision 1.27  2005/03/03 19:03:16  ssikorsk
  * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
  *

@@ -237,7 +237,7 @@ class CSeq_annot_Handle;
 class CAnnotMappingCollector;
 
 
-class CAnnot_Collector : public CObject
+class NCBI_XOBJMGR_EXPORT CAnnot_Collector : public CObject
 {
 public:
     typedef SAnnotSelector::TAnnotType TAnnotType;
@@ -779,6 +779,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/03/28 20:40:44  jcherry
+* Added export specifiers
+*
 * Revision 1.26  2005/03/17 17:52:27  grichenk
 * Added flag to SAnnotSelector for skipping multiple SNPs from the same
 * seq-annot. Optimized CAnnotCollector::GetAnnot().

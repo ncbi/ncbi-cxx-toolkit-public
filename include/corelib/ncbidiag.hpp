@@ -475,6 +475,7 @@ public:
     const char* GetFunction(void) const;
 
     /// Check if filters are passed
+    NCBI_XNCBI_EXPORT
     bool CheckFilters(void) const;
 
     /// Get post flags for the current message.
@@ -1106,6 +1107,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.79  2005/03/28 20:41:43  jcherry
+ * Added export specifiers
+ *
  * Revision 1.78  2004/12/13 19:39:18  kuznets
  * Improved doxy comments for filtering functions
  *

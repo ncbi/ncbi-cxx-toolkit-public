@@ -147,7 +147,7 @@ private:
 };
 
 
-class CTSE_LockSet
+class NCBI_XOBJMGR_EXPORT CTSE_LockSet
 {
 public:
 
