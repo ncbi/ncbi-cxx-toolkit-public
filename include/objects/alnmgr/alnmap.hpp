@@ -51,14 +51,15 @@ public:
     // data types
     typedef unsigned int TSegTypeFlags; // binary OR of ESegTypeFlags
     enum ESegTypeFlags {
-        fSeq                  = 0x01,
-        fAlignedToSeqOnAnchor = 0x02,
-        fUnalignedOnRight     = 0x04, // unaligned region on the right
-        fUnalignedOnLeft      = 0x08,
-        fNoSeqOnRight         = 0x10, // maybe gaps on the right but no seq
-        fNoSeqOnLeft          = 0x20,
-        fEndOnRight           = 0x40, // this is the last segment
-        fEndOnLeft            = 0x80,
+        fSeq                     = 0x01,
+        fNotAlignedToSeqOnAnchor = 0x02,
+        fInsert                  = fSeq | fNotAlignedToSeqOnAnchor,
+        fUnalignedOnRight        = 0x04, // unaligned region on the right
+        fUnalignedOnLeft         = 0x08,
+        fNoSeqOnRight            = 0x10, // maybe gaps on the right but no seq
+        fNoSeqOnLeft             = 0x20,
+        fEndOnRight              = 0x40, // this is the last segment
+        fEndOnLeft               = 0x80,
         // reserved for internal use
         fTypeIsSet            = (TSegTypeFlags) 0x80000000
     };
@@ -467,6 +468,12 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+* Remove static from the definition of CAlnMap::IsTypeInsert, as
+* (like virtual) it should appear only on the initial declaration.
+*
+* Revision 1.6  2002/09/26 18:43:11  todorov
+* Added a static method for convenient check for an insert
+*
 * Revision 1.5  2002/09/26 17:40:42  todorov
 * Changed flag fAlignedToSeqOnAnchor to fNotAlignedToSeqOnAnchor. This proved more convenient.
 *
