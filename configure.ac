@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.247 2003/12/12 18:49:24 ucko Exp $
+#  $Id: configure.ac,v 1.248 2003/12/19 21:14:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1231,6 +1231,8 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
 #### Try to find a version of pwd that yields /net paths.
+PATH=$PATH:/usr/sbin:/sbin
+export PATH
 if amq -w >/dev/null 2>&1; then
    smart_pwd='amq -w'
 else

@@ -4572,6 +4572,8 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
 #### Try to find a version of pwd that yields /net paths.
+PATH=$PATH:/usr/sbin:/sbin
+export PATH
 if amq -w >/dev/null 2>&1; then
    smart_pwd='amq -w'
 else
