@@ -57,6 +57,7 @@ class CIStreamBuffer;
 class NCBI_XUTIL_EXPORT CByteSource : public CObject
 {
 public:
+    CByteSource(void);
     virtual ~CByteSource(void);
     virtual CRef<CByteSourceReader> Open(void) = 0;
 };
@@ -65,6 +66,7 @@ public:
 class NCBI_XUTIL_EXPORT CByteSourceReader : public CObject
 {
 public:
+    CByteSourceReader(void);
     virtual ~CByteSourceReader(void);
 
     /// Read up to bufferLength bytes into buffer
@@ -77,6 +79,10 @@ public:
 
     virtual CRef<CSubSourceCollector> 
         SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
+
+private:
+    CByteSourceReader(const CByteSourceReader&);
+    CByteSourceReader& operator=(const CByteSourceReader&);
 };
 
 
@@ -126,9 +132,8 @@ protected:
 class NCBI_XUTIL_EXPORT CStreamByteSource : public CByteSource
 {
 public:
-    CStreamByteSource(CNcbiIstream& in)
-        : m_Stream(&in)
-        { return; }
+    CStreamByteSource(CNcbiIstream& in);
+    ~CStreamByteSource(void);
 
     CRef<CByteSourceReader> Open(void);
 
@@ -140,10 +145,7 @@ protected:
 class NCBI_XUTIL_EXPORT CFStreamByteSource : public CStreamByteSource
 {
 public:
-    CFStreamByteSource(CNcbiIstream& in)
-        : CStreamByteSource(in)
-        { return; }
-
+    CFStreamByteSource(CNcbiIstream& in);
     CFStreamByteSource(const string& fileName, bool binary);
     ~CFStreamByteSource(void);
 };
@@ -154,6 +156,7 @@ class NCBI_XUTIL_EXPORT CFileByteSource : public CByteSource
 public:
     CFileByteSource(const string& name, bool binary);
     CFileByteSource(const CFileByteSource& file);
+    ~CFileByteSource(void);
 
     CRef<CByteSourceReader> Open(void);
 
@@ -172,9 +175,8 @@ private:
 class NCBI_XUTIL_EXPORT CStreamByteSourceReader : public CByteSourceReader
 {
 public:
-    CStreamByteSourceReader(const CByteSource* source, CNcbiIstream* stream)
-        : m_Source(source), m_Stream(stream)
-        { return; }
+    CStreamByteSourceReader(const CByteSource* source, CNcbiIstream* stream);
+    ~CStreamByteSourceReader(void);
 
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
@@ -190,16 +192,12 @@ protected:
 class NCBI_XUTIL_EXPORT CIRByteSourceReader : public CByteSourceReader
 {
 public:
-    CIRByteSourceReader(IReader* reader)
-        : m_Reader(reader), m_EOF(false)
-        { return; }
+    CIRByteSourceReader(IReader* reader);
+    ~CIRByteSourceReader(void);
 
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
 
-private:
-    CIRByteSourceReader(const CIRByteSourceReader&);
-    CIRByteSourceReader& operator=(const CIRByteSourceReader&);
 protected:
     IReader*   m_Reader;
     bool       m_EOF;
@@ -225,10 +223,8 @@ public:
     ///   Readers source.
     /// @param writer
     ///   Destination interface pointer.
-    CWriterByteSourceReader(CNcbiIstream* stream, IWriter* writer)
-        : CStreamByteSourceReader(0 /* CByteSource* */, stream),
-          m_Writer(writer)
-        { _ASSERT(writer); }
+    CWriterByteSourceReader(CNcbiIstream* stream, IWriter* writer);
+    ~CWriterByteSourceReader(void);
 
     /// Create CWriterSourceCollector.
     virtual CRef<CSubSourceCollector> 
@@ -239,10 +235,40 @@ protected:
 };
 
 
+class NCBI_XUTIL_EXPORT CWriterCopyByteSourceReader 
+    : public CByteSourceReader
+{
+public:
+    /// Constructor.
+    ///
+    /// @param reader
+    ///   Source reader.
+    /// @param writer
+    ///   Destination interface pointer.
+    CWriterCopyByteSourceReader(CByteSourceReader* reader, IWriter* writer);
+    ~CWriterCopyByteSourceReader(void);
+
+    /// Just call Read method on source reader.
+    size_t Read(char* buffer, size_t bufferLength);
+
+    /// Just call EndOfData method on source reader.
+    bool EndOfData(void) const;
+
+    /// Create CWriterSourceCollector.
+    virtual CRef<CSubSourceCollector> 
+        SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
+
+protected:
+    CRef<CByteSourceReader> m_Reader;
+    IWriter* m_Writer;
+};
+
+
 class NCBI_XUTIL_EXPORT CFileByteSourceReader : public CStreamByteSourceReader
 {
 public:
     CFileByteSourceReader(const CFileByteSource* source);
+    ~CFileByteSourceReader(void);
    
     CRef<CSubSourceCollector> SubSource(size_t prepend, 
                                         CRef<CSubSourceCollector> parent);
@@ -277,9 +303,7 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryByteSource : public CByteSource
 {
 public:
-    CMemoryByteSource(CConstRef<CMemoryChunk> bytes)
-        : m_Bytes(bytes)
-        { return; }
+    CMemoryByteSource(CConstRef<CMemoryChunk> bytes);
     ~CMemoryByteSource(void);
 
     CRef<CByteSourceReader> Open(void);
@@ -292,9 +316,8 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryByteSourceReader : public CByteSourceReader
 {
 public:
-    CMemoryByteSourceReader(CConstRef<CMemoryChunk> bytes)
-        : m_CurrentChunk(bytes), m_CurrentChunkOffset(0)
-        { return; }
+    CMemoryByteSourceReader(CConstRef<CMemoryChunk> bytes);
+    ~CMemoryByteSourceReader(void);
     
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
@@ -313,6 +336,7 @@ class NCBI_XUTIL_EXPORT CMemorySourceCollector : public CSubSourceCollector
 public:
     CMemorySourceCollector(CRef<CSubSourceCollector>
                            parent = CRef<CSubSourceCollector>());
+    ~CMemorySourceCollector(void);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
     virtual CRef<CByteSource> GetSource(void);
@@ -374,6 +398,7 @@ public:
     CFileSourceCollector(CConstRef<CFileByteSource> source,
                          TFilePos                   start,
                          CRef<CSubSourceCollector>  parent);
+    ~CFileSourceCollector(void);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
     virtual CRef<CByteSource> GetSource(void);
@@ -393,6 +418,7 @@ public:
     typedef CFileSourceCollector::TFileOff TFileOff;
     CSubFileByteSource(const CFileByteSource& file,
                        TFilePos start, TFileOff length);
+    ~CSubFileByteSource(void);
 
     CRef<CByteSourceReader> Open(void);
 
@@ -416,6 +442,7 @@ public:
 
     CSubFileByteSourceReader(const CFileByteSource* source,
                              TFilePos start, TFileOff length);
+    ~CSubFileByteSourceReader(void);
 
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
@@ -435,6 +462,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2003/10/14 18:28:33  vasilche
+ * Added full set of explicit constructors/destructors to all readers and sources.
+ * Added CWriterCopyByteSourceReader for copying data from another reader object.
+ *
  * Revision 1.20  2003/10/01 21:08:37  ivanov
  * Formal code rearrangement
  *

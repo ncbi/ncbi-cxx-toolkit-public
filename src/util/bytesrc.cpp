@@ -44,16 +44,37 @@ BEGIN_NCBI_SCOPE
 typedef CFileSourceCollector::TFilePos TFilePos;
 typedef CFileSourceCollector::TFileOff TFileOff;
 
+/////////////////////////////////////////////////////////////////////////////
+// CByteSource
+/////////////////////////////////////////////////////////////////////////////
+
+CByteSource::CByteSource(void)
+{
+}
+
 
 CByteSource::~CByteSource(void)
 {
-    return;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
+CByteSourceReader::CByteSourceReader(void)
+{
 }
 
 
 CByteSourceReader::~CByteSourceReader(void)
 {
-    return;
+}
+
+
+bool CByteSourceReader::EndOfData(void) const
+{
+    return true;
 }
 
 
@@ -63,6 +84,11 @@ CByteSourceReader::SubSource(size_t /*prevent*/,
 {
     return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent));
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSubSourceCollector
+/////////////////////////////////////////////////////////////////////////////
 
 
 CSubSourceCollector::CSubSourceCollector(CRef<CSubSourceCollector> parent)
@@ -85,6 +111,11 @@ void CSubSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
     }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CStreamByteSource
+/////////////////////////////////////////////////////////////////////////////
+
 /* Mac compiler doesn't like getting these flags as unsigned int (thiessen)
 static inline
 unsigned IFStreamFlags(bool binary)
@@ -96,9 +127,14 @@ unsigned IFStreamFlags(bool binary)
   (isBinary? (IOS_BASE::in | IOS_BASE::binary): IOS_BASE::in)
 
 
-bool CByteSourceReader::EndOfData(void) const
+CStreamByteSource::CStreamByteSource(CNcbiIstream& in)
+    : m_Stream(&in)
 {
-    return true;
+}
+
+
+CStreamByteSource::~CStreamByteSource(void)
+{
 }
 
 
@@ -106,6 +142,22 @@ CRef<CByteSourceReader> CStreamByteSource::Open(void)
 {
     return CRef<CByteSourceReader>
         (new CStreamByteSourceReader(this, m_Stream));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStreamByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
+CStreamByteSourceReader::CStreamByteSourceReader(const CByteSource* source,
+                                                 CNcbiIstream* stream)
+    : m_Source(source), m_Stream(stream)
+{
+}
+
+
+CStreamByteSourceReader::~CStreamByteSourceReader(void)
+{
 }
 
 
@@ -118,6 +170,21 @@ size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 bool CStreamByteSourceReader::EndOfData(void) const
 {
     return m_Stream->eof();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CIRByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
+CIRByteSourceReader::CIRByteSourceReader(IReader* reader)
+    : m_Reader(reader), m_EOF(false)
+{
+}
+
+
+CIRByteSourceReader::~CIRByteSourceReader(void)
+{
 }
 
 
@@ -138,6 +205,16 @@ bool CIRByteSourceReader::EndOfData(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CFStreamByteSource
+/////////////////////////////////////////////////////////////////////////////
+
+CFStreamByteSource::CFStreamByteSource(CNcbiIstream& in)
+    : CStreamByteSource(in)
+{
+}
+
+
 CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
     : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
@@ -154,6 +231,10 @@ CFStreamByteSource::~CFStreamByteSource(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CFileByteSource
+/////////////////////////////////////////////////////////////////////////////
+
 CFileByteSource::CFileByteSource(const string& fileName, bool binary)
     : m_FileName(fileName), m_Binary(binary)
 {
@@ -168,11 +249,20 @@ CFileByteSource::CFileByteSource(const CFileByteSource& file)
 }
 
 
+CFileByteSource::~CFileByteSource(void)
+{
+}
+
+
 CRef<CByteSourceReader> CFileByteSource::Open(void)
 {
     return CRef<CByteSourceReader>(new CFileByteSourceReader(this));
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CSubFileByteSource
+/////////////////////////////////////////////////////////////////////////////
 
 CSubFileByteSource::CSubFileByteSource(const CFileByteSource& file,
                                        TFilePos start, TFileOff length)
@@ -182,12 +272,20 @@ CSubFileByteSource::CSubFileByteSource(const CFileByteSource& file,
 }
 
 
+CSubFileByteSource::~CSubFileByteSource(void)
+{
+}
+
+
 CRef<CByteSourceReader> CSubFileByteSource::Open(void)
 {
     return CRef<CByteSourceReader>
         (new CSubFileByteSourceReader(this, m_Start, m_Length));
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// CFileByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
 
 CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
     : CStreamByteSourceReader(source, 0),
@@ -205,12 +303,35 @@ CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
 }
 
 
+CFileByteSourceReader::~CFileByteSourceReader(void)
+{
+}
+
+
+CRef<CSubSourceCollector> 
+CFileByteSourceReader::SubSource(size_t prepend, 
+                                 CRef<CSubSourceCollector> parent)
+{
+    return CRef<CSubSourceCollector>(new CFileSourceCollector(m_FileSource,
+                                    m_Stream->tellg() - TFileOff(prepend),
+                                    parent));
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CSubFileByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
 CSubFileByteSourceReader::CSubFileByteSourceReader(const CFileByteSource* s,
                                                    TFilePos start,
                                                    TFileOff length)
     : CParent(s), m_Length(length)
 {
     m_Stream->seekg(start);
+}
+
+
+CSubFileByteSourceReader::~CSubFileByteSourceReader(void)
+{
 }
 
 
@@ -231,14 +352,9 @@ bool CSubFileByteSourceReader::EndOfData(void) const
 }
 
 
-CRef<CSubSourceCollector> 
-CFileByteSourceReader::SubSource(size_t prepend, 
-                                 CRef<CSubSourceCollector> parent)
-{
-    return CRef<CSubSourceCollector>(new CFileSourceCollector(m_FileSource,
-                                    m_Stream->tellg() - TFileOff(prepend),
-                                    parent));
-}
+/////////////////////////////////////////////////////////////////////////////
+// CFileSourceCollector
+/////////////////////////////////////////////////////////////////////////////
 
 
 CFileSourceCollector::CFileSourceCollector(CConstRef<CFileByteSource> s,
@@ -249,7 +365,11 @@ CFileSourceCollector::CFileSourceCollector(CConstRef<CFileByteSource> s,
       m_Start(start),
       m_Length(0)
 {
-    return;
+}
+
+
+CFileSourceCollector::~CFileSourceCollector(void)
+{
 }
 
 
@@ -267,6 +387,10 @@ CRef<CByteSource> CFileSourceCollector::GetSource(void)
                                   m_Start, m_Length));
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CMemoryChunk
+/////////////////////////////////////////////////////////////////////////////
 
 CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
                            CRef<CMemoryChunk> prevChunk)
@@ -287,6 +411,16 @@ CMemoryChunk::~CMemoryChunk(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CMemoryByteSource
+/////////////////////////////////////////////////////////////////////////////
+
+CMemoryByteSource::CMemoryByteSource(CConstRef<CMemoryChunk> bytes)
+    : m_Bytes(bytes)
+{
+}
+
+
 CMemoryByteSource::~CMemoryByteSource(void)
 {
 }
@@ -295,6 +429,22 @@ CMemoryByteSource::~CMemoryByteSource(void)
 CRef<CByteSourceReader> CMemoryByteSource::Open(void)
 {
     return CRef<CByteSourceReader>(new CMemoryByteSourceReader(m_Bytes));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CMemoryByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
+
+CMemoryByteSourceReader::CMemoryByteSourceReader(CConstRef<CMemoryChunk> bytes)
+    : m_CurrentChunk(bytes), m_CurrentChunkOffset(0)
+{
+}
+
+
+CMemoryByteSourceReader::~CMemoryByteSourceReader(void)
+{
 }
 
 
@@ -331,12 +481,21 @@ bool CMemoryByteSourceReader::EndOfData(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CMemorySourceCollector
+/////////////////////////////////////////////////////////////////////////////
+
 CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector>
                                                parent)
     : CSubSourceCollector(parent)
 {
-    return;
 }
+
+
+CMemorySourceCollector::~CMemorySourceCollector(void)
+{
+}
+
 
 void CMemorySourceCollector::AddChunk(const char* buffer,
                                       size_t bufferLength)
@@ -354,6 +513,10 @@ CRef<CByteSource> CMemorySourceCollector::GetSource(void)
     return CRef<CByteSource>(new CMemoryByteSource(m_FirstChunk));
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CWriterSourceCollector
+/////////////////////////////////////////////////////////////////////////////
 
 CWriterSourceCollector::CWriterSourceCollector(IWriter*    writer, 
                                                EOwnership  own, 
@@ -400,9 +563,67 @@ CRef<CByteSource> CWriterSourceCollector::GetSource(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CWriterByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
+CWriterByteSourceReader::CWriterByteSourceReader(CNcbiIstream* stream,
+                                                 IWriter* writer)
+    : CStreamByteSourceReader(0 /* CByteSource* */, stream),
+      m_Writer(writer)
+{
+    _ASSERT(writer);
+}
+
+
+CWriterByteSourceReader::~CWriterByteSourceReader(void)
+{
+}
+
+
 CRef<CSubSourceCollector> 
 CWriterByteSourceReader::SubSource(size_t /*prepend*/,
                                    CRef<CSubSourceCollector> parent)
+{
+    return 
+        CRef<CSubSourceCollector>(
+            new CWriterSourceCollector(m_Writer, eNoOwnership, parent));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CWriterCopyByteSourceReader
+/////////////////////////////////////////////////////////////////////////////
+
+CWriterCopyByteSourceReader::CWriterCopyByteSourceReader(CByteSourceReader* reader, IWriter* writer)
+    : m_Reader(reader),
+      m_Writer(writer)
+{
+    _ASSERT(reader);
+    _ASSERT(writer);
+}
+
+
+CWriterCopyByteSourceReader::~CWriterCopyByteSourceReader(void)
+{
+}
+
+
+size_t CWriterCopyByteSourceReader::Read(char* buffer, size_t bufferLength)
+{
+    return m_Reader->Read(buffer, bufferLength);
+}
+
+
+bool CWriterCopyByteSourceReader::EndOfData(void) const
+{
+    return m_Reader->EndOfData();
+}
+
+
+CRef<CSubSourceCollector>
+CWriterCopyByteSourceReader::SubSource(size_t prepend,
+                                       CRef<CSubSourceCollector> parent)
 {
     return 
         CRef<CSubSourceCollector>(
@@ -416,6 +637,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/10/14 18:28:33  vasilche
+ * Added full set of explicit constructors/destructors to all readers and sources.
+ * Added CWriterCopyByteSourceReader for copying data from another reader object.
+ *
  * Revision 1.28  2003/10/01 21:14:55  ivanov
  * Formal code rearrangement
  *
