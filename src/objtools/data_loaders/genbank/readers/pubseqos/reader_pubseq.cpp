@@ -82,7 +82,7 @@ static int GetDebugLevel(void)
     return ret;
 }
 #else
-# defined s_GetDebugLevel() (0)
+# define GetDebugLevel() (0)
 #endif
 
 
@@ -584,6 +584,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.54  2004/06/30 21:09:39  vasilche
+* Fixed typo in release mode.
+*
 * Revision 1.53  2004/06/30 21:02:02  vasilche
 * Added loading of external annotations from 26 satellite.
 *
