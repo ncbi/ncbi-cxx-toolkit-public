@@ -567,6 +567,9 @@ void CNWAligner::FormatAsText(string* output,
     switch (type) {
 
     case eFormatType1: {
+        if(m_Seq1Id.size() && m_Seq2Id.size()) {
+            ss << '>' << m_Seq1Id << endl << '>' << m_Seq2Id << endl;
+        }
         vector<char> v1, v2;
         size_t aln_size = x_ApplyTranscript(&v1, &v2);
         unsigned i1 = 0, i2 = 0;
@@ -600,6 +603,9 @@ void CNWAligner::FormatAsText(string* output,
     break;
 
     case eFormatType2: {
+        if(m_Seq1Id.size() && m_Seq2Id.size()) {
+            ss << '>' << m_Seq1Id << endl << '>' << m_Seq2Id << endl;
+        }
         vector<char> v1, v2;
         size_t aln_size = x_ApplyTranscript(&v1, &v2);
         unsigned i1 = 0, i2 = 0;
@@ -998,6 +1004,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/07/09 15:11:22  kapustin
+ * Update plain text output with seq ids and use inequalities instead of binary operation to verify intron boundaries
+ *
  * Revision 1.31  2003/06/26 20:39:39  kapustin
  * Rename formal parameters in SetEndSpaceFree() to avoid conflict with macro under some configurations
  *

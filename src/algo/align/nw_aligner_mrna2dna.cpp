@@ -745,7 +745,7 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
             size_t matches = 0, exon_size = 0;
 
             while(tr_idx >= tr_idx_lo && 
-                  !(m_Transcript[tr_idx] & eIntron_GT_AG)) {
+                  m_Transcript[tr_idx] < eIntron_GT_AG) {
                 
                 bool noins = m_Transcript[tr_idx] != eInsert;
                 bool nodel = m_Transcript[tr_idx] != eDelete;
@@ -784,7 +784,7 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
             }
             // find next exon
             while(tr_idx >= tr_idx_lo &&
-                  (m_Transcript[tr_idx] & eIntron_GT_AG)) {
+                  (m_Transcript[tr_idx] >= eIntron_GT_AG)) {
 
                 --tr_idx;
                 ++p2;
@@ -810,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/07/09 15:11:23  kapustin
+ * Update plain text output with seq ids and use inequalities instead of binary operation to verify intron boundaries
+ *
  * Revision 1.20  2003/06/17 17:20:44  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *
