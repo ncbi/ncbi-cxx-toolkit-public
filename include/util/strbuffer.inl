@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/14 17:59:24  vakatov
+* COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
+* to avoid clash with MS-Win system headers' #define
+*
 * Revision 1.2  2001/01/05 20:08:53  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -334,7 +338,7 @@ size_t COStreamBuffer::GetUsedSpace(void) const
 }
 
 inline
-size_t COStreamBuffer::GetFreeSpace(void) const
+size_t COStreamBuffer::GetAvailableSpace(void) const
 {
     return m_BufferEnd - m_CurrentPos;
 }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/03/14 17:59:26  vakatov
+* COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
+* to avoid clash with MS-Win system headers' #define
+*
 * Revision 1.22  2001/01/05 20:09:05  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -835,10 +839,10 @@ void COStreamBuffer::Write(const char* data, size_t dataLength)
     THROWS1((CIOException, bad_alloc))
 {
     while ( dataLength > 0 ) {
-        size_t available = GetFreeSpace();
+        size_t available = GetAvailableSpace();
         if ( available == 0 ) {
             FlushBuffer(false);
-            available = GetFreeSpace();
+            available = GetAvailableSpace();
         }
         if ( available >= dataLength )
             break; // current chunk will fit in buffer
@@ -855,10 +859,10 @@ void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
     THROWS1((CIOException, bad_alloc))
 {
     for ( ;; ) {
-        size_t available = GetFreeSpace();
+        size_t available = GetAvailableSpace();
         if ( available == 0 ) {
             FlushBuffer(false);
-            available = GetFreeSpace();
+            available = GetAvailableSpace();
         }
         size_t count = reader.GetObject().Read(m_CurrentPos, available);
         if ( count == 0 ) {

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/03/14 17:59:24  vakatov
+* COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
+* to avoid clash with MS-Win system headers' #define
+*
 * Revision 1.22  2001/01/05 20:08:53  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -349,7 +353,7 @@ private:
     const char* m_Error;
 
     size_t GetUsedSpace(void) const;
-    size_t GetFreeSpace(void) const;
+    size_t GetAvailableSpace(void) const;
     size_t GetBufferSize(void) const;
 
     size_t m_IndentLevel;
