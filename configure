@@ -2398,7 +2398,7 @@ EOF
 ### Compose their target counterparts
 ### Configure
 
-configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | grep -v 'config\.h\.in' | grep -v 'configure\.in' | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`cd "${srcdir}/src"  &&  find ./ -name '*.in' -print | grep -v 'config\.h\.in' | grep -v 'configure\.in' | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 if test -z "$configurables" ; then
   { echo "configure: error: Cannot find any configurables below \"${srcdir}\"!" 1>&2; exit 1; }
 fi
@@ -2859,7 +2859,7 @@ echo "$x_configurables" | while read x_file ; do
    rm "$x_file.tmp"
 done
 
-find "$exec_prefix" -name '*.sh' -print | while read x_file ; do
+find "$exec_prefix/" -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
 
