@@ -873,7 +873,7 @@ void CAlnMix::x_CreateRowsVector()
         CAlnMixSeq * seq = *i;
         m_Rows.push_back(seq);
         seq->m_RowIndex = count++;
-        while ( (seq = seq->m_ExtraRow) == NULL ) {
+        while ( (seq = seq->m_ExtraRow) != NULL ) {
             seq->m_RowIndex = count++;
             m_Rows.push_back(seq);
         }
@@ -1183,6 +1183,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/01/10 15:12:13  dicuccio
+* Ooops.  Methinks I should read my e-mail more thoroughly - thats '!= NULL', not
+* '== NULL'.
+*
 * Revision 1.19  2003/01/10 15:11:12  dicuccio
 * Small bug fixes: changed 'iterate' -> 'non_const_iterate' in x_Merge(); changed
 * logic of while() in x_CreateRowsVector() to avoid compiler warning.
