@@ -39,6 +39,8 @@
 #include <objmgr/seq_vector_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/synonyms.hpp>
 
@@ -1288,6 +1290,27 @@ CBioseq_Handle GetParentForPart(const CBioseq_Handle& part)
 END_SCOPE(sequence)
 
 
+void CFastaOstream::Write(const CSeq_entry_Handle& handle,
+                          const CSeq_loc* location)
+{
+    for (CBioseq_CI it(handle);  it;  ++it) {
+        if ( !SkipBioseq(*it->GetCompleteBioseq()) ) {
+            if (location) {
+                CSeq_loc loc2;
+                loc2.SetWhole().Assign(*it->GetSeqId());
+                int d = sequence::TestForOverlap
+                    (*location, loc2, sequence::eOverlap_Interval,
+                     kInvalidSeqPos, &handle.GetScope());
+                if (d < 0) {
+                    continue;
+                }
+            }
+            Write(*it, location);
+        }
+    }
+}
+
+
 void CFastaOstream::Write(const CBioseq_Handle& handle,
                           const CSeq_loc* location)
 {
@@ -1417,8 +1440,12 @@ static TGaps s_AdjustGaps(const TGaps& gaps, const CSeq_loc& location)
             }
         }
 
-        while (gap_it->GetEnd() < range.GetFrom()) {
+        while (gap_it != gaps.end()  &&  gap_it->GetEnd() < range.GetFrom()) {
             ++gap_it; // skip
+        }
+        // we may be out of gaps now...
+        if (gap_it == gaps.end()) {
+            break;
         }
 
         if (gap_it->m_Start <= range.GetFrom()) {
@@ -1520,16 +1547,9 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
 
 void CFastaOstream::Write(CSeq_entry& entry, const CSeq_loc* location)
 {
-    CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CScope         scope(*om);
+    CScope scope(*CObjectManager::GetInstance());
 
-    scope.AddTopLevelSeqEntry(entry);
-    for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
-        if ( !SkipBioseq(*it) ) {
-            CBioseq_Handle h = scope.GetBioseqHandle(*it->GetId().front());
-            Write(h, location);
-        }
-    }
+    Write(scope.AddTopLevelSeqEntry(entry), location);
 }
 
 
@@ -2531,6 +2551,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.112  2005/01/06 21:04:25  ucko
+* CFastaOstream: support CSeq_entry_Handle, and improve support for
+* limiting the output to a particular location.
+*
 * Revision 1.111  2005/01/04 14:52:11  dicuccio
 * Bug Fixes:
 * - sequence::GetId(..., eGetId_ForceAcc): removed unententional fall-through
