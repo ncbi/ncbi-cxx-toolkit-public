@@ -136,7 +136,7 @@ void CFlatFileGenerator::Generate
     const CSeq_entry* entry = 0;
     CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(loc);
     if ( bsh ) {
-        const CSeq_entry* entry = bsh.GetBioseq().GetParentEntry();
+        entry = bsh.GetBioseq().GetParentEntry();
     }
     if ( entry == 0 ) {
         NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:58:28  shomrat
+* bug fix
+*
 * Revision 1.3  2004/01/14 16:13:11  shomrat
 * Added GFF foramt; changed internal representation
 *
