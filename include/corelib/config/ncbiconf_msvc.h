@@ -52,6 +52,7 @@
 #define HAVE_WSTRING     1
 
 #define HAVE_OPENGL      1
+#define HAVE_FLTK        1
 
 #define HAVE_IOS_XALLOC  1
 

@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.20 2003/06/16 16:57:27 dicuccio Exp $
+/* $Id: ncbiconf.ms6,v 1.21 2003/06/20 15:09:56 dicuccio Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -52,6 +52,7 @@
 #define HAVE_WSTRING     1
 
 #define HAVE_OPENGL      1
+#define HAVE_FLTK        1
 
 #define HAVE_IOS_XALLOC  1
 
