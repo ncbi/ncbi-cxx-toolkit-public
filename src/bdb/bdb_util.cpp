@@ -100,6 +100,8 @@ CBDB_File::TUnifiedFieldIndex BDB_find_field(const CBDB_File& dbf,
         if (fidx >= 0) {
             fidx = BDB_GetUFieldIdx(fidx, true /* key */);
             return fidx;
+        } else {
+            fidx = 0;
         }
     }
 
@@ -109,6 +111,8 @@ CBDB_File::TUnifiedFieldIndex BDB_find_field(const CBDB_File& dbf,
         if (fidx >= 0) {
             fidx = BDB_GetUFieldIdx(fidx, false /* key */);
             return fidx;        
+        } else {
+            fidx = 0;
         }
     }
 
@@ -148,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/11 13:15:40  kuznets
+ * Minor bugfix
+ *
  * Revision 1.2  2004/03/10 14:03:11  kuznets
  * + BDB_get_rowid
  *
