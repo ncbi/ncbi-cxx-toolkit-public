@@ -354,6 +354,7 @@
 			if ( oTask.DllBuild ) {
 				ptb_command_line += " -dll";
 			}
+			ptb_command_line += " -nobuildptb";
 			ptb_command_line += " -logfile " + oTree.TreeRoot + "\\" + oTask.ProjectName + "_log.txt";
 			ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
 			ptb_command_line += " " + oTree.TreeRoot;
