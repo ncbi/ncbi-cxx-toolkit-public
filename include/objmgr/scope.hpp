@@ -42,6 +42,7 @@
 #include <objects/objmgr/annot_types_ci.hpp>
 #include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/seqmatch_info.hpp>
+#include <objects/objmgr/impl/synonyms.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -161,6 +162,8 @@ private:
 
     CSeq_id_Mapper& x_GetIdMapper(void) const;
 
+    const CSynonymsSet* x_GetSynonyms(const CSeq_id_Handle& id);
+
     // Conflict reporting function
     enum EConflict {
         eConflict_History,
@@ -180,6 +183,9 @@ private:
     typedef map<CSeq_id_Handle, CBioseq_Handle> TCache;
     TCache m_Cache;
 
+    typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
+    TSynCache m_SynCache;
+
     mutable CMutex m_Scope_Mtx;
 
     friend class CObjectManager;
@@ -196,6 +202,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/02/28 20:02:35  grichenk
+* Added synonyms cache and x_GetSynonyms()
+*
 * Revision 1.30  2003/02/27 14:35:32  vasilche
 * Splitted PopulateTSESet() by logically independent parts.
 *

@@ -428,6 +428,42 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
 }
 
 
+const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
+{
+    TSynCache::const_iterator cached = m_SynCache.find(id);
+    if (cached != m_SynCache.end()) {
+        return cached->second;
+    }
+    // Temporary implementation. May change when datasources will
+    // be able of getting synonyms without the whole sequences.
+    // Then we will need to filter results like in x_BestResolve.
+    CBioseq_Handle h = GetBioseqHandle(id);
+    if ( !h ) {
+        return 0;
+    }
+    CBioseq_Handle::TBioseqCore core = h.GetBioseqCore();
+    // It's OK to use CRef, at least one copy should be kept
+    // alive by the id cache (for the ID requested).
+    CRef<CSynonymsSet> synset(new CSynonymsSet);
+    iterate(CBioseq::TId, it, core->GetId()) {
+        // Check current ID for conflicts, add to the set.
+        CSeq_id_Handle idh = x_GetIdMapper().GetHandle(**it);
+        TCache::const_iterator seq = m_Cache.find(idh);
+        if (seq != m_Cache.end()  &&  seq->second != h) {
+            // already cached for a different bioseq - ignore the id
+            continue;
+        }
+        synset->AddSynonym(idh);
+        m_SynCache[idh] = synset;
+    }
+    // Map the original ID which may be not in the resulting set,
+    // e.g. id="A", set={"A.1", gi1}
+    m_SynCache[id] = synset;
+    _ASSERT(synset->size() > 0);
+    return synset;
+}
+
+
 void
 CScope::x_DetachFromOM(void)
 {
@@ -471,6 +507,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/02/28 20:02:37  grichenk
+* Added synonyms cache and x_GetSynonyms()
+*
 * Revision 1.43  2003/02/27 14:35:31  vasilche
 * Splitted PopulateTSESet() by logically independent parts.
 *
