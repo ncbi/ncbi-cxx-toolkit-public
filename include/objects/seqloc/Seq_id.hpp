@@ -315,9 +315,16 @@ public:
     // whereas BestRank corresponds to the C Toolkit's SeqIdFindBest
     // and favors GIs.  All three give a slight bonus to accessions
     // that carry versions.
-    int TextScore     (void) const;
-    int BestRankScore (void) const;
-    int WorstRankScore(void) const;
+
+    int AdjustScore       (int base_score) const;
+    int BaseTextScore     (void)           const;
+    int BaseBestRankScore (void)           const;
+    int BaseWorstRankScore(void)           const;
+
+    int TextScore     (void) const { return AdjustScore(BaseTextScore()); }
+    int BestRankScore (void) const { return AdjustScore(BaseBestRankScore()); }
+    int WorstRankScore(void) const
+        { return AdjustScore(BaseWorstRankScore()); }
 
     // Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id)
@@ -398,67 +405,54 @@ bool CSeq_id::Match (const CSeq_id& sid2) const
 
 
 inline
-int CSeq_id::TextScore(void) const
+int CSeq_id::AdjustScore(int base_score) const
+{
+    int score = base_score * 10;
+    const CTextseq_id* text_id = GetTextseq_Id();
+    if (text_id) {
+        if ( !text_id->IsSetVersion() ) {
+            score += 4;
+        }
+        if ( !text_id->IsSetAccession() ) {
+            score += 3;
+        }
+        if ( !text_id->IsSetName() ) {
+            score += 2;
+        }
+    }
+    return score;
+}
+
+
+inline
+int CSeq_id::BaseTextScore(void) const
 {
     switch (Which()) {
-    case e_not_set:
-        return kMax_Int;
-
-    case e_Giim:
-    case e_Gi:
-        return 20;
-
-    case e_General:
-    case e_Gibbsq:
-    case e_Gibbmt:
-        return 15;
-
-    case e_Local:
-    case e_Patent:
-        return 10;
-
-    case e_Other:
-        if (GetOther().IsSetVersion()) {
-            return 7;
-        }
-        return 8;
-
-    default:
-        {{
-             const CTextseq_id* text_id = GetTextseq_Id();
-             if (text_id  &&  text_id->IsSetVersion()) {
-                 return 4;
-             }
-             return 5;
-        }}
+    case e_not_set:                                return kMax_Int;
+    case e_Giim:    case e_Gi:                     return 20;
+    case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
+    case e_Local:   case e_Patent:                 return 10;
+    case e_Other:                                  return 8;
+    default:                                       return 5;
     }
 }
 
 
 inline
-int CSeq_id::BestRankScore(void) const
+int CSeq_id::BaseBestRankScore(void) const
 {
     switch (Which()) {
     case e_not_set:                               return 83;
     case e_General: case e_Local:                 return 80;
     case e_Gibbsq: case e_Gibbmt: case e_Giim:    return 70;
     case e_Patent:                                return 67;
-    case e_Other:
-        if (GetOther().IsSetVersion()) {
-            return 64;
-        }
-        return 65;
+    case e_Other:                                 return 65;
+
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
     case e_Pir:  case e_Swissprot:
-    case e_Tpg:   case e_Genbank:
-        {{
-             const CTextseq_id* text_id = GetTextseq_Id();
-             if (text_id  &&  text_id->IsSetVersion()) {
-                 return 59;
-             }
-             return 60;
-        }}
+    case e_Tpg:  case e_Genbank:                  return 60;
+
     case e_Gi:                                    return 51;
     default:                                      return 5;
     }
@@ -466,29 +460,20 @@ int CSeq_id::BestRankScore(void) const
 
 
 inline
-int CSeq_id::WorstRankScore(void) const
+int CSeq_id::BaseWorstRankScore(void) const
 {
     switch (Which()) {
     case e_not_set:                               return 83;
     case e_Gi: case e_Giim:                       return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
     case e_Local: case e_Patent:                  return 10;
-    case e_Other:
-        if (GetOther().IsSetVersion()) {
-            return 7;
-        }
-        return 8;
+    case e_Other:                                 return 8;
+
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
     case e_Pir:  case e_Swissprot:
-    case e_Tpg:   case e_Genbank:
-        {{
-             const CTextseq_id* text_id = GetTextseq_Id();
-             if (text_id  &&  text_id->IsSetVersion()) {
-                 return 4;
-             }
-             return 5;
-        }}
+    case e_Tpg:  case e_Genbank:                  return 5;
+
     default:                                      return 3;
     }
 }
@@ -504,6 +489,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2004/05/11 14:34:12  ucko
+ * Factored out and refined Textseq-id bonus calculation.
+ *
  * Revision 1.46  2004/04/28 14:13:17  grichenk
  * Added FindTextseq_id()
  *
