@@ -53,12 +53,28 @@
 
 BEGIN_NCBI_SCOPE
 
+CBl2Seq::CBl2Seq(CConstRef<CSeq_loc>& query, CConstRef<CSeq_loc>& subject, 
+        TProgram p, CScope* scope)
+: m_Query(query), m_Program(p), m_Scope(scope)
+{
+    // call constructor for mult seqlocs vs mult seqlocs
+    TSeqLocVector subjects;
+    subjects.push_back(subject);
+    m_Subjects = subjects;
+    x_Init();
+}
+
 CBl2Seq::CBl2Seq(CConstRef<CSeq_loc>& query, const TSeqLocVector& subject,
         TProgram p, CScope* scope)
 : m_Query(query), m_Subjects(subject), m_Program(p), m_Scope(scope)
 {
+    x_Init();
+}
+
+void CBl2Seq::x_Init(void)
+{
     m_QuerySetUpDone = false;
-    m_Options.Reset(new CBlastOption(p));
+    m_Options.Reset(new CBlastOption(m_Program));
 
     mi_vSubjects.clear();
     mi_MaxSubjLength = 0;
@@ -69,6 +85,13 @@ CBl2Seq::CBl2Seq(CConstRef<CSeq_loc>& query, const TSeqLocVector& subject,
 
     mi_vResults.clear();
     mi_vReturnStats.clear();
+}
+
+CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects,
+        TProgram p, CScope* scope)
+{
+    // real constructor should live here!
+    abort();
 }
 
 CBl2Seq::~CBl2Seq()
@@ -130,7 +153,7 @@ CBl2Seq::x_SetupQueryInfo()
     TSeqPos length = sequence::GetLength(*m_Query, m_Scope);
     _ASSERT(length != numeric_limits<TSeqPos>::max());
 
-    mi_QueryInfo.Reset((BlastQueryInfoPtr) MemNew(sizeof(BlastQueryInfo)));
+    mi_QueryInfo.Reset((BlastQueryInfoPtr) calloc(1, sizeof(BlastQueryInfo)));
     _ASSERT(mi_QueryInfo.operator->() != NULL);
 
     if (m_Program == CBlastOption::eBlastn) {
@@ -157,10 +180,10 @@ CBl2Seq::x_SetupQueryInfo()
     // Only one element is needed as query concatenation is not allowed for
     // bl2seq
     if ( !(mi_QueryInfo->eff_searchsp_array = 
-                (Int8*) MemNew(nframes*sizeof(Int8))))
+                (Int8*) calloc(nframes, sizeof(Int8))))
         NCBI_THROW(CBlastException, eOutOfMemory, "Search space array");
     if ( !(mi_QueryInfo->length_adjustments = 
-                (int*) MemNew(nframes*sizeof(int))))
+                (int*) calloc(nframes, sizeof(int))))
         NCBI_THROW(CBlastException, eOutOfMemory, "Length adjustments array");
 
     mi_QueryInfo->context_offsets = context_offsets;
@@ -334,7 +357,7 @@ CBl2Seq::x_SetupSubjects()
         Uint1* buf = NULL;  // stores compressed sequence
         int buflen = 0;     // length of the buffer above
         BLAST_SequenceBlkPtr subj = (BLAST_SequenceBlkPtr) 
-                MemNew(sizeof(BLAST_SequenceBlk));
+                calloc(1, sizeof(BLAST_SequenceBlk));
 
         buf = BLASTGetSequence(**itr, encoding, buflen, m_Scope, strand, false);
 
@@ -458,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.6  2003/07/29 14:15:12  camacho
 * Do not use MemFree/Malloc
 *

@@ -117,7 +117,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         sentinel = NULLB;
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = sv.size()+2;
-        buf = buf_var = (Uint1*) Malloc(sizeof(Uint1)*buflen);
+        buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         *buf_var++ = sentinel;
         for (i = 0; i < sv.size(); i++)
             *buf_var++ = sv[i];
@@ -132,7 +132,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         if (strand == eNa_strand_both)
             buflen = add_nucl_sentinel ? buflen * 2 - 1 : buflen * 2;
 
-        buf = buf_var = (Uint1*) Malloc(sizeof(Uint1)*buflen);
+        buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         if (add_nucl_sentinel)
             *buf_var++ = sentinel;
         for (i = 0; i < sv.size(); i++) {
@@ -170,7 +170,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         if (strand == eNa_strand_both)
             buflen *= 2;
 
-        buf = buf_var = (Uint1*) Malloc(sizeof(Uint1)*buflen);
+        buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         PackDNA(sv, buf_var, (strand == eNa_strand_both) ? buflen/2 : buflen);
 
         if (strand == eNa_strand_both) {
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.4  2003/07/25 13:55:58  camacho
 * Removed unnecessary #includes
 *

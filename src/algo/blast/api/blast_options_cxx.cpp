@@ -360,7 +360,7 @@ CBlastOption::SetTblastn()
     // this is needed to avoid using MemFree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    m_DbOpts->gen_code_string = (Uint1Ptr) Malloc(sizeof(Uint1)*GENCODE_STRLEN);
+    m_DbOpts->gen_code_string = (Uint1Ptr) malloc(sizeof(Uint1)*GENCODE_STRLEN);
     copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
     delete gc;
 }
@@ -416,7 +416,7 @@ CBlastOption::SetTblastx()
     // this is needed to avoid using MemFree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    m_DbOpts->gen_code_string = (Uint1Ptr)Malloc(sizeof(Uint1)*GENCODE_STRLEN);
+    m_DbOpts->gen_code_string = (Uint1Ptr) malloc(sizeof(Uint1)*GENCODE_STRLEN);
     copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
     delete gc;
 }
@@ -472,6 +472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.4  2003/07/24 18:24:17  camacho
 * Minor
 *

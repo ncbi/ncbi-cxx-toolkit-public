@@ -49,8 +49,18 @@ public:
     typedef vector< CConstRef<CSeq_loc> >   TSeqLocVector;
     typedef CBlastOption::EProgram          TProgram;
 
-    CBl2Seq(CConstRef<CSeq_loc>& query, const TSeqLocVector& subject, 
+    /// Constructor to compare 2 sequences
+    CBl2Seq(CConstRef<CSeq_loc>& query, CConstRef<CSeq_loc>& subject, 
             TProgram p, CScope* scope);
+
+    /// Constructor to compare query against all subject sequences
+    CBl2Seq(CConstRef<CSeq_loc>& query, const TSeqLocVector& subjects, 
+            TProgram p, CScope* scope);
+
+    /// Contructor to allow query concatenation
+    CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects,
+            TProgram p, CScope* scope);
+
     virtual ~CBl2Seq();
 
     void SetQuery(CConstRef<CSeq_loc>& query);
@@ -96,6 +106,8 @@ private:
     CRef<CBlastOption>   m_Options;         //< Blast options
     TProgram             m_Program;         //< Blast program
     CScope*              m_Scope;           //< Needed to retrieve sequences
+
+    void x_Init(void);
 
     // Prohibit copy constructor
     CBl2Seq(const CBl2Seq&);
@@ -207,6 +219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.2  2003/07/14 22:16:37  camacho
 * Added interface to retrieve masked regions
 *

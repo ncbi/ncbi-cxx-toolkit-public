@@ -71,7 +71,7 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
 #endif
 
 /** Retrieves the requested genetic code in Ncbistdaa format. Caller is
- * responsible for deallocating return value with delete []. No Malloc/MemNew
+ * responsible for deallocating return value with delete []. No malloc/calloc
  * are used within this function!
  * @param genetic_code numeric identifier for genetic code requested [in]
  */
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.2  2003/07/23 21:29:06  camacho
 * Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
 *

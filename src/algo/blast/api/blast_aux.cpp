@@ -273,7 +273,7 @@ x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
         break;
     }
 
-    mask = (BlastMaskPtr) MemNew(sizeof(BlastMask));
+    mask = (BlastMaskPtr) calloc(1, sizeof(BlastMask));
     mask->index = index;
     mask->loc_list = (ValNodePtr) bsl;
 

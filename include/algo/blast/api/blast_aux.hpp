@@ -107,8 +107,8 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingOptionsPtr, BlastHitSavingOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParametersPtr,
         BlastHitSavingParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptionsPtr, MemFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptionsPtr, MemFree);
+DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptionsPtr, sfree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptionsPtr, sfree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BLAST_ScoreBlkPtr, BLAST_ScoreBlkDestruct);
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptionsPtr, BlastScoringOptionsFree);
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.2  2003/07/14 22:17:17  camacho
 * Convert CSeq_loc to BlastMaskPtr
 *

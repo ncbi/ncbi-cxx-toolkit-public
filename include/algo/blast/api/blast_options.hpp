@@ -333,8 +333,11 @@ CBlastOption::GetMatrixName() const
 inline void
 CBlastOption::SetMatrixName(const char* matrix)
 {
-    m_LutOpts->matrixname = (char*) MemFree(m_LutOpts->matrixname);
-    m_ScoringOpts->matrix = (char*) MemFree(m_ScoringOpts->matrix);
+    if (!matrix)
+        return;
+
+    sfree(m_LutOpts->matrixname);
+    sfree(m_ScoringOpts->matrix);
 
     m_LutOpts->matrixname = strdup(matrix);
     m_ScoringOpts->matrix = strdup(matrix);
@@ -446,7 +449,10 @@ CBlastOption::GetFilterString() const
 inline void
 CBlastOption::SetFilterString(const char* f)
 {
-    m_QueryOpts->filter_string = (char*) MemFree(m_QueryOpts->filter_string);
+    if (!f)
+        return;
+
+    sfree(m_QueryOpts->filter_string);
 #if 0
     if (!StringICmp(f, "T")) {
         if (m_Program == CBlastOption::eBlastn)
@@ -968,8 +974,7 @@ CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
     if (!gc_str)
         return;
 
-    m_DbOpts->gen_code_string = (Uint1Ptr) MemFree(m_DbOpts->gen_code_string);
-    MemCpy(m_DbOpts->gen_code_string, gc_str, GENCODE_STRLEN);
+    copy(gc_str, gc_str+GENCODE_STRLEN, m_DbOpts->gen_code_string);
 }
 
 END_NCBI_SCOPE
@@ -978,6 +983,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/30 15:00:01  camacho
+* Do not use Malloc/MemNew/MemFree
+*
 * Revision 1.5  2003/07/30 13:55:09  coulouri
 * use strdup()
 *
