@@ -3159,17 +3159,17 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
             sock->n_written += x_written;
             sock->n_out++;
             if ((size_t) x_written != x_msgsize) {
-                status = sock->w_status = eIO_Closed;
+                sock->w_status = status = eIO_Closed;
                 CORE_LOGF(eLOG_Error, ("%s[DSOCK::SendMsg] "
                                        " Partial datagram sent",s_ID(sock,w)));
                 break;
             }
-            status = sock->w_status = eIO_Success;
+            sock->w_status = status = eIO_Success;
             break;
         }
 
         /* don't want to handle all possible errors... let them be "unknown" */
-        status = sock->w_status = eIO_Unknown;
+        sock->w_status = status = eIO_Unknown;
         x_errno = SOCK_ERRNO;
 
         /* blocked -- retry if unblocked before the timeout expires */
@@ -3199,7 +3199,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
 
         if (sock->i_on_sig == eOn  ||
             (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
-            status = sock->w_status = eIO_Interrupt;
+            sock->w_status = status = eIO_Interrupt;
             break;
         }
     }
@@ -3265,7 +3265,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                                              (struct sockaddr*)&addr,&addrlen);
         if (x_read >= 0) {
             /* got a message */
-            status = sock->r_status = eIO_Success;
+            sock->r_status = status = eIO_Success;
             if ( x_read ) {
                 if ( msglen )
                     *msglen = x_read;
@@ -3291,7 +3291,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         }
 
         x_errno = SOCK_ERRNO;
-        status = sock->r_status = eIO_Unknown;
+        sock->r_status = status = eIO_Unknown;
         if (x_errno != SOCK_EWOULDBLOCK  &&
             x_errno != SOCK_EAGAIN       &&
             x_errno != SOCK_EINTR) {
@@ -3375,12 +3375,10 @@ extern EIO_Status DSOCK_WipeMsg(SOCK sock, EIO_Event direction)
 
     switch (direction) {
     case eIO_Read:
-        status = s_WipeRBuf(sock);
-        sock->r_status = status;
+        sock->r_status = status = s_WipeRBuf(sock);
         break;
     case eIO_Write:
-        status = s_WipeWBuf(sock);
-        sock->w_status = status;
+        sock->w_status = status = s_WipeWBuf(sock);
         break;
     default:
         CORE_LOGF(eLOG_Error, ("%s[DSOCK::WipeMsg]  Invalid direction %u",
@@ -3712,6 +3710,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.113  2003/05/31 05:17:32  lavr
+ * Swap bitfields and enums in chain assignments
+ *
  * Revision 6.112  2003/05/21 17:53:40  lavr
  * Add logs for broken connections; update both R and W status on them
  *
