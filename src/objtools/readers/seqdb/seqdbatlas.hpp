@@ -38,6 +38,7 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
+#include <util/random_gen.hpp>
 #include <vector>
 #include <map>
 #include <set>
@@ -347,6 +348,8 @@ private:
     
     TNameOffsetTable m_NameOffsetLookup;
     TAddressTable    m_AddressLookup;
+    
+    CRandom m_RandGen;
 };
 
 Uint4 CSeqDBAtlas::x_LookupFile(const string  & fname,

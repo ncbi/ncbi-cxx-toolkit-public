@@ -43,9 +43,6 @@
 
 BEGIN_NCBI_SCOPE
 
-using std::min;
-using std::max;
-
 // Further optimizations:
 
 // 1. Regions could be stored in a map<>, sorted by file, then offset.
@@ -200,10 +197,14 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
                 in_use -= mr->Length();
             }
             
-            num_gcs = max(num_gcs, mr->GetClock());
+            num_gcs = ((num_gcs > mr->GetClock())
+                       ? num_gcs
+                       : mr->GetClock()); // max
         }
         
-        num_gcs = 1 + min(num_gcs, max_distinct_clock);
+        num_gcs = 1 + ((num_gcs < max_distinct_clock)
+                       ? num_gcs
+                       : max_distinct_clock); //min
     }
     
     while(num_gcs >= 0) {
@@ -382,7 +383,7 @@ Uint4 CSeqDBAtlas::x_GetNewIdent()
     Uint4 id = 0;
     
     while ((id == 0) || m_IDLookup.find(id) != m_IDLookup.end()) {
-        id = random();
+        id = m_RandGen.GetRand();
     }
     
     return id;
