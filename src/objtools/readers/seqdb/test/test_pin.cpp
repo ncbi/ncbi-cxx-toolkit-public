@@ -1707,7 +1707,7 @@ int test1(int argc, char ** argv)
     cout << "Using [" << (use_mm ? "mm" : "file") << "] mode." << endl;
     
     if (num_display != -1) {
-        cout << "Displaying [" << (num_display) << "]." << endl;
+        cout << "Displaying [" << (Int4)(num_display) << "]." << endl;
     }
     
     if (num_itera != 1) {
@@ -1740,6 +1740,7 @@ int test1(int argc, char ** argv)
             if (show_progress)
                 cout << "at line " << __LINE__ << endl;
             
+			// Does nseqs really need to be an Int8?
             Int8 nseqs  = (Int8) dbi.GetNumSeqs();
             Uint8 tleng = dbi.GetTotalLength();
             
@@ -1753,7 +1754,7 @@ int test1(int argc, char ** argv)
             double dend = sw.Elapsed();
             
             if (show_progress) {
-                cout << "NR seq count: " << nseqs   << endl;
+                cout << "NR seq count: " << (Int4)nseqs   << endl;
                 cout << "Total length: " << tleng   << endl;
                 cout << "Compute time: " << (dend - dstart) << endl;
             }
@@ -1888,7 +1889,7 @@ int test1(int argc, char ** argv)
             double cend = sw.Elapsed();
             
             if (show_progress) {
-                cout << "\nNR seq count:  " << nseqs   << "\n";
+                cout << "\nNR seq count:  " << (Int4)nseqs   << "\n";
                 cout << "Total clength: "   << cleng   << "\n";
                 cout << "Sampling est:  "   << ((sampling / double(numsamp)) * nseqs) << "\n";
                 cout << "Compute ctime: "   << (cend - cstart) << endl;
