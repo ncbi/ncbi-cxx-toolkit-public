@@ -69,7 +69,7 @@ If you are using the make file created by new_project.sh, then just uncomment th
 For example, the linker may complain about the symbol <i>ncbi::objects::CSeq_id::GetTypeInfo(void)</i> being undefined. 
 The cause of this problem is that the applicable objects library has not been linked into the application. You 
 determine the applicable objects library as follows: <br><br>1) Look for the *.hpp file that declares the applicable class
-(e.g., for CSeq_id this will be include/objects/seqloc/Seq_id.hpp). This can be done by going to the <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_id">source browser</a> and doing
+(e.g., for CSeq_id this will be include/objects/seqloc/Seq_id.hpp). This can be done by going to the <a href="lxr/ident?i=CSeq_id">source browser</a> and doing
 an identifier search on the class name (e.g., CSeq_id) and looking in the <b>Defined as a class</b> section for the path name. <br><br>2) Note the name of the sub directory in which the *.hpp file is located (in this case the sub directory is seqloc). <br><br>3) The name of the library to link is determined from the sub directory name. In the make file add the library name to the LIB macro (e.g., LIB = <b>seqloc</b> xncbi) or add -l<b>subdir</b> (e.g.,
 -lseqloc) to the command line of the link command. 
 <br><br>The above describes how to find the libraries for classes in sub directories of the <b>object/</b> directory. A similar techniques works for other classes also. However, in a some cases, the library name is a variant on the sub directory name. These variants are summarized below.
@@ -186,7 +186,7 @@ yourself! -- instead, just send your request to
 
 <p>
 Use script
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/add_asn.sh">src/objects/add_asn.sh</a> that automates the adding
+<a href="lxr/source/src/objects/add_asn.sh">src/objects/add_asn.sh</a> that automates the adding
 of new ASN.1 spec to the C++ Toolkit. Note that it does only the "UNIX part"
 of the job, and you will have to make changes in the MSVC and MAC projects
 later, manually.
