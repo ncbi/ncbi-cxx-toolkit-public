@@ -49,7 +49,7 @@ enum ETildeStyle {
 };
 string ExpandTildes(const string& s, ETildeStyle style);
 
-void JoinNoRedund(string& str1, const string& str2, const string& delim);
+void JoinNoRedund(string& to, const string& prefix, const string& str);
 string JoinNoRedund(const list<string>& l, const string& delim);
 
 // Strips all spaces in string in following manner. If the function
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/18 15:34:54  shomrat
+* Meaningful argument names
+*
 * Revision 1.2  2004/02/11 16:57:17  shomrat
 * added JoinNoRedund functions
 *
