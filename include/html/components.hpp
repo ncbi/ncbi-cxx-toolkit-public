@@ -1,3 +1,6 @@
+#ifndef COMPONENTS__HPP
+#define COMPONENTS__HPP
+
 /*  $RCSfile$  $Revision$  $Date$
 * ===========================================================================
 *
@@ -26,61 +29,53 @@
 * Author:  Lewis Geer
 *
 * File Description:
-*   code for CNCBINode
+*   The individual html components used on a page
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/10/29 16:13:06  lewisg
+* Revision 1.1  1998/10/29 16:15:51  lewisg
 * version 2
-*
-* Revision 1.1  1998/10/06 20:36:05  lewisg
-* new html lib and test program
 *
 * ===========================================================================
 */
 
-#include <node.hpp>
-
-// append a child
-CNCBINode * CNCBINode::AppendChild(CNCBINode * childNode)
-{
-    if(!childNode) return NULL;
-    m_ChildNodes.push_back(childNode);
-    ((CNCBINode *)childNode)->m_ParentNode = this;
-    ((CNCBINode *)childNode)->m_SelfIter = --(m_ChildNodes.end()); // don't forget that end() points beyond the list
-    return childNode;
-}
 
 
-// insert a child before the given node
-CNCBINode * CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
-{
-    if(!newChild | ! refChild) return NULL;
-    ((CNCBINode *)newChild)->m_ParentNode = this;
-    ((CNCBINode *)newChild)->m_SelfIter = m_ChildNodes.insert(((CNCBINode *)refChild)->m_SelfIter, newChild);
-    return newChild;
-}
+#include <html.hpp>
+#include <page.hpp>
 
+const int kNoCOMMENTS = 0x2;
+const int kNoLIST = 0x1;
 
+class CQueryBox: public CHTMLBasicPage {
+public:
+    CQueryBox();
 
-CNCBINode::~CNCBINode()
-{
-    list <CNCBINode *>::iterator iChildren;
-    CNCBINode * temp;
+    virtual void Init(int);
+    virtual void Draw(int);
 
-    iChildren = m_ChildNodes.begin();
-    while ( iChildren != m_ChildNodes.end()) {     
-        temp = (CNCBINode *) *iChildren; // need an extra copy as the iterator gets destroyed by the child
-        iChildren++;
-        delete temp;
-    }
+    // hiding error?
+    //    void Create(int style, const string & url)   // url input
+    //   {
+    //     Init(style);
+    //    m_URL = url;
+    //     Draw(style);
+    // }
 
-    if(m_ParentNode) {
-        ((CNCBINode *)m_ParentNode)->m_ChildNodes.erase(m_SelfIter);
-    }
-}
+    virtual CHTMLNode * CreateComments();
+    CHTMLNode * m_Comments;  // extra comments
 
+    string m_Width; // in pixels
+    string m_BgColor;
+    string m_DbName;  // name of the database field
+    map < string, string, less<string> > m_Databases;  // the list of databases
+    map < string, string, less<string> > m_HiddenValues;
+    string m_TermName;
+    string m_DispMax;  // name of dispmax field
+    string m_DefaultDispMax;
+    list < string > m_Disp;  // the values in dispmax field
+    string m_URL;
 
+};
 
-
-
+#endif

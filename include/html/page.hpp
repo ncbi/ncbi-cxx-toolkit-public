@@ -1,3 +1,6 @@
+#ifndef PAGE__HPP
+#define PAGE__HPP
+
 /*  $RCSfile$  $Revision$  $Date$
 * ===========================================================================
 *
@@ -26,61 +29,63 @@
 * Author:  Lewis Geer
 *
 * File Description:
-*   code for CNCBINode
+*   The HTML page
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/10/29 16:13:06  lewisg
+* Revision 1.1  1998/10/29 16:15:53  lewisg
 * version 2
-*
-* Revision 1.1  1998/10/06 20:36:05  lewisg
-* new html lib and test program
 *
 * ===========================================================================
 */
 
-#include <node.hpp>
-
-// append a child
-CNCBINode * CNCBINode::AppendChild(CNCBINode * childNode)
-{
-    if(!childNode) return NULL;
-    m_ChildNodes.push_back(childNode);
-    ((CNCBINode *)childNode)->m_ParentNode = this;
-    ((CNCBINode *)childNode)->m_SelfIter = --(m_ChildNodes.end()); // don't forget that end() points beyond the list
-    return childNode;
-}
 
 
-// insert a child before the given node
-CNCBINode * CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
-{
-    if(!newChild | ! refChild) return NULL;
-    ((CNCBINode *)newChild)->m_ParentNode = this;
-    ((CNCBINode *)newChild)->m_SelfIter = m_ChildNodes.insert(((CNCBINode *)refChild)->m_SelfIter, newChild);
-    return newChild;
-}
+#include <html.hpp>
+
+/////////////////////////////////////////////////////////////
+// CHTMLBasicPage is the virtual base class.  The main functionality is
+// the turning on and off of sub HTML components via style bits and a
+// creation function that orders sub components on the page.  The ability
+// to hold children and print HTML is inherited from CHTMLNode.
+  
+class CHTMLBasicPage: public CHTMLNode {
+public: 
+    virtual void Create() { Create(0); }
+    virtual void Create(int style) { Init(style); Draw(style); }
+    virtual void Init(int style) {}  // initialize members
+    virtual void Draw(int) = 0;  // create and aggregate sub pages + other html
+
+};
 
 
+const int kNoTITLE = 0x1;
+const int kNoVIEW = 0x2;
 
-CNCBINode::~CNCBINode()
-{
-    list <CNCBINode *>::iterator iChildren;
-    CNCBINode * temp;
+class CHTMLPage: public CHTMLBasicPage {
+public:
 
-    iChildren = m_ChildNodes.begin();
-    while ( iChildren != m_ChildNodes.end()) {     
-        temp = (CNCBINode *) *iChildren; // need an extra copy as the iterator gets destroyed by the child
-        iChildren++;
-        delete temp;
-    }
+    ////////// how to make the page
 
-    if(m_ParentNode) {
-        ((CNCBINode *)m_ParentNode)->m_ChildNodes.erase(m_SelfIter);
-    }
-}
+    virtual void Init(int);
+    virtual void Draw(int);
+
+    ////////// the individual components of the page
+
+    virtual CHTMLNode * CreateTemplate();
+    CHTMLNode * m_Template;
+
+    virtual CHTMLNode * CreateTitle();
+    CHTMLNode * m_Title;
+
+    virtual CHTMLNode * CreateView();
+    CHTMLNode * m_View;
+
+    ////////// 'tor
+
+    CHTMLPage() { m_Title = NULL; m_View = NULL; m_Template = NULL;}
 
 
+};
 
-
-
+#endif

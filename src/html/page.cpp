@@ -26,61 +26,75 @@
 * Author:  Lewis Geer
 *
 * File Description:
-*   code for CNCBINode
+*   Page Classes
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/10/29 16:13:06  lewisg
+* Revision 1.1  1998/10/29 16:13:11  lewisg
 * version 2
-*
-* Revision 1.1  1998/10/06 20:36:05  lewisg
-* new html lib and test program
 *
 * ===========================================================================
 */
 
-#include <node.hpp>
+#include <fstream.h>
 
-// append a child
-CNCBINode * CNCBINode::AppendChild(CNCBINode * childNode)
+
+#include <components.hpp>
+#include <page.hpp>
+
+
+
+void CHTMLPage::Init(int style)
 {
-    if(!childNode) return NULL;
-    m_ChildNodes.push_back(childNode);
-    ((CNCBINode *)childNode)->m_ParentNode = this;
-    ((CNCBINode *)childNode)->m_SelfIter = --(m_ChildNodes.end()); // don't forget that end() points beyond the list
-    return childNode;
+    if (!m_Template) m_Template = CreateTemplate();
+
+    if(!(style & kNoTITLE))
+	if (!m_Title) m_Title = CreateTitle();
+    else m_Title = new CHTMLNode;
+
+    if(!(style & kNoVIEW))
+        if (!m_View) m_View = CreateView();
+    else m_View = new CHTMLNode;
 }
 
 
-// insert a child before the given node
-CNCBINode * CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
+void CHTMLPage::Draw(int style)
 {
-    if(!newChild | ! refChild) return NULL;
-    ((CNCBINode *)newChild)->m_ParentNode = this;
-    ((CNCBINode *)newChild)->m_SelfIter = m_ChildNodes.insert(((CNCBINode *)refChild)->m_SelfIter, newChild);
-    return newChild;
+    if(m_Template)
+	AppendChild(m_Template);
+
+    if(!(style & kNoTITLE) && m_Title && m_Template)
+	m_Template->Rfind("<@TITLE@>", m_Title);
+
+    if(!(style & kNoVIEW) && m_View && m_Template) 
+        m_Template->Rfind("<@VIEW@>", m_View);
 }
 
 
-
-CNCBINode::~CNCBINode()
+CHTMLNode * CHTMLPage::CreateTitle() 
 {
-    list <CNCBINode *>::iterator iChildren;
-    CNCBINode * temp;
-
-    iChildren = m_ChildNodes.begin();
-    while ( iChildren != m_ChildNodes.end()) {     
-        temp = (CNCBINode *) *iChildren; // need an extra copy as the iterator gets destroyed by the child
-        iChildren++;
-        delete temp;
-    }
-
-    if(m_ParentNode) {
-        ((CNCBINode *)m_ParentNode)->m_ChildNodes.erase(m_SelfIter);
-    }
+    return new CHTMLText("My Page");
 }
 
 
+CHTMLNode * CHTMLPage::CreateTemplate() 
+{
+    string input;  
+    char ch;
+
+    // demo hack
+    ifstream inFile("frontpage.html");
+    while( inFile.get(ch)) input += ch;
+    CHTMLText * text = new CHTMLText;
+    text->Data(input); // some text
+    return text;
+}
 
 
+CHTMLNode * CHTMLPage::CreateView() 
+{
+    CQueryBox * querybox = new CQueryBox();
+    querybox->Create();
+    return querybox;
+}
 

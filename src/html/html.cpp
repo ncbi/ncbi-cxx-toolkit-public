@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/29 16:13:06  lewisg
+* version 2
+*
 * Revision 1.1  1998/10/06 20:36:05  lewisg
 * new html lib and test program
 *
@@ -43,7 +46,7 @@
 
 
 // serialize the node to the given string
-void CHTMLNode::Print(string& output)  
+void CHTMLNode::Print(string & output)  
 {
     list <CNCBINode *>::iterator iChildren = m_ChildNodes.begin();
     for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode * ) (*iChildren))->Print(output);
@@ -51,17 +54,22 @@ void CHTMLNode::Print(string& output)
 
 
 // this function searches for a text string in a Text node and replaces it with a node
-void CHTMLNode::Rfind(string& tagname, CNCBINode * replacenode)
+void CHTMLNode::Rfind(const string & tagname, CNCBINode * replacenode)
 {
     list <CNCBINode *>::iterator iChildren;
     
+    if(!replacenode) return;
     for (iChildren = m_ChildNodes.begin(); iChildren != m_ChildNodes.end(); iChildren++) {     
         ((CHTMLNode * )(*iChildren))->Rfind(tagname, replacenode);
     }
 }
 
 
-
+CNCBINode * CHTMLNode::AppendText(const string & appendstring)
+{
+    CHTMLText * text = new CHTMLText(appendstring);
+    return AppendChild(text);
+}
 
 
 void CHTMLText::Print(string& output)  
@@ -83,12 +91,13 @@ CNCBINode * CHTMLText::Split(SIZE_TYPE iSplit)
 }
 
 
-void CHTMLText::Rfind(string& tagname, CNCBINode * replacenode)
+void CHTMLText::Rfind(const string & tagname, CNCBINode * replacenode)
 {
     list <CNCBINode *>::iterator iChildren;
     SIZE_TYPE iPosition;
     CNCBINode * splittext;
     
+    if(!replacenode) return;
     iPosition = m_Datamember.find(tagname, 0); // look for the tag to replace
     if (iPosition != NPOS) {
         splittext = Split(iPosition);  // split it at the found position
@@ -119,7 +128,7 @@ void CHTMLElement::Print(string& output)
             iAttributes++;
         }
         else {
-            output.append(" " + (*iAttributes).first + "=\"" + (*iAttributes).second + "\"");
+            output.append(" " + (*iAttributes).first + "=" + (*iAttributes).second );
             iAttributes++;
         }
     }
@@ -133,7 +142,7 @@ void CHTMLElement::Print(string& output)
 // anchor element
 
 
-CHTML_a::CHTML_a(string href)
+CHTML_a::CHTML_a(const string & href)
 {
     m_Name = "a";
     m_Attributes["href"] = href;
@@ -143,14 +152,14 @@ CHTML_a::CHTML_a(string href)
 // TABLE element
 
 
-CHTML_table::CHTML_table(string bgcolor)
+CHTML_table::CHTML_table(const string & bgcolor)
 {
     m_Name = "table";
     m_Attributes["bgcolor"] = bgcolor;
 }
 
 
-CHTML_table::CHTML_table(string bgcolor, string width)
+CHTML_table::CHTML_table(const string & bgcolor, const string & width)
 {
     m_Name = "table";
     m_Attributes["bgcolor"] = bgcolor;
@@ -181,7 +190,7 @@ CHTML_table::CHTML_table(int row, int column)
 }
 
 
-CHTML_table::CHTML_table(string bgcolor, int row, int column)
+CHTML_table::CHTML_table(const string & bgcolor, int row, int column)
 {
     m_Name = "table";
     m_Attributes["bgcolor"] = bgcolor;
@@ -189,11 +198,22 @@ CHTML_table::CHTML_table(string bgcolor, int row, int column)
 }
 
 
-CHTML_table::CHTML_table(string bgcolor, string width, int row, int column)
+CHTML_table::CHTML_table(const string & bgcolor, const string & width, int row, int column)
 {
     m_Name = "table";
     m_Attributes["bgcolor"] = bgcolor;
     m_Attributes["width"] = width;
+    MakeTable(row, column);
+}
+
+
+CHTML_table::CHTML_table(const string & bgcolor, const string & width, const string & cellspacing, const string & cellpadding, int row, int column)
+{
+    m_Name = "table";
+    m_Attributes["bgcolor"] = bgcolor;
+    m_Attributes["width"] = width;
+    m_Attributes["cellspacing"] = cellspacing;
+    m_Attributes["cellpadding"] = cellpadding;
     MakeTable(row, column);
 }
 
@@ -204,6 +224,7 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
     list <CNCBINode *>::iterator iChildren;
     list <CNCBINode *>::iterator iyChildren;
 
+    if(!Child) return NULL;
     iy = 1;
     iChildren = m_ChildNodes.begin();
 
@@ -224,7 +245,14 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
 }
 
 
-void CHTML_table::ColumnWidth(CHTML_table * table, int column, string width)
+CNCBINode * CHTML_table::InsertTextInTable(int x, int y, const string & appendstring)
+{
+CHTMLText * text = new CHTMLText(appendstring);
+return InsertInTable(x, y, text);
+}
+
+
+void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & width)
 {
     int ix, iy;
     list <CNCBINode *>::iterator iChildren;
@@ -252,14 +280,14 @@ void CHTML_table::ColumnWidth(CHTML_table * table, int column, string width)
 }
 
 
-CHTML_tr::CHTML_tr(string bgcolor)
+CHTML_tr::CHTML_tr(const string & bgcolor)
 {
     m_Name = "tr";
     m_Attributes["bgcolor"] = bgcolor;
 }
 
 
-CHTML_tr::CHTML_tr(string bgcolor, string width)
+CHTML_tr::CHTML_tr(const string & bgcolor, const string & width)
 {
     m_Name = "tr";
     m_Attributes["bgcolor"] = bgcolor;
@@ -267,7 +295,7 @@ CHTML_tr::CHTML_tr(string bgcolor, string width)
 }
 
 
-CHTML_tr::CHTML_tr(string bgcolor, string width, string align)
+CHTML_tr::CHTML_tr(const string & bgcolor, const string & width, const string & align)
 {
     m_Name = "tr";
     m_Attributes["bgcolor"] = bgcolor;
@@ -277,14 +305,14 @@ CHTML_tr::CHTML_tr(string bgcolor, string width, string align)
 
 
 
-CHTML_td::CHTML_td(string bgcolor)
+CHTML_td::CHTML_td(const string & bgcolor)
 {
     m_Name = "td";
     m_Attributes["bgcolor"] = bgcolor;
 }
 
 
-CHTML_td::CHTML_td(string bgcolor, string width)
+CHTML_td::CHTML_td(const string & bgcolor, const string & width)
 {
     m_Name = "td";
     m_Attributes["bgcolor"] = bgcolor;
@@ -292,7 +320,7 @@ CHTML_td::CHTML_td(string bgcolor, string width)
 }
 
 
-CHTML_td::CHTML_td(string bgcolor, string width, string align)
+CHTML_td::CHTML_td(const string & bgcolor, const string & width, const string & align)
 {
     m_Name = "td";
     m_Attributes["bgcolor"] = bgcolor;
@@ -302,7 +330,7 @@ CHTML_td::CHTML_td(string bgcolor, string width, string align)
 
 
 // form element
-CHTML_form::CHTML_form(string action, string method)
+CHTML_form::CHTML_form(const string & action, const string & method)
 {
     m_Name = "form";
     m_Attributes["action"] = action;
@@ -311,7 +339,7 @@ CHTML_form::CHTML_form(string action, string method)
 
 
 // textarea element
-CHTML_textarea::CHTML_textarea(string name, string cols, string rows)
+CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const string & rows)
 {
     m_Name = "textarea";
     m_Attributes["name"] = name;
@@ -321,23 +349,32 @@ CHTML_textarea::CHTML_textarea(string name, string cols, string rows)
 
 
 //input tag
-CHTML_input::CHTML_input(string type, string name, string size)
+CHTML_input::CHTML_input(const string & type, const string & value)
 {
     m_Name = "input";
     m_Attributes["type"] = type;
-    m_Attributes["name"] = name;
-    m_Attributes["size"] = string(size);
+    m_Attributes["value"] = value;
     m_EndTag = false;
 };
 
 
-CHTML_input::CHTML_input(string type, string name, string size, string value)
+CHTML_input::CHTML_input(const string & type, const string & name, const string & value)
 {
     m_Name = "input";
     m_Attributes["type"] = type;
     m_Attributes["name"] = name;
-    m_Attributes["size"] = string(size);
     m_Attributes["value"] = value;
+    m_EndTag = false;
+};
+
+
+CHTML_input::CHTML_input(const string & type, const string & name, const string & value, const string & size)
+{
+    m_Name = "input";
+    m_Attributes["type"] = type;
+    m_Attributes["name"] = name;
+    m_Attributes["size"] = size;
+    if(!value.empty()) m_Attributes["value"] = value;
     m_EndTag = false;
 };
 
@@ -351,30 +388,44 @@ CHTML_option::CHTML_option(bool selected)
 };
 
 
+CHTML_option::CHTML_option(bool selected, const string & value)    
+{
+    m_Name = "option";
+    if (selected) m_Attributes["selected"] = "";
+    m_Attributes["value"] = value;
+    m_EndTag = false;
+};
+
+
 // select tag
-CHTML_select::CHTML_select(string name)
+CHTML_select::CHTML_select(const string & name)
 {
     m_Name = "select";
     m_Attributes["name"] = name;
 }
 
 
-CNCBINode * CHTML_select::AppendOption(string option)
+CNCBINode * CHTML_select::AppendOption(const string & option)
 {
-    CNCBINode * retval;
-
-    retval = AppendChild(new CHTML_option);
+    CNCBINode * retval = AppendChild(new CHTML_option);
     ((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
 
     return retval;
 };
 
 
-CNCBINode * CHTML_select::AppendOption(string option, bool selected)
+CNCBINode * CHTML_select::AppendOption(const string & option, bool selected)
 {
-    CNCBINode * retval;
+    CNCBINode *  retval = AppendChild(new CHTML_option(selected));
+    ((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
 
-    retval = AppendChild(new CHTML_option(selected));
+    return retval;
+};
+
+
+CNCBINode * CHTML_select::AppendOption(const string & option, bool selected, const string & value)
+{
+    CNCBINode * retval = AppendChild(new CHTML_option(selected, value));
     ((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
 
     return retval;

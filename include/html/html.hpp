@@ -33,28 +33,33 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/29 16:15:52  lewisg
+* version 2
+*
 * Revision 1.1  1998/10/06 20:34:30  lewisg
 * html library includes
 *
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+
 
 
 
 #include <node.hpp>
 
+// base class for html node
 
-class CHTMLNode : public CNCBINode // base class for html node
-{
+class CHTMLNode : public CNCBINode {
 public:
     string NodeName() const { return m_Name; }
-    void NodeName(string namein) { m_Name = namein; }
-    string GetAttributes(string aname) { return m_Attributes[aname]; }  // how to make const with non-const []?
-    void SetAttributes(string aname, string avalue) { m_Attributes[aname] = avalue; }
-    virtual void Print(string&);   // prints the tag and children
-    virtual void Rfind(string&, CNCBINode *);  // finds and replaces text with a node    
+    void NodeName(string & namein) { m_Name = namein; }
+    string GetAttributes(const string& aname) { return m_Attributes[aname]; }  // how to make const with non-const []?
+    void SetAttributes(const string & aname, string avalue) { m_Attributes[aname] = avalue; }
+    virtual void Print(string &);   // prints the tag and children
+    virtual void Rfind(const string &, CNCBINode *);  // finds and replaces text with a node    
+    CHTMLNode() { m_Name = ""; }
+    CNCBINode * AppendText(const string &);  // convenient way to add CHTMLText
 
 protected:
     string m_Name; // the tag name
@@ -63,16 +68,15 @@ protected:
 
 
 // A text node that contain plain text
-class CHTMLText: public CHTMLNode 
-{
+class CHTMLText: public CHTMLNode {
 public:
     string Data() const { return m_Datamember; }
-    void Data(string datain) { m_Datamember = datain; }
+    void Data(const string & datain) { m_Datamember = datain; }
     CNCBINode * Split(SIZE_TYPE); // splits a node in two
-    virtual void Print(string&);
-    virtual void Rfind(string&, CNCBINode *);  
+    virtual void Print(string &);
+    virtual void Rfind(const string &, CNCBINode *);  
     CHTMLText() {};
-    CHTMLText(string text) { m_Datamember = text; };
+    CHTMLText(const string & text) { m_Datamember = text; };
     
 protected:
     string m_Datamember;  // the text
@@ -80,8 +84,7 @@ protected:
 
 
 // An html tag
-class CHTMLElement: public CHTMLNode 
-{
+class CHTMLElement: public CHTMLNode {
 public:
     virtual void Print(string&);
     CHTMLElement() { m_EndTag = true; }
@@ -91,25 +94,25 @@ protected:
 
 
 // the "a" tag
-class CHTML_a: public CHTMLElement
-{
+class CHTML_a: public CHTMLElement {
 public:
-    CHTML_a(string href);
+    CHTML_a(const string & href);
 };
 
 
 // the table tag
-class CHTML_table: public CHTMLElement
-{
+class CHTML_table: public CHTMLElement {
 public:
     CHTML_table() { m_Name = "table"; }
-    CHTML_table(string);
-    CHTML_table(string, string);
+    CHTML_table(const string &);
+    CHTML_table(const string &, const string &);
     CHTML_table(int, int);
-    CHTML_table(string, int, int);
-    CHTML_table(string, string, int, int);
+    CHTML_table(const string &, int, int);
+    CHTML_table(const string &, const string &, int, int);
+    CHTML_table(const string &, const string &, const string &, const string &, int, int);
     CNCBINode * InsertInTable(int, int, CNCBINode *);
-    void ColumnWidth(CHTML_table *, int, string);  
+    CNCBINode * InsertTextInTable(int, int, const string &);
+    void ColumnWidth(CHTML_table *, int, const string &);  
 protected:
     void MakeTable(int, int);
 
@@ -117,87 +120,88 @@ protected:
 
 
 // the tr tag
-class CHTML_tr: public CHTMLElement
-{
+class CHTML_tr: public CHTMLElement {
 public:
     CHTML_tr() { m_Name = "tr"; }
-    CHTML_tr(string);
-    CHTML_tr(string, string);
-    CHTML_tr(string, string, string);
+    CHTML_tr(const string &);
+    CHTML_tr(const string &, const string &);
+    CHTML_tr(const string &, const string &, const string &);
 };
 
 
 // the td tag
-class CHTML_td: public CHTMLElement
-{
+class CHTML_td: public CHTMLElement {
 public:
     CHTML_td() { m_Name = "td"; }
-    CHTML_td(string);
-    CHTML_td(string, string);
-    CHTML_td(string, string, string);
+    CHTML_td(const string &);
+    CHTML_td(const string &, const string &);
+    CHTML_td(const string &, const string &, const string &);
 };
 
 
 // the form tag
-class CHTML_form: public CHTMLElement
-{
+class CHTML_form: public CHTMLElement {
 public:
     CHTML_form() { m_Name = "form"; }
-    CHTML_form(string, string);
+    CHTML_form(const string &, const string &);
 };
 
 
 // the textarea tag
-class CHTML_textarea: public CHTMLElement
-{
+class CHTML_textarea: public CHTMLElement {
 public:
     CHTML_textarea() { m_Name = "textarea"; }
-	CHTML_textarea(string, string, string);
+	CHTML_textarea(const string &, const string &, const string &);
 };
 
 
-class CHTML_input: public CHTMLElement
-{
+class CHTML_input: public CHTMLElement {
 public:
     CHTML_input() { m_Name = "input"; m_EndTag = false; };
-    CHTML_input::CHTML_input(string, string, string);
-    CHTML_input::CHTML_input(string, string, string, string);
+    CHTML_input::CHTML_input(const string &, const string &);
+    CHTML_input::CHTML_input(const string &, const string &, const string &);
+    CHTML_input::CHTML_input(const string &, const string &, const string &, const string &);
 };
 
 
 //option tag.  rarely used alone.  see select tag
-class CHTML_option: public CHTMLElement 
-{
+class CHTML_option: public CHTMLElement {
 public:
     CHTML_option() { m_Name = "option"; m_EndTag = false; };
     CHTML_option(bool);
+    CHTML_option(bool, const string &);
 };
 
 
 // select tag
-class CHTML_select: public CHTMLElement 
-{
+class CHTML_select: public CHTMLElement {
 public:
-    CNCBINode * AppendOption(string);
-    CNCBINode * AppendOption(string, bool);
+    CNCBINode * AppendOption(const string &);
+    CNCBINode * AppendOption(const string &, bool);
+    CNCBINode * AppendOption(const string &, bool, const string &);
     CHTML_select() { m_Name = "select"; m_EndTag = false; };
-    CHTML_select(string);
+    CHTML_select(const string &);
 };
 
 
 // paragraph with end tag
-class CHTML_p: public CHTMLElement 
-{
+class CHTML_p: public CHTMLElement {
 public:
     CHTML_p() { m_Name = "p"; };
 };
 
 
 // paragraph without end tag
-class CHTML_pnop: public CHTMLElement 
-{
+class CHTML_pnop: public CHTMLElement {
 public:
     CHTML_pnop() { m_Name = "p"; m_EndTag = false; };
+};
+
+
+// break
+class CHTML_br: public CHTMLElement {
+public:
+    CHTML_br() { m_Name = "br"; m_EndTag = false; };
 };
 
 #endif

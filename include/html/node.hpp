@@ -34,13 +34,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/29 16:15:52  lewisg
+* version 2
+*
 * Revision 1.1  1998/10/06 20:34:31  lewisg
 * html library includes
 *
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
 
 
 #include <stl.hpp>
@@ -55,7 +57,8 @@ public:
     virtual CNCBINode * InsertBefore(CNCBINode * newChild, CNCBINode * refChild);  // adds a child to the child list at iterator.
     virtual CNCBINode * AppendChild(CNCBINode *);  // add a Node * to the end of m_ChildNodes
     CNCBINode() { m_ParentNode = NULL; }
-    ~CNCBINode();
+    virtual ~CNCBINode();
+    // need to include explicit copy and assignment op.  I don't think the child list should be copied, nor parent.
 
 protected:
     list<CNCBINode *> m_ChildNodes;  // Child nodes.

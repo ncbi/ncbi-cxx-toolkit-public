@@ -33,13 +33,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/29 16:15:53  lewisg
+* version 2
+*
 * Revision 1.1  1998/10/06 20:34:32  lewisg
 * html library includes
 *
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
 
 
 // include the standard library and sets some compiler specific macros

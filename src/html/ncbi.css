@@ -1,0 +1,86 @@
+.TEXT {
+	font-size:12pt;
+	line-height: 14pt;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+.TEXTWIDE {
+	font-size:12pt;
+	line-height: 16pt;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+.SMALL1 {font-size:10pt;
+	line-height: 12pt;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+.SMALL2 {font-size:10pt;
+	line-height: 12pt;
+	font-family: verdana;
+	}
+
+.GUTTER1 {font-size:10pt;
+	line-height: 13pt;
+	font-family: arial,helvetica,sans-serif;
+	color:#ffffff;
+	margin-top: -12 pt;
+	}
+
+.GUTTER2 {font-size:10pt;
+	line-height: 13pt;
+	font-family: arial,helvetica,sans-serif;
+	text-indent: 10 pt;
+	color:#ffffff;
+	margin-top: -12 pt;
+	}
+
+
+A.BAR {color:#ffffff;
+	font:12pt arial,helvetica,sans-serif;
+	text-decoration:none;
+	}
+
+A.HELPBAR {color:#000000;
+	font:10pt arial,helvetica,sans-serif;
+	text-decoration:none;
+	}
+
+A.GUTTER {color:#ffffff;
+	font:10pt arial,helvetica,sans-serif;
+	text-decoration:none;
+	}
+
+H1, .H1 {
+	font-size:18pt;
+	font-weight: bold;
+	line-height: 20pt;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+H2, .H2 {
+	font-size:16pt;
+	font-weight: bold;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+H3, .H3 {
+	font-size:14pt;
+	font-weight: bold;
+	line-height: 16pt;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+H4, .H4 {
+	font-size:12pt;
+	font-weight: bold;
+	font-family: arial,helvetica,sans-serif;
+	}
+
+H5, .H5 {
+	font-size:12pt;
+	font-weight: bold;
+	font-style: italic;
+	font-family: arial,helvetica,sans-serif;
+	}
+
