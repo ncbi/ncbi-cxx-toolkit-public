@@ -1739,7 +1739,7 @@ static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    {
       found_end = TRUE;
       score_right = BLAST_AlignPackedNucl(query+q_length-1, 
-         subject+(s_length-1)/COMPRESSION_RATIO, 
+         subject+(s_length+3)/COMPRESSION_RATIO - 1, 
          query_blk->length-q_length, 
          subject_blk->length-s_length, &(gap_align->query_stop),
          &(gap_align->subject_stop), gap_align, score_options, FALSE);
