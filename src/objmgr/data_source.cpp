@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/04/11 18:45:39  ucko
+* Pull in extra headers to make KCC happy.
+*
 * Revision 1.33  2002/04/11 12:08:21  grichenk
 * Fixed GetResolvedSeqMap() implementation
 *
@@ -140,6 +143,7 @@
 #include "handle_range_map.hpp"
 #include <objects/objmgr1/seq_vector.hpp>
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_hist.hpp>

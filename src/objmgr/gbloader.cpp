@@ -34,6 +34,8 @@
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
 #include "data_source.hpp"
+#include "annot_object.hpp"
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/objmgr1/reader_id1.hpp>
 #include <objects/objmgr1/reader_pubseq.hpp>
 #include <objects/objmgr1/gbloader.hpp>
@@ -785,6 +787,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/04/11 18:45:35  ucko
+* Pull in extra headers to make KCC happy.
+*
 * Revision 1.26  2002/04/10 22:47:56  kimelman
 * added pubseq_reader as default one
 *
