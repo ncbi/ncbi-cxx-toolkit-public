@@ -33,6 +33,8 @@
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/lds/lds_util.hpp>
 
+#include <objects/general/Object_id.hpp>
+
 #include <bdb/bdb_util.hpp>
 #include <objtools/lds/lds.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
@@ -59,41 +61,90 @@ private:
 class CLDS_FindSeqIdFunc
 {
 public:
-    CLDS_FindSeqIdFunc(const CHandleRangeMap&  hrmap)
-    : m_HrMap(hrmap)
+    CLDS_FindSeqIdFunc(SLDS_TablesCollection& db,
+                       const CHandleRangeMap&  hrmap)
+    : m_HrMap(hrmap),
+      m_db(db)
     {}
 
     void operator()(SLDS_ObjectDB& dbf)
     {
         if (dbf.primary_seqid.IsNull())
             return;
+        int object_id = dbf.object_id;
 
         string seq_id_str = (const char*)dbf.primary_seqid;
         if (seq_id_str.empty())
             return;
-        CSeq_id seq_id_db(seq_id_str);
-
-        CHandleRangeMap::const_iterator it;
-        for (it = m_HrMap.begin(); it != m_HrMap.end(); ++it) {
-            CSeq_id_Handle seq_id_hnd = it->first;
-            const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
-            if (seq_id.Match(seq_id_db)) {
-                int id = dbf.object_id;
-                int tse_id = dbf.TSE_object_id;
-
-                if (tse_id == 0) {  // top level object
-                    m_ids.insert(id);
-                } else {
-                    m_ids.insert(tse_id);
+        {{
+            CSeq_id seq_id_db(seq_id_str);
+            if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                seq_id_db.SetLocal().SetStr(seq_id_str);
+                if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                    return;
                 }
             }
-        } // for
+
+            ITERATE (CHandleRangeMap, it, m_HrMap) {
+                CSeq_id_Handle seq_id_hnd = it->first;
+                const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
+                if (seq_id.Match(seq_id_db)) {
+                    int tse_id = dbf.TSE_object_id;
+
+                    m_ids.insert(tse_id ? tse_id : object_id);
+                    return;
+                }
+            } // ITERATE
+        }}
+
+        // Primaty seq_id scan gave no results
+        // Trying supplemental aliases
+
+        m_db.object_attr_db.object_attr_id = object_id;
+        if (m_db.object_attr_db.Fetch() != eBDB_Ok) {
+            return;
+        }
+
+        if (m_db.object_attr_db.seq_ids.IsNull() || 
+            m_db.object_attr_db.seq_ids.IsEmpty()) {
+            return;
+        }
+
+        string attr_seq_ids((const char*)m_db.object_attr_db.seq_ids);
+        vector<string> seq_id_arr;
+        
+        NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
+
+        ITERATE (vector<string>, it, seq_id_arr) {
+            CSeq_id seq_id_db(*it);
+
+            if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                seq_id_db.SetLocal().SetStr(*it);
+                if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                    continue;
+                }
+            }
+
+            ITERATE (CHandleRangeMap, it, m_HrMap) {
+                CSeq_id_Handle seq_id_hnd = it->first;
+                const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
+
+                if (seq_id.Match(seq_id_db)) {
+                    int tse_id = dbf.TSE_object_id;
+
+                    m_ids.insert(tse_id ? tse_id : object_id);
+                    return;
+                }
+            } // ITERATE
+
+        } // ITERATE
     }
 
     CLDS_Set& GetIds() { return m_ids; }
 
 private:
     const CHandleRangeMap&  m_HrMap;  // Range map of seq ids to search
+    SLDS_TablesCollection&  m_db;     // The LDS database
     CLDS_Set                m_ids;    // TSE results, found
 };
 
@@ -128,7 +179,7 @@ CLDS_DataLoader::~CLDS_DataLoader()
 bool CLDS_DataLoader::GetRecords(const CHandleRangeMap& hrmap,
                                  const EChoice choice)
 {
-    CLDS_FindSeqIdFunc search_func(hrmap);
+    CLDS_FindSeqIdFunc search_func(m_LDS_db.GetTables(), hrmap);
     
     SLDS_TablesCollection& db = m_LDS_db.GetTables();
 
@@ -185,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/30 19:46:54  kuznets
+ * Implemented alias search mode
+ *
  * Revision 1.3  2003/07/30 18:36:38  kuznets
  * Minor syntactic fix
  *
