@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/13 02:42:14  thiessen
+* added helix and strand objects
+*
 * Revision 1.7  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -89,6 +92,15 @@ public:
     friend bool operator != (const Vector& a, const Vector& b)
     {
         return (a.x!=b.x || a.y!=b.y || a.z!=b.z);
+    }
+    double& operator [] (SIZE_TYPE i)
+    {
+        static double err = 0.0;
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else if (i == 2) return z;
+        else ERR_POST(ncbi::Error << "Vector operator [] access out of range : " << i);
+        return err;
     }
     double operator [] (SIZE_TYPE i) const
     {

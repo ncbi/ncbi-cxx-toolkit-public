@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/13 02:43:02  thiessen
+* added helix and strand objects
+*
 * Revision 1.3  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -122,15 +125,12 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     const Residue *residue;
     bond->GetParentOfType(&residue);
     
-    if (atom1.rID == 1 && atom1.aID == 1 && atom2.rID == 1 && atom2.aID == 1) {
-        TESTMSG(bondStyle->end1.color << bondStyle->end2.color);
-    }
-
     // color by element for now
     const Residue::AtomInfo *info = object->graph->GetAtomInfo(atom1);
     if (bond->order != Bond::eVirtual && (info->classification == Residue::ePartialBackboneAtom || 
         info->classification == Residue::eCompleteBackboneAtom)) {
-        return false;
+        bondStyle->end1.style = bondStyle->end2.style = StyleManager::eNotDisplayed;
+        return true;
     }
     const Element *element = PeriodicTable.GetElement(info->atomicNumber);
     bondStyle->end1.color = element->color;
@@ -139,8 +139,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     info = object->graph->GetAtomInfo(atom2);
     if (bond->order != Bond::eVirtual && (info->classification == Residue::ePartialBackboneAtom || 
         info->classification == Residue::eCompleteBackboneAtom)) {
-        return false;
-        ;
+        bondStyle->end1.style = bondStyle->end2.style = StyleManager::eNotDisplayed;
+        return true;
     }
     element = PeriodicTable.GetElement(info->atomicNumber);
     bondStyle->end2.color = element->color;
@@ -162,6 +162,31 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             bondStyle->end1.color = bondStyle->end2.color = green;
     }
 
+    return true;
+}
+
+bool StyleManager::GetHelixStyle(const StructureObject *object,
+    const Helix3D& helix, HelixStyle *helixStyle)
+{
+    helixStyle->style = StyleManager::eObjectWithArrow;
+    helixStyle->radius = 1.8;
+    helixStyle->color = Vector(0,1,0);
+    helixStyle->sides = 12;
+    helixStyle->arrowLength = 4.0;
+    helixStyle->arrowBaseWidthProportion = 1.2;
+    helixStyle->arrowTipWidthProportion = 0.4;
+    return true;
+}
+
+bool StyleManager::GetStrandStyle(const StructureObject *object,
+    const Strand3D& strand, StrandStyle *strandStyle)
+{
+    strandStyle->style = StyleManager::eObjectWithArrow;
+    strandStyle->width = 2.0;
+    strandStyle->thickness = 0.5;
+    strandStyle->color = Vector(.7,.7,0);
+    strandStyle->arrowLength = 2.8;
+    strandStyle->arrowBaseWidthProportion = 1.6;
     return true;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/13 02:43:00  thiessen
+* added helix and strand objects
+*
 * Revision 1.7  2000/08/07 14:13:15  thiessen
 * added animation frames
 *
@@ -67,6 +70,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
+#include "cn3d/object_3d.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -237,21 +241,21 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
             // draw this molecule with all alternative AtomSets (e.g., NMR's or altConfs)
             a->first->SetActiveEnsemble(a->second);
-            if (!(continueDraw = m->second->DrawAll(a->first))) break;
+            continueDraw = m->second->DrawAll(a->first);
 
             // revert transformation matrix
             if (object->IsSlave()) parentSet->renderer->PopMatrix();
 
             // end display list
             parentSet->renderer->EndDisplayList();
-        }
 
-        if (!continueDraw) return false;
+            if (!continueDraw) return false;
+        }
     }
 
-    // then put everything else (solvents, hets, intermolecule bonds) in a single display list
+    // then put everything else (solvents, hets, intermolecule bonds, 3d-objects) in a single display list
     if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
-    TESTMSG("drawing hets/solvents/i-m bonds");
+    TESTMSG("drawing hets/solvents/i-m bonds/objects");
     int n = 0;
     for (a=atomSetList.begin(); a!=ae; a++, n++) {
     
@@ -259,20 +263,29 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         parentSet->renderer->StartDisplayList(displayListOtherStart + n);
         if (object->IsSlave()) parentSet->renderer->PushMatrix(object->transformToMaster);
 
+        BondList::const_iterator b, be=interMoleculeBonds.end();
+        CoordSet::Object3DList::const_iterator o, oe=object->coordSets.front()->objects.end();
+
         for (m=molecules.begin(); m!=me; m++) {
             if (m->second->IsProtein() || m->second->IsNucleotide()) continue;
-            if (!(continueDraw = m->second->DrawAll(a->first))) break;
+            if (!(continueDraw = m->second->DrawAll(a->first))) goto skip;
         }
 
-        BondList::const_iterator b, be=interMoleculeBonds.end();
         for (b=interMoleculeBonds.begin(); b!=be; b++) {
-            if (!(continueDraw = (*b)->Draw(a->first))) break;
+            if (!(continueDraw = (*b)->Draw(a->first))) goto skip;
         }
 
+        // only use 3d-objects from first coordset, since they will only be
+        // present in a model with a single set of coordinates, anyway
+        for (o=object->coordSets.front()->objects.begin(); o!=oe; o++) {
+            if (!(continueDraw = (*o)->Draw(a->first))) goto skip;
+        }
+
+skip:
         if (object->IsSlave()) parentSet->renderer->PopMatrix();
         parentSet->renderer->EndDisplayList();
 
-        if (!continueDraw) break;
+        if (!continueDraw) return false;
     }
 
     return true;

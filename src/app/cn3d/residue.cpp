@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
 * Revision 1.10  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -79,6 +82,7 @@
 #include "cn3d/periodic_table.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

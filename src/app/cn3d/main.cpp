@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/08/13 02:43:00  thiessen
+* added helix and strand objects
+*
 * Revision 1.15  2000/08/07 14:13:15  thiessen
 * added animation frames
 *
@@ -80,6 +83,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <serial/serial.hpp>            
+#include <serial/objistrasn.hpp>       
 #include <serial/objistrasnb.hpp>       
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 
@@ -290,9 +294,20 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
-    // Associate ASN.1 binary serialization methods with the input 
+    // try to decide if it's binary or ascii
+    static const std::string asciiMimeFirstWord = "Ncbi-mime-asn1";
+    std::string firstWord;
+    *inStream >> firstWord;
+    inStream->seekg(0);
+
     auto_ptr<CObjectIStream> inObject;
-    inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+    if (firstWord == asciiMimeFirstWord) {
+        // Associate ASN.1 text serialization methods with the input 
+        inObject.reset(new CObjectIStreamAsn(*inStream));
+    } else {
+        // Associate ASN.1 binary serialization methods with the input 
+        inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+    }
 
     // Read the CNcbi_mime_asn1 data 
     CNcbi_mime_asn1 mime;

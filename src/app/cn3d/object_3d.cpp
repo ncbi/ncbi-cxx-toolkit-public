@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
 * Revision 1.1  2000/08/11 18:24:57  thiessen
 * add 3-d objects code
 *
@@ -37,8 +40,12 @@
 */
 
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
+#include <objects/mmdb3/Model_space_point.hpp>
 
 #include "cn3d/object_3d.hpp"
+#include "cn3d/opengl_renderer.hpp"
+#include "cn3d/style_manager.hpp"
+#include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -62,18 +69,93 @@ Object3D::Object3D(StructureBase *parent, const CResidue_pntrs& residues) :
     toResidue = interval.GetTo().Get();
 }
 
+static inline void ModelPoint2Vector(const CModel_space_point& msp, Vector *v)
+{
+    v->x = msp.GetX();
+    v->y = msp.GetY();
+    v->z = msp.GetZ();
+    *v /= msp.GetScale_factor();
+}
+
 Helix3D::Helix3D(StructureBase *parent, const CCylinder& cylinder, const CResidue_pntrs& residues) :
     Object3D(parent, residues)
 {
     if (molecule == Object3D::NOT_SET) return;
-    TESTMSG("got helix: " << molecule << ' ' << fromResidue << ' ' << toResidue);
+
+    ModelPoint2Vector(cylinder.GetAxis_bottom(), &Nterm);
+    ModelPoint2Vector(cylinder.GetAxis_top(), &Cterm);
+}
+
+bool Helix3D::Draw(const AtomSet *data) const
+{
+    if (!parentSet->renderer) {
+        ERR_POST(Error << "Helix3D::Draw() - no renderer");
+        return false;
+    }
+
+    // get object parent
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "Helix3D::Draw() - can't get StructureObject parent");
+        return false;
+    }
+
+    // get Style
+    HelixStyle helixStyle;
+    if (!parentSet->styleManager->GetHelixStyle(object, *this, &helixStyle))
+        return false;
+
+    // draw the Helix
+    if (helixStyle.style != StyleManager::eNotDisplayed)
+        parentSet->renderer->DrawHelix(Nterm, Cterm, helixStyle);
+
+    return true;
 }
 
 Strand3D::Strand3D(StructureBase *parent, const CBrick& brick, const CResidue_pntrs& residues) :
     Object3D(parent, residues)
 {
     if (molecule == Object3D::NOT_SET) return;
-    TESTMSG("got strand: " << molecule << ' ' << fromResidue << ' ' << toResidue);
+
+    Vector c1, c2;
+    ModelPoint2Vector(brick.GetCorner_000(), &c1);
+    ModelPoint2Vector(brick.GetCorner_011(), &c2);
+    Nterm = (c1 + c2) / 2;
+
+    ModelPoint2Vector(brick.GetCorner_100(), &c1);
+    ModelPoint2Vector(brick.GetCorner_111(), &c2);
+    Cterm = (c1 + c2) / 2;
+
+    ModelPoint2Vector(brick.GetCorner_010(), &c1);
+    ModelPoint2Vector(brick.GetCorner_000(), &c2);
+    unitNormal = c1 - c2;
+    unitNormal.normalize();
+}
+
+bool Strand3D::Draw(const AtomSet *data) const
+{
+    if (!parentSet->renderer) {
+        ERR_POST(Error << "Strand3D::Draw() - no renderer");
+        return false;
+    }
+
+    // get object parent
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "Strand3D::Draw() - can't get StructureObject parent");
+        return false;
+    }
+
+    // get Style
+    StrandStyle strandStyle;
+    if (!parentSet->styleManager->GetStrandStyle(object, *this, &strandStyle))
+        return false;
+
+    // draw the Strand
+    if (strandStyle.style != StyleManager::eNotDisplayed)
+        parentSet->renderer->DrawStrand(Nterm, Cterm, unitNormal, strandStyle);
+
+    return true;
 }
 
 END_SCOPE(Cn3D)

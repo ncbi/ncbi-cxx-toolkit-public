@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/13 02:42:13  thiessen
+* added helix and strand objects
+*
 * Revision 1.1  2000/08/11 18:24:41  thiessen
 * add 3-d objects code
 *
@@ -44,6 +47,7 @@
 #include <objects/mmdb3/Brick.hpp>
 
 #include "cn3d/structure_base.hpp"
+#include "cn3d/vector_math.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -65,7 +69,9 @@ public:
     Helix3D(StructureBase *parent,
         const ncbi::objects::CCylinder& cylinder, const ncbi::objects::CResidue_pntrs& residues);
 
-private:
+    Vector Nterm, Cterm;
+
+    bool Draw(const AtomSet *data) const;
 };
 
 class Strand3D : public Object3D
@@ -74,7 +80,9 @@ public:
     Strand3D(StructureBase *parent,
         const ncbi::objects::CBrick& brick, const ncbi::objects::CResidue_pntrs& residues);
 
-private:
+    Vector Nterm, Cterm, unitNormal;
+
+    bool Draw(const AtomSet *data) const;
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
 * Revision 1.17  2000/08/07 14:13:16  thiessen
 * added animation frames
 *
@@ -106,9 +109,11 @@
 #include "cn3d/atom_set.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -279,7 +284,25 @@ void StructureSet::SelectedAtom(unsigned int name)
         return;
     }
 
-    TESTMSG("residue " << residue->id << ", atom " << atomID);
+    // for now, if an atom is selected then use it as rotation center; use coordinate
+    // from first CoordSet, default altConf
+    const StructureObject *object;
+    if (!residue->GetParentOfType(&object)) {
+        ERR_POST(Error << "StructureSet::SelectedAtom() - can't get StructureObject parent");
+        return;
+    }
+    const Molecule *molecule;
+    if (!residue->GetParentOfType(&molecule)) {
+        ERR_POST(Error << "StructureSet::SelectedAtom() - can't get Molecule parent");
+        return;
+    }
+    TESTMSG("rotating about " << object->pdbID
+        << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
+    object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);
+    rotationCenter = object->coordSets.front()->atomSet->
+        GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
+    if (object->IsSlave())
+        ApplyTransformation(&rotationCenter, *(object->transformToMaster));
 }
 
 const int StructureObject::NO_MMDB_ID = -1;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/13 02:42:13  thiessen
+* added helix and strand objects
+*
 * Revision 1.4  2000/08/11 12:59:13  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -49,15 +52,19 @@
 #define CN3D_STYLE_MANAGER__HPP
 
 #include "cn3d/vector_math.hpp"
-#include "cn3d/structure_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
 class StructureObject;
+class AtomPntr;
 class Bond;
 class BondStyle;
 class AtomStyle;
+class Helix3D;
+class HelixStyle;
+class Strand3D;
+class StrandStyle;
 
 class StyleManager
 {
@@ -70,6 +77,8 @@ public:
         eCylinderBond,
         eLineWormBond,
         eThickWormBond,
+        eObjectWithArrow,
+        eObjectWithoutArrow,
         eNotDisplayed
     };
 
@@ -78,6 +87,8 @@ public:
     bool GetBondStyle(const Bond *bond,
             const AtomPntr& atom1, const AtomPntr& atom2,
             BondStyle *bondStyle);
+    bool GetHelixStyle(const StructureObject *object, const Helix3D& helix, HelixStyle *helixStyle);
+    bool GetStrandStyle(const StructureObject *object, const Strand3D& strand, StrandStyle *strandStyle);
 
 private:
 };
@@ -105,6 +116,25 @@ public:
     } end1, end2;
     bool midCap;
     double tension;
+};
+
+class HelixStyle
+{
+public:
+    StyleManager::eDisplayStyle style;
+    double radius;
+    Vector color;
+    double arrowLength, arrowBaseWidthProportion, arrowTipWidthProportion;
+    int sides;
+};
+
+class StrandStyle
+{
+public:
+    StyleManager::eDisplayStyle style;
+    double width, thickness;
+    Vector color;
+    double arrowLength, arrowBaseWidthProportion;
 };
 
 END_SCOPE(Cn3D)

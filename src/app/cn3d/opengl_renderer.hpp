@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/13 02:42:13  thiessen
+* added helix and strand objects
+*
 * Revision 1.11  2000/08/11 12:59:13  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -73,7 +76,6 @@
 // access this without potential name conflicts
 
 #include "cn3d/vector_math.hpp"
-#include "cn3d/style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -81,6 +83,10 @@ BEGIN_SCOPE(Cn3D)
 // the OpenGLRenderer class
 
 class StructureSet;
+class AtomStyle;
+class BondStyle;
+class HelixStyle;
+class StrandStyle;
 
 class OpenGLRenderer
 {
@@ -150,6 +156,9 @@ public:
     void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
     void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style,
         const Vector *site0, const Vector* site3);
+    void DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& helixStyle);
+    void DrawStrand(const Vector& Nterm, const Vector& Cterm, 
+        const Vector& unitNormal, const StrandStyle& strandStyle);
 
 private:
     StructureSet *structureSet;

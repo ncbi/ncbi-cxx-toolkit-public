@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
 * Revision 1.14  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -92,6 +95,8 @@
 
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/style_manager.hpp"
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -310,10 +315,26 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
     glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
 }
 
-void OpenGLRenderer::SetSize(GLint width, GLint height) const
+void OpenGLRenderer::SetSize(int width, int height) const
 {
     glViewport(0, 0, width, height);
+    TESTMSG("viewport " << width << ' ' << height);
     NewView();
+}
+
+void OpenGLRenderer::PushMatrix(const Matrix* m) const
+{
+    glPushMatrix();
+    if (m) {
+        GLdouble g[16];
+        Matrix2GL(*m, g);
+        glMultMatrixd(g);
+    }
+}
+
+void OpenGLRenderer::PopMatrix(void) const
+{
+    glPopMatrix();
 }
 
 // display list management stuff
@@ -614,21 +635,6 @@ void OpenGLRenderer::ConstructLogo(void)
     }
 
     glEndList();
-}
-
-void OpenGLRenderer::PushMatrix(const Matrix* m) const
-{
-    glPushMatrix();
-    if (m) {
-        GLdouble g[16];
-        Matrix2GL(*m, g);
-        glMultMatrixd(g);
-    }
-}
-
-void OpenGLRenderer::PopMatrix(void) const
-{
-    glPopMatrix();
 }
 
 void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
@@ -941,6 +947,207 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
     DrawHalfBond(midpoint, site2, style.end2.style, style.end2.radius,
         style.midCap, style.end2.atomCap, style.end2.sides, style.end2.segments,
         style.tension, site3, site2, site1, site0);
+}
+
+void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& style)
+{
+    SetColor(GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+    glLoadName(static_cast<GLuint>(NO_NAME));
+
+    double length = (Nterm - Cterm).length();
+    if (length <= 0.000001 || style.sides <= 0) return;
+
+    glPushMatrix();
+    DoCylinderPlacementTransform(Nterm, Cterm, length);
+    if (style.style == StyleManager::eObjectWithArrow)
+        length -= style.arrowLength;
+    gluCylinder(qobj, style.radius, style.radius, length, style.sides, 1);
+    
+    // Nterm cap
+    glPushMatrix();
+    glRotated(180.0, 0.0, 1.0, 0.0);
+    gluDisk(qobj, 0.0, style.radius, style.sides, 1);
+    glPopMatrix();
+
+    // Cterm Arrow
+    if (style.style == StyleManager::eObjectWithArrow) {
+        glPushMatrix();
+        glTranslated(0.0, 0.0, length);
+        if (style.arrowBaseWidthProportion > 1.0) {
+            glPushMatrix();
+            glRotated(180.0, 0.0, 1.0, 0.0);
+            gluDisk(qobj, 0.0, style.radius * style.arrowBaseWidthProportion, style.sides, 1);
+            glPopMatrix();
+        }
+        gluCylinder(qobj, style.radius * style.arrowBaseWidthProportion,
+            style.radius * style.arrowTipWidthProportion, style.arrowLength, style.sides, 10);
+        if (style.arrowTipWidthProportion > 0.0) {
+            glTranslated(0.0, 0.0, style.arrowLength);
+            gluDisk(qobj, 0.0, style.radius * style.arrowTipWidthProportion, style.sides, 1);
+        }
+        glPopMatrix();
+
+    // Cterm cap
+    } else {
+        glPushMatrix();
+        glTranslated(0.0, 0.0, length);
+        gluDisk(qobj, 0.0, style.radius, style.sides, 1);
+        glPopMatrix();
+    }
+   
+    glPopMatrix();
+}
+
+void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm, 
+    const Vector& unitNormal, const StrandStyle& style)
+{
+    GLdouble c000[3], c001[3], c010[3], c011[3],
+             c100[3], c101[3], c110[3], c111[3], n[3];
+    Vector a, h;
+    int i;
+
+    SetColor(GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+    glLoadName(static_cast<GLuint>(NO_NAME));
+
+    /* in this brick's world coordinates, the long axis (N-C direction) is
+       along +Z, with N terminus at Z=0; width is in the X direction, and
+       thickness in Y. Arrowhead at C-terminus, of course. */
+         
+    a = Cterm - Nterm;
+    a.normalize();
+    h = vector_cross(unitNormal, a);
+
+    Vector lCterm(Cterm);
+    if (style.style == StyleManager::eObjectWithArrow)
+        lCterm -= a * style.arrowLength;
+            
+    for (i=0; i<3; i++) {
+        c000[i] =  Nterm[i] - h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
+        c001[i] = lCterm[i] - h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
+        c010[i] =  Nterm[i] - h[i]*style.width/2 + unitNormal[i]*style.thickness/2;
+        c011[i] = lCterm[i] - h[i]*style.width/2 + unitNormal[i]*style.thickness/2;
+        c100[i] =  Nterm[i] + h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
+        c101[i] = lCterm[i] + h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
+        c110[i] =  Nterm[i] + h[i]*style.width/2 + unitNormal[i]*style.thickness/2;
+        c111[i] = lCterm[i] + h[i]*style.width/2 + unitNormal[i]*style.thickness/2;
+    }
+
+    glBegin(GL_QUADS);
+
+    for (i=0; i<3; i++) n[i] = unitNormal[i];
+    glNormal3dv(n);
+    glVertex3dv(c010);
+    glVertex3dv(c011);
+    glVertex3dv(c111);
+    glVertex3dv(c110);
+
+    for (i=0; i<3; i++) n[i] = -unitNormal[i];
+    glNormal3dv(n);
+    glVertex3dv(c000);
+    glVertex3dv(c100);
+    glVertex3dv(c101);
+    glVertex3dv(c001);
+
+    for (i=0; i<3; i++) n[i] = h[i];
+    glNormal3dv(n);
+    glVertex3dv(c100);
+    glVertex3dv(c110);
+    glVertex3dv(c111);
+    glVertex3dv(c101);
+
+    for (i=0; i<3; i++) n[i] = -h[i];
+    glNormal3dv(n);
+    glVertex3dv(c000);
+    glVertex3dv(c001);
+    glVertex3dv(c011);
+    glVertex3dv(c010);
+
+    for (i=0; i<3; i++) n[i] = -a[i];
+    glNormal3dv(n);
+    glVertex3dv(c000);
+    glVertex3dv(c010);
+    glVertex3dv(c110);
+    glVertex3dv(c100);
+
+    if (style.style == StyleManager::eObjectWithoutArrow) {
+        for (i=0; i<3; i++) n[i] = a[i];
+        glNormal3dv(n);
+        glVertex3dv(c001);
+        glVertex3dv(c101);
+        glVertex3dv(c111);
+        glVertex3dv(c011);
+
+    } else {
+        GLdouble FT[3], LT[3], RT[3], FB[3], LB[3], RB[3];
+    
+        for (i=0; i<3; i++) {
+            FT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 + 
+                a[i]*style.arrowLength;
+            LT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 + 
+                h[i]*style.arrowBaseWidthProportion*style.width/2;
+            RT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 - 
+                h[i]*style.arrowBaseWidthProportion*style.width/2;
+            FB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 + 
+                a[i]*style.arrowLength;
+            LB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 + 
+                h[i]*style.arrowBaseWidthProportion*style.width/2;
+            RB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 - 
+                h[i]*style.arrowBaseWidthProportion*style.width/2;
+        }
+
+        // the back-facing rectangles on the base of the arrow
+        for (i=0; i<3; i++) n[i] = -a[i];
+        glNormal3dv(n);
+        glVertex3dv(c111);
+        glVertex3dv(LT);
+        glVertex3dv(LB);
+        glVertex3dv(c101);
+
+        glVertex3dv(c011);
+        glVertex3dv(c001);
+        glVertex3dv(RB);
+        glVertex3dv(RT);
+
+        // the left side of the arrow
+        for (i=0; i<3; i++) h[i] = FT[i] - LT[i];
+        Vector nL = vector_cross(unitNormal, h);
+        nL.normalize();
+        for (i=0; i<3; i++) n[i] = nL[i];
+        glNormal3dv(n);
+        glVertex3dv(FT);
+        glVertex3dv(FB);
+        glVertex3dv(LB);
+        glVertex3dv(LT);
+
+        // the right side of the arrow
+        for (i=0; i<3; i++) h[i] = FT[i] - RT[i];
+        Vector nR = vector_cross(h, unitNormal);
+        nR.normalize();
+        for (i=0; i<3; i++) n[i] = nR[i];
+        glNormal3dv(n);
+        glVertex3dv(FT);
+        glVertex3dv(RT);
+        glVertex3dv(RB);
+        glVertex3dv(FB);
+
+        glEnd();
+        glBegin(GL_TRIANGLES);
+        
+        // the top and bottom arrow triangles
+        for (i=0; i<3; i++) n[i] = unitNormal[i];
+        glNormal3dv(n);
+        glVertex3dv(FT);
+        glVertex3dv(LT);
+        glVertex3dv(RT);
+        
+        for (i=0; i<3; i++) n[i] = -unitNormal[i];
+        glNormal3dv(n);
+        glVertex3dv(FB);
+        glVertex3dv(RB);
+        glVertex3dv(LB);
+    }
+
+    glEnd();
 }
 
 END_SCOPE(Cn3D)
