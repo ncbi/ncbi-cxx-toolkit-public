@@ -384,6 +384,21 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 	
 	(* Save everything *)
 	on SaveProjectFile()
+		(* Genome Workbench Disk Image *)
+		(* Add a shell script only target to create a standalone disk image for distribution *)
+		set shellScript to do shell script "cat " & TheNCBIPath & "/compilers/xCode/diskimage.tmpl"
+		
+		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
+		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
+		
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
+		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
+		addPair(theTarget, "TARGET__GBENCH_DISK")
+		addPair({isa:"PBXTargetDependency", |target|:"TARGET__GBENCH_DISK"}, "DEPENDENCE__GBENCH_DISK")
+		copy "DEPENDENCE__GBENCH_DISK" to the end of allDepList
+		
+		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
 		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
@@ -391,20 +406,6 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
 		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
-		
-		
-		(* Genome Workbench Disk Image *)
-		(* Add a shell script only target to create a standalone disk image for distribution *)
-		set shellScript to do shell script "cat " & TheNCBIPath & "/compilers/xCode/diskimage.tmpl"
-		
-		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
-		set scriptPhaseName to "SCRIPTPHASE__GBENCH"
-		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
-		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
-		copy scriptPhaseName to the beginning of |buildPhases| of theTarget
-		addPair(aScriptPhase, scriptPhaseName)
-		addPair(theTarget, "TARGET__GBENCH_DISK")
 		
 		
 		(* add frameworks*)
@@ -607,6 +608,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/03/24 15:37:51  lebedev
+ * Build phase for release GBench disk image added
+ *
  * Revision 1.24  2005/03/22 16:41:53  lebedev
  * Better disk image script
  *
