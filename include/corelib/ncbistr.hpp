@@ -2072,7 +2072,7 @@ int NStr::strcasecmp(const char* s1, const char* s2)
 #if defined(HAVE_STRICMP)
     return ::stricmp(s1, s2);
 
-#elif defined(HAVE_STRCASECMP)
+#elif defined(HAVE_STRCASECMP_LC)
     return ::strcasecmp(s1, s2);
 
 #else
@@ -2080,7 +2080,7 @@ int NStr::strcasecmp(const char* s1, const char* s2)
     for ( ;; ++s1, ++s2) {
         char c1 = *s1;
         // calculate difference
-        diff = toupper(c1) - toupper(*s2);
+        diff = tolower(c1) - tolower(*s2);
         // if end of string or different
         if (!c1  ||  diff)
             break; // return difference
@@ -2095,7 +2095,7 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 #if defined(HAVE_STRICMP)
     return ::strnicmp(s1, s2, n);
 
-#elif defined(HAVE_STRCASECMP)
+#elif defined(HAVE_STRCASECMP_LC)
     return ::strncasecmp(s1, s2, n);
 
 #else
@@ -2103,7 +2103,7 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
     for ( ; ; ++s1, ++s2, --n) {
         char c1 = *s1;
         // calculate difference
-        diff = toupper(c1) - toupper(*s2);
+        diff = tolower(c1) - tolower(*s2);
         // if end of string or different
         if (!c1  ||  diff)
             break; // return difference
@@ -2447,6 +2447,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.65  2004/10/04 14:27:31  ucko
+ * Treat all letters as lowercase for case-insensitive comparisons.
+ *
  * Revision 1.64  2004/10/01 15:17:38  shomrat
  * Added test if string starts/ends with a specified char and test if string is blank
  *

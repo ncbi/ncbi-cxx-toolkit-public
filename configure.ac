@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.324 2004/09/25 17:59:33 ucko Exp $
+#  $Id: configure.ac,v 1.325 2004/10/04 14:27:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1963,6 +1963,24 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf vsnprintf \
                getpagesize)
 AC_LANG_POP(C)
+
+# We want the program to return 0, which is *false* in C.  Also, since
+# use of lowercase seems to be customary if not universal, the default
+# is yes when cross-compiling; anyone cross-compiling for exceptional
+# platforms can set ncbi_cv_func_strcasecmp_lc=no in config.site.
+if test "$ac_cv_func_strcasecmp" = yes; then
+   AC_CACHE_CHECK([whether strcasecmp treats letters as lowercase],
+                  ncbi_cv_func_strcasecmp_lc,
+      [AC_RUN_IFELSE([AC_LANG_PROGRAM(
+          [[#include <string.h>]],
+          [[return strcasecmp("A", "_") <= 0;]])],
+          [ncbi_cv_func_strcasecmp_lc=yes], [ncbi_cv_func_strcasecmp_lc=no],
+          [ncbi_cv_func_strcasecmp_lc=yes])])
+   if test "$ncbi_cv_func_strcasecmp_lc" = yes; then
+      AC_DEFINE(HAVE_STRCASECMP_LC, 1,
+                [Define to 1 if strcasecmp treats letters as lowercase.])
+   fi
+fi
 
 AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(

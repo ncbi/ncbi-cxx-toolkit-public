@@ -117,7 +117,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&  toupper(*s) == toupper(*pattern)) {
+    while (n  &&  *pattern  &&  tolower(*s) == tolower(*pattern)) {
         s++;  pattern++;  n--;
     }
 
@@ -125,7 +125,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return *pattern ? -1 : 0;
     }
 
-    return toupper(*s) - toupper(*pattern);
+    return tolower(*s) - tolower(*pattern);
 }
 
 
@@ -183,7 +183,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     const char* s = str.data() + pos;
     const char* p = pattern.data();
-    while (n_cmp  &&  toupper(*s) == toupper(*p)) {
+    while (n_cmp  &&  tolower(*s) == tolower(*p)) {
         s++;  p++;  n_cmp--;
     }
 
@@ -193,7 +193,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return n > pattern.length() ? 1 : -1;
     }
 
-    return toupper(*s) - toupper(*p);
+    return tolower(*s) - tolower(*p);
 }
 
 
@@ -1609,6 +1609,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.119  2004/10/04 14:27:31  ucko
+ * Treat all letters as lowercase for case-insensitive comparisons.
+ *
  * Revision 1.118  2004/10/01 15:18:25  shomrat
  * + IsBlank; changes to string wrap
  *
