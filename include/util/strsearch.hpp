@@ -335,7 +335,7 @@ void CTextFsm<MatchType>::ComputeFail(void)
     
     // queue up states reached directly from state 0 (depth 1) 
     
-    iterate ( CState::TMapCharInt,
+    ITERATE ( CState::TMapCharInt,
               it, 
               m_States[GetInitialState()].GetTransitions() ) {
         s = it->second;
@@ -349,7 +349,7 @@ void CTextFsm<MatchType>::ComputeFail(void)
         
         // depth 1 states beget depth 2 states, etc. 
         
-        iterate ( CState::TMapCharInt, it, m_States[r].GetTransitions() ) {
+        ITERATE ( CState::TMapCharInt, it, m_States[r].GetTransitions() ) {
             s = it->second;
             QueueAdd(queue, qbeg, s);
             
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/03/10 17:56:34  kuznets
+* iterate->ITERATE
+*
 * Revision 1.9  2003/02/04 20:15:16  shomrat
 * Change int to unsigned
 *

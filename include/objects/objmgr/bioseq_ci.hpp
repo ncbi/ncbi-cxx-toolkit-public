@@ -101,7 +101,7 @@ CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
 {
     if (this != &bioseq_ci) {
         m_Scope = bioseq_ci.m_Scope;
-        iterate (TBioseqHandleSet, it, bioseq_ci.m_Handles) {
+        ITERATE (TBioseqHandleSet, it, bioseq_ci.m_Handles) {
             m_Handles.insert(*it);
         }
         if (bioseq_ci) {
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/10 17:51:36  kuznets
+* iterate->ITERATE
+*
 * Revision 1.7  2003/02/25 14:48:06  vasilche
 * Added Win32 export modifier to object manager classes.
 *

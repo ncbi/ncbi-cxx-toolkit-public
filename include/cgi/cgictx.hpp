@@ -262,7 +262,7 @@ CCgiServerContext& CCgiContext::GetServCtx(void)
 inline
 CNcbiOstream& CCgiContext::PrintMsg(CNcbiOstream& os)
 {
-    iterate (TMessages, it, m_Messages) {
+    ITERATE (TMessages, it, m_Messages) {
         os << **it;
     }
     return os;
@@ -312,6 +312,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2003/03/10 17:46:36  kuznets
+* iterate->ITERATE
+*
 * Revision 1.23  2003/02/21 19:19:15  vakatov
 * CCgiContext::GetRequestValue() -- added optional arg "is_found"
 *
