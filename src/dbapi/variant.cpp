@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.16  2003/01/09 19:59:29  kholodov
+* Fixed: operator=(CVariant&) rewritten using copy ctor
+*
 * Revision 1.15  2002/10/31 22:37:05  kholodov
 * Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
 * Fixed: minor errors, diagnostic messages
@@ -90,8 +93,8 @@
 
 #include <dbapi/variant.hpp>
 #include <algorithm>
-#include "basetmpl.hpp"
-#include <corelib/ncbistre.hpp>
+//#include "basetmpl.hpp"
+//#include <corelib/ncbistd.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -370,6 +373,9 @@ string CVariant::GetString(void) const
     case eDB_Int:
         s << GetInt4(); 
         return CNcbiOstrstreamToString(s);
+    case eDB_BigInt:
+        s << GetInt8(); 
+        return CNcbiOstrstreamToString(s);
     case eDB_Float:
         s << GetFloat(); 
         return CNcbiOstrstreamToString(s);
@@ -630,9 +636,12 @@ CVariant& CVariant::operator=(const CTime& v)
     return *this;
 }
 
+class CDB_Object;
+
 CVariant& CVariant::operator=(const CVariant& v)
 {
-    *(GetData()) = *(v.GetData());
+    CVariant t(v);
+    swap(t.m_data, this->m_data);
     return *this;
 }
 
