@@ -201,7 +201,7 @@ void CSourceItem::x_SetSource
         CBioSource::TGenome genome = bsrc.CanGetGenome() ? bsrc.GetGenome() 
             : CBioSource::eGenome_unknown;
         
-        m_Organelle = &(s_old_organelle_prefix[genome]);
+        m_Organelle = &(s_organelle_prefix[genome]);
         
         // If the organelle prefix is already on the  name, don't add it.
         if ( NStr::StartsWith(*m_Taxname, *m_Organelle, NStr::eNocase) ) {
@@ -298,6 +298,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/08/12 15:50:15  shomrat
+* use new organelle prefix
+*
 * Revision 1.7  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
