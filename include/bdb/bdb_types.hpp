@@ -988,6 +988,8 @@ public:
     /// 0 - means no forced limit
     unsigned int GetFieldCompareLimit() const;
 
+    ~CBDB_BufferManager();
+
 protected:
     CBDB_BufferManager();
 
@@ -1073,7 +1075,7 @@ private:
     vector<CBDB_Field*>     m_Fields;
     /// Array of pointers to the fields' data
     vector<void*>           m_Ptrs;        
-    auto_ptr<char>          m_Buffer;
+    char*                   m_Buffer;
     size_t                  m_BufferSize;
     size_t                  m_PackedSize;
     bool                    m_Packable;
@@ -1455,7 +1457,7 @@ inline bool CBDB_BufferManager::IsNullable() const
 
 inline void CBDB_BufferManager::SetNullable()
 {
-    _ASSERT(m_Buffer.get() == 0);
+    _ASSERT(m_Buffer == 0);
     m_Nullable = true;
 }
 
@@ -1473,7 +1475,7 @@ inline bool CBDB_BufferManager::TestNullBit(unsigned int n) const
 {
     _ASSERT(IsNullable());
 
-    const unsigned char* buf  = (unsigned char*) m_Buffer.get();
+    const unsigned char* buf  = (unsigned char*) m_Buffer;
     unsigned char        mask = (unsigned char) (1 << (n & 7));
     const unsigned char* offs = buf + (n >> 3);
 
@@ -1485,7 +1487,7 @@ inline void CBDB_BufferManager::SetNullBit(unsigned int n, bool value)
 {
     _ASSERT(IsNullable());
 
-    unsigned char* buf  = (unsigned char*) m_Buffer.get();
+    unsigned char* buf  = (unsigned char*) m_Buffer;
     unsigned char  mask = (unsigned char) (1 << (n & 7));
     unsigned char* offs = buf + (n >> 3);
 
@@ -1505,7 +1507,7 @@ inline void CBDB_BufferManager::SetNull(unsigned int field_idx, bool value)
 inline void CBDB_BufferManager::SetAllNull()
 {
     _ASSERT(IsNullable());
-    unsigned char* buf = (unsigned char*) m_Buffer.get();
+    unsigned char* buf = (unsigned char*) m_Buffer;
     for (size_t i = 0;  i < m_NullSetSize;  ++i) {
         *buf++ = (unsigned char) 0xFF;
     }
@@ -1544,7 +1546,7 @@ inline void CBDB_BufferManager::ArrangePtrsUnpacked()
 
 inline void CBDB_BufferManager::Clear()
 {
-    ::memset(m_Buffer.get(), 0, m_BufferSize);
+    ::memset(m_Buffer, 0, m_BufferSize);
 	ArrangePtrsUnpacked();
 }
 
@@ -1617,6 +1619,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/11/06 14:05:08  kuznets
+ * Dismissed auto_ptr from CBDB_BufferManager because of the delete / delete []
+ * mismatch. Gives errors in some memory profilers (valgrind).
+ *
  * Revision 1.25  2003/10/28 14:19:19  kuznets
  * Calling DoubleToString without precision (%g format) for float and double
  * BDB fields (more accurate results for scientific data)
