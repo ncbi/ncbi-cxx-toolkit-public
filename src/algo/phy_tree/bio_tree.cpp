@@ -135,14 +135,14 @@ void CBioTreeFeatureDictionary::Clear()
 }
 
 bool 
-CBioTreeFeatureDictionary::HasFeature(const string& feature_name) 
+CBioTreeFeatureDictionary::HasFeature(const string& feature_name) const
 {
     TFeatureNameIdx::const_iterator it = m_Name2Id.find(feature_name);
     return (it != m_Name2Id.end());
 }
 
 bool 
-CBioTreeFeatureDictionary::HasFeature(TBioTreeFeatureId id)
+CBioTreeFeatureDictionary::HasFeature(TBioTreeFeatureId id) const
 {
     TFeatureDict::const_iterator it = m_Dict.find(id);
     return (it != m_Dict.end());
@@ -177,12 +177,94 @@ CBioTreeFeatureDictionary::GetId(const string& feature_name) const
     return it->second;
 }
 
+
+static string s_EncodeLabel(const string& label);
+
+// recursive function
+void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
+               const CBioTreeDynamic::TBioTreeNode& node)
+{
+    if (!node.IsLeaf()) {
+        os << '(';
+        CBioTreeDynamic::TBioTreeNode::TNodeList_CI it = node.SubNodeBegin();
+        for (;  it != node.SubNodeEnd();  ++it) {
+            if (it != node.SubNodeBegin()) {
+                os << ", ";
+            }
+            PrintNode(os, tree, **it);
+        }
+        os << ')';
+    }
+
+    string label;
+    if (tree.GetFeatureDict().HasFeature("label")) {
+        label = node.GetValue().features
+            .GetFeatureValue(tree.GetFeatureDict().GetId("label"));
+    }
+    if (node.IsLeaf() || !label.empty()) {
+        os << s_EncodeLabel(label);
+    }
+
+    string dist_string;
+    if (tree.GetFeatureDict().HasFeature("dist")) {
+        label = node.GetValue().features
+            .GetFeatureValue(tree.GetFeatureDict().GetId("dist"));
+    }
+    if (!dist_string.empty()) {
+        os << ':' << dist_string;
+    }
+}
+
+
+CNcbiOstream& operator<<(CNcbiOstream& os, const CBioTreeDynamic& tree)
+{
+    PrintNode(os, tree, *tree.GetTreeNode());
+    os << ';' << endl;
+    return os;
+};
+
+
+void WriteNexusTree(CNcbiOstream& os, const CBioTreeDynamic& tree,
+                    const string& tree_name)
+{
+    os << "#nexus\n\nbegin trees;\ntree " << tree_name << " = "
+       << tree << "\nend;" << endl;
+};
+
+
+// Encode a label for Newick format: enclose it in single quotes,
+// but first escape any single quotes by doubling them.
+// e.g., "This 'label'" -> "'This ''label'''"
+static string s_EncodeLabel(const string& label) {
+    if (label.find_first_of("'") == string::npos) {
+        return '\'' + label + '\'';
+    }
+    string rv;
+    rv.reserve(label.size() + 2);
+    rv.append(1, '\'');
+    for (unsigned int i = 0;  i < label.size();  ++i) {
+        rv.append(1, label[i]);
+        if (label[i] == '\'') {
+            // "'" -> "''"
+            rv.append(1, label[i]);
+        }
+    }
+    rv.append(1, '\'');
+
+    return rv;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/03 16:16:21  jcherry
+ * Added Newick and Nexus format writing for CBioTreeDynamic.
+ * Made CBioTreeFeatureDictionary::HasFeature const.
+ *
  * Revision 1.5  2004/06/07 15:22:13  kuznets
  * + Register
  *

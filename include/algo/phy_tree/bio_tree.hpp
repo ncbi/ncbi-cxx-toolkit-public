@@ -187,10 +187,10 @@ public:
        operator=(const CBioTreeFeatureDictionary& btr);
 
     /// Check if feature is listed in the dictionary
-    bool HasFeature(const string& feature_name);
+    bool HasFeature(const string& feature_name) const;
 
     /// Check if feature is listed in the dictionary
-    bool HasFeature(TBioTreeFeatureId id);
+    bool HasFeature(TBioTreeFeatureId id) const;
 
     /// Register new feature, return its id.
     /// If feature is already registered just returns the id.
@@ -410,6 +410,22 @@ typedef
   CBioTree<BioTreeBaseNode<CBioTreeEmptyNodeData, CBioTreeFeatureList> >
   CBioTreeDynamic;
 
+/// Newick format output
+NCBI_XALGOPHYTREE_EXPORT
+CNcbiOstream& operator<<(CNcbiOstream& os, const CBioTreeDynamic& tree);
+
+/// Nexus format output (Newick with some stuff around it).
+///
+/// tree_name gets put in the file.
+NCBI_XALGOPHYTREE_EXPORT
+void WriteNexusTree(CNcbiOstream& os, const CBioTreeDynamic& tree,
+                    const string& tree_name = "the_tree");
+
+/// Newick but without the terminal ';'
+NCBI_XALGOPHYTREE_EXPORT
+void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
+               const CBioTreeDynamic::TBioTreeNode& node);
+
 
 END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 
@@ -417,6 +433,10 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/03 16:16:20  jcherry
+ * Added Newick and Nexus format writing for CBioTreeDynamic.
+ * Made CBioTreeFeatureDictionary::HasFeature const.
+ *
  * Revision 1.13  2004/06/21 12:31:21  ckenny
  * fixed bug in SetTreeNode
  *
