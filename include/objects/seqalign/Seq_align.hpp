@@ -60,6 +60,10 @@ public:
     /// NOTE: currently *only* works for dense-seg
     void Reverse(void);
 
+    // Create a Dense-seg from a Std-seg
+    // Used by AlnMgr to handle nucl2prot alignments
+    CRef<CSeq_align> CreateDensegFromStdseg(void) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_align(const CSeq_align& value);
@@ -90,6 +94,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/19 21:10:39  todorov
+* +CreateDensegFromStdseg
+*
 * Revision 1.1  2003/08/13 18:11:35  johnson
 * added 'Reverse' method
 *

@@ -36,6 +36,11 @@
 
 // standard includes
 #include <objects/seqalign/seqalign_exception.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <serial/iterator.hpp>
 
 // generated includes
 #include <objects/seqalign/Seq_align.hpp>
@@ -67,6 +72,222 @@ void CSeq_align::Reverse(void)
     }
 }
 
+
+///----------------------------------------------------------------------------
+/// PRE : the Seq-align has StdSeg segs
+/// POST: Seq_align of type Dense-seg is created with m_Widths if necessary
+CRef<CSeq_align> 
+CSeq_align::CreateDensegFromStdseg() const
+{
+    if ( !GetSegs().IsStd() ) {
+        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                   "CreateDensegFromStdseg(): "
+                   "Input Seq-align should have segs of type StdSeg!");
+    }
+
+    CRef<CSeq_align> sa(new CSeq_align);
+    CDense_seg& ds = sa->SetSegs().SetDenseg();
+
+    typedef CDense_seg::TDim    TNumrow;
+    typedef CDense_seg::TNumseg TNumseg;
+
+    vector<TSeqPos>       row_lens;
+    CDense_seg::TLens&    seg_lens = ds.SetLens();
+    CDense_seg::TStarts&  starts   = ds.SetStarts();
+    CDense_seg::TStrands& strands  = ds.SetStrands();
+    CDense_seg::TWidths&  widths   = ds.SetWidths();
+    vector<bool>          widths_determined;
+
+    TSeqPos row_len;
+    TSeqPos from, to;
+    int width;
+    ENa_strand strand;
+
+
+    TNumseg seg = 0;
+    TNumrow dim = 0, row = 0;
+    ITERATE (CSeq_align::C_Segs::TStd, std_i, GetSegs().GetStd()) {
+
+        const CStd_seg& ss = **std_i;
+
+        seg_lens.push_back(0);
+        TSeqPos& seg_len = seg_lens.back();
+        row_len = 0;
+        row_lens.clear();
+        widths_determined.push_back(false);
+
+        row = 0;
+        const CSeq_id* seq_id;
+        ITERATE (CStd_seg::TLoc, i, ss.GetLoc()) {
+
+            // push back initialization values
+            if (seg == 0) {
+                widths.push_back(0);
+                strands.push_back(eNa_strand_unknown);
+            }
+
+            if ((*i)->IsInt()) {
+                const CSeq_interval& interval = (*i)->GetInt();
+                
+                // determine start and len
+                from = interval.GetFrom();
+                to = interval.GetTo();
+                starts.push_back(from);
+                row_len = to - from + 1;
+                row_lens.push_back(row_len);
+                
+                // try to determine/check the seg_len and width
+                if (!seg_len) {
+                    width = 0;
+                    seg_len = row_len;
+                } else {
+                    if (row_len * 3 == seg_len) {
+                        seg_len /= 3;
+                        width = 1;
+                    } else if (row_len / 3 == seg_len) {
+                        width = 3;
+                    } else if (row_len != seg_len) {
+                        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                                   "CreateDensegFromStdseg(): "
+                                   "Std-seg segment lengths not accurate!");
+                    }
+                }
+                if (width > 0) {
+                    widths_determined[seg] = true;
+                    if (widths[row] > 0  &&  widths[row] != width) {
+                        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                                   "CreateDensegFromStdseg(): "
+                                   "Std-seg segment lengths not accurate!");
+                    } else {
+                        widths[row] = width;
+                    }
+                }
+
+                // get the id
+                seq_id = &(*i)->GetInt().GetId();
+
+                // determine/check the strand
+                if (interval.CanGetStrand()) {
+                    strand = interval.GetStrand();
+                    if (seg == 0  ||  strands[row] == eNa_strand_unknown) {
+                        strands[row] = strand;
+                    } else {
+                        if (strands[row] != strand) {
+                            NCBI_THROW(CSeqalignException,
+                                       eInvalidInputAlignment,
+                                       "CreateDensegFromStdseg(): "
+                                       "Inconsistent strands!");
+                        }
+                    }
+                } else {
+                    strand = eNa_strand_unknown;
+                }
+
+                    
+            } else if ((*i)->IsEmpty()) {
+                starts.push_back(-1);
+                if (seg == 0) {
+                    strands[row] = eNa_strand_unknown;
+                }
+                seq_id = &(*i)->GetEmpty();
+                row_lens.push_back(0);
+
+            }
+
+            // determine/check the id
+            if (seg == 0) {
+                CRef<CSeq_id> id(new CSeq_id);
+                SerialAssign(*id, *seq_id);
+                ds.SetIds().push_back(id);
+            } else {
+                if (!SerialEquals(*ds.GetIds()[row], *seq_id)) {
+                    NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                               "CreateDensegFromStdseg(): "
+                               "Inconsistent seq-ids!");
+                }
+            }
+
+            // next row
+            row++;
+            if (seg == 0) {
+                dim++;
+            }
+        }
+        if (dim != ss.GetDim()  ||  row != dim) {
+            NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                       "CreateDensegFromStdseg(): "
+                       "Inconsistent dimentions!");
+        }
+
+        if (widths_determined[seg]) {
+            // go back and determine/check widths
+            for (row = 0; row < dim; row++) {
+                if ((row_len = row_lens[row]) > 0) {
+                    if (row_len == seg_len * 3) {
+                        width = 3;
+                    } else if (row_len == seg_len) {
+                        width = 1;
+                    }
+                    if (widths[row] > 0  &&  widths[row] != width) {
+                        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                                   "CreateDensegFromStdseg(): "
+                                   "Std-seg segment lengths not accurate!");
+                    } else {
+                        widths[row] = width;
+                    }
+                }
+            }
+        }
+
+        // next seg
+        seg++;
+    }
+
+    ds.SetDim(dim);
+    ds.SetNumseg(seg);
+
+    // go back and finish lens determination
+    bool widths_failure = false;
+    bool widths_success = false;
+    for (seg = 0; seg < ds.GetNumseg(); seg++) {
+        if (!widths_determined[seg]) {
+            for(row = 0; row < dim; row++) {
+                if (starts[seg * dim + row] >= 0) {
+                    width = widths[row];
+                    if (width == 3) {
+                        seg_lens[seg] /= 3;
+                    } else if (width == 0) {
+                        widths_failure = true;
+                    }
+                    break;
+                }
+            }
+        } else {
+            widths_success = true;
+        }
+    }
+
+    if (widths_failure) {
+        if (widths_success) {
+            NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                       "CreateDensegFromStdseg(): "
+                       "Some widths cannot be determined!");
+        } else {
+            ds.ResetWidths();
+        }
+    }
+    
+    // finish the strands
+    for (seg = 1; seg < ds.GetNumseg(); seg++) {
+        for (row = 0; row < dim; row++) {
+            strands.push_back(strands[row]);
+        }
+    }
+
+    return sa;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -76,6 +297,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/19 21:11:13  todorov
+* +CreateDensegFromStdseg
+*
 * Revision 1.1  2003/08/13 18:12:03  johnson
 * added 'Reverse' method
 *
