@@ -38,6 +38,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/04/09 16:04:29  grichenk
+* SDataSourceRec replaced with CPriorityNode
+* Added CScope::AddScope(scope, priority) to allow scope nesting
+*
 * Revision 1.12  2003/03/26 20:59:22  grichenk
 * Removed commented-out code
 *
@@ -155,22 +159,25 @@ protected:
     void RegisterScope(CScope& scope);
     void RevokeScope  (CScope& scope);
 
-    void AcquireDefaultDataSources(TDataSourceSet& sources,
-                                   SDataSourceRec::TPriority priority);
+    void AcquireDefaultDataSources(CPriorityNode& sources,
+                                   CPriorityNode::TPriority priority);
 
     void AddDataLoader(
-        TDataSourceSet& sources, const string& loader_name,
-        SDataSourceRec::TPriority priority);
+        CPriorityNode& sources, const string& loader_name,
+        CPriorityNode::TPriority priority);
     void AddDataLoader(
-        TDataSourceSet& sources, CDataLoader& loader,
-        SDataSourceRec::TPriority priority);
+        CPriorityNode& sources, CDataLoader& loader,
+        CPriorityNode::TPriority priority);
     void AddTopLevelSeqEntry(
-        TDataSourceSet& sources, CSeq_entry& top_entry,
-        SDataSourceRec::TPriority priority);
+        CPriorityNode& sources, CSeq_entry& top_entry,
+        CPriorityNode::TPriority priority);
+    void AddScope(
+        CPriorityNode& sources, CScope& scope,
+        CPriorityNode::TPriority priority);
     void RemoveTopLevelSeqEntry(
-        TDataSourceSet& sources, CSeq_entry& top_entry);
+        CPriorityNode& sources, CSeq_entry& top_entry);
 
-    void ReleaseDataSources(TDataSourceSet& sources);
+    void ReleaseDataSources(CPriorityNode& sources);
 
 
 private:
@@ -182,8 +189,8 @@ private:
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;
     
     void x_AddDataSource(
-        TDataSourceSet& sources, CDataSource* source,
-        SDataSourceRec::TPriority priority) const;
+        CPriorityNode& sources, CDataSource* source,
+        CPriorityNode::TPriority priority) const;
     void x_ReleaseDataSource(CDataSource* source);
 
 private:

@@ -103,14 +103,17 @@ public:
     virtual ~CScope(void);
 
     // Add default data loaders from object manager
-    void AddDefaults(SDataSourceRec::TPriority priority = 99);
+    void AddDefaults(CPriorityNode::TPriority priority = 99);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
-                       SDataSourceRec::TPriority priority = 99);
+                       CPriorityNode::TPriority priority = 99);
     // Add seq_entry, default priority is higher than for defaults or loaders
     void AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                             SDataSourceRec::TPriority priority = 9);
+                             CPriorityNode::TPriority priority = 9);
+
+    // Add the scope's datasources as a single group with the given priority
+    void AddScope(CScope& scope, CPriorityNode::TPriority priority = 9);
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
@@ -174,6 +177,7 @@ public:
 
 private:
     typedef CAnnotTypes_CI::TTSESet       TTSE_Set;
+    typedef set<CSeqMatch_Info>           TSeqMatchSet;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           CSeq_annot::C_Data::E_Choice sel,
@@ -188,6 +192,10 @@ private:
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(CSeq_id_Handle idh);
+    // Iterate over priorities, find all possible data sources
+    void x_ResolveInNode(const CPriorityNode& node,
+                         CSeq_id_Handle& idh,
+                         TSeqMatchSet& sm_set);
 
     // GetTSE_Info corresponding to the TSE
     TTSE_Lock GetTSEInfo(const CSeq_entry* tse);
@@ -215,19 +223,18 @@ private:
                          const CSeqMatch_Info& info2) const;
 
     CObjectManager      *m_pObjMgr;
-    TDataSourceSet       m_setDataSrc;
+    CPriorityNode       m_setDataSrc;
 
     EFindMode m_FindMode;
 
     TRequestHistory m_History;
 
     typedef map<CSeq_id_Handle, CBioseq_Handle> TCache;
-    TCache m_Cache;
-
     typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
-    TSynCache m_SynCache;
-
     typedef map<CSeq_id_Handle, TTSE_Set> TAnnotCache;
+
+    TCache m_Cache;
+    TSynCache m_SynCache;
     TAnnotCache m_AnnotCache;
 
     mutable CMutex m_Scope_Mtx;
@@ -248,6 +255,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/04/09 16:04:29  grichenk
+* SDataSourceRec replaced with CPriorityNode
+* Added CScope::AddScope(scope, priority) to allow scope nesting
+*
 * Revision 1.40  2003/04/03 14:18:08  vasilche
 * Added public GetSynonyms() method.
 *

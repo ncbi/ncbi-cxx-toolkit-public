@@ -58,6 +58,7 @@ CScope::CScope(CObjectManager& objmgr)
     : m_pObjMgr(&objmgr), m_FindMode(eFirst)
 {
     m_pObjMgr->RegisterScope(*this);
+    m_setDataSrc.SetTree();
 }
 
 
@@ -66,31 +67,37 @@ CScope::~CScope(void)
     x_DetachFromOM();
 }
 
-void CScope::AddDefaults(SDataSourceRec::TPriority priority)
+void CScope::AddDefaults(CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AcquireDefaultDataSources(m_setDataSrc, priority);
 }
 
 
 void CScope::AddDataLoader (const string& loader_name,
-                            SDataSourceRec::TPriority priority)
+                            CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AddDataLoader(m_setDataSrc, loader_name, priority);
 }
 
 
 void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                                 SDataSourceRec::TPriority priority)
+                                 CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AddTopLevelSeqEntry(m_setDataSrc, top_entry, priority);
+}
+
+
+void CScope::AddScope(CScope& scope, CPriorityNode::TPriority priority)
+{
+    m_pObjMgr->AddScope(m_setDataSrc, scope, priority);
 }
 
 
 bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        if ( it->m_DataSource->AttachAnnot(entry, annot) ) {
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( it->AttachAnnot(entry, annot) ) {
             return true;
         }
     }
@@ -101,10 +108,10 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 bool CScope::RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        if ( it->m_DataSource->GetDataLoader() )
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( it->GetDataLoader() )
             continue; // can not modify loaded data
-        if ( it->m_DataSource->RemoveAnnot(entry, annot) ) {
+        if ( it->RemoveAnnot(entry, annot) ) {
             return true;
         }
     }
@@ -117,8 +124,8 @@ bool CScope::ReplaceAnnot(const CSeq_entry& entry,
                           CSeq_annot& new_annot)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        if ( it->m_DataSource->ReplaceAnnot(entry, old_annot, new_annot) ) {
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( it->ReplaceAnnot(entry, old_annot, new_annot) ) {
             return true;
         }
     }
@@ -129,8 +136,8 @@ bool CScope::ReplaceAnnot(const CSeq_entry& entry,
 bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        if ( it->m_DataSource->AttachEntry(parent, entry) ) {
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( it->AttachEntry(parent, entry) ) {
             return true;
         }
     }
@@ -141,8 +148,8 @@ bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        if ( it->m_DataSource->AttachMap(bioseq, seqmap) ) {
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( it->AttachMap(bioseq, seqmap) ) {
             return true;
         }
     }
@@ -238,8 +245,8 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
     // find all
     x_GetIdMapper().GetMatchingHandlesStr(searchBy, setSource);
     // filter those which "belong" to my data sources
-    ITERATE(TDataSourceSet, itSrc, m_setDataSrc) {
-        itSrc->m_DataSource->FilterSeqid(setResult, setSource);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        it->FilterSeqid(setResult, setSource);
     }
     // create result
     ITERATE(TSeq_id_HandleSet, itSet, setResult) {
@@ -249,43 +256,42 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 }
 
 
-CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
+void CScope::x_ResolveInNode(const CPriorityNode& node,
+                             CSeq_id_Handle& idh,
+                             TSeqMatchSet& sm_set)
 {
-    //### Use priority flag, do not scan all DSs - find the first one.
-    // Protected by m_Scope_Mtx in upper-level functions
-    set<CSeqMatch_Info> bm_set;
-    SDataSourceRec::TPriority pr = SDataSourceRec::TPriority(-1);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        // Do not search in lower-priority sources
-        if (pr < it->m_Priority)
-            continue;
-        CSeqMatch_Info info = it->m_DataSource->BestResolve(idh);
-        if ( info ) {
-            bm_set.insert(info);
-            pr = it->m_Priority;
+    if ( node.IsTree() ) {
+        // Process sub-tree
+        NON_CONST_ITERATE(CPriorityNode::TPriorityMap, mit, node.GetTree()) {
+            // Search in all nodes of the same priority regardless
+            // of previous results
+            NON_CONST_ITERATE(CPriorityNode::TPrioritySet, sit, mit->second) {
+                x_ResolveInNode(*sit, idh, sm_set);
+            }
+            // Don't process lower priority nodes if something
+            // was found
+            if (sm_set.size() > 0)
+                return;
         }
     }
-    CSeqMatch_Info best;
-    bool best_is_in_history = false;
-    bool best_is_live = false;
-    CSeqMatch_Info extra_live;
-    NON_CONST_ITERATE (set<CSeqMatch_Info>, bm_it, bm_set) {
-        TRequestHistory::const_iterator hist =
-            m_History.find(TTSE_Lock(&const_cast<CTSE_Info&>(**bm_it)));
-        if (hist != m_History.end()) {
-            if ( !best_is_in_history ) {
-                // The first TSE from the history -- save it
-                best = *bm_it;
-                best_is_in_history = true;
-                best_is_live = !(*bm_it)->m_Dead;
-                continue;
-            }
-            else {
-                x_ThrowConflict(eConflict_History, best, *bm_it);
-            }
+    else if ( node.IsDataSource() ) {
+        CSeqMatch_Info info = node.GetDataSource().BestResolve(idh);
+        if ( info ) {
+            sm_set.insert(info);
         }
-        if ( best_is_in_history )
-            continue; // Don't check TSEs not in the history
+    }
+}
+
+
+CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
+{
+    // Use priority, do not scan all DSs - find the first one.
+    // Protected by m_Scope_Mtx in upper-level functions
+    TSeqMatchSet bm_set;
+    x_ResolveInNode(m_setDataSrc, idh, bm_set);
+    CSeqMatch_Info best;
+    bool best_is_live = false;
+    NON_CONST_ITERATE (set<CSeqMatch_Info>, bm_it, bm_set) {
         if ( !(*bm_it)->m_Dead ) {
             if ( !best_is_live ) {
                 // The first live TSE -- save it
@@ -294,9 +300,8 @@ CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
                 continue;
             }
             else {
-                // Can not throw exception right now - there may be a better
-                // match from the history.
-                extra_live = *bm_it;
+                // More than one live TSEs found = conflict
+                x_ThrowConflict(eConflict_Live, best, *bm_it);
             }
         }
         if ( best_is_live )
@@ -308,9 +313,6 @@ CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
             best = *bm_it;
         }
     }
-    if ( extra_live ) {
-        x_ThrowConflict(eConflict_Live, best, extra_live);
-    }
     return best;
 }
 
@@ -320,8 +322,8 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
                               const CSeq_entry* limit_entry)
 {
     //CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        it->m_DataSource->UpdateAnnotIndex(loc, sel, limit_entry);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        it->UpdateAnnotIndex(loc, sel, limit_entry);
     }
 }
 
@@ -336,8 +338,8 @@ const CScope::TTSE_Set& CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     // Create new entry for idh
     TTSE_Set& tse_set = m_AnnotCache[idh];
     //CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        it->m_DataSource->GetTSESetWithAnnots(idh, tse_set, *this);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        it->GetTSESetWithAnnots(idh, tse_set, *this);
     }
     //### Filter the set depending on the requests history?
     NON_CONST_ITERATE (TTSE_Set, tse_it, tse_set) {
@@ -351,8 +353,8 @@ TTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
 {
     TTSE_Lock ret;
     CMutexGuard guard(m_Scope_Mtx);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        ret = it->m_DataSource->GetTSEInfo(tse);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        ret = it->GetTSEInfo(tse);
         if ( ret )
             break;
     }
@@ -442,8 +444,8 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
                                         set<CBioseq_Handle>& handles,
                                         CSeq_inst::EMol filter)
 {
-    ITERATE(TDataSourceSet, itSrc, m_setDataSrc) {
-        if (itSrc->m_DataSource->GetTSEHandles(*this, tse, handles, filter))
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if (it->GetTSEHandles(*this, tse, handles, filter))
             break;
     }
 }
@@ -519,7 +521,7 @@ void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
     ddc.Log("m_pObjMgr", m_pObjMgr,0);
     if (depth == 0) {
-        DebugDumpValue(ddc,"m_setDataSrc.size()", m_setDataSrc.size());
+        //DebugDumpValue(ddc,"m_setDataSrc.size()", m_setDataSrc.size());
         DebugDumpValue(ddc,"m_History.size()", m_History.size());
     } else {
         DebugDumpValue(ddc,"m_setDataSrc.type", "set<CDataSource*>");
@@ -542,6 +544,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/04/09 16:04:32  grichenk
+* SDataSourceRec replaced with CPriorityNode
+* Added CScope::AddScope(scope, priority) to allow scope nesting
+*
 * Revision 1.57  2003/04/03 14:18:09  vasilche
 * Added public GetSynonyms() method.
 *
