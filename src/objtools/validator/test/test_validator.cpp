@@ -175,9 +175,9 @@ int CTest_validatorApplication::Run(void)
 
     // Display error messages
     for (CValidError_CI vit(eval); vit; ++vit) {
-        cout << "Error code: " << (*vit).GetErrCode() << endl << endl;
-        cout << "Message: " << (*vit).GetMessage() << endl << endl;
-        cout << "Verbose: " << (*vit).GetVerbose() << endl << endl;
+        cout << "Error code: " << vit->GetErrCode() << endl << endl;
+        cout << "Message: " << vit->GetMsg() << endl << endl;
+        cout << "Verbose: " << vit->GetVerbose() << endl << endl;
     }
 
     return 0;
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2003/01/07 20:04:26  shomrat
+ * GetMessage changed to GetMsg
+ *
  * Revision 1.2  2003/01/07 17:57:05  ucko
  * Use the new path to the validator's public header.
  *
