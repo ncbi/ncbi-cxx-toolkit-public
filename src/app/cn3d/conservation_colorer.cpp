@@ -33,6 +33,7 @@
 
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
 #include <corelib/ncbi_limits.h>
+#include <util/tables/raw_scoremat.h>
 
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/conservation_colorer.hpp"
@@ -48,41 +49,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-#define BLOSUMSIZE 24
-static const char Blosum62Fields[BLOSUMSIZE] =
-   { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M',
-     'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X', '*' };
-static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
-/*       A,  R,  N,  D,  C,  Q,  E,  G,  H,  I,  L,  K,  M,  F,  P,  S,  T,  W,  Y,  V,  B,  Z,  X,  * */
-/*A*/ {  4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0, -4 },
-/*R*/ { -1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2, -1, -3, -2, -1, -1, -3, -2, -3, -1,  0, -1, -4 },
-/*N*/ { -2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0, -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1, -4 },
-/*D*/ { -2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1, -3, -3, -1,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
-/*C*/ {  0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1, -3, -3, -2, -4 },
-/*Q*/ { -1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,  0, -3, -1,  0, -1, -2, -1, -2,  0,  3, -1, -4 },
-/*E*/ { -1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1, -2, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
-/*G*/ {  0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2, -3, -3, -2,  0, -2, -2, -3, -3, -1, -2, -1, -4 },
-/*H*/ { -2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1, -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1, -4 },
-/*I*/ { -1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,  1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1, -4 },
-/*L*/ { -1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,  2,  0, -3, -2, -1, -2, -1,  1, -4, -3, -1, -4 },
-/*K*/ { -1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5, -1, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1, -4 },
-/*M*/ { -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,  5,  0, -2, -1, -1, -1, -1,  1, -3, -1, -1, -4 },
-/*F*/ { -2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,  0,  6, -4, -2, -2,  1,  3, -1, -3, -3, -1, -4 },
-/*P*/ { -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4,  7, -1, -1, -4, -3, -2, -2, -1, -2, -4 },
-/*S*/ {  1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0, -1, -2, -1,  4,  1, -3, -2, -2,  0,  0,  0, -4 },
-/*T*/ {  0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  1,  5, -2, -2,  0, -1, -1,  0, -4 },
-/*W*/ { -3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1,  1, -4, -3, -2, 11,  2, -3, -4, -3, -2, -4 },
-/*Y*/ { -2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2, -1,  3, -3, -2, -2,  2,  7, -1, -3, -2, -1, -4 },
-/*V*/ {  0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,  1, -1, -2, -2,  0, -3, -1,  4, -3, -2, -1, -4 },
-/*B*/ { -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0, -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
-/*Z*/ { -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1, -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
-/*X*/ {  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1, -4 },
-/***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
-};
-
-map < char, map < char, int > > Blosum62Map;
-
-inline char ScreenResidueCharacter(char original)
+static inline char ScreenResidueCharacter(char original)
 {
     char ch = toupper(original);
     switch (ch) {
@@ -100,16 +67,15 @@ inline char ScreenResidueCharacter(char original)
 
 int GetBLOSUM62Score(char a, char b)
 {
-    if (Blosum62Map.size() == 0) {
-        // initialize BLOSUM map for easy access
-        for (int row=0; row<BLOSUMSIZE; row++) {
-             for (int column=0; column<BLOSUMSIZE; column++)
-                Blosum62Map[Blosum62Fields[row]][Blosum62Fields[column]] =
-                    Blosum62Matrix[row][column];
-        }
+    static SNCBIFullScoreMatrix Blosum62Matrix;
+    static bool unpacked = false;
+
+    if (!unpacked) {
+        NCBISM_Unpack(&NCBISM_Blosum62, &Blosum62Matrix);
+        unpacked = true;
     }
 
-    return Blosum62Map[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
+    return Blosum62Matrix.s[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
 }
 
 static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
@@ -549,6 +515,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/12/11 19:35:54  thiessen
+* use built-in blosum62 matrix
+*
 * Revision 1.31  2003/11/04 18:09:17  thiessen
 * rearrange headers for OSX build
 *
