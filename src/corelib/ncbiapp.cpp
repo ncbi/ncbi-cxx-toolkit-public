@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 
 static const char* s_ArgLogFile = "-logfile";
 static const char* s_ArgCfgFile = "-conffile";
+static const char* s_ArgVersion = "-version";
 
 
 static void s_DiagToStdlog_Cleanup(void* data)
@@ -79,6 +80,9 @@ CNcbiApplication::CNcbiApplication(void)
             "Second instance of CNcbiApplication is prohibited");
     }
     m_Instance = this;
+
+    // Create empty version info
+    m_Version.reset(new CVersionInfo(0,0));
 
     // Create empty application arguments & name
     m_Arguments.reset(new CNcbiArguments(0,0));
@@ -158,6 +162,16 @@ int CNcbiApplication::AppMain
     // So we turn off sync_with_stdio here:
     IOS_BASE::sync_with_stdio(false);
 
+    // Get program name
+    string appname = name;
+    if (appname.empty()) {
+        if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
+            appname = argv[0];
+        } else {
+            appname = "ncbi";
+        }
+    }
+
     // We do not know standard way of passing arguments to C++ program on Mac,
     // so we will read arguments from special file having extension ".args"
     // and name equal to name of program (name argument of AppMain).
@@ -165,21 +179,13 @@ int CNcbiApplication::AppMain
 #  define MAX_ARGC 256
 #  define MAX_ARG_LEN 1024
     if (argc <= 1) {
-        string fileName = name;
-        if (fileName.empty()) {
-            if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
-                fileName = argv[0];
-            } else {
-                fileName = "ncbi";
-            }
-        }
-        string argsName = fileName + ".args";
+        string argsName = appname + ".args";
 
         CNcbiIfstream in(argsName.c_str());
         if ( in ) {
             int c = 1;
             const char** v = new const char*[MAX_ARGC];
-            v[0] = strdup(fileName.c_str()); // program name
+            v[0] = strdup(appname.c_str()); // program name
             char arg[MAX_ARG_LEN];
             while (in.getline(arg, sizeof(arg))  ||  in.gcount()) {
                 if ( in.eof() ) {
@@ -204,7 +210,8 @@ int CNcbiApplication::AppMain
     }
 #endif
 
-    // Check command line for presence special arguments "-logfile","-conffile"
+    // Check command line for presence special arguments
+    // "-logfile", "-conffile", "-version"
     bool is_diag_setup = false;
     if (!m_DisableArgDesc && argc > 1  &&  argv) {
         const char** v = new const char*[argc];
@@ -241,6 +248,16 @@ int CNcbiApplication::AppMain
                 }
                 conf = argv[i];
 
+            // Version
+            } else if ( NStr::strcmp(argv[i], s_ArgVersion) == 0 ) {
+                if ( !argv[i++] ) {
+                    continue;
+                }
+                // Print USAGE
+                string str;
+                LOG_POST(appname + ": " + GetVersion().Print());
+                return 0;
+
             // Save real argument
             } else {
                 v[real_arg_index++] = argv[i];
@@ -255,7 +272,7 @@ int CNcbiApplication::AppMain
     }
 
     // Reset command-line args and application name
-    m_Arguments->Reset(argc, argv, name);
+    m_Arguments->Reset(argc, argv, appname);
 
     // Reset application environment
     m_Environ->Reset(envp);
@@ -372,6 +389,11 @@ int CNcbiApplication::AppMain
                         "Program's configuration (registry) data file",
                         CArgDescriptions::eInputFile);
                 }
+                if ((m_HideArgs & fHideVersion) == 0 &&
+                    !m_ArgDesc->Exist(s_ArgVersion+1)) {
+                    m_ArgDesc->AddFlag( s_ArgVersion+1,
+                        "Print version number;  ignore other arguments");
+                }
             }
             // Print USAGE
             string str;
@@ -440,6 +462,20 @@ int CNcbiApplication::AppMain
 
     // Exit
     return exit_code;
+}
+
+
+// Set program version
+void CNcbiApplication::SetVersion(const CVersionInfo& version)
+{
+    m_Version.reset(new CVersionInfo(version));
+}
+
+
+// Get program version
+CVersionInfo CNcbiApplication::GetVersion(void)
+{
+    return *m_Version;
 }
 
 
@@ -654,6 +690,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2002/12/26 17:13:03  ivanov
+ * Added version info and Set/GetVersion functions into CNcbiApplication class
+ *
  * Revision 1.50  2002/12/18 22:54:48  dicuccio
  * Shuffled some headers to avoid a potentially serious compiler warning
  * (deletion of incomplete type in Windows).

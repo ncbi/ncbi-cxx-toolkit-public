@@ -37,6 +37,7 @@
 // These are placed here because MSVC gets confused by the predeclarations
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/version.hpp>
 #include <memory>
 
 
@@ -146,12 +147,13 @@ public:
     // By default ArgDescriptions are enabled (i.e. required)
     void DisableArgDescriptions(void);
 
-    // Hide descriptions of the standard flags (-h, -logfile, -conffile)
+    // Hide descriptions of the standard flags (-h, -logfile, -conffile, -version)
     // in the usage message (you still can pass them in the cmd.-line)
     enum EHideStdArgs {
         fHideHelp     = 0x01,
         fHideLogfile  = 0x02,
-        fHideConffile = 0x04
+        fHideConffile = 0x04,
+        fHideVersion  = 0x08
     };
     typedef int THideStdArgs;  // binary OR of "EHideStdArgs"
     void HideStdArgs(THideStdArgs hide_mask);
@@ -176,6 +178,12 @@ public:
 
 
 protected:
+    // Set program version (call it from constructor)
+    // Default:  0.0.0 (unknown)
+    void SetVersion(const CVersionInfo& version);
+    // Get program version
+    CVersionInfo GetVersion(void);
+
     // Setup cmd.-line argument descriptions. Call it from Init(). The passed
     // "arg_desc" will be owned by this class, and it'll be deleted
     // by ~CNcbiApplication(), or if SetupArgDescriptions() is called again.
@@ -219,6 +227,7 @@ protected:
 
 private:
     static CNcbiApplication*   m_Instance;   // current app.instance
+    auto_ptr<CVersionInfo>     m_Version;    // program version
     auto_ptr<CNcbiEnvironment> m_Environ;    // cached application environment
     auto_ptr<CNcbiRegistry>    m_Config;     // (guaranteed to be non-NULL)
     auto_ptr<CNcbiOstream>     m_DiagStream; // opt., aux., see "eDS_ToMemory"
@@ -264,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/12/26 17:12:42  ivanov
+ * Added version info and Set/GetVersion functions into CNcbiApplication class
+ *
  * Revision 1.27  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
