@@ -70,17 +70,10 @@ extern "C" {
 #endif
 
 #ifndef NCBI_C_TOOLKIT
-typedef double FloatHi, Nlm_FloatHi;
-typedef double * FloatHiPtr;
-typedef Uint1 Boolean, Nlm_Boolean;
+typedef Uint1 Boolean;
 typedef Boolean* BooleanPtr;
 #define TRUE 1
 #define FALSE 0
-typedef Uint1 * Uint1Ptr;
-typedef Int4 * Int4Ptr;
-typedef Uint4 * Uint4Ptr;
-typedef Int8 * Int8Ptr;
-typedef Char * CharPtr;
 #endif
 
 #ifndef ASSERT
@@ -125,13 +118,13 @@ typedef Char * CharPtr;
 #define DIRDELIMSTR        "/"
 
 /* blastkar.c needs these to read matrix files */
-Int8 FileLength(CharPtr fileName);
+Int8 FileLength(char* fileName);
 
 #endif /* NCBI_C_TOOLKIT */
 
 /****************************** Functions from ncbimath ***********************/
 /* Round a floating point number to the nearest integer */
-long Nlm_Nint(register Nlm_FloatHi x);
+long Nlm_Nint(register double x);
 #define Nint Nlm_Nint
 
 /*
@@ -140,30 +133,30 @@ integer power function
 Original submission by John Spouge, 6/25/90
 Added to shared library by WRG
 */
-FloatHi Powi(FloatHi x, Int4 n);
+double Powi(double x, Int4 n);
 
 /*
     Nlm_Expm1(x)
     Return values accurate to approx. 16 digits for the quantity exp(x)-1
     for all x.
 */
-FloatHi Expm1(register FloatHi	x);
+double Expm1(register double	x);
 
 /*
     Nlm_Log1p(x)
     Return accurate values for the quantity log(x+1) for all x > -1.
 */
-FloatHi Log1p(register FloatHi x);
+double Log1p(register double x);
 
 /* Nth order derivative of log(gamma) */
-FloatHi Nlm_PolyGamma (FloatHi x, Int4 order);
-FloatHi Nlm_Factorial(Int4 n);  /* Factorial */
-FloatHi Nlm_LnGamma(FloatHi x); /* log(gamma(x)) */
+double Nlm_PolyGamma (double x, Int4 order);
+double Nlm_Factorial(Int4 n);  /* Factorial */
+double Nlm_LnGamma(double x); /* log(gamma(x)) */
 
 /* Nlm_LnGammaInt(n) -- return log(Gamma(n)) for integral n */
-FloatHi LnGammaInt(Int4 n);
+double LnGammaInt(Int4 n);
 
-FloatHi LnFactorial (FloatHi x); /* Logarithm of the factorial Fn */
+double LnFactorial (double x); /* Logarithm of the factorial Fn */
 
 /*
 	Romberg numerical integrator
@@ -179,9 +172,9 @@ FloatHi LnFactorial (FloatHi x); /* Logarithm of the factorial Fn */
 #define F(x)  ((*f)((x), fargs))
 #define ROMBERG_ITMAX 20
 
-FloatHi RombergIntegrate(
-        FloatHi (*f) (FloatHi,void*), void* fargs, FloatHi p, 
-        FloatHi q, FloatHi eps, Int4 epsit, Int4 itmin);
+double RombergIntegrate(
+        double (*f) (double,void*), void* fargs, double p, 
+        double q, double eps, Int4 epsit, Int4 itmin);
 
 /*
 Nlm_Gcd(a, b)
@@ -197,21 +190,19 @@ typedef struct ListNode {
 	Uint1 choice;          /* to pick a choice */
 	void *ptr;              /* attached data */
 	struct ListNode *next;  /* next in linked list */
-} ListNode, *ListNodePtr;
+} ListNode;
 
-ListNodePtr ListNodeNew (ListNodePtr vnp);
-ListNodePtr ListNodeAdd (ListNodePtr* head);
-ListNodePtr ListNodeAddPointer (ListNodePtr* head, Int2 choice, 
-                                void *value);
-ListNodePtr ListNodeFree (ListNodePtr vnp);
-ListNodePtr ListNodeFreeData (ListNodePtr vnp);
-ListNodePtr ListNodeSort (ListNodePtr list, 
+ListNode* ListNodeNew (ListNode* vnp);
+ListNode* ListNodeAdd (ListNode** head);
+ListNode* ListNodeAddPointer (ListNode** head, Int2 choice, void *value);
+ListNode* ListNodeFree (ListNode* vnp);
+ListNode* ListNodeFreeData (ListNode* vnp);
+ListNode* ListNodeSort (ListNode* list, 
                int (*compar) (const void *, const void *));
-ListNodePtr ListNodeCopyStr (ListNodePtr* head, Int2 choice, CharPtr str);
-Int4 ListNodeLen (ListNodePtr vnp);
+ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, char* str);
+Int4 ListNodeLen (ListNode* vnp);
 
-void * MemDup (const void *orig, size_t size);
-Boolean FindPath(const Char* file, const Char* section, const Char* type, Char* buf, Int2 buflen);
+void* MemDup (const void *orig, size_t size);
 #ifdef __cplusplus
 }
 #endif

@@ -403,7 +403,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    Int4 align_length;
    /** THE FOLLOWING HAS TO BE PASSED IN THE ARGUMENTS!!!!! 
        DEFINED INSIDE TEMPORARILY, ONLY TO ALLOW COMPILATION */
-   FloatHi scalingFactor = 1.0;
+   double scalingFactor = 1.0;
    Int4 new_hspcnt = 0;
    Boolean is_ooframe = score_options->is_ooframe;
    Int4 context_offset;
@@ -618,7 +618,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
                hsp->evalue = 
                   BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
-                     (FloatHi)query_info->eff_searchsp_array[hsp->context]);
+                     (double)query_info->eff_searchsp_array[hsp->context]);
                if (hsp->evalue > hit_options->expect_value) 
                   /* put in for comp. based stats. */
                   keep = FALSE;
@@ -637,7 +637,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                 hit_options->longest_intron > 0) {
                hsp->evalue = 
                   BlastKarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
-                     (FloatHi) query_info->eff_searchsp_array[hsp->context]);
+                     (double) query_info->eff_searchsp_array[hsp->context]);
             }
 
             for (index2=0; index2<index && keep == TRUE; index2++) {

@@ -48,7 +48,7 @@ extern "C" {
 typedef struct BlastHitList {
    Int4 hsplist_count; /**< Filled size of the HSP lists array */
    Int4 hsplist_max; /**< Maximal allowed size of the HSP lists array */
-   FloatHi worst_evalue; /**< Highest of the best e-values among the HSP 
+   double worst_evalue; /**< Highest of the best e-values among the HSP 
                             lists */
    Boolean heapified; /**< Is this hit list already heapified? */
    BlastHSPList** hsplist_array; /**< Array of HSP lists for individual

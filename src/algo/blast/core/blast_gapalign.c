@@ -1653,7 +1653,7 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query,
       /* Take advantage of an opportunity to easily calculate percent 
          identity, to avoid parsing the traceback later */
       gap_align->percent_identity = 
-         100*(1 - ((FloatHi)score) / MIN(q_ext_l+q_ext_r, s_ext_l+s_ext_r));
+         100*(1 - ((double)score) / MIN(q_ext_l+q_ext_r, s_ext_l+s_ext_r));
       score = 
          (q_ext_r + s_ext_r + q_ext_l + s_ext_l)*score_options->reward/2 - 
          score*(score_options->reward - score_options->penalty);
@@ -2199,8 +2199,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    Int2 frame = 0; /* CHANGE!!!!!!!!!!!!!!!!! */
    BlastInitHSP** init_hsp_array = NULL;
    BlastHSPList* hsp_list = NULL;
-   FloatHi gap_trigger;
-   FloatHi cutoff_score;
+   double gap_trigger;
+   double cutoff_score;
    Boolean further_process = FALSE;
    BlastHitSavingOptions* hit_options = hit_params->options;
 

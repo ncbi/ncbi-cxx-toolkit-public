@@ -302,7 +302,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options, 
    const BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info)
 {
-   Nlm_FloatHi alpha, beta; /*alpha and beta for new scoring system */
+   double alpha, beta; /*alpha and beta for new scoring system */
    Int4 min_query_length;   /* lower bound on query length. */
    Int4 length_adjustment;  /* length adjustment for current iteration. */
    Int4 last_length_adjustment;/* length adjustment in previous iteration.*/
@@ -366,9 +366,9 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
          for (i=0; i<5; i++) {
             if (program_number != blast_type_blastn && 
                 scoring_options->gapped_calculation) {
-               length_adjustment = Nlm_Nint((((kbp->logK)+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
+               length_adjustment = Nlm_Nint((((kbp->logK)+log((double)(query_length-last_length_adjustment)*(double)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
             } else {
-               length_adjustment = (Int4) ((kbp->logK+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
+               length_adjustment = (Int4) ((kbp->logK+log((double)(query_length-last_length_adjustment)*(double)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
             }
 
             if (length_adjustment >= query_length-min_query_length) {

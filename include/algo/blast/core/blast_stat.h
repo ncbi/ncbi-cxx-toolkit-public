@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.11  2003/07/31 14:19:18  camacho
+* Replaced FloatHi for double
+*
 * Revision 1.10  2003/07/31 00:32:35  camacho
 * Eliminated Ptr notation
 *
@@ -74,7 +77,7 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 * Add effective length parameters
 *
 * Revision 6.28  2002/09/03 14:21:50  camacho
-* Changed type of karlinK from FloatHi to Nlm_FloatHi
+* Changed type of karlinK from double to double
 *
 * Revision 6.27  2002/08/29 13:58:08  camacho
 * Added field to store K parameter associated with posMatrix
@@ -205,7 +208,7 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
  * Added function BlastScoreBlkMatCreate for blastn matrices.
  *
  * Revision 1.2  1996/08/22  20:38:11  madden
- * Changed all doubles and floats to Nlm_FloatHi.
+ * Changed all doubles and floats to double.
  *
  * Revision 1.1  1996/08/05  19:47:42  madden
  * Initial revision
@@ -338,13 +341,13 @@ extern Uint1 blastna_to_ncbi4na[BLASTNA_SIZE];
 **************************************************************************/
 
 typedef struct BLAST_KarlinBlk {
-		Nlm_FloatHi	Lambda; /* Lambda value used in statistics */
-		Nlm_FloatHi	K, logK; /* K value used in statistics */
-		Nlm_FloatHi	H; /* H value used in statistics */
+		double	Lambda; /* Lambda value used in statistics */
+		double	K, logK; /* K value used in statistics */
+		double	H; /* H value used in statistics */
 		/* "real" values are ones actually found, may be replaced by above */
-		Nlm_FloatHi	Lambda_real, K_real, logK_real, H_real;
+		double	Lambda_real, K_real, logK_real, H_real;
 		Int4 q_frame, s_frame; /* reading frame for query and subject.*/
-		Nlm_FloatHi	paramC;	/* for use in seed. */
+		double	paramC;	/* for use in seed. */
 	} BLAST_KarlinBlk;
 
 
@@ -382,8 +385,8 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 typedef struct BLAST_ScoreFreq {
     BLAST_Score	score_min, score_max;
     BLAST_Score	obs_min, obs_max;
-    Nlm_FloatHi	score_avg;
-    Nlm_FloatHi* sprob0,* sprob;
+    double	score_avg;
+    double* sprob0,* sprob;
 } BLAST_ScoreFreq;
 
 #define BLAST_MATRIX_SIZE 32
@@ -402,7 +405,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	BLASTMatrixStructure* matrix_struct;	/* Holds info about matrix. */
 	BLAST_ScorePtr* matrix;  /* Substitution matrix */
 	BLAST_ScorePtr* posMatrix;  /* Sub matrix for position depend BLAST. */
-    Nlm_FloatHi karlinK; /* Karlin-Altschul parameter associated with posMatrix */
+    double karlinK; /* Karlin-Altschul parameter associated with posMatrix */
 	Int2		mat_dim1, mat_dim2;	/* dimensions of matrix. */
 	BLAST_ScorePtr	maxscore; /* Max. score for each letter */
 	BLAST_Score	loscore, hiscore; /* Min. & max. substitution scores */
@@ -410,7 +413,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Boolean		read_in_matrix; /* If TRUE, matrix is read in, otherwise
 					produce one from penalty and reward above. */
 	BLAST_ScoreFreq** sfp;	/* score frequencies. */
-	Nlm_FloatHi **posFreqs; /*matrix of position specific frequencies*/
+	double **posFreqs; /*matrix of position specific frequencies*/
 	/* kbp & kbp_gap are ptrs that should be set to kbp_std, kbp_psi, etc. */
 	BLAST_KarlinBlk** kbp; 	/* Karlin-Altschul parameters. */
 	BLAST_KarlinBlk** kbp_gap; /* K-A parameters for gapped alignments. */
@@ -446,8 +449,8 @@ typedef struct BLAST_Matrix {
     Int4	rows,		/* query length + 1 for PSSM. */
         columns;	/* alphabet size in all cases (26). */
     Int4** matrix;
-    Nlm_FloatHi ** posFreqs;
-    Nlm_FloatHi karlinK;
+    double ** posFreqs;
+    double karlinK;
     Int4** original_matrix;
 } BLAST_Matrix;
 
@@ -459,8 +462,8 @@ typedef struct BLAST_ResComp {
 
 typedef struct BLAST_ResFreq {
     Uint1		alphabet_code;
-    Nlm_FloatHi* prob;	/* probs, (possible) non-zero offset. */
-    Nlm_FloatHi* prob0; /* probs, zero offset. */
+    double* prob;	/* probs, (possible) non-zero offset. */
+    double* prob0; /* probs, zero offset. */
 } BLAST_ResFreq;
 
 BLAST_ScoreBlk* BLAST_ScoreBlkNew (Uint1 alphabet, Int2 number_of_contexts);
@@ -537,50 +540,50 @@ Char* PrintAllowedValuesMessage(const Char *matrix, Int4 gap_open, Int4 gap_exte
 Int2 BlastKarlinReportAllowedValues(const Char *matrix_name, Blast_Message** error_return);
 
 
-Nlm_FloatHi BlastKarlinLHtoK (BLAST_ScoreFreq* sfp, Nlm_FloatHi lambda, Nlm_FloatHi H);
+double BlastKarlinLHtoK (BLAST_ScoreFreq* sfp, double lambda, double H);
 
-Nlm_FloatHi BlastKarlinLambdaBis (BLAST_ScoreFreq* sfp);
+double BlastKarlinLambdaBis (BLAST_ScoreFreq* sfp);
 
-Nlm_FloatHi BlastKarlinLambdaNR (BLAST_ScoreFreq* sfp);
+double BlastKarlinLambdaNR (BLAST_ScoreFreq* sfp);
 
-Nlm_FloatHi BlastKarlinLtoH (BLAST_ScoreFreq* sfp, Nlm_FloatHi  lambda);
+double BlastKarlinLtoH (BLAST_ScoreFreq* sfp, double  lambda);
 
-BLAST_Score BlastKarlinEtoS (Nlm_FloatHi  E, BLAST_KarlinBlk* kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen);
+BLAST_Score BlastKarlinEtoS (double  E, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-BLAST_Score BlastKarlinEtoS_simple (Nlm_FloatHi  E, BLAST_KarlinBlk* kbp, Nlm_FloatHi searchsp); 
+BLAST_Score BlastKarlinEtoS_simple (double  E, BLAST_KarlinBlk* kbp, double searchsp); 
 
-Nlm_FloatHi BlastKarlinPtoE (Nlm_FloatHi p);
+double BlastKarlinPtoE (double p);
 
-Nlm_FloatHi BlastKarlinEtoP (Nlm_FloatHi x);
+double BlastKarlinEtoP (double x);
 
-Nlm_FloatHi BlastKarlinStoP (BLAST_Score S, BLAST_KarlinBlk* kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen);
+double BlastKarlinStoP (BLAST_Score S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-Nlm_FloatHi BlastKarlinStoP_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, Nlm_FloatHi  searchsp);
+double BlastKarlinStoP_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-Nlm_FloatHi BlastKarlinStoE (BLAST_Score S, BLAST_KarlinBlk* kbp, Nlm_FloatHi  qlen, Nlm_FloatHi  dblen);
+double BlastKarlinStoE (BLAST_Score S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-Nlm_FloatHi BlastKarlinStoE_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, Nlm_FloatHi  searchsp);
+double BlastKarlinStoE_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-Int2 BlastCutoffs (BLAST_ScorePtr S, Nlm_FloatHi* E, BLAST_KarlinBlk* kbp, Nlm_FloatHi qlen, Nlm_FloatHi dblen, Nlm_Boolean dodecay);
+Int2 BlastCutoffs (BLAST_ScorePtr S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
 
 
-Int2 BlastCutoffs_simple (BLAST_ScorePtr S, Nlm_FloatHi* E, BLAST_KarlinBlk* kbp, Nlm_FloatHi search_sp, Nlm_Boolean dodecay);
-Nlm_FloatHi BlastKarlinStoLen (BLAST_KarlinBlk* kbp, BLAST_Score S);
+Int2 BlastCutoffs_simple (BLAST_ScorePtr S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
+double BlastKarlinStoLen (BLAST_KarlinBlk* kbp, BLAST_Score S);
 
 /* SumP function. Called by BlastSmallGapSumE and BlastLargeGapSumE. */
-Nlm_FloatHi BlastSumP (Int4 r, Nlm_FloatHi s);
+double BlastSumP (Int4 r, double s);
 
 /* Functions to calculate SumE (for large and small gaps). */
-Nlm_FloatHi BlastSmallGapSumE (BLAST_KarlinBlk* kbp, Int4 gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length);
+double BlastSmallGapSumE (BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
-Nlm_FloatHi BlastUnevenGapSumE (BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length);
+double BlastUnevenGapSumE (BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
-Nlm_FloatHi BlastLargeGapSumE (BLAST_KarlinBlk* kbp, Nlm_FloatHi gap_prob, Nlm_FloatHi gap_decay_rate, Int2 num,  Nlm_FloatHi xsum, Int4 query_length, Int4 subject_length);
+double BlastLargeGapSumE (BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
 /* Used to produce random sequences. */
 Char*  BlastRepresentativeResidues (Int2 length);
 
-Int2 BlastResFreqNormalize (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, Nlm_FloatHi norm);
+Int2 BlastResFreqNormalize (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, double norm);
 
 BLAST_ResFreq* BlastResFreqNew (BLAST_ScoreBlk* sbp);
 void BlastResFreqFree (BLAST_ResFreq* rfp);
@@ -611,9 +614,9 @@ Int2 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_s
 Functions used to convert between Stephen's pseudo scores
 and E or p-values.
 */
-Int2 ConvertPtoPseudoS (Nlm_FloatHi p, Nlm_FloatHi n);
-Int2 ConvertEtoPseudoS (Nlm_FloatHi E, Nlm_FloatHi searchsp);
-Nlm_FloatHi ConvertPseudoStoE (Int2 s, Nlm_FloatHi n);
+Int2 ConvertPtoPseudoS (double p, double n);
+Int2 ConvertEtoPseudoS (double E, double searchsp);
+double ConvertPseudoStoE (Int2 s, double n);
 
 /*
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
@@ -626,16 +629,16 @@ are not required should be set to NULL.  The Int2 return value is the length of 
 arrays.
 */
 
-Int2 BlastKarlinGetMatrixValues (Char* matrix, Int4** open, Int4** extension, FloatHi** lambda, FloatHi** K, FloatHi** H, Int4** pref_flags);
+Int2 BlastKarlinGetMatrixValues (Char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags);
 
-Int2 BlastKarlinGetMatrixValuesEx (Char* matrix, Int4** open, Int4** extension, Int4** decline_align, FloatHi** lambda, FloatHi** K, FloatHi** H, Int4** pref_flags);
+Int2 BlastKarlinGetMatrixValuesEx (Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags);
 
-Int2 BlastKarlinGetMatrixValuesEx2 (Char* matrix, Int4** open, Int4** extension, Int4** decline_align, FloatHi** lambda, FloatHi** K, FloatHi** H, FloatHi** alpha, FloatHi** beta, Int4** pref_flags);
+Int2 BlastKarlinGetMatrixValuesEx2 (Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags);
 
-void getAlphaBeta (Char* matrixName, Nlm_FloatHi *alpha,
-Nlm_FloatHi *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
+void getAlphaBeta (Char* matrixName, double *alpha,
+double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
-Int2 BlastKarlinGetDefaultMatrixValues (Char* matrix, Int4* open, Int4* extension, FloatHi* lambda, FloatHi* K, FloatHi* H);
+Int2 BlastKarlinGetDefaultMatrixValues (Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H);
 
 Int4** BlastMatrixToTxMatrix (BLAST_Matrix* matrix);
 Int4** TxMatrixDestruct (Int4** txmatrix); 

@@ -60,7 +60,7 @@ static Sequence* SeqNew(void)
    seq->start = seq->length = 0;
    seq->bogus = seq->punctuation = FALSE;
    seq->composition = seq->state = (Int4*) NULL;
-   seq->entropy = (FloatHi) 0.0;
+   seq->entropy = (double) 0.0;
 
    return(seq);
 }
@@ -241,9 +241,9 @@ static Sequence* openwin(Sequence* parent, Int4 start, Int4 length)
 
 /*--------------------------------------------------------------(entropy)---*/
 
-static FloatHi entropy(Int4* sv)
+static double entropy(Int4* sv)
 
-  {FloatHi ent;
+  {double ent;
    Int4 i, total;
 
    total = 0;
@@ -256,10 +256,10 @@ static FloatHi entropy(Int4* sv)
    ent = 0.0;
    for (i=0; sv[i]!=0; i++)
      {
-      ent += ((FloatHi)sv[i])*log(((FloatHi)sv[i])/(double)total)/LN2;
+      ent += ((double)sv[i])*log(((double)sv[i])/(double)total)/LN2;
      }
 
-   ent = fabs(ent/(FloatHi)total);
+   ent = fabs(ent/(double)total);
 
    return(ent);
   }
@@ -354,10 +354,10 @@ static void enton(Sequence* win)
   }
 
 /*---------------------------------------------------------------(seqent)---*/
-static FloatHi* seqent(Sequence* seq, Int4 window, Int4 maxbogus)
+static double* seqent(Sequence* seq, Int4 window, Int4 maxbogus)
 {
    Sequence* win;
-   FloatHi* H;
+   double* H;
    Int4 i, first, last, downset, upset;
 
    downset = (window+1)/2 - 1;
@@ -365,10 +365,10 @@ static FloatHi* seqent(Sequence* seq, Int4 window, Int4 maxbogus)
 
    if (window>seq->length)
      {
-      return((FloatHi*) NULL);
+      return((double*) NULL);
      }
 
-   H = (FloatHi*) calloc(seq->length, sizeof(FloatHi));
+   H = (double*) calloc(seq->length, sizeof(double));
 
    for (i=0; i<seq->length; i++)
      {
@@ -429,7 +429,7 @@ appendseg(Seg* segs, Seg* seg)
 
 /*---------------------------------------------------------------(findlo)---*/
 
-static Int4 findlo(Int4 i, Int4 limit, FloatHi hicut, FloatHi* H)
+static Int4 findlo(Int4 i, Int4 limit, double hicut, double* H)
 
   {
    Int4 j;
@@ -445,7 +445,7 @@ static Int4 findlo(Int4 i, Int4 limit, FloatHi hicut, FloatHi* H)
 
 /*---------------------------------------------------------------(findhi)---*/
 
-static Int4 findhi(Int4 i, Int4 limit, FloatHi hicut, FloatHi* H)
+static Int4 findhi(Int4 i, Int4 limit, double hicut, double* H)
 
   {
    Int4 j;
@@ -461,10 +461,10 @@ static Int4 findhi(Int4 i, Int4 limit, FloatHi hicut, FloatHi* H)
 
 /*---------------------------------------------------------------(lnperm)---*/
 
-static FloatHi lnperm(Int4* sv, Int4 tot)
+static double lnperm(Int4* sv, Int4 tot)
 
   {
-   FloatHi ans;
+   double ans;
    Int4 i;
 
    ans = lnfact[tot];
@@ -479,7 +479,7 @@ static FloatHi lnperm(Int4* sv, Int4 tot)
 
 /*----------------------------------------------------------------(lnass)---*/
 
-static FloatHi lnass(Int4* sv, Int4 alphasize)
+static double lnass(Int4* sv, Int4 alphasize)
 
 {
 	double	ans;
@@ -523,10 +523,10 @@ static FloatHi lnass(Int4* sv, Int4 alphasize)
 
 /*--------------------------------------------------------------(getprob)---*/
 
-static FloatHi getprob(Int4* sv, Int4 total, Alpha* palpha)
+static double getprob(Int4* sv, Int4 total, Alpha* palpha)
 
   {
-   FloatHi ans, ans1, ans2 = 0, totseq;
+   double ans, ans1, ans2 = 0, totseq;
 
    /* #define LN20	2.9957322735539909 */
    /* #define LN4	1.3862943611198906 */
@@ -562,7 +562,7 @@ static void trim(Sequence* seq, Int4* leftend, Int4* rightend,
 
   {
    Sequence* win;
-   FloatHi prob, minprob;
+   double prob, minprob;
    Int4 shift, len, i;
    Int4 lend, rend;
    Int4 minlen;
@@ -622,13 +622,13 @@ static void SegSeq(Sequence* seq, SegParameters* sparamsp, Seg* *segs,
    Seg* seg,* leftsegs;
    Sequence* leftseq;
    Int4 window;
-   FloatHi locut, hicut;
+   double locut, hicut;
    Int4 maxbogus;
    Int4 downset, upset;
    Int4 first, last, lowlim;
    Int4 loi, hii, i;
    Int4 leftend, rightend, lend, rend;
-   FloatHi* H;
+   double* H;
 
    if (sparamsp->window<=0) return;
    if (sparamsp->locut<=0.) sparamsp->locut = 0.;

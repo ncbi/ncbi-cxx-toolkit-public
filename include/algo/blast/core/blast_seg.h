@@ -64,7 +64,7 @@ typedef struct Alpha
   {
    Int4 alphabet;
    Int4 alphasize;
-   FloatHi lnalphasize;
+   double lnalphasize;
    Int4* alphaindex;
    unsigned char* alphaflag;
    Char* alphachar;
@@ -73,8 +73,8 @@ typedef struct Alpha
 typedef struct SegParameters
   {
    Int4 window;
-   FloatHi locut;
-   FloatHi hicut;
+   double locut;
+   double hicut;
    Int4 period;
    Int4 hilenmin;
    Boolean overlaps;	/* merge overlapping pieces if TRUE. */
@@ -94,7 +94,7 @@ typedef struct Sequence
    Boolean punctuation;
    Int4* composition;
    Int4* state;
-   FloatHi entropy;
+   double entropy;
   } Sequence;
 
 SegParameters* SegParametersNewAa (void);

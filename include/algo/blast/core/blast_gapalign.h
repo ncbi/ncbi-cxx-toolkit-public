@@ -93,7 +93,7 @@ typedef struct BlastHSPLink {
    Int2 num[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< number of HSP in the
                                                   ordering. */
    Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP. */
-   Nlm_FloatHi xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
+   double xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
                                      multiplied by the appropriate Lambda. */
    Int4 changed;
 } BlastHSPLink;
@@ -111,7 +111,7 @@ typedef struct BlastHSP {
                               "link" pointer. */
    BLAST_Score score;         /**< This HSP's raw score */
    Int4 num_ident;         /**< Number of identical base pairs in this HSP */
-   Nlm_FloatHi evalue;        /**< This HSP's e-value */
+   double evalue;        /**< This HSP's e-value */
    BlastSeg query;            /**< Query sequence info. */
    BlastSeg subject;          /**< Subject sequence info. */
    Int2     context;          /**< Context number of query */
@@ -140,7 +140,7 @@ typedef struct BlastGapAlignStruct {
    Int4 query_start, query_stop;/**< Return values: query offsets */
    Int4 subject_start, subject_stop;/**< Return values: subject offsets */
    Int4 score;   /**< Return value: alignment score */
-   FloatHi percent_identity;/**< Return value: percent identity - filled only 
+   double percent_identity;/**< Return value: percent identity - filled only 
                                by the greedy non-affine alignment algorithm */
 } BlastGapAlignStruct;
 

@@ -374,13 +374,13 @@ parse_dust_options(const Char *ptr, Int4* level, Int4* window,
  * @param hicut returns "hicut" for seg. [out]
 */
 static Int2
-parse_seg_options(const Char *ptr, Int4* window, FloatHi* locut, FloatHi* hicut)
+parse_seg_options(const Char *ptr, Int4* window, double* locut, double* hicut)
 
 {
 	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
 	Int4 arg, index, index1; 
 	long	tmplong;
-	FloatHi	tmpdouble;
+	double	tmpdouble;
 
 	arg = 0;
 	index1 = 0;
@@ -433,13 +433,13 @@ parse_seg_options(const Char *ptr, Int4* window, FloatHi* locut, FloatHi* hicut)
  * @param linker returns linker [out]
 */
 static Int2
-parse_cc_options(const Char *ptr, Int4* window, FloatHi* cutoff, Int4* linker)
+parse_cc_options(const Char *ptr, Int4* window, double* cutoff, Int4* linker)
 
 {
 	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
 	Int4 arg, index, index1;
 	long	tmplong;
-	FloatHi	tmpdouble;
+	double	tmpdouble;
 
 	arg = 0;
 	index1 = 0;
@@ -560,7 +560,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
    BlastSeqLoc* cc_loc = NULL;
 	PccDatPtr pccp;
    Int4 window_cc, linker_cc;
-	Nlm_FloatHi cutoff_cc;
+	double cutoff_cc;
 #endif
 #ifdef TEMP_BLAST_OPTIONS
    /* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.49  2003/07/31 14:19:28  camacho
+ * Replaced FloatHi for double
+ *
  * Revision 1.48  2003/07/31 00:32:37  camacho
  * Eliminated Ptr notation
  *
@@ -355,7 +358,7 @@ Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    Uint1 program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
-   FloatHi xdrop_ungapped)
+   double xdrop_ungapped)
 {
    if (!options)
       return 1;
@@ -409,11 +412,11 @@ BlastInitialWordParametersNew(Uint1 program_number,
 {
    Int4 context = query_info->first_context;
    Int4 cutoff_score = 0, s2 = 0;
-   FloatHi e2 = UNGAPPED_CUTOFF_EVALUE;
+   double e2 = UNGAPPED_CUTOFF_EVALUE;
    BLAST_KarlinBlk* kbp;
-   FloatHi qlen;
+   double qlen;
    BlastHitSavingOptions* hit_options;
-   FloatHi avglen;
+   double avglen;
 
    if (!word_options || !hit_params || !sbp || !sbp->kbp_std[context])
       return 8;
@@ -438,7 +441,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
       If it is smaller, then use this one */
    qlen = query_info->context_offsets[query_info->last_context+1] - 1;
 
-   avglen = ((FloatHi) eff_len_options->db_length) / 
+   avglen = ((double) eff_len_options->db_length) / 
       eff_len_options->dbseq_num;
 
    BlastCutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
@@ -498,7 +501,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
 
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   Uint1 program, Boolean greedy, FloatHi x_dropoff, FloatHi x_dropoff_final)
+   Uint1 program, Boolean greedy, double x_dropoff, double x_dropoff_final)
 {
    if (!options)
       return 1;
@@ -957,7 +960,7 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
 
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
-   Boolean is_gapped, FloatHi evalue, Int4 hitlist_size)
+   Boolean is_gapped, double evalue, Int4 hitlist_size)
 {
    if (!options)
       return 1;
@@ -1021,7 +1024,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
 {
    BlastHitSavingParameters* params;
    BLAST_KarlinBlk* kbp;
-   FloatHi evalue = options->expect_value;
+   double evalue = options->expect_value;
 
    if (!options || !parameters)
       return 1;
@@ -1045,7 +1048,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
       params->cutoff_score = options->cutoff_score;
    } else {
       BlastCutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
-         (FloatHi)query_info->eff_searchsp_array[query_info->first_context], 
+         (double)query_info->eff_searchsp_array[query_info->first_context], 
          FALSE);
    }
    

@@ -169,7 +169,7 @@ typedef struct BlastInitialWordOptions {
                               blastn: do mini-extension to the word size; in
                               megablast: keep word information on stacks, 
                               etc. */
-   FloatHi x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
+   double x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
                          extension */
 } BlastInitialWordOptions;
 
@@ -193,10 +193,10 @@ typedef struct BlastInitialWordParameters {
  *     be used.
  */
 typedef struct BlastExtensionOptions {
-   FloatHi gap_x_dropoff; /**< X-dropoff value for gapped extension (in bits) */
-   FloatHi gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
+   double gap_x_dropoff; /**< X-dropoff value for gapped extension (in bits) */
+   double gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                   extension (in bits) */
-   FloatHi gap_trigger;/**< Score in bits for starting gapped extension */
+   double gap_trigger;/**< Score in bits for starting gapped extension */
    Int4 algorithm_type; /**< E.g. for blastn: dynamic programming; 
                            greedy without traceback; greedy with traceback */
 } BlastExtensionOptions;
@@ -206,7 +206,7 @@ typedef struct BlastExtensionParameters {
    Int4 gap_x_dropoff; /**< X-dropoff value for gapped extension (raw) */
    Int4 gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                extension (raw) */
-   FloatHi gap_trigger; /**< Minimal raw score for starting gapped extension */
+   double gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastExtensionParameters;
 
 /** Options used when evaluating and saving hits
@@ -229,15 +229,15 @@ typedef struct BlastHitSavingOptions {
                             alignment */
    Int4 required_end;    /**< End of the region required to be part of the
                             alignment */
-   FloatHi expect_value; /**< The expect value cut-off threshold for an HSP, or
+   double expect_value; /**< The expect value cut-off threshold for an HSP, or
                             a combined hit if sum statistics is used */
-   FloatHi original_expect_value; /**< Needed for PSI-BLAST??? */
-   FloatHi single_hsp_evalue; /**< When sum statistics is used, the largest 
+   double original_expect_value; /**< Needed for PSI-BLAST??? */
+   double single_hsp_evalue; /**< When sum statistics is used, the largest 
                                  e-value allowed for an individual HSP */
    Int4 cutoff_score; /**< The (raw) score cut-off threshold */
    Int4 single_hsp_score; /**< The score cut-off for a single HSP when sum
                              statistics is used */
-   FloatHi percent_identity; /**< The percent identity cut-off threshold */
+   double percent_identity; /**< The percent identity cut-off threshold */
    Boolean do_sum_stats; /**< Should sum statistics be used to combine HSPs? */
    Int4 longest_intron; /**< The longest distance between HSPs allowed for
                            combining via sum statistics with uneven gaps */
@@ -259,8 +259,8 @@ typedef struct BlastHitSavingParameters {
    /**< Callback for formatting results on the fly for each subject sequence */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */
-   FloatHi gap_prob;       /**< Probability of decay for linking HSPs */
-   FloatHi gap_decay_rate; /**< Decay rate for linking HSPs */
+   double gap_prob;       /**< Probability of decay for linking HSPs */
+   double gap_decay_rate; /**< Decay rate for linking HSPs */
    Int4 gap_size;          /**< Small gap size for linking HSPs */
    Int4 cutoff_small_gap; /**< Cutoff sum score for linked HSPs with small 
                              gaps */
@@ -308,11 +308,11 @@ typedef struct BlastEffectiveLengthsOptions {
  *  Some of these possibly should be transfered elsewhere  
  */
 typedef struct PSIBlastOptions {
-   FloatHi ethresh;       /**< PSI-BLAST */
+   double ethresh;       /**< PSI-BLAST */
    Int4 maxNumPasses;     /**< PSI-BLAST */
    Int4 pseudoCountConst; /**< PSI-BLAST */
    Boolean composition_based_stat;/**< PSI-BLAST */
-   FloatHi scalingFactor; /**< Scaling factor used when constructing PSSM for
+   double scalingFactor; /**< Scaling factor used when constructing PSSM for
                              RPS-BLAST */
    Boolean use_best_align; /**< Use only alignments chosen by user for PSSM
                               computation: WWW PSI-BLAST only */
@@ -405,7 +405,7 @@ Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    Uint1 program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
-   FloatHi xdrop_ungapped);
+   double xdrop_ungapped);
 
 
 /** Deallocate memory for BlastInitialWordParameters.
@@ -462,8 +462,8 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options);
 */
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   Uint1 program, Boolean greedy, FloatHi x_dropoff, 
-   FloatHi x_dropoff_final);
+   Uint1 program, Boolean greedy, double x_dropoff, 
+   double x_dropoff_final);
 
 
 /** Validate contents of BlastExtensionOptions.
@@ -621,7 +621,7 @@ Int2 BlastHitSavingOptionsNew(Uint1 program,
 */
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
-   Boolean is_gapped, FloatHi evalue, Int4 hitlist_size);
+   Boolean is_gapped, double evalue, Int4 hitlist_size);
 
 /** Deallocate memory for BlastHitSavingOptions*. 
  * @param parameters Structure to free [in]

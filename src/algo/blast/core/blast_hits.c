@@ -147,11 +147,11 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
          query information block, in order of preference */
       if (sbp->effective_search_sp) {
          hsp->evalue = BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
-                          (FloatHi)sbp->effective_search_sp);
+                          (double)sbp->effective_search_sp);
       } else {
          hsp->evalue = 
             BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
-               (FloatHi)query_info->eff_searchsp_array[hsp->context/factor]);
+               (double)query_info->eff_searchsp_array[hsp->context/factor]);
       }
    }
    
@@ -165,7 +165,7 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list,
    BlastHSP** hsp_array;
    Int4 hsp_cnt = 0;
    Int4 index;
-   Nlm_FloatHi cutoff;
+   double cutoff;
    
    if (hsp_list == NULL)
       return 1;
@@ -384,7 +384,7 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    BlastHSP** hsp_array = hsp_list->hsp_array;
    Boolean shift_needed = FALSE;
    Int2 context;
-   FloatHi evalue;
+   double evalue;
 
    qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
             diag_uniq_compare_hsps);
@@ -473,7 +473,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    Uint1 mask = 0x0f;
    GapEditScript* esp,* last_esp,* prev_esp,* first_esp;
    Boolean purge, delete_hsp;
-   FloatHi searchsp_eff;
+   double searchsp_eff;
    Int4 last_esp_num;
    Int2 status = 0;
    Int4 align_length;
@@ -544,7 +544,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       context = hsp->context;
 
       query_start = query_blk->sequence + query_info->context_offsets[context];
-      searchsp_eff = (FloatHi)query_info->eff_searchsp_array[context/2];
+      searchsp_eff = (double)query_info->eff_searchsp_array[context/2];
       
       query = query_start + hsp->query.offset; 
       subject = subject_start + hsp->subject.offset;
@@ -642,7 +642,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
          BlastHSPGetNumIdentical(query_start, subject_start, hsp, 
             hit_options->is_gapped, &hsp->num_ident, &align_length);
          /* Check if this HSP passes the percent identity test */
-         if (((FloatHi)hsp->num_ident) / align_length * 100 < 
+         if (((double)hsp->num_ident) / align_length * 100 < 
              hit_options->percent_identity)
             delete_hsp = TRUE;
       }

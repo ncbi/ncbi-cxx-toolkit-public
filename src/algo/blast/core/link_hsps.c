@@ -41,17 +41,17 @@ Detailed Contents:
 static char const rcsid[] = "$Id$";
 
 #define WINDOW_SIZE 20
-static FloatHi 
+static double 
 SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlk* sbp, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    BlastHitSavingParameters* hit_params, 
    BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
 {
-   FloatHi gap_prob, gap_decay_rate, sum_evalue, score_prime;
+   double gap_prob, gap_decay_rate, sum_evalue, score_prime;
    Int4 gap_size, num;
    Int4 subject_eff_length, query_eff_length, length_adjustment;
    Int4 context = head_hsp->context;
-   FloatHi eff_searchsp;
+   double eff_searchsp;
 
    gap_size = hit_params->gap_size;
    gap_prob = hit_params->gap_prob;
@@ -80,10 +80,10 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlk* sbp,
          gap_prob, gap_decay_rate, num, score_prime, 
          query_eff_length, subject_eff_length);
 
-   eff_searchsp = ((FloatHi) subject_eff_length) * query_eff_length;
+   eff_searchsp = ((double) subject_eff_length) * query_eff_length;
    
    sum_evalue *= 
-      ((FloatHi) query_info->eff_searchsp_array[context]) / eff_searchsp;
+      ((double) query_info->eff_searchsp_array[context]) / eff_searchsp;
 
    return sum_evalue;
 }
@@ -329,7 +329,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	BLAST_KarlinBlk** kbp;
 	BLAST_Score maxscore, cutoff[2];
 	Boolean frame_change, linked_set, ignore_small_gaps;
-	Nlm_FloatHi gap_decay_rate, gap_prob, prob[2];
+	double gap_decay_rate, gap_prob, prob[2];
 	Int4 index, index1, ordering_method, num_links, frame_index, number_of_query_frames;
 	Int4 hp_frame_number[3*2];
 	Int4 gap_size, number_of_hsps, total_number_of_hsps;
@@ -570,7 +570,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                {
                   Int4 H_hsp_num=0;
                   Int4 H_hsp_sum=0;
-                  Nlm_FloatHi H_hsp_xsum=0.0;
+                  double H_hsp_xsum=0.0;
                   void* H_hsp_link=NULL;
                   if (H->score > cutoff[index]) {
                      Int4 H_query_etrim = H->query.end_trim;
@@ -620,7 +620,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   }
                   { 
                      BLAST_Score score=H->score;
-                     Nlm_FloatHi new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
+                     double new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
                      Int4 new_sum = H_hsp_sum + (score - cutoff[index]);
                      
                      H->hsp_link.sum[index] = new_sum;
@@ -646,7 +646,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             {
                Int4 H_hsp_num=0;
                Int4 H_hsp_sum=0;
-               Nlm_FloatHi H_hsp_xsum=0.0;
+               double H_hsp_xsum=0.0;
                void* H_hsp_link=NULL;
                
                H->hsp_link.changed=1;
@@ -732,7 +732,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                } /* end if(H->score>cuttof[]) */
                { 
                   BLAST_Score score=H->score;
-                  Nlm_FloatHi new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
+                  double new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
                   Int4 new_sum = H_hsp_sum + (score - cutoff[index]);
                   
                   H->hsp_link.sum[index] = new_sum;
@@ -805,7 +805,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          
          /* AM: Support for query concatenation. */
          prob[ordering_method] *= 
-            ((Nlm_FloatHi)query_info->eff_searchsp_array[query_context]/((Nlm_FloatHi)subject_length*query_length));
+            ((double)query_info->eff_searchsp_array[query_context]/((double)subject_length*query_length));
          
          best[ordering_method]->evalue = prob[ordering_method];
          
@@ -933,7 +933,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    BlastHSP** score_hsp_array,** offset_hsp_array,** end_hsp_array;
    BlastHSP* hsp,* head_hsp,* best_hsp,* var_hsp;
    Int4 hspcnt, index, index1, i;
-   FloatHi best_evalue, evalue;
+   double best_evalue, evalue;
    Int4 sumscore, best_sumscore;
    Boolean reverse_link;
    Uint1* subject_seq = NULL;

@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.23  2003/07/31 14:19:28  camacho
+ * Replaced FloatHi for double
+ *
  * Revision 1.22  2003/07/31 00:32:37  camacho
  * Eliminated Ptr notation
  *
@@ -139,7 +142,7 @@ static BLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 static BLASTMatrixStructure* BlastMatrixDestruct (BLASTMatrixStructure* matrix_struct);
 
 /* performs sump calculation, used by BlastSumPStd */
-static FloatHi BlastSumPCalc (int r, FloatHi s);
+static double BlastSumPCalc (int r, double s);
 
 #define COMMENT_CHR	'#'
 #define TOKSTR	" \t\n\r"
@@ -227,7 +230,7 @@ static Uint1 ncbistdaa_to_ncbieaa[BLASTAA_SIZE]={
 'N','P','Q','R','S','T','V','W','X','Y','Z','U','*'};
 
 /* Used in BlastKarlinBlkGappedCalc */
-typedef FloatHi array_of_8[8];
+typedef double array_of_8[8];
 
 /* Used to temporarily store matrix values for retrieval. */
 
@@ -243,7 +246,7 @@ typedef struct MatrixInfo {
 
 How the statistical parameters for the matrices are stored:
 -----------------------------------------------------------
-They parameters are stored in a two-dimensional array FloatHi (i.e., 
+They parameters are stored in a two-dimensional array double (i.e., 
 doubles, which has as it's first dimensions the number of different 
 gap existence and extension combinations and as it's second dimension 8.
 The eight different columns specify:
@@ -289,7 +292,7 @@ if 14 values were to be allowed.
 
 2.) add a two-dimensional array to contain the statistical parameters:
 
-static FloatHi testmatrix_values[TESTMATRIX_VALUES_MAX][8] ={ ...
+static double testmatrix_values[TESTMATRIX_VALUES_MAX][8] ={ ...
 
 3.) add a "prefs" array that should hint about the "optimal" 
 gap existence and extension penalties:
@@ -314,21 +317,21 @@ add two lines before the return at the end of the function:
 	
 
 #define BLOSUM45_VALUES_MAX 14
-static FloatHi  blosum45_values[BLOSUM45_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.2291, 0.0924, 0.2514, 0.9113, -5.7},
-    {13, 3, (FloatHi) INT2_MAX, 0.207, 0.049, 0.14, 1.5, -22},
-    {12, 3, (FloatHi) INT2_MAX, 0.199, 0.039, 0.11, 1.8, -34},
-    {11, 3, (FloatHi) INT2_MAX, 0.190, 0.031, 0.095, 2.0, -38},
-    {10, 3, (FloatHi) INT2_MAX, 0.179, 0.023, 0.075, 2.4, -51},
-    {16, 2, (FloatHi) INT2_MAX, 0.210, 0.051, 0.14, 1.5, -24},
-    {15, 2, (FloatHi) INT2_MAX, 0.203, 0.041, 0.12, 1.7, -31},
-    {14, 2, (FloatHi) INT2_MAX, 0.195, 0.032, 0.10, 1.9, -36},
-    {13, 2, (FloatHi) INT2_MAX, 0.185, 0.024, 0.084, 2.2, -45},
-    {12, 2, (FloatHi) INT2_MAX, 0.171, 0.016, 0.061, 2.8, -65},
-    {19, 1, (FloatHi) INT2_MAX, 0.205, 0.040, 0.11, 1.9, -43},
-    {18, 1, (FloatHi) INT2_MAX, 0.198, 0.032, 0.10, 2.0, -43},
-    {17, 1, (FloatHi) INT2_MAX, 0.189, 0.024, 0.079, 2.4, -57},
-    {16, 1, (FloatHi) INT2_MAX, 0.176, 0.016, 0.063, 2.8, -67},
+static double  blosum45_values[BLOSUM45_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2291, 0.0924, 0.2514, 0.9113, -5.7},
+    {13, 3, (double) INT2_MAX, 0.207, 0.049, 0.14, 1.5, -22},
+    {12, 3, (double) INT2_MAX, 0.199, 0.039, 0.11, 1.8, -34},
+    {11, 3, (double) INT2_MAX, 0.190, 0.031, 0.095, 2.0, -38},
+    {10, 3, (double) INT2_MAX, 0.179, 0.023, 0.075, 2.4, -51},
+    {16, 2, (double) INT2_MAX, 0.210, 0.051, 0.14, 1.5, -24},
+    {15, 2, (double) INT2_MAX, 0.203, 0.041, 0.12, 1.7, -31},
+    {14, 2, (double) INT2_MAX, 0.195, 0.032, 0.10, 1.9, -36},
+    {13, 2, (double) INT2_MAX, 0.185, 0.024, 0.084, 2.2, -45},
+    {12, 2, (double) INT2_MAX, 0.171, 0.016, 0.061, 2.8, -65},
+    {19, 1, (double) INT2_MAX, 0.205, 0.040, 0.11, 1.9, -43},
+    {18, 1, (double) INT2_MAX, 0.198, 0.032, 0.10, 2.0, -43},
+    {17, 1, (double) INT2_MAX, 0.189, 0.024, 0.079, 2.4, -57},
+    {16, 1, (double) INT2_MAX, 0.176, 0.016, 0.063, 2.8, -67},
 };
 
 static Int4 blosum45_prefs[BLOSUM45_VALUES_MAX] = {
@@ -350,23 +353,23 @@ BLAST_MATRIX_NOMINAL
 
 
 #define BLOSUM50_VALUES_MAX 16
-static FloatHi  blosum50_values[BLOSUM50_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.2318, 0.112, 0.3362, 0.6895, -4.0},
-    {13, 3, (FloatHi) INT2_MAX, 0.212, 0.063, 0.19, 1.1, -16},
-    {12, 3, (FloatHi) INT2_MAX, 0.206, 0.055, 0.17, 1.2, -18},
-    {11, 3, (FloatHi) INT2_MAX, 0.197, 0.042, 0.14, 1.4, -25},
-    {10, 3, (FloatHi) INT2_MAX, 0.186, 0.031, 0.11, 1.7, -34},
-    {9, 3, (FloatHi) INT2_MAX, 0.172, 0.022, 0.082, 2.1, -48},
-    {16, 2, (FloatHi) INT2_MAX, 0.215, 0.066, 0.20, 1.05, -15},
-    {15, 2, (FloatHi) INT2_MAX, 0.210, 0.058, 0.17, 1.2, -20},
-    {14, 2, (FloatHi) INT2_MAX, 0.202, 0.045, 0.14, 1.4, -27},
-    {13, 2, (FloatHi) INT2_MAX, 0.193, 0.035, 0.12, 1.6, -32},
-    {12, 2, (FloatHi) INT2_MAX, 0.181, 0.025, 0.095, 1.9, -41},
-    {19, 1, (FloatHi) INT2_MAX, 0.212, 0.057, 0.18, 1.2, -21},
-    {18, 1, (FloatHi) INT2_MAX, 0.207, 0.050, 0.15, 1.4, -28},
-    {17, 1, (FloatHi) INT2_MAX, 0.198, 0.037, 0.12, 1.6, -33},
-    {16, 1, (FloatHi) INT2_MAX, 0.186, 0.025, 0.10, 1.9, -42},
-    {15, 1, (FloatHi) INT2_MAX, 0.171, 0.015, 0.063, 2.7, -76},
+static double  blosum50_values[BLOSUM50_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2318, 0.112, 0.3362, 0.6895, -4.0},
+    {13, 3, (double) INT2_MAX, 0.212, 0.063, 0.19, 1.1, -16},
+    {12, 3, (double) INT2_MAX, 0.206, 0.055, 0.17, 1.2, -18},
+    {11, 3, (double) INT2_MAX, 0.197, 0.042, 0.14, 1.4, -25},
+    {10, 3, (double) INT2_MAX, 0.186, 0.031, 0.11, 1.7, -34},
+    {9, 3, (double) INT2_MAX, 0.172, 0.022, 0.082, 2.1, -48},
+    {16, 2, (double) INT2_MAX, 0.215, 0.066, 0.20, 1.05, -15},
+    {15, 2, (double) INT2_MAX, 0.210, 0.058, 0.17, 1.2, -20},
+    {14, 2, (double) INT2_MAX, 0.202, 0.045, 0.14, 1.4, -27},
+    {13, 2, (double) INT2_MAX, 0.193, 0.035, 0.12, 1.6, -32},
+    {12, 2, (double) INT2_MAX, 0.181, 0.025, 0.095, 1.9, -41},
+    {19, 1, (double) INT2_MAX, 0.212, 0.057, 0.18, 1.2, -21},
+    {18, 1, (double) INT2_MAX, 0.207, 0.050, 0.15, 1.4, -28},
+    {17, 1, (double) INT2_MAX, 0.198, 0.037, 0.12, 1.6, -33},
+    {16, 1, (double) INT2_MAX, 0.186, 0.025, 0.10, 1.9, -42},
+    {15, 1, (double) INT2_MAX, 0.171, 0.015, 0.063, 2.7, -76},
 };
 
 static Int4 blosum50_prefs[BLOSUM50_VALUES_MAX] = {
@@ -389,19 +392,19 @@ BLAST_MATRIX_NOMINAL
 };
 
 #define BLOSUM62_VALUES_MAX 12
-static FloatHi  blosum62_values[BLOSUM62_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.3176, 0.134, 0.4012, 0.7916, -3.2},
-    {11, 2, (FloatHi) INT2_MAX, 0.297, 0.082, 0.27, 1.1, -10},
-    {10, 2, (FloatHi) INT2_MAX, 0.291, 0.075, 0.23, 1.3, -15},
-    {9, 2, (FloatHi) INT2_MAX, 0.279, 0.058, 0.19, 1.5, -19},
-    {8, 2, (FloatHi) INT2_MAX, 0.264, 0.045, 0.15, 1.8, -26},
-    {7, 2, (FloatHi) INT2_MAX, 0.239, 0.027, 0.10, 2.5, -46},
-    {6, 2, (FloatHi) INT2_MAX, 0.201, 0.012, 0.061, 3.3, -58},
-    {13, 1, (FloatHi) INT2_MAX, 0.292, 0.071, 0.23, 1.2, -11},
-    {12, 1, (FloatHi) INT2_MAX, 0.283, 0.059, 0.19, 1.5, -19},
-    {11, 1, (FloatHi) INT2_MAX, 0.267, 0.041, 0.14, 1.9, -30},
-    {10, 1, (FloatHi) INT2_MAX, 0.243, 0.024, 0.10, 2.5, -44},
-    {9, 1, (FloatHi) INT2_MAX, 0.206, 0.010, 0.052, 4.0, -87},
+static double  blosum62_values[BLOSUM62_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3176, 0.134, 0.4012, 0.7916, -3.2},
+    {11, 2, (double) INT2_MAX, 0.297, 0.082, 0.27, 1.1, -10},
+    {10, 2, (double) INT2_MAX, 0.291, 0.075, 0.23, 1.3, -15},
+    {9, 2, (double) INT2_MAX, 0.279, 0.058, 0.19, 1.5, -19},
+    {8, 2, (double) INT2_MAX, 0.264, 0.045, 0.15, 1.8, -26},
+    {7, 2, (double) INT2_MAX, 0.239, 0.027, 0.10, 2.5, -46},
+    {6, 2, (double) INT2_MAX, 0.201, 0.012, 0.061, 3.3, -58},
+    {13, 1, (double) INT2_MAX, 0.292, 0.071, 0.23, 1.2, -11},
+    {12, 1, (double) INT2_MAX, 0.283, 0.059, 0.19, 1.5, -19},
+    {11, 1, (double) INT2_MAX, 0.267, 0.041, 0.14, 1.9, -30},
+    {10, 1, (double) INT2_MAX, 0.243, 0.024, 0.10, 2.5, -44},
+    {9, 1, (double) INT2_MAX, 0.206, 0.010, 0.052, 4.0, -87},
 };
 
 static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
@@ -421,17 +424,17 @@ static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
 
 
 #define BLOSUM80_VALUES_MAX 10
-static FloatHi  blosum80_values[BLOSUM80_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.3430, 0.177, 0.6568, 0.5222, -1.6},
-    {25, 2, (FloatHi) INT2_MAX, 0.342, 0.17, 0.66, 0.52, -1.6},
-    {13, 2, (FloatHi) INT2_MAX, 0.336, 0.15, 0.57, 0.59, -3},
-    {9, 2, (FloatHi) INT2_MAX, 0.319, 0.11, 0.42, 0.76, -6},
-    {8, 2, (FloatHi) INT2_MAX, 0.308, 0.090, 0.35, 0.89, -9},
-    {7, 2, (FloatHi) INT2_MAX, 0.293, 0.070, 0.27, 1.1, -14},
-    {6, 2, (FloatHi) INT2_MAX, 0.268, 0.045, 0.19, 1.4, -19},
-    {11, 1, (FloatHi) INT2_MAX, 0.314, 0.095, 0.35, 0.90, -9},
-    {10, 1, (FloatHi) INT2_MAX, 0.299, 0.071, 0.27, 1.1, -14},
-    {9, 1, (FloatHi) INT2_MAX, 0.279, 0.048, 0.20, 1.4, -19},
+static double  blosum80_values[BLOSUM80_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3430, 0.177, 0.6568, 0.5222, -1.6},
+    {25, 2, (double) INT2_MAX, 0.342, 0.17, 0.66, 0.52, -1.6},
+    {13, 2, (double) INT2_MAX, 0.336, 0.15, 0.57, 0.59, -3},
+    {9, 2, (double) INT2_MAX, 0.319, 0.11, 0.42, 0.76, -6},
+    {8, 2, (double) INT2_MAX, 0.308, 0.090, 0.35, 0.89, -9},
+    {7, 2, (double) INT2_MAX, 0.293, 0.070, 0.27, 1.1, -14},
+    {6, 2, (double) INT2_MAX, 0.268, 0.045, 0.19, 1.4, -19},
+    {11, 1, (double) INT2_MAX, 0.314, 0.095, 0.35, 0.90, -9},
+    {10, 1, (double) INT2_MAX, 0.299, 0.071, 0.27, 1.1, -14},
+    {9, 1, (double) INT2_MAX, 0.279, 0.048, 0.20, 1.4, -19},
 };
 
 static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
@@ -447,15 +450,15 @@ static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
 };
 
 #define BLOSUM90_VALUES_MAX 8
-static FloatHi  blosum90_values[BLOSUM90_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.3346, 0.190, 0.7547, 0.4434, -1.4},
-    {9, 2, (FloatHi) INT2_MAX, 0.310, 0.12, 0.46, 0.67, -6},
-    {8, 2, (FloatHi) INT2_MAX, 0.300, 0.099, 0.39, 0.76, -7},
-    {7, 2, (FloatHi) INT2_MAX, 0.283, 0.072, 0.30, 0.93, -11},
-    {6, 2, (FloatHi) INT2_MAX, 0.259, 0.048, 0.22, 1.2, -16},
-    {11, 1, (FloatHi) INT2_MAX, 0.302, 0.093, 0.39, 0.78, -8},
-    {10, 1, (FloatHi) INT2_MAX, 0.290, 0.075, 0.28, 1.04, -15},
-    {9, 1, (FloatHi) INT2_MAX, 0.265, 0.044, 0.20, 1.3, -19},
+static double  blosum90_values[BLOSUM90_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3346, 0.190, 0.7547, 0.4434, -1.4},
+    {9, 2, (double) INT2_MAX, 0.310, 0.12, 0.46, 0.67, -6},
+    {8, 2, (double) INT2_MAX, 0.300, 0.099, 0.39, 0.76, -7},
+    {7, 2, (double) INT2_MAX, 0.283, 0.072, 0.30, 0.93, -11},
+    {6, 2, (double) INT2_MAX, 0.259, 0.048, 0.22, 1.2, -16},
+    {11, 1, (double) INT2_MAX, 0.302, 0.093, 0.39, 0.78, -8},
+    {10, 1, (double) INT2_MAX, 0.290, 0.075, 0.28, 1.04, -15},
+    {9, 1, (double) INT2_MAX, 0.265, 0.044, 0.20, 1.3, -19},
 };
 
 static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
@@ -470,23 +473,23 @@ static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
 };
 
 #define PAM250_VALUES_MAX 16
-static FloatHi  pam250_values[PAM250_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.2252, 0.0868, 0.2223, 0.98, -5.0},
-    {15, 3, (FloatHi) INT2_MAX, 0.205, 0.049, 0.13, 1.6, -23},
-    {14, 3, (FloatHi) INT2_MAX, 0.200, 0.043, 0.12, 1.7, -26},
-    {13, 3, (FloatHi) INT2_MAX, 0.194, 0.036, 0.10, 1.9, -31},
-    {12, 3, (FloatHi) INT2_MAX, 0.186, 0.029, 0.085, 2.2, -41},
-    {11, 3, (FloatHi) INT2_MAX, 0.174, 0.020, 0.070, 2.5, -48},
-    {17, 2, (FloatHi) INT2_MAX, 0.204, 0.047, 0.12, 1.7, -28},
-    {16, 2, (FloatHi) INT2_MAX, 0.198, 0.038, 0.11, 1.8, -29},
-    {15, 2, (FloatHi) INT2_MAX, 0.191, 0.031, 0.087, 2.2, -44},
-    {14, 2, (FloatHi) INT2_MAX, 0.182, 0.024, 0.073, 2.5, -53},
-    {13, 2, (FloatHi) INT2_MAX, 0.171, 0.017, 0.059, 2.9, -64},
-    {21, 1, (FloatHi) INT2_MAX, 0.205, 0.045, 0.11, 1.8, -34},
-    {20, 1, (FloatHi) INT2_MAX, 0.199, 0.037, 0.10, 1.9, -35},
-    {19, 1, (FloatHi) INT2_MAX, 0.192, 0.029, 0.083, 2.3, -52},
-    {18, 1, (FloatHi) INT2_MAX, 0.183, 0.021, 0.070, 2.6, -60},
-    {17, 1, (FloatHi) INT2_MAX, 0.171, 0.014, 0.052, 3.3, -86},
+static double  pam250_values[PAM250_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2252, 0.0868, 0.2223, 0.98, -5.0},
+    {15, 3, (double) INT2_MAX, 0.205, 0.049, 0.13, 1.6, -23},
+    {14, 3, (double) INT2_MAX, 0.200, 0.043, 0.12, 1.7, -26},
+    {13, 3, (double) INT2_MAX, 0.194, 0.036, 0.10, 1.9, -31},
+    {12, 3, (double) INT2_MAX, 0.186, 0.029, 0.085, 2.2, -41},
+    {11, 3, (double) INT2_MAX, 0.174, 0.020, 0.070, 2.5, -48},
+    {17, 2, (double) INT2_MAX, 0.204, 0.047, 0.12, 1.7, -28},
+    {16, 2, (double) INT2_MAX, 0.198, 0.038, 0.11, 1.8, -29},
+    {15, 2, (double) INT2_MAX, 0.191, 0.031, 0.087, 2.2, -44},
+    {14, 2, (double) INT2_MAX, 0.182, 0.024, 0.073, 2.5, -53},
+    {13, 2, (double) INT2_MAX, 0.171, 0.017, 0.059, 2.9, -64},
+    {21, 1, (double) INT2_MAX, 0.205, 0.045, 0.11, 1.8, -34},
+    {20, 1, (double) INT2_MAX, 0.199, 0.037, 0.10, 1.9, -35},
+    {19, 1, (double) INT2_MAX, 0.192, 0.029, 0.083, 2.3, -52},
+    {18, 1, (double) INT2_MAX, 0.183, 0.021, 0.070, 2.6, -60},
+    {17, 1, (double) INT2_MAX, 0.171, 0.014, 0.052, 3.3, -86},
 };
 
 static Int4 pam250_prefs[PAM250_VALUES_MAX] = {
@@ -509,14 +512,14 @@ BLAST_MATRIX_NOMINAL
 };
 
 #define PAM30_VALUES_MAX 7
-static FloatHi  pam30_values[PAM30_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3},
-    {7, 2, (FloatHi) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3},
-    {6, 2, (FloatHi) INT2_MAX, 0.287, 0.11, 0.68, 0.42, -4},
-    {5, 2, (FloatHi) INT2_MAX, 0.264, 0.079, 0.45, 0.59, -7},
-    {10, 1, (FloatHi) INT2_MAX, 0.309, 0.15, 0.88, 0.35, -3},
-    {9, 1, (FloatHi) INT2_MAX, 0.294, 0.11, 0.61, 0.48, -6},
-    {8, 1, (FloatHi) INT2_MAX, 0.270, 0.072, 0.40, 0.68, -10},
+static double  pam30_values[PAM30_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3},
+    {7, 2, (double) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3},
+    {6, 2, (double) INT2_MAX, 0.287, 0.11, 0.68, 0.42, -4},
+    {5, 2, (double) INT2_MAX, 0.264, 0.079, 0.45, 0.59, -7},
+    {10, 1, (double) INT2_MAX, 0.309, 0.15, 0.88, 0.35, -3},
+    {9, 1, (double) INT2_MAX, 0.294, 0.11, 0.61, 0.48, -6},
+    {8, 1, (double) INT2_MAX, 0.270, 0.072, 0.40, 0.68, -10},
 };
 
 static Int4 pam30_prefs[PAM30_VALUES_MAX] = {
@@ -531,14 +534,14 @@ BLAST_MATRIX_NOMINAL,
 
 
 #define PAM70_VALUES_MAX 7
-static FloatHi  pam70_values[PAM70_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7},
-    {8, 2, (FloatHi) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5},
-    {7, 2, (FloatHi) INT2_MAX, 0.286, 0.093, 0.43, 0.67, -7},
-    {6, 2, (FloatHi) INT2_MAX, 0.264, 0.064, 0.29, 0.90, -12},
-    {11, 1, (FloatHi) INT2_MAX, 0.305, 0.12, 0.52, 0.59, -6},
-    {10, 1, (FloatHi) INT2_MAX, 0.291, 0.091, 0.41, 0.71, -9},
-    {9, 1, (FloatHi) INT2_MAX, 0.270, 0.060, 0.28, 0.97, -14},
+static double  pam70_values[PAM70_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7},
+    {8, 2, (double) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5},
+    {7, 2, (double) INT2_MAX, 0.286, 0.093, 0.43, 0.67, -7},
+    {6, 2, (double) INT2_MAX, 0.264, 0.064, 0.29, 0.90, -12},
+    {11, 1, (double) INT2_MAX, 0.305, 0.12, 0.52, 0.59, -6},
+    {10, 1, (double) INT2_MAX, 0.291, 0.091, 0.41, 0.71, -9},
+    {9, 1, (double) INT2_MAX, 0.270, 0.060, 0.28, 0.97, -14},
 };
 
 static Int4 pam70_prefs[PAM70_VALUES_MAX] = {
@@ -554,40 +557,40 @@ BLAST_MATRIX_NOMINAL
 
 
 #define BLOSUM62_20_VALUES_MAX 65
-static FloatHi  blosum62_20_values[BLOSUM62_20_VALUES_MAX][8] = {
-    {(FloatHi) INT2_MAX, (FloatHi) INT2_MAX, (FloatHi) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2},
-    {100, 12, (FloatHi) INT2_MAX, 0.0300, 0.056, 0.21, 0.14, -15},
-    {95, 12, (FloatHi) INT2_MAX, 0.0291, 0.047, 0.18, 0.16, -20},
-    {90, 12, (FloatHi) INT2_MAX, 0.0280, 0.038, 0.15, 0.19, -28},
-    {85, 12, (FloatHi) INT2_MAX, 0.0267, 0.030, 0.13, 0.21, -31},
-    {80, 12, (FloatHi) INT2_MAX, 0.0250, 0.021, 0.10, 0.25, -39},
-    {105, 11, (FloatHi) INT2_MAX, 0.0301, 0.056, 0.22, 0.14, -16},
-    {100, 11, (FloatHi) INT2_MAX, 0.0294, 0.049, 0.20, 0.15, -17},
-    {95, 11, (FloatHi) INT2_MAX, 0.0285, 0.042, 0.16, 0.18, -25},
-    {90, 11, (FloatHi) INT2_MAX, 0.0271, 0.031, 0.14, 0.20, -28},
-    {85, 11, (FloatHi) INT2_MAX, 0.0256, 0.023, 0.10, 0.26, -46},
-    {115, 10, (FloatHi) INT2_MAX, 0.0308, 0.062, 0.22, 0.14, -20},
-    {110, 10, (FloatHi) INT2_MAX, 0.0302, 0.056, 0.19, 0.16, -26},
-    {105, 10, (FloatHi) INT2_MAX, 0.0296, 0.050, 0.17, 0.17, -27},
-    {100, 10, (FloatHi) INT2_MAX, 0.0286, 0.041, 0.15, 0.19, -32},
-    {95, 10, (FloatHi) INT2_MAX, 0.0272, 0.030, 0.13, 0.21, -35},
-    {90, 10, (FloatHi) INT2_MAX, 0.0257, 0.022, 0.11, 0.24, -40},
-    {85, 10, (FloatHi) INT2_MAX, 0.0242, 0.017, 0.083, 0.29, -51},
-    {115, 9, (FloatHi) INT2_MAX, 0.0306, 0.061, 0.24, 0.13, -14},
-    {110, 9, (FloatHi) INT2_MAX, 0.0299, 0.053, 0.19, 0.16, -23},
-    {105, 9, (FloatHi) INT2_MAX, 0.0289, 0.043, 0.17, 0.17, -23},
-    {100, 9, (FloatHi) INT2_MAX, 0.0279, 0.036, 0.14, 0.20, -31},
-    {95, 9, (FloatHi) INT2_MAX, 0.0266, 0.028, 0.12, 0.23, -37},
-    {120, 8, (FloatHi) INT2_MAX, 0.0307, 0.062, 0.22, 0.14, -18},
-    {115, 8, (FloatHi) INT2_MAX, 0.0300, 0.053, 0.20, 0.15, -19},
-    {110, 8, (FloatHi) INT2_MAX, 0.0292, 0.046, 0.17, 0.17, -23},
-    {105, 8, (FloatHi) INT2_MAX, 0.0280, 0.035, 0.14, 0.20, -31},
-    {100, 8, (FloatHi) INT2_MAX, 0.0266, 0.026, 0.12, 0.23, -37},
-    {125, 7, (FloatHi) INT2_MAX, 0.0306, 0.058, 0.22, 0.14, -18},
-    {120, 7, (FloatHi) INT2_MAX, 0.0300, 0.052, 0.19, 0.16, -23},
-    {115, 7, (FloatHi) INT2_MAX, 0.0292, 0.044, 0.17, 0.17, -24},
-    {110, 7, (FloatHi) INT2_MAX, 0.0279, 0.032, 0.14, 0.20, -31},
-    {105, 7, (FloatHi) INT2_MAX, 0.0267, 0.026, 0.11, 0.24, -41},
+static double  blosum62_20_values[BLOSUM62_20_VALUES_MAX][8] = {
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2},
+    {100, 12, (double) INT2_MAX, 0.0300, 0.056, 0.21, 0.14, -15},
+    {95, 12, (double) INT2_MAX, 0.0291, 0.047, 0.18, 0.16, -20},
+    {90, 12, (double) INT2_MAX, 0.0280, 0.038, 0.15, 0.19, -28},
+    {85, 12, (double) INT2_MAX, 0.0267, 0.030, 0.13, 0.21, -31},
+    {80, 12, (double) INT2_MAX, 0.0250, 0.021, 0.10, 0.25, -39},
+    {105, 11, (double) INT2_MAX, 0.0301, 0.056, 0.22, 0.14, -16},
+    {100, 11, (double) INT2_MAX, 0.0294, 0.049, 0.20, 0.15, -17},
+    {95, 11, (double) INT2_MAX, 0.0285, 0.042, 0.16, 0.18, -25},
+    {90, 11, (double) INT2_MAX, 0.0271, 0.031, 0.14, 0.20, -28},
+    {85, 11, (double) INT2_MAX, 0.0256, 0.023, 0.10, 0.26, -46},
+    {115, 10, (double) INT2_MAX, 0.0308, 0.062, 0.22, 0.14, -20},
+    {110, 10, (double) INT2_MAX, 0.0302, 0.056, 0.19, 0.16, -26},
+    {105, 10, (double) INT2_MAX, 0.0296, 0.050, 0.17, 0.17, -27},
+    {100, 10, (double) INT2_MAX, 0.0286, 0.041, 0.15, 0.19, -32},
+    {95, 10, (double) INT2_MAX, 0.0272, 0.030, 0.13, 0.21, -35},
+    {90, 10, (double) INT2_MAX, 0.0257, 0.022, 0.11, 0.24, -40},
+    {85, 10, (double) INT2_MAX, 0.0242, 0.017, 0.083, 0.29, -51},
+    {115, 9, (double) INT2_MAX, 0.0306, 0.061, 0.24, 0.13, -14},
+    {110, 9, (double) INT2_MAX, 0.0299, 0.053, 0.19, 0.16, -23},
+    {105, 9, (double) INT2_MAX, 0.0289, 0.043, 0.17, 0.17, -23},
+    {100, 9, (double) INT2_MAX, 0.0279, 0.036, 0.14, 0.20, -31},
+    {95, 9, (double) INT2_MAX, 0.0266, 0.028, 0.12, 0.23, -37},
+    {120, 8, (double) INT2_MAX, 0.0307, 0.062, 0.22, 0.14, -18},
+    {115, 8, (double) INT2_MAX, 0.0300, 0.053, 0.20, 0.15, -19},
+    {110, 8, (double) INT2_MAX, 0.0292, 0.046, 0.17, 0.17, -23},
+    {105, 8, (double) INT2_MAX, 0.0280, 0.035, 0.14, 0.20, -31},
+    {100, 8, (double) INT2_MAX, 0.0266, 0.026, 0.12, 0.23, -37},
+    {125, 7, (double) INT2_MAX, 0.0306, 0.058, 0.22, 0.14, -18},
+    {120, 7, (double) INT2_MAX, 0.0300, 0.052, 0.19, 0.16, -23},
+    {115, 7, (double) INT2_MAX, 0.0292, 0.044, 0.17, 0.17, -24},
+    {110, 7, (double) INT2_MAX, 0.0279, 0.032, 0.14, 0.20, -31},
+    {105, 7, (double) INT2_MAX, 0.0267, 0.026, 0.11, 0.24, -41},
     {120,10,5, 0.0298, 0.049, 0.19, 0.16, -21},
     {115,10,5, 0.0290, 0.042, 0.16, 0.18, -25},
     {110,10,5, 0.0279, 0.033, 0.13, 0.21, -32},
@@ -894,10 +897,10 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
 
 {
     BLAST_Matrix* blast_matrix;
-    FloatHi karlinK = 0.0;
+    double karlinK = 0.0;
     Int4 index1, index2, dim1, dim2;
     Int4** matrix,** original_matrix;
-    FloatHi **posFreqs = NULL;
+    double **posFreqs = NULL;
 
     if (sbp == NULL)
         return NULL;
@@ -938,9 +941,9 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
 
     /* Copying posFreqs to the BLAST_Matrix */
     if ((sbp->posFreqs != NULL) && (sbp->posMatrix != NULL)) {
-        posFreqs = calloc(dim1, sizeof(FloatHi *));
+        posFreqs = calloc(dim1, sizeof(double *));
         for (index1 = 0; index1 < dim1; index1++) {
-            posFreqs[index1] = calloc(dim2, sizeof(FloatHi));
+            posFreqs[index1] = calloc(dim2, sizeof(double));
             for (index2=0; index2 < dim2; index2++) {
                 posFreqs[index1][index2] = sbp->posFreqs[index1][index2];
             }
@@ -1219,7 +1222,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
     Uint4	a1cnt = 0, a2cnt = 0;
     Char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
     long	lineno = 0;
-    FloatHi	xscore;
+    double	xscore;
     register int	index1, index2;
     Int2 status;
 #ifdef THREADS_IMPLEMENTED
@@ -1597,7 +1600,7 @@ BlastScoreFreqNew(BLAST_Score score_min, BLAST_Score score_max)
 		return NULL;
 
 	range = score_max - score_min + 1;
-	sfp->sprob = (FloatHi*) calloc(range, sizeof(FloatHi));
+	sfp->sprob = (double*) calloc(range, sizeof(double));
 	if (sfp->sprob == NULL) 
 	{
 		BlastScoreFreqDestruct(sfp);
@@ -1630,7 +1633,7 @@ BlastScoreFreqCalc(BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp
 {
 	BLAST_ScorePtr*	matrix;
 	BLAST_Score	score, obs_min, obs_max;
-	FloatHi		score_sum, score_avg;
+	double		score_sum, score_avg;
 	Int2 		alphabet_start, alphabet_end, index1, index2;
 
 	if (sbp == NULL || sfp == NULL)
@@ -1689,7 +1692,7 @@ BlastScoreFreqCalc(BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp
 
 typedef struct BLAST_LetterProb {
 		Char	ch;
-		FloatHi	p;
+		double	p;
 	} BLAST_LetterProb;
 
 /*  M. O. Dayhoff amino acid background frequencies   */
@@ -1794,7 +1797,7 @@ BlastResFreqNew(BLAST_ScoreBlk* sbp)
 
 	rfp->alphabet_code = sbp->alphabet_code;
 
-	rfp->prob0 = (FloatHi*) calloc(sbp->alphabet_size, sizeof(FloatHi));
+	rfp->prob0 = (double*) calloc(sbp->alphabet_size, sizeof(double));
 	if (rfp->prob0 == NULL) 
 	{
 		rfp = BlastResFreqDestruct(rfp);
@@ -1817,10 +1820,10 @@ void BlastResFreqFree(BLAST_ResFreq* rfp)
 	Normalize the frequencies to "norm".
 */
 Int2
-BlastResFreqNormalize(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, FloatHi norm)
+BlastResFreqNormalize(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, double norm)
 {
 	Int2	alphabet_stop, index;
-	FloatHi	sum = 0., p;
+	double	sum = 0., p;
 
 	if (norm == 0.)
 		return 1;
@@ -1930,7 +1933,7 @@ BlastRepresentativeResidues(Int2 length)
 	ptr = buffer;
 	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
 	{
-		number = Nint((STD_AMINO_ACID_FREQS[index].p)*((FloatHi) length)/((FloatHi) total));
+		number = Nint((STD_AMINO_ACID_FREQS[index].p)*((double) length)/((double) total));
 		while (number > 0)
 		{
 			*ptr = STD_AMINO_ACID_FREQS[index].ch;
@@ -1979,7 +1982,7 @@ Int2
 BlastResFreqResComp(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp)
 {
 	Int2	alphabet_max, index;
-	FloatHi	sum = 0.;
+	double	sum = 0.;
 
 	if (rfp == NULL || rcp == NULL)
 		return 1;
@@ -2113,7 +2116,7 @@ BlastLoadMatrixValues (void)
 }
 /*
 Int2
-BlastKarlinGetMatrixValues(Char* matrix, Int4* open, Int4* extension, FloatHi* lambda, FloatHi* K, FloatHi* H)
+BlastKarlinGetMatrixValues(Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
 	
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
 the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
@@ -2122,7 +2125,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValues(Char* matrix, Int4** open, Int4** extension, FloatHi** lambda, FloatHi** K, FloatHi** H, Int4** pref_flags)
+BlastKarlinGetMatrixValues(Char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags)
 
 {
 	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, NULL, lambda, K, H, NULL, NULL, pref_flags);
@@ -2131,7 +2134,7 @@ BlastKarlinGetMatrixValues(Char* matrix, Int4** open, Int4** extension, FloatHi*
 
 /*
 Int2
-BlastKarlinGetMatrixValuesEx(Char* matrix, Int4* open, Int4* extension, FloatHi* lambda, FloatHi* K, FloatHi* H)
+BlastKarlinGetMatrixValuesEx(Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
 	
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
 the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
@@ -2140,7 +2143,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValuesEx(Char* matrix, Int4** open, Int4** extension, Int4** decline_align, FloatHi** lambda, FloatHi** K, FloatHi** H, Int4** pref_flags)
+BlastKarlinGetMatrixValuesEx(Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags)
 
 {
 	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, decline_align, lambda, K, H, NULL, NULL, pref_flags);
@@ -2149,7 +2152,7 @@ BlastKarlinGetMatrixValuesEx(Char* matrix, Int4** open, Int4** extension, Int4**
 
 /*
 Int2
-BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4* open, Int4* extension, Int4* decline_align, FloatHi* lambda, FloatHi* K, FloatHi* H)
+BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4* open, Int4* extension, Int4* decline_align, double* lambda, double* K, double* H)
 	
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
 the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
@@ -2158,14 +2161,14 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4** open, Int4** extension, Int4** decline_align, FloatHi** lambda, FloatHi** K, FloatHi** H, FloatHi** alpha, FloatHi** beta, Int4** pref_flags)
+BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
 
 {
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
 	Int4 index, max_number_values=0;
 	Int4* open_array=NULL,* extension_array=NULL,* decline_align_array=NULL,* pref_flags_array=NULL,* prefs;
-	FloatHi* lambda_array=NULL,* K_array=NULL,* H_array=NULL,* alpha_array=NULL,* beta_array=NULL;
+	double* lambda_array=NULL,* K_array=NULL,* H_array=NULL,* alpha_array=NULL,* beta_array=NULL;
 	MatrixInfo* matrix_info;
 	ListNode* vnp,* head;
 
@@ -2197,15 +2200,15 @@ BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4** open, Int4** extension, Int4*
 		if (decline_align)
 			*decline_align = decline_align_array = calloc(max_number_values, sizeof(Int4));
 		if (lambda)
-			*lambda = lambda_array = (FloatHi*) calloc(max_number_values, sizeof(FloatHi));
+			*lambda = lambda_array = (double*) calloc(max_number_values, sizeof(double));
 		if (K)
-			*K = K_array = (FloatHi*) calloc(max_number_values, sizeof(FloatHi));
+			*K = K_array = (double*) calloc(max_number_values, sizeof(double));
 		if (H)
-			*H = H_array = (FloatHi*) calloc(max_number_values, sizeof(FloatHi));
+			*H = H_array = (double*) calloc(max_number_values, sizeof(double));
 		if (alpha)
-			*alpha = alpha_array = (FloatHi*) calloc(max_number_values, sizeof(FloatHi));
+			*alpha = alpha_array = (double*) calloc(max_number_values, sizeof(double));
 		if (beta)
-			*beta = beta_array = (FloatHi*) calloc(max_number_values, sizeof(FloatHi));
+			*beta = beta_array = (double*) calloc(max_number_values, sizeof(double));
 		if (pref_flags)
 			*pref_flags = pref_flags_array = calloc(max_number_values, sizeof(Int4));
 
@@ -2239,11 +2242,11 @@ BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4** open, Int4** extension, Int4*
 
 /*Extract the alpha and beta settings for this matrixName, and these
   gap open and gap extension costs*/
-void getAlphaBeta(Char* matrixName, FloatHi *alpha,
-FloatHi *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
+void getAlphaBeta(Char* matrixName, double *alpha,
+double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
 {
    Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
-   FloatHi* alpha_arr,* beta_arr;
+   double* alpha_arr,* beta_arr;
    Int2 num_values;
    Int4 i; /*loop index*/
 
@@ -2290,9 +2293,9 @@ FloatHi *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
  */
 
 Int2
-BlastKarlinGetDefaultMatrixValues(Char* matrix, Int4* open, Int4* extension, FloatHi* lambda, FloatHi* K, FloatHi* H) {
+BlastKarlinGetDefaultMatrixValues(Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H) {
     Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
-    FloatHi* Lambda_arr,* Kappa_arr,* H_arr;
+    double* Lambda_arr,* Kappa_arr,* H_arr;
     Int4 i,n;
     if(matrix==NULL)
         matrix = "BLOSUM62";
@@ -2341,7 +2344,7 @@ BlastKarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, C
 
 {
 
-	return BlastKarlinBlkGappedCalcEx(kbp, gap_open, gap_extend, (FloatHi) INT2_MAX, matrix_name, error_return);
+	return BlastKarlinBlkGappedCalcEx(kbp, gap_open, gap_extend, (double) INT2_MAX, matrix_name, error_return);
 
 }
 	
@@ -2708,26 +2711,26 @@ ErrExit:
 #define DIMOFP0	(iter*range + 1)
 #define DIMOFP0_MAX (BLAST_KARLIN_K_ITER_MAX*BLAST_SCORE_RANGE_MAX+1)
 
-FloatHi
-BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, FloatHi	lambda, FloatHi H)
+double
+BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 {
 #ifndef BLAST_KARLIN_STACKP
-	FloatHi* P0 = NULL;
+	double* P0 = NULL;
 #else
-	FloatHi	P0 [DIMOFP0_MAX];
+	double	P0 [DIMOFP0_MAX];
 #endif
 	BLAST_Score	low;	/* Lowest score (must be negative) */
 	BLAST_Score	high;	/* Highest score (must be positive) */
-	FloatHi	K;			/* local copy of K */
-	FloatHi	ratio;
+	double	K;			/* local copy of K */
+	double	ratio;
 	int		i, j;
 	BLAST_Score	range, lo, hi, first, last, d;
-	register FloatHi	sum;
-	FloatHi	Sum, av, oldsum, oldsum2, score_avg;
+	register double	sum;
+	double	Sum, av, oldsum, oldsum2, score_avg;
 	int		iter;
-	FloatHi	sumlimit;
-	FloatHi* p,* ptrP,* ptr1,* ptr2,* ptr1e;
-	FloatHi	etolami, etolam;
+	double	sumlimit;
+	double* p,* ptrP,* ptr1,* ptr2,* ptr1e;
+	double	etolami, etolam;
         Boolean         bi_modal_score = FALSE;
 
 	if (lambda <= 0. || H <= 0.) {
@@ -2756,7 +2759,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, FloatHi	lambda, FloatHi H)
 	range = high - low;
 
 	av = H/lambda;
-	etolam = exp((FloatHi)lambda);
+	etolam = exp((double)lambda);
 
 	if (low == -1 || high == 1) {
            if (high == 1)
@@ -2776,7 +2779,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, FloatHi	lambda, FloatHi H)
 		return -1.;
 	}
 #ifndef BLAST_KARLIN_STACKP
-	P0 = (FloatHi*)calloc(DIMOFP0 , sizeof(*P0));
+	P0 = (double*)calloc(DIMOFP0 , sizeof(*P0));
 	if (P0 == NULL)
 		return -1.;
 #else
@@ -2808,7 +2811,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, FloatHi	lambda, FloatHi H)
               if (ptrP - P0 <= range)
                  --last;
            }
-           etolami = Powi((FloatHi)etolam, lo - 1);
+           etolami = Powi((double)etolam, lo - 1);
            for (sum = 0., i = lo; i != 0; ++i) {
               etolami *= etolam;
               sum += *++ptrP * etolami;
@@ -2836,10 +2839,10 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, FloatHi	lambda, FloatHi H)
 	if (etolam > 0.05) 
 	{
            etolami = 1 / etolam;
-           K = exp((FloatHi)-2.0*Sum) / (av*(1.0 - etolami));
+           K = exp((double)-2.0*Sum) / (av*(1.0 - etolami));
 	}
 	else
-           K = -exp((FloatHi)-2.0*Sum) / (av*Expm1(-(FloatHi)lambda));
+           K = -exp((double)-2.0*Sum) / (av*Expm1(-(double)lambda));
 
 CleanUp:
 #ifndef BLAST_KARLIN_K_STACKP
@@ -2854,14 +2857,14 @@ CleanUp:
 
 	Calculate Lambda using the bisection method (slow).
 */
-FloatHi
+double
 BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 {
-	register FloatHi* sprob;
-	FloatHi	lambda, up, newval;
+	register double* sprob;
+	double	lambda, up, newval;
 	BLAST_Score	i, low, high, d;
 	int		j;
-	register FloatHi	sum, x0, x1;
+	register double	sum, x0, x1;
 
 	if (sfp->score_avg >= 0.) {
 		return -1.;
@@ -2885,8 +2888,8 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 	up = BLAST_KARLIN_LAMBDA0_DEFAULT;
 	for (lambda=0.; ; ) {
 		up *= 2;
-		x0 = exp((FloatHi)up);
-		x1 = Powi((FloatHi)x0, low - 1);
+		x0 = exp((double)up);
+		x1 = Powi((double)x0, low - 1);
 		if (x1 > 0.) {
 			for (sum=0., i=low; i<=high; ++i)
 				sum += sprob[i*d] * (x1 *= x0);
@@ -2902,8 +2905,8 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 
 	for (j=0; j<BLAST_KARLIN_LAMBDA_ITER_DEFAULT; ++j) {
 		newval = (lambda + up) / 2.;
-		x0 = exp((FloatHi)newval);
-		x1 = Powi((FloatHi)x0, low - 1);
+		x0 = exp((double)newval);
+		x1 = Powi((double)x0, low - 1);
 		if (x1 > 0.) {
 			for (sum=0., i=low; i<=high; ++i)
 				sum += sprob[i*d] * (x1 *= x0);
@@ -2928,15 +2931,15 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 	guess (lambda0) obtained perhaps by the bisection method.
 *******************************************************************************/
 
-FloatHi
+double
 BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 {
 	BLAST_Score	low;			/* Lowest score (must be negative)  */
 	BLAST_Score	high;			/* Highest score (must be positive) */
 	int		j;
 	BLAST_Score	i, d;
-	FloatHi*	sprob;
-	FloatHi	lambda0, sum, slope, temp, x0, x1, amt;
+	double*	sprob;
+	double	lambda0, sum, slope, temp, x0, x1, amt;
 
 	low = sfp->obs_min;
 	high = sfp->obs_max;
@@ -2964,8 +2967,8 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 		slope = 0.0;
 		if (lambda0 < 0.01)
 			break;
-		x0 = exp((FloatHi)lambda0);
-		x1 = Powi((FloatHi)x0, low - 1);
+		x0 = exp((double)lambda0);
+		x1 = Powi((double)x0, low - 1);
 		if (x1 == 0.)
 			break;
 		for (i=low; i<=high; i++) {
@@ -2991,11 +2994,11 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 
 	Calculate H, the relative entropy of the p's and q's
 */
-FloatHi
-BlastKarlinLtoH(BLAST_ScoreFreq* sfp, FloatHi	lambda)
+double
+BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
 {
 	BLAST_Score	score;
-	FloatHi	av, etolam, etolami;
+	double	av, etolam, etolami;
 
 	if (lambda < 0.) {
 		return -1.;
@@ -3003,8 +3006,8 @@ BlastKarlinLtoH(BLAST_ScoreFreq* sfp, FloatHi	lambda)
 	if (BlastScoreChk(sfp->obs_min, sfp->obs_max) != 0)
 		return -1.;
 
-	etolam = exp((FloatHi)lambda);
-	etolami = Powi((FloatHi)etolam, sfp->obs_min - 1);
+	etolam = exp((double)lambda);
+	etolami = Powi((double)etolam, sfp->obs_min - 1);
 	if (etolami > 0.) 
 	{
 	    av = 0.0;
@@ -3022,8 +3025,8 @@ BlastKarlinLtoH(BLAST_ScoreFreq* sfp, FloatHi	lambda)
 }
 
 
-static FloatHi
-BlastGapDecayInverse(FloatHi pvalue, unsigned nsegs, FloatHi decayrate)
+static double
+BlastGapDecayInverse(double pvalue, unsigned nsegs, double decayrate)
 {
 	if (decayrate <= 0. || decayrate >= 1. || nsegs == 0)
 		return pvalue;
@@ -3031,8 +3034,8 @@ BlastGapDecayInverse(FloatHi pvalue, unsigned nsegs, FloatHi decayrate)
 	return pvalue * (1. - decayrate) * Powi(decayrate, nsegs - 1);
 }
 
-static FloatHi
-BlastGapDecay(FloatHi pvalue, unsigned nsegs, FloatHi decayrate)
+static double
+BlastGapDecay(double pvalue, unsigned nsegs, double decayrate)
 {
 	if (decayrate <= 0. || decayrate >= 1. || nsegs == 0)
 		return pvalue;
@@ -3049,10 +3052,10 @@ BlastGapDecay(FloatHi pvalue, unsigned nsegs, FloatHi decayrate)
 */
 Int2
 BlastCutoffs(BLAST_ScorePtr S, /* cutoff score */
-	FloatHi* E, /* expected no. of HSPs scoring at or above S */
+	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
-	FloatHi qlen, /* length of query sequence */
-	FloatHi dblen, /* length of database or database sequence */
+	double qlen, /* length of query sequence */
+	double dblen, /* length of database or database sequence */
 	Boolean dodecay) /* TRUE ==> use gapdecay feature */
 {
 	return BlastCutoffs_simple(S, E, kbp, qlen*dblen, dodecay);
@@ -3060,13 +3063,13 @@ BlastCutoffs(BLAST_ScorePtr S, /* cutoff score */
 
 Int2
 BlastCutoffs_simple(BLAST_ScorePtr S, /* cutoff score */
-	FloatHi* E, /* expected no. of HSPs scoring at or above S */
+	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
-	FloatHi searchsp, /* size of search space. */
+	double searchsp, /* size of search space. */
 	Boolean dodecay) /* TRUE ==> use gapdecay feature */
 {
 	BLAST_Score	s = *S, es;
-	FloatHi	e = *E, esave;
+	double	e = *E, esave;
 	Boolean		s_changed = FALSE;
 
 	if (kbp->Lambda == -1. || kbp->K == -1. || kbp->H == -1.)
@@ -3113,27 +3116,27 @@ BlastCutoffs_simple(BLAST_ScorePtr S, /* cutoff score */
 	Error return value is BLAST_SCORE_MIN
 */
 BLAST_Score
-BlastKarlinEtoS(FloatHi	E,	/* Expect value */
+BlastKarlinEtoS(double	E,	/* Expect value */
 	BLAST_KarlinBlk*	kbp,
-	FloatHi	qlen,	/* length of query sequence */
-	FloatHi	dblen)	/* length of database */
+	double	qlen,	/* length of query sequence */
+	double	dblen)	/* length of database */
 {
 	return BlastKarlinEtoS_simple(E, kbp, qlen*dblen);
 }
 
 
 /* Smallest float that might not cause a floating point exception in
-	S = (BLAST_Score) (ceil( log((FloatHi)(K * searchsp / E)) / Lambda ));
+	S = (BLAST_Score) (ceil( log((double)(K * searchsp / E)) / Lambda ));
 below.
 */
 #define BLASTKAR_SMALL_FLOAT 1.0e-297
 BLAST_Score
-BlastKarlinEtoS_simple(FloatHi	E,	/* Expect value */
+BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	BLAST_KarlinBlk*	kbp,
-	FloatHi	searchsp)	/* size of search space */
+	double	searchsp)	/* size of search space */
 {
 
-	FloatHi	Lambda, K, H; /* parameters for Karlin statistics */
+	double	Lambda, K, H; /* parameters for Karlin statistics */
 	BLAST_Score	S;
 
 	Lambda = kbp->Lambda;
@@ -3146,7 +3149,7 @@ BlastKarlinEtoS_simple(FloatHi	E,	/* Expect value */
 
 	E = MAX(E, BLASTKAR_SMALL_FLOAT);
 
-	S = (BLAST_Score) (ceil( log((FloatHi)(K * searchsp / E)) / Lambda ));
+	S = (BLAST_Score) (ceil( log((double)(K * searchsp / E)) / Lambda ));
 	return S;
 }
 
@@ -3158,21 +3161,21 @@ BlastKarlinEtoS_simple(FloatHi	E,	/* Expect value */
 
 	On error, return value is -1. (same as BlastKarlinStoE()).
 */
-FloatHi
+double
 BlastKarlinStoP(BLAST_Score S,
 		BLAST_KarlinBlk* kbp,
-		FloatHi	qlen,	/* length of query sequence */
-		FloatHi	dblen)	/* length of database */
+		double	qlen,	/* length of query sequence */
+		double	dblen)	/* length of database */
 {
 	return BlastKarlinStoP_simple(S, kbp, qlen*dblen);
 }
 
-FloatHi
+double
 BlastKarlinStoP_simple(BLAST_Score S,
 		BLAST_KarlinBlk* kbp,
-		FloatHi	searchsp)	/* size of search space. */
+		double	searchsp)	/* size of search space. */
 {
-	FloatHi	x, p;
+	double	x, p;
 
 	x = BlastKarlinStoE_simple(S, kbp, searchsp);
 	if (x == -1.)
@@ -3187,21 +3190,21 @@ BlastKarlinStoP_simple(BLAST_Score S,
 
 	Error return value is -1.
 */
-FloatHi
+double
 BlastKarlinStoE(BLAST_Score S,
 		BLAST_KarlinBlk* kbp,
-		FloatHi	qlen,	/* length of query sequence */
-		FloatHi	dblen)	/* length of database */
+		double	qlen,	/* length of query sequence */
+		double	dblen)	/* length of database */
 {
 	return BlastKarlinStoE_simple(S, kbp, qlen*dblen);
 }
 
-FloatHi
+double
 BlastKarlinStoE_simple(BLAST_Score S,
 		BLAST_KarlinBlk* kbp,
-		FloatHi	searchsp)	/* size of search space. */
+		double	searchsp)	/* size of search space. */
 {
-	FloatHi	Lambda, K, H; /* parameters for Karlin statistics */
+	double	Lambda, K, H; /* parameters for Karlin statistics */
 
 	Lambda = kbp->Lambda;
 	K = kbp->K;
@@ -3210,14 +3213,14 @@ BlastKarlinStoE_simple(BLAST_Score S,
 		return -1.;
 	}
 
-	return searchsp * exp((FloatHi)(-Lambda * S) + kbp->logK);
+	return searchsp * exp((double)(-Lambda * S) + kbp->logK);
 }
 
 /*
 BlastKarlinPtoE -- convert a P-value to an Expect value
 */
-FloatHi
-BlastKarlinPtoE(FloatHi p)
+double
+BlastKarlinPtoE(double p)
 {
         if (p < 0. || p > 1.0) 
 	{
@@ -3233,10 +3236,10 @@ BlastKarlinPtoE(FloatHi p)
 /*
 BlastKarlinEtoP -- convert an Expect value to a P-value
 */
-FloatHi
-BlastKarlinEtoP(FloatHi x)
+double
+BlastKarlinEtoP(double x)
 {
-	return -Expm1((FloatHi)-x);
+	return -Expm1((double)-x);
 }
 
 /*
@@ -3244,19 +3247,19 @@ BlastKarlinEtoP(FloatHi x)
 
 	Given a score, return the length expected for an HSP of that score
 */
-FloatHi
+double
 BlastKarlinStoLen(BLAST_KarlinBlk* kbp, BLAST_Score S)
 {
 	return kbp->Lambda * S / kbp->H;
 }
 
-static FloatHi	tab2[] = { /* table for r == 2 */
+static double	tab2[] = { /* table for r == 2 */
 0.01669,  0.0249,   0.03683,  0.05390,  0.07794,  0.1111,   0.1559,   0.2146,   
 0.2890,   0.3794,   0.4836,   0.5965,   0.7092,   0.8114,   0.8931,   0.9490,   
 0.9806,   0.9944,   0.9989
 		};
 
-static FloatHi	tab3[] = { /* table for r == 3 */
+static double	tab3[] = { /* table for r == 3 */
 0.9806,   0.9944,   0.9989,   0.0001682,0.0002542,0.0003829,0.0005745,0.0008587,
 0.001278, 0.001893, 0.002789, 0.004088, 0.005958, 0.008627, 0.01240,  0.01770,  
 0.02505,  0.03514,  0.04880,  0.06704,  0.09103,  0.1220,   0.1612,   0.2097,   
@@ -3264,7 +3267,7 @@ static FloatHi	tab3[] = { /* table for r == 3 */
 0.8922,   0.9367,   0.9667,   0.9846,   0.9939,   0.9980
 		};
 
-static FloatHi	tab4[] = { /* table for r == 4 */
+static double	tab4[] = { /* table for r == 4 */
 2.658e-07,4.064e-07,6.203e-07,9.450e-07,1.437e-06,2.181e-06,3.302e-06,4.990e-06,
 7.524e-06,1.132e-05,1.698e-05,2.541e-05,3.791e-05,5.641e-05,8.368e-05,0.0001237,
 0.0001823,0.0002677,0.0003915,0.0005704,0.0008275,0.001195, 0.001718, 0.002457,
@@ -3274,11 +3277,11 @@ static FloatHi	tab4[] = { /* table for r == 4 */
 0.8699,   0.9127,   0.9451,   0.9679,   0.9827,   0.9915,   0.9963
 		};
 
-static FloatHi* table[] = { tab2, tab3, tab4 };
+static double* table[] = { tab2, tab3, tab4 };
 static short tabsize[] = { DIM(tab2)-1, DIM(tab3)-1, DIM(tab4)-1 };
 
-static FloatHi f (FloatHi,void*);
-static FloatHi g (FloatHi,void*);
+static double f (double,void*);
+static double g (double,void*);
 
 
 /*
@@ -3287,11 +3290,11 @@ static FloatHi g (FloatHi,void*);
 	r = number of segments
 	s = total score (in nats), adjusted by -r*log(KN)
 */
-FloatHi
-BlastSumP(Int4 r, FloatHi s)
+double
+BlastSumP(Int4 r, double s)
 {
 	Int4		i, r1, r2;
-	FloatHi	a;
+	double	a;
 
 	if (r == 1)
 		return -Expm1(-exp(-s));
@@ -3320,7 +3323,7 @@ BlastSumP(Int4 r, FloatHi s)
 /*
     BlastSumPCalc
 
-    Evaluate the following FloatHi integral, where r = number of segments
+    Evaluate the following double integral, where r = number of segments
     and s = the adjusted score in nats:
 
                     (r-2)         oo           oo
@@ -3329,14 +3332,14 @@ BlastSumP(Int4 r, FloatHi s)
                  (r-1)! (r-2)!  U            U
                                 s            0
 */
-static FloatHi
-BlastSumPCalc(int r, FloatHi s)
+static double
+BlastSumPCalc(int r, double s)
 {
 	int		r1, itmin;
-	FloatHi	t, d, epsilon;
-	FloatHi	est_mean, mean, stddev, stddev4;
-	FloatHi	xr, xr1, xr2, logr;
-	FloatHi	args[6];
+	double	t, d, epsilon;
+	double	est_mean, mean, stddev, stddev4;
+	double	xr, xr1, xr2, logr;
+	double	args[6];
 
 	epsilon = BLAST_SUMP_EPSILON_DEFAULT; /* accuracy for SumP calcs. */
 
@@ -3422,11 +3425,11 @@ BlastSumPCalc(int r, FloatHi s)
 	return (d < 1. ? d : 1.);
 }
 
-static FloatHi
-g(FloatHi	s, void*	vp)
+static double
+g(double	s, void*	vp)
 {
-	register FloatHi*	args = vp;
-	FloatHi	mx;
+	register double*	args = vp;
+	double	mx;
 	
 	ARG_ADJ2 = ARG_ADJ1 - s;
 	ARG_SDIVR = s / ARG_R;	/* = s / r */
@@ -3434,11 +3437,11 @@ g(FloatHi	s, void*	vp)
 	return RombergIntegrate(f, vp, 0., mx, ARG_EPS, 0, 1);
 }
 
-static FloatHi
-f(FloatHi	x, void*	vp)
+static double
+f(double	x, void*	vp)
 {
-	register FloatHi*	args = vp;
-	register FloatHi	y;
+	register double*	args = vp;
+	register double	y;
 
 	y = exp(x - ARG_SDIVR);
 #ifdef BLASTKAR_HUGE_VAL
@@ -3465,15 +3468,15 @@ f(FloatHi	x, void*	vp)
 
 */
 
-FloatHi
-BlastSmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, FloatHi score_prime, Int4 query_length, Int4 subject_length)
+double
+BlastSmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
-	FloatHi sum_p, sum_e;
+	double sum_p, sum_e;
 		
-	score_prime -= kbp->logK + log((FloatHi)subject_length*(FloatHi)query_length) + (num-1)*(kbp->logK + 2*log((FloatHi)gap));
-	score_prime -= LnFactorial((FloatHi) num); 
+	score_prime -= kbp->logK + log((double)subject_length*(double)query_length) + (num-1)*(kbp->logK + 2*log((double)gap));
+	score_prime -= LnFactorial((double) num); 
 
 	sum_p = BlastSumP(num, score_prime);
 
@@ -3500,15 +3503,15 @@ BlastSmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, FloatHi gap_prob, FloatHi gap_
         that are separated by introns.
 */
 
-FloatHi
-BlastUnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, FloatHi score_prime, Int4 query_length, Int4 subject_length)
+double
+BlastUnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
-	FloatHi sum_p, sum_e;
+	double sum_p, sum_e;
 		
-	score_prime -= kbp->logK + log((FloatHi)subject_length*(FloatHi)query_length) + (num-1)*(kbp->logK + log((FloatHi)p_gap) + log((FloatHi)n_gap));
-	score_prime -= LnFactorial((FloatHi) num); 
+	score_prime -= kbp->logK + log((double)subject_length*(double)query_length) + (num-1)*(kbp->logK + log((double)p_gap) + log((double)n_gap));
+	score_prime -= LnFactorial((double) num); 
 
 	sum_p = BlastSumP(num, score_prime);
 
@@ -3532,20 +3535,20 @@ BlastUnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, FloatHi gap_pro
 	infinite) followings an idea of Stephen Altschul's.
 */
 
-FloatHi
-BlastLargeGapSumE(BLAST_KarlinBlk* kbp, FloatHi gap_prob, FloatHi gap_decay_rate, Int2 num, FloatHi score_prime, Int4 query_length, Int4 subject_length)
+double
+BlastLargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
-	FloatHi sum_p, sum_e;
+	double sum_p, sum_e;
 /* The next two variables are for compatability with Warren's code. */
-	FloatHi lcl_subject_length, lcl_query_length;
+	double lcl_subject_length, lcl_query_length;
 
-        lcl_query_length = (FloatHi) query_length;
-        lcl_subject_length = (FloatHi) subject_length;
+        lcl_query_length = (double) query_length;
+        lcl_subject_length = (double) subject_length;
 
 	score_prime -= num*(kbp->logK + log(lcl_subject_length*lcl_query_length)) 
-	    - LnFactorial((FloatHi) num); 
+	    - LnFactorial((double) num); 
 
 	sum_p = BlastSumP(num, score_prime);
 
@@ -3578,10 +3581,10 @@ BlastLargeGapSumE(BLAST_KarlinBlk* kbp, FloatHi gap_prob, FloatHi gap_decay_rate
 #define 	SYBASE_MIN 1.0e-300
 
 Int2 
-ConvertPtoPseudoS(FloatHi p, FloatHi n)
+ConvertPtoPseudoS(double p, double n)
 {
 	Int2	s;
-	FloatHi	E;
+	double	E;
 
 /* If p is 1.0, then E is very large and E/n is about one. */
 	if (p > 0.99)
@@ -3607,7 +3610,7 @@ ConvertPtoPseudoS(FloatHi p, FloatHi n)
 *	the calculation of the pseudo-score.
 *******************************************************************/
 Int2 
-ConvertEtoPseudoS(FloatHi E, FloatHi searchsp)
+ConvertEtoPseudoS(double E, double searchsp)
 {
 	Int2	s;
 
@@ -3631,8 +3634,8 @@ Given a pseudoscore, a subroutine for calculating an E-value for a comparison
 of size n (the product of the sequence length) is:
 */
 
-FloatHi 
-ConvertPseudoStoE(Int2 s, FloatHi n)
+double 
+ConvertPseudoStoE(Int2 s, double n)
 {
 	return n*exp(-s/PSCALE);
 }

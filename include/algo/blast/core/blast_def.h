@@ -165,7 +165,7 @@ typedef struct BlastReturnStat {
                        extensions */
    Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
                              extensions with traceback */
-   FloatHi gap_trigger; /**< Minimal raw score for starting gapped extension */
+   double gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastReturnStat;
 
 /** Structure for keeping the query masking information */
