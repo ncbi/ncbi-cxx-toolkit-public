@@ -284,10 +284,13 @@ string GetStdPath(const string& path)
     }
 #endif
     // Replace each native separator character with the 'standard' one.
-    for (SIZE_TYPE i = 0; i < stdpath.size(); i++) {
+    SIZE_TYPE ibeg = NStr::StartsWith(path, "http://", NStr::eNocase) ? 7 : 0;
+    for (SIZE_TYPE i=ibeg ; i < stdpath.size(); i++) {
         if ( IsDirSeparator(stdpath[i]) )
             stdpath[i] = '/';
     }
+    string tmp = NStr::Replace(stdpath,"//","/",ibeg);
+    stdpath = NStr::Replace(tmp,"/./","/",ibeg);
     return stdpath;
 }
 
@@ -545,6 +548,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/04/29 20:12:36  gouriano
+* GetStdPath tweaked
+*
 * Revision 1.26  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
