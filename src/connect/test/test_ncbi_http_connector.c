@@ -98,7 +98,7 @@ int main(void)
 
     /* Log and data-log streams */
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    data_file = fopen("test_ncbi_http_connector.log", "wb");
+    data_file = fopen("test_ncbi_http_connector.log", "ab");
     assert(data_file);
 
     /* Tune to the test URL using hard-coded pseudo-registry */
@@ -114,23 +114,19 @@ int main(void)
     /* Run the tests */
     flags = fHCC_KeepHeader | fHCC_UrlCodec | fHCC_UrlEncodeArgs;
     connector = HTTP_CreateConnector(0, user_header, flags);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_SingleBouncePrint);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
     flags = 0;
     connector = HTTP_CreateConnector(0, user_header, flags);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_SingleBounceCheck);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
     flags = fHCC_AutoReconnect;
     connector = HTTP_CreateConnector(0, user_header, flags);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_Everything);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     flags = fHCC_AutoReconnect | fHCC_UrlCodec;
     connector = HTTP_CreateConnector(0, user_header, flags);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_Everything);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     /* Cleanup and Exit */
     CORE_SetREG(0);
@@ -143,6 +139,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/12/04 16:59:21  lavr
+ * Open log file in append mode
+ *
  * Revision 6.10  2002/11/22 15:09:40  lavr
  * Replace all occurances of "ray" with "yar"
  *

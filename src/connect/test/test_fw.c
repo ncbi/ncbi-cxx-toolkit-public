@@ -99,7 +99,7 @@ extern int main(int argc, char** argv)
 
     /* Error logging */
     {{
-        FILE* log_fp = fopen("test_fw.log", "w");
+        FILE* log_fp = fopen("test_fw.log", "a");
         if ( !fp ) {
             perror("Failed to open \"test_fw.log\" for writing");
             return 2;
@@ -133,6 +133,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/12/04 16:59:51  lavr
+ * Open log file in append mode
+ *
  * Revision 6.7  2002/10/17 20:49:25  lavr
  * SOCK_Write(): forgotten write mode argument added
  *
