@@ -1284,7 +1284,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
       do_sum_stats = TRUE;
    } else if (options->do_sum_stats == eSumStatsNotSet) {
       /* By default, sum statistics is used for all translated searches 
-       * (except RPS BLAST), and for ungapped blastn.
+       * (except RPS BLAST), and for all ungapped searches.
        */
       if (!gapped_calculation ||  
           (program_number == eBlastTypeBlastx) ||
@@ -1558,7 +1558,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
       link_hsp_params->cutoff_small_gap = 
          MAX(ext_params->gap_trigger, 
              (Int4) floor((log(x_variable)/kbp->Lambda)) + 1);
-
+      link_hsp_params->gap_prob = BLAST_GAP_PROB;
    } else {
       link_hsp_params->cutoff_big_gap = 
          (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
@@ -1577,6 +1577,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.133  2004/09/23 15:00:29  dondosha
+ * Reset gap_prob in CalculateLinkHSPCutoffs when necessary; fixed a doxygen comment
+ *
  * Revision 1.132  2004/09/14 21:17:02  camacho
  * Add structure group customization to ignore query
  *
