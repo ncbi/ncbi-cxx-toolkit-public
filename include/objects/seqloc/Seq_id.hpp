@@ -266,7 +266,7 @@ public:
 
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
-    const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
+    CProxy DumpAsFasta(void) const { return Dump(eAsFasta); }
     const string AsFastaString(void) const;
 
     //Return seqid string with optional version for text seqid type
@@ -382,6 +382,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2004/01/16 22:11:15  ucko
+ * Update for new CSerializable interface.
+ *
  * Revision 1.36  2004/01/09 19:54:13  ucko
  * Give EXAMPLE prefixes to ease migration from hardcoded checks.
  *
