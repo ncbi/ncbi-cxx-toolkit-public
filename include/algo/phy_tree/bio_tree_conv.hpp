@@ -496,44 +496,66 @@ void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
 
 
 template<class TBioTreeContainer, 
-		 class TTaxon1, class TITaxon1Node, class TITreeIterator>
+	 class TTaxon1, class TITaxon1Node, class TITreeIterator>
 class CTaxon1ConvertToBioTreeContainer
 {
 public:
-	void operator()(TBioTreeContainer&  tree_container,
-					TTaxon1&            tax, 
-					int                 tax_id)
-	{
-		// Setup features dictionary
+  void operator()(TBioTreeContainer&  tree_container,
+		  TTaxon1&            tax, 
+		  int                 tax_id)
+  {
+    // Setup features dictionary
+    
+    BioTreeAddFeatureToDictionary(tree_container, 1, "name");
+    BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
+    BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
+    BioTreeAddFeatureToDictionary(tree_container, 4, "division");
+    BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
+    BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
+    BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
+    
+    // Convert nodes
+    
+    const TITaxon1Node* tax_node=0;
+    bool res = tax.LoadSubtree(tax_id, &tax_node);
+    if (res) {
+      CRef<TITreeIterator> tax_tree_iter(tax.GetTreeIterator());
+      tax_tree_iter->GoNode(tax_node);
+      
+      typedef typename TITreeIterator::I4Each T4Each;
+      
+      CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
+	TITreeIterator, TBioTreeContainer>
+	tax_vis(&tree_container);
+      tax_tree_iter->TraverseDownward(tax_vis);
+    }
+    
+  }
+  
+  void operator()(TBioTreeContainer&  tree_container,
+		  CRef<TITreeIterator> tax_tree_iter)
+  {
+    // Setup features dictionary
+    
+    BioTreeAddFeatureToDictionary(tree_container, 1, "name");
+    BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
+    BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
+    BioTreeAddFeatureToDictionary(tree_container, 4, "division");
+    BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
+    BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
+    BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
+    
+    // Convert nodes
+    
+    tax_tree_iter->GoRoot();
+    typedef typename TITreeIterator::I4Each T4Each;
+    CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
+      TITreeIterator, TBioTreeContainer>
+      tax_vis(&tree_container);
+    tax_tree_iter->TraverseDownward(tax_vis);
+  }
 
-		BioTreeAddFeatureToDictionary(tree_container, 1, "name");
-		BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
-		BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
-		BioTreeAddFeatureToDictionary(tree_container, 4, "division");
-		BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
-		BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
-		BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
-
-		// Convert nodes
-
-		const TITaxon1Node* tax_node=0;
-		bool res = tax.LoadSubtree(tax_id, &tax_node);
-		if (res) {
-			CRef<TITreeIterator> tax_tree_iter(tax.GetTreeIterator());
-			tax_tree_iter->GoNode(tax_node);
-
-			typedef typename TITreeIterator::I4Each T4Each;
-
-			CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
-			                    	  TITreeIterator, TBioTreeContainer>
-				tax_vis(&tree_container);
-			tax_tree_iter->TraverseDownward(tax_vis);
-		}
-
-	}
 };
-
-
 
 END_NCBI_SCOPE 
 
@@ -541,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/28 17:01:20  ckenny
+ * + conv from part tax tree to CBioTreeContainer
+ *
  * Revision 1.4  2004/06/09 13:38:40  kuznets
  * Fixed compilation errors (GCC)
  *
