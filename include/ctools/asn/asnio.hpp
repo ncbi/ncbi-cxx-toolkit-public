@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/10/21 16:20:38  golikov
+* Mode param added
+*
 * Revision 1.3  1999/04/14 19:11:48  vakatov
 * Added "LIBCALLBACK" to AsnRead/Write proto (MSVC++ feature)
 *
@@ -56,8 +59,8 @@ BEGIN_NCBI_SCOPE
 class AsnMemoryRead
 {
 public:
-    AsnMemoryRead(const string& str);
-    AsnMemoryRead(const char* buffer, size_t size);
+    AsnMemoryRead(Uint2 mode, const string& str);
+    AsnMemoryRead(Uint2 mode, const char* buffer, size_t size);
     virtual ~AsnMemoryRead(void);
 
     AsnIoPtr GetIn(void) const
@@ -75,6 +78,7 @@ private:
     const char* m_Data;
     size_t m_Size;
     size_t m_Ptr;
+    int m_mode;
 
     // cached ASN.1 communication interface pointer
     AsnIoPtr m_In;

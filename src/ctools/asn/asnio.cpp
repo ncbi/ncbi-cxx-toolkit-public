@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/10/21 16:20:44  golikov
+* Mode param added
+*
 * Revision 1.6  1999/05/15 23:00:59  vakatov
 * Moved "asnio" and "asnwrite" modules to the (new) library
 * "xasn"(project "asn")
@@ -64,14 +67,14 @@ extern "C" {
     static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
 }
 
-AsnMemoryRead::AsnMemoryRead(const string& str)
-    : m_Source(str), m_Data(str.c_str()), m_Size(str.size())
+AsnMemoryRead::AsnMemoryRead(Uint2 mode, const string& str)
+    : m_Source(str), m_Data(str.c_str()), m_Size(str.size()), m_mode(mode)
 {
     Init();
 }
 
-AsnMemoryRead::AsnMemoryRead(const char* data, size_t size)
-    : m_Data(data), m_Size(size)
+AsnMemoryRead::AsnMemoryRead(Uint2 mode, const char* data, size_t size)
+    : m_Data(data), m_Size(size), m_mode(mode)
 {
     Init();
 }
@@ -84,7 +87,7 @@ AsnMemoryRead::~AsnMemoryRead(void)
 void AsnMemoryRead::Init(void)
 {
     m_Ptr = 0;
-    m_In = AsnIoNew(ASNIO_TEXT | ASNIO_IN, 0, this, ReadAsn, 0);
+    m_In = AsnIoNew(m_mode | ASNIO_IN, 0, this, ReadAsn, 0);
 }
 
 size_t AsnMemoryRead::Read(char* buffer, size_t size)
@@ -106,7 +109,7 @@ Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
 AsnMemoryWrite::AsnMemoryWrite(void)
     : m_Data(new char[512]), m_Size(512), m_Ptr(0)
 {
-    m_Out = AsnIoNew(ASNIO_TEXT | ASNIO_OUT, 0, this, 0, WriteAsn);
+    m_Out = AsnIoNew(ASNIO_BIN | ASNIO_OUT, 0, this, 0, WriteAsn);
 }
 
 AsnMemoryWrite::~AsnMemoryWrite(void)
