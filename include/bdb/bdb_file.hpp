@@ -58,6 +58,7 @@ enum EBDB_ErrCode {
 
 
 class CBDB_Env;
+class CBDB_Transaction;
 
 
 /// Raw file class wraps up basic Berkeley DB operations. 
@@ -158,6 +159,9 @@ public:
     /// Compute database statistic, return number of records.
     /// (Can be time consuming)
     unsigned CountRecs();
+    
+    /// Set current transaction
+    void SetTransaction(CBDB_Transaction* trans);
 
 private:
     CBDB_RawFile(const CBDB_RawFile&);
@@ -172,12 +176,20 @@ protected:
 
     // Create m_DB member, set page, cache parameters
     void x_CreateDB();
+    
+    /// Get transaction handler.
+    ///
+    /// Function returns NULL if no transaction has been set.
+    ///
+    /// @sa SetTransaction
+    DB_TXN* GetTxn();
 
 protected:
     DB*               m_DB;
     DBT*              m_DBT_Key;
     DBT*              m_DBT_Data;
     CBDB_Env*         m_Env;
+    CBDB_Transaction* m_Trans;
 
 private:
     bool             m_DB_Attached;  //!< TRUE if m_DB doesn't belong here
@@ -190,6 +202,8 @@ private:
     EOpenMode        m_OpenMode;
 
     static const int kOpenFileMask;
+    
+    friend class CBDB_Transaction;
 };
 
 
@@ -219,8 +233,13 @@ public:
     void Attach(CBDB_File& db_file);
 
     /// Fetches the record corresponding to the current key value.
-    EBDB_ErrCode Fetch();
-
+    EBDB_ErrCode Fetch() { return x_Fetch(0); }
+    
+    /// Fetche the record corresponding to the current key value.
+    /// Acquire write lock instead of read lock when doing the retrieval.
+    /// Meaningful only in the presence of transactions.
+    EBDB_ErrCode FetchForUpdate();
+    
     enum EAfterWrite {
         eKeepData,    //!< Keep the inserted data for a while
         eDiscardData  //!< Invalidate the inserted data immediately after write
@@ -288,6 +307,9 @@ protected:
     /// data structures (BLOB storage, etc.) Caller takes full
     /// responsibility for filling m_DBT_Data with correct values.
     void DisableDataBufProcessing() { m_DataBufDisabled = true; }
+
+    /// Wrapper around get operation.    
+    EBDB_ErrCode x_Fetch(unsigned int flags);    
 
 
 private:
@@ -409,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/12/10 19:13:27  kuznets
+ * Added support of berkeley db transactions
+ *
  * Revision 1.23  2003/10/27 14:20:31  kuznets
  * + Buffer manager accessor functions for CBDB_File
  *

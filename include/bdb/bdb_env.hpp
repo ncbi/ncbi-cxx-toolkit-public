@@ -77,6 +77,12 @@ public:
     /// @param db_home destination directory for the database
     void OpenConcurrentDB(const char* db_home);
 
+    /// Open environment using transaction
+    ///
+    /// @param db_home destination directory for the database
+    void OpenWithTrans(const char* db_home);
+
+
     /// Join the existing environment
     ///
     /// @param db_home destination directory for the database
@@ -87,6 +93,16 @@ public:
 
     /// Set cache size for the environment.
     void SetCacheSize(unsigned int cache_size);
+    
+    /// Start transaction (DB_ENV->txn_begin)
+    /// 
+    /// @param parent_txn
+    ///   Parent transaction
+    /// @param flags
+    ///   Transaction flags
+    /// @return 
+    ///   New transaction handler
+    DB_TXN* CreateTxn(DB_TXN* parent_txn = 0, unsigned int flags = 0);
 
 private:
     CBDB_Env(const CBDB_Env&);
@@ -102,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/10 19:13:07  kuznets
+ * Added support of berkeley db transactions
+ *
  * Revision 1.7  2003/11/24 13:49:08  kuznets
  * +OpenConcurrentDB
  *

@@ -124,18 +124,21 @@ public:
         eIdxSearch,
         eInvalidValue,
         eInvalidOperation,
+        eTransInProgress,
         eNull
     };
 
     virtual const char* GetErrCodeString(void) const
     {
-        switch ( GetErrCode() ) {
+        switch (GetErrCode())
+        {
         case eOverflow:          return "eOverflow";
         case eType:              return "eType";
         case eIdxSearch:         return "eIdxSearch";
         case eInvalidValue:      return "eInvalidValue";
         case eInvalidOperation:  return "eInvalidOperation";
         case eNull:              return "eNull";
+        case eTransInProgress:   return "eTransInProgress";
         default:                 return  CException::GetErrCodeString();
         }
     }
@@ -181,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/10 19:13:18  kuznets
+ * Added support of berkeley db transactions
+ *
  * Revision 1.8  2003/09/29 14:30:22  kuznets
  * Comments doxygenification
  *

@@ -31,6 +31,7 @@
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/bdb_trans.hpp>
 
 #include <db.h>
 
@@ -71,6 +72,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
   m_DBT_Key(0),
   m_DBT_Data(0),
   m_Env(0),
+  m_Trans(0),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_PageSize(0),
@@ -99,6 +101,18 @@ CBDB_RawFile::~CBDB_RawFile()
     x_Close(eIgnoreError);
     delete m_DBT_Key;
     delete m_DBT_Data;
+
+    // It's illegal to close a file involved in active transactions
+    
+    if (m_Trans && (m_Trans->IsInProgress())) {
+        _ASSERT(0);
+        
+        // If we are here we can try to communicate by throwing
+        // an exception. It's illegal, but situation is bad enough already
+        
+        BDB_THROW(eTransInProgress, 
+                  "Cannot close the file while transaction is in progress.");
+    }
 }
 
 
@@ -117,6 +131,13 @@ void CBDB_RawFile::Attach(CBDB_RawFile& bdb_file)
 void CBDB_RawFile::SetEnv(CBDB_Env& env)
 {
     m_Env = &env;
+}
+
+DB_TXN* CBDB_RawFile::GetTxn()
+{
+    if (m_Trans)
+        return m_Trans->GetTxn();
+    return 0;
 }
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
@@ -209,8 +230,9 @@ unsigned int CBDB_RawFile::Truncate()
 {
     _ASSERT(m_DB != 0);
     u_int32_t count;
+    DB_TXN* txn = GetTxn();
     int ret = m_DB->truncate(m_DB,
-                             0,       // DB_TXN*
+                             txn,
                              &count,
                              0);
 
@@ -227,6 +249,20 @@ void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
     }
     m_CacheSize = cache_size;
 }
+
+
+void CBDB_RawFile::SetTransaction(CBDB_Transaction* trans)
+{
+    if (m_Trans) {
+        m_Trans->RemoveFile(this);
+    }
+
+    m_Trans = trans;
+    if (m_Trans) {
+        m_Trans->AddFile(this);
+    }
+}
+
 
 void CBDB_RawFile::x_CreateDB()
 {
@@ -287,9 +323,10 @@ void CBDB_RawFile::x_Open(const char* filename,
             open_flags = 0;
             break;
         }
+        DB_TXN* txn = GetTxn();
 
         ret = m_DB->open(m_DB,
-                         0,                    // DB_TXN*
+                         txn,
                          filename,
                          database,             // database name
                          DB_BTREE,
@@ -350,8 +387,10 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
     _ASSERT(!m_DB_Attached);
     u_int32_t open_flags = DB_CREATE;
 
+    DB_TXN* txn = GetTxn();
+
     int ret = m_DB->open(m_DB,
-                         0,               // DB_TXN*
+                         txn,
                          filename,
                          database,        // database name
                          DB_BTREE,
@@ -455,16 +494,18 @@ void CBDB_File::Attach(CBDB_File& db_file)
     x_CheckConstructBuffers();
 }
 
-EBDB_ErrCode CBDB_File::Fetch()
+EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 {
     x_StartRead();
 
+    DB_TXN* txn = GetTxn();
+
     int ret = m_DB->get(m_DB,
-                        0,     // DB_TXN*
+                        txn,
                         m_DBT_Key,
                         m_DBT_Data,
-                        0
-                        );
+                        flags);
+                        
     if (ret == DB_NOTFOUND)
         return eBDB_NotFound;
     // Disable error reporting for custom m_DBT_data management
@@ -474,6 +515,11 @@ EBDB_ErrCode CBDB_File::Fetch()
 
     x_EndRead();
     return eBDB_Ok;
+}
+
+EBDB_ErrCode CBDB_File::FetchForUpdate()
+{
+    return x_Fetch(DB_RMW);
 }
 
 
@@ -527,8 +573,10 @@ EBDB_ErrCode CBDB_File::UpdateInsert(EAfterWrite write_flag)
 EBDB_ErrCode CBDB_File::Delete(EIgnoreError on_error)
 {
     m_KeyBuf->PrepareDBT_ForWrite(m_DBT_Key);
+    DB_TXN* txn = GetTxn();
+
     int ret = m_DB->del(m_DB,
-                        0,           // DB_TXN*
+                        txn,
                         m_DBT_Key,
                         0);
     if (on_error != eIgnoreError) {
@@ -566,8 +614,10 @@ DBC* CBDB_File::CreateCursor() const
         BDB_THROW(eInvalidValue, "Cannot create cursor for unopen file.");
     }
 
+    DB_TXN* txn = 0; // GetTxn();
+
     int ret = m_DB->cursor(m_DB,
-                           0,        // DB_TXN*
+                           txn,
                            &cursor,
                            0);
     BDB_CHECK(ret, FileName().c_str());
@@ -646,8 +696,10 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
             m_DataBuf->PrepareDBT_ForWrite(m_DBT_Data);
         }
     }
+    DB_TXN* txn = GetTxn();
+    
     int ret = m_DB->put(m_DB,
-                        0,     // DB_TXN*
+                        txn,
                         m_DBT_Key,
                         m_DBT_Data,
                         flags
@@ -690,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/12/10 19:14:08  kuznets
+ * Added support of berkeley db transactions
+ *
  * Revision 1.25  2003/10/15 18:11:00  kuznets
  * Several functions(Close, Delete) received optional parameter to ignore
  * errors (if any).

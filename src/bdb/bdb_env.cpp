@@ -70,6 +70,13 @@ void CBDB_Env::OpenWithLocks(const char* db_home)
     Open(db_home, DB_CREATE|DB_RECOVER|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
+void CBDB_Env::OpenWithTrans(const char* db_home)
+{
+    Open(db_home, 
+         DB_INIT_TXN | DB_RECOVER |
+         DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL | DB_THREAD);
+}
+
 void CBDB_Env::OpenConcurrentDB(const char* db_home)
 {
     int ret = 
@@ -85,12 +92,25 @@ void CBDB_Env::JoinEnv(const char* db_home)
     Open(db_home, DB_JOINENV);
 }
 
+DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
+{
+    DB_TXN* txn = 0;
+    int ret = m_Env->txn_begin(m_Env, parent_txn, &txn, flags);
+    BDB_CHECK(ret, "DB_ENV::txn_begin");
+    return txn;
+}
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/10 19:14:02  kuznets
+ * Added support of berkeley db transactions
+ *
  * Revision 1.5  2003/11/24 13:49:19  kuznets
  * +OpenConcurrentDB
  *

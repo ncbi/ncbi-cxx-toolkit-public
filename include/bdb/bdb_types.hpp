@@ -50,6 +50,7 @@ extern "C" {
     struct __db;     typedef struct __db     DB;
     struct __dbc;    typedef struct __dbc    DBC;
     struct __db_env; typedef struct __db_env DB_ENV;
+    struct __db_txn; typedef struct __db_txn DB_TXN;
 
     typedef int (*BDB_CompareFunction)(DB*, const DBT*, const DBT*);
 }
@@ -1619,6 +1620,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/12/10 19:13:37  kuznets
+ * Added support of berkeley db transactions
+ *
  * Revision 1.26  2003/11/06 14:05:08  kuznets
  * Dismissed auto_ptr from CBDB_BufferManager because of the delete / delete []
  * mismatch. Gives errors in some memory profilers (valgrind).
