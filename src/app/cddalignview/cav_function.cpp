@@ -37,6 +37,7 @@
 #include <corelib/ncbidiag.hpp>
 
 #include <list>
+#include <memory>
 
 #include <objects/cdd/Cdd.hpp>
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
@@ -393,6 +394,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/19 16:06:28  thiessen
+* add <memory>
+*
 * Revision 1.1  2003/03/19 05:33:43  thiessen
 * move to src/app/cddalignview
 *

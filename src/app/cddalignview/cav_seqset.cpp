@@ -31,6 +31,9 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
@@ -53,7 +56,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqblock/PDB_block.hpp>
 
-#include <corelib/ncbistre.hpp>
+#include <memory>
 
 #include "cddalignview/cav_seqset.hpp"
 #include "cddalignview/cddalignview.h"
@@ -339,6 +342,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/19 16:06:28  thiessen
+* add <memory>
+*
 * Revision 1.1  2003/03/19 05:33:43  thiessen
 * move to src/app/cddalignview
 *
