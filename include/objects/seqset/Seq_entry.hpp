@@ -108,6 +108,34 @@ NCBI_SEQ_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0);
 
 
+
+//////////////////////////////////////////////////////////////////
+//
+// Class - description of multi-entry FASTA file.
+// 
+//
+struct SFastaFileMap
+{
+    struct SFastaEntry
+    {
+        string  seq_id;        // Sequence Id
+        string  description;   // Molecule description
+        size_t  stream_offset; // Molecule offset in file
+    };
+
+    typedef vector<SFastaEntry>  TMapVector;
+
+    TMapVector   file_map; // vector keeps list of all molecule entries
+};
+
+// Function reads input stream (assumed that it is FASTA format) one
+// molecule entry after another filling the map structure describing and
+// pointing on molecule entries. Fasta map can be used later for quick
+// CSeq_entry retrival
+void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input);
+
+
+
 /////////////////// CSeq_entry inline methods
 
 // constructor
@@ -134,6 +162,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2003/05/15 18:50:15  kuznets
+ * Implemented ReadFastaFileMap function. Function reads multientry FASTA
+ * file filling SFastaFileMap structure(seq_id, sequence offset, description)
+ *
  * Revision 1.12  2003/05/09 16:08:06  ucko
  * Rename fReadFasta_Redund to fReadFasta_AllSeqIds.
  *

@@ -461,6 +461,52 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
     return entry;
 }
 
+
+void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
+{
+    _ASSERT(fasta_map);
+
+    fasta_map->file_map.resize(0);
+
+    if (!input.is_open()) 
+        return;
+
+    while (!input.eof()) {
+        SFastaFileMap::SFastaEntry  fasta_entry;
+        fasta_entry.stream_offset = input.tellg();
+
+        CRef<CSeq_entry> se;
+        se = ReadFasta(input, fReadFasta_AssumeNuc | fReadFasta_OneSeq);
+
+        if (!se->IsSeq()) 
+            continue;
+
+        const CSeq_entry::TSeq& bioseq = se->GetSeq();
+        const CSeq_id* sid = bioseq.GetFirstId();
+        fasta_entry.seq_id = sid->GetSeqIdString();
+        if (bioseq.CanGetDescr()) {
+            const CSeq_descr& d = bioseq.GetDescr();
+            if (d.CanGet()) {
+                const CSeq_descr_Base::Tdata& data = d.Get();
+                if (!data.empty()) {
+                    CSeq_descr_Base::Tdata::const_iterator it = 
+                                                      data.begin();
+                    if (it != data.end()) {
+                        CRef<CSeqdesc> ref_desc = *it;
+                        ref_desc->GetLabel(&fasta_entry.description, 
+                                           CSeqdesc::eContent);
+                    }                                
+                }
+            }
+        }
+        fasta_map->file_map.push_back(fasta_entry);
+        
+
+    } // while
+
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -469,6 +515,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.23  2003/05/15 18:50:41  kuznets
+ * Implemented ReadFastaFileMap function. Function reads multientry FASTA
+ * file filling SFastaFileMap structure(seq_id, sequence offset, description)
+ *
  * Revision 6.22  2003/05/14 15:06:30  ucko
  * ReadFasta: if unable to conclude anything from the IDs, try passing the
  * first line of data to CFormatGuess::SequenceType (unless ForceType is set)
