@@ -119,7 +119,7 @@ SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc,
    DoubleIntPtr di;
    Int4 index;
    Boolean translated_query;
-   Uint1 num_frames, index_offset;
+   Uint1 num_frames;
    
    translated_query = (program_number == blast_type_blastx || 
                        program_number == blast_type_tblastx);
