@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/07 21:56:33  vasilche
+* Fixed problem with static variables in templates on SunPro
+*
 * Revision 1.7  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -68,11 +71,11 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 class CObjectOStream;
 
-template<class TYPE>
+template<typename T>
 class CStdTypeInfoTmpl : public CTypeInfo
 {
 public:
-    typedef TYPE TObjectType;
+    typedef T TObjectType;
 
     static TObjectType& Get(TObjectPtr object)
         {
@@ -105,8 +108,8 @@ protected:
         }
 };
 
-template<class TYPE>
-class CStdTypeInfo : public CStdTypeInfoTmpl<TYPE>
+template<typename T>
+class CStdTypeInfo : public CStdTypeInfoTmpl<T>
 {
 public:
     virtual TObjectPtr Create(void) const
@@ -116,7 +119,7 @@ public:
 
     virtual TConstObjectPtr GetDefault(void) const
         {
-            static TYPE def = 0;
+            static TObjectType def = 0;
             return &def;
         }
 
@@ -160,47 +163,31 @@ private:
         }
 };
 
-template<typename TYPE>
-class CStrTypeInfoTmpl : public CStdTypeInfoTmpl<TYPE>
+template<>
+class CStdTypeInfo<char*> : public CStdTypeInfoTmpl<char*>
 {
 public:
-    virtual TConstObjectPtr GetDefault(void) const
-        {
-            static TObjectType def = 0;
-            return &def;
-        }
+    virtual TConstObjectPtr GetDefault(void) const;
+
+    static TTypeInfo GetTypeInfo(void);
 
 protected:
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            in.ReadStr(Get(object));
-        }
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            out.WriteStr(Get(object));
-        }
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
 
 template<>
-class CStdTypeInfo<char*> : public CStrTypeInfoTmpl<char*>
+class CStdTypeInfo<const char*> : public CStdTypeInfoTmpl<const char*>
 {
 public:
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStdTypeInfo;
-            return typeInfo;
-        }
-};
+public:
+    virtual TConstObjectPtr GetDefault(void) const;
 
-template<>
-class CStdTypeInfo<const char*> : public CStrTypeInfoTmpl<const char*>
-{
-public:
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStdTypeInfo;
-            return typeInfo;
-        }
+    static TTypeInfo GetTypeInfo(void);
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
 
 template<>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/07 21:56:35  vasilche
+* Fixed problem with static variables in templates on SunPro
+*
 * Revision 1.6  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -114,6 +117,54 @@ void CStdTypeInfo<string>::ReadData(CObjectIStream& in, TObjectPtr object) const
 void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object) const
 {
 	out.WriteStr(Get(object));
+}
+
+static const char* const zeroPointer = 0;
+
+TTypeInfo CStdTypeInfo<const char*>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStdTypeInfo;
+    return typeInfo;
+}
+
+TConstObjectPtr CStdTypeInfo<const char*>::GetDefault(void) const
+{
+    return &zeroPointer;
+}
+
+void CStdTypeInfo<const char*>::ReadData(CObjectIStream& in,
+                                         TObjectPtr object) const
+{
+    in.ReadStr(Get(object));
+}
+
+void CStdTypeInfo<const char*>::WriteData(CObjectOStream& out,
+                                          TConstObjectPtr object) const
+{
+    out.WriteStr(Get(object));
+}
+
+TTypeInfo CStdTypeInfo<char*>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStdTypeInfo;
+    return typeInfo;
+}
+
+TConstObjectPtr CStdTypeInfo<char*>::GetDefault(void) const
+{
+    return &zeroPointer;
+}
+
+void CStdTypeInfo<char*>::ReadData(CObjectIStream& in,
+                                   TObjectPtr object) const
+{
+    in.ReadStr(Get(object));
+}
+
+void CStdTypeInfo<char*>::WriteData(CObjectOStream& out,
+                                    TConstObjectPtr object) const
+{
+    out.WriteStr(Get(object));
 }
 
 END_NCBI_SCOPE
