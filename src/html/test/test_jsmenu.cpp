@@ -72,12 +72,14 @@ static void Test_Html(void)
     body->AppendChild(m1);
 
     // Create another menu
-    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
+    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2",CHTMLPopupMenu::eKurdin);
 
-    m2->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
-    m2->AddItem("Netscape", "top.location='http://www.netscape.com'");
+    m2->AddItem("NCBI", "http://ncbi.nlm.nih.gov");
+    m2->AddItem("Netscape", "http://www.netscape.com");
     m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
     m2->SetAttribute(eHTML_PM_disableHide, "true");
+    m2->SetAttribute(eHTML_PM_titleColor, "yellow");
+    m2->SetAttribute(eHTML_PM_alignV, "top");
 
     body->AppendChild(m2);
 
@@ -93,22 +95,24 @@ static void Test_Html(void)
     body->AppendChild(m3);
 
     // Add menus call
-    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(),
-                                   "Color Menu");
+    CHTML_a* anchor1 = new CHTML_a("#","Smith's Menu");
+    anchor1->AttachPopupMenu(m1, eHTML_EH_Click);
+
+    CHTML_a* anchor2 = new CHTML_a("#","Kurdin's Menu");
+    anchor2->AttachPopupMenu(m2);
+
+    CHTML_a* anchor3 = new CHTML_a("#","Smith's HTML Menu");
+    anchor3->AttachPopupMenu(m3, eHTML_EH_MouseOver);
+
     body->AppendChild(anchor1);
     body->AppendChild(new CHTML_p(""));
-
-    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "URL Menu");
-    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
     body->AppendChild(anchor2);
     body->AppendChild(new CHTML_p(""));
-
-    CHTML_a* anchor3 = new CHTML_a("javascript:" + m3->ShowMenu(),
-                                   "HTML Menu");
     body->AppendChild(anchor3);
 
     // Enable using popup menus (we can skip call this function)
-    //html->EnablePopupMenu();
+    html->EnablePopupMenu(CHTMLPopupMenu::eSmith);
+    html->EnablePopupMenu(CHTMLPopupMenu::eKurdin);
     
     // Print in HTML format
     html->Print(cout);
@@ -130,41 +134,42 @@ static void Test_Template(void)
     // Create one menu
     CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
     m1->AddItem("Red"  , "document.bgColor='red'");
-    m1->AddItem("White" , "document.bgColor='white'");
-    m1->AddSeparator();
+    m1->AddItem("White" ,"document.bgColor='white'");
     m1->AddItem("Green", "document.bgColor='green'");
+    m1->AddSeparator();
+    m1->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
     m1->SetAttribute(eHTML_PM_fontColor, "black");
     m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
 
     view->AppendChild(m1);
 
     // Create another menu
-    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
-    m2->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
-    m2->AddItem("Netscape", "top.location='http://www.netscape.com'");
+    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2",CHTMLPopupMenu::eKurdin);
+    m2->AddItem("NCBI", "http://ncbi.nlm.nih.gov");
+    m2->AddItem("Netscape", "http://www.netscape.com");
     m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
     m2->SetAttribute(eHTML_PM_disableHide, "true");
+    m2->SetAttribute(eHTML_PM_titleColor, "yellow");
+    m2->SetAttribute(eHTML_PM_alignV, "top");
 
     view->AppendChild(m2);
 
-    // Enable using popup menus (we can skip call this function)
-    // page.EnablePopupMenu();
-
     // Add menus call
-    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(),
-                                   "Color Menu");
+    CHTML_a* anchor1 = new CHTML_a("#","Smith's Menu");
+    anchor1->AttachPopupMenu(m1, eHTML_EH_Click);
+
+    CHTML_a* anchor2 = new CHTML_a("#","Kurdin's Menu");
+    anchor2->AttachPopupMenu(m2);
+
     view->AppendChild(anchor1);
-
     view->AppendChild(new CHTML_br());
-
-    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "URL Menu");
-    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
     view->AppendChild(anchor2);
 
     page.AddTagMap("VIEW", view);
 
     // Enable using popup menus (we can skip call this function)
-    //page.EnablePopupMenu();
+    page.EnablePopupMenu(CHTMLPopupMenu::eSmith);
+    page.EnablePopupMenu(CHTMLPopupMenu::eKurdin);
 
     // Print test result
     page.Print(cout, CNCBINode::eHTML);
@@ -247,6 +252,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2002/12/09 22:13:30  ivanov
+ * Added tests for Sergey Kurdin's popup menu
+ *
  * Revision 1.5  2002/04/16 19:05:21  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
