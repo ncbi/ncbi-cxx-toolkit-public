@@ -36,6 +36,7 @@
 /// IBLOB_Cache interface implemented on top of Berkeley DB
 
 
+#include <util/cache/icache.hpp>
 #include <util/cache/blob_cache.hpp>
 #include <util/cache/int_cache.hpp>
 #include <bdb/bdb_file.hpp>
@@ -48,6 +49,143 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
+
+
+struct NCBI_BDB_EXPORT SCacheDB : public CBDB_BLobFile
+{
+    CBDB_FieldString       key;
+    CBDB_FieldInt4         version;
+    CBDB_FieldString       subkey;
+
+    SCacheDB()
+    {
+        BindKey("key",     &key, 256);
+        BindKey("version", &version);
+        BindKey("subkey",  &subkey, 256);
+    }
+};
+
+
+struct NCBI_BDB_EXPORT SCache_AttrDB : public CBDB_File
+{
+    CBDB_FieldString       key;
+    CBDB_FieldInt4         version;
+    CBDB_FieldString       subkey;
+    CBDB_FieldInt4         time_stamp;
+    CBDB_FieldInt4         overflow;
+
+    SCache_AttrDB()
+    {
+        BindKey("key",     &key, 256);
+        BindKey("version", &version);
+        BindKey("subkey",  &subkey, 256);
+
+        BindData("time_stamp", &time_stamp);
+        BindData("overflow",   &overflow);
+    }
+};
+
+class CPIDGuard;
+
+/// BDB cache implementation.
+///
+/// Class implements ICache interface using local Berkeley DB
+/// database.
+
+class NCBI_BDB_EXPORT CBDB_Cache : public ICache
+{
+public:
+    CBDB_Cache();
+    virtual ~CBDB_Cache();
+
+    enum ELockMode 
+    {
+        eNoLock,     ///< Do not lock-protect cache instance
+        ePidLock,    ///< Create PID lock on cache (exception if failed) 
+    };
+
+    void Open(const char* cache_path, 
+              const char* cache_name,
+              ELockMode lm = eNoLock);
+
+    void Close();
+
+    // ICache interface 
+
+    virtual void SetTimeStampPolicy(TTimeStampFlags policy, int timeout);
+
+    virtual TTimeStampFlags GetTimeStampPolicy() const;
+    virtual int GetTimeout();
+    virtual void SetVersionRetention(EKeepVersions policy);
+    virtual EKeepVersions GetVersionRetention() const;
+    virtual void Store(const string&  key,
+                       int            version,
+                       const string&  subkey,
+                       const void*    data,
+                       size_t         size);
+
+    virtual size_t GetSize(const string&  key,
+                           int            version,
+                           const string&  subkey);
+
+    virtual bool Read(const string& key, 
+                      int           version, 
+                      const string& subkey,
+                      void*         buf, 
+                      size_t        buf_size);
+
+    virtual IReader* GetReadStream(const string&  key, 
+                                   int            version,
+                                   const string&  subkey);
+
+    virtual IWriter* GetWriteStream(const string&    key,
+                                    int              version,
+                                    const string&    subkey);
+
+    virtual void Remove(const string& key);
+
+    virtual time_t GetAccessTime(const string&  key,
+                                 int            version,
+                                 const string&  subkey);
+
+    virtual void Purge(time_t           access_timeout,
+                       EKeepVersions    keep_last_version = eDropAll);
+
+    virtual void Purge(const string&    key,
+                       const string&    subkey,
+                       time_t           access_timeout,
+                       EKeepVersions    keep_last_version = eDropAll);
+
+private:
+    /// Return TRUE if cache item expired according to the current timestamp
+    bool x_CheckTimestampExpired();
+    void x_UpdateAccessTime(const string&  key,
+                            int            version,
+                            const string&  subkey);
+    void x_DropBlob(const char*    key,
+                    int            version,
+                    const char*    subkey,
+                    int            overflow);
+
+    void x_TruncateDB();
+
+private:
+    CBDB_Cache(const CBDB_Cache&);
+    CBDB_Cache& operator=(const CBDB_Cache);
+
+private:
+    string                  m_Path;       ///< Path to storage
+    string                  m_Name;       ///< Cache name
+    CPIDGuard*              m_PidGuard;   ///< Cache lock
+
+    CBDB_Env*               m_Env;          ///< Common environment for cache DBs
+    SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
+    SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
+    TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
+    int                     m_Timeout;      ///< Timeout expiration policy
+    EKeepVersions           m_VersionFlag;  ///< Version retention policy
+};
+
 
 /// BLOB storage file structure
 
@@ -124,8 +262,6 @@ private:
     SIntCacheDB&   m_IntCacheDB;
     time_t         m_ExpirationTime;
 };
-
-class CPIDGuard;
 
 /// BDB cache implementation.
 ///
@@ -214,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/11/25 19:36:24  kuznets
+ * + ICache implementation
+ *
  * Revision 1.9  2003/10/24 12:35:28  kuznets
  * Added cache locking options.
  *
