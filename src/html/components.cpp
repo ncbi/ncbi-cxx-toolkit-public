@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/01/07 17:06:35  vasilche
+* Added default query text in CQueryBox.
+* Added query text width in CQueryBox.
+*
 * Revision 1.15  1999/01/07 16:41:56  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -95,7 +99,7 @@
 BEGIN_NCBI_SCOPE
 
 CQueryBox::CQueryBox(const string& URL)
-    : CParent(URL)
+    : CParent(URL), m_TermWidth(0)
 {
 }
 
@@ -127,7 +131,13 @@ void CQueryBox::CreateSubNodes()
     table->SetCellSpacing(0)->SetCellPadding(5)->SetBgColor(m_BgColor)->SetWidth(m_Width);
     AppendChild(table);
 
-    table->InsertAt(0, 0, new CHTML_text(m_TermName, m_Width? m_Width/12: 10)); // todo: the width calculation
+    CHTML_text* term;
+    if ( m_TermWidth )
+        term = new CHTML_text(m_TermName, m_TermWidth, m_TermValue);
+    else
+        term = new CHTML_text(m_TermName, m_TermValue);
+    table->InsertAt(0, 0, term);
+
     table->InsertAt(0, 0, new CHTMLText("&nbsp;"));
     table->InsertAt(0, 0, new CHTML_submit("Search"));
     table->InsertAt(0, 0, new CHTML_br);

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/01/07 17:06:32  vasilche
+* Added default query text in CQueryBox.
+* Added query text width in CQueryBox.
+*
 * Revision 1.12  1999/01/07 16:41:52  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -110,7 +114,10 @@ public:
     string m_DefaultDatabase;  // initially selected database
 
     map<string, string> m_HiddenValues;
-    string m_TermName;
+
+    string m_TermName; // name of query string value
+    string m_TermValue; // initial query string value
+    int m_TermWidth; // width of query string
 
     string m_DispMax;  // name of dispmax field
     list<string> m_Disp;  // the values in dispmax field
