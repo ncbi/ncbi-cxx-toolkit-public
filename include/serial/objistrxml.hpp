@@ -61,7 +61,8 @@ public:
     enum EEncoding {
         eEncoding_Unknown,
         eEncoding_UTF8,
-        eEncoding_ISO8859_1
+        eEncoding_ISO8859_1,
+        eEncoding_Windows_1252
     };
     EEncoding GetEncoding(void) const;
 
@@ -250,6 +251,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/01/08 17:38:23  gouriano
+* Added encoding Windows-1252
+*
 * Revision 1.31  2003/11/26 19:59:38  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
