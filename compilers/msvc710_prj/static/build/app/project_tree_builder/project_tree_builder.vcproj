@@ -165,22 +165,22 @@
     <Filter Name="Datatool Files" Filter="">
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\msvc71_project.dtd">
         <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\c++" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
         </FileConfiguration>
         <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\c++" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
         </FileConfiguration>
         <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\c++" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
         </FileConfiguration>
         <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\c++" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
         </FileConfiguration>
         <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\c++" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
         </FileConfiguration>
         <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;$(OutDir)\datatool.exe -m $(InputPath) -oA -oc $(InputName) -od $(InputDir)\$(InputName).def -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\c++" Outputs="$(InputDir)project_tree_builder__.cpp;$(InputDir)project_tree_builder___.cpp;" Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"></Tool>
         </FileConfiguration>
       </File>
     </Filter>
