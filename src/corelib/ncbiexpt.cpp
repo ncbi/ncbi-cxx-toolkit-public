@@ -105,7 +105,7 @@ bool CException::sm_BkgrEnabled=true;
 
 CException::CException(const char* file, int line,
     const CException* prev_exception,
-    EErrCode err_code, const string& message) throw()
+    EErrCode err_code, const string& message)
     :   m_ErrCode(err_code),
         m_InReporter(false)
 {
@@ -114,13 +114,13 @@ CException::CException(const char* file, int line,
 }
 
 
-CException::CException(const CException& other) throw()
+CException::CException(const CException& other)
 {
     m_Predecessor = 0;
     x_Assign(other);
 }
 
-CException::CException(void) throw()
+CException::CException(void)
 {
 // this only is called in case of multiple inheritance
     m_ErrCode = CException::eInvalid;
@@ -434,6 +434,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/07/04 19:11:23  vakatov
+ * Do not use "throw()" specification after constructors and assignment
+ * operators of exception classes inherited from "std::exception" -- as it
+ * causes ICC 8.0 generated code to abort in Release mode.
+ *
  * Revision 1.38  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *

@@ -115,13 +115,13 @@ public:
 
     CInvalidChoiceSelection(const char* file,int line,
         size_t currentIndex, size_t mustBeIndex,
-        const char* const names[], size_t namesCount) throw();
+        const char* const names[], size_t namesCount);
 // for backward compatibility
     CInvalidChoiceSelection(
         size_t currentIndex, size_t mustBeIndex,
-        const char* const names[], size_t namesCount) throw();
+        const char* const names[], size_t namesCount);
 
-    CInvalidChoiceSelection(const CInvalidChoiceSelection& other) throw();
+    CInvalidChoiceSelection(const CInvalidChoiceSelection& other);
     virtual ~CInvalidChoiceSelection(void) throw();
 
     virtual const char* GetType(void) const;
@@ -129,7 +129,7 @@ public:
     TErrCode GetErrCode(void) const;
 
 protected:
-    CInvalidChoiceSelection(void) throw();
+    CInvalidChoiceSelection(void);
     virtual const CException* x_Clone(void) const;
 };
 
@@ -143,6 +143,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/07/04 19:11:23  vakatov
+* Do not use "throw()" specification after constructors and assignment
+* operators of exception classes inherited from "std::exception" -- as it
+* causes ICC 8.0 generated code to abort in Release mode.
+*
 * Revision 1.16  2004/05/11 15:56:10  gouriano
 * Change GetErrCode method prototype to return TErrCode - to be able to
 * safely cast EErrCode to an eInvalid

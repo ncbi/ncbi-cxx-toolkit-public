@@ -1799,7 +1799,7 @@ public:
     CParseTemplException(const char* file,int line,
         const CException* prev_exception,
         EErrCode err_code,const string& message,
-        string::size_type pos) throw()
+        string::size_type pos)
           : TBase(file, line,prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message), m_Pos(pos)
@@ -1811,7 +1811,7 @@ public:
     }
 
     /// Constructor.
-    CParseTemplException(const CParseTemplException<TBase>& other) throw()
+    CParseTemplException(const CParseTemplException<TBase>& other)
         : TBase(other)
     {
         m_Pos = other.m_Pos;
@@ -1847,7 +1847,7 @@ public:
 
 protected:
     /// Constructor.
-    CParseTemplException(void) throw()
+    CParseTemplException(void)
     {
         m_Pos = 0;
     }
@@ -2374,6 +2374,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2004/07/04 19:11:23  vakatov
+ * Do not use "throw()" specification after constructors and assignment
+ * operators of exception classes inherited from "std::exception" -- as it
+ * causes ICC 8.0 generated code to abort in Release mode.
+ *
  * Revision 1.57  2004/06/21 12:14:50  ivanov
  * Added additional parameter for all StringToXxx() function that specify
  * an action which will be performed on conversion error: to throw an

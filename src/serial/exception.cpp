@@ -66,7 +66,7 @@ const char* CInvalidChoiceSelection::GetName(
 CInvalidChoiceSelection::CInvalidChoiceSelection(
     const char* file,int line,
     size_t currentIndex, size_t mustBeIndex,
-    const char* const names[], size_t namesCount) throw()
+    const char* const names[], size_t namesCount)
         : CSerialException(file, line, 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
@@ -80,7 +80,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
-    const char* const names[], size_t namesCount) throw()
+    const char* const names[], size_t namesCount)
         : CSerialException("unknown", 0, 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
@@ -93,7 +93,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
-    const CInvalidChoiceSelection& other) throw()
+    const CInvalidChoiceSelection& other)
     : CSerialException(other)
 {
     x_Assign(other);
@@ -115,7 +115,7 @@ CInvalidChoiceSelection::TErrCode CInvalidChoiceSelection::GetErrCode(void) cons
         (CInvalidChoiceSelection::TErrCode) CException::eInvalid;
 }
 
-CInvalidChoiceSelection::CInvalidChoiceSelection(void) throw()
+CInvalidChoiceSelection::CInvalidChoiceSelection(void)
 {
 }
 
@@ -129,6 +129,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/04 19:11:24  vakatov
+* Do not use "throw()" specification after constructors and assignment
+* operators of exception classes inherited from "std::exception" -- as it
+* causes ICC 8.0 generated code to abort in Release mode.
+*
 * Revision 1.13  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

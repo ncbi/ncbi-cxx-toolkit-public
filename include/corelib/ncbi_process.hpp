@@ -174,7 +174,6 @@ public:
     CPIDGuardException(const char* file, int line,
                        const CException* prev_exception, EErrCode err_code,
                        const string& message, TPid pid = 0)
-        throw()
         : CException(file, line, prev_exception, CException::eInvalid,
                      message),
           m_PID(pid)
@@ -257,6 +256,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/04 19:11:23  vakatov
+ * Do not use "throw()" specification after constructors and assignment
+ * operators of exception classes inherited from "std::exception" -- as it
+ * causes ICC 8.0 generated code to abort in Release mode.
+ *
  * Revision 1.7  2004/05/18 16:59:09  ivanov
  * CProcess::
  *     + WaitForAlive(), WaitForTerminate().

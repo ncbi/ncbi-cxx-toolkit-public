@@ -469,10 +469,10 @@ public:
     /// When throwing an exception initially, "prev_exception" must be 0.
     CException(const char* file, int line,
                const CException* prev_exception,
-               EErrCode err_code,const string& message) throw();
+               EErrCode err_code,const string& message);
 
     /// Copy constructor.
-    CException(const CException& other) throw();
+    CException(const CException& other);
 
     /// Add a message to backlog (to re-throw the same exception then).
     void AddBacklog(const char* file, int line,const string& message);
@@ -553,7 +553,7 @@ protected:
     /// Constructor with no arguments.
     ///
     /// Required in case of multiple inheritance.
-    CException(void) throw();
+    CException(void);
 
     /// Helper method for reporting to the system debugger.
     virtual void x_ReportToDebugger(void) const;
@@ -591,7 +591,7 @@ private:
     static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag
 
     /// Private assignment operator to prohibit assignment.
-    CException& operator= (const CException&) throw();
+    CException& operator= (const CException&);
 };
 
 
@@ -613,7 +613,7 @@ const TTo* UppermostCast(const TFrom& from)
         x_Init(file,line,message, prev_exception); \
         x_InitErrCode((CException::EErrCode) err_code); \
     } \
-    exception_class(const exception_class& other) throw() \
+    exception_class(const exception_class& other) \
        : base_class(other) \
     { \
         x_Assign(other); \
@@ -627,7 +627,7 @@ const TTo* UppermostCast(const TFrom& from)
             (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
     } \
 protected: \
-    exception_class(void) throw() {} \
+    exception_class(void) {} \
     virtual const CException* x_Clone(void) const \
     { \
         return new exception_class(*this); \
@@ -645,7 +645,7 @@ private: \
 public: \
     exception_class(const char* file,int line, \
         const CException* prev_exception, \
-        EErrCode err_code,const string& message) throw() \
+        EErrCode err_code,const string& message) \
         : base_class(file, line, prev_exception, \
             (base_class::EErrCode) CException::eInvalid, (message)) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
@@ -660,7 +660,7 @@ public: \
         this->x_Init(file,line,message, prev_exception); \
         this->x_InitErrCode((typename CException::EErrCode) err_code); \
     } \
-    exception_class(const exception_class& other) throw() \
+    exception_class(const exception_class& other) \
        : base_class(other) \
     { \
         x_Assign(other); \
@@ -675,7 +675,7 @@ public: \
             (TErrCode) CException::eInvalid; \
     } \
 protected: \
-    exception_class(void) throw() {} \
+    exception_class(void) {} \
     virtual const CException* x_Clone(void) const \
     { \
         return new exception_class(*this); \
@@ -858,8 +858,8 @@ public:
 
     /// Constructor.
     CErrnoTemplExceptionEx(const char* file, int line,
-        const CException* prev_exception,
-        EErrCode err_code, const string& message) throw()
+                           const CException* prev_exception,
+                           EErrCode err_code, const string& message)
           : TBase(file, line, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message)
@@ -872,10 +872,9 @@ public:
 
     /// Constructor.
     CErrnoTemplExceptionEx(const char* file,int line,
-        const CException* prev_exception,
-        EErrCode err_code, const string& message, 
-        int errnum
-        ) throw()
+                           const CException* prev_exception,
+                           EErrCode err_code, const string& message, 
+                           int errnum)
           : TBase(file, line, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message),
@@ -888,7 +887,6 @@ public:
 
     /// Copy constructor.
     CErrnoTemplExceptionEx(const CErrnoTemplExceptionEx<TBase, PErrstr>& other)
-        throw()
         : TBase( other)
     {
         m_Errno = other.m_Errno;
@@ -924,7 +922,7 @@ public:
 
 protected:
     /// Constructor.
-    CErrnoTemplExceptionEx(void) throw() { m_Errno = errno; }
+    CErrnoTemplExceptionEx(void) { m_Errno = errno; }
 
     /// Helper clone method.
     virtual const CException* x_Clone(void) const
@@ -954,7 +952,7 @@ public:
     /// Constructor.
     CErrnoTemplException<TBase>(const char* file,int line,
         const CException* prev_exception,
-        typename CParent::EErrCode err_code,const string& message) throw()
+        typename CParent::EErrCode err_code,const string& message)
         : CParent(file, line, prev_exception,
                  (typename CParent::EErrCode) CException::eInvalid, message)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>,
@@ -988,7 +986,7 @@ public: \
     exception_class(const char* file,int line, \
         const CException* prev_exception, \
         EErrCode err_code,const string& message, \
-        extra_type extra_param) throw() \
+        extra_type extra_param) \
         : base_class(file, line, prev_exception, \
             (base_class::EErrCode) CException::eInvalid, \
             (message), extra_param) \
@@ -1003,6 +1001,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/07/04 19:11:23  vakatov
+ * Do not use "throw()" specification after constructors and assignment
+ * operators of exception classes inherited from "std::exception" -- as it
+ * causes ICC 8.0 generated code to abort in Release mode.
+ *
  * Revision 1.54  2004/05/11 15:55:47  gouriano
  * Change GetErrCode method prototype to return TErrCode - to be able to
  * safely cast EErrCode to an eInvalid
