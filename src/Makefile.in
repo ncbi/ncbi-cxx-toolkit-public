@@ -54,7 +54,7 @@ dbindir = $(bindir)/.DEATH-ROW
 dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
 	test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" || \
-	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check $(POTENTIAL_SUB_PROJ) $(EXPENDABLE_SUB_PROJ) Makefile
+	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check $(POTENTIAL_SUB_PROJ) $(EXPENDABLE_SUB_PROJ)
 	@test \! -f "$(apps_to_drop)" || \
 	  while read app; do \
 	    test -f "$(bindir)/$$app" || continue; \
