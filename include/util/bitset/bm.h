@@ -3258,7 +3258,7 @@ public:
         */
         void swap(blocks_manager& bm)
         {
-            bm::word_t*** btmp = blocks_;
+            word_t*** btmp = blocks_;
             blocks_ = bm.blocks_;
             bm.blocks_ = btmp;
          #ifdef BM_DISBALE_BIT_IN_PTR
