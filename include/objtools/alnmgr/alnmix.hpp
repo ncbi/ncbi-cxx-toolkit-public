@@ -57,14 +57,22 @@ public:
 
     // constructor
     CAlnMix(void);
-    CAlnMix(CScope& scope);
+
+    typedef int (*TCalcScoreMethod)(const string& s1,
+                                    const string& s2,
+                                    bool s1_is_prot,
+                                    bool s2_is_prot);
+
+    CAlnMix(CScope& scope,
+            TCalcScoreMethod calc_score = 0);
+                 
 
     // destructor
     ~CAlnMix(void);
 
     enum EAddFlags {
         // Determine score of each aligned segment in the process of mixing
-        // (can only be set in addition to fUseObjMgr)
+        // (only makes sense if scope was provided at construction time)
         fCalcScore            = 0x01,
 
         // Force translation of nucleotide rows
@@ -193,6 +201,7 @@ private:
     bool                        m_ContainsAA;
     bool                        m_ContainsNA;
     size_t                      m_MatchIdx;
+    TCalcScoreMethod            x_CalculateScore;
 };
 
 
@@ -240,7 +249,7 @@ public:
     int                   m_Score;
     int                   m_StrandScore;
     bool                  m_IsAA;
-    int                   m_Width;
+    unsigned              m_Width;
     int                   m_Frame;
     bool                  m_PositiveStrand;
     TStarts               m_Starts;
@@ -345,6 +354,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2005/02/16 21:27:48  todorov
+* Abstracted the CalculateScore method so that it could be delegated to
+* the caller.
+* Fixed a few signed/unsigned comparison warnings.
+*
 * Revision 1.48  2004/11/08 13:36:13  todorov
 * Usage of OM now only depend on whether scope was provided at construction time
 *
