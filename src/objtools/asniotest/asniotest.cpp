@@ -547,6 +547,7 @@ bool GetAsnDataViaHTTP(
     bool okay = false;
 
     // set up registry field to set GET connection method for HTTP
+    REG orig_reg = CORE_GetREG();
     CNcbiRegistry* reg = new CNcbiRegistry;
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
@@ -567,7 +568,7 @@ bool GetAsnDataViaHTTP(
         *err = string("Network connection failed or data is not in expected format; error: ") + e.what();
     }
 
-    CORE_SetREG(NULL);
+    CORE_SetREG(orig_reg);
     return okay;
 }
 
@@ -670,6 +671,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/09/22 18:15:29  lavr
+* GetAsnDataViaHTTP() to save/restore original registry
+*
 * Revision 1.18  2004/09/22 13:27:47  thiessen
 * fix typo in URL
 *
