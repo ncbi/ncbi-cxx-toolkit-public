@@ -244,6 +244,7 @@ private:
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
     : m_AnnotObject_Index(0),
+      m_MappedIndex(0),
       m_ObjectType(eType_null),
       m_Partial(false),
       m_MappedType(CSeq_loc::e_not_set)
@@ -462,6 +463,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/09/03 19:59:00  grichenk
+* Initialize m_MappedIndex to 0
+*
 * Revision 1.49  2003/08/27 21:23:35  vasilche
 * Fixed warning.
 *

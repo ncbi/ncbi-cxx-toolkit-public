@@ -71,6 +71,7 @@ inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object.GetSeq_annot_Info()),
       m_AnnotObject_Index(object.GetSeq_annot_Info().GetAnnotObjectIndex(object)),
+      m_MappedIndex(0),
       m_ObjectType(eType_Seq_annot_Info),
       m_Partial(false),
       m_MappedType(CSeq_loc::e_not_set)
@@ -89,6 +90,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    TSeqPos index)
     : m_Object(&snp_annot),
       m_AnnotObject_Index(index),
+      m_MappedIndex(0),
       m_ObjectType(eType_Seq_annot_SNP_Info),
       m_Partial(false),
       m_MappedType(CSeq_loc::e_not_set)
@@ -478,6 +480,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
       m_Scope(&scope)
 {
     SetResolveNone(); // nothing to resolve
+    SetSortOrder(eSortOrder_None);
     SetLimitSeqEntry(&entry);
     CConstRef<CSeq_entry_Info> entry_info(
         m_Scope->x_GetSeq_entry_Info(entry));
@@ -1075,6 +1078,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/09/03 19:59:01  grichenk
+* Initialize m_MappedIndex to 0
+*
 * Revision 1.83  2003/08/27 14:29:52  vasilche
 * Reduce object allocations in feature iterator.
 *
