@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/01/20 04:42:22  vakatov
+ * Do not #define _DEBUG on NCBI_OS_MSWIN
+ *
  * Revision 1.5  2002/01/10 16:48:06  ivanov
  * Added test s_TEST_CheckPath()
  *
@@ -47,11 +50,16 @@
  * Revision 1.1  2001/09/19 13:08:15  ivanov
  * Initial revision
  *
- *
  * ===========================================================================
  */
 
-#define _DEBUG 1
+#if defined(NDEBUG)
+#  undef  NDEBUG
+#endif 
+
+#if !defined(_DEBUG)  &&  !defined(NCBI_OS_MSWIN)
+#  define _DEBUG
+#endif 
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -61,8 +69,8 @@
 
 USING_NCBI_SCOPE;
 
-#if defined __MACOS__
-#define main testfiles
+#if defined(__MACOS__)
+#  define main testfiles
 extern int testfiles(int, const char *[]);
 #endif
 
@@ -75,7 +83,7 @@ static void s_TEST_SplitPath(void)
 {
     string path, dir, title, ext;
     
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     CFile::SplitPath("c:\\windows\\command\\win.ini", &dir, &title, &ext);
     _VERIFY( dir   == "c:\\windows\\command\\" );
     _VERIFY( title == "win" );
@@ -98,7 +106,7 @@ static void s_TEST_SplitPath(void)
     _VERIFY( f.GetBase() == "file" );
     _VERIFY( f.GetExt()  == ".ext" );
 
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 
     CFile::SplitPath("/usr/lib/any.other.lib", &dir, &title, &ext);
     _VERIFY( dir   == "/usr/lib/" );
@@ -114,7 +122,7 @@ static void s_TEST_SplitPath(void)
     _VERIFY( f.GetBase() == "any.other" );
     _VERIFY( f.GetExt()  == ".lib" );
 
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
 	CFile::SplitPath("Hard Disk:Folder:1984.mov", &dir, &title, &ext);
     _VERIFY( dir  == "Hard Disk:Folder:" );
     _VERIFY( title == "1984" );
@@ -139,7 +147,7 @@ static void s_TEST_CheckPath(void)
 
     // IsAbsolutePath() test
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     _VERIFY( d.IsAbsolutePath("c:\\") );
     _VERIFY( d.IsAbsolutePath("c:\\file") );
     _VERIFY( d.IsAbsolutePath("c:file") );
@@ -149,7 +157,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY(!d.IsAbsolutePath(".\\file") );
     _VERIFY(!d.IsAbsolutePath("..\\file") );
     _VERIFY(!d.IsAbsolutePath("dir\\file") );
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
     _VERIFY( d.IsAbsolutePath("/") );
     _VERIFY( d.IsAbsolutePath("/file") );
     _VERIFY( d.IsAbsolutePath("/dir/dir") );
@@ -157,7 +165,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY(!d.IsAbsolutePath("./file") );
     _VERIFY(!d.IsAbsolutePath("../file") );
     _VERIFY(!d.IsAbsolutePath("dir/file") );
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
     _VERIFY( d.IsAbsolutePath("HD:") );
     _VERIFY( d.IsAbsolutePath("HD:file") );
     _VERIFY(!d.IsAbsolutePath("file") );
@@ -171,7 +179,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY( d.ConvertToOSPath("c:\\file")     == "c:\\file" );
     _VERIFY( d.ConvertToOSPath("/dir/file")    == "/dir/file" );
     _VERIFY( d.ConvertToOSPath("dir:file")     == "dir:file" );
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     _VERIFY( d.ConvertToOSPath("dir")          == "dir" );
     _VERIFY( d.ConvertToOSPath("dir\\file")    == "dir\\file" );
     _VERIFY( d.ConvertToOSPath("dir/file")     == "dir\\file" );
@@ -181,7 +189,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY( d.ConvertToOSPath("./dir/file")   == ".\\dir\\file" );
     _VERIFY( d.ConvertToOSPath("../file")      == "..\\file" );
     _VERIFY( d.ConvertToOSPath("../../file")   == "..\\..\\file" );
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
     _VERIFY( d.ConvertToOSPath("dir")          == "dir" );
     _VERIFY( d.ConvertToOSPath("dir\\file")    == "dir/file" );
     _VERIFY( d.ConvertToOSPath("dir/file")     == "dir/file" );
@@ -190,7 +198,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY( d.ConvertToOSPath(".\\dir\\file") == "./dir/file" );
     _VERIFY( d.ConvertToOSPath("..\\file")     == "../file" );
     _VERIFY( d.ConvertToOSPath("..\\..\\file") == "../../file" );
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
     _VERIFY( d.ConvertToOSPath("dir")          == ":dir" );
     _VERIFY( d.ConvertToOSPath("dir\\file")    == ":dir:file" );
     _VERIFY( d.ConvertToOSPath("dir/file")     == ":dir:file" );
@@ -203,7 +211,7 @@ static void s_TEST_CheckPath(void)
 
     // ConcatPath() test
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     _VERIFY( d.ConcatPath("c:", "file")     == "c:file");
     _VERIFY( d.ConcatPath("dir", "file")    == "dir\\file");
     _VERIFY( d.ConcatPath("dir", "\\file")  == "dir\\file");
@@ -212,7 +220,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY( d.ConcatPath("", "file")       == "file");
     _VERIFY( d.ConcatPath("dir", "")        == "dir\\");
     _VERIFY( d.ConcatPath("", "")           == "");
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
     _VERIFY( d.ConcatPath("dir", "file")    == "dir/file");
     _VERIFY( d.ConcatPath("dir", "/file")   == "dir/file");
     _VERIFY( d.ConcatPath("dir/", "file")   == "dir/file");
@@ -220,7 +228,7 @@ static void s_TEST_CheckPath(void)
     _VERIFY( d.ConcatPath("", "file")       == "file");
     _VERIFY( d.ConcatPath("dir", "")        == "dir/");
     _VERIFY( d.ConcatPath("", "")           == "");
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
     _VERIFY( d.ConcatPath("HD", "dir")      == "HD:dir");
     _VERIFY( d.ConcatPath(":dir", "file")   == ":dir:file");
     _VERIFY( d.ConcatPath("dir:", "file")   == "dir:file");
@@ -337,7 +345,7 @@ static void s_TEST_File(void)
 // Work with directories
 //
 
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 #   define REL ":"
 #   define SEP ":"
 #   define CWD ":"
