@@ -31,8 +31,10 @@
 */
 #include <corelib/ncbistd.hpp>
 
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -48,8 +50,8 @@ CSequenceItem::CSequenceItem
 (TSeqPos from,
  TSeqPos to,
  bool first, 
- CFFContext& ctx) :
-    CFlatItem(ctx),
+ CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_From(from), m_To(to - 1), m_First(first)
 {
     x_GatherInfo(ctx);
@@ -94,27 +96,29 @@ bool CSequenceItem::IsFirst(void) const
 /***************************************************************************/
 
 
-void CSequenceItem::x_GatherInfo(CFFContext& ctx)
+void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    x_SetObject(ctx.GetActiveBioseq());
+    x_SetObject(*ctx.GetHandle().GetCompleteBioseq());
 
-    CSeq_loc loc;
-    CSeq_loc::TInt& interval = loc.SetInt();
-    CRef<CSeq_id> id(new CSeq_id);
-    id->Assign(*ctx.GetPrimaryId());
-
-    interval.SetId(*id);
-    interval.SetFrom(m_From);
-    interval.SetTo(m_To);
-
+    const CSeq_loc& loc = ctx.GetLocation();
+    TSeqPos offset = loc.GetStart(kInvalidSeqPos); 
+    TSeqPos len = sequence::GetLength(loc, &ctx.GetScope());
+    TSeqPos start = m_From + offset;
+    TSeqPos end   = min(m_To + offset, len);
     
-    m_Sequence = ctx.GetHandle().GetSequenceView(
-        loc, 
-        CBioseq_Handle::eViewConstructed);
+    CSeq_loc region;
+    CSeq_loc::TInt& ival = region.SetInt();
+    region.SetId(*ctx.GetPrimaryId());
+    ival.SetFrom(start);
+    ival.SetTo(end);
+    
+    m_Sequence = 
+        ctx.GetHandle().GetSequenceView(region, CBioseq_Handle::eViewConstructed);
 
     CSeqVector::TCoding code = CSeq_data::e_Iupacna;
     if ( ctx.IsProt() ) {
-        code = ctx.IsModeRelease() ? CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
+        code = ctx.Config().IsModeRelease() ?
+            CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
     }
     m_Sequence.SetCoding(code);
 }
@@ -128,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:56:17  shomrat
+* Support partial region
+*
 * Revision 1.3  2004/02/11 22:56:37  shomrat
 * use IsModeRelease method
 *
