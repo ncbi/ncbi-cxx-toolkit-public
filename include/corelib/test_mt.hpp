@@ -28,10 +28,12 @@
  *
  * Author:  Aleksey Grichenko
  *
- * File Description:
- *   Wrapper for testing modules in MT environment
  *
  */
+
+/// @file test_mt.hpp
+///   Wrapper for testing modules in MT environment
+
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -52,10 +54,17 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 // Globals
 
-const unsigned int   k_NumThreadsMin = 1;
-const unsigned int   k_NumThreadsMax = 500;
-const int            k_SpawnByMin    = 1;
-const int            k_SpawnByMax    = 100;
+/// Minimum number of threads.
+const unsigned int k_NumThreadsMin = 1;
+
+/// Maximum number of threads.
+const unsigned int k_NumThreadsMax = 500;
+
+/// Minimum number of spawn by threads.
+const int k_SpawnByMin = 1;
+
+/// Maximum number of spawn by threads.
+const int k_SpawnByMax = 100;
 
 extern unsigned int  s_NumThreads;
 extern int           s_SpawnBy;
@@ -67,37 +76,82 @@ extern int           s_SpawnBy;
 //    Core application class for MT-tests
 //
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CThreadedApp --
+///
+/// Basic NCBI threaded application class.
+///
+/// Defines the high level behavior of an NCBI threaded application.
+
 class NCBI_XNCBI_EXPORT CThreadedApp : public CNcbiApplication
 {
 public:
-    // Override constructor to initialize the application
+    /// Constructor.
+    ///
+    /// Override constructor to initialize the application.
     CThreadedApp(void);
+
+    /// Destructor.
     ~CThreadedApp(void);
 
     // Functions to be called by the test thread's constructor, Main(),
     // OnExit() and destructor. All methods should return "true" on
     // success, "false" on failure.
+
+    /// Initialize the thread.
+    ///
+    /// Called from thread's constructor.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool Thread_Init(int idx);
+
+    /// Run the thread.
+    ///
+    /// Called from thread's Main() method.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool Thread_Run(int idx);
+
+    /// Exit the thread.
+    ///
+    /// Called from thread's OnExit() method.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool Thread_Exit(int idx);
+
+    /// Destroy the thread.
+    ///
+    /// Called from thread's destroy() method.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool Thread_Destroy(int idx);
 
 protected:
 
-    // Override this method to add your custom arguments
-    // Return "true" on success.
+    /// Override this method to add your custom arguments.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool TestApp_Args( CArgDescriptions& args);
 
-    // Override this method to execute code before running threads.
-    // Return "true" on success.
+    /// Override this method to execute code before running threads.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool TestApp_Init(void);
 
-    // Override this method to execute code after all threads termination.
-    // Return "true" on success.
+    /// Override this method to execute code after all threads terminate.
+    /// @return
+    ///   TRUE on success, and FALSE on failure.
     virtual bool TestApp_Exit(void);
 
 private:
+
+    /// Initialize the thread.
     void Init(void);
+
+    /// Run the thread.
     int Run(void);
 };
 
@@ -111,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/08 12:18:13  siyan
+ * Documentation changes
+ *
  * Revision 1.5  2003/05/08 20:50:08  grichenk
  * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
  *
