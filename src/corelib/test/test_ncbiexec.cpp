@@ -83,8 +83,8 @@ int CTest::Run(void)
     const char* my_env[] =   // Environment for Spawn*E
     {
         "THIS=environment will be",
-        "PASSED=to new process by",
-        "the EXEC=functions",
+        "PASSED=to new process by the",
+        "EXEC=functions",
         "TEST_NCBI_EXEC=yes",
         0
     };
@@ -173,11 +173,15 @@ int main(int argc, const char* argv[])
 {
      // Test exec run
     if ( argc > 1) {
-        cout << "Exec: " << argv[1] << endl;
+        cout << endl << "Exec: " << argv[1] << endl;
         // Check environment
         if (strstr(argv[1],"E_e")) {
+#if defined(NCBI_OS_UNIX)
+           CExec::System("env");
+#endif
            char* ptr = getenv("TEST_NCBI_EXEC");
            if (!ptr) {
+               cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
                exit(1);
            }
         }
@@ -191,6 +195,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/07/15 15:20:37  ivanov
+ * Added extended error dignostic
+ *
  * Revision 6.3  2002/06/29 06:45:50  vakatov
  * Get rid of some compilation warnings
  *
