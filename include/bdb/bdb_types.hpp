@@ -47,6 +47,7 @@ extern "C" {
     struct __db_dbt; typedef struct __db_dbt DBT;
     struct __db;     typedef struct __db     DB;
     struct __dbc;    typedef struct __dbc    DBC;
+    struct __db_env; typedef struct __db_env DB_ENV;
 
     typedef int (*BDB_CompareFunction)(DB*, const DBT*, const DBT*);
 
@@ -1278,6 +1279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/08/26 18:50:26  kuznets
+ * Added forward declararion of DB_ENV structure
+ *
  * Revision 1.15  2003/07/31 16:39:32  dicuccio
  * Minor corrections: remove EXPORT specifier from pure inline classes; added
  * virtual dtor to abstract classes
