@@ -25,10 +25,7 @@ LIB = blastxx
 SRC = BlastAux BlastSeqalign BlastSetup BlastOption Bl2Seq
 # OBJ =
 
-#LIBS = $(LIBDIR)/ncbithr.o $(LOCAL_LDFLAGS) -lncbitool -lncbiobj -lncbi \
-			-lm $(NCBI_OTHERLIBS_MT)
-
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) $(LOCAL_CPPFLAGS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(LOCAL_CPPFLAGS)
 CFLAGS   = $(ORIG_CFLAGS) $(LOCAL_CPPFLAGS)
 
 # CXXFLAGS = $(ORIG_CXXFLAGS)

@@ -55,11 +55,11 @@ BEGIN_NCBI_SCOPE
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
  * @return Linked list of BlastMask structures
  */
-BlastMaskPtr
+BlastMask*
 BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index);
 
 CRef<CSeq_loc>
-BLASTBlastMask2SeqLoc(BlastMaskPtr mask);
+BLASTBlastMask2SeqLoc(BlastMask* mask);
 
 
 
@@ -68,56 +68,56 @@ BLASTBlastMask2SeqLoc(BlastMaskPtr mask);
  */
 
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
-class C##struct_name : public CDebugDumpable \
+class C##struct_name##Ptr : public CDebugDumpable \
 { \
 public: \
-    C##struct_name() : m_Ptr(NULL) {} \
-    C##struct_name(struct_name p) : m_Ptr(p) {} \
-    void Reset(struct_name p) { if (m_Ptr) { free_func(m_Ptr); } m_Ptr = p; } \
-    ~C##struct_name() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
-    operator struct_name() { return m_Ptr; } \
-    operator struct_name() const { return m_Ptr; } \
-    struct_name operator->() { return m_Ptr; } \
-    struct_name operator->() const { return m_Ptr; } \
-    struct_name* operator&() { return &m_Ptr; } \
+    C##struct_name##Ptr() : m_Ptr(NULL) {} \
+    C##struct_name##Ptr(struct_name* p) : m_Ptr(p) {} \
+    void Reset(struct_name* p) { if (m_Ptr) { free_func(m_Ptr); } m_Ptr = p; } \
+    ~C##struct_name##Ptr() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
+    operator struct_name *() { return m_Ptr; } \
+    operator struct_name *() const { return m_Ptr; } \
+    struct_name* operator->() { return m_Ptr; } \
+    struct_name* operator->() const { return m_Ptr; } \
+    struct_name** operator&() { return &m_Ptr; } \
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const; \
 private: \
-    struct_name m_Ptr; \
+    struct_name* m_Ptr; \
 }
 
-DECLARE_AUTO_CLASS_WRAPPER(BLAST_SequenceBlkPtr, BlastSequenceBlkFree);
+DECLARE_AUTO_CLASS_WRAPPER(BLAST_SequenceBlk, BlastSequenceBlkFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BlastQueryInfoPtr, BlastQueryInfoFree);
-DECLARE_AUTO_CLASS_WRAPPER(QuerySetUpOptionsPtr, BlastQuerySetUpOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastQueryInfo, BlastQueryInfoFree);
+DECLARE_AUTO_CLASS_WRAPPER(QuerySetUpOptions, BlastQuerySetUpOptionsFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(LookupTableOptionsPtr, LookupTableOptionsFree);
-DECLARE_AUTO_CLASS_WRAPPER(LookupTableWrapPtr, BlastLookupTableDestruct);
+DECLARE_AUTO_CLASS_WRAPPER(LookupTableOptions, LookupTableOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(LookupTableWrap, BlastLookupTableDestruct);
 
-DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordOptionsPtr,
+DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordOptions,
         BlastInitialWordOptionsFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordParametersPtr,
+DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordParameters,
         BlastInitialWordParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BLAST_ExtendWordPtr, BlastExtendWordFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionOptionsPtr, BlastExtensionOptionsFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionParametersPtr,
+DECLARE_AUTO_CLASS_WRAPPER(BLAST_ExtendWord, BlastExtendWordFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionOptions, BlastExtensionOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionParameters,
         BlastExtensionParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingOptionsPtr, BlastHitSavingOptionsFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParametersPtr,
+DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingOptions, BlastHitSavingOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParameters,
         BlastHitSavingParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptionsPtr, sfree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptionsPtr, sfree);
+DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptions, sfree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, sfree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BLAST_ScoreBlkPtr, BLAST_ScoreBlkDestruct);
-DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptionsPtr, BlastScoringOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BLAST_ScoreBlk, BLAST_ScoreBlkDestruct);
+DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptions, BlastScoringOptionsFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptionsPtr,
+DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
         BlastEffectiveLengthsOptionsFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStructPtr, BLAST_GapAlignStructFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastResultsPtr, BLAST_ResultsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastResults, BLAST_ResultsFree);
 
 END_NCBI_SCOPE
 
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.3  2003/07/30 15:00:01  camacho
 * Do not use Malloc/MemNew/MemFree
 *

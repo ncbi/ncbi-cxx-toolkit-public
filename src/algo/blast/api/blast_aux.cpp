@@ -241,13 +241,13 @@ CBlastDatabaseOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
 
 }
 
-BlastMaskPtr
+BlastMask*
 x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
 {
     _ASSERT(sl.IsInt() || sl.IsPacked_int());
 
-    BlastSeqLocPtr bsl = NULL, curr = NULL, tail = NULL;
-    BlastMaskPtr mask = NULL;
+    BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
+    BlastMask* mask = NULL;
 
     switch (sl.Which()) {
 
@@ -271,7 +271,7 @@ x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
         break;
     }
 
-    mask = (BlastMaskPtr) calloc(1, sizeof(BlastMask));
+    mask = (BlastMask*) calloc(1, sizeof(BlastMask));
     mask->index = index;
     mask->loc_list = (ListNode *) bsl;
 
@@ -280,7 +280,7 @@ x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
 
 //TODO
 CRef<CSeq_loc>
-BLASTBlastMask2SeqLoc(BlastMaskPtr mask)
+BLASTBlastMask2SeqLoc(BlastMask* mask)
 {
     CRef<CSeq_loc> retval;
 

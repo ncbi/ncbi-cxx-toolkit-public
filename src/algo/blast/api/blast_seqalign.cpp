@@ -69,7 +69,7 @@ x_GetCurrPos(int& pos, int pos2advance)
 }
 
 static TSeqPos
-x_GetAlignmentStart(int& curr_pos, const GapEditScriptPtr esp, 
+x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp, 
         ENa_strand strand, bool translate, int length, int original_length, 
         short frame)
 {
@@ -100,14 +100,14 @@ x_GetAlignmentStart(int& curr_pos, const GapEditScriptPtr esp,
 /// Note that even though the edit_block is passed in, data for seqalign is
 /// collected from the esp argument for nsegs segments
 static void
-x_CollectSeqAlignData(const GapEditBlockPtr edit_block, 
-        const GapEditScriptPtr esp_head, unsigned int nsegs,
+x_CollectSeqAlignData(const GapEditBlock* edit_block, 
+        const GapEditScript* esp_head, unsigned int nsegs,
         vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
         vector<ENa_strand>& strands)
 {
     _ASSERT(edit_block != NULL);
 
-    GapEditScriptPtr esp = esp_head;   // start of list of esp's
+    GapEditScript* esp = const_cast<GapEditScript*>(esp_head);
     ENa_strand m_strand, s_strand;      // strands of alignment
     TSignedSeqPos m_start, s_start;     // running starts of alignment
     int start1 = edit_block->start1;    // start of alignment on master sequence
@@ -305,10 +305,10 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
 /// Assumes GAPALIGN_DECLINE regions are to the right of GAPALIGN_{INS,DEL}.
 /// This function swaps them (GAPALIGN_DECLINE ends to the right of the gap)
 static void 
-x_CorrectUASequence(GapEditBlockPtr edit_block)
+x_CorrectUASequence(GapEditBlock* edit_block)
 {
-    GapEditScriptPtr curr = NULL, curr_last = NULL;
-    GapEditScriptPtr indel_prev = NULL; // pointer to node before the last
+    GapEditScript* curr = NULL,* curr_last = NULL;
+    GapEditScript* indel_prev = NULL; // pointer to node before the last
             // insertion or deletion followed immediately by GAPALIGN_DECLINE
     bool last_indel = false;    // last operation was an insertion or deletion
 
@@ -367,7 +367,7 @@ x_CreateSeqAlign(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
 }
 
 static CRef<CSeq_align>
-x_GapEditBlock2SeqAlign(const GapEditBlockPtr edit_block, 
+x_GapEditBlock2SeqAlign(GapEditBlock* edit_block, 
         CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
 {
     _ASSERT(edit_block != NULL);
@@ -378,7 +378,7 @@ x_GapEditBlock2SeqAlign(const GapEditBlockPtr edit_block,
     bool is_disc_align = false;
     int nsegs = 0;      // number of segments in edit_block->esp
 
-    for (GapEditScriptPtr t = edit_block->esp; t; t = t->next, nsegs++) {
+    for (GapEditScript* t = edit_block->esp; t; t = t->next, nsegs++) {
         if (t->op_type == GAPALIGN_DECLINE)
             is_disc_align = true;
     }
@@ -396,7 +396,7 @@ x_GapEditBlock2SeqAlign(const GapEditBlockPtr edit_block,
         seqalign->SetDim(2);         // BLAST only creates pairwise alignments
 
         bool skip_region;
-        GapEditScriptPtr curr = NULL, curr_head = edit_block->esp;
+        GapEditScript* curr = NULL,* curr_head = edit_block->esp;
 
         while (curr_head) {
             skip_region = false;
@@ -468,12 +468,12 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 
 /// C++ version of GetScoreSetFromBlastHsp (tools/blastutl.c)
 static void
-x_BuildScoreList(const BlastHSPPtr hsp, const BLAST_ScoreBlkPtr sbp, const
-        BlastScoringOptionsPtr score_options, CSeq_align::TScore& scores,
+x_BuildScoreList(const BlastHSP* hsp, const BLAST_ScoreBlk* sbp, const
+        BlastScoringOptions* score_options, CSeq_align::TScore& scores,
         CBlastOption::EProgram program)
 {
     string score_type;
-    BLAST_KarlinBlkPtr kbp = NULL;
+    BLAST_KarlinBlk* kbp = NULL;
 
     if (!hsp)
         return;
@@ -522,9 +522,9 @@ x_BuildScoreList(const BlastHSPPtr hsp, const BLAST_ScoreBlkPtr sbp, const
 
 
 static void
-x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSPPtr hsp, 
-        const BLAST_ScoreBlkPtr sbp, CBlastOption::EProgram program,
-        const BlastScoringOptionsPtr score_options)
+x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp, 
+        const BLAST_ScoreBlk* sbp, CBlastOption::EProgram program,
+        const BlastScoringOptions* score_options)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
@@ -550,10 +550,10 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSPPtr hsp,
 
 // This is called for each query in the BLAST search
 static CRef<CSeq_align_set>
-x_ProcessBlastHitList(BlastHitListPtr hit_list, 
+x_ProcessBlastHitList(BlastHitList* hit_list, 
         CConstRef<CSeq_id>& query_seqid,
-        const BlastSeqSrcPtr bssp, CConstRef<CSeq_id>& subject_id, 
-        const BlastScoringOptionsPtr score_options, const BLAST_ScoreBlkPtr sbp,
+        const BlastSeqSrc* bssp, CConstRef<CSeq_id>& subject_id, 
+        const BlastScoringOptions* score_options, const BLAST_ScoreBlk* sbp,
         CBlastOption::EProgram program)
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set()); 
@@ -562,7 +562,7 @@ x_ProcessBlastHitList(BlastHitListPtr hit_list,
     // hits in the database or hits to a single sequence in the case of
     // Blast2Sequences)
     for (int i = 0; i < hit_list->hsplist_count; i++) {
-        BlastHSPListPtr hsp_list = hit_list->hsplist_array[i];
+        BlastHSPList* hsp_list = hit_list->hsplist_array[i];
         CConstRef<CSeq_id> curr_subject;
 
         if (!hsp_list)
@@ -572,14 +572,14 @@ x_ProcessBlastHitList(BlastHitListPtr hit_list,
             char* id = BLASTSeqSrcGetSeqIdStr(bssp, (void*) &hsp_list->oid);
             string seqid(id);
             curr_subject.Reset(new CSeq_id(seqid));
-            free(id);
+            sfree(id);
         } else {
             curr_subject.Reset(subject_id);
         }
 
         // Create a seqalign for each HSP in a hsp array
         for (int j = 0; j < hsp_list->hspcnt; j++) {
-            BlastHSPPtr hsp = hsp_list->hsp_array[j];
+            BlastHSP* hsp = hsp_list->hsp_array[j];
             CRef<CSeq_align> seqalign = 
                 x_GapEditBlock2SeqAlign(hsp->gap_info, query_seqid,
                         curr_subject);
@@ -598,17 +598,17 @@ CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
         CBlastOption::EProgram prog,
         vector< CConstRef<CSeq_id> >& query_seqids, 
-        const BlastSeqSrcPtr bssp,
+        const BlastSeqSrc* bssp,
         CConstRef<CSeq_id>& subject_seqid,
-        const BlastScoringOptionsPtr score_options, 
-        const BLAST_ScoreBlkPtr sbp)
+        const BlastScoringOptions* score_options, 
+        const BLAST_ScoreBlk* sbp)
 {
     _ASSERT(results->num_queries == (int)query_seqids.size());
     CRef<CSeq_align_set> retval(new CSeq_align_set());
 
     // Process each query's hit list
     for (int i = 0; i < results->num_queries; i++) {
-        BlastHitListPtr hit_list = results->hitlist_array[i];
+        BlastHitList* hit_list = results->hitlist_array[i];
 
         if (!hit_list)
             continue;
@@ -635,6 +635,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.5  2003/07/25 22:12:46  camacho
 * Use BLAST Sequence Source to retrieve sequence identifier
 *

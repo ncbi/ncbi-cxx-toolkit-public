@@ -472,7 +472,7 @@ CBlastOption::SetStrandOption(ENa_strand s)
 
 #if 0
 vector< CConstRef<CSeq_loc> >
-x_BlastMask2CSeqLoc(BlastMaskPtr mask, CBlastOption::EProgram program)
+x_BlastMask2CSeqLoc(BlastMask* mask, CBlastOption::EProgram program)
 {
     abort();
 }
@@ -489,10 +489,10 @@ CBlastOption::GetLCaseMask() const
 inline void 
 CBlastOption::SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector)
 {
-    BlastMaskPtr mask = NULL, curr = NULL, tail = NULL;;
+    BlastMask* mask = NULL,* curr = NULL,* tail = NULL;
     int index = 0;
 
-    // Convert from CSeq_loc's to BlastMaskPtr's
+    // Convert from CSeq_loc's to BlastMask*'s
     // index corresponds to the query index in the case of query concatenation
     ITERATE(vector< CConstRef<CSeq_loc> >, itr, sl_vector) {
 
@@ -975,6 +975,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.7  2003/07/30 19:56:19  coulouri
 * remove matrixname
 *

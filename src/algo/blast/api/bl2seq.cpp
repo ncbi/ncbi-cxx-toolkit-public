@@ -119,6 +119,7 @@ void
 CBl2Seq::x_ResetSubjectDs()
 {
     // Clean up structures and results from any previous search
+    // TODO: This should change if structs are used
     for (unsigned int i = 0; i < mi_vSubjects.size(); i++) {
         if (mi_vSubjects[i])
             mi_vSubjects[i] = BlastSequenceBlkFree(mi_vSubjects[i]);
@@ -153,7 +154,7 @@ CBl2Seq::x_SetupQueryInfo()
     TSeqPos length = sequence::GetLength(*m_Query, m_Scope);
     _ASSERT(length != numeric_limits<TSeqPos>::max());
 
-    mi_QueryInfo.Reset((BlastQueryInfoPtr) calloc(1, sizeof(BlastQueryInfo)));
+    mi_QueryInfo.Reset((BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)));
     _ASSERT(mi_QueryInfo.operator->() != NULL);
 
     if (m_Program == CBlastOption::eBlastn) {
@@ -252,21 +253,19 @@ CBl2Seq::x_SetupQuery()
 {
     Uint1* buf = NULL;
     int buflen = 0;
-    bool query_is_na, query_is_translated;
-    Uint1 encoding;
     ENa_strand strand = m_Options->GetStrandOption();
 
     x_ResetQueryDs();
 
-    query_is_na = (m_Program == CBlastOption::eBlastn ||
-                   m_Program == CBlastOption::eBlastx ||
-                   m_Program == CBlastOption::eTblastx);
+    bool query_is_na = (m_Program == CBlastOption::eBlastn ||
+                       m_Program == CBlastOption::eBlastx ||
+                       m_Program == CBlastOption::eTblastx);
 
-    query_is_translated = (m_Program == CBlastOption::eBlastx ||
-                           m_Program == CBlastOption::eTblastx);
+    bool query_is_translated = (m_Program == CBlastOption::eBlastx ||
+                               m_Program == CBlastOption::eTblastx);
 
-    encoding = (m_Program == CBlastOption::eBlastn) ?  BLASTNA_ENCODING : 
-                    (query_is_na ? NCBI4NA_ENCODING : BLASTP_ENCODING);
+    Uint1 encoding = (m_Program == CBlastOption::eBlastn) ?  BLASTNA_ENCODING : 
+                        (query_is_na ? NCBI4NA_ENCODING : BLASTP_ENCODING);
 
     x_SetupQueryInfo();
 
@@ -276,7 +275,7 @@ CBl2Seq::x_SetupQuery()
         TSeqPos orig_length = sequence::GetLength(*m_Query, m_Scope);
         TSeqPos trans_len = 
             mi_QueryInfo->context_offsets[mi_QueryInfo->last_context] + 1;
-        Uint1Ptr gc = BLASTFindGeneticCode(m_Options->GetQueryGeneticCode());
+        Uint1* gc = BLASTFindGeneticCode(m_Options->GetQueryGeneticCode());
 
         if ( !(translation = (Uint1*) malloc(sizeof(Uint1)*trans_len)))
             NCBI_THROW(CBlastException, eOutOfMemory, "Translation buffer");
@@ -314,8 +313,8 @@ CBl2Seq::x_SetupQuery()
 
     }
 
-    BlastMaskPtr filter_mask = NULL;
-    Blast_MessagePtr blmsg = NULL;
+    BlastMask* filter_mask = NULL;
+    Blast_Message* blmsg = NULL;
     short st;
 
     st = BLAST_MainSetUp(m_Program, m_Options->GetQueryOpts(),
@@ -329,7 +328,7 @@ CBl2Seq::x_SetupQuery()
         NCBI_THROW(CBlastException, eInternal, msg.c_str());
     }
 
-    // Convert the BlastMaskPtr into a CSeq_loc
+    // Convert the BlastMask* into a CSeq_loc
     mi_FilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
 }
 
@@ -356,7 +355,7 @@ CBl2Seq::x_SetupSubjects()
 
         Uint1* buf = NULL;  // stores compressed sequence
         int buflen = 0;     // length of the buffer above
-        BLAST_SequenceBlkPtr subj = (BLAST_SequenceBlkPtr) 
+        BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
                 calloc(1, sizeof(BLAST_SequenceBlk));
 
         buf = BLASTGetSequence(**itr, encoding, buflen, m_Scope, strand, false);
@@ -409,10 +408,11 @@ CBl2Seq::SetupSearch()
 void 
 CBl2Seq::ScanDB()
 {
-    ITERATE(vector<BLAST_SequenceBlkPtr>, itr, mi_vSubjects) {
+    ITERATE(vector<BLAST_SequenceBlk*>, itr, mi_vSubjects) {
 
-        BlastResultsPtr result = NULL;
-        BlastReturnStat return_stats = { 0 };
+        BlastResults* result = NULL;
+        BlastReturnStat return_stats;
+        memset((void*) &return_stats, 0, sizeof(return_stats));
 
         BLAST_ResultsInit(mi_QueryInfo->num_queries, &result);
 
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.8  2003/07/30 19:58:02  coulouri
 * use ListNode
 *

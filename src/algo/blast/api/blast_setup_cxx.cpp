@@ -97,7 +97,7 @@ Uint1*
 BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         ENa_strand strand, bool add_nucl_sentinel)
 {
-    Uint1 *buf, *buf_var;       // buffers to write sequence
+    Uint1* buf,* buf_var;       // buffers to write sequence
     TSeqPos buflen;             // length of buffer allocated
     TSeqPos i;                  // loop index of original sequence
     Uint1 sentinel;             // sentinel byte
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.5  2003/07/30 15:00:01  camacho
 * Do not use Malloc/MemNew/MemFree
 *

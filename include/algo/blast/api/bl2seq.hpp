@@ -118,12 +118,12 @@ private:
     CBLAST_SequenceBlkPtr               mi_Query;
     CBlastQueryInfoPtr                  mi_QueryInfo;
     /// Vector of sequence blk structures, one per subject
-    vector<BLAST_SequenceBlkPtr>        mi_vSubjects;      
+    vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures
     unsigned int                        mi_MaxSubjLength;
 
-    BLAST_ScoreBlkPtr                   mi_Sbp;
-    LookupTableWrapPtr                  mi_LookupTable;
-    ListNode *                          mi_LookupSegments;
+    BLAST_ScoreBlk*                     mi_Sbp;
+    LookupTableWrap*                    mi_LookupTable;
+    ListNode*                           mi_LookupSegments;
 
     CBlastInitialWordParametersPtr      mi_InitWordParams;
     CBlastHitSavingParametersPtr        mi_HitSavingParams;
@@ -133,7 +133,7 @@ private:
     CBlastDatabaseOptionsPtr            mi_DbOptions;
 
     /// Vector of result structures, one per subject
-    vector<BlastResultsPtr>             mi_vResults;
+    vector<BlastResults*>               mi_vResults;//should use structs?
     /// Vector of statistical return structures, one per subject
     vector<BlastReturnStat>             mi_vReturnStats;
 
@@ -219,6 +219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.4  2003/07/30 19:58:02  coulouri
 * use ListNode
 *

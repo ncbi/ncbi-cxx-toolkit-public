@@ -38,12 +38,12 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 
+// Blast++ includes
+#include <BlastOption.hpp>
+
 // NewBlast includes
 #include <blast_hits.h>
 #include <gapinfo.h>
-
-// Blast++ includes
-#include <BlastOption.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -68,15 +68,18 @@ CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
         CBlastOption::EProgram prog,
         vector< CConstRef<CSeq_id> >& query_seqids, 
-        const BlastSeqSrcPtr bssp, 
+        const BlastSeqSrc* bssp, 
         CConstRef<CSeq_id>& subject_seqid,
-        const BlastScoringOptionsPtr score_options, 
-        const BLAST_ScoreBlkPtr sbp);
+        const BlastScoringOptions* score_options, 
+        const BLAST_ScoreBlk* sbp);
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/31 19:45:33  camacho
+* Eliminate Ptr notation
+*
 * Revision 1.3  2003/07/25 22:12:46  camacho
 * Use BLAST Sequence Source to retrieve sequence identifier
 *
