@@ -36,6 +36,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 #include <bdb/bdb_cursor.hpp>
 
@@ -378,18 +379,40 @@ int CLDS_Object::SaveObject(int file_id,
                         continue;
 
                     const CSeq_align::TSegs& segs = (*it)->GetSegs();
-                    const CSeq_align_Base::C_Segs::TStd& std_list =
-                                                segs.GetStd();
-                    ITERATE(CSeq_align_Base::C_Segs::TStd, it2, std_list) {
-                        const CRef<CStd_seg>& seg = *it2;
-                        const CStd_seg::TIds& ids = seg->GetIds();
+                    switch (segs.Which())
+                    {
+                    case CSeq_align::C_Segs::e_Std:
+                        {
+                        const CSeq_align_Base::C_Segs::TStd& std_list =
+                                                    segs.GetStd();
+                        ITERATE(CSeq_align_Base::C_Segs::TStd, it2, std_list) {
+                            const CRef<CStd_seg>& seg = *it2;
+                            const CStd_seg::TIds& ids = seg->GetIds();
 
-                        ITERATE(CStd_seg::TIds, it3, ids) {
-                            ref_seq_ids.insert((*it3)->AsFastaString());
+                            ITERATE(CStd_seg::TIds, it3, ids) {
+                                ref_seq_ids.insert((*it3)->AsFastaString());
+
+                            } // ITERATE
 
                         } // ITERATE
+                        }
+                        break;
+                    case CSeq_align::C_Segs::e_Denseg:
+                        {
+                        const CSeq_align_Base::C_Segs::TDenseg& denseg =
+                                                        segs.GetDenseg();
+                        const CDense_seg::TIds& ids = denseg.GetIds();
 
-                    } // ITERATE
+                        ITERATE(CDense_seg::TIds, it3, ids) {
+                            ref_seq_ids.insert((*it3)->AsFastaString());
+                        } // ITERATE
+                        
+                        }
+                        break;
+                    case CSeq_align::C_Segs::e_Packed:
+                    case CSeq_align::C_Segs::e_Disc:
+                        break;
+                    }
 
                 } // ITERATE
             }
@@ -511,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/07/03 19:23:37  kuznets
+ * Added recognition of denseg alignments.
+ *
  * Revision 1.10  2003/07/02 12:07:42  dicuccio
  * Fix for implicit conversion/assignment in gcc
  *
