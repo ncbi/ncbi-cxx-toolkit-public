@@ -43,6 +43,7 @@
 #include <bdb/bdb_trans.hpp>
 
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 #include <time.h>
 
 #include <util/cache/icache_cf.hpp>
@@ -57,7 +58,6 @@ DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 
 static const unsigned int s_WriterBufferSize = 256 * 1024;
-static const unsigned int s_CheckPointInterval = 50 * (1024 * 1024);
 
 		
 static void s_MakeOverflowFileName(string& buf,
@@ -374,7 +374,7 @@ public:
 
         trans.Commit();
 
-        m_Cache.x_PerformCheckPointNoLock(m_BytesInBuffer);
+        m_Cache.x_PerformCheckPointNoLock(flushed_bytes);
 
         return eRW_Success;
     }
@@ -480,7 +480,8 @@ CBDB_Cache::CBDB_Cache()
   m_PurgeCount(0),
   m_PurgeNowRunning(false),
   m_RunPurgeThread(false),
-  m_PurgeThreadDelay(10)
+  m_PurgeThreadDelay(10),
+  m_CheckPointInterval(24 * (1024 * 1024))
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -765,11 +766,6 @@ void CBDB_Cache::Close()
 {
     StopPurgeThread();
 
-    if (m_CacheAttrDB) {
-        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-        x_SaveAttrStorage();
-    }
-
     delete m_PidGuard;    m_PidGuard = 0;
     delete m_CacheDB;     m_CacheDB = 0;
     delete m_CacheAttrDB; m_CacheAttrDB = 0;
@@ -952,7 +948,6 @@ void CBDB_Cache::Store(const string&  key,
     // Update cache element's attributes
     //
 
-    //CTime time_stamp(CTime::eCurrent);
     time_t curr = time(0);
 
     m_CacheAttrDB->key = key;
@@ -972,14 +967,6 @@ void CBDB_Cache::Store(const string&  key,
             trans.Commit();
         }
 	}
-/*
-    if (m_MemAttr.IsActive()) {
-        const string& sk = 
-            (m_TimeStampFlag & fTrackSubKey) ? subkey : kEmptyStr;
-
-        m_MemAttr.Remove(CacheKey(key, version, sk));
-    }
-*/
 
     if (overflow == 0) { // inline BLOB
         x_PerformCheckPointNoLock(size);
@@ -1228,21 +1215,6 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     }
     blob_descr->blob_size = m_CacheDB->LobSize();
 
-    // trying to read the BLOB into the user's buffer
-/*
-    if (blob_descr->buf  &&
-        blob_descr->blob_size < blob_descr->buf_size) {
-    
-        ret = m_CacheDB->GetData(blob_descr->buf, blob_descr->blob_size);
-        if (ret != eBDB_Ok) {
-            blob_descr->blob_size = 0;
-            return;
-        }
-        if ( m_TimeStampFlag & fTimeStampOnRead ) {
-            x_UpdateReadAccessTime(key, version, subkey);
-        }
-    }
-*/
     // read the BLOB into a custom in-memory buffer
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     blob_descr->reader = 
@@ -1374,8 +1346,6 @@ void CBDB_Cache::Remove(const string& key)
     }
 
     trans.Commit();
-    //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
-
 }
 
 void CBDB_Cache::Remove(const string&    key,
@@ -1419,7 +1389,6 @@ void CBDB_Cache::Remove(const string&    key,
     }
 
 	trans.Commit();
-    //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 }
 
 
@@ -1429,15 +1398,6 @@ time_t CBDB_Cache::GetAccessTime(const string&  key,
                                  const string&  subkey)
 {
     _ASSERT(m_CacheAttrDB);
-/*
-    if (m_MemAttr.IsActive()) {
-        int access_time = 
-            m_MemAttr.GetAccessTime(CacheKey(key, version, subkey));
-        if (access_time) {
-            return access_time;
-        }
-    }
-*/
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     m_CacheAttrDB->key = key;
@@ -1524,7 +1484,6 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     }}
 
 
-    unsigned delay = 0;
     if (IsReadOnly()) {
         return;
     }
@@ -1535,6 +1494,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         return;
     }
 
+    unsigned delay = 0;
+    unsigned bytes_written = 0;
     vector<SCacheDescr> cache_entries;
     cache_entries.reserve(1000);
 
@@ -1589,15 +1550,19 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                 m_PurgeStop = false;
                 return;
             }
-            if (m_BytesWritten > s_CheckPointInterval) {
-                m_Env->TransactionCheckpoint();
-                m_BytesWritten = 0;
-            }
-
+            bytes_written = m_BytesWritten;
         }}
 
-        if (delay) {
-            SleepMilliSec(delay);
+        if (bytes_written > m_CheckPointInterval) {
+            m_Env->TransactionCheckpoint();
+            {{
+            CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+            m_BytesWritten = 0;
+            }}
+        } else {
+            if (delay) {
+                SleepMilliSec(delay);
+            }
         }
 
 
@@ -1645,11 +1610,9 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
     } // for i
 
-    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
     ++m_PurgeCount;
     if (m_CleanLogOnPurge) {
         if ((m_PurgeCount % m_CleanLogOnPurge) == 0) {
-            m_Env->TransactionCheckpoint();
             m_Env->CleanLog();
         }
     }
@@ -1811,14 +1774,17 @@ void CBDB_Cache::Verify(const char*  cache_path,
 void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
 {
     m_BytesWritten += bytes_written;
+
     // if purge is running (in the background) it works as a checkpoint-er
     // so we don't need to call TransactionCheckpoint
-    if ((m_PurgeNowRunning == false) && 
-         (m_BytesWritten > s_CheckPointInterval)) {
+
+    if ((m_RunPurgeThread == false) && 
+         (m_BytesWritten > m_CheckPointInterval)) {
 
         m_Env->TransactionCheckpoint();
         m_BytesWritten = 0;
     }
+
 }
 
 bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
@@ -1860,8 +1826,7 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
                                          int            version,
                                          const string&  subkey)
 {
-    //CTime time_stamp(CTime::eCurrent);
-    time_t curr = time(0); // (int)time_stamp.GetTimeT();
+    time_t curr = time(0);
     return x_CheckTimestampExpired(key, version, subkey, curr);
 }
 
@@ -1899,8 +1864,7 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
     if (IsReadOnly()) {
         return;
     }
-    //CTime time_stamp(CTime::eCurrent);
-    time_t curr = time(0); // time_stamp.GetTimeT()
+    time_t curr = time(0);
     x_UpdateAccessTime_NonTrans(key, 
                                 version, 
                                 subkey, 
@@ -2055,27 +2019,7 @@ void CBDB_Cache::x_DropBlob(const char*    key,
     m_CacheAttrDB->Delete(CBDB_RawFile::eIgnoreError);
 }
 
-void CBDB_Cache::x_SaveAttrStorage()
-{
-    CCacheTransaction trans(*this);
 
-    x_SaveAttrStorage_NonTrans();
-
-    trans.Commit();
-}
-
-void CBDB_Cache::x_SaveAttrStorage_NonTrans()
-{
-/*
-    if (IsReadOnly() || !m_MemAttr.IsActive()) {
-        return;
-    }
-    
-    _ASSERT(m_CacheAttrDB);
-
-    m_MemAttr.DumpToStorage(*this);
-*/
-}
 
 CBDB_Cache::CacheKey::CacheKey(const string& x_key, 
                                int           x_version, 
@@ -2096,37 +2040,6 @@ CBDB_Cache::CacheKey::operator < (const CBDB_Cache::CacheKey& cache_key) const
         return cmp < 0;
     return false;
 }
-
-/*
-CBDB_Cache::CMemAttrStorage::CMemAttrStorage()
-: m_Limit(0)
-{
-}
-
-void CBDB_Cache::CMemAttrStorage::DumpToStorage(CBDB_Cache& cache)
-{
-    ITERATE(TAttrMap, it, m_Attr) {
-        if (it->second) {
-            cache.x_UpdateAccessTime_NonTrans(it->first.key,
-                                              it->first.version,
-                                              it->first.subkey,
-                                              it->second);
-        }
-    }
-    m_Attr.clear();
-}
-
-int 
-CBDB_Cache::CMemAttrStorage::GetAccessTime(const CacheKey& cache_key) const
-{
-    TAttrMap::const_iterator it = m_Attr.find(cache_key);
-    if (it != m_Attr.end()) {
-        return it->second;
-    }
-    return 0;
-}
-
-*/
 
 
 void BDB_Register_Cache(void)
@@ -2182,6 +2095,7 @@ static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
 static const string kCFParam_purge_clean_log    = "purge_clean_log";
 static const string kCFParam_purge_thread       = "purge_thread";
 static const string kCFParam_purge_thread_delay = "purge_thread_delay";
+static const string kCFParam_checkpoint_bytes   = "checkpoint_bytes";
 
 
 
@@ -2228,6 +2142,11 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         } // any other variant makes deafult (large) page size
     }
 
+    unsigned checkpoint_bytes = 
+        GetParamDataSize(params, kCFParam_checkpoint_bytes, 
+                         false, 24 * 1024 * 1024);
+    drv->SetCheckpoint(checkpoint_bytes);
+
     bool ro =
         GetParamBool(params, kCFParam_read_only, false, false);
 
@@ -2269,12 +2188,6 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
                   lock, mem_size, 
                   use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans);
     }
-/*
-    unsigned ru_limit = 
-        GetParamInt(params, kCFParam_read_update_limit, false, 0);
-    if (ru_limit)
-        drv->SetReadUpdateLimit(ru_limit);
-*/    
     return drv.release();
 
 }
@@ -2344,6 +2257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2005/01/03 14:26:49  kuznets
+ * Implemented variable checkpoint interval (was hard coded)
+ *
  * Revision 1.100  2004/12/29 19:55:11  kuznets
  * Use time(0) to get current time instead of CTime
  *

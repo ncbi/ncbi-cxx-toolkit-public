@@ -241,6 +241,10 @@ public:
     /// (For factor == 1 every Purge will try to remove logs)
     void CleanLogOnPurge(unsigned int factor) { m_CleanLogOnPurge = factor; }
 
+    /// Checkpoint the database at least as often as every bytes of 
+    /// log file are written. 
+    void SetCheckpoint(unsigned int bytes) { m_CheckPointInterval = bytes; }
+
 
     // ICache interface 
 
@@ -356,10 +360,6 @@ private:
 
     void x_TruncateDB();
 
-    /// Save in-memory attributes
-    void x_SaveAttrStorage();
-    void x_SaveAttrStorage_NonTrans();
-
     void x_Close();
 
     void x_PidLock(ELockMode lm);
@@ -449,6 +449,8 @@ private:
     bool                       m_RunPurgeThread;
     /// Delay in seconds between Purge runs
     unsigned                   m_PurgeThreadDelay;
+    /// Trnasaction checkpoint interval (bytes)
+    unsigned                   m_CheckPointInterval;
 };
 
 
@@ -527,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/01/03 14:26:43  kuznets
+ * Implemented variable checkpoint interval (was hard coded)
+ *
  * Revision 1.46  2004/12/28 19:43:40  kuznets
  * +x_CheckTimeStampExpired
  *
