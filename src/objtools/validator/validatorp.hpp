@@ -376,6 +376,7 @@ private:
 
     void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
     void ValidatePubArticle(const CCit_art& art, const CSerialObject& obj);
+    void ValidateEtAl(const CPubdesc& pubdesc, const CSerialObject& obj);
     
     bool HasName(const list< CRef< CAuthor > >& authors);
     bool HasTitle(const CTitle& title);
@@ -703,6 +704,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/01/29 21:55:19  shomrat
+* Added check for et al
+*
 * Revision 1.8  2003/01/24 20:39:40  shomrat
 * Added history validation for bioseq
 *

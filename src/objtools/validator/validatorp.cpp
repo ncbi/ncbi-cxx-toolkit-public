@@ -82,9 +82,13 @@
 
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Cit_jour.hpp>
-#include <objects/biblio/Cit_gen.hpp>
 #include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_book.hpp>
+#include <objects/biblio/Cit_gen.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_let.hpp>
+#include <objects/biblio/Cit_proc.hpp>
+#include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/PubMedId.hpp>
 #include <objects/biblio/PubStatus.hpp>
 #include <objects/biblio/Title.hpp>
@@ -467,6 +471,7 @@ void CValidError_imp::ValidatePubdesc
             break;
         }
     }
+    ValidateEtAl(pubdesc, obj);
 }
 
 
@@ -677,6 +682,69 @@ bool CValidError_imp::HasName(const list< CRef< CAuthor > >& authors)
         }
     }
     return false;
+}
+
+
+void CValidError_imp::ValidateEtAl
+(const CPubdesc& pubdesc,
+ const CSerialObject& obj)
+{
+    iterate( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+        const CAuth_list* authors = 0;
+        switch ( (*pub)->Which() ) {
+        case CPub::e_Gen:
+            if ( (*pub)->GetGen().IsSetAuthors() ) {
+                authors = &((*pub)->GetGen().GetAuthors());
+            }
+            break;
+        case CPub::e_Sub:
+            authors = &((*pub)->GetSub().GetAuthors());
+            break;
+        case CPub::e_Article:
+            if ( (*pub)->GetArticle().IsSetAuthors() ) {
+                authors = &((*pub)->GetArticle().GetAuthors());
+            }
+            break;
+        case CPub::e_Book:
+            authors = &((*pub)->GetBook().GetAuthors());
+            break;
+        case CPub::e_Proc:
+            authors = &((*pub)->GetProc().GetBook().GetAuthors());
+            break;
+        case CPub::e_Man:
+            authors = &((*pub)->GetMan().GetCit().GetAuthors());
+            break;
+        default:
+            break;
+        }
+
+        if ( !authors ) {
+            continue;
+        }
+
+        const CAuth_list::C_Names& names = authors->GetNames();
+        if ( !names.IsStd() ) {
+            continue;
+        }
+
+        iterate ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
+            if ( (*name)->GetName().IsName() ) {
+                const CName_std& nstd = (*name)->GetName().GetName();
+                if ( (NStr::CompareNocase(nstd.GetLast(), "et al.") == 0)  ||
+                     (nstd.GetLast() == "et."  &&  nstd.GetInitials() == "al"  &&
+                      nstd.GetFirst().empty()) ) {
+                    CAuth_list::C_Names::TStd::const_iterator temp = name;
+                    if ( ++temp == names.GetStd().end() ) {
+                        PostErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
+                            "Author list ends in et al.", obj);
+                    } else {
+                        PostErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
+                            "Author list contains et al.", obj);
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -1626,6 +1694,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/01/29 21:55:14  shomrat
+* Added check for et al
+*
 * Revision 1.8  2003/01/24 20:38:51  shomrat
 * Added call to ValidateHistory for each bioseq
 *
