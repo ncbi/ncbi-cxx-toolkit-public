@@ -145,13 +145,13 @@ static void s_LOG_Handler(void*         /*user_data*/,
             diag.SetLine(call_data->line);
         }
         diag << call_data->message;
-        if (call_data->raw_data  &&  call_data->raw_size) {
+        if ( call_data->raw_size ) {
             diag <<
                 "\n#################### [BEGIN] Raw Data (" <<
                 call_data->raw_size <<
                 " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
                 NStr::PrintableString
-                (string(static_cast<const char*>(call_data->raw_data),
+                (string(static_cast<const char*> (call_data->raw_data),
                         call_data->raw_size), NStr::eNewLine_Passthru) <<
                 "\n#################### [END] Raw Data";
         }
@@ -245,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/05/05 20:17:59  lavr
+ * s_LOG_Handler() to explicitly check data_size only
+ *
  * Revision 6.15  2002/12/19 20:48:33  lavr
  * Fix double exception handling in both catch() and STD_CATCH_ALL()
  *
