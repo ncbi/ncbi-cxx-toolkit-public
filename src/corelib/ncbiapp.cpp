@@ -613,6 +613,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
                                   CNcbiRegistry::TFlags reg_flags)
 {
     string basename(m_Arguments->GetProgramBasename());
+    string basename2(m_Arguments->GetProgramBasename(true));
     CMetaRegistry::SEntry entry;
 
     if ( !conf ) {
@@ -620,6 +621,11 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
     } else if (conf->empty()) {
         entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini,
                                     CMetaRegistry::fDontOwn, reg_flags, &reg);
+        if ( !entry.registry  &&  basename2 != basename ) {
+            entry = CMetaRegistry::Load(basename2, CMetaRegistry::eName_Ini,
+                                        CMetaRegistry::fDontOwn, reg_flags,
+                                        &reg);
+        }
     } else {
         entry = CMetaRegistry::Load(*conf, CMetaRegistry::eName_AsIs,
                                     CMetaRegistry::fDontOwn, reg_flags, &reg);
@@ -885,6 +891,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2003/09/30 21:12:30  ucko
+ * CNcbiApplication::LoadConfig: if run through a symlink and there's no
+ * configuration file for the link's source, try its (ultimate) target.
+ *
  * Revision 1.73  2003/09/29 20:28:00  vakatov
  * + LoadConfig(...., reg_flags)
  *
