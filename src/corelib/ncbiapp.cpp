@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/01/22 19:28:37  ivanov
+* Changed ConcatPath() -> ConcatPathEx() in LoadConfig()
+*
 * Revision 1.35  2002/01/20 05:53:59  vakatov
 * Get rid of a GCC warning;  formally rearrange some code.
 *
@@ -567,8 +570,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
             x_conf = cnf;
         } else {
             // path is relative to the program location
-            x_conf = CDirEntry::ConcatPath(m_Arguments->GetProgramDirname(),
-                                           cnf);
+            x_conf = CDirEntry::ConcatPathEx(m_Arguments->GetProgramDirname(),
+                                             cnf);
         }
         // do load
         x_conf = NStr::TruncateSpaces(x_conf);
