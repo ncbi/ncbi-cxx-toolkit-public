@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.29  2002/04/22 14:27:29  thiessen
 * add alignment export
 *
@@ -234,20 +237,19 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
-        if (!enabled) CancelDerivedSpecialModes();
+        if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
 
 void SequenceViewerWindow::OnDeleteRow(wxCommandEvent& event)
 {
-    if (DoRealignRow()) RealignRowOff();
-    if (DoMarkBlock()) MarkBlockOff();
-    if (DoProximitySort()) ProximitySortOff();
-    CancelBaseSpecialModes();
-    if (DoDeleteRow())
-        SetCursor(*wxCROSS_CURSOR);
-    else
-        DeleteRowOff();
+    if (event.GetId() == MID_DELETE_ROW) {
+        CancelAllSpecialModesExcept(MID_DELETE_ROW);
+        if (DoDeleteRow())
+            SetCursor(*wxCROSS_CURSOR);
+        else
+            DeleteRowOff();
+    }
 }
 
 void SequenceViewerWindow::OnMoveRow(wxCommandEvent& event)
@@ -360,10 +362,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
 {
     // setup one-at-a-time row realignment
     if (event.GetId() == MID_REALIGN_ROW) {
-        if (DoDeleteRow()) DeleteRowOff();
-        if (DoMarkBlock()) MarkBlockOff();
-        if (DoProximitySort()) ProximitySortOff();
-        CancelBaseSpecialModes();
+        CancelAllSpecialModesExcept(MID_REALIGN_ROW);
         if (DoRealignRow())
             SetCursor(*wxCROSS_CURSOR);
         else
@@ -434,10 +433,7 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();
             break;
         case MID_PROXIMITY_SORT:
-            if (DoDeleteRow()) DeleteRowOff();
-            if (DoRealignRow()) RealignRowOff();
-            if (DoMarkBlock()) MarkBlockOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_PROXIMITY_SORT);
             if (DoProximitySort())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -464,10 +460,7 @@ void SequenceViewerWindow::OnMarkBlock(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_MARK_BLOCK:
-            if (DoDeleteRow()) DeleteRowOff();
-            if (DoRealignRow()) RealignRowOff();
-            if (DoProximitySort()) ProximitySortOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_MARK_BLOCK);
             if (DoMarkBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else

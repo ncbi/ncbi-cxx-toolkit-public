@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.27  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -373,7 +376,7 @@ public:
         }
     }
 
-    // for storing initial alignment region, e.g. when demoted from multiple
+    // kludge for now for storing allowed alignment region (on slave), e.g. when demoted from multiple
     int alignFrom, alignTo;
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.3  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -63,14 +66,13 @@ public:
 
     static const std::string BLASTResidues;
 
-    typedef std::list < const Sequence * > SequenceList;
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 
     // creates new pairwise alignments (as two-row BlockMultipleAlignments), each of which has
     // the given master and one of the given sequences. If the alignment algorithm fails to
     // align the new sequence, it will include a null-alignment for that sequence.
     void CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
-        const SequenceList& slaves, AlignmentList *newAlignments,
+        const AlignmentList& slaves, AlignmentList *newAlignments,
         const BlockMultipleAlignment *multipleForPSSM);
 };
 

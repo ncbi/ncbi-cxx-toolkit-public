@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.39  2002/05/07 20:22:47  thiessen
 * fix for BLAST/PSSM
 *
@@ -168,6 +171,7 @@
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -183,6 +187,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
+    EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -209,7 +214,9 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_THREAD_ALL, "Thread &All");
     menu->AppendSeparator();
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
-    menu->Append(MID_BLAST_PSSM_ONE, "&BLAST/PSSM Single", "", true);
+    menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
+    menu->AppendSeparator();
+    menu->Append(MID_SET_REGION, "Set &Region", "", true);
     menuBar->Append(menu, "Al&gorithms");
 
     // Alignments menu
@@ -259,11 +266,7 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_THREAD_ONE:
-            if (DoBlastSingle()) BlastSingleOff();
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
-            if (DoMergeSingle()) MergeSingleOff();
-            if (DoDeleteSingle()) DeleteSingleOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_THREAD_ONE);
             if (DoThreadSingle())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -301,11 +304,7 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_MERGE_ONE:
-            if (DoThreadSingle()) ThreadSingleOff();
-            if (DoBlastSingle()) BlastSingleOff();
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
-            if (DoDeleteSingle()) DeleteSingleOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_MERGE_ONE);
             if (DoMergeSingle())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -329,11 +328,7 @@ void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_DELETE_ONE:
-            if (DoThreadSingle()) ThreadSingleOff();
-            if (DoBlastSingle()) BlastSingleOff();
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
-            if (DoMergeSingle()) MergeSingleOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_DELETE_ONE);
             if (DoDeleteSingle())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -380,22 +375,14 @@ void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_BLAST_ONE:
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
-            if (DoThreadSingle()) ThreadSingleOff();
-            if (DoMergeSingle()) MergeSingleOff();
-            if (DoDeleteSingle()) DeleteSingleOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_BLAST_ONE);
             if (DoBlastSingle())
                 SetCursor(*wxCROSS_CURSOR);
             else
                 BlastSingleOff();
             break;
         case MID_BLAST_PSSM_ONE:
-            if (DoBlastSingle()) BlastSingleOff();
-            if (DoThreadSingle()) ThreadSingleOff();
-            if (DoMergeSingle()) MergeSingleOff();
-            if (DoDeleteSingle()) DeleteSingleOff();
-            CancelBaseSpecialModes();
+            CancelAllSpecialModesExcept(MID_BLAST_PSSM_ONE);
             if (DoBlastPSSMSingle())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -408,6 +395,17 @@ void UpdateViewerWindow::OnSortUpdates(wxCommandEvent& event)
 {
     if (event.GetId() == MID_SORT_UPDATES_IDENTIFIER)
         updateViewer->SortByIdentifier();
+}
+
+void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_SET_REGION) {
+        CancelAllSpecialModesExcept(MID_SET_REGION);
+        if (DoSetRegion())
+            SetCursor(*wxCROSS_CURSOR);
+        else
+            SetRegionOff();
+    }
 }
 
 
@@ -559,6 +557,121 @@ void ThreaderOptionsDialog::OnButton(wxCommandEvent& event)
     } else {
         event.Skip();
     }
+}
+
+
+///// RegionDialog stuff; window setup taken from region_dialog.wdr
+
+#define ID_TEXT 10000
+#define ID_T_TITLE 10001
+#define ID_TEXTCTRL 10002
+#define ID_SPINBUTTON 10003
+#define ID_B_OK 10004
+#define ID_B_CANCEL 10005
+
+BEGIN_EVENT_TABLE(RegionDialog, wxDialog)
+    EVT_BUTTON(-1,  RegionDialog::OnButton)
+    EVT_CLOSE (     RegionDialog::OnCloseWindow)
+END_EVENT_TABLE()
+
+RegionDialog::RegionDialog(wxWindow* parentFrame,
+        const Sequence* sequence, int initialFrom, int initialTo) :
+    wxDialog(parentFrame, -1, "Set Alignment Region", wxDefaultPosition, wxDefaultSize,
+        wxCAPTION | wxSYSTEM_MENU) // not resizable
+{
+    wxPanel *parent = new wxPanel(this, -1);
+    wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
+
+    wxStaticBox *item2 = new wxStaticBox( parent, -1, "Region" );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
+
+    wxFlexGridSizer *item3 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item3->AddGrowableCol( 1 );
+
+    wxStaticText *item4 = new wxStaticText( parent, ID_TEXT, "Sequence:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item4, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxString title;
+    title.Printf("%s, length %i", sequence->identifier->ToString().c_str(), sequence->Length());
+    wxStaticText *item5 = new wxStaticText( parent, ID_T_TITLE, title, wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item5, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxFlexGridSizer *item6 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item6->AddGrowableCol( 1 );
+    item6->AddGrowableRow( 4 );
+
+    wxStaticText *item7 = new wxStaticText( parent, ID_TEXT, "From:", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    iFrom = new IntegerSpinCtrl(parent, 0, sequence->Length(), 1, initialFrom,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item6->Add( iFrom->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
+    item6->Add( iFrom->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5 );
+
+    wxStaticText *item10 = new wxStaticText( parent, ID_TEXT, "To:", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    iTo = new IntegerSpinCtrl(parent, 0, sequence->Length(), 1, initialTo,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item6->Add( iTo->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
+    item6->Add( iTo->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5 );
+
+    item1->Add( item6, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxBoxSizer *item13 = new wxBoxSizer( wxHORIZONTAL );
+
+    wxButton *item14 = new wxButton( parent, ID_B_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
+    item14->SetDefault();
+    item13->Add( item14, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item15 = new wxButton( parent, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item13->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item0->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    parent->SetAutoLayout( TRUE );
+    parent->SetSizer( item0 );
+    item0->Fit( this );
+    item0->Fit( parent );
+    item0->SetSizeHints( this );
+}
+
+RegionDialog::~RegionDialog(void)
+{
+    DestroyChildren();  // must do first, since following are wxEvtHandlers
+    delete iFrom;
+    delete iTo;
+}
+
+void RegionDialog::OnCloseWindow(wxCloseEvent& event)
+{
+    EndModal(wxCANCEL);
+}
+
+void RegionDialog::OnButton(wxCommandEvent& event)
+{
+    if (event.GetId() == ID_B_OK) {
+        int dummy1, dummy2;
+        if (GetValues(&dummy1, &dummy2))  // can't successfully quit if values aren't valid
+            EndModal(wxOK);
+        else
+            wxBell();
+    } else if (event.GetId() == ID_B_CANCEL) {
+        EndModal(wxCANCEL);
+    } else {
+        event.Skip();
+    }
+}
+
+bool RegionDialog::GetValues(int *from, int *to)
+{
+    return (iFrom->GetInteger(from) && iTo->GetInteger(to));
 }
 
 END_SCOPE(Cn3D)

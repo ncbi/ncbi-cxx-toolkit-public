@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.14  2002/04/22 14:27:29  thiessen
 * add alignment export
 *
@@ -186,12 +189,12 @@ public:
     bool DoMarkBlock(void) const { return menuBar->IsChecked(MID_MARK_BLOCK); }
     bool DoProximitySort(void) const { return menuBar->IsChecked(MID_PROXIMITY_SORT); }
 
-    void CancelDerivedSpecialModes(void)
+    void CancelDerivedSpecialModesExcept(int id)
     {
-        if (DoDeleteRow()) DeleteRowOff();
-        if (DoRealignRow()) RealignRowOff();
-        if (DoMarkBlock()) MarkBlockOff();
-        if (DoProximitySort()) ProximitySortOff();
+        if (id != MID_DELETE_ROW && DoDeleteRow()) DeleteRowOff();
+        if (id != MID_REALIGN_ROW && DoRealignRow()) RealignRowOff();
+        if (id != MID_MARK_BLOCK && DoMarkBlock()) MarkBlockOff();
+        if (id != MID_PROXIMITY_SORT && DoProximitySort()) ProximitySortOff();
     }
 
     void EnableExport(bool enabled) { menuBar->Enable(MID_EXPORT, enabled); }

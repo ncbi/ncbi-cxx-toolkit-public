@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.49  2002/05/07 20:22:47  thiessen
 * fix for BLAST/PSSM
 *
@@ -710,6 +713,25 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (updateWindow->DoBlastPSSMSingle()) {
                 updateWindow->updateViewer->BlastUpdate(alignment, true);
                 if (!controlDown) updateWindow->BlastPSSMSingleOff();
+                return false;
+            }
+
+            // set region (on slave sequence)
+            if (updateWindow->DoSetRegion()) {
+                // dialog uses 1-based sequence locations
+                RegionDialog dialog(updateWindow,
+                    alignment->GetSequenceOfRow(1), alignment->alignFrom + 1, alignment->alignTo + 1);
+                if (dialog.ShowModal() == wxOK) {
+                    int from, to;
+                    if (!dialog.GetValues(&from, &to)) {
+                        ERR_POST(Error << "RegionDialog returned OK, but values invalid");
+                    } else {
+                        TESTMSG("set region: " << from << " to " << to);
+                        alignment->alignFrom = from - 1;
+                        alignment->alignTo = to - 1;
+                    }
+                    if (!controlDown) updateWindow->SetRegionOff();
+                }
                 return false;
             }
 

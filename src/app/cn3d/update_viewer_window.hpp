@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.23  2002/05/07 20:22:47  thiessen
 * fix for BLAST/PSSM
 *
@@ -145,6 +148,7 @@ private:
         MID_THREAD_ALL,
         MID_BLAST_ONE,
         MID_BLAST_PSSM_ONE,
+        MID_SET_REGION,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
@@ -155,6 +159,7 @@ private:
     void OnSortUpdates(wxCommandEvent& event);
     void OnRunThreader(wxCommandEvent& event);
     void OnRunBlast(wxCommandEvent& event);
+    void OnSetRegion(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
     void OnImport(wxCommandEvent& event);
@@ -172,6 +177,11 @@ private:
     void BlastPSSMSingleOff(void)
     {
         menuBar->Check(MID_BLAST_PSSM_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+    void SetRegionOff(void)
+    {
+        menuBar->Check(MID_SET_REGION, false);
         SetCursor(wxNullCursor);
     }
     void MergeSingleOff(void)
@@ -196,16 +206,18 @@ public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
+    bool DoSetRegion(void) const { return menuBar->IsChecked(MID_SET_REGION); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
-    void CancelDerivedSpecialModes(void)
+    void CancelDerivedSpecialModesExcept(int id)
     {
-        if (DoThreadSingle()) ThreadSingleOff();
-        if (DoBlastSingle()) BlastSingleOff();
-        if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
-        if (DoDeleteSingle()) DeleteSingleOff();
-        if (DoMergeSingle()) MergeSingleOff();
+        if (id != MID_THREAD_ONE && DoThreadSingle()) ThreadSingleOff();
+        if (id != MID_BLAST_ONE && DoBlastSingle()) BlastSingleOff();
+        if (id != MID_BLAST_PSSM_ONE && DoBlastPSSMSingle()) BlastPSSMSingleOff();
+        if (id != MID_SET_REGION && DoSetRegion()) SetRegionOff();
+        if (id != MID_MERGE_ONE && DoMergeSingle()) MergeSingleOff();
+        if (id != MID_DELETE_ONE && DoDeleteSingle()) DeleteSingleOff();
     }
 };
 
@@ -215,6 +227,7 @@ public:
 class ThreaderOptions;
 class FloatingPointSpinCtrl;
 class IntegerSpinCtrl;
+class Sequence;
 
 class ThreaderOptionsDialog : public wxDialog
 {
@@ -231,6 +244,24 @@ private:
     FloatingPointSpinCtrl *fpWeight, *fpLoops;
     IntegerSpinCtrl *iStarts, *iResults, *iCutoff;
     wxCheckBox *bMerge, *bFreeze;
+
+    void OnCloseWindow(wxCloseEvent& event);
+    void OnButton(wxCommandEvent& event);
+
+    DECLARE_EVENT_TABLE()
+};
+
+class RegionDialog : public wxDialog
+{
+public:
+    RegionDialog(wxWindow* parentFrame, const Sequence *sequence, int initialFrom, int initialTo);
+    ~RegionDialog(void);
+
+    // get the values in the panel; returns true if all values are valid
+    bool GetValues(int *from, int *to);
+
+private:
+    IntegerSpinCtrl *iFrom, *iTo;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.17  2002/02/05 18:53:26  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -143,7 +146,7 @@ public:
     virtual void EnableDerivedEditorMenuItems(bool enable) { }
 
     // allows the derived class to set up special mouse/cursor modes, e.g. for delete row
-    virtual void CancelDerivedSpecialModes(void) { }
+    virtual void CancelDerivedSpecialModesExcept(int id) { }
 
     // menu callbacks
     void OnTitleView(wxCommandEvent& event);
@@ -230,12 +233,18 @@ protected:
         SetCursor(wxNullCursor);
     }
 
-    void CancelBaseSpecialModes(void)
+    void CancelBaseSpecialModesExcept(int id)
     {
-        if (DoSplitBlock()) SplitBlockOff();
-        if (DoMergeBlocks()) MergeBlocksOff();
-        if (DoCreateBlock()) CreateBlockOff();
-        if (DoDeleteBlock()) DeleteBlockOff();
+        if (id != MID_SPLIT_BLOCK && DoSplitBlock()) SplitBlockOff();
+        if (id != MID_MERGE_BLOCKS && DoMergeBlocks()) MergeBlocksOff();
+        if (id != MID_CREATE_BLOCK && DoCreateBlock()) CreateBlockOff();
+        if (id != MID_DELETE_BLOCK && DoDeleteBlock()) DeleteBlockOff();
+    }
+
+    void CancelAllSpecialModesExcept(int id)
+    {
+        CancelBaseSpecialModesExcept(id);
+        CancelDerivedSpecialModesExcept(id);
     }
 
     virtual SequenceViewerWidget::eMouseMode GetMouseModeForCreateAndMerge(void) = 0;

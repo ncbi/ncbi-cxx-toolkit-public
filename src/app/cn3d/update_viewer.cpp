@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.33  2002/04/26 19:01:00  thiessen
 * fix display delete bug
 *
@@ -816,11 +819,11 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
         if (*a != alignment) continue;
 
         // run BLAST between master and first slave (should be only one slave...)
-        BLASTer::SequenceList seqs;
-        seqs.push_back(alignment->GetSequenceOfRow(1));
+        BLASTer::AlignmentList toRealign;
+        toRealign.push_back(alignment);
         BLASTer::AlignmentList newAlignments;
         alignmentManager->blaster->CreateNewPairwiseAlignmentsByBlast(
-            alignment->GetSequenceOfRow(0), seqs, &newAlignments, multipleForPSSM);
+            alignment->GetSequenceOfRow(0), toRealign, &newAlignments, multipleForPSSM);
         if (newAlignments.size() != 1) {
             ERR_POST(Error << "UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
             return;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.135  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.134  2002/05/16 18:46:04  thiessen
 * Mac fixes
 *
@@ -1374,7 +1377,7 @@ void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
             path = wxString(GetProgramDir().c_str()) + "cn3d_commands.htb";
 #ifdef __WXMAC__
             // convert to UNIX style pathname
-            for (size_t i=0; i<path.size(); i++) 
+            for (size_t i=0; i<path.size(); i++)
                 if (path[i] == ':') path[i] = '/';
 #endif
             if (!helpController->AddBook(path))
@@ -2032,7 +2035,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         }
     }
     if (!readOK) {
-        ERR_POST(Error << "File is not a recognized data type (Ncbi-mime-asn1 or Cdd)");
+        ERR_POST(Error << "File not found, not readable, or is not a recognized data type");
         SetCursor(wxNullCursor);
         return;
     }

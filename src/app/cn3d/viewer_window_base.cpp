@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.29  2002/03/01 19:21:00  thiessen
 * add icon to all frames
 *
@@ -244,12 +247,7 @@ void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
     for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; i++)
         menuBar->Enable(i, enabled);
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
-    if (!enabled) {
-        if (DoSplitBlock()) SplitBlockOff();
-        if (DoMergeBlocks()) MergeBlocksOff();
-        if (DoCreateBlock()) CreateBlockOff();
-        if (DoDeleteBlock()) DeleteBlockOff();
-    }
+    if (!enabled) CancelBaseSpecialModesExcept(-1);
     menuBar->Enable(MID_UNDO, false);
     EnableDerivedEditorMenuItems(enabled);
 }
@@ -320,10 +318,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             break;
 
         case MID_SPLIT_BLOCK:
-            if (DoCreateBlock()) CreateBlockOff();
-            if (DoMergeBlocks()) MergeBlocksOff();
-            if (DoDeleteBlock()) DeleteBlockOff();
-            CancelDerivedSpecialModes();
+            CancelAllSpecialModesExcept(MID_SPLIT_BLOCK);
             if (DoSplitBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -331,10 +326,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             break;
 
         case MID_MERGE_BLOCKS:
-            if (DoSplitBlock()) SplitBlockOff();
-            if (DoCreateBlock()) CreateBlockOff();
-            if (DoDeleteBlock()) DeleteBlockOff();
-            CancelDerivedSpecialModes();
+            CancelAllSpecialModesExcept(MID_MERGE_BLOCKS);
             if (DoMergeBlocks()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
@@ -344,10 +336,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             break;
 
         case MID_CREATE_BLOCK:
-            if (DoSplitBlock()) SplitBlockOff();
-            if (DoMergeBlocks()) MergeBlocksOff();
-            if (DoDeleteBlock()) DeleteBlockOff();
-            CancelDerivedSpecialModes();
+            CancelAllSpecialModesExcept(MID_CREATE_BLOCK);
             if (DoCreateBlock()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
@@ -357,10 +346,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             break;
 
         case MID_DELETE_BLOCK:
-            if (DoSplitBlock()) SplitBlockOff();
-            if (DoMergeBlocks()) MergeBlocksOff();
-            if (DoCreateBlock()) CreateBlockOff();
-            CancelDerivedSpecialModes();
+            CancelAllSpecialModesExcept(MID_DELETE_BLOCK);
             if (DoDeleteBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else

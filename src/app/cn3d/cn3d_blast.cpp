@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
 * Revision 1.8  2002/05/07 20:22:47  thiessen
 * fix for BLAST/PSSM
 *
@@ -182,7 +185,7 @@ static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleFo
 }
 
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
-    const SequenceList& newSequences, AlignmentList *newAlignments,
+    const AlignmentList& toRealign, AlignmentList *newAlignments,
     const BlockMultipleAlignment *multipleForPSSM)
 {
     // set up BLAST stuff
@@ -201,24 +204,47 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
     if (multipleForPSSM) {
         BLASTmatrix = CreateBLASTMatrix(multipleForPSSM);
         masterSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
-        masterSeqLoc->choice = SEQLOC_WHOLE;
-        masterSeqLoc->data.ptrvalue = masterBioseq->id;
+        masterSeqLoc->choice = SEQLOC_INT;
+        SeqIntPtr seqInt = (SeqIntPtr) MemNew(sizeof(SeqInt));
+        masterSeqLoc->data.ptrvalue = seqInt;
+        seqInt->id = masterBioseq->id;
+        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+            uaBlocks(multipleForPSSM->GetUngappedAlignedBlocks());
+        if (uaBlocks->size() > 0) {
+            seqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from;
+            seqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to;
+        } else {
+            seqInt->from = 0;
+            seqInt->to = master->Length() - 1;
+        }
         slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
     }
 
     std::string err;
-    SequenceList::const_iterator s, se = newSequences.end();
-    for (s=newSequences.begin(); s!=se; s++) {
+    AlignmentList::const_iterator s, se = toRealign.end();
+    for (s=toRealign.begin(); s!=se; s++) {
+        if ((*s)->GetMaster() != master)
+            ERR_POST(Error << "BLASTer::CreateNewPairwiseAlignmentsByBlast() - master sequence mismatch");
 
-        // get C Bioseq for slave
-        Bioseq *slaveBioseq = master->parentSet->GetOrCreateBioseq(*s);
+        // get C Bioseq for slave of each incoming (pairwise) alignment
+        const Sequence *slaveSeq = (*s)->GetSequenceOfRow(1);
+        Bioseq *slaveBioseq = master->parentSet->GetOrCreateBioseq(slaveSeq);
 
         // actually do the BLAST alignment
         SeqAlign *salp = NULL;
         if (multipleForPSSM) {
-            TESTMSG("calling BlastTwoSequencesByLocWithCallback()");
-            slaveSeqLoc->choice = SEQLOC_WHOLE;
-            slaveSeqLoc->data.ptrvalue = slaveBioseq->id;
+            if ((*s)->GetMaster() != multipleForPSSM->GetMaster())
+                ERR_POST(Error << "BLASTer::CreateNewPairwiseAlignmentsByBlast() - master sequence mismatch");
+            slaveSeqLoc->choice = SEQLOC_INT;
+            SeqIntPtr seqInt = (SeqIntPtr) MemNew(sizeof(SeqInt));
+            slaveSeqLoc->data.ptrvalue = seqInt;
+            seqInt->id = slaveBioseq->id;
+            seqInt->from = ((*s)->alignFrom >= 0) ? (*s)->alignFrom : 0;
+            seqInt->to = ((*s)->alignTo >= 0) ? (*s)->alignTo : slaveSeq->Length() - 1;
+            TESTMSG("calling BlastTwoSequencesByLocWithCallback()\n\t master range " <<
+                (((SeqIntPtr) masterSeqLoc->data.ptrvalue)->from + 1) << " to " <<
+                (((SeqIntPtr) masterSeqLoc->data.ptrvalue)->to + 1) << ", slave range " <<
+                (seqInt->from + 1) << " to " << (seqInt->to + 1));
             salp = BlastTwoSequencesByLocWithCallback(
                 masterSeqLoc, slaveSeqLoc,
                 "blastp", options,
@@ -233,7 +259,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
         // create new alignment structure
         BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
         (*seqs)[0] = master;
-        (*seqs)[1] = *s;
+        (*seqs)[1] = slaveSeq;
         BlockMultipleAlignment *newAlignment =
             new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
 
@@ -260,7 +286,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
             if (!sa.IsSetDim() || sa.GetDim() != 2 ||
                 !sa.GetSegs().IsDenseg() || sa.GetSegs().GetDenseg().GetDim() != 2 ||
                 !master->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().front())) ||
-                !(*s)->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().back()))) {
+                !slaveSeq->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().back()))) {
                 ERR_POST(Error << "Confused by BLAST result format");
                 continue;
             }
