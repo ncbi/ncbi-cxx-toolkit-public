@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.72  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -416,6 +419,7 @@ public:
                     MID_INFO,
                     MID_FIT,
                     MID_BLOCK_FIT,
+                    MID_BLOCK_Z_FIT,
                 MID_OBJECT,
                 MID_DOMAIN,
                 MID_MOLECULE,

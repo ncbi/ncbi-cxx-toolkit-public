@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.37  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -224,7 +227,8 @@ public:
         eWeightedVariety = 10,
         eInformationContent = 11,
         eFit = 12,
-        eBlockFit = 17
+        eBlockFit = 17,
+        eBlockZFit = 18
     };
 
     typedef struct {
@@ -300,6 +304,7 @@ public:
         eInformationContentShortcut,
         eFitShortcut,
         eBlockFitShortcut,
+        eBlockZFitShortcut,
         eObjectShortcut,
         eDomainShortcut,
         eMoleculeShortcut,

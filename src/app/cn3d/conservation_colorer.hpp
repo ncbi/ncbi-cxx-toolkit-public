@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.10  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -77,11 +80,6 @@
 
 BEGIN_SCOPE(Cn3D)
 
-// for convenience, allow access to the Blosum62 map, keyed on a pair of uppercase aa characters:
-// e.g. score = Blosum62Map['A']['V']; filled out when first ConservationColorer is constructed
-extern std::map < char, std::map < char, int > > Blosum62Map;
-
-
 class UngappedAlignedBlock;
 class BlockMultipleAlignment;
 
@@ -126,7 +124,7 @@ private:
     FitColors fitColors;
 
     typedef std::map < const UngappedAlignedBlock * , std::vector < Vector > >  BlockFitColors;
-    BlockFitColors blockFitColors;
+    BlockFitColors blockFitColors, blockZFitColors;
 
 public:
 
@@ -169,6 +167,12 @@ public:
     {
         CalculateConservationColors();
         return &(blockFitColors.find(block)->second[row]);
+    }
+
+    const Vector *GetBlockZFitColor(const UngappedAlignedBlock *block, int row)
+    {
+        CalculateConservationColors();
+        return &(blockZFitColors.find(block)->second[row]);
     }
 };
 

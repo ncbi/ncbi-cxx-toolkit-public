@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.24  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -292,8 +295,8 @@ void ConservationColorer::CalculateConservationColors(void)
     float minFit, maxFit;
 
     typedef std::map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
-    BlockRowScores blockFitScores;
-    float minBlockFit, maxBlockFit;
+    BlockRowScores blockFitScores, blockZFitScores;
+    float minBlockFit, maxBlockFit, minBlockZFit=kMin_Float, maxBlockZFit;
 
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
@@ -382,15 +385,42 @@ void ConservationColorer::CalculateConservationColors(void)
             }
         }
 
-        // average block fit scores per residue
+        // calculate average block fit scores per residue (and average of these over the block)
+        float average = 0.0f;
         for (row=0; row<nRows; row++) {
             float& score = blockFitScores[b->first][row];
             score /= b->first->width;
+            average += score;
             if (row == 0 && b == blocks.begin()) {
                 minBlockFit = maxBlockFit = score;
             } else {
                 if (score < minBlockFit) minBlockFit = score;
                 else if (score > maxBlockFit) maxBlockFit = score;
+            }
+        }
+        average /= nRows;
+
+        // calculate block Z scores from block fit scores
+        if (nRows > 1) {
+            // calculate standard deviation
+            float stdDev = 0.0f;
+            for (row=0; row<nRows; row++)
+                stdDev += (blockFitScores[b->first][row] - average) * (blockFitScores[b->first][row] - average);
+            stdDev /= nRows - 1;
+            stdDev = sqrt(stdDev);
+            if (stdDev > 1e-10) {
+                // calculate Z scores for each row
+                blockZFitScores[b->first].resize(nRows, 0.0f);
+                for (row=0; row<nRows; row++) {
+                    float& zScore = blockZFitScores[b->first][row];
+                    zScore = (blockFitScores[b->first][row] - average) / stdDev;
+                    if (minBlockZFit == kMin_Float) {
+                        minBlockZFit = maxBlockZFit = zScore;
+                    } else {
+                        if (zScore < minBlockZFit) minBlockZFit = zScore;
+                        else if (zScore > maxBlockZFit) maxBlockZFit = zScore;
+                    }
+                }
             }
         }
     }
@@ -451,6 +481,23 @@ void ConservationColorer::CalculateConservationColors(void)
             else
                 scale = 1.0 * (blockFitScores[b->first][row] - minBlockFit) / (maxBlockFit - minBlockFit);
             blockFitColors[b->first][row] = GlobalColors()->Get(Colors::eConservationMap, scale);
+        }
+    }
+
+    // block Z fit
+    blockZFitColors.clear();
+    for (b=blocks.begin(); b!=be; b++) {
+        if (blockZFitScores[b->first].size() == 0 || minBlockZFit == kMin_Float) {
+            blockZFitColors[b->first].resize(nRows, Vector(0,0,0));
+        } else {
+            blockZFitColors[b->first].resize(nRows);
+            for (row=0; row<nRows; row++) {
+                if (maxBlockZFit == minBlockZFit)
+                    scale = 1.0;
+                else
+                    scale = 1.0 * (blockZFitScores[b->first][row] - minBlockZFit) / (maxBlockZFit - minBlockZFit);
+                blockZFitColors[b->first][row] = GlobalColors()->Get(Colors::eConservationMap, scale);
+            }
         }
     }
 

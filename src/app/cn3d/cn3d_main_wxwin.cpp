@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.176  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.175  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -1299,6 +1302,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu2->Append(MID_INFO, "&Information Content", "", true);
     subMenu2->Append(MID_FIT, "&Fit", "", true);
     subMenu2->Append(MID_BLOCK_FIT, "&Block Fit", "", true);
+    subMenu2->Append(MID_BLOCK_Z_FIT, "Block &Z Fit", "", true);
     subMenu->Append(MID_CONS, "Sequence &Conservation", subMenu2);
     subMenu->Append(MID_OBJECT, "&Object", "", true);
     subMenu->Append(MID_DOMAIN, "&Domain", "", true);
@@ -2055,6 +2059,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             case MID_INFO: COLORING_SHORTCUT(eInformationContentShortcut, MID_INFO);
             case MID_FIT: COLORING_SHORTCUT(eFitShortcut, MID_FIT);
             case MID_BLOCK_FIT: COLORING_SHORTCUT(eBlockFitShortcut, MID_BLOCK_FIT);
+            case MID_BLOCK_Z_FIT: COLORING_SHORTCUT(eBlockZFitShortcut, MID_BLOCK_Z_FIT);
             case MID_OBJECT: COLORING_SHORTCUT(eObjectShortcut, MID_OBJECT);
             case MID_DOMAIN: COLORING_SHORTCUT(eDomainShortcut, MID_DOMAIN);
             case MID_MOLECULE: COLORING_SHORTCUT(eMoleculeShortcut, MID_MOLECULE);
@@ -2091,6 +2096,7 @@ void Cn3DMainFrame::SetColoringMenuFlag(int which)
     menuBar->Check(MID_INFO, (which == MID_INFO));
     menuBar->Check(MID_FIT, (which == MID_FIT));
     menuBar->Check(MID_BLOCK_FIT, (which == MID_BLOCK_FIT));
+    menuBar->Check(MID_BLOCK_Z_FIT, (which == MID_BLOCK_Z_FIT));
     menuBar->Check(MID_OBJECT, (which == MID_OBJECT));
     menuBar->Check(MID_DOMAIN, (which == MID_DOMAIN));
     menuBar->Check(MID_MOLECULE, (which == MID_MOLECULE));

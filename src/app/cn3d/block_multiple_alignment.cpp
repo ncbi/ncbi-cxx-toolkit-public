@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.45  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -739,6 +742,9 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(
             break;
         case StyleSettings::eBlockFit:
             alignedColor = conservationColorer->GetBlockFitColor(block, row);
+            break;
+        case StyleSettings::eBlockZFit:
+            alignedColor = conservationColorer->GetBlockZFitColor(block, row);
             break;
         default:
             alignedColor = NULL;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
 * Revision 1.70  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -574,7 +577,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
 
         case eAlignedShortcut: case eIdentityShortcut: case eVarietyShortcut:
         case eWeightedVarietyShortcut: case eInformationContentShortcut:
-        case eFitShortcut: case eBlockFitShortcut:
+        case eFitShortcut: case eBlockFitShortcut: case eBlockZFitShortcut:
             switch (scheme) {
                 case eAlignedShortcut: proteinBackbone.colorScheme = eAligned; break;
                 case eIdentityShortcut: proteinBackbone.colorScheme = eIdentity; break;
@@ -583,6 +586,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
                 case eInformationContentShortcut: proteinBackbone.colorScheme = eInformationContent; break;
                 case eFitShortcut: proteinBackbone.colorScheme = eFit; break;
                 case eBlockFitShortcut: proteinBackbone.colorScheme = eBlockFit; break;
+                case eBlockZFitShortcut: proteinBackbone.colorScheme = eBlockZFit; break;
             }
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
@@ -920,6 +924,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         case StyleSettings::eInformationContent:
         case StyleSettings::eFit:
         case StyleSettings::eBlockFit:
+        case StyleSettings::eBlockZFit:
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
                     IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
