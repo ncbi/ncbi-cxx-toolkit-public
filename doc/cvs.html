@@ -629,7 +629,9 @@ the C++ source tree:
 <br>
 In either mode, if <tt>&lt;project-list&gt;</tt> contains neither a
 directory nor an extension, the script will add the extension
-<tt>.lst</tt> and look in the system directory
+<tt>.lst</tt> and look in the "system" directory -- which is either
+<tt>internal/projects</tt> subdir of
+<tt>update_projects.sh</tt>'s dir or (if no such dir exists)
 <tt>$NCBI/c++/scripts/internal/projects</tt>.
 </div>
 
