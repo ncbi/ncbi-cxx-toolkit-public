@@ -89,6 +89,9 @@ public:
     // Get library (LIBS) description
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
+    // Is this lib available in certain config
+    bool IsLibEnabledInConfig(const string&      lib, 
+                              const SConfigInfo& config) const;
     
     // Resolve define (now from CPPFLAGS)
     string ResolveDefine(const string& define) const;
@@ -115,6 +118,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/24 20:48:49  gorelenk
+ * Added declaration of member-function IsLibEnabledInConfig
+ * to class CMsvcSite.
+ *
  * Revision 1.8  2004/02/24 17:16:30  gorelenk
  * Redesigned member-function IsEmpty of struct SLibInfo.
  *
