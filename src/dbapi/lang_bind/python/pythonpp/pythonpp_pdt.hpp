@@ -190,10 +190,6 @@ public:
 
 public:
     // Type conversion operators ...
-    operator CInt() const
-    {
-        return static_cast<int>(PyInt_AsLong(Get()));
-    }
     operator long() const
     {
         return PyInt_AsLong(Get());
@@ -974,6 +970,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/18 21:56:21  ssikorsk
+* Fixed: warning with gcc295
+*
 * Revision 1.1  2005/01/18 19:26:08  ssikorsk
 * Initial version of a Python DBAPI module
 *
