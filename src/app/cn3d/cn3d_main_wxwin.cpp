@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.136  2002/05/23 16:13:31  thiessen
+* update wxFontDialog ctor
+*
 * Revision 1.135  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -1500,7 +1503,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
     initialFontData.SetInitialFont(initialFont);
 
     // bring up font chooser dialog
-    wxFontDialog dialog(this, &initialFontData);
+    wxFontDialog dialog(this, initialFontData);
     int result = dialog.ShowModal();
 
     // if user selected a font
