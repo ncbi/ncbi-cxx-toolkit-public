@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 
+#include <math.h>
 #include <corelib/ncbifloat.h>
 
 #include "fastme/graph.h"
@@ -446,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/16 17:52:17  jcherry
+ * Re-add math.h
+ *
  * Revision 1.10  2005/02/16 15:42:55  jcherry
  * Made tree-building methods throw if distance matrix contains
  * NaNs or Infs.  Added CDistMethods::AllFinite to check this.
