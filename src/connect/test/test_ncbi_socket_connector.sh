@@ -4,7 +4,7 @@
 exit_code=0
 port="555`expr $$ % 100`"
 
-./socket_io_bouncer $port &
+socket_io_bouncer $port &
 server_pid=$!
 trap 'kill $server_pid' 1 2 15
 
