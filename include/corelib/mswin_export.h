@@ -172,6 +172,7 @@
  */
 #ifdef NCBI_GUIWIDGETS_EXPORTS
 #  define NCBI_GUIWIDGETS_FL_EXPORTS
+#  define NCBI_GUIWIDGETS_GL_EXPORTS
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
 #  define NCBI_GUIWIDGETS_FLEK_EXPORTS
 #  define NCBI_GUIWIDGETS_TABLE_EXPORTS
@@ -816,6 +817,15 @@
 #endif
 
 /*
+ * Export specifier for library gui_widgets_gl
+ */
+#ifdef NCBI_GUIWIDGETS_GL_EXPORTS
+#  define NCBI_GUIWIDGETS_GL_EXPORT    __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETS_GL_EXPORT    __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library gui_widgets_flek
  */
 #ifdef NCBI_GUIWIDGETS_FLEK_EXPORTS
@@ -1132,6 +1142,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.45  2003/10/29 23:05:30  yazhuk
+ * Added NCBI_GUIWIDGETS_GL_EXPORT macros
+ *
  * Revision 1.44  2003/10/24 21:28:41  lewisg
  * add omssa, xomssa, omssacl to win32 build, including dll
  *
