@@ -35,6 +35,70 @@
 BEGIN_NCBI_SCOPE
 
 
+inline static bool isATGC(char ch)
+{
+    if (ch == 'A' || ch == 'T' || ch == 'G' || ch == 'C') {
+        return true;
+    }
+    return false;
+}
+
+
+inline static bool isURY(char ch)
+{
+    if (ch == 'U' ||
+        ch == 'R' ||
+        ch == 'Y' ||
+        ch == 'K' ||
+        ch == 'M' ||
+        ch == 'S' ||
+        ch == 'W' ||
+        ch == 'B' ||
+        ch == 'D' ||
+        ch == 'H' ||
+        ch == 'V' ||
+        ch == 'N' ) 
+    {
+        return true;
+    }
+    return false;
+}
+
+
+CFormatGuess::ESequenceType 
+CFormatGuess::SequenceType(const char* str, unsigned length)
+{
+    if (length == 0)
+        length = ::strlen(str);
+
+    unsigned ATGC_content = 0;
+    unsigned URY_content = 0;
+
+    for (unsigned i = 0; i < length; ++i) {
+        unsigned char ch = str[i];
+        char upch = toupper(ch);
+
+        if (isATGC(upch)) {
+            ++ATGC_content;
+        }
+        if (isURY(upch)) {
+            ++URY_content;
+        }
+    }
+
+    double dna_content = (double)ATGC_content / (double)length;
+    double prot_content = (double)URY_content / (double)length;
+
+    if (dna_content > 0.7) {
+        return eNucleotide;
+    }
+    if (prot_content > 0.7) {
+        return eProtein;
+    }
+    return eUndefined;
+}
+
+
 CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 {
     EFormat format = eUnknown;
@@ -87,22 +151,10 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         if (isalnum(ch) || isspace(ch)) {
             ++alpha_content;
         }
-        if (upch == 'A' || upch == 'T' || upch == 'G' || upch == 'C') {
+        if (isATGC(upch)) {
             ++ATGC_content;
         }
-        if (upch == 'U' || 
-            upch == 'R' || 
-            upch == 'Y' || 
-            upch == 'K' ||
-            upch == 'M' ||
-            upch == 'S' ||
-            upch == 'W' ||
-            upch == 'B' ||
-            upch == 'D' ||
-            upch == 'H' ||
-            upch == 'V' ||
-            upch == 'N' ) 
-        {
+        if (isURY(upch)) {
             ++URY_content;
         }
     }
@@ -154,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/13 15:18:02  kuznets
+ * added sequence type guessing function
+ *
  * Revision 1.2  2003/05/09 14:08:28  ucko
  * ios_base:: -> IOS_BASE:: for gcc 2.9x compatibility
  *

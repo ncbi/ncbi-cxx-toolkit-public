@@ -51,9 +51,20 @@ public:
         eBinaryASN,
         eTextASN,
         eFasta,
-        eXml        
+        eXml
     };
 
+    enum ESequenceType {
+        eUndefined,
+        eNucleotide,
+        eProtein
+    };
+
+    // Guess sequence type. Function calculates sequence alphabet and 
+    // identifies if the source belongs to nucleotide or protein sequence
+    static ESequenceType SequenceType(const char* str, unsigned length);
+
+    // Guess file format structure.
     EFormat Format(const string& path);
 
 };
@@ -63,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/13 15:16:13  kuznets
+ * added sequence type guessing function
+ *
  * Revision 1.1  2003/05/08 19:45:55  kuznets
  * Initial revision
  *
