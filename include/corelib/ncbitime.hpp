@@ -33,12 +33,15 @@
 * File Description:
 *   CTime - the standard Date/Time class;  it also can be used
 *           as a time span (to represent elapsed time).
-*7
+*
 *	NOTE:   Do not use Local time with time span and dates < "1/1/1900"
 *           (use GMT time only!!!)	
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/29 20:12:58  ivanov
+* Changed type of return value in NanoSecond().
+*
 * Revision 1.6  2001/05/29 16:14:34  ivanov
 * Return to nanosecond-revision. Corrected mistake of the work with local
 * time on Linux. Polish and improvement source code.
@@ -391,7 +394,7 @@ inline
 int CTime::Second(void) const { return m_Second; }
 
 inline 
-long CTime::NanoSecond(void) const { return m_NanoSecond; }
+long CTime::NanoSecond(void) const { return (long) m_NanoSecond; }
 
 inline
 CTime& CTime::SetTimeT(const time_t& t) { return x_SetTime(&t); };
