@@ -59,7 +59,7 @@ built.
 to find that initially, the&nbsp; <i>include/objects</i> subtrees are empty,
 and the subdirectories in the <i>src/objects</i> subtree contain only ASN.1
 modules.&nbsp; This is because both the header files and source files are
-auto-generated from the ASN.1 specifications by the <i><a href="/home/zimmerma/internal/c++/doc/tools/datatool/datatool.html">datatool</a></i>
+auto-generated from the ASN.1 specifications by the <i><a href="../tools/datatool/datatool.html">datatool</a></i>
 program. As described in <i><a href="inside_tree.html">Working within the
 C++ source tree</a></i>, you can build everything by running
 <i>make all_r
@@ -73,7 +73,7 @@ area, using the source browsers to locate the objects you are particularly
 interested in. For example, if you are seeking the new class definition
 for the <i>Bioseq struct</i> defined in the C Toolkit, you can search for
 the <i>CBioseq</i> class, using either the <i><a href="../lxr/ident/">LXR</a></i>
-identifier search tool, or the <i>DOC++</i>&nbsp; <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/HIER.html">class
+identifier search tool, or the <i>DOC++</i>&nbsp; <a href="../docxx/HIER.html">class
 hierarchy</a> browser. Starting with the name of the data object as it
 appears in the ASN.1 module, two simple rules apply in deriving the new
 C++ class name:
@@ -139,13 +139,13 @@ the libraries.</h4>
 <ol>
 <li>
 Create a working directory (e.g. <i><font color="#990000">Work</font></i>)
-and check out the C++ tree to that directory:, using either <i><a href="/home/zimmerma/internal/c++/doc/new_proj.html#ref_Checkout">cvs
+and check out the C++ tree to that directory:, using either <i><a href="../new_proj.html#ref_Checkout">cvs
 checkout</a></i> or the shell script, <i>cvs_core.sh &lt;dirname></i>.</li>
 
 <br>&nbsp;
 <li>
-<a href="/home/zimmerma/internal/c++/doc/config.html#ref_Running">Configure</a>
-the environment to work inside this tree using one of the configure <a href="/home/zimmerma/internal/c++/doc/config.html#ref_Wrappers">scripts</a>,
+<a href="../config.html#ref_Running">Configure</a>
+the environment to work inside this tree using one of the configure <a href="../config.html#ref_Wrappers">scripts</a>,
 according to the platform you will be working on. Be sure to<b> include
 the <i>--with-objects</i> flag</b> in invoking the <i>configure</i> script.</li>
 
