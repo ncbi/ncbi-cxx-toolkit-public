@@ -87,7 +87,7 @@ void CProjProjects::LoadFrom(const string& dir_path, CProjProjects* pr)
             if ( !fc.empty() ) {
                 string base;
                 CDirEntry::SplitPath(path, NULL, &base);
-                pr->m_Projects[base] = fc;
+                pr->m_Elements[base] = fc;
             }
         } 
     }
@@ -97,13 +97,13 @@ void CProjProjects::LoadFrom(const string& dir_path, CProjProjects* pr)
 
 void CProjProjects::Clear(void)
 {
-    m_Projects.clear();
+    m_Elements.clear();
 }
 
 
 void CProjProjects::SetFrom(const CProjProjects& contents)
 {
-    m_Projects = contents.m_Projects;
+    m_Elements = contents.m_Elements;
 }
 
 
@@ -129,11 +129,40 @@ void CProjProjects::LoadFrom(const string&  file_path,
     }
 }
 
+//-----------------------------------------------------------------------------
+static void s_GetSetIds (const CProjectTreeFolders&          folders,
+                         const CProjProjects::TFileContents& set_contents,
+                         CProjProjectsSets::TProjectsSet*    ids)
+{
+    ids->clear();
+    ITERATE(CProjProjects::TFileContents, p, set_contents) {
+        const CProjProjects::SLstElement& elt = *p;
+
+    }
+}
+
+void CProjProjectsSets::Create(const CProjectItemsTree& tree,
+                               const CProjProjects&     elements, 
+                               TSets*                   sets)
+{
+    sets->clear();
+
+    CProjectTreeFolders folders(tree);
+
+    ITERATE(CProjProjects::TElements, p, elements.m_Elements) {
+        const string& set_name = p->first;
+        const CProjProjects::TFileContents& set_contents = p->second;
+    }
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $$
+ * $Log$
+ * Revision 1.2  2004/02/18 23:38:06  gorelenk
+ * Added definitions of class CProjProjectsSets member-functions.
+ *
  * ===========================================================================
  */
