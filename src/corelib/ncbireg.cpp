@@ -62,7 +62,8 @@ BEGIN_NCBI_SCOPE
  */
 inline bool s_IsNameSectionSymbol(char ch)
 {
-    return (isalnum(ch)  ||  ch == '_'  ||  ch == '-'  ||  ch == '.');
+    return (isalnum(ch)
+            ||  ch == '_'  ||  ch == '-' ||  ch == '.'  ||  ch == '/');
 }
 
 
@@ -874,6 +875,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/07/19 20:35:16  gouriano
+ * Allow forward slash in section and entry names
+ *
  * Revision 1.39  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
