@@ -279,7 +279,7 @@ public:
 
     const TBioTreeNode* GetTopNode() const { return m_TreeNode.get(); }
 
-    void SetTopNode(TBioTreeNode* node) { m_TreeNode = auto_ptr<TBioTreeNode>(node); }
+    void SetTopNode(TBioTreeNode* node) { m_TreeNode.reset(node); }
 
 private:
     CBioTree(const CBioTree& btr);
@@ -453,6 +453,10 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/10 20:51:27  ucko
+ * Repoint m_TreeNode with .reset() rather than assignment, which not
+ * all auto_ptr<> implementations support.
+ *
  * Revision 1.4  2004/05/10 15:45:46  kuznets
  * Redesign. Added dynamic interface for UI viewer compatibility.
  *
