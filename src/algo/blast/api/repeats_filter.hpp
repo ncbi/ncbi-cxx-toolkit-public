@@ -55,6 +55,7 @@ extern "C" {
 #endif
 
 /// Parses out thre repeats filtering option from a filter string option.
+NCBI_XBLAST_EXPORT
 char* GetRepeatsFilterOption(const char* filter_string);
 
 #ifdef __cplusplus
@@ -66,6 +67,7 @@ char* GetRepeatsFilterOption(const char* filter_string);
  * @param query_loc Vector of sequence locations. [in] [out]
  * @param repeats_filter_string Repeats filtering options. [in]
  */
+NCBI_XBLAST_EXPORT
 void
 FindRepeatFilterLoc(TSeqLocVector& query_loc, char* repeats_filter_sting);
 
@@ -75,6 +77,9 @@ FindRepeatFilterLoc(TSeqLocVector& query_loc, char* repeats_filter_sting);
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/11 11:59:07  ivanov
+* Added export specifier NCBI_XBLAST_EXPORT
+*
 * Revision 1.2  2004/07/02 19:52:51  dondosha
 * Added doxygen comments
 *

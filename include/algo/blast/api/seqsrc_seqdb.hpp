@@ -62,6 +62,7 @@ extern "C" {
  * @param args Pointer to SSeqDbSrcNewArgs structure above [in]
  * @return Updated bssp structure (with all function pointers initialized
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* bssp, void* args);
 
 /** SeqDb sequence source destructor: frees its internal data structure and the
@@ -69,6 +70,7 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* bssp, void* args);
  * @param bssp BlastSeqSrc structure to free [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* bssp);
 
 /** SeqDb sequence source copier: creates a new reference to the CSeqDB object
@@ -76,6 +78,7 @@ BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* bssp);
  * @param bssp BlastSeqSrc structure to copy [in]
  * @return Pointer to the new BlastSeqSrc.
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* bssp);
 
 }
@@ -89,6 +92,7 @@ BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* bssp);
  * @param extra_arg Reserved for the future implementation of other database
  *                  restrictions [in]
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* 
 SeqDbSrcInit(const char* dbname, Boolean is_prot, int first_seq, 
              int last_seq, void* extra_arg);
@@ -101,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/11 11:59:07  ivanov
+ * Added export specifier NCBI_XBLAST_EXPORT
+ *
  * Revision 1.5  2004/07/19 14:57:57  dondosha
  * Corrected file name
  *

@@ -49,15 +49,15 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 class CBlastOptions;
 
-void
+NCBI_XBLAST_EXPORT void
 SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo); // out
 
-void
+NCBI_XBLAST_EXPORT void
 SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk);
 
-void
+NCBI_XBLAST_EXPORT void
 SetupSubjects(const TSeqLocVector& subjects, 
               EProgram program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
@@ -86,6 +86,7 @@ enum ESentinelType {
  *        encoding. [in]
  * @return pair containing the buffer and its length. 
  */
+NCBI_XBLAST_EXPORT
 pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope,
@@ -104,6 +105,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
  * @return Length of the buffer to allocate to contain original sequence of
  *        length sequence_length for given encoding and parameter constraints
  */
+NCBI_XBLAST_EXPORT
 TSeqPos
 CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
                          objects::ENa_strand strand =
@@ -118,6 +120,7 @@ CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
  * @param encoding Encoding for which a sentinel byte is needed [in]
  * @return sentinel byte
  */
+NCBI_XBLAST_EXPORT
 Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException));
 
 #if 0
@@ -130,7 +133,7 @@ Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException));
  * @param translation buffer to hold the translation, should be allocated
  * outside this function [out]
  */
-void
+NCBI_XBLAST_EXPORT void
 BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev, 
                     const int nucl_length, const short frame, Uint1* translation);
 #endif
@@ -138,6 +141,7 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
 /** Retrieves the requested genetic code in Ncbistdaa format. 
  * @param genetic_code numeric identifier for genetic code requested [in]
  */
+NCBI_XBLAST_EXPORT
 AutoPtr<Uint1, ArrayDeleter<Uint1> >
 FindGeneticCode(int genetic_code);
 
@@ -146,6 +150,7 @@ FindGeneticCode(int genetic_code);
  * @param matrix_name matrix to search for
  * @param is_prot true if this is a protein matrix
  */
+NCBI_XBLAST_EXPORT
 string
 FindMatrixPath(const char* matrix_name, bool is_prot);
 
@@ -154,12 +159,14 @@ FindMatrixPath(const char* matrix_name, bool is_prot);
  * @param dbname Database to search for
  * @param is_prot true if this is a protein matrix
  */
+NCBI_XBLAST_EXPORT
 string
 FindBlastDbPath(const char* dbname, bool is_prot);
 
 /** Returns the number of frames for a given BLAST program
  * @param p program 
  */
+NCBI_XBLAST_EXPORT
 unsigned int 
 GetNumberOfFrames(EProgram p);
 
@@ -168,6 +175,7 @@ GetNumberOfFrames(EProgram p);
 NCBI_XBLAST_EXPORT
 EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
 
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -175,6 +183,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/08/11 11:56:48  ivanov
+* Added export specifier NCBI_XBLAST_EXPORT
+*
 * Revision 1.23  2004/07/08 20:19:29  gorelenk
 * Temporary added export spec to GetProgramFromBlastProgramType
 *

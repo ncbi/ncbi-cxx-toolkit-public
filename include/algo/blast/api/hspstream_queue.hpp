@@ -73,6 +73,7 @@ private:
 };
 
 /// Function to initialize a queue HSP stream.
+NCBI_XBLAST_EXPORT
 BlastHSPStream* Blast_HSPListCQueueInit();
 
 /* @} */
@@ -81,6 +82,9 @@ BlastHSPStream* Blast_HSPListCQueueInit();
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/11 11:59:07  ivanov
+* Added export specifier NCBI_XBLAST_EXPORT
+*
 * Revision 1.2  2004/06/22 16:24:39  dondosha
 * Added doxygen comments
 *

@@ -226,6 +226,7 @@ BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
  * @param bssp BlastSeqSrc to free [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
 
 /** Copy function: needed to guarantee thread safety. 
