@@ -266,7 +266,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
             SIZE_TYPE mid;
             for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++)
                 continue;
-            string name = str.substr(beg, mid);
+            string name = str.substr(beg, mid - beg);
 
             // '=' and surrounding spaces
             while ( isspace(str[mid]) )
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/05/08 13:47:16  ivanov
+ * Fixed Read() for right handle entry names with leading spaces
+ *
  * Revision 1.34  2003/04/07 19:40:36  ivanov
  * Rollback to R1.32
  *
