@@ -236,7 +236,7 @@ static unsigned read_size(CNcbiIstream& stream)
 {
     unsigned size = 0;
     int shift = 0;
-    char c = 1<<7;
+    char c = char(1<<7);
     while ( c & (1<<7) ) {
         c = stream.get();
         size |= (c & ((1<<7)-1)) << shift;
@@ -404,6 +404,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.11  2004/03/16 16:04:20  vasilche
+ * Removed conversion warning
+ *
  * Revision 1.10  2004/02/06 16:13:19  vasilche
  * Added parsing "replace" as a synonym of "allele" in SNP qualifiers.
  * More compact format of SNP table in cache. SNP table version increased.
