@@ -328,7 +328,21 @@ public:
 };
 
 
-NCBI_DECLARE_INTERFACE_VERSION(ICache,  "icache", 2, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(ICache,  "xcache", 2, 1, 0);
+
+template<>
+class CDllResolver_Getter<ICache>
+{
+public:
+    CPluginManager_DllResolver* operator()(void)
+    {
+        CPluginManager_DllResolver* resolver =
+            new CPluginManager_DllResolver(
+            CInterfaceVersion<ICache>::GetName());
+        resolver->SetDllNamePrefix("ncbi");
+        return resolver;
+    }
+};
 
 
 END_NCBI_SCOPE
@@ -337,6 +351,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/12/22 19:32:34  grichenk
+ * +CDllResolver_Getter<ICache>
+ * Changed interface name from icache to xcache
+ *
  * Revision 1.12  2004/12/22 14:33:52  kuznets
  * +GetBlobAccess()
  *
