@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  1999/07/07 14:17:07  vakatov
+* CNcbiRegistry::  made the section and entry names be case-insensitive
+*
 * Revision 1.47  1999/07/06 15:26:37  vakatov
 * CNcbiRegistry::
 *   - allow multi-line values
@@ -286,9 +289,9 @@ static void TestRegistry(void)
 
     _ASSERT( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name42", "V420 V421\nV422 V423 \"",
+    _ASSERT( reg.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
                      CNcbiRegistry::ePersistent) );
-    _ASSERT( reg.Set("Section4", "Name43",
+    _ASSERT( reg.Set("Section4", "NAME43",
                      " \tV430 V431  \n V432 V433 ",
                      CNcbiRegistry::ePersistent) );
     _ASSERT( reg.Set("Section4", "Name43T",
@@ -350,11 +353,11 @@ static void TestRegistry(void)
     _ASSERT( reg.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
     _ASSERT( reg.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
     _ASSERT( reg.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
-    _ASSERT( reg.Get("Section4", "Name45")  == "\r\n V450 V451  \n  " );
+    _ASSERT( reg.Get("SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
     _ASSERT( reg.Get("Section4", "Name46")  == "\n\nV460\" \n \t \n\t" );
-    _ASSERT( reg.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
+    _ASSERT( reg.Get("Section4", "NaMe46T") == "\n\nV460\" \n \t \n" );
     _ASSERT( reg.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
-    _ASSERT( reg.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg.Get("Section4", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
     _ASSERT( reg.Get("Section4", "Name48")  == xxx );
 
     _ASSERT( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
@@ -362,8 +365,8 @@ static void TestRegistry(void)
     _ASSERT( reg2.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
     _ASSERT( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
     _ASSERT( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
-    _ASSERT( reg2.Get("Section4", "Name45")  == "\r\n V450 V451  \n  " );
-    _ASSERT( reg2.Get("Section4", "Name46")  == "\n\nV460\" \n \t \n\t" );
+    _ASSERT( reg2.Get("Section4", "NaMe45")  == "\r\n V450 V451  \n  " );
+    _ASSERT( reg2.Get("SecTIOn4", "NAme46")  == "\n\nV460\" \n \t \n\t" );
     _ASSERT( reg2.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
     _ASSERT( reg2.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
     _ASSERT( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );

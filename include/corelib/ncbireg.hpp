@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/07 14:17:05  vakatov
+* CNcbiRegistry::  made the section and entry names be case-insensitive
+*
 * Revision 1.7  1999/07/06 15:26:31  vakatov
 * CNcbiRegistry::
 *   - allow multi-line values
@@ -77,14 +80,15 @@ name1 = value1
 ***/
 
 
-///  Leading and trailing spaces in "section" and "name" get truncated
-///  Comments and empty lines are skipped during the parsing
-///  "Section" and "name" must contain only [a-z], [A-Z], [0-9] and underscore
+///  "Section" and "name" must contain only [a-z], [A-Z], [0-9] and underscore;
+///  they are not case-sensitive;  their leading and trailing spaces get
+///  truncated.
+///  Comments and empty lines are skipped during the parsing.
 ///  The serialization escaping rules:
 ///   1) [backslash] + [backslash] is converted into a single [backslash]
 ///   2) [backslash] + [space(s)] + [EndOfLine] is converted to an [EndOfLine]
 ///   3) [backslash] + ["]  is converted into a ["]
-///   4) unescaped '"' gets ignored in the very beginning/end of value
+///   4) unescaped '"' get ignored in the very beginning/end of value
 ///   *) all other combinations with [backslash] and ["] are invalid
 ///  Hint:
 ///   !) The memory-resided values always assume the [EndOfLine] == '\n', while
@@ -164,10 +168,10 @@ public:
 private:
     struct TRegEntry {
         string persistent;  // non-transient
-        string transient;   // transient(thus do not get dumped by Write())
+        string transient;   // transient(thus does not get dumped by Write())
     };
-    typedef map<string, TRegEntry>   TRegSection;
-    typedef map<string, TRegSection> TRegistry;
+    typedef map<string, TRegEntry,   PNocase>  TRegSection;
+    typedef map<string, TRegSection, PNocase>  TRegistry;
     TRegistry m_Registry;
 
 
