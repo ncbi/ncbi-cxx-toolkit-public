@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2000/10/06 21:56:45  butanaev
+ * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
+ *
  * Revision 1.10  2000/09/29 17:10:54  butanaev
  * Got rid of IsDefaultValue(), added IsProvided().
  *
@@ -1085,6 +1088,24 @@ bool CArgDescriptions::x_CreateArg
         value = &arg1;
     }
 
+    // Check whether the value is allowed
+    {
+      TAllow::const_iterator it = m_Allow.find(tag);
+      if(it != m_Allow.end())
+      {
+        bool allowed = false;
+        const TArgAllowList &l = it->second;
+        for(TArgAllowList::const_iterator lit = l.begin(); lit != l.end(); ++lit)
+          if((*lit)->Allow(*value))
+          {
+            allowed = true;
+            break;
+          }
+        if(! allowed)
+          ARG_THROW(tag + " : value not allowed", *value);
+      }
+    }
+
     // Process argument value and add it to the "args"
     args.Add(tag, desc->ProcessArgument(*value));
     return arg2_used;
@@ -1120,24 +1141,13 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it)
     {
       CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
-      if(arg)
-      {
-        if ( !args.Exist(it->first) )
-        {
-          ARG_THROW("Must specify mandatory argument, with key", it->first);
-        }
-      }
+      if(arg && ! args.Exist(it->first))
+        ARG_THROW("Must specify mandatory argument, with key", it->first);
 
       // Add optional arguments if they are not provided in a command line
-      CArgDesc_OptionalKey* optArg =
-        dynamic_cast<CArgDesc_OptionalKey*>(it->second.get());
-      if(optArg)
-      {
-        if(! args.Exist(it->first) )
-        {
-          args.Add(it->first, optArg->ProcessArgument(optArg->GetDefault(), true));
-        }
-      }
+      CArgDesc_OptionalKey* optArg = dynamic_cast<CArgDesc_OptionalKey*>(it->second.get());
+      if(optArg && ! args.Exist(it->first))
+        args.Add(it->first, optArg->ProcessArgument(optArg->GetDefault(), true));
     }
 }
 
@@ -1460,5 +1470,32 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 {
     return CreateArgs(args.Size(), args);
 }
+
+CArgAllow::~CArgAllow()
+{}
+
+CArgAllowIntInterval::CArgAllowIntInterval(int a, int b) : m_a(a), m_b(b)
+{}
+
+bool CArgAllowIntInterval::Allow(const string &value)
+{
+  int v = NStr::StringToLong(value);
+  return m_a <= v && v <= m_b;
+}
+
+CArgAllowValue::CArgAllowValue(const string &value) : m_value(value)
+{}
+
+bool CArgAllowValue::Allow(const string &value)
+{
+  return m_value == value;
+}
+
+void CArgDescriptions::Allow(const string &name, CArgAllow *allow)
+{
+
+  m_Allow[name].push_back(AutoPtr<CArgAllow>(allow));
+}
+
 
 END_NCBI_SCOPE

@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2000/10/06 21:57:51  butanaev
+ * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
+ *
  * Revision 1.7  2000/09/29 17:11:22  butanaev
  * Got rid of IsDefaultValue(), added IsProvided().
  *
@@ -229,6 +232,45 @@ public:
 };
 
 
+//
+// Class describing what values an argument allowing to have
+//
+
+class CArgAllow
+{
+public:
+  virtual ~CArgAllow();
+  virtual bool Allow(const string &value) = 0;
+};
+
+
+//
+// Class allowing an argument to have values withing given interval
+//
+
+class CArgAllowIntInterval : public CArgAllow
+{
+public:
+  CArgAllowIntInterval(int a, int b);
+  virtual bool Allow(const string &value);
+private:
+  int m_a, m_b;
+};
+
+
+//
+// Class allowing an argument to have particular value
+//
+
+class CArgAllowValue : public CArgAllow
+{
+public:
+  CArgAllowValue(const string &value);
+  virtual bool Allow(const string &value);
+private:
+  string m_value;
+};
+
 
 //
 // Container to store the command-line argument descriptions.
@@ -347,12 +389,20 @@ public:
     // alphanumeric characters and underscore ('_')
     static bool VerifyName(const string& name);
 
+    //
+    // Put a restrriction on an argument value
+    //
+    void Allow(const string &name, CArgAllow *allow);
+
 private:
     typedef map< string, AutoPtr<CArgDesc> >  TArgs;
     typedef TArgs::iterator                   TArgsI;
     typedef TArgs::const_iterator             TArgsCI;
-    typedef vector<string> TPlainArgs;  // (better use deque<> here; later)
+    typedef vector<string>                    TPlainArgs;  // (better use deque<> here; later)
+    typedef vector< AutoPtr<CArgAllow> >      TArgAllowList;
+    typedef map<string, TArgAllowList>        TAllow;
 
+    TAllow       m_Allow;
     TArgs        m_Args;        // assoc.map of arguments' name/descr
     TPlainArgs   m_PlainArgs;   // pos. args, ordered by position in cmd.-line
     EConstraint  m_Constraint;  // policy for the position args

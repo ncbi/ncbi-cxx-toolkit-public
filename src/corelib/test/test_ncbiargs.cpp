@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/10/06 21:57:07  butanaev
+ * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
+ *
  * Revision 6.5  2000/09/29 17:11:01  butanaev
  * Got rid of IsDefaultValue(), added IsProvided().
  *
@@ -56,6 +59,27 @@
 
 USING_NCBI_SCOPE;
 
+
+// Allowing
+void Example9(CArgDescriptions& m, int argc, const char* argv[])
+{
+  m.AddKey("a", "alphaNumericKey",
+           "This is a test alpha-num key argument, which may have values (one, two) ",
+           CArgDescriptions::eAlnum);
+
+  m.AddKey("i", "integerKey",
+           "This is a test integer key argument with values [5 .. 10]",
+           CArgDescriptions::eInteger);
+
+  m.Allow("a", new CArgAllowValue("one"));
+  m.Allow("a", new CArgAllowValue("two"));
+  m.Allow("i", new CArgAllowIntInterval(5, 10));
+
+  CArgs* a = m.CreateArgs(argc, argv);
+
+  cout << "a=" << (*a)["a"].AsString() << endl;
+  cout << "i=" << (*a)["i"].AsInteger() << endl;
+}
 
 // Argument with default walue
 void Example8(CArgDescriptions& m, int argc, const char* argv[])
@@ -220,7 +244,8 @@ static FTest s_Test[] =
   Example5,
   Example6,
   Example7,
-  Example8
+  Example8,
+  Example9
 };
 
 // Main
@@ -262,7 +287,7 @@ int main(int argc, const char* argv[])
   CArgDescriptions m;
   try
   {
-    m.SetUsageContext(argv[0], "Program for argument testing, #" + NStr::UIntToString(i));
+    m.SetUsageContext(argv[0], "Program for argument testing, #" + NStr::UIntToString(i + 1));
     s_Test[i] (m, argc, argv);
   }
   catch (exception& e)
