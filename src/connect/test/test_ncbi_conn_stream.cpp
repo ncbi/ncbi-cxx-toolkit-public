@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/04/23 18:03:06  vakatov
+ * Artificial cast to get rid of warning in the 64-bit compilation mode
+ *
  * Revision 6.10  2001/03/27 23:39:16  lavr
  * Explicit cast to (char) added in buffer filling
  *
@@ -104,7 +107,7 @@ int main(void)
     USING_NCBI_SCOPE;
     size_t i, j, k, l;
 
-    srand(time(0));
+    srand((unsigned int) time(0));
 
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(s_CreateRegistry(), true));
