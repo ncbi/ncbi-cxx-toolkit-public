@@ -495,7 +495,7 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
       else {
 	oss << "<M-Gap>\t";
       }
-      oss << seg.m_details;
+      oss << '-';
     }
     oss << endl;
   }
@@ -505,8 +505,7 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
     oss << query << '\t' << subj << "\t-\t"
   	<< mrna_size - polya_start << '\t'
   	<< polya_start + 1 << '\t' << mrna_size << "\t-\t-\t<Poly(A)-Gap>\t";
-    string thetail (mrna.begin() + polya_start, mrna.end());
-    oss << (m_rle? RLE(thetail): thetail);
+    oss << '-' ;
     oss << endl;
   }
 
@@ -573,6 +572,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/18 16:04:53  kapustin
+ * Do not print PolyA and gap contents
+ *
  * Revision 1.13  2003/12/15 20:16:58  kapustin
  * GetNextQuery() ->GetNextPair()
  *
