@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2003/06/02 17:02:51  dicuccio
+* Changed file name
+*
 * Revision 1.7  2000/04/13 14:51:01  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
