@@ -772,6 +772,8 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
     return (ret_code == CS_SUCCEED);
 }
 
+
+
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
 //
@@ -787,20 +789,18 @@ I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
 	if(vers.find("100") != string::npos) 
 	    version= CS_VERSION_100;
     }
-    return (I_DriverContext*)(new CTLibContext(reuse_context, version));
+    return new CTLibContext(reuse_context, version);
 }
 
-void DBAPI_CTLIB_Register(I_DriverMgr* mgr)
+void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
 {
-    if(mgr) {
-	mgr->RegisterDriver("ctlib", CTLIB_CreateContext);
-    }
+    mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
 }
 
 extern "C" {
     void* DBAPI_E_ctlib()
     {
-	return (void*)DBAPI_CTLIB_Register;
+	return (void*)DBAPI_RegisterDriver_CTLIB;
     }
 } 
 
@@ -812,6 +812,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/01/17 22:07:10  soussov
+ * changes driver registration
+ *
  * Revision 1.9  2002/01/11 20:24:33  soussov
  * driver manager support added
  *
