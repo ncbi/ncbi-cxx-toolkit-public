@@ -101,10 +101,13 @@ int CCgiApplication::Run(void)
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
         _TRACE("CCgiApplication::Run: return " << result);
+        OnEvent(result == 0 ? eSuccess : eError, result);
+        OnEvent(eExit, result);
     }
     catch (exception& e) {
         // Call the exception handler and set the CGI exit code
         result = OnException(e, NcbiCout);
+        OnEvent(eException, result);
 
         // Logging
         {{
@@ -148,6 +151,9 @@ int CCgiApplication::Run(void)
         string msg = stat->Compose();
         stat->Submit(msg);
     }
+
+    OnEvent(eEndRequest, 120);
+    OnEvent(eExit, result);
 
     return result;
 }
@@ -236,6 +242,7 @@ void CCgiApplication::SetCafService(CCookieAffinity* caf)
 {
     m_Caf.reset(caf);
 }
+
 
 
 // Flexible diagnostics support
@@ -351,6 +358,12 @@ const CArgs& CCgiApplication::GetArgs(void) const
 }
 
 
+
+void CCgiApplication::OnEvent(EEvent /*event*/,
+                              int    /*exit_code*/)
+{
+    return;
+}
 
 
 void CCgiApplication::RegisterDiagFactory(const string& key,
@@ -792,6 +805,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.59  2004/12/27 20:31:38  vakatov
+* + CCgiApplication::OnEvent() -- to allow one catch and handle a variety of
+*   states and events happening in the CGI and Fast-CGI applications
+*
+* Doxygen'ized and updated comments (in the header only).
+*
 * Revision 1.58  2004/12/01 13:50:13  kuznets
 * Changes to make CGI parameters available as arguments
 *

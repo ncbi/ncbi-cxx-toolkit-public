@@ -169,9 +169,12 @@ extern "C" {
 # endif /* USE_ALARM */
 
 
+
 // Decide if this FastCGI process should be finished prematurely, right now
 // (the criterion being whether the executable or a special watched file
 // has changed since the last iteration)
+const int kSR_Executable = 111;
+const int kSR_WatchFile  = 112;
 static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
 {
     // Check if this CGI executable has been changed
@@ -180,14 +183,14 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
     if (mtimeNew != mtime) {
         _TRACE("CCgiApplication::x_RunFastCGI: "
                "the program modification date has changed");
-        return 111;
+        return kSR_Executable;
     }
     
     // Check if the file we're watching (if any) has changed
     // (based on contents, not timestamp!)
     if (watcher  &&  watcher->HasChanged()) {
         _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
-        return 112;
+        return kSR_WatchFile;
     }
     return 0;
 }
@@ -360,11 +363,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 {{ // If to restart the application
                     int restart_code = s_ShouldRestart(mtime, watcher.get());
                     if (restart_code != 0) {
+                        OnEvent(restart_code == kSR_Executable ?
+                                eExecutable : eWatchFile, restart_code);
                         *result = restart_code;
                         break;
                     }
                 }}
                 m_Iteration--;
+                OnEvent(eWaiting, 115);
                 continue;
             }
         }
@@ -410,6 +416,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                             CNcbiRegistry::eErrPost)
                 && m_Context->GetRequest().GetEntries().find("exitfastcgi")
                 != m_Context->GetRequest().GetEntries().end()) {
+                OnEvent(eExitRequest, 114);
                 ostr <<
                     "Content-Type: text/html" HTTP_EOL
                     HTTP_EOL
@@ -420,6 +427,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
                 FCGX_Finish();
 # endif
+                OnEvent(eEndRequest, 122);
                 break;
             }
 
@@ -438,6 +446,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             x_AddLBCookie();
 
             m_ArgContextSync = false;
+
             // Call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             int x_result = ProcessRequest(*m_Context);
@@ -447,6 +456,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if (x_result != 0)
                 (*result)++;
             FCGX_SetExitStatus(x_result, pfout);
+            OnEvent(x_result == 0 ? eSuccess : eError, x_result);
         }
         catch (exception& e) {
             // Increment error counter
@@ -457,6 +467,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 CCgiObuffer  obuf(pfout);
                 CNcbiOstream ostr(&obuf);
                 int exit_code = OnException(e, ostr);
+                OnEvent(eException, exit_code);
                 FCGX_SetExitStatus(exit_code, pfout);
             }}
             
@@ -494,12 +505,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     ("FastCGI","StopIfFailed", false, CNcbiRegistry::eErrPost);
                 if ( is_stop_onfail ) {     // configured to stop on error
                     // close current request
+                    OnEvent(eExitOnFail, 113);
                     _TRACE("CCgiApplication::x_RunFastCGI: FINISHING(forced)");
 # ifdef HAVE_FCGX_ACCEPT_R
                     FCGX_Finish_r(&request);
 # else
                     FCGX_Finish();
 # endif
+                    OnEvent(eEndRequest, 123);
                     break;
                 }
             }}
@@ -524,15 +537,23 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             stat->Submit(msg);
         }
 
+        // 
+        OnEvent(eEndRequest, 121);
+
         // If to restart the application
         {{
             int restart_code = s_ShouldRestart(mtime, watcher.get());
             if (restart_code != 0) {
+                OnEvent(restart_code == kSR_Executable ?
+                        eExecutable : eWatchFile, restart_code);
                 *result = restart_code;
                 break;
             }
         }}
     } // Main Fast-CGI loop
+
+    //
+    OnEvent(eExit, *result);
 
     // done
     _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI loop finished)");
@@ -549,6 +570,12 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.52  2004/12/27 20:31:38  vakatov
+ * + CCgiApplication::OnEvent() -- to allow one catch and handle a variety of
+ *   states and events happening in the CGI and Fast-CGI applications
+ *
+ * Doxygen'ized and updated comments (in the header only).
+ *
  * Revision 1.51  2004/12/01 13:50:13  kuznets
  * Changes to make CGI parameters available as arguments
  *

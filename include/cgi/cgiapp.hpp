@@ -68,27 +68,55 @@ public:
     CCgiApplication(void);
     ~CCgiApplication(void);
 
-    static CCgiApplication* Instance(void); // Singleton method
+    /// Singleton
+    static CCgiApplication* Instance(void);
 
-    // These methods will throw exception if no server context set
+    /// Get current server context. Throw exception if the context is not set.
     const CCgiContext& GetContext(void) const  { return x_GetContext(); }
+    /// Get current server context. Throw exception if the context is not set.
     CCgiContext&       GetContext(void)        { return x_GetContext(); }
 
-    // These methods will throw exception if no resource is set
+    /// Get server 'resource'. Throw exception if the resource is not set.
     const CNcbiResource& GetResource(void) const { return x_GetResource(); }
+    /// Get server 'resource'. Throw exception if the resource is not set.
     CNcbiResource&       GetResource(void)       { return x_GetResource(); }
 
-    // 1-based for FastCGI (but 0 before the first iteration starts);
-    // always 0 for regular (i.e. not "fast") CGIs.
+    /// Get the # of currently processed HTTP request.
+    ///
+    /// 1-based for FastCGI (but 0 before the first iteration starts);
+    /// always 0 for regular (i.e. not "fast") CGIs.
     unsigned int GetFCgiIteration(void) const { return m_Iteration; }
 
-    // Return TRUE if it is running as a "fast" CGI
+    /// Return TRUE if it is running as a "fast" CGI
     bool IsFastCGI(void) const;
 
-    virtual void Init(void);  // initialization
-    virtual void Exit(void);  // cleanup
+    /// This method is called on the CGI application initialization -- before
+    /// starting to process a HTTP request or even receiving one.
+    ///
+    /// No HTTP request (or context) is available at the time of call.
+    ///
+    /// If you decide to override it, remember to call CCgiApplication::Init().
+    virtual void Init(void);
 
+    /// This method is called on the CGI application exit.
+    ///
+    /// No HTTP request (or context) is available at the time of call.
+    ///
+    /// If you decide to override it, remember to call CCgiApplication::Exit().
+    virtual void Exit(void);
+
+    /// Do not override this method yourself! -- it includes all the CGI
+    /// specific machinery. If you override it, do call CCgiApplication::Run()
+    /// from inside your overriding method.
+    /// @sa ProcessRequest
     virtual int Run(void);
+
+    /// This is the method you should override. It is called whenever the CGI
+    /// application gets a syntaxically valid HTTP request.
+    /// @param context
+    ///  Contains the parameters of the HTTP request
+    /// @return
+    ///  Exit code;  it must be zero on success
     virtual int ProcessRequest(CCgiContext& context) = 0;
 
     virtual CNcbiResource*     LoadResource(void);
@@ -109,22 +137,60 @@ public:
     const CArgs& GetArgs(void) const;
 
 protected:
-    // Factory method for the Context object construction
+    /// This method is called if an exception is thrown during the processing
+    /// of HTTP request. OnEvent() will be called after this method.
+    ///
+    /// Context and Resource aren't valid at the time of this method call
+    ///
+    /// The default implementation sends out an HTTP response with "e.what()",
+    /// and then returns zero if the printout has got through, -1 otherwise.
+    /// @param e
+    ///  The exception thrown
+    /// @param os
+    ///  Output stream to the client.
+    /// @return
+    ///  Value to use as the CGI's (or FCGI iteration's) exit code
+    /// @sa OnEvent
+    virtual int OnException(std::exception& e, CNcbiOstream& os);
+
+    /// @sa OnEvent, ProcessRequest
+    enum EEvent {
+        eSuccess,    ///< The HTTP request was processed, with zero exit code
+        eError,      ///< The HTTP request was processed, non-zero exit code
+        eWaiting,    ///< Periodic awakening while waiting for the next request
+        eException,  ///< An exception occured during the request processing
+        eEndRequest, ///< HTTP request processed, all results sent to client
+        eExit,       ///< No more iterations, exiting (called the very last)
+        eExecutable, ///< FCGI forced to exit as its modif. time has changed
+        eWatchFile,  ///< FCGI forced to exit as its "watch file" has changed
+        eExitOnFail, ///< [FastCGI].StopIfFailed set, and the iteration failed
+        eExitRequest ///< FCGI forced to exit by client's 'exitfastcgi' request
+    };
+
+    /// This method is called after each request, or when the CGI is forced to
+    /// skip a request, or to finish altogether without processing a request.
+    ///
+    /// No HTTP request (or context) may be available at the time of call.
+    ///
+    /// The default implementation of this method does nothing.
+    ///
+    /// @param event
+    ///  CGI framework event
+    /// @param status
+    ///  - eSuccess, eError:  the value returned by ProcessRequest()
+    ///  - eException:        the value returned by OnException()
+    ///  - eExit:             exit code of the CGI application
+    ///  - others:            non-zero, and different for any one status
+    virtual void OnEvent(EEvent event, int status);
+
+
+    /// Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
                                          CNcbiEnvironment* env  = 0,
                                          CNcbiIstream*     inp  = 0,
                                          CNcbiOstream*     out  = 0,
                                          int               ifd  = -1,
                                          int               ofd  = -1);
-
-    // When an exception is thrown during the request processing,
-    // this method will be called. It will examine the exception "e" and
-    // maybe gather other useful info, and write it as HTTP response to "os".
-    // The returned value will be used as a CGI (or FCGI iteration's) exit code
-    // NOTE: Context and Resource are not valid at the time of this method call
-    // The default implementation prints out "e.what()" to "os" and then
-    // returns zero if the printout has got through, -1 otherwise.
-    virtual int            OnException(std::exception& e, CNcbiOstream& os);
 
     void                   RegisterDiagFactory(const string& key,
                                                CDiagFactory* fact);
@@ -135,7 +201,7 @@ protected:
     virtual void           ConfigureDiagThreshold  (CCgiContext& context);
     virtual void           ConfigureDiagFormat     (CCgiContext& context);
 
-    // Analyze registry settings ([CGI] Log) and return current logging option
+    /// Analyze registry settings ([CGI] Log) and return current logging option
     enum ELogOpt {
         eNoLog,
         eLog,
@@ -143,11 +209,11 @@ protected:
     };
     ELogOpt GetLogOpt(void) const;
 
-    // Class factory for statistics class
+    /// Class factory for statistics class
     virtual CCgiStatistics* CreateStat();
 
-    // Attach cookie affinity service interface. Pointer ownership goes to
-    // CCgiApplication
+    /// Attach cookie affinity service interface. Pointer ownership goes to
+    /// the CCgiApplication.
     void SetCafService(CCookieAffinity* caf);
 
 private:
@@ -196,7 +262,7 @@ private:
     /// Bit flags for CCgiRequest
     int                       m_RequestFlags;
     /// Flag, indicates arguments are in sync with CGI context
-    /// (becomes TRUE on first call of GetArgs()
+    /// (becomes TRUE on first call of GetArgs())
     mutable bool              m_ArgContextSync;
 
     // forbidden
@@ -262,6 +328,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/12/27 20:31:38  vakatov
+* + CCgiApplication::OnEvent() -- to allow one catch and handle a variety of
+*   states and events happening in the CGI and Fast-CGI applications
+*
+* Doxygen'ized and updated comments (in the header only).
+*
 * Revision 1.42  2004/12/01 13:49:13  kuznets
 * Changes to make CGI parameters available as arguments
 *
