@@ -474,6 +474,9 @@ void CBDB_Cache::Open(const char* cache_path,
 
     m_Env = new CBDB_Env();
 
+    string err_file = m_Path + "err" + string(cache_name) + ".log";
+    m_Env->OpenErrFile(err_file.c_str());
+
     // Check if bdb env. files are in place and try to join
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
@@ -500,10 +503,9 @@ void CBDB_Cache::Open(const char* cache_path,
                 LOG_POST(Warning << 
                          "LC: Warning: DB_ENV returned DB_RUNRECOVERY code."
                          " Running the recovery procedure.");
-                m_Env->OpenWithTrans(cache_path, 
-                                      CBDB_Env::eThreaded | 
-                                      CBDB_Env::eRunRecovery);
             }
+            m_Env->OpenWithTrans(cache_path, 
+                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
         catch (CBDB_Exception&)
         {
@@ -591,12 +593,16 @@ void CBDB_Cache::Close()
         x_SaveAttrStorage();
     }
 
+    x_Close();
+}
+
+void CBDB_Cache::x_Close()
+{
     delete m_PidGuard;    m_PidGuard = 0;
     delete m_CacheDB;     m_CacheDB = 0;
     delete m_CacheAttrDB; m_CacheAttrDB = 0;
     delete m_Env;         m_Env = 0;
 }
-
 
 void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
                                     int             timeout)
@@ -1205,6 +1211,66 @@ void CBDB_Cache::Purge(const string&    key,
 
 }
 
+void CBDB_Cache::Verify(const char*  cache_path, 
+                        const char*  cache_name,
+                        const char*  err_file,
+                        bool         force_remove)
+{
+    Close();
+
+    m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
+
+    m_Env = new CBDB_Env();
+
+    m_Env->SetCacheSize(10 * 1024 * 1024);
+    m_Env->OpenErrFile(err_file ? err_file : "stderr");
+    try {
+        m_Env->Open(cache_path, DB_INIT_MPOOL | DB_USE_ENVIRON);
+    } 
+    catch (CBDB_Exception& ex)
+    {
+        m_Env->Open(cache_path, 
+                    DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON);
+    }
+
+    LOG_POST("Cache location: " + string(cache_path));
+
+    string cache_db_name = 
+       string("lcs_") + string(cache_name) + string(".db");
+    string attr_db_name = 
+       string("lcs_") + string(cache_name) + string("_attr") + string(".db");
+
+    m_CacheDB = new SCacheDB();
+    m_CacheDB->SetEnv(*m_Env);
+
+    LOG_POST("Running verification for: " + cache_db_name);
+    m_CacheDB->Verify(cache_db_name.c_str(), 0, 0);
+
+    m_CacheAttrDB = new SCache_AttrDB();
+    m_CacheAttrDB->SetEnv(*m_Env);
+
+
+    string bak = m_Path + attr_db_name + ".bak";
+    FILE* fl = fopen(bak.c_str(), "wb");
+
+    LOG_POST("Running verification for: " + attr_db_name);
+    m_CacheAttrDB->Verify(attr_db_name.c_str(), 0, fl);
+    delete m_CacheAttrDB; m_CacheAttrDB = 0;
+
+    fclose(fl);
+
+    if (force_remove) {
+        m_Env->ForceRemove();
+    } else {
+        bool deleted = m_Env->Remove();
+
+        if (!deleted)
+            LOG_POST("Cannot delete the environment (it is busy by another process)");
+    }
+    delete m_Env; m_Env = 0;
+}
+
+
 
 bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
                                          int            version,
@@ -1621,6 +1687,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2004/08/13 11:04:16  kuznets
+ * +Verify()
+ *
  * Revision 1.66  2004/08/10 12:19:57  kuznets
  * Entry points made non-inline to make sure they always instantiate
  *

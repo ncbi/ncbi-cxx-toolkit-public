@@ -120,6 +120,18 @@ public:
               ELockMode    lm = eNoLock,
               unsigned int cache_ram_size = 0);
 
+    /// Run verification of the cache database
+    ///
+    /// @param cache_path  Path to cache
+    /// @param cache_name  Cache instance name
+    /// @param err_file    
+    ///    Name of the error file 
+    ///    When NULL errors are dumped to stderr 
+    void Verify(const char*  cache_path, 
+                const char*  cache_name,
+                const char*  err_file = 0,
+                bool         force_remove = false);
+
     /// Open local cache in read-only mode.
     /// This is truely passive mode of operations. 
     /// All modification calls are ignored, no statistics is going to 
@@ -244,6 +256,8 @@ private:
     /// Save in-memory attributes
     void x_SaveAttrStorage();
     void x_SaveAttrStorage_NonTrans();
+
+    void x_Close();
 
 private:
     CBDB_Cache(const CBDB_Cache&);
@@ -399,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/08/13 11:04:08  kuznets
+ * +Verify()
+ *
  * Revision 1.28  2004/08/10 12:19:50  kuznets
  * Entry points made non-inline to make sure they always instantiate
  *
