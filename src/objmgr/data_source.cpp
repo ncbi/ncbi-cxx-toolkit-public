@@ -1074,7 +1074,6 @@ CTSE_LoadLock CDataSource::GetTSE_LoadLock(const TBlobId& blob_id)
             TTSE_Ref& slot = m_Blob_Map[blob_id];
             if ( !slot ) {
                 slot.Reset(new CTSE_Info(blob_id));
-                _TRACE("CDataSource::CTSE_Info = "<<&*slot<<" id="<<&blob_id);
                 _ASSERT(!IsLoaded(*slot));
                 _ASSERT(!slot->m_LoadMutex);
                 slot->m_LoadMutex.Reset(new CTSE_Info::CLoadMutex);
