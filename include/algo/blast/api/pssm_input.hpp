@@ -59,6 +59,13 @@ public:
     /// implemented in this method
     virtual void Process() = 0;
 
+    /// Get the query sequence used as master for the multiple sequence
+    /// alignment.
+    virtual unsigned char* GetQuery() = 0;
+
+    /// Get the query's length
+    virtual unsigned int GetQueryLength() = 0;
+
     /// Obtain the multiple sequence alignment structure
     virtual PsiAlignmentData* GetData() = 0;
 
@@ -73,6 +80,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/08/02 13:27:01  camacho
+ * + query sequence methods
+ *
  * Revision 1.1  2004/07/29 17:53:47  camacho
  * Initial revision
  *
