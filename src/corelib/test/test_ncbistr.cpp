@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/version.hpp>
 #include <algorithm>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -964,6 +965,70 @@ int CTestApplication::Run(void)
     OK;
 
     //------------------------------------------------------------------------
+    // CVersionInfo::FromStr
+    //------------------------------------------------------------------------
+
+    NcbiCout << NcbiEndl << "CVersionInfo::FromStr tests...";
+
+    {{
+    CVersionInfo ver("1.2.3");
+    assert(ver.GetMajor() == 1 && ver.GetMinor() == 2 && ver.GetPatchLevel() == 3);
+    ver.FromStr("12.35");
+    assert(ver.GetMajor() == 12 && ver.GetMinor() == 35 && ver.GetPatchLevel() == 0);
+    {{
+        bool err_catch = false;
+        try {
+            ver.FromStr("12.35a");
+        }
+        catch (exception&)
+        {
+            err_catch = true;
+        }
+        assert(err_catch);
+    }}
+    }}
+
+    OK;
+
+    NcbiCout << NcbiEndl << "ParseVersionString tests...";
+
+    {{
+    CVersionInfo ver("1.2.3");
+    string pname;
+    ParseVersionString("1.3.2", &pname, &ver);
+    assert(pname.empty());
+    assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 2);
+
+    ParseVersionString("Program 1.3.3", &pname, &ver);
+    assert(pname == "Program");
+    assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 3);
+
+    ParseVersionString("version 50.1.0", &pname, &ver);
+    assert(pname.empty());
+    assert(ver.GetMajor() == 50 && ver.GetMinor() == 1 && ver.GetPatchLevel() == 0);
+
+    ParseVersionString("MyProgram version 50.2.1", &pname, &ver);
+    assert(pname ==  "MyProgram");
+    assert(ver.GetMajor() == 50 && ver.GetMinor() == 2 && ver.GetPatchLevel() == 1);
+
+    ParseVersionString("MyProgram ver. 50.3.1", &pname, &ver);
+    assert(pname ==  "MyProgram");
+    assert(ver.GetMajor() == 50 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+
+    ParseVersionString("MyOtherProgram ver 51.3.1", &pname, &ver);
+    assert(pname ==  "MyOtherProgram");
+    assert(ver.GetMajor() == 51 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+
+    ParseVersionString("Program v. 1.3.1", &pname, &ver);
+    assert(pname ==  "Program");
+    assert(ver.GetMajor() == 1 && ver.GetMinor() == 3 && ver.GetPatchLevel() == 1);
+
+    }}
+
+    OK;
+
+
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "TEST_NCBISTR execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
@@ -986,6 +1051,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.37  2005/04/04 16:17:41  kuznets
+ * + Test for version strings
+ *
  * Revision 6.36  2004/10/21 15:25:41  vakatov
  * Warning fixes
  *
