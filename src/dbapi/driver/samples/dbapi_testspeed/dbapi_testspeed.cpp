@@ -352,7 +352,7 @@ int main (int argc, char* argv[])
       bcp->CompleteBCP();
     }
     double timeElapsed = timer.Elapsed();
-    cout << "inserting timeElapsed=" << timeElapsed << "\n";
+    cout << "inserting timeElapsed=" << NStr::DoubleToString(timeElapsed, 2) << "\n";
 
     timer.Start();
     if(fileParam) {
@@ -362,7 +362,7 @@ int main (int argc, char* argv[])
       FetchResults(con, table_name, readItems);
     }
     timeElapsed = timer.Elapsed();
-    cout << "fetching timeElapsed=" << timeElapsed << "\n";
+    cout << "fetching timeElapsed=" << NStr::DoubleToString(timeElapsed,2) << "\n";
     cout << "\n";
 
     DeleteTable(con, table_name);
