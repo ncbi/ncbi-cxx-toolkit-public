@@ -519,15 +519,15 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
     for (int seg = 0;  seg < numseg;  seg++, ++len_it) {
         CDense_seg::TIds::const_iterator id_it =
             denseg.GetIds().begin();
-        SAlignment_Segment seg(*len_it);
+        SAlignment_Segment alnseg(*len_it);
         for (int seq = 0;  seq < dim;  seq++, ++start_it, ++id_it) {
             if ( m_HaveStrands ) {
                 strand = *strand_it;
                 ++strand_it;
             }
-            seg.AddRow(**id_it, *start_it, m_HaveStrands, strand, 0);
+            alnseg.AddRow(**id_it, *start_it, m_HaveStrands, strand, 0);
         }
-        m_SrcSegs.push_back(seg);
+        m_SrcSegs.push_back(alnseg);
     }
 }
 
@@ -643,16 +643,16 @@ void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
     for (int seg = 0;  seg < numseg;  seg++, ++len_it) {
         CPacked_seg::TIds::const_iterator id_it =
             pseg.GetIds().begin();
-        SAlignment_Segment seg(*len_it);
+        SAlignment_Segment alnseg(*len_it);
         for (int seq = 0;  seq < dim;  seq++, ++start_it, ++id_it, ++pr_it) {
             if ( m_HaveStrands ) {
                 strand = *strand_it;
                 ++strand_it;
             }
-            seg.AddRow(**id_it, (*pr_it ? *start_it : -1),
+            alnseg.AddRow(**id_it, (*pr_it ? *start_it : -1),
                 m_HaveStrands, strand, 0);
         }
-        m_SrcSegs.push_back(seg);
+        m_SrcSegs.push_back(alnseg);
     }
 }
 
@@ -1317,6 +1317,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/23 22:13:48  ucko
+* Fix variable shadowing that some compilers treated as an error.
+*
 * Revision 1.11  2004/01/23 16:14:48  grichenk
 * Implemented alignment mapping
 *
