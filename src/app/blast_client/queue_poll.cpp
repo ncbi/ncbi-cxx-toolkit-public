@@ -85,7 +85,7 @@ s_IsAmino(const string & program)
     return (program == "blastp")  ||  (program == "tblastn");
 }
 
-static void
+void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, CRef<CBlast4_cutoff> x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -98,7 +98,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, CRef<CBlast4_cutoff> x)
     l.push_back(p);
 }
 
-static void
+void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const string x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -111,7 +111,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const string x)
     l.push_back(p);
 }
 
-static void
+void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const int & x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -124,7 +124,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const int & x)
     l.push_back(p);
 }
 
-static void
+void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const bool & x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -137,7 +137,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const bool & x)
     l.push_back(p);
 }
 
-static void
+void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const double & x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -151,7 +151,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const double & x)
 }
 
 template <class T1, class T2, class T3>
-static void
+void
 s_SetpOpt(T1 & params, T2 & name, T3 & object)
 {
     if (object.Exists()) {
@@ -160,7 +160,7 @@ s_SetpOpt(T1 & params, T2 & name, T3 & object)
 }
 
 template <class T>
-static void
+void
 s_Output(CNcbiOstream & os, CRef<T> t)
 {
     auto_ptr<CObjectOStream> x(CObjectOStream::Open(eSerial_AsnText, os));
@@ -532,6 +532,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/09/26 20:01:43  bealer
+ * - Fix Solaris compile errors.
+ *
  * Revision 1.1  2003/09/26 16:53:49  bealer
  * - Add blast_client project for netblast protocol, initial code commit.
  *
