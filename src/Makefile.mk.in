@@ -14,7 +14,7 @@
 
 ### Make sure we are using a right command shell
 
-SHELL = /bin/sh
+@use_shell@
 
 
 ### Configurable directories
@@ -26,7 +26,7 @@ incdir      = @incdir@
 libdir      = @libdir@
 bindir      = @bindir@
 
-INCLUDE = -I$(incdir) -I$(srcdir) -I$(includedir) 
+STD_INCLUDE = -I$(incdir) -I$(srcdir) -I$(includedir) 
 
 
 ### Auxiliary commands

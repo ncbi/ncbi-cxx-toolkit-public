@@ -111,17 +111,39 @@ AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
 AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 
-### Turn on compilation warnings
+# Use the right command shell
+cmd_shell="SHELL=/bin/sh"
+
+### Turn on compilation warnings and some compiler-specific flags and features
+obj_ext=".o"
+lib_pre="-l"
+lib_ext=".a"
+exe_ext=""
+f_compile="-c "
+f_outobj="-o "
+f_libpath="-L"
+f_outexe="-o "
+
 changequote(, )dnl
 if test "$GCC" = "yes" ; then
-  # GNU compiler
-  CFLAGS="-Wall -ansi $CFLAGS"
-  CXXFLAGS="-Wall -ansi $CXXFLAGS"
+   # GNU compiler
+   CFLAGS="-Wall -ansi $CFLAGS"
+   CXXFLAGS="-Wall -ansi $CXXFLAGS"
 elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then
-  # MSVC++ compiler
-  CFLAGS="-W4 $CFLAGS"
-  CXXFLAGS="-W4 $CXXFLAGS"
-  CPPFLAGS="/nologo $CPPFLAGS"
+   # MSVC++ compiler
+   CFLAGS="-W4 $CFLAGS"
+   CXXFLAGS="-W4 $CXXFLAGS"
+   CPPFLAGS="/nologo $CPPFLAGS"
+
+   cmd_shell=""
+   obj_ext=".obj"
+   lib_ext=".lib"
+   lib_pre="lib"
+   exe_ext=".exe"
+   f_compile="/c "
+   f_outobj="/Fo"
+   f_libpath="/LIBPATH:"
+   f_outexe="/OUT:"
 fi
 changequote([, ])dnl
 
@@ -239,7 +261,7 @@ libdir="$SAVE_libdir"
 bindir="$SAVE_bindir"
 
 mkdir -p "$libdir" "$bindir" "$incdir"
-cp -p "$top_srcdir/config.h" "$incdir/ncbiconf.h"
+mv "$top_srcdir/config.h" "$incdir/ncbiconf.h"
 
 if test "$exec_prefix" != "$top_srcdir" ; then
    builddir="$SAVE_builddir"
@@ -255,7 +277,7 @@ if test "$exec_prefix" != "$top_srcdir" ; then
       if test ! -d "$dest_dir" ; then
          mkdir -p "$dest_dir"
       fi
-      cp -p "$src_dir/$x_makefile" "$dest_dir/"
+      mv "$src_dir/$x_makefile" "$dest_dir/"
    done
 fi,
 

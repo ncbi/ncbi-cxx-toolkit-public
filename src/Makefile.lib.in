@@ -4,13 +4,13 @@
 #################################
 # Must be used this way:
 #
-# LIBOBJ  = p1_lib1.o p1_lib2.o 
-# LIB     = libp1.a
-# OBJ     = p1_obj1.o
-# SUBPROJ = app sub_proj1 sub_proj2
-#
 # srcdir = @srcdir@
 # include @builddir@/Makefile.mk
+#
+# LIBOBJ  = p1_lib1 p1_lib2 
+# LIB     = libp1
+# OBJ     = p1_obj1
+# SUBPROJ = app sub_proj1 sub_proj2
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 # .....
@@ -18,34 +18,40 @@
 #################################
 
 
+### Add prefixes and extentions
+XLIBOBJ = $(LIBOBJ:=@obj_ext@)
+XOBJ    = $(OBJ:=@obj_ext@)
+XLIB    = $(XLIB:=@lib_ext@)
+
+
 ### C/C++ source file compilation rules
 
-%.o: $(srcdir)/%.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-%.o: $(srcdir)/%.c
-	$(CC)  -c $(CFLAGS)   $(CPPFLAGS) $< -o $@
+%.@obj_ext@: $(srcdir)/%.cpp
+	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@ $@
+%.@obj_ext@: $(srcdir)/%.c
+	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@ $@
 
 
 ### The library build rule
 
-$(LIB): $(LIBOBJ)
-	$(AR) $(LIB) $(LIBOBJ)
-	-$(RANLIB) $(LIB)
+$(XLIB): $(XLIBOBJ)
+	$(AR) $(XLIB) $(XLIBOBJ)
+	-$(RANLIB) $(XLIB)
 
 
 ### Standard targets(non-recursive)
 
-all: $(LIB) $(OBJ)
+all: $(XLIB) $(XOBJ)
 
 install: all
-	$(COPY) $(LIB) $(OBJ) $(libdir)/
+	$(COPY) $(XLIB) $(XOBJ) $(libdir)/
 
 clean:
 	-$(RMDIR) SunWS_cache
 	-$(RM) .make.state
-	-$(RM) $(LIBOBJ)
-	-$(RM) $(LIB)
-	-$(RM) $(OBJ)
+	-$(RM) $(XLIBOBJ)
+	-$(RM) $(XLIB)
+	-$(RM) $(XOBJ)
 	-$(RM) *~
 
 
