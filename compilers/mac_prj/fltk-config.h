@@ -25,6 +25,13 @@
  * Please report all bugs and problems to "fltk-bugs@fltk.org".
  */
 
+/* 
+  have to define this to something so fluid will compile.
+  But the following probably will not work.
+  To get help in fluid define the environment variable
+  FLTK_DOCDIR
+*/
+#define FLTK_DOCDIR "~/fltk-1.1.4rc1/documentation"
 
 /*
  * BORDER_WIDTH:
