@@ -194,7 +194,8 @@ public:
     EJobStatus SubmitJobAndWait(const string&  input,
                                 string*        job_key,
                                 int*           ret_code,
-                                string*        output, 
+                                string*        output,
+                                string*        err_msg,
                                 unsigned       wait_time,
                                 unsigned short udp_port);
 
@@ -284,14 +285,35 @@ public:
                    int           ret_code, 
                    const string& output);
 
+    /// Submit job failure diagnostics. This method indicates that
+    /// job failed because of some fatal, unrecoverable error.
+    /// 
+    /// @param job_key
+    ///     Job key
+    /// @param err_msg
+    ///     Short diagnostic message
+    ///
+    virtual
+    void PutFailure(const string& job_key, 
+                    const string& err_msg);
+
+
     /// Request of current job status
     /// eJobNotFound is returned if job status cannot be found 
     /// (job record timed out)
     ///
+    /// @param ret_code
+    ///    Job return code for successfully finished jobs
+    /// @param output
+    ///    Job output data (NetCache key).
+    /// @param err_msg
+    ///    Error message (if job failed)
+    ///
     virtual
     EJobStatus GetStatus(const string& job_key, 
                          int*          ret_code,
-                         string*       output);
+                         string*       output,
+                         string*       err_msg = 0);
 
     /// Transfer job to the "Returned" status. It will be
     /// re-executed after a while. 
@@ -573,6 +595,10 @@ void CNetSchedule_GenerateJobKey(string*        key,
 /// @internal
 const unsigned int kNetScheduleMaxDataSize = 512;
 
+/// @internal
+const unsigned int kNetScheduleMaxErrSize = 1024;
+
+
 /* @} */
 
 
@@ -582,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/17 20:36:05  kuznets
+ * +PutFailure()
+ *
  * Revision 1.12  2005/03/17 17:18:00  kuznets
  * Implemented load-balanced client
  *

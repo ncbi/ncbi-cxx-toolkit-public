@@ -238,6 +238,7 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
                                      string*        job_key,
                                      int*           ret_code,
                                      string*        output, 
+                                     string*        err_msg,
                                      unsigned       wait_time,
                                      unsigned short udp_port)
 {
@@ -288,7 +289,7 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
 
     WaitJobNotification(wait_time, udp_port, m_JobKey.id);
 
-    return GetStatus(*job_key, ret_code, output);
+    return GetStatus(*job_key, ret_code, output, err_msg);
 }
 
 void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
@@ -299,7 +300,7 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
 
     EIO_Status status;
     int    sig_buf[4];
-    const char* sig = "DONE";
+    const char* sig = "JNTF";
     memcpy(sig_buf, sig, 4);
 
     int    buf[1024/sizeof(int)];
@@ -413,8 +414,12 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
 CNetScheduleClient::EJobStatus 
 CNetScheduleClient::GetStatus(const string& job_key,
                               int*          ret_code,
-                              string*       output)
+                              string*       output,
+                              string*       err_msg)
 {
+    _ASSERT(ret_code);
+    _ASSERT(output);
+
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
@@ -455,31 +460,51 @@ CNetScheduleClient::GetStatus(const string& job_key,
     int st = atoi(str);
     status = (EJobStatus) st;
 
-    if (status == eDone && (ret_code || output)) {
+    if ((status == eDone || status == eFailed)) {
         for ( ;*str && isdigit(*str); ++str) {
         }
 
         for ( ; *str && isspace(*str); ++str) {
         }
 
-        if (ret_code) {
-            *ret_code = atoi(str);
+        *ret_code = atoi(str);
+
+        for ( ;*str && isdigit(*str); ++str) {
         }
 
-        if (output) {
-            output->erase();
+        output->erase();
 
-            for ( ;*str && isdigit(*str); ++str) {
+        for ( ; *str && isspace(*str); ++str) {
+        }
+
+        if (*str && *str == '"') {
+            ++str;
+            for( ;*str && *str != '"'; ++str) {
+                output->push_back(*str);
             }
-            for ( ; *str && isspace(*str); ++str) {
+        }
+
+        if (err_msg) {
+
+            err_msg->erase();
+
+            if (!*str)
+                return status;
+
+            for (++str; *str && isspace(*str); ++str) {
             }
+            
+            if (!*str)
+                return status;
 
             if (*str && *str == '"') {
                 ++str;
                 for( ;*str && *str != '"'; ++str) {
-                    output->push_back(*str);
+                    err_msg->push_back(*str);
                 }
             }
+
+            *err_msg = NStr::ParseEscapes(*err_msg);
         }
     }
 
@@ -738,6 +763,39 @@ void CNetScheduleClient::PutResult(const string& job_key,
     CheckOK(&m_Tmp);
 }
 
+void CNetScheduleClient::PutFailure(const string& job_key, 
+                                    const string& err_msg)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    if (err_msg.length() >= kNetScheduleMaxErrSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+                   "Error message too long");
+    }
+    
+    CheckConnect(job_key);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "FPUT ");
+
+    m_Tmp.append(job_key);
+    m_Tmp.append(" ");
+    m_Tmp.append(" \"");
+    m_Tmp.append(NStr::PrintableString(err_msg));
+    m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
+}
+
+
 void CNetScheduleClient::ReturnJob(const string& job_key)
 {
     if (m_RequestRateControl) {
@@ -911,6 +969,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/17 20:36:22  kuznets
+ * +PutFailure()
+ *
  * Revision 1.12  2005/03/17 17:18:25  kuznets
  * Cosmetics
  *
