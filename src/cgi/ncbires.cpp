@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/08/12 14:54:43  sandomir
+* #include <algorithm> added
+*
 * Revision 1.25  1999/08/11 18:33:50  sandomir
 * class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
 *
@@ -113,6 +116,8 @@
 
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
