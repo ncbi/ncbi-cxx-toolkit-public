@@ -45,7 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static const size_t kBufferSize = 1024*1024;
+static const size_t kBufferSize = 512*1024;
 
 
 /* NOTE about MSVC compiler and its C++ std. library:
@@ -56,12 +56,9 @@ static const size_t kBufferSize = 1024*1024;
  * The only clear message is seen in "The C++ Programming Language",
  * 3rd ed. by B.Stroustrup, p.644, which reads "what is guaranteed
  * is that you can back up one character after a successful read."
- * Most of the implementations obey this; but MSVC's one does not.
- * If you do only unformatted reads from the file, your program gets data
- * via unbuffered stream (!) because basic_filebuf::uflow() gets control
- * and never allocates internal filebuf buffer; whereas in formatted
- * input filebuf::underflow() is used, and it does proper buffer allocation,
- * which in turn allows the backup after a read.
+ *
+ * Most implementation obey this; but there are some that do not.
+ *
  * A bug or not a bug, we had to put putback and unget tests to only
  * follow a first pushback operation, which (internally) changes the
  * stream buffer and always keeps "usual backup condition", described in
@@ -113,7 +110,7 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (buflen + i > kBufferSize + 1)
             i = kBufferSize + 1 - buflen;
-        LOG_POST(Info << "Reading " << i << " byte(s)");
+        LOG_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s"));
         j = CStreamUtils::Readsome(ios, &buf2[buflen], i);
         if (!ios.good()) {
             ERR_POST("Error receiving data");
@@ -130,15 +127,21 @@ extern int TEST_StreamPushback(iostream&    ios,
             c = 0;
         buflen += j;
 
-        if (rewind && rand() % 7 == 0 && buflen < kBufferSize) {
-            LOG_POST(Info << "Testing seekg(" << buflen <<
-                     ", " << STR(IOS_BASE) "::beg)");
-            ios.seekg(buflen, IOS_BASE::beg);
+        bool pback = false;
+        if (rewind  &&  rand() % 7 == 0  &&  buflen < kBufferSize) {
+            if (rand() & 1) {
+                LOG_POST(Info << "Testing pre-seekg(" << buflen << ", "
+                         << STR(IOS_BASE) "::beg)");
+                ios.seekg(buflen, IOS_BASE::beg);
+            } else {
+                LOG_POST(Info << "Testing pre-seekg(" << buflen << ')');
+                ios.seekg(buflen);
+            }
             if (!ios.good()) {
                 ERR_POST("Error in stream re-positioning");
                 return 2;
             }
-        } else if (ios.good() && rand() % 5 == 0 && j > 1) {
+        } else if (ios.good()  &&  rand() % 5 == 0  &&  j > 1) {
 #ifdef NCBI_COMPILER_MSVC
             if (!rewind || first_pushback_done) {
 #endif
@@ -155,6 +158,7 @@ extern int TEST_StreamPushback(iostream&    ios,
                     return 2;
                 }
                 j--;
+                pback = true;
 #ifdef NCBI_COMPILER_MSVC
             }
 #endif
@@ -163,13 +167,35 @@ extern int TEST_StreamPushback(iostream&    ios,
         i = rand() % j + 1;
         if (i != j || --i) {
             buflen -= i;
-            LOG_POST(Info << "Pushing back " << i << " byte(s)");
+            LOG_POST(Info << "Pushing back " << i <<
+                     " byte" << (i == 1 ? "" : "s"));
             CStreamUtils::Pushback(ios, &buf2[buflen], i);
             c = buf2[buflen];
 #ifdef NCBI_COMPILER_MSVC
             first_pushback_done = true;
 #endif
+            pback = true;
         }
+
+        if (rewind  &&  rand() % 9 == 0  &&  buflen < kBufferSize) {
+            if (pback) {
+                buflen++;
+                c = 0;
+            }
+            if (rand() & 1) {
+                LOG_POST(Info << "Tesing post-seekg(" << buflen << ')');
+                ios.seekg(buflen);
+            } else {
+                LOG_POST(Info << "Tesing post-seekg(" << buflen << ", "
+                         << STR(IOS_BASE) << "::beg)");
+                ios.seekg(buflen, IOS_BASE::beg);
+            }
+            if (!ios.good()) {
+                ERR_POST("Error in stream re-positioning");
+                return 2;
+            }
+        }
+
         //LOG_POST(Info << "Obtained " << buflen << " of " << kBufferSize);
     }
 
@@ -206,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/11/21 19:59:55  lavr
+ * Buffer size decreased to 1/2 Meg, post-pushback seekg() test added
+ *
  * Revision 1.10  2003/04/11 17:59:22  lavr
  * Macro _STR(x) [mistakenly left empty] defined properly
  *
