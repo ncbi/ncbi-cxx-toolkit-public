@@ -47,19 +47,14 @@
 
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/data_source.hpp>
-#include <objmgr/impl/annot_object.hpp>
 #include <objmgr/data_loader_factory.hpp>
 
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Seq_annot.hpp>
 
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/interfaces.hpp>
 #include <corelib/ncbithr.hpp>
+
 #include <corelib/plugin_manager_impl.hpp>
 #include <util/plugin_manager_store.hpp>
 
@@ -283,9 +278,9 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
     for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
         CGBReaderRequestResult result(this);
         CLoadLockBlob_ids blobs(result, sih);
-        if ( !blobs ) {
+        if ( !blobs.IsLoaded() ) {
             m_Driver->ResolveSeq_id(result, sih);
-            if ( !blobs ) {
+            if ( !blobs.IsLoaded() ) {
                 continue; // retry
             }
         }
@@ -307,9 +302,9 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
     for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
         CGBReaderRequestResult result(this);
         CLoadLockSeq_ids seq_ids(result, idh);
-        if ( !seq_ids ) {
+        if ( !seq_ids.IsLoaded() ) {
             m_Driver->ResolveSeq_ids(result, idh);
-            if ( !seq_ids ) {
+            if ( !seq_ids.IsLoaded() ) {
                 continue; // retry
             }
         }
@@ -317,7 +312,8 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
         return;
     }
     NCBI_THROW(CLoaderException, eOtherError,
-               "cannot get synonyms for "+idh.AsString()+": too many attempts");
+               "cannot get synonyms for "+idh.AsString()+
+               ": too many attempts");
 }
 
 
@@ -438,25 +434,31 @@ TBlobContentsMask CGBDataLoader::x_MakeContentMask(EChoice choice) const
         return fBlobHasSeqMap | fBlobHasSeqData;
     case CGBDataLoader::eFeatures:
         // SeqFeatures
-        return fBlobHasFeatures;
+        return fBlobHasIntFeat;
     case CGBDataLoader::eGraph:
         // SeqGraph
-        return fBlobHasGraph;
+        return fBlobHasIntGraph;
     case CGBDataLoader::eAlign:
         // SeqGraph
-        return fBlobHasAlign;
+        return fBlobHasIntAlign;
     case CGBDataLoader::eAnnot:
         // all internal annotations
-        return fBlobHasAlign | fBlobHasGraph | fBlobHasFeatures;
+        return fBlobHasIntAnnot;
     case CGBDataLoader::eExtFeatures:
+        return fBlobHasExtFeat;
     case CGBDataLoader::eExtGraph:
+        return fBlobHasExtGraph;
     case CGBDataLoader::eExtAlign:
+        return fBlobHasExtAlign;
     case CGBDataLoader::eExtAnnot:
         // external annotations
-        return fBlobHasExternal;
+        return fBlobHasExtAnnot;
+    case CGBDataLoader::eOrphanAnnot:
+        // orphan annotations
+        return fBlobHasOrphanAnnot;
     case CGBDataLoader::eAll:
-        // whole bioseq
-        return fBlobHasAllLocal | fBlobHasExternal;
+        // everything
+        return fBlobHasAll;
     default:
         return 0;
     }
@@ -473,24 +475,33 @@ CGBDataLoader::x_MakeContentMask(const SRequestDetails& details) const
     if ( details.m_NeedSeqData.NotEmpty() ) {
         mask |= fBlobHasSeqData;
     }
-    switch ( DetailsToChoice(details.m_NeedInternalAnnots) ) {
-    case eFeatures:
-        mask |= fBlobHasFeatures;
-        break;
-    case eAlign:
-        mask |= fBlobHasAlign;
-        break;
-    case eGraph:
-        mask |= fBlobHasGraph;
-        break;
-    case eAnnot:
-        mask |= fBlobHasAlign | fBlobHasGraph | fBlobHasFeatures;
-        break;
-    default:
-        break;
-    }
-    if ( !details.m_NeedExternalAnnots.empty() ) {
-        mask |= fBlobHasExternal;
+    if ( details.m_AnnotBlobType != SRequestDetails::fAnnotBlobNone ) {
+        TBlobContentsMask annots = 0;
+        switch ( DetailsToChoice(details.m_NeedAnnots) ) {
+        case eFeatures:
+            annots |= fBlobHasIntFeat;
+            break;
+        case eAlign:
+            annots |= fBlobHasIntAlign;
+            break;
+        case eGraph:
+            annots |= fBlobHasIntGraph;
+            break;
+        case eAnnot:
+            annots |= fBlobHasIntAnnot;
+            break;
+        default:
+            break;
+        }
+        if ( details.m_AnnotBlobType & SRequestDetails::fAnnotBlobInternal ) {
+            mask |= annots;
+        }
+        if ( details.m_AnnotBlobType & SRequestDetails::fAnnotBlobExternal ) {
+            mask |= (annots << 1);
+        }
+        if ( details.m_AnnotBlobType & SRequestDetails::fAnnotBlobOrphan ) {
+            mask |= (annots << 2);
+        }
     }
     return mask;
 }
@@ -504,10 +515,78 @@ CGBDataLoader::GetRecords(const CSeq_id_Handle& sih, const EChoice choice)
 
 
 CDataLoader::TTSE_LockSet
-CGBDataLoader::GetRecords(const CSeq_id_Handle& sih,
-                          const SRequestDetails& details)
+CGBDataLoader::GetDetailedRecords(const CSeq_id_Handle& sih,
+                                  const SRequestDetails& details)
 {
     return x_GetRecords(sih, x_MakeContentMask(details));
+}
+
+
+namespace {
+    struct SBetterId
+    {
+        int GetScore(const CSeq_id_Handle& id1) const
+            {
+                if ( id1.IsGi() ) {
+                    return 100;
+                }
+                if ( !id1 ) {
+                    return -1;
+                }
+                CConstRef<CSeq_id> seq_id = id1.GetSeqId();
+                const CTextseq_id* text_id = seq_id->GetTextseq_Id();
+                if ( text_id ) {
+                    int score;
+                    if ( text_id->IsSetAccession() ) {
+                        if ( text_id->IsSetVersion() ) {
+                            score = 99;
+                        }
+                        else {
+                            score = 50;
+                        }
+                    }
+                    else {
+                        score = 0;
+                    }
+                    return score;
+                }
+                if ( seq_id->IsGeneral() ) {
+                    return 10;
+                }
+                if ( seq_id->IsLocal() ) {
+                    return 0;
+                }
+                return 1;
+            }
+        bool operator()(const CSeq_id_Handle& id1,
+                        const CSeq_id_Handle& id2) const
+            {
+                int score1 = GetScore(id1);
+                int score2 = GetScore(id2);
+                if ( score1 != score2 ) {
+                    return score1 > score2;
+                }
+                return id1 < id2;
+            }
+    };
+}
+
+
+CDataLoader::TTSE_LockSet
+CGBDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
+{
+    TTSE_LockSet ret;
+    TIds ids = bioseq.GetId();
+    sort(ids.begin(), ids.end(), SBetterId());
+    ITERATE ( TIds, it, ids ) {
+        if ( GetBlobId(*it) ) {
+            // correct id is found
+            TTSE_LockSet ret2 = GetRecords(*it, eExtAnnot);
+            ret.swap(ret2);
+            break;
+        }
+    }
+    return ret;
 }
 
 
@@ -520,8 +599,8 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
         return locks;
     }
     
-    if ( (mask & fBlobHasAllLocal) == 0 && !sih.IsGi() ) {
-        // no external features on non-gi
+    if ( (mask & ~fBlobHasOrphanAnnot) == 0 ) {
+        // no orphan annotations in GenBank
         return locks;
     }
     
@@ -530,9 +609,9 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
     for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
         CGBReaderRequestResult result(this);
         CLoadLockBlob_ids blobs(result, sih);
-        if ( !blobs ) {
+        if ( !blobs.IsLoaded() ) {
             m_Driver->LoadBlobs(result, sih, mask);
-            if ( !blobs ) {
+            if ( !blobs.IsLoaded() ) {
                 continue; // retry
             }
         }
@@ -563,13 +642,13 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
 
 void CGBDataLoader::GetChunk(TChunk chunk)
 {
-    for ( int retry = 0; chunk->NotLoaded() && retry < 3; ++retry ) {
+    for ( int retry = 0; !chunk->IsLoaded() && retry < 3; ++retry ) {
         CGBReaderRequestResult result(this);
         m_Driver->LoadChunk(result,
                             GetBlobId(chunk->GetBlobId()),
                             chunk->GetChunkId());
     }
-    if ( chunk->NotLoaded() ) {
+    if ( !chunk->IsLoaded() ) {
         NCBI_THROW(CLoaderException, eOtherError,
                    "cannot load chunk : too many attempts");
     }
