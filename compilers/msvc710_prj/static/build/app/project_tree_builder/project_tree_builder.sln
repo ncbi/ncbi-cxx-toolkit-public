@@ -1,4 +1,16 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-HIERARCHICAL-VIEW-", "UtilityProjects\-HIERARCHICAL-VIEW-.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProjects\-CONFIGURE-.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_INDEX_", "UtilityProjects\_INDEX_.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "datatool", "..\..\serial\datatool\datatool.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3}
@@ -26,14 +38,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xutil", "..\..\util\xutil.v
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_HIERARCHICAL_VIEW_", "UtilityProjects\_HIERARCHICAL_VIEW_.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_CONFIGURE_", "UtilityProjects\_CONFIGURE_.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -44,6 +48,42 @@ Global
 		ReleaseMT = ReleaseMT
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Debug.ActiveCfg = Debug|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Debug.Build.0 = Debug|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugDLL.Build.0 = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugMT.ActiveCfg = DebugMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugMT.Build.0 = DebugMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Release.ActiveCfg = Release|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Release.Build.0 = Release|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseMT.Build.0 = ReleaseMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Debug.ActiveCfg = Debug|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Debug.Build.0 = Debug|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugDLL.Build.0 = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugMT.ActiveCfg = DebugMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugMT.Build.0 = DebugMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Release.ActiveCfg = Release|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Release.Build.0 = Release|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseMT.Build.0 = ReleaseMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.Debug.ActiveCfg = Debug|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.Debug.Build.0 = Debug|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.DebugDLL.Build.0 = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.DebugMT.ActiveCfg = DebugMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.DebugMT.Build.0 = DebugMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.Release.ActiveCfg = Release|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.Release.Build.0 = Release|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA7}.ReleaseMT.Build.0 = ReleaseMT|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}.Debug.ActiveCfg = Debug|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}.Debug.Build.0 = Debug|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}.DebugDLL.ActiveCfg = DebugDLL|Win32
@@ -104,30 +144,6 @@ Global
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}.ReleaseMT.Build.0 = ReleaseMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Debug.ActiveCfg = Debug|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Debug.Build.0 = Debug|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugDLL.ActiveCfg = DebugDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugDLL.Build.0 = DebugDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugMT.ActiveCfg = DebugMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.DebugMT.Build.0 = DebugMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Release.ActiveCfg = Release|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.Release.Build.0 = Release|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA5}.ReleaseMT.Build.0 = ReleaseMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Debug.ActiveCfg = Debug|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Debug.Build.0 = Debug|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugDLL.ActiveCfg = DebugDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugDLL.Build.0 = DebugDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugMT.ActiveCfg = DebugMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.DebugMT.Build.0 = DebugMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Release.ActiveCfg = Release|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.Release.Build.0 = Release|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA6}.ReleaseMT.Build.0 = ReleaseMT|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
