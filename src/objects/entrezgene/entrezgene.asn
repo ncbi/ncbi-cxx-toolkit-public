@@ -1,4 +1,4 @@
---$Revision: 1.1 $ 
+--$Revision: 1.2 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -43,6 +43,7 @@ Entrezgene ::= SEQUENCE {
     refgene SEQUENCE OF Gene-commentary OPTIONAL ,          -- NG for this? 
     transcripts SEQUENCE OF Gene-commentary OPTIONAL ,   -- all the alternative splice forms 
     products SEQUENCE OF Gene-commentary OPTIONAL ,         -- all the proteins 
+    homology SEQUENCE OF Gene-commentary OPTIONAL , 
     comments SEQUENCE OF Gene-commentary OPTIONAL } 
  
 Gene-track ::= SEQUENCE { 
