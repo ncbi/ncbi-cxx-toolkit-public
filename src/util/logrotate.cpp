@@ -67,7 +67,7 @@ void CRotatingLogStreamBuf::Rotate(void)
 
 CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
 {
-    CT_POS_TYPE new_size = m_Size + pptr() - pbase();
+    CT_POS_TYPE new_size = m_Size + (pptr() - pbase());
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         new_size += 1; // CT_POS_TYPE lacks ++ on WorkShop at least
     }
@@ -77,7 +77,7 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
     // seem to handle the case of pptr() being null by setting the
     // pointers and writing c to the buffer but not actually flushing
     // it to disk. :-/
-    m_Size = new_size + pbase() - pptr();
+    m_Size = new_size + (pbase() - pptr());
     if (m_Size >= m_Limit) {
         Rotate();
     }
@@ -88,10 +88,10 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
 int CRotatingLogStreamBuf::sync(void)
 {
     // Perform output first, in case switching files discards data.
-    CT_POS_TYPE new_size = m_Size + pptr() - pbase();
+    CT_POS_TYPE new_size = m_Size + (pptr() - pbase());
     int result = CNcbiFilebuf::sync();
     // pptr() ought to equal pbase() now, but just in case...
-    m_Size = new_size + pbase() - pptr();
+    m_Size = new_size + (pbase() - pptr());
     if (m_Size >= m_Limit) {
         Rotate();
     }
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/02/12 19:59:11  ucko
+* Parenthesize pointer subtractions.
+*
 * Revision 1.2  2003/02/12 16:41:08  ucko
 * Always supply CRotatingLogStreamBuf::sync, and avoid double-counting
 * via run-time rather than compile-time logic.
