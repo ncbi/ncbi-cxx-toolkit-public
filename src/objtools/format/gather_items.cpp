@@ -780,19 +780,8 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_BarcodeComment(CBioseqContext& ctx) const
 {
-    CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_Molinfo);
-    if (!desc_it) {
-        return;
-    }
-    const CSeqdesc& desc = *desc_it;
-    const CMolInfo& mi = desc.GetMolinfo();
-
-    CMolInfo::TTech tech = mi.GetTech();
-    if (tech == CMolInfo::eTech_barcode) {
-        CRef<CCommentItem> com(
-            new CCommentItem(CCommentItem::GetStringForBarcode(ctx), ctx, &desc));
-        com->SetNeedPeriod(false);
-        x_AddComment(com);
+    if (ctx.GetTech() == CMolInfo::eTech_barcode) {
+        x_AddComment(new CBarcodeComment(ctx));
     }
 }
 
@@ -1608,6 +1597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/03/29 18:18:09  shomrat
+* Use CBarcodeComment
+*
 * Revision 1.44  2005/03/28 17:20:59  shomrat
 * Optimizing bioseq iteration and cds product feature collection
 *
