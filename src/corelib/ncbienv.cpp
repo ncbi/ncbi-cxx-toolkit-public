@@ -41,7 +41,11 @@
 #include <unistd.h>
 #endif
 
+#ifdef NCBI_OS_MSWIN
+#include <stdlib.h>
+#else
 extern char** environ;
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -287,6 +291,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/14 18:15:19  ucko
+ * On Windows, take the declaration of environ from stdlib.h to ensure
+ * proper DLL linkage.
+ *
  * Revision 1.14  2005/03/14 15:52:09  ucko
  * Support taking settings from the environment.
  *
