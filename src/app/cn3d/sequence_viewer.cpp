@@ -116,9 +116,6 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
         sequenceWindow->UpdateDisplay(display);
     else
         CreateSequenceWindow(false);
-
-    // allow alignment export
-    sequenceWindow->EnableExport(true);
 }
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
@@ -144,9 +141,6 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         sequenceWindow->UpdateDisplay(display);
     else
         CreateSequenceWindow(false);
-
-    // forbid alignment export
-    sequenceWindow->EnableExport(false);
 }
 
 void SequenceViewer::TurnOnEditor(void)
@@ -554,6 +548,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/11/02 12:45:39  thiessen
+* enable sequence viewer menu items properly
+*
 * Revision 1.68  2004/09/23 19:29:31  thiessen
 * shorten and escape single quotes in status strings
 *

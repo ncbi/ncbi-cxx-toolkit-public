@@ -169,8 +169,6 @@ public:
         if (id != MID_MARK_BLOCK && DoMarkBlock()) MarkBlockOff();
         if (id != MID_PROXIMITY_SORT && DoProximitySort()) ProximitySortOff();
     }
-
-    void EnableExport(bool enabled) { menuBar->Enable(MID_EXPORT, enabled); }
 };
 
 END_SCOPE(Cn3D)
@@ -180,6 +178,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/11/02 12:45:39  thiessen
+* enable sequence viewer menu items properly
+*
 * Revision 1.30  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

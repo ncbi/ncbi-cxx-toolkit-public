@@ -181,6 +181,9 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_TAXONOMY, editable);
         menuBar->Enable(MID_SCORE_THREADER, editable);
         menuBar->Enable(MID_HIGHLIGHT_BLOCKS, editable);
+        menuBar->Enable(MID_EXPORT, editable);
+        menuBar->Enable(MID_EXPAND_HIGHLIGHTS, editable);
+        menuBar->Enable(MID_RESTRICT_HIGHLIGHTS, editable);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
@@ -567,6 +570,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2004/11/02 12:45:39  thiessen
+* enable sequence viewer menu items properly
+*
 * Revision 1.56  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *
