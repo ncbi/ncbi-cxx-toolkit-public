@@ -16,7 +16,7 @@ export DYLD_BIND_AT_LAUNCH
 . ${script_dir}/common.sh
 
 
-algos='align basic external gnomon linkout phylo validator'
+algos='align basic cn3d external gnomon linkout phylo validator'
 docs='basic table'
 views='align graphic phylo_tree table taxplot text validator'
 PLUGINS="ncbi_init"
