@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/02/04 21:16:27  gouriano
+* minor changes to make it run correctly on Solaris
+*
 * Revision 1.8  2002/01/30 22:09:28  gouriano
 * changed CSeqMap interface
 *
@@ -740,8 +743,11 @@ int CTestApp::Run(void)
     m_ObjMgr = new CObjectManager;
     {
         CScope Scope(*m_ObjMgr);
-        Scope.AddTopLevelSeqEntry(*CreateTestEntry1(0));
-        Scope.AddTopLevelSeqEntry(*CreateTestEntry2(0));
+        CRef<CSeq_entry> entry;
+        entry = CreateTestEntry1(0);
+        Scope.AddTopLevelSeqEntry(*entry);
+        entry = CreateTestEntry2(0);
+        Scope.AddTopLevelSeqEntry(*entry);
 
         // Test global scope
         id.SetLocal().SetStr("seq11");
