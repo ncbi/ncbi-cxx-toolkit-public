@@ -95,8 +95,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    Uint1 program_number = gap_align->program;
    Boolean translated_subject;
    Int2 frame, frame_min, frame_max;
-   Int4 nucl_length = 0;
-   Uint1Ptr nucl_sequence = NULL, translation_buffer = NULL;
+   Int4 orig_length = 0;
+   Uint1Ptr orig_sequence = NULL, translation_buffer = NULL;
    Uint1Ptr translation_table = NULL, translation_table_rc = NULL;
    Int4 num_init_hsps = 0;
    Int4 num_hsps = 0;
@@ -195,8 +195,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       }
 
       if (translated_subject) {
-         nucl_length = subject->length;
-         nucl_sequence = subject->sequence;
+         orig_length = subject->length;
+         orig_sequence = subject->sequence;
          subject->sequence = translation_buffer;
       }
 
@@ -211,11 +211,11 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
             } else if (frame > 0) {
                subject->length = 
                   BLAST_TranslateCompressedSequence(translation_table,
-                     nucl_length, nucl_sequence, frame, translation_buffer);
+                     orig_length, orig_sequence, frame, translation_buffer);
             } else {
                subject->length = 
                   BLAST_TranslateCompressedSequence(translation_table_rc,
-                     nucl_length, nucl_sequence, frame, translation_buffer);
+                     orig_length, orig_sequence, frame, translation_buffer);
                
             }
             subject->sequence = translation_buffer + 1;
@@ -316,11 +316,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          score_options, db, NULL);
 
       if (db) {
-         if (translated_subject) {
-            /* Restore the original contents of the subject block */
-            subject->length = nucl_length;
-            subject->sequence = nucl_sequence;
-         }
+         /* Restore the original contents of the subject block */
+         subject->length = orig_length;
+         subject->sequence = orig_sequence;
          BlastSequenceBlkClean(subject);
       }
    }

@@ -636,7 +636,8 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
       /* diag_level serves as a boolean variable indicating that this hit 
          has already been saved */
       diag_table->diag_array[real_diag].diag_level = 1;
-      if (ungapped_data->score >= word_params->cutoff_score)
+      if (!ungapped_data || 
+          ungapped_data->score >= word_params->cutoff_score)
          BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
       else
          ungapped_data = MemFree(ungapped_data);
