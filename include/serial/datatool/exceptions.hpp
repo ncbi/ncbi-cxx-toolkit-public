@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/16 17:41:13  vasilche
+* Missing USING_NCBI_SCOPE
+*
 * Revision 1.3  2000/03/16 17:27:02  vasilche
 * Added missing include <stdexcept>
 *
@@ -52,11 +55,12 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <stdexcept>
 #include <list>
 
-class CDataType;
+USING_NCBI_SCOPE;
 
 class CTypeNotFound : public runtime_error
 {
