@@ -999,8 +999,8 @@ void CAlnMix::x_Merge()
                             row->m_DSIndex = match->m_DSIndex;
                         }
                         m_ExtraRows.push_back(row);
-                        seq2->m_ExtraRow = row;
-                        seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow;
+                        row->m_ExtraRowIdx = seq2->m_ExtraRowIdx + 1;
+                        seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow = row;
                         break;
                     }
                     seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow;
@@ -1139,6 +1139,7 @@ CAlnMix::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
                     new_seq->m_DSIndex = match->m_DSIndex;
                 }
                 m_ExtraRows.push_back(new_seq);
+                new_seq->m_ExtraRowIdx = seq->m_ExtraRowIdx + 1;
                 seq = seq->m_ExtraRow = new_seq;
                 break;
             }
@@ -1517,10 +1518,20 @@ void CAlnMix::x_CreateSegmentsVector()
             }
             break; // from the main loop
         }
+#if _ALNMGR_TRACE
+        cerr << "refseq is on row " << refseq->m_RowIndex
+             << " seq " << refseq->m_SeqIndex << "\n";
+#endif
         // for each refseq segment
         while (refseq->m_StartIt != refseq->m_Starts.end()) {
             stack< CRef<CAlnMixSegment> > seg_stack;
             seg_stack.push(refseq->m_StartIt->second);
+#if _ALNMGR_TRACE
+            cerr << "  [row " << refseq->m_RowIndex
+                 << " seq " << refseq->m_SeqIndex
+                 << " start " << refseq->m_StartIt->first
+                 << " was pushed into stack\n";
+#endif
             
             while ( !seg_stack.empty() ) {
                 
@@ -1555,6 +1566,21 @@ void CAlnMix::x_CreateSegmentsVector()
                         }
 #endif
                         seg_stack.push(row->m_StartIt->second);
+#if _ALNMGR_TRACE
+                        cerr << "  [row " << row->m_RowIndex
+                             << " seq " << row->m_SeqIndex
+                             << " start " << row->m_StartIt->first
+                             << " (left of start " << start_its_i->second->first << ") "
+                             << "was pushed into stack\n";
+#endif
+#if _DEBUG
+                        if (row == refseq) {
+                            string errstr =
+                                string("CAlnMix::x_CreateSegmentsVector():")
+                                + " Internal error: Infinite loop detected.";
+                            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+                        }                            
+#endif
                         pop_seg = false;
                         break;
                     }
@@ -1606,6 +1632,9 @@ void CAlnMix::x_CreateSegmentsVector()
                         // add to the gapped segments
                         gapped_segs.push_back(seg_stack.top());
                         seg_stack.pop();
+#if _ALNMGR_TRACE
+                        cerr << "  seg popped].\n";
+#endif
                     } else {
                         // add the gapped segments if any
                         if (gapped_segs.size()) {
@@ -1633,6 +1662,9 @@ void CAlnMix::x_CreateSegmentsVector()
                             gapped_segs.push_back(seg_stack.top());
                         }
                         seg_stack.pop();
+#if _ALNMGR_TRACE
+                        cerr << "  refseq seg popped].\n";
+#endif
                     } // if (seg_stack.size() > 1)
                 } // if (popseg)
             } // while ( !seg_stack.empty() )
@@ -2176,6 +2208,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.114  2004/11/02 18:04:36  todorov
+* CAlnMixSeq += m_ExtraRowIdx
+* x_CreateSegmentsVector() += conditionally compiled (_ALNMGR_TRACE) sections
+*
 * Revision 1.113  2004/10/26 17:46:32  todorov
 * Prevented iterator invalidation in case refseq needs to be moved to first row
 *
