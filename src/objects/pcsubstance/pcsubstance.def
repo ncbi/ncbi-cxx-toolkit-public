@@ -1,8 +1,9 @@
 [-]
 _export =
 
-[PC-Transformation]
-type._type = vector
+[PC-InfoData]
+value.ivec._type = vector
+value.fvec._type = vector
 
 [PC-Coordinates]
 type._type = vector

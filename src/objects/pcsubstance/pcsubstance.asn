@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.6 2004/08/27 18:00:24 thiessen Exp $
+-- $Id: pcsubstance.asn,v 1.7 2004/12/14 11:55:38 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -54,9 +54,7 @@ PC-Substance ::= SEQUENCE {
     xref           SEQUENCE OF PC-XRefData    OPTIONAL, -- X-Ref/LinkOut Data provided by Depositor
 
     -- Structure Description
-    original       PC-Compound,                         -- Original Deposited Structure Information
-    standardized   SEQUENCE OF PC-Compound    OPTIONAL, -- Standardized versions of the Original Structure
-    components     INTEGER                              -- Count of Compound Components 
+    compound       PC-Compounds                         -- Original Deposited Structure Information
 }
 
 
@@ -116,6 +114,8 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         gi               INTEGER,                 -- GenBank General ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
+        mmdb             INTEGER,                 -- MMDB ID
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
         dburl            VisibleString,           -- Depositor Source Database Homepage
         sburl            VisibleString,           -- Depositor Homepage for a Substance
         asurl            VisibleString            -- Depositor Homepage for an Assay
@@ -125,10 +125,8 @@ PC-XRefData ::= CHOICE {
 -- Compound Record
 PC-Compound ::= SEQUENCE {
     -- Tracking Information
-    cid            INTEGER,                                -- Compound ID  [Either valid ID or a "0" dummy value]
-                                                           --   Note: Must be greater than "0" or invalid, "0"
-                                                           --   Note: Initial deposition must give a dummy value
-    transform      SEQUENCE OF PC-Transformation,          -- Compound Transformation Audit Trail
+    id             PC-CompoundID,                          -- Compound ID
+    type           PC-CompoundType               OPTIONAL, -- Type of Compound
     name           SEQUENCE OF VisibleString     OPTIONAL, -- Derived Name/Synonym Describing a Structure
     atoms          PC-Atoms                      OPTIONAL, -- AtomID/Type Information
     bonds          PC-Bonds                      OPTIONAL, -- BondID/Type/Atom Information
@@ -137,98 +135,50 @@ PC-Compound ::= SEQUENCE {
     charge         INTEGER                       OPTIONAL, -- Provided Total Formal Charge  (Signed Integer)
     props          SEQUENCE OF PC-InfoData       OPTIONAL, -- Derived (computed) Properties
     stereogroups   SEQUENCE OF PC-StereoGroup    OPTIONAL, -- Relative stereochemistry groups
-    count          PC-Count                                -- Counts of various properties
+    count          PC-Count                      OPTIONAL, -- Counts of various properties
+    vbalt          PC-Compounds                  OPTIONAL  -- Alternate Valence-Bond Forms
+}
+
+
+-- Holder for groups of Compounds
+PC-Compounds ::= SEQUENCE OF PC-Compound
+
+
+-- Compound ID  [Note: Compound ID’s must either be a valid ID or a "0" dummy value]
+PC-CompoundID ::= CHOICE {
+        cid        INTEGER,                      --  Deposited Compound
+        cig        INTEGER                       --  Standardized Compound
+}
+
+
+-- Compound Type
+PC-CompoundType ::= INTEGER {
+        deposited           (0),                 -- Original Deposited Compound
+        standardized        (1),                 -- Standardized VB Form of Deposited Compound
+        component           (2),                 -- Component of Standardized VB Form
+        neutralized         (3),                 -- Neutralized VB Form of Standardized VB Form
+        unknown           (255)                  -- Unknown Compound Type
 }
 
 
 -- Counts of various properties of a Compound
 PC-Count ::= SEQUENCE {
-    heavy-atom               INTEGER,  -- Total count of non-Hydrogen (Heavy) Atoms
+    heavy-atom               INTEGER,             -- Total count of non-Hydrogen (Heavy) Atoms
 
     -- StereoChemistry Counts
-    atom-chiral              INTEGER,  -- Total count of (SP3) Chiral Atoms
-    atom-chiral-def          INTEGER,  -- Total count of Defined (SP3) Chiral Atoms
-    atom-chiral-undef        INTEGER,  -- Total count of Undefined (SP3) Chiral Atoms
-    bond-chiral              INTEGER,  -- Total count of (SP2) Chiral Bonds
-    bond-chiral-def          INTEGER,  -- Total count of (SP2) Defined Chiral Bonds
-    bond-chiral-undef        INTEGER,  -- Total count of (SP2) Undefined Chiral Bonds
+    atom-chiral              INTEGER,             -- Total count of (SP3) Chiral Atoms
+    atom-chiral-def          INTEGER,             -- Total count of Defined (SP3) Chiral Atoms
+    atom-chiral-undef        INTEGER,             -- Total count of Undefined (SP3) Chiral Atoms
+    bond-chiral              INTEGER,             -- Total count of (SP2) Chiral Bonds
+    bond-chiral-def          INTEGER,             -- Total count of (SP2) Defined Chiral Bonds
+    bond-chiral-undef        INTEGER,             -- Total count of (SP2) Undefined Chiral Bonds
 
-    isotope-atom             INTEGER,  -- Total count of Atoms with Isotopic Information
+    -- Isotopic Counts
+    isotope-atom             INTEGER,             -- Total count of Atoms with Isotopic Information
 
-    tautomers                INTEGER OPTIONAL -- Total number of possible tautomers (including the one drawn)
-}
-
-
--- Compound Transformation Audit Trail that details modification to the Original Compound
---    Information to yield this Compound Record
-PC-Transformation ::= SEQUENCE {
-    -- How was this compound transformed?
-    type           SEQUENCE OF PC-TransformType,        -- Transformations Performed (vector)
-
-    -- Who/When/How of Transformation/Standardization
-    method         INTEGER {                            -- Standardization Method 
-                       unspecified      (1),            -- Non-specific or Non-applicable
-                       cactvs           (2),            -- Cactvs Suite
-                       openeye          (3),            -- OpenEye Suite
-                       ncbi             (4),            -- Home-Grown Methodology
-                       other          (255)             -- Unspecified or Unknown
-                   }                          OPTIONAL,
-    version        VisibleString              OPTIONAL, -- Method Version
-    comment        VisibleString              OPTIONAL, -- Comment on Transformation
-    date           Date                       OPTIONAL  -- Transformation Timestamp 
-}
-
-
--- Type of Transformation Performed
-PC-TransformType ::= INTEGER {
-        -- 3D Coordinate Only Processing
-        connectivity-3d-perceived      (1),  -- Connectivity perceived from 3D Coordinates
-        bondorder-3d-perceived         (2),  -- Bond Order perceived from 3D Geometry
-        hydrogens-3d-perceived         (3),  -- Added missing hydrogens based on 3D geometry
-        charges-3d-perceived           (4),  -- Atom formal charges perceived from 3D geometry
-        atomstereo-3d-perceived        (5),  -- Atom StereoChemistry perceived from 3D Geometry
-        bondstereo-3d-perceived        (6),  -- Bond StereoChemistry perceived from 3D Geometry
-
-        -- Atom Specific Transformations
-        atoms-verified                (11),  -- Atom Information made Consistent and Chemically Valid
-        atom-isotopes-removed         (12),  -- Atom Isotopic Enrichment Information was Removed
-        groupV-pentavalent-neutral    (13),  -- GroupV Elements made Penta-valent and Neutral
-        groupV-tetravalent-charged    (14),  -- GroupV Elements made Tetra-valent and Charged
-        implicit-hydrogens-perceived  (15),  -- Implicit Hydrogens were perceived
-
-        -- Bond Specific Transformations
-        bonds-verified                (21),  -- Bond Information made Consistent and Chemically Valid
-
-        -- StereoChemistry Specific Transformations
-        stereochemistry-verified      (31),  -- StereoChemical Information made Consistent and Chemically Valid
-
-        -- Compound Specific Transformations
-        hydrogens-made-implicit       (41),  -- Explicit Hydrogens were made implicit
-        hydrogens-made-explicit       (42),  -- Implicit Hydrogens were made explicit
-        formal-charges-consistent     (43),  -- Formal Charges were made consistent with Compound Total Charge
-        functional-groups-consistent  (44),  -- Functional Group Representations were Standardized
-        aromaticity-perceived         (45),  -- Aromaticity perceived from Atom/Bond Information
-        kekule-form                   (46),  -- Aromaticity information used to Kekulize Compound
-        compound-validated            (47),  -- Compound Record is Self-Consistent
-        compound-verified             (48),  -- Compound is Chemically Valid
-        valence-bond-standardized     (49),  -- Compound Valence-Bond form is Standardized
-        charge-neutralized            (50),  -- Compound Acid/Base Neutralized
-
-        -- Compound Bond Cleavage Transformations
-        rgroup-compound               (71),  -- Compound resulted from Cleavage from a larger Structure
-        parent-compound               (72),  -- Compound resulted from Cleavage of smaller Structures
-        protecting-groups-removed     (73),  -- Protecting Groups Removed from Compound
-
-        -- MultiComponent Specific Transformations
-        individual-component          (81),  -- Compound was originally part of a MultiComponent Structure
-        salts-removed                 (82),  -- Compound Salts were Removed
-        primary-compound              (83),  -- Compound is the Primary Compound of a MultiComponent Structure
-        separated-salt                (84),  -- Compound is Salt Separated from Primary Component
-        separated-solvent             (85),  -- Compound is Solvent Separated from Primary Component
-        separated-minor-component     (86),  -- Compound is Minor Component Separated from Primary Component
-
-        none                         (254),  -- No transformation performed (original record)
-        unknown                      (255)
+    -- Discrete Structure Counts
+    covalent-unit            INTEGER,             -- Total count of covalently-bonded units in the record
+    tautomers                INTEGER              -- Number of possible tautomers (Max. 999)
 }
 
 
@@ -251,11 +201,14 @@ PC-StereoGroup ::= SEQUENCE OF INTEGER                  -- Atom Identifiers of a
 PC-InfoData ::= SEQUENCE {
     urn            PC-Urn,                              -- Universal Resource Name  [for Value Qualification]
     value          CHOICE {                             -- Data Value
-                          bval    BOOLEAN,
-                          ival    INTEGER,
-                          fval    REAL,
-                          sval    VisibleString,
-                          sset    SEQUENCE OF VisibleString
+                          bval    BOOLEAN,                   -- Boolean or Binary
+                          blist   SEQUENCE OF BOOLEAN,       -- List of Booleans
+                          ival    INTEGER,                   -- Integer (signed or unsigned)
+                          ivec    SEQUENCE OF INTEGER,       -- Integer Vector
+                          fval    REAL,                      -- Float or Double
+                          fvec    SEQUENCE OF REAL,          -- Double Vector
+                          sval    VisibleString,             -- String
+                          slist   SEQUENCE OF VisibleString  -- List of Strings
                    }
 }
 
@@ -279,33 +232,37 @@ PC-Urn ::= SEQUENCE {
 --   Provides for more specific validation of specified data.
 PC-UrnDataType ::= INTEGER {
         -- Basic Data Types
-        string                         (1),  -- String                      [maps to a VisibleString]
-        stringset                      (2),  -- Set of Strings              [maps to a set of VisibleString]
-        int                            (3),  -- 32-Bit Signed Integer       [maps to an INTEGER]
-        uint                           (4),  -- 32-Bit Unsigned Integer     [maps to an INTEGER]
-        float                          (5),  -- 32-Bit Real                 [maps to a REAL]
-        double                         (6),  -- 64-Bit Real                 [maps to a REAL]
+        string                         (1),  -- String                             [maps to a VisibleString]
+        stringlist                     (2),  -- List of Strings                    [maps to VisibleString list]
+        int                            (3),  -- 32-Bit Signed Integer              [maps to an INTEGER]
+        intvec                         (4),  -- Vector of 32-Bit Signed Integer    [maps to INTEGER vector]
+        uint                           (5),  -- 32-Bit Unsigned Integer            [maps to an INTEGER]
+        uintvec                        (6),  -- Vector of 32-Bit Unsigned Integer  [maps to INTEGER vector]
+        double                         (7),  -- 64-Bit Float                       [maps to a REAL]
+        doublevec                      (8),  -- Vector of Double                   [maps to REAL vector]
+        bool                           (9),  -- Boolean or Binary value            [maps to a BOOLEAN]
+        boolvec                       (10),  -- Boolean Vector                     [maps to BOOLEAN vector]
 
         -- Specialized Data Types
-        uint64                         (7),  -- 64-Bit Unsigned Integer     [maps to a VisibleString]
-        binary                         (8),  -- Base64 encoded Binary Blob  [maps to a set of VisibleString]
-        url                            (9),  -- URL                         [maps to a VisibleString]
+        uint64                        (11),  -- 64-Bit Unsigned Integer            [maps to a VisibleString]
+        binary                        (12),  -- Base64 encoded Binary Blob         [maps to a VisibleString]
+        url                           (13),  -- URL                                [maps to a VisibleString]
 
-        unknown                      (255)   -- Unknown Data Type           [maps to a set of VisibleString]
+        unknown                      (255)   -- Unknown Data Type               [maps to a set of VisibleString]
 }
 
 
 -- Coordinates for the Compound of a given type
 PC-Coordinates ::= SEQUENCE {
     type           SEQUENCE OF PC-CoordinateType,          -- Coordinate Type Information (vector)
-    label          VisibleString                 OPTIONAL, -- Coordinate Set label
-
     aid            SEQUENCE OF INTEGER,                    -- Conformer Atom IDs (vector)
-                                                           --   (kept synchronized with Conformers)
+                                                           --   (to be kept synchronized with Conformers)
                                                            --   Note: Atom ID's must be greater than "0"
     conformers     SEQUENCE OF PC-Conformer,               -- Conformers for this Coordinate Set
 
-    atomlabels     SEQUENCE OF PC-AtomString     OPTIONAL  -- Atom labels for Conformer Set
+    atomlabels     SEQUENCE OF PC-AtomString     OPTIONAL, -- Atom labels for Conformer Set
+
+    data           SEQUENCE OF PC-InfoData       OPTIONAL  -- Data Associated with these Coordinates
 }
 
 
@@ -317,7 +274,9 @@ PC-Conformer ::= SEQUENCE {
     y              SEQUENCE OF REAL,                       -- Y Coordinates (vector)
     z              SEQUENCE OF REAL              OPTIONAL, -- Z Coordinates (vector)
 
-    style          PC-DrawAnnotations            OPTIONAL  -- Structure Annotations
+    style          PC-DrawAnnotations            OPTIONAL, -- Structure Annotations
+
+    data           SEQUENCE OF PC-InfoData       OPTIONAL  -- Data Associated with this Conformer
 }
 
 
@@ -377,9 +336,9 @@ PC-Atoms ::= SEQUENCE {
     aid            SEQUENCE OF INTEGER,                    -- Atom Identifiers (vector)
                                                            --   Note: Atom ID's must be greater than "0"
     element        SEQUENCE OF PC-Element,                 -- Atomic Numbers (vector)
-    label          SEQUENCE OF VisibleString     OPTIONAL, -- Atom labels
 
     -- Independent Arrays of ID-Value Pairs  (Technically allows multiple values per Atom)
+    label          SEQUENCE OF PC-AtomString     OPTIONAL, -- Atom labels
     isotope        SEQUENCE OF PC-AtomInt        OPTIONAL, -- Isotopic Information
     charge         SEQUENCE OF PC-AtomInt        OPTIONAL, -- Formal Charges
     radical        SEQUENCE OF PC-AtomRadical    OPTIONAL, -- Radical Information
@@ -435,7 +394,7 @@ PC-Element::= INTEGER {
     -- Illegal Atom Numbers that may be Interpreted to be something else
     a  (255),                                    -- Unspecified Atom (Asterick)
     d  (254),                                    -- Dummy Atom
-    rg (253),                                    -- Rgroup Label
+    r  (253),                                    -- Rgroup Label
     lp (252),                                    -- Lone Pair
 
     -- Elements
@@ -460,7 +419,8 @@ PC-Element::= INTEGER {
     pa(91), u(92),  np(93), pu(94), am(95),
     cm(96), bk(97), cf(98), es(99), fm(100),
     md(101), no(102), lr(103), rf(104), db(105),
-    sg(106), bh(107), hs(108), mt(109), ds(110)
+    sg(106), bh(107), hs(108), mt(109), ds(110),
+    rg(111)
 }
 
 
@@ -666,6 +626,11 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.7  2004/12/14 11:55:38  bolton
+-- Latest spec changes to reflect "PubChem 2.0".  Included in this update are
+-- changes to allow for cheminformatics research, new Compound ID definitions
+-- for different namespaces and types, and more...
+--
 -- Revision 1.6  2004/08/27 18:00:24  thiessen
 -- add tautomer count to PC-Count (optional so as to not invalidate old data
 --
@@ -724,5 +689,4 @@ END
 -- structural information.
 --
 -- ===========================================================================
-
 
