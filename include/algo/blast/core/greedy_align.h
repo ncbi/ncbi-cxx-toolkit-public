@@ -48,11 +48,11 @@ typedef struct {
     edit_op_t *op;                  /* array of edit operations */
     Uint4 size, num;         /* size of allocation, number in use */
     edit_op_t last;                 /* most recent operation added */
-} edit_script_t;
+} MBGapEditScript;
 
-edit_script_t *edit_script_free(edit_script_t *es);
-edit_script_t *edit_script_new(void);
-edit_script_t *edit_script_append(edit_script_t *es, edit_script_t *et);
+MBGapEditScript *MBGapEditScriptFree(MBGapEditScript *es);
+MBGapEditScript *MBGapEditScriptNew(void);
+MBGapEditScript *MBGapEditScriptAppend(MBGapEditScript *es, MBGapEditScript *et);
 
 enum {
     EDIT_OP_MASK = 0x3,
@@ -75,22 +75,20 @@ typedef struct _three_val_ {
     Int4 I, C, D;
 } ThreeVal, PNTR ThreeValPtr;
 
-typedef struct mb_space_struct {
+typedef struct MBSpace {
     ThreeValPtr space_array;
     Int4 used, size;
-    struct mb_space_struct *next;
+    struct MBSpace *next;
 } MBSpace, *MBSpacePtr;
 
 #define EDIT_VAL(op) (op >> 2)
 
 #define EDIT_OPC(op) (op & EDIT_OP_MASK)
 
-MBSpacePtr new_mb_space(void);
-void refresh_mb_space(MBSpacePtr sp);
-void free_mb_space(MBSpacePtr sp);
-ThreeValPtr get_mb_space(MBSpacePtr S, Int4 amount);
+MBSpacePtr MBSpaceNew(void);
+void MBSpaceFree(MBSpacePtr sp);
 
-typedef struct greedy_align_mem {
+typedef struct GreedyAlignMem {
    Int4Ptr PNTR flast_d;
    Int4Ptr max_row_free;
    ThreeValPtr PNTR flast_d_affine;
@@ -104,7 +102,7 @@ BLAST_GreedyAlign PROTO((const UcharPtr s1, Int4 len1,
 			     Boolean reverse, Int4 xdrop_threshold, 
 			     Int4 match_cost, Int4 mismatch_cost,
 			     Int4Ptr e1, Int4Ptr e2, GreedyAlignMemPtr abmp, 
-			     edit_script_t *S, Uint1 rem));
+			     MBGapEditScript *S, Uint1 rem));
 Int4 
 BLAST_AffineGreedyAlign PROTO((const UcharPtr s1, Int4 len1,
 				  const UcharPtr s2, Int4 len2,
@@ -113,7 +111,7 @@ BLAST_AffineGreedyAlign PROTO((const UcharPtr s1, Int4 len1,
 				  Int4 gap_open, Int4 gap_extend,
 				  Int4Ptr e1, Int4Ptr e2, 
 				  GreedyAlignMemPtr abmp, 
-				  edit_script_t *S, Uint1 rem));
+				  MBGapEditScript *S, Uint1 rem));
 
 #ifdef __cplusplus
 }
