@@ -133,8 +133,8 @@ DoCopy()
 {
     RelativeCP $1 $2
 
-    case `uname` in
-        Darwin*)
+    case `uname`:$1 in
+        Darwin*:*.so)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
         COMMON_ExecRB $BINCOPY $dylib_file $2
         ;;
