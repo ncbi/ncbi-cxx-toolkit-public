@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/21 14:38:38  kholodov
+* Added: method WriteAsString() for string representation of an object.
+*
 * Revision 1.2  2001/04/17 04:08:01  vakatov
 * Redesigned from a pure interface (ISerializable) into a regular
 * base class (CSerializable) to make its usage safer, more formal and
@@ -52,12 +55,17 @@ BEGIN_NCBI_SCOPE
 class CSerializable
 {
 protected:
-    enum EOutputType { eAsFasta, eAsAsnText, eAsAsnBinary, eAsXML };
+    enum EOutputType { eAsFasta, 
+		       eAsAsnText, 
+		       eAsAsnBinary, 
+		       eAsXML, 
+		       eAsString };
 
     virtual void WriteAsFasta     (ostream& out) const;
     virtual void WriteAsAsnText   (ostream& out) const;
     virtual void WriteAsAsnBinary (ostream& out) const;
     virtual void WriteAsXML       (ostream& out) const;
+    virtual void WriteAsString    (ostream& out) const;
 
     const CSerializable& Dump(EOutputType output_type) const;
 

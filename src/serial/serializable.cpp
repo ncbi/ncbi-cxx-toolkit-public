@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/21 14:38:32  kholodov
+* Added: method WriteAsString() for string representation of an object.
+*
 * Revision 1.2  2001/04/17 04:08:27  vakatov
 * Redesigned from a pure interface (ISerializable) into a regular
 * base class (CSerializable) to make its usage safer, more formal and
@@ -78,6 +81,13 @@ void CSerializable::WriteAsXML(ostream& /*out*/)
                  "CSerializable::WriteAsXML() not implemented");
 }
 
+void CSerializable::WriteAsString(ostream& /*out*/)
+    const
+{
+    THROW1_TRACE(CSerialNotImplemented,
+                 "CSerializable::WriteAsString() not implemented");
+}
+
 
 ostream& operator << (ostream& out, const CSerializable& src) 
 {
@@ -93,6 +103,9 @@ ostream& operator << (ostream& out, const CSerializable& src)
         break;
     case CSerializable::eAsXML:
         src.WriteAsXML(out);
+        break;
+    case CSerializable::eAsString:
+        src.WriteAsString(out);
         break;
     default:
         THROW1_TRACE(runtime_error,
