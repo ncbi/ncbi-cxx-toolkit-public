@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.31  2004/04/26 14:14:27  kholodov
+* Added: ExecteQuery() method
+*
 * Revision 1.30  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -142,6 +145,7 @@
 */
 
 #include "stmt_impl.hpp"
+#include "cstmt_impl.hpp"
 #include "conn_impl.hpp"
 #include "cursor_impl.hpp"
 #include "rs_impl.hpp"
@@ -406,7 +410,8 @@ void CResultSet::Action(const CDbapiEvent& e)
               << "' received from " << e.GetSource()->GetIdent());
     
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-        if( dynamic_cast<CStatement*>(e.GetSource()) != 0 ) {
+        if( dynamic_cast<CStatement*>(e.GetSource()) != 0
+            || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
             if( m_rs != 0 ) {
                 _TRACE("Discarding old CDB_Result " << (void*)m_rs);
                 Invalidate();
@@ -418,7 +423,8 @@ void CResultSet::Action(const CDbapiEvent& e)
         RemoveListener(e.GetSource());
 
         if(dynamic_cast<CStatement*>(e.GetSource()) != 0
-           || dynamic_cast<CCursor*>(e.GetSource()) != 0 ) {
+           || dynamic_cast<CCursor*>(e.GetSource()) != 0
+           || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
         }
