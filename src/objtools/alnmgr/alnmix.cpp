@@ -555,7 +555,8 @@ void CAlnMix::x_Merge()
                                 prev_seg->m_StartIts) {
                             CAlnMixSeq * seq = it->first;
                             tmp_start_i = it->second;
-                            if (seq->m_PositiveStrand) {
+                            if (seq->m_PositiveStrand ==
+                                seq1->m_PositiveStrand) {
                                 seq->m_Starts[tmp_start_i->first + len1]
                                     = seg;
                                 seg->m_StartIts[seq] = ++tmp_start_i;
@@ -599,7 +600,8 @@ void CAlnMix::x_Merge()
                                 prev_seg->m_StartIts) {
                             CAlnMixSeq * seq = it->first;
                             tmp_start_i = it->second;
-                            if (seq->m_PositiveStrand) {
+                            if (seq->m_PositiveStrand ==
+                                seq1->m_PositiveStrand) {
                                 seq->m_Starts[tmp_start_i->first + curr_len]
                                     = seg;
                                 seg->m_StartIts[seq] = ++tmp_start_i;
@@ -926,7 +928,6 @@ void CAlnMix::x_CreateSegmentsVector()
             if (row == refseq) {
                 continue;
             }
-
             int index = 0;
             while (row->m_StartIt != start_its_i->second) {
 #if OBJECTS_ALNMGR___ALNMIX__DBG
@@ -1183,6 +1184,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/01/10 17:37:28  todorov
+* Fixed a bug in fNegativeStrand
+*
 * Revision 1.20  2003/01/10 15:12:13  dicuccio
 * Ooops.  Methinks I should read my e-mail more thoroughly - thats '!= NULL', not
 * '== NULL'.
