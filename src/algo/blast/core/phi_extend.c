@@ -41,11 +41,12 @@ Contents: Word finder functions for PHI-BLAST
 
 static char const rcsid[] = "$Id$";
 
-Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
+Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
         BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
         Int4** matrix, const BlastInitialWordParameters* word_params,
         Blast_ExtendWord* ewp, Uint4* query_offsets, Uint4* subject_offsets,
-        Int4 max_hits, BlastInitHitList* init_hitlist)
+        Int4 max_hits, BlastInitHitList* init_hitlist, 
+        BlastUngappedStats* ungapped_stats)
 {
    PHILookupTable* lookup = (PHILookupTable*) lookup_wrap->lut;
    Int4 hits=0;
@@ -71,5 +72,7 @@ Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
             lookup->lengths[query_offsets[i]], 0);
       } /* end for */
    } /* end while */
-   return totalhits;
+
+   Blast_UngappedStatsUpdate(ungapped_stats, totalhits, totalhits, totalhits);
+   return 0;
 }

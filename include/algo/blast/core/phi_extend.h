@@ -47,14 +47,15 @@ Detailed Contents:
 extern "C" {
 #endif
 
-Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
+Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
         BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
         Int4** matrix, const BlastInitialWordParameters* word_params,
         Blast_ExtendWord* ewp, Uint4* q_offsets, Uint4* s_offsets,
-        Int4 max_hits, BlastInitHitList* init_hitlist);
+        Int4 max_hits, BlastInitHitList* init_hitlist, 
+        BlastUngappedStats* ungapped_stats);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* PHI_LOOKUP__H */
+#endif /* PHI_EXTEND__H */

@@ -137,6 +137,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
  * @param hit_params Options related to saving HSPs [in]
  * @param init_hitlist Contains all the initial hits [in]
  * @param hsp_list_ptr List of HSPs with full extension information [out]
+ * @param gapped_stats Return statistics (not filled if NULL) [out]
 */
 Int2 BLAST_MbGetGappedScore(Uint1 program_number, 
              BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -146,7 +147,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 			    const BlastExtensionParameters* ext_params,
 			    const BlastHitSavingParameters* hit_params,
 			    BlastInitHitList* init_hitlist,
-			    BlastHSPList** hsp_list_ptr);
+			    BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
 
 
 
@@ -168,6 +169,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  * @param init_hitlist List of initial HSPs (offset pairs with additional 
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
+ * @param gapped_stats Return statistics (not filled if NULL) [out]
  */
 Int2 BLAST_GetGappedScore (Uint1 program_number, 
             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -177,7 +179,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
 		      const BlastExtensionParameters* ext_params,
 		      const BlastHitSavingParameters* hit_params,
 		      BlastInitHitList* init_hitlist,
-		      BlastHSPList** hsp_list_ptr);
+		      BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
 
 /** Perform a gapped alignment with traceback
  * @param program Type of BLAST program [in]
@@ -264,6 +266,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
  * @param init_hitlist List of initial HSPs, including offset pairs and
  *                     pattern match lengths [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
+ * @param gapped_stats Return statistics (not filled if NULL) [out]
  */
 Int2 PHIGetGappedScore (Uint1 program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -273,7 +276,7 @@ Int2 PHIGetGappedScore (Uint1 program_number,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,
-        BlastHSPList** hsp_list_ptr);
+        BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
 
 void 
 AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 

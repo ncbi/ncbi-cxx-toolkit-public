@@ -49,9 +49,9 @@ extern "C" {
  * @param subject_offsets array for storing subject offsets [out]
  * @param offset_array_size the number of elements in each offset array [in]
  * @param init_hitlist hsps resulting from the ungapped extension [out]
- * @return the number of hits found 
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
-Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
+Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 		       BLAST_SequenceBlk* query,
 		       LookupTableWrap* lookup,
 		       Int4** matrix,
@@ -60,7 +60,8 @@ Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 		       Uint4* NCBI_RESTRICT query_offsets,
 		       Uint4* NCBI_RESTRICT subject_offsets,
 		       Int4 offset_array_size,
-		       BlastInitHitList* init_hitlist);
+		       BlastInitHitList* init_hitlist, 
+             BlastUngappedStats* ungapped_stats);
 
 /** Scan a subject sequence for word hits and trigger two-hit extensions.
  *
@@ -75,10 +76,10 @@ Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
  * @param subject_offsets array for storing subject offsets [out]
  * @param array_size the number of elements in each offset array [in]
  * @param ungapped_hsps hsps resulting from the ungapped extension [out]
- * @return the number of hits found 
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
 
-Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
+Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      const BLAST_SequenceBlk* query,
 			      const LookupTableWrap* lookup_wrap,
 			      BLAST_DiagTable* diag,
@@ -88,7 +89,8 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      Uint4 * NCBI_RESTRICT query_offsets,
 			      Uint4 * NCBI_RESTRICT subject_offsets,
 			      Int4 array_size,
-	                      BlastInitHitList* ungapped_hsps);
+	            BlastInitHitList* ungapped_hsps, 
+               BlastUngappedStats* ungapped_stats);
 
 /** Scan a subject sequence for word hits and trigger one-hit extensions.
  *
@@ -103,10 +105,9 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
  * @param subject_offsets array for storing subject offsets
  * @param array_size the number of elements in each offset array
  * @param ungapped_hsps hsps resulting from the ungapped extensions [out]
- * @return the number of hits found
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
-
-Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
+Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      const BLAST_SequenceBlk* query,
 			      const LookupTableWrap* lookup_wrap,
 			      BLAST_DiagTable* diag,
@@ -116,7 +117,8 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Uint4 * NCBI_RESTRICT query_offsets,
 			      Uint4 * NCBI_RESTRICT subject_offsets,
 			      Int4 array_size,
-	                      BlastInitHitList* ungapped_hsps);
+	            BlastInitHitList* ungapped_hsps, 
+               BlastUngappedStats* ungapped_stats);
 
 /**
  * Beginning at s_off and q_off in the subject and query, respectively,

@@ -46,6 +46,7 @@ extern "C" {
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_diagnostics.h>   
 
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.
@@ -63,8 +64,8 @@ extern "C" {
  * @param psi_options Options specific to PSI-BLAST [in]
  * @param db_options Options for handling BLAST database [in]
  * @param results Structure holding all saved results [in] [out]
- * @param return_stats Return statistics containing numbers of hits on 
- *                     different stages of the search [out]
+ * @param diagnostics Return statistics containing numbers of hits on 
+ *                    different stages of the search [out]
  */
 Int4 
 BLAST_SearchEngine(Uint1 program_number, 
@@ -78,7 +79,7 @@ BLAST_SearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastReturnStat* return_stats);
+   BlastHSPResults* results, BlastDiagnostics* diagnostics);
 
 /** The high level function performing an RPS BLAST search 
  * @param program_number Type of BLAST program [in]
@@ -95,8 +96,8 @@ BLAST_SearchEngine(Uint1 program_number,
  * @param psi_options Options specific to PSI-BLAST [in]
  * @param db_options Options for handling BLAST database [in]
  * @param results Structure holding all saved results [in] [out]
- * @param return_stats Return statistics containing numbers of hits on 
- *                     different stages of the search [out]
+ * @param diagnostics Return statistics containing numbers of hits on 
+ *                    different stages of the search [out]
  */
 Int4 
 BLAST_RPSSearchEngine(Uint1 program_number, 
@@ -110,20 +111,21 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastReturnStat* return_stats);
+   BlastHSPResults* results, BlastDiagnostics* diagnostics);
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
      (Uint1, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
       BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringParameters*,
       const BlastExtensionParameters*, const BlastHitSavingParameters*,
-      BlastInitHitList*, BlastHSPList**);
+      BlastInitHitList*, BlastHSPList**, BlastGappedStats*);
      
 /** Word finder function pointer type */
-typedef Int4 (*BlastWordFinderType) 
+typedef Int2 (*BlastWordFinderType) 
      (BLAST_SequenceBlk*, BLAST_SequenceBlk*,
       LookupTableWrap*, Int4**, const BlastInitialWordParameters*,
-      Blast_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*);
+      Blast_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*,
+      BlastUngappedStats*);
 
 /** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */

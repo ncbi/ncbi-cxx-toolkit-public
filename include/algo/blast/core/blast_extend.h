@@ -41,6 +41,7 @@ Contents: Structures used for BLAST extension
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/lookup_wrap.h>
+#include <algo/blast/core/blast_diagnostics.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,8 +158,9 @@ BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
  * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
-Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
+Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   BLAST_SequenceBlk* query, 
 		   LookupTableWrap* lookup,
 		   Int4** matrix, 
@@ -167,7 +169,8 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   Uint4* q_offsets,
 		   Uint4* s_offsets,
 		   Int4 max_hits,
-		   BlastInitHitList* init_hitlist);
+		   BlastInitHitList* init_hitlist, 
+         BlastUngappedStats* ungapped_stats);
 
 /** Perform ungapped extension of a word hit
  * @param query The query sequence [in]
@@ -202,8 +205,9 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
  * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
-Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject, 
+Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject, 
 		       BLAST_SequenceBlk* query,
 		       LookupTableWrap* lookup_wrap,
 		       Int4** matrix,
@@ -212,7 +216,8 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 		       Uint4* q_offsets,
 		       Uint4* s_offsets,
 		       Int4 max_hits,
-		       BlastInitHitList* init_hitlist);
+		       BlastInitHitList* init_hitlist, 
+             BlastUngappedStats* ungapped_stats);
 
 /** Finds all words for a given subject sequence, satisfying the wordsize and 
  *  discontiguous template conditions, and performs initial (exact match) 
@@ -230,8 +235,9 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
  * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
-Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject, 
+Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject, 
 			  BLAST_SequenceBlk* query,
 			  LookupTableWrap* lookup_wrap,
 			  Int4** matrix,
@@ -240,7 +246,8 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 			  Uint4* q_offsets,
 			  Uint4* s_offsets,
 			  Int4 max_hits,
-			  BlastInitHitList* init_hitlist);
+			  BlastInitHitList* init_hitlist, 
+           BlastUngappedStats* ungapped_stats);
 
 /** Save the initial hit data into the initial hit list structure.
  * @param init_hitlist the structure holding all the initial hits 
@@ -259,7 +266,6 @@ Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp);
 void 
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
                  Int4 q_off, Int4 s_off, Int4 len, Int4 score);
-
 
 #ifdef __cplusplus
 }
