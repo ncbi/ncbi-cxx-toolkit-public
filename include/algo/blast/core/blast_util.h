@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #include <algo/blast/core/blast_def.h>
-#include <corelib/mswin_export.h>
+#include <algo/blast/core/blast_export.h>
 
 /** Different types of sequence encodings for sequence retrieval from the 
  * BLAST database 
