@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-BUILD-ALL-", "UtilityProjects\_BUILD_ALL_.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA59}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6C23686B-1522-4B44-8D48-7E3176C36247} = {6C23686B-1522-4B44-8D48-7E3176C36247}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gbench-install", "gbench\gbench-install.vcproj", "{6C23686B-1522-4B44-8D48-7E3176C36247}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		DebugDLL = DebugDLL
+		ReleaseDLL = ReleaseDLL
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA59}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA59}.DebugDLL.Build.0 = DebugDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA59}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA59}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{6C23686B-1522-4B44-8D48-7E3176C36247}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{6C23686B-1522-4B44-8D48-7E3176C36247}.DebugDLL.Build.0 = DebugDLL|Win32
+		{6C23686B-1522-4B44-8D48-7E3176C36247}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{6C23686B-1522-4B44-8D48-7E3176C36247}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
