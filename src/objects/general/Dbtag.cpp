@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/06/27 15:40:09  shomrat
+ * Implemented IsApproved
+ *
  * Revision 6.4  2002/01/10 19:45:57  clausen
  * Added GetLabel
  *
@@ -53,6 +56,10 @@
  */
 
 // standard includes
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbireg.hpp>
+
+#include <algorithm>
 
 // generated includes
 #include <objects/general/Dbtag.hpp>
@@ -65,6 +72,83 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+struct SDbEntry
+{
+    const char*  m_Db;
+    const char*  m_URLPrefix;
+
+    bool operator<(const SDbEntry& other) const {
+        return strcmp(m_Db, other.m_Db) < 0;
+    }
+};
+
+
+// List of approved DB names.
+// NOTE: these must stay in ASCIIbetical order!
+static const string kApprovedDbXrefs[] = {
+    { "ATCC"              },
+    { "ATCC(dna)"         },
+    { "ATCC(in host)"     },
+    { "AceView/WormGenes" },
+    { "BDGP_EST"          },
+    { "BDGP_INS"          },
+    { "CDD"               },
+    { "CK"                },
+    { "COG"               },
+    { "ENSEMBL"           },
+    { "ESTLIB"            },
+    { "FANTOM_DB"         },
+    { "FLYBASE"           },
+    { "GABI"              },
+    { "GDB"               },
+    { "GI"                },
+    { "GO"                },
+    { "GOA"               },
+    { "GeneDB"            },
+    { "GeneID"            },
+    { "IFO"               },
+    { "IMGT/HLA"          },
+    { "IMGT/LIGM"         },
+    { "ISFinder"          },
+    { "InterimID"         },
+    { "Interpro"          },
+    { "JCM"               },
+    { "LocusID"           },
+    { "MGD"               },
+    { "MGI"               },
+    { "MIM"               },
+    { "MaizeDB"           },
+    { "NextDB"            },
+    { "PID"               },
+    { "PIDd"              },
+    { "PIDe"              },
+    { "PIDg"              },
+    { "PIR"               },
+    { "PSEUDO"            },
+    { "RATMAP"            },
+    { "REMTREMBL"         },
+    { "RGD"               },
+    { "RZPD"              },
+    { "RiceGenes"         },
+    { "SGD"               },
+    { "SPTREMBL"          },
+    { "SWISS-PROT"        },
+    { "SoyBase"           },
+    { "UniGene"           },
+    { "UniSTS"            },
+    { "WorfDB"            },
+    { "WormBase"          },
+    { "dbEST"             },
+    { "dbSNP"             },
+    { "dbSTS"             },
+    { "niaEST"            },
+    { "taxon",              }
+};
+static const string* kApprovedDbXrefsEnd
+    = kApprovedDbXrefs + sizeof(kApprovedDbXrefs)/sizeof(string);
+
+
 // destructor
 CDbtag::~CDbtag(void)
 {
@@ -76,6 +160,7 @@ bool CDbtag::Match(const CDbtag& dbt2) const
 		return false;
 	return ((GetTag()).Match((dbt2.GetTag())));
 }
+
 
 // Appends a label to "label" based on content of CDbtag 
 void CDbtag::GetLabel(string* label) const
@@ -91,6 +176,28 @@ void CDbtag::GetLabel(string* label) const
     default:
         *label += GetDb();
     }
+}
+
+
+// Test if CDbtag.dbis in the approved databases list.
+// NOTE: 'GenBank', 'EMBL' and 'DDBJ' are approved only in 
+//        the context of a RefSeq record.
+bool CDbtag::IsApproved(bool refseq) const
+{
+    if ( !CanGetDb() ) {
+        return false;
+    }
+    const string& db = GetDb();
+
+    // if refseq, first test if GenBank, EMBL or DDBJ
+    if ( refseq ) {
+        if ( db == "GenBank"  ||  db == "EMBL"  ||  db == "DDBJ" ) {
+            return true;
+        }
+    }
+
+    // Check the rest of approved databases
+    return binary_search(kApprovedDbXrefs, kApprovedDbXrefsEnd, db);
 }
 
 
