@@ -81,19 +81,20 @@ CGraph_CI::~CGraph_CI(void)
 }
 
 
-const CSeq_graph& CGraph_CI::operator* (void) const
+const CMappedGraph& CGraph_CI::operator* (void) const
 {
     const CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsGraph());
-    return annot->GetGraph();
+    _ASSERT(annot);
+    return m_Graph.Set(*annot);
 }
 
 
-const CSeq_graph* CGraph_CI::operator-> (void) const
+const CMappedGraph* CGraph_CI::operator-> (void) const
 {
     const CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsGraph());
-    return &annot->GetGraph();
+    _ASSERT(annot);
+    m_Graph.Set(*annot);
+    return &m_Graph;
 }
 
 END_SCOPE(objects)
@@ -102,6 +103,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/10 22:04:44  grichenk
+* CGraph_CI resolves to CMappedGraph instead of CSeq_graph
+*
 * Revision 1.13  2003/02/10 15:51:27  grichenk
 * + CMappedGraph
 *

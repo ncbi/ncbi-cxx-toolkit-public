@@ -201,10 +201,12 @@ public:
 
     CGraph_CI& operator++ (void);
     operator bool (void) const;
-    const CSeq_graph& operator* (void) const;
-    const CSeq_graph* operator-> (void) const;
+    const CMappedGraph& operator* (void) const;
+    const CMappedGraph* operator-> (void) const;
 private:
     CGraph_CI operator++ (int);
+
+    mutable CMappedGraph m_Graph; // current graph object returned by operator->()
 };
 
 
@@ -248,6 +250,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/02/10 22:04:42  grichenk
+* CGraph_CI resolves to CMappedGraph instead of CSeq_graph
+*
 * Revision 1.16  2003/02/10 15:51:26  grichenk
 * + CMappedGraph
 *
