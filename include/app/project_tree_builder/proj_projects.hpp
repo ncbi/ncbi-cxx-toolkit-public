@@ -29,68 +29,111 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
-#include <app/project_tree_builder/proj_item.hpp>
+//#include <app/project_tree_builder/proj_item.hpp>
 
 #include <corelib/ncbienv.hpp>
+#include <app/project_tree_builder/proj_utils.hpp>
+
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CProjProjects --
-///
-/// Abstraction of .lst files set inside scripts/projects.
-///
-/// 
 
-class CProjProjects
+class CProjectDummyFilter : public IProjectFilter
 {
 public:
-    CProjProjects(void);
-    CProjProjects(const CProjProjects& projects);
+    CProjectDummyFilter(void)
+    {
+    }
+    virtual ~CProjectDummyFilter(void)
+    {
+    }
+    virtual bool CheckProject(const string& project_base_dir) const
+    {
+        return true;
+    }
+    virtual bool PassAll (void) const
+    {
+        return true;
+    }
+private:
+    // Prohibited to:
+    CProjectDummyFilter(const CProjectDummyFilter&);
+    CProjectDummyFilter& operator= (const CProjectDummyFilter&);   
+};
 
-    CProjProjects& operator= (const CProjProjects& projects);
+class CProjectOneNodeFilter : public IProjectFilter
+{
+public:
+    // 
+    CProjectOneNodeFilter(const string& root_src_dir,
+                          const string& subtree_dir);
 
-    CProjProjects(const string& dir_path);
+    virtual ~CProjectOneNodeFilter(void)
+    {
+    }
 
-    ~CProjProjects(void);
+    virtual bool CheckProject(const string& project_base_dir) const;
+    virtual bool PassAll     (void) const
+    {
+        return m_PassAll;
+    }
 
-    static void LoadFrom(const string& dir_path, CProjProjects* pr);
+private:
+    typedef list<string> TPath;
 
-    typedef CProjectTreeFolders::TPath TPath;
+    string m_RootSrcDir;
+    string m_SubtreeDir;
+
+    TPath  m_SubtreePath;
+    bool m_PassAll;
+
+    // Prohibited to:
+    CProjectOneNodeFilter(void);
+    CProjectOneNodeFilter(const CProjectOneNodeFilter&);
+    CProjectOneNodeFilter& operator= (const CProjectOneNodeFilter&);   
+};
+
+
+class CProjectsLstFileFilter : public IProjectFilter
+{
+public:
+    // create from .lst file
+    CProjectsLstFileFilter(const string& root_src_dir,
+                           const string& file_full_path);
+
+    virtual ~CProjectsLstFileFilter(void)
+    {
+    }
+
+    virtual bool CheckProject(const string& project_base_dir) const;
+    virtual bool PassAll     (void) const
+    {
+        return false;
+    }
+
+private:
+    typedef list<string> TPath;
+
+    string m_RootSrcDir;
 
     struct SLstElement
     {
         TPath m_Path;
         bool  m_Recursive;
     };
-
     /// One .lst file
-    typedef list<SLstElement> TFileContents;
-    /// Project name/ file contents
-    typedef map<string, TFileContents> TElements;
-    TElements m_Elements;
+    typedef list<SLstElement> TLstFileContents;
+    TLstFileContents m_LstFileContents;
+    
 
-private:
-    void Clear(void);
 
-    void SetFrom(const CProjProjects& contents);
-
-    static void LoadFrom(const string&  file_path, 
-                         TFileContents* fc);
+    static bool CmpLstElementWithPath(const SLstElement& elt, 
+                                      const TPath&       path);
+    // Prohibited to:
+    CProjectsLstFileFilter(void);
+    CProjectsLstFileFilter(const CProjectsLstFileFilter&);
+    CProjectsLstFileFilter& operator= (const CProjectsLstFileFilter&);   
 };
 
-class CProjProjectsSets
-{
-public:
-    // IDs (not Names!) of projects inside one set.
-    typedef set<string> TProjectsSet;
-    // set_name / ProjectSet
-    typedef map<string, TProjectsSet> TSets;
-
-    static void Create(const CProjectItemsTree& tree,
-                       const CProjProjects&     elements, 
-                       TSets*                   sets);
-};
 
 
 END_NCBI_SCOPE
@@ -98,6 +141,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/26 21:26:11  gorelenk
+ * Removed all older class declarations. Added declaration of classes that
+ * implements IProjectFilter interface: CProjectDummyFilter,
+ * CProjectOneNodeFilter and CProjectsLstFileFilter.
+ *
  * Revision 1.3  2004/02/18 23:34:30  gorelenk
  * Added declaration of class CProjProjectsSets.
  *
