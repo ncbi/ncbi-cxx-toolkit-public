@@ -47,7 +47,8 @@ public:
 
     /// General flags
     enum EFlags {
-        fPrivate = 0x1 ///< Do not cache, or support automatic saving.
+        fPrivate = 0x1, ///< Do not cache, or support automatic saving.
+        fDontOwn = 0x2, ///< Do not attempt to delete on destruction.
     };
     typedef int TFlags; ///< Binary OR of "EFlags"
 
@@ -80,17 +81,21 @@ public:
     ///   How, if at all, to modify "name".
     /// @param flags
     ///   Any relevant options from EFlags above.
+    /// @param reg
+    ///   Existing registry object to reuse, if non-NULL.  (If it wasn't
+    //    empty, automatically causes fPrivate to be set in flags.)
     /// @return
     ///   On success, .actual_name will contain the absolute path to
     ///   the file ultimately loaded, and .registry will point to a
     ///   CNcbiRegistry object containing its contents (owned by this
-    ///   class unless fPrivate was given).
+    ///   class unless fPrivate or fDontOwn was given).
     ///   On failure, .actual_name will be empty and .registry will be
     ///   NULL.
     static SEntry Load(const string& name,
                        ENameStyle    style     = eName_AsIs,
                        TFlags        flags     = 0,
-                       TRegFlags     reg_flags = 0);
+                       TRegFlags     reg_flags = 0,
+                       CNcbiRegistry* reg      = 0);
 
     /// Accessors for the search path for unqualified names.
     /// By default, the path list contains the following dirs in this order:
@@ -115,7 +120,7 @@ private:
 
     /// name0 and style0 are the originally requested name and style
     SEntry x_Load(const string& name,  ENameStyle style,
-                  TFlags        flags, TRegFlags  reg_flags,
+                  TFlags flags, TRegFlags reg_flags, CNcbiRegistry* reg,
                   const string& name0, ENameStyle style0);
 
     const TSearchPath& x_GetSearchPath(void) const { return m_SearchPath; }
@@ -138,9 +143,10 @@ inline
 CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
                                           CMetaRegistry::ENameStyle style,
                                           CMetaRegistry::TFlags flags,
-                                          CNcbiRegistry::TFlags reg_flags)
+                                          CNcbiRegistry::TFlags reg_flags,
+                                          CNcbiRegistry* reg)
 {
-    return Instance().x_Load(name, style, flags, reg_flags, name, style);
+    return Instance().x_Load(name, style, flags, reg_flags, reg, name, style);
 }
 
 inline
@@ -180,6 +186,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/06 20:25:55  ucko
+* Allow Load to take an existing registry to reuse.
+*
 * Revision 1.1  2003/08/05 19:57:46  ucko
 * CMetaRegistry: Singleton class for loading CRegistry data from files;
 * keeps track of what it loaded from where, for potential reuse.
