@@ -70,8 +70,7 @@ BEGIN_NCBI_SCOPE
 /// CCParseTemplException<CCoreException> and defines additional error codes
 /// for the Registry.
 
-class NCBI_XNCBI_EXPORT CRegistryException :
-    public CParseTemplException<CCoreException>
+class CRegistryException : public CParseTemplException<CCoreException>
 {
 public:
     /// Error types that the Registry can generate.
@@ -383,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/08/19 13:01:51  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.32  2003/10/20 21:55:05  vakatov
  * CNcbiRegistry::GetComment() -- make it "const"
  *

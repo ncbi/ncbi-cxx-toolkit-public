@@ -113,7 +113,7 @@ class CArgAllow;
 /// CArgException inherits its basic functionality from CCoreException
 /// and defines additional error codes for malformed arguments.
 
-class NCBI_XNCBI_EXPORT CArgException : public CCoreException
+class CArgException : public CCoreException
 {
 public:
     /// Error types for improperly formatted arguments.
@@ -164,7 +164,7 @@ public:
 /// CArgException inherits its basic functionality from CArgException
 /// and defines an additional error code for help.
 
-class NCBI_XNCBI_EXPORT CArgHelpException : public CArgException
+class CArgHelpException : public CArgException
 {
 public:
     /// Error type for help exception.
@@ -1051,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/08/19 13:01:51  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.35  2004/08/17 14:33:53  dicuccio
  * Export CArgDesc
  *

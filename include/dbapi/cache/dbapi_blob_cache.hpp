@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 /// DBAPI ICache exception 
 
-class NCBI_DBAPI_EXPORT CDBAPI_ICacheException : public CException
+class CDBAPI_ICacheException : public CException
 {
 public:
     enum EErrCode {
@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/19 13:02:28  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.8  2004/08/10 16:56:10  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

@@ -71,7 +71,7 @@ BEGIN_NCBI_SCOPE
 /// CTimeException inherits its basic functionality from CCoreException
 /// and defines additional error codes.
 
-class NCBI_XNCBI_EXPORT CTimeException : public CCoreException
+class CTimeException : public CCoreException
 {
 public:
     /// Error types that CTime can generate.
@@ -1253,6 +1253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/08/19 13:02:17  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.34  2004/07/29 19:53:08  vasilche
  * Added CStopWatch::Restart() to reuse the same timer sequentially.
  *

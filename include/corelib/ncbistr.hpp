@@ -1873,8 +1873,7 @@ private:
 /// CParseTemplException<CCoreException> and defines additional error codes
 /// for string parsing.
 
-class NCBI_XNCBI_EXPORT CStringException :
-                        public CParseTemplException<CCoreException>
+class CStringException : public CParseTemplException<CCoreException>
 {
 public:
     /// Error types that string classes can generate.
@@ -2374,6 +2373,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2004/08/19 13:02:17  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.58  2004/07/04 19:11:23  vakatov
  * Do not use "throw()" specification after constructors and assignment
  * operators of exception classes inherited from "std::exception" -- as it

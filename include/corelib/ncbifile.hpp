@@ -66,7 +66,7 @@ BEGIN_NCBI_SCOPE
 /// CFileException inherits its basic functionality from CCoreException
 /// and defines additional error codes for file operations.
 
-class NCBI_XNCBI_EXPORT CFileException : public CCoreException
+class CFileException : public CCoreException
 {
 public:
     /// Error types that file operations can generate.
@@ -1571,6 +1571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/08/19 13:01:51  dicuccio
+ * Dropped unnecessary export specifier on exceptions
+ *
  * Revision 1.46  2004/08/03 12:04:57  ivanov
  * + CMemoryFile_Base   - base class for all memory mapping classes.
  * + CMemoryFileSegment - auxiliary class for mapping a memory file region.
