@@ -35,7 +35,8 @@
 
     Seems that PCRE has a bug (or may be this is a feature?).
     It doesn't correct handle regular expressions with brackets "[]"
-    if a PCRE_MULTILINE / PCRE_DOTALL flag is specified (may be and some other).
+    if a PCRE_MULTILINE / PCRE_DOTALL flag is specified
+    (may be and some other).
     It is necessary to investigate and try a new PCRE version.
 */
 
@@ -121,7 +122,12 @@ private:
 
     /// Replace configuration settings accordingly required configuration.
     /// Return name of the configuration with or without used GUI.
-    string Configure(const string& cfg_template, string& cfg_str, EConfig config, ESuffix suffix);
+    string Configure(
+        const string& cfg_template,
+        string&       cfg_str,
+        EConfig       config,
+        ESuffix       suffix
+    );
 
 private:
     /// Parameters.
@@ -164,21 +170,26 @@ void CMainApplication::Init(void)
 
     arg_desc->AddPositional
         ("path",
-         "Directory or project file name to convert", CArgDescriptions::eString);
+         "Directory or project file name to convert",
+         CArgDescriptions::eString);
     arg_desc->AddOptionalPositional
         ("config_type",
-         "Type of configuration to produce (default is \"all\")", CArgDescriptions::eString);
+         "Type of configuration to produce (default is \"all\")",
+         CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("config_type", &(*new CArgAllow_Strings, "all", "release", "debug"));
     arg_desc->AddOptionalPositional
         ("config_spec",
-         "Set of build configurations (default is all)", CArgDescriptions::eInteger);
+         "Set of build configurations (default is all)",
+         CArgDescriptions::eInteger);
     arg_desc->SetConstraint
         ("config_spec", new CArgAllow_Integers(2, 4));
     arg_desc->AddFlag
-        ("r", "Process all project files in the <path> recursively (only if <path> is a directory)");
+        ("r", "Process all project files in the <path> recursively " \
+         "(only if <path> is a directory)");
     arg_desc->AddFlag
-        ("d", "Distributive mode;  remove include/library paths, which refers to DIZZY");
+        ("d", "Distributive mode;  remove include/library paths, " \
+         "which refers to DIZZY");
 
 /*
     arg_desc->AddFlag
@@ -291,7 +302,7 @@ void CMainApplication::ProcessFile(const string& file_name)
 
         CNcbiIfstream is(file_name.c_str(), IOS_BASE::in | IOS_BASE::binary);
         if ( !is.is_open() ) {
-            throw "cannot be opened";
+            throw (string)"cannot be opened";
         }
         while ( is ) {
             char buf[16384];
@@ -305,7 +316,8 @@ void CMainApplication::ProcessFile(const string& file_name)
         is.close();
 
 
-        // DOS-2-UNIX conversion (shouldn't be here, but just in case for sanity).
+        // DOS-2-UNIX conversion.
+        // (shouldn't be here, but just in case for sanity).
 
         content = NStr::Replace(content, "\r\n", kEOL);
         content = NStr::Replace(content, "\r",   kEOL);
@@ -316,17 +328,18 @@ void CMainApplication::ProcessFile(const string& file_name)
 
         if ( !re.Exists(
             "^# Microsoft Developer Studio Project File - Name=.*\n" \
-             "# Microsoft Developer Studio Generated Build File, Format Version 6.00\n" \
-             "# \\*\\* DO NOT EDIT \\*\\*\n\n" \
-             "# TARGTYPE .*\n",  kSL) ) {
-            throw "doesn't look like MSVC++ 6.0 Project File";
+            "# Microsoft Developer Studio Generated Build File, " \
+            "Format Version 6.00\n" \
+            "# \\*\\* DO NOT EDIT \\*\\*\n\n" \
+            "# TARGTYPE .*\n",  kSL) ) {
+            throw (string)"doesn't look like MSVC++ 6.0 Project File";
         }
 
 
         // Check multiple configurations.
 
         if ( re.Exists("\n!IF .*\n!ELSEIF .*\n!ENDIF.*# Begin Target", kSL) ) {
-            throw "contains more than one configuration";
+            throw (string)"contains more than one configuration";
         }
 
 
@@ -334,8 +347,10 @@ void CMainApplication::ProcessFile(const string& file_name)
 
         if ( re.Exists("^# PROP +AllowPerConfigDependencies +1", kML) ) {
             if ( re.Exists("\n# Begin Target.*\n!IF ", kSL) ) {
-                ERR_POST(Warning << "File contains per-configuration dependencies,\n" \
-                         "which may or may not be handled correctly by this program.");
+                ERR_POST(Warning <<
+                         "File contains per-configuration dependencies,\n" \
+                         "which may or may not be handled correctly by "   \
+                         "this program.");
             }
         }
         re.Replace("^(# PROP +AllowPerConfigDependencies +)1", "{$1}0", kML);
@@ -355,7 +370,10 @@ void CMainApplication::ProcessFile(const string& file_name)
 
         // Extract middle part.
 
-        string middle = re.Extract("\n(# Begin Project.*)\n*(!IF|# PROP BASE) +", kSL, kDF, 1) + kEOL + kEOL;
+        string middle = 
+            re.Extract("\n(# Begin Project.*)\n*(!IF|# PROP BASE) +",
+                       kSL, kDF, 1)
+            + kEOL + kEOL;
 
 
         // Extract configuration-dependent part. Make template from it.
@@ -364,9 +382,9 @@ void CMainApplication::ProcessFile(const string& file_name)
         CRegexpUtil re_cfg_template(str);
         if ( str.empty() ) {
             // Extract a configuration-dependent part.
-            str = re.Extract("\n(# PROP BASE .*\n)# Begin Target", kSL, kDF, 1);
+            str = re.Extract("\n(# PROP BASE .*\n)# Begin Target", kSL, kDF,1);
             // Get all together.
-            str = "!IF  \"$(CFG)\" == " + cfg_name + "\n\n" + str + "\n!ENDIF ";
+            str = "!IF  \"$(CFG)\" == " + cfg_name + "\n\n" + str +"\n!ENDIF ";
             re_cfg_template.Reset(str);
         } else {
             re_cfg_template.Replace("^!ELSEIF .*$", "!ENDIF", kML);
@@ -378,9 +396,12 @@ void CMainApplication::ProcessFile(const string& file_name)
             ITERATE_SUFFIX(j) {
                 string cfg = CONFIG_NAME(i,j);
                 re_cfg_template.SetRange("^# PROP ");
-                re_cfg_template.ReplaceRange(cfg, kTemplate, kDF, kDF, CRegexpUtil::eOutside);
-                re_cfg_template.SetRange("^# PROP .*\"[^ ]*" + cfg + "[^ ]*\"");
-                re_cfg_template.ReplaceRange(cfg, kTemplate, kDF, kDF, CRegexpUtil::eInside);
+                re_cfg_template.ReplaceRange(cfg, kTemplate, kDF, kDF,
+                                             CRegexpUtil::eOutside);
+                re_cfg_template.SetRange("^# PROP .*\"[^ ]*" + cfg +
+                                         "[^ ]*\"");
+                re_cfg_template.ReplaceRange(cfg, kTemplate, kDF, kDF,
+                                             CRegexpUtil::eInside);
             }
         }
 
@@ -409,11 +430,14 @@ void CMainApplication::ProcessFile(const string& file_name)
                 CRegexpUtil re_cb(str);
                 re_cb.Replace("\n!ELSEIF .*\n!ENDIF", "\n!ENDIF", kSL);
 
-                string str_cb_template = re_cb.Extract("!IF .*\n# Begin Custom Build.*\n!ENDIF", kSL);
+                string str_cb_template = 
+                    re_cb.Extract("!IF .*\n# Begin Custom Build.*\n!ENDIF",
+                                  kSL);
                 if ( str_cb_template.empty() ) {
                     str_cb_template = re_cb.Extract("\nSOURCE=.*\n(.*# Begin Custom Build.*)$", kSL, kDF, 1);
                     if ( !str_cb_template.empty() ) {
-                        str_cb_template = "!IF  \"$(CFG)\" == " + cfg_name + "\n\n" + str_cb_template + "\n\n!ENDIF";
+                        str_cb_template = "!IF  \"$(CFG)\" == " +
+                            cfg_name + "\n\n" + str_cb_template + "\n\n!ENDIF";
                         re_cb.Replace("(\nSOURCE=.*\n).*$", "$1\n@CB", kSL);
                     }
                 } else {
@@ -426,7 +450,8 @@ void CMainApplication::ProcessFile(const string& file_name)
                     ITERATE_CONFIG(i) {
                         ITERATE_SUFFIX(j) {
                             string cfg = CONFIG_NAME(i,j);
-                            str_cb_template = NStr::Replace(str_cb_template, cfg, kTemplate);
+                            str_cb_template = NStr::Replace(str_cb_template,
+                                                            cfg, kTemplate);
                         }
                     }
                     // Accumulate parts to replace. 
@@ -436,7 +461,8 @@ void CMainApplication::ProcessFile(const string& file_name)
                             // Is configuration [i,j] enabled?
                             if ( m_Cfg[i][j] ) {
                                 string cfg = CONFIG_NAME(i,j);
-                                cb += NStr::Replace(str_cb_template, kTemplate, cfg);
+                                cb += NStr::Replace(str_cb_template,
+                                                    kTemplate, cfg);
                             }
                         }
                     }
@@ -457,7 +483,8 @@ void CMainApplication::ProcessFile(const string& file_name)
 
         str = re_tail.Extract("^# +Name +\".*\"", kML);
         CRegexpUtil re_tail_cfg_template(str);
-        re_tail_cfg_template.Replace("(.*\".* - \\w+ ).*(\".*)$",  string("$1") + kTemplate + "$2", kSL);
+        re_tail_cfg_template.Replace("(.*\".* - \\w+ ).*(\".*)$",
+                                     string("$1") + kTemplate + "$2", kSL);
 
 
         // Make required replacements and configs.
@@ -475,19 +502,24 @@ void CMainApplication::ProcessFile(const string& file_name)
                     string cfg = CONFIG_NAME(i,j);
 
                     // Accumulate configurations to replace. 
-                    cfg_header += eol + NStr::Replace(re_header_cfg_template, kTemplate, cfg);
-                    cfg_tail   += eol + NStr::Replace(re_tail_cfg_template,   kTemplate, cfg);
+                    cfg_header += eol + NStr::Replace(re_header_cfg_template,
+                                                      kTemplate, cfg);
+                    cfg_tail   += eol + NStr::Replace(re_tail_cfg_template,
+                                                      kTemplate, cfg);
 
                     // Is a first configuration (namely default) ?
                     // It must be a configuration with maximum priority.
                     if ( !default_found ) {
-                        // Replace all conf. names in the header with the name of default configuration.
-                        re_header.Replace("(CFG=[\"]*.* - \\w+ ).*(\"|\n)", "$1" + cfg + "$2", kSL);
+                        // Replace all conf. names in the header with
+                        // the name of default configuration.
+                        re_header.Replace("(CFG=[\"]*.* - \\w+ ).*(\"|\n)",
+                                          "$1" + cfg + "$2", kSL);
                         default_found = true;
                         eol = kEOL;
                     }
                     // Configure $i$j.
-                    cfgs += Configure(re_cfg_template, str, EConfig(i), ESuffix(j)) + " ";
+                    cfgs += Configure(re_cfg_template, str,
+                                      EConfig(i), ESuffix(j)) + " ";
                     middle += str;
                 }
             }
@@ -497,7 +529,8 @@ void CMainApplication::ProcessFile(const string& file_name)
         re_middle.Replace("!ENDIF\\s*!IF", "!ELSEIF", kSL);
 
 
-        // Summarize configurations in the header and tail parts of the project.
+        // Summarize configurations in the header and
+        // tail parts of the project.
 
         re_header.Replace("^!MESSAGE +\".*\".*$", cfg_header, kML);
         re_tail.Replace  ("^# Name +\".*\".*$",   cfg_tail,   kML);
@@ -512,14 +545,15 @@ void CMainApplication::ProcessFile(const string& file_name)
         // Write content into new file and than rename it.
 
         string file_name_new = file_name + ".new";
-        CNcbiOfstream os(file_name_new.c_str(), IOS_BASE::out | IOS_BASE::binary);
+        CNcbiOfstream os(file_name_new.c_str(),
+                         IOS_BASE::out | IOS_BASE::binary);
         if ( !os.is_open() ) {
-            throw "cannot create output file " + file_name_new;
+            throw (string)"cannot create output file " + file_name_new;
         }
         os << str;
         os.flush();
         if ( !os ) {
-            throw "cannot write to file " + file_name_new;
+            throw (string)"cannot write to file " + file_name_new;
         }
         os.close();
 
@@ -531,10 +565,10 @@ void CMainApplication::ProcessFile(const string& file_name)
         CFile(file_bakup).Remove();
         if (!CFile(file_name).Rename(file_bakup) ||
             !CFile(file_name_new).Rename(file_name) ) {
-            throw "cannot rename file.";
+            throw (string)"cannot rename file.";
         }
     }
-    catch (char* e) {
+    catch (string& e) {
         ERR_POST(file_name << ": " << e << ".");
     }
     catch (CException& e) {
@@ -546,7 +580,9 @@ void CMainApplication::ProcessFile(const string& file_name)
 }
 
 
-string CMainApplication::Configure(const string& cfg_template, string& cfg_str, EConfig config, ESuffix suffix)
+string CMainApplication::Configure(const string& cfg_template,
+                                   string& cfg_str,
+                                   EConfig config, ESuffix suffix)
 {
     // Configuration name.
     string cfg = CONFIG_NAME(config, suffix);
@@ -585,10 +621,13 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
                 wxdll = "/D \"WXUSINGDLL=1\"";
             }
         }
-        // Remove some wxWindows macros, which are surely configuration-dependent.
+        // Remove some wxWindows macros, which are surely
+        // configuration-dependent.
         re.SetRange("^# ADD .*CPP ");
-        re.ReplaceRange("  */D  *[\"]{0,1}__WXDEBUG__=*[0-9]*[\"]{0,1}",    kEmptyStr);
-        re.ReplaceRange("  */D  *[\"]{0,1}WX.{2,3}INGDLL=*[0-9]*[\"]{0,1}", kEmptyStr);
+        re.ReplaceRange("  */D  *[\"]{0,1}__WXDEBUG__=*[0-9]*[\"]{0,1}",
+                        kEmptyStr);
+        re.ReplaceRange("  */D  *[\"]{0,1}WX.{2,3}INGDLL=*[0-9]*[\"]{0,1}",
+                        kEmptyStr);
 
     } else if (re.Exists("^# ADD .*LINK32 .*fltk[a-z]*[.]lib", kML)) {
         // The project is a FLTK-dependent project.
@@ -611,13 +650,14 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
         { "/D +\"{0,1}DEBUG=*[0-9]*\"{0,1}", " @D", kAll }
     };
     re.SetRange("^# ADD .*CPP ");
-    for (int i = 0; i < sizeof(ksOpt)/sizeof(ksOpt[0]); i++) {
+    for (size_t i = 0; i < sizeof(ksOpt)/sizeof(ksOpt[0]); i++) {
         re.ReplaceRange(string(" +") + ksOpt[i][0], ksOpt[i][1],
                         kDF, kDF, CRegexpUtil::eInside, (int)ksOpt[i][2]);
     }
 
 
-    // Configuration-dependent changes: replace hooks and more compiler options where appropriate.
+    // Configuration-dependent changes: replace hooks and more compiler
+    // options where appropriate.
 
     const char* ksOptDebug[][3] = {
         { "@c"       , " /GZ /c"         , kAll   },
@@ -642,7 +682,7 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
 
     if (config == eDebug) {
         re.SetRange("^# PROP ");
-        re.ReplaceRange("  *Use_Debug_Libraries  *0", " Use_Debug_Libraries 1");
+        re.ReplaceRange("  *Use_Debug_Libraries  *0"," Use_Debug_Libraries 1");
         re.SetRange("^# ADD .*LINK32 ");
         re.ReplaceRange("  */pdb:[^ ]*", kEmptyStr);
         re.ReplaceRange("/mach", "/pdb:none /debug /mach");
@@ -650,7 +690,7 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
         subst_size = sizeof(ksOptDebug)/sizeof(subst[0])/3;
     } else {
         re.SetRange("^# PROP ");
-        re.ReplaceRange("  *Use_Debug_Libraries  *1", " Use_Debug_Libraries 0");
+        re.ReplaceRange("  *Use_Debug_Libraries  *1"," Use_Debug_Libraries 0");
         re.SetRange("^# ADD .*LINK32 ");
         re.ReplaceRange("  */pdbtype[^ ]*", kEmptyStr);
         subst = &ksOptRelease[0][0];
@@ -682,14 +722,14 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
         { " CPP"    , " CPP" + lib_switch     }
     };
     re.SetRange("^# ADD +CPP ");
-    for (int i = 0; i < sizeof(ksLib)/sizeof(ksLib[0]); i++) {
+    for (size_t i = 0; i < sizeof(ksLib)/sizeof(ksLib[0]); i++) {
         if ( re.ReplaceRange(ksLib[i][0], ksLib[i][1], 
                              kDF, kDF, CRegexpUtil::eInside, 1) ) {
             break;
         }
     }
     re.SetRange("^# ADD +BASE +CPP ");
-    for (int i = 0; i < sizeof(ksLib)/sizeof(ksLib[0]); i++) {
+    for (size_t i = 0; i < sizeof(ksLib)/sizeof(ksLib[0]); i++) {
         if ( re.ReplaceRange(ksLib[i][0], ksLib[i][1],
                              kDF, kDF, CRegexpUtil::eInside, 1) ) {
             break;
@@ -697,10 +737,11 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
     }
 
     re.Replace("^(# ADD .*CPP +.*) *@C(.*)", "$1$2", kML);
-    re.Replace("^(# ADD .*LINK32 +.*) */incremental:(yes|no)(.*)", "$1$3", kML);
+    re.Replace("^(# ADD .*LINK32 +.*) */incremental:(yes|no)(.*)", "$1$3",kML);
 
 
-    // Make sure that incremental linking is on except for wxWindows DLLs (slow).
+    // Make sure that incremental linking is on
+    // except for wxWindows DLLs (slow).
     string incr_link;
 
     if ( !re.Exists("^# ADD .*LINK32 .*/dll", kML) ) {
@@ -745,14 +786,14 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
             };
             // Insert it once in each line
             re.SetRange("^# ADD +CPP ");
-            for (int i = 0; i < sizeof(ksWx)/sizeof(ksWx[0]); i++) {
+            for (size_t i = 0; i < sizeof(ksWx)/sizeof(ksWx[0]); i++) {
                 if ( re.ReplaceRange(ksWx[i][0], ksWx[i][1],
                                      kDF, kDF, CRegexpUtil::eInside, 1) ) {
                     break;
                 }
             }
             re.SetRange("^# ADD +BASE +CPP ");
-            for (int i = 0; i < sizeof(ksWx)/sizeof(ksWx[0]); i++) {
+            for (size_t i = 0; i < sizeof(ksWx)/sizeof(ksWx[0]); i++) {
                 if ( re.ReplaceRange(ksWx[i][0], ksWx[i][1],
                                      kDF, kDF, CRegexpUtil::eInside, 1) ) {
                     break;
@@ -769,8 +810,9 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
             { " *$"    , "$0 "      }
         };
         re.SetRange("^# ADD +LINK32 ");
-        for (int i = 0; i < sizeof(ksWxss)/sizeof(ksWxss[0]); i++) {
-            if ( re.ReplaceRange(ksWxss[i][0], ksWxss[i][1] + "/subsystem:windows",
+        for (size_t i = 0; i < sizeof(ksWxss)/sizeof(ksWxss[0]); i++) {
+            if ( re.ReplaceRange(ksWxss[i][0],
+                                 ksWxss[i][1] + "/subsystem:windows",
                                  kDF, kDF, CRegexpUtil::eInside, 1) ) {
                 break;
             }
@@ -788,7 +830,7 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
             { "wx[dl]{0,1}[.]lib", " @wx" }
         };
         re.SetRange("^# ADD .*LINK32 .*wx[dl]{0,1}[.]lib");
-        for (int i = 0; i < sizeof(ksWxLib)/sizeof(ksWxLib[0]); i++) {
+        for (size_t i = 0; i < sizeof(ksWxLib)/sizeof(ksWxLib[0]); i++) {
             re.ReplaceRange("  *" + ksWxLib[i][0], ksWxLib[i][1]);
         }
 
@@ -816,8 +858,9 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
             { " *$"    , "$0 "      }
         };
         re.SetRange("^# ADD LINK32 ");
-        for (int i = 0; i < sizeof(ksWxss)/sizeof(ksWxss[0]); i++) {
-            if ( re.ReplaceRange(ksWxss[i][0], ksWxss[i][1] + "/subsystem:windows", 
+        for (size_t i = 0; i < sizeof(ksWxss)/sizeof(ksWxss[0]); i++) {
+            if ( re.ReplaceRange(ksWxss[i][0],
+                                 ksWxss[i][1] + "/subsystem:windows", 
                                  kDF, kDF, CRegexpUtil::eInside, 1) ) {
                 break;
             }
@@ -837,7 +880,8 @@ string CMainApplication::Configure(const string& cfg_template, string& cfg_str, 
             lib = "fltkforms.lib fltkimages.lib fltkgl.lib " + lib;
         }
         re.SetRange("^# ADD .*LINK32 .*@fltk");
-        re.ReplaceRange("@fltk", "fltkdll.lib", kDF, kDF, CRegexpUtil::eInside, 1); 
+        re.ReplaceRange("@fltk", "fltkdll.lib", kDF, kDF,
+                        CRegexpUtil::eInside, 1); 
         re.ReplaceRange("@fltk", kEmptyStr);
     }
 
@@ -894,6 +938,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/07 13:42:27  ivanov
+ * Fixed lines wrapped at 79th columns. Get rid of compilation warnings on UNIX.
+ *
  * Revision 1.2  2003/11/06 17:08:32  ivanov
  * Remove ".bak" file before renaming
  *
