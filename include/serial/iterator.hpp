@@ -41,6 +41,8 @@
 #include <set>
 #include <stack>
 
+#include <serial/pathhook.hpp>
+
 
 /** @addtogroup ObjHierarchy
  *
@@ -187,6 +189,11 @@ public:
             _DEBUG_ARG(m_LastCall = eNone);
             Init(beginInfo);
         }
+    CTreeIteratorTmpl(const TBeginInfo& beginInfo, const string& filter)
+        {
+            _DEBUG_ARG(m_LastCall = eNone);
+            Init(beginInfo, filter);
+        }
     virtual ~CTreeIteratorTmpl(void)
         {
             Reset();
@@ -312,6 +319,14 @@ public:
             }
             return loc;
         }
+    void SetContextFilter(const string& filter)
+        {
+            m_ContextFilter = filter;
+            if (!m_ContextFilter.empty() &&
+                !CPathHook::Match(m_ContextFilter,GetContext())) {
+                Next();
+            }
+        }
 
 protected:
     bool CheckValid(void) const
@@ -368,6 +383,11 @@ protected:
             m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
             Walk();
         }
+    void Init(const TBeginInfo& beginInfo, const string& filter)
+        {
+            m_ContextFilter = filter;
+            Init(beginInfo);
+        }
 
 private:
     bool Step(const TObjectInfo& current)
@@ -411,8 +431,11 @@ private:
                 }
                 current = m_Stack.top()->Get();
                 if ( CanSelect(current) ) {
-                    m_CurrentObject = current;
-                    return;
+                    if (m_ContextFilter.empty() ||
+                        CPathHook::Match(m_ContextFilter,GetContext())) {
+                        m_CurrentObject = current;
+                        return;
+                    }
                 }
             } while ( Step(current) );
         }
@@ -425,6 +448,7 @@ private:
     // currently selected object
     TObjectInfo m_CurrentObject;
     auto_ptr<TVisitedObjects> m_VisitedObjects;
+    string m_ContextFilter;
 
     friend class CTreeIterator;
 };
@@ -446,6 +470,10 @@ public:
     CTreeIterator(const TBeginInfo& beginInfo)
         {
             Init(beginInfo);
+        }
+    CTreeIterator(const TBeginInfo& beginInfo, const string& filter)
+        {
+            Init(beginInfo, filter);
         }
 
     // initialize iterator to new root of object hierarchy
@@ -476,6 +504,12 @@ protected:
         : m_NeedType(needType)
         {
             Init(beginInfo);
+        }
+    CTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo,
+                      const string& filter)
+        : m_NeedType(needType)
+        {
+            Init(beginInfo, filter);
         }
 
     virtual bool CanSelect(const CConstObjectInfo& object)
@@ -516,6 +550,12 @@ protected:
         {
             Init(beginInfo);
         }
+    CLeafTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo,
+                          const string& filter)
+        : CParent(needType)
+        {
+            Init(beginInfo, filter);
+        }
 
     virtual bool CanSelect(const CConstObjectInfo& object);
 };
@@ -550,6 +590,12 @@ public:
         : m_TypeList(typeList)
         {
             Init(beginInfo);
+        }
+    CTypesIteratorBase(const TTypeList& typeList, const TBeginInfo& beginInfo,
+                       const string& filter)
+        : m_TypeList(typeList)
+        {
+            Init(beginInfo, filter);
         }
 
     const TTypeList& GetTypeList(void) const
@@ -639,6 +685,10 @@ public:
         : CParent(TypeGetter::GetTypeInfo(), beginInfo)
         {
         }
+    CTypeIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(TypeGetter::GetTypeInfo(), beginInfo, filter)
+        {
+        }
     explicit CTypeIterator(CSerialObject& object)
         : CParent(TypeGetter::GetTypeInfo(), TBeginInfo(object))
         {
@@ -684,6 +734,10 @@ public:
         : CParent(TypeGetter::GetTypeInfo(), beginInfo)
         {
         }
+    CTypeConstIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(TypeGetter::GetTypeInfo(), beginInfo, filter)
+        {
+        }
     explicit CTypeConstIterator(const CSerialObject& object)
         : CParent(TypeGetter::GetTypeInfo(), TBeginInfo(object))
         {
@@ -719,6 +773,10 @@ public:
         }
     CLeafTypeIterator(const TBeginInfo& beginInfo)
         : CParent(C::GetTypeInfo(), beginInfo)
+        {
+        }
+    CLeafTypeIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(C::GetTypeInfo(), beginInfo, filter)
         {
         }
     explicit CLeafTypeIterator(CSerialObject& object)
@@ -766,6 +824,10 @@ public:
         : CParent(C::GetTypeInfo(), beginInfo)
         {
         }
+    CLeafTypeConstIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(C::GetTypeInfo(), beginInfo, filter)
+        {
+        }
     explicit CLeafTypeConstIterator(const CSerialObject& object)
         : CParent(C::GetTypeInfo(), TBeginInfo(object))
         {
@@ -802,6 +864,10 @@ public:
         : CParent(beginInfo)
         {
         }
+    CStdTypeIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(beginInfo, filter)
+        {
+        }
     explicit CStdTypeIterator(CSerialObject& object)
         : CParent(object)
         {
@@ -828,6 +894,10 @@ public:
         }
     CStdTypeConstIterator(const TBeginInfo& beginInfo)
         : CParent(beginInfo)
+        {
+        }
+    CStdTypeConstIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(beginInfo, filter)
         {
         }
     explicit CStdTypeConstIterator(const CSerialObject& object)
@@ -924,6 +994,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/12/28 18:02:10  gouriano
+* Added context filter
+*
 * Revision 1.33  2004/07/28 17:03:29  gouriano
 * Minor tune-up for GCC34
 *
