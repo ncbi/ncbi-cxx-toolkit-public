@@ -32,10 +32,11 @@
 	 to affect the application performance and functionality;  to
 	 turn them on, one must <i>#define</i> the <i>"_DEBUG"</i> preprocessor
 	 variable. Also, the developer must be careful and not use
-	 any code with side effects in <i>_ASSERT</i> as this will cause
-	 a discrepancy in functionality between debug and non-debug code
-	 (e.g.,  <i>ASSERT(a++);</i> would increment <i>"a"</i> in debug version but
-	 do nothing in the non-debug one).
+	 any code with side effects in <i>_ASSERT</i> or <i>_TRACE</i>
+	 as this will cause a discrepancy in functionality between debug
+	 and non-debug code(e.g., <i>_ASSERT(a++)</i> and
+	 <i>_TRACE("a++ = " &lt;&lt; a++)</i> would increment <i>"a"</i>
+	 in the debug version but do nothing in the non-debug one).
 	 <ul>
 		<li> <b><i>_TROUBLE</i></b> --
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
@@ -55,9 +56,19 @@
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
 		otherwise, it outputs the <b><i>message</i></b> using
 		<a href="#ref_Message">Standard NCBI C++ message posting</a>:
-		<ul>#define _TRACE(message)
-		{{ CNcbiDiag diag;  diag &lt;&lt; Trace &lt;&lt; message; }}
 	 </ul> </ul>
+
+	 All these macros automatically add(prefix) file name and line
+	 number to the diagnostics. For example, this code located in file
+	 <i>"somefile.cpp"</i> at line 333:
+<pre>
+int x = 100;
+_TRACE( "x + 5 = "  <<  (x + 5) );
+</pre>
+	 will output:
+<pre>
+{somefile.cpp:333}  x + 5 = 105
+</pre>
 
 
 	 <br></br>
