@@ -62,7 +62,6 @@ static char const rcsid[] =
 // Object Manager
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 // Objtools
 #include <objtools/readers/fasta.hpp>
@@ -469,7 +468,6 @@ QueueAndPoll(string                program,
         
     // Queue and poll
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*objmgr);
 
     CRef<CScope>         scope (new CScope(*objmgr));
     scope->AddDefaults();
@@ -538,6 +536,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/08/18 15:58:43  bealer
+ * - Prevent warning message.
+ *
  * Revision 1.9  2004/08/02 20:09:25  bealer
  * - Remove Unix dependencies.
  *
