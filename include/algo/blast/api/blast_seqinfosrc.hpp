@@ -43,7 +43,12 @@
  */
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
+// Forward declarations in objects scope
+BEGIN_SCOPE(objects)
+    class CSeq_id;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
 
 /// Abstract base class to encapsulate retrieval of sequence identifiers. 
@@ -53,7 +58,7 @@ class IBlastSeqInfoSrc
 {
 public:
     /// Method to retrieve a sequence identifier given its ordinal number.
-    virtual list< CRef<CSeq_id> > GetId(Uint4 index) const = 0;
+    virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const = 0;
     /// Method to retrieve a sequence length given its ordinal number.
     virtual Uint4 GetLength(Uint4 index) const = 0;
 };
@@ -65,6 +70,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/10/06 17:45:35  dondosha
+ * Removed USING_SCOPE; qualify objects classes directly
+ *
  * Revision 1.1  2004/10/06 14:51:04  dondosha
  * Abstract base class IBlastSeqInfoSrc for sequence id and length retrieval in BLAST API
  *

@@ -57,7 +57,7 @@ public:
     /// Destructor
     virtual ~CSeqVecSeqInfoSrc();
     /// Retrieve a sequence identifier given its index in the vector.
-    list< CRef<CSeq_id> > GetId(Uint4 index) const;
+    list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
     /// Retrieve sequence length given its index in the vector.
     Uint4 GetLength(Uint4 index) const;
 private:
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/10/06 17:45:35  dondosha
+ * Removed USING_SCOPE; qualify objects classes directly
+ *
  * Revision 1.1  2004/10/06 14:51:37  dondosha
  * Implementation of IBlastSeqInfoSrc with TSeqLocVector
  *

@@ -45,7 +45,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 /// Implementation of the IBlastSeqInfoSrc interface to encapsulate retrieval of
@@ -59,7 +58,7 @@ public:
     CSeqDbSeqInfoSrc(const string& dbname, bool is_protein);
     virtual ~CSeqDbSeqInfoSrc();
     /// Retrieve a sequence identifier given its ordinal number.
-    list< CRef<CSeq_id> > GetId(Uint4 oid) const;
+    list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
     /// Retrieve sequence length given its ordinal number.
     Uint4 GetLength(Uint4 oid) const;
 
@@ -75,6 +74,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/10/06 17:45:35  dondosha
+ * Removed USING_SCOPE; qualify objects classes directly
+ *
  * Revision 1.1  2004/10/06 14:51:22  dondosha
  * Implementation of IBlastSeqInfoSrc with CSeqDB
  *
