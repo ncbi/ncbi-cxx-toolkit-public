@@ -526,19 +526,18 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 string NStr::PtrToString(const void* value)
 {
     char buffer[64];
-    ::sprintf(buffer+2, "%p", value);
-    if (buffer[2] == '0'  &&  buffer[3] == 'x')
-        return buffer + 2;
-
-    // need to add leading "0x"
-    buffer[0] = '0';
-    buffer[1] = 'x';
+    ::sprintf(buffer, "%p", value);
     return buffer;
 }
 
 
 const void* NStr::StringToPtr(const string& str)
 {
+    void *ptr = NULL;
+    ::sscanf(str.c_str(), "%p", &ptr);
+    return ptr;
+
+#if 0
     // special case: 'PtrToString() encodes '0' as '(nil)'
     if (str == "(nil)") {
         return reinterpret_cast<const void*> (NULL);
@@ -558,6 +557,7 @@ const void* NStr::StringToPtr(const string& str)
 #else
 # error "NStr::StringToPtr():  SIZEOF_VOIDP is neither 4 nor 8"
    _ASSERT(0); 
+#endif
 #endif
 }
 
@@ -1037,6 +1037,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2003/03/20 13:27:11  dicuccio
+ * Changed NStr::StringToPtr() - now symmetric with NSrt::PtrToString (there were
+ * too many special cases).
+ *
  * Revision 1.87  2003/03/17 12:49:26  dicuccio
  * Fixed indexing error in NStr::PtrToString() - buffer is 0-based index, not
  * 1-based
