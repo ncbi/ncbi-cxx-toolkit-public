@@ -378,6 +378,11 @@ function AdjustLocalSite(oShell, oTree, oTask)
     }
 }
 
+function SetVerboseFlag(value)
+{
+    g_verbose = value;
+}
+
 function SetVerbose(oArgs, flag, default_val)
 {
     g_verbose = GetFlagValue(oArgs, flag, default_val);

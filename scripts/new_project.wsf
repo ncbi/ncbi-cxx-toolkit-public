@@ -1,12 +1,64 @@
 <package>
 	<job id="new-project-wsh-js">
 	
+		<script language="VBScript">
+        Function VbAskData(prompt, title, defvalue)
+            VbAskData = InputBox(prompt, title, defvalue) 
+        End Function
+
+        Function VbAskQuestionYNC(prompt, title)
+            Dim reply
+            reply = MsgBox(prompt, vbYesNoCancel, title)
+            If reply = vbYes Then
+                VbAskQuestionYNC = "yes"
+            End If
+            If reply = vbNo Then
+                VbAskQuestionYNC = "no"
+            End If
+        End Function
+
+        Function VbAskQuestionYN(prompt, title)
+            Dim reply
+            reply = MsgBox(prompt, vbYesNo, title)
+            If reply = vbYes Then
+                VbAskQuestionYN = "yes"
+            End If
+            If reply = vbNo Then
+                VbAskQuestionYN = "no"
+            End If
+        End Function
+		</script>
+
 		<script language="JScript" src="project_utilits.js">
 		</script>
 
 		<script language="JScript">
 		// Framework
 		
+		function InputData(prompt, defvalue)
+		{
+		    var answer = VbAskData(prompt, WScript.ScriptFullName, defvalue);
+            if ((typeof(answer) == "undefined") || answer.length == 0) {
+    			WScript.Quit(1);
+            }
+            return answer;
+		}
+		function InputFlagYNC(prompt)
+		{
+		    var answer = VbAskQuestionYNC(prompt, WScript.ScriptFullName);
+            if ((typeof(answer) == "undefined") || answer.length == 0) {
+    			WScript.Quit(1);
+            }
+            return answer == "yes";
+		}
+		function InputFlagYN(prompt)
+		{
+		    var answer = VbAskQuestionYN(prompt, WScript.ScriptFullName);
+            if ((typeof(answer) == "undefined") || answer.length == 0) {
+    			WScript.Quit(1);
+            }
+            return answer == "yes";
+		}
 		// Verify command line arguments
 		function VerifyArguments(oArgs)
 		{
@@ -85,7 +137,7 @@
 			usage_str += "                   app/dbapi    for a DBAPI application\n";
 			usage_str += "                   app/gui      for a FLTK application\n";
 			usage_str += "                   app/objects  for an application that uses ASN.1 objects\n";
-			usage_str += "                   app/objmgr   for an application that uses Object Manager.\n";
+			usage_str += "                   app/objmgr   for an application that uses Object Manager\n";
 			usage_str += "                   app/alnmgr   for an application that uses Alignment Manager\n";
 			usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
 			usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
@@ -103,14 +155,55 @@
 		// Task object constructor
 		function Task()
 		{
+			var toolkit_path;
 			var oArgs = WScript.Arguments;
-			if ( !VerifyArguments(oArgs) ) {
+			var run_interactive = GetFlagValue(oArgs, "-i", false);
+			if ( !run_interactive && VerifyArguments(oArgs) ) {
+                SetVerbose(oArgs, "-v", false);
+			    this.ProjectName = GetPositionalValue(oArgs, 0);
+			    this.ProjectType = GetPositionalValue(oArgs, 1);
+			    this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
+			    toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
+			        GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
+			} else {
 				WScript.Echo(Usage());
-				WScript.Quit(1);
+				if (!run_interactive) {
+    			    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    			    var scripthost = oFso.GetBaseName(WScript.FullName);
+    			    run_interactive = (scripthost == "cscript");
+				    if (run_interactive) {
+    				    run_interactive = InputFlagYN("Do you want to enter the data interactively?");
+				    }
+				    if (!run_interactive) {
+				        WScript.Quit(1);
+				    }
+				}
 			}
-            SetVerbose(oArgs, "-v", false);
-			this.ProjectName = GetPositionalValue(oArgs, 0);
-			this.ProjectType = GetPositionalValue(oArgs, 1);
+			if (run_interactive) {
+                var prompt, answer, footer;
+                prompt = "Enter Project Name";
+//                footer = "\n\nPress Cancel to abort the script";
+                footer="";
+                this.ProjectName = InputData(prompt+footer, "test");
+                prompt = "Enter Project Type\n";
+			    prompt += "This can be one of the following:\n";
+			    prompt += "\tapp\n";
+			    prompt += "\tapp/basic\n";
+			    prompt += "\tapp/cgi\n";
+			    prompt += "\tapp/dbapi\n";
+			    prompt += "\tapp/gui\n";
+			    prompt += "\tapp/objects\n";
+			    prompt += "\tapp/objmgr\n";
+			    prompt += "\tapp/alnmgr";
+                this.ProjectType = InputData(prompt+footer, "app/basic");
+                prompt = "Enter path to the pre-built NCBI C++ toolkit";
+			    toolkit_path = InputData(prompt+footer,
+			        GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
+			    prompt = "Use NCBI C++ toolkit DLLs?";
+			    this.DllBuild = InputFlagYNC(prompt+footer);
+			    prompt = "Use verbose output?"
+                SetVerboseFlag( InputFlagYNC(prompt+footer));
+			}
 
 			this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
 			this.TemplatesDict.Add("app",         "app/sample/basic");
@@ -125,9 +218,6 @@
 			    this.ProjectTemplate = this.TemplatesDict.Item(this.ProjectType);
 			}
 
-			this.DllBuild        = GetFlagValue(oArgs, "-dll", false);
-			var toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
-			    GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
 			if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
 				this.ToolkitPath = toolkit_path;
 			} else {
