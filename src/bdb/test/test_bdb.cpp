@@ -41,6 +41,7 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_blob.hpp>
+#include <bdb/bdb_map.hpp>
 
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -102,6 +103,9 @@ void ValidateRecord(const TestDBF1& dbf1, unsigned int id)
 const char* s_TestFileName = "testbase.db";
 const char* s_TestFileName2= "testbase2.db";
 const char* s_TestFileName3= "testbase3.db";
+
+const char* s_db_map1 = "i2s.db";
+const char* s_db_map2 = "ii2s.db";
 
 const unsigned int s_RecsInTable = 100;
 
@@ -875,6 +879,101 @@ static void s_TEST_BDB_Duplicates(void)
 
 }
 
+
+//////////////////////////////////////////////////////////////////
+//
+// 
+// db_map test
+//
+//
+
+bool CheckMapDataValid_i2s(int first, const string& second)
+{
+    char szBuf[256];
+    sprintf(szBuf, "Data%i", first);
+    return second == string(szBuf);
+}
+
+static void s_TEST_db_map(void)
+{
+    cout << "======== db_map test." << endl;
+
+    db_map<int, string>  i2s;
+
+    i2s.open(s_db_map1, ios_base::out|ios_base::trunc);
+
+    i2s.insert(pair<int, string>(1, "Data1"));
+    i2s.insert(pair<int, string>(2, "Data2"));
+    i2s.insert(pair<int, string>(3, "Data3"));
+
+    string v = i2s[2];
+
+    assert(v == "Data2");
+
+    {{
+    db_map<int, string>::const_iterator it(i2s.begin());
+    while (it.valid()) {
+        bool v = CheckMapDataValid_i2s((*it).first, (*it).second);
+        assert(v);
+        ++it;
+    }
+
+    }}
+
+    {{
+    db_map<int, string>::const_iterator it(i2s.begin());
+    db_map<int, string>::const_iterator it_end(i2s.end());
+    for (;it != it_end; ++it) {
+        bool v = CheckMapDataValid_i2s(it->first, it->second);
+        assert(v);
+    }
+
+    }}
+
+    cout << "======== db_map test ok." << endl;
+
+}
+
+static void s_TEST_db_multimap(void)
+{
+    cout << "======== db_multimap test." << endl;
+
+    db_multimap<int, string>  ii2s;
+
+    ii2s.open(s_db_map2, ios_base::out|ios_base::trunc);
+
+    ii2s.insert(pair<int, string>(1, "Data1"));
+    ii2s.insert(pair<int, string>(2, "Data2"));
+    ii2s.insert(pair<int, string>(3, "Data3"));
+    ii2s.insert(pair<int, string>(3, "Data31"));
+
+    size_t sz = ii2s.size();
+    assert(sz == 4);
+
+    sz = 0;
+    {{
+    db_multimap<int, string>::const_iterator it(ii2s.find(3));
+    while (it.valid()) {
+        const string& data = it->second;
+        if (sz == 0) {
+            assert(data == "Data3");
+        } else {
+            assert(data == "Data31");
+        }
+
+        ++sz;
+        ++it;
+    }
+
+    }}
+    assert(sz == 2);
+
+    cout << "======== db_multimap test ok." << endl;
+
+}
+
+
+
 ////////////////////////////////
 // Test application
 //
@@ -921,6 +1020,10 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_Duplicates();
 
+        s_TEST_db_map();
+
+        s_TEST_db_multimap();
+
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -953,6 +1056,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/07/22 15:21:17  kuznets
+ * Sketched two tet cases for db_map and db_multimap
+ *
  * Revision 1.9  2003/07/09 14:29:47  kuznets
  * Added DB_DUP mode test.
  *
