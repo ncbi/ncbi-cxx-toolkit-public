@@ -16,13 +16,14 @@
 
 #include <algorithm>
 
+
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
-static void s_CollectRelPathes(const string&        path_from,
-                               const list<string>&  abs_dirs,
-                               const list<string>&  file_masks,
-                               list<string> *       pRelPathes);
-//------------------------------------------------------------------------------
+
+
+static void s_CollectRelPathes(const string&       path_from,
+                               const list<string>& abs_dirs,
+                               const list<string>& file_masks,
+                               list<string>*       rel_pathes);
 
 
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<string>& configs)
@@ -38,9 +39,6 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator()
 
 bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
-    //TODO - delete this !!!!
-    //if (prj.m_ID != "xncbi") return false;
-
     CVisualStudioProject xmlprj;
     CMsvcPrjProjectContext project_context(prj);
     
@@ -106,69 +104,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //AdditionalIncludeDirectories
             {{
-                BIND_TOOLS(tool, msvc_tool.Compiler(), 
-                                    AdditionalIncludeDirectories);
-#if 0
-                const string generic_includes = 
-                           msvc_tool.Compiler()->AdditionalIncludeDirectories();
-                
-                // Actual include directories will be guessed as :
-                // 1. Root include directory of the build tree 
-                // is always present (and reports by context).
-                // 2. Source directrory is always take into account 
-                // by MSVC compiler.
-                // 3. Some "exceptions" from build tree concept 
-                // (subdirs like "impl", etc..) are possible
-                //
-                // Therefore:
-                // We will look into dirs were actual project headers are 
-                // present and collect them into include_dirs container.
-                //
-                // We will exclude "standard" dirs like "Root include" and
-                // "Source directory" from include_dirs.
-                //
-                // If include_dirs is not-empty, we'll add in to aditional 
-                // include dirs of the project.
+                BIND_TOOLS(tool, 
+                           msvc_tool.Compiler(), 
+                           AdditionalIncludeDirectories);
 
-                list<string> include_dirs;
-                CollectHeaderDirs(prj, project_context, &include_dirs);
-                
-                ITERATE(list<string>, p, project_context.IncludeDirsAbs())
-                {
-                    list<string>::iterator m = 
-                                find(include_dirs.begin(), 
-                                     include_dirs.end(), 
-                                     CDirEntry::CreateRelativePath(
-                                             project_context.ProjectDir(), *p));
-                    
-                    if (m != include_dirs.end())
-                        include_dirs.erase(m);
-                }
-                
-                ITERATE(list<string>, p, project_context.SourcesDirsAbs())
-                {
-                    list<string>::iterator m = 
-                                find(include_dirs.begin(), 
-                                     include_dirs.end(), 
-                                     CDirEntry::CreateRelativePath(
-                                             project_context.ProjectDir(), *p));
-                    
-                    if (m != include_dirs.end())
-                        include_dirs.erase(m);
-                }
-                
-                if ( include_dirs.empty() ) {
-
-                    tool->SetAttlist().SetAdditionalIncludeDirectories(
-                                                              generic_includes);
-                }
-                else {
-
-                    tool->SetAttlist().SetAdditionalIncludeDirectories(
-                      generic_includes + ", " + NStr::Join(include_dirs, ", "));
-                }
-#endif
-                
             }}
             
             //PreprocessorDefinitions
@@ -193,8 +132,9 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Compiler(), WarningLevel);
 
             //Detect64BitPortabilityProblems
-            BIND_TOOLS(tool, msvc_tool.Compiler(), 
-                                        Detect64BitPortabilityProblems);
+            BIND_TOOLS(tool, 
+                       msvc_tool.Compiler(), 
+                       Detect64BitPortabilityProblems);
 
             //DebugInformationFormat
             BIND_TOOLS(tool, msvc_tool.Compiler(), DebugInformationFormat);
@@ -332,16 +272,17 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Name);
              
             //PreprocessorDefinitions
-            BIND_TOOLS( tool, 
-                        msvc_tool.ResourceCompiler(), PreprocessorDefinitions );
+            BIND_TOOLS(tool, 
+                       msvc_tool.ResourceCompiler(), 
+                       PreprocessorDefinitions);
             
             //Culture
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Culture);
 
             //AdditionalIncludeDirectories
-            BIND_TOOLS( tool, 
-                        msvc_tool.ResourceCompiler(), 
-                        AdditionalIncludeDirectories );
+            BIND_TOOLS(tool, 
+                       msvc_tool.ResourceCompiler(), 
+                       AdditionalIncludeDirectories);
 
             conf->SetTool().push_back(tool);
         }}
@@ -378,8 +319,9 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             CRef<CTool> tool(new CTool(""));
 
             //Name
-            BIND_TOOLS( tool, 
-                        msvc_tool.AuxiliaryManagedWrapperGenerator(), Name );
+            BIND_TOOLS(tool, 
+                       msvc_tool.AuxiliaryManagedWrapperGenerator(),
+                       Name);
 
             conf->SetTool().push_back(tool);
         }}
@@ -395,17 +337,17 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         //Files - source files
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Source Files");
-        filter->SetAttlist().SetFilter(
-                                      "cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
+        filter->SetAttlist().SetFilter
+            ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
 
         list<string> rel_pathes;
         CollectSources(prj,project_context, &rel_pathes); 
         ITERATE(list<string>, p, rel_pathes) {
-
+            //Include collected source files
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
 
-            CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFile(*file);
             filter->SetFF().SetFF().push_back(ce);
         }
@@ -420,18 +362,18 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         list<string> rel_pathes;
         CollectHeaders(prj, project_context, &rel_pathes);
         ITERATE(list<string>, p, rel_pathes) {
-
+            //Include collected header files
             CRef<CFFile> file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
 
-            CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFile(*file);
             filter->SetFF().SetFF().push_back(ce);
         }
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
     {{
-        //Files - inline files - empty
+        //Files - inline files
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Inline Files");
         filter->SetAttlist().SetFilter("inl");
@@ -439,11 +381,11 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         list<string> rel_pathes;
         CollectInlines(prj, project_context, &rel_pathes);
         ITERATE(list<string>, p, rel_pathes) {
-
+            //Include collected inline files
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
 
-            CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFile(*file);
             filter->SetFF().SetFF().push_back(ce);
         }
@@ -453,8 +395,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         //Resource Files - header files - empty
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Resource Files");
-        filter->SetAttlist().SetFilter(
-                    "rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
+        filter->SetAttlist().SetFilter
+            ("rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
 
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -476,12 +418,12 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 }
 
 
-void CMsvcProjectGenerator::CollectSources(
-                                          const CProjItem& project,
-                                          const CMsvcPrjProjectContext& context,
-                                          list<string> * pRelPathes)
+void 
+CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
+                                       const CMsvcPrjProjectContext& context,
+                                       list<string>*                 rel_pathes)
 {
-    pRelPathes->clear();
+    rel_pathes->clear();
 
     ITERATE(list<string>, p, project.m_Sources) {
 
@@ -489,15 +431,12 @@ void CMsvcProjectGenerator::CollectSources(
 
         string ext = SourceFileExt(abs_path);
         if ( !ext.empty() ) {
-
+            // add ext to file
             string source_file_abs_path = abs_path + ext;
-            pRelPathes->push_back(
+            rel_pathes->push_back(
                 CDirEntry::CreateRelativePath(context.ProjectDir(), 
-                                                        source_file_abs_path));
-
-        }
-        else {
-
+                                              source_file_abs_path));
+        } else {
             LOG_POST(">>>>> Can not resolve/find source file : " + abs_path);
         }
     }
@@ -505,106 +444,62 @@ void CMsvcProjectGenerator::CollectSources(
 
 
 
-void CMsvcProjectGenerator::CollectHeaders(
-                                          const CProjItem& project,
-                                          const CMsvcPrjProjectContext& context,
-                                          list<string> * pRelPathes)
+void 
+CMsvcProjectGenerator::CollectHeaders(const CProjItem&              project,
+                                      const CMsvcPrjProjectContext& context,
+                                      list<string>*                 rel_pathes)
 {
-    pRelPathes->clear();
+    rel_pathes->clear();
 
     // .h and .hpp files may be in include or source dirs:
     list<string> abs_dirs(context.IncludeDirsAbs());
     copy(context.SourcesDirsAbs().begin(), 
          context.SourcesDirsAbs().end(), 
          back_inserter(abs_dirs));
-#if 0
-    // also it may be in some subdirs:
-    list<string> additional_abs_dirs;
-    list<string> additional_inlude_subdirs;
-    GetApp().GetAdditionalPossibleIncludeDirs(&additional_inlude_subdirs);
-    ITERATE(list<string>, p, abs_dirs) {
-
-        ITERATE(list<string>, n, additional_inlude_subdirs) {
-
-            additional_abs_dirs.push_back(CDirEntry::ConcatPath(*p, *n));
-        }
-    }
-    copy(additional_abs_dirs.begin(), 
-         additional_abs_dirs.end(), 
-         back_inserter(abs_dirs));
-#endif
 
     //collect *.h and *.hpp files
     list<string> exts;
     exts.push_back(".h");
     exts.push_back(".hpp");
-    list<string> rel_pathes;
-    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, pRelPathes);
+    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, rel_pathes);
 }
 
 
-#if 0
-void CMsvcProjectGenerator::CollectHeaderDirs(
-                                          const CProjItem& project,
-                                          const CMsvcPrjProjectContext& context,
-                                          list<string> * pRelDirs)
+void 
+CMsvcProjectGenerator::CollectInlines(const CProjItem&              project,
+                                      const CMsvcPrjProjectContext& context,
+                                      list<string>*                 rel_pathes)
 {
-    pRelDirs->clear();
+    rel_pathes->clear();
 
-    list<string> headers_rel;
-    CollectHeaders(project, context, &headers_rel);
-
-    set<string> dir_set;
-    ITERATE(list<string>, p, headers_rel)
-    {
-        string dir;
-        CDirEntry::SplitPath(*p, &dir);
-        dir_set.insert(dir);
-    }
-
-    copy(dir_set.begin(), dir_set.end(), back_inserter(*pRelDirs));
-}
-#endif
-
-void CMsvcProjectGenerator::CollectInlines(
-                                          const CProjItem& project,
-                                          const CMsvcPrjProjectContext& context,
-                                          list<string> * pRelPathes)
-{
-    pRelPathes->clear();
-
+    // .inl files may be in include or source dirs:
     list<string> abs_dirs(context.IncludeDirsAbs());
     copy(context.SourcesDirsAbs().begin(), 
          context.SourcesDirsAbs().end(), 
          back_inserter(abs_dirs));
 
+    //collect *.inl files
     list<string> exts(1, ".inl");
-    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, pRelPathes);
+    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, rel_pathes);
 }
 
 
-
-//------------------------------------------------------------------------------
-
+// Collect all files from specified dirs having specified exts
 static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
                                const list<string>&  file_masks,
-                               list<string> *       pRelPathes)
+                               list<string>*        rel_pathes)
 {
-    pRelPathes->clear();
+    rel_pathes->clear();
 
     list<string> pathes;
     ITERATE(list<string>, p, file_masks) {
-
         ITERATE(list<string>, n, abs_dirs) {
-
             CDir dir(*n);
             if ( !dir.Exists() )
                 continue;
-
             CDir::TEntries contents = dir.GetEntries("*" + *p);
             ITERATE(CDir::TEntries, i, contents) {
-
                 if ( (*i)->IsFile() ) {
                     string path  = (*i)->GetPath();
                     pathes.push_back(path);
@@ -613,12 +508,18 @@ static void s_CollectRelPathes(const string&        path_from,
         }
     }
 
-    ITERATE(list<string>, p, pathes) {
-
-        pRelPathes->push_back(CDirEntry::CreateRelativePath(path_from, *p));
-    }
+    ITERATE(list<string>, p, pathes)
+        rel_pathes->push_back(CDirEntry::CreateRelativePath(path_from, *p));
 }
 
 
-//------------------------------------------------------------------------------
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.6  2004/01/22 17:57:54  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */

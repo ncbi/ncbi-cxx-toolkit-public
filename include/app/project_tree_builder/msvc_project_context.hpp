@@ -1,6 +1,35 @@
 #ifndef PROJECT_CONTEXT_HEADER
 #define PROJECT_CONTEXT_HEADER
 
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Viatcheslav Gorelenkov
+ *
+ */
+
 #include<list>
 #include<string>
 #include<map>
@@ -9,8 +38,17 @@
 
 #include <corelib/ncbienv.hpp>
 
+
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMsvcPrjProjectContext --
+///
+/// Abstraction of MSVC project-specific context.
+///
+/// Project context provides project-specific information for 
+/// project generation.
 
 class CMsvcPrjProjectContext
 {
@@ -65,9 +103,10 @@ public:
     }
 
 private:
+    // Prohibited to:
     CMsvcPrjProjectContext(void);
     CMsvcPrjProjectContext(const CMsvcPrjProjectContext&);
-    CMsvcPrjProjectContext&	operator = (const CMsvcPrjProjectContext&);
+    CMsvcPrjProjectContext&	operator= (const CMsvcPrjProjectContext&);
 
     string m_ProjectName;
     string m_AdditionalIncludeDirectories;
@@ -84,16 +123,22 @@ private:
     list<string> m_IncludeDirsAbs;
 };
 
-
-//------------------------------------------------------------------------------
-
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMsvcPrjGeneralContext --
+///
+/// Abstraction of MSVC project "general" context.
+///
+/// Project context provides specific information for particular type of 
+/// project (Exe, Lib, Dll). This information not project-specific, but 
+/// more project type specific.
 
 class CMsvcPrjGeneralContext
 {
 public:
     //no value type semantics
-    CMsvcPrjGeneralContext( const string& config, 
-                            const CMsvcPrjProjectContext& prj_context );
+    CMsvcPrjGeneralContext(const string& config, 
+                           const CMsvcPrjProjectContext& prj_context);
 
     typedef enum { 
         eExe, 
@@ -119,25 +164,28 @@ public:
         return m_OutputDirectory;
     }
 
-
     string ConfigurationName(void) const
     {
         return m_ConfigurationName;
     }
 
-
-//	string GetOutputDirSuffix(void) const; // lib or bin
-
 private:
+    /// Prohibited to:
     CMsvcPrjGeneralContext(void);
     CMsvcPrjGeneralContext(const CMsvcPrjGeneralContext&);
-    CMsvcPrjGeneralContext& operator = (const CMsvcPrjGeneralContext&);
+    CMsvcPrjGeneralContext& operator= (const CMsvcPrjGeneralContext&);
 
     string m_OutputDirectory;
     string m_ConfigurationName;
 };
 
-//------------------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ITool --
+///
+/// Base class for all MSVC tools.
+///
+/// Polymorphic hierarchy base class.
 
 struct ITool
 {
@@ -147,139 +195,188 @@ struct ITool
     {
     }
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IConfiguration --
+///
+/// "Configuration" interface.
+///
+/// Abstract class.
+
 struct IConfiguration : public ITool
 {
-    //string Name;// ="Debug|Win32" - Configuration+'|'+"Win32"
-    virtual string OutputDirectory(void)		const = 0;// ="../../Binaries/Debug"
-    virtual string IntermediateDirectory(void)	const = 0;//="Debug"
-    virtual string ConfigurationType(void)		const = 0;//="2"
-    virtual string CharacterSet(void)			const = 0;//="2">
+    //Name : Configuration+'|'+"Win32"
+    virtual string OutputDirectory(void)		const = 0;
+    virtual string IntermediateDirectory(void)	const = 0;
+    virtual string ConfigurationType(void)		const = 0;
+    virtual string CharacterSet(void)			const = 0;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ICompilerTool --
+///
+/// "CompilerTool" interface.
+///
+/// Abstract class.
+
 struct ICompilerTool : public ITool
 {
-    //debug - EXE DLL LIB
-    //string Name;// ="VCCLCompilerTool"
-    virtual string Optimization(void)					const = 0;// ="0"
-    virtual string AdditionalIncludeDirectories(void)	const = 0;// ="../aaa,"
+    //string Name : "VCCLCompilerTool"
+    virtual string Optimization(void)					const = 0;
+    virtual string AdditionalIncludeDirectories(void)	const = 0;
 
     // Preprocessor definition:
     // LIB (Debug)		WIN32;_DEBUG;_LIB
     // LIB (Release)	WIN32;NDEBUG;_LIB
     // APP (Debug)		WIN32;_DEBUG;_CONSOLE
     // APP (Release)	WIN32;NDEBUG;_CONSOLE
-    // DLL (Debug)		WIN32;_DEBUG;_WINDOWS;_USRDLL;IR2COREIMAGELIB_EXPORTS 
-    //                                                (project_name(uppercase)+"_EXPORTS")
+    // DLL (Debug)		WIN32;_DEBUG;_WINDOWS;_USRDLL;XNCBI_EXPORTS 
+    //                                    (project_name(uppercase)+"_EXPORTS")
 
-    // DLL (Relese)		WIN32;NDEBUG;_WINDOWS;_USRDLL;IR2COREIMAGELIB_EXPORTS
-    //                                                (project_name(uppercase)+"_EXPORTS")
+    // DLL (Relese)		WIN32;NDEBUG;_WINDOWS;_USRDLL;XNCBI_EXPORTS
+    //                                    (project_name(uppercase)+"_EXPORTS")
 
+    // All configurations:
     virtual string PreprocessorDefinitions(void)		const = 0;
 
-    virtual string MinimalRebuild(void)					const = 0;// ="TRUE"
-    virtual string BasicRuntimeChecks(void)				const = 0;// ="3"
-    virtual string RuntimeLibrary(void)					const = 0;// ="3"
-    virtual string RuntimeTypeInfo(void)                const = 0;// ="TRUE"
-    virtual string UsePrecompiledHeader(void)			const = 0;// ="0"pchNone
-    virtual string WarningLevel(void)					const = 0;// ="3"
-    virtual string Detect64BitPortabilityProblems(void) const = 0;// ="FALSE"
-    virtual string DebugInformationFormat(void)			const = 0;// ="4"
-    virtual string CompileAs(void)                      const = 0;// ="0"Default
+    virtual string MinimalRebuild(void)					const = 0;
+    virtual string BasicRuntimeChecks(void)				const = 0;
+    virtual string RuntimeLibrary(void)					const = 0;
+    virtual string RuntimeTypeInfo(void)                const = 0;
+    virtual string UsePrecompiledHeader(void)			const = 0;
+    virtual string WarningLevel(void)					const = 0;
+    virtual string Detect64BitPortabilityProblems(void) const = 0;
+    virtual string DebugInformationFormat(void)			const = 0;
+    virtual string CompileAs(void)                      const = 0;
 
-    //release - EXE DLL LIB
-    virtual string InlineFunctionExpansion(void)		const = 0;// ="1"
-    virtual string OmitFramePointers(void)				const = 0;// ="TRUE"
-    virtual string StringPooling(void)					const = 0;// ="TRUE"
-    virtual string EnableFunctionLevelLinking(void)		const = 0;// ="TRUE"
+    //For release - EXE DLL LIB
+    virtual string InlineFunctionExpansion(void)		const = 0;
+    virtual string OmitFramePointers(void)				const = 0;
+    virtual string StringPooling(void)					const = 0;
+    virtual string EnableFunctionLevelLinking(void)		const = 0;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ILinkerTool --
+///
+/// "LinkerTool" interface.
+///
+/// Abstract class.
+
 struct ILinkerTool : public ITool
 {
-    //debug - EXE DLL
-    //string Name;// ="VCLinkerTool"
-    virtual string AdditionalOptions(void)			const = 0;// ="Ws2_32.lib ../../binaries/Debug/PSOAP_INET.lib"
-    virtual string OutputFile(void)					const = 0;// ="$(OutDir)/PSOAP_SRV.dll"
-    virtual string LinkIncremental(void)			const = 0;// ="2"
-    virtual string GenerateDebugInformation(void)	const = 0;// ="TRUE"
-    virtual string ProgramDatabaseFile(void)		const = 0;// ="$(OutDir)/PSOAP_SRV.pdb"
-    virtual string SubSystem(void)					const = 0;// ="2" // VG our case - "1" (console)
-    virtual string ImportLibrary(void)				const = 0;// ="$(OutDir)/PSOAP_SRV.lib"
-    virtual string TargetMachine(void)				const = 0;// ="1"/> // VG : 1-machineX86
+    //string Name : "VCLinkerTool"
+    virtual string AdditionalOptions(void)			const = 0;
+    virtual string OutputFile(void)					const = 0;
+    virtual string LinkIncremental(void)			const = 0;
+    virtual string GenerateDebugInformation(void)	const = 0;
+    virtual string ProgramDatabaseFile(void)		const = 0;
+    virtual string SubSystem(void)					const = 0;
+    virtual string ImportLibrary(void)				const = 0;
+    virtual string TargetMachine(void)				const = 0;
 
     //release - EXE DLL +=
-    virtual string OptimizeReferences(void)			const = 0;// ="2"
-    virtual string EnableCOMDATFolding(void)		const = 0;// ="2"
-};
-struct ILibrarianTool : public ITool
-{
-    //debug and release - LIB
-    //string Name;// ="VCLibrarianTool"
-    virtual string AdditionalOptions(void)			const = 0;// ="/OUT:&quot;../Binaries/Debug/TIFF_LIB.lib&quot; /NOLOGO"
-    virtual string OutputFile(void)					const = 0;// ="$(OutDir)/TIFF_LIB.lib"
-    virtual string IgnoreAllDefaultLibraries(void)	const = 0;// ="TRUE"
-    virtual string IgnoreDefaultLibraryNames(void)	const = 0;// =""/>
+    virtual string OptimizeReferences(void)			const = 0;
+    virtual string EnableCOMDATFolding(void)		const = 0;
 };
 
-//dummies:
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ILibrarianTool --
+///
+/// "LibrarianTool" interface.
+///
+/// Abstract class.
+
+struct ILibrarianTool : public ITool
+{
+    //string Name : "VCLibrarianTool"
+    virtual string AdditionalOptions(void)			const = 0;
+    virtual string OutputFile(void)					const = 0;
+    virtual string IgnoreAllDefaultLibraries(void)	const = 0;
+    virtual string IgnoreDefaultLibraryNames(void)	const = 0;
+};
+
+/// Dummies - Name - only tools. Must present in msvc proj:
 struct ICustomBuildTool : public ITool
 {
-    //string Name="VCCustomBuildTool"
+    //Name : "VCCustomBuildTool"
 };
 struct IMIDLTool : public ITool
 {
-    //string Name="VCMIDLTool"
+    //Name : "VCMIDLTool"
 };
 struct IPostBuildEventTool : public ITool
 {
-    //string Name="VCPostBuildEventTool"
+    //Name : "VCPostBuildEventTool"
 };
 struct IPreBuildEventTool : public ITool
 {
-    //string Name="VCPreBuildEventTool"
+    //Name : "VCPreBuildEventTool"
 };
 struct IPreLinkEventTool : public ITool
 {
-    //string Name="VCPreLinkEventTool"
+    //Name : "VCPreLinkEventTool"
 };
 
 
-//not alway a dummy
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IResourceCompilerTool --
+///
+/// "ResourceCompilerTool" interface.
+///
+/// Abstract class.
+
 struct IResourceCompilerTool : public ITool
 {
-    //string Name="VCResourceCompilerTool"
-    //(LIB, APP, DLL (Debug)  : =_DEBUG
-    //(LIB, APP, DLL (Release): =NDEBUG
-    virtual string PreprocessorDefinitions(void)		const = 0;//="_DEBUG" // or "NDEBUG"
-    virtual string Culture(void)						const = 0;//="1033"
-    virtual string AdditionalIncludeDirectories(void)	const = 0;//="$(IntDir)"/>
+    //Name : "VCResourceCompilerTool"
+    //must be implemented for Dll
+    virtual string PreprocessorDefinitions(void)		const = 0;
+    virtual string Culture(void)						const = 0;
+    virtual string AdditionalIncludeDirectories(void)	const = 0;
 };
 
 
-//more dummies:
+/// Dummies - Name - only tools. Must present in msvc proj:
 struct IWebServiceProxyGeneratorTool : public ITool
 {
-    //string Name="VCWebServiceProxyGeneratorTool"
+    //Name : "VCWebServiceProxyGeneratorTool"
 };
 struct IXMLDataGeneratorTool : public ITool
 {
-    //string Name="VCXMLDataGeneratorTool"
+    //Name : "VCXMLDataGeneratorTool"
 };
 struct IManagedWrapperGeneratorTool : public ITool
 {
-    //string Name="VCManagedWrapperGeneratorTool"
+    //Name : "VCManagedWrapperGeneratorTool"
 };
 struct IAuxiliaryManagedWrapperGeneratorTool : public ITool
 {
-    //string Name="VCAuxiliaryManagedWrapperGeneratorTool"
+    //Name : "VCAuxiliaryManagedWrapperGeneratorTool"
 };
 
-
-//------------------------------------------------------------------------------
-
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMsvcTools --
+///
+/// Abstraction of MSVC 7.10 C++ project build tools.
+///
+/// Provides all tools interfaces. Tools implementation will depends upon
+/// project general and project specific contexts.
 
 class CMsvcTools
 {
 public:
-    CMsvcTools(	const CMsvcPrjGeneralContext& general_context,
-                const CMsvcPrjProjectContext& project_context );
+    CMsvcTools(const CMsvcPrjGeneralContext& general_context,
+               const CMsvcPrjProjectContext& project_context);
 
     ~CMsvcTools();
 
@@ -336,12 +433,20 @@ private:
     //this is not a value-type class
     CMsvcTools();
     CMsvcTools(const CMsvcTools&);
-    CMsvcTools& operator = (const CMsvcTools&);
+    CMsvcTools& operator= (const CMsvcTools&);
 };
 
 
 
-//------------------------------------------------------------------------------
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2004/01/22 17:57:08  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */
 
 #endif // PROJECT_CONTEXT_HEADER

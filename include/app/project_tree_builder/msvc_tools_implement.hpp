@@ -1,6 +1,36 @@
 #ifndef TOOLS_IMPLEMENT_HEADER
 #define TOOLS_IMPLEMENT_HEADER
 
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Viatcheslav Gorelenkov
+ *
+ */
+
+
 #include <string>
 
 #include <app/project_tree_builder/msvc_project_context.hpp>
@@ -9,8 +39,14 @@
 #include <corelib/ncbienv.hpp>
 
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConfigurationImpl --
+///
+/// Implementation of IConfiguration interface.
+///
+/// Accepts trait class as a template parameter.
 
 template <class ConfTrait> 
 class CConfigurationImpl : public IConfiguration
@@ -51,8 +87,16 @@ private:
 
     CConfigurationImpl(void);
     CConfigurationImpl(const CConfigurationImpl&);
-    CConfigurationImpl& operator = (const CConfigurationImpl&);
+    CConfigurationImpl& operator= (const CConfigurationImpl&);
 };
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCompilerToolImpl --
+///
+/// Implementation of ICompilerTool interface.
+///
+/// Accepts trait classes as a template parameters.
 
 template <  class CRTTrait, 
             class DebugReleaseTrait,
@@ -141,8 +185,17 @@ private:
 
     CCompilerToolImpl(void);
     CCompilerToolImpl(const CCompilerToolImpl&);
-    CCompilerToolImpl& operator = (const CCompilerToolImpl&);
+    CCompilerToolImpl& operator= (const CCompilerToolImpl&);
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CLinkerToolImpl --
+///
+/// Implementation of ILinkerTool interface.
+///
+/// Accepts trait classes as a template parameters.
 
 template <  class DebugReleaseTrait,
             class ConfTrait > 
@@ -206,8 +259,17 @@ private:
 
     CLinkerToolImpl(void);
     CLinkerToolImpl(const CLinkerToolImpl&);
-    CLinkerToolImpl& operator = (const CLinkerToolImpl&);
+    CLinkerToolImpl& operator= (const CLinkerToolImpl&);
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CLinkerToolDummyImpl --
+///
+/// Implementation of ILinkerTool interface.
+///
+/// Dummy (name-only) implementation.
 
 class CLinkerToolDummyImpl : public ILinkerTool // for LIB targets:
 {
@@ -262,10 +324,17 @@ public:
 
 private:
     CLinkerToolDummyImpl(const CLinkerToolDummyImpl&);
-    CLinkerToolDummyImpl& operator = (const CLinkerToolDummyImpl&);
+    CLinkerToolDummyImpl& operator= (const CLinkerToolDummyImpl&);
 };
 
-//for LIB targets
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CLibrarianToolImpl --
+///
+/// Implementation of ILibrarianTool interface.
+///
+/// Implementation for LIB targets.
+
 class CLibrarianToolImpl : public ILibrarianTool
 {
 public:
@@ -302,8 +371,17 @@ private:
 
     CLibrarianToolImpl(void);
     CLibrarianToolImpl(const CLibrarianToolImpl&);
-    CLibrarianToolImpl& operator = (const CLibrarianToolImpl&);
+    CLibrarianToolImpl& operator= (const CLibrarianToolImpl&);
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CLibrarianToolDummyImpl --
+///
+/// Implementation of ILibrarianTool interface.
+///
+/// Dummy (name-only) implementation for APP and DLL targets.
 
 class CLibrarianToolDummyImpl : public ILibrarianTool // for APP and DLL
 {
@@ -335,8 +413,11 @@ public:
     }
 private:
 	CLibrarianToolDummyImpl(const CLibrarianToolDummyImpl&);
-	CLibrarianToolDummyImpl& operator = (const CLibrarianToolDummyImpl&);
+	CLibrarianToolDummyImpl& operator= (const CLibrarianToolDummyImpl&);
 };
+
+
+/// Dummy (name-only) tool implementations.
 
 #define DEFINE_NAME_ONLY_DUMMY_TOOL(C,I,N)\
 class C : public I\
@@ -351,7 +432,7 @@ public:\
     }\
 private:\
     C(const C&);\
-    C& operator = (const C&);\
+    C& operator= (const C&);\
 };
 
 DEFINE_NAME_ONLY_DUMMY_TOOL(CCustomBuildToolDummyImpl,
@@ -373,6 +454,15 @@ DEFINE_NAME_ONLY_DUMMY_TOOL(CPreBuildEventToolDummyImpl,
 DEFINE_NAME_ONLY_DUMMY_TOOL(CPreLinkEventToolDummyImpl,
                             IPreLinkEventTool, 
                             "VCPreLinkEventTool");
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CResourceCompilerToolImpl --
+///
+/// Implementation of IResourceCompilerTool interface.
+///
+/// Accepts traits as a template parameter.
 
 template <class DebugReleaseTrait>
 class CResourceCompilerToolImpl : public IResourceCompilerTool
@@ -400,9 +490,19 @@ public:
 
 private:
     CResourceCompilerToolImpl(const CResourceCompilerToolImpl&);
-    CResourceCompilerToolImpl& operator = (const CResourceCompilerToolImpl&);
+    CResourceCompilerToolImpl& operator= (const CResourceCompilerToolImpl&);
 
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CResourceCompilerToolImpl --
+///
+/// Implementation of IResourceCompilerTool interface.
+///
+/// Dummy (name-only) implementation.
+
 class CResourceCompilerToolDummyImpl : public IResourceCompilerTool //no resources
 {
 public:
@@ -427,11 +527,14 @@ public:
     }
 
 private:
-    CResourceCompilerToolDummyImpl(
-                                const CResourceCompilerToolDummyImpl&);
-    CResourceCompilerToolDummyImpl& operator = (
-                                const CResourceCompilerToolDummyImpl&);
+    CResourceCompilerToolDummyImpl
+        (const CResourceCompilerToolDummyImpl&);
+    CResourceCompilerToolDummyImpl& operator= 
+        (const CResourceCompilerToolDummyImpl&);
 };
+
+
+/// Dummy (name-only) tool implementations.
 
 DEFINE_NAME_ONLY_DUMMY_TOOL(CWebServiceProxyGeneratorToolDummyImpl,
                             IWebServiceProxyGeneratorTool, 
@@ -450,7 +553,16 @@ DEFINE_NAME_ONLY_DUMMY_TOOL(CAuxiliaryManagedWrapperGeneratorToolDummyImpl,
                             "VCAuxiliaryManagedWrapperGeneratorTool");
 
 
-//------------------------------------------------------------------------------
+
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2004/01/22 17:57:09  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */
 
 #endif // TOOLS_IMPLEMENT_HEADER

@@ -1,3 +1,32 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Viatcheslav Gorelenkov
+ *
+ */
+
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_sln_generator.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
@@ -7,7 +36,6 @@
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
 
 
 CMsvcSolutionGenerator::CMsvcSolutionGenerator(const list<string>& configs)
@@ -21,26 +49,30 @@ CMsvcSolutionGenerator::~CMsvcSolutionGenerator()
 }
 
 
-void CMsvcSolutionGenerator::AddProject(const CProjItem& project)
+void 
+CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 {
     m_Projects[project.m_ID] = CPrjContext(project);
 }
 
 
-void CMsvcSolutionGenerator::AddMasterProject(const string& base_name)
+void 
+CMsvcSolutionGenerator::AddMasterProject(const string& base_name)
 {
     m_MasterProject.first  = base_name;
     m_MasterProject.second = GenerateSlnGUID();
 }
 
 
-bool CMsvcSolutionGenerator::IsSetMasterProject() const
+bool 
+CMsvcSolutionGenerator::IsSetMasterProject() const
 {
     return !m_MasterProject.first.empty() && !m_MasterProject.second.empty();
 }
 
 
-void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
+void 
+CMsvcSolutionGenerator::SaveSolution(const string& file_path)
 {
     CDirEntry::SplitPath(file_path, &m_SolutionDir);
 
@@ -72,7 +104,10 @@ void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     }
     ofs << '\t' << "EndGlobalSection" << endl;
     
-    ofs << '\t' << "GlobalSection(ProjectConfiguration) = postSolution" << endl;
+    ofs << '\t' 
+        << "GlobalSection(ProjectConfiguration) = postSolution" 
+        << endl;
+
     ITERATE(TProjects, p, m_Projects) {
         
         WriteProjectConfigurations(ofs, p->second);
@@ -83,7 +118,8 @@ void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     ofs << '\t' << "EndGlobalSection" << endl;
 
     //meanless stuff
-    ofs << '\t' << "GlobalSection(ExtensibilityGlobals) = postSolution" << endl;
+    ofs << '\t' 
+        << "GlobalSection(ExtensibilityGlobals) = postSolution" << endl;
 	ofs << '\t' << "EndGlobalSection" << endl;
 	ofs << '\t' << "GlobalSection(ExtensibilityAddIns) = postSolution" << endl;
 	ofs << '\t' << "EndGlobalSection" << endl;
@@ -120,10 +156,9 @@ CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CProjItem& project)
 
 
 CMsvcSolutionGenerator::CPrjContext& 
-    CMsvcSolutionGenerator::CPrjContext::operator = (const CPrjContext& context)
+CMsvcSolutionGenerator::CPrjContext::operator= (const CPrjContext& context)
 {
-    if (this != &context)
-    {
+    if (this != &context) {
         Clear();
         SetFrom(context);
     }
@@ -143,8 +178,9 @@ void CMsvcSolutionGenerator::CPrjContext::Clear(void)
 }
 
 
-void CMsvcSolutionGenerator::CPrjContext::SetFrom(
-                                             const CPrjContext& project_context)
+void 
+CMsvcSolutionGenerator::CPrjContext::SetFrom
+    (const CPrjContext& project_context)
 {
     m_Project     = project_context.m_Project;
 
@@ -153,29 +189,9 @@ void CMsvcSolutionGenerator::CPrjContext::SetFrom(
     m_ProjectPath = project_context.m_ProjectPath;
 }
 
-//------------------------------------------------------------------------------
-//Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util_all", "util\util_all.vcproj", "{EE5BB51D-9D33-4CCB-8596-2530204A39D9}"
-//	ProjectSection(ProjectDependencies) = postProject
-//		{A2BD051C-15FC-4757-AF79-B6959C0289F7} = {A2BD051C-15FC-4757-AF79-B6959C0289F7}
-//		{46056CE1-F74D-4592-A10E-D7B2B5FB64D7} = {46056CE1-F74D-4592-A10E-D7B2B5FB64D7}
-//		{433B7D1E-AA60-4B2B-A2DA-E37EE180C87A} = {433B7D1E-AA60-4B2B-A2DA-E37EE180C87A}
-//		{49B981D7-7B6A-46FA-9246-7BEC65BC296A} = {49B981D7-7B6A-46FA-9246-7BEC65BC296A}
-//		{37B853D3-3A69-49A8-AF98-A41307C22138} = {37B853D3-3A69-49A8-AF98-A41307C22138}
-//		{E2BA4286-8E01-4024-BC22-E1121640304A} = {E2BA4286-8E01-4024-BC22-E1121640304A}
-//		{22E61D2C-859F-4E86-9C76-E7C723F0D24F} = {22E61D2C-859F-4E86-9C76-E7C723F0D24F}
-//		{3BD708FD-A8CF-43B1-B8E8-3CFFC02105E4} = {3BD708FD-A8CF-43B1-B8E8-3CFFC02105E4}
-//		{386DD7FC-D3B8-4903-8F02-4F7D206483FC} = {386DD7FC-D3B8-4903-8F02-4F7D206483FC}
-//		{7231DE6A-900A-4D34-95B3-5D2EE17CCD1E} = {7231DE6A-900A-4D34-95B3-5D2EE17CCD1E}
-//		{DDCC87D4-0146-4BC9-93CC-BB9E82CBFF6F} = {DDCC87D4-0146-4BC9-93CC-BB9E82CBFF6F}
-//		{DC184280-5530-493D-824B-161D0CC13B0C} = {DC184280-5530-493D-824B-161D0CC13B0C}
-//		{805839BC-C31D-4369-9155-F2716E054DFC} = {805839BC-C31D-4369-9155-F2716E054DFC}
-//	EndProjectSection
-//EndProject
 
-
-
-void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs, 
-                             const CMsvcSolutionGenerator::CPrjContext& project)
+void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs, 
+                                                    const CPrjContext& project)
 {
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID 
@@ -201,10 +217,11 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs,
 
             const CPrjContext& prj_i = n->second;
 
-            ofs << '\t' 
-                << '\t' << prj_i.m_GUID << " = " << prj_i.m_GUID << endl;
-        }
-        else {
+            ofs << '\t' << '\t' 
+                << prj_i.m_GUID 
+                << " = " 
+                << prj_i.m_GUID << endl;
+        } else {
 
             LOG_POST("&&&&&&& Project: " + 
                       project.m_ProjectName + " is dependend of " + id + 
@@ -238,23 +255,10 @@ void CMsvcSolutionGenerator::WriteMasterProject(CNcbiOfstream& ofs)
 }
 
 
-//------------------------------------------------------------------------------
 
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.Debug.ActiveCfg = Debug|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.Debug.Build.0 = Debug|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.DebugDLL.ActiveCfg = DebugDLL|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.DebugDLL.Build.0 = DebugDLL|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.DebugMT.ActiveCfg = DebugMT|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.DebugMT.Build.0 = DebugMT|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.Release.ActiveCfg = Release|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.Release.Build.0 = Release|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
-//		{08090CA6-5107-40DA-A6F3-91A5134774D7}.ReleaseMT.Build.0 = ReleaseMT|Win32
-
-void CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream& ofs, 
-                             const CMsvcSolutionGenerator::CPrjContext& project)
+void 
+CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs, 
+                                                   const CPrjContext& project)
 {
     ITERATE(list<string>, p, m_Configs) {
 
@@ -282,7 +286,8 @@ void CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream& ofs,
 }
 
 
-void CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
+void 
+CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
 {
     ITERATE(list<string>, p, m_Configs) {
 
@@ -310,5 +315,13 @@ void CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
 }
 
 
-//------------------------------------------------------------------------------
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2004/01/22 17:57:54  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */

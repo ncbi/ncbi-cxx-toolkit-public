@@ -1,9 +1,38 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Viatcheslav Gorelenkov
+ *
+ */
+
 #include <app/project_tree_builder/proj_item.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
+
 
 CProjItem::CProjItem(void)
 {
@@ -17,10 +46,9 @@ CProjItem::CProjItem(const CProjItem& item)
 }
 
 
-CProjItem& CProjItem::operator = (const CProjItem& item)
+CProjItem& CProjItem::operator= (const CProjItem& item)
 {
     if (this != &item) {
-
         Clear();
         SetFrom(item);
     }
@@ -90,11 +118,10 @@ CProjectItemsTree::CProjectItemsTree(const CProjectItemsTree& projects)
 }
 
 
-CProjectItemsTree& CProjectItemsTree::operator = (
-                                      const CProjectItemsTree& projects)
+CProjectItemsTree& 
+CProjectItemsTree::operator= (const CProjectItemsTree& projects)
 {
     if (this != &projects) {
-
         Clear();
         SetFrom(projects);
     }
@@ -126,32 +153,32 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                    const TFiles& makein, 
                                    const TFiles& makelib, 
                                    const TFiles& makeapp , 
-                                   CProjectItemsTree * pTree)
+                                   CProjectItemsTree* tree)
 {
-    pTree->m_Projects.clear();
-    pTree->m_RootSrc = root_src;
+    tree->m_Projects.clear();
+    tree->m_RootSrc = root_src;
 
     ITERATE(TFiles, p, makein) {
 
         string sources_dir;
         CDirEntry::SplitPath(p->first, &sources_dir);
 
-        list<TMakeInInfo> list_info;
+        TMakeInInfoList list_info;
         AnalyzeMakeIn(p->second, &list_info);
-        ITERATE(list<TMakeInInfo>, i, list_info) {
+        ITERATE(TMakeInInfoList, i, list_info) {
 
-            const TMakeInInfo& info = *i;
+            const SMakeInInfo& info = *i;
 
             //Iterate all project_name(s) from makefile.in 
-            ITERATE(list<string>, n, info.second) {
+            ITERATE(list<string>, n, info.m_ProjNames) {
 
                 //project id
                 const string proj_name = *n;
         
                 string applib_mfilepath = CDirEntry::ConcatPath(sources_dir,
-                               CreateMakeAppLibFileName(info.first, proj_name));
+                               CreateMakeAppLibFileName(info.m_ProjType, proj_name));
             
-                if (info.first == CProjItem::eApp) {
+                if (info.m_ProjType == CProjItem::eApp) {
 
                     TFiles::const_iterator m = makeapp.find(applib_mfilepath);
                     if (m == makeapp.end()) {
@@ -194,7 +221,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 
                     string source_base_dir;
                     CDirEntry::SplitPath(p->first, &source_base_dir);
-                    pTree->m_Projects[proj_id] =  CProjItem( CProjItem::eApp, 
+                    tree->m_Projects[proj_id] =  CProjItem( CProjItem::eApp, 
                                                                proj_name, 
                                                                proj_id,
                                                                source_base_dir,
@@ -202,7 +229,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                                                depends);
 
                 }
-                else if (info.first == CProjItem::eLib) {
+                else if (info.m_ProjType == CProjItem::eLib) {
 
                     TFiles::const_iterator m = makelib.find(applib_mfilepath);
                     if (m == makelib.end()) {
@@ -242,7 +269,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 
                     string source_base_dir;
                     CDirEntry::SplitPath(p->first, &source_base_dir);
-                    pTree->m_Projects[proj_id] =  CProjItem( CProjItem::eLib,
+                    tree->m_Projects[proj_id] =  CProjItem( CProjItem::eLib,
                                                                proj_name, 
                                                                proj_id,
                                                                source_base_dir,
@@ -255,33 +282,33 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 }
 
 
-void CProjectItemsTree::AnalyzeMakeIn(
-                              const CSimpleMakeFileContents& makein_contents,
-                              list<TMakeInInfo> * pInfo)
+void CProjectItemsTree::AnalyzeMakeIn
+    (const CSimpleMakeFileContents& makein_contents,
+     TMakeInInfoList*               info)
 {
-    pInfo->clear();
+    info->clear();
 
     CSimpleMakeFileContents::TContents::const_iterator p = 
         makein_contents.m_Contents.find("LIB_PROJ");
 
     if (p != makein_contents.m_Contents.end()) {
 
-        pInfo->push_back(TMakeInInfo(CProjItem::eLib, p->second)); 
+        info->push_back(SMakeInInfo(CProjItem::eLib, p->second)); 
     }
 
     p = makein_contents.m_Contents.find("APP_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
-        pInfo->push_back(TMakeInInfo(CProjItem::eApp, p->second)); 
+        info->push_back(SMakeInInfo(CProjItem::eApp, p->second)); 
     }
 
     //TODO - DLL_PROJ
 }
 
 
-string CProjectItemsTree::CreateMakeAppLibFileName(
-                                                  CProjItem::TProjType projtype,
-                                                  const string& projname)
+string CProjectItemsTree::CreateMakeAppLibFileName
+    (CProjItem::TProjType projtype,
+     const string&        projname)
 {
     string fname = "Makefile." + projname;
 
@@ -297,56 +324,52 @@ string CProjectItemsTree::CreateMakeAppLibFileName(
 }
 
 
-void CProjectItemsTree::CreateFullPathes(const string& dir, 
-                                        const list<string> files,
-                                        list<string> * pFullPathes)
+void CProjectItemsTree::CreateFullPathes(const string&      dir, 
+                                         const list<string> files,
+                                         list<string>*      full_pathes)
 {
     ITERATE(list<string>, p, files) {
-
         string full_path = CDirEntry::ConcatPath(dir, *p);
-        pFullPathes->push_back(full_path);
+        full_pathes->push_back(full_path);
     }
 }
 
 
-void CProjectItemsTree::GetInternalDepends(list<string> * pDepends) const
+void CProjectItemsTree::GetInternalDepends(list<string>* depends) const
 {
-    pDepends->clear();
+    depends->clear();
 
     set<string> depends_set;
 
     ITERATE(TProjects, p, m_Projects) {
-
         const CProjItem& proj_item = p->second;
         ITERATE(list<string>, n, proj_item.m_Depends) {
-
             depends_set.insert(*n);
         }
     }
 
-    copy(depends_set.begin(), depends_set.end(), back_inserter(*pDepends));
+    copy(depends_set.begin(), depends_set.end(), back_inserter(*depends));
 }
 
 
-void CProjectItemsTree::GetExternalDepends(list<string> 
-                                                       * pExternalDepends) const
+void 
+CProjectItemsTree::GetExternalDepends(list<string>* external_depends) const
 {
-    pExternalDepends->clear();
+    external_depends->clear();
 
     list<string> depends;
     GetInternalDepends(&depends);
     ITERATE(list<string>, p, depends) {
-
         const string& depend_id = *p;
         if (m_Projects.find(depend_id) == m_Projects.end())
-            pExternalDepends->push_back(depend_id);
+            external_depends->push_back(depend_id);
     }
 }
 
 
-void CProjectItemsTree::GetRoots(list<string> * pIds) const
+void CProjectItemsTree::GetRoots(list<string>* ids) const
 {
-    pIds->clear();
+    ids->clear();
 
     set<string> dirs;
     ITERATE(TProjects, p, m_Projects) {
@@ -359,15 +382,15 @@ void CProjectItemsTree::GetRoots(list<string> * pIds) const
         //if project parent dir is not in dirs - it's a root
         const CProjItem& project = p->second;
         if (dirs.find(GetParentDir(project.m_SourcesBaseDir)) == dirs.end())
-            pIds->push_back(project.m_ID);
+            ids->push_back(project.m_ID);
     }
 }
 
 
 void CProjectItemsTree::GetSiblings(const string& parent_id,
-                                    list<string> * pIds) const
+                                    list<string>* ids) const
 {
-    pIds->clear();
+    ids->clear();
 
     TProjects::const_iterator n = m_Projects.find(parent_id);
     if (n == m_Projects.end()) 
@@ -380,16 +403,11 @@ void CProjectItemsTree::GetSiblings(const string& parent_id,
         const CProjItem& project_i = p->second;
         if (GetParentDir(project_i.m_SourcesBaseDir) == 
                                 parent_project.m_SourcesBaseDir)
-            pIds->push_back(project_i.m_ID);
+            ids->push_back(project_i.m_ID);
     }
 }
 
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//------------------------------------------------------------------------------
 static bool s_IsMakeInFile(const string& name)
 {
     return name == "Makefile.in";
@@ -408,17 +426,18 @@ static bool s_IsMakeAppFile(const string& name)
     return NStr::StartsWith(name, "Makefile")  &&  
 	       NStr::EndsWith(name, ".app");
 }
-//------------------------------------------------------------------------------
 
 
-void CProjectTreeBuilder::BuildOneProjectTree( const string& start_node_path,
-                                               const string& root_src_path,
-                                               CProjectItemsTree *  pTree  )
+void 
+CProjectTreeBuilder::BuildOneProjectTree(const string&       start_node_path,
+                                         const string&       root_src_path,
+                                         CProjectItemsTree*  tree  )
 {
-    TMakeFiles subtree_makefiles;
+    SMakeFiles subtree_makefiles;
 
-    ProcessDir(start_node_path, start_node_path == root_src_path, 
-                                                            &subtree_makefiles);
+    ProcessDir(start_node_path, 
+               start_node_path == root_src_path,
+               &subtree_makefiles);
 
     // Resolve macrodefines
     list<string> metadata_files;
@@ -430,15 +449,16 @@ void CProjectTreeBuilder::BuildOneProjectTree( const string& start_node_path,
 
     // Build projects tree
     CProjectItemsTree::CreateFrom(root_src_path,
-                                  subtree_makefiles.m_First, 
-                                  subtree_makefiles.m_Second, 
-                                  subtree_makefiles.m_Third, pTree);
+                                  subtree_makefiles.m_In, 
+                                  subtree_makefiles.m_Lib, 
+                                  subtree_makefiles.m_App, tree);
 }
 
 
-void CProjectTreeBuilder::BuildProjectTree( const string& start_node_path,
-                                            const string& root_src_path,
-                                            CProjectItemsTree *  pTree  )
+void 
+CProjectTreeBuilder::BuildProjectTree(const string&       start_node_path,
+                                      const string&       root_src_path,
+                                      CProjectItemsTree*  tree  )
 {
     // Bulid subtree
     CProjectItemsTree target_tree;
@@ -450,7 +470,6 @@ void CProjectTreeBuilder::BuildProjectTree( const string& start_node_path,
 
     // If we have to add more projects to the target tree...
     if ( !external_depends.empty() ) {
-
         // Get whole project tree
         CProjectItemsTree whole_tree;
         BuildOneProjectTree(root_src_path, root_src_path, &whole_tree);
@@ -458,42 +477,40 @@ void CProjectTreeBuilder::BuildProjectTree( const string& start_node_path,
         list<string> depends_to_resolve = external_depends;
 
         while ( !depends_to_resolve.empty() ) {
-
             bool modified = false;
             ITERATE(list<string>, p, depends_to_resolve) {
-
+                // id of project we have to resolve
                 const string& prj_id = *p;
                 CProjectItemsTree::TProjects::const_iterator n = 
                                              whole_tree.m_Projects.find(prj_id);
             
-                if ( n != whole_tree.m_Projects.end() ) {
-
+                if (n != whole_tree.m_Projects.end()) {
+                    //insert this project to target_tree
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
-                }
-                else
+                } else {
                     LOG_POST ("========= No project with id :" + prj_id);
+                }
             }
 
             if (!modified) {
-
-                *pTree = target_tree;
+                //we done - no more projects was added to target_tree
+                *tree = target_tree;
                 return;
-            }
-            else {
-
+            } else {
+                //continue resolving dependences
                 target_tree.GetExternalDepends(&depends_to_resolve);
             }
         }
     }
 
-    *pTree = target_tree;
+    *tree = target_tree;
 }
 
 
 void CProjectTreeBuilder::ProcessDir(const string& dir_name, 
-                                     bool is_root, 
-                                     TMakeFiles * pMakeFiles)
+                                     bool          is_root, 
+                                     SMakeFiles*   makefiles)
 {
     // Do not collect makefile from root directory
     CDir dir(dir_name);
@@ -508,57 +525,57 @@ void CProjectTreeBuilder::ProcessDir(const string& dir_name,
 
         if ( (*i)->IsFile()  &&  !is_root) {
             if ( s_IsMakeInFile(name) )
-	            ProcessMakeInFile(path, pMakeFiles);
+	            ProcessMakeInFile(path, makefiles);
             else if ( s_IsMakeLibFile(name) )
-	            ProcessMakeLibFile(path, pMakeFiles);
+	            ProcessMakeLibFile(path, makefiles);
             else if ( s_IsMakeAppFile(name) )
-	            ProcessMakeAppFile(path, pMakeFiles);
+	            ProcessMakeAppFile(path, makefiles);
         } 
         else if ( (*i)->IsDir() ) {
-            ProcessDir(path, false, pMakeFiles);
+            ProcessDir(path, false, makefiles);
         }
     }
 }
 
 
 void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name, 
-                                            TMakeFiles * pMakeFiles)
+                                            SMakeFiles*   makefiles)
 {
     LOG_POST("Processing MakeIn: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
-	    pMakeFiles->m_First[file_name] = fc;
+	    makefiles->m_In[file_name] = fc;
 }
 
 
 void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name, 
-                                             TMakeFiles * pMakeFiles)
+                                             SMakeFiles*   makefiles)
 {
     LOG_POST("Processing MakeLib: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
-	    pMakeFiles->m_Second[file_name] = fc;
+	    makefiles->m_Lib[file_name] = fc;
 }
 
 
 void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name, 
-                                             TMakeFiles * pMakeFiles)
+                                             SMakeFiles*   makefiles)
 {
     LOG_POST("Processing MakeApp: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
-	    pMakeFiles->m_Third[file_name] = fc;
+	    makefiles->m_App[file_name] = fc;
 }
 
 
 //recursive resolving
 void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver, 
-                                      TMakeFiles& makefiles)
+                                      SMakeFiles&   makefiles)
 {
-    NON_CONST_ITERATE(TFiles, p, makefiles.m_Third) {
+    NON_CONST_ITERATE(TFiles, p, makefiles.m_App) {
 	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
                           n, 
                           p->second.m_Contents) {
@@ -569,14 +586,13 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
                 list<string> new_vals;
                 bool modified = false;
                 NON_CONST_ITERATE(list<string>, k, values) {
-
+                    //iterate all values and try to resolve 
                     const string& val = *k;
 	                list<string> resolved_def;
 	                resolver.Resolve(val, &resolved_def);
 	                if ( resolved_def.empty() )
 		                new_vals.push_back(val); //not resolved - keep old val
                     else {
-
                         //was resolved
 		                copy(resolved_def.begin(), 
 			                 resolved_def.end(), 
@@ -592,5 +608,13 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
 }
 
 
-//------------------------------------------------------------------------------
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2004/01/22 17:57:55  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */

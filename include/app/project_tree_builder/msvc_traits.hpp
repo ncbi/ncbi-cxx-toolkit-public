@@ -1,16 +1,46 @@
 #ifndef MSVC_TRAITS_HEADER
 #define MSVC_TRAITS_HEADER
 
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Viatcheslav Gorelenkov
+ *
+ */
+
+
 #include <string>
 #include <corelib/ncbienv.hpp>
 
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
 
-//traits for MSVC projects:
 
-//------------------------------------------------------------------------------
-// 1. RunTime library traits:
+/// Traits for MSVC projects:
+
+
+/// RunTime library traits.
 #if 0
 // Quota from MDE VC++ system engine typelib:
 typedef enum {
@@ -31,6 +61,7 @@ struct SCrtMultiThreaded
     }
 };
 
+
 struct SCrtMultiThreadedDebug
 {
     static string RuntimeLibrary(void)
@@ -38,6 +69,7 @@ struct SCrtMultiThreadedDebug
 	    return "1";
     }
 };
+
 
 struct SCrtMultiThreadedDLL
 {
@@ -56,6 +88,7 @@ struct SCrtMultiThreadedDebugDLL
     }
 };
 
+
 struct SCrtSingleThreaded
 {
     static string RuntimeLibrary(void)
@@ -64,6 +97,7 @@ struct SCrtSingleThreaded
     }
 };
 
+
 struct SCrtSingleThreadedDebug
 {
     static string RuntimeLibrary(void)
@@ -71,8 +105,9 @@ struct SCrtSingleThreadedDebug
 	    return "5";
     }
 };
-//------------------------------------------------------------------------------
-// 2. Debug/Release traits:
+
+
+/// Debug/Release traits.
 #if 0
 typedef enum {
     debugDisabled = 0,
@@ -147,6 +182,7 @@ struct SDebug
     }
 };
 
+
 struct SRelease
 {
     static string Optimization(void)
@@ -194,8 +230,9 @@ struct SRelease
 	    return "2";
     }
 };
-//------------------------------------------------------------------------------
-// 3. Congiguration Type (Target type) traits:
+
+
+/// Congiguration Type (Target type) traits.
 #if 0
 typedef enum {
     typeUnknown = 0,
@@ -205,6 +242,7 @@ typedef enum {
     typeGeneric = 10
 } ConfigurationTypes;
 #endif
+
 
 struct SApp
 {
@@ -229,6 +267,8 @@ struct SApp
 	    return "1"; //console
     }
 };
+
+
 struct SLib
 {
     static string ConfigurationType(void)
@@ -252,6 +292,8 @@ struct SLib
 	    return "1"; //console
     }
 };
+
+
 struct SDll
 {
     static string ConfigurationType(void)
@@ -276,7 +318,16 @@ struct SDll
     }
 };
 
-//------------------------------------------------------------------------------
+
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2004/01/22 17:57:09  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */
 
 #endif // MSVC_TRAITS_HEADER

@@ -1,92 +1,47 @@
 #ifndef PROJ_UTILS_01152004_HEADER
 #define PROJ_UTILS_01152004_HEADER
 
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Viatcheslav Gorelenkov
+ *
+ */
+
+
 /// Utilits for Project Tree Builder:
 #include <corelib/ncbienv.hpp>
 
 
 BEGIN_NCBI_SCOPE
-//------------------------------------------------------------------------------
 
-template <class A, class B, class C>
-struct STriple
+struct SKeyValue
 {
-    typedef A TFirst;
-    typedef B TSecond;
-    typedef C TThird;
-
-    STriple()
-        :m_First  (A()),
-         m_Second (B()),
-         m_Third  (C())
-    {
-    }
-
-    STriple(const A& a, const B& b, const C& c)
-        :m_First  (a),
-         m_Second (b),
-         m_Third  (c)
-    {
-    }
-
-    STriple(const STriple& triple)
-        :m_First  (triple.m_First),
-         m_Second (triple.m_Second),
-         m_Third  (triple.m_Third)
-    {
-    }
-
-    STriple& operator = (const STriple& triple)
-    {
-        if(this != &triple)
-        {
-            m_First  = triple.m_First;
-            m_Second = triple.m_Second;
-            m_Third  = triple.m_Third;
-        }
-        return *this;
-    }
-
-    ~STriple()
-    {
-    }
-
-    
-    bool operator < (const STriple& triple) const
-    {
-        if( m_First  > triple.m_First )
-            return false;
-        else if( m_First  < triple.m_First )
-            return true;
-        else {
-
-            if(m_Second > triple.m_Second)
-                return false;
-            else if (m_Second < triple.m_Second)
-                return true;
-            else
-                return m_Third < triple.m_Third;
-        }
-    }
-
-
-    bool operator == (const STriple& triple) const
-    {
-        return !(*this < triple)  &&  !(triple < *this);
-    }
-
-    bool operator != (const STriple& triple) const
-    {
-        return !(*this == triple);
-    }
-
-
-    A m_First;
-    B m_Second;
-    C m_Third;    
+    string m_Key;
+    string m_Value;
 };
-
-//------------------------------------------------------------------------------
 
 inline string GetParentDir(const string& dir)
 {
@@ -105,7 +60,16 @@ inline string GetFolder(const string& dir)
     return folder;
 }
 
-//------------------------------------------------------------------------------
+
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2004/01/22 17:57:09  gorelenk
+ * first version
+ *
+ * ===========================================================================
+ */
 
 #endif //PROJ_UTILS_01152004_HEADER
