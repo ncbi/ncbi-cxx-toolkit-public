@@ -891,11 +891,13 @@ Int8 CFile::GetLength(void) const
 
 string CFile::GetTmpName(void)
 {
-    char* filename = tmpnam(0);
+    char* filename = tempnam(0,0);
     if ( !filename ) {
         return kEmptyStr;
     }
-    return filename;
+    string res(filename);
+    free(filename);
+    return res;   
 }
 
 
@@ -1567,6 +1569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2003/08/29 16:54:28  ivanov
+ * GetTmpName(): use tempname() instead tmpname()
+ *
  * Revision 1.51  2003/08/21 20:32:48  ivanov
  * CDirEntry::GetType(): use lstat() instead stat() on UNIX
  *
