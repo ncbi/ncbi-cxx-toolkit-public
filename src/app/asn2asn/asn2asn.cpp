@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/15 19:46:57  vasilche
+* Added Read/Write hooks.
+*
 * Revision 1.17  2000/06/16 16:32:06  vasilche
 * Fixed 'unused variable' warnings.
 *
@@ -93,6 +96,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
+#include <serial/objhook.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -161,7 +165,9 @@ void PrintUsage(void)
         "  -s  Output asnfile in binary mode\n"
         "  -x  Output XML file\n"
         "  -l  Log errors to file named\n"
-        "  -c <number>  Repeat action <number> times\n";
+        "  -c <number>  Repeat action <number> times\n"
+        "  -hi Read Bioseq-set via Seq-entry hook\n"
+        "  -ho Write Bioseq-set from Seq-entry hook\n";
     exit(1);
 }
 
@@ -183,6 +189,31 @@ const string& StringArgument(const CNcbiArguments& args, size_t index)
 static
 void SeqEntryProcess(CSeq_entry& sep);  /* dummy function */
 
+class CReadSeqSetHook : public CReadClassMemberHook
+{
+public:
+    CReadSeqSetHook(void)
+        : m_Level(0)
+        {
+        }
+    ~CReadSeqSetHook(void)
+        {
+            _ASSERT(m_Level == 0);
+        }
+
+    void ReadClassMember(CObjectIStream& in,
+                         const CObjectInfo& object,
+                         TMemberIndex memberIndex);
+
+    class CReadSeqEntryHook : public CReadContainerElementHook
+    {
+    public:
+        void ReadContainerElement(CObjectIStream& in,
+                                  const CObjectInfo& container);
+    };
+
+    int m_Level;
+};
 
 /*****************************************************************************
 *
@@ -199,6 +230,9 @@ int CAsn2Asn::Run(void)
     ESerialDataFormat outFormat = eSerial_AsnText;
     string logFile;
     int count = 1;
+    bool readHook = false;
+    bool writeHook = false;
+
     CNcbiDiagStream logStream(&NcbiCerr);
 	SetDiagPostLevel(eDiag_Error);
 
@@ -241,6 +275,19 @@ int CAsn2Asn::Run(void)
                     count = NStr::StringToInt(StringArgument(GetArguments(),
                                                              ++i));
                     break;
+                case 'h':
+                    switch ( arg[2] ) {
+                    case 'i':
+                        readHook = true;
+                        break;
+                    case 'o':
+                        writeHook = true;
+                        break;
+                    default:
+                        InvalidArgument(arg);
+                        break;
+                    }
+                    break;
                 default:
                     InvalidArgument(arg);
                     break;
@@ -267,6 +314,7 @@ int CAsn2Asn::Run(void)
     }
 
     for ( int i = 0; i < count; ++i ) {
+        NcbiCerr << "Step " << (i + 1) << ':' << NcbiEndl;
         auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
                                                          eSerial_StdWhenAny));
         auto_ptr<CObjectOStream> out(outFile.empty()? 0:
@@ -275,29 +323,53 @@ int CAsn2Asn::Run(void)
 
         if ( inSeqEntry ) { /* read one Seq-entry */
             if ( skip ) {
+                NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
                 in->Skip(CSeq_entry::GetTypeInfo());
             }
             else {
                 CSeq_entry entry;
+                NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
                 *in >> entry;
                 SeqEntryProcess(entry);     /* do any processing */
-                if ( out.get() )
+                if ( out.get() ) {
+                    NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
                     *out << entry;
+                }
             }
         }
         else {              /* read Seq-entry's from a Bioseq-set */
             if ( skip ) {
+                NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
                 in->Skip(CBioseq_set::GetTypeInfo());
             }
             else {
                 CBioseq_set entries;
-                *in >> entries;
-                non_const_iterate ( CBioseq_set::TSeq_set, seqi,
-                                    entries.SetSeq_set() ) {
-                    SeqEntryProcess(**seqi);     /* do any processing */
+                NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
+                if ( readHook ) {
+                    CObjectTypeInfo hookType(CBioseq_set::GetTypeInfo());
+                    TMemberIndex memberIndex = hookType.FindMember("seq-set");
+                    CReadSeqSetHook hook;
+                    in->SetReadClassMemberHook(hookType.GetClassTypeInfo(),
+                                               memberIndex, &hook);
+                    *in >> entries;
+                    in->ResetReadClassMemberHook(hookType.GetClassTypeInfo(),
+                                                 memberIndex);
                 }
-                if ( out.get() )
-                    *out << entries;
+                else {
+                    *in >> entries;
+                    non_const_iterate ( CBioseq_set::TSeq_set, seqi,
+                                        entries.SetSeq_set() ) {
+                        SeqEntryProcess(**seqi);     /* do any processing */
+                    }
+                }
+                if ( out.get() ) {
+                    NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
+                    if ( writeHook ) {
+                    }
+                    else {
+                        *out << entries;
+                    }
+                }
             }
         }
     }
@@ -316,3 +388,28 @@ void SeqEntryProcess (CSeq_entry& /*sep*/)
 {
 }
 
+void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
+                                      const CObjectInfo& object,
+                                      TMemberIndex memberIndex)
+{
+    ++m_Level;
+    //    NcbiCerr << "+Level: " << m_Level << NcbiEndl;
+    if ( m_Level == 1 ) {
+        CReadSeqEntryHook hook;
+        in.ReadContainer(object.GetClassMember(memberIndex), hook);
+    }
+    else {
+        in.ReadObject(object.GetClassMember(memberIndex));
+    }
+    //    NcbiCerr << "-Level: " << m_Level << NcbiEndl;
+    --m_Level;
+}
+
+void CReadSeqSetHook::
+CReadSeqEntryHook::ReadContainerElement(CObjectIStream& in,
+                                        const CObjectInfo& /*cont*/)
+{
+    CSeq_entry entry;
+    in.ReadSeparateObject(ObjectInfo(entry));
+    SeqEntryProcess(entry);
+}
