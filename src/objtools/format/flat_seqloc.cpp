@@ -205,9 +205,11 @@ void CFlatSeqLoc::x_Add
     {
         string delim;
         oss << prefix;
-        ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+        CSeq_loc_CI::EEmptyFlag empty = ((type == eType_location) ?
+            CSeq_loc_CI::eEmpty_Skip : CSeq_loc_CI::eEmpty_Allow);
+        for ( CSeq_loc_CI it(loc, empty); it; ++it ) {
             oss << delim;
-            x_Add(**it, oss, ctx, type, show_comp);
+            x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp);
             delim = ", \b";
         }
         oss << ')';
@@ -409,6 +411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/26 17:24:14  shomrat
+* Skip gaps when formatting a location
+*
 * Revision 1.6  2004/03/02 17:50:14  shomrat
 * Bug fix (missing break)
 *
