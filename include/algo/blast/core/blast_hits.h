@@ -108,7 +108,7 @@ Int2 BLAST_SortResults(BlastResults* results);
  * @param sbp Structure containing statistical information [in]
  */
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, BlastScoringOptions* score_options, 
+        BlastHSPList* hsp_list, const BlastScoringOptions* score_options, 
         BlastScoreBlk* sbp);
 
 /** Calculate e-value for an HSP found by PHI BLAST.
