@@ -82,8 +82,6 @@
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_BLAST_EXPORTS
 #  define NCBI_BLASTDB_EXPORTS
-#  define NCBI_ID1_EXPORTS
-#  define NCBI_ID2_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
@@ -101,6 +99,9 @@
  * Definitions for NCBI_SEQEXT.DLL
  */
 #ifdef NCBI_SEQEXT_EXPORTS
+#  define NCBI_ID1_EXPORTS
+#  define NCBI_ID2_EXPORTS
+#  define NCBI_ID2_SPLIT_EXPORTS
 #  define NCBI_FLAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
@@ -528,6 +529,15 @@
 #  define NCBI_GUIWIDGETSALN_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_GUIWIDGETSALN_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library id2_split
+ */
+#ifdef NCBI_ID2_SPLIT_EXPORTS
+#  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllexport)
+#else
+#  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllimport)
 #endif
 
 /*
@@ -1348,6 +1358,7 @@
 #  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
+#  define NCBI_ID2_SPLIT_EXPORT
 #  define NCBI_INSDSEQ_EXPORT
 #  define NCBI_LDS_EXPORT
 #  define NCBI_MEDLARS_EXPORT
@@ -1430,6 +1441,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.79  2004/08/04 14:37:07  vasilche
+ * Added exports for ID2 libraries. ID1 & ID2 moved to ncbi_seqext.dll.
+ *
  * Revision 1.78  2004/08/03 13:31:40  dicuccio
  * Ordered export specifiers alphabetically.  Removed duplicate copies of export
  * specifier #ifdef blocks.
