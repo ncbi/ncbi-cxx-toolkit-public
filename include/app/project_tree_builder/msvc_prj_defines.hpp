@@ -49,10 +49,15 @@
 #define MSVC_SOLUTION_HEADER_LINE   "Microsoft Visual Studio Solution File, Format Version 8.00"
 #define MSVC_SOLUTION_ROOT_GUID     "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 
+#define MSVC_DEFAULT_LIBS_TAG       "DefaultLibs"
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/29 15:41:23  gorelenk
+ * Added "DefaultLibs" define
+ *
  * Revision 1.2  2004/01/22 17:57:08  gorelenk
  * first version
  *
