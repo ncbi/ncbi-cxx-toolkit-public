@@ -519,6 +519,9 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
 BlastGapAlignStruct* 
 BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
 {
+   if (!gap_align)
+      return NULL;
+
    GapEditBlockDelete(gap_align->edit_block);
    if (gap_align->greedy_align_mem)
       BLAST_GreedyAlignsfree(gap_align->greedy_align_mem);
@@ -2334,10 +2337,6 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
          }
       }
    }
-
-   if (ext_options->ePrelimGapExt != eGreedyExt)
-      /* Set the flag that traceback is already done for this HSP list */
-      hsp_list->traceback_done = TRUE;
 
    sfree(init_hsp_array);
 
