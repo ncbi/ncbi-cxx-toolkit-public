@@ -53,11 +53,7 @@ static Int4 SeqDbGetMaxLength(void* seqdb_handle, void* ignoreme);
 static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void* ignoreme);
 static Int8 SeqDbGetTotLen(void* seqdb_handle, void* ignoreme);
 static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme);
-static char* SeqDbGetName(void* seqdb_handle, void* ignoreme);
-static char* SeqDbGetDefinition(void* seqdb_handle, void* ignoreme);
-static char* SeqDbGetDate(void* seqdb_handle, void* ignoreme);
-static Boolean SeqDbGetIsProt(void* seqdb_handle, void* ignoreme);
-static ListNode* SeqDbGetError(void* seqdb_handle, void* args);
+static Blast_Message* SeqDbGetError(void* seqdb_handle, void* args);
 
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
@@ -105,30 +101,11 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* SeqDbGetName(void* seqdb_handle, void*)
+static const char* 
+SeqDbGetName(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    return strdup((*seqdb)->GetDBNameList().c_str());
-}
-
-/** Retrieves the definition (title) of the BLAST database.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
- */
-static char* SeqDbGetDefinition(void* seqdb_handle, void*)
-{
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    return strdup((*seqdb)->GetTitle().c_str());
-}
-
-/** Retrieves the date of the BLAST database.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
- */
-static char* SeqDbGetDate(void* seqdb_handle, void*)
-{
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    return strdup((*seqdb)->GetDate().c_str());
+    return (*seqdb)->GetDBNameList().c_str();
 }
 
 /** Retrieves the date of the BLAST database.
@@ -234,59 +211,6 @@ static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
     return BLAST_SEQSRC_SUCCESS;
 }
 
-/** Retrieves the sequence identifier meeting the criteria defined by its 
- * second argument. Currently it is an ordinal id (integer value).
- * Client code is responsible for deallocating the return value. 
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param args Pointer to integer indicating ordinal id [in]
- * @return Sequence id structure generated from ASN.1 spec, 
- *         cast to a void pointer.
- */
-static ListNode* SeqDbGetSeqId(void* seqdb_handle, void* args)
-{
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    Uint4* oid = (Uint4*) args;
-    ListNode* seqid_wrap;
-
-    if (!seqdb || !oid)
-        return NULL;
-
-    list< CRef<CSeq_id> > seqid_list;
-    seqid_list = (*seqdb)->GetSeqIDs(*oid);
-
-    CRef<CSeq_id>* seqid_ref = new CRef<CSeq_id>(seqid_list.front());
-    seqid_wrap = ListNodeAddPointer(NULL, BLAST_SEQSRC_CPP_SEQID_REF, 
-                                    (void*) seqid_ref);
-
-    return seqid_wrap;
-}
-
-/** Retrieves the sequence identifier meeting the criteria defined by its 
- * second argument. Currently it is an ordinal id (integer value).
- * @todo Need a way to request difference sequence identifiers in redundant
- * databases.
- * Client code is responsible for deallocating the return value. 
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param args Pointer to integer indicating ordinal id [in]
- */
-static char* SeqDbGetSeqIdStr(void* seqdb_handle, void* args)
-{
-    char* seqid_str = NULL;
-    ListNode* seqid_wrap = NULL;
-
-    seqid_wrap = SeqDbGetSeqId(seqdb_handle, args);
-    if (seqid_wrap->choice != BLAST_SEQSRC_CPP_SEQID_REF)
-        return NULL;
-    CRef<CSeq_id>* seqid_ref = (CRef<CSeq_id>*) seqid_wrap->ptr;
-
-    ListNodeFree(seqid_wrap);
-    if (seqid_ref)
-        seqid_str = strdup((*seqid_ref)->GetSeqIdString().c_str());
-
-    delete seqid_ref;
-    return seqid_str;
-}
-
 /** Retrieve length of a given database sequence.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param args Pointer to integer indicating ordinal id [in]
@@ -303,12 +227,13 @@ static Int4 SeqDbGetSeqLen(void* seqdb_handle, void* args)
     return (*seqdb)->GetSeqLength(*oid);
 }
 
-/* There are no error messages saved in the SeqdbFILE structure, so the 
+/* There are no error messages saved in the CSeqDB class, so the 
  * following getter function is implemented as always returning NULL.
+ * @todo FIXME: should error handling be provided for this 
+ *              implementation?
  */
-static ListNode* SeqDbGetError(void*, void*)
+static Blast_Message* SeqDbGetError(void*, void*)
 {
-    /* FIXME: error handling should not be provided by the seqsrc interface */
    return NULL;
 }
 
@@ -344,19 +269,19 @@ static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
     return BLAST_SEQSRC_SUCCESS;
 }
 
-static Int4 SeqDbIteratorNext(void* seqsrc, BlastSeqSrcIterator* itr)
+static Int4 SeqDbIteratorNext(void* ptr, BlastSeqSrcIterator* itr)
 {
-    BlastSeqSrc* bssp = (BlastSeqSrc*) seqsrc;
+    BlastSeqSrc* seq_src = (BlastSeqSrc*) ptr;
     Int4 retval = BLAST_SEQSRC_EOF;
     Int4 status = BLAST_SEQSRC_SUCCESS;
 
-    ASSERT(bssp);
+    ASSERT(seq_src);
     ASSERT(itr);
 
     /* If internal iterator is uninitialized/invalid, retrieve the next chunk 
        from the BlastSeqSrc */
     if (itr->current_pos == UINT4_MAX) {
-        status = BLASTSeqSrcGetNextChunk(bssp, itr);
+        status = BLASTSeqSrcGetNextChunk(seq_src, itr);
         if (status == BLAST_SEQSRC_ERROR || status == BLAST_SEQSRC_EOF) {
             return status;
         }
@@ -418,14 +343,9 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     SetGetMaxSeqLen(retval, &SeqDbGetMaxLength);
     SetGetAvgSeqLen(retval, &SeqDbGetAvgLength);
     SetGetTotLen(retval, &SeqDbGetTotLen);
-    SetGetAvgSeqLen(retval, &SeqDbGetAvgLength);
     SetGetName(retval, &SeqDbGetName);
-    SetGetDefinition(retval, &SeqDbGetDefinition);
-    SetGetDate(retval, &SeqDbGetDate);
     SetGetIsProt(retval, &SeqDbGetIsProt);
     SetGetSequence(retval, &SeqDbGetSequence);
-    SetGetSeqIdStr(retval, &SeqDbGetSeqIdStr);
-    SetGetSeqId(retval, &SeqDbGetSeqId);
     SetGetSeqLen(retval, &SeqDbGetSeqLen);
     SetGetNextChunk(retval, &SeqDbGetNextChunk);
     SetIterNext(retval, &SeqDbIteratorNext);
@@ -491,6 +411,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2004/10/06 14:56:13  dondosha
+ * Remove methods that are no longer supported by interface
+ *
  * Revision 1.19  2004/09/23 15:46:48  dondosha
  * Use GetDBNameList method of CSeqDb class to get database name
  *

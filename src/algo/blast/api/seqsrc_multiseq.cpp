@@ -50,7 +50,6 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
-    : m_vSeqVector(seq_vector)
 {
     m_ibIsProt = (program == eBlastp || program == eBlastx);
     
@@ -141,21 +140,8 @@ static Int8 MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
 
 /** Needed for completeness only.
  */
-static char* MultiSeqGetName(void* /*multiseq_handle*/, void*)
-{
-    return NULL;
-}
-
-/** Needed for completeness only
- */
-static char* MultiSeqGetDefinition(void* /*multiseq_handle*/, void*)
-{
-    return NULL;
-}
-
-/** Needed for completeness only.
- */
-static char* MultiSeqGetDate(void* /*multiseq_handle*/, void*)
+static const char* 
+MultiSeqGetName(void* /*multiseq_handle*/, void*)
 {
     return NULL;
 }
@@ -224,52 +210,6 @@ static Int2 MultiSeqRetSequence(void* /*multiseq_handle*/, void* args)
     return 0;
 }
 
-/** Retrieves the sequence identifier given its index into the sequence vector.
- * Client code is responsible for deallocating the return value. 
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param args Pointer to integer indicating ordinal id [in]
- * @return Sequence id structure generated from ASN.1 spec, 
- *         cast to a void pointer.
- */
-static ListNode* MultiSeqGetSeqId(void* multiseq_handle, void* args)
-{
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
-    Int4 index;
-    ListNode* seqid_wrap;
-
-    ASSERT(seq_info);
-    ASSERT(args);
-
-    index = *((Int4*) args);
-
-    seqid_wrap = ListNodeAddPointer(NULL, BLAST_SEQSRC_CPP_SEQID, 
-                                    seq_info->GetSeqId(index));
-    return seqid_wrap;
-}
-
-/** Retrieves the sequence identifier in character string form.
- * Client code is responsible for deallocating the return value. 
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param args Pointer to integer indicating index into the vector [in]
- */
-static char* MultiSeqGetSeqIdStr(void* multiseq_handle, void* args)
-{
-    CSeq_id* seqid;
-    char *seqid_str = NULL;
-    ListNode* seqid_wrap;
-
-    ASSERT(args);
-    seqid_wrap = MultiSeqGetSeqId(multiseq_handle, args);
-    if (seqid_wrap->choice != BLAST_SEQSRC_CPP_SEQID)
-        return NULL;
-    seqid = (CSeq_id*) seqid_wrap->ptr;
-    ListNodeFree(seqid_wrap);
-    if (seqid)
-        seqid_str = strdup(seqid->GetSeqIdString().c_str());
-
-    return seqid_str;
-}
-
 /** Retrieve length of a given sequence.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param args Pointer to integer indicating index into the sequences 
@@ -325,16 +265,10 @@ static Int2 MultiSeqGetNextChunk(void* multiseq_handle,
     return BLAST_SEQSRC_SUCCESS;
 }
 
-ListNode* MultiSeqGetErrorMessage(void* multiseq_handle, void*)
+Blast_Message* MultiSeqGetErrorMessage(void* multiseq_handle, void*)
 {
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
-    Blast_Message* error_msg = seq_info->GetErrorMessage();
-    ListNode* retval = NULL;
-    if (error_msg) {
-        retval = 
-            ListNodeAddPointer(NULL, BLAST_SEQSRC_MESSAGE, (void*) error_msg);
-    }
-    return retval;
+    return seq_info->GetErrorMessage();
 }
 
 BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
@@ -356,12 +290,8 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     SetGetAvgSeqLen(retval, &MultiSeqGetAvgLength);
     SetGetTotLen(retval, &MultiSeqGetTotLen);
     SetGetName(retval, &MultiSeqGetName);
-    SetGetDefinition(retval, &MultiSeqGetDefinition);
-    SetGetDate(retval, &MultiSeqGetDate);
     SetGetIsProt(retval, &MultiSeqGetIsProt);
     SetGetSequence(retval, &MultiSeqGetSequence);
-    SetGetSeqIdStr(retval, &MultiSeqGetSeqIdStr);
-    SetGetSeqId(retval, &MultiSeqGetSeqId);
     SetGetSeqLen(retval, &MultiSeqGetSeqLen);
     SetGetNextChunk(retval, &MultiSeqGetNextChunk);
     SetIterNext(retval, &MultiSeqIteratorNext);
@@ -398,12 +328,7 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
     bssn_info.ctor_argument = (void*) args.get();
 
     seq_src = BlastSeqSrcNew(&bssn_info);
-    ListNode* error_wrap = BLASTSeqSrcGetError(seq_src);
-    Blast_Message* error_msg = NULL;
-    if (error_wrap && error_wrap->choice == BLAST_SEQSRC_MESSAGE) {
-        error_msg = (Blast_Message*) error_wrap->ptr;
-        ListNodeFree(error_wrap);
-    }
+    Blast_Message* error_msg = BLASTSeqSrcGetError(seq_src);
     if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
         seq_src = BlastSeqSrcFree(seq_src);
         CBlastException::EErrCode code = (CBlastException::EErrCode) error_msg->code;
@@ -425,6 +350,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2004/10/06 14:56:13  dondosha
+ * Remove methods that are no longer supported by interface
+ *
  * Revision 1.21  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
