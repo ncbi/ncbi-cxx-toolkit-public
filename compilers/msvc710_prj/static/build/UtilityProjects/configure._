@@ -1,0 +1,1 @@
+%PTB_PATH%\project_tree_builder.exe -logfile out.log -conffile %PTB_PATH%\..\..\project_tree_builder.ini %TREE_ROOT% src\ %SLN_PATH%
