@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/11/09 19:07:22  grichenk
+* Fixed DTDFilePrefix functions
+*
 * Revision 1.3  2001/10/17 18:18:28  grichenk
 * Added CObjectOStreamXml::xxxFilePrefix() and
 * CObjectOStreamXml::xxxFileName()
@@ -121,13 +124,14 @@ void CObjectOStreamXml::CloseTagIfNamed(TTypeInfo type)
 }
 
 inline
-void CObjectOStreamXml::SetDTDFilePrefix(const string prefix)
+void CObjectOStreamXml::SetDTDFilePrefix(const string& prefix)
 {
     m_DTDFilePrefix = prefix;
+    m_UseDefaultDTDFilePrefix = false;
 }
 
 inline
-void CObjectOStreamXml::SetDTDFileName(const string filename)
+void CObjectOStreamXml::SetDTDFileName(const string& filename)
 {
     m_DTDFileName = filename;
 }
@@ -135,7 +139,7 @@ void CObjectOStreamXml::SetDTDFileName(const string filename)
 inline
 string CObjectOStreamXml::GetDTDFilePrefix(void)
 {
-    if ( !m_DTDFilePrefix.empty() ) {
+    if ( !m_UseDefaultDTDFilePrefix ) {
         return m_DTDFilePrefix;
     }
     else {
@@ -150,13 +154,13 @@ string CObjectOStreamXml::GetDTDFileName(void)
 }
 
 inline
-void CObjectOStreamXml::SetDefaultDTDFilePrefix(const string def_prefix)
+void CObjectOStreamXml::SetDefaultDTDFilePrefix(const string& def_prefix)
 {
     sm_DefaultDTDFilePrefix = def_prefix;
 }
 
 inline
-string CObjectOStreamXml::s_GetDefaultDTDFilePrefix(void)
+string CObjectOStreamXml::GetDefaultDTDFilePrefix(void)
 {
     return sm_DefaultDTDFilePrefix;
 }

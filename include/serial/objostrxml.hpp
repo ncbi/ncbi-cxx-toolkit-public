@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/11/09 19:07:22  grichenk
+* Fixed DTDFilePrefix functions
+*
 * Revision 1.18  2001/10/17 20:41:20  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -140,16 +143,23 @@ public:
                    TEnumValueType value, const string& valueName);
 
     // DTD file name and prefix. The final module name is built as
-    // DTDFilePrefix + DTDFileName. If no DTDFilePrefix was defined,
-    // DefaultDTDFilePrefix is used instead. If no DTDFileName
-    // was set, type name is used as the file name.
-    void SetDTDFilePrefix(const string prefix);
-    void SetDTDFileName(const string filename);
-    static void SetDefaultDTDFilePrefix(const string def_prefix = "");
+    // DTDFilePrefix + DTDFileName.
 
+    // If "DTDFilePrefix" has never been set for this stream, then
+    // the global "DefaultDTDFilePrefix" will be used.
+    // If it has been set to any value (including empty string), then
+    // that value will be used.
+    void   SetDTDFilePrefix(const string& prefix);
     string GetDTDFilePrefix(void);
+
+    // Default (global) DTD file prefix.
+    static void   SetDefaultDTDFilePrefix(const string& prefix);
+    static string GetDefaultDTDFilePrefix(void);
+
+    // If "DTDFileName" is not set or set to empty string for this stream,
+    // then type name will be used as the file name.
+    void   SetDTDFileName(const string& filename);
     string GetDTDFileName(void);
-    static string s_GetDefaultDTDFilePrefix(void);
 
 protected:
     virtual void WriteBool(bool data);
@@ -270,6 +280,7 @@ private:
     ETagAction m_LastTagAction;
 
     // DTD file name and prefix
+    bool   m_UseDefaultDTDFilePrefix;
     string m_DTDFilePrefix;
     string m_DTDFileName;
     static string sm_DefaultDTDFilePrefix;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/11/09 19:07:58  grichenk
+* Fixed DTDFilePrefix functions
+*
 * Revision 1.28  2001/10/17 20:41:26  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -183,7 +186,9 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
 string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
-    : CObjectOStream(out, deleteOut), m_LastTagAction(eTagClose)
+    : CObjectOStream(out, deleteOut),
+      m_LastTagAction(eTagClose),
+      m_UseDefaultDTDFilePrefix(true)
 {
     m_Output.SetBackLimit(1);
 }
