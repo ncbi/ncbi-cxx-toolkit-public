@@ -167,7 +167,7 @@ int CNWAligner::Run()
         
         V = V0 += m_Ws;
         E = kMin_Int;
-        backtrace_matrix[++k] = kMaskFc;
+        backtrace_matrix[k++] = kMaskFc;
         char ci = seq1[i];
 
         for (j = 1; j < N2; ++j, ++k) {
@@ -461,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/08 15:42:59  kapustin
+ * Fix initialization for the first column of the backtrace matrix
+ *
  * Revision 1.4  2003/01/06 18:04:10  kapustin
  * CNWAligner: add sequence size verification
  *

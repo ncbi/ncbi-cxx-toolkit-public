@@ -58,12 +58,12 @@ CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
 // Acc:  1 if acceptor; 0 - otherwise
 // Dnr:  1 if the best donor (so far from left to right); 0 otherwise
 
-const unsigned char kMaskFc    = 1;
-const unsigned char kMaskEc    = kMaskFc << 1;
-const unsigned char kMaskE     = kMaskFc << 2;
-const unsigned char kMaskD     = kMaskFc << 3;
-const unsigned char kMaskAcc   = kMaskFc << 4;
-const unsigned char kMaskDnr   = kMaskFc << 5;
+const unsigned char kMaskFc    = 0x01;
+const unsigned char kMaskEc    = 0x02;
+const unsigned char kMaskE     = 0x04;
+const unsigned char kMaskD     = 0x08;
+const unsigned char kMaskAcc   = 0x10;
+const unsigned char kMaskDnr   = 0x20;
 
 int CNWAlignerMrna2Dna::Run()
 {
@@ -122,7 +122,7 @@ int CNWAlignerMrna2Dna::Run()
         V = V0 += wsleft2;
         E = kMin_Int;
         k0 = k;
-        backtrace_matrix[++k] = kMaskFc;
+        backtrace_matrix[k++] = kMaskFc;
         ci = seq1[i];
 
         jTail = jHead = 0;
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/08 15:42:59  kapustin
+ * Fix initialization for the first column of the backtrace matrix
+ *
  * Revision 1.3  2002/12/24 18:29:06  kapustin
  * Remove sequence size verification since a part of Dna could be submitted
  *
