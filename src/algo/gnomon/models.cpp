@@ -38,7 +38,7 @@ BEGIN_NCBI_SCOPE
 
 const double BadScore   = -numeric_limits<double>::max();
 const double LnHalf     = log(0.5);
-const double LnThree    = log(3);
+const double LnThree    = log(3.0);
 const int    toMinus[5] = { nT, nG, nC, nA, nN };
 const int    TooFarLen  = 500;
 const char*  aa_table   = "KNKNXTTTTTRSRSXIIMIXXXXXXQHQHXPPPPPRRRRRLLLLLXXXXXEDEDXAAAAAGGGGGVVVVVXXXXX * Y*YXSSSSS * CWCXLFLFXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
@@ -956,6 +956,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/06 00:52:38  ucko
+ * Don't try to take the log of an integer constant.
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *
