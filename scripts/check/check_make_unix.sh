@@ -236,19 +236,15 @@ EOF
 
 if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
    cat >> $x_out <<EOF
-# Adjust PATH and LD_LIBRARY_PATH for running tests
-if [ -n "\$LD_LIBRARY_PATH" ]; then
-   LD_LIBRARY_PATH="${x_conf_dir}/lib:\${LD_LIBRARY_PATH}"
-else
-   LD_LIBRARY_PATH="$x_conf_dir/lib"
-fi
-export LD_LIBRARY_PATH
+# Add a library path for running tests
+. $x_root_dir/scripts/common.sh
+COMMON_AddRunpath "$x_conf_dir/lib"
 EOF
 else
    echo "WARNING:  Cannot find path to the library dir."
 fi
 
-   cat >> $x_out <<EOF
+cat >> $x_out <<EOF
 
 # Run
 count_ok=0
