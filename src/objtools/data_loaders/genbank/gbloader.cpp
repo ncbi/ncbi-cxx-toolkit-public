@@ -344,7 +344,15 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
         CGBReaderRequestResult result(this);
         CLoadLockBlob_ids blobs(result, sih);
         if ( !blobs.IsLoaded() ) {
-            m_Driver->ResolveSeq_id(result, sih);
+            CLoadLockSeq_ids ids(result, sih);
+            if ( ids.IsLoaded() &&
+                 (ids->GetState() & CBioseq_Handle::fState_no_data) ) {
+                blobs->SetState(ids->GetState());
+                blobs.SetLoaded();
+            }
+            else {
+                m_Driver->ResolveSeq_id(result, sih);
+            }
             if ( !blobs.IsLoaded() ) {
                 continue; // retry
             }
@@ -703,7 +711,15 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
         CGBReaderRequestResult result(this);
         CLoadLockBlob_ids blobs(result, sih);
         if ( !blobs.IsLoaded() ) {
-            m_Driver->LoadBlobs(result, sih, mask);
+            CLoadLockSeq_ids ids(result, sih);
+            if ( ids.IsLoaded() &&
+                 (ids->GetState() & CBioseq_Handle::fState_no_data) ) {
+                blobs->SetState(ids->GetState());
+                blobs.SetLoaded();
+            }
+            else {
+                m_Driver->LoadBlobs(result, sih, mask);
+            }
             if ( !blobs.IsLoaded() ) {
                 continue; // retry
             }
