@@ -80,17 +80,19 @@ public:
     ///
     /// PCRE compiler flags used in the constructor and in Set().
     /// If eCompile_ignore_case is set, matches are case insensitive.
-    /// If eCompile_dotall is set, a dot metacharater in the pattern matches all
-    /// characters, including newlines. Without it, newlines are excluded.
+    /// If eCompile_dotall is set, a dot metacharater in the pattern matches
+    /// all characters, including newlines. Without it, newlines are excluded.
     /// If eCompile_newline is set then ^ matches the start of a line and
     /// $ matches the end of a line. If not set, ^ matches only the start
     /// of the entire string and $ matches only the end of the entire string.
-    /// If eCompile_ungreedy inverts the "greediness" of the quantifiers so that
-    /// they are not greedy by default, but become greedy if followed by "?".
+    /// If eCompile_ungreedy inverts the "greediness" of the quantifiers so
+    /// that they are not greedy by default, but become greedy if followed by
+    /// "?".
     /// It is not compatible with Perl. 
     ///
-    /// The settings can be changed from within the pattern by a sequence of Perl
-    /// option letters enclosed between "(?" and ")". The option letters are 
+    /// The settings can be changed from within the pattern by a sequence of
+    /// Perl option letters enclosed between "(?" and ")".
+    /// The option letters are:
     ///   i  for PCRE_CASELESS
     ///   m  for PCRE_MULTILINE
     ///   s  for PCRE_DOTALL
@@ -296,11 +298,8 @@ public:
     /// @param match_flags
     ///   Flags to match.
     /// @return
-    ///   Return TRUE if  a string corresponding to the match to pattern or subpattern
-    ///   Return array where index 0 is location of first character in
-    ///   pattern/subpattern and index 1 is 1 beyond last character in
-    ///   pattern/subpattern.
-    ///   Throws if called with idx >= NumFound().
+    ///   Return TRUE if  a string corresponding to the match to pattern or
+    ///   subpattern.
     /// @sa
     ///   CRegexp, CRegexp::GetMatch()
     bool Exists(
@@ -321,8 +320,8 @@ public:
     ///   Index of pattern/subpattern to extract.
     ///   Use pattern_idx = 0 for pattern, pattern_idx > 0 for sub patterns.
     /// @return
-    ///   Return the substring at location of pattern/subpatter match with index
-    ///   pattern_idx. Return empty string when no match.    
+    ///   Return the substring at location of pattern/subpatter match with
+    ///   index pattern_idx. Return empty string when no match.
     /// @sa
     ///   CRegexp, CRegexp::GetMatch()
     string Extract(
@@ -565,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/07 13:38:51  ivanov
+ * Comments changes
+ *
  * Revision 1.5  2003/11/06 16:12:10  ivanov
  * Added CRegexpUtil class.
  * Added some new CRegExp::ECompile flags.
