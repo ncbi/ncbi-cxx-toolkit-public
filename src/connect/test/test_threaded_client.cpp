@@ -48,12 +48,17 @@ static volatile unsigned int s_Processed = 0;
 DEFINE_STATIC_FAST_MUTEX(s_Mutex);
 
 
+enum EMessage {
+    eHello,
+    eGoodbye
+};
+
 class CConnectionRequest : public CStdRequest
 {
 public:
     CConnectionRequest(const string& host, unsigned short port,
-                       unsigned int delay) // in milliseconds
-        : m_Host(host), m_Port(port), m_Delay(delay) {}
+                       unsigned int delay /* in ms */, EMessage message)
+        : m_Host(host), m_Port(port), m_Delay(delay), m_Message(message) {}
 
 protected:
     virtual void Process(void);
@@ -62,11 +67,7 @@ private:
     string         m_Host;
     unsigned short m_Port;
     unsigned int   m_Delay;
-};
-
-enum EMessage {
-    eHello,
-    eGoodbye
+    EMessage       m_Message;
 };
 
 static void s_Send(const string& host, unsigned short port,
@@ -101,7 +102,7 @@ static void s_Send(const string& host, unsigned short port,
 
 void CConnectionRequest::Process(void)
 {
-    s_Send(m_Host, m_Port, m_Delay, eHello);
+    s_Send(m_Host, m_Port, m_Delay, m_Message);
 }
 
 
@@ -165,11 +166,13 @@ int CThreadedClientApp::Run(void)
     for (unsigned int i = 0;  i < s_Requests;  ++i) {
         pool.AcceptRequest(CRef<ncbi::CStdRequest>
                            (new CConnectionRequest
-                            (host, port, rng.GetRand(0, 999))));
+                            (host, port, rng.GetRand(0, 999), eHello)));
         SleepMilliSec(rng.GetRand(0, 999));
     }
 
-    s_Send(host, port, 500, eGoodbye);
+    // s_Send(host, port, 500, eGoodbye);
+    pool.AcceptRequest(CRef<ncbi::CStdRequest>
+                       (new CConnectionRequest(host, port, 500, eGoodbye)));
 
     pool.KillAllThreads(true);
 
@@ -193,6 +196,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.10  2004/11/03 16:46:47  ucko
+ * Queue the server shutdown request to keep it from occurring prematurely.
+ *
  * Revision 6.9  2004/10/18 18:15:09  ucko
  * Support a clean server shutdown request.
  *
