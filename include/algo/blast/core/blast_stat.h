@@ -149,6 +149,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int4 *maxscore; /* Max. score for each letter */
 	Int4	loscore, hiscore; /* Min. & max. substitution scores */
 	Int4	penalty, reward; /* penalty and reward for blastn. */
+        double  scale_factor; /* multiplier for all cutoff and dropoff scores */
 	Boolean		read_in_matrix; /* If TRUE, matrix is read in, otherwise
 					produce one from penalty and reward above. */
 	BLAST_ScoreFreq** sfp;	/* score frequencies. */
