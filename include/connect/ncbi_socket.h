@@ -299,6 +299,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
  *  LISTENING SOCKET
  */
 
+typedef enum {
+    fLSCE_LogOff     = eOff,      /* logging is inherited in Accept()ed SOCKs*/
+    fLSCE_LogOn      = eOn,       /*                    -"-                  */
+    fLSCE_LogDefault = eDefault,  /*                    -"-                  */
+    fLSCE_BindAny    = 0,         /* bind to 0.0.0.0, default                */
+    fLSCE_BindLocal  = 0x10       /* bind to 127.0.0.1 only                  */
+} FLSCE_Flags;
+typedef unsigned int TLSCE_Flags;
 
 /* [SERVER-side]  Create and initialize the server-side(listening) socket
  * (socket() + bind() + listen())
@@ -308,7 +316,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
 (unsigned short port,    /* [in]  the port to listen at                  */
  unsigned short backlog, /* [in]  maximal # of pending connections       */
  LSOCK*         lsock,   /* [out] handle of the created listening socket */
- ESwitch        log      /* [in]  whether to log activity (inherited)    */
+ TLSCE_Flags    flags    /* [in]  special modifiers                      */
  );
 
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
@@ -958,6 +966,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2004/07/23 19:04:38  lavr
+ * LSOCK_CreateEx(): last parameter to become flags (bitmask)
+ *
  * Revision 6.49  2004/03/23 02:26:55  lavr
  * Typo fix
  *
