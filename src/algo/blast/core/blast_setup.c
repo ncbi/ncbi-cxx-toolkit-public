@@ -468,18 +468,31 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Int2 status = 0;            /* return value */
     BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */
+    SBlastFilterOptions* filter_options = NULL;
 
+
+    if (qsup_options->filtering_options == NULL && qsup_options->filter_string)
+    {
+         status = BlastFilteringOptionsFromString(program_number, qsup_options->filter_string, &filter_options, blast_message);
+         if (status)
+            return status;
+    }
 
     status = BlastSetUp_GetFilteringLocations(query_blk, 
                                               query_info, 
                                               program_number, 
-                                              qsup_options->filter_string, 
+                                              filter_options ? filter_options : qsup_options->filtering_options, 
                                               &filter_maskloc, 
-                                              &mask_at_hash, 
                                               blast_message);
+
+
     if (status) {
         return status;
     } 
+
+    mask_at_hash = FilterOptionsMaskAtHash(filter_options ? filter_options : qsup_options->filtering_options);
+
+    filter_options = FilterOptionsFree(filter_options);
 
     if (!mask_at_hash)
     {
