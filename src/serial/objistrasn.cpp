@@ -27,328 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.78  2002/12/23 18:41:49  dicuccio
-* Minor tweaks to avoid warnings in MSVC
-*
-* Revision 1.77  2002/11/18 19:49:36  grichenk
-* More details in error messages
-*
-* Revision 1.76  2002/11/05 17:45:54  grichenk
-* Throw runtime_error instead of CEofException when a stream is broken
-*
-* Revision 1.75  2002/10/25 14:49:27  vasilche
-* NCBI C Toolkit compatibility code extracted to libxcser library.
-* Serial streams flags names were renamed to fXxx.
-*
-* Names of flags
-*
-* Revision 1.74  2001/12/09 07:42:25  vakatov
-* Fixed a warning
-*
-* Revision 1.73  2001/10/17 20:41:23  grichenk
-* Added CObjectOStream::CharBlock class
-*
-* Revision 1.72  2001/10/16 17:15:47  grichenk
-* Fixed bug in CObjectIStreamAsn::ReadString()
-*
-* Revision 1.71  2001/08/02 22:28:42  grichenk
-* Added memory pre-allocation on \n for long strings
-*
-* Revision 1.70  2001/07/25 19:12:25  grichenk
-* Added memory pre-allocation for long strings
-*
-* Revision 1.69  2001/06/11 14:35:00  grichenk
-* Added support for numeric tags in ASN.1 specifications and data streams.
-*
-* Revision 1.68  2001/06/07 17:12:50  grichenk
-* Redesigned checking and substitution of non-printable characters
-* in VisibleString
-*
-* Revision 1.67  2001/05/17 15:07:08  lavr
-* Typos corrected
-*
-* Revision 1.66  2001/01/22 23:12:05  vakatov
-* CObjectIStreamAsn::{Read,Skip}ClassSequential() -- use curr.member "pos"
-*
-* Revision 1.65  2001/01/05 20:10:51  vasilche
-* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
-* were moved to util.
-*
-* Revision 1.64  2001/01/03 15:22:26  vasilche
-* Fixed limited buffer size for REAL data in ASN.1 binary format.
-* Fixed processing non ASCII symbols in ASN.1 text format.
-*
-* Revision 1.63  2000/12/26 22:24:11  vasilche
-* Fixed errors of compilation on Mac.
-*
-* Revision 1.62  2000/12/15 21:29:01  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.61  2000/12/15 15:38:44  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.60  2000/11/20 17:25:36  vasilche
-* Added prototypes of functions.
-*
-* Revision 1.59  2000/10/20 15:51:41  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.58  2000/10/17 18:45:34  vasilche
-* Added possibility to turn off object cross reference detection in
-* CObjectIStream and CObjectOStream.
-*
-* Revision 1.57  2000/10/04 19:18:59  vasilche
-* Fixed processing floating point data.
-*
-* Revision 1.56  2000/10/03 17:22:43  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.55  2000/09/29 16:18:23  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.54  2000/09/18 20:00:23  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.53  2000/09/01 13:16:17  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.52  2000/08/15 19:44:49  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.51  2000/07/03 20:47:22  vasilche
-* Removed unused variables/functions.
-*
-* Revision 1.50  2000/07/03 20:39:55  vasilche
-* Fixed comments.
-*
-* Revision 1.49  2000/07/03 18:42:45  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.48  2000/06/16 16:31:19  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.47  2000/06/07 19:45:59  vasilche
-* Some code cleaning.
-* Macros renaming in more clear way.
-* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
-*
-* Revision 1.46  2000/06/01 19:07:03  vasilche
-* Added parsing of XML data.
-*
-* Revision 1.45  2000/05/24 20:08:47  vasilche
-* Implemented XML dump.
-*
-* Revision 1.44  2000/05/09 16:38:39  vasilche
-* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
-* Added write context to CObjectOStream.
-* Inlined most of methods of helping class Member, Block, ByteBlock etc.
-*
-* Revision 1.43  2000/05/03 14:38:14  vasilche
-* SERIAL: added support for delayed reading to generated classes.
-* DATATOOL: added code generation for delayed reading.
-*
-* Revision 1.42  2000/04/28 16:58:12  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* Revision 1.41  2000/04/13 14:50:27  vasilche
-* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
-*
-* Revision 1.40  2000/03/29 15:55:28  vasilche
-* Added two versions of object info - CObjectInfo and CConstObjectInfo.
-* Added generic iterators by class -
-* 	CTypeIterator<class>, CTypeConstIterator<class>,
-* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
-* 	CObjectsIterator and CObjectsConstIterator.
-*
-* Revision 1.39  2000/03/14 14:42:31  vasilche
-* Fixed error reporting.
-*
-* Revision 1.38  2000/03/07 14:06:22  vasilche
-* Added stream buffering to ASN.1 binary input.
-* Optimized class loading/storing.
-* Fixed bugs in processing OPTIONAL fields.
-* Added generation of reference counted objects.
-*
-* Revision 1.37  2000/02/17 20:02:44  vasilche
-* Added some standard serialization exceptions.
-* Optimized text/binary ASN.1 reading.
-* Fixed wrong encoding of StringStore in ASN.1 binary format.
-* Optimized logic of object collection.
-*
-* Revision 1.36  2000/02/11 17:10:24  vasilche
-* Optimized text parsing.
-*
-* Revision 1.35  2000/02/01 21:47:22  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Added buffering to CObjectIStreamAsn.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-*
-* Revision 1.34  2000/01/11 14:27:42  vasilche
-* Found absent DBL_* macros in float.h
-*
-* Revision 1.33  2000/01/11 14:16:45  vasilche
-* Fixed pow ambiguity.
-*
-* Revision 1.32  2000/01/10 19:46:40  vasilche
-* Fixed encoding/decoding of REAL type.
-* Fixed encoding/decoding of StringStore.
-* Fixed encoding/decoding of NULL type.
-* Fixed error reporting.
-* Reduced object map (only classes).
-*
-* Revision 1.31  2000/01/05 19:43:54  vasilche
-* Fixed error messages when reading from ASN.1 binary file.
-* Fixed storing of integers with enumerated values in ASN.1 binary file.
-* Added TAG support to key/value of map.
-* Added support of NULL variant in CHOICE.
-*
-* Revision 1.30  1999/12/17 19:05:03  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.29  1999/11/18 20:19:01  vakatov
-* ExpectString() -- get rid of the CodeWarrior(MAC) C++ compiler warning
-*
-* Revision 1.28  1999/10/25 20:19:51  vasilche
-* Fixed strings representation in text ASN.1 files.
-*
-* Revision 1.27  1999/10/04 16:22:17  vasilche
-* Fixed bug with old ASN.1 structures.
-*
-* Revision 1.26  1999/09/24 18:19:18  vasilche
-* Removed dependency on NCBI toolkit.
-*
-* Revision 1.25  1999/09/23 21:16:07  vasilche
-* Removed dependence on asn.h
-*
-* Revision 1.24  1999/09/23 18:56:58  vasilche
-* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
-*
-* Revision 1.23  1999/09/22 20:11:55  vasilche
-* Modified for compilation on IRIX native c++ compiler.
-*
-* Revision 1.22  1999/08/17 15:13:06  vasilche
-* Comments are allowed in ASN.1 text files.
-* String values now parsed in accordance with ASN.1 specification.
-*
-* Revision 1.21  1999/08/13 15:53:50  vasilche
-* C++ analog of asntool: datatool
-*
-* Revision 1.20  1999/07/26 18:31:35  vasilche
-* Implemented skipping of unused values.
-* Added more useful error report.
-*
-* Revision 1.19  1999/07/22 17:33:51  vasilche
-* Unified reading/writing of objects in all three formats.
-*
-* Revision 1.18  1999/07/21 14:20:04  vasilche
-* Added serialization of bool.
-*
-* Revision 1.17  1999/07/20 18:23:10  vasilche
-* Added interface to old ASN.1 routines.
-* Added fixed choice of subclasses to use for pointers.
-*
-* Revision 1.16  1999/07/19 15:50:33  vasilche
-* Added interface to old ASN.1 routines.
-* Added naming of key/value in STL map.
-*
-* Revision 1.15  1999/07/14 18:58:09  vasilche
-* Fixed ASN.1 types/field naming.
-*
-* Revision 1.14  1999/07/13 20:18:18  vasilche
-* Changed types naming.
-*
-* Revision 1.13  1999/07/09 16:32:54  vasilche
-* Added OCTET STRING write/read.
-*
-* Revision 1.12  1999/07/07 21:15:02  vasilche
-* Cleaned processing of string types (string, char*, const char*).
-*
-* Revision 1.11  1999/07/07 19:59:05  vasilche
-* Reduced amount of data allocated on heap
-* Cleaned ASN.1 structures info
-*
-* Revision 1.10  1999/07/07 18:18:32  vasilche
-* Fixed some bugs found by MS VC++
-*
-* Revision 1.9  1999/07/02 21:31:55  vasilche
-* Implemented reading from ASN.1 binary format.
-*
-* Revision 1.8  1999/07/01 17:55:30  vasilche
-* Implemented ASN.1 binary write.
-*
-* Revision 1.7  1999/06/30 16:04:55  vasilche
-* Added support for old ASN.1 structures.
-*
-* Revision 1.6  1999/06/24 14:44:55  vasilche
-* Added binary ASN.1 output.
-*
-* Revision 1.5  1999/06/18 16:26:49  vasilche
-* Fixed bug with unget() in MSVS
-*
-* Revision 1.4  1999/06/17 21:08:51  vasilche
-* Fixed bug with unget()
-*
-* Revision 1.3  1999/06/17 20:42:05  vasilche
-* Fixed storing/loading of pointers.
-*
-* Revision 1.2  1999/06/16 20:58:04  vasilche
-* Added GetPtrTypeRef to avoid conflict in MSVS.
-*
-* Revision 1.1  1999/06/16 20:35:31  vasilche
-* Cleaned processing of blocks of data.
-* Added input from ASN.1 text format.
-*
-* Revision 1.7  1999/06/15 16:19:49  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.6  1999/06/11 19:14:58  vasilche
-* Working binary serialization and deserialization of first test object.
-*
-* Revision 1.5  1999/06/10 21:06:46  vasilche
-* Working binary output and almost working binary input.
-*
-* Revision 1.4  1999/06/07 20:10:02  vasilche
-* Avoid using of numeric_limits.
-*
-* Revision 1.3  1999/06/07 19:30:25  vasilche
-* More bug fixes
-*
-* Revision 1.2  1999/06/04 20:51:45  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:53  vasilche
-* Commit just in case.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -498,7 +176,7 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
 {
     try { // catch CEofException
         for ( ;; ) {
-		    char c = m_Input.SkipSpaces();
+            char c = m_Input.SkipSpaces();
             switch ( c ) {
             case '\t':
                 m_Input.SkipChar();
@@ -524,7 +202,7 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
     } catch (CEofException& e) {
         // There should be no eof here, report as an error
         ThrowError(fEOF, e.what());
-		return '\0';
+        return '\0';
     }
 }
 
@@ -593,7 +271,7 @@ CLightString CObjectIStreamAsn::ReadTypeId(char c)
             }
         }
     }
-	else {
+    else {
         return ScanEndOfId(FirstIdChar(c));
     }
 }
@@ -644,7 +322,7 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
             }
         }
     }
-	else {
+    else {
         return ScanEndOfId(islower(c) != 0);
     }
 }
@@ -823,13 +501,13 @@ double CObjectIStreamAsn::ReadDouble(void)
         ThrowError(fFormatError, "illegal REAL base (must be 2 or 10)");
 
     if ( base == 10 ) {     /* range checking only on base 10, for doubles */
-    	if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
-    		return mantissa < 0 ? -DBL_MAX: DBL_MAX;
-    	else if ( exp < DBL_MIN_10_EXP )  /* exponent too small */
-    		return 0;
+        if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
+            return mantissa < 0 ? -DBL_MAX: DBL_MAX;
+        else if ( exp < DBL_MIN_10_EXP )  /* exponent too small */
+            return 0;
     }
 
-	return mantissa * pow(double(base), exp);
+    return mantissa * pow(double(base), exp);
 }
 
 void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
@@ -1075,7 +753,7 @@ void CObjectIStreamAsn::SkipNull(void)
 
 void CObjectIStreamAsn::SkipByteBlock(void)
 {
-	Expect('\'', true);
+    Expect('\'', true);
     for ( ;; ) {
         char c = GetChar();
         if ( c >= '0' && c <= '9' ) {
@@ -1098,7 +776,7 @@ void CObjectIStreamAsn::SkipByteBlock(void)
             ThrowError(fFormatError, "bad char in octet string");
         }
     }
-	Expect('H', true);
+    Expect('H', true);
 }
 
 void CObjectIStreamAsn::StartBlock(void)
@@ -1359,7 +1037,7 @@ void CObjectIStreamAsn::SkipChoice(const CChoiceTypeInfo* choiceType)
 
 void CObjectIStreamAsn::BeginBytes(ByteBlock& )
 {
-	Expect('\'', true);
+    Expect('\'', true);
 }
 
 int CObjectIStreamAsn::GetHexChar(void)
@@ -1392,8 +1070,8 @@ int CObjectIStreamAsn::GetHexChar(void)
 size_t CObjectIStreamAsn::ReadBytes(ByteBlock& block,
                                     char* dst, size_t length)
 {
-	size_t count = 0;
-	while ( length-- > 0 ) {
+    size_t count = 0;
+    while ( length-- > 0 ) {
         int c1 = GetHexChar();
         if ( c1 < 0 ) {
             block.EndOfBlock();
@@ -1410,18 +1088,18 @@ size_t CObjectIStreamAsn::ReadBytes(ByteBlock& block,
             *dst++ = (c1 << 4) | c2;
             count++;
         }
-	}
-	return count;
+    }
+    return count;
 }
 
 void CObjectIStreamAsn::EndBytes(const ByteBlock& )
 {
-	Expect('H');
+    Expect('H');
 }
 
 void CObjectIStreamAsn::BeginChars(CharBlock& )
 {
-	Expect('\"', true);
+    Expect('\"', true);
 }
 
 size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
@@ -1509,3 +1187,329 @@ string CObjectIStreamAsn::ReadOtherPointer(void)
 }
 
 END_NCBI_SCOPE
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.79  2002/12/23 19:00:49  dicuccio
+* Tabs -> Spaces.  Lof to end.
+*
+* Revision 1.78  2002/12/23 18:41:49  dicuccio
+* Minor tweaks to avoid warnings in MSVC
+*
+* Revision 1.77  2002/11/18 19:49:36  grichenk
+* More details in error messages
+*
+* Revision 1.76  2002/11/05 17:45:54  grichenk
+* Throw runtime_error instead of CEofException when a stream is broken
+*
+* Revision 1.75  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
+* Revision 1.74  2001/12/09 07:42:25  vakatov
+* Fixed a warning
+*
+* Revision 1.73  2001/10/17 20:41:23  grichenk
+* Added CObjectOStream::CharBlock class
+*
+* Revision 1.72  2001/10/16 17:15:47  grichenk
+* Fixed bug in CObjectIStreamAsn::ReadString()
+*
+* Revision 1.71  2001/08/02 22:28:42  grichenk
+* Added memory pre-allocation on \n for long strings
+*
+* Revision 1.70  2001/07/25 19:12:25  grichenk
+* Added memory pre-allocation for long strings
+*
+* Revision 1.69  2001/06/11 14:35:00  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
+* Revision 1.68  2001/06/07 17:12:50  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
+* Revision 1.67  2001/05/17 15:07:08  lavr
+* Typos corrected
+*
+* Revision 1.66  2001/01/22 23:12:05  vakatov
+* CObjectIStreamAsn::{Read,Skip}ClassSequential() -- use curr.member "pos"
+*
+* Revision 1.65  2001/01/05 20:10:51  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
+* Revision 1.64  2001/01/03 15:22:26  vasilche
+* Fixed limited buffer size for REAL data in ASN.1 binary format.
+* Fixed processing non ASCII symbols in ASN.1 text format.
+*
+* Revision 1.63  2000/12/26 22:24:11  vasilche
+* Fixed errors of compilation on Mac.
+*
+* Revision 1.62  2000/12/15 21:29:01  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.61  2000/12/15 15:38:44  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.60  2000/11/20 17:25:36  vasilche
+* Added prototypes of functions.
+*
+* Revision 1.59  2000/10/20 15:51:41  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.58  2000/10/17 18:45:34  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
+* Revision 1.57  2000/10/04 19:18:59  vasilche
+* Fixed processing floating point data.
+*
+* Revision 1.56  2000/10/03 17:22:43  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.55  2000/09/29 16:18:23  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.54  2000/09/18 20:00:23  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.53  2000/09/01 13:16:17  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.52  2000/08/15 19:44:49  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.51  2000/07/03 20:47:22  vasilche
+* Removed unused variables/functions.
+*
+* Revision 1.50  2000/07/03 20:39:55  vasilche
+* Fixed comments.
+*
+* Revision 1.49  2000/07/03 18:42:45  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.48  2000/06/16 16:31:19  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.47  2000/06/07 19:45:59  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
+* Revision 1.46  2000/06/01 19:07:03  vasilche
+* Added parsing of XML data.
+*
+* Revision 1.45  2000/05/24 20:08:47  vasilche
+* Implemented XML dump.
+*
+* Revision 1.44  2000/05/09 16:38:39  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
+* Revision 1.43  2000/05/03 14:38:14  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
+* Revision 1.42  2000/04/28 16:58:12  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
+* Revision 1.41  2000/04/13 14:50:27  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
+* Revision 1.40  2000/03/29 15:55:28  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+*   CTypeIterator<class>, CTypeConstIterator<class>,
+*   CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+*   CObjectsIterator and CObjectsConstIterator.
+*
+* Revision 1.39  2000/03/14 14:42:31  vasilche
+* Fixed error reporting.
+*
+* Revision 1.38  2000/03/07 14:06:22  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
+* Revision 1.37  2000/02/17 20:02:44  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
+* Revision 1.36  2000/02/11 17:10:24  vasilche
+* Optimized text parsing.
+*
+* Revision 1.35  2000/02/01 21:47:22  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
+* Revision 1.34  2000/01/11 14:27:42  vasilche
+* Found absent DBL_* macros in float.h
+*
+* Revision 1.33  2000/01/11 14:16:45  vasilche
+* Fixed pow ambiguity.
+*
+* Revision 1.32  2000/01/10 19:46:40  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
+* Revision 1.31  2000/01/05 19:43:54  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
+* Revision 1.30  1999/12/17 19:05:03  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
+* Revision 1.29  1999/11/18 20:19:01  vakatov
+* ExpectString() -- get rid of the CodeWarrior(MAC) C++ compiler warning
+*
+* Revision 1.28  1999/10/25 20:19:51  vasilche
+* Fixed strings representation in text ASN.1 files.
+*
+* Revision 1.27  1999/10/04 16:22:17  vasilche
+* Fixed bug with old ASN.1 structures.
+*
+* Revision 1.26  1999/09/24 18:19:18  vasilche
+* Removed dependency on NCBI toolkit.
+*
+* Revision 1.25  1999/09/23 21:16:07  vasilche
+* Removed dependence on asn.h
+*
+* Revision 1.24  1999/09/23 18:56:58  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
+* Revision 1.23  1999/09/22 20:11:55  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
+* Revision 1.22  1999/08/17 15:13:06  vasilche
+* Comments are allowed in ASN.1 text files.
+* String values now parsed in accordance with ASN.1 specification.
+*
+* Revision 1.21  1999/08/13 15:53:50  vasilche
+* C++ analog of asntool: datatool
+*
+* Revision 1.20  1999/07/26 18:31:35  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
+* Revision 1.19  1999/07/22 17:33:51  vasilche
+* Unified reading/writing of objects in all three formats.
+*
+* Revision 1.18  1999/07/21 14:20:04  vasilche
+* Added serialization of bool.
+*
+* Revision 1.17  1999/07/20 18:23:10  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
+* Revision 1.16  1999/07/19 15:50:33  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
+* Revision 1.15  1999/07/14 18:58:09  vasilche
+* Fixed ASN.1 types/field naming.
+*
+* Revision 1.14  1999/07/13 20:18:18  vasilche
+* Changed types naming.
+*
+* Revision 1.13  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
+* Revision 1.12  1999/07/07 21:15:02  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
+* Revision 1.11  1999/07/07 19:59:05  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
+* Revision 1.10  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
+* Revision 1.9  1999/07/02 21:31:55  vasilche
+* Implemented reading from ASN.1 binary format.
+*
+* Revision 1.8  1999/07/01 17:55:30  vasilche
+* Implemented ASN.1 binary write.
+*
+* Revision 1.7  1999/06/30 16:04:55  vasilche
+* Added support for old ASN.1 structures.
+*
+* Revision 1.6  1999/06/24 14:44:55  vasilche
+* Added binary ASN.1 output.
+*
+* Revision 1.5  1999/06/18 16:26:49  vasilche
+* Fixed bug with unget() in MSVS
+*
+* Revision 1.4  1999/06/17 21:08:51  vasilche
+* Fixed bug with unget()
+*
+* Revision 1.3  1999/06/17 20:42:05  vasilche
+* Fixed storing/loading of pointers.
+*
+* Revision 1.2  1999/06/16 20:58:04  vasilche
+* Added GetPtrTypeRef to avoid conflict in MSVS.
+*
+* Revision 1.1  1999/06/16 20:35:31  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
+* Revision 1.7  1999/06/15 16:19:49  vasilche
+* Added ASN.1 object output stream.
+*
+* Revision 1.6  1999/06/11 19:14:58  vasilche
+* Working binary serialization and deserialization of first test object.
+*
+* Revision 1.5  1999/06/10 21:06:46  vasilche
+* Working binary output and almost working binary input.
+*
+* Revision 1.4  1999/06/07 20:10:02  vasilche
+* Avoid using of numeric_limits.
+*
+* Revision 1.3  1999/06/07 19:30:25  vasilche
+* More bug fixes
+*
+* Revision 1.2  1999/06/04 20:51:45  vasilche
+* First compilable version of serialization.
+*
+* Revision 1.1  1999/05/19 19:56:53  vasilche
+* Commit just in case.
+*
+* ===========================================================================
+*/
