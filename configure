@@ -2588,12 +2588,13 @@ mkdir -p "$libdir" "$bindir" "$incdir"
 echo "Configured header:  $incdir/ncbiconf.h"
 mv "$top_srcdir/config.h" "$incdir/ncbiconf.h"
 
+src_dir="$top_srcdir"/src
 if test "$exec_prefix" != "$top_srcdir" ; then
    echo "Build   directory:  $builddir"
    test -d  "$builddir"  ||  mkdir -p "$builddir"
 
-   src_dir="$top_srcdir"/src
-   echo "Scripts/makefiles:\n\t$src_dir  -->  $builddir"
+   echo "Scripts/makefiles:"
+   echo "    $src_dir  -->  $builddir"
 
    cd "$src_dir"
    ( find . -name '*.sh' -print ; find . -name 'Makefile*' -print ) |
@@ -2613,9 +2614,12 @@ if test "$exec_prefix" != "$top_srcdir" ; then
    echo "Status  directory:  $status_dir"
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
    mv config.status config.cache config.log "$status_dir"/
-
-   echo "Configuration completed."
+else
+   find "$src_dir" -name '*.sh' -print | while read x_file ; do
+      chmod a+x "$x_file"
+   done
 fi
+echo "Configuration completed."
 exit 0
 EOF
 chmod +x $CONFIG_STATUS
