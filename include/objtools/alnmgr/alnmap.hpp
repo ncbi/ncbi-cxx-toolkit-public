@@ -457,7 +457,8 @@ CAlnMap::x_GetRawSegType(TNumrow row, TNumseg seg) const
     } else {
         return x_SetRawSegType(row, seg);
     }
-inline static bool CAlnMap::IsTypeInsert(TSegTypeFlags type)
+}
+
 inline
 bool CAlnMap::IsTypeInsert(TSegTypeFlags type)
 {
@@ -476,6 +477,13 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+*
+* $Log$
+* Revision 1.7  2002/09/27 02:26:32  ucko
+* Remove static from the definition of CAlnMap::IsTypeInsert, as
+* (like virtual) it should appear only on the initial declaration.
+*
+* Revision 1.8  2002/09/27 16:58:21  todorov
 * changed order of params for GetSeqPosFrom{Seq,Aln}Pos
 *
 * Revision 1.7  2002/09/27 02:26:32  ucko
