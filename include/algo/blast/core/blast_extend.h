@@ -135,8 +135,11 @@ Int2 BlastExtendWordNew(Uint4 query_length,
 /** Allocate memory for the BlastInitHitList structure */
 BlastInitHitList* BLAST_InitHitListNew(void);
 
-  /** Free memory for the BlastInitList structure */
-BlastInitHitList* BLAST_InitHitListDestruct(BlastInitHitList* init_hitlist);
+/** Free the ungapped data substructures and reset initial HSP count to 0 */
+void BlastInitHitListReset(BlastInitHitList* init_hitlist);
+
+/** Free memory for the BlastInitList structure */
+BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
 
 /** Finds all words for a given subject sequence, satisfying the wordsize and 
  *  discontiguous template conditions, and performs initial (exact match) 

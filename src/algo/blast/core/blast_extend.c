@@ -59,11 +59,21 @@ BlastInitHitList* BLAST_InitHitListNew(void)
    return init_hitlist;
 }
 
-BlastInitHitList* BLAST_InitHitListDestruct(BlastInitHitList* init_hitlist)
+void BlastInitHitListReset(BlastInitHitList* init_hitlist)
 {
-  sfree(init_hitlist->init_hsp_array);
-  sfree(init_hitlist);
-  return NULL;
+   Int4 index;
+
+   for (index = 0; index < init_hitlist->total; ++index)
+      sfree(init_hitlist->init_hsp_array[index].ungapped_data);
+   init_hitlist->total = 0;
+}
+
+BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist)
+{
+   BlastInitHitListReset(init_hitlist);
+   sfree(init_hitlist->init_hsp_array);
+   sfree(init_hitlist);
+   return NULL;
 }
 
 
