@@ -51,7 +51,7 @@
 # include <asn.h>
 # include "twebenv.h"
 #else
-# include "Web_Env.hpp"
+# include "webenv/Web_Env.hpp"
 #endif
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -773,6 +773,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2004/01/21 15:18:15  grichenk
+ * Re-arranged webenv files for serial test
+ *
  * Revision 1.62  2003/06/16 16:53:46  gouriano
  * corrections to make test run OK
  *

@@ -11,7 +11,7 @@ SRC = serialobject serialobject_Base test_serial cppwebenv twebenv \
       we_cpp__ we_cpp___
 LIB = xcser xser xutil xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I$(srcdir) -I$(srcdir)/webenv
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
 
