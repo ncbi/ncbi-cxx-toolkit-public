@@ -558,33 +558,17 @@ HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_in
             return keep;
 }
 
-/** Compute gapped alignment with traceback for all HSPs from a single
- * query/subject sequence pair. 
- * Final e-values are calculated here, except when sum statistics is used,
- * in which case this is done in file link_hsps.c:
- * @sa { BLAST_LinkHsps }
- * @param program_number Type of BLAST program [in]
- * @param hsp_list List of HSPs [in]
- * @param query_blk The query sequence [in]
- * @param subject_blk The subject sequence [in]
- * @param query_info Query information, needed to get pointer to the
- *        start of this query within the concatenated sequence [in]
- * @param gap_align Auxiliary structure used for gapped alignment [in]
- * @param sbp Statistical parameters [in]
- * @param score_options Scoring parameters [in]
- * @param ext_options Gapped extension options [in]
- * @param hit_params Hit saving parameters [in]
- * @param db_options Options containing database genetic code string [in]
- * @param psi_options Options specific to PSI BLAST [in]
+/*
+    Comments in blast_traceback.h
  */
-static Int2
-BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list, 
+Int2
+Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list, 
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options,
    const BlastExtensionOptions* ext_options,
-   BlastHitSavingParameters* hit_params,
+   const BlastHitSavingParameters* hit_params,
    const Uint1* gen_code_string,
    const PSIBlastOptions* psi_options)
 {
@@ -945,7 +929,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
                   return status;
             }
 
-            BlastHSPListGetTraceback(program_number, hsp_list, query, 
+            Blast_TracebackFromHSPList(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
                ext_params->options, hit_params, db_options->gen_code_string, 
                psi_options);
@@ -1124,7 +1108,7 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
          /* compute the traceback information and calculate E values
             for all HSPs in the list */
 
-         BlastHSPListGetTraceback(program_number, hsp_list, &one_db_seq, 
+         Blast_TracebackFromHSPList(program_number, hsp_list, &one_db_seq, 
             query, &one_db_seq_info, gap_align, sbp, score_options, 
             ext_params->options, hit_params, db_options->gen_code_string, 
             psi_options);
