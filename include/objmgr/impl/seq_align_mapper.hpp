@@ -177,7 +177,7 @@ private:
     TSubAligns                   m_SubAligns;
     bool                         m_HaveStrands;
     bool                         m_HaveWidths;
-    unsigned int                 m_Dim;
+    size_t                       m_Dim;
     EAlignFlags                  m_AlignFlags;
 };
 
@@ -222,6 +222,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/26 14:57:36  ucko
+* Change CSeq_align_Mapper::m_Dim's type from unsigned int to size_t
+* for consistency with STL containers' size() methods.
+*
 * Revision 1.6  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.
