@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/03/07 14:05:30  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.33  2000/01/10 20:04:07  vasilche
 * Fixed duplicate name.
 *
@@ -172,7 +177,11 @@ public:
     // root reader
     void Read(TObjectPtr object, TTypeInfo type);
     void Read(TObjectPtr object, const CTypeRef& type);
-    CObject ReadObject(void);
+
+    void Skip(TTypeInfo type);
+    void Skip(const CTypeRef& type);
+
+    CObjectInfo ReadObject(void);
 
     virtual string ReadTypeName(void);
     
@@ -244,6 +253,69 @@ public:
             ReadString(data);
         }
     virtual void ReadStringStore(string& s);
+
+    // std C types readers
+    void SkipStd(const bool &)
+        {
+            SkipBool();
+        }
+    void SkipStd(const char& )
+        {
+            SkipChar();
+        }
+    void SkipStd(const signed char& )
+        {
+            SkipSChar();
+        }
+    void SkipStd(const unsigned char& )
+        {
+            SkipUChar();
+        }
+    void SkipStd(const short& )
+        {
+            SkipShort();
+        }
+    void SkipStd(const unsigned short& )
+        {
+            SkipUShort();
+        }
+    void SkipStd(const int& )
+        {
+            SkipInt();
+        }
+    void SkipStd(const unsigned& )
+        {
+            SkipUInt();
+        }
+    void SkipStd(const long& )
+        {
+            SkipLong();
+        }
+    void SkipStd(const unsigned long& )
+        {
+            SkipULong();
+        }
+    void SkipStd(const float& )
+        {
+            SkipFloat();
+        }
+    void SkipStd(const double& )
+        {
+            SkipDouble();
+        }
+    void SkipStd(char* const& )
+        {
+            SkipCString();
+        }
+    void SkipStd(const char* const& )
+        {
+            SkipCString();
+        }
+    virtual void SkipString(void) = 0;
+    virtual void SkipNull(void) = 0;
+    virtual void SkipStringStore(void);
+    virtual void SkipByteBlock(void) = 0;
+    void SkipExternalObject(TTypeInfo typeInfo);
 
     // object level readers
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
@@ -605,7 +677,7 @@ protected:
 	virtual void End(const ByteBlock& block);
 
     // low level readers
-    CObject ReadObjectInfo(void);
+    CObjectInfo ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
     virtual TIndex ReadObjectPointer(void) = 0;
     virtual void ReadThisPointerEnd(void);
@@ -613,7 +685,7 @@ protected:
     virtual void ReadOtherPointerEnd(void);
     virtual bool HaveMemberSuffix(void);
     virtual TMemberIndex ReadMemberSuffix(const CMembers& members) = 0;
-    void SelectMember(CObject& object);
+    void SelectMember(CObjectInfo& object);
 
     virtual bool ReadBool(void) = 0;
     virtual char ReadChar(void) = 0;
@@ -630,7 +702,24 @@ protected:
     virtual void ReadString(string& s) = 0;
     virtual char* ReadCString(void);
 
-    const CObject& GetRegisteredObject(TIndex index) const;
+    virtual void SkipBool(void) = 0;
+    virtual void SkipChar(void) = 0;
+    virtual void SkipSNumber(void) = 0;
+    virtual void SkipUNumber(void);
+    virtual void SkipSChar(void);
+    virtual void SkipUChar(void);
+    virtual void SkipShort(void);
+    virtual void SkipUShort(void);
+    virtual void SkipInt(void);
+    virtual void SkipUInt(void);
+    virtual void SkipLong(void);
+    virtual void SkipULong(void);
+    virtual void SkipFNumber(void) = 0;
+    virtual void SkipFloat(void);
+    virtual void SkipDouble(void);
+    virtual void SkipCString(void);
+
+    const CObjectInfo& GetRegisteredObject(TIndex index) const;
     TIndex RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     TIndex RegisterInvalidObject(void)
         { return RegisterObject(0, 0); }
@@ -640,8 +729,13 @@ protected:
             typeInfo->ReadData(*this, object);
         }
 
+    void SkipData(TTypeInfo typeInfo)
+        {
+            typeInfo->SkipData(*this);
+        }
+
 private:
-    vector<CObject> m_Objects;
+    vector<CObjectInfo> m_Objects;
 
     unsigned m_Fail;
     const StackElement* m_CurrentElement;

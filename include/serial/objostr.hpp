@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/03/07 14:05:31  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.30  2000/01/10 20:12:37  vasilche
 * Fixed duplicate argument names.
 * Fixed conflict between template and variable name.
@@ -162,7 +167,7 @@ public:
     // root writer
     void Write(TConstObjectPtr object, TTypeInfo type);
     void Write(TConstObjectPtr object, const CTypeRef& type);
-    void WriteObject(const CObject& object)
+    void WriteObject(const CObjectInfo& object)
         {
             Write(object.GetObject(), object.GetTypeInfo());
         }

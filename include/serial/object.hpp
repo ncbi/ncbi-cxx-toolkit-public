@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/07 14:05:30  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.2  1999/08/13 20:22:57  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -47,21 +52,21 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObject {
+class CObjectInfo {
 public:
-    CObject(void)
+    CObjectInfo(void)
         : m_Object(0), m_TypeInfo(0)
         {
         }
-    CObject(TTypeInfo typeInfo)
+    CObjectInfo(TTypeInfo typeInfo)
         : m_Object(typeInfo->Create()), m_TypeInfo(typeInfo)
         {
         }
-    CObject(TObjectPtr object, TTypeInfo typeInfo)
+    CObjectInfo(TObjectPtr object, TTypeInfo typeInfo)
         : m_Object(object), m_TypeInfo(typeInfo)
         {
         }
-    ~CObject(void)
+    ~CObjectInfo(void)
         {
         }
 

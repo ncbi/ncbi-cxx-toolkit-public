@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 14:05:29  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.6  2000/02/01 21:44:34  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -135,6 +140,14 @@ public:
         }
 
 protected:
+    void SkipData(CObjectIStream& in) const
+        {
+            if ( !in.ReadEnum(Values()).second ) {
+                // plain integer
+                CParent::SkipData(in);
+            }
+        }
+
     void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             pair<long, bool> value = in.ReadEnum(Values());

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/03/07 14:05:27  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.5  1999/12/28 18:55:39  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -73,6 +78,7 @@ protected:
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
+    void SkipData(CObjectIStream& in) const;
 };
 
 //#include <serial/autoptrinfo.inl>

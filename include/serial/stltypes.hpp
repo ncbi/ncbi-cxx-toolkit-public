@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/03/07 14:05:32  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.30  2000/02/17 20:02:29  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -148,6 +153,7 @@
 */
 
 #include <serial/typeinfo.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <serial/typeref.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -257,6 +263,42 @@ public:
     static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
             return new CStlClassInfo_auto_ptr<Data>(info);
+        }
+};
+
+template<typename Data>
+class CRefTypeInfo : public CPointerTypeInfo
+{
+    typedef CPointerTypeInfo CParent;
+public:
+    typedef Data TDataType;
+    typedef CRef<TDataType> TObjectType;
+
+    CRefTypeInfo(TTypeInfo typeInfo)
+        : CParent("CRef", typeInfo, typeInfo)
+        { }
+    CRefTypeInfo(const CTypeRef& typeRef)
+        : CParent("CRef", "?", typeRef)
+        { }
+    
+    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
+        {
+            return &**static_cast<const TObjectType*>(object);
+        }
+    void SetObjectPointer(TObjectPtr object, TObjectPtr data) const
+        {
+            static_cast<TObjectType*>(object)->
+                Reset(static_cast<TDataType*>(data));
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return sizeof(TObjectType);
+        }
+
+    static TTypeInfo GetTypeInfo(TTypeInfo info)
+        {
+            return new CRefTypeInfo<Data>(info);
         }
 };
 
@@ -394,6 +436,15 @@ protected:
             while ( block.Next() ) {
                 dataTypeInfo->ReadData(in, AddEmpty(object, block.GetIndex()));
             }
+        }
+
+    virtual void SkipData(CObjectIStream& in) const
+        {
+            CObjectIStream::Block block(CObjectIStream::eFixed,
+                                        in, RandomOrder());
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            while ( block.Next() )
+                dataTypeInfo->SkipData(in);
         }
 
     virtual void Reserve(TObjectPtr object, size_t length) const = 0;
@@ -573,6 +624,7 @@ protected:
                            TConstObjectPtr key, TConstObjectPtr value) const;
     void ReadKeyValuePair(CObjectIStream& in,
                           TObjectPtr key, TObjectPtr value) const;
+    void SkipKeyValuePair(CObjectIStream& in) const;
     bool EqualsKeyValuePair(TConstObjectPtr key1, TConstObjectPtr key2,
                             TConstObjectPtr value1, TConstObjectPtr value2) const;
 };
@@ -672,6 +724,14 @@ protected:
                 ReadKeyValuePair(in, &key, &value);
                 typename TObjectType::value_type insert(key, value);
                 o.insert(insert);
+            }
+        }
+
+    virtual void SkipData(CObjectIStream& in) const
+        {
+            CObjectIStream::Block block(in);
+            while ( block.Next() ) {
+                SkipKeyValuePair(in);
             }
         }
 };
@@ -808,6 +868,10 @@ protected:
                     o.insert(o.end(), buffer, buffer + count);
                 }
             }
+        }
+    virtual void SkipData(CObjectIStream& in) const
+        {
+            in.SkipByteBlock();
         }
 };
 

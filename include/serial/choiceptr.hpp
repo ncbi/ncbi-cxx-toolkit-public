@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/03/07 14:05:28  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.11  2000/02/17 20:02:27  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -120,6 +125,8 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
+    void SkipData(CObjectIStream& in) const;
+
 private:
     void Init(void);
     const TVariantsByType& VariantsByType(void) const;
@@ -178,6 +185,8 @@ protected:
     void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+    void SkipData(CObjectIStream& in) const;
 };
 
 //#include <serial/choiceptr.inl>

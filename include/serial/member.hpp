@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 14:05:29  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.6  2000/02/01 21:44:35  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -71,7 +76,7 @@ BEGIN_NCBI_SCOPE
 class CMemberInfo {
 public:
     CMemberInfo(size_t offset, const CTypeRef& type)
-        : m_Optional(false), m_Pointer(false),
+        : m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
           m_Offset(offset), m_Type(type),
           m_SetFlagOffset(size_t(-1)), m_Default(0)
         {
@@ -93,9 +98,18 @@ public:
         {
             return m_Pointer;
         }
+    bool IsObjectPointer(void) const
+        {
+            return m_ObjectPointer;
+        }
     CMemberInfo* SetPointer(void)
         {
             m_Pointer = true;
+            return this;
+        }
+    CMemberInfo* SetObjectPointer(void)
+        {
+            m_Pointer = m_ObjectPointer = true;
             return this;
         }
     TConstObjectPtr GetDefault(void) const
@@ -172,6 +186,8 @@ private:
     bool m_Optional;
     // is pointer in choice
     bool m_Pointer;
+    // is pointer to CObject descendant
+    bool m_ObjectPointer;
     // offset of member inside object
     size_t m_Offset;
     // type of member

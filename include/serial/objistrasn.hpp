@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/03/07 14:05:30  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.25  2000/02/17 20:02:28  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -184,6 +189,15 @@ protected:
     virtual double ReadDouble(void);
     virtual void ReadString(string& s);
 
+    virtual void SkipBool(void);
+    virtual void SkipChar(void);
+    virtual void SkipSNumber(void);
+    virtual void SkipUNumber(void);
+    virtual void SkipFNumber(void);
+    virtual void SkipString(void);
+    virtual void SkipNull(void);
+    virtual void SkipByteBlock(void);
+
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
     virtual void AsnOpen(AsnIo& asn);
@@ -193,6 +207,7 @@ protected:
 protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
+    virtual void VEnd(const Block& block);
     virtual void StartMember(Member& member, const CMembers& members);
     virtual void StartMember(Member& member, const CMemberId& id);
     virtual void StartMember(Member& member, LastMember& lastMember);
@@ -214,9 +229,12 @@ private:
 
 public:
     // low level methods
+    CStreamBuffer& GetInput(void)
+        {
+            return m_Input;
+        }
     char GetChar(void);
     char PeekChar(void);
-    void SkipChar(void);
 
 	// parse methods
     char GetChar(bool skipWhiteSpace);
@@ -234,8 +252,6 @@ private:
     char SkipWhiteSpace(void);
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
-    void SkipString(void);
-    void SkipBitString(void);
 
     CStreamBuffer m_Input;
 };

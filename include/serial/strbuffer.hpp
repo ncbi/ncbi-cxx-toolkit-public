@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/07 14:05:33  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.4  2000/02/17 20:02:29  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -69,6 +74,7 @@ public:
 
     char PeekChar(size_t offset = 0) THROWS((CSerialIOException))
         {
+            _ASSERT(offset >= 0);
             char* pos = m_CurrentPos + offset;
             if ( pos >= m_DataEndPos )
                 pos = FillBuffer(pos);
@@ -92,7 +98,7 @@ public:
     // precondition: PeekChar(c) was called when c >= count
     void SkipChars(size_t count)
         {
-            _ASSERT(count > 0);
+            _ASSERT(m_CurrentPos + count > m_CurrentPos);
             _ASSERT(m_CurrentPos + count <= m_DataEndPos);
             m_CurrentPos += count;
         }
@@ -101,6 +107,12 @@ public:
         {
             SkipChars(1);
         }
+
+    // read chars in buffer
+    void GetChars(char* buffer, size_t count) THROWS((CSerialIOException));
+    // skip chars which may not be in buffer
+    void GetChars(size_t count) THROWS((CSerialIOException));
+
     // precondition: last char extracted was either '\r' or '\n'
     // action: inctement line count and
     //         extract next complimentary '\r' or '\n' char if any
@@ -119,6 +131,10 @@ public:
         {
             return m_Line;
         }
+    size_t GetStreamOffset(void) const
+        {
+            return m_BufferOffset + (m_CurrentPos - m_Buffer);
+        }
 
     // action: read in buffer up to end of line
     size_t ReadLine(char* buff, size_t size) THROWS((CSerialIOException));
@@ -130,6 +146,7 @@ protected:
 
 private:
     CNcbiIstream& m_Input;    // source stream
+    size_t m_BufferOffset;   // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer

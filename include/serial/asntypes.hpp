@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/03/07 14:05:27  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.24  2000/02/17 20:02:26  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -208,6 +213,8 @@ protected:
     virtual void ReadData(CObjectIStream& in,
                           TObjectPtr object) const;
 
+    virtual void SkipData(CObjectIStream& in) const;
+
 private:
     TTypeInfo m_DataType;
     size_t m_NextOffset;  // offset in struct of pointer to next object (def 0)
@@ -287,6 +294,8 @@ protected:
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+    void SkipData(CObjectIStream& in) const;
 };
 
 class COldAsnTypeInfo : public CTypeInfo
@@ -329,6 +338,8 @@ protected:
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+    void SkipData(CObjectIStream& in) const;
 
 private:
     TNewProc m_NewProc;

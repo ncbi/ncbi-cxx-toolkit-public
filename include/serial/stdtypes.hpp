@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/03/07 14:05:32  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.16  2000/01/10 19:46:34  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -164,6 +169,10 @@ protected:
         {
         }
 
+    virtual void SkipData(CObjectIStream& in) const
+        {
+            in.SkipStd(TObjectType(0));
+        }
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             in.ReadStd(Get(object));
@@ -190,6 +199,7 @@ public:
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
 protected:
+    virtual void SkipData(CObjectIStream& ) const;
     virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
 
@@ -230,6 +240,7 @@ public:
     static TTypeInfo GetTypeInfo(void);
 
 protected:
+    virtual void SkipData(CObjectIStream& in) const;
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
@@ -244,6 +255,7 @@ public:
     static TTypeInfo GetTypeInfo(void);
 
 protected:
+    virtual void SkipData(CObjectIStream& in) const;
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
@@ -258,6 +270,7 @@ public:
     static TTypeInfo GetTypeInfo(void);
 
 protected:
+    virtual void SkipData(CObjectIStream& in) const;
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };

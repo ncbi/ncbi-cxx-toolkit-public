@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/03/07 14:05:31  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+*
 * Revision 1.16  2000/02/17 20:02:28  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -99,6 +104,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objstrasnb.hpp>
+#include <serial/strbuffer.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -119,11 +125,6 @@ public:
     virtual void ReadNull(void);
     virtual void SkipValue(void);
 
-    unsigned char ReadByte(void);
-    signed char ReadSByte(void);
-    void ReadBytes(char* buffer, size_t count);
-    void SkipBytes(size_t count);
-
 protected:
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -136,39 +137,26 @@ protected:
     virtual char* ReadCString(void);
     virtual void ReadStringStore(string& s);
 
-public:
-    void ExpectByte(TByte byte);
-
-    ETag ReadSysTag(void);
-    void BackSysTag(void);
-    void FlushSysTag(bool constructed = false);
-    TTag ReadTag(void);
-
-    ETag ReadSysTag(EClass c, bool constructed);
-    TTag ReadTag(EClass c, bool constructed);
-
-    void ExpectSysTag(ETag tag);
-    void ExpectSysTag(EClass c, bool constructed, ETag tag);
-    ETag GetLastTag(void) const;
-    bool LastTagWas(EClass c, bool constructed) const;
-    bool LastTagWas(EClass c, bool constructed, ETag tag) const;
-
-    size_t ReadShortLength(void);
-    size_t ReadLength(bool allowIndefinite = false);
-
-    void ExpectShortLength(size_t length);
-    void ExpectIndefiniteLength(void);
-    void ExpectEndOfContent(void);
+    virtual void SkipBool(void);
+    virtual void SkipChar(void);
+    virtual void SkipSNumber(void);
+    virtual void SkipFNumber(void);
+    virtual void SkipString(void);
+    virtual void SkipStringStore(void);
+    virtual void SkipNull(void);
+    virtual void SkipByteBlock(void);
 
 protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
+    virtual void VEnd(const Block& block);
     virtual void StartMember(Member& member, const CMembers& members);
     virtual void StartMember(Member& member, const CMemberId& id);
     virtual void StartMember(Member& member, LastMember& lastMember);
     virtual void EndMember(const Member& member);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
+	virtual void End(const ByteBlock& block);
 
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
@@ -183,42 +171,72 @@ private:
     virtual string ReadOtherPointer(void);
     virtual void ReadOtherPointerEnd(void);
 
-    string ReadClassTag(void);
-
     bool SkipRealValue(void);
 
-    CNcbiIstream& m_Input;
-
-    TByte m_LastTagByte;
-    enum ELastTagState {
-        eNoTagRead,
-        eSysTagRead,
-        eSysTagBack
-    };
-    ELastTagState m_LastTagState;
+    CStreamBuffer m_Input;
+    // states:
+    // before StartTag (Peek*Tag/ExpectSysTag) tag:
+    //     m_CurrentTagLength == 0
+    //     stream position on tag start
+    // after Peek*Tag/ExpectSysTag tag:
+    //     m_CurrentTagLength == beginning of LENGTH field
+    //     stream position on tag start
+    // after FlushTag (Read*Length/ExpectIndefiniteLength):
+    //     m_CurrentTagLength == 0
+    //     stream position on tad DATA start
+    //     tag limit is pushed on stack and new tag limit is updated
+    // after EndOfTag
+    //     m_CurrentTagLength == 0
+    //     stream position on tag DATA end
+    //     tag limit is popped from stack
+    // m_CurrentTagLength == beginning of LENGTH field
+    //                         -- after any of Peek?Tag or ExpectSysTag
+    // 
+    size_t m_CurrentTagLength;  // length of tag header (without length field)
+    size_t m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
+    stack<size_t> m_Limits;
 
 #if CHECK_STREAM_INTEGRITY
-    size_t m_CurrentPosition;
     enum ETagState {
         eTagStart,
-        eTagValue,
-        eLengthStart,
-        eLengthValueFirst,
+        eTagParsed,
         eLengthValue,
         eData
     };
     ETagState m_CurrentTagState;
-    size_t m_CurrentTagPosition;
-    TByte m_CurrentTagCode;
-    size_t m_CurrentTagLengthSize;
-    size_t m_CurrentTagLength;
-    size_t m_CurrentTagLimit;
-    stack<size_t> m_Limits;
-
-    void StartTag(TByte code);
-    void EndTag(void);
-    void SetTagLength(size_t length);
 #endif
+
+    // low level interface
+private:
+    TByte PeekTagByte(size_t index = 0);
+    TByte StartTag(void);
+    TTag PeekTag(void);
+    TTag PeekTag(EClass c, bool constructed);
+    string PeekClassTag(void);
+    TByte PeekAnyTag(void);
+    void ExpectSysTag(EClass c, bool constructed, ETag tag);
+    void ExpectSysTag(ETag tag);
+    TByte FlushTag(void);
+    void ExpectIndefiniteLength(void);
+    bool PeekIndefiniteLength(void);
+public:
+    size_t ReadShortLength(void);
+private:
+    size_t ReadLength(void);
+    size_t StartTagData(size_t length);
+    void ExpectShortLength(size_t length);
+    void ExpectEndOfContent(void);
+public:
+    void EndOfTag(void);
+    TByte ReadByte(void);
+    signed char ReadSByte(void);
+    void ExpectByte(TByte byte);
+private:
+    void ReadBytes(char* buffer, size_t count);
+    void SkipBytes(size_t count);
+
+    void ReadStringValue(string& s);
+    void SkipTagData(void);
 };
 
 //#include <serial/objistrasnb.inl>
