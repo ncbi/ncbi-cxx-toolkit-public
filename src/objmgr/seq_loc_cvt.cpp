@@ -905,6 +905,7 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
                     }
                     std_seg->SetLoc().push_back(loc);
                 }
+                std_segs.push_back(std_seg);
             }
             break;
         }
@@ -1330,6 +1331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/02/05 20:18:37  grichenk
+* Fixed std-segs processing
+*
 * Revision 1.16  2004/02/02 14:44:54  vasilche
 * Removed several compilation warnings.
 *
