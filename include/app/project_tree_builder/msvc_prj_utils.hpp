@@ -109,6 +109,10 @@ struct SConfigInfo
     string m_RuntimeLibrary;
 };
 
+// Helper to load configs from ini files
+void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
+                           const list<string>&  config_names, 
+                           list<SConfigInfo>*   configs);
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// SCustomBuildInfo --
@@ -257,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/03/10 16:42:12  gorelenk
+ * Changed declaration of class CMsvc7RegSettings.
+ *
  * Revision 1.14  2004/03/02 23:28:17  gorelenk
  * Added declaration of class CBuildType.
  *
