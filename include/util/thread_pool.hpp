@@ -153,10 +153,12 @@ public:
 protected:
     virtual TThread* NewThread(void) = 0;
 
+    typedef CAtomicCounter::TValue TACValue;
+
     CAtomicCounter           m_ThreadCount;
-    volatile unsigned int    m_MaxThreads;
+    volatile TACValue        m_MaxThreads;
     CAtomicCounter           m_Delta;     // # unfinished requests - # threads
-    int                      m_Threshold; // for delta
+    TACValue                 m_Threshold; // for delta
     CMutex                   m_Mutex;     // for m_MaxThreads
     CBlockingQueue<TRequest> m_Queue;
 };
@@ -359,7 +361,7 @@ void CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req)
     {{
         CMutexGuard guard(m_Mutex);
         m_Queue.Put(req);
-        if (static_cast<int>(m_Delta.Add(1)) >= m_Threshold
+        if (m_Delta.Add(1) >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads) {
             // Add another thread to the pool because they're all busy.
             m_ThreadCount.Add(1);
@@ -382,6 +384,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/08/24 15:01:38  ucko
+* Tweak to avoid signed/unsigned comparisons.
+*
 * Revision 1.13  2004/07/15 18:51:21  ucko
 * Make CBlockingQueue's default timeout arguments saner, and let
 * CPoolOfThreads::WaitForRoom take an optional timeout too.
