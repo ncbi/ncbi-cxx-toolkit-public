@@ -68,12 +68,15 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        id;              ///< Job id
 
     CBDB_FieldInt4         status;          ///< Current job status
-    CBDB_FieldInt4         failed;          ///< Number of job failures
     CBDB_FieldUint4        time_submit;     ///< Job submit time
     CBDB_FieldUint4        time_run;        ///<     run time
     CBDB_FieldUint4        time_done;       ///<     result submission time
     CBDB_FieldUint4        timeout;         ///<     individual timeout
     CBDB_FieldUint4        run_timeout;     ///<     job run timeout
+
+    CBDB_FieldUint4        subm_addr;       ///< netw BO (for notification)
+    CBDB_FieldUint4        subm_port;       ///< notification port
+    CBDB_FieldUint4        subm_timeout;    ///< notification timeout
 
     CBDB_FieldUint4        worker_node1;    ///< IP address of worker node 1
     CBDB_FieldUint4        worker_node2;    ///< reserved
@@ -97,12 +100,15 @@ struct SQueueDB : public CBDB_File
         BindKey("id",      &id);
 
         BindData("status", &status);
-        BindData("failed", &failed);
         BindData("time_submit", &time_submit);
         BindData("time_run",    &time_run);
         BindData("time_done",   &time_done);
         BindData("timeout",     &timeout);
         BindData("run_timeout", &run_timeout);
+
+        BindData("subm_addr",    &subm_addr);
+        BindData("subm_port",    &subm_port);
+        BindData("subm_timeout", &subm_timeout);
 
         BindData("worker_node1", &worker_node1);
         BindData("worker_node2", &worker_node2);
@@ -172,6 +178,11 @@ struct SLockedQueue
     int                          run_timeout;
     CRWLock                      rtl_lock;      ///< run_time_line locker
 
+    // datagram notification socket 
+    // (used to notify worker nodes and waiting clients)
+    CDatagramSocket              udp_socket;    ///< UDP notification socket
+    CFastMutex                   us_lock;       ///< UDP socket lock
+
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
           notif_timeout(7), 
@@ -222,7 +233,6 @@ private:
 private:
     TQueueMap      m_QMap;
 };
-
 
 
 
@@ -322,6 +332,9 @@ public:
         /// Remove all jobs
         void Truncate();
 
+        /// Remove job from the queue
+        void DropJob(unsigned job_id);
+
         /// Free unsued memory (status storage)
         void FreeUnusedMem() { m_LQueue.status_tracker.FreeUnusedMem(); }
 
@@ -404,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/15 14:52:39  kuznets
+ * Better datagram socket management, DropJob implemenetation
+ *
  * Revision 1.10  2005/03/10 14:19:57  kuznets
  * Implemented individual run timeouts
  *

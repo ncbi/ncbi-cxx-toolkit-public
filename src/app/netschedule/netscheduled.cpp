@@ -66,7 +66,7 @@
 USING_NCBI_SCOPE;
 
 
-#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.5"
+#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.6"
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -83,6 +83,7 @@ typedef enum {
     eReturnJob,
     eJobRunTimeout,
     eDropQueue,
+    eDropJob,
 
     eShutdown,
     eVersion,
@@ -187,6 +188,7 @@ public:
     void ProcessDropQueue(CSocket& sock, SThreadData& tdata);
     void ProcessReturn(CSocket& sock, SThreadData& tdata);
     void ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata);
+    void ProcessDropJob(CSocket& sock, SThreadData& tdata);
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
@@ -370,6 +372,9 @@ void CNetScheduleServer::Process(SOCK sock)
             case eJobRunTimeout:
                 ProcessJobRunTimeout(socket, *tdata);
                 break;
+            case eDropJob:
+                ProcessDropJob(socket, *tdata);
+                break;
             case eShutdown:
                 LOG_POST("Shutdown request...");
                 SetShutdownFlag();
@@ -468,6 +473,17 @@ void CNetScheduleServer::ProcessCancel(CSocket& sock, SThreadData& tdata)
     queue.Cancel(job_id);
     WriteMsg(sock, "OK:", "");
 }
+
+void CNetScheduleServer::ProcessDropJob(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    queue.DropJob(job_id);
+    WriteMsg(sock, "OK:", "");
+}
+
 
 void 
 CNetScheduleServer::ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata)
@@ -658,6 +674,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 12.DROPQ
     // 13.WGET udp_port_number timeout
     // 14.JRTO JSID_01_1 timeout
+    // 15.DROJ JSID_01_1
 
     const char* s = reqstr.c_str();
 
@@ -808,6 +825,18 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         }
         req->timeout = timeout;
 
+        return;
+    }
+
+    if (strncmp(s, "DROJ", 4) == 0) {
+        req->req_type = eDropJob;
+        s += 4;
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
+        
+        if (req->job_key_str.empty()) {
+            NS_RETURN_ERROR("Misformed drop job request")
+        }
         return;
     }
 
@@ -1036,12 +1065,14 @@ int CNetScheduleDApp::Run(void)
         const string& db_path = 
             bdb_conf.GetString("netschedule", "path", 
                                 CConfig::eErr_Throw, kEmptyStr);
+        bool reg_reinit =
+            reg.GetBool("server", "reinit", false, 0, IRegistry::eReturn);
 
-        if (args["reinit"]) {  // Drop the database directory
+        if (args["reinit"] || reg_reinit) {  // Drop the database directory
             CDir dir(db_path);
             dir.Remove();
             LOG_POST(Info << "Reinintialization. " << db_path 
-                          << " removed.");
+                          << " removed. \n");
         }
 
         unsigned mem_size = (unsigned)
@@ -1052,6 +1083,30 @@ int CNetScheduleDApp::Run(void)
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
         qdb->Open(db_path, mem_size);
+
+
+        int port = 
+            reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);
+
+        int udp_port = 
+            reg.GetInt("server", "udp_port", 0, 0, CNcbiRegistry::eReturn);
+        if (udp_port == 0) {
+            udp_port = port + 1;
+            LOG_POST(Info << "UDP notification port: " << udp_port);
+        }
+        if (udp_port < 1024 || udp_port > 65535) {
+            LOG_POST(Error << "Invalid UDP port value: " << udp_port 
+                           << ". Notification will be disabled.");
+            udp_port = -1;
+        }
+        if (udp_port < 0) {
+            LOG_POST(Info << "UDP notification disabled. ");
+        }
+        if (udp_port > 0) {
+            qdb->SetUdpPort((unsigned short) udp_port);
+        }
+
+
 
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
@@ -1087,11 +1142,11 @@ int CNetScheduleDApp::Run(void)
                 std::min(min_run_timeout, (unsigned)run_timeout_precision);
 
             LOG_POST(Info 
-                << "Mounting queue:         " << qname          << "\n"
-                << "   Timeout:              " << timeout       << "\n"
-                << "   Notification timeout: " << notif_timeout << "\n"
-                << "   Run timeout:          " << run_timeout   << "\n"
-                << "   Run timeout precision:" << run_timeout_precision <<"\n"
+                << "Mounting queue:           " << qname                 << "\n"
+                << "   Timeout:               " << timeout               << "\n"
+                << "   Notification timeout:  " << notif_timeout         << "\n"
+                << "   Run timeout:           " << run_timeout           << "\n"
+                << "   Run timeout precision: " << run_timeout_precision <<"\n"
             );
             qdb->MountQueue(qname, timeout, 
                             notif_timeout, run_timeout, run_timeout_precision);
@@ -1106,27 +1161,6 @@ int CNetScheduleDApp::Run(void)
         qdb->RunPurgeThread();
 
 
-        // Init threaded server
-        int port = 
-            reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);
-
-        int udp_port = 
-            reg.GetInt("server", "udp_port", 0, 0, CNcbiRegistry::eReturn);
-        if (udp_port == 0) {
-            udp_port = port + 1;
-            LOG_POST(Info << "UDP notification port: " << udp_port);
-        }
-        if (udp_port < 1024 || udp_port > 65535) {
-            LOG_POST(Error << "Invalid UDP port value: " << udp_port 
-                           << ". Notification will be disabled.");
-            udp_port = -1;
-        }
-        if (udp_port < 0) {
-            LOG_POST(Info << "UDP notification disabled. ");
-        }
-        if (udp_port > 0) {
-            qdb->SetUdpPort((unsigned short) udp_port);
-        }
 
         qdb->RunNotifThread();
 
@@ -1205,6 +1239,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/15 14:52:39  kuznets
+ * Better datagram socket management, DropJob implemenetation
+ *
  * Revision 1.11  2005/03/10 14:19:57  kuznets
  * Implemented individual run timeouts
  *

@@ -280,9 +280,15 @@ void CQueueDataBase::MountQueue(const string& queue_name,
 
     m_QueueCollection.AddQueue(queue_name, q.release());
 
-    // scan the queue, restore the state machine
-
     SLockedQueue& queue = m_QueueCollection.GetLockedQueue(queue_name);
+
+    queue.run_timeout = run_timeout;
+    if (run_timeout) {
+        queue.run_time_line = new CJobTimeLine(run_timeout_precision, 0);
+    }
+
+
+    // scan the queue, restore the state machine
 
     CBDB_FileCursor cur(queue.db);
     cur.SetCondition(CBDB_FileCursor::eGE);
@@ -300,11 +306,21 @@ void CQueueDataBase::MountQueue(const string& queue_name,
         queue.status_tracker.SetExactStatusNoLock(job_id, 
                       (CNetScheduleClient::EJobStatus) status, 
                       true);
+
+        if (status == (int) CNetScheduleClient::eRunning && 
+            queue.run_time_line) {
+            // Add object to the first available slot
+            // it is going to be rescheduled or dropped
+            // in the background control thread
+            queue.run_time_line->AddObjectToSlot(0, job_id);
+        }
     } // while
 
-    queue.run_timeout = run_timeout;
-    if (run_timeout) {
-        queue.run_time_line = new CJobTimeLine(run_timeout_precision, 0);
+
+    queue.udp_socket.SetReuseAddress(eOn);
+    unsigned short udp_port = GetUdpPort();
+    if (udp_port) {
+        queue.udp_socket.Bind(udp_port);
     }
 
     LOG_POST(Info << "Records = " << recs);
@@ -637,13 +653,16 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
     db.id = job_id;
 
     db.status = (int) CNetScheduleClient::ePending;
-    db.failed = 0;
 
     db.time_submit = time(0);
     db.time_run = 0;
     db.time_done = 0;
     db.timeout = 0;
     db.run_timeout = 0;
+
+    db.subm_addr = 0;
+    db.subm_port = 0;
+    db.subm_timeout = 0;
 
     db.worker_node1 = 0;
     db.worker_node2 = 0;
@@ -712,6 +731,22 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
     RemoveFromTimeLine(job_id);
 }
 
+void CQueueDataBase::CQueue::DropJob(unsigned job_id)
+{
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    m_LQueue.status_tracker.SetStatus(job_id, 
+                                      CNetScheduleClient::eJobNotFound);
+
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(&trans);
+    db.id = job_id;
+    db.Delete(CBDB_File::eIgnoreError);
+    trans.Commit();
+}
 
 void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                        int           ret_code,
@@ -1236,11 +1271,6 @@ void CQueueDataBase::CQueue::NotifyListeners()
         m_LQueue.last_notif = curr;
     }}
 
-
-    CDatagramSocket  udp_socket;
-    udp_socket.SetReuseAddress(eOn);
-    udp_socket.Bind(udp_port);
-    
     const char* msg = m_LQueue.q_notif.c_str();
     size_t msg_len = m_LQueue.q_notif.length()+1;
     
@@ -1261,8 +1291,14 @@ void CQueueDataBase::CQueue::NotifyListeners()
         host = ql->host;
         port = ql->port;
 
+        {{
+            CFastMutexGuard guard(m_LQueue.us_lock);
+
         //EIO_Status status = 
-            udp_socket.Send(msg, msg_len, CSocketAPI::ntoa(host), port);
+            m_LQueue.udp_socket.Send(msg, msg_len, 
+                                     CSocketAPI::ntoa(host), port);
+
+        }}
         // check if we have no more jobs left
         if ((i % 10 == 0) &&
             !m_LQueue.status_tracker.AnyPending()) {
@@ -1397,6 +1433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/15 14:52:39  kuznets
+ * Better datagram socket management, DropJob implemenetation
+ *
  * Revision 1.14  2005/03/10 14:19:57  kuznets
  * Implemented individual run timeouts
  *
