@@ -227,30 +227,75 @@ void CDbBlast::x_InitFields()
     m_ibTracebackOnly = false;
 }
 
+void CDbBlast::x_InitRPSFields()
+{
+    EProgram program = m_OptsHandle->GetOptions().GetProgram();
+    if (program == eRPSBlast || program == eRPSTblastn) {
+        string dbname(BLASTSeqSrcGetName(m_pSeqSrc));
+        if (Blast_FillRPSInfo(&m_ipRpsInfo, &m_ipRpsMmap, 
+                              &m_ipRpsPssmMmap, dbname) != 0) {
+            NCBI_THROW(CBlastException, eBadParameter, 
+                       "Cannot initialize RPS BLAST database");
+        }
+        m_OptsHandle->SetOptions().SetMatrixName(m_ipRpsInfo->aux_info.orig_score_matrix);
+        m_OptsHandle->SetOptions().SetGapOpeningCost(m_ipRpsInfo->aux_info.gap_open_penalty);
+        m_OptsHandle->SetOptions().SetGapExtensionCost(m_ipRpsInfo->aux_info.gap_extend_penalty);
+        /* Because of the database concatenation in the preliminary phase of 
+           the search, sizes of hit lists should be equal to the total number 
+           of sequences in the database. */
+        m_OptsHandle->SetOptions().SetPrelimHitlistSize(
+            m_ipRpsInfo->profile_header->num_profiles);
+    } else {
+        m_ipRpsInfo = NULL;
+        m_ipRpsMmap = NULL;
+        m_ipRpsPssmMmap = NULL;
+    }
+
+
+
+}
+
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
-                   EProgram p, RPSInfo* rps_info, BlastHSPStream* hsp_stream,
+                   EProgram p, BlastHSPStream* hsp_stream,
                    int nthreads)
-    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
+    : m_tQueries(queries), m_pSeqSrc(seq_src), 
       m_pHspStream(hsp_stream), m_iNumThreads(nthreads)
 {
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
     x_InitFields();
+    x_InitRPSFields();
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
-                   CBlastOptionsHandle& opts, RPSInfo* rps_info, 
+                   CBlastOptionsHandle& opts, 
                    BlastHSPStream* hsp_stream, int nthreads)
-    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
+    : m_tQueries(queries), m_pSeqSrc(seq_src), 
       m_pHspStream(hsp_stream), m_iNumThreads(nthreads) 
 {
     m_OptsHandle.Reset(&opts);    
     x_InitFields();
+    x_InitRPSFields();
 }
 
 CDbBlast::~CDbBlast()
 { 
     x_ResetQueryDs();
     x_ResetResultDs();
+    x_ResetRPSFields();
+}
+
+/// Resets query data structures
+void
+CDbBlast::x_ResetQueryDs()
+{
+    m_ibQuerySetUpDone = false;
+    // should be changed if derived classes are created
+    m_iclsQueries.Reset(NULL);
+    m_iclsQueryInfo.Reset(NULL);
+    m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
+    m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
+    m_ipLookupSegments = BlastSeqLocFree(m_ipLookupSegments);
+    m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
 }
 
 /// Resets results data structures
@@ -269,18 +314,18 @@ CDbBlast::x_ResetResultDs()
         m_pHspStream = BlastHSPStreamFree(m_pHspStream);
 }
 
-/// Resets query data structures
-void
-CDbBlast::x_ResetQueryDs()
+/// Resets (frees) the fields allocated for the RPS database.
+void 
+CDbBlast::x_ResetRPSFields()
 {
-    m_ibQuerySetUpDone = false;
-    // should be changed if derived classes are created
-    m_iclsQueries.Reset(NULL);
-    m_iclsQueryInfo.Reset(NULL);
-    m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
-    m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
-    m_ipLookupSegments = BlastSeqLocFree(m_ipLookupSegments);
-    m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
+    if (m_ipRpsInfo) {
+        delete m_ipRpsMmap;
+        delete m_ipRpsPssmMmap;
+        delete [] m_ipRpsInfo->aux_info.karlin_k;
+        sfree(m_ipRpsInfo->aux_info.orig_score_matrix);
+        delete m_ipRpsInfo;
+        m_ipRpsInfo = NULL;
+    }
 }
 
 /// Initializes the HSP stream structure, if it has not been passed by the 
@@ -296,14 +341,7 @@ CDbBlast::x_InitHSPStream()
         int num_results;
         EProgram program = GetOptions().GetProgram();
 
-        /* For RPS BLAST, number of "queries" in HSP stream is equal to 
-           number of sequences in the RPS BLAST database, because queries 
-           and subjects are switched in an RPS search. In all other cases,
-           it is the real number of queries. */
-        if (program == eRPSBlast || program == eRPSTblastn)
-            num_results = m_pRpsInfo->profile_header->num_profiles;
-        else
-            num_results = m_tQueries.size();
+        num_results = m_tQueries.size();
 
         m_pHspStream = 
             Blast_HSPListCollectorInitMT(GetOptions().GetProgramType(), 
@@ -362,7 +400,7 @@ void CDbBlast::SetupSearch()
 
         if (x_eProgram == eBlastTypeRpsBlast || 
             x_eProgram == eBlastTypeRpsTblastn)
-            scale_factor = m_pRpsInfo->aux_info.scale_factor;
+            scale_factor = m_ipRpsInfo->aux_info.scale_factor;
         else
             scale_factor = 1.0;
 
@@ -403,7 +441,7 @@ void CDbBlast::SetupSearch()
         if (!m_ibTracebackOnly) {
             LookupTableWrapInit(m_iclsQueries, GetOptions().GetLutOpts(), 
                                 m_ipLookupSegments, m_ipScoreBlock, 
-                                &m_ipLookupTable, m_pRpsInfo);
+                                &m_ipLookupTable, m_ipRpsInfo);
         }
         m_ibQuerySetUpDone = true;
     }
@@ -677,6 +715,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2004/10/26 15:31:41  dondosha
+ * Removed RPSInfo argument from constructors;
+ * RPSInfo is now initialized inside the CDbBlast class if RPS search is requested;
+ * multiple queries are now allowed for RPS search
+ *
  * Revision 1.43  2004/10/06 14:54:57  dondosha
  * Use IBlastSeqInfoSrc interface in x_Results2CSeqAlign; added RunTraceback method to perform a traceback only search, given the precomputed preliminary results, and return Seq-align; removed unused SetSeqSrc method
  *
