@@ -109,53 +109,73 @@ BlastMaskPtr BlastMaskFromSeqLoc(SeqLocPtr mask_slp, Int4 index)
    return new_mask;
 }
 
-SeqLocPtr BlastMaskToSeqLoc(BlastMaskPtr mask_loc, SeqLocPtr slp)
+SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc, 
+                            SeqLocPtr slp)
 {
    BlastMaskPtr new_mask = (BlastMaskPtr) MemNew(sizeof(BlastMask));
    BlastSeqLocPtr loc, last_loc = NULL, head_loc = NULL;
    SeqIntPtr si;
    SeqLocPtr mask_head = NULL, last_mask = NULL;
-   SeqLocPtr mask_slp_last, mask_slp_head;
+   SeqLocPtr mask_slp_last, mask_slp_head, new_mask_slp;
    SeqIdPtr seqid;
    DoubleIntPtr di;
    Int4 index;
+   Uint1 num_frames;
    
+   if (program_number == blast_type_blastx || 
+       program_number == blast_type_tblastx)
+      num_frames = NUM_FRAMES;
+   else
+      num_frames = 1;
+
    for (index = 0; slp; ++index, slp = slp->next) {
       /* Find the mask locations for this query */
-      for ( ; mask_loc && mask_loc->index < index; mask_loc = mask_loc->next);
+      for ( ; mask_loc && (mask_loc->index/NUM_FRAMES < index); 
+            mask_loc = mask_loc->next);
       if (!mask_loc)
          /* No more masks */
          break;
+
       if (mask_loc->index != index)
          /* There is no mask for this sequence */
          continue;
-      
-      seqid = SeqLocId(slp);
-      
-      mask_slp_head = mask_slp_last = NULL;
-      for (loc = mask_loc->loc_list; loc; loc = loc->next) {
-         di = (DoubleIntPtr) loc->data.ptrvalue;
-         si = SeqIntNew();
-         si->from = di->i1;
-         si->to = di->i2;
-         si->id = SeqIdDup(seqid);
-         if (!mask_slp_last)
-            mask_slp_last = ValNodeAddPointer(&mask_slp_head, SEQLOC_INT, si);
-         else 
-            mask_slp_last = ValNodeAddPointer(&mask_slp_last, SEQLOC_INT, si);
-      }
 
-      if (mask_slp_head) {
-         if (!last_mask) {
-            last_mask = 
-               ValNodeAddPointer(&mask_head, SEQLOC_PACKED_INT, mask_slp_head);
-         } else {
-            last_mask = 
-               ValNodeAddPointer(&last_mask, SEQLOC_PACKED_INT, mask_slp_head);
+      seqid = SeqLocId(slp);
+      while (mask_loc && (mask_loc->index/num_frames == index)) {
+      
+         mask_slp_head = mask_slp_last = NULL;
+         for (loc = mask_loc->loc_list; loc; loc = loc->next) {
+            di = (DoubleIntPtr) loc->data.ptrvalue;
+            si = SeqIntNew();
+            si->from = di->i1;
+            si->to = di->i2;
+            si->id = SeqIdDup(seqid);
+            if (!mask_slp_last)
+               mask_slp_last = 
+                  ValNodeAddPointer(&mask_slp_head, SEQLOC_INT, si);
+            else 
+               mask_slp_last = 
+                  ValNodeAddPointer(&mask_slp_last, SEQLOC_INT, si);
          }
+
+         if (mask_slp_head) {
+            Uint1 frame_index = (mask_loc->index % num_frames) + 1;
+            new_mask_slp = ValNodeAddPointer(NULL, SEQLOC_PACKED_INT, 
+                                             mask_slp_head);
+            /* The 'choice' of the SeqLoc in masks should show the frame,
+               with values 1..6 when queries are translated; otherwise
+               it does not matter. */
+            if (!last_mask) {
+               last_mask = ValNodeAddPointer(&mask_head, 
+                              frame_index, new_mask_slp);
+            } else {
+               last_mask = ValNodeAddPointer(&last_mask, 
+                              frame_index, new_mask_slp);
+            }
+         }
+         mask_loc = mask_loc->next;
       }
    }
-
    return mask_head;
 }
 
@@ -224,7 +244,6 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
          di_next = loc_var->next->data.ptrvalue;
       if (di_next && stop+1 >= di_next->i1) {
          stop = MAX(stop, di_next->i2);
-         di_next = NULL;
       } else {
          di_tmp = (DoubleIntPtr) Malloc(sizeof(DoubleInt));
          di_tmp->i1 = start;
@@ -239,6 +258,7 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
          }
       }
       loc_var = loc_var->next;
+      di_next = NULL;
    }
 
    *mask_loc_out = new_loc;
@@ -887,8 +907,6 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 	return status;
 }
 
-#define NUM_FRAMES 6
-
 Int2 BlastMaskDNAToProtein(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
 {
    Int2 status = 0;
@@ -976,7 +994,7 @@ Int2 BlastMaskProteinToDNA(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
 
    index = NUM_FRAMES;
 
-   while (slp) {
+   while (slp && mask_loc) {
       if (index <= mask_loc->index) {
          /* Advance to the next nucleotide sequence */
          index += NUM_FRAMES;
@@ -998,9 +1016,6 @@ Int2 BlastMaskProteinToDNA(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
             dip->i1 = from;
             dip->i2 = to;
          }
-         /* Set index to the DNA sequence index */
-         mask_loc->index = index / NUM_FRAMES;
-
          /* Advance to the next mask */
          mask_loc = mask_loc->next;
       }

@@ -45,6 +45,8 @@ extern "C" {
 
 #include <blast_def.h>
 
+#define NUM_FRAMES 6
+
 /** Create and initialize a new sequence interval.
  * @param from Start of the interval [in]
  * @param to End of the interval [in]
@@ -69,11 +71,13 @@ BlastMaskPtr BlastMaskFromSeqLoc(SeqLocPtr mask_slp, Int4 index);
 /** Convert a BlastMask list to a list of SeqLocs, used for formatting 
  * BLAST results.
  */
-SeqLocPtr BlastMaskToSeqLoc(BlastMaskPtr mask_loc, SeqLocPtr slp);
+SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc, 
+                            SeqLocPtr slp);
 
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
  * were on the list, produce a new (merged) list of locations. 
+ * @param program_number Type of BLAST program [in]
  * @param mask_loc The list of masks to be merged [in] 
  * @param mask_loc_out The new (merged) list of masks. [out]
 */
