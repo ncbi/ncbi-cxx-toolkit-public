@@ -52,9 +52,14 @@ extern "C" {
 
 /* Create new CONNECTOR structure to handle a data transfer between two
  * processes over named pipe. Return NULL on error.
+ *
  */
 
 extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
+(const char*  pipename
+ );
+
+extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnectorEx
 (const char*  pipename,
  size_t       bufsize
  );
@@ -71,6 +76,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2003/08/21 20:07:54  ivanov
+ * Added NAMEDPIPE_CreateConnectorEx
+ *
  * Revision 1.1  2003/08/18 19:17:32  ivanov
  * Initial revision
  *

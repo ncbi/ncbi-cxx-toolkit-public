@@ -234,7 +234,7 @@ static void s_Destroy
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
 
-extern CONNECTOR NAMEDPIPE_CreateConnector
+extern CONNECTOR NAMEDPIPE_CreateConnectorEx
 (const char*  pipename,
  size_t       bufsize) 
 {
@@ -258,11 +258,22 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
 }
 
 
+extern CONNECTOR NAMEDPIPE_CreateConnector
+(const char*  pipename) 
+{
+    return NAMEDPIPE_CreateConnectorEx(pipename,
+                                       CNamedPipe::kDefaultBufferSize);
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2003/08/21 20:07:37  ivanov
+ * Added NAMEDPIPE_CreateConnectorEx
+ *
  * Revision 1.2  2003/08/20 16:51:05  ivanov
- * Get read of some warnings -- unused function parameters
+ * Get rid of some warnings -- unused function parameters
  *
  * Revision 1.1  2003/08/18 19:18:23  ivanov
  * Initial revision
