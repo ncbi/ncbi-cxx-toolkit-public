@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.28  2003/06/18 12:21:01  camacho
+ * Added proper return value
+ *
  * Revision 1.27  2003/06/17 20:42:43  camacho
  * Moved comments to header file, fixed includes
  *
@@ -1045,6 +1048,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options)
    options->pseudoCountConst = PSI_PSEUDO_COUNT_CONST;
    options->scalingFactor = PSI_SCALING_FACTOR;
    
+   return 0;
 }
 
 PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
@@ -1062,6 +1066,8 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
 
    options->genetic_code = BLAST_GENETIC_CODE;
    *db_options = options;
+
+   return 0;
 }
 
 BlastDatabaseOptionsPtr 
