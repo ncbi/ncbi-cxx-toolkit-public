@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-#if 0
+#ifdef COMBINED_EXCLUDE
 struct PIsExcludedByProjectMakefile
 {
     typedef CProjectItemsTree::TProjects::value_type TValueType;
@@ -167,6 +167,30 @@ private:
     const T1 m_T1;
     const T2 m_T2;
 };
+#else
+// not def COMBINED_EXCLUDE
+struct PIsExcludedByProjectMakefile
+{
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
+    {
+        const CProjItem& project = item.second;
+        CMsvcPrjProjectContext prj_context(project);
+        const list<string> implicit_exclude_dirs = 
+            GetApp().GetProjectTreeInfo().m_ImplicitExcludedAbsDirs;
+        ITERATE(list<string>, p, implicit_exclude_dirs) {
+            const string& dir = *p;
+            if ( IsSubdir(dir, project.m_SourcesBaseDir) ) {
+                // implicitly excluded from build
+                return prj_context.GetMsvcProjectMakefile().IsExcludeProject
+                                                                        (true);
+            }
+        }
+        // implicitly included to build
+        return prj_context.GetMsvcProjectMakefile().IsExcludeProject(false);
+    }
+};
+
 #endif
 
 struct PIsExcludedByRequires
@@ -275,7 +299,7 @@ int CProjBulderApp::Run(void)
     // MSVC specific part:
     
     // Exclude some projects from build:
-#if 0
+#ifdef COMBINED_EXCLUDE
     {{
         // Implicit/Exclicit exclude by msvc Makefiles.in.msvc
         // and project .msvc makefiles.
@@ -287,6 +311,13 @@ int CProjBulderApp::Run(void)
                                   logical_combine(p_make_in, p_project_makefile);
         EraseIf(projects_tree.m_Projects, logical_combine);
     }}
+#else
+    {{
+        // Implicit/Exclicit exclude by msvc Makefiles.in.msvc
+        PIsExcludedByProjectMakefile   p_project_makefile;
+        EraseIf(projects_tree.m_Projects, p_project_makefile);
+    }}
+
 #endif
     {{
         // Project requires are not provided
@@ -760,6 +791,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/04/08 18:45:56  gorelenk
+ * Conditionaly enabled exclude projects by msvc makefiles .
+ *
  * Revision 1.34  2004/03/23 14:35:51  gorelenk
  * Added implementation of CProjBulderApp::GetWholeTree.
  *
