@@ -20,8 +20,12 @@
 
 ### C/C++ source file compilation rules
 
+%@obj_ext@: ./%.cpp
+	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.cpp
 	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
+%@obj_ext@: ./%.c
+	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.c
 	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
 
