@@ -500,7 +500,7 @@ PsiAlignmentData2String(const PsiAlignmentData* alignment)
     for (TSeqPos i = 0; i < alignment->dimensions->query_sz; i++) {
         ss << setw(3) << i << " ";
     }
-    for (TSeqPos j = 0; j < PSI_ALPHABET_SIZE; j++) {
+    for (TSeqPos j = 0; j < BLASTAA_SIZE; j++) {
         ss << ncbistdaa_to_ncbieaa[j] << ": ";
         for (TSeqPos i = 0; i < alignment->dimensions->query_sz; i++) {
             ss << setw(3) << alignment->res_counts[i][j] << " ";
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/06/21 12:53:05  camacho
+* Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
+*
 * Revision 1.4  2004/06/09 14:32:23  camacho
 * Added use_best_alignment option
 *

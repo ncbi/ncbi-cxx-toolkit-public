@@ -139,7 +139,7 @@ _PSIAlignedBlockFree(PsiAlignedBlock* aligned_blocks);
 /** FIXME: Where are the formulas for these? Need better names */
 typedef struct PsiSequenceWeights {
     double** match_weights; /* observed residue frequencies (fi in paper) 
-                               dimensions are query_sz+1 by PSI_ALPHABET_SIZE
+                               dimensions are query_sz+1 by BLASTAA_SIZE
                              */
     Uint4 match_weights_size;    /* kept for deallocation purposes */
 
@@ -148,7 +148,7 @@ typedef struct PsiSequenceWeights {
     double* row_sigma;  /**< array of num_seqs + 1 */
     /* Sigma: number of different characters occurring in matches within a
      * multi-alignment block - why is it a double? */
-    double* sigma;      /**< array of num_seqs+1 (query_sz) length */
+    double* sigma;      /**< array of query_sz length */
 
     double* std_prob;   /**< standard amino acid probabilities */
 
@@ -314,6 +314,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/06/21 12:52:44  camacho
+ * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
+ *
  * Revision 1.6  2004/06/17 20:46:59  camacho
  * doxygen fixes
  *

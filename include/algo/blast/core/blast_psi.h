@@ -101,7 +101,7 @@ PSIAlignmentDataFree(PsiAlignmentData* align_data);
  * object */
 typedef struct PsiMatrix {
     int** pssm;             /**< The PSSM, its dimensions are query_sz+1 by 
-                                 PSI_ALPHABET_SIZE */
+                                 BLASTAA_SIZE */
     int** scaled_pssm;      /**< not to be used by the public ? Dimensions are
                                  the same as above Needed in the last 2 stages
                                  of PSI-BLAST */

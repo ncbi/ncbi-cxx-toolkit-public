@@ -114,7 +114,7 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
 
     /* This doesn't need to be query_sz + 1 (posC) */
     retval->res_counts = (Uint4**) _PSIAllocateMatrix(info->query_sz,
-                                                      PSI_ALPHABET_SIZE,
+                                                      BLASTAA_SIZE,
                                                       sizeof(Uint4));
     if ( !(retval->res_counts) ) {
         return PSIAlignmentDataFree(retval);

@@ -79,7 +79,7 @@ Int4 RPSLookupTableNew(const RPSInfo *info,
 
    lookup->rps_aux_info = (RPSAuxInfo *)(&info->aux_info);
    lookup->wordsize = BLAST_WORDSIZE_PROT;
-   lookup->alphabet_size = PSI_ALPHABET_SIZE;
+   lookup->alphabet_size = BLASTAA_SIZE;
    lookup->charsize = ilog2(lookup->alphabet_size) + 1;
    lookup->backbone_size = 1 << (lookup->wordsize * lookup->charsize);
    lookup->mask = lookup->backbone_size - 1;

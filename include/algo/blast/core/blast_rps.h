@@ -71,7 +71,7 @@ typedef struct RPSProfileHeader {
 
     /* After the list of sequence start offsets comes the list
        of PSSM rows. There is one row for each letter in the RPS
-       sequence database, and each row has PSI_ALPHABET_SIZE entries.
+       sequence database, and each row has BLASTAA_SIZE entries.
        Because there is a sentinel byte at the end of each sequence,
        there is also a PSSM row for each sentinel byte */
 

@@ -168,13 +168,13 @@ _PSISequenceWeightsNew(const PsiInfo* info, const BlastScoreBlk* sbp)
         return _PSISequenceWeightsFree(retval);
     }
 
-    retval->sigma = (double*) calloc(info->num_seqs + 1, sizeof(double));
+    retval->sigma = (double*) calloc(info->query_sz, sizeof(double));
     if ( !retval->sigma ) {
         return _PSISequenceWeightsFree(retval);
     }
 
     retval->match_weights = (double**) _PSIAllocateMatrix(info->query_sz + 1,
-                                                          PSI_ALPHABET_SIZE,
+                                                          BLASTAA_SIZE,
                                                           sizeof(double));
     retval->match_weights_size = info->query_sz + 1;
     if ( !retval->match_weights ) {
@@ -183,6 +183,12 @@ _PSISequenceWeightsNew(const PsiInfo* info, const BlastScoreBlk* sbp)
 
     retval->std_prob = _PSIGetStandardProbabilities(sbp);
     if ( !retval->std_prob ) {
+        return _PSISequenceWeightsFree(retval);
+    }
+
+    retval->gapless_column_weights = (double*) 
+        calloc(info->query_sz, sizeof(double));
+    if ( !retval->gapless_column_weights ) {
         return _PSISequenceWeightsFree(retval);
     }
 
@@ -220,6 +226,10 @@ _PSISequenceWeightsFree(PsiSequenceWeights* seq_weights)
 
     if (seq_weights->std_prob) {
         sfree(seq_weights->std_prob);
+    }
+
+    if (seq_weights->gapless_column_weights) {
+        sfree(seq_weights->gapless_column_weights);
     }
 
     if (seq_weights->info_content) {
@@ -321,7 +331,7 @@ _PSIUpdatePositionCounts(PsiAlignmentData* alignment)
         for (p = 0; p < alignment->dimensions->query_sz; p++) {
             if (alignment->desc_matrix[s][p].used) {
                 const Uint1 res = alignment->desc_matrix[s][p].letter;
-                if (res >= PSI_ALPHABET_SIZE) {
+                if (res >= BLASTAA_SIZE) {
                     continue;
                 }
                 alignment->res_counts[p][res]++;
@@ -722,7 +732,7 @@ _PSICalculatePositionWeightsAndIntervalSigmas(
 {
     /** keeps track of how many occurrences of each residue was found at a
      * given position */
-    Uint4 residue_counts[PSI_ALPHABET_SIZE];
+    Uint4 residue_counts[BLASTAA_SIZE];
     Uint4 num_distinct_residues = 0; /**< number of distinct 
                                               residues found at a given 
                                               position */
@@ -914,14 +924,14 @@ _PSICheckSequenceWeights(const PsiAlignmentData* alignment,
             continue;
         }
 
-        for (res = 0; res < PSI_ALPHABET_SIZE; res++) {
+        for (res = 0; res < BLASTAA_SIZE; res++) {
             running_total += seq_weights->match_weights[pos][res];
         }
         ASSERT(running_total < 0.99 || running_total > 1.01);
 
 #ifndef PSI_IGNORE_GAPS_IN_COLUMNS
         /* Disperse method of spreading the gap weights */
-        for (res = 0; res < PSI_ALPHABET_SIZE; res++) {
+        for (res = 0; res < BLASTAA_SIZE; res++) {
             if (seq_weights->std_prob[res] > kEpsilon) {
                 seq_weights->match_weights[pos][res] += 
                     (seq_weights->match_weights[pos][GAP] * 
@@ -931,7 +941,7 @@ _PSICheckSequenceWeights(const PsiAlignmentData* alignment,
 #endif
         seq_weights->match_weights[pos][GAP] = 0.0;
         running_total = 0.0;
-        for (res = 0; res < PSI_ALPHABET_SIZE; res++) {
+        for (res = 0; res < BLASTAA_SIZE; res++) {
             running_total += seq_weights->match_weights[pos][res];
         }
 
@@ -1525,6 +1535,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/21 12:52:44  camacho
+ * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
+ *
  * Revision 1.11  2004/06/17 20:47:21  camacho
  * Minor fix to extent sizes
  *

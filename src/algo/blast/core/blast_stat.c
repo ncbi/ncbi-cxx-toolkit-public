@@ -3291,12 +3291,12 @@ BLAST_LargeGapSumE(
 void 
 Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb)
 {
-    Int4 frequency[PSI_ALPHABET_SIZE];  /*frequency of each letter*/
+    Int4 frequency[BLASTAA_SIZE];  /*frequency of each letter*/
     Int4 i;                             /*index*/
     Int4 denominator;                   /*length not including X's*/
 
     denominator = length;
-    for(i = 0; i < PSI_ALPHABET_SIZE; i++)
+    for(i = 0; i < BLASTAA_SIZE; i++)
         frequency[i] = 0;
 
     for(i = 0; i < length; i++) {
@@ -3306,7 +3306,7 @@ Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resPro
             denominator--;
     }
 
-    for(i = 0; i < PSI_ALPHABET_SIZE; i++) {
+    for(i = 0; i < BLASTAA_SIZE; i++) {
         if (frequency[i] == 0)
             resProb[i] = 0.0;
         else
@@ -3368,7 +3368,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
     minScore = maxScore = 0;
 
     for (i = 0; i < matrixLength; i++) {
-        for (j = 0 ; j < PSI_ALPHABET_SIZE; j++) {
+        for (j = 0 ; j < BLASTAA_SIZE; j++) {
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if ((matrix[i][j] > BLAST_SCORE_MIN) && 
@@ -3387,7 +3387,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
     return_sfp->sprob = &(scoreArray[-minScore]); /*center around 0*/
     recipLength = 1.0 / (double) matrixLength;
     for(i = 0; i < matrixLength; i++) {
-        for (j = 0; j < PSI_ALPHABET_SIZE; j++) {
+        for (j = 0; j < BLASTAA_SIZE; j++) {
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if(matrix[i][j] >= minScore)
@@ -3425,7 +3425,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     double temp;               /*intermediate variable for adjusting matrix*/
     Int4 index, inner_index; 
 
-    resProb = (double *)malloc(PSI_ALPHABET_SIZE * sizeof(double));
+    resProb = (double *)malloc(BLASTAA_SIZE * sizeof(double));
     scoreArray = (double *)malloc(BLAST_SCORE_RANGE_MAX * sizeof(double));
     return_sfp = (Blast_ScoreFreq *)malloc(sizeof(Blast_ScoreFreq));
 
@@ -3447,11 +3447,11 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     finalLambda = correctUngappedLambda/scaledInitialUngappedLambda;
 
     returnMatrix = (Int4 **)_PSIAllocateMatrix((db_seq_length+1),
-                                               PSI_ALPHABET_SIZE,
+                                               BLASTAA_SIZE,
                                                sizeof(Int4));
 
     for (index = 0; index < db_seq_length+1; index++) {
-        for (inner_index = 0; inner_index < PSI_ALPHABET_SIZE; inner_index++) {
+        for (inner_index = 0; inner_index < BLASTAA_SIZE; inner_index++) {
             if (posMatrix[index][inner_index] <= BLAST_SCORE_MIN || 
                 inner_index == AMINOACID_TO_NCBISTDAA['X']) {
                 returnMatrix[index][inner_index] = 
@@ -3598,6 +3598,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2004/06/21 12:52:05  camacho
+ * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
+ *
  * Revision 1.84  2004/06/18 14:01:32  madden
  * Doxygen fixes, made some input params const, do not set deprecated sbp->maxscore
  *
