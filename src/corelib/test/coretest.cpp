@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/01/12 17:10:16  sandomir
+* test restored
+*
 * Revision 1.33  1999/01/12 17:06:37  sandomir
 * GetLink changed
 *
@@ -819,18 +822,6 @@ int CTestApplication::Run(void)
 
 extern int main(int argc, char* argv[])
 {
-  try {
-    char* p = 0;
-    string str( p );
-    cout << str;
-    str += "test";
-    cout << str;
-  } catch( exception& e ) {
-    cout << "seva ERROR: " << e.what();
-  }
-  cout << "seva OK";
-  
-
     int res = 1;
     try {
         CTestApplication app(argc, argv);  
