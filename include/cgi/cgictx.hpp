@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/29 20:04:37  pubmed
+* many changes due to query interface changes
+*
 * Revision 1.6  1999/05/14 19:21:49  pubmed
 * myncbi - initial version; minor changes in CgiContext, history, query
 *
@@ -114,6 +117,8 @@ public:
 // In addtion, it contains list of messages.
 // Having non-const reference, CCgiContext's user has access to its 
 // all internal data
+// Context will try to create request from given data or default request
+// on any request creation error
 
 class CCgiContext
 {
@@ -168,7 +173,7 @@ private:
 
     CCgiApplication& m_app;
     
-    CCgiRequest m_request; // CGI request information
+    auto_ptr<CCgiRequest> m_request; // CGI request information
     CCgiResponse m_response; // CGI response information
 
     // server context will be obtained from CCgiApp::LoadServerContext()

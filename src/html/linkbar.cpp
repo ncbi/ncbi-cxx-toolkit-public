@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/29 20:05:53  pubmed
+* many changes due to query interface changes
+*
 * Revision 1.5  1999/05/13 15:22:44  vakatov
 * Added default constructor to CLinkDefinition:: -- to let the Mac
 * CodeWarrior C++ compiler to instantiate "list<CLinkDefinition>"
@@ -79,8 +82,8 @@ CLinkDefinition::CLinkDefinition(const string& name,
 {
 }
 
-CLinkBar::CLinkBar(const TLinkBarTemplate* templ)
-    : m_Template(templ)
+CLinkBar::CLinkBar(const TLinkBarTemplate* templ, int itemW, int itemH )
+    : m_Template(templ), m_itemW( itemW ), m_itemH( itemH )
 {
 /*
     SetCellSpacing(0);
@@ -96,7 +99,8 @@ CLinkBar::~CLinkBar(void)
 void CLinkBar::AddLink(const string& name, const string& linkUrl)
 {
     m_Links[name] = linkUrl;
-    
+
+#if 0    
     // check that this link is in template
     for ( TLinkBarTemplate::const_iterator i = m_Template->begin();
           i != m_Template->end(); ++i ) {
@@ -104,6 +108,8 @@ void CLinkBar::AddLink(const string& name, const string& linkUrl)
             return;
     }
     _TRACE("CLinkBar::AddLink: name " << name << " is not in template");
+#endif
+
 }
 
 void CLinkBar::CreateSubNodes(void)
@@ -113,10 +119,12 @@ void CLinkBar::CreateSubNodes(void)
           i != m_Template->end(); ++i ) {
         CHTMLNode* cell = Cell(0, col++);
         cell->AppendChild(CreateLink(*i));
+#if 0
         if ( i->m_Width > 0 )
             cell->SetWidth(i->m_Width);
         if ( i->m_Height > 0 )
             cell->SetHeight(i->m_Height);
+#endif
     }
 }
 
@@ -124,6 +132,7 @@ CHTMLNode* CLinkBar::CreateLink(const CLinkDefinition& def)
 {
     CHTMLNode* node;
     CHTML_img* img;
+    int w = m_itemW, h = m_itemH;
 
     map<string, string>::iterator ptr = m_Links.find(def.m_LinkName);
     if ( ptr == m_Links.end() || ptr->second.empty() ) {
@@ -133,13 +142,15 @@ CHTMLNode* CLinkBar::CreateLink(const CLinkDefinition& def)
         img = new CHTML_img(def.m_LinkImage);
         img->SetAttribute("BORDER", 0);
         node = new CHTML_a(ptr->second, img);
+        w = def.m_Width;
+        h = def.m_Height;
     }
-/*
-    if ( def.m_Width > 0 )
-        img->SetWidth(def.m_Width);
-    if ( def.m_Height > 0 )
-        img->SetHeight(def.m_Height);
-*/
+    
+    if ( w > 0 )
+        img->SetWidth(w); 
+    if ( h > 0 ) 
+        img->SetHeight(h); 
+    
     return node;
 }
 

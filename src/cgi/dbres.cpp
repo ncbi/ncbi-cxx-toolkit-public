@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/29 20:02:29  pubmed
+* many changes due to query interface changes
+*
 * Revision 1.5  1999/06/18 20:42:46  vakatov
 * Fixed tiny compilation warnings
 *
@@ -170,7 +173,7 @@ CNcbiCommand::~CNcbiCommand( void )
 }
 
 bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
-{
+{ 
     const string value = GetName();
   
     TCgiEntries& entries = const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
@@ -183,16 +186,14 @@ bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
     } // for
 
     // if there is no 'cmd' entry
-    if ( p.first == p.second ) {
-        // check the same for IMAGE value
-        p = entries.equal_range( NcbiEmptyString );
-        for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
-            if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
-                return true;
-            } // if
-        } // for
+    // check the same for IMAGE value
+    p = entries.equal_range( NcbiEmptyString );
+    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+            return true;
+        } // if
     }
-
+    
     return false;
 }
 

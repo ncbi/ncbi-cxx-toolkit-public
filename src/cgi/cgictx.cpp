@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/29 20:02:29  pubmed
+* many changes due to query interface changes
+*
 * Revision 1.8  1999/05/14 19:21:54  pubmed
 * myncbi - initial version; minor changes in CgiContext, history, query
 *
@@ -73,8 +76,17 @@ BEGIN_NCBI_SCOPE
 CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
                           CNcbiIstream* in, CNcbiOstream* out,
                           int argc, char** argv )
-    : m_app(app), m_request(argc, argv, env, in), m_response(out)
+    : m_app(app), m_request( 0 ),  m_response(out)
 {
+    try {
+        m_request.reset( new CCgiRequest(argc, argv, env, in) );
+    } catch( exception& e ) {
+        PutMsg( "Bad request" );
+        string buf;
+        CNcbiIstrstream dummy( buf.c_str() );
+        m_request.reset( new CCgiRequest( 0, 0, 0, &dummy, 
+                                          CCgiRequest::fIgnoreQueryString ) );
+    }
 }
 
 CCgiContext::~CCgiContext( void )

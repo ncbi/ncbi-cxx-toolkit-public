@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/29 20:04:52  pubmed
+* many changes due to query interface changes
+*
 * Revision 1.4  1999/05/13 15:22:42  vakatov
 * Added default constructor to CLinkDefinition:: -- to let the Mac
 * CodeWarrior C++ compiler to instantiate "list<CLinkDefinition>"
@@ -82,7 +85,7 @@ class CLinkBar : public CHTML_table
 {
 public:
 
-    CLinkBar(const TLinkBarTemplate* templ);
+    CLinkBar(const TLinkBarTemplate* templ, int itemW = 0, int itemH = 0 );
     ~CLinkBar(void);
 
     //    const TLinkBarTemplate* GetTemplate(void) const;
@@ -99,6 +102,8 @@ private:
     const TLinkBarTemplate* m_Template;
 
     map<string, string> m_Links;
+    int m_itemW;
+    int m_itemH;
 };
 
 #include <html/linkbar.inl>
