@@ -47,23 +47,27 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 /** Structure containing information needed for adding neighboring words. 
- * @todo FIXME: add comments for all structure fields.
  */
 typedef struct NeighborInfo {
     BlastLookupTable *lookup; /**< Lookup table */
-    Uint1 *query_word;
-    Uint1 *subject_word;
-    Int4 alphabet_size;
-    Int4 wordsize;
-    Int4 **matrix;
-    Int4 *row_max;
-    Int4 *offset_list;
-    Int4 threshold;
-    Int4 query_bias;
+    Uint1 *query_word;   /**< the word whose neighbors we are computing */
+    Uint1 *subject_word; /**< the computed neighboring word */
+    Int4 alphabet_size;  /**< number of letters in the alphabet */
+    Int4 wordsize;       /**< number of residues in a word */
+    Int4 **matrix;       /**< the substitution matrix */
+    Int4 *row_max;       /**< maximum possible score for each row of the matrix */
+    Int4 *offset_list;   /**< list of offsets where the word occurs in the query */
+    Int4 threshold;      /**< the score threshold for neighboring words */
+    Int4 query_bias;     /**< bias all stored offsets for multiple queries */
 } NeighborInfo;
 
 /** Add neighboring words to the lookup table.
- * @todo FIXME: add more detailed description and document parameters.
+ * @param lookup Pointer to the lookup table.
+ * @param matrix Pointer to the substitution matrix.
+ * @param query Pointer to the query sequence.
+ * @param offset_list list of offsets where the word occurs in the query
+ * @param query_bias bias all stored offsets for multiple queries
+ * @param row_max maximum possible score for each row of the matrix
  */
 static void AddWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
@@ -73,7 +77,9 @@ static void AddWordHits( BlastLookupTable *lookup,
                          Int4 *row_max);
 
 /** Add neighboring words to the lookup table using NeighborInfo structure.
- * @todo FIXME: add more detailed description and document parameters.
+ * @param info Pointer to the NeighborInfo structure.
+ * @param score The partial sum of the score.
+ * @param current_pos The current offset.
  */
 static void _AddWordHits(NeighborInfo *info, 
                          Int4 score, 
@@ -81,7 +87,10 @@ static void _AddWordHits(NeighborInfo *info,
 
 /** Add neighboring words to the lookup table in case of a position-specific 
  * matrix.
- * @todo FIXME: add more detailed description and document parameters.
+ * @param lookup Pointer to the lookup table.
+ * @param matrix The position-specific matrix.
+ * @param query_bias bias all stored offsets for multiple queries
+ * @param row_max maximum possible score for each row of the matrix
  */
 static void AddPSSMWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
@@ -90,7 +99,9 @@ static void AddPSSMWordHits( BlastLookupTable *lookup,
 
 /** Add neighboring words to the lookup table in case of a position-specific 
  * matrix, using NeighborInfo structure.
- * @todo FIXME: add more detailed description and document parameters.
+ * @param info Pointer to the NeighborInfo structure.
+ * @param score The partial sum of the score.
+ * @param current_pos The current offset.
  */
 static void _AddPSSMWordHits(NeighborInfo *info, 
                          Int4 score, 
