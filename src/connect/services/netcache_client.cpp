@@ -31,8 +31,11 @@
 
 #include <ncbi_pch.hpp>
 
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+
+#include <memory>
 
 #include <connect/netcache_client.hpp>
 #include <util/reader_writer.hpp>
@@ -48,9 +51,10 @@ CNetCacheClient::CNetCacheClient(CSocket* sock, const char* client_name)
 {
 }
 
-string CNetCacheClient::PutData(void* buf, size_t size)
+string CNetCacheClient::PutData(void*        buf, 
+                                size_t       size, 
+                                unsigned int time_to_live)
 {
-    EIO_Status io_st;
     string blob_id;
 
     const char* client = m_ClientName ? m_ClientName : "noname";
@@ -61,46 +65,49 @@ string CNetCacheClient::PutData(void* buf, size_t size)
 
     ++client_len; // to send ending 0
 
-    io_st = m_Sock->Write(client, client_len);
-    NCBI_IO_CHECK(io_st);
+    WriteStr(client, client_len);
 
-    const char* request = "PUT";
-    unsigned request_len = strlen(request) + 1;
-
-    io_st = m_Sock->Write(request, request_len);
-    NCBI_IO_CHECK(io_st);
+    string request = "PUT ";
+    if (time_to_live) {
+        request += NStr::IntToString(time_to_live);
+    }
+   
+    WriteStr(request.c_str(), request.length()+1);
 
     // Read BLOB_ID answer from the server
-    char szbuf[1024];
-    size_t n_read;
-    io_st = m_Sock->Read(szbuf, sizeof(szbuf) &n_read);
-    NCBI_IO_CHECK(io_st);
-
-    // TODO: check for error response
-    bool is_error = IsError(szbuf);
-    if (is_error) {
-        LOG_POST(Error << szbuf);
+    ReadStr(*m_Sock, &blob_id);
+    if (NStr::FindCase(blob_id, "ID:") != 0) {
+        // Answer is not in "ID:....." format
+        // (Most likely it is an error)
         return kEmptyStr;
     }
-
-
-    for (unsigned i = 0; i < (unsigned) n_read; ++i) {
-        char ch = szbuf[i];
-        if (ch == '\r' || ch == '\n')
-            break;
-        blob_id += ch;
-    }
-
+    blob_id.erase(0, 3);
+    
     if (blob_id.empty())
         return kEmptyStr;
 
     // Write the actual BLOB
-    io_st = m_Sock->Write(buf, size);
-    NCBI_IO_CHECK(io_st);
+    WriteStr((char*)buf, size);
 
     m_Sock->Close();
 
     return blob_id;
+}
+
+void CNetCacheClient::WriteStr(const char* str, size_t len)
+{
+    EIO_Status io_st;
+    size_t n_written;
+
+    const char* buf_ptr = str;
+    size_t size_to_write = len;
+    while (size_to_write) {
+        io_st = m_Sock->Write(buf_ptr, size_to_write, &n_written);
+        NCBI_IO_CHECK(io_st);
+        size_to_write -= n_written;
+        buf_ptr += n_written;
+    } // while
+
 }
 
 IReader* CNetCacheClient::GetData(const string& key)
@@ -114,22 +121,19 @@ IReader* CNetCacheClient::GetData(const string& key)
 
     if (!client_len)
         return 0;
-
     ++client_len; // to send ending 0
 
-    io_st = m_Sock->Write(client, client_len);
-    NCBI_IO_CHECK(io_st);
-
+    WriteStr(client, client_len);
 
     string request = "GET ";
     request += key;
-    io_st = m_Sock->Write(request.c_str(), request.length());
-    NCBI_IO_CHECK(io_st);
+    WriteStr(request.c_str(), request.length()+1);
 
     string answer;
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
         if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
+            return 0;
         }
     }
 
@@ -137,6 +141,49 @@ IReader* CNetCacheClient::GetData(const string& key)
 
     return reader;
 }
+
+CNetCacheClient::EReadResult 
+CNetCacheClient::GetData(const string&  key,
+                         void*          buf, 
+                         size_t         buf_size, 
+                         size_t*        n_read)
+{
+    _ASSERT(buf && buf_size);
+
+    auto_ptr<IReader> rdr(GetData(key));
+    if (rdr.get() == 0) {
+        return CNetCacheClient::eNotFound;
+    }
+    size_t bytes_read;
+    size_t buf_avail = buf_size;
+
+    unsigned char* buf_ptr = (unsigned char*) buf;
+
+    if (n_read)
+        *n_read = 0;
+
+    while (buf_avail) {
+        bytes_read = 0;
+        ERW_Result rw_res = rdr->Read(buf_ptr, buf_avail, &bytes_read);
+        switch (rw_res) {
+        case eRW_Success:
+            if (n_read)
+                *n_read += bytes_read;
+            buf_avail -= bytes_read;
+            buf_ptr += bytes_read;
+            break;
+        case eRW_Eof:
+            return CNetCacheClient::eReadComplete;
+        case eRW_Timeout:
+            break;
+        default:
+            return CNetCacheClient::eNotFound;
+        } // switch
+    } // while
+
+    return CNetCacheClient::eReadPart;
+}
+
 
 bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
 {
@@ -150,7 +197,7 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
 
     do {
         do {
-            io_st = sock.Read(&ch, 1, &bytes_read);
+            io_st = sock.Read(&ch, 1, &bytes_read, eIO_ReadPlain);
             switch (io_st) 
             {
             case eIO_Success:
@@ -189,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/05 18:18:46  kuznets
+ * +GetData, fixed bugs in protocol
+ *
  * Revision 1.1  2004/10/04 18:44:59  kuznets
  * Initial revision
  *
