@@ -46,7 +46,7 @@ CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
     if (ifs) {
         //read registry
         m_MakeFile.Read(ifs);
-        //and remember dir from where it was loaded
+        //and remember dir from where it has been loaded
         CDirEntry::SplitPath(file_path, &m_MakeFileBaseDir);
     }
 }
@@ -610,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/12/20 15:30:24  gouriano
+ * Typo fixed
+ *
  * Revision 1.17  2004/10/12 13:27:35  gouriano
  * Added possibility to specify which headers to include into project
  *
