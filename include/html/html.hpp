@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/08/15 19:40:16  vasilche
+* Added CHTML_label::SetFor() method for setting HTML attribute FOR.
+*
 * Revision 1.45  2000/07/25 15:26:00  vasilche
 * Added newline symbols before table and after each table row in text mode.
 *
@@ -660,6 +663,8 @@ public:
     CHTML_label(const string& text);
     CHTML_label(const string& text, const string& idRef);
     ~CHTML_label(void);
+
+    void SetFor(const string& idRef);
 };
 
 // the textarea tag

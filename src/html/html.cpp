@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2000/08/15 19:40:48  vasilche
+* Added CHTML_label::SetFor() method for setting HTML attribute FOR.
+*
 * Revision 1.59  2000/08/01 20:05:11  golikov
 * Removed _TRACE
 *
@@ -1264,11 +1267,16 @@ CHTML_label::CHTML_label(const string& text)
 CHTML_label::CHTML_label(const string& text, const string& idRef)
     : CParent("label", text)
 {
-    SetAttribute("for", idRef);
+    SetFor(idRef);
 }
 
 CHTML_label::~CHTML_label(void)
 {
+}
+
+void CHTML_label::SetFor(const string& idRef)
+{
+    SetAttribute("for", idRef);
 }
 
 // textarea element
