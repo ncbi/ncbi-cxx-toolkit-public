@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/10/05 21:10:11  lavr
+ * ncbiconf.h included
+ *
  * Revision 6.4  2000/05/31 23:12:17  lavr
  * First try to assemble things together to get working service mapper
  *
@@ -46,6 +49,7 @@
  * ==========================================================================
  */
 
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_server_info.h>
 #include <stddef.h>
 
@@ -61,6 +65,12 @@ typedef struct SSERV_IterTag* SERV_ITER;
 
 
 /* Create iterator for the iterative server lookup.
+ * Connection information (info) can be NULL pointer, which means
+ * not to make any network connections (only LBSMD will be consulted).
+ * If info is not NULL, LBSMD is consulted first (unless info->lb_disable
+ * is true, meaning to skip LBSMD on this step), and then DISPD is consulted
+ * (unsing information provided) but only if mapping with LBSMD (if any)
+ * failed. This scheme permits to use any combination of service mappers.
  */
 SERV_ITER SERV_OpenSimple
 (const char*       service          /* service name */
@@ -69,13 +79,15 @@ SERV_ITER SERV_OpenSimple
 SERV_ITER SERV_Open
 (const char*       service,         /* service name */
  TSERV_Type        type,            /* mask of type of servers requested */
- unsigned int      preferred_host   /* preferred host to use service on */
+ unsigned int      preferred_host,  /* preferred host to use service on */
+ SNetConnInfo*     info             /* connection information */
  );
 
 SERV_ITER SERV_OpenEx
 (const char*        service,        /* service name */
  TSERV_Type         type,           /* mask of type of servers requested */
  unsigned int       preferred_host, /* preferred host to use service on */
+ SNetConnInfo*      info,           /* connection information */
  const SSERV_Info** skip,           /* array of servers NOT to select */
  size_t             n_skip          /* number of servers in preceding array */
  );

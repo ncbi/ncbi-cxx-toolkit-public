@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/10/05 21:10:11  lavr
+ * ncbiconf.h included
+ *
  * Revision 6.8  2000/05/31 23:12:14  lavr
  * First try to assemble things together to get working service mapper
  *
@@ -65,6 +68,7 @@
  * ==========================================================================
  */
 
+#include <ncbiconf.h>
 #include <stddef.h>
 #include <time.h>
 

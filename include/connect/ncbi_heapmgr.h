@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/10/05 21:09:52  lavr
+ * ncbiconf.h included
+ *
  * Revision 6.4  2000/05/23 21:41:05  lavr
  * Alignment changed to 'double'
  *
@@ -42,6 +45,7 @@
  * ==========================================================================
  */
 
+#include <ncbiconf.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
