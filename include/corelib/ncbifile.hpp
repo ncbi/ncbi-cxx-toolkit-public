@@ -759,7 +759,7 @@ TFindFunc FindFilesInDir(const CDir&            dir,
 {
     CDir::TEntries contents = dir.GetEntries(masks, CDir::eIgnoreRecursive);
 
-    ITERATE(typename CDir::TEntries, it, contents) {
+    ITERATE(CDir::TEntries, it, contents) {
         const CDirEntry& dir_entry = **it;
 
         if (dir_entry.IsDir()) {
@@ -1136,6 +1136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/04/29 16:14:03  kuznets
+ * Removed unnecessary typename
+ *
  * Revision 1.39  2004/04/29 15:14:17  kuznets
  * + Generic FindFile algorithm capable of recursive searches
  * CDir::GetEntries received additional parameter to ignore self
