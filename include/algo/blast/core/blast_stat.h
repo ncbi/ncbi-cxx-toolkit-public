@@ -92,8 +92,7 @@ of K, so high accuracy is generally unwarranted.
 	as the first four characters have the same representation as in
 	ncbi2na.
 */
-extern Uint1 ncbi4na_to_blastna[BLASTNA_SIZE];
-extern Uint1 blastna_to_ncbi4na[BLASTNA_SIZE];
+extern Uint1 NCBI4NA_TO_BLASTNA[BLASTNA_SIZE];
 	
 /*************************************************************************
 	Structure to the Karlin-Blk parameters.
@@ -117,7 +116,7 @@ typedef struct BLAST_KarlinBlk {
 
 /********************************************************************
 
-	Structures relating to scoring or the BLAST_ScoreBlk
+	Structures relating to scoring or the BlastScoreBlk
 
 ********************************************************************/
 
@@ -155,7 +154,7 @@ typedef struct BLASTMatrixStructure {
     Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
 } BLASTMatrixStructure;
 
-typedef struct BLAST_ScoreBlk {
+typedef struct BlastScoreBlk {
 	Boolean		protein_alphabet; /* TRUE if alphabet_code is for a 
 protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Uint1		alphabet_code;	/* NCBI alphabet code. */
@@ -197,7 +196,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int4	effective_query_length; /* shortened query length. */
 	Int8	effective_db_length;	/* trimmed db length */
 	Int8	effective_search_sp;	/* product of above two */
-} BLAST_ScoreBlk;
+} BlastScoreBlk;
 
 /* Used for communicating between BLAST and other applications. */
 typedef struct BLAST_Matrix {
@@ -225,59 +224,35 @@ typedef struct BLAST_ResFreq {
     double* prob0; /* probs, zero offset. */
 } BLAST_ResFreq;
 
-BLAST_ScoreBlk* BLAST_ScoreBlkNew (Uint1 alphabet, Int2 number_of_contexts);
+BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int2 number_of_contexts);
 
-BLAST_ScoreBlk* BLAST_ScoreBlkDestruct (BLAST_ScoreBlk* sbp);
+BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
 
-Int2 BlastScoreSetAmbigRes (BLAST_ScoreBlk* sbp, char ambiguous_res);
+Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
-Int2 BlastScoreBlkFill (BLAST_ScoreBlk* sbp, char* string, Int4 length, Int2 context_number);
+Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int2 context_number);
  
-/** This function fills in the BLAST_ScoreBlk structure.  
+/** This function fills in the BlastScoreBlk structure.  
  * Tasks are:
  *	-read in the matrix
  *	-set maxscore
  * @param sbp Scoring block [in] [out]
  * @param matrix_path Full path to the matrix in the directory structure [in]
 */
-Int2 BlastScoreBlkMatFill (BLAST_ScoreBlk* sbp, char* matrix);
-Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward);
+Int2 BLAST_ScoreBlkMatFill (BlastScoreBlk* sbp, char* matrix);
  
-Int2 BlastScoreBlkMatRead (BLAST_ScoreBlk* sbp, FILE *fp);
- 
-Int2 BlastScoreBlkMaxScoreSet (BLAST_ScoreBlk* sbp);
-Int4 *BlastPSIMaxScoreGet(Int4 **posMatrix, 
-                          Int4 start, Int4 length);
-
-BLAST_ResComp* BlastResCompNew (BLAST_ScoreBlk* sbp);
-
-BLAST_ResComp* BlastResCompDestruct (BLAST_ResComp* rcp);
-
-Int2 BlastResCompStr (BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length);
-
-/* 
-Produces a Karlin Block, and parameters, with standard protein frequencies.
-*/
-Int2 BlastKarlinBlkStandardCalc (BLAST_ScoreBlk* sbp, Int2 context_start, Int2 context_end);
-BLAST_KarlinBlk* BlastKarlinBlkStandardCalcEx (BLAST_ScoreBlk* sbp);
-
-
-
 /*
 	Functions taken from the OLD karlin.c
 */
 
-BLAST_KarlinBlk* BlastKarlinBlkCreate (void);
+BLAST_KarlinBlk* BLAST_KarlinBlkCreate (void);
 
-BLAST_KarlinBlk* BlastKarlinBlkDestruct (BLAST_KarlinBlk*);
-
-Int2 BlastKarlinBlkCalc (BLAST_KarlinBlk* kbp, BLAST_ScoreFreq* sfp);
-
-Int2 BlastKarlinBlkGappedCalc (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, char* matrix_name, Blast_Message** error_return);
-
-Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return);
-
+Int2 BLAST_KarlinBlkGappedCalc (BLAST_KarlinBlk* kbp, Int4 gap_open, 
+        Int4 gap_extend, Int4 decline_align, char* matrix_name, 
+        Blast_Message** error_return);
+Int2 BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int2 context_start, 
+                                 Int2 context_end);
 
 /*
         Attempts to fill KarlinBlk for given gap opening, extensions etc.
@@ -287,95 +262,28 @@ Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_e
                         1 if matrix not found
                         2 if matrix found, but open, extend etc. values not supported.
 */
-Int2 BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name);
+Int2 BLAST_KarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name);
 
 /* Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. */
-char* PrintMatrixMessage(const char *matrix);
+char* BLAST_PrintMatrixMessage(const char *matrix);
 
 /* Prints a messages about the allowed open etc values for the given matrix, 
 BlastKarlinkGapBlkFill should return 2 before this is called. */
-char* PrintAllowedValuesMessage(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
+char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
-Int2 BlastKarlinReportAllowedValues(const char *matrix_name, Blast_Message** error_return);
+double BLAST_KarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-
-double BlastKarlinLHtoK (BLAST_ScoreFreq* sfp, double lambda, double H);
-
-double BlastKarlinLambdaBis (BLAST_ScoreFreq* sfp);
-
-double BlastKarlinLambdaNR (BLAST_ScoreFreq* sfp);
-
-double BlastKarlinLtoH (BLAST_ScoreFreq* sfp, double  lambda);
-
-Int4 BlastKarlinEtoS (double  E, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
-
-Int4 BlastKarlinEtoS_simple (double  E, BLAST_KarlinBlk* kbp, double searchsp); 
-
-double BlastKarlinPtoE (double p);
-
-double BlastKarlinEtoP (double x);
-
-double BlastKarlinStoP (Int4 S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
-
-double BlastKarlinStoP_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
-
-double BlastKarlinStoE (Int4 S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
-
-double BlastKarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
-
-Int2 BlastCutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
+Int2 BLAST_Cutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
 
 
-Int2 BlastCutoffs_simple (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
-double BlastKarlinStoLen (BLAST_KarlinBlk* kbp, Int4 S);
-
-/* SumP function. Called by BlastSmallGapSumE and BlastLargeGapSumE. */
-double BlastSumP (Int4 r, double s);
+Int2 BLAST_Cutoffs_simple (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
 
 /* Functions to calculate SumE (for large and small gaps). */
-double BlastSmallGapSumE (BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_SmallGapSumE (BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
-double BlastUnevenGapSumE (BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_UnevenGapSumE (BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
-double BlastLargeGapSumE (BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
-
-/* Used to produce random sequences. */
-char*  BlastRepresentativeResidues (Int2 length);
-
-Int2 BlastResFreqNormalize (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, double norm);
-
-BLAST_ResFreq* BlastResFreqNew (BLAST_ScoreBlk* sbp);
-void BlastResFreqFree (BLAST_ResFreq* rfp);
-
-BLAST_ResFreq* BlastResFreqDestruct (BLAST_ResFreq* rfp);
-
-Int2 BlastResFreqString (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 length);
-
-Int2 BlastResFreqStdComp (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp);
-
-Int2 BlastResFreqResComp (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp* rcp);
-
-Int2 BlastResFreqClr (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp);
-
-BLAST_ScoreFreq* BlastScoreFreqNew (Int4 score_min, Int4 score_max);
-
-BLAST_ScoreFreq* BlastScoreFreqDestruct (BLAST_ScoreFreq* sfp);
-
-BLAST_Matrix* BLAST_MatrixDestruct (BLAST_Matrix* blast_matrix);
-
-BLAST_Matrix* BLAST_MatrixFill (BLAST_ScoreBlk* sbp);
-
-BLAST_Matrix* BLAST_MatrixFetch (char* matrix_name);
-
-
-Int2 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size);
-/*
-Functions used to convert between Stephen's pseudo scores
-and E or p-values.
-*/
-Int2 ConvertPtoPseudoS (double p, double n);
-Int2 ConvertEtoPseudoS (double E, double searchsp);
-double ConvertPseudoStoE (Int2 s, double n);
+double BLAST_LargeGapSumE (BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
 /*
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
@@ -388,19 +296,8 @@ are not required should be set to NULL.  The Int2 return value is the length of 
 arrays.
 */
 
-Int2 BlastKarlinGetMatrixValues (char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags);
-
-Int2 BlastKarlinGetMatrixValuesEx (char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags);
-
-Int2 BlastKarlinGetMatrixValuesEx2 (char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags);
-
-void getAlphaBeta (char* matrixName, double *alpha,
+void BLAST_GetAlphaBeta (char* matrixName, double *alpha,
 double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
-
-Int2 BlastKarlinGetDefaultMatrixValues (char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H);
-
-Int4** BlastMatrixToTxMatrix (BLAST_Matrix* matrix);
-Int4** TxMatrixDestruct (Int4** txmatrix); 
 
 #ifdef __cplusplus
 }
