@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/04/26 13:46:38  thiessen
+* comment out all blast/pssm methods
+*
 * Revision 1.32  2002/02/22 14:24:01  thiessen
 * sort sequences in reject dialog ; general identifier comparison
 *
@@ -1079,8 +1082,9 @@ void SequenceViewerWidget::TitleAreaToggle(void)
 
 bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY)
 {
-    sequenceArea->AttachAlignment(newAlignment, initX, initY);
+    // do titles first, since on Mac sequence area update causes title redraw
     titleArea->ShowTitles(newAlignment);
+    sequenceArea->AttachAlignment(newAlignment, initX, initY);
 
     SetSashPosition(titleArea->GetMaxTitleWidth() + 10, true);
 	return true;

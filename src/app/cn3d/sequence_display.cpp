@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/04/26 13:46:36  thiessen
+* comment out all blast/pssm methods
+*
 * Revision 1.45  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -687,11 +690,11 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             }
 
             // BLAST/PSSM single
-            if (updateWindow->DoBlastPSSMSingle()) {
-                updateWindow->updateViewer->BlastUpdate(alignment, true);
-                if (!controlDown) updateWindow->BlastPSSMSingleOff();
-                return false;
-            }
+//            if (updateWindow->DoBlastPSSMSingle()) {
+//                updateWindow->updateViewer->BlastUpdate(alignment, true);
+//                if (!controlDown) updateWindow->BlastPSSMSingleOff();
+//                return false;
+//            }
 
             // merge single
             if (updateWindow->DoMergeSingle()) {

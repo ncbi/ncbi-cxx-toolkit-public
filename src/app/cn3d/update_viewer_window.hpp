@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/04/26 13:46:45  thiessen
+* comment out all blast/pssm methods
+*
 * Revision 1.19  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -132,7 +135,7 @@ private:
         MID_THREAD_ONE,
         MID_THREAD_ALL,
         MID_BLAST_ONE,
-        MID_BLAST_PSSM_ONE,
+//        MID_BLAST_PSSM_ONE,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
@@ -157,11 +160,11 @@ private:
         menuBar->Check(MID_BLAST_ONE, false);
         SetCursor(wxNullCursor);
     }
-    void BlastPSSMSingleOff(void)
-    {
-        menuBar->Check(MID_BLAST_PSSM_ONE, false);
-        SetCursor(wxNullCursor);
-    }
+//    void BlastPSSMSingleOff(void)
+//    {
+//        menuBar->Check(MID_BLAST_PSSM_ONE, false);
+//        SetCursor(wxNullCursor);
+//    }
     void MergeSingleOff(void)
     {
         menuBar->Check(MID_MERGE_ONE, false);
@@ -183,7 +186,7 @@ private:
 public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
-    bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
+//    bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
@@ -191,7 +194,7 @@ public:
     {
         if (DoThreadSingle()) ThreadSingleOff();
         if (DoBlastSingle()) BlastSingleOff();
-        if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+//        if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
         if (DoDeleteSingle()) DeleteSingleOff();
         if (DoMergeSingle()) MergeSingleOff();
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/04/26 13:46:42  thiessen
+* comment out all blast/pssm methods
+*
 * Revision 1.35  2002/04/15 15:34:55  thiessen
 * remove BLAST/PSSM for now
 *
@@ -170,7 +173,8 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
-    EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
+//    EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
+    EVT_MENU      (MID_BLAST_ONE,                       UpdateViewerWindow::OnRunBlast)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -248,7 +252,7 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
     switch (event.GetId()) {
         case MID_THREAD_ONE:
             if (DoBlastSingle()) BlastSingleOff();
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+//            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
             if (DoMergeSingle()) MergeSingleOff();
             if (DoDeleteSingle()) DeleteSingleOff();
             CancelBaseSpecialModes();
@@ -291,7 +295,7 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
         case MID_MERGE_ONE:
             if (DoThreadSingle()) ThreadSingleOff();
             if (DoBlastSingle()) BlastSingleOff();
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+//            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
             if (DoDeleteSingle()) DeleteSingleOff();
             CancelBaseSpecialModes();
             if (DoMergeSingle())
@@ -319,7 +323,7 @@ void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
         case MID_DELETE_ONE:
             if (DoThreadSingle()) ThreadSingleOff();
             if (DoBlastSingle()) BlastSingleOff();
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+//            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
             if (DoMergeSingle()) MergeSingleOff();
             CancelBaseSpecialModes();
             if (DoDeleteSingle())
@@ -368,7 +372,7 @@ void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_BLAST_ONE:
-            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+//            if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
             if (DoThreadSingle()) ThreadSingleOff();
             if (DoMergeSingle()) MergeSingleOff();
             if (DoDeleteSingle()) DeleteSingleOff();
@@ -378,6 +382,7 @@ void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
             else
                 BlastSingleOff();
             break;
+/*
         case MID_BLAST_PSSM_ONE:
             if (DoBlastSingle()) BlastSingleOff();
             if (DoThreadSingle()) ThreadSingleOff();
@@ -389,6 +394,7 @@ void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
             else
                 BlastPSSMSingleOff();
             break;
+*/
     }
 }
 
