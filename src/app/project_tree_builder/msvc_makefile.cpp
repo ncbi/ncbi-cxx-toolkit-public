@@ -175,6 +175,9 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
     case CProjKey::eDll:
         name += "dll.";
         break;
+    case CProjKey::eMsvc:
+        name += "msvcproj.";
+        break;
     default:
         NCBI_THROW(CProjBulderAppException, 
                    eProjectType, 
@@ -364,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/10 19:52:52  gorelenk
+ * Changed CreateMsvcProjectMakefileName.
+ *
  * Revision 1.10  2004/05/10 14:27:04  gorelenk
  * Implemented IsPchEnabled and GetUsePchThroughHeader.
  *
