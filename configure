@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -888,8 +888,9 @@ Optional Packages:
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
  --without-sssdb         do not use NCBI SSS DB library
- --with-included-sss     use the in-tree copy of SSS (experimental)
+ --with-included-sss     use the in-tree copy of SSS
  --without-geo           do not use NCBI GEO libraries
+ --with-included-geo     use the in-tree copy of GEO
  --without-pubmed        do not use NCBI PubMed libraries
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
@@ -1632,6 +1633,12 @@ if test "${with_geo+set}" = set; then
 
 fi;
 
+# Check whether --with-included-geo or --without-included-geo was given.
+if test "${with_included_geo+set}" = set; then
+  withval="$with_included_geo"
+
+fi;
+
 # Check whether --with-pubmed or --without-pubmed was given.
 if test "${with_pubmed+set}" = set; then
   withval="$with_pubmed"
@@ -2022,7 +2029,8 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
-ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo sp pubmed \
+ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
+sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc sqlite \
 expat sablot oechem gif jpeg tiff png xpm \
@@ -17939,6 +17947,19 @@ if test "$with_sssdb" = "no"  -o  "$with_sssutils" = "no" ; then
 fi
 
 if test "$with_geo" != "no" ; then
+   local_geo='<internal/geo>'
+   if test "${with_included_geo-no}" = "yes" \
+       -a -f "${srcdir}/include/internal/geo/geodb/geo_api.hpp" \
+       -a -f "${srcdir}/src/internal/geo/geodb/utils.cpp"; then
+      with_included_geo=yes
+      NCBI_GEO_PATH=$local_geo
+      NCBI_GEO_INCLUDE='$(includedir)/internal/geo/geodb -I$(includedir0)/internal/geo/geodb'
+      NCBI_GEO_LIBPATH='$(libdir)'
+      geo=geo
+   else
+      with_included_geo=no
+      geo=
+   fi
    NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/production"}
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
@@ -17946,7 +17967,10 @@ if test "$with_geo" != "no" ; then
    fi
    echo "$as_me:$LINENO: checking for NCBI GEO directories in $NCBI_GEO_PATH" >&5
 echo $ECHO_N "checking for NCBI GEO directories in $NCBI_GEO_PATH... $ECHO_C" >&6
-   if test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
+   if test "$with_included_geo" = "yes"; then
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+   elif test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
       echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
       with_geo="no"
@@ -17961,7 +17985,12 @@ if test "$with_geo" = "no" ; then
    NCBI_GEO_LIBPATH=
    LIBGEODB=
 else
-   NCBI_GEO_LIBPATH="-L${NCBI_GEO_LIBPATH}"
+   if test "$with_included_geo" = "yes"; then
+      NCBI_GEO_LIBPATH= # Not needed
+      ncbi_cv_lib_geodb=yes
+   else
+      NCBI_GEO_LIBPATH="-L${NCBI_GEO_LIBPATH}"
+   fi
    # GEO_API defaults to GeoTest, leading to link errors.
    NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE} -DGEO_API=Geo"
    LIBGEODB="-lgeodb"
@@ -19813,6 +19842,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -20666,6 +20696,7 @@ s,@ssssrv@,$ssssrv,;t t
 s,@NCBI_GEO_INCLUDE@,$NCBI_GEO_INCLUDE,;t t
 s,@NCBI_GEO_LIBPATH@,$NCBI_GEO_LIBPATH,;t t
 s,@LIBGEODB@,$LIBGEODB,;t t
+s,@geo@,$geo,;t t
 s,@SP_INCLUDE@,$SP_INCLUDE,;t t
 s,@SP_LIBS@,$SP_LIBS,;t t
 s,@NCBI_PM_PATH@,$NCBI_PM_PATH,;t t
