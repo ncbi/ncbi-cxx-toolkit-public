@@ -53,8 +53,6 @@ extern "C" {
 #define EXTEND_WORD_VARIABLE_SIZE 0x00000010
 #define EXTEND_WORD_UNGAPPED      0x00000020
 
-#define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & 0x03)
-
 /** Structure to hold ungapped alignment information */
 typedef struct BlastUngappedData {
    Int4 q_start; /**< Start of the ungapped alignment in query */

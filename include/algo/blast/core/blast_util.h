@@ -56,6 +56,9 @@ extern "C" {
 #ifndef IS_residue
 #define IS_residue(x) (x <= 250)
 #endif
+
+#define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & 0x03)
+
 #if 0
 /** Retrieve a sequence from the BLAST database
  * @param db BLAST database [in]
