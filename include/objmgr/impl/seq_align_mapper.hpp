@@ -36,6 +36,7 @@
 #include <objmgr/seq_id_handle.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Score.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -76,11 +77,15 @@ struct SAlignment_Segment
                            int width);
 
     typedef vector<SAlignment_Segment> TSegments;
+    typedef vector< CRef<CScore> >     TScores;
+
+    void SetScores(const TScores& scores);
 
     int       m_Len;
     TRows     m_Rows;
     bool      m_HaveStrands;
     TSegments m_Mappings;
+    TScores   m_Scores;
 };
 
 
@@ -166,6 +171,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/13 19:10:57  grichenk
+* Preserve scores in mapped alignments
+*
 * Revision 1.4  2004/05/10 20:22:24  grichenk
 * Fixed more warnings (removed inlines)
 *

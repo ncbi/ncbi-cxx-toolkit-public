@@ -61,6 +61,12 @@ SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow(const CSeq_id& id
 }
 
 
+void SAlignment_Segment::SetScores(const TScores& scores)
+{
+    m_Scores = scores;
+}
+
+
 CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align)
     : m_OrigAlign(&align),
       m_DstAlign(0),
@@ -115,6 +121,9 @@ void CSeq_align_Mapper::x_Init(const TDendiag& diags)
             strand_it = diag.GetStrands().begin();
         }
         ENa_strand strand = eNa_strand_unknown;
+        if ( diag.IsSetScores() ) {
+            seg.SetScores(diag.GetScores());
+        }
         for (int i = 0; i < dim; ++i) {
             if ( m_HaveStrands ) {
                 strand = *strand_it;
@@ -165,6 +174,10 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
         CDense_seg::TIds::const_iterator id_it =
             denseg.GetIds().begin();
         SAlignment_Segment alnseg(*len_it);
+        if ( seg == 0  &&  denseg.IsSetScores() ) {
+            // Set scores for the first segment only to avoid multiple copies
+            alnseg.SetScores(denseg.GetScores());
+        }
         for (int seq = 0;  seq < dim;  seq++, ++start_it, ++id_it) {
             if ( m_HaveStrands ) {
                 strand = *strand_it;
@@ -196,6 +209,9 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
             dim = min(dim, stdseg.GetIds().size());
         }
         SAlignment_Segment seg(0); // length is unknown yet
+        if ( stdseg.IsSetScores() ) {
+            seg.SetScores(stdseg.GetScores());
+        }
         int seg_len = 0;
         bool multi_width = false;
         ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
@@ -293,6 +309,10 @@ void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
         CPacked_seg::TIds::const_iterator id_it =
             pseg.GetIds().begin();
         SAlignment_Segment alnseg(*len_it);
+        if ( seg == 0  &&  pseg.IsSetScores() ) {
+            // Set scores for the first segment only to avoid multiple copies
+            alnseg.SetScores(pseg.GetScores());
+        }
         for (int seq = 0;  seq < dim;  seq++, ++start_it, ++id_it, ++pr_it) {
             if ( m_HaveStrands ) {
                 strand = *strand_it;
@@ -376,6 +396,10 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
         TSeqPos dl = cvt.m_Src_from <= start ? 0 : cvt.m_Src_from - start;
         TSeqPos dr = cvt.m_Src_to >= stop ? 0 : stop - cvt.m_Src_to;
         SAlignment_Segment dseg(len - dl - dr);
+        if (!dl  &&  !dr) {
+            // copy scores
+            dseg.SetScores(sseg.m_Scores);
+        }
         for (size_t i = 0; i < sseg.m_Rows.size(); ++i) {
             if (i == row_idx) {
                 // translate id and coords
@@ -453,6 +477,10 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
         TSeqPos dr = mapping_copy.m_Src_to >= stop ? 0
             : stop - mapping_copy.m_Src_to;
         SAlignment_Segment dseg(sseg.m_Len - dl - dr);
+        if (!dl  &&  !dr) {
+            // copy scores
+            dseg.SetScores(sseg.m_Scores);
+        }
         for (size_t i = 0; i < sseg.m_Rows.size(); ++i) {
             if (i == row_idx) {
                 // translate id and coords
@@ -612,7 +640,7 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
     _ASSERT(m_SubAligns.size() > 0  ||  x_IsValidAlign(m_DstSegs));
     CRef<CSeq_align> dst(new CSeq_align);
     dst->Assign(*m_OrigAlign);
-    dst->ResetScore();
+    // dst->ResetScore();
     dst->SetSegs().Reset();
     switch ( m_OrigAlign->GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
@@ -621,7 +649,6 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
             ITERATE(TSegments, seg_it, m_DstSegs) {
                 const SAlignment_Segment& seg = *seg_it;
                 CRef<CDense_diag> diag(new CDense_diag);
-                // scores ???
                 diag->SetDim(seg.m_Rows.size());
                 diag->SetLen(seg.m_Len);
                 ITERATE(SAlignment_Segment::TRows, row, seg.m_Rows) {
@@ -633,6 +660,9 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
                         diag->SetStrands().push_back(row->m_Strand);
                     }
                 }
+                if ( seg.m_Scores.size() ) {
+                    diag->SetScores() = seg.m_Scores;
+                }
                 diags.push_back(diag);
             }
             break;
@@ -643,6 +673,9 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
             // dseg.SetScores().Assign(m_OrigAnnot->GetDenseg().GetScores();
             dseg.SetDim(m_DstSegs[0].m_Rows.size());
             dseg.SetNumseg(m_DstSegs.size());
+            if ( m_DstSegs[0].m_Scores.size() ) {
+                dseg.SetScores() = m_DstSegs[0].m_Scores;
+            }
             ITERATE(SAlignment_Segment::TRows, row, m_DstSegs[0].m_Rows) {
                 CRef<CSeq_id> id(new CSeq_id);
                 id->Assign(*row->m_Id.GetSeqId());
@@ -667,8 +700,10 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
             TStd& std_segs = dst->SetSegs().SetStd();
             ITERATE(TSegments, seg_it, m_DstSegs) {
                 CRef<CStd_seg> std_seg(new CStd_seg);
-                // scores ???
                 std_seg->SetDim(seg_it->m_Rows.size());
+                if ( seg_it->m_Scores.size() ) {
+                    std_seg->SetScores() = seg_it->m_Scores;
+                }
                 ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
                     CRef<CSeq_id> id(new CSeq_id);
                     id->Assign(*row->m_Id.GetSeqId());
@@ -704,6 +739,9 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
             // pseg.SetScores().Assign(m_OrigAnnot->GetPacked().GetScores();
             pseg.SetDim(m_DstSegs[0].m_Rows.size());
             pseg.SetNumseg(m_DstSegs.size());
+            if ( m_DstSegs[0].m_Scores.size() ) {
+                pseg.SetScores() = m_DstSegs[0].m_Scores;
+            }
             ITERATE(SAlignment_Segment::TRows, row, m_DstSegs[0].m_Rows) {
                 CRef<CSeq_id> id(new CSeq_id);
                 id->Assign(*row->m_Id.GetSeqId());
@@ -745,6 +783,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/13 19:10:57  grichenk
+* Preserve scores in mapped alignments
+*
 * Revision 1.5  2004/05/10 20:22:24  grichenk
 * Fixed more warnings (removed inlines)
 *
