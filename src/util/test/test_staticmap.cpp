@@ -172,6 +172,24 @@ void CTestStaticMap::TestStaticSet(void) const
         ITERATE ( TRef, it, ref ) {
             arr[index++] = *it;
         }
+        if ( m_NumberOfElements >= 2 ) {
+            switch ( m_TestBadData ) {
+            case eBad_swap_at_begin:
+                swap(arr[0], arr[1]);
+                break;
+            case eBad_swap_at_end:
+                swap(arr[m_NumberOfElements-1], arr[m_NumberOfElements-2]);
+                break;
+            case eBad_equal_at_begin:
+                arr[0] = arr[1];
+                break;
+            case eBad_equal_at_end:
+                arr[m_NumberOfElements-1] = arr[m_NumberOfElements-2];
+                break;
+            default:
+                break;
+            }
+        }
     }}
 
     TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
@@ -328,6 +346,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/23 18:59:18  vasilche
+ * Added test of order validation.
+ *
  * Revision 1.4  2004/01/23 18:50:48  vasilche
  * Fixed for MSVC compiler.
  *
