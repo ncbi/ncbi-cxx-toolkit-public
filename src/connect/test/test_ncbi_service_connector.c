@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/06/11 22:17:28  lavr
+ * Wait-for-reading timeout made finite
+ *
  * Revision 6.13  2001/06/07 17:53:47  lavr
  * Persistent reading from test connection
  *
@@ -127,7 +130,7 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Error writing to connection");
     }
 
-    if (CONN_Wait(conn, eIO_Read, 0) != eIO_Success) {
+    if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error waiting for reading");
     }
