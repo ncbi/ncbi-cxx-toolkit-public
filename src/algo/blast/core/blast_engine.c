@@ -741,10 +741,12 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 #ifdef THREADS_IMPLEMENTED
    }    /* end while!(BLAST_GetDbChunk...) */
 
+      
    BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
    sfree(oid_list);
 #endif
-
+   
+   itr = BlastSeqSrcIteratorFree(itr);
    BlastSequenceBlkFree(seq_arg.seq);
 
    /* Now sort the hit lists for all queries */
