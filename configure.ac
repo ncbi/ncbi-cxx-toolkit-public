@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.169 2003/02/28 19:14:05 ucko Exp $
+#  $Id: configure.ac,v 1.170 2003/03/03 16:25:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -875,15 +875,19 @@ if test -z "$CONF_f_runpath" ; then
       CONF_f_runpath="-Wl,-R"
       ;;
     linux*:GCC | *bsd*:GCC | cygwin*:GCC )
-      # osf*:GCC could go here as well, but then the linker's
-      # unwillingness to merge -rpath options bites us if we use GCC 3. :-/
       CONF_f_runpath="-Wl,-rpath,"
+      ;;
+    osf*:GCC )
+      # Won't work for GCC 3, as the linker doesn't merge -rpath flags.
+      if test "$compiler_version" -lt 300; then
+         CONF_f_runpath="-Wl,-rpath,"        
+      fi
       ;;
     linux*:ICC )
       # trying to use "-Wl,-rpath," here sends "ld" to endless 100% CPU loop
       CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
-    irix*:* | linux*:KCC )
+    irix*:* | linux*:KCC | *:Compaq )
       CONF_f_runpath="-rpath "
       ;;
     * )
@@ -3182,6 +3186,7 @@ AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(CRYPT_LIBS)
 AC_SUBST(DL_LIBS)
 AC_SUBST(RT_LIBS)
+AC_SUBST(ICONV_LIBS)
 AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
