@@ -48,7 +48,7 @@ $Revision$
  * @param query_info Query information containing context information [in]
  *
 */
-static Int2
+Int2
 BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
                         Uint1 program, BlastQueryInfo * query_info)
@@ -447,8 +447,9 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         } else {
            status = BlastScoreBlkGappedFill(sbp, scoring_options, 
                        program_number, query_info);
-           if (status)
+           if (status) {
               return status;
+           }
         }
 
         *sbpp = sbp;
@@ -546,8 +547,11 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
 
             if (!hit_options->phi_align &&
                 (status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
-                                             query_length, context)))
-                return status;
+                                             query_length, context))) {
+               Blast_MessageWrite(blast_message, 2, 2, 1, 
+                  "Query completely filtered; nothing left to search");
+               return status;
+            }
         }
     }
 
