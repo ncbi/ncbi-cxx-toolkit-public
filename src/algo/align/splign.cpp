@@ -1128,7 +1128,7 @@ const char* CSplign::SSegment::GetDonor() const
 {
     const size_t adim = m_annot.size();
     return
-      (adim > 2 && m_annot[adim - 3] == '>')? &(m_annot[adim-2]): 0;
+      (adim > 2 && m_annot[adim - 3] == '>')? (m_annot.c_str() + adim - 2): 0;
 }
 
 
@@ -1144,6 +1144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/23 16:52:04  kapustin
+ * Change the way we get donor address
+ *
  * Revision 1.3  2004/04/23 14:37:44  kapustin
  * *** empty log message ***
  *
