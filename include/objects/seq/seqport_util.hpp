@@ -31,7 +31,7 @@
  *
  * File Description:
  */   
-
+#include <corelib/ncbi_limits.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 #include <util/random_gen.hpp>
@@ -90,9 +90,8 @@ public:
     // residues packed. If in_seq cannot be packed, the
     // original in_seq is returned unchanged and the return value
     // from Pack is 0
-    static TSeqPos Pack(CSeq_data*   in_seq,
-                        TSeqPos      uBeginidx = 0,
-                        TSeqPos      uLength   = 0);
+    static TSeqPos Pack(CSeq_data*   in_seq,                        
+        TSeqPos uLength = ncbi::numeric_limits<TSeqPos>::max());
 
     // Performs fast validation of CSeq_data. If all data in the
     // sequence represent valid elements of a biological sequence, then
@@ -334,6 +333,9 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2003/11/06 16:10:56  shomrat
+ * changed signature of Pack method
+ *
  * Revision 1.8  2002/12/26 12:42:59  dicuccio
  * Added Win32 export specifiers
  *
