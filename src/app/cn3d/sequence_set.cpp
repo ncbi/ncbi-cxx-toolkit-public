@@ -335,19 +335,24 @@ CSeq_id * Sequence::CreateSeqId(void) const
 
 void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
 {
-    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
-        sid->SetPdb().SetMol().Set(identifier->pdbID);
-        if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
-    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
-        sid->SetGi(identifier->gi);
-    } else if (identifier->accession.size() > 0) {
-        CObject_id *oid = new CObject_id();
-        oid->SetStr(identifier->accession);
-        sid->SetLocal(*oid);
-    } else {
-        ERRORMSG("Sequence::FillOutSeqId() - can't do Seq-id on sequence "
-            << identifier->ToString());
-    }
+    // copy first id from asn data, if present
+    sid->Reset();
+    if (bioseqASN->GetId().size() > 0)
+        sid->Assign(bioseqASN->GetId().front().GetObject());
+
+    // dangerous to create new Seq-id's...
+//    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
+//        sid->SetPdb().SetMol().Set(identifier->pdbID);
+//        if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
+//    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
+//        sid->SetGi(identifier->gi);
+//    } else if (identifier->accession.size() > 0) {
+//        CObject_id *oid = new CObject_id();
+//        oid->SetStr(identifier->accession);
+//        sid->SetLocal(*oid);
+
+    else
+        ERRORMSG("Sequence::FillOutSeqId() - can't do Seq-id on sequence " << identifier->ToString());
 }
 
 void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
@@ -587,6 +592,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/08/30 14:01:15  thiessen
+* use existing CSeq_id instead of creating new one
+*
 * Revision 1.58  2003/07/14 18:37:08  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *
