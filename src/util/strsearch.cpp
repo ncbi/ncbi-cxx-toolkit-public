@@ -68,24 +68,23 @@ m_LastOccurance(sm_AlphabetSize)
     
     // For each character in the alpahbet compute its last occurance in 
     // the pattern.
-    size_t i;
     
     // Initilalize vector
     size_t size = m_LastOccurance.size();
-    for ( i = 0;  i < size;  ++i ) {
+    for ( size_t i = 0;  i < size;  ++i ) {
         m_LastOccurance[i] = m_PatLen;
     }
     
     // compute right-most occurance
-    for ( i = 0;  i < (int)m_PatLen - 1;  ++i ) {
-        m_LastOccurance[(int)m_Pattern[i]] = m_PatLen - i - 1;
+    for ( int j = 0;  j < (int)m_PatLen - 1;  ++j ) {
+        m_LastOccurance[(int)m_Pattern[j]] = m_PatLen - j - 1;
     }
 }
 
 
 int CBoyerMooreMatcher::Search(const string& text, unsigned int shift) const
 {
-    unsigned int text_len = text.length();
+    size_t text_len = text.length();
     
     while ( shift + m_PatLen <= text_len ) {
         int j = m_PatLen - 1;
@@ -116,24 +115,24 @@ const int CBoyerMooreMatcher::sm_AlphabetSize = 256;     // assuming ASCII
 
 
 // Member Functions
-bool CBoyerMooreMatcher::IsWholeWord(const string& text, int pos) const
+bool CBoyerMooreMatcher::IsWholeWord(const string& text, unsigned int pos) const
 {
     if ( !m_WholeWord ) {
         return true;
     }
     
     bool left  = true, 
-        right = true;
-    
-    // check on the right
-    if ( pos > 0 ) {
-        right = isspace(text[pos - 1]) != 0;
-    }
+         right = true;
     
     // check on the left
+    if ( pos > 0 ) {
+        left = isspace(text[pos - 1]) != 0;
+    }
+    
+    // check on the right
     pos += m_PatLen;
     if ( pos < text.length() ) {
-        left = isspace(text[pos]) != 0;
+        right = isspace(text[pos]) != 0;
     }
     
     return (right  &&  left);
@@ -147,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/02/04 20:16:15  shomrat
+* Change signed to unsigned to eliminate compilation warning
+*
 * Revision 1.3  2002/11/05 23:01:13  shomrat
 * Coding style changes
 *
