@@ -671,8 +671,12 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
         break;
 
     case CSeq_id::e_General:
-        // for general IDs, use the db-name only
-        *label += "gnl";
+        // we may encode 'gln' or the database name as requested
+        if (flags & CSeq_id::fLabel_GeneralDbIsContent) {
+            *label += id.GetGeneral().GetDb();
+        } else {
+            *label += "gnl";
+        }
         break;
     }
 
@@ -733,7 +737,9 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_General:
             {{
                 const CDbtag& dbt = id.GetGeneral();
-                *label += dbt.GetDb() + '|';
+                if (flags & CSeq_id::fLabel_GeneralDbIsContent) {
+                    *label += dbt.GetDb() + '|';
+                }
                 if (dbt.GetTag().Which() == CObject_id::e_Id) {
                     *label += NStr::IntToString(dbt.GetTag().GetId());
                 } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
@@ -1506,6 +1512,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.85  2004/06/28 14:21:10  dicuccio
+ * Implement flag: treat the db portion of a general ID as content or not
+ *
  * Revision 6.84  2004/06/07 20:12:17  ucko
  * Revert previous change, as some code was relying on getting e_not_set
  * for unrecognized IDs.
