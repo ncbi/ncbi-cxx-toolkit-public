@@ -105,6 +105,8 @@ GetServerTypeStr(void)
         return "MYSQL";
     case eSqlite :
         return "SQLITE";
+    default :
+        return "none";
     }
 
     return "none";
@@ -380,6 +382,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/03/10 17:22:33  ssikorsk
+* Fixed a compilation warning
+*
 * Revision 1.7  2005/03/01 15:22:58  ssikorsk
 * Database driver manager revamp to use "core" CPluginManager
 *
