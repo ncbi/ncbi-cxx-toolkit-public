@@ -503,32 +503,163 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-dyn]";
         
-//         if (s == "-xlate3") {
-//             string dbname("prot_dbs");
-//             string acc("AAK53449");
+        if (s == "-xlate3") {
+            string dbname("nr");
+            //string dbname("prot_dbs");
+            string acc("AAK53449");
+            //string acc("AAK53420"); //!!!!!!!!
             
-//             if ((! args.empty()) && ((*args.begin())[0] != '-')) {
-//                 dbname = *args.begin();
-//                 args.pop_front();
-//             }
+            if ((! args.empty()) && ((*args.begin())[0] != '-')) {
+                dbname = *args.begin();
+                args.pop_front();
+            }
             
-//             CSeqDB db(dbname, 'p');
+            CSeqDB db(dbname, 'p');
             
-//             vector<Uint4> oids;
-//             Uint4 oid(0), gi(0);
-            
-//             db.AccessionToOids(acc, oids);
-            
-//             if (! oids.empty()) {
-//                 db.OidToGi(oid = oids[0], gi);
+            while((acc != "QUIT") && cin) {
+                vector<Uint4> oids;
+                Uint4 oid(0), gi(0);
                 
-//                 if (oids.size() > 1) {
-//                     cout << "Multiple oids were returned ..." << endl;
-//                 }
-//             }
+                db.AccessionToOids(acc, oids);
+                
+                if (! oids.empty()) {
+                    cout << "Num oids returned " << oids.size() << endl;
+                    
+                    db.OidToGi(oid = oids[0], gi);
+                    
+                    if (oids.size() > 1) {
+                        cout << "Multiple oids were returned ..." << endl;
+                    }
+                } else {
+                    cout << "No oids were returned" << endl;
+                }
+                
+                cout << "Acc [" << acc << "] is oid " << oid << ", which is gi " << gi << endl;
+                
+                {
+                    ReadDBFILEPtr rdfp =
+                        readdb_new_ex2((char*) dbname.c_str(),
+                                       1, // prot
+                                       READDB_NEW_DO_TAXDB,
+                                       NULL,
+                                       NULL);
+                    
+                    Int4 oid2 = readdb_acc2fasta(rdfp, (char*) acc.c_str());
+                    
+                    cout << "... readdb says oid = " << oid2 << endl;
+                    
+                    readdb_destruct(rdfp);
+                }
+                
+                cout << "enter QUIT to quit:" << endl;
+                cout << "enter acc: " << flush;
+                cin >> acc;
+                cout << endl << "... You entered accession [" << acc << "]" << endl;
+            }
+            return 0;
+        } else desc += " [-xlate3]";
+        
+        if ((s == "-xlate4r") || 
+            (s == "-xlate4rx")) {
             
-//             cout << "Acc [" << acc << "] is oid " << oid << ", which is gi " << gi << endl;
-//         } else desc += " [-dyn]";
+            bool rx = (s == "-xlate4rx");
+            
+            ReadDBFILEPtr rdfp = readdb_new_ex2((char*) "nr",
+                                                1, // prot
+                                                READDB_NEW_DO_TAXDB,
+                                                NULL,
+                                                NULL);
+            
+            CNcbiIfstream idents("stringids.txt");
+            
+            while(idents) {
+                string line;
+                NcbiGetlineEOL(idents, line);
+                
+                if (line.empty()) {
+                    break;
+                }
+                
+                vector<Uint4> oids;
+                
+                if (rx) {
+                    oids.clear();
+                    
+                    Int4 * data(0);
+                    Int4   count(0);
+                    
+                    Int4 result = readdb_acc2fastaEx(rdfp, (char*)line.c_str(), & data, & count);
+                    
+                    if ((result >= 0) && (count > 0)) {
+                        for(Int4 i = 0; i<count; i++) {
+                            oids.push_back(data[i]);
+                        }
+                    }
+                } else {
+                    Int4 oid1 = readdb_acc2fasta(rdfp, (char*)line.c_str());
+                    
+                    if (oid1 != -1) {
+                        oids.resize(1);
+                        oids[0] = oid1;
+                    }
+                }
+                
+                cout << "Acc [" << line << "] has oids: ";
+                
+                if (oids.size()) {
+                    for(Uint4 i = 0; i < oids.size(); i++) {
+                        if (i) {
+                            cout << ", ";
+                        }
+                        
+                        cout << oids[i];
+                    }
+                } else {
+                    cout << "NONE";
+                }
+                cout << endl;
+            }
+            
+            return 0;
+        } else desc += " [-xlate4r] [-xlate4rx]";
+        
+        if (s == "-xlate4") {
+            CSeqDB db("nr", 'p');
+            
+            CNcbiIfstream idents("stringids.txt");
+            
+            while(idents) {
+                string line;
+                NcbiGetlineEOL(idents, line);
+                
+                if (line.empty()) {
+                    break;
+                }
+                
+                vector<Uint4> oids;
+                db.AccessionToOids(line, oids);
+                
+                cout << "Acc [" << line << "] has oids: ";
+                
+                if (oids.size()) {
+                    for(Uint4 i = 0; i < oids.size(); i++) {
+                        if (i) {
+                            cout << ", ";
+                        }
+                        
+                        Uint4 gi(0);
+                        db.OidToGi(oids[i], gi);
+                        
+                        cout << oids[i];
+                    }
+                } else {
+                    cout << "NONE";
+                }
+                cout << endl;
+            }
+            
+            return 0;
+        } else desc += " [-xlate4]";
         
         if (s == "-xlate2") {
             string dbname1("prot_dbs");
