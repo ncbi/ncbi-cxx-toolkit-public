@@ -226,6 +226,7 @@ enum EOffsetType {
     eOffset_FromLeft,  // relative to low-numbered end
     eOffset_FromRight  // relative to high-numbered end
 };
+// returns (TSeqPos)-1 if the locations don't overlap
 NCBI_XOBJUTIL_EXPORT
 TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
                        EOffsetType how = eOffset_FromStart, CScope* scope = 0);
@@ -493,6 +494,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2003/01/22 21:02:44  ucko
+* Add a comment about LocationOffset's return value.
+*
 * Revision 1.25  2003/01/22 20:14:27  vasilche
 * Removed compiler warning.
 *
