@@ -723,7 +723,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 pseudo = true;
             }
             if (!grp->IsSuppressed()) {
-                gene_syn = x_AddQuals(*grp, pseudo, subtype, overlap_gene);
+                gene_syn = x_AddQuals(*grp, pseudo, subtype, overlap_gene.NotEmpty());
             }
         }
         if ( type != CSeqFeatData::e_Cdregion  &&  type !=  CSeqFeatData::e_Rna ) {
@@ -1958,6 +1958,19 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
                 }
             }
             break;
+        case eFQ_compare:
+            {{
+                list<string> vals;
+                s_ParseParentQual(**it, vals);
+                ITERATE (list<string>, i, vals) {
+                    if (!ctx.Config().CheckQualSyntax()  ||
+                        IsValidAccession(*i, eValidateAccDotVer)) {
+                        x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eUnquoted));
+                    }
+                }
+                break;
+            }}
+            break;
         default:
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
@@ -2089,6 +2102,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(anticodon);
     DO_QUAL(bound_moiety);
     DO_QUAL(clone);
+    DO_QUAL(compare);
     DO_QUAL(cons_splice);
     DO_QUAL(direction);
     DO_QUAL(function);
@@ -2385,6 +2399,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_coded_by, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_codon, CSeqFeatData::eQual_codon),
     TQualPair(eFQ_codon_start, CSeqFeatData::eQual_codon_start),
+    TQualPair(eFQ_compare, CSeqFeatData::eQual_compare),
     TQualPair(eFQ_cons_splice, CSeqFeatData::eQual_cons_splice),
     TQualPair(eFQ_db_xref, CSeqFeatData::eQual_db_xref),
     TQualPair(eFQ_derived_from, CSeqFeatData::eQual_bad),
@@ -3499,6 +3514,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2005/01/31 16:32:31  shomrat
+* Added /compare qualifier
+*
 * Revision 1.41  2005/01/13 16:31:59  shomrat
 * Show /peptide in Ncbieaa coding
 *
