@@ -93,7 +93,7 @@ private:
         CSimpleMakeFileContents* m_FileContents;
 
     private:
-        SParser();
+        SParser(void);
         SParser(const SParser&);
         SParser& operator= (const SParser&);
     };
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/17 23:21:56  gorelenk
+ * Cosmetic changes.
+ *
  * Revision 1.4  2004/01/30 20:39:43  gorelenk
  * second revision
  *
