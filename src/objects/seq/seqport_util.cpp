@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/10/17 18:35:33  clausen
+ * Fixed machine dependencies in InitFastNcbi4naIupacna and InitFastNcbi2naNcbi4na
+ *
  * Revision 6.4  2001/10/17 13:04:30  clausen
  * Fixed InitFastNcbi2naIupacna to remove hardware dependency
  *
@@ -1407,8 +1410,10 @@ CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::Ini
                     unsigned char chj = m_Ncbi2naNcbi4na->m_Table[j];
                     unsigned char chk = m_Ncbi2naNcbi4na->m_Table[k];
                     unsigned char chl = m_Ncbi2naNcbi4na->m_Table[l];
-                    fastTable->m_Table[aByte] =
-                        (chi << 12)|(chj << 8)|(chk << 4)|chl;
+                    char *pt = 
+                        reinterpret_cast<char*>(&fastTable->m_Table[aByte]);
+                    *(pt++) = (chi << 4) | chj;
+                    *pt = (chk << 4) | chl;
                 }
     m_Ncbi2naNcbi4na->drop_table();
     return fastTable;
@@ -1429,7 +1434,9 @@ CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::Ini
 
             // Note high order nible corresponds to low order byte
             // etc., on Unix machines.
-            fastTable->m_Table[aByte] = (chi<<8) | chj;
+            char *pt = reinterpret_cast<char*>(&fastTable->m_Table[aByte]);
+            *(pt++) = chi;
+            *pt = chj;
         }
     m_Ncbi4naIupacna->drop_table();
     return fastTable;
