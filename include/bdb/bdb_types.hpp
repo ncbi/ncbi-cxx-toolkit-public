@@ -485,7 +485,6 @@ public:
     }
 
     operator const char* () const;
-	operator string() const;
     const CBDB_FieldString& operator= (const CBDB_FieldString& str);
     const CBDB_FieldString& operator= (const char*             str);
     const CBDB_FieldString& operator= (const string&           str);
@@ -497,6 +496,8 @@ public:
         eTruncateOnOverflow
     };
     void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
+    string Get() const { return string((const char*)GetBuffer()); }
+
     bool IsEmpty() const;
     bool IsBlank() const;
 
@@ -526,7 +527,6 @@ public:
 
     // Accessors
     operator const char* () const { return (const char*) GetBuffer(); }
-	operator string() const {  return string((const char*)GetBuffer()); }
 	
     const CBDB_FieldStringCase& operator= (const CBDB_FieldString& str)
     {
@@ -863,11 +863,6 @@ inline CBDB_FieldString::operator const char* () const
     return str;
 }
 
-inline
-CBDB_FieldString::operator string() const
-{
-	return string((const char*) GetBuffer());
-}
 
 inline 
 const CBDB_FieldString&
@@ -1173,6 +1168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/07/22 16:05:20  kuznets
+ * Resolved operators ambiguity (GCC-MSVC conflict of interests)
+ *
  * Revision 1.11  2003/07/22 15:48:34  kuznets
  * Fixed minor compilation issue with GCC
  *
