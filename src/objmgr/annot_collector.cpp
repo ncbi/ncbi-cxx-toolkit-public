@@ -939,7 +939,7 @@ bool CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
     //continue;
     //}
 
-    if ( m_Selector.m_AdaptiveDepth && tse->ContainsSeqid(id) ) {
+    if ( m_Selector.m_AdaptiveDepth && tse->ContainsBioseqMatch(id) ) {
         const SIdAnnotObjs* objs = tse->x_GetUnnamedIdObjects(id);
         if ( objs ) {
             vector<char> indexes;
@@ -1762,6 +1762,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/10/25 16:53:35  vasilche
+* Check if TSE contains Bioseq by matching Seq-id.
+*
 * Revision 1.32  2004/10/22 17:36:42  grichenk
 * Minor fixes in filtering duplicates
 *
