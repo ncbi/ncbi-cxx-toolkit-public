@@ -276,7 +276,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 
 END_SCOPE(sequence)
 
-// FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
+// FASTA-format output; see also ReadFasta in <objtools/readers/fasta.hpp>
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
@@ -497,6 +497,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2003/08/21 16:09:44  ucko
+* Correct path to header for FASTA reader
+*
 * Revision 1.28  2003/05/09 15:36:55  ucko
 * Take const CBioseq_Handle references in CFastaOstream::Write et al.
 *
