@@ -1,4 +1,4 @@
---$Revision: 1.15 $
+--$Revision: 1.16 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -48,9 +48,8 @@ Seq-feat ::= SEQUENCE {
     cit Pub-set OPTIONAL ,        -- citations for this feature
     exp-ev ENUMERATED {           -- evidence for existence of feature
         experimental (1) ,        -- any reasonable experimental check
-        not-experimental (2) } OPTIONAL }   -- by similarity to other seqs,
-                                            -- pattern, etc
-    
+        not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
+	xref SET OF SeqFeatXref }   -- cite other relevant features
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
@@ -103,9 +102,11 @@ SeqFeatData ::= CHOICE {
 		turn  (3) } ,       -- beta or gamma turn
 	non-std-residue VisibleString ,  -- non-standard residue here in seq
 	het Heterogen }         -- cofactor, prosthetic grp, etc, bound to seq
-	
-		
 
+SeqFeatXref ::= SEQUENCE {
+    id Feat-id OPTIONAL ,		 -- the feature copied
+    data SeqFeatData }           -- the specific data
+	
 --*** CdRegion ***********************************************
 --*
 --*  Instructions to translate from a nucleic acid to a peptide
