@@ -58,13 +58,27 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
+    /// Which of the objects (passed in the constructor) should be
+    /// deleted on this object's destruction.
+    /// NOTE:  if the reader and writer are in fact the same object, it will
+    ///        not be deleted twice.
+    enum EOwnership {
+        fOwnReader = 1 << 1,    // own the underlying reader
+        fOwnWriter = 1 << 2,    // own the underlying writer
+        fOwnAll    = fOwnReader + fOwnWriter
+    };
+    typedef int TOwnership;     // bitwise OR of EOwnership
+
+
     CRWStreambuf(IReaderWriter* rw = 0,
                  streamsize     buf_size = 0,
-                 CT_CHAR_TYPE*  buf = 0);
+                 CT_CHAR_TYPE*  buf = 0,
+                 TOwnership     own = 0);
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
                  streamsize     buf_size = 0,
-                 CT_CHAR_TYPE*  buf = 0);
+                 CT_CHAR_TYPE*  buf = 0,
+                 TOwnership     own = 0);
     virtual ~CRWStreambuf();
 
 protected:
@@ -79,6 +93,8 @@ protected:
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 protected:
+    TOwnership     m_OwnRW;
+
     IReader*       m_Reader;
     IWriter*       m_Writer;
 
@@ -97,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 15:47:59  lavr
+ * Reader/Writer ownership added
+ *
  * Revision 1.6  2004/01/20 20:33:21  lavr
  * Fix typo in the log
  *
