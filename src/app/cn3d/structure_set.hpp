@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/29 19:18:19  thiessen
+* improved atom map
+*
 * Revision 1.3  2000/06/29 14:35:20  thiessen
 * new atom_set files
 *
@@ -45,13 +48,16 @@
 #ifndef CN3D_STRUCTURESET__HPP
 #define CN3D_STRUCTURESET__HPP
 
+#include <string>
+
 #include <serial/serial.hpp>            
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
-USING_NCBI_SCOPE;
-using namespace objects;
 
 #include "cn3d/structure_base.hpp"
+
+USING_NCBI_SCOPE;
+using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -85,7 +91,7 @@ public:
     // public data
     const bool isMaster;
     int mmdbId;
-    string pdbId;
+    std::string pdbId;
     typedef LIST_TYPE < const AtomSet * > AtomSetList;
     AtomSetList atomSets;
 

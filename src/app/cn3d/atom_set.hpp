@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/29 19:18:19  thiessen
+* improved atom map
+*
 * Revision 1.1  2000/06/29 14:35:20  thiessen
 * new atom_set files
 *
@@ -39,41 +42,19 @@
 #ifndef CN3D_ATOMSET__HPP
 #define CN3D_ATOMSET__HPP
 
+#include <string>
+#include <map>
+
 #include <serial/serial.hpp>            
 #include <objects/mmdb2/Atomic_coordinates.hpp>
-USING_NCBI_SCOPE;
-using namespace objects;
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
 
+USING_NCBI_SCOPE;
+using namespace objects;
+
 BEGIN_SCOPE(Cn3D)
-
-class Atom;
-
-class AtomSet : public StructureBase
-{
-public:
-    AtomSet(const CAtomic_coordinates& coords);
-    ~AtomSet(void);
-
-    // public data
-    typedef LIST_TYPE < const string * > EnsembleList;
-    EnsembleList ensembles;
-
-    // public methods
-    void Draw(void) const;
-    const Atom* GetAtomPntr(int moleculeID, int residueID, int atomID) const;
-
-private:
-    AtomSet(void);
-
-    int nAtoms;
-    int *moleculeID;
-    int *residueID;
-    int *atomID;
-    Atom *atomList;
-};
 
 #define ATOM_NO_TEMPERATURE (-1.0)
 #define ATOM_NO_OCCUPANCY (-1.0)
@@ -95,9 +76,43 @@ public:
     bool HasTemp(void) const { return (averageTemperature!=ATOM_NO_TEMPERATURE); }
     bool HasOccup(void) const { return (occupancy!=ATOM_NO_OCCUPANCY); }
     bool HasAlt(void) const { return (altConfID!=ATOM_NO_ALTCONFID); }
-    //void Draw(void) const;
+    void Draw(void) const;
 
 private:
+};
+
+class AtomSet : public StructureBase
+{
+public:
+    AtomSet(const CAtomic_coordinates& coords);
+    ~AtomSet(void);
+
+    // public data
+    typedef LIST_TYPE < const std::string * > EnsembleList;
+    EnsembleList ensembles;
+
+    // public methods
+    void Draw(void) const;
+    const Atom* GetAtomPntr(int moleculeID, int residueID, 
+                            int atomID, char altConfID = ATOM_NO_ALTCONFID) const;
+    bool HasTemp(void) const { return (nAtoms>0 && atomList[0].HasTemp()); }
+    bool HasOccup(void) const { return (nAtoms>0 && atomList[0].HasOccup()); }
+    bool HasAlt(void) const { return (nAtoms>0 && atomList[0].HasAlt()); }
+
+private:
+    AtomSet(void);
+
+    int nAtoms;
+    Atom *atomList;
+    
+    // this provides a convenient way to look up atoms from Atom-pntr info
+    typedef std::pair < int, std::pair < int, std::pair < int, char > > > AtomPntrKey;
+    AtomPntrKey MakeKey(int moleculeID, int residueID, int atomID, char altID) const
+    {
+        return std::make_pair(moleculeID, std::make_pair(residueID, std::make_pair(atomID, altID))); 
+    }
+    typedef std::map < AtomPntrKey, const Atom * > AtomPntrMap;
+    AtomPntrMap atomMap;
 };
 
 END_SCOPE(Cn3D)

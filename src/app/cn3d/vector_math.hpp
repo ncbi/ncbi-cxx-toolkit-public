@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/29 19:18:19  thiessen
+* improved atom map
+*
 * Revision 1.2  2000/06/29 16:46:16  thiessen
 * use NCBI streams correctly
 *
@@ -46,9 +49,8 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
-USING_NCBI_SCOPE;
 
-using namespace std;
+USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 

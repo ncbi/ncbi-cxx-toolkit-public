@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/29 19:18:19  thiessen
+* improved atom map
+*
 * Revision 1.2  2000/06/29 16:46:16  thiessen
 * use NCBI streams correctly
 *
@@ -42,12 +45,16 @@
 #ifndef CN3D_STRUCTUREBASE__HPP
 #define CN3D_STRUCTUREBASE__HPP
 
-#define TESTMSG(stream) ERR_POST(Info << stream);
-//#define TESTMSG(stream)
-
 // container type used for various lists
 #include <deque>
 #define LIST_TYPE deque
+
+#include <corelib/ncbidiag.hpp>
+
+USING_NCBI_SCOPE;
+
+#define TESTMSG(stream) ERR_POST(Info << stream)
+//#define TESTMSG(stream)
 
 // convenience macros for lists of StructureBase-derived objects
 #define DELETE_ALL(theClass, theList) \

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/29 19:17:47  thiessen
+* improved atom map
+*
 * Revision 1.2  2000/06/29 16:46:07  thiessen
 * use NCBI streams correctly
 *
@@ -88,7 +91,7 @@ int main(int argc, const char* argv[])
 
     SetDiagPostLevel(eDiag_Info); // report all messages
 
-    // Run the application 
+    // Run the application (w/o loading registry)
     CCn3DApp theApp;
-    return theApp.AppMain(argc, argv);
+    return theApp.AppMain(argc, argv, 0, eDS_Default, NULL);
 }
