@@ -36,6 +36,7 @@
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_engine.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -77,7 +78,7 @@ public:
     virtual TSeqAlignVector Run();
     // Run BLAST search without traceback
     virtual void PartialRun();
-
+    
     // Remove extra results if a limit is provided on total number of HSPs
     void TrimBlastHSPResults();
 
@@ -96,6 +97,29 @@ protected:
     virtual int SetupSearch();
     virtual void RunSearchEngine();
     virtual TSeqAlignVector x_Results2SeqAlign();
+    virtual void x_ResetQueryDs();
+
+    BlastScoringOptions* GetScoringOpts() const;
+    BlastEffectiveLengthsOptions* GetEffLenOpts() const;
+    BlastExtensionOptions * GetExtnOpts() const;
+    BlastHitSavingOptions * GetHitSaveOpts() const;
+    QuerySetUpOptions * GetQueryOpts() const;
+    BlastDatabaseOptions * GetDbOpts() const;
+    PSIBlastOptions * CDbBlast::GetProtOpts() const;    
+
+    /// Internal data structures used in this and all derived classes 
+    bool                mi_bQuerySetUpDone;
+    CBLAST_SequenceBlk  mi_clsQueries;  // one for all queries
+    CBlastQueryInfo     mi_clsQueryInfo; // one for all queries
+    BlastScoreBlk*      mi_pScoreBlock; // Karlin-Altschul parameters
+    /// Statistical return structures
+    BlastReturnStat*    mi_pReturnStats;
+    /// Error (info, warning) messages
+    TBlastError         mi_vErrors;
+   
+    /// Results structure - not private, because derived class will need to
+    /// set it
+    BlastHSPResults*    mi_pResults;
 
 private:
     // Data members received from client code
@@ -108,25 +132,13 @@ private:
     /// Prohibit assignment operator
     CDbBlast& operator=(const CDbBlast& rhs);
 
-    /************ Internal data structures (m_i = internal members)***********/
-    bool                mi_bQuerySetUpDone;
-    CBLAST_SequenceBlk  mi_clsQueries;  // one for all queries
-    CBlastQueryInfo     mi_clsQueryInfo; // one for all queries
-    BlastScoreBlk*      mi_pScoreBlock; // Karlin-Altschul parameters
+    /************ Internal data structures (m_i = internal members)**********/
     LookupTableWrap*    mi_pLookupTable; // one for all queries
     ListNode*           mi_pLookupSegments; /* Intervals for which lookup 
                                                table is created: complement of
                                                filtered regions */
     BlastMaskLoc*       mi_pFilteredRegions; // Filtered regions
 
-    /// Results structure
-    BlastHSPResults*    mi_pResults;
-    /// Statistical return structures
-    BlastReturnStat*    mi_pReturnStats;
-    TBlastError         mi_vErrors;
-
-   
-    void x_ResetQueryDs();
 };
 
 inline void
@@ -206,6 +218,34 @@ inline TBlastError CDbBlast::GetErrorMessage() const
     return mi_vErrors;
 }
 
+inline BlastScoringOptions* CDbBlast::GetScoringOpts() const
+{
+    return m_OptsHandle->GetOptions().GetScoringOpts();
+}
+inline BlastEffectiveLengthsOptions* CDbBlast::GetEffLenOpts() const
+{
+    return m_OptsHandle->GetOptions().GetEffLenOpts();
+}
+inline BlastExtensionOptions * CDbBlast::GetExtnOpts() const
+{
+    return m_OptsHandle->GetOptions().GetExtnOpts();
+}
+inline BlastHitSavingOptions * CDbBlast::GetHitSaveOpts() const
+{
+    return m_OptsHandle->GetOptions().GetHitSaveOpts();
+}
+inline QuerySetUpOptions * CDbBlast::GetQueryOpts() const
+{
+    return m_OptsHandle->GetOptions().GetQueryOpts();
+}
+inline BlastDatabaseOptions * CDbBlast::GetDbOpts() const
+{
+    return m_OptsHandle->GetOptions().GetDbOpts();
+}
+inline PSIBlastOptions * CDbBlast::GetProtOpts() const
+{
+    return m_OptsHandle->GetOptions().GetProtOpts();
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -214,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/02/24 18:18:54  dondosha
+* Made some private variables and methods protected - needed for derived class; added getters for various options
+*
 * Revision 1.8  2004/02/19 21:10:25  dondosha
 * Added vector of error messages to the CDbBlast class
 *
