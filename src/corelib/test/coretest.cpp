@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/02/18 16:54:10  vakatov
+* + eDiag_Critical
+*
 * Revision 1.56  2000/01/20 17:55:48  vakatov
 * Fixes to follow the "CNcbiApplication" change.
 *
@@ -532,6 +535,8 @@ static void TestDiag(void)
 
     diag << Error << "This message has severity \"Info\"" << Reset
          << Info  << "This message has severity \"Info\"" << Endm;
+
+    diag << Critical << "This message has severity \"Critical\"" << Endm;
 
     SetDiagPostFlag(eDPF_All);
     SetDiagPostPrefix("Foo-Prefix");

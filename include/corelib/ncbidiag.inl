@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/02/18 16:54:04  vakatov
+* + eDiag_Critical
+*
 * Revision 1.16  2000/01/20 16:52:30  vakatov
 * SDiagMessage::Write() to replace SDiagMessage::Compose()
 * + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
@@ -263,6 +266,12 @@ inline
 CNcbiDiag& Error(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Error;
+    return diag;
+}
+inline
+CNcbiDiag& Critical(CNcbiDiag& diag)  {
+    diag << Endm;
+    diag.m_Severity = eDiag_Critical;
     return diag;
 }
 inline

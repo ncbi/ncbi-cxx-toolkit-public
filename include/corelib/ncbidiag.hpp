@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/02/18 16:54:02  vakatov
+* + eDiag_Critical
+*
 * Revision 1.17  2000/01/20 16:52:29  vakatov
 * SDiagMessage::Write() to replace SDiagMessage::Compose()
 * + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
@@ -111,6 +114,7 @@ typedef enum {
     eDiag_Info = 0,
     eDiag_Warning,
     eDiag_Error,
+    eDiag_Critical,
     eDiag_Fatal,   // guarantees to exit(or abort)
     eDiag_Trace
 } EDiagSev;
@@ -173,11 +177,12 @@ public:
     friend CNcbiDiag& Reset  (CNcbiDiag& diag); // reset content of curr.mess.
     friend CNcbiDiag& Endm   (CNcbiDiag& diag); // flush curr.mess., start new
 
-    friend CNcbiDiag& Info   (CNcbiDiag& diag); /// these 5 manipulators:
-    friend CNcbiDiag& Warning(CNcbiDiag& diag); /// first do a flush;
-    friend CNcbiDiag& Error  (CNcbiDiag& diag); /// then they set a
-    friend CNcbiDiag& Fatal  (CNcbiDiag& diag); /// severity for the next
-    friend CNcbiDiag& Trace  (CNcbiDiag& diag); /// diagnostic message
+    friend CNcbiDiag& Info    (CNcbiDiag& diag); /// these 5 manipulators:
+    friend CNcbiDiag& Warning (CNcbiDiag& diag); /// first do a flush;
+    friend CNcbiDiag& Error   (CNcbiDiag& diag); /// then
+    friend CNcbiDiag& Critical(CNcbiDiag& diag); /// set a
+    friend CNcbiDiag& Fatal   (CNcbiDiag& diag); /// severity for the next
+    friend CNcbiDiag& Trace   (CNcbiDiag& diag); /// diagnostic message
 
     // get a common symbolic name for the severity levels
     static const char* SeverityName(EDiagSev sev);

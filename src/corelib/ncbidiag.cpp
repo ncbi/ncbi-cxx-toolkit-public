@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/02/18 16:54:07  vakatov
+* + eDiag_Critical
+*
 * Revision 1.16  2000/01/20 16:52:32  vakatov
 * SDiagMessage::Write() to replace SDiagMessage::Compose()
 * + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
@@ -119,7 +122,7 @@ eDiag_Error;
 EDiagSev CDiagBuffer::sm_DieSeverity = eDiag_Fatal;
 
 const char* CDiagBuffer::SeverityName[eDiag_Trace+1] = {
-    "Info", "Warning", "Error", "Fatal", "Trace"
+    "Info", "Warning", "Error", "Critical", "Fatal", "Trace"
 };
 
 FDiagHandler CDiagBuffer::sm_HandlerFunc    = 0;
