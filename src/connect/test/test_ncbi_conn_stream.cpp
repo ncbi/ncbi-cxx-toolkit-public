@@ -103,9 +103,10 @@ int main(void)
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
     {{
-        // Test for memory leaks in unused stream
+        // Test for timeouts and memory leaks in unused stream
+        STimeout tmo = {8, 0};
         CConn_IOStream* s  =
-            new CConn_ServiceStream("ID1", fSERV_Any);
+            new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo);
         delete s;
     }}
 
@@ -249,6 +250,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/03/25 22:16:38  lavr
+ * Show that timeouts are set from CONN stream ctors
+ *
  * Revision 6.23  2002/11/22 15:09:40  lavr
  * Replace all occurances of "ray" with "yar"
  *
