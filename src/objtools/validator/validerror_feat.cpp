@@ -102,11 +102,15 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 {
     CBioseq_Handle bsh;
     bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh.GetBioseq(), "Location");
+    if ( bsh ) {
+        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh.GetBioseq(), "Location");
+    }
     
     if ( feat.IsSetProduct() ) {
         bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");
+        if ( bsh ) {
+            m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");
+        }
         
         const CSeq_id* sid = bsh.GetSeqId();
         if ( sid ) {
@@ -136,11 +140,11 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     }
     
     ValidateFeatPartialness(feat);
-
+    
     ValidateExcept(feat);
     
     ValidateSeqFeatData(feat.GetData(), feat);
-
+    
     if (feat.IsSetDbxref ()) {
         m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
     }
@@ -409,9 +413,9 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
     static string parterr[2] = { "PartialProduct", "PartialLocation" };
     static string parterrs[4] = {
         "Start does not include first/last residue of sequence",
-            "Stop does not include first/last residue of sequence",
-            "Internal partial intervals do not include first/last residue of sequence",
-            "Improper use of partial (greater than or less than)"
+        "Stop does not include first/last residue of sequence",
+        "Internal partial intervals do not include first/last residue of sequence",
+        "Improper use of partial (greater than or less than)"
     };
     
     partial_loc  = SeqLocPartialCheck(feat.GetLocation(), m_Scope );
@@ -420,7 +424,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
     }
     
     if ( (partial_loc  != eSeqlocPartial_Complete)  ||
-        (partial_prod != eSeqlocPartial_Complete)  ||   
+         (partial_prod != eSeqlocPartial_Complete)  ||   
         feat.GetPartial () == true ) {
         // a feature on a partial sequence should be partial -- it often isn't
         if ( !feat.GetPartial ()  &&
@@ -484,20 +488,30 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
         unsigned int partials[2] = { partial_prod, partial_loc };
         for ( int i = 0; i < 2; ++i ) {
             unsigned int errtype = eSeqlocPartial_Nostart;
+
             for ( int j = 0; j < 4; ++j ) {
                 if (partials[i] & errtype) {
                     if ( i == 1  &&  j < 2  &&
-                         IsPartialAtSpliceSite(feat.GetLocation(), errtype) ) {
-                        PostErr (eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                            parterr[i] + ":" + parterrs[j] + "(but is at consensus splice site)", feat);
-                    } else if (feat.GetData ().Which () == CSeqFeatData::e_Cdregion && j == 0) {
+                        IsPartialAtSpliceSite(feat.GetLocation(), errtype) ) {
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                            parterr[i] + ":" + parterrs[j] + 
+                            "(but is at consensus splice site)", feat);
+                    } else if ( i == 1  &&  j < 2  &&
+                        (feat.GetData().Which() == CSeqFeatData::e_Gene  ||
+                        feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
+                         IsSameAsCDS(feat) ) {
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                            parterr[i] + ": " + parterrs[j], feat);
+                    } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 0) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                             parterr[i] + 
-                            ": 5' partial is not at start AND is not at consensus splice site", feat); 
-                    } else if (feat.GetData ().Which () == CSeqFeatData::e_Cdregion && j == 1) {
+                            ": 5' partial is not at start AND is not at consensus splice site",
+                            feat); 
+                    } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 1) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                             parterr[i] + 
-                            ": 3' partial is not at stop AND is not at consensus splice site", feat);
+                            ": 3' partial is not at stop AND is not at consensus splice site",
+                            feat);
                     } else {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                             parterr[i] + ": " + parterrs[j], feat);
@@ -534,6 +548,7 @@ void CValidError_feat::ValidateCdregion (
     const CSeq_feat& feat
 ) 
 {
+    
     iterate( list< CRef< CGb_qual > >, qual, feat.GetQual () ) {
         if ( (**qual).GetQual() == "codon" ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
@@ -548,7 +563,7 @@ void CValidError_feat::ValidateCdregion (
         ValidateCdTrans(feat);
         ValidateSplice(feat, false);
     }
-
+    
     iterate( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
         ECompare comp = sequence::Compare((**codebreak).GetLoc (),
             feat.GetLocation (), m_Scope );
@@ -654,12 +669,12 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     const CSeq_id* last_id = 0;
 
     CBioseq_Handle bsh;
+    size_t seq_len = 0;
     for (CSeq_loc_CI citer(location); citer; ++citer) {
         ++counter;
 
         const CSeq_id& seq_id = citer.GetSeq_id();
         
-        size_t         seq_len = 0;
         if ( last_id == 0 || !last_id->Match(seq_id) ) {
             bsh = m_Scope->GetBioseqHandle(seq_id);
             seq_len = bsh.GetSeqVector().size();
@@ -668,12 +683,14 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
         TSeqPos acceptor = citer.GetRange().GetFrom();
         TSeqPos donor = citer.GetRange().GetTo();
+
         TSeqPos start = acceptor;
         TSeqPos stop = donor;
 
         if ( citer.GetStrand() == eNa_strand_minus ) {
             swap(acceptor, donor);
-            // CSeqVector uses start and stop based on the strand.
+            stop = seq_len - donor - 1;
+            start = seq_len - acceptor - 1;
         }
 
         // set severity level
@@ -690,7 +707,8 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         string label;
         bsq.GetLabel(&label, CBioseq::eContent, m_Imp.IsSuppressContext());
         
-        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CSeqVector seq_vec =
+            bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, citer.GetStrand());
         // check donor on all but last exon and on sequence
         if ( ((check_all && !partial_last)  ||  counter < num_of_parts)  &&
              (stop < seq_len - 2) ) {
@@ -1335,9 +1353,16 @@ void CValidError_feat::ValidateCommonCDSProduct
     CBioseq_Handle prod = m_Scope->GetBioseqHandle(feat.GetProduct());
     CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( !prod ) {
+        const CSeq_id* sid = 0;
+        try {
+            sid = &(GetId(feat.GetProduct(), m_Scope));
+        } catch (const CNotUnique&) {}
+
         // okay to have far RefSeq product, but only if genomic product set
-        if ( m_Imp.IsRefSeq() && m_Imp.IsGPS() ) {
-            return;
+        if ( sid == 0  ||  !sid->IsOther() ) {
+            if ( m_Imp.IsGPS() ) {
+                return;
+            }
         }
         // or just a bioseq
         if ( nuc.GetTopLevelSeqEntry().IsSeq() ) {
@@ -1345,6 +1370,7 @@ void CValidError_feat::ValidateCommonCDSProduct
         }
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCDSproducts,
             "Unable to find product Bioseq from CDS feature", feat);
+        return;
     }
     const CSeq_entry* prod_nps = 
         m_Imp.GetAncestor(prod.GetBioseq(), CBioseq_set::eClass_nuc_prot);
@@ -1356,8 +1382,6 @@ void CValidError_feat::ValidateCommonCDSProduct
             "Protein product not packaged in nuc-prot set with nucleotide", 
             feat);
     }
-
-    CSeq_loc::TRange range = feat.GetProduct().GetTotalRange();
 
     const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(prod.GetBioseq());
     if ( !sfp ) {
@@ -1460,7 +1484,10 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
     } 
     // } DEBUG
     
-    // look for intersecting gene
+    // !!! can't look for contating feature using GetBestOverlap.
+    // This implementation should be changed once the above is supported
+
+    // look for intersecting genes
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
@@ -1636,20 +1663,21 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     string gccode = NStr::IntToString(gc);
 
     string transl_prot;   // translated protein
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(location);
+    CBioseq_Handle nuc_handle = m_Scope->GetBioseqHandle(location);
+    if ( !nuc_handle ) {
+        return;
+    }
     CCdregion_translate::TranslateCdregion(
         transl_prot, 
-        bsh, 
+        nuc_handle, 
         location, 
         cdregion, 
         true,   // include stop codons
         false); // do not remove trailing X/B/Z
     
-    
     if ( transl_prot.empty() ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_CdTransFail, 
             "Unable to translate", feat);
-        prot_ok = false;
         return;
     }
     
@@ -1725,13 +1753,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     
     bool show_stop = true;
 
-    const CSeq_id& protid = GetId(product, m_Scope);
-    bsh = m_Scope->GetBioseqHandle(protid);
-
-    CSeqVector prot_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-    size_t prot_len = prot_vec.size();
-
-    if ( prot_len == 0 ) {
+    CBioseq_Handle prot_handle = m_Scope->GetBioseqHandle(product);
+    if ( !prot_handle ) {
         if ( transl_prot.length() > 6 ) {
             if ( !(m_Imp.IsNG() || m_Imp.IsNT()) ) {
                 EDiagSev sev = eDiag_Error;
@@ -1741,7 +1764,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 if ( m_Imp.IsNC() ) {
                     sev = eDiag_Warning;
 
-                    if ( bsh.GetTopLevelSeqEntry().IsSeq() ) {
+                    if ( nuc_handle.GetTopLevelSeqEntry().IsSeq() ) {
                         sev = eDiag_Info;
                     }
                 }
@@ -1754,8 +1777,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         ReportCdTransErrors(feat, show_stop, got_stop, no_end, ragged);
         return;
     }
-    
+
+    CSeqVector prot_vec = prot_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    size_t prot_len = prot_vec.size(); 
     size_t len = transl_prot.length();
+
     if ( got_stop  &&  (len == prot_len + 1) ) { // ok, got stop
         --len;
     }
@@ -1816,7 +1842,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         prot_res = prot_vec[mismatches.front()];
         transl_res = Residue(transl_prot[mismatches.front()]);
         msg = 
-            NStr::IntToString(mismatches.size()) + "mismatches found. " +
+            NStr::IntToString(mismatches.size()) + " mismatches found. " +
             "First mismatch at " + NStr::IntToString(mismatches.front() + 1) +
             ", residue in protein [" + prot_res + "]" +
             " != translation [" + transl_res + "]";
@@ -1976,14 +2002,16 @@ bool CValidError_feat::IsPartialAtSpliceSite
     TSeqPos donor = temp.GetRange().GetTo();
     TSeqPos start = acceptor;
     TSeqPos stop = donor;
-    
+
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+        temp.GetStrand());
+    TSeqPos len = vec.size();
+
     if ( temp.GetStrand() == eNa_strand_minus ) {
         swap(acceptor, donor);
-        // CSeqVector uses start and stop based on the strand.
+        stop = len - donor - 1;
+        start = len - acceptor - 1;
     }
-
-    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
-    TSeqPos len = vec.size();
 
     bool result = false;
 
@@ -2098,6 +2126,35 @@ bool CValidError_feat::IsTransgenic(const CBioSource& bsrc)
 }
 
 
+// REQUIRES: feature is either Gene or mRNA
+bool CValidError_feat::IsSameAsCDS(const CSeq_feat& feat)
+{
+    EOverlapType overlap_type;
+    if ( feat.GetData().IsGene() ) {
+        overlap_type = eOverlap_Simple;
+    } else if ( feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ) {
+        overlap_type = eOverlap_CheckIntervals;
+    } else {
+        return false;
+    }
+
+    CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
+            feat.GetLocation(),
+            CSeqFeatData::e_Cdregion,
+            overlap_type,
+            *m_Scope);
+        if ( cds ) {
+            if ( TestForOverlap(
+                    cds->GetLocation(),
+                    feat.GetLocation(),
+                    eOverlap_Simple) == 0 ) {
+                return true;
+            }
+        }
+    return false;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -2107,6 +2164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/02/07 21:25:04  shomrat
+* SameAsCDS checks partial gene or mRNA for CDS with proper intervals, drops severity to INFO; Bug fixes
+*
 * Revision 1.13  2003/02/03 20:21:41  shomrat
 * Skip use of feature indexing if performance flag is set (testing)
 *
