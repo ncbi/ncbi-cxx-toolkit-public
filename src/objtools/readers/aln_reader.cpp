@@ -114,7 +114,7 @@ void CAlnReader::Read()
         if (afp->organisms[i]) {
             m_Organisms[i] = afp->organisms[i];
         } else {
-            m_Organisms[i].clear();
+            m_Organisms[i].erase();
         }
     }
     m_Deflines.resize(afp->num_deflines);
@@ -122,7 +122,7 @@ void CAlnReader::Read()
         if (afp->deflines[i]) {
             m_Deflines[i] = afp->deflines[i];
         } else {
-            m_Deflines[i].clear();
+            m_Deflines[i].erase();
         }
     }
 
@@ -309,6 +309,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/20 01:21:35  ucko
+ * Again, erase() strings rather than clear()ing them for compatibility
+ * with G++ 2.95.  (The fix seems to have gotten lost in the recent
+ * move.)
+ *
  * Revision 1.2  2004/02/19 18:38:13  ucko
  * Update path to aln_reader.hpp.
  *
