@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -118,6 +118,8 @@ Cn3d-style-settings ::= SEQUENCE {
     strand-width INTEGER,
     strand-thickness INTEGER
 }
+
+Cn3d-style-settings-set ::= SET OF Cn3d-style-settings
 
 Cn3d-style-table-id ::= INTEGER
 
