@@ -74,8 +74,9 @@ public:
 
     string AdditionalLinkerOptions(const SConfigInfo& cfg_info) const;
 
-
+#if 0
     string AdditionalLibrarianOptions(const SConfigInfo& cfg_info) const;
+#endif
 
     
     string AdditionalLibraryDirectories(const SConfigInfo& cfg_info) const;
@@ -117,10 +118,8 @@ public:
     }
 
 
-    const list<string>& Defines(void) const
-    {
-        return m_Defines;
-    }
+    const list<string> Defines(const SConfigInfo& cfg_info) const;
+
 
     const list<string>& PreBuilds(void) const
     {
@@ -512,6 +511,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/03/22 14:44:35  gorelenk
+ * Changed declaration of member-function Defines
+ * of class CMsvcPrjProjectContext.
+ *
  * Revision 1.14  2004/03/10 16:43:41  gorelenk
  * Changed declaration of class CMsvcPrjProjectContext.
  *
