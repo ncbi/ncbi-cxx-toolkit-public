@@ -112,6 +112,9 @@ CBioseqContext::CBioseqContext
 // destructor
 CBioseqContext::~CBioseqContext(void)
 {
+    if (m_Virtual) {
+        m_Virtual.GetEditHandle().Remove();
+    }
 }
 
 
@@ -166,48 +169,59 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     x_SetLocation(user_loc);
     
+    
     m_HasOperon = x_HasOperon();
 }
 
 
 void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 {
-    _ASSERT(user_loc == 0  ||  user_loc->IsInt()  ||  user_loc->IsWhole());
-    CRef<CSeq_loc> source;
+    CRef<CSeq_loc> loc;
 
     if (user_loc != NULL) {
-        // map the location to the current bioseq
+        // map the user location to the current bioseq
         CSeq_loc_Mapper mapper(m_Handle, CSeq_loc_Mapper::eSeqMap_Up);
-        mapper.SetMergeAll();  // just to be safe
-        source.Reset(mapper.Map(*user_loc));
+        loc.Reset(mapper.Map(*user_loc));
 
-        // no need to map if doing the entire bioseq
-        if ( source->IsWhole()  ||
-             source->GetStart(eExtreme_Positional) == 0  &&
-             source->GetStop(eExtreme_Positional) == m_Handle.GetInst_Length() - 1) {
-            source.Reset();
-        }
-
-        if ( source ) {
-            CScope& scope = GetScope();
-
-            CRef<CSeq_loc> target = 
-                m_Handle.GetRangeSeq_loc(0, source->GetTotalRange().GetLength());
-
-            m_Mapper.Reset(new CSeq_loc_Mapper(*source, *target, &scope));
-            m_Mapper->SetMergeAbutting();
-            m_Mapper->KeepNonmappingRanges();
+        if (loc) {
+            if (loc->IsWhole()) {
+                loc.Reset();
+            } else if (loc->IsInt()) {
+                CSeq_loc::TRange range = loc->GetTotalRange();
+                if (range.GetFrom() == 0  &&  range.GetTo() == m_Handle.GetInst_Length() - 1) {
+                    loc.Reset();
+                }
+            }
         }
     }
 
-    // if no location is specified do the entire sequence
-    if ( !source ) {
-        source.Reset(new CSeq_loc);
-        source->SetWhole(*m_PrimaryId);
+    // if no partial location specified do the entire bioseq
+    if (!loc) {
+        loc.Reset(new CSeq_loc);
+        loc->SetWhole(*m_PrimaryId);
+    } else {
+        x_SetMapper(*loc);
     }
 
-    _ASSERT(source);
-    m_Location = source;
+    m_Location = loc;
+}
+
+
+void CBioseqContext::x_SetMapper(const CSeq_loc& loc)
+{
+    _ASSERT(GetBioseqFromSeqLoc(loc, GetScope()) == m_Handle);
+
+    // not covering the entire bioseq (may be multiple ranges)
+    CRef<CBioseq> vseq(new CBioseq(loc, GetAccession()));
+    vseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
+    CBioseq_Handle vseqh = GetScope().AddBioseq(*vseq);
+
+    if (vseqh) {
+        m_Mapper.Reset(new CSeq_loc_Mapper(vseqh, CSeq_loc_Mapper::eSeqMap_Up));
+        m_Mapper->SetMergeAbutting();
+        m_Mapper->SetGapRemove();
+        //m_Mapper->KeepNonmappingRanges();
+    }
 }
 
 
@@ -618,6 +632,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2005/03/28 17:18:39  shomrat
+* Support for complex user location
+*
 * Revision 1.36  2005/03/14 18:19:02  grichenk
 * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
 * SAnnotSelector.

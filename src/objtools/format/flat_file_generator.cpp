@@ -55,6 +55,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+USING_SCOPE(sequence);
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -164,17 +165,12 @@ void CFlatFileGenerator::Generate
  CScope& scope,
  CFlatItemOStream& item_os)
 {
-    if ( !loc.IsWhole()  &&  !loc.IsInt() ) {
-        NCBI_THROW(CFlatException, eInvalidParam, 
-            "locations must be an interval on a bioseq (or whole)");
-    }
-
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
-    if ( !bsh ) {
+    CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
+    if (!bsh) {
         NCBI_THROW(CFlatException, eInvalidParam, "location not in scope");
     }
     CSeq_entry_Handle entry = bsh.GetParentEntry();
-    if ( !entry ) {
+    if (!entry) {
         NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
     }
     CRef<CSeq_loc> location(new CSeq_loc);
@@ -302,6 +298,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/03/28 17:19:17  shomrat
+* Support for complex user location
+*
 * Revision 1.14  2005/03/07 17:19:49  shomrat
 * Protect call to CScope::GetSeq_entryHandle
 *
