@@ -584,6 +584,8 @@ void CValidError_align::x_ValidateFastaLike
     size_t dim = denseg.GetDim();
     size_t numseg = denseg.GetNumseg();
 
+    vector<string> fasta_like;
+
     for ( size_t id = 0; id < dim; ++id ) {
         bool gap = false;
         
@@ -602,12 +604,30 @@ void CValidError_align::x_ValidateFastaLike
             if ( seg == numseg - 1  &&  gap ) {
                 // if no more positive start value are found after the initial
                 // -1 start value, it's fasta like
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
-                    "This may be a fasta-like alignment for SeqId: " + 
-                    denseg.GetIds()[id]->AsFastaString(), align);
+                fasta_like.push_back(denseg.GetIds()[id]->AsFastaString());
             }
         }
     }
+
+    if ( !fasta_like.empty() ) {
+        string fasta_like_ids;
+        bool first = true;
+        ITERATE( vector<string>, idstr, fasta_like ) {
+            if ( first ) {
+                first = false;
+            } else {
+                fasta_like_ids += ", ";
+            }
+
+            fasta_like_ids += *idstr;
+        }
+        fasta_like_ids += ".";
+
+        PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
+            "This may be a fasta-like alignment for SeqIds: " + 
+            fasta_like_ids, align);
+    }
+
 }           
 
 
@@ -1048,6 +1068,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/05/28 16:24:40  shomrat
+* Report a single FastaLike error from each alignment
+*
 * Revision 1.4  2003/04/29 14:58:07  shomrat
 * Implemented SeqAlign validation
 *
