@@ -1,0 +1,11 @@
+.cvsignore
+[A-Z]*.cpp
+*__.cpp
+Makefile.in
+Makefile.*.lib
+*.files
+*.dtd
+*.mod
+*.def0
+gprof.out
+gmon.out
