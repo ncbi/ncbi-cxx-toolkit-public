@@ -41,7 +41,6 @@ sleep 2
 docdir="$target"/doc
 incdir="$target"/include
 srcdir="$target"/src
-altsrc="$target"/altsrc
 dbgdir="$target"/Debug
 libdir="$target"/Release
 bindir="$target"/bin
@@ -78,25 +77,6 @@ cd "$srcdir"
 find . -type d -name CVS -exec rm -r {} \;
 
 
-# Debug src/inc dir -- put everything (sources, headers) into a single blob
-makedir "$altsrc" -p
-cd "$srcdir"
-x_dirs=`find . -type d -print`
-for ddd in $x_dirs ; do
-  cd "$srcdir/$ddd"
-  cp -p *.[ch]pp "$altsrc" >/dev/null 2>&1
-  cp -p *.[ch]   "$altsrc" >/dev/null 2>&1
-  cp -p *.inl    "$altsrc" >/dev/null 2>&1
-done
-
-cd "$incdir"
-x_dirs=`find . -type d -print`
-for ddd in $x_dirs ; do
-  cd "$incdir/$ddd"
-  cp -p *.* "$altsrc" >/dev/null 2>&1
-done
-
-
 # Libraries
 for i in 'Debug' 'Release' ; do
   for j in '' 'DLL' ; do
@@ -124,7 +104,6 @@ for i in 'DLL' '' ; do
     fi
   fi
 done
-
 
 
 # Gbench public installation
