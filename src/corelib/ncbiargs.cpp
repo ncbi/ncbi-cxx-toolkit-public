@@ -34,6 +34,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2000/11/17 22:04:30  vakatov
+ * CArgDescriptions::  Switch the order of optional args in methods
+ * AddOptionalKey() and AddPlain(). Also, enforce the default value to
+ * match arg. description (and constraints, if any) at all times.
+ *
  * Revision 1.21  2000/11/13 20:31:07  vakatov
  * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
  *
@@ -125,7 +130,7 @@ CArgException::CArgException(const string& what)
 
 CArgException::CArgException(const string& what, const string& arg_value)
     THROWS_NONE
-: runtime_error(what + ":  " + arg_value)
+: runtime_error(what + ":  `" + arg_value + "'")
 {
     return;
 }
@@ -176,13 +181,13 @@ bool CArgValue::AsBoolean(void) const
 }
 
 
-CNcbiIstream& CArgValue::AsInputFile(EFlags /*changeModeTo*/) const
+CNcbiIstream& CArgValue::AsInputFile(EFlags /*change_mode*/) const
 {
     ARG_THROW("Attempt to cast to a wrong (InputFile) type", AsString());
 }
 
 
-CNcbiOstream& CArgValue::AsOutputFile(EFlags /*changeModeTo*/) const
+CNcbiOstream& CArgValue::AsOutputFile(EFlags /*change_mode*/) const
 {
     ARG_THROW("Attempt to cast to a wrong (OutputFile) type", AsString());
 }
@@ -336,7 +341,7 @@ public:
                    IOS_BASE::openmode  openmode,
                    bool                delay_open, bool is_default);
     ~CArg_InputFile();
-    virtual CNcbiIstream& AsInputFile(EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiIstream& AsInputFile(EFlags change_mode = fUnchanged) const;
 
 private:
     void Open(void) const;
@@ -360,7 +365,7 @@ void CArg_InputFile::Open(void) const
         m_DeleteFlag = true;
     }
 
-    if ( !*m_InputFile ) {
+    if (!m_InputFile  ||  !*m_InputFile) {
         ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
     }
 }
@@ -387,17 +392,20 @@ CArg_InputFile::~CArg_InputFile()
 }
 
 
-CNcbiIstream& CArg_InputFile::AsInputFile(EFlags changeModeTo) const
+CNcbiIstream& CArg_InputFile::AsInputFile(EFlags change_mode) const
 {
-    if (changeModeTo != fUnchanged  &&  m_InputFile) {
+    if (change_mode != fUnchanged  &&  m_InputFile) {
         ARG_THROW("Cannot change open mode in non-deffered open file argument",
                   AsString());
     }
 
-    if (changeModeTo == fToText)
-        m_OpenMode &= ~CArgDescriptions::fBinary;
-    if (changeModeTo == fToBinary)
-        m_OpenMode |= CArgDescriptions::fBinary;
+    if (change_mode == fToText) {
+        m_OpenMode = (IOS_BASE::openmode)
+            (m_OpenMode  &  ~CArgDescriptions::fBinary);
+    } else if (change_mode == fToBinary) {
+        m_OpenMode = (IOS_BASE::openmode)
+            (m_OpenMode  |  ~CArgDescriptions::fBinary);
+    }
 
     Open();
     return *m_InputFile;
@@ -416,7 +424,7 @@ public:
                     bool               is_default);
     ~CArg_OutputFile();
 
-    virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiOstream& AsOutputFile(EFlags change_mode = fUnchanged) const;
 
 private:
     void Open(void) const;
@@ -440,7 +448,7 @@ void CArg_OutputFile::Open(void) const
         m_DeleteFlag = true;
     }
 
-    if ( !*m_OutputFile ) {
+    if (!m_OutputFile  ||   !*m_OutputFile) {
         ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
     }
 }
@@ -467,17 +475,20 @@ CArg_OutputFile::~CArg_OutputFile()
 }
 
 
-CNcbiOstream& CArg_OutputFile::AsOutputFile(EFlags changeModeTo) const
+CNcbiOstream& CArg_OutputFile::AsOutputFile(EFlags change_mode) const
 {
-    if (changeModeTo != fUnchanged  &&  !m_OutputFile) {
+    if (change_mode != fUnchanged  &&  !m_OutputFile) {
         ARG_THROW("Cannot change open mode in non-deffered open file argument",
                   AsString());
     }
 
-    if (changeModeTo == fToText)
-        m_OpenMode &= ~CArgDescriptions::fBinary;
-    if (changeModeTo == fToBinary)
-        m_OpenMode |= CArgDescriptions::fBinary;
+    if (change_mode == fToText) {
+        m_OpenMode = (IOS_BASE::openmode)
+            (m_OpenMode  &  ~CArgDescriptions::fBinary);
+    } else if (change_mode == fToBinary) {
+        m_OpenMode = (IOS_BASE::openmode)
+            (m_OpenMode  |  ~CArgDescriptions::fBinary);
+    }
 
     Open();
     return *m_OutputFile;
@@ -648,6 +659,9 @@ CArgDesc_Plain::CArgDesc_Plain
         if((flags &
             ~(CArgDescriptions::fPreOpen | CArgDescriptions::fBinary)) == 0)
             return;
+    case CArgDescriptions::k_EType_Size:
+        _TROUBLE;
+        ARG_THROW("Invalid argument type", "k_EType_Size");
     default:
         if (flags == 0)
             return;
@@ -726,19 +740,22 @@ CArgValue* CArgDesc_Plain::ProcessArgument(const string& value,
         return new CArg_Double(value, is_default);
     case CArgDescriptions::eInputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
-        IOS_BASE::openmode openmode = 0;
+        IOS_BASE::openmode openmode = (IOS_BASE::openmode) 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
         return new CArg_InputFile(value, openmode, delay_open, is_default);
     }
     case CArgDescriptions::eOutputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
-        IOS_BASE::openmode openmode = 0;
+        IOS_BASE::openmode openmode = (IOS_BASE::openmode) 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
         if (GetFlags() & CArgDescriptions::fAppend)
             openmode |= IOS_BASE::app;
         return new CArg_OutputFile(value, openmode, delay_open, is_default);
+    }
+    case CArgDescriptions::k_EType_Size: {
+        break;
     }
     } /* switch GetType() */
 
@@ -1018,7 +1035,7 @@ CArgDescriptions::~CArgDescriptions(void)
 
 const string& CArgDescriptions::GetTypeName(EType type)
 {
-    static const string s_TypeName[N_ARG_TYPE] = {
+    static const string s_TypeName[k_EType_Size] = {
         "String",
         "AlphaNum",
         "Boolean",
@@ -1028,6 +1045,9 @@ const string& CArgDescriptions::GetTypeName(EType type)
         "OutFile"
     };
 
+    if (type == k_EType_Size) {
+        _TROUBLE;  ARG_THROW("Invalid argument type", "k_EType_Size");
+    }
     return s_TypeName[(int) type];
 }
 
@@ -1052,8 +1072,8 @@ void CArgDescriptions::AddOptionalKey
  const string& synopsis,
  const string& comment,
  EType         type,
- TFlags        flags,
- const string& default_value)
+ const string& default_value,
+ TFlags        flags)
 {
     auto_ptr<CArgDesc_OptionalKey> arg
         (new CArgDesc_OptionalKey
@@ -1081,8 +1101,8 @@ void CArgDescriptions::AddPlain
 (const string& name,
  const string& comment,
  EType         type,
- TFlags        flags,
- const string& default_value)
+ const string& default_value,
+ TFlags        flags)
 {
     auto_ptr<CArgDesc_Plain> arg
         (new CArgDesc_Plain(comment, type, flags, default_value));
@@ -1158,21 +1178,75 @@ void CArgDescriptions::Delete(const string& name)
 }
 
 
-inline bool s_IsTag(const string& value)
+// Check if the Nth positional arg is optional
+inline bool s_IsOptionalPlain
+(unsigned                      n,
+ CArgDescriptions::EConstraint constraint,
+ unsigned                      n_constraint)
 {
-    return (value.length() > 1)  &&  value[0] == '-'  &&  value[1] != '-';
+    return
+        (constraint == CArgDescriptions::eAny  ||
+         constraint == CArgDescriptions::eLessOrEqual  ||
+         (constraint == CArgDescriptions::eMoreOrEqual  &&
+          n_constraint != 0  &&  n >= n_constraint));
 }
 
 
+// Process argument's value
+static CArgValue* s_ProcessArgument
+(const CArgDesc& desc,
+ const string&   name,
+ const string&   value,
+ unsigned        n_plain)
+{
+    string arg_msg;
 
-struct CArgContext {
-    CArgContext(void) { plain_idx = 0; }
-    unsigned plain_idx;
-};
+    try {
+        return desc.ProcessArgument(value);
+    } catch (exception& e) {
+        arg_msg = e.what();
+    }
+
+    // An error occured...
+    string msg;
+    if ( n_plain ) {
+        msg = "Pos.arg " + NStr::UIntToString(n_plain);
+        if ( !name.empty() ) {
+            msg += " (\"" + name + "\")";
+        }
+    } else {
+        msg = "Argument \"" + name + "\"";
+    }
+    ARG_THROW(msg, arg_msg);
+}
+
+
+// Try to process argument's default value
+static void s_VerifyDefaultValue
+(CArgDesc_Plain& pl_arg,
+ const string&   name,
+ unsigned        n_plain = 0)
+{
+    if (pl_arg.GetType() == CArgDescriptions::eInputFile  ||
+        pl_arg.GetType() == CArgDescriptions::eOutputFile) {
+        return;
+    }
+
+    string arg_msg;
+    try {
+        CRef<CArgValue> arg_value =
+            s_ProcessArgument(pl_arg, name, pl_arg.GetDefault(), n_plain);
+        return;
+    } catch (exception& e) {
+        arg_msg = e.what();
+    }
+    ARG_THROW("(Invalid default value)", arg_msg);
+}
 
 
 void CArgDescriptions::x_PreCheck(void) const
 {
+    // Check for the consistency of constraints for the # of positional args
     bool     has_extra     = (m_Args.find(kEmptyStr) != m_Args.end());
     unsigned n_policy_args = m_ConstrArgs ?
         m_ConstrArgs : (unsigned) m_PlainArgs.size();
@@ -1199,22 +1273,54 @@ void CArgDescriptions::x_PreCheck(void) const
         }
         break;
     }
-    if ( !err_msg )
-        return;  // okay
 
-    // trouble
-    static const char* s_PolicyStr[] = {
-        "eAny", "eLessOrEqual",  "eEqual", "eMoreOrEqual" };
+    // Inconsistent #-of-args constraints...
+    if ( err_msg ) {
+        static const char* s_PolicyStr[] = {
+            "eAny", "eLessOrEqual",  "eEqual", "eMoreOrEqual" };
 
-    THROW1_TRACE(CArgException,
-                 string("CArgDescriptions::CreateArgs() inconsistency:  "
-                        "policy=") +  s_PolicyStr[(int) m_Constraint]
-                 + ", policy_args="
-                 + (m_ConstrArgs ?
-                    NStr::UIntToString(m_ConstrArgs) : string("0<plain_args>"))
-                 + ", plain_args=" + NStr::UIntToString(m_PlainArgs.size())
-                 + ", extra_args=" + NStr::BoolToString(has_extra) + " -- "
-                 + err_msg + "!");
+        THROW1_TRACE(CArgException,
+                     string("CArgDescriptions::CreateArgs() inconsistency:  "
+                            "policy=") +  s_PolicyStr[(int) m_Constraint]
+                     + ", policy_args="
+                     + (m_ConstrArgs ?
+                        NStr::UIntToString(m_ConstrArgs) :
+                        string("0<plain_args>"))
+                     + ", plain_args=" + NStr::UIntToString(m_PlainArgs.size())
+                     + ", extra_args=" + NStr::BoolToString(has_extra) + " -- "
+                     + err_msg + "!");
+    }
+
+    // Check for the validity of default values of optional key args
+    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
+        CArgDesc_OptionalKey* opt_arg =
+            dynamic_cast<CArgDesc_OptionalKey*> (it->second.get());
+
+        if (opt_arg  &&  !dynamic_cast<CArgDesc_Key*> (opt_arg)) {
+            s_VerifyDefaultValue(*opt_arg, it->first);
+        }
+    }
+
+    // Check for the validity of default values of positional args
+    for (unsigned n = 0;  n < m_PlainArgs.size();  n++) {
+        TArgsCI it = m_Args.find(m_PlainArgs[n]);
+        CArgDesc_Plain& pl_arg = dynamic_cast<CArgDesc_Plain&> (*it->second);
+
+        if ( s_IsOptionalPlain(n, m_Constraint, m_ConstrArgs) ) {
+            // Check the default value against the argument description
+            s_VerifyDefaultValue(pl_arg, it->first, n+1);
+        } else {
+            // Mandatory arguments should not have a default value at all
+            if ( !pl_arg.GetDefault().empty() ) {
+                string msg = "Mandatory pos.arg " + NStr::UIntToString(n+1);
+                if ( !it->first.empty() ) {
+                    msg += " (\"" + it->first + "\")";
+                }
+                msg += " should not have a default value";
+                ARG_THROW(msg, pl_arg.GetDefault());
+            }
+        }
+    }    
 }
 
 
@@ -1229,11 +1335,9 @@ bool CArgDescriptions::x_CreateArg
 
     // Extract arg. tag
     string tag;
-    if ( s_IsTag(arg1) ) {
-        // <key> <value>, or <flag>
-        if ( *n_plain ) {
-            ARG_THROW("Flag or key where a plain argument should be", arg1);
-        }
+    if (*n_plain == 0  &&
+        (arg1.length() > 1)  &&  arg1[0] == '-'  &&  arg1[1] != '-') {
+        // "<key> <value>", or "<flag>"
         tag = arg1.substr(1);
         if (tag.empty()  ||  !VerifyName(tag)) {
             ARG_THROW("Illegal argument tag", arg1);
@@ -1282,16 +1386,8 @@ bool CArgDescriptions::x_CreateArg
     }
 
     // Process the "raw" argument value into "CArgValue"
-    CRef<CArgValue>  arg_value;
-    auto_ptr<string> err_msg;
-    try {
-        arg_value = desc->ProcessArgument(*value);
-    } catch (exception& e) {
-        err_msg.reset(new string(e.what()));
-    }
-    if ( err_msg.get() ) {
-        ARG_THROW("Argument \"" + tag + "\"", *err_msg);
-    }
+    CRef<CArgValue> arg_value =
+        s_ProcessArgument(*desc, tag, *value, *n_plain);
 
     // Add the argument value to "args"
     args.Add(tag, arg_value);
@@ -1533,19 +1629,6 @@ static void s_PrintComment(string& str, const CArgUsage& arg, SIZE_TYPE width)
 
     // Print description
     s_PrintCommentBody(str, arg.m_Desc->GetUsageCommentBody(), width);
-}
-
-
-inline bool s_IsOptionalPlain
-(unsigned                      n,
- CArgDescriptions::EConstraint constraint,
- unsigned                      n_constraint)
-{
-    return
-        (constraint == CArgDescriptions::eAny  ||
-         constraint == CArgDescriptions::eLessOrEqual  ||
-         (constraint == CArgDescriptions::eMoreOrEqual  &&
-          n_constraint != 0  &&  n >= n_constraint));
 }
 
 

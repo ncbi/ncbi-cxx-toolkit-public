@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/11/17 22:04:33  vakatov
+* CArgDescriptions::  Switch the order of optional args in methods
+* AddOptionalKey() and AddPlain(). Also, enforce the default value to
+* match arg. description (and constraints, if any) at all times.
+*
 * Revision 1.32  2000/11/14 21:40:08  vasilche
 * New NCBIArgs API.
 *
@@ -307,7 +312,7 @@ int CAsn2Asn::Run(void)
         argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
                                argDesc.eOutputFile);
         argDesc.AddOptionalKey("c", "count", "perform command <count> times",
-                               argDesc.eInteger, 0, "1");
+                               argDesc.eInteger, "1");
         
         argDesc.AddFlag("ih", "Use read hooks");
         argDesc.AddFlag("oh", "Use write hooks");
@@ -453,7 +458,7 @@ int CAsn2Asn::Run(void)
 *
 *****************************************************************************/
 static
-void SeqEntryProcess(CSeq_entry& seqEntry)
+void SeqEntryProcess(CSeq_entry& /* seqEntry */)
 {
 }
 
@@ -480,11 +485,11 @@ void CWriteSeqEntryHook::WriteObject(CObjectOStream& out,
     CInc inc(m_Level);
     if ( m_Level == 1 ) {
         NcbiCerr << "entry" << NcbiEndl;
-        const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
+        // const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
         object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
     }
     else {
-        const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
+        // const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
         object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
     }
 }

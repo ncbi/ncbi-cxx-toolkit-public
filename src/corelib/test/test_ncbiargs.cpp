@@ -30,6 +30,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2000/11/17 22:04:31  vakatov
+ * CArgDescriptions::  Switch the order of optional args in methods
+ * AddOptionalKey() and AddPlain(). Also, enforce the default value to
+ * match arg. description (and constraints, if any) at all times.
+ *
  * Revision 6.9  2000/11/13 20:31:09  vakatov
  * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
  *
@@ -80,16 +85,14 @@ static CArgs* s_Test0(CArgDescriptions& arg_desc, int argc, const char* argv[])
     arg_desc.AddOptionalKey
         ("ko", "OptionalKey",
          "This is an optional integer key argument",
-         CArgDescriptions::eInteger, 0/*no flags*/,
-         "123");
+         CArgDescriptions::eInteger, "123");
     arg_desc.SetConstraint
         ("ko", new CArgAllow_Integers(0, 200));
 
     arg_desc.AddOptionalKey
         ("ko2", "OptionalKey2",
          "This is another optional key argument",
-         CArgDescriptions::eBoolean, 0/*no flags*/,
-         "True");
+         CArgDescriptions::eBoolean, "True");
 
     arg_desc.AddFlag
         ("f1",
@@ -101,23 +104,22 @@ static CArgs* s_Test0(CArgDescriptions& arg_desc, int argc, const char* argv[])
          false);
 
     arg_desc.AddPlain
-        ("p",
+        ("barfooetc",
          "This is a mandatory plain (named positional) argument",
          CArgDescriptions::eString);
     arg_desc.SetConstraint
-        ("p", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+        ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
 
     arg_desc.AddPlain
-        ("po",
+        ("logfile",
          "This is an optional plain (named positional) argument",
-         CArgDescriptions::eOutputFile,
-         CArgDescriptions::fPreOpen | CArgDescriptions::fBinary,
-         "-");
+         CArgDescriptions::eOutputFile, "-",
+         CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
 
     arg_desc.AddExtra
         ("These are the optional extra (unnamed positional) arguments. "
          "They will be printed out to the file specified by the "
-         "2nd positional argument, \"po\"",
+         "2nd positional argument,\n\"logfile\"",
          CArgDescriptions::eBoolean);
 
 
@@ -130,22 +132,23 @@ static CArgs* s_Test0(CArgDescriptions& arg_desc, int argc, const char* argv[])
 
 
     // Print all extra (unnamed positional) arguments
-    cout << "Printing unnamed positional arguments to file `"
-         << args["po"].AsString() << "'..." << endl;
-    
-    ostream& os = args["po"].AsOutputFile();
-    if ( args.GetNExtra() ) {
-        for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
-            os << "#" << extra << ":  "
-               << NStr::BoolToString(args[extra].AsBoolean())
-               << "   (passed as `" << args[extra].AsString() << "')"
+    if ( args.IsProvided("logfile") ) {
+        cout << "Printing unnamed positional arguments to file `"
+             << args["logfile"].AsString() << "'..." << endl;
+
+        ostream& os = args["logfile"].AsOutputFile();
+        if ( args.GetNExtra() ) {
+            for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
+                os << "#" << extra << ":  "
+                   << NStr::BoolToString(args[extra].AsBoolean())
+                   << "   (passed as `" << args[extra].AsString() << "')"
+                   << endl;
+            }
+        } else {
+            os << "...no unnamed positional arguments provided in the cmd-line"
                << endl;
         }
-    } else {
-        os << "...no unnamed positional arguments provided in the cmd-line"
-           << endl;
     }
-
 
     // Return to Main
     return &args;
@@ -184,7 +187,6 @@ static CArgs* s_Test8(CArgDescriptions& arg_desc, int argc, const char* argv[])
                             "alphaNumericKey",
                             "This is an optional argument",
                             CArgDescriptions::eAlnum,
-                            0,
                             "CORELIB");
 
     CArgs* args = arg_desc.CreateArgs(argc, argv);
@@ -427,17 +429,27 @@ int main(int argc, const char* argv[])
         auto_ptr<CArgs> args( s_Test[test](arg_desc, argc, argv) );
 
         // Printout obtained argument values
-        cout << string(72, '=') << endl;
+        cout << endl << string(72, '=') << endl;
         string str;
         cout << args->Print(str) << endl;
     }
     catch (exception& e) {
         // Print USAGE
         string str;
-        cerr << string(72, '~') << endl << arg_desc.PrintUsage(str) << endl;
+        cerr << endl << string(72, '~') << endl;
+        cerr << arg_desc.PrintUsage(str) << endl;
 
         // Print the exception error message
         cerr << string(72, '=') << endl << "ERROR:  " << e.what() << endl;
+    }
+    catch (...) {
+        // Print USAGE
+        string str;
+        cerr << endl << string(72, '~') << endl;
+        cerr << arg_desc.PrintUsage(str) << endl;
+
+        // Print the exception error message
+        cerr << string(72, '=') << endl << "ERROR:  unknown error" << endl;
     }
 
     return 0;

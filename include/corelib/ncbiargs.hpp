@@ -37,6 +37,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2000/11/17 22:04:28  vakatov
+ * CArgDescriptions::  Switch the order of optional args in methods
+ * AddOptionalKey() and AddPlain(). Also, enforce the default value to
+ * match arg. description (and constraints, if any) at all times.
+ *
  * Revision 1.11  2000/11/13 20:31:05  vakatov
  * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
  *
@@ -158,8 +163,8 @@ public:
         fToBinary  = 0x4  // change file open mode to binary
     };
 
-    virtual CNcbiIstream& AsInputFile (EFlags changeModeTo = fUnchanged) const;
-    virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiIstream& AsInputFile (EFlags change_mode = fUnchanged) const;
+    virtual CNcbiOstream& AsOutputFile(EFlags change_mode = fUnchanged) const;
 
 protected:
     // Prohibit explicit instantiation of "CArg" objects
@@ -270,8 +275,10 @@ public:
         eInteger,    // conversible into an integer number (long)
         eDouble,     // conversible into a floating point number (double)
         eInputFile,  // name of file (must exist and be readable)
-        eOutputFile  // name of file (must be writeable)
-#define N_ARG_TYPE ((size_t) eOutputFile + 1)
+        eOutputFile, // name of file (must be writeable)
+
+        // this one is for internal use only:
+        k_EType_Size
     };
     // Arg.type names
     static const string& GetTypeName(EType type);
@@ -300,8 +307,8 @@ public:
                         const string& synopsis,  // must be {alnum, '_'} word
                         const string& comment,
                         EType         type,
-                        TFlags        flags         = 0,
-                        const string& default_value = kEmptyStr);
+                        const string& default_value = kEmptyStr,
+                        TFlags        flags         = 0);
 
     /////  arg_flag  := -<flag>,     <flag> := "name"
     // If the flag is provided (in the command-line), then its value
@@ -320,8 +327,8 @@ public:
     void AddPlain(const string& name,
                   const string& comment,
                   EType         type,
-                  TFlags        flags         = 0,
-                  const string& default_value = kEmptyStr);
+                  const string& default_value = kEmptyStr,
+                  TFlags        flags         = 0);
 
     // Provide description for the extra position args -- the ones
     // that have not been described by AddPlain().
@@ -372,6 +379,7 @@ public:
     // Check if the "name" is syntaxically correct: it can contain only
     // alphanumeric characters and underscore ('_')
     static bool VerifyName(const string& name);
+
 
 private:
     typedef map< string, AutoPtr<CArgDesc> >  TArgs;
