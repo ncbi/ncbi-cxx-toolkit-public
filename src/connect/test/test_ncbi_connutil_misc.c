@@ -141,6 +141,30 @@ static void TEST_URL_Encoding(void)
 }
 
 
+/***********************************************************************
+ *  TEST:  BASE64_Encode(), BAS64_Decode()
+ */
+
+static void TEST_BASE64_Encoding(void)
+{
+    const char test_string[] = "Quick brown fox jumps over the lazy dog";
+    size_t read, written, len = 16;
+    char buf1[1024], buf2[1024];
+
+    BASE64_Encode(test_string, strlen(test_string) + 1, &read,
+                  buf1, sizeof(buf1), &written, &len);
+    assert(read == strlen(test_string) + 1);
+    assert(written < sizeof(buf1));
+    assert(buf1[written] == '\0');
+
+    assert(BASE64_Decode(buf1, written, &read,
+                         buf2, sizeof(buf2), &written));
+    assert(strlen(buf1) == read);
+    assert(written == strlen(test_string) + 1);
+    assert(buf2[written - 1] == '\0');
+    assert(strcmp(buf2, test_string) == 0);
+}
+
 
 /***********************************************************************
  *  TEST:  Miscellaneous
@@ -291,6 +315,7 @@ int main(void)
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     TEST_URL_Encoding();
+    TEST_BASE64_Encoding();
     TEST_MIME();
     TEST_ConnNetInfo();
 
@@ -302,6 +327,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2005/03/19 02:14:10  lavr
+ * +Test for  src/connect/test/test_ncbi_connutil_misc.cBASE64_{En|De}code
+ *
  * Revision 6.14  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
