@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -341,7 +341,7 @@ Tx-evidence ::= SEQUENCE {
         rna-size (2) ,  -- RNA length measurement
         np-map (3) ,    -- nuclease protection mapping with homologous sequence ladder
         np-size (4) ,   -- nuclease protected fragment length measurement
-        pm-seq (5) ,    -- dideoxy RNA sequencing 
+        pe-seq (5) ,    -- dideoxy RNA sequencing 
         cDNA-seq (6) ,  -- full-length cDNA sequencing
         pe-map (7) ,    -- primer extension mapping with homologous sequence ladder    
         pe-size (8) ,   -- primer extension product length measurement
