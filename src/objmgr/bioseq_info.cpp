@@ -809,6 +809,18 @@ void CBioseq_Info::SetInst_Hist_Deleted(TInst_Hist_Deleted& v)
 }
 
 
+bool CBioseq_Info::IsNa(void) const
+{
+    return m_Object->IsNa();
+}
+
+
+bool CBioseq_Info::IsAa(void) const
+{
+    return m_Object->IsAa();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // calculate bioseq length if inst.length field is not set
 /////////////////////////////////////////////////////////////////////////////
@@ -993,6 +1005,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/01/04 16:31:07  grichenk
+* Added IsNa(), IsAa()
+*
 * Revision 1.28  2004/12/22 15:56:29  vasilche
 * Try matching Seq-ids too in x_CalcBioseqLength.
 *

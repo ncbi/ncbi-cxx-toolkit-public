@@ -392,6 +392,18 @@ bool CBioseq_Handle::HasAnnots(void) const
 }
 
 
+bool CBioseq_Handle::IsNa(void) const
+{
+    return x_GetInfo().IsNa();
+}
+
+
+bool CBioseq_Handle::IsAa(void) const
+{
+    return x_GetInfo().IsAa();
+}
+
+
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
 
@@ -856,6 +868,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/01/04 16:31:07  grichenk
+* Added IsNa(), IsAa()
+*
 * Revision 1.77  2004/12/28 18:39:46  vasilche
 * Added lost scope lock in CTSE_Handle.
 *

@@ -203,6 +203,9 @@ public:
     const TInst_Hist_Deleted& GetInst_Hist_Deleted(void) const;
     void SetInst_Hist_Deleted(TInst_Hist_Deleted& v);
 
+    bool IsNa(void) const;
+    bool IsAa(void) const;
+
     // Get some values from core:
     const CSeqMap& GetSeqMap(void) const;
 
@@ -302,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2005/01/04 16:31:07  grichenk
+ * Added IsNa(), IsAa()
+ *
  * Revision 1.22  2004/10/18 13:56:36  vasilche
  * Added support for split assembly.
  *

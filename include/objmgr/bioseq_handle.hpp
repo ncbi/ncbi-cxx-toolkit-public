@@ -203,6 +203,8 @@ public:
     // annot
     bool HasAnnots(void) const;
 
+    bool IsNa(void) const;
+    bool IsAa(void) const;
     //////////////////////////////////////////////////////////////////
     // Old interface:
 
@@ -639,6 +641,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2005/01/04 16:31:07  grichenk
+* Added IsNa(), IsAa()
+*
 * Revision 1.67  2004/12/22 15:56:05  vasilche
 * Introduced CTSE_Handle.
 * Added auto-release of unused TSEs in scope.
