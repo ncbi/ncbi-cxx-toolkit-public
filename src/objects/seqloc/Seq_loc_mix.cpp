@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/04/22 20:09:08  grichenk
+ * -GetTotalRange(), GetRangeMap(), ResetRangeMap()
+ *
  * Revision 6.4  2002/01/24 23:29:48  vakatov
  * Note for ourselves that the bug workaround "BW_010" is not needed
  * anymore, and we should get rid of it in about half a year
@@ -96,33 +99,6 @@ int CSeq_loc_mix::GetLength(void) const
         length += ret;
     }
     return length;
-}
-
-
-void CSeq_loc_mix::ResetRangeMap(void) const
-{
-    m_RangeMap.reset(0);
-}
-
-
-const CSeq_loc_mix::TRangeMap& CSeq_loc_mix::GetRangeMap(void) const
-{
-    TRangeMap* rangeMap = m_RangeMap.get();
-    if ( !rangeMap ) {
-        TRange totalRange = TRange::GetEmpty();
-        auto_ptr<TRangeMap> rm(rangeMap = new TRangeMap);
-        iterate ( Tdata, i, Get() ) {
-            const CRef<CSeq_loc>& loc = *i;
-            TRange range = loc->GetTotalRange();
-            if ( !range.Empty() ) {
-                rm->insert(TRangeMap::value_type(range, loc));
-                totalRange += range;
-            }
-        }
-        m_TotalRange = totalRange;
-        m_RangeMap = rm;
-    }
-    return *rangeMap;
 }
 
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/04/22 20:09:06  grichenk
+ * -GetTotalRange(), GetRangeMap(), ResetRangeMap()
+ *
  * Revision 1.6  2001/08/24 13:45:01  grichenk
  * included <memory>
  *
@@ -86,25 +89,12 @@ public:
 
     // Length Calculator
     int GetLength(void) const;
-
-    typedef CRangeMap<CConstRef<CSeq_loc>, int> TRangeMap;
-    typedef TRangeMap::range_type TRange;
-
-    const TRangeMap& GetRangeMap(void) const;
-    void ResetRangeMap(void) const;
-    TRange GetTotalRange(void) const
-        {
-            GetRangeMap();
-            return m_TotalRange;
-        }
     
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc_mix(const CSeq_loc_mix&);
     CSeq_loc_mix& operator= (const CSeq_loc_mix&);
 
-    mutable auto_ptr<TRangeMap> m_RangeMap;
-    mutable TRange m_TotalRange;
 };
 
 
