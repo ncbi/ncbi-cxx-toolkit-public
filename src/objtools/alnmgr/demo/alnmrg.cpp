@@ -116,7 +116,15 @@ void CAlnMrgApp::Init(void)
 
     arg_desc->AddDefaultKey
         ("calcscore", "CalcScore",
-         "Calculate each aligned seq pair score and use it when merging.",
+         "Calculate each aligned seq pair score and use it when merging."
+         "(Don't stitch off ObjMgr for this).",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("noobjmgr", "noobjmgr",
+        // ObjMgr is used to identify sequences and obtain a bioseqhandle.
+        // Also used to calc scores and determine the type of molecule
+         "Skip ObjMgr in identifying sequences, calculating scores, etc.",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
@@ -166,7 +174,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
     if (asn_type == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         *in >> *se;
-        //m_Mix->GetScope().AddTopLevelSeqEntry(*se);
+        m_Mix->GetScope().AddTopLevelSeqEntry(*se);
         for (i = Begin(*se); i; ++i) {
             if (CType<CDense_seg>::Match(i)) {
                 m_Mix->Add(*(CType<CDense_seg>::Get(i)),
@@ -251,6 +259,7 @@ void CAlnMrgApp::SetOptions(void)
     }
 
     m_MergeFlags = 0;
+    m_AddFlags = 0;
 
     if (args["gapjoin"]  &&  args["gapjoin"].AsBoolean()) {
         m_MergeFlags |= CAlnMix::fGapJoin;
@@ -274,6 +283,10 @@ void CAlnMrgApp::SetOptions(void)
 
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
+    }
+
+    if (args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) {
+        m_AddFlags |= CAlnMix::fDontUseObjMgr;
     }
 }
 
@@ -312,6 +325,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/06/24 19:23:37  todorov
+* objmgr usage optional
+*
 * Revision 1.3  2003/06/02 16:06:41  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
