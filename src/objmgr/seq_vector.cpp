@@ -305,8 +305,9 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
         if (cend > m_CurData.dest_start + m_CurData.length) {
             cend = m_CurData.dest_start + m_CurData.length;
             m_CachedPos = cend - min(cend, kCacheSize*2);
-            if (m_CachedPos < m_CurData.dest_start)
+            if (m_CachedPos < m_CurData.dest_start) {
                 m_CachedPos = m_CurData.dest_start;
+            }
         }
         m_CachedLen = cend - m_CachedPos;
         TSeqPos src_start
@@ -475,6 +476,9 @@ void CSeqVector::x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buf
     if (cache_stop - cache_start > vstop - vstart) {
         cache_stop = cache_start + vstop - vstart;
     }
+    if (cache_stop > m_CachedLen) {
+        cache_stop = m_CachedLen;
+    }
 
     buffer += m_CachedData.substr(cache_start, cache_stop - cache_start);
     start += cache_stop - cache_start;
@@ -535,6 +539,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/09/26 20:15:11  grichenk
+* Fixed cache lengths checks
+*
 * Revision 1.32  2002/09/16 20:13:01  grichenk
 * Fixed Iupac coding setter
 *
