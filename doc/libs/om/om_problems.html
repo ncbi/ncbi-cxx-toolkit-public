@@ -22,8 +22,17 @@
   <li><a href="#seqvector">
   What is the format of data CSeqVector returns?
   </a></li>
+  <li><a href="#cdreg">
+  What to pay attention to when processing CdRegions?
+  </a></li>
+  <li><a href="#largeseq">
+  Sequence gi=18565551.
+  </a></li>
   <li><a href="#fcgi">
   How to convert CGI application into FCGI one?
+  </a></li>
+  <li><a href="#fileentry">
+  How to load sequence data from a file?
   </a></li>
   <li><a href="#other">
   Other suggestions.
@@ -67,7 +76,7 @@ accession should be fetched.
 There are two methods in CBioseq_Handle, which return CSeqMap object:
 <pre>
     const CSeqMap&amp; GetSeqMap(void) const;
-    const CSeqMap&amp GetResolvedSeqMap(void) const;
+    const CSeqMap&amp; GetResolvedSeqMap(void) const;
 </pre>
 What is the difference? The point is that a sequence can refer to other sequences,
 which in turn to others etc. etc. <var>Object Manager</var> does not resolve this
@@ -76,6 +85,9 @@ references until a client needs it. So, the contents of SeqMap object returned b
 <tt>GetResolvedSeqMap</tt> returns completely resolved map, that is map, which
 does not contain references to references, nor references to gaps - only either data,
 or references to data, or gaps.
+<br>
+Please note, the last element of CSeqMap is always of type <tt>eSeqEnd</tt>.
+Its length is zero. It does not mean much - just "the end of the map".
 </p>
 
 
@@ -91,8 +103,40 @@ in the original format (in which it receives it from the database).
 <br>
 More information about various sequence data formats can be found
 <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML#Seq-data: Encoding the Sequence Data Itself">here</a>.
+<br>
+When there is a gap in the sequence, CSeqVector always returns symbol N,
+regardless of coding.
 </p>
 
+
+<hr>
+<a name="cdreg"></a>
+<h4>What to pay attention to when processing CdRegions?</h4>
+<p>
+When looking for CdRegions on a sequence, you get a set of Seq_loc objects,
+which describe their position on the sequence. Please note, these positions may,
+and do overlap. Based on a set of Seq_locs, it is possible to "construct"
+a Bioseq - it has a special constructor for this. Still, in case of
+overlapping intervals, such sequence would contain some data regions repeated twice,
+or even several times.
+<br>
+When calculating total number of residues on a sequence, one should skip gaps -
+CSeqVector returns symbol N in this case.
+</p>
+
+
+
+<hr>
+<a name="largeseq"></a>
+<h4>Sequence gi=18565551.</h4>
+<p>
+This is a huge (8 megabases) segmented sequence with CDS features defined on the sequence
+itself and its parts, which are also huge. When trying to get all of them, you can
+run out of your computer resources. We are looking for some
+solution to this problem. Probably, in some cases the <var>Object Manager</var>
+does not need to retrieve all features for all bioseq segments, but we
+are not sure how to filter them out.
+</p>
 
 
 <hr>
@@ -116,18 +160,66 @@ LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(FASTCGI_LIBS) $(NETWORK_LIBS) $(ORIG_L
 
 
 <hr>
+<a name="fileentry"></a>
+<h4>How to load sequence data from a file?</h4>
+<p>
+It is possible to load into <var>Object Manager</var>  &nbsp;"manually" created sequence entry -
+using <tt>AddTopLevelSeqEntry</tt> method of CScope object.
+Such an entry can be loaded, for example, from a file in ASN format (file.asn):
+<pre>
+#include &lt;serial/serial.hpp&gt;
+#include &lt;serial/objistr.hpp&gt;
+#include &lt;serial/objostr.hpp&gt;
+...
+    // Use CRef&lt;&gt; to store the object. Use "new" to allocate it.
+    // This will allow the Object Manager to work with the object
+    // even if you delete the reference.
+    CRef<CSeq_entry> entry = new CSeq_entry;
+    // Open serial input stream (ASN.1 text file version)
+    CObjectIStream&amp; is = *CObjectIStream::Open("file.asn", eSerial_AsnText);
+    // ASN.1 binary file version
+    // CObjectIStream&amp; is = *CObjectIStream::Open("file.asn", eSerial_AsnBinary);
+    // ASN.1 text stream version
+    // CObjectIStream&amp; is = *CObjectIStream::Open(eSerial_AsnText, any_stream);
+    is &gt;&gt; *entry;
+    is.Close();
+</pre>
+To store sequence entry in an ASN file, use the following code:
+<pre>
+    // Open serial output stream (dump ASN.1 text to stdout)
+    CObjectOStream&amp; os = *CObjectOStream::Open(eSerial_AsnText, NcbiCout);
+    os &lt;&lt; *entry;
+    os.Close();
+</pre>
+</p>
+
+
+<hr>
 <a name="other"></a>
 <h4>Other suggestions.</h4>
 <ol>
-  <li>
-    CSeq_loc needs an additional function - to make its complement.
-  </li>
   <li>
     CBioseq needs an additional function - one that has been called
     <tt>GetBestId</tt> in the old toolkit (the best id is actually 'GI').
 	If there is no GI there are priorities defined in the old toolkit.
     The construction <tt>GetId().begin()</tt>, one has to use instead,
 	is not quite proper.
+  </li>
+  <li>
+    CSeqMap can specify that a segment was a reference to another sequence. Still,
+	there is no way to learn to <b>what</b> sequence it refers to.
+  </li>
+  <li>
+    Implement some sort of "Seq_loc algebra" - to be able to create unions, intersections,
+	complements etc. of Seq_loc objects.
+  </li>
+  <li>
+    Implement some sort of "Seq_loc iterator, or cursor" - to be able
+	to traverse a set of Seq_locs in some organized way. 
+  </li>
+  <li>
+  Method <tt>CSeq_loc::GetTotalRange</tt> returns incorrect data in case of Seq_loc
+  being a mix.
   </li>
 </ol>
 
