@@ -220,7 +220,8 @@ inline
 typename C::value_type
 FindBestChoice(const C& container, F score_func)
 {
-    CBestChoiceTracker<typename C::value_type, F> tracker(score_func);
+    typedef typename C::value_type T;
+    CBestChoiceTracker<T, F> tracker(score_func);
     iterate (typename C, it, container) {
         tracker(*it);
     }
@@ -234,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/08/28 14:48:00  ucko
+ * Tweak FindBestChoice<> to work with MSVC.
+ *
  * Revision 1.24  2002/08/22 21:24:24  ucko
  * Added templates for finding the best element (e.g., CRef<CSeq_id>) in
  * a container according to some score function.
