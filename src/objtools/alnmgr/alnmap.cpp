@@ -282,7 +282,6 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos) const
     }
 }
 
-
 TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
                                            TSeqPos aln_pos) const
 {
@@ -291,18 +290,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
         return -1;
     } else {
         TSignedSeqPos pos = GetStart(for_row, seg);
-        if (pos == -1) {
-            // our alignment position lies on a gap, so we return
-            // the best available offset
-            if (IsPositiveStrand(for_row)) {
-                for ( ; seg > 0 && pos == -1; --seg)
-                    pos = GetStop(for_row, seg);
-            } else {
-                for ( ; seg < GetNumSegs() && pos == -1; ++seg) {
-                    pos = GetStop(for_row, seg);
-                }
-            }
-        } else {
+        if (pos >= 0) {
             TSeqPos delta = aln_pos - GetAlnStart(seg);
             if (IsPositiveStrand(for_row)) {
                 pos += delta;
@@ -315,6 +303,42 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
     }
 }
 
+TSeqPos CAlnMap::GetBestSeqPosFromAlnPos(TNumrow for_row,
+                                         TSeqPos aln_pos) const
+{
+    if (aln_pos > GetAlnStop()) {
+        return GetSeqStop(for_row);
+    }
+
+    TNumseg seg = GetSeg(aln_pos);
+
+    TSignedSeqPos pos = GetStart(for_row, seg);
+    if (pos == -1) {
+        // our alignment position lies on a gap, so we return
+        // the best available offset
+        if (IsPositiveStrand(for_row)) {
+            for ( ; seg > 0 && pos == -1; --seg) {
+                pos = GetStop(for_row, seg);
+            }
+        } else {
+            for ( ; seg < GetNumSegs() && pos == -1; ++seg) {
+                pos = GetStop(for_row, seg);
+            }
+        }
+        if (pos == -1) {
+            pos = GetSeqStart(for_row);
+        }
+    } else {
+        TSeqPos delta = aln_pos - GetAlnStart(seg);
+        if (IsPositiveStrand(for_row)) {
+            pos += delta;
+        } else {
+            pos += GetLen(seg) - 1 - delta;
+        }
+    }
+    
+    return pos;
+}
 
 TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
                                            TNumrow row, TSeqPos seq_pos) const
@@ -550,6 +574,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2002/10/04 16:38:06  todorov
+* new method GetBestSeqPosFromAlnPos
+*
 * Revision 1.11  2002/09/27 16:57:46  todorov
 * changed order of params for GetSeqPosFrom{Seq,Aln}Pos
 *
