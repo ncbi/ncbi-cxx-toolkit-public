@@ -92,7 +92,7 @@
  *  @ingroup CORELIB
  */
 
-/** @defgroup Application Registry
+/** @defgroup Registry Application Registry
  *  @ingroup CORELIB
  */
 
@@ -129,6 +129,10 @@
  */
 
 /** @defgroup MTWrappers MT-safety Testing Framework
+ *  @ingroup CORELIB
+ */
+
+/** @defgroup Process Process Management
  *  @ingroup CORELIB
  */
 
@@ -185,6 +189,10 @@
  */
 
 /** @defgroup ThreadedServer Threaded Server
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup ReaderWriter Socket reader-writer
  *  @ingroup CONNECT
  */
 
@@ -329,6 +337,10 @@
  *  @ingroup HTML
  */
 
+/** @defgroup HTMLexpt  HTML Exception
+ *  @ingroup HTML
+ */
+
 
 /* ========================================================================= */
 
@@ -455,6 +467,22 @@
 
 /** @defgroup UserCodeSupport User Code Support
  *  @ingroup SERIAL
+ */
+
+
+/* ========================================================================= */
+
+
+/** @defgroup OBJECTS OBJECTS
+ *  ASN.1 objects
+ */
+
+/** @defgroup OBJECTS_Seqloc Seq-loc Management
+ *  @ingroup OBJECTS
+ */
+
+/** @defgroup OBJECTS_Seqid Seq-id Management
+ *  @ingroup OBJECTS
  */
 
 

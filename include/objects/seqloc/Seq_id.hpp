@@ -50,6 +50,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+/** @addtogroup OBJECTS_Seqid
+ *
+ * @{
+ */
+
+
 class CBioseq;
 
 
@@ -60,27 +66,27 @@ class NCBI_SEQLOC_EXPORT CSeq_id : public CSeq_id_Base,
 
 public:
 
-    //
-    // See also CSeq_id related functions in "util/sequence.hpp":
-    //
-    //   TSeqPos GetLength(const CSeq_id&, CScope*);
-    //   bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
-    //
+    ///
+    /// See also CSeq_id related functions in "util/sequence.hpp":
+    ///
+    ///   TSeqPos GetLength(const CSeq_id&, CScope*);
+    ///   bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
+    ///
 
     // Default constructor
     CSeq_id( void );
 
-    // Takes either a FastA-style string delimited by vertical bars or
-    // a raw accession (with optional version).
+    /// Takes either a FastA-style string delimited by vertical bars or
+    /// a raw accession (with optional version).
     CSeq_id( const string& the_id );
 
-    // Construct a seq-id from a dbtag
+    /// Construct a seq-id from a dbtag
     CSeq_id(const CDbtag& tag, bool set_as_general = true);
 
-    // With proper choice
+    /// With proper choice
     CSeq_id(CSeq_id_Base::E_Choice the_type,
             int           int_seq_id);     // see explanation in x_Init below
-    // With proper choice
+    /// With proper choice
     CSeq_id(CSeq_id_Base::E_Choice the_type,
             const string&          acc_in,  // see explanation in x_Init below
             const string&          name_in,
@@ -94,7 +100,7 @@ public:
             int                    version    = 0,
             const string&          release_in = kEmptyStr);
 
-    // Need to lookup choice
+    /// Need to lookup choice
     CSeq_id(const string& the_type,
             const string& acc_in,     // see explanation in x_Init below
             const string& name_in,
@@ -111,10 +117,10 @@ public:
     // Destructor
     virtual ~CSeq_id(void);
 
-    // Converts a string to a choice, no need to require a member.
+    /// Converts a string to a choice, no need to require a member.
     static CSeq_id::E_Choice WhichInverseSeqId(const char* SeqIdCode);
 
-    // For s_IdentifyAccession (below)
+    /// For s_IdentifyAccession (below)
     enum EAccessionInfo {
         // Mask for Seq_id type; allow 8 bits to be safe
         eAcc_type_mask = 0xff,
@@ -242,23 +248,23 @@ public:
     static E_Choice GetAccType(EAccessionInfo info)
         { return static_cast<E_Choice>(info & eAcc_type_mask); }
 
-    // Deduces information from a bare accession a la WHICH_db_accession;
-    // may report false negatives on properties.
+    /// Deduces information from a bare accession a la WHICH_db_accession;
+    /// may report false negatives on properties.
     static EAccessionInfo IdentifyAccession(const string& accession);
     EAccessionInfo IdentifyAccession(void) const;
 
-    // Match() - TRUE if SeqIds are equivalent
+    /// Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
 
-    // Compare return values
+    /// Compare return values
     enum E_SIC {
-        e_error = 0,  // some problem
-        e_DIFF,       // different SeqId types-can't compare
-        e_NO,         // SeqIds compared, but are different
-        e_YES         // SeqIds compared, are equivalent
+        e_error = 0,  /// some problem
+        e_DIFF,       /// different SeqId types-can't compare
+        e_NO,         /// SeqIds compared, but are different
+        e_YES         /// SeqIds compared, are equivalent
     };
 
-    // Compare() - more general
+    /// Compare() - more general
     E_SIC Compare(const CSeq_id& sid2) const;
     int CompareOrdered(const CSeq_id& sid2) const;
     bool operator<(const CSeq_id& sid2) const
@@ -266,22 +272,22 @@ public:
             return CompareOrdered(sid2) < 0;
         }
 
-    // Return compatible CTextseq_id
+    /// Return compatible CTextseq_id
     const CTextseq_id* GetTextseq_Id(void) const;
 
-    // Implement serializable interface
+    /// Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     CProxy DumpAsFasta(void) const { return Dump(eAsFasta); }
     const string AsFastaString(void) const;
 
-    // return the label for a given string
+    /// return the label for a given string
     enum ELabelType {
         eType,
         eContent,
         eBoth,
         eFasta,
 
-        // default is to show type + content
+        /// default is to show type + content
         eDefault = eBoth
     };
 
@@ -289,7 +295,7 @@ public:
         fLabel_Version            = 0x10,
         fLabel_GeneralDbIsContent = 0x20,
 
-        // default options - always show the version
+        /// default options - always show the version
         fLabel_Default = fLabel_Version
     };
     typedef int TLabelFlags;
@@ -297,11 +303,11 @@ public:
                   ELabelType  type  = eDefault,
                   TLabelFlags flags = fLabel_Default) const;
 
-    //Return seqid string with optional version for text seqid type
+    ///Return seqid string with optional version for text seqid type
     string GetSeqIdString(bool with_version = false) const;
 
-    // Get a string representation of the sequence IDs of a given bioseq.  This
-    // function produces strings in a number of possible formats.
+    /// Get a string representation of the sequence IDs of a given bioseq.  This
+    /// function produces strings in a number of possible formats.
     enum EStringFormat {
         eFormat_FastA,              // FastA format
         eFormat_ForceGI,            // GI only, in FastA format
@@ -310,12 +316,12 @@ public:
     };
     static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt);
 
-    // Numerical quality ranking; lower is better.
-    // (Text)Score and WorstRank both basically correspond to the C
-    // Toolkit's SeqIdFindWorst, which favors textual accessions,
-    // whereas BestRank corresponds to the C Toolkit's SeqIdFindBest
-    // and favors GIs.  All three give a slight bonus to accessions
-    // that carry versions.
+    /// Numerical quality ranking; lower is better.
+    /// (Text)Score and WorstRank both basically correspond to the C
+    /// Toolkit's SeqIdFindWorst, which favors textual accessions,
+    /// whereas BestRank corresponds to the C Toolkit's SeqIdFindBest
+    /// and favors GIs.  All three give a slight bonus to accessions
+    /// that carry versions.
 
     int AdjustScore       (int base_score) const;
     int BaseTextScore     (void)           const;
@@ -327,7 +333,7 @@ public:
     int WorstRankScore(void) const
         { return AdjustScore(BaseWorstRankScore()); }
 
-    // Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
+    /// Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id)
         { return id ? id->TextScore() : kMax_Int; }
     static int BestRank(const CRef<CSeq_id>& id)
@@ -359,8 +365,8 @@ private:
 };
 
 
-// Search the container of CRef<CSeq_id> for the id of given type.
-// Return the id of requested type, or null CRef.
+/// Search the container of CRef<CSeq_id> for the id of given type.
+/// Return the id of requested type, or null CRef.
 template<class container>
 CRef<CSeq_id> GetSeq_idByType(const container& ids,
                                     CSeq_id::E_Choice choice)
@@ -373,7 +379,7 @@ CRef<CSeq_id> GetSeq_idByType(const container& ids,
     return CRef<CSeq_id>(0);
 }
 
-//return gi from id list if exists, return 0 otherwise
+/// Return gi from id list if exists, return 0 otherwise
 template<class container>
 int FindGi(const container& ids)
 {
@@ -382,7 +388,7 @@ int FindGi(const container& ids)
 }
 
 
-//return text seq-id from id list if exists, return 0 otherwise
+/// Return text seq-id from id list if exists, return 0 otherwise
 template<class container>
 CRef<CSeq_id> FindTextseq_id(const container& ids)
 {
@@ -482,6 +488,8 @@ int CSeq_id::BaseWorstRankScore(void) const
 
 /////////////////// end of CSeq_id inline methods
 
+/* @} */
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
@@ -490,6 +498,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2004/11/15 22:21:48  grichenk
+ * Doxygenized comments, fixed group names.
+ *
  * Revision 1.48  2004/06/28 14:20:42  dicuccio
  * Added flag for GetLabel(): treat the 'db' portion of a general ID as content
  *

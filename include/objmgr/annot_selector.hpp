@@ -43,6 +43,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
 class CSeq_entry;
 class CSeq_annot;
 
@@ -52,36 +59,41 @@ class CSeq_annot_Handle;
 class CAnnotObject_Info;
 
 
-// Structure to select type of Seq-annot
+/////////////////////////////////////////////////////////////////////////////
+///
+///  SAnnotSelector --
+///
+///  Structure to select type of Seq-annot
+
 struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 {
-    // Flag to indicate location overlapping method
+    /// Flag to indicate location overlapping method
     enum EOverlapType {
         eOverlap_Intervals,  // default - overlapping of individual intervals
         eOverlap_TotalRange  // overlapping of total ranges only
     };
-    // Flag to indicate references resolution method
+    /// Flag to indicate references resolution method
     enum EResolveMethod {
-        eResolve_None,   // Do not search annotations on segments
-        eResolve_TSE,    // default - search only on segments in the same TSE
-        eResolve_All     // Search annotations for all referenced sequences
+        eResolve_None,   /// Do not search annotations on segments
+        eResolve_TSE,    /// default - search only on segments in the same TSE
+        eResolve_All     /// Search annotations for all referenced sequences
     };
-    // Flag to indicate adaptive segment selection
+    /// Flag to indicate adaptive segment selection
     enum ESegmentSelect {
         eSegmentSelect_All,
         eSegmentSelect_First,
         eSegmentSelect_Last
     };
-    // Flag to indicate sorting method
+    /// Flag to indicate sorting method
     enum ESortOrder {
-        eSortOrder_None,    // do not sort annotations for faster retrieval
-        eSortOrder_Normal,  // default - increasing start, decreasing length
-        eSortOrder_Reverse  // decresing end, decreasing length
+        eSortOrder_None,    /// do not sort annotations for faster retrieval
+        eSortOrder_Normal,  /// default - increasing start, decreasing length
+        eSortOrder_Reverse  /// decresing end, decreasing length
     };
     enum EUnresolvedFlag {
-        eIgnoreUnresolved, // Ignore unresolved ids (default)
-        eSearchUnresolved, // Search annotations for unresolvable IDs
-        eFailUnresolved    // Throw exception for unresolved ids
+        eIgnoreUnresolved, /// Ignore unresolved ids (default)
+        eSearchUnresolved, /// Search annotations for unresolvable IDs
+        eFailUnresolved    /// Throw exception for unresolved ids
     };
 
     SAnnotSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set,
@@ -121,11 +133,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& IncludeFeatSubtype(TFeatSubtype subtype);
     SAnnotSelector& ExcludeFeatSubtype(TFeatSubtype subtype);
 
-    // Set type if not set yet, else do nothing.
+    /// Set type if not set yet, else do nothing.
     SAnnotSelector& CheckAnnotType(TAnnotType type);
 
-    // Return true if at least one subtype of the type is included
-    // or selected type is not set (any).
+    /// Return true if at least one subtype of the type is included
+    /// or selected type is not set (any).
     bool IncludedAnnotType(TAnnotType type) const;
     bool IncludedFeatType(TFeatType type) const;
     bool IncludedFeatSubtype(TFeatSubtype subtype) const;
@@ -214,8 +226,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
     SAnnotSelector& SetAdaptiveTrigger(const SAnnotTypeSelector& sel);
 
-    // set maximum count of annotations to find
-    // if max_size == 0 - no limit
+    /// set maximum count of annotations to find
+    /// if max_size == 0 - no limit
     size_t GetMaxSize(void)
         {
             return m_MaxSize;
@@ -278,11 +290,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
-    // Set all flags for searching external annotations. "seq" or "tse"
-    // should contain the virtual segmented bioseq. The flags set are:
-    //   ResolveTSE - prevent loading external bioseqs
-    //   LimitTSE   - search only external annotations near the virtual bioseq
-    //   SearchUnresolved - search on unresolved IDs.
+    /// Set all flags for searching external annotations. "seq" or "tse"
+    /// should contain the virtual segmented bioseq. The flags set are:
+    ///   ResolveTSE - prevent loading external bioseqs
+    ///   LimitTSE   - search only external annotations near the virtual bioseq
+    ///   SearchUnresolved - search on unresolved IDs.
     SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
     SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
 
@@ -388,12 +400,18 @@ public:
 };
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/11/15 22:21:48  grichenk
+* Doxygenized comments, fixed group names.
+*
 * Revision 1.36  2004/11/04 19:21:17  grichenk
 * Marked non-handle versions of SetLimitXXXX as deprecated
 *

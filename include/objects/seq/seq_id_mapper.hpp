@@ -47,18 +47,23 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/** @addtogroup OBJECTS_Seqid
+ *
+ * @{
+ */
+
 
 class CSeq_id;
 class CSeq_id_Which_Tree;
 
 
-////////////////////////////////////////////////////////////////////
-//
-//  CSeq_id_Mapper::
-//
-//    Allows fast convertions between CSeq_id and CSeq_id_Handle,
-//    including searching for multiple matches for a given seq-id.
-//
+/////////////////////////////////////////////////////////////////////
+///
+///  CSeq_id_Mapper::
+///
+///    Allows fast convertions between CSeq_id and CSeq_id_Handle,
+///    including searching for multiple matches for a given seq-id.
+///
 
 
 typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
@@ -71,23 +76,23 @@ public:
     
     virtual ~CSeq_id_Mapper(void);
     
-    // Get seq-id handle. Create new handle if not found and
-    // do_not_create is false. Get only the exactly equal seq-id handle.
+    /// Get seq-id handle. Create new handle if not found and
+    /// do_not_create is false. Get only the exactly equal seq-id handle.
     CSeq_id_Handle GetGiHandle(int gi);
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
 
-    // Get the list of matching handles, do not create new handles
+    /// Get the list of matching handles, do not create new handles
     bool HaveMatchingHandles(const CSeq_id_Handle& id);
     void GetMatchingHandles(const CSeq_id_Handle& id,
                             TSeq_id_HandleSet& h_set);
     bool HaveReverseMatch(const CSeq_id_Handle& id);
     void GetReverseMatchingHandles(const CSeq_id_Handle& id,
                                    TSeq_id_HandleSet& h_set);
-    // Get the list of string-matching handles, do not create new handles
+    /// Get the list of string-matching handles, do not create new handles
     void GetMatchingHandlesStr(string sid,
                                TSeq_id_HandleSet& h_set);
     
-    // Get seq-id for the given handle
+    /// Get seq-id for the given handle
     static CConstRef<CSeq_id> GetSeq_id(const CSeq_id_Handle& handle);
     
 private:
@@ -149,6 +154,8 @@ CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
     return x_GetTree(id.Which());
 }
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -156,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/11/15 22:21:48  grichenk
+* Doxygenized comments, fixed group names.
+*
 * Revision 1.29  2004/09/30 18:41:20  vasilche
 * Added CSeq_id_Handle::GetMapper() and MatchesTo().
 *

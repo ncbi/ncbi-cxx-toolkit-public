@@ -46,6 +46,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerCore
+ *
+ * @{
+ */
+
+
 class CSeq_id;
 class CSeq_loc;
 class CSeq_loc_CI;
@@ -54,6 +61,7 @@ class CSeq_align;
 class CScope;
 class CBioseq_Handle;
 class CSeqMap;
+
 
 class CMappingRange : public CObject
 {
@@ -101,6 +109,14 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_loc_Mapper --
+///
+///  Mapping locations and alignments between bioseqs through seq-locs,
+///  features, alignments or between parts of segmented bioseqs.
+
+
 class NCBI_XOBJMGR_EXPORT CSeq_loc_Mapper : public CObject
 {
 public:
@@ -108,29 +124,29 @@ public:
         eLocationToProduct,
         eProductToLocation
     };
-    // Method of treating locations already on the destination
+    /// Method of treating locations already on the destination
     enum EDestinationLocs {
-        eDestinationPreserve,  // preserve locations on the destination
-        eDestinationRemove     // remove any location not on the source
+        eDestinationPreserve,  /// preserve locations on the destination
+        eDestinationRemove     /// remove any location not on the source
     };
 
-    // Mapping through a feature, both location and product must be set.
-    // If scope is set, synonyms are resolved for each source ID.
+    /// Mapping through a feature, both location and product must be set.
+    /// If scope is set, synonyms are resolved for each source ID.
     CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                     EFeatMapDirection dir,
                     CScope*           scope = 0);
 
-    // Mapping between two seq_locs. If scope is set, synonyms are resolved
-    // for each source ID.
+    /// Mapping between two seq_locs. If scope is set, synonyms are resolved
+    /// for each source ID.
     CSeq_loc_Mapper(const CSeq_loc&   source,
                     const CSeq_loc&   target,
                     CScope*           scope = 0);
 
-    // Mapping through an alignment. Need to specify target ID or
-    // target row of the alignment. Any other ID is mapped to the
-    // target one. If scope is set, synonyms are resolved for each source ID.
-    // Only the first row matching target ID is used, all other rows
-    // are considered source.
+    /// Mapping through an alignment. Need to specify target ID or
+    /// target row of the alignment. Any other ID is mapped to the
+    /// target one. If scope is set, synonyms are resolved for each source ID.
+    /// Only the first row matching target ID is used, all other rows
+    /// are considered source.
     CSeq_loc_Mapper(const CSeq_align& map_align,
                     const CSeq_id&    to_id,
                     CScope*           scope = 0);
@@ -138,11 +154,11 @@ public:
                     size_t            to_row,
                     CScope*           scope = 0);
 
-    // Mapping from segments to the segmented sequence (same as
-    // in annot iterator). If dst_id is set, all segments are
-    // mapped to the id. Otherwise mapping is done to the top
-    // level references in the map (e.g. if the map is created from
-    // a seq-loc).
+    /// Mapping from segments to the segmented sequence (same as
+    /// in annot iterator). If dst_id is set, all segments are
+    /// mapped to the id. Otherwise mapping is done to the top
+    /// level references in the map (e.g. if the map is created from
+    /// a seq-loc).
     CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                     EDestinationLocs dst_locs = eDestinationPreserve);
     CSeq_loc_Mapper(const CSeqMap&   seq_map,
@@ -150,8 +166,8 @@ public:
                     CScope*          scope = 0,
                     EDestinationLocs dst_locs = eDestinationPreserve);
 
-    // Mapping from master sequence to its segments, restricted
-    // by depth. Depth = 0 is for synonyms conversion.
+    /// Mapping from master sequence to its segments, restricted
+    /// by depth. Depth = 0 is for synonyms conversion.
     CSeq_loc_Mapper(size_t          depth,
                     CBioseq_Handle& source_seq);
     CSeq_loc_Mapper(size_t         depth,
@@ -161,34 +177,39 @@ public:
 
     ~CSeq_loc_Mapper(void);
 
-    // Intervals' merging mode
-    // No merging
+    /// Intervals' merging mode
+    /// MergeNone and MergeAbutting do not change the order of ranges
+    /// in the destination seq-loc. No ranges will be merged if they
+    /// are separated by any other sub-range.
+    /// MergeContained and MergeAll sort ranges before sorting, so that
+    /// any overlapping ranges can be merged.
+    /// No merging
     CSeq_loc_Mapper& SetMergeNone(void);
-    // Merge only abutting intervals, keep overlapping
+    /// Merge only abutting intervals, keep overlapping
     CSeq_loc_Mapper& SetMergeAbutting(void);
-    // Merge intervals only if one is completely covered by another
+    /// Merge intervals only if one is completely covered by another
     CSeq_loc_Mapper& SetMergeContained(void);
-    // Merge any abutting or overlapping intervals
+    /// Merge any abutting or overlapping intervals
     CSeq_loc_Mapper& SetMergeAll(void);
 
     CSeq_loc_Mapper& SetGapPreserve(void);
     CSeq_loc_Mapper& SetGapRemove(void);
 
-    // Create target-to-target mapping to avoid truncation of ranges
-    // already on the target sequence(s). This includes mapping
-    // of each synonym to the same target ID if a scope is available.
+    /// Create target-to-target mapping to avoid truncation of ranges
+    /// already on the target sequence(s). This includes mapping
+    /// of each synonym to the same target ID if a scope is available.
     void PreserveDestinationLocs(void);
 
-    // Keep ranges which can not be mapped. Does not affect truncation
-    // of partially mapped ranges. By default nonmapping ranges are
-    // converted to NULL.
+    /// Keep ranges which can not be mapped. Does not affect truncation
+    /// of partially mapped ranges. By default nonmapping ranges are
+    /// converted to NULL.
     void KeepNonmappingRanges(void);
     void TruncateNonmappingRanges(void);
 
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
     CRef<CSeq_align> Map(const CSeq_align& src_align);
 
-    // Check if the last mapping resulted in partial location
+    /// Check if the last mapping resulted in partial location
     bool             LastIsPartial(void);
 
 private:
@@ -198,11 +219,6 @@ private:
     friend class CSeq_loc_Conversion_Set;
     friend class CSeq_align_Mapper;
 
-    // eMergeNone and eMergeAbutting do not change the order of ranges
-    // in the destination seq-loc. No ranges will be merged if they
-    // are separated by any other sub-range.
-    // eMergeContained and eMergeAll sort ranges before sorting, so that
-    // any overlapping ranges can be merged.
     enum EMergeFlags {
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
@@ -484,12 +500,18 @@ void CSeq_loc_Mapper::TruncateNonmappingRanges(void)
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/11/15 22:21:48  grichenk
+* Doxygenized comments, fixed group names.
+*
 * Revision 1.20  2004/10/27 20:01:04  grichenk
 * Fixed mapping: strands, circular locations, fuzz.
 *

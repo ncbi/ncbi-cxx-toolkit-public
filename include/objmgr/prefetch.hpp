@@ -45,6 +45,19 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerCore
+ *
+ * @{
+ */
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CPrefetchToken --
+///
+///  Data prefetching token
+
+
 class CPrefetchToken
 {
 public:
@@ -55,12 +68,12 @@ public:
     };
 
     CPrefetchToken(void);
-    // Find the first loader in the scope, request prefetching from
-    // this loader. Scope may be destroyed after creating token, but
-    // the scope used in NextBioseqHandle() should contain the same
-    // loader. Depth limits number of TSEs to be prefetched.
+    /// Find the first loader in the scope, request prefetching from
+    /// this loader. Scope may be destroyed after creating token, but
+    /// the scope used in NextBioseqHandle() should contain the same
+    /// loader. Depth limits number of TSEs to be prefetched.
     CPrefetchToken(CScope& scope, const TIds& ids, unsigned int depth = 2);
-    // Do not lock prefetched TSEs, prefetch depth is ignored.
+    /// Do not lock prefetched TSEs, prefetch depth is ignored.
     CPrefetchToken(CScope& scope, const TIds& ids, ENon_locking_prefetch);
     ~CPrefetchToken(void);
 
@@ -68,7 +81,7 @@ public:
     CPrefetchToken& operator =(const CPrefetchToken& token);
 
     operator bool(void) const;
-    // Get bioseq handle and move to the next requested id
+    /// Get bioseq handle and move to the next requested id
     CBioseq_Handle NextBioseqHandle(CScope& scope);
 
 private:
@@ -156,12 +169,18 @@ CPrefetchToken::operator bool(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/11/15 22:21:48  grichenk
+* Doxygenized comments, fixed group names.
+*
 * Revision 1.5  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

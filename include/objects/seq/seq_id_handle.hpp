@@ -40,14 +40,19 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/** @addtogroup OBJECTS_Seqid
+ *
+ * @{
+ */
 
-////////////////////////////////////////////////////////////////////
-//
-//  CSeq_id_Handle::
-//
-//    Handle to be used instead of CSeq_id. Supports different
-//    methods of comparison: exact equality or match of seq-ids.
-//
+
+/////////////////////////////////////////////////////////////////////
+///
+///  CSeq_id_Handle::
+///
+///    Handle to be used instead of CSeq_id. Supports different
+///    methods of comparison: exact equality or match of seq-ids.
+///
 
 // forward declaration
 class CSeq_id;
@@ -104,7 +109,10 @@ public:
     CSeq_id_Handle(const CSeq_id_Handle& handle);
     CSeq_id_Handle& operator=(const CSeq_id_Handle& handle);
 
+    /// Faster way to create a handle for a gi.
     static CSeq_id_Handle GetGiHandle(int gi);
+
+    /// Normal way of getting a handle, works for any seq-id.
     static CSeq_id_Handle GetHandle(const CSeq_id& id);
 
     bool operator== (const CSeq_id_Handle& handle) const;
@@ -112,19 +120,19 @@ public:
     bool operator<  (const CSeq_id_Handle& handle) const;
     bool operator== (const CSeq_id& id) const;
 
-    // Check if the handle is a valid or an empty one
+    /// Check if the handle is a valid or an empty one
     operator bool(void) const;
     bool operator! (void) const;
 
-    // Reset the handle (remove seq-id reference)
+    /// Reset the handle (remove seq-id reference)
     void Reset(void);
 
-    // True if *this matches to h.
-    // This mean that *this is either the same as h,
-    // or more generic version of h.
+    /// True if *this matches to h.
+    /// This mean that *this is either the same as h,
+    /// or more generic version of h.
     bool MatchesTo(const CSeq_id_Handle& h) const;
 
-    // True if "this" is a better bioseq than "h".
+    /// True if "this" is a better bioseq than "h".
     bool IsBetter(const CSeq_id_Handle& h) const;
 
     string AsString(void) const;
@@ -339,6 +347,8 @@ unsigned CSeq_id_Handle::GetHash(void) const
     return hash;
 }
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -347,6 +357,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/11/15 22:21:48  grichenk
+* Doxygenized comments, fixed group names.
+*
 * Revision 1.27  2004/09/30 18:40:33  vasilche
 * Added CSeq_id_Handle::GetMapper() and MatchesTo().
 *

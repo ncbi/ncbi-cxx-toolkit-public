@@ -31,7 +31,7 @@
  *
  */
 
-/// @file ncbip_rocess.hpp 
+/// @file ncbi_process.hpp 
 /// Defines a process management classes.
 ///
 /// Defines classes: 
@@ -255,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/15 22:21:48  grichenk
+ * Doxygenized comments, fixed group names.
+ *
  * Revision 1.10  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()

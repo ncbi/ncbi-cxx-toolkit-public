@@ -38,7 +38,7 @@
 
 #include <algo/align/nw_aligner.hpp>
 
-/** @addtogroup AlgoAlignBand
+/** @addtogroup AlgoAlignRoot
  *
  * @{
  */
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/11/15 22:21:48  grichenk
+ * Doxygenized comments, fixed group names.
+ *
  * Revision 1.1  2004/09/16 19:26:05  kapustin
  * Initial revision
  *

@@ -57,6 +57,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+/** @addtogroup OBJECTS_Seqloc
+ *
+ * @{
+ */
+
+
 class CSeq_id_Handle;
 class ISynonymMapper;
 class ILengthGetter;
@@ -85,58 +91,58 @@ public:
     // destructor
     virtual ~CSeq_loc(void);
 
-    // See related functions in util/sequence.hpp:
-    //
-    //   TSeqPos GetLength(const CSeq_loc&, CScope*)
-    //   bool IsOneBioseq(const CSeq_loc&, CScope*)
-    //   const CSeq_id& GetId(const CSeq_loc&, CScope*)
-    //   TSeqPos GetStart(const CSeq_loc&, CScope*)
-    //   sequence::ECompare Compare(const CSeq_loc&, CSeq_loc&, CScope*)
-    //   sequence::SeqLocMerge(...)
-    //
+    /// See related functions in util/sequence.hpp:
+    ///
+    ///   TSeqPos GetLength(const CSeq_loc&, CScope*)
+    ///   bool IsOneBioseq(const CSeq_loc&, CScope*)
+    ///   const CSeq_id& GetId(const CSeq_loc&, CScope*)
+    ///   TSeqPos GetStart(const CSeq_loc&, CScope*)
+    ///   sequence::ECompare Compare(const CSeq_loc&, CSeq_loc&, CScope*)
+    ///   sequence::SeqLocMerge(...)
+    ///
 
     typedef CRange<TSeqPos> TRange;
 
     TRange GetTotalRange(void) const;
     void InvalidateTotalRangeCache(void);
  
-    // Return true if all ranges have reverse strand
+    /// Return true if all ranges have reverse strand
     bool IsReverseStrand(void) const;
 
-    // Flip the strand (e.g. plus to minus)
+    /// Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
 
-    // Return start and stop positions of the seq-loc.
-    // End may be less than Start for circular sequences.
+    /// Return start and stop positions of the seq-loc.
+    /// End may be less than Start for circular sequences.
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
     TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
 
-    // Special case for circular sequences. No ID is checked for
-    // circular locations. If the sequence is not circular
-    // (seq_len == kInvalidSeqPos) the function works like GetTotalRange()
+    /// Special case for circular sequences. No ID is checked for
+    /// circular locations. If the sequence is not circular
+    /// (seq_len == kInvalidSeqPos) the function works like GetTotalRange()
     TSeqPos GetCircularLength(TSeqPos seq_len) const;
 
-    // Appends a label suitable for display (e.g., error messages)
-    // label must point to an existing string object
-    // Method just returns if label is null. Note this label is NOT
-    // GenBank-style.
+    /// Appends a label suitable for display (e.g., error messages)
+    /// label must point to an existing string object
+    /// Method just returns if label is null. Note this label is NOT
+    /// GenBank-style.
     void GetLabel(string* label) const;
 
-    // check left (5') or right (3') end of location for e_Lim fuzz
+    /// check left (5') or right (3') end of location for e_Lim fuzz
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
 
-    // set / remove e_Lim fuzz on left (5') or right (3') end
+    /// set / remove e_Lim fuzz on left (5') or right (3') end
     void SetPartialLeft (bool val);
     void SetPartialRight(bool val);
 
-    // set the 'id' field in all parts of this location
+    /// set the 'id' field in all parts of this location
     void SetId(CSeq_id& id); // stores id
     void SetId(const CSeq_id& id); // stores a new copy of id
 
-    // check that the 'id' field in all parts of the location is the same
-    // as the specifies id.
-    // if the id parameter is NULL will return the location's id (if unique)
+    /// check that the 'id' field in all parts of the location is the same
+    /// as the specifies id.
+    /// if the id parameter is NULL will return the location's id (if unique)
     void CheckId(const CSeq_id*& id) const;
     void InvalidateIdCache(void);
 
@@ -145,44 +151,44 @@ public:
     virtual bool Equals(const CSerialObject& object,
                         ESerialRecursionMode how = eRecursive) const;
 
-    // Compare locations if they are defined on the same single sequence
-    // or throw exception.
+    /// Compare locations if they are defined on the same single sequence
+    /// or throw exception.
     int Compare(const CSeq_loc& loc) const;
 
-    // Simple adding of seq-locs.
+    /// Simple adding of seq-locs.
     void Add(const CSeq_loc& other);
 
     void ChangeToMix(void);
-    // Works only if current state is "Int".
+    /// Works only if current state is "Int".
     void ChangeToPackedInt(void);
 
-    // CSeq_loc operations
-    //
-    // Flags for operations:
-    // fStrand_Ignore - if set, strands will be ignored and any ranges
-    // may be merged/sorted. If not set, ranges on plus and minus strands
-    // are treated as different sub-sets. In some operations strand may
-    // still be checked (see fMerge_Abutting and order of ranges).
-    //
-    // fMerge_Contained - merges (removes) any range which is completely
-    // contained in another range.
-    // fMerge_Abutting - merge abutting ranges. Also forces merging of
-    // contained ranges. Even if fStrand_Ignore is set, only the ranges
-    // with the correct order are merged (e.g. loc2.to == loc1.from must be
-    // true if loc1.strand is minus).
-    // fMerge_Overlapping - merge overlapping ranges. Also forces merging of
-    // contained ranges.
-    // fMerge_All - merge any ranges if possible (contained, overlapping, abutting)
-    // fMerge_SingleRange - creates a single range, covering all original ranges.
-    // Strand is set to the first strand in the original seq-loc, regardless of the
-    // strand flag.
-    //
-    // fSort - forces sorting of the resulting ranges. All ranges on the
-    // same ID are grouped together, but the order of IDs is undefined. Strand
-    // is reset to plus and minuns (in strand-preserve mode) or unknown (in
-    // strand-ignore mode). NULLs are always merged to a single NULL. The order
-    // of locations for each ID is: NULL, whole, empty, plus strand intervals,
-    // minus strand intervals.
+    /// CSeq_loc operations
+    ///
+    /// Flags for operations:
+    /// fStrand_Ignore - if set, strands will be ignored and any ranges
+    /// may be merged/sorted. If not set, ranges on plus and minus strands
+    /// are treated as different sub-sets. In some operations strand may
+    /// still be checked (see fMerge_Abutting and order of ranges).
+    ///
+    /// fMerge_Contained - merges (removes) any range which is completely
+    /// contained in another range.
+    /// fMerge_Abutting - merge abutting ranges. Also forces merging of
+    /// contained ranges. Even if fStrand_Ignore is set, only the ranges
+    /// with the correct order are merged (e.g. loc2.to == loc1.from must be
+    /// true if loc1.strand is minus).
+    /// fMerge_Overlapping - merge overlapping ranges. Also forces merging of
+    /// contained ranges.
+    /// fMerge_All - merge any ranges if possible (contained, overlapping, abutting)
+    /// fMerge_SingleRange - creates a single range, covering all original ranges.
+    /// Strand is set to the first strand in the original seq-loc, regardless of the
+    /// strand flag.
+    ///
+    /// fSort - forces sorting of the resulting ranges. All ranges on the
+    /// same ID are grouped together, but the order of IDs is undefined. Strand
+    /// is reset to plus and minuns (in strand-preserve mode) or unknown (in
+    /// strand-ignore mode). NULLs are always merged to a single NULL. The order
+    /// of locations for each ID is: NULL, whole, empty, plus strand intervals,
+    /// minus strand intervals.
 
     enum EOpFlags {
         fStrand_Ignore         = 1<<0,
@@ -197,23 +203,23 @@ public:
     };
     typedef int TOpFlags;
 
-    // All functions create and return a new seq-loc object.
-    // Optional synonym mapper may be provided to detect and convert
-    // synonyms of a bioseq. Length getter is used by Subtract() to
-    // calculate real sequence length.
+    /// All functions create and return a new seq-loc object.
+    /// Optional synonym mapper may be provided to detect and convert
+    /// synonyms of a bioseq. Length getter is used by Subtract() to
+    /// calculate real sequence length.
 
-    // Merge ranges depending on flags, return a new seq-loc object.
+    /// Merge ranges depending on flags, return a new seq-loc object.
     CRef<CSeq_loc> Merge(TOpFlags        flags,
                          ISynonymMapper* syn_mapper) const;
 
-    // Add seq-loc, merge/sort resulting ranges depending on flags.
-    // Return a new seq-loc object.
+    /// Add seq-loc, merge/sort resulting ranges depending on flags.
+    /// Return a new seq-loc object.
     CRef<CSeq_loc> Add(const CSeq_loc& other,
                        TOpFlags        flags,
                        ISynonymMapper* syn_mapper) const;
 
-    // Subtract seq-loc from this, merge/sort resulting ranges depending on
-    // flags. Return a new seq-loc object.
+    /// Subtract seq-loc from this, merge/sort resulting ranges depending on
+    /// flags. Return a new seq-loc object.
     CRef<CSeq_loc> Subtract(const CSeq_loc& other,
                             TOpFlags        flags,
                             ISynonymMapper* syn_mapper,
@@ -245,9 +251,9 @@ private:
 };
 
 
-// Interface for mapping IDs to the best synonym. Should provide
-// GetBestSynonym() method which returns the ID which should replace
-// the original one in the destination seq-loc.
+/// Interface for mapping IDs to the best synonym. Should provide
+/// GetBestSynonym() method which returns the ID which should replace
+/// the original one in the destination seq-loc.
 class ISynonymMapper
 {
 public:
@@ -258,8 +264,8 @@ public:
 };
 
 
-// Interface for getting bioseq length. Should provide GetLength()
-// method.
+/// Interface for getting bioseq length. Should provide GetLength()
+/// method.
 class ILengthGetter
 {
 public:
@@ -270,15 +276,15 @@ public:
 };
 
 
-// Seq-loc iterator class -- iterates all intervals from a seq-loc
-// in the correct order.
+/// Seq-loc iterator class -- iterates all intervals from a seq-loc
+/// in the correct order.
 class NCBI_SEQLOC_EXPORT CSeq_loc_CI
 {
 public:
-    // Options for empty locations processing
+    /// Options for empty locations processing
     enum EEmptyFlag {
-        eEmpty_Skip,    // ignore empty locations
-        eEmpty_Allow    // treat empty locations as usual
+        eEmpty_Skip,    /// ignore empty locations
+        eEmpty_Allow    /// treat empty locations as usual
     };
 
     CSeq_loc_CI(void);
@@ -293,25 +299,25 @@ public:
 
     typedef CRange<TSeqPos> TRange;
 
-    // Get seq_id of the current location
+    /// Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
-    // Get the range
+    /// Get the range
     TRange         GetRange(void) const;
-    // Get strand
+    /// Get strand
     bool IsSetStrand(void) const;
     ENa_strand GetStrand(void) const;
-    // Get seq-loc for the current interval
+    /// Get seq-loc for the current interval
     const CSeq_loc& GetSeq_loc(void) const;
 
     // Return null if non-fuzzy 
     const CInt_fuzz* GetFuzzFrom(void) const;
     const CInt_fuzz* GetFuzzTo  (void) const;
 
-    // True if the current location is a whole sequence
+    /// True if the current location is a whole sequence
     bool           IsWhole(void) const;
-    // True if the current location is empty
+    /// True if the current location is empty
     bool           IsEmpty(void) const;
-    // True if the current location is a single point
+    /// True if the current location is a single point
     bool           IsPoint(void) const;
 
 private:
@@ -559,12 +565,18 @@ bool CSeq_loc_CI::IsPoint(void) const
 /////////////////// end of CSeq_loc_CI inline methods
 
 
+/* @} */
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/11/15 22:21:48  grichenk
+ * Doxygenized comments, fixed group names.
+ *
  * Revision 1.41  2004/11/15 15:07:57  grichenk
  * Moved seq-loc operations to CSeq_loc, modified flags.
  *
