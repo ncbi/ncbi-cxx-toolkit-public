@@ -1728,9 +1728,12 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         glVertex3dv(FB);
 
         glEnd();
-        glBegin(GL_TRIANGLES);
 
-        // the top and bottom arrow triangles
+#ifdef __WXMAC__
+       
+		// the top and bottom arrow triangles; connect exactly to end points of base, otherwise
+		// artifacts appear at junction on Mac (actually, they still do, but are much less obvious)
+		glBegin(GL_TRIANGLE_FAN);
         for (i=0; i<3; ++i) n[i] = unitNormal[i];
         MAC_GL_SETCOLOR
         glNormal3dv(n);
@@ -1738,8 +1741,14 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glVertex3dv(LT);
         MAC_GL_SETCOLOR
+        glVertex3dv(c011);
+        MAC_GL_SETCOLOR
+        glVertex3dv(c111);
+        MAC_GL_SETCOLOR
         glVertex3dv(RT);
+		glEnd();
 
+		glBegin(GL_TRIANGLE_FAN);
         for (i=0; i<3; ++i) n[i] = -unitNormal[i];
         MAC_GL_SETCOLOR
         glNormal3dv(n);
@@ -1747,7 +1756,30 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glVertex3dv(RB);
         MAC_GL_SETCOLOR
+        glVertex3dv(c101);
+        MAC_GL_SETCOLOR
+        glVertex3dv(c001);
+        MAC_GL_SETCOLOR
         glVertex3dv(LB);
+
+#else
+
+        glBegin(GL_TRIANGLES);
+		
+        // the top and bottom arrow triangles
+        for (i=0; i<3; ++i) n[i] = unitNormal[i];
+        glNormal3dv(n);
+        glVertex3dv(FT);
+        glVertex3dv(LT);
+        glVertex3dv(RT);
+
+        for (i=0; i<3; ++i) n[i] = -unitNormal[i];
+        glNormal3dv(n);
+        glVertex3dv(FB);
+        glVertex3dv(RB);
+        glVertex3dv(LB);
+		
+#endif
     }
 
     glEnd();
@@ -1921,6 +1953,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2004/08/19 16:23:04  thiessen
+* improve strand arrow rendering on mac
+*
 * Revision 1.83  2004/08/19 15:26:49  thiessen
 * don't need to do glNormal for all vertexes for mac gl optimization
 *
