@@ -143,7 +143,7 @@ class NCBI_VALIDATOR_EXPORT CValidError_CI
 public:
     CValidError_CI(void);
     CValidError_CI(const CValidError& ve,
-                   string errcode   = kEmptyStr,
+                   const string& errcode = kEmptyStr,
                    EDiagSev minsev  = eDiag_Info,
                    EDiagSev maxsev  = eDiag_Critical);
     CValidError_CI(const CValidError_CI& iter);
@@ -158,9 +158,13 @@ public:
     const CValidErrItem* operator->(void) const;
 
 private:
-    const CValidError*       m_Validator;
+    bool Filter(const CValidErrItem& item) const;
+    bool AtEnd(void) const;
+    void Next(void);
+
+    CConstRef<CValidError>  m_Validator;
     TErrs::const_iterator   m_ErrIter;
-    unsigned int            m_ErrCodeFilter;
+    string                  m_ErrCodeFilter;
     EDiagSev                m_MinSeverity;
     EDiagSev                m_MaxSeverity;
 };
@@ -175,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/03/06 19:31:57  shomrat
+* Bug fix and code cleanup in CValidError_CI
+*
 * Revision 1.5  2003/02/24 20:14:59  shomrat
 * Added AddValidErrItem instead of exposing the undelying container
 *
