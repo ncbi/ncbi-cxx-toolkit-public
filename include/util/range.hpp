@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/01/23 21:24:22  vasilche
+* Fixed reference to operator=() on IRIX.
+*
 * Revision 1.11  2003/01/22 21:14:52  vasilche
 * Added missing typename.
 *
@@ -364,7 +367,7 @@ public:
     // modifiers
     TThisType& operator=(TParent range)
         {
-            TParent::operator=(range);
+	    static_cast<TParent&>(*this) = range;
             return *this;
         }
 };
