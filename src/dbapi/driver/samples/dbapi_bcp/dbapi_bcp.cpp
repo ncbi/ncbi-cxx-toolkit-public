@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi BCP 
 * $Log$
+* Revision 1.3  2002/12/09 16:25:19  starchen
+* remove the text files from samples
+*
 * Revision 1.2  2002/09/04 22:20:39  vakatov
 * Get rid of comp.warnings
 *
@@ -71,7 +74,7 @@ int main (int argc, char* argv[])
     if ( p == NULL) {
        cout << endl << "usage: for Sybase dblib: -S STRAUSS -d dblib" << endl 
             << "for Sybase ctlib: -S STRAUSS -d ctlib" << endl
-            << "for MSSQL: -S MSSQL3 -d ftds" << endl << endl;
+            << "for MSSQL: -S MSSQL2 -d ftds" << endl << endl;
     }
 
     //    Driver Manager allowes you to change a type of SQL server
@@ -119,6 +122,7 @@ int main (int argc, char* argv[])
         delete set_cmd;
 
         // Create table in database for the test
+    
         CreateTable(con);
 
         //Set textsize to work with text and image
@@ -138,24 +142,24 @@ int main (int argc, char* argv[])
         CDB_Float fl_val;
         CDB_DateTime date_val;
         CDB_VarChar str_val;
-        CMyText* pTxt;
+        CDB_Text pTxt;
 	     int i;
-    
+        pTxt.Append("This is a test string.");
+
         // Bind data from a program variables  
         bcp->Bind(0, &int_val);
         bcp->Bind(1, &fl_val);
         bcp->Bind(2, &date_val);
         bcp->Bind(3, &str_val);
-  
+        bcp->Bind(4, &pTxt);
+
 	     for(i= 0; *file_name[i] != '\0'; i++) {
             int_val = i;
             fl_val = i + 0.999;
             date_val = date_val.Value();
- 
             str_val= file_name[i];
-            pTxt= new CMyText(file_name[i]);
-            bcp->Bind(4, (CDB_Text*)pTxt);
-
+    
+            pTxt.MoveTo(0);
             //Send row of data to the server
 	         bcp->SendRow();
  
@@ -166,7 +170,6 @@ int main (int argc, char* argv[])
 	         }
 
             count++;
-	         delete pTxt;
 	     }
         //End a bulk copy 
         bcp->CompleteBCP();

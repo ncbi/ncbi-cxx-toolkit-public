@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi cursor
 * $Log$
+* Revision 1.2  2002/12/09 16:25:21  starchen
+* remove the text files from samples
+*
 * Revision 1.1  2002/07/18 15:47:42  starchen
 * first entry
 *
@@ -55,30 +58,4 @@ int ShowResults (CDB_Connection* con);
 int DeleteTable (CDB_Connection* con);
 
 
-class CMyText : public CDB_Text {
-public:
-    CMyText(const char* fname) {
-	m_File= fopen(fname, "r");
-	fseek(m_File, 0, SEEK_END);
-	m_Size= (int)ftell(m_File);
-	fseek(m_File, 0, SEEK_SET);
-	m_Null= false;
-    }
-    virtual size_t Read(void* buff, size_t nof_bytes) {
-	return fread((void*)buff, 1, nof_bytes, m_File);
-    }
-    
-    virtual size_t Size() const {
-	return (size_t) m_Size;
-    }
-    ~CMyText() {
-	fclose(m_File);
-    }
-     virtual CDB_Object* Clone() const {
-	 return (CDB_Object*)this;
-     }
-private:
-    FILE* m_File;
-    int m_Size;
-};
 #endif

@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.4  2002/12/09 16:25:23  starchen
+* remove the text files from samples
+*
 * Revision 1.3  2002/09/04 22:20:42  vakatov
 * Get rid of comp.warnings
 *
@@ -185,7 +188,11 @@ int CreateTable (CDB_Connection* con)
 
    try {
        CDB_LangCmd* lcmd =
-        con->LangCmd (" create table CursorSample"
+        con->LangCmd (" IF EXISTS(select * from sysobjects WHERE name = 'CursorSample'"
+                       " AND   user_name(uid) = 'dbo'"
+                       " AND   type = 'U') begin "
+                       " DROP TABLE dbo.CursorSample end "
+                     " create table CursorSample"
                      " (int_val int not null,fl_val real not null,"
                      " date_val datetime not null ,str_val varchar(255) null,"
                      " text_val text null, primary key clustered(int_val))");
@@ -200,30 +207,32 @@ int CreateTable (CDB_Connection* con)
         }
         delete lcmd;
 	     bcp = con->BCPIn("CursorSample", 5);
-
+    
   	     CDB_Int int_val;
         CDB_Float fl_val;
         CDB_DateTime date_val;
         CDB_VarChar str_val;
-        CMyText* pTxt;
+        CDB_Text pTxt;
 	     int i;
-    
+        pTxt.Append("This is a test string.");
+
+        // Bind data from a program variables  
         bcp->Bind(0, &int_val);
         bcp->Bind(1, &fl_val);
         bcp->Bind(2, &date_val);
         bcp->Bind(3, &str_val);
-  
-	     for (i= 0; *file_name[i] != '\0'; i++) {
+        bcp->Bind(4, &pTxt);
+
+	     for(i= 0; *file_name[i] != '\0'; i++) {
             int_val = i;
             fl_val = i + 0.999;
             date_val = date_val.Value();
  
             str_val= file_name[i];
-            pTxt= new CMyText(file_name[i]);
-            bcp->Bind(4, (CDB_Text*)pTxt);
-	       
+       
+	         pTxt.MoveTo(0);
 	         bcp->SendRow();
-	         delete pTxt;
+	         
 	     }
         bcp->CompleteBCP();
 	     delete bcp;  
@@ -320,7 +329,7 @@ int ShowResults (CDB_Connection* con)
                             } else {
                                 txt_buf = ( char*) malloc (text_val.Size()+1);
                                 len_txt = text_val.Read (( char*)txt_buf, text_val.Size());
-                                txt_buf[text_val.Size()+1] = '\0'; 
+                                txt_buf[text_val.Size()] = '\0'; 
                                 cout << txt_buf << endl << endl ;
                             }
                         } else {

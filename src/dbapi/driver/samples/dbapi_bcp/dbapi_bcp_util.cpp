@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.3  2002/12/09 16:25:20  starchen
+* remove the text files from samples
+*
 * Revision 1.2  2002/07/18 19:51:03  starchen
 * fixed some error
 *
@@ -41,6 +44,8 @@
 */
 
 #include "dbapi_bcp.hpp"
+#include <string>
+
 
  const char* prnType(EDB_Type t)
 {
@@ -171,9 +176,13 @@ int CreateTable (CDB_Connection* con)
 {
    try {
        CDB_LangCmd* lcmd =
-        con->LangCmd (" create table BcpSample"
-                     " (int_val int not null,fl_val real not null,"
-                     " date_val datetime not null  ,str_val varchar(255) null,txt_val text null)");
+        con->LangCmd ( " IF EXISTS(select * from sysobjects WHERE name = 'BcpSample'"
+                       " AND   user_name(uid) = 'dbo'"
+                       " AND   type = 'U') begin "
+                       " DROP TABLE dbo.BcpSample end"
+                       " create table BcpSample"
+                       " (int_val int not null,fl_val real not null,"
+                       " date_val datetime not null  ,str_val varchar(255) null,txt_val text null)");
        lcmd->Send();
 
        while (lcmd->HasMoreResults()) {
@@ -277,6 +286,7 @@ int ShowResults (CDB_Connection* con)
                             } else {
                                 txt_buf = ( char*) malloc (text_val.Size());
                                 len_txt = text_val.Read (( char*)txt_buf, text_val.Size());
+                                txt_buf[text_val.Size()] = '\0';
                                 cout << txt_buf << endl<< endl ;
                             }
                         } else {
@@ -319,3 +329,5 @@ int DeleteTable (CDB_Connection* con)
      }
     return 0;
 }
+
+
