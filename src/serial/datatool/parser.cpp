@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/11/19 15:48:10  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.14  1999/11/15 19:36:18  vasilche
 * Fixed warnings on GCC
 *
@@ -139,40 +142,40 @@ AutoPtr<CDataType> ASNParser::x_Type(void)
     switch ( Next() ) {
     case K_BOOLEAN:
         Consume();
-        return new CBoolDataType();
+        return AutoPtr<CDataType>(new CBoolDataType());
     case K_INTEGER:
         Consume();
         if ( CheckSymbol('{') )
             return EnumeratedBlock(new CIntEnumDataType());
         else
-            return new CIntDataType();
+            return AutoPtr<CDataType>(new CIntDataType());
     case K_ENUMERATED:
         Consume();
         return EnumeratedBlock(new CEnumDataType());
     case K_REAL:
         Consume();
-        return new CRealDataType();
+        return AutoPtr<CDataType>(new CRealDataType());
     case K_BIT:
         Consume();
         Consume(K_STRING, "STRING");
-        return new CBitStringDataType();
+        return AutoPtr<CDataType>(new CBitStringDataType());
     case K_OCTET:
         Consume();
         Consume(K_STRING, "STRING");
-        return new COctetStringDataType();
+        return AutoPtr<CDataType>(new COctetStringDataType());
     case K_NULL:
         Consume();
-        return new CNullDataType();
+        return AutoPtr<CDataType>(new CNullDataType());
     case K_SEQUENCE:
         Consume();
         if ( ConsumeIf(K_OF) )
-            return new CUniSequenceDataType(Type());
+            return AutoPtr<CDataType>(new CUniSequenceDataType(Type()));
         else
             return TypesBlock(new CDataSequenceType());
     case K_SET:
         Consume();
         if ( ConsumeIf(K_OF) )
-            return new CUniSetDataType(Type());
+            return AutoPtr<CDataType>(new CUniSetDataType(Type()));
         else
             return TypesBlock(new CDataSetType());
     case K_CHOICE:
@@ -180,16 +183,16 @@ AutoPtr<CDataType> ASNParser::x_Type(void)
         return TypesBlock(new CChoiceDataType());
     case K_VisibleString:
         Consume();
-        return new CStringDataType();
+        return AutoPtr<CDataType>(new CStringDataType());
     case K_StringStore:
         Consume();
-        return new CStringDataType("StringStore");
+        return AutoPtr<CDataType>(new CStringDataType("StringStore"));
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
-        return new CReferenceDataType(TypeReference());
+        return AutoPtr<CDataType>(new CReferenceDataType(TypeReference()));
     }
     ParseError("type");
-	return 0;
+	return AutoPtr<CDataType>();
 }
 
 AutoPtr<CDataType>
@@ -201,7 +204,7 @@ ASNParser::TypesBlock(CDataMemberContainerType* containerType)
         container->AddMember(NamedDataType());
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
-    return container.release();
+    return AutoPtr<CDataType>(container.release());
 }
 
 AutoPtr<CDataMember> ASNParser::NamedDataType(void)
@@ -232,7 +235,7 @@ AutoPtr<CDataType> ASNParser::EnumeratedBlock(CEnumDataType* enumType)
         EnumeratedValue(*e);
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
-    return e.release();
+    return AutoPtr<CDataType>(e.release());
 }
 
 void ASNParser::EnumeratedValue(CEnumDataType& t)
@@ -263,33 +266,33 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
 {
     switch ( Next() ) {
     case T_NUMBER:
-        return new CIntDataValue(Number());
+        return AutoPtr<CDataValue>(new CIntDataValue(Number()));
     case T_STRING:
-        return new CStringDataValue(String());
+        return AutoPtr<CDataValue>(new CStringDataValue(String()));
     case K_NULL:
         Consume();
-        return new CNullDataValue();
+        return AutoPtr<CDataValue>(new CNullDataValue());
     case K_FALSE:
         Consume();
-        return new CBoolDataValue(false);
+        return AutoPtr<CDataValue>(new CBoolDataValue(false));
     case K_TRUE:
         Consume();
-        return new CBoolDataValue(true);
+        return AutoPtr<CDataValue>(new CBoolDataValue(true));
     case T_IDENTIFIER:
         {
             string id = Identifier();
             if ( CheckSymbols(',', '}') )
-                return new CIdDataValue(id);
+                return AutoPtr<CDataValue>(new CIdDataValue(id));
             else
-                return new CNamedDataValue(id, Value());
+                return AutoPtr<CDataValue>(new CNamedDataValue(id, Value()));
         }
     case T_BINARY_STRING:
     case T_HEXADECIMAL_STRING:
-        return new CBitStringDataValue(ConsumeAndValue());
+        return AutoPtr<CDataValue>(new CBitStringDataValue(ConsumeAndValue()));
     case T_SYMBOL:
         switch ( NextToken().GetSymbol() ) {
         case '-':
-            return new CIntDataValue(Number());
+            return AutoPtr<CDataValue>(new CIntDataValue(Number()));
         case '{':
             {
                 Consume();
@@ -300,13 +303,13 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
                     } while ( ConsumeIfSymbol(',') );
                 }
                 ConsumeSymbol('}');
-                return b.release();
+                return AutoPtr<CDataValue>(b.release());
             }
         }
 		break;
     }
     ParseError("value");
-	return 0;
+	return AutoPtr<CDataValue>(0);
 }
 
 long ASNParser::Number(void)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/11/19 15:48:09  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.13  1999/11/18 17:13:06  vasilche
 * Fixed generation of ENUMERATED CHOICE and VisibleString.
 * Added generation of initializers to zero for primitive types and pointers.
@@ -44,10 +47,10 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <set>
 #include <map>
 #include <list>
-#include "autoptr.hpp"
 
 USING_NCBI_SCOPE;
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/11/19 15:48:09  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.5  1999/11/15 19:36:12  vasilche
 * Fixed warnings on GCC
 *
@@ -40,9 +43,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <corelib/ncbistre.hpp>
 #include <vector>
-#include "autoptr.hpp"
 #include "atoken.hpp"
 
 USING_NCBI_SCOPE;

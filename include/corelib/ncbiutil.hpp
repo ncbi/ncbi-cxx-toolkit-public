@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/11/19 15:44:51  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.6  1999/09/16 15:49:36  sandomir
 * DeleteElements: clear container added to avoid case when user forgets to call clear after DeleteElements
 *
@@ -223,29 +226,30 @@ inline void DeleteElements(map<Key, Element*>& m)
 	m.clear();
 }
 
-template<class X, class Del = Deleter<X> >
-class AutoPtr : public auto_ptr<X>
+// Standard auto_ptr template from STL have designed in a way which does'n
+// allow to put it in STL containers (list, vector, map etc.).
+// The reason is absence of copy constructor and assignment operator.
+// We decided that it would be useful to have analog of STL's auto_ptr
+// without this restriction - AutoPtr.
+// NOTE: due to nature of AutoPtr it's copy constructor and assignment
+// operator modify source object - source object will hold NULL after use.
+// Also we added possibility to redefine the way pointer will be deleted:
+// second argument of template allows to put pointers from malloc in
+// AutoPtr. By default, nevertheless, pointers will be deleted by C++
+// delete operator.
+template< class X, class Del = Deleter<X> >
+class AutoPtr
 {
 public:
-    explicit AutoPtr(void)
-        : auto_ptr<X>(0)
+    typedef X element_type;
+
+    explicit AutoPtr(X* p = 0)
+        : m_Ptr(p)
         {
         }
-
-    explicit AutoPtr(X* p)
-        : auto_ptr<X>(NotNull(p))
+    AutoPtr(const AutoPtr<X>& p)
+        : m_Ptr(p.x_Release())
         {
-        }
-
-    AutoPtr(AutoPtr& a)
-        : auto_ptr<X>(a)
-        {
-        }
-
-    AutoPtr& operator= (AutoPtr& rhs)
-        {
-            reset(rhs.release());
-            return *this;
         }
 
     ~AutoPtr(void)
@@ -253,18 +257,63 @@ public:
             reset();
         }
 
+    AutoPtr& operator=(const AutoPtr<X>& p)
+        {
+            reset(p.x_Release());
+            return *this;
+        }
+    AutoPtr& operator=(X* p)
+        {
+            reset(p);
+            return *this;
+        }
+
+    // bool operator is for using in if() clause
+    operator bool(void) const
+        {
+            return m_Ptr != 0;
+        }
+    // standard getters
+    X& operator*(void) const
+        {
+            return *m_Ptr;
+        }
+    X* operator->(void) const
+        {
+            return m_Ptr;
+        }
+    X* get(void) const
+        {
+            return m_Ptr;
+        }
+
+    // release will release ownership of pointer to caller
+    X* release(void)
+        {
+            X* ret = m_Ptr;
+            m_Ptr = 0;
+            return ret;
+        }
+    // reset will delete old pointer and set content to new value
+    void reset(X* p)
+        {
+            reset();
+            m_Ptr = p;
+        }
+
+private:
+    X* m_Ptr;
+
+    // release for const object
+    X* x_Release(void) const
+        {
+            return const_cast<AutoPtr<X>*>(this)->release();
+        }
+
+    // reset without  arguments
     void reset(void)
         {
             Del::Delete(release());
-        }
-
-    void reset(X* p)
-        { 
-            if ( get() != p )
-                {
-                    reset();
-                    auto_ptr<X>::reset(p);
-                }
         }
 };
 
@@ -293,6 +342,13 @@ struct CNameGetter
             return value->GetName();
         }
 };
+
+// iterate is useful macro for writing 'for' statements with STL container
+// iterator as an variable.
+#define iterate(Type, Var, Cont) \
+    for ( Type::const_iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
+#define non_const_iterate(Type, Var, Cont) \
+    for ( Type::iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
 
 END_NCBI_SCOPE
 

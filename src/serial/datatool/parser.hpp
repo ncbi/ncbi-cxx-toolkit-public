@@ -33,14 +33,17 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/11/19 15:48:11  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.9  1999/11/15 19:36:18  vasilche
 * Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
+#include <corelib/ncbiutil.hpp>
 #include "aparser.hpp"
-#include "autoptr.hpp"
 #include "moduleset.hpp"
 #include <list>
 

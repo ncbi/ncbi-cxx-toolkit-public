@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/11/19 15:48:11  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.20  1999/11/16 15:41:17  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -46,8 +49,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/typeref.hpp>
-#include "autoptr.hpp"
 #include <set>
 
 BEGIN_NCBI_SCOPE

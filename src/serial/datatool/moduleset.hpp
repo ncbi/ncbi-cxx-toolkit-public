@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/11/19 15:48:10  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.8  1999/11/15 19:36:17  vasilche
 * Fixed warnings on GCC
 *
@@ -40,10 +43,10 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/typemapper.hpp>
 #include <list>
 #include <map>
-#include "autoptr.hpp"
 
 class CDataType;
 class CDataTypeModule;

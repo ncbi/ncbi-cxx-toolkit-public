@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/19 15:48:10  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
 * Revision 1.2  1999/11/15 19:36:15  vasilche
 * Fixed warnings on GCC
 *
@@ -40,7 +43,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include "autoptr.hpp"
+#include <corelib/ncbiutil.hpp>
 #include <map>
 #include <set>
 
