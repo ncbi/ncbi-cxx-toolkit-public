@@ -53,15 +53,13 @@ typedef struct localcurrents {
 
 /* local functions */
 
-static Int4 dust_segs PROTO ((Int4, Uint1Ptr, Int4, DREGION PNTR,
-                              Int4, Int4, Int4, Int4));
 static Int4 wo PROTO ((Int4, Uint1Ptr, Int4, DCURLOC PNTR, UcharPtr seq));
 static void wo1 PROTO ((Int4, UcharPtr, Int4, DCURLOC PNTR));
 static Int4 dust_triplet_find PROTO ((Uint1Ptr, Int4, Int4, UcharPtr));
 
 /* entry point for dusting */
 
-Int4 dust_segs (Int4 length, Uint1Ptr sequence, Int4 start,
+static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
 		       DREGION PNTR reg,
 		       Int4 level, Int4 windowsize, Int4 minwin, Int4 linker)
 {
@@ -285,13 +283,12 @@ GetDustLocations (ValNodePtr PNTR loc, DREGION PNTR reg, Int4 nreg)
    return 0;
 }
 
-Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length,
+Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 minwin, Int2 linker,
                     BlastSeqLocPtr PNTR dust_loc)
 {
 	DREGION	PNTR reg, PNTR regold;
 	Int4 nreg;
-	Int4 start, end, l;
 	Int2 loopDustMax = 0;
         Int2 status = 0;
 
@@ -300,12 +297,8 @@ Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length,
 	if (!reg)
            return -1;
 
-        start = 0;
-        end = length - 1;
-        
-        nreg = dust_segs (length, sequence, start, reg,
-				  (Int4)level, (Int4)window, (Int4)minwin,
-                          (Int4)linker);
+        nreg = dust_segs (sequence, length, offset, reg, (Int4)level, 
+                  (Int4)window, (Int4)minwin, (Int4)linker);
 
         status = GetDustLocations(dust_loc, reg, nreg);
         /* find tail - this way avoids referencing the pointer */
