@@ -689,14 +689,14 @@ string CMainApplication::Configure(const string& cfg_template,
         re.ReplaceRange("  */pdb:[^ ]*", kEmptyStr);
         re.ReplaceRange("/mach", "/pdb:none /debug /mach");
         subst = &ksOptDebug[0];
-        subst_size = sizeof(ksOptDebug)/sizeof(subst[0])/3;
+        subst_size = sizeof(ksOptDebug)/sizeof(subst[0]);
     } else {
         re.SetRange("^# PROP ");
         re.ReplaceRange("  *Use_Debug_Libraries  *1"," Use_Debug_Libraries 0");
         re.SetRange("^# ADD .*LINK32 ");
         re.ReplaceRange("  */pdbtype[^ ]*", kEmptyStr);
         subst = &ksOptRelease[0];
-        subst_size = sizeof(ksOptRelease)/sizeof(subst[0])/3;
+        subst_size = sizeof(ksOptRelease)/sizeof(subst[0]);
     }
     re.SetRange("^# ADD .*CPP ");
     for (int i = 0; i < subst_size; i++) {
@@ -760,7 +760,7 @@ string CMainApplication::Configure(const string& cfg_template,
 
     if ( m_IsDistribution ) {
         re.SetRange("^# ADD .*(CPP|RSC) ");
-        re.ReplaceRange(" +/I +[\"]{0,1}\\\\\\\\[Dd][Ii][Zz][Zz][Yy]\\\\[^ ]*",
+        re.ReplaceRange(" +/[Ii] +[\"]{0,1}\\\\\\\\[Dd][Ii][Zz][Zz][Yy]\\\\[^ ]*",
                         kEmptyStr);
         re.SetRange("^# ADD .*LINK32 ");
         re.ReplaceRange(" +/libpath:[\"]{0,1}\\\\\\\\[Dd][Ii][Zz][Zz][Yy]\\\\[^ ]*",
@@ -939,6 +939,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/10 14:59:51  ivanov
+ * Fixed array size determination after previous fix.
+ * Use caseless check for include/library paths, which refer to DIZZY.
+ *
  * Revision 1.4  2003/11/07 17:14:56  ivanov
  * Use array of SReplacement instead of two-dim arrays
  *
