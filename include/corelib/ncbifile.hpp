@@ -79,8 +79,9 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eMemoryMap: return "eMemoryMap";
-        default:         return CException::GetErrCodeString();
+        case eMemoryMap:    return "eMemoryMap";
+        case eRelativePath: return "eRelativePath";
+        default:            return CException::GetErrCodeString();
         }
     }
 
@@ -1571,6 +1572,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/09/02 16:18:04  ivanov
+ * CFileException:: added errcode sctring for eRelativePath
+ *
  * Revision 1.47  2004/08/19 13:01:51  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *
