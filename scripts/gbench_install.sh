@@ -62,8 +62,8 @@ DoCopy()
     COMMON_Exec $BINCOPY $1 $2
 
     case `uname` in
-        Darin*)
-        dylib_file=`echo $1 | sed "s,\.so$,.dylib"`
+        Darwin*)
+        dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
         COMMON_Exec $BINCOPY $dylib_file $2
         ;;
     esac
@@ -78,7 +78,7 @@ CopyFiles()
         if [ -f $src_file ]; then
             mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-            DoCopy $src_file $target_dir/bin/
+            COMMON_Exec $BINCOPY $src_file $target_dir/bin/
         else
             COMMON_Error "File not found: $src_file"
         fi
