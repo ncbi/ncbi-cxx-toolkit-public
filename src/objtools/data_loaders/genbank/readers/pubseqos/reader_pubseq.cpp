@@ -179,7 +179,7 @@ streambuf *CPubseqReader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
   {
     return x_SeqrefStreamBuf(seqId, conn);
   }
-  catch(const CDB_Exception &e)
+  catch(const CDB_Exception&)
   {
     Reconnect(conn);
     throw;
@@ -410,7 +410,7 @@ CSeq_entry *CPubseqBlob::Seq_entry()
   {
     ois >> *se;
   }
-  catch(const CDB_Exception &e)
+  catch(const CDB_Exception&)
   {
     m_Seqref->m_Reader->Reconnect(m_Seqref->m_Conn);
     throw;
@@ -425,7 +425,7 @@ CBlob *CPubseqSeqref::RetrieveBlob(istream &is)
   {
     is >> *blob.get();
   }
-  catch(const CDB_Exception &e)
+  catch(const CDB_Exception&)
   {
     m_Reader->Reconnect(m_Conn);
     throw;
@@ -438,6 +438,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.17  2002/12/26 20:53:41  dicuccio
+* Minor tweaks to relieve compiler warnings in MSVC
+*
 * Revision 1.16  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *

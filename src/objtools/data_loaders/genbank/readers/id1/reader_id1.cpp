@@ -39,7 +39,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
   {
     return x_SeqrefStreamBuf(seqId, conn);
   }
-  catch(const CIOException &e)
+  catch(const CIOException&)
   {
     Reconnect(conn);
     throw;
@@ -204,7 +204,7 @@ streambuf *CId1Seqref::BlobStreamBuf(int a, int b, const CBlobClass &c, unsigned
   {
     return x_BlobStreamBuf(a, b, c, conn);
   }
-  catch(const CIOException &e)
+  catch(const CIOException&)
   {
     m_Reader->Reconnect(conn);
     throw;
@@ -349,6 +349,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.25  2002/12/26 20:53:25  dicuccio
+* Minor tweaks to relieve compiler warnings in MSVC
+*
 * Revision 1.24  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
