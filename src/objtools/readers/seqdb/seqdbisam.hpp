@@ -282,6 +282,8 @@ private:
     ///   The GI or PIG identifier to look up.
     /// @param oid
     ///   The returned oid.
+    /// @param locked
+    ///   The lock holder object for this thread.
     /// @return
     ///   true if the identifier was found.
     bool x_IdentToOid(Uint4            id,
@@ -303,6 +305,8 @@ private:
     ///   The returned location in the data file if not done.
     /// @param done
     ///   true if the OID was found.
+    /// @param locked
+    ///   The lock holder object for this thread.
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
@@ -326,6 +330,8 @@ private:
     ///   The returned location in the ISAM table, or NULL.
     /// @param SampleNum
     ///   The location of the page in the data file to search.
+    /// @param locked
+    ///   The lock holder object for this thread.
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode

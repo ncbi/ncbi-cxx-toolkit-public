@@ -186,8 +186,8 @@ private:
     /// possible in cases where small masked databases are mixed with
     /// large, "fully-in" volumes.
     /// 
-    /// @param filename
-    ///   The name of the mask file to use.
+    /// @param volset
+    ///   The set of volumes to build an oid mask for.
     /// @param locked
     ///   The lock hold object for this thread.
     void x_Setup(CSeqDBVolSet   & volset,

@@ -37,23 +37,25 @@
 #include <objects/general/general__.hpp>
 #include <corelib/ncbiutil.hpp>
 
+/// Place these definitions in the ncbi namespace
 BEGIN_NCBI_SCOPE
 
+/// Import this namespace
 USING_SCOPE(objects);
 
+/// Format version of the ISAM files
 #define ISAM_VERSION 1
+
+/// Default page size for numeric indices
 #define DEFAULT_NISAM_SIZE 256
+
+/// Default page size for string indices
 #define DEFAULT_SISAM_SIZE 64
+
+/// Special page size value which indicates a memory-only string index
 #define MEMORY_ONLY_PAGE_SIZE 1
 
 
-/* ---------------------- ISAMInitSearch --------------------------
-   Purpose:     Initialize ISAM Numeric Search. Checks for any errors
-   
-   Parameters:  ISAM Object
-   Returns:     ISAM Error Code
-   NOTE:        None
-   ------------------------------------------------------------------*/
 CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
 {
@@ -423,6 +425,16 @@ Int4 CSeqDBIsam::x_DiffCharLease(const string   & term_in,
     return dc_result;
 }
 
+/// Return NUL for nulls or EOL characters
+///
+/// This function returns a NUL byte for any of NUL, CR, or NL.  This
+/// is done because these characters are used to terminate the
+/// variable length records in a string-based ISAM file.
+///
+/// @param c
+///   A character
+/// @return
+///   NUL or the same character
 static inline char
 s_SeqDBIsam_NullifyEOLs(char c)
 {
@@ -433,9 +445,11 @@ s_SeqDBIsam_NullifyEOLs(char c)
     }
 }
 
+/// The terminating character for string ISAM keys when data is present.
 const char ISAM_DATA_CHAR = (char) 2;
 
-inline bool ENDS_ISAM_KEY(char P)
+/// Returns true if the character is a terminator for an ISAM key.
+static inline bool ENDS_ISAM_KEY(char P)
 {
     return (P == ISAM_DATA_CHAR) || (s_SeqDBIsam_NullifyEOLs(P) == 0);
 }
@@ -1108,6 +1122,19 @@ bool CSeqDBIsam::x_IdentToOid(Uint4 ident, TOid & oid, CSeqDBLockHold & locked)
     return false;
 }
 
+/// Find the end of a single element in a Seq-id set
+/// 
+/// Seq-id strings sometimes contain several Seq-ids.  This function
+/// looks for the end of the first Seq-id, and will return its length.
+/// Static methods of CSeq_id are used to evaluate tokens.
+/// 
+/// @param str
+///   Seq-id string to search.
+/// @param pos
+///   Position at which to start search.
+/// @return
+///   End position of first fasta id, or string::npos in case of error.
+
 static size_t
 s_SeqDB_EndOfFastaID(const string & str, size_t pos)
 {
@@ -1151,6 +1178,18 @@ s_SeqDB_EndOfFastaID(const string & str, size_t pos)
     return (vbar == string::npos) ? str.size() : vbar;
 }
 
+/// Parse string into a sequence of Seq-id objects.
+///
+/// A string is broken down into Seq-ids and the set of Seq-ids is
+/// returned.
+///
+/// @param line
+///   The string to interpret.
+/// @seqids
+///   The returned set of Seq-id objects.
+/// @return
+///   true if any Seq-id objects were found.
+
 static bool
 s_SeqDB_ParseSeqIDs(const string              & line,
                     vector< CRef< CSeq_id > > & seqids)
@@ -1191,7 +1230,7 @@ s_SeqDB_ParseSeqIDs(const string              & line,
 }
 
 void CSeqDBIsam::StringToOids(const string   & acc,
-                              vector<Uint4>  & oids,
+                              vector<TOid>   & oids,
                               bool             adjusted,
                               CSeqDBLockHold & locked)
 {
