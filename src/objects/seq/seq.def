@@ -1,3 +1,6 @@
+[-]
+_export = NCBI_SEQ_EXPORT
+
 [Num-cont]
 refnum._type = TSignedSeqPos
 

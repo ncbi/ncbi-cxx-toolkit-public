@@ -1,3 +1,6 @@
+[-]
+_export = NCBI_SEQFEAT_EXPORT
+
 [Cdregion]
 ; Be conservative.
 gaps._type     = TSeqPos

@@ -1,3 +1,6 @@
+[-]
+_export = NCBI_SEQALIGN_EXPORT
+
 [Dense-diag]
 starts.E._type = TSeqPos
 len._type      = TSeqPos

@@ -1,3 +1,6 @@
+[-]
+_export = NCBI_ENTREZ2_EXPORT
+
 [client]
 class   = CEntrez2Client
 service = ENTREZ2

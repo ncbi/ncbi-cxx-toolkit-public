@@ -1,3 +1,6 @@
+[-]
+_export = NCBI_SEQLOC_EXPORT
+
 [Seq-interval]
 from._type = TSeqPos
 to._type   = TSeqPos
