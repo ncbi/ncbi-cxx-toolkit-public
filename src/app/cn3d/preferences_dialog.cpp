@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/09/13 13:44:34  thiessen
+* add browser launch item to prefs dialog
+*
 * Revision 1.13  2002/08/15 22:13:15  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -465,6 +468,10 @@ wxSizer *SetupPreferencesNotebook( wxWindow *parent, bool call_fit, bool set_siz
     return item0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// The following is modified from wxDesigner's C++ code from preferences_dialog.wdr
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
@@ -475,6 +482,19 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
     wxCheckBox *item3 = new wxCheckBox( parent, ID_C_ANNOT_RO, "CDD annotations are read-only", wxDefaultPosition, wxDefaultSize, 0 );
     item3->SetValue( TRUE );
     item1->Add( item3, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+#ifdef __WXGTK__
+    wxFlexGridSizer *item4 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item4->AddGrowableCol( 0 );
+
+    wxTextCtrl *item5 = new wxTextCtrl( parent, ID_TEXTCTRL, "", wxDefaultPosition, wxSize(80,-1), 0 );
+    item4->Add( item5, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticText *item6 = new wxStaticText( parent, ID_TEXT, "Browser launch", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item1->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+#endif
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -491,10 +511,6 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
 
     return item0;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-// The following is modified from wxDesigner's C++ code from preferences_dialog.wdr
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
 {
