@@ -265,6 +265,13 @@ int BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2)
 
 } // extern "C"
 
+/////////////////////////////////////////////////////////////////////////////
+//  IBDB_Field::
+//
+
+IBDB_Field::~IBDB_Field() 
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_Field::
@@ -801,6 +808,22 @@ string CBDB_FieldLString::Get() const
     return ret;
 }
 
+void CBDB_FieldLString::ToString(string& ostr) const
+{
+    const unsigned char* buf = (const unsigned char*) GetBuffer();
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+    
+    const unsigned char* str;
+    int str_len;
+
+    ostr.resize(0);
+
+    str = GetLString(buf, check_legacy, &str_len);
+    if (str_len == 0) {
+        return;
+    }
+    ostr.append((const char*) str, str_len);
+}
 
 void CBDB_FieldLString::SetStdString(const string& str)
 {
@@ -846,6 +869,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/03/08 13:30:39  kuznets
+ * + ToString
+ *
  * Revision 1.19  2004/02/17 19:05:21  kuznets
  * GCC warnings fix
  *
