@@ -1,4 +1,4 @@
---$Revision: 1.9 $
+--$Revision: 1.10 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -24,19 +24,20 @@ BEGIN
 
 EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set;
 
-IMPORTS  Date                 FROM NCBI-General
-         Pub                  FROM NCBI-Pub
-         Biostruc-annot-set   FROM MMDB
-         Bioseq               FROM NCBI-Sequence
-         Seq-annot            FROM NCBI-Sequence
-         Seq-entry            FROM NCBI-Seqset
-         Org-ref              FROM NCBI-Organism
-         Seq-id               FROM NCBI-Seqloc
-         Seq-interval         FROM NCBI-Seqloc
-         Seq-loc              FROM NCBI-Seqloc
-         Seq-feat             FROM NCBI-Seqfeat
-         Score-set            FROM NCBI-Seqalign
-	 Cn3d-style-dictionary, Cn3d-user-annotations FROM NCBI-Cn3d;
+IMPORTS  Date                  FROM NCBI-General
+         Pub                   FROM NCBI-Pub
+         Biostruc-annot-set    FROM MMDB
+         Bioseq                FROM NCBI-Sequence
+         Seq-annot             FROM NCBI-Sequence
+         Seq-entry             FROM NCBI-Seqset
+         Org-ref               FROM NCBI-Organism
+         Seq-id                FROM NCBI-Seqloc
+         Seq-interval          FROM NCBI-Seqloc
+         Seq-loc               FROM NCBI-Seqloc
+         Seq-feat              FROM NCBI-Seqfeat
+         Score-set             FROM NCBI-Seqalign
+         Cn3d-style-dictionary,
+         Cn3d-user-annotations FROM NCBI-Cn3d;
 
 -- Cdd's should not exist without a unique accession, but alternative id's may
 -- be present as well. It is conceivable that a CD which is created as a merged
@@ -46,18 +47,28 @@ IMPORTS  Date                 FROM NCBI-General
 Global-id ::= SEQUENCE {
   accession     VisibleString,          -- SMART, Pfam, LOAD or CD accession
   release       VisibleString OPTIONAL, -- to hold CD-Database release number
+                                        -- if desired, currently not used
   version       INTEGER       OPTIONAL, -- version 0 is the seed, version
                                         -- numbers increase with update/curate
                                         -- cycles
   database      VisibleString OPTIONAL  -- this is NOT the source!, rather the
 }                                       -- database the object resides in
+                                        -- currently not in use
 
 Cdd-id ::= CHOICE {
-  uid           INTEGER,                -- for synchronization with Entrez?
-  gid           Global-id
+  uid           INTEGER,                -- for synchronization with Entrez
+                                        -- holds PSSM-Ids
+  gid           Global-id               -- holds accession/version pairs
 }
 
 Cdd-id-set ::= SEQUENCE OF Cdd-id
+
+Cdd-repeat ::= SEQUENCE {               -- record whether the CD contains
+                                        -- repeated sequence/structure motifs
+  count         INTEGER,                -- number of tandem repeats in the CD
+  location      Seq-loc OPTIONAL,       -- location on the representative
+  avglen        INTEGER OPTIONAL        -- average repeat length
+}
 
 -- The description of CDD's refers to the specific set of aligned sequences,
 -- the region that is being aligned and the information contained in the
@@ -72,9 +83,9 @@ Cdd-descr ::= CHOICE {
   othername     VisibleString,          -- alternative names for the CDD
                                         -- if domain has several common names
   category      VisibleString,          -- intracellular, extracellular, etc.
-                                        -- to record spatial and or temporal
+                                        -- to record spatial and/or temporal
                                         -- expression in free-text format
-  comment       VisibleString,          -- this is where long names go
+  comment       VisibleString,          -- this is where descriptions go
   reference     Pub,                    -- a citation describing the domain
   create-date   Date,                   -- Date of first creation/dump
   tax-source    Org-ref,                -- holds the highest common tax node
@@ -82,19 +93,22 @@ Cdd-descr ::= CHOICE {
                                         -- from, e.g. SMART, PFAM, etc..
   status        INTEGER { unassigned(0),
                           finished-ok(1),     -- a public curated CD
-                          pending-release(2), -- needs work done
-                          other-asis(3),      -- imported as-is
-                          matrix-only(4),     -- CD holds a Psi-Blast
-                                        -- PSSM, no alignment
+                          pending-release(2), -- needs work done, not yet released
+                          other-asis(3),      -- imported as-is, immediate release
+                          matrix-only(4),     -- CD holds a Psi-Blast PSSM only,
+                                              -- does not contain alignment data
                           update-running(5),  -- has been flagged for
                                               -- update (in queue)
                           auto-updated(6),    -- update finished, no
                                               -- work necessary
                           claimed(7),         -- is earmarked for curation
                           other(255) },       -- for CD production?
-  update-date   Date,                         -- Date of last change
+  update-date   Date,                         -- Date of last version change
   scrapbook     SEQUENCE OF VisibleString,    -- for storing curation notes
-  source-id     Cdd-id-set                    -- for linking back to source db
+                                              -- those won't make it into public
+                                              -- distributions
+  source-id     Cdd-id-set,                   -- for linking back to source db
+  repeats       Cdd-repeat                    -- to record repeat counts
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
@@ -105,13 +119,14 @@ Cdd-descr-set ::= SET OF Cdd-descr
 -- and should be synchronized
 
 Cdd-tree ::= SEQUENCE {
-  name          VisibleString,
-  id            Cdd-id-set,
-  description   Cdd-descr-set OPTIONAL,
+  name          VisibleString,          -- short name  copied from CD
+  id            Cdd-id-set,             -- IDs         copied from CD
+  description   Cdd-descr-set OPTIONAL, -- description copied from CD
   parents       Cdd-id-set OPTIONAL,    -- CD is the result of a split/merge
   children      Cdd-id-set OPTIONAL,    -- this CD has been split
   siblings      Cdd-id-set OPTIONAL,    -- related CDs (have common hits)
-  neighbors     Cdd-id-set OPTIONAL     -- co-occurring CDs
+  neighbors     Cdd-id-set OPTIONAL     -- co-occurring CDs (non-overlapping 
+                                        -- hits to same sequences)
 }
 
 Cdd-tree-set ::= SEQUENCE OF Cdd-tree
@@ -170,8 +185,8 @@ Update-align ::= SEQUENCE {
   type          INTEGER { unassigned(0),
                           update(1),
                           update-3d(2),
-                        demoted(51),
-                        demoted-3d(52),
+                          demoted(51),
+                          demoted-3d(52),
                           other(255)}
 }
 
@@ -215,7 +230,7 @@ Align-annot-set ::= SEQUENCE OF Align-annot
 -- added in update cycle, annotation changed, alignment errors fixed)
 
 Cdd ::= SEQUENCE {
-  name          VisibleString,          -- a short name (can be the accession)
+  name          VisibleString,          -- a short name (can be the accession..)
   id            Cdd-id-set,             -- this CD's Ids
   description   Cdd-descr-set OPTIONAL, -- status, references, etc.
   seqannot      SEQUENCE OF Seq-annot OPTIONAL,    -- contains the CD alignment
