@@ -214,8 +214,10 @@ CCgiContext* CCgiApplication::CreateContext
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256,
                            CNcbiRegistry::eReturn);
 
-    return new CCgiContext(*this, args, env, inp, out, ifd, ofd,
-                           (errbuf_size >= 0) ? (size_t) errbuf_size : 256);
+    return 
+      new CCgiContext(*this, args, env, inp, out, ifd, ofd,
+                     (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
+                     m_RequestFlags);
 }
 
 
@@ -255,7 +257,10 @@ private:
 };
 
 
-CCgiApplication::CCgiApplication(void) : m_HostIP(0), m_Iteration(0)
+CCgiApplication::CCgiApplication(void) 
+ : m_HostIP(0), 
+   m_Iteration(0),
+   m_RequestFlags(0)
 {
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
@@ -726,6 +731,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.52  2004/05/11 12:43:55  kuznets
+* Changes to control HTTP parsing (CCgiRequest flags)
+*
 * Revision 1.51  2004/04/07 22:21:41  vakatov
 * Convert multi-line diagnostic messages into one-line ones by default
 *

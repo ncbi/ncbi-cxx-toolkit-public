@@ -94,6 +94,10 @@ public:
     virtual CNcbiResource*     LoadResource(void);
     virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
 
+    /// Set cgi parsing flag
+    /// @sa CCgiRequest::Flags
+    void SetRequestFlags(int flags) { m_RequestFlags = flags; }
+
 protected:
     // Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
@@ -179,6 +183,9 @@ private:
     // Environment var. value to put to the diag.prefix;  [CGI].DiagPrefixEnv
     string                    m_DiagPrefixEnv;
 
+    /// Bit flags for CCgiRequest
+    int                       m_RequestFlags;
+
     // forbidden
     CCgiApplication(const CCgiApplication&);
     CCgiApplication& operator=(const CCgiApplication&);
@@ -242,6 +249,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/05/11 12:43:29  kuznets
+* Changes to control HTTP parsing (CCgiRequest flags)
+*
 * Revision 1.40  2003/11/05 18:25:32  dicuccio
 * Added export specifiers.  Added private, unimplemented copy ctor/assignment
 * operator

@@ -101,7 +101,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          CNcbiOstream*           out,
                          int                     ifd,
                          int                     ofd,
-                         size_t                  errbuf_size)
+                         size_t                  errbuf_size,
+                         CCgiRequest::TFlags     flags)
     : m_App(app),
       m_Request(0),
       m_Response(out, ofd)
@@ -109,7 +110,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     try {
         m_Request.reset(new CCgiRequest(args ? args : &app.GetArguments(),
                                         env  ? env  : &app.GetEnvironment(),
-                                        inp, 0, ifd, errbuf_size));
+                                        inp, flags, ifd, errbuf_size));
     }
     catch (exception& _DEBUG_ARG(e)) {
         _TRACE("CCgiContext::CCgiContext: " << e.what());
@@ -285,6 +286,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2004/05/11 12:43:55  kuznets
+* Changes to control HTTP parsing (CCgiRequest flags)
+*
 * Revision 1.35  2003/05/19 21:25:31  vakatov
 * In CCgiContext::ctor -- fixed invalid arg passage to CCgiRequest::ctor
 *

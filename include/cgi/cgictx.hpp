@@ -138,7 +138,8 @@ public:
                 CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */,
                 int                     ifd  = -1,
                 int                     ofd  = -1,
-                size_t                  errbuf_size = 256 /* see CCgiRequest */
+                size_t                  errbuf_size = 256, /* see CCgiRequest */
+                CCgiRequest::TFlags     flags = 0
                 );
     virtual ~CCgiContext(void);
 
@@ -333,6 +334,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2004/05/11 12:43:29  kuznets
+* Changes to control HTTP parsing (CCgiRequest flags)
+*
 * Revision 1.28  2003/11/05 18:25:32  dicuccio
 * Added export specifiers.  Added private, unimplemented copy ctor/assignment
 * operator
