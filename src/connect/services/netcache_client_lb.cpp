@@ -75,53 +75,93 @@ bool s_ConnectClient(CNetCacheClient* nc_client,
     return true;
 }
 
+/// @internal
+static
+bool s_ConnectClient_Reserve(CNetCacheClient* nc_client, 
+                             const string&    host,
+                             unsigned short   port,
+                             const string&    service_name,
+                             STimeout&        to,
+                             string*          err_msg)
+{
+    if (s_ConnectClient(nc_client, host, port, to)) {
+        LOG_POST(Warning << "Service " << service_name 
+                         << " cannot be found using load balancer"
+                         << " reserve service used " 
+                         << host << ":" << port);
+        return false;
+    } 
+    *err_msg += ". Reserve netcache instance at ";
+    *err_msg += host;
+    *err_msg += ":";
+    *err_msg += NStr::UIntToString(port);
+    *err_msg += " not responding.";
+    return true;
+}
+
+
 
 void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
                               const string&    service_name)
 {
     SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
     STimeout& to = nc_client->SetCommunicationTimeout();
+    string err_msg = "Cannot connect to netcache service (";
 
     if (srv_it == 0) {
-        goto static_connect;
+        err_msg += "Load balancer cannot find service name ";
+        err_msg += service_name;
+    } else {
+        const SSERV_Info* sinfo;
+        while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
+
+            try {
+
+                if ( !s_ConnectClient(nc_client, sinfo->host, sinfo->port, to)){
+                    continue;
+                }
+                SERV_Close(srv_it);
+                return;
+                
+            } catch(exception&){
+                // try another server
+            }
+
+        } // while
+
+        SERV_Close(srv_it);
+
+        // failed to find any server responding under the service name
+
+        err_msg += " Failed to find alive netcache server for .";
+        err_msg += service_name;
     }
 
-    {{
-    const SSERV_Info* sinfo;
-
-    while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
-
-        try {
-
-            if ( !s_ConnectClient(nc_client, sinfo->host, sinfo->port, to)){
-                continue;
-            }
-            SERV_Close(srv_it);
-            return;
-            
-        } catch(exception&){
-            // try another server
-        }
-
-    } // while
-
-    SERV_Close(srv_it);
-    }}
-
-static_connect:
     // LB failed to provide any alive services
     // lets try to call "emergency numbers"
 
-    if (s_ConnectClient(nc_client, "netcache.ncbi.nlm.nih.gov", 9009, to)) {
+    const unsigned short rport = 9009;
+    if (s_ConnectClient_Reserve(nc_client, 
+                                "netcache.ncbi.nlm.nih.gov", 
+                                rport, 
+                                service_name,
+                                to, 
+                                &err_msg)) {
         return;
     }
-    if (s_ConnectClient(nc_client, "service1", 9009, to)) {
+    if (s_ConnectClient_Reserve(nc_client, 
+                                "service1", 
+                                rport, 
+                                service_name,
+                                to, 
+                                &err_msg)) {
         return;
     }
 
+    err_msg += ")";
+
     // cannot connect
-    NCBI_THROW(CNetServiceException, eCommunicationError, 
-               "Cannot connect to service using load balancer.");
+    NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }
 
 
@@ -359,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/02/07 16:54:59  kuznets
+ * Improved diagnostics in LB connect
+ *
  * Revision 1.8  2005/02/07 16:20:20  ucko
  * NetCache_ConfigureWithLB: Fix build error introduced in previous
  * revision by moving the declaration of "STimeout& to" further up.
