@@ -156,7 +156,12 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static int StringToInt(const string& str, int base = 10,
+    /// @return
+    ///   - Convert "str" to "int" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents
+    ///     a number that does not fit into "int".
+    static int StringToInt(const string&  str,
+                           int            base     = 10,
                            ECheckEndPtr   check    = eCheck_Need,
                            EConvErrAction on_error = eConvErr_Throw);
 
@@ -175,35 +180,14 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static unsigned int StringToUInt(const string& str, int base = 10,
+    /// @return
+    ///   - Convert "str" to "unsigned int" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents
+    ///     a number that does not fit into "unsigned int".
+    static unsigned int StringToUInt(const string&  str,
+                                     int            base     = 10,
                                      ECheckEndPtr   check    = eCheck_Need,
                                      EConvErrAction on_error = eConvErr_Throw);
-
-    /// Convert string to unsigned int. 
-    /// String can contain "software" qulifiers: MB(megabyte), KB (kilobyte)..
-    /// Example: 100MB, 1024KB
-    /// Cannot process string if result exceed sizeof(unsigned int) value
-    /// in bytes for current platform.
-    ///
-    /// @param str
-    ///   String to be converted.
-    /// @param base
-    ///   Numeric base of the number symbols (default = 10).
-    /// @param check
-    ///   Whether trailing symbols (other than '\0') are permitted - default
-    ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an action defined by "on_error" parameter will
-    ///   be performed. If the value is eCheck_Skip, the string can have
-    ///   trailing symbols after the number.
-    /// @param on_error
-    ///   Whether to throw an exception on error, or just to return zero.
-    /// @sa
-    ///   StringToUInt8_DataSize, StringToUInt
-    static unsigned int 
-    StringToUInt_DataSize(const string&  str, 
-                          int            base     = 10,
-                          ECheckEndPtr   check    = eCheck_Need,
-                          EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to long.
     ///
@@ -219,7 +203,12 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static long StringToLong(const string& str, int base = 10,
+    /// @return
+    ///   - Convert "str" to "long" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents
+    ///     a number that does not fit into "long".
+    static long StringToLong(const string&  str,
+                             int            base     = 10,
                              ECheckEndPtr   check    = eCheck_Need,
                              EConvErrAction on_error = eConvErr_Throw);
 
@@ -237,7 +226,12 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static unsigned long StringToULong(const string& str, int base = 10,
+    /// @return
+    ///   - Convert "str" to "unsigned long" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents
+    ///     a number that does not fit into "unsigned long".
+    static unsigned long StringToULong(const string&  str,
+                                       int            base     = 10,
                                        ECheckEndPtr   check    = eCheck_Need,
                                        EConvErrAction on_error = eConvErr_Throw);
 
@@ -253,7 +247,11 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static double StringToDouble(const string& str,
+    /// @return
+    ///   - Convert "str" to "double" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents
+    ///     a number that does not fit into "double".
+    static double StringToDouble(const string&  str,
                                  ECheckEndPtr   check    = eCheck_Need,
                                  EConvErrAction on_error = eConvErr_Throw);
 
@@ -261,19 +259,71 @@ public:
     ///
     /// @param str
     ///   String to be converted.
+    /// @param base
+    ///   Radix base. Default is 10. Other values can be 2, 8, and 16.
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     /// @return
     ///   Converted Int8 value.
-    static Int8 StringToInt8(const string& str);
+    static Int8 StringToInt8(const string&  str,
+                             int            base     = 10,
+                             ECheckEndPtr   check    = eCheck_Need,
+                             EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to Uint8.
     ///
     /// @param str
     ///   String to be converted.
     /// @param base
-    ///   Radix base. Default is 10. Other values can be 2, 8, and 16.
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     /// @return
     ///   Converted UInt8 value.
-    static Uint8 StringToUInt8(const string& str, int base = 10);
+    static Uint8 StringToUInt8(const string&  str,
+                               int            base     = 10,
+                               ECheckEndPtr   check    = eCheck_Need,
+                               EConvErrAction on_error = eConvErr_Throw);
+
+    /// Convert string to number of bytes. 
+    ///
+    /// String can contain "software" qulifiers: MB(megabyte), KB (kilobyte)..
+    /// Example: 100MB, 1024KB
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
+    /// @return
+    ///   - Convert "str" to "Uint8" value of bytes presented by string
+    ///     and return it. 
+    ///   - 0 if "str" contains illegal symbols, or if it represents
+    ///     a number of bytes that does not fit into "Uint8".
+    static 
+    Uint8 StringToUInt8_DataSize(const string&  str, 
+                                 int            base     = 10,
+                                 ECheckEndPtr   check    = eCheck_Need,
+                                 EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to pointer.
     ///
@@ -372,7 +422,6 @@ public:
     /// @param value
     ///   Double value to be converted.
     static void DoubleToString(string& out_str, double value);
-
 
     /// Convert double to string with specified precision.
     ///
@@ -2459,6 +2508,13 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.70  2004/10/15 12:00:52  ivanov
+ * Renamed NStr::StringToUInt_DataSize -> NStr::StringToUInt8_DataSize.
+ * Added doxygen @return statement to NStr::StringTo* comments.
+ * Added additional arguments to NStr::StringTo[U]Int8 to select radix
+ * (now it is not fixed with predefined values, and can be arbitrary)
+ * and action on not permitted trailing symbols in the converting string.
+ *
  * Revision 1.69  2004/10/13 13:05:38  ivanov
  * Some cosmetics
  *
