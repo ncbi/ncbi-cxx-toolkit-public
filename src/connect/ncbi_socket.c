@@ -1186,14 +1186,15 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         /* all sockets are not ready for the requested events */
         for (i = j; i < n; i++) {
             /* try to find an immediately readable socket */
-            if (polls[i].sock  &&  polls[i].revent != eIO_Close
-                &&  polls[i].event  == eIO_Write
-                &&  polls[i].revent == eIO_Read) {
-                ESwitch save_r_on_w = polls[i].sock->r_on_w;
+            if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
+                ESwitch save_r_on_w;
                 SSOCK_Poll poll;
+
+                assert(polls[i].sock);
                 /* try upread as mush as possible data into internal buffer */
                 s_NCBI_Recv(polls[i].sock, 0, 1000000000, 1/*peek*/);
-
+                /* then poll about writing-only w/o upread */
+                save_r_on_w = polls[i].sock->r_on_w;
                 polls[i].sock->r_on_w = eOff;
                 poll.sock  = polls[i].sock;
                 poll.event = eIO_Write;
@@ -1201,7 +1202,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                 polls[i].sock->r_on_w = save_r_on_w;
 
                 if (status == eIO_Success  &&  poll.revent == eIO_Write) {
-                    polls[i].revent = poll.revent;
+                    polls[i].revent = eIO_Write/*poll.revent*/;
                     break; /*can write now!*/
                 }
             }
@@ -1995,6 +1996,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2002/08/28 15:59:24  lavr
+ * Removed few redundant checks in s_SelectStallsafe()
+ *
  * Revision 6.60  2002/08/27 03:16:15  lavr
  * Rename SOCK_htonl -> SOCK_HostToNetLong, SOCK_htons -> SOCK_HostToNetShort
  *
