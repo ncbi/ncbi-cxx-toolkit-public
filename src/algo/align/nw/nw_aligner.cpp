@@ -320,43 +320,56 @@ CNWAligner::TScore CNWAligner::Run()
 CNWAligner::TScore CNWAligner::x_Run()
 {
     try {
-        if(m_guides.size() == 0) {
-	  m_score = x_Align(m_Seq1,m_SeqLen1, m_Seq2,m_SeqLen2, &m_Transcript);
-	}
-	else {
-	    m_Transcript.clear();
-	    // run the algorithm for every segment between hits
-	    size_t guides_dim = m_guides.size() / 4;
-	    size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
-	    vector<ETranscriptSymbol> trans;
-	    for(size_t i = 4*guides_dim; i != 0; i -= 4) {
-	      q0 = m_guides[i - 3] + 1;
-	      s0 = m_guides[i - 1] + 1;
-	      size_t dim_query = q1 - q0, dim_subj = s1 - s0;
-	      x_Align(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
-	      copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
-	      size_t dim_hit = m_guides[i - 3] - m_guides[i - 4] + 1;
-	      for(size_t k = 0; k < dim_hit; ++k) {
-                m_Transcript.push_back(eTS_Match);
-	      }
-	      q1 = m_guides[i - 4];
-	      s1 = m_guides[i - 2];
-	      trans.clear();
-	    }
-	    x_Align(m_Seq1, q1, m_Seq2, s1, &trans);
-	    copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
-	    m_score = x_ScoreByTranscript();
-	}
+    
+    if(m_guides.size() == 0) {
+      m_score = x_Align(m_Seq1,m_SeqLen1, m_Seq2,m_SeqLen2, &m_Transcript);
     }
-    catch(bad_alloc&) {
+    else {
+
+      // run the algorithm for every segment between hits
+      m_Transcript.clear();
+      size_t guides_dim = m_guides.size() / 4;
+      size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
+      vector<ETranscriptSymbol> trans;
       
-      NCBI_THROW(
-		 CAlgoAlignException,
-		 eMemoryLimit,
-		 "Memory limit exceeded");
+      // save original esf settings
+      bool esf_L1 = m_esf_L1, esf_R1 = m_esf_R1, esf_L2 = m_esf_L2, esf_R2 = m_esf_R2;
+      SetEndSpaceFree(false, esf_R1, false, esf_R2); // last region
+      for(size_t istart = 4*guides_dim, i = istart; i != 0; i -= 4) {
+	q0 = m_guides[i - 3] + 1;
+	s0 = m_guides[i - 1] + 1;
+	size_t dim_query = q1 - q0, dim_subj = s1 - s0;
+	x_Align(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
+	copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
+	size_t dim_hit = m_guides[i - 3] - m_guides[i - 4] + 1;
+	for(size_t k = 0; k < dim_hit; ++k) {
+	  m_Transcript.push_back(eTS_Match);
+	}
+	q1 = m_guides[i - 4];
+	s1 = m_guides[i - 2];
+	trans.clear();
+	if(i == istart) {
+	  SetEndSpaceFree(false, false, false, false); // middle regions
+	}
+      }
+      SetEndSpaceFree(esf_L1, false, esf_L2, false); // first region
+      x_Align(m_Seq1, q1, m_Seq2, s1, &trans);
+      SetEndSpaceFree(esf_L1, esf_R1, esf_L2, esf_R2); // restore
+      copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
+      m_score = x_ScoreByTranscript();
     }
 
-    return m_score;
+  }
+  
+  catch( bad_alloc& ) {
+      
+    NCBI_THROW(
+	       CAlgoAlignException,
+	       eMemoryLimit,
+	       "Memory limit exceeded");
+  }
+
+  return m_score;
 }
 
 
@@ -978,6 +991,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/10/14 18:44:46  kapustin
+ * Adjust esf flags during pattern-guided alignment
+ *
  * Revision 1.38  2003/09/30 19:50:04  kapustin
  * Make use of standard score matrix interface
  *
