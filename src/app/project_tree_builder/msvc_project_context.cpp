@@ -45,9 +45,10 @@ BEGIN_NCBI_SCOPE
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
     //MSVC project name created from project type and project ID
-    m_ProjectName  = CreateProjectName(CProjKey(project.m_ProjType, 
-                                                project.m_ID));
-    m_ProjectId    = project.m_ID;
+    m_ProjectId    = CProjKey(project.m_ProjType, 
+                              project.m_ID);
+
+    m_ProjectName  = CreateProjectName(m_ProjectId);
 
     m_SourcesBaseDir = project.m_SourcesBaseDir;
     m_Requires       = project.m_Requires;
@@ -147,6 +148,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // Libraries from NCBI C Toolkit
     m_NcbiCLibs = project.m_NcbiCLibs;
+
+    // Depends for project
+    m_Depends   = project.m_Depends;
 }
 
 
@@ -627,7 +631,9 @@ s_CreateCompilerTool(const CMsvcPrjGeneralContext& general_context,
         general_context.GetMsvcMetaMakefile(),
         general_context.m_Config,
         general_context.m_Type,
-        project_context.Defines());
+        project_context.Defines(),
+        project_context.ProjectId(),
+        project_context.Depends());
 }
 
 
@@ -642,7 +648,7 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                                             (general_context.m_Config),
                         project_context.AdditionalLibraryDirectories
                                             (general_context.m_Config),
-                        project_context.ProjectId(),
+                        project_context.ProjectId().Id(),
                         project_context.GetMsvcProjectMakefile(),
                         general_context.GetMsvcMetaMakefile(),
                         general_context.m_Config);
@@ -659,7 +665,7 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                                             (general_context.m_Config),
                         project_context.AdditionalLibraryDirectories
                                             (general_context.m_Config),
-                        project_context.ProjectId(),
+                        project_context.ProjectId().Id(),
                         project_context.GetMsvcProjectMakefile(),
                         general_context.GetMsvcMetaMakefile(),
                         general_context.m_Config);
@@ -679,7 +685,7 @@ s_CreateLibrarianTool(const CMsvcPrjGeneralContext& general_context,
                                                     (general_context.m_Config),
                                  project_context.AdditionalLibraryDirectories
                                                     (general_context.m_Config),
-								 project_context.ProjectId(),
+								 project_context.ProjectId().Id(),
                                  project_context.GetMsvcProjectMakefile(),
                                  general_context.GetMsvcMetaMakefile(),
                                  general_context.m_Config);
@@ -738,6 +744,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/03/08 23:36:11  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext constructor.
+ *
  * Revision 1.18  2004/03/02 23:33:55  gorelenk
  * Changed implementation of class CMsvcPrjGeneralContext constructor.
  *
