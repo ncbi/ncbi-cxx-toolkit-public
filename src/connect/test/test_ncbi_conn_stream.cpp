@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/03/31 02:37:19  lavr
+ * Additional registry entries for ID1 added
+ *
  * Revision 6.19  2002/03/30 03:37:21  lavr
  * Added test for memory leak in unused connector
  *
@@ -113,9 +116,11 @@ static CNcbiRegistry* s_CreateRegistry(void)
     CNcbiRegistry* reg = new CNcbiRegistry;
 
     // Compose a test registry
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,           "ray.nlm.nih.gov");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,       "/Service/bounce.cgi");
+    reg->Set("ID1", "CONN_" REG_CONN_HOST, DEF_CONN_HOST);
+    reg->Set("ID1", "CONN_" REG_CONN_PATH, DEF_CONN_PATH);
+    reg->Set("ID1", "CONN_" REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,          "ray.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "5.0");
