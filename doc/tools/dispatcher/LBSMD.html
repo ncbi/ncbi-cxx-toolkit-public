@@ -1,0 +1,382 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Load-Balancing Service Mapping Daemon (LBSMD)</title>
+</head>
+<body>
+<center><h1>Load-Balancing Service Mapping Daemon (<tt>LBSMD</tt>)</h1></center>
+
+In general, <tt>LBSMD</tt> should be run at NCBI site on every host, which carries either public
+or private servers implementing NCBI service(s) (see, however discussion about <i>static</i> servers
+<a href="#ref_Static">below</a>). The services include CGIs or standalone servers
+to access NCBI data. Each service has a name assigned to it, <tt>TaxServer</tt>
+for instance. The name uniquely identifies the service, and - <u>most importantly</u> -
+the protocol used for data exchange, i.e. any client connecting to service <tt>TaxServer</tt>
+knows how to communicate with that service, whereas the service can be
+implemented in various ways on hosts across NCBI.
+That is, the service could be implemented as a standalone server on
+a host <tt>X</tt>, and as a CGI on the same or another host <tt>Y</tt>.
+(Note however, that on a certain host, there should <i>not</i> be two or more
+servers of the same <a href="#ref_ServerType">type</a> for the same service.)
+Moreover, the same server can implement several services, that is
+the services with different names. For example, one service (like,
+<tt>Entrez2</tt>) can accept binary data only, and another one
+(say, <tt>Entrez2Text</tt>) can accept data only in text format.
+For the server, the distinction between those two could be in this case
+made by using a <a href="#ref_ContentType">content type specifier</a>.
+
+<p>
+The goal of <tt>LBSMD</tt> is to maintain a table of all services
+available at NCBI at the moment. In addition, <tt>LBSMD</tt> keeps track of
+services, which are found non-functional (dead services), and
+it is also responsible for propagating trouble reports,
+obtained back from the applications about their experience with
+advertized services (e.g. an advertized service is not
+technically dead, but generates sort of garbage when accessed).
+Further in this document the latter kind of feedback is called a
+<i>penalty</i>.
+
+<p>
+The principle of load-balancing is simple: each server, implementing
+the required service, is assigned a (calculated) rate. The higher the rate
+the better the chance for that the server to be chosen. Note that load-balancing
+is thus almost never deterministic (see however, discussion of negative
+<a href="#ref_Bonus">local bonus coefficient</a> below).
+
+<p>
+It is not obviously enough that the load-balancing daemon does not calculate the rates of servers.
+Its primary goal is to collect all necessary information for that.
+Actual calculation of current rates of (non-<a href="#ref_Static"><i>static</i></a>) servers is based on
+many parameters of the system, including the load average, the number of
+CPUs and processes, etc. The rate calculation fomulas can be found in
+<a href="../../lxr/source/src/connect/ncbi_lbsm.c"><b><i>connect/ncbi_lbsm.c</i></b></a>,
+which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>, not <tt>LBSMD</tt>.
+
+
+<p><hr><p>
+
+<h2><tt>LBSMD</tt> in Details</h2>
+
+<tt>LBSMD</tt> is configured by means of a configuration file, which is also
+shared with <a href="DISPD.html">NCBI dispatching CGI</a>.
+Each line in the file either defines a service, or is a part of
+the host environment, or is en empty line (the one entirely blank or containing a
+comment only). Empty lines are all ignored in the file.
+Any single configuration line can be split into several physical lines by
+inserting a backslash symbol (\) before the line breaks.
+A comment is introduced by a hash symbol (#).
+
+<p>
+A configuration line of the form
+<pre>
+name=value
+</pre>
+places itself in the <i>host environment</i>. The host environment can be accessed by
+clients while making the service name resolution. Often, the host environment
+tells the client about limitations/options, which the host has, and based on this
+additional information, the client can make a decision whether the server
+(despite that it is implementing the service) is suitable for carrying out client's request.
+For example, the host environment can give the client an idea about what are the databases
+available on the host. The host environment is not interpreted or used in any way both by the daemon, and
+by the load-balancing algorithm, except for that <tt>name</tt> must be a valid identifier.
+The <tt>value</tt> may be practically anything, even empty.
+It is left solely on the client to parse the environment and to look for the information in interest.
+<br>
+<u>Note</u> that white characters surrounding <tt>name</tt> are not preserved, but they are
+preserved in <tt>value</tt>, i.e. when appear after the equal sign.
+
+<p>
+A <i>service</i> is defined by a line of the form
+<pre>
+service_name [check_time] server_descriptor [| launcher_info ]
+</pre>
+<ul>
+<li><tt>service_name</tt> specifies the service, for instance
+<tt>TaxServer</tt>.
+<li><tt>[check_time]</tt> is an optional parameter (if omitted,
+the surrounding square brackets must go, too),
+which specifies the number of seconds for periodic checkups.
+For example, <tt>[120]</tt> means to check the server once
+every 2 minutes. Note the square brackets - they are required.
+<li><tt>server_descriptor</tt> is a server address and related information,
+which is described in details later in this document.
+An example of the <tt>server_descriptor</tt>:
+<pre>
+STANDALONE somehost:1234 R=3000 L=yes S=yes B=-200
+</pre>
+<li><tt>launcher_info</tt> is basically a command line,
+preceded by a pipe symbol (|), delimiting from <tt>server_descriptor</tt>.
+It is an optional argument, and is only required
+for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>.
+</ul>
+
+<p>
+<tt>Server_descriptor</tt>, also described in details in
+<a href="../../lxr/source/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>,
+consists of the following fields
+<ol>
+<tt>server_type [host][:port] [arguments] [flags]</tt><br>
+where:
+<ul type=square>
+<li><a name="ref_ServerType"><tt>server_type</tt></a> is one of the following keywords:<br>
+  <ul compact type=bullet>
+  <li><tt>NCBID</tt> for servers launched by <a href="DISPD.html#ref_NCBID"><b><i>ncbid.cgi</i></b></a>;
+  <li><tt>STANDALONE</tt> for standalone servers listening on dedicated ports;
+  <li><tt>HTTP_GET</tt> for servers, which are CGI programs, accepting only <i>GET</i> request method;
+  <li><tt>HTTP_POST</tt> for servers, which are CGI programs, accepting only <i>POST</i> request method;
+  <li><tt>HTTP_POST</tt> for servers, which are CGI programs, accepting both <i>GET</i> and <i>POST</i> request methods.
+  </ul>
+<li>Both <tt>host</tt> and <tt>port</tt> parameters are optional. Defaults are local host, and
+port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
+<a name="ref_Static">If <tt>host</tt> <u>is</u> specified</a> (even, <tt>localhost</tt>, or local host name)
+then the described server is not a subject for variable load-balancing, but a so-called <i>static</i>
+server. Such a server always has a constant rate, independent on the host load.
+<li><tt>arguments</tt> are required for <tt>HTTP*</tt> servers, and must give
+the local absolute URL of the CGI, and optionally parameters, like:
+<ol>
+  <tt>/somepath/somecgi.cgi?param1&param2=value2&param3=value3</tt>
+</ol>
+If no parameters are to be supplied, then question mark (?) must not be
+specified.<br>
+For <tt>NCBID</tt> servers, arguments are parameters to
+pass to the server, and are formed as arguments for CGI programs, i.e.
+<ol>
+  <tt>param1&param2&param3=value</tt>
+</ol>
+As a special rule, <tt>''</tt> may be used to denote empty argument for <tt>NCBID</tt> server.<br>
+<tt>STANDALONE</tt> servers do <i>not</i> take any <tt>arguments</tt>.
+<li><tt>flags</tt> can come in no specific order (but no more than one instance of a flag is allowed),
+and essentially are the optional modifiers of the values, used by default. The following flags are
+recognized:
+<ul type=circle>
+  <li>load calculation keyword:
+  <ul type=bullet>
+    <li><tt>Blast</tt> to use special algorithm for status calculation, acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
+	applications. The algorithm uses instant values of the host load, and thus is less conservative and more
+	reactive than the ordinary one;
+    <li><tt>Regular</tt> to use an ordinary rate calculation (default, and the only load calculation
+    option allowed for <a href="#ref_Static"><i>static</i></a> servers).
+  </ul>
+  <li>base rate:
+  <ul type=bullet>
+  <li><tt>R=value</tt> sets base server reachability rate (as a floating point number),
+  default is 1000. Any negative value makes the server unreachable, and a value of 0
+  uses the default. The maximal base rate is 100000.
+  </ul>
+  <li>locality marker:
+  <ul type=bullet>
+     <li><tt>L={yes|no}</tt> sets (if <tt>yes</tt>) the server to be <i>local only</i>. Default is <tt>no</tt>.
+     <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> returns <i>local only</i> servers
+     in the case of mapping with the use of <tt>LBSMD</tt> running on the same (local) host. Otherwise, if service mapping
+     occurs using network (via exchange with <a href="DISPD.html"><b><i>dispd.cgi</i></b></a>), then
+     <i>local only</i> servers are not seen.
+  </ul>
+  <li>stateful server:
+  <ul type=bullet>
+     <li><tt>S={yes|no}</tt> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
+     and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Those servers are only
+     accessed via creating a stream connection to the server, and the entire data transfer is to happen
+     while the connection is alive. Default is <tt>no</tt>.<br>
+     <u>Note</u> that due to mutual incompatibility, Web-browsers <i>cannot</i> directly
+     connect to <i>stateful</i> servers.
+  </ul>
+  <li><a name="ref_ContentType">content type specifier</a>:
+  <ul type=bullet>
+     <li><tt>C=type/subtype</tt> specifies what is the data type that the server accepts/generates.
+     There is no default value for this flag.
+  </ul>
+  <li><a name="ref_Bonus">local bonus coefficient</a>:
+  <ul type=bullet>
+     <li><tt>B=value</tt>. The interpretation of this flag depends on the sign of <tt>value</tt>. When positive,
+     <tt>value</tt> specifies a multiplier, which applies to the server rate when the server is locally run.
+     When zero (default), the slight default rate increase takes effect for locally run servers. When <tt>value</tt> is negative, the
+     locally run server overrides those even having higher rates and preceding the local one, but only if the local server has
+     a rate, which is not in the percentile (expressed by the absolute <tt>value</tt>) of average rest rate of all other servers,
+     implementing the service.<br>
+     For example, a server on a <u>local</u> host <tt>Z</tt> configured with <tt>B=-5</tt> (and currently having rate of 100)
+     will be chosen by the <u>local</u> load-balancer even if there are hosts <tt>X</tt> and <tt>Y</tt>, having rates 1000 and 2000,
+     because 100 is more than 5% of (1000 + 2000)/2 = 1500, which is 75.</br>
+     <u>Note</u> again that for this coefficient to play, <i>both</i> server <i>and</i> mapping must be on the same host.
+  </ul>
+</ul>
+</ul>
+</ol>
+
+<p>
+The main loop of the daemon comprises of periodic checks of configuration file and reloads of the configuration if
+necessary, checks and processings of incoming messages from other load-balancing daemons running on
+other hosts, generating and brodacasting messages to the other hosts about the load of the system and
+configured services. Also, the daemon periodically checks whether the configured servers are alive, trying
+to connect to them, and then to immediately disconnect, without any data exchange. This way the daemon
+is only able to check whether the network port is alive. Further server accessibility information could
+be sent back to the daemon by applications, which actually use the server (see <a href="#ref_Penalizer">below</a>).
+
+<p>
+The daemon can be configured by a dozen of switches, which could modify certain
+parameters from their default values. To see all command-line switches, switch <tt>-h</tt> may be used,
+or NCBI Intranet users <i>only</i> can click <a href="http://pluto/Service/lbsmd.cgi">here</a>.
+Also, daemon reacts on <tt>HUP</tt> signal to reload its configuration,
+and both <tt>INT</tt> and <tt>TERM</tt> signals to gracefully quit. Despite very high stability, usually
+the daemon is forcibly started from <tt>crontab</tt> each every few minutes on all production hosts to ensure
+that the daemon is always running. This technique is safe, because no more than one instance of the daemon
+is permitted on a certain host, and any attempt to start more than one is rejected.
+
+<p>
+<tt>LBSMD</tt> can generate output to the logfile, which can be limited in size to prevent
+disk from flooding with messages. NCBI Intranet users <i>only</i>
+<a href="http://pluto/Service/lbsmd.cgi?log">can take a look</a>
+at (no more than 100) recent lines of the logfile on host <tt>pluto</tt>.
+
+<p>
+<hr>
+<p>
+
+<h2>Example of Configuration File</h2>
+
+Below is an excerpt from an example configuration file, which declares some of the host environment,
+advertizes one standalone stateful server, and one NCBID service, both implementing the same
+service, and one HTTP service, which is a local service only.
+
+<pre>
+#
+# This is a configuraiton file of LBSMD and DISPD
+#
+
+# This goes to host environment. (practical)
+db_list=a.db b.db c.db
+# And this, too. (illustrative)
+my_entry="some very important value as a quoted string"
+
+# Standalone server listening on port 9999
+TestService STANDALONE :9999 S=yes R=2000
+
+# NCBID server (note empty quotes to prevent treatment of Regular as
+# an argument, and the path and parameters to the executable)
+TestService NCBID      '' Regular | /home/webuser/TestService/a.out "parameter 1"
+
+# Local HTTP service w/o checks (note [0])
+LocalService [0] HTTP /LocalService.cgi?param=somevalue L=yes
+
+# Static service - check it each 200 seconds
+StaticService [200] STANDALONE :8888
+
+# Static service from another host where LBSMD may even not be running
+# (no checks at all or just [0] allowed for non-local static servers)
+ForeignService [0] STANDALONE :7777 R=300
+
+# end of configuration
+</pre>
+
+NCBI Intranet users <i>only</i> can take a look at a real configuration file on the host <tt>pluto</tt>
+<a href="http://pluto/Service/lbsmd.cgi?cfg">here</a>.
+
+<p><hr><p>
+
+<h2>Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</h2>
+
+This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program</a>, which repeatedly
+dumps onto the screen a table, representing current contents of shared memory segment, where the daemon
+collects all the information about hosts and services. The client's output can be controlled by a number
+of switches, full list of which may be obtained via switch <tt>-h</tt> alone, or NCBI Intranet users can click
+<a href="http://pluto/Service/lbsmc.cgi?-h">here</a>. For example, to print only
+the hosts currently running the daemon, one can use the following command:
+<pre>
+>./lbsmc -s none 0
+08/23/01 11:36:35 ================== sampson ===================================
+Hostname/IPaddr Task/CPU LoadAv LoadBl   Status   StatBl n1 n2 n3 n4 n5 q1 q2 q3
+iblastd            4/2     2.01   2.00   220.26     0.00  0  0  0  0  0 10 10  0
+muncher        *  11/16    0.01   0.05 14414.42 15950.00  0  0  0  0  0 22 22  0
+ray               29/6     2.71   3.14    75.39  2860.00  0  0  0  0  0  1  1  0
+sampson           11/6     0.16   0.17  2173.91  5830.00  0  0  0  0  0  0  0  0
+schroeder         60/8     0.45   0.00   285.72  8000.00  0  0  0  0  0  0  0  0
+--------------------------------------------------------------------------------
+* Hosts: 5/5, Svcs: 0/12/0      |      Heap: 8192, used: 1736/1776, free: 6416 *
+
+
+08/23/01 11:36:35 LBSMD PID was detected as 9733
+</pre>
+For NCBI Intranet users <i>only</i>, the following live lists are available to browse:
+<ul type=circle>
+<li><a href="http://pluto/Service/lbsmc.cgi?-s_none_-w">Currently running hosts</a>;
+<li><a href="http://pluto/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
+<li><a href="http://pluto/Service/lbsmc.cgi?-h_none_-w_-d">Currently dead servers</a>.
+</ul>
+
+<p><hr><p>
+
+<h2><a name="ref_Penalizer">Server Penalizer</a></h2>
+
+There is a means for application to report problems with accessing a certain server back to
+the load-balancing daemon, in the form of the penalty, a value in the range <tt>[0..100]</tt>,
+showing in percents, how bad the server is. The value of 0 means the server is completely okay,
+whilst 100 means the server (is misbehaving and) should <i>not</i> be used at all. The penalty is
+not a constant value: once set it starts to decrease in time, first slowly, then faster and
+faster, until reaches zero. This way, if a server was penalized for some reason beyond its control,
+but then that reason has gone, then the server becomes available as its penalty (not been
+reset by applications again in the absence of the offending reason) goes itself zero.
+
+<p>
+Technically, the penalty is maintained by a daemon, which has the server configured.
+That is, received by a certain host, which may be different from the one, where the
+server was put into configuration file, the penalty first migrates to that host,
+and then the daemon on that host announces that the server was penalized.</br>
+<u>Note</u> that once the daemon is restarted, the penalty information is lost.
+
+<p>
+<a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> has a call
+<a href="../../lxr/ident?i=SERV_Penalize"><b><i>SERV_Penalize</i></b></a>,
+declared in <a href="../../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>,
+which can be used to set the penalty for the last server, obtained from the mapping iterator.
+
+<p>
+For the script files (like ones used to start/stop servers), there is a dedicated utility program called
+<a href="../../lxr/source/src/connect/daemons/lbsm_penalize.c"><b><i>lbsm_penalize</i></b></a>,
+which sets the penalty from the command line. Because of intervening  the load-balancing
+mechanism substantially, this command should be used with care.
+
+<p>
+<b><i>lbsm_penalize</i></b> is now a part of LBSM set of tools, installed on all hosts, running <tt>LBSMD</tt>.
+As explained above, penalizing means making a server less favorable for choosing by load-balancing
+mechanism. Because of the fact that the full penalty of 100% makes a server unavailable for clients at all,
+at the time when the server is about to shut down (restart), it is wise to increase the server penalty
+to the maximal value, thus excluding the server from the service mapping. (Otherwise, load-balancing daemon
+might not immediately notice that the server is down, and continue dispatching to that server.)
+Usually penalty takes at most 5 seconds to propagate to all participating network hosts.
+That is, before the actual server shutdown, the following sequence of commands may be used:
+<pre>
+> ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 100 host 120'
+> sleep 5
+> shutdown the server
+</pre>
+
+The effect of the above is to set the maximal penalty <tt>100</tt> for the service <tt>Servicename</tt> (of type
+<tt>STANDALONE</tt>) running on host <tt>host</tt> for at least <tt>120</tt> seconds, the last parameter.
+(After 120 seconds the normal behavior of the penalty occurs, i.e. automatical decreasing in time, if not reset again to a different value.)
+In order to be realized by all hosts of the subnet, <tt>sleep 5</tt> precedes the server shutdown command.
+Please note single quotes surrounding penalty specification: they are required in the shell because
+<b><i>lbsm_penalize</i></b> takes only one argument, the entire penalty specification.
+
+<p>
+As soon as the server is down, <tt>LBSMD</tt> detects it in the matter of several seconds
+(if not instructed otherwise via configuration file), and then never dispatches to the server until it is up.
+
+In some circumstances, the following command may come handy:
+<pre>
+> ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'
+</pre> 
+which resets the penalty to 0 (no penalty), and is useful, when e.g. as for the previous example, the server is restarted
+and ready in less than 120 seconds, but the penalty is still held high by <tt>LBSMD</tt>.
+
+<p>
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>
