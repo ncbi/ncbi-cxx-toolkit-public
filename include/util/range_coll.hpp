@@ -1,5 +1,5 @@
-#ifndef GUI_WIDGETS_ALN_MULTIPLE___RANGECOLL__HPP
-#define GUI_WIDGETS_ALN_MULTIPLE___RANGECOLL__HPP
+#ifndef UTIL___RANGE_COLL__HPP
+#define UTIL___RANGE_COLL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 template<class Range, class Position>
-    struct PRangeLessPos
+struct PRangeLessPos
 {
     bool    operator()(const Range &R, Position Pos)  { return R.GetToOpen() <= Pos;  }    
 };
@@ -54,7 +54,8 @@ template<class Range, class Position>
 // Adding an interval to the collection leads to possible merging it with 
 // existing intervals.
 
-template<class Position>    class   CRangeCollection 
+template<class Position>
+class CRangeCollection 
 {
 public:
     typedef Position    position_type;
@@ -351,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/22 19:17:49  dicuccio
+ * Use correct #include guard
+ *
  * Revision 1.1  2003/12/01 16:29:45  yazhuk
  * Moved from gui/widgets/aln_multiple
  *
@@ -378,4 +382,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  // GUI_WIDGETS_ALN_MULTIPLE___RANGECOLL__HPP
+#endif  // UTIL___RANGE_COLL__HPP
