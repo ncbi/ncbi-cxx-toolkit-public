@@ -68,7 +68,6 @@ void SChunkInfo::Add(const SChunkInfo& chunk)
 
 void SChunkInfo::Add(TPlaceId place_id, const CSeq_annot_SplitInfo& info)
 {
-    _TRACE("SChunkInfo::Add(const CSeq_annot_SplitInfo&)");
     TAnnotObjects& objs = m_Annots[place_id][info.m_Src_annot];
     ITERATE ( CSeq_annot_SplitInfo::TObjects, it, info.m_Objects ) {
         if ( !*it ) {
@@ -81,7 +80,6 @@ void SChunkInfo::Add(TPlaceId place_id, const CSeq_annot_SplitInfo& info)
 
 void SChunkInfo::Add(TAnnotObjects& objs, const CLocObjects_SplitInfo& info)
 {
-    _TRACE("SChunkInfo::Add(TAnnotObjects& objst, CLocObjects_SplitInfo&)");
     ITERATE ( CLocObjects_SplitInfo, it, info ) {
         objs.push_back(*it);
         m_Size += it->m_Size;
@@ -91,7 +89,6 @@ void SChunkInfo::Add(TAnnotObjects& objs, const CLocObjects_SplitInfo& info)
 
 void SChunkInfo::Add(const SAnnotPiece& piece)
 {
-    _TRACE("SChunkInfo::Add(const SAnnotPiece&)");
     switch ( piece.m_ObjectType ) {
     case SAnnotPiece::seq_descr:
         Add(piece.m_PlaceId, *piece.m_Seq_descr);
@@ -121,7 +118,6 @@ void SChunkInfo::Add(const SAnnotPiece& piece)
 
 void SChunkInfo::Add(const SIdAnnotPieces& pieces)
 {
-    _TRACE("SChunkInfo::Add(const SIdAnnotPieces&)");
     ITERATE ( SIdAnnotPieces, it, pieces ) {
         Add(*it);
     }
@@ -175,6 +171,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/24 16:45:15  vasilche
+* Removed excessive _TRACEs.
+*
 * Revision 1.8  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *
