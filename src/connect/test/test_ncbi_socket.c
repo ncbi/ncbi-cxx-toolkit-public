@@ -784,9 +784,6 @@ static void TEST_gethostby(void)
     assert( !TEST_gethostbyname("a1....b1") );
     assert( !TEST_gethostbyname("boo.foo.bar.doo") );
 
-    assert( !TEST_gethostbyaddr(0) );
-    assert( !TEST_gethostbyaddr(0xFFFFFFFF) );
-
     fprintf(log_fp, "\n++++++++++++++++++++++\n");
 
     (void) TEST_gethostbyname("localhost");
@@ -795,8 +792,11 @@ static void TEST_gethostby(void)
     (void) TEST_gethostbyname("127.0.0.1");
     (void) TEST_gethostbyname("130.14.25.1");
 
+    (void) TEST_gethostbyaddr(0);
     (void) TEST_gethostbyaddr(SOCK_gethostbyname("127.0.0.1"));
     (void) TEST_gethostbyaddr(SOCK_gethostbyname("130.14.25.1"));
+    (void) TEST_gethostbyaddr(SOCK_gethostbyname("234.234.234.234"));
+    (void) TEST_gethostbyaddr(0xFFFFFFFF);
 
     fprintf(log_fp, "\n===============================\n");
 }
@@ -924,6 +924,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2002/10/11 19:58:23  lavr
+ * Remove asserts() (replace with tests) for SOCK_gethostbyaddr({0|0xFFFFFFFF})
+ *
  * Revision 6.16  2002/08/12 15:10:43  lavr
  * Use persistent SOCK_Write()
  *
