@@ -474,9 +474,12 @@ CBDB_Cache::CBDB_Cache()
   m_PurgeBatchSize(150),
   m_BatchSleep(0),
   m_PurgeStop(false),
+  m_BytesWritten(0),
   m_CleanLogOnPurge(0),
   m_PurgeCount(0),
-  m_RunPurgeThread(false)
+  m_PurgeNowRunning(false),
+  m_RunPurgeThread(false),
+  m_PurgeThreadDelay(10)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -1480,13 +1483,28 @@ void CBDB_Cache::StopPurge()
 }
 
 /// @internal
+///
+/// Sets specified flag to FALSE on destruction
+///
 class CPurgeFlagGuard
 {
 public:
-    CPurgeFlagGuard() : m_Flag(0) {}
-    ~CPurgeFlagGuard() { m_Flag ? *m_Flag = false : 0; }
+    CPurgeFlagGuard() 
+        : m_Flag(0) 
+    {}
 
-    void SetFlag(bool* flag) { m_Flag = flag; *m_Flag = true; }
+    ~CPurgeFlagGuard() 
+    { 
+        if (m_Flag) {
+            *m_Flag = false; 
+        }
+    }
+
+    void SetFlag(bool* flag) 
+    { 
+        m_Flag = flag; 
+        *m_Flag = true; 
+    }
 private:
     bool*  m_Flag;
 };
@@ -1679,11 +1697,6 @@ void CBDB_Cache::Purge(const string&    key,
         int         overflow      = m_CacheAttrDB->overflow;
         string      x_subkey      = (const char*) m_CacheAttrDB->subkey;
 
-/*
-        unsigned mem_time_stamp = 
-            m_MemAttr.GetAccessTime(CacheKey(x_key, version, x_subkey));
-        db_time_stamp = max(db_time_stamp, mem_time_stamp);
-*/
         unsigned ttl = m_CacheAttrDB->ttl;
         unsigned to = timeout;
 
@@ -1798,8 +1811,8 @@ void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
     m_BytesWritten += bytes_written;
     // if purge is running (in the background) it works as a checkpoint-er
     // so we don't need to call TransactionCheckpoint
-    if (!m_PurgeNowRunning && 
-         m_BytesWritten > s_CheckPointInterval) {
+    if ((m_PurgeNowRunning == false) && 
+         (m_BytesWritten > s_CheckPointInterval)) {
 
         m_Env->TransactionCheckpoint();
         m_BytesWritten = 0;
@@ -1848,57 +1861,13 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
     CTime time_stamp(CTime::eCurrent);
     time_t curr = (int)time_stamp.GetTimeT();
     return x_CheckTimestampExpired(key, version, subkey, curr);
-/*
-    int timeout = GetTimeout();
-
-    if (timeout) {
-
-        int db_time_stamp = m_CacheAttrDB->time_stamp;
-        unsigned int ttl = m_CacheAttrDB->ttl;
-
-        CTime time_stamp(CTime::eCurrent);
-        time_t curr = (int)time_stamp.GetTimeT();
-
-        if (ttl) {  // individual timeout
-            if (m_MaxTimeout && ttl > m_MaxTimeout) {
-                ttl = timeout;
-            } else {
-                timeout = ttl;
-            }
-        }
-        
-        if (curr - timeout > db_time_stamp) {
-
-            LOG_POST("local cache item expired:" 
-                     << db_time_stamp << " curr=" << curr 
-                     << " diff=" << curr - db_time_stamp
-                     << " ttl=" << ttl);
-
-            return true;
-        }
-    }
-    return false;
-*/
 }
 
 void CBDB_Cache::x_UpdateReadAccessTime(const string&  key,
                                         int            version,
                                         const string&  subkey)
 {
-/*
-    if (m_MemAttr.IsActive()) {
-        const string& sk = 
-            (m_TimeStampFlag & fTrackSubKey) ? subkey : kEmptyStr;
-        CTime time_stamp(CTime::eCurrent);
-        m_MemAttr.UpdateAccessTime(
-            CacheKey(key, version, sk), (int)time_stamp.GetTimeT());
-        if (m_MemAttr.IsLimitReached()) {
-            x_SaveAttrStorage();
-        }
-    } else */
-    {
-        x_UpdateAccessTime(key, version, subkey);
-    }
+    x_UpdateAccessTime(key, version, subkey);
 }
 
 
@@ -2068,12 +2037,13 @@ void CBDB_Cache::x_DropBlob(const char*    key,
         if (entry.Exists()) {
             entry.Remove();
         }
-    }
-    m_CacheDB->key = key;
-    m_CacheDB->version = version;
-    m_CacheDB->subkey = subkey;
+    } else {
+        m_CacheDB->key = key;
+        m_CacheDB->version = version;
+        m_CacheDB->subkey = subkey;
 
-    m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
+        m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
+    }
 
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
@@ -2371,6 +2341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2004/12/29 15:33:47  kuznets
+ * Fixed bug in variable initialization
+ *
  * Revision 1.98  2004/12/28 19:44:38  kuznets
  * Performance optimization
  *
