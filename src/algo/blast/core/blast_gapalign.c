@@ -43,6 +43,7 @@ static char const rcsid[] = "$Id$";
 #include <blast_util.h> /* for READDB_UNPACK_BASE macros */
 #include <blast_setup.h>
 #include <greedy_align.h>
+#include <blast_setup.h>
 
 static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query, 
    BLAST_SequenceBlkPtr subject, BlastGapAlignStructPtr gap_align,
@@ -2417,24 +2418,6 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    }
    *hsp_list_ptr = hsp_list;
    return status;
-}
-
-/** Reverse the sequence and copy into buffer.
- * @param seq The original sequence [in]
- * @param pos The address of a chracter in the array seq from which to start
- *        copying backwards to the start of seq into target.
- * @param target Buffer to hold the reversed sequence [in] [out]
- * @return Number of characters copied
- */
-static Int4 reverse_seq(Uint1 *seq, Uint1 *pos, Uint1 *target) 
-{
-    Uint1 *c; /*index over addresses of characters in seq*/
-    Int4 numCopied; /*number of characters copied*/
-
-    for (c = pos, numCopied = 0; c >= seq; c--, numCopied++) 
-	*target++ = *c;
-    *target = '\0';
-    return numCopied;
 }
 
 /** Out-of-frame gapped alignment.
