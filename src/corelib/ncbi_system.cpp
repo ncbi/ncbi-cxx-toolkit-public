@@ -48,6 +48,9 @@
 #  include <unistd.h>
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
+#  if defined (NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS
+#    include <ncbi_mslextras.h>
+#  endif
 #endif
 
 #ifdef NCBI_OS_DARWIN
@@ -416,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/04/02 13:29:29  rsmith
+ * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.
+ *
  * Revision 1.25  2003/03/06 23:46:50  ucko
  * Move extra NCBI_OS_DARWIN headers up with the rest, and surround them
  * with extern "C" because they seem to lack it.

@@ -82,10 +82,15 @@
 
 /* Platform-specific system headers
  */
+
 #if defined(NCBI_OS_UNIX)
 #  include <sys/time.h>
 #  include <unistd.h>
-#  include <netdb.h>
+#  if  defined (NCBI_OS_DARWIN) && defined (__MWERKS__) &&  _MSL_USING_MW_C_HEADERS
+#    include <ncbi_mslextras.h>
+#  else
+#    include <netdb.h>
+#  endif
 #  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
@@ -2974,6 +2979,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.88  2003/04/02 13:26:07  rsmith
+ * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.
+ *
  * Revision 6.87  2003/03/25 22:18:06  lavr
  * shutdown(): Do not warn on ENOTCONN on SGI and OSF1 (in addition to Linux)
  *

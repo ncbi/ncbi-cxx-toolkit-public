@@ -53,6 +53,10 @@
 #    define MAP_FAILED ((void *) -1)
 #  endif
 
+#  if defined (NCBI_OS_DARWIN) && defined (NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS
+#    include <ncbi_mslextras.h>
+#  endif
+
 #elif defined(NCBI_OS_MAC)
 #  include <fcntl.h>
 #  include <corelib/ncbi_os_mac.hpp>
@@ -1519,6 +1523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2003/04/02 13:29:29  rsmith
+ * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.
+ *
  * Revision 1.42  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
