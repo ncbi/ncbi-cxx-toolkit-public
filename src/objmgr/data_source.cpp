@@ -1846,6 +1846,40 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
     return false;
 }
 
+
+bool CDataSource::GetTSEHandles(CScope& scope,
+                                const CSeq_entry& entry,
+                                set<CBioseq_Handle>& handles)
+{
+    // Find TSE_Info
+    CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));
+    TEntries::iterator found = m_Entries.find(ref);
+    if (found == m_Entries.end()  ||
+        found->second->m_TSE.GetPointer() != &entry)
+        return false; // entry not found or not a TSE
+
+    // One lock for the whole bioseq iterator
+    scope.x_AddToHistory(*found->second);
+
+    // Get all bioseq handles from the TSE
+    // Store seq-entries in the map to prevent duplicates
+    typedef map<CSeq_entry*, CBioseq_Info*> TEntryToInfo;
+    TEntryToInfo bioseq_map;
+    // Populate the map
+    iterate (CTSE_Info::TBioseqMap, bit, found->second->m_BioseqMap) {
+        bioseq_map[bit->second->m_Entry.GetPointer()] = bit->second;
+    }
+    // Convert each map entry into bioseq handle
+    iterate (TEntryToInfo, eit, bioseq_map) {
+        CBioseq_Handle h(*eit->second->m_Synonyms.begin());
+        h.x_ResolveTo(scope, *this, *eit->first, *found->second);
+        handles.insert(h);
+    }
+    return true;
+}
+
+
 void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CDataSource");
@@ -1918,6 +1952,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/09/30 20:01:19  grichenk
+* Added methods to support CBioseq_CI
+*
 * Revision 1.63  2002/09/16 19:59:36  grichenk
 * Fixed getting reference to a gap on minus strand
 *

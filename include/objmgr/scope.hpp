@@ -127,6 +127,10 @@ private:
                           CSeq_annot::C_Data::E_Choice sel,
                           CAnnotTypes_CI::TTSESet& tse_set);
 
+    // Get bioseq handles for sequences from the given TSE
+    void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
+                                    set<CBioseq_Handle>& handles);
+
     bool x_GetSequence(const CBioseq_Handle& handle,
                        TSeqPos point,
                        SSeqData* seq_piece);
@@ -155,6 +159,7 @@ private:
     friend class CSeqVector;
     friend class CDataSource;
     friend class CAnnotTypes_CI;
+    friend class CBioseq_CI;
 };
 
 
@@ -164,6 +169,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/09/30 20:01:17  grichenk
+* Added methods to support CBioseq_CI
+*
 * Revision 1.19  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -329,26 +329,16 @@ void CScope::ResetHistory(void)
     m_History.clear();
 }
 
-void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+
+void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
+                                        set<CBioseq_Handle>& handles)
 {
-    ddc.SetFrame("CScope");
-    CObject::DebugDump( ddc, depth);
-
-    ddc.Log("m_pObjMgr", m_pObjMgr,0);
-    if (depth == 0) {
-        DebugDumpValue(ddc,"m_setDataSrc.size()", m_setDataSrc.size());
-        DebugDumpValue(ddc,"m_History.size()", m_History.size());
-    } else {
-        DebugDumpValue(ddc,"m_setDataSrc.type", "set<CDataSource*>");
-        DebugDumpRangePtr(ddc,"m_setDataSrc",
-            m_setDataSrc.begin(), m_setDataSrc.end(), depth);
-
-        DebugDumpValue(ddc,"m_History.type", "set<CConstRef<CTSE_Info>>");
-        DebugDumpRangeCRef(ddc,"m_History",
-            m_History.begin(), m_History.end(), depth);
+    iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
+        if ((*itSrc)->GetTSEHandles(*this, tse, handles))
+            break;
     }
-    DebugDumpValue(ddc,"m_FindMode", m_FindMode);
 }
+
 
 void
 CScope::x_DetachFromOM(void)
@@ -370,12 +360,38 @@ CScope::x_DetachFromOM(void)
       }
 }
 
+
+void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CScope");
+    CObject::DebugDump( ddc, depth);
+
+    ddc.Log("m_pObjMgr", m_pObjMgr,0);
+    if (depth == 0) {
+        DebugDumpValue(ddc,"m_setDataSrc.size()", m_setDataSrc.size());
+        DebugDumpValue(ddc,"m_History.size()", m_History.size());
+    } else {
+        DebugDumpValue(ddc,"m_setDataSrc.type", "set<CDataSource*>");
+        DebugDumpRangePtr(ddc,"m_setDataSrc",
+            m_setDataSrc.begin(), m_setDataSrc.end(), depth);
+
+        DebugDumpValue(ddc,"m_History.type", "set<CConstRef<CTSE_Info>>");
+        DebugDumpRangeCRef(ddc,"m_History",
+            m_History.begin(), m_History.end(), depth);
+    }
+    DebugDumpValue(ddc,"m_FindMode", m_FindMode);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/09/30 20:01:19  grichenk
+* Added methods to support CBioseq_CI
+*
 * Revision 1.27  2002/08/09 14:59:00  ucko
 * Restrict template <> to MIPSpro for now, as it also leads to link
 * errors with Compaq's compiler.  (Sigh.)

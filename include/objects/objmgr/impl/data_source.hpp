@@ -154,6 +154,13 @@ public:
                         CSeq_annot::C_Data::E_Choice sel,
                         CScope& scope);
 
+    // Fill the set with bioseq handles for all sequences from a given TSE.
+    // Return false if the entry was not found or is not a TSE.
+    // Used to initialize bioseq iterators.
+    bool GetTSEHandles(CScope& scope,
+                       const CSeq_entry& entry,
+                       set<CBioseq_Handle>& handles);
+
     CSeqMatch_Info BestResolve(const CSeq_id& id, CScope& scope);
 
     bool IsSynonym(const CSeq_id& id1, CSeq_id& id2) const;
@@ -315,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/09/30 20:01:19  grichenk
+* Added methods to support CBioseq_CI
+*
 * Revision 1.26  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
