@@ -111,7 +111,7 @@ void CSeq_descr_CI::x_Step(void)
         m_CurrentEntry = m_CurrentEntry.GetParentEntry();
     }
     else {
-        m_CurrentEntry = CSeq_entry_Handle();
+        m_CurrentEntry.Reset();
     }
 }
 
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/12/22 15:56:33  vasilche
+* Use handle Reset() method.
+*
 * Revision 1.14  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.
