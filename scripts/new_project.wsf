@@ -33,7 +33,16 @@
 		}
 		function VerifyTask(oTask)
 		{
-			//TODO - verify oTask.ProjectName
+			//Project name
+			var oRe = /^[a-z]([a-z]|\d|[_])*$/g;
+			if (oTask.ProjectName.match(oRe) == null) {
+				WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
+				WScript.Echo("Project name should starts from lower-case letter");
+				WScript.Echo("             and containts lower-case letter(s),");
+				WScript.Echo("                           underscore(s)");
+				WScript.Echo("                        or digit(s)");
+				WScript.Quit(1);
+			}
 			
 			//Project template
 			templates_dict = new ActiveXObject("Scripting.Dictionary");
@@ -99,7 +108,7 @@
 			this.TreeRoot              = oShell.CurrentDirectory;
 			this.CompilersBranch       = this.TreeRoot + "\\compilers\\msvc710_prj";
 			this.CompilersBranchStatic = this.CompilersBranch + "\\static";
-			this.PtbBinPath            = this.CompilersBranchStatic + "\\bin\\release";
+			this.BinPathStatic         = this.CompilersBranchStatic + "\\bin";
 			this.CompilersBranchDll    = this.CompilersBranch + "\\dll";
 			
 			this.IncludeRootBranch     = this.TreeRoot + "\\include";
@@ -114,7 +123,7 @@
 			WScript.Echo(oTree.TreeRoot              );
 			WScript.Echo(oTree.CompilersBranch       );
 			WScript.Echo(oTree.CompilersBranchStatic );
-			WScript.Echo(oTree.PtbBinPath            );
+			WScript.Echo(oTree.BinPathStatic         );
 			WScript.Echo(oTree.CompilersBranchDll    );
 
 			WScript.Echo(oTree.IncludeRootBranch     );
@@ -122,6 +131,22 @@
 
 			WScript.Echo(oTree.SrcRootBranch         );
 			WScript.Echo(oTree.SrcProjectBranch      );
+		}
+		function GetConfigs(oTask)
+		{
+			if (oTask.DllBuild) {
+				var configs = new Array ("DebugDLL", 
+				                         "ReleaseDLL");
+				return configs;
+			} else {
+				var configs = new Array ("Debug", 
+										 "DebugMT", 
+				                         "DebugDLL", 
+				                         "Release", 
+				                         "ReleaseMT", 
+				                         "ReleaseDLL");
+				return configs;
+			}
 		}
 		
 		// Recursive path creator
@@ -134,16 +159,20 @@
 			}
 		}
 		// Create local build tree
-		function CreateTreeStructure(oTree)
+		function CreateTreeStructure(oTree, oTask)
 		{
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
 			// do not create tree root - it is cwd :-))
 			CreateFolderIfAbsent(oFso, oTree.CompilersBranch       );
 			CreateFolderIfAbsent(oFso, oTree.CompilersBranchStatic );
-			CreateFolderIfAbsent(oFso, oTree.PtbBinPath            );
-			CreateFolderIfAbsent(oFso, oTree.PtbBinPath + "\\..\\ReleaseDLL" ); // all reasonable configurations
-			CreateFolderIfAbsent(oFso, oTree.PtbBinPath + "\\..\\Debug" );      // we've to put PTB into them
-			CreateFolderIfAbsent(oFso, oTree.PtbBinPath + "\\..\\DebugDLL" );
+			
+			var configs = GetConfigs(oTask);
+			for(var config_i = 0; config_i < configs.length; config_i++) {
+				var conf = configs[config_i];
+				var target_path = oTree.BinPathStatic + "\\" + conf;
+				CreateFolderIfAbsent(oFso, target_path);
+			}
+			
 			CreateFolderIfAbsent(oFso, oTree.CompilersBranchDll    );
 
 			CreateFolderIfAbsent(oFso, oTree.IncludeRootBranch     );
@@ -213,10 +242,13 @@
 		}
 		function CopyPtb(oShell, oTree, oTask)
 		{
-			execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + oTree.PtbBinPath);
-			execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + oTree.PtbBinPath + "\\..\\ReleaseDLL");
-			execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + oTree.PtbBinPath + "\\..\\Debug");
-			execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + oTree.PtbBinPath + "\\..\\DebugDLL");
+			var configs = GetConfigs(oTask);
+			for(var config_i = 0; config_i < configs.length; config_i++) {
+				var conf = configs[config_i];
+				var target_path = oTree.BinPathStatic + "\\" + conf;
+				execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + target_path);
+			}
+			
 		}
 		function AdjustProject(oShell, oTree, oTask)
 		{
@@ -307,8 +339,6 @@
 			file.WriteLine("        ncbi_xreader_pubseqos.lib"); 
 
 			file.WriteLine("CONFS   = DebugDLL ReleaseDLL");
-			file.WriteLine("[CXX_Toolkit.debug.Debug]");
-			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Debug"));
 			file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
 			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
 			file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
@@ -377,7 +407,9 @@
 		}
 		function RunPtb(oShell, oTree, oTask)
 		{
-			var ptb_command_line = oTree.PtbBinPath + "\\project_tree_builder.exe";
+			var conf = GetConfigs(oTask)[0];
+			var target_path = oTree.BinPathStatic + "\\" + conf;
+			var ptb_command_line = target_path + "\\project_tree_builder.exe";
 			if ( oTask.DllBuild ) {
 				ptb_command_line += " -dll";
 			}
@@ -418,7 +450,7 @@
 		var oTree  = new Tree(oShell, oTask);
 		//DumpTree(oTree);
 		
-		CreateTreeStructure(oTree);
+		CreateTreeStructure(oTree, oTask);
 		FillTree           (oShell, oTree);
  		CopyProjectTemplate(oShell, oTree, oTask);
  		CopyPtb            (oShell, oTree, oTask);
