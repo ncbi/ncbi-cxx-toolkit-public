@@ -644,6 +644,15 @@ unsigned CQueueDataBase::CQueue::CountRecs()
     return db.CountRecs();
 }
 
+void CQueueDataBase::CQueue::PrintStat(CNcbiOstream & out)
+{
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+	db.SetTransaction(0);
+    db.PrintStat(out);
+}
+
+
 unsigned int 
 CQueueDataBase::CQueue::Submit(const string& input,
                                unsigned      host_addr,
@@ -1574,6 +1583,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/22 16:14:49  kuznets
+ * +PrintStat()
+ *
  * Revision 1.19  2005/03/21 13:07:28  kuznets
  * Added some statistical functions
  *

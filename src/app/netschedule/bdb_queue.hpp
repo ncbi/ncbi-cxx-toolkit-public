@@ -381,6 +381,8 @@ public:
         /// Count database records
         unsigned CountRecs();
 
+        void PrintStat(CNcbiOstream & out);
+
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
@@ -438,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/22 16:14:49  kuznets
+ * +PrintStat()
+ *
  * Revision 1.14  2005/03/21 13:07:28  kuznets
  * Added some statistical functions
  *
