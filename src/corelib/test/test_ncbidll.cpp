@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/04/01 18:55:41  ivanov
+ * Using ASSERT in stead VERIFY
+ *
  * Revision 6.5  2002/03/25 17:08:18  ucko
  * Centralize treatment of Cygwin as Unix rather than Windows in configure.
  *
@@ -102,22 +105,22 @@ static void s_TEST_SimpleDll(void)
 
     // Call loaded function
 
-    _VERIFY( *DllVar_Counter == 0  );
-    _VERIFY( Dll_Inc(3)      == 3  );
-    _VERIFY( *DllVar_Counter == 3  );
-    _VERIFY( Dll_Inc(100)    == 103);
-    _VERIFY( *DllVar_Counter == 103);
+    _ASSERT( *DllVar_Counter == 0  );
+    _ASSERT( Dll_Inc(3)      == 3  );
+    _ASSERT( *DllVar_Counter == 3  );
+    _ASSERT( Dll_Inc(100)    == 103);
+    _ASSERT( *DllVar_Counter == 103);
     *DllVar_Counter = 1;
-    _VERIFY( Dll_Inc(0)      == 1  );
+    _ASSERT( Dll_Inc(0)      == 1  );
 
-    _VERIFY( Dll_Add(3,4)    == 7  );
-    _VERIFY( Dll_Add(-2,-1)  == -3 );
+    _ASSERT( Dll_Add(3,4)    == 7  );
+    _ASSERT( Dll_Add(-2,-1)  == -3 );
     
     string* str = Dll_StrRepeat("ab",2);
-    _VERIFY( *str == "abab");
+    _ASSERT( *str == "abab");
 
     str = Dll_StrRepeat("a",4);  
-    _VERIFY( *str == "aaaa");
+    _ASSERT( *str == "aaaa");
 
     // Unload used dll
     dll.Unload();
