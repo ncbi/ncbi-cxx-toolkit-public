@@ -553,7 +553,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
         return -1;
     }
 
-    if (cachePrevRow < 0 || sequence != (*sequences)[cachePrevRow]) {
+    if (cachePrevRow < 0 || cachePrevRow >= NRows() || sequence != (*sequences)[cachePrevRow]) {
         int row;
         for (row=0; row<NRows(); row++) if ((*sequences)[row] == sequence) break;
         if (row == NRows()) {
@@ -1272,6 +1272,7 @@ bool BlockMultipleAlignment::DeleteRow(int row)
 
     // update total alignment width
     UpdateBlockMapAndColors();
+    InitCache();
 
     return true;
 }
@@ -1384,6 +1385,7 @@ bool BlockMultipleAlignment::ExtractRows(
 
     // update total alignment width
     UpdateBlockMapAndColors();
+    InitCache();
     return true;
 }
 
@@ -1797,6 +1799,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/06/13 14:46:58  thiessen
+* fix row cache bug
+*
 * Revision 1.50  2003/06/12 14:21:11  thiessen
 * when saving single-row alignment, make master-master alignment in asn
 *
