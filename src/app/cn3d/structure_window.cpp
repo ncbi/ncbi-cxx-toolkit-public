@@ -1427,8 +1427,8 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
             return;
 
         wxArrayString choiceStrs;
-        choiceStrs.Add("alpha");
         choiceStrs.Add("single");
+        choiceStrs.Add("alpha");
         choiceStrs.Add("PDB");
         wxString modelStr = wxGetSingleChoice(
             "Please select which type of model you'd like to load", "Select model", choiceStrs);
@@ -1535,6 +1535,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/03/09 14:30:47  thiessen
+* change network load type choice order
+*
 * Revision 1.27  2004/02/19 17:05:16  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
