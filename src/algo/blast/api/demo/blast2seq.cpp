@@ -47,6 +47,7 @@
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/blast_nucl_options.hpp>
 #include "blast_input.hpp"
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -289,25 +290,29 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
+        // Setting seed extension method involves changing the scanning 
+        // stride as well, which is handled in the derived 
+        // CBlastNucleotideOptionsHandle class, but not in the base
+        // CBlastOptionsHandle class.
+        CBlastNucleotideOptionsHandle* opts_handle = 
+            dynamic_cast<CBlastNucleotideOptionsHandle*>(retval);
         if (!args["templen"].AsInteger()) {
             opt.SetVariableWordSize(args["varword"].AsBoolean());
             switch(args["scantype"].AsInteger()) {
             case 1:
-                opt.SetSeedExtensionMethod(eRightAndLeft);
-                opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
-                                    opt.GetVariableWordSize(), 
-                                    opt.GetLookupTableType()));
+                opts_handle->SetSeedExtensionMethod(eRightAndLeft);
                 break;
             default:
-                opt.SetSeedExtensionMethod(eRight);
+                opts_handle->SetSeedExtensionMethod(eRight);
                 break;
             }
-            if (args["stride"].AsInteger()) {
-                opt.SetScanStep(args["stride"].AsInteger());
-            }
         } else {
-            // Discontiguous Mega BLAST: only one extension method
-            opt.SetSeedExtensionMethod(eRight); 
+            // Discontiguous Mega BLAST: only one extension method.
+            opts_handle->SetSeedExtensionMethod(eRight); 
+        }
+        // Override the scan step value if it is set by user
+        if (args["stride"].AsInteger()) {
+            opt.SetScanStep(args["stride"].AsInteger());
         }
     }
 
@@ -464,6 +469,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/03/17 20:09:08  dondosha
+ * Use CBlastNucleotideOptionsHandle method to set both extension method and scan step, instead of directly calling CalculateBestStride
+ *
  * Revision 1.38  2004/03/11 17:27:41  camacho
  * Minor change to avoid confusing doxygen
  *

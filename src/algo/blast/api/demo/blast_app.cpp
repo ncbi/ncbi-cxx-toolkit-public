@@ -47,6 +47,7 @@ Contents: C++ driver for running BLAST
 #include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include "blast_input.hpp"
@@ -80,7 +81,7 @@ private:
     void InitScope(void);
     void InitOptions(void);
     void SetOptions(const CArgs& args);
-    void ProcessCommandLineArgs(CBlastOptions& opt, BlastSeqSrc* bssp);
+    void ProcessCommandLineArgs(CBlastOptionsHandle* opt, BlastSeqSrc* bssp);
     int BlastSearch(void);
     void RegisterBlastDbLoader(char* dbname, bool is_na);
     void FormatResults(CDbBlast& blaster, TSeqAlignVector& seqalignv);
@@ -256,10 +257,12 @@ CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
 }
 
 void
-CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt, 
-                                              BlastSeqSrc* bssp)
+CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
+                                          BlastSeqSrc* bssp)
 {
     CArgs args = GetArgs();
+
+    CBlastOptions& opt = opts_handle->SetOptions();
 
     if (args["strand"].AsInteger()) {
         switch (args["strand"].AsInteger()) {
@@ -315,18 +318,27 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        opt.SetVariableWordSize(args["varword"].AsBoolean());
-        switch(args["scantype"].AsInteger()) {
-        case 1:
-            opt.SetSeedExtensionMethod(eRightAndLeft);
-            opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
-                                                opt.GetVariableWordSize(), 
-                                                opt.GetLookupTableType()));
-            break;
-        default:
-            opt.SetSeedExtensionMethod(eRight);
-            break;
+        // Setting seed extension method involves changing the scanning 
+        // stride as well, which is handled in the derived 
+        // CBlastNucleotideOptionsHandle class, but not in the base
+        // CBlastOptionsHandle class.
+        CBlastNucleotideOptionsHandle* nucl_handle = 
+            dynamic_cast<CBlastNucleotideOptionsHandle*>(opts_handle);
+        if (!args["templen"].AsInteger()) {
+            opt.SetVariableWordSize(args["varword"].AsBoolean());
+            switch(args["scantype"].AsInteger()) {
+            case 1:
+                nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
+                break;
+            default:
+                nucl_handle->SetSeedExtensionMethod(eRight);
+                break;
+            }
+        } else {
+            // Discontiguous Mega BLAST: only one extension method.
+            nucl_handle->SetSeedExtensionMethod(eRight); 
         }
+        // Override the scan step value if it is set by user
         if (args["stride"].AsInteger()) {
             opt.SetScanStep(args["stride"].AsInteger());
         }
@@ -662,7 +674,7 @@ int CBlastApplication::Run(void)
                               first_oid, last_oid, NULL);
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
-    ProcessCommandLineArgs(opts->SetOptions(), seq_src);
+    ProcessCommandLineArgs(opts, seq_src);
 
     Nlm_MemMapPtr rps_mmap = NULL;
     Nlm_MemMapPtr rps_pssm_mmap = NULL;
