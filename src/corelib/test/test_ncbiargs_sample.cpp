@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/06/01 15:17:57  vakatov
+ * Workaround a bug in SUN WorkShop 5.1 compiler
+ *
  * Revision 6.1  2001/05/31 16:32:51  ivanov
  * Initialization
  *
@@ -157,14 +160,15 @@ int CArgTestApplication::Run(void)
     _ASSERT(args["barfooetc"]);
 
     // Stream to result output
-    ostream& lg = args["logfile"]  ?  args["logfile"].AsOutputFile()  :  cout;
+    // (NOTE: "x_lg" is just a workaround for bug in SUN WorkShop 5.1 compiler)
+    ostream* x_lg = args["logfile"] ? &args["logfile"].AsOutputFile() : &cout;
+    ostream& lg = *x_lg;
 
     if ( args["logfile"] )
         cout << "Printing arguments to file `"
              << args["logfile"].AsString() << "'..." << endl;
 
     // Printout argument values
-
     lg << "k:         " << args["k"].AsString() << endl;
     lg << "barfooetc: " << args["barfooetc"].AsString() << endl;
     lg << "logfile:   " << args["logfile"].AsString() << endl;
