@@ -49,7 +49,7 @@ TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, objects::CScope* scope, 
                          objects::ENa_strand strand,
                          TSeqPos from, TSeqPos to, int* counter,
-                         BlastMask** lcase_mask = NULL);
+                         bool get_lcase_mask = FALSE);
 
 
 END_SCOPE(blast)
