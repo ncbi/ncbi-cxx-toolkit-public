@@ -521,8 +521,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     from = m_AlnMap.m_DS->GetStarts()[start_seg * m_AlnMap.m_DS->GetDim()
                                      + m_Row];
     if (from >= 0) {
-        to = chunk->GetRange().GetFrom()
-            + m_AlnMap.m_DS->GetLens()[start_seg] - 1;
+        to = from + m_AlnMap.m_DS->GetLens()[start_seg] - 1;
     } else {
         from = -1;
         to = -1;
@@ -681,6 +680,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2002/12/20 21:25:14  todorov
+* ... and another small fix
+*
 * Revision 1.19  2002/12/20 20:30:42  todorov
 * Fixed a bug introduced in the previous revision
 *
