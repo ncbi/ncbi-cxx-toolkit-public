@@ -45,10 +45,9 @@ BEGIN_NCBI_SCOPE
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
     //MSVC project name created from project type and project ID
-    m_ProjectId    = CProjKey(project.m_ProjType, 
-                              project.m_ID);
-
-    m_ProjectName  = CreateProjectName(m_ProjectId);
+    m_ProjectName  = CreateProjectName(CProjKey(project.m_ProjType, 
+                                                project.m_ID));
+    m_ProjectId    = project.m_ID;
 
     m_SourcesBaseDir = project.m_SourcesBaseDir;
     m_Requires       = project.m_Requires;
@@ -80,16 +79,22 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
 
     // Creating project dir:
-    m_ProjectDir = GetApp().GetProjectTreeInfo().m_Compilers;
-    m_ProjectDir = 
-        CDirEntry::ConcatPath(m_ProjectDir, 
-                              GetApp().GetRegSettings().m_CompilersSubdir);
-    m_ProjectDir = 
-        CDirEntry::ConcatPath(m_ProjectDir, 
-                              CDirEntry::CreateRelativePath
-                                  (GetApp().GetProjectTreeInfo().m_Src, 
-                                  m_SourcesBaseDir));
-    m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
+    if (project.m_ProjType == CProjKey::eDll) {
+        //For dll - it is so
+        m_ProjectDir = project.m_SourcesBaseDir;
+
+    } else {
+        m_ProjectDir = GetApp().GetProjectTreeInfo().m_Compilers;
+        m_ProjectDir = 
+            CDirEntry::ConcatPath(m_ProjectDir, 
+                                  GetApp().GetRegSettings().m_CompilersSubdir);
+        m_ProjectDir = 
+            CDirEntry::ConcatPath(m_ProjectDir, 
+                                  CDirEntry::CreateRelativePath
+                                      (GetApp().GetProjectTreeInfo().m_Src, 
+                                      m_SourcesBaseDir));
+        m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
+    }
 
     m_ProjType = project.m_ProjType;
 
@@ -135,7 +140,14 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // Proprocessor definitions from makefiles:
     m_Defines = project.m_Defines;
-
+    if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+        m_Defines.push_back(GetApp().GetDllsInfo().GetBuildDefine());
+        if (project.m_ProjType == CProjKey::eDll) {
+            CMsvcDllsInfo::SDllInfo dll_info;
+            GetApp().GetDllsInfo().GetDllInfo(project.m_ID, &dll_info);
+            m_Defines.push_back(dll_info.m_DllDefine);
+        }
+    }
     // Pre-Builds for LIB projects:
     if (m_ProjType == CProjKey::eLib) {
         ITERATE(list<CProjKey>, p, project.m_Depends) {
@@ -148,9 +160,6 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // Libraries from NCBI C Toolkit
     m_NcbiCLibs = project.m_NcbiCLibs;
-
-    // Depends for project
-    m_Depends   = project.m_Depends;
 }
 
 
@@ -345,6 +354,9 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     case CProjKey::eApp:
         m_Type = eExe;
         break;
+    case CProjKey::eDll:
+        m_Type = eDll;
+        break;
     default:
         //TODO - handle Dll(s)
    	    NCBI_THROW(CProjBulderAppException, eProjectType, 
@@ -374,6 +386,8 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "lib");
     else if (m_Type == eExe)
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "bin");
+    else if (m_Type == eDll)
+        output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "dll");
     else {
         //TODO - handle Dll(s)
    	    NCBI_THROW(CProjBulderAppException, 
@@ -631,9 +645,7 @@ s_CreateCompilerTool(const CMsvcPrjGeneralContext& general_context,
         general_context.GetMsvcMetaMakefile(),
         general_context.m_Config,
         general_context.m_Type,
-        project_context.Defines(),
-        project_context.ProjectId(),
-        project_context.Depends());
+        project_context.Defines());
 }
 
 
@@ -648,7 +660,7 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                                             (general_context.m_Config),
                         project_context.AdditionalLibraryDirectories
                                             (general_context.m_Config),
-                        project_context.ProjectId().Id(),
+                        project_context.ProjectId(),
                         project_context.GetMsvcProjectMakefile(),
                         general_context.GetMsvcMetaMakefile(),
                         general_context.m_Config);
@@ -665,7 +677,7 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                                             (general_context.m_Config),
                         project_context.AdditionalLibraryDirectories
                                             (general_context.m_Config),
-                        project_context.ProjectId().Id(),
+                        project_context.ProjectId(),
                         project_context.GetMsvcProjectMakefile(),
                         general_context.GetMsvcMetaMakefile(),
                         general_context.m_Config);
@@ -685,7 +697,7 @@ s_CreateLibrarianTool(const CMsvcPrjGeneralContext& general_context,
                                                     (general_context.m_Config),
                                  project_context.AdditionalLibraryDirectories
                                                     (general_context.m_Config),
-								 project_context.ProjectId().Id(),
+								 project_context.ProjectId(),
                                  project_context.GetMsvcProjectMakefile(),
                                  general_context.GetMsvcMetaMakefile(),
                                  general_context.m_Config);
@@ -744,6 +756,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/03/10 16:44:21  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext.
+ *
  * Revision 1.19  2004/03/08 23:36:11  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext constructor.
  *
