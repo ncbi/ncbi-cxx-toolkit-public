@@ -241,19 +241,19 @@ on CreateProject()
 	
 	x_AddtoLog("Opening generated project: " & TheOUTPath & "/NCBI.xCode")
 	do shell script "open " & TheOUTPath & "/NCBI.xCode" -- Open Project
-	
-	(*tell application "Xcode"
-		set p to the a reference to project "NCBI"
-		set intermediates path of p to TheOUTPath
-		set product path of p to (TheOUTPath & "/bin")
-	end tell *)
 	x_AddtoLog("Done")
 	
-	if content of button "buildProj" of window "Main" is true then -- build the new project
-		x_AddtoLog("Building")
-		tell application "Xcode" to build project "NCBI" -- not yet implemented in xCode 1.2
+	tell application "Xcode"
+		set ver to version
+	end tell
+	if ver ³ "1.5" then
+		if content of button "buildProj" of window "Main" is true then -- build the new project
+			x_AddtoLog("Building")
+			--tell application "Xcode" to build project "NCBI" -- not yet implemented in xCode 1.2
+		end if
+	else
+		my x_ShowAlert("xCode version 1.5 or greater is required. Please visit  www.apple.com/developer  to download the latest version.")
 	end if
-	
 	
 end CreateProject
 
@@ -423,6 +423,9 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/13 13:41:45  lebedev
+ * Display warning if installed xCode version is less than 1.5
+ *
  * Revision 1.6  2004/08/13 11:41:43  lebedev
  * Changes to upgrade to xCode 1.5 and support for G5 CPU specific options
  *
