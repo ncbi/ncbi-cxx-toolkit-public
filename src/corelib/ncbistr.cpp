@@ -368,7 +368,13 @@ Int8 NStr::StringToInt8(const string& str)
     while (*pc) {
         if (!isdigit(*pc))
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");
-        n = n * 10 + (*pc++ - '0');
+        int delta = *pc++ - '0';                    
+        n = n * 10;
+        // Overflow checking
+        if (n + delta < n) {
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");        
+        }
+        n += delta;
     }
     
     return sign ? -n : n;
@@ -389,7 +395,13 @@ Uint8 NStr::StringToUInt8(const string& str)
     while (*pc) {
         if (!isdigit(*pc))
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");
-        n = n * 10 + (*pc++ - '0');
+        int delta = *pc++ - '0';        
+        n = n * 10;
+        // Overflow checking
+        if (n + delta < n) {
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");        
+        }
+        n += delta;
     }
     
     return n;
@@ -829,6 +841,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2003/01/13 14:47:16  kuznets
+ * Implemented overflow checking for StringToInt8 function
+ *
  * Revision 1.62  2003/01/10 22:17:06  kuznets
  * Implemented NStr::String2Int8
  *
