@@ -105,7 +105,6 @@ typedef struct BlastQueryInfo {
    Int2 first_context; /**< Index of the first element of the context array */
    Int2 last_context;  /**< Index of the last element of the context array */
    int num_queries;   /**< Number of query sequences */
-   Int4 total_length; /**< Total length of all query sequences/strands/frames */
    Int4* context_offsets; /**< Offsets of the individual queries in the
                                concatenated super-query */
    Int4* length_adjustments; /**< Length adjustments for boundary conditions */
