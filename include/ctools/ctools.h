@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/02/12 15:34:34  lavr
+ * Extra semicolon removed
+ *
  * Revision 1.1  2001/02/09 17:31:27  lavr
  * Initial revision
  *
@@ -50,7 +53,7 @@ void SetupCToolkitErrPost(void);
 
 
 #ifdef __cplusplus
-}; /* extern "C" */
+} /* extern "C" */
 #endif /* __cplusplus */
 
 
