@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2002/06/07 11:16:57  clausen
+ * Fixed comments
+ *
  * Revision 1.17  2002/06/07 11:13:01  clausen
  * Added comment about util/sequence.hpp
  *
@@ -117,8 +120,8 @@ public:
     //
     // See also CSeq_id related functions in "util/sequence.hpp":
     //
-    //TSeqPos GetLength(const CSeq_id&, CScope*);
-    //bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
+    //   TSeqPos GetLength(const CSeq_id&, CScope*);
+    //   bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
     //
      
     // Default constructor
