@@ -33,6 +33,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <util/stream_utils.hpp>
 
 #include <memory>
@@ -59,9 +60,36 @@ FileMessenger::FileMessenger(FileMessagingManager *parentManager,
     TRACEMSG("monitoring message file " << messageFilename);
 }
 
+static fstream * CreateLock(const CDirEntry& lockFile)
+{
+    if (lockFile.Exists()) {
+        TRACEMSG("unable to establish a lock - lock file exists already");
+        return NULL;
+    }
+
+    auto_ptr<fstream> lockStream(CFile::CreateTmpFile(lockFile.GetPath(), CFile::eText, CFile::eAllowRead));
+    if (lockStream.get() == NULL || !(*lockStream)) {
+        TRACEMSG("unable to establish a lock - cannot create lock file");
+        return NULL;
+    }
+    char lockWord[4];
+    lockStream->seekg(0);
+    if (CStreamUtils::Readsome(*lockStream, lockWord, 4) == 4 &&
+            lockWord[0] == 'L' && lockWord[1] == 'O' &&
+            lockWord[2] == 'C' && lockWord[3] == 'K') {
+        ERRORMSG("lock file opened for writing but apparently already LOCKed!");
+        return NULL;
+    }
+    lockStream->seekg(0);
+    lockStream->write("LOCK", 4);
+    lockStream->flush();
+    TRACEMSG("lock file established: " << lockFile.GetPath());
+    return lockStream.release();
+}
+
 FileMessenger::~FileMessenger(void)
 {
-    // check to make sure each command issued received a reply
+    // sanity check to make sure each command issued received a reply
     bool okay = false;
     CommandOriginators::const_iterator c, ce = commandsSent.end();
     TargetApp2Command::const_iterator a, ae;
@@ -80,7 +108,24 @@ FileMessenger::~FileMessenger(void)
     }
     if (!okay) WARNINGMSG("FileMessenger: did not receive a reply to all commands sent!");
 
-    // check to make sure each command received was sent a reply
+    // last-minute attempt to write any pending commands to the file
+    if (pendingCommands.size() > 0) {
+        auto_ptr<fstream> lockStream(CreateLock(lockFile.GetPath()));
+        if (lockStream.get() == NULL) {
+            int nTries = 1;
+            do {
+                SleepSec(1);
+                lockStream.reset(CreateLock(lockFile));
+                nTries++;
+            } while (lockStream.get() == NULL && nTries <= 30);
+        }
+        if (lockStream.get() != NULL)
+            SendPendingCommands();
+        else
+            ERRORMSG("Timeout occurred when attempting to flush pending commands to file");
+    }
+
+    // sanity check to make sure each command received was sent a reply
     okay = false;
     ce = commandsReceived.end();
     if (commandsReceived.size() == repliesSent.size()) {
@@ -186,31 +231,16 @@ void FileMessenger::PollMessageFile(void)
     if (needToRead) TRACEMSG("message file has grown since last read");
     if (pendingCommands.size() > 0) TRACEMSG("has pending commands to send");
 
-    // if we're going to read or write the file, establish a lock now
-    auto_ptr<fstream> lockStream(CFile::CreateTmpFile(lockFile.GetPath(), CFile::eText, CFile::eAllowRead));
-    if (lockStream.get() == NULL || !(*lockStream)) {
-        TRACEMSG("unable to establish a lock");
-        return;
-    }
-    char lockWord[4];
-    lockStream->seekg(0);
-    if (CStreamUtils::Readsome(*lockStream, lockWord, 4) == 4 &&
-            lockWord[0] == 'L' && lockWord[1] == 'O' &&
-            lockWord[2] == 'C' && lockWord[3] == 'K') {
-        ERRORMSG("lock file opened for writing but apparently already LOCKed!");
-        return;
-    }
-    lockStream->seekg(0);
-    lockStream->write("LOCK", 4);
-    lockStream->flush();
-    TRACEMSG("lock file established: " << lockFile.GetPath());
+    // since we're going to read or write the file, establish a lock now
+    auto_ptr<fstream> lockStream(CreateLock(lockFile));
+    if (lockStream.get() == NULL)
+        return; // try again later, so program isn't locked during wait
 
     // first read any new commands from the file
     if (needToRead) ReceiveCommands();
 
     // then send any pending commands
-    bool havePendingCommands = (pendingCommands.size() > 0);
-    if (havePendingCommands)
+    if (pendingCommands.size() > 0)
         SendPendingCommands();
 
     // now update the size stamp to current size so we don't unnecessarily read in any commands just sent
@@ -242,6 +272,7 @@ static bool ReadSingleLine(CNcbiIfstream& inStream, string *str)
     return true;
 }
 
+// must be called only after lock is established!
 void FileMessenger::ReceiveCommands(void)
 {
     TRACEMSG("receiving commands...");
@@ -361,9 +392,12 @@ void FileMessenger::ReceiveCommands(void)
     } while (1);
 }
 
+// must be called only after lock is established!
 void FileMessenger::SendPendingCommands(void)
 {
     TRACEMSG("sending commands...");
+    if (pendingCommands.size() == 0)
+        return;
 
     auto_ptr<CNcbiOfstream> outStream(new ncbi::CNcbiOfstream(
         messageFile.GetPath().c_str(), IOS_BASE::out | IOS_BASE::app));
@@ -418,15 +452,11 @@ FileMessenger * FileMessagingManager::CreateNewFileMessenger(
     return newMessenger;
 }
 
-void FileMessagingManager::DeleteFileMessenger(FileMessenger *messenger, bool deleteMessageFile)
+void FileMessagingManager::DeleteFileMessenger(FileMessenger *messenger)
 {
     FileMessengerList::iterator f, fe = messengers.end();
     for (f=messengers.begin(); f!=fe; f++) {
         if (*f == messenger) {
-            if (deleteMessageFile && !(*f)->readOnly)
-                if (!(*f)->messageFile.Remove())
-                    ERRORMSG("DeleteFileMessenger() - error deleting message file "
-                        << (*f)->messageFile.GetPath() << '!');
             delete *f;
             messengers.erase(f);
             return;
@@ -447,6 +477,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/10/20 23:03:33  thiessen
+* send pending commands before messenger is destroyed
+*
 * Revision 1.7  2003/10/02 18:45:22  thiessen
 * make non-reply message warning only
 *

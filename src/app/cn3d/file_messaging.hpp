@@ -80,6 +80,8 @@ private:
     friend class FileMessagingManager;
     FileMessenger(FileMessagingManager *parentManager,
         const std::string& messageFilename, MessageResponder *responderObject, bool isReadOnly);
+
+    // any pending commands are sent before the object is deconstructed
     ~FileMessenger(void);
 
     const FileMessagingManager * const manager;
@@ -150,8 +152,8 @@ public:
     FileMessenger * CreateNewFileMessenger(const std::string& messageFilename,
         MessageResponder *responderObject, bool readOnly);
 
-    // stop monitoring a connection (and destroy the messenger), and optionally delete the message file.
-    void DeleteFileMessenger(FileMessenger *messenger, bool deleteMessageFile);
+    // stop monitoring a connection, and destroy the messenger (but doesn't delete the file)
+    void DeleteFileMessenger(FileMessenger *messenger);
 
     // for all FileMessengers, receives any new commands/replies and sends any pending ones
     void PollMessageFiles(void);
@@ -164,6 +166,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/10/20 23:03:33  thiessen
+* send pending commands before messenger is destroyed
+*
 * Revision 1.3  2003/03/19 14:44:36  thiessen
 * fix char/traits problem
 *
