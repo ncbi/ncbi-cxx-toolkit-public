@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/03/30 14:43:40  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.32  2001/03/23 15:14:07  thiessen
 * load sidechains in CDD's
 *
@@ -427,20 +430,18 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
         logText = NULL;
         logFrame = NULL;
     }
-    GlobalMessenger()->RemoveStructureWindow(this);
 }
 
 void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 {
-    GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
-    SaveDialog(false);                          // give structure window a chance to save data
-    Destroy();
+    Command(MID_EXIT);
 }
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
-    GlobalMessenger()->SequenceWindowsSave();
-    SaveDialog(false);
+    GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
+    GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
+    SaveDialog(false);                          // give structure window a chance to save data
     Destroy();
 }
 

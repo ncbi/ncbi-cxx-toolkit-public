@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.8  2001/03/30 03:07:35  thiessen
 * add threader score calculation & sorting
 *
@@ -79,7 +82,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
 
     SetSizeHints(200, 150);
 
-    // status bar with a single field
+    // status bar with two fields - first is for id/loc, second is for general status line
     CreateStatusBar(2);
     int widths[2] = { 150, -1 };
     SetStatusWidths(2, widths);
@@ -88,7 +91,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
 
     menuBar = new wxMenuBar;
     viewMenu = new wxMenu;
-    viewMenu->Append(MID_SHOW_TITLES, "&Show Titles");
+    viewMenu->Append(MID_SHOW_TITLES, "Show Tit&les");
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
     menuBar->Append(viewMenu, "&View");
 

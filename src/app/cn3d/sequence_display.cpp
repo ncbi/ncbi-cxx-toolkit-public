@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.9  2001/03/30 03:07:34  thiessen
 * add threader score calculation & sorting
 *
@@ -63,6 +66,7 @@
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbistre.hpp>
 
 #include <algorithm>
 
@@ -213,8 +217,11 @@ SequenceDisplay::~SequenceDisplay(void)
 SequenceDisplay * SequenceDisplay::Clone(const Old2NewAlignmentMap& newAlignments) const
 {
     SequenceDisplay *copy = new SequenceDisplay(isEditable, viewerWindow);
-    for (int row=0; row<rows.size(); row++)
-        copy->rows.push_back(rows[row]->Clone(newAlignments));
+    for (int row=0; row<rows.size(); row++) {
+        DisplayRow *newRow = rows[row]->Clone(newAlignments);
+        newRow->statusLine = rows[row]->statusLine;
+        copy->rows.push_back(newRow);
+    }
     copy->startingColumn = startingColumn;
     copy->maxRowWidth = maxRowWidth;
     return copy;
@@ -329,9 +336,10 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
 void SequenceDisplay::MouseOver(int column, int row) const
 {
     if (*viewerWindow) {
-        wxString message;
+        wxString idLoc, status;
         if (column >= 0 && row >= 0) {
             const DisplayRow *displayRow = rows[row];
+            status = displayRow->statusLine.c_str();
             if (column < displayRow->Width()) {
                 const Sequence *sequence;
                 int index;
@@ -341,19 +349,21 @@ void SequenceDisplay::MouseOver(int column, int row) const
                         wxString title;
                         wxColour color;
                         if (GetRowTitle(row, &title, &color)) {
-                            message.Printf(", loc %i", index);
-                            message = title + message;
+                            idLoc.Printf(", loc %i", index);
+                            idLoc = title + idLoc;
                         }
                     }
                 }
             }
         }
-        (*viewerWindow)->SetStatusText(message, 0);
+        (*viewerWindow)->SetStatusText(idLoc, 0);
+        (*viewerWindow)->SetStatusText(status, 1);
     }
 }
 
 void SequenceDisplay::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment)
 {
+    ClearStatusLines();
     UpdateBlockBoundaryRow(forAlignment);
     UpdateMaxRowWidth(); // in case alignment width has changed
     (*viewerWindow)->viewer->PushAlignment();
@@ -779,6 +789,20 @@ bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
         SequenceViewer *seqViewer = dynamic_cast<SequenceViewer*>((*viewerWindow)->viewer);
         if (seqViewer) {
             seqViewer->alignmentManager->CalculateRowScoresWithThreader(weightPSSM);
+            TESTMSG("calculated row scores");
+
+            // set status lines to show resulting scores
+            for (int r=0; r<rows.size(); r++) {
+                DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[r]);
+                if (alnRow) {
+                    CNcbiOstrstream oss;
+                    oss << "Threading score (PSSM x" << weightPSSM << "): "
+                        << alnRow->alignment->GetRowDouble(alnRow->row) << '\0';
+                    alnRow->statusLine = oss.str();
+                    delete oss.str();
+                }
+            }
+
             return true;
         }
     }
@@ -787,9 +811,10 @@ bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
 
 void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
 {
-    if (!CalculateRowScoresWithThreader(weightPSSM)) return;;
+    if (!CalculateRowScoresWithThreader(weightPSSM)) return;
     rowComparisonFunction = CompareRowsByScore;
     SortRows();
+    TESTMSG("sorted rows");
 }
 
 void SequenceDisplay::SortRows(void)

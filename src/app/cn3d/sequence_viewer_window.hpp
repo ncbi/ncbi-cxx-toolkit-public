@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/30 14:43:11  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.5  2001/03/30 03:07:09  thiessen
 * add threader score calculation & sorting
 *
@@ -79,6 +82,7 @@ private:
     enum {
         // view menu
         MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_SCORE_THREADER,
         // edit menu
         MID_DELETE_ROW,
         MID_SORT_ROWS,   // sort rows submenu
@@ -98,6 +102,7 @@ private:
     void OnShowUpdates(wxCommandEvent& event);
     void OnRealign(wxCommandEvent& event);
     void OnSort(wxCommandEvent& event);
+    void OnScoreThreader(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.7  2001/03/30 03:07:34  thiessen
 * add threader score calculation & sorting
 *
@@ -219,6 +222,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
         SCALING_FACTOR,
         NULL
     );
+    TESTMSG("created Seq_Mtf (PSSM)");
 
     SeqAlignFree(seqAlign);
 	return seqMtf;
@@ -256,6 +260,7 @@ void Threader::CreateBioseqs(const BlockMultipleAlignment *multiple)
 {
     for (int row=0; row<multiple->NRows(); row++)
         CreateBioseq(multiple->GetSequenceOfRow(row));
+    TESTMSG("created Bioseqs");
 }
 
 Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier)
@@ -1047,7 +1052,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
                 CalculatePSSMScore(aBlocks, row, residueNumbers, seqMtf) : 0.0,
             scoreContacts = (weightPSSM < 1.0) ?
                 CalculateContactScore(multiple, row, residueNumbers, fldMtf, rcxPtl) : 0.0;
-        multiple->SetRowDouble(row, (weightPSSM + scoreContacts) / SCALING_FACTOR);
+        multiple->SetRowDouble(row, (scorePSSM + scoreContacts) / SCALING_FACTOR);
     }
 
     retval = true;

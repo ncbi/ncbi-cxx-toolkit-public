@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.5  2001/03/22 00:33:18  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -120,7 +123,9 @@ void ViewerBase::PushAlignment(void)
     }
 
     // clone and update display
-    displayStack.push_back(displayStack.back()->Clone(newAlignmentMap));
+    SequenceDisplay *newDisplay = displayStack.back()->Clone(newAlignmentMap);
+    displayStack.back()->ClearStatusLines();
+    displayStack.push_back(newDisplay);
     if (*viewerWindow) {
         (*viewerWindow)->UpdateDisplay(displayStack.back());
         if (displayStack.size() > 2) (*viewerWindow)->EnableUndo(true);

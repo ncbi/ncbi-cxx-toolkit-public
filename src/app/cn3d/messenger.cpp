@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.14  2001/03/22 00:33:17  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -168,7 +171,7 @@ void Messenger::ProcessRedraws(void)
         redrawAllStructures = false;
     }
 
-    else if (redrawMolecules.size() > 0) {
+    else if (redrawMolecules.size() > 0 && structureWindows.size() > 0) {
         std::map < const StructureObject * , bool > hetsRedrawn;
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
         for (m=redrawMolecules.begin(); m!=me; m++) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/30 14:43:11  thiessen
+* show threader scores in status line; misc UI tweaks
+*
 * Revision 1.7  2001/03/30 03:07:08  thiessen
 * add threader score calculation & sorting
 *
@@ -89,9 +92,8 @@ public:
 
     virtual DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const = 0;
 
-protected:
-    // can't instantiate base class
-    DisplayRow(void) { }
+    // for storing row-wise status info - e.g. threading scores, etc.
+    mutable std::string statusLine;
 };
 
 class DisplayRowFromAlignment : public DisplayRow
@@ -269,6 +271,10 @@ public:
     // column to scroll to when this display is first shown
     void SetStartingColumn(int column) { startingColumn = column; }
     int GetStartingColumn(void) const { return startingColumn; }
+
+    // empties all rows' status lines
+    void ClearStatusLines(void) const
+        { for (int r=0; r<rows.size(); r++) rows[r]->statusLine.erase(); }
 
     // methods required by ViewableAlignment base class
     void GetSize(int *setColumns, int *setRows) const
