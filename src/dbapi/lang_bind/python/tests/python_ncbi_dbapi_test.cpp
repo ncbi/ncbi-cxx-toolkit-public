@@ -34,7 +34,7 @@
 
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h> 
+#include <cppunit/ui/text/TestRunner.h>
 
 #include "python_ncbi_dbapi_test.hpp"
 
@@ -48,31 +48,36 @@ CPythonDBAPITest::CPythonDBAPITest()
 {
 }
 
-void 
+void
 CPythonDBAPITest::setUp()
 {
     m_Engine.ExecuteStr("import python_ncbi_dbapi\n");
 }
 
 
-void 
+void
 CPythonDBAPITest::tearDown()
 {
 }
 
 
 void 
+CPythonDBAPITest::MakeTestPreparation()
+{
+    m_Engine.ExecuteStr("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True)\n");
+    m_Engine.ExecuteStr("conn_simple = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV2', '', 'anyone', 'allowed')\n");
+
+    m_Engine.ExecuteStr("cursor_simple = conn_simple.cursor() \n");
+    m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int)') \n");
+}
+
+void
 CPythonDBAPITest::TestBasic()
 {
-    // m_Engine.ExecuteStr("import python_ncbi_dbapi\n");
-
     m_Engine.ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
     m_Engine.ExecuteStr("apilevel = python_ncbi_dbapi.apilevel \n");
     m_Engine.ExecuteStr("threadsafety = python_ncbi_dbapi.threadsafety \n");
     m_Engine.ExecuteStr("paramstyle = python_ncbi_dbapi.paramstyle \n");
-
-    m_Engine.ExecuteStr("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True)\n");
-    m_Engine.ExecuteStr("conn_simple = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV2', '', 'anyone', 'allowed')\n");
 
     m_Engine.ExecuteStr("connection.commit()\n");
     m_Engine.ExecuteStr("connection.rollback()\n");
@@ -116,10 +121,10 @@ CPythonDBAPITest::TestBasic()
     // m_Engine.ExecuteStr("connection2.close()\n");
 }
 
-void 
+void
 CPythonDBAPITest::TestExecute()
 {
-    // Simple test 
+    // Simple test
     {
         m_Engine.ExecuteStr("cursor = connection.cursor()\n");
         m_Engine.ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
@@ -127,63 +132,86 @@ CPythonDBAPITest::TestExecute()
     }
 }
 
-void 
+void
 CPythonDBAPITest::TestFetch()
 {
     // Prepare ...
     m_Engine.ExecuteStr("cursor = connection.cursor()\n");
     m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
 
-    // fetchone 
+    // fetchone
     m_Engine.ExecuteStr("cursor.fetchone()\n");
-    // fetchmany 
+    // fetchmany
     m_Engine.ExecuteStr("cursor.fetchmany(1)\n");
     m_Engine.ExecuteStr("cursor.fetchmany(2)\n");
     m_Engine.ExecuteStr("cursor.fetchmany(3)\n");
-    // fetchall 
+    // fetchall
     m_Engine.ExecuteStr("cursor.fetchall()\n");
 }
 
-void 
+void
 CPythonDBAPITest::TestParameters()
 {
     // Prepare ...
     m_Engine.ExecuteStr("cursor = connection.cursor()\n");
     m_Engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'@type_par':'S'})\n");
 
-    // fetchall 
+    // fetchall
     m_Engine.ExecuteStr("cursor.fetchall()\n");
 }
 
-void 
+void
 CPythonDBAPITest::TestExecuteMany()
 {
     // Excute with empty parameter list
     {
-        m_Engine.ExecuteStr("cursor = connection.cursor()\n");
-        m_Engine.ExecuteStr("cursor.executemany('select qq = 57 + 33', [])\n");
-        m_Engine.ExecuteStr("cursor.fetchone()\n");
+        m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
+        m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
+        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'value':value} for value in range(1, 11) ]) \n");
     }
 }
 
 
-void 
+void
 CPythonDBAPITest::TestTransaction()
 {
-    m_Engine.ExecuteStr("cursor = conn_simple.cursor()\n");
-    m_Engine.ExecuteStr("cursor.execute('CREATE TABLE #t ( vkey int)')\n");
-    m_Engine.ExecuteStr("cursor.execute('SELECT * FROM #t')\n");
-    m_Engine.ExecuteStr("cursor.fetchall()\n");
+    // "Simple mode" test ...
+    {
+        m_Engine.ExecuteStr("sql_ins = 'INSERT INTO #t(vkey) VALUES(@value)' \n");
+        m_Engine.ExecuteStr("sql_sel = 'SELECT * FROM #t' \n");
+        m_Engine.ExecuteStr("cursor = conn_simple.cursor() \n");
+        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+        m_Engine.ExecuteStr("cursor.fetchall() \n");
+        m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
+        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+        m_Engine.ExecuteStr("cursor.fetchall() \n");
+        m_Engine.ExecuteStr("conn_simple.commit() \n");
+        m_Engine.ExecuteStr("conn_simple.rollback() \n");
+        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+        m_Engine.ExecuteStr("cursor.fetchall() \n");
+        m_Engine.ExecuteStr("cursor.execute('ROLLBACK TRANSACTION') \n");
+        m_Engine.ExecuteStr("cursor.execute('BEGIN TRANSACTION') \n");
+        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+        m_Engine.ExecuteStr("cursor.fetchall() \n");
+        m_Engine.ExecuteStr("cursor.executemany(sql_ins, [ {'@value':value} for value in range(1, 11) ]) \n");
+        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+        m_Engine.ExecuteStr("cursor.fetchall() \n");
+        m_Engine.ExecuteStr("cursor.execute('COMMIT TRANSACTION') \n");
+        m_Engine.ExecuteStr("cursor.execute(sql_sel) \n");
+        m_Engine.ExecuteStr("cursor.fetchall() \n");
+    }
 }
 
 
-void 
+void
 CPythonDBAPITest::TestFromFile()
 {
 }
 
 
-void 
+void
 CPythonDBAPITest::CreateTestTable()
 {
 }
@@ -194,22 +222,9 @@ END_NCBI_SCOPE
 int
 main(int argc, char *argv[])
 {
-    try {
-        // Execute some Python statements (in module __main__)
-
-        // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample1.py");
-        // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample5.py");
-        // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\tests\\python_ncbi_dbapi_test.py");
-
-    } catch(...)
-    {
-	    return 1;
-    }
-
-	// return 0;
-
-
-
+    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample1.py");
+    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample5.py");
+    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\tests\\python_ncbi_dbapi_test.py");
 
   // Get the top level suite from the registry
   CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
@@ -219,8 +234,7 @@ main(int argc, char *argv[])
   runner.addTest( suite );
 
   // Change the default outputter to a compiler error format outputter
-  runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(),
-                                                       std::cerr ) );
+  runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(), std::cerr ) );
   // Run the test.
   bool wasSucessful = runner.run();
 
@@ -231,8 +245,11 @@ main(int argc, char *argv[])
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/02/10 20:13:48  ssikorsk
+* Improved 'simple mode' test
+*
 * Revision 1.4  2005/02/08 19:21:18  ssikorsk
-* + Test "rowcount" attribute and support hte "simple mode" interface
+* + Test "rowcount" attribute and support the "simple mode" interface
 *
 * Revision 1.3  2005/02/03 16:11:16  ssikorsk
 * python_ncbi_dbapi_test was adapted to the cppunit testing framework

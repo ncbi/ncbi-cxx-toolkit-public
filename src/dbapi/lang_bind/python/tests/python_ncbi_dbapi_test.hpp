@@ -41,11 +41,12 @@ BEGIN_NCBI_SCOPE
 class CPythonDBAPITest : public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE( CPythonDBAPITest );
+  CPPUNIT_TEST( MakeTestPreparation );
   CPPUNIT_TEST( TestBasic );
   CPPUNIT_TEST( TestExecute );
   CPPUNIT_TEST( TestFetch );
   CPPUNIT_TEST( TestParameters );
-  // CPPUNIT_TEST( TestExecuteMany );
+  CPPUNIT_TEST( TestExecuteMany );
   CPPUNIT_TEST( TestTransaction );
   CPPUNIT_TEST( TestFromFile );
   CPPUNIT_TEST_SUITE_END();
@@ -61,6 +62,7 @@ public:
     // Test IStatement interface.
 
     // Test particular methods.
+    void MakeTestPreparation();
     void TestBasic();
     void TestExecute();
     void TestFetch();
@@ -87,6 +89,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/02/10 20:13:48  ssikorsk
+ * Improved 'simple mode' test
+ *
  * Revision 1.2  2005/02/08 19:21:18  ssikorsk
  * + Test "rowcount" attribute and support hte "simple mode" interface
  *
