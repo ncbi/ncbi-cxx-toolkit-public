@@ -177,6 +177,18 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
         return item_buff;
     }
 
+    if (b_type == eDB_Text) {
+        if ( !item_buff ) {
+            item_buff = new CDB_Text;
+        }
+        if ( d_len ) {
+            ((CDB_Text*) item_buff)->Append(d_ptr, d_len);
+        } else {
+            item_buff->AssignNULL();
+        }
+        return item_buff;
+    }
+
     long   int_val;
     double double_val;
 
@@ -302,6 +314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/25 22:40:37  vysokolo
+ * Atting eDB_Text type
+ *
  * Revision 1.6  2004/03/24 19:46:53  vysokolo
  * addaed support of blob
  *
