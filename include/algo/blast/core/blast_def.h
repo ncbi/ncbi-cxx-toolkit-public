@@ -108,7 +108,13 @@ typedef struct BlastSeqLoc {
 
 /** Structure for keeping the query masking information */
 typedef struct BlastMaskLoc {
-   Int4 total_size; /**< total size of the BlastSeqLoc array below (FIXME: same as # of contexts, or of queries?) */
+   Int4 total_size; /**< Total size of the BlastSeqLoc array below. Inside the
+                       engine equal to number of contexts in the BlastQueryInfo
+                       structure. For lower case mask in a translated search,
+                       total size is at first equal to number of query 
+                       sequences, but then expanded to number of contexts
+                       (total number of translated frames), i.e. 6 times number
+                       of queries. */
    BlastSeqLoc** seqloc_array; /**< array of mask locations. */
 } BlastMaskLoc;
 
