@@ -178,7 +178,8 @@ while(first_offset <= last_offset)
 	
 	
 	/* update the diagonal array to reflect this hit. */
-	DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
+        if (diff >= lookup->wordsize)
+           DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
 	i++;
 	
       } /* end while - done with this batch of hits, call scansubject again. */
