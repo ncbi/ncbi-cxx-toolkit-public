@@ -33,6 +33,7 @@
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/classstr.hpp>
+#include <serial/datatool/stdstr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <serial/datatool/comments.hpp>
@@ -57,6 +58,31 @@ CTypeStrings::EKind CClassTypeStrings::GetKind(void) const
 {
     return m_IsObject? eKindObject: eKindClass;
 }
+
+bool CClassTypeStrings::x_IsNullType(TMembers::const_iterator i) const
+{
+    return i->haveFlag ?
+        (dynamic_cast<CNullTypeStrings*>(i->type.get()) != 0) : false;
+}
+
+bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i) const
+{
+    if (i->ref && i->dataType) {
+        const CDataType* resolved = i->dataType->Resolve();
+        if (resolved && resolved != i->dataType) {
+            CClassTypeStrings* typeStr = resolved->GetTypeStr();
+            if (typeStr) {
+                ITERATE ( TMembers, ir, typeStr->m_Members ) {
+                    if (ir->simple) {
+                        return x_IsNullType(ir);
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 
 void CClassTypeStrings::AddMember(const string& name,
                                   const AutoPtr<CTypeStrings>& type,
@@ -304,8 +330,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "    // types\n";
         ITERATE ( TMembers, i, m_Members ) {
             string cType = i->type->GetCType(code.GetNamespace());
-            code.ClassPublic() <<
-                "    typedef "<<cType<<" "<<i->tName<<";\n";
+            if (!x_IsNullType(i)) {
+                code.ClassPublic() <<
+                    "    typedef "<<cType<<" "<<i->tName<<";\n";
+            }
         }
         code.ClassPublic() << 
             "\n";
@@ -354,6 +382,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         size_t set_index;
         size_t set_offset;
         Uint4  set_mask, set_mask_maybe;
+        bool isNull, isNullWithAtt;
         ITERATE ( TMembers, i, m_Members ) {
             // generate IsSet... method
             ++member_index;
@@ -362,6 +391,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             set_mask   = (0x03 << set_offset);
             set_mask_maybe = (0x01 << set_offset);
             {
+                isNull = x_IsNullType(i);
+                isNullWithAtt = x_IsNullWithAttlist(i);
 // comment: what is it
                 if (i->optional) {
                     if (i->defaultValue.empty()) {
@@ -373,10 +404,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     code.ClassPublic() << "    // mandatory\n";
                 }
 // comment: typedef
-                code.ClassPublic()
-                    << "    // typedef "
-                    << i->type->GetCType(code.GetNamespace())
-                    <<" "<<i->tName<<"\n";
+                if (!isNull) {
+                    code.ClassPublic()
+                        << "    // typedef "
+                        << i->type->GetCType(code.GetNamespace())
+                        <<" "<<i->tName<<"\n";
+                }
 
 // IsSetX
                 code.ClassPublic() <<
@@ -399,8 +432,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                     if ( i->ref ) {
                         // CRef
-                        inlineMethods <<
-                            "    return "<<i->mName<<";\n";
+                        if (isNullWithAtt) {
+                            inlineMethods <<
+                                "    return "<<i->mName<<"->IsSet"<<i->cName<<"();\n";
+                        } else {
+                            inlineMethods <<
+                                "    return "<<i->mName<<";\n";
+                        }
                     }
                     else {
                         // doesn't need set flag -> use special code
@@ -422,7 +460,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if (!i->defaultValue.empty() || i->type->GetKind() == eKindContainer) {
                     inlineMethods <<"    return true;\n";
                 } else {
-                    inlineMethods <<"    return IsSet"<<i->cName<<"();\n";
+                    if (isNull || isNullWithAtt) {
+                        inlineMethods <<"    return false;\n";
+                    } else {
+                        inlineMethods <<"    return IsSet"<<i->cName<<"();\n";
+                    }
                 }
                 inlineMethods <<
                     "}\n"
@@ -479,8 +521,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 if ( !assignValue.empty() ) {
                     // assign default value
-                    code.Methods(inl) <<
-                        "    "<<i->mName<<" = "<<assignValue<<";\n";
+                    if (!isNull) {
+                        code.Methods(inl) <<
+                            "    "<<i->mName<<" = "<<assignValue<<";\n";
+                    }
                 }
                 else {
                     // no default value
@@ -501,55 +545,60 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
             // generate getter
             inl = true;//!i->ref;
-            if (i->dataType && i->dataType->IsPrimitive()) {
-                code.ClassPublic() <<
-                    "    "<<i->tName<<" Get"<<i->cName<<"(void) const;\n";
-                code.MethodStart(inl) <<
-                    ""<<rType<<" "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                    "{\n";
-            } else {
-                code.ClassPublic() <<
-                    "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
-                code.MethodStart(inl) <<
-                    "const "<<rType<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                    "{\n";
-            }
-            if ( i->delayed ) {
+            if (!isNull) {
+                if (i->dataType && i->dataType->IsPrimitive()) {
+                    code.ClassPublic() <<
+                        "    "<<i->tName<<" Get"<<i->cName<<"(void) const;\n";
+                    code.MethodStart(inl) <<
+                        ""<<rType<<" "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                        "{\n";
+                } else {
+                    code.ClassPublic() <<
+                        "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
+                    code.MethodStart(inl) <<
+                        "const "<<rType<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                        "{\n";
+                }
+                if ( i->delayed ) {
+                    code.Methods(inl) <<
+                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                }
+                if (i->defaultValue.empty() &&
+                    i->type->GetKind() != eKindContainer && !isNullWithAtt) {
+                    code.Methods(inl) <<
+                        "    if (!CanGet"<< i->cName<<"()) {\n"
+                        "        ThrowUnassigned("<<member_index<<");\n"
+                        "    }\n";
+                }
                 code.Methods(inl) <<
-                    "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                    "    return "<<i->valueName<<";\n"
+                    "}\n"
+                    "\n";
             }
-            if (i->defaultValue.empty() && i->type->GetKind() != eKindContainer) {
-                code.Methods(inl) <<
-                    "    if (!CanGet"<< i->cName<<"()) {\n"
-                    "        ThrowUnassigned("<<member_index<<");\n"
-                    "    }\n";
-            }
-            code.Methods(inl) <<
-                "    return "<<i->valueName<<";\n"
-                "}\n"
-                "\n";
 
             // generate setter
             if ( i->ref ) {
-                // generate reference setter
-                setters <<
-                    "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n";
-                methods <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
-                    "{\n";
-                if ( i->delayed ) {
+                if (!isNullWithAtt) {
+                    // generate reference setter
+                    setters <<
+                        "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n";
                     methods <<
-                        "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
-                }
-                methods <<
-                    "    "<<i->mName<<".Reset(&value);\n";
-                if ( i->haveFlag ) {
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
+                        "{\n";
+                    if ( i->delayed ) {
+                        methods <<
+                            "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                    }
                     methods <<
-                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                        "    "<<i->mName<<".Reset(&value);\n";
+                    if ( i->haveFlag ) {
+                        methods <<
+                            "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                    }
+                    methods <<
+                        "}\n"
+                        "\n";
                 }
-                methods <<
-                    "}\n"
-                    "\n";
                 setters <<
                     "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
                 if ( i->canBeNull ) {
@@ -579,16 +628,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         inlineMethods <<
                             "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                     }
-                    if ( i->haveFlag ) {
+                    if ( i->haveFlag) {
                         inlineMethods <<
                             "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                    }
+                    if (isNullWithAtt) {
+                        inlineMethods <<
+                            "    "<<i->mName<<"->Set"<<i->cName<<"();\n";
                     }
                     inlineMethods <<
                         "    return "<<i->valueName<<";\n"
                         "}\n"
                         "\n";
                 }
-                if (i->dataType) {
+                if (i->dataType && !isNullWithAtt) {
                     const CDataType* resolved = i->dataType->Resolve();
                     if (resolved && resolved != i->dataType) {
                         CClassTypeStrings* typeStr = resolved->GetTypeStr();
@@ -617,63 +670,78 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
             else {
-                if ( i->type->CanBeCopied() ) {
+                if (isNull) {
                     setters <<
-                        "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                        "    void Set"<<i->cName<<"(void);\n";
                     inlineMethods <<
-                        "inline\n"
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<rType<<"& value)\n"
+                        "inline\n"<<
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                         "{\n";
-                    if ( i->delayed ) {
-                        inlineMethods <<
-                            "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
-                    }
-                    inlineMethods <<                        
-                        "    "<<i->valueName<<" = value;\n";
-                    if ( i->haveFlag ) {
-                        inlineMethods <<
-                            "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
-                    }
+                    inlineMethods <<
+                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
                     inlineMethods <<
                         "}\n"
                         "\n";
-                }
-                setters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
-                inlineMethods <<
-                    "inline\n"<<
-                    rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
-                    "{\n";
-                if ( i->delayed ) {
-                    inlineMethods <<
-                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
-                }
-                if ( i->haveFlag ) {
-
-                    if ((kind == eKindStd) || (kind == eKindEnum) || (kind == eKindString)) {
+                } else {
+                    if ( i->type->CanBeCopied() ) {
+                        setters <<
+                            "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
                         inlineMethods <<
-                            "#ifdef _DEBUG\n"
-                            "    if (!IsSet"<<i->cName<<"()) {\n"
-                            "        ";
-                        if (kind == eKindString) {
+                            "inline\n"
+                            "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<rType<<"& value)\n"
+                            "{\n";
+                        if ( i->delayed ) {
                             inlineMethods <<
-                                i->valueName << " = ms_UnassignedStr;\n";
-                        } else {
+                                "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                        }
+                        inlineMethods <<                        
+                            "    "<<i->valueName<<" = value;\n";
+                        if ( i->haveFlag ) {
                             inlineMethods <<
-                                "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
+                                "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
                         }
                         inlineMethods <<
-                            "    }\n"
-                            "#endif\n";
+                            "}\n"
+                            "\n";
                     }
-
+                    setters <<
+                        "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
                     inlineMethods <<
-                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
+                        "inline\n"<<
+                        rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                        "{\n";
+                    if ( i->delayed ) {
+                        inlineMethods <<
+                            "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                    }
+                    if ( i->haveFlag ) {
+
+                        if ((kind == eKindStd) || (kind == eKindEnum) || (kind == eKindString)) {
+                            inlineMethods <<
+                                "#ifdef _DEBUG\n"
+                                "    if (!IsSet"<<i->cName<<"()) {\n"
+                                "        ";
+                            if (kind == eKindString) {
+                                inlineMethods <<
+                                    i->valueName << " = ms_UnassignedStr;\n";
+                            } else {
+                                inlineMethods <<
+                                    "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
+                            }
+                            inlineMethods <<
+                                "    }\n"
+                                "#endif\n";
+                        }
+
+                        inlineMethods <<
+                            "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
+                    }
+                    inlineMethods <<
+                        "    return "<<i->valueName<<";\n"
+                        "}\n"
+                        "\n";
                 }
-                inlineMethods <<
-                    "    return "<<i->valueName<<";\n"
-                    "}\n"
-                    "\n";
+
             }
 
 
@@ -778,8 +846,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    "<<ncbiNamespace<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
                 }
                 else {
-                    code.ClassPrivate() <<
-                        "    "<<i->tName<<" "<<i->mName<<";\n";
+                    if (!x_IsNullType(i)) {
+                        code.ClassPrivate() <<
+                            "    "<<i->tName<<" "<<i->mName<<";\n";
+                    }
                 }
 		    }
 		}
@@ -800,11 +870,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                 }
                 else {
-                    string init = i->defaultValue;
-                    if ( init.empty() )
-                        init = i->type->GetInitializer();
-                    if ( !init.empty() )
-                        code.AddInitializer(i->mName, init);
+                    if (!x_IsNullType(i)) {
+                        string init = i->defaultValue;
+                        if ( init.empty() )
+                            init = i->type->GetInitializer();
+                        if ( !init.empty() )
+                            code.AddInitializer(i->mName, init);
+                    }
                 }
             }
         }
@@ -911,6 +983,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
 
             methods << "    ADD_NAMED_";
+            bool isNull = x_IsNullType(i);
+            if (isNull) {
+                methods << "NULL_";
+            }
             
             bool addNamespace = false;
             bool addCType = false;
@@ -949,8 +1025,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
 
-            methods <<
-                "MEMBER(\""<<i->externalName<<"\", "<<i->mName;
+            methods << "MEMBER(\""<<i->externalName<<"\"";
+            if (!isNull) {
+                methods << ", "<<i->mName;
+            }
             if ( addNamespace )
                 methods << ", "<<i->type->GetNamespace();
             if ( addCType )
@@ -1036,7 +1114,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "public:\n";
     DeclareConstructor(out, GetClassNameDT());
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple) {
+        if (i->simple && !x_IsNullType(i)) {
             out <<
                 "    " << GetClassNameDT() <<"(const "<<
                 i->type->GetCType(GetNamespace()) << "& value);" <<
@@ -1058,7 +1136,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple) {
+        if (i->simple && !x_IsNullType(i)) {
             out <<
             "    operator const " << i->type->GetCType(GetNamespace()) <<
             "&(void) const;\n";
@@ -1090,7 +1168,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "}\n"
         "\n";
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple) {
+        if (i->simple && !x_IsNullType(i)) {
             out <<
             "inline\n" <<
             GetClassNameDT()<<"::"<<GetClassNameDT()<<"(const "<<
@@ -1121,7 +1199,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->simple) {
+        if (i->simple && !x_IsNullType(i)) {
             out <<
             "inline\n"<<
             GetClassNameDT() << "::"
@@ -1223,6 +1301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2003/11/20 14:32:41  gouriano
+* changed generated C++ code so NULL data types have no value
+*
 * Revision 1.58  2003/06/24 20:55:42  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/11/20 14:32:11  gouriano
+* changed generated C++ code so NULL data types have no value
+*
 * Revision 1.14  2002/11/19 19:47:50  gouriano
 * added support of XML attributes of choice variants
 *
@@ -160,6 +163,8 @@ protected:
                            const string& methodPrefix,
                            bool haveUserClass,
                            const string& classPrefix) const;
+    bool x_IsNullType(TVariants::const_iterator i) const;
+    bool x_IsNullWithAttlist(TVariants::const_iterator i) const;
 
 private:
     TVariants m_Variants;

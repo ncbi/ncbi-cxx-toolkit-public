@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/11/20 14:32:40  gouriano
+* changed generated C++ code so NULL data types have no value
+*
 * Revision 1.46  2003/10/21 13:48:51  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
@@ -232,6 +235,7 @@
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/choicestr.hpp>
+#include <serial/datatool/stdstr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <serial/serialdef.hpp>
@@ -303,6 +307,29 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
         memberType = ePointerMember;
         break;
     }
+}
+
+bool CChoiceTypeStrings::x_IsNullType(TVariants::const_iterator i) const
+{
+    return (dynamic_cast<CNullTypeStrings*>(i->type.get()) != 0);
+}
+
+bool CChoiceTypeStrings::x_IsNullWithAttlist(TVariants::const_iterator i) const
+{
+    if (i->dataType) {
+        const CDataType* resolved = i->dataType->Resolve();
+        if (resolved && resolved != i->dataType) {
+            CClassTypeStrings* typeStr = resolved->GetTypeStr();
+            if (typeStr) {
+                ITERATE ( TMembers, ir, typeStr->m_Members ) {
+                    if (ir->simple) {
+                        return CClassTypeStrings::x_IsNullType(ir);
+                    }
+                }
+            }
+        }
+    }
+    return false;
 }
 
 void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
@@ -704,7 +731,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 switch ( i->memberType ) {
                 case eSimpleMember:
-                    {
+                    if (!x_IsNullType(i)) {
                         string init = i->type->GetInitializer();
                         methods <<
                             "    case "STATE_PREFIX<<i->cName<<":\n"
@@ -786,8 +813,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    // types\n";
         ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
-            code.ClassPublic() <<
-                "    typedef "<<cType<<" T"<<i->cName<<";\n";
+            if (!x_IsNullType(i)) {
+                code.ClassPublic() <<
+                    "    typedef "<<cType<<" T"<<i->cName<<";\n";
+            }
         }
         code.ClassPublic() << 
             "\n";
@@ -803,10 +832,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             string cType = i->type->GetCType(code.GetNamespace());
             string tType = "T" + i->cName;
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
+            bool isNull = x_IsNullType(i);
+            bool isNullWithAtt = x_IsNullWithAttlist(i);
 
 // comment: typedef
-            code.ClassPublic()
-                << "    // typedef "<< cType <<" "<<tType<<"\n";
+            if (!isNull) {
+                code.ClassPublic()
+                    << "    // typedef "<< cType <<" "<<tType<<"\n";
+            }
 
             if (i->attlist) {
                 code.ClassPublic() <<
@@ -820,22 +853,31 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "    "<<tType<<" Get"<<i->cName<<"(void) const;"
                     "\n";
             } else {
-                code.ClassPublic() <<
-                    "    const "<<tType<<"& Get"<<i->cName<<"(void) const;"
-                    "\n";
+                if (!isNull) {
+                    code.ClassPublic() <<
+                        "    const "<<tType<<"& Get"<<i->cName<<"(void) const;"
+                        "\n";
+                }
             }
-            setters <<
-                "    "<<tType<<"& Set"<<i->cName<<"(void);\n";
+            if (isNull) {
+                setters <<
+                    "    void Set"<<i->cName<<"(void);\n";
+            } else {
+                setters <<
+                    "    "<<tType<<"& Set"<<i->cName<<"(void);\n";
+            }
             if ( i->type->CanBeCopied() ) {
                 if (i->attlist) {
                     setters <<
                         "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
                 } else {
-                    setters <<
-                        "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
+                    if (!isNull) {
+                        setters <<
+                            "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
+                    }
                 }
             }
-            if ( i->memberType == eObjectPointerMember ) {
+            if ( i->memberType == eObjectPointerMember && !isNullWithAtt) {
                 setters <<
                     "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
             }
@@ -908,50 +950,70 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "\n";
                 if (i->dataType && i->dataType->IsPrimitive()) {
                     code.MethodStart(inl) << rType;
-                } else {
+                } else if (!isNull) {
                     code.MethodStart(inl) << "const "<<rType<<"&";
                 }
-                code.Methods(inl) <<
-                    " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                    "{\n"
-                    "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
-                if ( i->delayed ) {
+                if (!isNull) {
                     code.Methods(inl) <<
-                        "    "DELAY_MEMBER".Update();\n";
+                        " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                        "{\n"
+                        "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
+                    if ( i->delayed ) {
+                        code.Methods(inl) <<
+                            "    "DELAY_MEMBER".Update();\n";
+                    }
+                    code.Methods(inl) <<
+                        "    return "<<constMemberRef<<";\n"
+                        "}\n"
+                        "\n";
+                }
+                if (isNull) {
+                    code.MethodStart(inl) <<
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(void)\n";
+                } else {
+                    code.MethodStart(inl) <<
+                        rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n";
                 }
                 code.Methods(inl) <<
-                    "    return "<<constMemberRef<<";\n"
-                    "}\n"
-                    "\n";
-                code.MethodStart(inl) <<
-                    rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                     "{\n"
                     "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
-                if ( i->delayed ) {
-                    code.Methods(inl) <<
-                        "    "DELAY_MEMBER".Update();\n";
+                if (!isNull) {
+                    if ( i->delayed ) {
+                        code.Methods(inl) <<
+                            "    "DELAY_MEMBER".Update();\n";
+                    }
+                    if (isNullWithAtt) {
+                        code.Methods(inl) <<
+                            "    "<<rType<<"& value = "<<memberRef<<";\n" <<
+                            "    value.Set"<<i->cName<<"();\n" <<
+                            "    return value;\n";
+                    } else {
+                        code.Methods(inl) <<
+                            "    return "<<memberRef<<";\n";
+                    }
                 }
                 code.Methods(inl) <<
-                    "    return "<<memberRef<<";\n"
                     "}\n"
                     "\n";
                 if ( i->type->CanBeCopied() ) {
                     bool set_inl = i->dataType && i->dataType->IsPrimitive();
-                    code.MethodStart(set_inl) <<
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"("
-                        "const " << rType << "&" << " value)\n"
-                        "{\n"
-                        "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
-                    if ( i->delayed ) {
+                    if (!isNull) {
+                        code.MethodStart(set_inl) <<
+                            "void "<<methodPrefix<<"Set"<<i->cName<<"("
+                            "const " << rType << "&" << " value)\n"
+                            "{\n"
+                            "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                        if ( i->delayed ) {
+                            code.Methods(set_inl) <<
+                                "    "DELAY_MEMBER".Forget();\n";
+                        }
                         code.Methods(set_inl) <<
-                            "    "DELAY_MEMBER".Forget();\n";
+                            "    "<<memberRef<<" = value;\n"
+                            "}\n"
+                            "\n";
                     }
-                    code.Methods(set_inl) <<
-                        "    "<<memberRef<<" = value;\n"
-                        "}\n"
-                        "\n";
                 }
-                if ( i->memberType == eObjectPointerMember ) {
+                if ( i->memberType == eObjectPointerMember  && !isNullWithAtt) {
                     methods <<
                         "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
                         "{\n"
@@ -1021,8 +1083,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             code.ClassPrivate() << "    union {\n";
             ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eSimpleMember ) {
-                    code.ClassPrivate() <<
-                        "        T"<<i->cName<<" m_"<<i->cName<<";\n";
+                    if (!x_IsNullType(i)) {
+                        code.ClassPrivate() <<
+                            "        T"<<i->cName<<" m_"<<i->cName<<";\n";
+                    }
                 }
                 else if ( i->memberType == ePointerMember ) {
                     code.ClassPrivate() <<
@@ -1108,6 +1172,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
 
             methods << "    ADD_NAMED_";
+            bool isNull = x_IsNullType(i);
+            if (isNull) {
+                methods << "NULL_";
+            }
             
             bool addNamespace = false;
             bool addCType = false;
@@ -1160,7 +1228,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             } else {
                 methods << "CHOICE_VARIANT(\"";
             }
-            methods <<i->externalName<<"\", ";
+            methods <<i->externalName<<"\"";
+            if (!isNull) {
+                methods <<", ";
+            }
             switch ( i->memberType ) {
             case eObjectPointerMember:
                 if (i->attlist) {
@@ -1173,7 +1244,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << STRING_MEMBER;
                 break;
             default:
-                methods << "m_"<<i->cName;
+                if (!isNull) {
+                    methods << "m_"<<i->cName;
+                }
                 break;
             }
             if ( addNamespace )

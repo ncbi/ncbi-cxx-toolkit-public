@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/11/20 14:33:19  gouriano
+* changed generated C++ code so NULL data types have no value
+*
 * Revision 1.37  2003/09/22 20:56:31  gouriano
 * Changed base type of AnyContent object to CSerialObject
 *
@@ -195,6 +198,7 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+
 
 class CPrimitiveTypeFunctionsBase
 {
@@ -599,11 +603,31 @@ CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfo(void)
 class CNullBoolFunctions : public CPrimitiveTypeFunctions<bool>
 {
 public:
+    static TObjectPtr Create(TTypeInfo type)
+        {
+            NCBI_THROW(CSerialException,eIllegalCall, "Cannot create NULL object");
+            return 0;
+        }
+    static bool IsDefault(TConstObjectPtr)
+        {
+            return false;
+        }
+    static void SetDefault(TObjectPtr)
+        {
+        }
+
+    static bool Equals(TConstObjectPtr, TConstObjectPtr)
+        {
+            return true;
+        }
+    static void Assign(TObjectPtr, TConstObjectPtr)
+        {
+        }
+
     static void Read(CObjectIStream& in, TTypeInfo ,
                      TObjectPtr object)
         {
             in.ReadNull();
-            Get(object) = true;
         }
     static void Write(CObjectOStream& out, TTypeInfo ,
                       TConstObjectPtr /*object*/)
@@ -631,6 +655,9 @@ CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfoNullBool(void)
 {
     CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoBool;
     typedef CNullBoolFunctions TFunctions;
+    info->SetMemFunctions(&TFunctions::Create, &TFunctions::IsDefault,
+                          &TFunctions::SetDefault,&TFunctions::Equals,
+                          &TFunctions::Assign);
     info->SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
                          &TFunctions::Copy, &TFunctions::Skip);
     return info;

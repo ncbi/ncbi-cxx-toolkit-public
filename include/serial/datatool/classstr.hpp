@@ -151,6 +151,8 @@ protected:
                                    const string& methodPrefix,
                                    bool haveUserClass,
                                    const string& classPrefix) const;
+    bool x_IsNullType(TMembers::const_iterator i) const;
+    bool x_IsNullWithAttlist(TMembers::const_iterator i) const;
 
 private:
     bool m_IsObject;
@@ -198,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/11/20 14:32:12  gouriano
+* changed generated C++ code so NULL data types have no value
+*
 * Revision 1.20  2003/06/24 20:53:39  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
