@@ -49,24 +49,17 @@ static char const rcsid[] =
 #include "blast_psi_priv.h"
 #include "matrix_freq_ratios.h"
 #include "blast_gapalign_priv.h"
+#include "blast_posit.h"
 #include "blast_hits_priv.h"
 
 
 /** by what factor might initially reported E-value exceed true Evalue */
 #define EVALUE_STRETCH 5 
-/** number of real aminoacids (i.e.: does not include U, X, B, etc) */
-#define PRO_TRUE_ALPHABET_SIZE 20
-/** range of scores in a matrix */
-#define kScoreMatrixScoreRange 10000
 
 /** For translated subject sequences, the number of amino acids to
     include before and after the existing aligned segment when
     generating a composition-based scoring system. */
 #define KAPPA_WINDOW_BORDER 200
-
-/**positions of true characters in protein alphabet*/
-static Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE] =
-  {1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22};
 
 /**
  * Scale the scores in an HSP list and reset the bit scores.
@@ -75,6 +68,8 @@ static Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE] =
  * @param logK              Karlin-Altschul statistical parameter [in]
  * @param lambda            Karlin-Altschul statistical parameter [in]
  * @param scoreDivisor      the value by which reported scores are to be
+ * @todo rename to something which is more intention revealing, merge with
+ * function of the same name in blast_traceback.c
  */
 static void
 s_HSPListRescaleScores(BlastHSPList * hsp_list,
@@ -235,7 +230,7 @@ s_HSPListFromDistinctAlignments(
   hsp_list->oid = oid;
 
   for(align = *alignments; NULL != align; align = align->next) {
-    BlastHSP * new_hsp;
+    BlastHSP * new_hsp = NULL;
 
     Blast_HSPInit(align->queryStart,   align->queryEnd,
                   align->matchStart,   align->matchEnd,
@@ -1518,42 +1513,6 @@ SmithWatermanFindStart(Kappa_SequenceData * subject,
 
 
 /**
- * allocates  a score matrix with numPositions + 1 rows; all elements in row
- * numPositions are set to  BLAST_SCORE_MIN
- * @param numPositions length of matrix (or query) [in]
- * @return matrix (Int4**)
- */
-static Int4 **allocateScaledMatrix(Int4 numPositions)
-{
-  Int4 **returnMatrix; /*allocated matrix to return*/
-  Int4 c; /*loop index over characters*/
-
-  returnMatrix = (Int4**) _PSIAllocateMatrix(numPositions+1, BLASTAA_SIZE, sizeof(Int4));
-  for(c = 0; c < BLASTAA_SIZE; c++)
-    returnMatrix[numPositions][c] = BLAST_SCORE_MIN;
-  return(returnMatrix);
-}
-
-/**
- * allocates a frequency ratio matrix with numPositions + 1 rows; all
- * elements in row numPositions are set to BLAST_SCORE_MIN
- *
- * @param numPositions length of matrix (or query) [in]
- * @return matrix (double**)
- */
-static double **allocateStartFreqs(Int4 numPositions)
-{
-  double **returnMatrix; /*allocated matrix to return*/
-  Int4 c; /*loop index over characters*/
-
-  returnMatrix = (double**) _PSIAllocateMatrix(numPositions+1, BLASTAA_SIZE, sizeof(double));
-  for(c = 0; c < BLASTAA_SIZE; c++)
-    returnMatrix[numPositions][c] = BLAST_SCORE_MIN;
-  return(returnMatrix);
-}
-
-
-/**
  * @param matrix          is a position-specific score matrix with matrixLength
  *                        positions
  * @param subjectProbArray  is an array containing the probability of
@@ -1699,10 +1658,11 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
    SFreqRatios* freqRatios=NULL; /* frequency ratio container for given matrix */
    const double kPosEpsilon = 0.0001;
 
-   returnRatios = allocateStartFreqs(numPositions);
+   returnRatios = (double**) _PSIAllocateMatrix(numPositions, 
+                                                BLASTAA_SIZE, 
+                                                sizeof(double));
 
    freqRatios = _PSIMatrixFrequencyRatiosNew(matrixName);
-   ASSERT(freqRatios);
    if (freqRatios == NULL)
 	return NULL;
 
@@ -1805,6 +1765,78 @@ computeScaledStandardMatrix(
    }
 
    freqRatios = _PSIMatrixFrequencyRatiosFree(freqRatios);
+}
+
+
+/**
+ * produce a scaled-up version of the position-specific matrix
+ * starting from posFreqs
+ *
+ * @param fillPosMatrix     is the matrix to be filled
+ * @param nonposMatrix      is the underlying position-independent matrix,
+ *                          used to fill positions where frequencies are
+ *                          irrelevant
+ * @param sbp               stores various parameters of the search
+ */
+static int
+scalePosMatrix(int **fillPosMatrix, 
+               int **nonposMatrix, 
+               const char *matrixName, 
+               double **posFreqs, 
+               Uint1 *query, 
+               int queryLength, 
+               BlastScoreBlk* sbp)
+{
+    Kappa_posSearchItems *posSearch = NULL;
+    Kappa_compactSearchItems *compactSearch = NULL;
+    _PSIInternalPssmData* internal_pssm = NULL;
+    int status = PSI_SUCCESS;
+
+    posSearch = Kappa_posSearchItemsNew(queryLength, matrixName, 
+                                        fillPosMatrix, posFreqs);
+    compactSearch = Kappa_compactSearchItemsNew(query, queryLength, 
+                                                nonposMatrix, sbp);
+
+    /* Copy data into new structures */
+    internal_pssm = _PSIInternalPssmDataNew(queryLength, BLASTAA_SIZE);
+    _PSICopyMatrix_int(internal_pssm->pssm, posSearch->posMatrix,
+                       internal_pssm->ncols, internal_pssm->nrows);
+    _PSICopyMatrix_int(internal_pssm->scaled_pssm, posSearch->posPrivateMatrix,
+                       internal_pssm->ncols, internal_pssm->nrows);
+    _PSICopyMatrix_double(internal_pssm->freq_ratios, posSearch->posFreqs,
+                          internal_pssm->ncols, internal_pssm->nrows);
+    status = _PSIConvertFreqRatiosToPSSM(internal_pssm, query, sbp, 
+                                         compactSearch->standardProb);
+    if (status != PSI_SUCCESS) {
+        internal_pssm = _PSIInternalPssmDataFree(internal_pssm);
+        posSearch = Kappa_posSearchItemsFree(posSearch);
+        compactSearch = Kappa_compactSearchItemsFree(compactSearch);
+        return status;
+    }
+
+    /* Copy data from new structures to posSearchItems */
+    _PSICopyMatrix_int(posSearch->posMatrix, internal_pssm->pssm,
+                       internal_pssm->ncols, internal_pssm->nrows);
+    _PSICopyMatrix_int(posSearch->posPrivateMatrix, internal_pssm->scaled_pssm,
+                       internal_pssm->ncols, internal_pssm->nrows);
+    _PSICopyMatrix_double(posSearch->posFreqs, internal_pssm->freq_ratios,
+                          internal_pssm->ncols, internal_pssm->nrows);
+    status = Kappa_impalaScaling(posSearch, 
+                           compactSearch, 
+                           (double) SCALING_FACTOR, 
+                           FALSE, 
+                           sbp);
+    if (status != 0) {
+        internal_pssm = _PSIInternalPssmDataFree(internal_pssm);
+        posSearch = Kappa_posSearchItemsFree(posSearch);
+        compactSearch = Kappa_compactSearchItemsFree(compactSearch);
+        return status;
+    }
+
+    internal_pssm = _PSIInternalPssmDataFree(internal_pssm);
+    posSearch = Kappa_posSearchItemsFree(posSearch);
+    compactSearch = Kappa_compactSearchItemsFree(compactSearch);
+    return status;
 }
 
 
@@ -2204,7 +2236,7 @@ Kappa_SequenceGetWindow(
  * @param q_start       the start point in the query [out]
  * @param s_start       the start point in the subject [out]
  * @param sbp           general scoring info (includes the matrix) [in]
- * @param positionBased determines whether matrix is position specific or not [in]
+ * @param positionBased is this search position-specific? [in]
  * @param hsp           the HSP to be considered [in]
  * @param window        the window used to compute the traceback [in]
  * @param query         the query data [in]
@@ -2214,7 +2246,7 @@ static void
 StartingPointForHit(
   Int4 * q_start,
   Int4 * s_start,
-  BlastScoreBlk* sbp,
+  const BlastScoreBlk* sbp,
   Boolean positionBased,
   BlastHSP * hsp,
   Kappa_WindowInfo * window,
@@ -2383,8 +2415,6 @@ typedef struct Kappa_SearchParameters {
   Int4 **origMatrix;            /**< The original matrix values */
   Int4 **startMatrix;           /**< Rescaled values of the original matrix */
 
-  SFreqRatios* sFreqRatios;        /**< Stores the frequency ratios along
-                                         *  with their bit scale factor */
   double **startFreqRatios;             /**< frequency ratios to start
                                              investigating each pair */
   double  *scoreArray;          /**< array of score probabilities */
@@ -2421,16 +2451,12 @@ Kappa_SearchParametersFree(Kappa_SearchParameters ** searchParams)
 
   if(sp->kbp_gap_orig) Blast_KarlinBlkFree(sp->kbp_gap_orig);
 
-  /* An extra row is added at end during allocation. */
   if(sp->startMatrix)
-    _PSIDeallocateMatrix((void**) sp->startMatrix, 1+sp->mRows);
+    _PSIDeallocateMatrix((void**) sp->startMatrix, sp->mRows);
   if(sp->origMatrix)
-    _PSIDeallocateMatrix((void**) sp->origMatrix, 1+sp->mRows);
-  if(sp->sFreqRatios)
-    _PSIMatrixFrequencyRatiosFree(sp->sFreqRatios);
-/*
-  if(sp->startFreqRatios) freeStartFreqs(sp->startFreqRatios, sp->mRows);
-*/
+    _PSIDeallocateMatrix((void**) sp->origMatrix, sp->mRows);
+  if(sp->startFreqRatios) 
+    _PSIDeallocateMatrix((void**) sp->startFreqRatios, sp->mRows);
 
   if(sp->return_sfp) sfree(sp->return_sfp);
   if(sp->scoreArray) sfree(sp->scoreArray);
@@ -2466,7 +2492,6 @@ Kappa_SearchParametersNew(
   sp->kbp_gap_orig     = NULL;
   sp->startMatrix      = NULL;
   sp->origMatrix       = NULL;
-  sp->sFreqRatios      = NULL;
   sp->startFreqRatios  = NULL;
   sp->return_sfp       = NULL;
   sp->scoreArray       = NULL;
@@ -2476,9 +2501,10 @@ Kappa_SearchParametersNew(
   
   if(adjustParameters) {
     sp->kbp_gap_orig = Blast_KarlinBlkNew();
-    sp->startMatrix  = allocateScaledMatrix(sp->mRows);
-    sp->origMatrix   = allocateScaledMatrix(sp->mRows);
-    
+    sp->startMatrix  = (Int4**) _PSIAllocateMatrix(sp->mRows, sp->nCols,
+                                                   sizeof(Int4));
+    sp->origMatrix   = (Int4**) _PSIAllocateMatrix(sp->mRows, sp->nCols,
+                                                   sizeof(Int4));
     sp->resProb    =
       (double *) calloc(BLASTAA_SIZE, sizeof(double));
     sp->scoreArray =
@@ -2506,13 +2532,16 @@ Kappa_SearchParametersNew(
  * @param queryInfo query sequence information [in]
  * @param sbp Scoring Blk (contains Karlin-Altschul parameters) [in]
  * @param scoring gap-open/extend/decline_align information [in]
+ * @param positionBased is this search position-specific? [in]
+ * @todo instead of hard coding 0 for context we should use queryInfo
  */
 static void
 Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
                           BLAST_SequenceBlk * queryBlk,
                           BlastQueryInfo* queryInfo,
                           BlastScoreBlk* sbp,
-                          const BlastScoringParameters* scoring)
+                          const BlastScoringParameters* scoring,
+                          Boolean positionBased)
 {
   Uint1* query;               /* the query sequence */
   Int4 queryLength;             /* the length of the query sequence */
@@ -2520,6 +2549,8 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
 
   query = &queryBlk->sequence[kContextOffset];
   queryLength = queryInfo->contexts[0].query_length;
+  ASSERT((0 == queryInfo->first_context) &&
+         (queryInfo->first_context == queryInfo->last_context));
   
   if(searchParams->adjustParameters) {
     Int4 i, j;
@@ -2527,16 +2558,16 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
                                  * query-subject pair */
     Int4 **matrix;       /* matrix used to score a local
                                    query-subject alignment */
-    Boolean positionBased = FALSE; /* FIXME, how is this set in scoring options? */
 
     if(positionBased) {
-      kbp    = sbp->kbp_gap_psi[0];
-      matrix = sbp->posMatrix;
+      matrix = sbp->psi_matrix->pssm->data;
+      ASSERT(queryLength == searchParams->mRows);
+      ASSERT(queryLength == sbp->psi_matrix->pssm->ncols);
     } else {
-      kbp    = sbp->kbp_gap_std[0];
-      matrix = sbp->matrix;
+      matrix = sbp->matrix->data;
       Blast_FillResidueProbability(query, queryLength, searchParams->queryProb);
     }
+    kbp = sbp->kbp_gap[0];
     searchParams->gapOpen    = scoring->gap_open;
     searchParams->gapExtend  = scoring->gap_extend;
     searchParams->gapDecline = scoring->decline_align;
@@ -2564,6 +2595,7 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
  * @param queryInfo query sequence information [in]
  * @param sbp Scoring Blk (contains Karlin-Altschul parameters) [in]
  * @param scoringParams gap-open/extend/decline_align information [in]
+ * @param positionBased is this search position-specific? [in]
  * @return scaling-factor to be used.
  */
 static double
@@ -2571,7 +2603,8 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
                     BLAST_SequenceBlk* queryBlk,
                     BlastQueryInfo* queryInfo,
                     BlastScoreBlk* sbp,
-                    BlastScoringParameters* scoringParams)
+                    BlastScoringParameters* scoringParams,
+                    Boolean positionBased)
 {
   double localScalingFactor;            /* the factor by which to
                                          * scale the scoring system in
@@ -2590,7 +2623,6 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
                                  * query-subject pair */
     Uint1* query;               /* the query sequence */
     Int4 queryLength;           /* the length of the query sequence */
-    Boolean positionBased=FALSE; /* FIXME, how is this set with options?? */
 
     if((0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20"))) {
       localScalingFactor = SCALING_FACTOR / 10;
@@ -2610,22 +2642,30 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
     query = &queryBlk->sequence[0];
     queryLength = queryInfo->contexts[0].query_length;
     if(positionBased) {
+      int status = 0;
+      ASSERT(queryLength == sp->mRows);
+      ASSERT(queryLength == sbp->psi_matrix->pssm->ncols);
       sp->startFreqRatios =
         getStartFreqRatios(sbp, query, scoringParams->options->matrix,
-                           sbp->posFreqs, queryLength);
-/* FIXME      scalePosMatrix(sp->startMatrix, sbp->matrix, scoringParams->options->matrix,
-                     sbp->posFreqs, query, queryLength, sbp);
-*/
+                           sbp->psi_matrix->freq_ratios, queryLength);
+      status = scalePosMatrix(sp->startMatrix, sbp->matrix->data, 
+                              scoringParams->options->matrix, 
+                              sbp->psi_matrix->freq_ratios, query, 
+                              queryLength, sbp);
+      if (status) {
+          return 0.0;   /* return incorrect value for scalingFactor */
+      }
       initialUngappedLambda = sbp->kbp_psi[0]->Lambda;
     } else {
-/*
-      sp->startFreqRatios =
-        getStartFreqRatios(sbp, query, scoringParams->options->matrix, NULL,
-                           PROTEIN_ALPHABET, FALSE);
-*/
-      sp->sFreqRatios =
-        _PSIMatrixFrequencyRatiosNew(scoringParams->options->matrix);
-      sp->startFreqRatios = sp->sFreqRatios->data;
+      SFreqRatios* freqRatios =
+          _PSIMatrixFrequencyRatiosNew(scoringParams->options->matrix);
+      sp->startFreqRatios = (double**) _PSIAllocateMatrix(sp->mRows,
+                                                          sp->nCols,
+                                                          sizeof(double));
+      ASSERT(sp->startFreqRatios);
+      _PSICopyMatrix_double(sp->startFreqRatios, freqRatios->data,
+                            sp->mRows, sp->nCols);
+      freqRatios = _PSIMatrixFrequencyRatiosFree(freqRatios);
       initialUngappedLambda = sbp->kbp_ideal->Lambda;
     }
     sp->scaledUngappedLambda = initialUngappedLambda / localScalingFactor;
@@ -2634,11 +2674,7 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
                                   scoringParams->options->matrix,
                                   sp->scaledUngappedLambda);
     }
-    if(positionBased) {
-      kbp = sbp->kbp_gap_psi[0];
-    } else {
-      kbp = sbp->kbp_gap_std[0];
-    }
+    kbp = sbp->kbp_gap[0];
     kbp->Lambda /= localScalingFactor;
     kbp->logK = log(kbp->K);
   }
@@ -2658,6 +2694,7 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
  * @param queryLength   length of query sequence [in]
  * @param subject       data from the subject sequence [in]
  * @param matrix        a scoring matrix to be adjusted [out]
+ * @param positionBased is this search position-specific? [in]
  * @return              scaling-factor to be used.
  */
 static Int4
@@ -2665,7 +2702,8 @@ Kappa_AdjustSearch(
   Kappa_SearchParameters * sp,
   Int4 queryLength,
   Kappa_SequenceData * subject,
-  Int4 ** matrix)
+  Int4 ** matrix,
+  Boolean positionBased)
 {
   double LambdaRatio;           /* the ratio of the corrected lambda to the
                                  * original lambda */
@@ -2675,12 +2713,12 @@ Kappa_AdjustSearch(
     /* do adjust the parameters */
     Blast_ScoreFreq* this_sfp; 
     double correctUngappedLambda;  /* new value of ungapped lambda */
-    Boolean positionBased=FALSE; /* FIXME */
 
     /* compute and plug in new matrix here */
     Blast_FillResidueProbability(subject->data, subject->length, sp->resProb);
 
     if(positionBased) {
+      ASSERT(queryLength == sp->mRows);
       this_sfp =
         posfillSfp(sp->startMatrix, queryLength, sp->resProb, sp->scoreArray,
                    sp->return_sfp, kScoreMatrixScoreRange);
@@ -2720,13 +2758,15 @@ Kappa_AdjustSearch(
  * @param sbp               Karlin-Altschul parameters to be restored. [out]
  * @param matrix            the scoring matrix to be restored [out]
  * @param scoring           the scoring parameters to be restored [out]
+ * @param positionBased     is this search position-specific? [in]
  */
 static void
 Kappa_RestoreSearch(
   Kappa_SearchParameters * searchParams,
   BlastScoreBlk* sbp,
   Int4 ** matrix,
-  BlastScoringParameters* scoring)
+  BlastScoringParameters* scoring,
+  Boolean positionBased)
 {
   if(searchParams->adjustParameters) {
     Blast_KarlinBlk* kbp;       /* statistical parameters used to
@@ -2734,7 +2774,6 @@ Kappa_RestoreSearch(
                                    alignment of a query-subject
                                    pair */
     Int4 i, j; /* loop variables. */
-    Boolean positionBased=FALSE; /* FIXME. */
 
     scoring->gap_open = searchParams->gapOpen;
     scoring->gap_extend = searchParams->gapExtend;
@@ -2743,11 +2782,7 @@ Kappa_RestoreSearch(
 
     sbp->kbp_gap       = searchParams->orig_kbp_gap_array;
 
-    if(positionBased) {
-      kbp = sbp->kbp_gap_psi[0];
-    } else {
-      kbp = sbp->kbp_gap_std[0];
-    }
+    kbp = sbp->kbp_gap[0];
     Blast_KarlinBlkCopy(kbp, searchParams->kbp_gap_orig);
 
     for(i = 0; i < searchParams->mRows; i++) {
@@ -2757,7 +2792,6 @@ Kappa_RestoreSearch(
     }
   }
 }
-
 
 Int2
 Kappa_RedoAlignmentCore(EBlastProgramType program_number,
@@ -2783,7 +2817,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                          * order to obtain greater
                                          * precision */
 
-  Int4 **matrix;                /* score matrix */
+  Int4** matrix = NULL;         /* score matrix */
   Blast_KarlinBlk* kbp;         /* stores Karlin-Altschul parameters */
   Kappa_SearchParameters *searchParams; /* the values of the search
                                          * parameters that will be
@@ -2810,7 +2844,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
   BlastGapAlignStruct* gapAlign;        /* keeps track of gapped
                                            alignment params */
   Boolean SmithWaterman;       /* Perform Smith-Waterman alignments? */
-  Boolean positionBased=FALSE; /* FIXME, how is this determined? */
+  /* is this search position-specific? */
+  Boolean positionBased = (sbp->psi_matrix ? TRUE : FALSE); 
   Boolean adjustParameters;    /* Use composition based statistics? */
   BlastHSPList* thisMatch = NULL;  /* alignment data for the
                                     * current query-subject
@@ -2818,6 +2853,12 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
 
   double inclusion_ethresh;    /* All alignments above this value will be
                                   reported, no matter how many. */
+
+  if (program_number != eBlastTypeBlastp &&
+      program_number != eBlastTypePsiBlast) { /* tblastn ported but not fully
+                                                 implemented */
+        return BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED;
+  }
 
   inclusion_ethresh =
     (psiOptions != NULL) ? psiOptions->inclusion_ethresh : 0;
@@ -2857,28 +2898,28 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
   }
 
   if(positionBased) {
-    kbp    = sbp->kbp_gap_psi[0];
-    matrix = sbp->posMatrix;
+    ASSERT(program_number == eBlastTypePsiBlast);
+    matrix = sbp->psi_matrix->pssm->data;
     ASSERT( matrix != NULL );
 
-    if(sbp->posFreqs == NULL) {
-      sbp->posFreqs =
+    if(sbp->psi_matrix->freq_ratios == NULL) {
+      sbp->psi_matrix->freq_ratios =
         (double**) _PSIAllocateMatrix(query.length, BLASTAA_SIZE,
                                       sizeof(double));
     }
   } else {
-    kbp    = sbp->kbp_gap_std[0];
-    matrix = sbp->matrix;
+    matrix = sbp->matrix->data;
   }
+  kbp = sbp->kbp_gap[0];
 
   /* Initialize searchParams */
   searchParams =
-    Kappa_SearchParametersNew(query.length, adjustParameters,
-                              positionBased);
+    Kappa_SearchParametersNew(query.length, adjustParameters, positionBased);
   Kappa_RecordInitialSearch(searchParams, queryBlk, queryInfo, sbp,
-                            scoringParams);
+                            scoringParams, positionBased);
   localScalingFactor = Kappa_RescaleSearch(searchParams, queryBlk, queryInfo,
-                                           sbp, scoringParams);
+                                           sbp, scoringParams, positionBased);
+  ASSERT(localScalingFactor != 0.0);
 
 
   do_link_hsps = program_number == eBlastTypeTblastn;
@@ -2946,7 +2987,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
         Kappa_SequenceGetWindow( &matchingSeq, window, &subject );
 
         if(0 ==
-           Kappa_AdjustSearch(searchParams, query.length, &subject, matrix)) {
+           Kappa_AdjustSearch(searchParams, query.length, &subject, matrix,
+                              positionBased)) {
           /* Kappa_AdjustSearch ran without error; compute the new
              alignments. */
           Int4 aSwScore;                    /* score computed by the
@@ -3039,7 +3081,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
             Kappa_SequenceGetWindow(&matchingSeq, window, &subject);
 
             adjust_search_failed =
-              Kappa_AdjustSearch(searchParams, query.length, &subject, matrix);
+              Kappa_AdjustSearch(searchParams, query.length, &subject, matrix,
+                                 positionBased);
           }  /* end if the current window doesn't contain this HSP */
           if(!adjust_search_failed) {
             Int4 q_start, s_start;
@@ -3049,8 +3092,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                 window, &query, &subject);
 
             gapAlign->gap_x_dropoff =
-              (Int4) (extendParams->gap_x_dropoff_final * localScalingFactor);
-
+                (Int4) extendParams->options->gap_x_dropoff_final * NCBIMATH_LN2
+                / searchParams->kbp_gap_orig->Lambda*localScalingFactor;
             BLAST_GappedAlignmentWithTraceback(program_number,
                                                query.data, subject.data,
                                                gapAlign, scoringParams,
@@ -3111,7 +3154,6 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
 
         s_HSPListRescaleScores(hsp_list, kbp->Lambda, kbp->logK,
                                  localScalingFactor);
-        Blast_HSPListSortByScore(hsp_list);
 
         SWheapInsert(&significantMatches, hsp_list, bestEvalue,
                      thisMatch->oid);
@@ -3135,7 +3177,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
   if(SmithWaterman) Kappa_ForbiddenRangesRelease(&forbidden);
   gapAlign = BLAST_GapAlignStructFree(gapAlign);
 
-  Kappa_RestoreSearch(searchParams, sbp, matrix, scoringParams);
+  Kappa_RestoreSearch(searchParams, sbp, matrix, scoringParams, positionBased);
   Kappa_SearchParametersFree(&searchParams);
 
   return 0;
