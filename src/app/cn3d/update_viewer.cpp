@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
 * Revision 1.50  2002/10/15 22:04:09  thiessen
 * fix geom vltns bug
 *
@@ -203,6 +206,15 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/mmdb1/Mmdb_id.hpp>
+#include <objects/mmdb1/Biostruc_annot_set.hpp>
+#include <objects/mmdb3/Biostruc_feature_set.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/mmdb3/Chem_graph_alignment.hpp>
+#include <objects/mmdb3/Chem_graph_pntrs.hpp>
+#include <objects/mmdb3/Residue_pntrs.hpp>
+#include <objects/mmdb3/Residue_interval_pntr.hpp>
+#include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -522,23 +534,29 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
     }
 }
 
-void UpdateViewer::MakeNewAlignments(const SequenceList& newSequences,
+static BlockMultipleAlignment * MakeEmptyAlignment(const Sequence *master, const Sequence *slave)
+{
+    BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+    (*seqs)[0] = master;
+    (*seqs)[1] = slave;
+    BlockMultipleAlignment *newAlignment =
+        new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
+    if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors(false)) {
+        ERR_POST(Error << "MakeEmptyAlignment() - error finalizing alignment");
+        delete newAlignment;
+        return NULL;
+    }
+    return newAlignment;
+}
+
+void UpdateViewer::MakeEmptyAlignments(const SequenceList& newSequences,
     const Sequence *master, AlignmentList *newAlignments) const
 {
     newAlignments->clear();
     SequenceList::const_iterator s, se = newSequences.end();
     for (s=newSequences.begin(); s!=se; s++) {
-        BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
-        (*seqs)[0] = master;
-        (*seqs)[1] = *s;
-        BlockMultipleAlignment *newAlignment =
-            new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
-        if (newAlignment->AddUnalignedBlocks() && newAlignment->UpdateBlockMapAndColors(false)) {
-            newAlignments->push_back(newAlignment);
-        } else {
-            ERR_POST(Error << "UpdateViewer::MakeNewAlignments() - error finalizing alignment");
-            delete newAlignment;
-        }
+        BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
+        if (newAlignment) newAlignments->push_back(newAlignment);
     }
 }
 
@@ -576,13 +594,130 @@ void UpdateViewer::ImportSequences(void)
 
     // create null-alignments for each sequence
     AlignmentList newAlignments;
-    MakeNewAlignments(newSequences, master, &newAlignments);
+    MakeEmptyAlignments(newSequences, master, &newAlignments);
 
     // add new alignments to update list
     if (newAlignments.size() > 0)
         AddAlignments(newAlignments);
     else
         ERR_POST(Error << "UpdateViewer::ImportSequence() - no new alignments were created");
+}
+
+void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
+    const Sequence *master, AlignmentList *newAlignments, int masterFrom, int masterTo) const
+{
+    if (master->identifier->pdbID.size() == 0) {
+        ERR_POST(Error << "UpdateViewer::GetVASTAlignments() - "
+            "can't be called with non-structured master" << master->identifier->ToString());
+        return;
+    }
+
+    SequenceList::const_iterator s, se = newSequences.end();
+    for (s=newSequences.begin(); s!=se; s++) {
+        if ((*s)->identifier->pdbID.size() == 0) {
+            ERR_POST(Error << "UpdateViewer::GetVASTAlignments() - "
+                "can't be called with non-structured slave" << (*s)->identifier->ToString());
+            continue;
+        }
+
+        // set up URL
+        std::string
+            host = "www.ncbi.nlm.nih.gov",
+            path = "/Structure/VA/vastalign.cgi", err;
+        CNcbiOstrstream argstr;
+        argstr << "master=" << master->identifier->ToString()
+            << "&slave=" << (*s)->identifier->ToString();
+        if (masterFrom >= 0 && masterTo >= 0 && masterFrom <= masterTo &&
+            masterFrom < master->Length() && masterTo < master->Length())
+            argstr << "&from=" << (masterFrom+1) << "&to=" << (masterTo+1); // URL #'s are 1-based
+        argstr << '\0';
+        auto_ptr<char> args(argstr.str());
+
+        // connect to vastalign.cgi
+        CBiostruc_annot_set structureAlignment;
+        TESTMSG("trying to load VAST alignment data from " << host << path << '?' << args.get());
+        if (!GetAsnDataViaHTTP(host, path, args.get(), &structureAlignment, &err)) {
+            ERR_POST(Error << "Error calling vastalign.cgi: " << err);
+            BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
+            if (newAlignment) newAlignments->push_back(newAlignment);
+            continue;
+        }
+        TESTMSG("successfully loaded data from vastalign.cgi");
+#ifdef _DEBUG
+        WriteASNToFile("vastalign.dat.txt", structureAlignment, false, &err);
+#endif
+
+        // create initially empty alignment
+        BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+        (*seqs)[0] = master;
+        (*seqs)[1] = *s;
+        BlockMultipleAlignment *newAlignment =
+            new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
+
+        // skip if no VAST alignment found
+        if (structureAlignment.IsSetId() && structureAlignment.GetId().front()->IsMmdb_id() &&
+            structureAlignment.GetId().front()->GetMmdb_id().Get() == 0) {
+            ERR_POST(Warning << "VAST found no alignment for these chains");
+
+        } else {
+            // load in alignment, check format
+            if (!structureAlignment.IsSetId() || !structureAlignment.GetId().front()->IsMmdb_id() ||
+                structureAlignment.GetId().front()->GetMmdb_id().Get() != master->identifier->mmdbID ||
+                structureAlignment.GetFeatures().size() != 1 ||
+                structureAlignment.GetFeatures().front()->GetFeatures().size() != 1 ||
+                !structureAlignment.GetFeatures().front()->GetFeatures().front()->IsSetLocation() ||
+                !structureAlignment.GetFeatures().front()->GetFeatures().front()->GetLocation().IsAlignment())
+            {
+                ERR_POST(Error << "VAST data does not contain exactly one alignment of recognized format");
+                continue;
+            }
+            const CChem_graph_alignment& alignment =
+                structureAlignment.GetFeatures().front()->GetFeatures().front()->GetLocation().GetAlignment();
+            if (alignment.GetDimension() != 2 || alignment.GetAlignment().size() != 2 ||
+                alignment.GetBiostruc_ids().size() != 2 ||
+                !alignment.GetBiostruc_ids().front()->IsMmdb_id() ||
+                alignment.GetBiostruc_ids().front()->GetMmdb_id().Get() != master->identifier->mmdbID ||
+                !alignment.GetBiostruc_ids().back()->IsMmdb_id() ||
+                alignment.GetBiostruc_ids().back()->GetMmdb_id().Get() != (*s)->identifier->mmdbID ||
+                !alignment.GetAlignment().front()->IsResidues() ||
+                !alignment.GetAlignment().front()->GetResidues().IsInterval() ||
+                !alignment.GetAlignment().back()->IsResidues() ||
+                !alignment.GetAlignment().back()->GetResidues().IsInterval() ||
+                alignment.GetAlignment().front()->GetResidues().GetInterval().size() !=
+                    alignment.GetAlignment().back()->GetResidues().GetInterval().size())
+            {
+                ERR_POST(Error << "Unrecognized VAST data format");
+                continue;
+            }
+
+            // construct alignment from residue intervals
+            CResidue_pntrs::TInterval::const_iterator i, j,
+                ie = alignment.GetAlignment().front()->GetResidues().GetInterval().end();
+            for (i=alignment.GetAlignment().front()->GetResidues().GetInterval().begin(),
+                 j=alignment.GetAlignment().back()->GetResidues().GetInterval().begin(); i!=ie; i++, j++)
+            {
+                if ((*i)->GetMolecule_id().Get() != master->identifier->moleculeID ||
+                    (*j)->GetMolecule_id().Get() != (*s)->identifier->moleculeID)
+                {
+                    ERR_POST("mismatch in molecule ids in alignment interval block");
+                    continue;
+                }
+                UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment);
+                newBlock->SetRangeOfRow(0, (*i)->GetFrom().Get() - 1, (*i)->GetTo().Get() - 1);
+                newBlock->SetRangeOfRow(1, (*j)->GetFrom().Get() - 1, (*j)->GetTo().Get() - 1);
+                newBlock->width = (*i)->GetTo().Get() - (*i)->GetFrom().Get() + 1;
+                newAlignment->AddAlignedBlockAtEnd(newBlock);
+            }
+        }
+
+        // finalize alignment
+        if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors(false)) {
+            ERR_POST(Error << "MakeEmptyAlignment() - error finalizing alignment");
+            delete newAlignment;
+            continue;
+        }
+        newAlignments->push_back(newAlignment);
+    }
 }
 
 void UpdateViewer::ImportStructure(void)
@@ -672,6 +807,7 @@ void UpdateViewer::ImportStructure(void)
 
     // make list of protein chains in this structure
     std::vector < std::pair < int , char > > chains;    // holds gi and chain name
+    std::map < int , int > moleculeIDs;                 // maps gi -> molecule ID within MMDB object
     CBiostruc_graph::TDescr::const_iterator d, de;
     CBiostruc_graph::TMolecule_graphs::const_iterator
         m, me = biostruc->GetChemical_graph().GetMolecule_graphs().end();
@@ -696,8 +832,10 @@ void UpdateViewer::ImportStructure(void)
             gi = (*m)->GetSeq_id().GetGi();
 
         // add protein to list
-        if (isProtein && name && gi > 0)
+        if (isProtein && name && gi > 0) {
+            moleculeIDs[gi] = (*m)->GetId().Get();
             chains.push_back(make_pair(gi, name));
+        }
     }
     if (chains.size() == 0) {
         ERR_POST(Error << "No protein chains found in this structure!");
@@ -767,9 +905,10 @@ void UpdateViewer::ImportStructure(void)
         }
     }
 
-    // add MMDB id tag to Bioseq if not present already
     SequenceList::const_iterator w, we = newSequences.end();
     for (w=newSequences.begin(); w!=we; w++) {
+
+        // add MMDB id tag to Bioseq if not present already
         CBioseq::TAnnot::const_iterator a, ae = (*w)->bioseqASN->GetAnnot().end();
         CSeq_annot::C_Data::TIds::const_iterator i, ie;
         bool found = false;
@@ -795,17 +934,47 @@ void UpdateViewer::ImportStructure(void)
             annot->SetData().SetIds().push_back(seqid);
             (const_cast<Sequence*>(*w))->bioseqASN->SetAnnot().push_back(annot);
         }
+
+        // add MMDB and molecule id to identifier if not already set
+        if ((*w)->identifier->mmdbID == MoleculeIdentifier::VALUE_NOT_SET) {
+            (const_cast<MoleculeIdentifier*>((*w)->identifier))->mmdbID = mmdbID;
+        } else {
+            if ((*w)->identifier->mmdbID != mmdbID)
+                ERR_POST(Error << "MMDB ID mismatch in sequence " << (*w)->identifier->ToString());
+        }
+        if (moleculeIDs.find((*w)->identifier->gi) != moleculeIDs.end()) {
+            if ((*w)->identifier->moleculeID == MoleculeIdentifier::VALUE_NOT_SET) {
+                (const_cast<MoleculeIdentifier*>((*w)->identifier))->moleculeID =
+                    moleculeIDs[(*w)->identifier->gi];
+            } else {
+                if ((*w)->identifier->moleculeID != moleculeIDs[(*w)->identifier->gi])
+                    ERR_POST(Error << "Molecule ID mismatch in sequence " << (*w)->identifier->ToString());
+            }
+        } else
+            ERR_POST(Error << "No matching gi for MMDB sequence " << (*w)->identifier->ToString());
     }
 
     // create null-alignment
     AlignmentList newAlignments;
-    MakeNewAlignments(newSequences, master, &newAlignments);
+//    MakeEmptyAlignments(newSequences, master, &newAlignments);
+    int masterFrom = -1, masterTo = -1;
+    const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
+    if (multiple) {
+        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+            aBlocks(multiple->GetUngappedAlignedBlocks());
+        if (aBlocks.get() && aBlocks->size() > 0) {
+            masterFrom = aBlocks->front()->GetRangeOfRow(0)->from;
+            masterTo = aBlocks->back()->GetRangeOfRow(0)->to;
+        }
+    }
+    GetVASTAlignments(newSequences, master, &newAlignments, masterFrom, masterTo);
 
     // add new alignment to update list
     if (newAlignments.size() == newSequences.size())
         AddAlignments(newAlignments);
     else {
         ERR_POST(Error << "UpdateViewer::ImportStructure() - no new alignments were created");
+        DELETE_ALL_AND_CLEAR(newAlignments, AlignmentList);
         return;
     }
 

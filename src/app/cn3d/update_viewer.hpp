@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
 * Revision 1.19  2002/09/30 17:13:02  thiessen
 * change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
 *
@@ -161,8 +164,12 @@ private:
     void FetchSequenceViaHTTP(SequenceList *newSequences, StructureSet *sSet) const;
     void ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet) const;
     void FetchSequences(StructureSet *sSet, SequenceList *newSequences) const;
-    void MakeNewAlignments(const SequenceList& newSequences,
+
+    void MakeEmptyAlignments(const SequenceList& newSequences,
         const Sequence *master, AlignmentList *newAlignments) const;
+    void GetVASTAlignments(const SequenceList& newSequences,
+        const Sequence *master, AlignmentList *newAlignments,
+        int masterFrom = -1, int masterTo = -1) const;  // -1 means unrestricted
 
     typedef std::list < ncbi::CRef < ncbi::objects::CBiostruc > > BiostrucList;
     BiostrucList pendingStructures;

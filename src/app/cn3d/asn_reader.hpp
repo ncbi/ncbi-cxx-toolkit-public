@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
 * Revision 1.12  2002/06/12 18:45:41  thiessen
 * more linux/gcc fixes
 *
@@ -172,7 +175,8 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
 template < class ASNClass >
 static bool GetAsnDataViaHTTP(
     const std::string& host, const std::string& path, const std::string& args,
-    ASNClass *asnObject, std::string *err)
+    ASNClass *asnObject, std::string *err,
+    bool binaryData = true, unsigned short port = 80)
 {
     err->erase();
     bool okay = false;
@@ -185,9 +189,13 @@ static bool GetAsnDataViaHTTP(
 
     try {
         // load data from stream using given URL params
-        ncbi::CConn_HttpStream httpStream(host, path, args);
-        ncbi::CObjectIStreamAsnBinary asnStream(httpStream);
-        asnStream >> *asnObject;
+        ncbi::CConn_HttpStream httpStream(host, path, args, kEmptyStr, port);
+        NS_AUTO_PTR<ncbi::CObjectIStream> inObject;
+        if (binaryData)
+            inObject.reset(new ncbi::CObjectIStreamAsnBinary(httpStream));
+        else
+            inObject.reset(new ncbi::CObjectIStreamAsn(httpStream));
+        *inObject >> *asnObject;
         okay = true;
 
     } catch (std::exception& e) {

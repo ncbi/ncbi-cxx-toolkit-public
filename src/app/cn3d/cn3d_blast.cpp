@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
 * Revision 1.23  2002/09/19 14:21:03  thiessen
 * add search space size calculation to match scores with rpsblast (finally!)
 *
@@ -393,7 +396,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                 NULL, NULL, NULL,
                 BLASTmatrix);
         } else {
-            TESTMSG("calling BlastTwoSequencesyLoc()");
+            TESTMSG("calling BlastTwoSequencesByLoc()");
             salp = BlastTwoSequencesByLoc(masterSeqLoc, slaveSeqLoc, "blastp", options);
         }
 

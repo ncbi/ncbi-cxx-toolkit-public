@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
 * Revision 1.17  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -323,10 +326,10 @@ void ViewerBase::NewFont(void)
 
 void ViewerBase::MakeResidueVisible(const Molecule *molecule, int seqIndex)
 {
-    if (!(*viewerWindow) || displayStack.size() == 0) return;
+    if (!(*viewerWindow) || !currentDisplay) return;
 
     int column, row;
-    if (displayStack.back()->GetDisplayCoordinates(molecule, seqIndex,
+    if (currentDisplay->GetDisplayCoordinates(molecule, seqIndex,
             (*viewerWindow)->GetCurrentJustification(), &column, &row))
         (*viewerWindow)->MakeCellVisible(column, row);
 }
