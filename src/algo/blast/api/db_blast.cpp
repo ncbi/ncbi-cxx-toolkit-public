@@ -159,7 +159,7 @@ int CDbBlast::SetupSearch()
         BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
         LookupTableWrapInit(mi_clsQueries, 
             m_OptsHandle->GetOptions().GetLutOpts(), 
-            mi_pLookupSegments, mi_pScoreBlock, &mi_pLookupTable);
+            mi_pLookupSegments, mi_pScoreBlock, &mi_pLookupTable, NULL);
         
         mi_bQuerySetUpDone = true;
         mi_pReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
@@ -314,6 +314,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/03/10 17:37:36  papadopo
+ * add (unused) RPS info pointer to LookupTableWrapInit()
+ *
  * Revision 1.15  2004/02/24 20:31:39  dondosha
  * Typo fix; removed irrelevant CVS log comments
  *

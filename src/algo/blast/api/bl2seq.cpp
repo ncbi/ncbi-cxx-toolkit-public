@@ -216,7 +216,7 @@ CBl2Seq::SetupSearch()
         LookupTableWrapInit(mi_clsQueries, 
                             m_OptsHandle->GetOptions().GetLutOpts(),
                             mi_pLookupSegments, mi_pScoreBlock, 
-                            &mi_pLookupTable);
+                            &mi_pLookupTable, NULL);
         mi_bQuerySetUpDone = true;
     }
 
@@ -314,6 +314,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2004/03/10 17:37:36  papadopo
+ * add (unused) RPS info pointer to LookupTableWrapInit()
+ *
  * Revision 1.43  2004/02/24 18:16:29  dondosha
  * Removed lookup options argument from call to BLAST_MainSetUp
  *
