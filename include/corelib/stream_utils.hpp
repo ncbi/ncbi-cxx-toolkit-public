@@ -37,6 +37,12 @@
 
 #include <corelib/ncbistre.hpp>
 
+#if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
+#  ifdef HAVE_IOS_XALLOC
+#    define HAVE_BUGGY_IOS_CALLBACKS 1
+#  endif
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -125,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2003/04/14 21:09:07  lavr
+ * Define HAVE_BUGGY_IOS_CALLBACKS for Sun Workshop compiler in MT mode
+ *
  * Revision 1.9  2003/03/30 06:59:50  lavr
  * MIPS-specific workaround for lame-designed stream read ops
  *
