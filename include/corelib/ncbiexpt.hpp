@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/06/11 16:20:22  vasilche
+* THROW_TRACE fixed for not very smart compiler like Sunpro
+*
 * Revision 1.11  1999/06/11 02:48:03  vakatov
 * [_DEBUG] Refined the output from THROW*_TRACE macro
 *
@@ -124,57 +127,53 @@ extern void DoThrowTraceAbort(void);
     throw; \
 } while(0)
 
+#define THROW_TRACE_TRY_CATCH \
+    try { \
+        throw exception_; \
+    } catch (exception& e) { \
+        _TRACE("EXCEPTION: " << e.what()); \
+    } catch (const string& s) { \
+        _TRACE("EXCEPTION: " << s); \
+    } catch (const char* s) { \
+        _TRACE("EXCEPTION: " << s); \
+    }
+
 // Example:  THROW0_TRACE("Throw just a string");
 // Example:  THROW0_TRACE(123);
 #  define THROW0_TRACE(exception_class) do { \
-    try { \
-        throw exception_class; \
-    } catch (exception& e) { \
-        _TRACE("EXCEPTION: " << e.what()); \
-        DoThrowTraceAbort(); \
-        throw; \
-    } catch (const string& s) { \
-        _TRACE("EXCEPTION: " << s); \
-        DoThrowTraceAbort(); \
-        throw; \
-    } catch (...) { \
+    exception_class exception_; \
+    THROW_TRACE_TRY_CATCH \
+    catch (...) { \
         _TRACE("EXCEPTION: " << #exception_class); \
-        DoThrowTraceAbort(); \
-        throw; \
     } \
+    DoThrowTraceAbort(); \
+    throw exception_; \
 } while(0)
 
 // Example:  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) do { \
-    try { \
-        throw exception_class(exception_arg); \
-    } catch (exception& e) { \
-        _TRACE("EXCEPTION: " << e.what()); \
-        DoThrowTraceAbort(); \
-        throw; \
-    } catch (...) { \
+    exception_class exception_(exception_arg); \
+    THROW_TRACE_TRY_CATCH \
+    catch (...) { \
         _TRACE("EXCEPTION: " \
                << #exception_class << "(" << #exception_arg << ")"); \
-        DoThrowTraceAbort(); \
-        throw; \
     } \
+    DoThrowTraceAbort(); \
+    throw exception_; \
 } while(0)
 
 // Example:  THROW_TRACE(bad_alloc, ());
 // Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
 // Example:  THROW_TRACE(CParseException, ("Some parse error", 123));
 #  define THROW_TRACE(exception_class, exception_args) do { \
-    try { \
-        throw exception_class exception_args; \
-    } catch (exception& e) { \
-        _TRACE("EXCEPTION: " << e.what()); \
-        DoThrowTraceAbort(); \
-        throw; \
-    } catch (...) { \
-        _TRACE("EXCEPTION: " << #exception_class << #exception_args); \
-        DoThrowTraceAbort(); \
-        throw; \
+    exception_class exception_ exception_args; \
+    THROW_TRACE_TRY_CATCH \
+    catch (...) { \
+        _TRACE("EXCEPTION: " \
+               << #exception_class << #exception_args); \
     } \
+    DoThrowTraceAbort(); \
+    throw exception_; \
 } while(0)
 
 #else  /* _DEBUG */
