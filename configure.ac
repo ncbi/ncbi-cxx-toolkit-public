@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.305 2004/06/14 18:13:56 ucko Exp $
+#  $Id: configure.ac,v 1.306 2004/07/06 16:05:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -111,7 +111,7 @@ AC_ARG_WITH(suffix,
 AC_ARG_WITH(hostspec,
    [ --with-hostspec         add full host specs to the build dir name])
 AC_ARG_WITH(version,
-   [ --with-version          always include the compiler ver in the b.d. name])
+   [ --without-version       don't always include the cplr ver in the bd name])
 AC_ARG_WITH(execopy,
    [ --without-execopy       do not copy built executables to the BIN area])
 AC_ARG_WITH(bincopy,
@@ -1311,12 +1311,18 @@ if test -n "${with_build_root}" ; then
    build_root=${with_build_root}
 fi
 
+### Possibly add the version to the build directory name, but preseve
+### the original default when reconfiguring.
+if test -z "${with_version}" -a -n "${ac_cv_header_stdc}"; then
+   with_version=${ncbi_cv_with_version:-no}
+fi
 if test -z "${build_root}" ; then
    build_root="${srcdir}/${compiler}"
    case "$compiler:$with_version" in
-      *[[0-9]]:*) ;;
-      *:yes) build_root=${build_root}${compiler_version} ;;
+      *[[0-9]]:* | *:no) ;;
+      *) build_root=${build_root}${compiler_version} ;;
    esac
+   ncbi_cv_with_version=${with_version:-yes}
 else
    : ${with_suffix:="no"}
 fi
