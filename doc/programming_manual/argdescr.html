@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title> Using the CArgDescriptions class </title>
 </head>
 <body bgcolor="#FFFFFF">
@@ -20,7 +20,7 @@ Parsing, validating, and accessing command line arguments</h1>
 command-line arguments</a></li>
 
 <li>
-<a href="#ref_Overview_Classes">The relationships between the <i>CArgDescriprions</i>,
+<a href="#ref_Overview_Classes">The relationships between the <i>CArgDescriptions</i>,
 <i>CArgs</i>,
 and <i>CArgValue</i> classes</a></li>
 
@@ -65,7 +65,7 @@ positional arguments (no preceding tags)</li>
 plain (named):&nbsp; <font color="#008080">&lt;value></font></li>
 
 <li>
-extra: <font color="#008080">&lt;value> .....</font></li>
+extra (unnamed): <font color="#008080">.....</font></li>
 </ul>
 </ul>
 
@@ -76,10 +76,6 @@ imposed on the input arguments</a></li>
 <li>
 <a href="#ref_CArgDescriptions_UserValueTypes"><i>CArgAllow</i> class:
 user-defined restrictions on the range of allowed values</a></li>
-
-<li>
-<a href="#ref_CArgDescriptions_Number">Constraining the number of positional
-arguments</a></li>
 </ul>
 
 <li>
@@ -129,13 +125,13 @@ and <i>CArgValue</i> classes</h4>
 The <i><a href="#ref_CArgDescriptions">CArgDescriptions</a></i> class provides
 an interface to describe the data type and attributes of&nbsp; command-line
 arguments, via a set of <i>AddXxx()</i> methods.&nbsp; Additional constraints
-on the number of arguments and their acceptable ranges of values can be
-imposed using the <i>SetConstraint()</i> methods.&nbsp; The <i>CreateArgs()
-</i>method
-is passed the values of all command line arguments at runtime. It verifies
-their overall syntactic structure and matches their values against the
-stored descriptions. If the arguments are parsed successfully,&nbsp; a
-new <i><a href="#ref_CArgs">CArgs</a></i> object is returned by <i>CreateArgs()</i>.
+on the argument values can be imposed using the <i>SetConstraint()</i>
+method.&nbsp; The <i>CreateArgs()
+</i>method is passed the values of all
+command line arguments at runtime. It verifies their overall syntactic
+structure and matches their values against the stored descriptions. If
+the arguments are parsed successfully,&nbsp; a new <i><a href="#ref_CArgs">CArgs</a></i>
+object is returned by <i>CreateArgs()</i>.
 <p>The resulting
 <i><a href="#ref_CArgs">CArgs</a></i> object will contain
 verified and ready-to-use argument values which are stored as <i><a href="#ref_CArgValue">CArgValue</a></i>'s.
@@ -159,40 +155,67 @@ to retrieve a<i> double.</i>
 line, and available argument types</h4>
 This API can describe and work with&nbsp; command line arguments that fit
 the following profile:
-<p>//&nbsp;&nbsp;&nbsp; progname&nbsp; {<font color="#008080">arg_key,
-arg_key_opt, arg_flag</font>}&nbsp; {<font color="#008080">arg_plain</font>}&nbsp;
-{<font color="#008080">arg_extra</font>}
+<p>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">progname</font>
+<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{<font color="#FF0000">arg_key</font><font color="#000000">,</font><font color="#FF0000">&nbsp;
+arg_key_opt</font><font color="#000000">,&nbsp; </font><font color="#FF0000">arg_key_dflt</font><font color="#000000">,</font><font color="#FF0000">&nbsp;
+arg_flag</font>}&nbsp;&nbsp; [<font color="#FF0000">--</font>]
+<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{<font color="#FF0000">arg_pos</font>}&nbsp; {<font color="#FF0000">arg_pos_opt</font><font color="#000000">,</font><font color="#FF0000">&nbsp;
+arg_pos_dflt</font>}
+<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{<font color="#FF0000">arg_extra</font>}&nbsp; {<font color="#FF0000">arg_extra_opt</font>}
 <br>//
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_key</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:=&nbsp; -&lt;key> &lt;value>&nbsp;&nbsp;&nbsp;&nbsp; -- (mandatory)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_key_opt&nbsp;</font>&nbsp;
-:= [-&lt;key> &lt;value>]&nbsp;&nbsp;&nbsp; -- (optional)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_flag&nbsp;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= -&lt;flag>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>// where:
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_key</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+:=&nbsp; -&lt;key> &lt;value>&nbsp;&nbsp;&nbsp; -- (mandatory)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_key_opt</font>&nbsp;&nbsp;&nbsp;&nbsp;
+:= [-&lt;key> &lt;value>]&nbsp;&nbsp; -- (optional, without default value)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_key_dflt</font>&nbsp;&nbsp;&nbsp;&nbsp;
+:= [-&lt;key> &lt;value>]&nbsp;&nbsp; -- (optional, with default value)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_flag</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+:= -&lt;flag>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 -- (always optional)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_plain</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (depends on the
-<a href="#ref_CArgDescriptions_Number">constraint
-policy</a>)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_extra</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (depends on the
-<a href="#ref_CArgDescriptions_Number">constraint
-policy</a>)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">--&nbsp;&nbsp;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+:= optional delimiter to indicate the beginning of pos. args
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_pos</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+:= &lt;value>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+-- (mandatory)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_pos_opt&nbsp;</font>&nbsp;&nbsp;
+:= [&lt;value>]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --
+(optional, without default value)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_pos_dflt</font>&nbsp;&nbsp;&nbsp;
+:= [&lt;value>]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --
+(optional, with default value)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_extra</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+:= &lt;value>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+-- (dep. on the constraint policy)
+<br>//&nbsp;&nbsp;&nbsp; <font color="#FF0000">arg_extra_opt</font>&nbsp;
+:= [&lt;value>]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --
+(dep. on the constraint policy)
 <br>//
+<br>// and:
 <br>//&nbsp;&nbsp;&nbsp; &lt;key> must be followed by &lt;value>
 <br>//&nbsp;&nbsp;&nbsp; &lt;flag> and &lt;key> are case-sensitive, and
-can contain only alphanumeric (or underscore) characters
+they can contain
+<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+only alphanumeric characters
 <br>//&nbsp;&nbsp;&nbsp; &lt;value> is an arbitrary string (additional
-restrictions can be imposed upon the argument value)
+constraints can
+<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+be applied in the argument description, see "EType")
 <br>//
-<br>// {<font color="#008080">arg_plain</font>} and {<font color="#008080">arg_extra</font>}
-are position dependent arguments, with no tag preceding them.
-<br>// {<font color="#008080">arg_plain</font>} have individual names and
-descriptions.
-<br>// {<font color="#008080">arg_extra</font>} have only one description
-for all of them.
+<br>// {<font color="#FF0000">arg_pos***</font>} and {<font color="#FF0000">arg_extra***</font>}
+-- position-dependent arguments, with
+<br>// no tag preceeding them.
+<br>// {<font color="#FF0000">arg_pos***</font>} -- have individual names
+and descriptions (see methods
+<br>// AddPositional***).
+<br>// {<font color="#FF0000">arg_extra***</font>} have one description
+for all (see method AddExtra).
 <br>// User can apply <a href="#ref_CArgDescriptions_Number">constraints</a>
-on the <i>number</i> of position arguments.
+on the number of mandatory and optional
+<br>// {<font color="#FF0000">arg_extra***</font>} arguments.
 <p><font color="#000099">Examples:</font>
 <br><font color="#000099">&nbsp;&nbsp;&nbsp; MyProgram1 -reverse -depth
 5 -name Lisa -log foo.log 1.c 2.c 3.c</font>
@@ -219,14 +242,16 @@ all tagged variables on the command line, name is also the key (or flag)
 to be used there, as in: "<i>-name value</i>" (or "<i>-name"</i>).</dd>
 
 <dt>
-<i><font color="#0000B4">synopsis</font></i></dt>
+<i><font color="#0000B4">synopsis&nbsp;&nbsp;&nbsp; </font></i><font color="#000000">(for
+</font><font color="#FF0000">key_***</font><font color="#0000B4"> </font><font color="#000000">arguments
+only)</font></dt>
 
 <dd>
 The automatically generated <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i>
-messages include a description for each argument, with the format:</dd>
+messages include a description, with the format:</dd>
 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>-name
-[synopsis] type [mandatory | optional]</i>
+[synopsis]&nbsp; &lt;type, constraint></i>
 <dt>
 <i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 comment</i></dt>
@@ -246,7 +271,10 @@ One of the scalar values defined in the <i><a href="#ref_EType">EType</a></i>&nb
 enumeration, defining the type category of the argument.</dd>
 
 <dt>
-<i><font color="#0000B4">default</font></i></dt>
+<i><font color="#0000B4">default&nbsp;&nbsp;&nbsp;&nbsp; </font></i><font color="#000000">(for
+</font><font color="#FF0000">key_dflt</font><font color="#0000B4"> </font><font color="#000000">and
+</font><font color="#FF0000">pos_dflt</font><font color="#000000"> arguments
+only)</font></dt>
 
 <dl>
 <dt>
@@ -266,15 +294,12 @@ the file should be opened.</dd>
 
 <dd>
 </dd>
-
-<dd>
-</dd>
 </dl>
 
 <h4>
 <a NAME="ref_CArgDescriptions_Types"></a>Argument <i>types</i></h4>
 The <i>CArgDescriptions</i> class allows you to define command-line arguments
-that fit one of the following 5 pattern types:
+that fit one of the following pattern types:
 <dl>
 <dt>
 <font color="#000080">Mandatory named arguments:&nbsp; <i>-&lt;key> &lt;value>
@@ -296,12 +321,18 @@ synopsis, comment, value_type, flags)</a></i></dd>
 -name Lisa)</font></i></dt>
 
 <dd>
-Position-independent arguments that are <b>optional</b>. A default value
-can be specified in the argument's description to cover those cases where
-the argument does not occur in the command line.</dd>
+Position-independent arguments that are <b>optional</b>.</dd>
 
 <dd>
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddOptionalKey(key,
+synopsis, comment, value_type, flags)</a></i></dd>
+
+<dd>
+A default value can be specified in the argument's description to cover
+those cases where the argument does not occur in the command line.</dd>
+
+<dd>
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddDefaultKey(key,
 synopsis, comment, value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
@@ -315,12 +346,12 @@ are <i>always</i> optional.</dd>
 
 <dd>
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddFlag">AddFlag(flag,
-comment)</a></i></dd>
+comment, set_value)</a></i></dd>
 
 <br>&nbsp;
 <dt>
-<font color="#000080">Named positional arguments:&nbsp; <i>&lt;value> |
-[&lt;value>]
+<font color="#000080">Mandatory named positional arguments:&nbsp; <i>&lt;value>
+
 </i></font><i><font color="#FF0000">(example:&nbsp; 12 Feb)</font></i></dt>
 
 <dd>
@@ -328,33 +359,56 @@ These are position-<i>dependent</i> arguments (of any type), which are
 input using a <i>value</i> only. They do however, have names stored with
 their descriptions, which they are associated with in an order-dependent
 fashion. Specifically, the order in which untagged argument descriptions
-are added to the <i>CArgDescriptions</i> object (using <i>AddPlain()</i>)
+are added to the <i>CArgDescriptions</i> object using <i>AddPositional()</i>
 defines the order in which these arguments should appear on the command
-line. Using a <i><a href="#ref_CArgDescriptions_Number">constraint policy</a></i>,
-it is possible to specify how many of these arguments <b>must</b> be present
-in the command line.</dd>
+line.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddPlain(key,
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddPositional(key,
+comment, value_type, flags)</a></i></dd>
+
+<br>&nbsp;
+<dt>
+<font color="#000080">Optional named positional arguments:&nbsp; <i>[value]
+</i></font><i><font color="#FF0000">(example:&nbsp; foo.txt&nbsp; bar)</font></i></dt>
+
+<dd>
+Position-<i>dependent</i> arguments that are <b>optional</b>. They always
+go after the <b>mandatory</b> positional arguments. The order in which
+untagged argument descriptions are added to the <i>CArgDescriptions</i>
+object using <i>Add[Optional|Default]Positional()</i> defines the order
+in which these arguments should appear on the command line.</dd>
+
+<dd>
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddOptionalPositional(key,
+comment, value_type, flags)</a></i></dd>
+
+<dd>
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddDefaultPositional(key,
 comment, value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
 <font color="#000080">Unnamed positional arguments (all of the same type:
 <i>&lt;value1>
-| [valueN]</i>&nbsp; </font><i><font color="#FF0000">(example:&nbsp; foo.c
-bar.c xxx.c)</font></i></dt>
+| [valueN]</i>) </font><i><font color="#FF0000">(example:&nbsp; foo.c bar.c
+xxx.c)</font></i></dt>
 
 <dd>
 These are also position-<i>dependent</i> arguments that are input using
-a <i>value</i> only. Again, the same <i><a href="#ref_CArgDescriptions_Number">constraint
-policy</a></i> determines how many of these arguments are required. Unlike
-the previous argument type however, these arguments do not have individual
-named descriptions, but share a single "unnamed" description.</dd>
+a <i>value</i> only. They are expected to appear at the very end of command
+line, after all named arguments. Unlike the previous argument type however,
+these arguments do not have individual named descriptions, but share a
+single "unnamed" description. You can specify how many mandatory and how
+many optional</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddExtra">AddExtra(comment,
-type, flags)</a></i></dd>
+arguments to expect using <font color="#3333FF">n_mandatory</font> and
+<font color="#3333FF">n_optional</font> parameters:</dd>
+
+<dd>
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddExtra">AddExtra(n_mandatory,
+n_optional, comment, type, flags)</a></i></dd>
 </dl>
 Any of the registered descriptions can be tested for existance and/or deleted
 using:
@@ -363,8 +417,7 @@ const;</font>
 <br><font color="#008080"><b>&nbsp;&nbsp; </b>void Delete(const string&amp;
 name);</font>
 <p>These methods can also be applied to the unnamed postional arguments
-(as a <i>group</i>),&nbsp; using: <i>Exist(NcbiEmptyString) </i>and<i>
-Delete(NcbiEmptyString).</i>
+(as a <i>group</i>),&nbsp; using: <i>Exist(kEmptyStr) </i>and<i> Delete(kEmptyStr).</i>
 <h4>
 <a NAME="ref_CArgDescriptions_StdValueTypes"></a>Standard types: type restrictions
 imposed on the input argument <i>values</i></h4>
@@ -379,8 +432,6 @@ is defined as:
 {</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eString
 = 0,&nbsp;&nbsp;&nbsp; // an arbitrary string</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eAlnum,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-// [a-zA-Z0-9_]</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eBoolean,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 // {'true', 't', 'false', 'f'},&nbsp; case-insensitive</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInteger,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -431,91 +482,14 @@ notation can also be used by engaging the comma operator, as in:
 <blockquote><font color="#008080">args.SetConstraint("someString",</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &amp;(*new CArgAllow_Strings, "this", "that", "etc"));</font></blockquote>
-If the value provided on the command line is not in the allowed set of
-values specified for that argument, then an exception will be thrown.&nbsp;
+Other two pre-defined constraint classes are <i><a href="../docxx/CArgAllow_Symbols.html">CArgAllow_Symbols</a></i>
+and <i><a href="../docxx/CArgAllow_String.html">CArgAllow_String</a></i>.
+<p>If the value provided on the command line is not in the allowed set
+of values specified for that argument, then an exception will be thrown.&nbsp;
 This exception can be caught and handled in the usual manner, as&nbsp;
 described in the discussion of <a href="#ref_CArgDescriptions_Usage">Generating
 a <i>USAGE </i>message.</a>
-<h4>
-<a NAME="ref_CArgDescriptions_Number"></a>Constraining the number of positional
-arguments</h4>
-Positional argument values on the command line have no preceding tag, and
-are associated with their argument descriptions according to the order
-in which they occur, and the order in which these descriptions were registered.
-Thus, if your program contained the following lines:
-<p><font color="#008080">&nbsp;&nbsp; descriptions.AddPlain("n", "between
-1 and 10", eInteger);</font>
-<br><font color="#008080">&nbsp;&nbsp; descriptions.AddPlain("f", "between
-0 and 1", eDouble);</font>
-<p>then calling the program as: <i>myprog 1 0</i>, would bind the positional
-parameters as <i>n = 1</i> and <i>f = 0.0</i>.
-<p>By default, the total expected number of positional arguments is equal
-to the number of <i>named</i> positional descriptions that were registered
-using <i>AddPlain()</i>. It is possible to modify this default behavior
-however, by using the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetConstraint">SetConstraint()</a></i>
-method. This method uses its two arguments, an <i>EConstraint policy</i>,
-and an <i>unsigned int</i> value (<i>N</i>), to constrain the <i>total</i>
-number of (named <i>and</i> unnamed) positional arguments, <i>M</i>, as
-follows:
 <br>&nbsp;
-<center><table BORDER=2 NOSAVE >
-<tr NOSAVE>
-<th NOSAVE>
-<center>policy</center>
-</th>
-
-<th>constraint</th>
-</tr>
-
-<tr>
-<td><i>eAny&nbsp;</i></td>
-
-<td>none&nbsp;</td>
-</tr>
-
-<tr>
-<td><i>eLessOrEqual&nbsp;</i></td>
-
-<td><i>M &lt;= N</i></td>
-</tr>
-
-<tr>
-<td><i>eEqual&nbsp;</i></td>
-
-<td><i>M == N</i></td>
-</tr>
-
-<tr>
-<td><i>eMoreOrEqual&nbsp;</i></td>
-
-<td><i>M => N</i></td>
-</tr>
-</table></center>
-
-<p>A single shared description is registered for all additional
-<i>unnamed</i>
-positional arguments,&nbsp; via the <i>AddExtra()</i> method. By default,
-<i>unnamed</i>
-positional arguments are always optional, unless a constraint policy has
-been explicitly set which requires them. We consider next how the number
-of named and unnamed positional arguments must together satisfy the constraints.
-<p>The <i>unnamed</i> positional arguments must always follow the named
-positional arguments. The first <i>N</i> positional arguments will be associated
-with the first <i>N</i> named descriptions that were registered using <i>AddPlain()</i>.
-If this method was invoked<i> K</i> times, where <i>N &lt; K</i>, then
-an exception will be thrown if there are only <i>N</i> arguments.&nbsp;
-A second type of error might occur yet go undetected, when <i>unnamed</i>
-positional arguments can appear. In this case, it is possible to erroneously
-satisfy the required number of <i>named</i> positional arguments by incorrectly
-associating the trailing <i>unnamed</i> positional arguments with the remaining
-named descriptions.
-<p>More generally, the default behavior is equivalent to what would result
-from having called <i>SetConstraint(eEqual, n)</i>, where <i>n</i> is the
-number of <i>named </i>positional arguments only. Thus, to allow <i>unnamed</i>
-positional arguments on the command line as well, the <i>SetConstraint()</i>
-method should be invoked with
-<i>eMoreOrEqual</i> and/or a larger value
-of <i>N</i>.
 <h4>
 <a NAME="ref_CArgDescriptions_Usage"></a>Generating a <i>USAGE</i> message</h4>
 There are many points where an exception may arise, due to either an argument
@@ -561,8 +535,7 @@ returns that <i>string</i>, so that it can be used with an output operator.
 The output generated when an exception occurs might look something like:
 <pre><font color="#000080">ERROR: Must specify mandatory argument:&nbsp; "-i &lt;MyInputFile>"</font></pre>
 
-<pre>
-<font color="#000080">SYNOPSIS
+<pre><font color="#000080">SYNOPSIS
 &nbsp;&nbsp; myApplic -text -i MyInputFile [-l MyLogFile]&nbsp;
 
 DESCRIPTION&nbsp;&nbsp;&nbsp;
@@ -582,10 +555,11 @@ description was registered as:
 <pre><font color="#008080">argDesc.AddKey("i", "MyInputFile", "Input data file", CArgDescriptions::eInputFile);</font></pre>
 The information generated for each argument is displayed in the format:
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>-name
-[synopsis]&nbsp;&nbsp;&nbsp; / type;&nbsp; {mandatory | default=`.....'}
-/</i>
+[synopsis]&nbsp;&nbsp;&nbsp; &lt;type [, constraint]&nbsp; ></i>
 <br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 comment</i>
+<br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[default = .....]</i>
 <p><a NAME="ref_CArgs"></a>
 <h3>
 The <i><a href="../docxx/CArgs.html">CArgs</a></i> class: A container class
@@ -595,13 +569,11 @@ can be stored, and includes access routines in its public interface:
 <pre><font color="#008080">class CArgs
 {
 public:
-
 &nbsp;&nbsp;&nbsp; bool Exist(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // true if name has a description
-&nbsp;&nbsp;&nbsp; bool IsProvided(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // true if argument was also present
 
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](string&amp; name);&nbsp; // retrieve value by argument name
 
-&nbsp;&nbsp;&nbsp; unsigned GetNExtra(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // number of extra arguments
+&nbsp;&nbsp;&nbsp; unsigned GetNExtra(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // number of passed unnamed(extra) arguments
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](unsigned idx);&nbsp; // retrieve value by unnamed arg's index
 
 &nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // print all agruments to "str"
@@ -616,7 +588,7 @@ arguments can be accessed&nbsp; using the [ ] operator, as in: <i>myCArgs["f"]</
 where "f" is the name registered for that argument. There are two ways
 to access the <i><b>N</b>th</i> <i>unnamed</i> positional argument: <i>myCArgs["#<b>N</b>"]
 </i>and
-<i>myCArgs[<b>N</b>],&nbsp;
+<i>myCArgs[<b>N</b>],
 </i>where<i> 1 &lt;= <b>N</b> &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
@@ -630,13 +602,28 @@ to provide type-validated loading through a set of <i>AsXxx()</i> methods:
 <pre><font color="#008080">class CArgValue : public CObject
 {
 public:
-&nbsp;&nbsp;&nbsp; // These functions throw an exception on the wrong value type
-&nbsp;&nbsp;&nbsp; string&amp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsString&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; long&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsInteger&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsDouble&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; bool&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsBoolean&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; CNcbiIstream&amp;&nbsp; AsInputFile&nbsp; (EFlags) const;
-&nbsp;&nbsp;&nbsp; CNcbiOstream&amp;&nbsp; AsOutputFile (EFlags) const;
+&nbsp;&nbsp;&nbsp; // Check if the argument holds a value.
+&nbsp;&nbsp;&nbsp; // Argument does not hold value if it was described as optional argument
+&nbsp;&nbsp;&nbsp; // without default value, and if it was not passed a value in the command
+&nbsp;&nbsp;&nbsp; // line.&nbsp; On attempt to retrieve the value from such "no-value" argument,
+&nbsp;&nbsp;&nbsp; // exception will be thrown.
+&nbsp;&nbsp;&nbsp; virtual bool HasValue(void) const = 0;
+&nbsp;&nbsp;&nbsp; operator bool (void) const { return&nbsp; HasValue(); }
+&nbsp;&nbsp;&nbsp; bool operator!(void) const { return !HasValue(); }
+
+&nbsp;&nbsp;&nbsp; // Get the argument's string value.
+&nbsp;&nbsp;&nbsp; // (If it is a value of flag argument, then return one of "true", "false".)
+&nbsp;&nbsp;&nbsp; virtual const string&amp; AsString(void) const = 0;
+
+&nbsp;&nbsp;&nbsp; // These functions throw an exception if you requested the wrong
+&nbsp;&nbsp;&nbsp; // value type (e.g. if called "AsInteger()" for a "boolean" arg).
+&nbsp;&nbsp;&nbsp; virtual long&nbsp;&nbsp; AsInteger(void) const = 0;
+&nbsp;&nbsp;&nbsp; virtual double AsDouble (void) const = 0;
+&nbsp;&nbsp;&nbsp; virtual bool&nbsp;&nbsp; AsBoolean(void) const = 0;
+
+&nbsp;&nbsp;&nbsp; virtual CNcbiIstream&amp; AsInputFile (void) const = 0;
+&nbsp;&nbsp;&nbsp; virtual CNcbiOstream&amp; AsOutputFile(void) const = 0;
+&nbsp;&nbsp;&nbsp; virtual void&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CloseFile&nbsp;&nbsp; (void) const = 0; // safe close&amp;destroy
 };</font></pre>
 Each of these <i>AsXxx()</i> methods will access the string storing the
 requested variable's value, and attempt to convert that string to the specified
@@ -644,20 +631,18 @@ type, using for example, functions such as <i>atoi() </i>or<i> atof()</i>.&nbsp;
 Thus, the following construct can be used to obtain the value of a floating
 point argument named "f":
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float f = args["f"].AsDouble();</pre>
-The last two methods assume the string is a filename, and attempt to open
-a file of that name, using <i>EFlags</i> to determine the mode it is to
-be opened with. The <i>EFlags</i> enumeration is defined in the <i>CArgValue</i>
-class as:
-<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp; enum EFlags {</font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-fUnchanged = 0x1, // do not change open mode</font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-fToText&nbsp;&nbsp;&nbsp; = 0x2, // change file open mode to text</font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-fToBinary&nbsp; = 0x4&nbsp; // change file open mode to binary</font></tt>
-<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp; };</font></tt>
-<p>If the conversion fails, an exception will be thrown with an appropriate
-error message.
+An exception will be thrown with an appropriate error message, if:
+<ul>
+<li>
+the conversion fails, or</li>
+
+<li>
+"f" was described as an optional key or positional argument without default
+value (i.e. using <i>AddOptional***()</i> method), and it was not defined
+in the command line. NOTE: you can check for this case using <i>CArgValue::HasValue()</i>
+method.</li>
+</ul>
+
 <h1>
 <a NAME="ref_CodeExamples"></a></h1>
 
@@ -666,9 +651,10 @@ Code examples</h3>
 A simple application program, <i><a href="applic_cpp.html">applic.cpp</a></i>
 demonstrates the usage of these classes for argument processing. See also
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>
-(especially <i>main()</i> and <i>s_Test0() </i>there), and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+(especially <i>main(),</i> <i>s_InitTest0() </i>and<i> s_RunTest0() </i>there),
+and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
-<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;
+<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;
 <i><a href="registry.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >

@@ -30,6 +30,14 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2000/12/24 00:13:00  vakatov
+ * Radically revamped NCBIARGS.
+ * Introduced optional key and posit. args without default value.
+ * Added new arg.value constraint classes.
+ * Passed flags to be detected by HasValue() rather than AsBoolean.
+ * Simplified constraints on the number of mandatory and optional extra args.
+ * Improved USAGE info and diagnostic messages. Etc...
+ *
  * Revision 6.15  2000/11/29 00:09:19  vakatov
  * Added test #10 -- to auto-sort flag and key args alphabetically
  *
@@ -98,59 +106,72 @@ USING_NCBI_SCOPE;
 static void s_InitTest0(CArgDescriptions& arg_desc)
 {
     // Describe the expected command-line arguments
-    arg_desc.AddKey
-        ("k", "MandatoryKey",
-         "This is a mandatory alpha-num key argument",
-         CArgDescriptions::eAlnum);
-
-    arg_desc.AddOptionalKey
-        ("ko", "OptionalKey",
-         "This is an optional integer key argument",
-         CArgDescriptions::eInteger, "123");
-    arg_desc.SetConstraint
-        ("ko", new CArgAllow_Integers(0, 200));
-
-    arg_desc.AddOptionalKey
-        ("ko2", "OptionalKey2",
-         "This is another optional key argument",
-         CArgDescriptions::eBoolean, "T");
-
-    arg_desc.AddFlag
-        ("f1",
-         "This is a flag argument:  TRUE if set, FALSE if not set");
+    arg_desc.AddOptionalPositional
+        ("logfile",
+         "This is an optional named positional argument without default value",
+         CArgDescriptions::eOutputFile,
+         CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
 
     arg_desc.AddFlag
         ("f2",
          "This is another flag argument:  FALSE if set, TRUE if not set",
          false);
 
-    arg_desc.AddPlain
+    arg_desc.AddPositional
         ("barfooetc",
          "This is a mandatory plain (named positional) argument",
          CArgDescriptions::eString);
     arg_desc.SetConstraint
         ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
 
-    arg_desc.AddPlain
-        ("logfile",
-         "This is an optional plain (named positional) argument",
-         CArgDescriptions::eOutputFile, "-",
-         CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
+    arg_desc.AddDefaultKey
+        ("kd", "DefaultKey",
+         "This is an optional integer key argument, with default value",
+         CArgDescriptions::eInteger, "123");
+    arg_desc.SetConstraint
+        ("kd", new CArgAllow_Integers(0, 200));
+
 
     arg_desc.AddExtra
-        ("These are the optional extra (unnamed positional) arguments. "
+        (0,  // no mandatory extra args
+         3,  // up to 3 optional extra args
+         "These are the optional extra (unnamed positional) arguments. "
          "They will be printed out to the file specified by the "
          "2nd positional argument,\n\"logfile\"",
          CArgDescriptions::eBoolean);
 
+    arg_desc.AddKey
+        ("k", "MandatoryKey",
+         "This is a mandatory alpha-num key argument",
+         CArgDescriptions::eString);
+    arg_desc.SetConstraint
+        ("k", new CArgAllow_String(CArgAllow_Symbols::eAlnum));
 
-    // Put constraint on the # of positional arguments (named and unnamed)
-    arg_desc.SetConstraint(CArgDescriptions::eMoreOrEqual, 1);
+    arg_desc.AddOptionalKey
+        ("ko", "OptionalKey",
+         "This is another optional key argument, without default value",
+         CArgDescriptions::eBoolean);
+
+    arg_desc.AddFlag
+        ("f1",
+         "This is a flag argument:  TRUE if set, FALSE if not set");
+
+    arg_desc.AddDefaultPositional
+        ("one_symbol",
+         "This is an optional named positional argument with default value",
+         CArgDescriptions::eString, "a");
+    arg_desc.SetConstraint
+        ("one_symbol", new CArgAllow_Symbols(" aB\tCd"));
 }
 
 static void s_RunTest0(const CArgs& args, ostream& os)
 {
-    if ( !args.IsProvided("logfile") )
+    _ASSERT(!args.Exist(kEmptyStr));  // never exists;  use #1, #2, ... instead
+    _ASSERT(args.Exist("f1"));
+    _ASSERT(args.Exist("logfile"));
+    _ASSERT(args["barfooetc"]);
+
+    if ( !args["logfile"] )
         return;
 
     // Printout argument values
@@ -160,10 +181,29 @@ static void s_RunTest0(const CArgs& args, ostream& os)
     ostream& lg = args["logfile"].AsOutputFile();
 
     lg << "k:         " << args["k"].AsString() << endl;
-    lg << "ko:        " << args["ko"].AsInteger() << endl;
-    lg << "ko2:       " << NStr::BoolToString(args["ko2"].AsBoolean()) << endl;
     lg << "barfooetc: " << args["barfooetc"].AsString() << endl;
     lg << "logfile:   " << args["logfile"].AsString() << endl;
+
+    if ( args["ko"] ) {
+        lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
+           << endl;
+    } else {
+        lg << "ko:        not provided" << endl;
+        bool is_thrown = false;
+        try {
+            (void) args["ko"].AsString();
+        } catch (CArgException&) {
+            is_thrown = true;
+        }
+        _ASSERT(is_thrown);
+    }
+
+    if ( args["f1"] ) {
+        _ASSERT(args["f1"].AsBoolean());
+    }
+    if ( args["f2"] ) {
+        _ASSERT(args["f2"].AsBoolean());
+    }
 
     // Extra (unnamed positional) arguments
     if ( args.GetNExtra() ) {
@@ -174,7 +214,8 @@ static void s_RunTest0(const CArgs& args, ostream& os)
                << endl;
         }
     } else {
-        lg << "...no unnamed positional arguments in the cmd-line" << endl;
+        lg << "(no unnamed positional arguments passed in the cmd-line)"
+           << endl;
     }
 
     // Separator
@@ -189,7 +230,7 @@ static void s_InitTest9(CArgDescriptions& arg_desc)
     arg_desc.AddKey("a",
                     "alphaNumericKey",
                     "This is a test alpha-num argument",
-                    CArgDescriptions::eAlnum);
+                    CArgDescriptions::eString);
 
     arg_desc.AddKey("i",
                     "integerKey",
@@ -211,21 +252,14 @@ static void s_RunTest9(const CArgs& args, ostream& os)
 // Argument with default walue
 static void s_InitTest8(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOptionalKey("k",
-                            "alphaNumericKey",
-                            "This is an optional argument",
-                            CArgDescriptions::eAlnum,
-                            "CORELIB");
+    arg_desc.AddDefaultKey
+        ("k", "alphaNumericKey",
+         "This is an optional argument with default value",
+         CArgDescriptions::eString, "CORELIB");
 }
 
 static void s_RunTest8(const CArgs& args, ostream& os)
 {
-
-    if ( args.IsProvided("k") )
-        os << "argument value was provided" << endl;
-    else
-        os << "default argument value used" << endl;
-
     os << "k=" << args["k"].AsString()  << endl;
 }
 
@@ -234,31 +268,41 @@ static void s_RunTest8(const CArgs& args, ostream& os)
 // Position arguments - advanced
 static void s_InitTest7(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPlain("p1",
-                      "This is a plain argument",  CArgDescriptions::eAlnum);
-    arg_desc.AddPlain("p2",
-                      "This is a plain argument",  CArgDescriptions::eAlnum);
-    arg_desc.AddExtra("This is an extra argument", CArgDescriptions::eInteger);
-
-    arg_desc.SetConstraint(CArgDescriptions::eMoreOrEqual, 4);
+    arg_desc.AddPositional
+        ("p2",
+         "This is a plain argument",  CArgDescriptions::eString);
+    arg_desc.AddExtra
+        (1, 3,
+         "These are extra arguments", CArgDescriptions::eInteger);
+    arg_desc.AddPositional
+        ("p1",
+         "This is a plain argument",  CArgDescriptions::eBoolean);
 }
 
 static void s_RunTest7(const CArgs& args, ostream& os)
 {
     os << "p1=" << args["p1"].AsString()  << endl;
     os << "p2=" << args["p2"].AsString()  << endl;
+
     os << "#1=" << args["#1"].AsInteger() << endl;
-    os << "#2=" << args["#2"].AsInteger() << endl;
+    if ( args["#2"] ) {
+        os << "#2=" << args["#2"].AsInteger() << endl;
+    }
+    if ( args["#3"] ) {
+        os << "#3=" << args["#3"].AsInteger() << endl;
+    }
 }
 
 
 // Position arguments
 static void s_InitTest6(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPlain("p1",
-                      "This is a plain argument", CArgDescriptions::eAlnum);
-    arg_desc.AddPlain("p2",
-                      "This is a plain argument", CArgDescriptions::eAlnum);
+    arg_desc.AddDefaultPositional
+        ("p1", "This is a positional argument with default value",
+         CArgDescriptions::eDouble, "1.23");
+    arg_desc.AddPositional
+        ("p2", "This is a mandatory positional argument",
+         CArgDescriptions::eBoolean);
 }
 
 static void s_RunTest6(const CArgs& args, ostream& os)
@@ -326,11 +370,11 @@ static void s_InitTest3(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("k1",
                             "fistOptionalKey",
                             "This is an optional argument",
-                            CArgDescriptions::eAlnum);
+                            CArgDescriptions::eString);
     arg_desc.AddOptionalKey("k2",
                             "secondOptionalKey",
                             "This is an optional argument",
-                            CArgDescriptions::eAlnum);
+                            CArgDescriptions::eString);
 
     arg_desc.AddFlag("f1", "Flag 1");
     arg_desc.AddFlag("f2", "Flag 2");
@@ -338,15 +382,10 @@ static void s_InitTest3(CArgDescriptions& arg_desc)
 
 static void s_RunTest3(const CArgs& args, ostream& os)
 {
-    if (args.IsProvided("k1"))
+    if (args["k1"])
         os << "k1=" << args["k1"].AsString() << endl;
-    if (args.IsProvided("k2"))
+    if (args["k2"])
         os << "k2=" << args["k2"].AsString() << endl;
-
-    if (args.IsProvided("f1"))
-        os << "f1 was provided" << endl;
-    if (args.IsProvided("f2"))
-        os << "f2 was provided" << endl;
 }
 
 
@@ -356,7 +395,7 @@ static void s_InitTest2(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("ka",
                     "alphaNumericKey", "This is a test alpha-num key argument",
-                    CArgDescriptions::eAlnum);
+                    CArgDescriptions::eString);
 
     arg_desc.AddKey("kb",
                     "booleanKey", "This is a test boolean key argument",
@@ -384,7 +423,8 @@ static void s_RunTest2(const CArgs& args, ostream& os)
 static void s_InitTest1(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("k",
-                    "key", "This is a key argument", CArgDescriptions::eAlnum);
+                    "key", "This is a key argument",
+                    CArgDescriptions::eString);
 }
 
 static void s_RunTest1(const CArgs& args, ostream& os)
@@ -440,7 +480,7 @@ private:
 void CArgTestApplication::Init(void)
 {
     // Set err.-posting and tracing on maximum
-    // SetDiagTrace(eDT_Enable);
+    SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
 

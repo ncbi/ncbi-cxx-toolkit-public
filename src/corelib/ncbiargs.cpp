@@ -28,22 +28,19 @@
  * File Description:
  *   Command-line arguments' processing:
  *      descriptions  -- CArgDescriptions,  CArgDesc
- *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
  *      parsed values -- CArgs,             CArgValue
  *      exceptions    -- CArgException, ARG_THROW()
+ *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.28  2000/12/15 15:36:40  vasilche
- * Added header corelib/ncbistr.hpp for all string utility functions.
- * Optimized string utility functions.
- * Added assignment operator to CRef<> and CConstRef<>.
- * Add Upcase() and Locase() methods for automatic conversion.
- *
- * Revision 1.27  2000/12/12 14:20:36  vasilche
- * Added operator bool to CArgValue.
- * Various NStr::Compare() methods made faster.
- * Added class Upcase for printing strings to ostream with automatic conversion.
+ * Revision 1.29  2000/12/24 00:13:00  vakatov
+ * Radically revamped NCBIARGS.
+ * Introduced optional key and posit. args without default value.
+ * Added new arg.value constraint classes.
+ * Passed flags to be detected by HasValue() rather than AsBoolean.
+ * Simplified constraints on the number of mandatory and optional extra args.
+ * Improved USAGE info and diagnostic messages. Etc...
  *
  * Revision 1.26  2000/11/29 00:18:13  vakatov
  * s_ProcessArgument() -- avoid nested quotes in the exception message
@@ -142,9 +139,31 @@
 BEGIN_NCBI_SCOPE
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//  Include the private header
+//
+
+#define NCBIARGS__CPP
+#include "ncbiargs_p.hpp"
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//  Constants
+//
+
+static const string s_AutoHelp("h");
+static const string s_ExtraName("....");
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //  CArgException::
+//
 
 CArgException::CArgException(const string& what)
     THROWS_NONE
@@ -154,33 +173,51 @@ CArgException::CArgException(const string& what)
 }
 
 
-CArgException::CArgException(const string& what, const string& arg_value)
+CArgException::CArgException(const string& what, const string& attr)
     THROWS_NONE
-: runtime_error(what + ":  `" + arg_value + "'")
+: runtime_error(what + ":  `" + attr + "'")
 {
     return;
 }
 
 
-// ARG_THROW("What", "Value")
-#define ARG_THROW(what, value)  THROW_TRACE(CArgException, (what, value))
-#define ARG_THROW1(what)        THROW1_TRACE(CArgException, what)
+CArgException::CArgException
+(const string& name, const string& what, const string& attr)
+    THROWS_NONE
+: runtime_error("Argument \"" + (name.empty() ? s_ExtraName : name) + "\". " +
+                what + ":  `" + attr + "'")
+{
+    return;
+}
 
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-//  Internal classes:
-//    CArg_***::
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//  CArg_***::   classes representing various types of argument value
+//
+//    CArgValue
+//
+//       CArg_NoValue     : CArgValue
+//
+//       CArg_String      : CArgValue
+//          CArg_Integer     : CArg_String
+//          CArg_Double      : CArg_String
+//          CArg_Boolean     : CArg_String
+//          CArg_InputFile   : CArg_String
+//          CArg_OutputFile  : CArg_String
+//    
 
 
 ///////////////////////////////////////////////////////
 //  CArgValue::
 
-CArgValue::CArgValue(const string& value, bool is_default)
+CArgValue::CArgValue(const string& name)
+    : m_Name(name)
 {
-    m_String         = value;
-    m_IsDefaultValue = is_default;
+    if ( !CArgDescriptions::VerifyName(m_Name, true) ) {
+        ARG_THROW2("CArgValue::  Invalid argument name", m_Name);
+    }
 }
 
 
@@ -189,130 +226,98 @@ CArgValue::~CArgValue(void)
     return;
 }
 
-bool CArgValue::HasValue(void) const
+
+
+///////////////////////////////////////////////////////
+//  Overload the comparison operator -- to handle "CRef<CArgValue>" elements
+//  in "CArgs::m_Args" stored as "set< CRef<CArgValue> >"
+//
+
+inline bool operator< (const CRef<CArgValue>& x, const CRef<CArgValue>& y)
 {
-    return !IsDefaultValue(); //true;
+    return x->GetName() < y->GetName();
 }
-
-long CArgValue::AsInteger(void) const
-{
-    ARG_THROW("Attempt to cast to a wrong (Integer) type", AsString());
-}
-
-
-double CArgValue::AsDouble(void) const
-{
-    ARG_THROW("Attempt to cast to a wrong (Double) type", AsString());
-}
-
-
-bool CArgValue::AsBoolean(void) const
-{
-    ARG_THROW("Attempt to cast to a wrong (Boolean) type", AsString());
-}
-
-
-CNcbiIstream& CArgValue::AsInputFile(void) const
-{
-    ARG_THROW("Attempt to cast to a wrong (InputFile) type", AsString());
-}
-
-
-CNcbiOstream& CArgValue::AsOutputFile(void) const
-{
-    ARG_THROW("Attempt to cast to a wrong (OutputFile) type", AsString());
-}
-
-
-void CArgValue::CloseFile(void) const
-{
-    ARG_THROW("Attempt to close arg. of a non-file type", AsString());
-}
-
 
 
 
 ///////////////////////////////////////////////////////
-//  CArg_None::
+//  CArg_NoValue::
 
-class CArg_None : public CArgValue
-{
-public:
-    CArg_None(void);
-
-    bool HasValue(void) const;
-};
-
-inline
-CArg_None::CArg_None(void)
-    : CArgValue(kEmptyStr, true)
-{
-}
-
-bool CArg_None::HasValue(void) const
-{
-    return false;
-}
-
-
-///////////////////////////////////////////////////////
-//  CArg_String::
-
-class CArg_String : public CArgValue
-{
-public:
-    CArg_String(const string& value, bool is_default);
-};
-
-inline CArg_String::CArg_String(const string& value, bool is_default)
-    : CArgValue(value, is_default)
+inline CArg_NoValue::CArg_NoValue(const string& name)
+    : CArgValue(name)
 {
     return;
 }
 
 
-///////////////////////////////////////////////////////
-//  CArg_Alnum::
-
-class CArg_Alnum : public CArgValue
+bool CArg_NoValue::HasValue(void) const
 {
-public:
-    CArg_Alnum(const string& value, bool is_default);
-};
-
-
-inline CArg_Alnum::CArg_Alnum(const string& value, bool is_default)
-    : CArgValue(value, is_default)
-{
-    for (string::const_iterator it = value.begin();  it != value.end(); ++it) {
-        if ( !isalnum(*it) ) {
-            ARG_THROW("CArg_Alnum::  not an alphanumeric string", value);
-        }
-    }
+    return false;
 }
+
+
+#define THROW_CArg_NoValue \
+   ARG_THROW("Attempt to use unassigned optional argument", "NULL")
+
+const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
+long          CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
+double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
+bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
+CNcbiIstream& CArg_NoValue::AsInputFile (void) const { THROW_CArg_NoValue; }
+CNcbiOstream& CArg_NoValue::AsOutputFile(void) const { THROW_CArg_NoValue; }
+void          CArg_NoValue::CloseFile   (void) const { THROW_CArg_NoValue; }
+
+
+
+///////////////////////////////////////////////////////
+//  CArg_String::
+
+inline CArg_String::CArg_String(const string& name, const string& value)
+    : CArgValue(name),
+      m_String(value)
+{
+    return;
+}
+
+
+bool CArg_String::HasValue(void) const
+{
+    return true;
+}
+
+
+const string& CArg_String::AsString(void) const
+{
+    return m_String;
+}
+
+
+long CArg_String::AsInteger(void) const
+{ ARG_THROW("Attempt to cast to a wrong (Integer) type", AsString()); }
+double CArg_String::AsDouble(void) const
+{ ARG_THROW("Attempt to cast to a wrong (Double) type", AsString()); }
+bool CArg_String::AsBoolean(void) const
+{ ARG_THROW("Attempt to cast to a wrong (Boolean) type", AsString()); }
+CNcbiIstream& CArg_String::AsInputFile(void) const
+{ ARG_THROW("Attempt to cast to a wrong (InputFile) type", AsString()); }
+CNcbiOstream& CArg_String::AsOutputFile(void) const
+{ ARG_THROW("Attempt to cast to a wrong (OutputFile) type", AsString()); }
+void CArg_String::CloseFile(void) const
+{ ARG_THROW("Attempt to close an argument of non-file type", AsString()); }
+
 
 
 ///////////////////////////////////////////////////////
 //  CArg_Integer::
 
-class CArg_Integer : public CArgValue
-{
-public:
-    CArg_Integer(const string& value, bool is_default);
-    virtual long AsInteger(void) const;
-private:
-    long m_Integer;
-};
-
-
-inline CArg_Integer::CArg_Integer(const string& value, bool is_default)
-    : CArgValue(value, is_default)
+inline CArg_Integer::CArg_Integer(const string& name, const string& value)
+    : CArg_String(name, value)
 {
     try {
         m_Integer = NStr::StringToLong(value);
     } catch (exception& e) {
         _TRACE(e.what());
-        ARG_THROW("CArg_Integer::  not an integer value", value);
+        ARG_THROW("Integer value expected", value);
     }
 }
 
@@ -323,27 +328,18 @@ long CArg_Integer::AsInteger(void) const
 }
 
 
+
 ///////////////////////////////////////////////////////
 //  CArg_Double::
 
-class CArg_Double : public CArgValue
-{
-public:
-    CArg_Double(const string& value, bool is_default);
-    virtual double AsDouble(void) const;
-private:
-    double m_Double;
-};
-
-
-inline CArg_Double::CArg_Double(const string& value, bool is_default)
-    : CArgValue(value, is_default)
+inline CArg_Double::CArg_Double(const string& name, const string& value)
+    : CArg_String(name, value)
 {
     try {
         m_Double = NStr::StringToDouble(value);
     } catch (exception& e) {
         _TRACE(e.what());
-        ARG_THROW("CArg_Double::  not a floating point value", value);
+        ARG_THROW("Floating point value expected", value);
     }
 }
 
@@ -358,32 +354,21 @@ double CArg_Double::AsDouble(void) const
 ///////////////////////////////////////////////////////
 //  CArg_Boolean::
 
-class CArg_Boolean : public CArgValue
-{
-public:
-    CArg_Boolean(bool value, bool is_default);
-    CArg_Boolean(const string& value, bool is_default);
-    virtual bool AsBoolean(void) const;
-private:
-    bool m_Boolean;
-};
-
-
-inline CArg_Boolean::CArg_Boolean(bool value, bool is_default)
-    : CArgValue( NStr::BoolToString(value), is_default )
+inline CArg_Boolean::CArg_Boolean(const string& name, bool value)
+    : CArg_String(name, NStr::BoolToString(value))
 {
     m_Boolean = value;
 }
 
 
-inline CArg_Boolean::CArg_Boolean(const string& value, bool is_default)
-    : CArgValue(value, is_default)
+inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
+    : CArg_String(name, value)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
     } catch (exception& e) {
         _TRACE(e.what());
-        ARG_THROW("CArg_Boolean::  not a boolean value", value);
+        ARG_THROW("Boolean value expected", value);
     }
 }
 
@@ -398,26 +383,7 @@ bool CArg_Boolean::AsBoolean(void) const
 ///////////////////////////////////////////////////////
 //  CArg_InputFile::
 
-class CArg_InputFile : public CArgValue
-{
-public:
-    CArg_InputFile(const string&       value,
-                   IOS_BASE::openmode  openmode,
-                   bool                delay_open, bool is_default);
-    virtual ~CArg_InputFile(void);
-
-    virtual CNcbiIstream& AsInputFile(void) const;
-    virtual void CloseFile(void) const;
-
-private:
-    void Open(void) const;
-    mutable IOS_BASE::openmode  m_OpenMode;
-    mutable CNcbiIstream*       m_InputFile;
-    mutable bool                m_DeleteFlag;
-};
-
-
-void CArg_InputFile::Open(void) const
+void CArg_InputFile::x_Open(void) const
 {
     if ( m_InputFile )
         return;
@@ -442,21 +408,20 @@ void CArg_InputFile::Open(void) const
 }
 
 
-CArg_InputFile::CArg_InputFile(const string&      value,
+CArg_InputFile::CArg_InputFile(const string& name, const string& value,
                                IOS_BASE::openmode openmode,
-                               bool               delay_open,
-                               bool               is_default)
-: CArgValue(value, is_default),
+                               bool               delay_open)
+: CArg_String(name, value),
   m_OpenMode(openmode),
   m_InputFile(0),
   m_DeleteFlag(true)
 {
     if ( !delay_open )
-        Open();
+        x_Open();
 }
 
 
-CArg_InputFile::~CArg_InputFile()
+CArg_InputFile::~CArg_InputFile(void)
 {
     if (m_InputFile  &&  m_DeleteFlag)
         delete m_InputFile;
@@ -465,7 +430,7 @@ CArg_InputFile::~CArg_InputFile()
 
 CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 {
-    Open();
+    x_Open();
     return *m_InputFile;
 }
 
@@ -473,7 +438,10 @@ CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 void CArg_InputFile::CloseFile(void) const
 {
     if ( !m_InputFile ) {
-        ERR_POST(Warning << "CArg_InputFile::CloseFile() -- file not opened");
+        ERR_POST(Warning <<
+                 CArgException(GetName(),
+                               "CArg_InputFile::CloseFile -- file not opened",
+                               AsString()).what());
         return;
     }
 
@@ -488,27 +456,7 @@ void CArg_InputFile::CloseFile(void) const
 ///////////////////////////////////////////////////////
 //  CArg_OutputFile::
 
-class CArg_OutputFile : public CArgValue
-{
-public:
-    CArg_OutputFile(const string&      value,
-                    IOS_BASE::openmode openmode,
-                    bool               delay_open,
-                    bool               is_default);
-    virtual ~CArg_OutputFile(void);
-
-    virtual CNcbiOstream& AsOutputFile(void) const;
-    virtual void CloseFile(void) const;
-
-private:
-    void Open(void) const;
-    mutable IOS_BASE::openmode  m_OpenMode;
-    mutable CNcbiOstream*       m_OutputFile;
-    mutable bool                m_DeleteFlag;
-};
-
-
-void CArg_OutputFile::Open(void) const
+void CArg_OutputFile::x_Open(void) const
 {
     if ( m_OutputFile )
         return;
@@ -533,21 +481,20 @@ void CArg_OutputFile::Open(void) const
 }
 
 
-CArg_OutputFile::CArg_OutputFile(const string&      value,
+CArg_OutputFile::CArg_OutputFile(const string& name, const string& value,
                                  IOS_BASE::openmode openmode,
-                                 bool               delay_open,
-                                 bool               is_default)
-    : CArgValue(value, is_default),
+                                 bool               delay_open)
+    : CArg_String(name, value),
       m_OpenMode(openmode),
       m_OutputFile(0),
       m_DeleteFlag(true)
 {
     if ( !delay_open )
-        Open();
+        x_Open();
 }
 
 
-CArg_OutputFile::~CArg_OutputFile()
+CArg_OutputFile::~CArg_OutputFile(void)
 {
     if (m_OutputFile  &&  m_DeleteFlag)
         delete m_OutputFile;
@@ -556,7 +503,7 @@ CArg_OutputFile::~CArg_OutputFile()
 
 CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 {
-    Open();
+    x_Open();
     return *m_OutputFile;
 }
 
@@ -564,7 +511,10 @@ CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 void CArg_OutputFile::CloseFile(void) const
 {
     if ( !m_OutputFile ) {
-        ERR_POST(Warning << "CArg_InputFile::CloseFile() -- file not opened");
+        ERR_POST(Warning <<
+                 CArgException(GetName(),
+                               "CArg_OutputFile::CloseFile -- file not opened",
+                               AsString()).what());
         return;
     }
 
@@ -576,9 +526,32 @@ void CArg_OutputFile::CloseFile(void) const
 
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//  CArgDesc***::   abstract base classes for argument descriptions
 //
+//    CArgDesc
+//
+//    CArgDescMandatory  : CArgDesc
+//    CArgDescOptional   : virtual CArgDescMandatory
+//    CArgDescDefault    : virtual CArgDescOptional
+//
+//    CArgDescSynopsis
+//
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc::
+
+CArgDesc::CArgDesc(const string& name, const string& comment)
+    : m_Name(name), m_Comment(comment)
+{
+    if ( !CArgDescriptions::VerifyName(m_Name) ) {
+        ARG_THROW2("Invalid argument name", m_Name);
+    }
+}
+
 
 CArgDesc::~CArgDesc(void)
 {
@@ -586,153 +559,58 @@ CArgDesc::~CArgDesc(void)
 }
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-//  Internal classes:
-//    CArgDesc_Flag::
-//    CArgDesc_Plain::
-//    CArgDesc_Key::
-//    CArgDesc_OptionalKey::
-
-
-//
-//  arg_flag
-//
-
-class CArgDesc_Flag : public CArgDesc
-{
-public:
-    // 'ctors
-    CArgDesc_Flag(const string& comment, bool set_value=true);
-    virtual ~CArgDesc_Flag(void);
-
-    virtual string GetUsageSynopsis   (const string& name,
-                                       bool optional=false) const;
-    virtual string GetUsageCommentAttr(bool optional=false) const;
-    virtual string GetUsageCommentBody(void) const;
-    virtual string GetUsageConstraint(void) const;
-    virtual CArgValue* ProcessArgument(const string& value,
-                                       bool          is_default = false) const;
-    virtual void SetConstraint(CArgAllow* constraint);
-
-    const string& GetComment(void) const { return m_Comment; }
-
-private:
-    string m_Comment;   // help (what this arg. is about)
-    bool   m_SetValue;  // value to set if the arg is provided  
-};
-
-
-inline CArgDesc_Flag::CArgDesc_Flag(const string& comment, bool set_value)
-    : m_Comment(comment), m_SetValue(set_value)
+void CArgDesc::VerifyDefault(void) const
 {
     return;
 }
 
 
-CArgDesc_Flag::~CArgDesc_Flag(void)
+void CArgDesc::SetConstraint(CArgAllow* constraint)
 {
-    return;
-}
-
-
-string CArgDesc_Flag::GetUsageSynopsis(const string& name, bool /*optional*/)
-    const
-{
-    return "-" + name;
-}
-
-
-string CArgDesc_Flag::GetUsageCommentAttr(bool /*optional*/) const
-{
-    return kEmptyStr;
-}
-
-
-string CArgDesc_Flag::GetUsageCommentBody(void) const
-{
-    return m_Comment;
-}
-
-
-string CArgDesc_Flag::GetUsageConstraint(void) const
-{
-    return kEmptyStr;
-}
-
-
-CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/,
-                                          bool          is_default) const
-{
-    return new CArg_Boolean((is_default ? !m_SetValue : m_SetValue),
-                            is_default);
-}
-
-
-void CArgDesc_Flag::SetConstraint(CArgAllow* constraint)
-{
-    ARG_THROW("Attempt to add constraint to a flag argument",
+    ARG_THROW("Attempt to set constraint for a no-value argument",
               constraint ? constraint->GetUsage() : kEmptyStr);
 }
 
 
-
-//
-//   arg_plain := <value>
-//
-
-class CArgDesc_Plain : public CArgDesc_Flag
+const CArgAllow* CArgDesc::GetConstraint(void) const
 {
-public:
-    // 'ctors
-    CArgDesc_Plain(const string&            comment,
-                   CArgDescriptions::EType  type,
-                   CArgDescriptions::TFlags flags,
-                   const string&            default_value = kEmptyStr,
-                   bool                     is_extra      = false);
-    virtual ~CArgDesc_Plain(void);
-
-    virtual string GetUsageSynopsis   (const string& name,
-                                       bool optional = false) const;
-    virtual string GetUsageCommentAttr(bool optional = false) const;
-    virtual string GetUsageConstraint(void) const;
-    virtual CArgValue* ProcessArgument(const string& value,
-                                       bool          is_default = false) const;
-    virtual void SetConstraint(CArgAllow* constraint);
-
-    CArgDescriptions::EType  GetType   (void) const { return m_Type; }
-    CArgDescriptions::TFlags GetFlags  (void) const { return m_Flags; }
-    const string&            GetDefault(void) const { return m_DefaultValue; }
-
-private:
-    CArgDescriptions::EType  m_Type;
-    CArgDescriptions::TFlags m_Flags;
-    string                   m_DefaultValue;
-    CRef<CArgAllow>          m_Constraint;
-    bool                     m_IsExtra;
-};
+    return 0;
+}
 
 
-CArgDesc_Plain::CArgDesc_Plain
-(const string&            comment,
- CArgDescriptions::EType  type,
- CArgDescriptions::TFlags flags,
- const string&            default_value,
- bool                     is_extra)
-    : CArgDesc_Flag(comment),
-      m_Type(type),
-      m_Flags(flags),
-      m_DefaultValue(default_value),
-      m_IsExtra(is_extra)
+string CArgDesc::GetUsageConstraint(void) const
+{
+    const CArgAllow* constraint = GetConstraint();
+    return constraint ? constraint->GetUsage() : kEmptyStr;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  Overload the comparison operator -- to handle "AutoPtr<CArgDesc>" elements
+//  in "CArgs::m_Args" stored as "set< AutoPtr<CArgDesc> >"
+//
+
+inline bool operator< (const AutoPtr<CArgDesc>& x, const AutoPtr<CArgDesc>& y)
+{
+    return x->GetName() < y->GetName();
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDescMandatory::
+
+CArgDescMandatory::CArgDescMandatory(const string&            name,
+                                     const string&            comment,
+                                     CArgDescriptions::EType  type,
+                                     CArgDescriptions::TFlags flags)
+    : CArgDesc(name, comment),
+      m_Type(type), m_Flags(flags)
 {
     // verify if "flags" "type" are matching
     switch ( type ) {
     case CArgDescriptions::eBoolean:
-        if ( m_DefaultValue.empty() ) {
-            static const string s_False("false");
-            m_DefaultValue = s_False;
-        }
-        return;
     case CArgDescriptions::eOutputFile:
         return;
     case CArgDescriptions::eInputFile:
@@ -750,80 +628,55 @@ CArgDesc_Plain::CArgDesc_Plain
     ARG_THROW("Argument type/flags mismatch",
               "(type=" + CArgDescriptions::GetTypeName(type) +
               ", flags=" + NStr::UIntToString(flags) + ")");
+
 }
 
 
-CArgDesc_Plain::~CArgDesc_Plain(void)
+CArgDescMandatory::~CArgDescMandatory(void)
 {
     return;
 }
 
 
-string CArgDesc_Plain::GetUsageSynopsis(const string& name, bool optional)
-    const
+string CArgDescMandatory::GetUsageCommentAttr(void) const
 {
-    string tmp = name;
-    if( tmp.empty() )
-        tmp = "...";
-
-    if ( optional ) {
-        return "[" + tmp + "]";
-    } else {
-        return "<" + tmp + ">";
-    }
-}
-
-
-string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const
-{
+    // Print type name
     string str = CArgDescriptions::GetTypeName(GetType());
-    if ( m_IsExtra ) {
-        return str;
-    }
-    if ( optional ) {
-        str += ";  default=`" + GetDefault() + "'";
-    } else {
-        str += ";  mandatory";
+
+    // Print constraint info, if any
+    string constr = GetUsageConstraint();
+    if ( !constr.empty() ) {
+        str += ", ";
+        str += constr;
     }
     return str;
 }
 
 
-string CArgDesc_Plain::GetUsageConstraint(void) const
+CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
 {
-    if ( !m_Constraint ) {
-        return kEmptyStr;
-    }
-    return m_Constraint->GetUsage();
-}
-
-
-CArgValue* CArgDesc_Plain::ProcessArgument(const string& value,
-                                           bool          is_default) const
-{
-    // Check against additional (user-defined) constraints, if any imposed
-    if (m_Constraint.NotEmpty()  &&  !m_Constraint->Verify(value)) {
-        ARG_THROW("Illegal value, must be " + m_Constraint->GetUsage(), value);
-    }
-
     // Process according to the argument type
+    CRef<CArgValue> arg_value;
     switch ( GetType() ) {
     case CArgDescriptions::eString:
-        return new CArg_String(value, is_default);
-    case CArgDescriptions::eAlnum:
-        return new CArg_Alnum(value, is_default);
+        arg_value = new CArg_String(GetName(), value);
+        break;
     case CArgDescriptions::eBoolean:
-        return new CArg_Boolean(value, is_default);
+        arg_value = new CArg_Boolean(GetName(), value);
+        break;
     case CArgDescriptions::eInteger:
-        return new CArg_Integer(value, is_default);
+        arg_value = new CArg_Integer(GetName(), value);
+        break;
     case CArgDescriptions::eDouble:
-        return new CArg_Double(value, is_default);
+        arg_value = new CArg_Double(GetName(), value);
+        break;
     case CArgDescriptions::eInputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
         IOS_BASE::openmode openmode = (IOS_BASE::openmode) 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
-        return new CArg_InputFile(value, openmode, delay_open, is_default);
+        arg_value = new CArg_InputFile(GetName(), value, openmode, delay_open);
+        break;
     }
     case CArgDescriptions::eOutputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
@@ -832,119 +685,296 @@ CArgValue* CArgDesc_Plain::ProcessArgument(const string& value,
             openmode |= IOS_BASE::binary;
         if (GetFlags() & CArgDescriptions::fAppend)
             openmode |= IOS_BASE::app;
-        return new CArg_OutputFile(value, openmode, delay_open, is_default);
+        arg_value = new CArg_OutputFile(GetName(), value, openmode,delay_open);
+        break;
     }
     case CArgDescriptions::k_EType_Size: {
-        break;
+        _TROUBLE;
+        ARG_THROW("Unknown argument type", NStr::IntToString((int) GetType()));
     }
     } /* switch GetType() */
 
-    // Something is very wrong...
-    _TROUBLE;
-    ARG_THROW("Unknown argument type #", NStr::IntToString((int) GetType()));
+
+    // Check against additional (user-defined) constraints, if any imposed
+    if ( m_Constraint ) {
+        bool err = false;
+        try {
+            if ( !m_Constraint->Verify(value) )
+                err = true;
+        } catch (...) {
+            err = true;
+        }
+        if ( err ) {
+            ARG_THROW("Illegal value, expected " + m_Constraint->GetUsage(),
+                      value);
+        }
+    }
+
+    return arg_value.Release();
 }
 
 
-void CArgDesc_Plain::SetConstraint(CArgAllow* constraint)
+CArgValue* CArgDescMandatory::ProcessDefault(void) const
+{
+    ARG_THROW("Required argument missing", GetUsageCommentAttr());
+}
+
+
+void CArgDescMandatory::SetConstraint(CArgAllow* constraint)
 {
     m_Constraint = constraint;
 }
 
 
-
-//
-//  arg_key := [-<key> <value>]
-//
-
-class CArgDesc_OptionalKey : public CArgDesc_Plain
+const CArgAllow* CArgDescMandatory::GetConstraint(void) const
 {
-public:
-    // 'ctors
-    CArgDesc_OptionalKey(const string&            synopsis,
-                         const string&            comment,
-                         CArgDescriptions::EType  type,
-                         CArgDescriptions::TFlags flags,
-                         const string&            default_value);
-    virtual ~CArgDesc_OptionalKey(void);
-
-    virtual string GetUsageSynopsis   (const string& name,
-                                       bool optional=false) const;
-    virtual string GetUsageCommentAttr(bool optional=false) const;
-
-    const string& GetSynopsis(void) const { return m_Synopsis; }
-private:
-    string m_Synopsis;  // one-word synopsis
-};
-
-
-CArgDesc_OptionalKey::CArgDesc_OptionalKey
-(const string&            synopsis,
- const string&            comment,
- CArgDescriptions::EType  type,
- CArgDescriptions::TFlags flags,
- const string&            default_value)
-    : CArgDesc_Plain(comment, type, flags, default_value),
-      m_Synopsis(synopsis)
-{
-    // verify synopsis
-    for (string::const_iterator it = m_Synopsis.begin();
-         it != m_Synopsis.end();  ++it) {
-        if (*it != '_'  &&  !isalnum(*it)) {
-            ARG_THROW("Argument synopsis must be alpha-num", m_Synopsis);
-        }
-    }
+    return m_Constraint;
 }
 
 
-CArgDesc_OptionalKey::~CArgDesc_OptionalKey(void)
+
+
+///////////////////////////////////////////////////////
+//  CArgDescOptional::
+
+
+CArgDescOptional::CArgDescOptional(const string& name, const string& comment,
+                                   CArgDescriptions::EType  type,
+                                   CArgDescriptions::TFlags flags)
+    : CArgDescMandatory(name, comment, type, flags)
 {
     return;
 }
 
 
-string CArgDesc_OptionalKey::GetUsageSynopsis(const string& name,
-                                              bool /*optional*/) const
+CArgDescOptional::~CArgDescOptional(void)
 {
-    return "[-" + name + " " + GetSynopsis() + "]";
+    return;
 }
 
 
-string CArgDesc_OptionalKey::GetUsageCommentAttr(bool /*optional*/) const
+CArgValue* CArgDescOptional::ProcessDefault(void) const
 {
-    return CArgDesc_Plain::GetUsageCommentAttr(true);
+    return new CArg_NoValue(GetName());
 }
 
 
 
-//
-//  arg_key := -<key> <value>
-//
 
-class CArgDesc_Key : public CArgDesc_OptionalKey
+///////////////////////////////////////////////////////
+//  CArgDescDefault::
+
+
+CArgDescDefault::CArgDescDefault(const string& name, const string& comment,
+                                 CArgDescriptions::EType  type,
+                                 CArgDescriptions::TFlags flags,
+                                 const string&            default_value)
+    : CArgDescMandatory(name, comment, type, flags),
+      CArgDescOptional(name, comment, type, flags),
+      m_DefaultValue(default_value)
 {
-public:
-    // 'ctors
-    CArgDesc_Key(const string&            synopsis,
-                 const string&            comment,
-                 CArgDescriptions::EType  type,
-                 CArgDescriptions::TFlags flags);
-    virtual ~CArgDesc_Key(void);
-
-    virtual string GetUsageSynopsis   (const string& name,
-                                       bool optional=false) const;
-    virtual string GetUsageCommentAttr(bool optional=false) const;
-private:
-    // prohibit GetDefault!
-    const string& GetDefault(void) const { _TROUBLE;  return kEmptyStr; }
-};
+    return;
+}
 
 
-inline CArgDesc_Key::CArgDesc_Key
-(const string&            synopsis,
- const string&            comment,
- CArgDescriptions::EType  type,
- CArgDescriptions::TFlags flags)
-    : CArgDesc_OptionalKey(synopsis, comment, type, flags, kEmptyStr)
+CArgDescDefault::~CArgDescDefault(void)
+{
+    return;
+}
+
+
+CArgValue* CArgDescDefault::ProcessDefault(void) const
+{
+    return ProcessArgument(GetDefaultValue());
+}
+
+
+void CArgDescDefault::VerifyDefault(void) const
+{
+    if (GetType() == CArgDescriptions::eInputFile  ||
+        GetType() == CArgDescriptions::eOutputFile) {
+        return;
+    }
+
+    // Process, then immediately delete
+    CRef<CArgValue> arg_value(ProcessArgument(GetDefaultValue()));
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDescSynopsis::
+
+
+CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
+    : m_Synopsis(synopsis)
+{
+    for (string::const_iterator it = m_Synopsis.begin();
+         it != m_Synopsis.end();  ++it) {
+        if (*it != '_'  &&  !isalnum(*it)) {
+            ARG_THROW2("Argument synopsis must be alphanumeric", m_Synopsis);
+        }
+    }
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//  CArgDesc_***::   classes for argument descriptions
+//    CArgDesc_Flag    : CArgDesc
+//
+//    CArgDesc_Key     : virtual CArgDescMandatory
+//    CArgDesc_KeyOpt  : CArgDesc_Key, virtual CArgDescOptional
+//    CArgDesc_KeyDef  : CArgDesc_Key, CArgDescDefault
+//
+//    CArgDesc_Pos     : virtual CArgDescMandatory
+//    CArgDesc_PosOpt  : CArgDesc_Pos, virtual CArgDescOptional
+//    CArgDesc_PosDef  : CArgDesc_Pos, CArgDescDefault
+//
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc_Flag::
+
+
+CArgDesc_Flag::CArgDesc_Flag(const string& name, const string& comment,
+                             bool set_value)
+    : CArgDesc(name, comment),
+      m_SetValue(set_value)
+{
+    return;
+}
+
+
+CArgDesc_Flag::~CArgDesc_Flag(void)
+{
+    return;
+}
+
+
+string CArgDesc_Flag::GetUsageSynopsis(bool /*name_only*/) const
+{
+    return "-" + GetName();
+}
+
+
+string CArgDesc_Flag::GetUsageCommentAttr(void) const
+{
+    return kEmptyStr;
+}
+
+
+CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/) const
+{
+    if ( m_SetValue ) {
+        return new CArg_Boolean(GetName(), true);
+    } else {
+        return new CArg_NoValue(GetName());
+    }
+}
+
+
+CArgValue* CArgDesc_Flag::ProcessDefault(void) const
+{
+    if ( m_SetValue ) {
+        return new CArg_NoValue(GetName());
+    } else {
+        return new CArg_Boolean(GetName(), true);
+    }
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc_Pos::
+
+
+CArgDesc_Pos::CArgDesc_Pos(const string&            name,
+                           const string&            comment,
+                           CArgDescriptions::EType  type,
+                           CArgDescriptions::TFlags flags)
+    : CArgDescMandatory(name, comment, type, flags)
+{
+    return;
+}
+
+
+CArgDesc_Pos::~CArgDesc_Pos(void)
+{
+    return;
+}
+
+
+string CArgDesc_Pos::GetUsageSynopsis(bool /*name_only*/) const
+{
+    return GetName().empty() ? s_ExtraName : GetName();
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc_PosOpt::
+
+
+CArgDesc_PosOpt::CArgDesc_PosOpt(const string&            name,
+                                 const string&            comment,
+                                 CArgDescriptions::EType  type,
+                                 CArgDescriptions::TFlags flags)
+    : CArgDescMandatory (name, comment, type, flags),
+      CArgDescOptional  (name, comment, type, flags),
+      CArgDesc_Pos      (name, comment, type, flags)
+{
+    return;
+}
+
+
+CArgDesc_PosOpt::~CArgDesc_PosOpt(void)
+{
+    return;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc_PosDef::
+
+
+CArgDesc_PosDef::CArgDesc_PosDef(const string&            name,
+                                 const string&            comment,
+                                 CArgDescriptions::EType  type,
+                                 CArgDescriptions::TFlags flags,
+                                 const string&            default_value)
+    : CArgDescMandatory (name, comment, type, flags),
+      CArgDescOptional  (name, comment, type, flags),
+      CArgDescDefault   (name, comment, type, flags, default_value),
+      CArgDesc_PosOpt   (name, comment, type, flags)
+{
+    return;
+}
+
+
+CArgDesc_PosDef::~CArgDesc_PosDef(void)
+{
+    return;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc_Key::
+
+
+CArgDesc_Key::CArgDesc_Key(const string&            name,
+                           const string&            comment,
+                           CArgDescriptions::EType  type,
+                           CArgDescriptions::TFlags flags,
+                           const string&            synopsis)
+    : CArgDescMandatory(name, comment, type, flags),
+      CArgDesc_Pos     (name, comment, type, flags),
+      CArgDescSynopsis(synopsis)
 {
     return;
 }
@@ -956,23 +986,126 @@ CArgDesc_Key::~CArgDesc_Key(void)
 }
 
 
-string CArgDesc_Key::GetUsageSynopsis(const string& name, bool /*optional*/)
-    const
+inline string s_KeyUsageSynopsis(const string& name, const string& synopsis,
+                                 bool name_only)
 {
-    return "-" + name + " " + GetSynopsis();
+    if ( name_only ) {
+        return '-' + name;
+    } else {
+        return '-' + name + ' ' + synopsis;
+    }
 }
 
 
-string CArgDesc_Key::GetUsageCommentAttr(bool /*optional*/) const
+string CArgDesc_Key::GetUsageSynopsis(bool name_only) const
 {
-    return CArgDesc_Plain::GetUsageCommentAttr(false);
+    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only);
 }
 
 
 
 ///////////////////////////////////////////////////////
+//  CArgDesc_KeyOpt::
+
+
+CArgDesc_KeyOpt::CArgDesc_KeyOpt(const string&            name,
+                                 const string&            comment,
+                                 CArgDescriptions::EType  type,
+                                 CArgDescriptions::TFlags flags,
+                                 const string&            synopsis)
+    : CArgDescMandatory(name, comment, type, flags),
+      CArgDescOptional (name, comment, type, flags),
+      CArgDesc_PosOpt  (name, comment, type, flags),
+      CArgDescSynopsis(synopsis)
+{
+    return;
+}
+
+
+CArgDesc_KeyOpt::~CArgDesc_KeyOpt(void)
+{
+    return;
+}
+
+
+string CArgDesc_KeyOpt::GetUsageSynopsis(bool name_only) const
+{
+    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only);
+}
+
+
+
 ///////////////////////////////////////////////////////
+//  CArgDesc_KeyDef::
+
+
+CArgDesc_KeyDef::CArgDesc_KeyDef(const string&            name,
+                                 const string&            comment,
+                                 CArgDescriptions::EType  type,
+                                 CArgDescriptions::TFlags flags,
+                                 const string&            synopsis,
+                                 const string&            default_value)
+    : CArgDescMandatory(name, comment, type, flags),
+      CArgDescOptional (name, comment, type, flags),
+      CArgDesc_PosDef  (name, comment, type, flags, default_value),
+      CArgDescSynopsis(synopsis)
+{
+    return;
+}
+
+
+CArgDesc_KeyDef::~CArgDesc_KeyDef(void)
+{
+    return;
+}
+
+
+string CArgDesc_KeyDef::GetUsageSynopsis(bool name_only) const
+{
+    return s_KeyUsageSynopsis(GetName(), GetSynopsis(), name_only);
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//  Aux.functions to figure out various arg. features
+//
+//    s_IsPositional(arg)
+//    s_IsOptional(arg)
+//    s_IsFlag(arg)
+//
+
+inline bool s_IsKey(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDescSynopsis*> (&arg) != 0);
+}
+
+
+inline bool s_IsPositional(const CArgDesc& arg)
+{
+    return dynamic_cast<const CArgDesc_Pos*> (&arg) &&  !s_IsKey(arg);
+}
+
+
+inline bool s_IsOptional(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDescOptional*> (&arg) != 0);
+}
+
+
+inline bool s_IsFlag(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDesc_Flag*> (&arg) != 0);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //  CArgs::
+//
 
 
 CArgs::CArgs(void)
@@ -989,47 +1122,25 @@ CArgs::~CArgs(void)
 
 static string s_ComposeNameExtra(size_t idx)
 {
-    static const string s_PoundSign = "#";
-    return s_PoundSign + NStr::UIntToString(idx);
+    return '#' + NStr::UIntToString(idx);
 }
 
 
-void CArgs::Add(const string& name, CArgValue* arg)
+CArgs::TArgsCI CArgs::x_Find(const string& name) const
 {
-    // special case:  add an extra arg (generate virtual name for it)
-    if ( name.empty() ) {
-        Add(s_ComposeNameExtra(++m_nExtra), arg);
-        return;
-    }
-
-    // check-up
-    if ( !CArgDescriptions::VerifyName(name) ) {
-        ARG_THROW("CArgs::  invalid argument name", name);
-    }
-    if ( Exist(name) ) {
-        ARG_THROW("CArgs::  argument with this name already defined", name);
-    }
-
-    // add
-    m_Args[name].Reset(arg);
+    return m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
 }
 
 
 bool CArgs::Exist(const string& name) const
 {
-    return (m_Args.find(name) != m_Args.end());
+    return (x_Find(name) != m_Args.end());
 }
 
 
-bool CArgs::IsProvided(const string& name) const
+const CArgValue& CArgs::operator[] (const string& name) const
 {
-  return Exist(name)  &&  !(*this)[name].IsDefaultValue();
-}
-
-
-const CArgValue& CArgs::operator [](const string& name) const
-{
-    TArgs::const_iterator arg = m_Args.find(name);
+    TArgsCI arg = x_Find(name);
     if (arg == m_Args.end()) {
         // Special diagnostics for "extra" args
         if (!name.empty()  &&  name[0] == '#') {
@@ -1040,30 +1151,30 @@ const CArgValue& CArgs::operator [](const string& name) const
                 idx = kMax_UInt;
             }
             if (idx == kMax_UInt) {
-                ARG_THROW("CArgs::  argument of invalid name requested", name);
+                ARG_THROW2("CArgs:: argument of invalid name requested", name);
             }
             if (m_nExtra == 0) {
-                ARG_THROW("CArgs::  no \"extra\" (unnamed positional) args "
-                          "provided, cannot get", s_ComposeNameExtra(idx));
+                ARG_THROW2("CArgs::  no \"extra\" (unnamed positional) args "
+                           "provided, cannot get", s_ComposeNameExtra(idx));
             }
             if (idx == 0  ||  idx >= m_nExtra) {
-                ARG_THROW("CArgs::  \"extra\" (unnamed positional) arg is "
-                          "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
-                          + ")", s_ComposeNameExtra(idx));
+                ARG_THROW2("CArgs::  \"extra\" (unnamed positional) arg is "
+                           "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
+                           + ")", s_ComposeNameExtra(idx));
             }
         }
         // Diagnostics for all other argument classes
-        ARG_THROW("CArgs::  undefined argument requested", name);
+        ARG_THROW2("CArgs::  undescribed argument requested", name);
     }
 
-    // Found the arg with name "name"
-    return *arg->second;
+    // Found arg with name "name"
+    return **arg;
 }
 
 
-const CArgValue& CArgs::operator [](size_t idx) const
+const CArgValue& CArgs::operator[] (size_t idx) const
 {
-    return (*this)[ s_ComposeNameExtra(idx) ];
+    return (*this)[s_ComposeNameExtra(idx)];
 }
 
 
@@ -1071,24 +1182,47 @@ string& CArgs::Print(string& str) const
 {
     for (TArgsCI arg = m_Args.begin();  arg != m_Args.end();  ++arg) {
         // Arg. name
-        const string& arg_name = arg->first;
-
-        // Indicate whether the argument value was provided
-        // in the command-line or was obtained from the arg.description
-        if ( (*this)[arg_name].IsDefaultValue() ) {
-            str += "[default]  ";
-        } else {
-            str += "[cmdline]  ";
-        }
-
-        // Arg. name and value
+        const string& arg_name = (*arg)->GetName();
         str += arg_name;
-        str += " = `";
-        str += arg->second->AsString();
-        str += "'\n";
+
+        // Arg. value, if any
+        const CArgValue& arg_value = (*this)[arg_name];
+        if ( arg_value ) {
+            str += " = `";
+            str += arg_value.AsString();
+            str += "'\n";
+        } else {
+            str += ":  <not assigned>\n";
+        }
     }
     return str;
 }
+
+
+void CArgs::Add(CArgValue* arg)
+{
+    // special case:  add an "extra" arg (generate virtual name for it)
+    bool is_extra = false;
+    if ( arg->GetName().empty() ) {
+        arg->m_Name = s_ComposeNameExtra(m_nExtra + 1);
+        is_extra = true;
+    }
+
+    // check-up
+    _ASSERT(CArgDescriptions::VerifyName(arg->GetName(), true));
+    if ( Exist(arg->GetName()) ) {
+        ARG_THROW2("CArgs::Add()  argument with this name already defined",
+                   arg->GetName());
+    }
+
+    // add
+    m_Args.insert(arg);
+
+    if ( is_extra ) {
+        m_nExtra++;
+    }
+}
+
 
 
 
@@ -1097,16 +1231,16 @@ string& CArgs::Print(string& str) const
 //  CArgDescriptions::
 //
 
+
 CArgDescriptions::CArgDescriptions(bool auto_help)
-    : m_Args(),
-      m_PlainArgs(),
-      m_Constraint(eEqual),
-      m_ConstrArgs(0),
+    : m_nExtra(0),
+      m_nExtraOpt(0),
       m_AutoHelp(auto_help)
 {
-    SetUsageContext("PROGRAM", kEmptyStr);
+    SetUsageContext("NCBI_PROGRAM", kEmptyStr);
     if ( m_AutoHelp ) {
-        AddFlag("h", "Print this USAGE message");
+        AddFlag(s_AutoHelp,
+                "Print this USAGE message;  ignore other arguments");
     }
 }
 
@@ -1121,16 +1255,15 @@ const string& CArgDescriptions::GetTypeName(EType type)
 {
     static const string s_TypeName[k_EType_Size] = {
         "String",
-        "AlphaNum",
         "Boolean",
         "Integer",
-        "Double",
-        "InpFule",
-        "OutFile"
+        "Real",
+        "File_In",
+        "File_Out"
     };
 
     if (type == k_EType_Size) {
-        _TROUBLE;  ARG_THROW("Invalid argument type", "k_EType_Size");
+        _TROUBLE;  ARG_THROW2("Invalid argument type", "k_EType_Size");
     }
     return s_TypeName[(int) type];
 }
@@ -1144,9 +1277,9 @@ void CArgDescriptions::AddKey
  TFlags        flags)
 {
     auto_ptr<CArgDesc_Key> arg
-        (new CArgDesc_Key(synopsis, comment, type, flags));
+        (new CArgDesc_Key(name, comment, type, flags, synopsis));
 
-    x_AddDesc(name, *arg);
+    x_AddDesc(*arg);
     arg.release();
 }
 
@@ -1156,14 +1289,29 @@ void CArgDescriptions::AddOptionalKey
  const string& synopsis,
  const string& comment,
  EType         type,
+ TFlags        flags)
+{
+    auto_ptr<CArgDesc_KeyOpt> arg
+        (new CArgDesc_KeyOpt(name, comment, type, flags, synopsis));
+
+    x_AddDesc(*arg);
+    arg.release();
+}
+
+
+void CArgDescriptions::AddDefaultKey
+(const string& name,
+ const string& synopsis,
+ const string& comment,
+ EType         type,
  const string& default_value,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_OptionalKey> arg
-        (new CArgDesc_OptionalKey
-         (synopsis, comment, type, flags, default_value));
+    auto_ptr<CArgDesc_KeyDef> arg
+        (new CArgDesc_KeyDef(name, comment, type, flags, synopsis,
+                             default_value));
 
-    x_AddDesc(name, *arg);
+    x_AddDesc(*arg);
     arg.release();
 }
 
@@ -1174,79 +1322,116 @@ void CArgDescriptions::AddFlag
  bool          set_value)
 {
     auto_ptr<CArgDesc_Flag> arg
-        (new CArgDesc_Flag(comment, set_value));
+        (new CArgDesc_Flag(name, comment, set_value));
 
-    x_AddDesc(name, *arg);
+    x_AddDesc(*arg);
     arg.release();
 }
 
 
-void CArgDescriptions::AddPlain
+void CArgDescriptions::AddPositional
+(const string& name,
+ const string& comment,
+ EType         type,
+ TFlags        flags)
+{
+    auto_ptr<CArgDesc_Pos> arg
+        (new CArgDesc_Pos(name, comment, type, flags));
+
+    x_AddDesc(*arg);
+    arg.release();
+}
+
+
+void CArgDescriptions::AddOptionalPositional
+(const string& name,
+ const string& comment,
+ EType         type,
+ TFlags        flags)
+{
+    auto_ptr<CArgDesc_PosOpt> arg
+        (new CArgDesc_PosOpt(name, comment, type, flags));
+
+    x_AddDesc(*arg);
+    arg.release();
+}
+
+
+void CArgDescriptions::AddDefaultPositional
 (const string& name,
  const string& comment,
  EType         type,
  const string& default_value,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_Plain> arg
-        (new CArgDesc_Plain(comment, type, flags, default_value));
+    auto_ptr<CArgDesc_PosDef> arg
+        (new CArgDesc_PosDef(name, comment, type, flags, default_value));
 
-    x_AddDesc(name, *arg);
+    x_AddDesc(*arg);
     arg.release();
 }
 
 
 void CArgDescriptions::AddExtra
-(const string& comment,
+(unsigned      n_mandatory,
+ unsigned      n_optional,
+ const string& comment,
  EType         type,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_Plain> arg
-        (new CArgDesc_Plain(comment, type, flags, kEmptyStr, true/*extra*/));
+    if (!n_mandatory  &&  !n_optional) {
+        ARG_THROW2("AddExtra(0,0, ...)", "Zero # of extra arguments (?!)");
+    }
+    if (n_mandatory > 4096) {
+        ARG_THROW2("AddExtra(N, ...)", "Too many mandatory extra arguments");
+    }
 
-    x_AddDesc(kEmptyStr, *arg);
+    m_nExtra    = n_mandatory;
+    m_nExtraOpt = n_optional;
+
+    auto_ptr<CArgDesc_Pos> arg
+        (m_nExtra ?
+         new CArgDesc_Pos   (kEmptyStr, comment, type, flags) :
+         new CArgDesc_PosOpt(kEmptyStr, comment, type, flags));
+
+    x_AddDesc(*arg);
     arg.release();
 }
 
 
-void CArgDescriptions::SetConstraint(EConstraint policy, unsigned num_args)
+void CArgDescriptions::SetConstraint(const string& name, CArgAllow* constraint)
 {
-    m_Constraint = policy;
-    m_ConstrArgs = num_args;
+    CRef<CArgAllow> safe_delete(constraint);
 
-    if (m_Constraint == eAny  &&  m_ConstrArgs) {
-        ERR_POST(Warning << "CArgDescriptions::SetConstraint(eAny, non-zero)");
-    }
-}
-
-
-void CArgDescriptions::SetConstraint(const string& name,
-                                     CArgAllow*    constraint)
-{
-    CRef<CArgAllow> safe_delete = constraint;
-
-    TArgsI it = m_Args.find(name);
+    TArgsI it = x_Find(name);
     if (it == m_Args.end()) {
-        ARG_THROW("Attempt to set constraint for undescribed argument", name);
+        ARG_THROW2("Attempt to set constraint for undescribed argument", name);
     }
-    it->second->SetConstraint(constraint);
+    (*it)->SetConstraint(constraint);
 }
 
 
 bool CArgDescriptions::Exist(const string& name) const
 {
-    return (m_Args.find(name) != m_Args.end());
+    return (x_Find(name) != m_Args.end());
 }
 
 
 void CArgDescriptions::Delete(const string& name)
 {
     {{ // ...from the list of all args
-        TArgs::iterator it = m_Args.find(name);
+        TArgsI it = x_Find(name);
         if (it == m_Args.end()) {
-            ARG_THROW("Cannot delete non-existing argument description", name);
+            ARG_THROW2("Cannot delete non-existing arg. description", name);
         }
         m_Args.erase(it);
+
+        // take special care of the extra args
+        if ( name.empty() ) {
+            m_nExtra = 0;
+            m_nExtraOpt = 0;
+            return;
+        }
     }}
 
     {{ // ...from the list of key/flag args
@@ -1257,167 +1442,83 @@ void CArgDescriptions::Delete(const string& name)
         m_KeyFlagArgs.erase(it);
     }}
 
-    {{ // ...from the list of plain arg positions
-        TPlainArgs::iterator it =
-            find(m_PlainArgs.begin(), m_PlainArgs.end(), name);
-        _ASSERT(it != m_PlainArgs.end());
-        _ASSERT(find(it, m_PlainArgs.end(), name) == m_PlainArgs.end());
-        m_PlainArgs.erase(it);
+    {{ // ...from the list of positional args' positions
+        TPosArgs::iterator it =
+            find(m_PosArgs.begin(), m_PosArgs.end(), name);
+        _ASSERT(it != m_PosArgs.end());
+        _ASSERT(find(it, m_PosArgs.end(), name) == m_PosArgs.end());
+        m_PosArgs.erase(it);
     }}
 }
 
 
-// Check if the Nth positional arg is optional
-inline bool s_IsOptionalPlain
-(unsigned                      n,
- CArgDescriptions::EConstraint constraint,
- unsigned                      n_constraint)
+// Fake class to hold only a name -- to find in "m_Args"
+class CArgDesc_NameOnly : public CArgDesc
 {
-    return
-        (constraint == CArgDescriptions::eAny  ||
-         constraint == CArgDescriptions::eLessOrEqual  ||
-         (constraint == CArgDescriptions::eMoreOrEqual  &&
-          n_constraint != 0  &&  n >= n_constraint));
+public:
+    CArgDesc_NameOnly(const string& name) :
+        CArgDesc(name, kEmptyStr) {}
+private:
+    virtual string GetUsageSynopsis(bool/*name_only*/) const{return kEmptyStr;}
+    virtual string GetUsageCommentAttr(void) const {return kEmptyStr;}
+    virtual CArgValue* ProcessArgument(const string&) const {return 0;}
+    virtual CArgValue* ProcessDefault(void) const {return 0;}
+};
+
+CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name) const
+{
+    return m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
 }
 
-
-// Process argument's value
-static CArgValue* s_ProcessArgument
-(const CArgDesc& desc,
- const string&   name,
- const string&   value,
- unsigned        n_plain)
+CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name)
 {
-    string arg_msg;
-
-    try {
-        return desc.ProcessArgument(value);
-    } catch (exception& e) {
-        arg_msg = e.what();
-    }
-
-    // An error occured...
-    string msg;
-    if ( n_plain ) {
-        msg = "Pos.arg " + NStr::UIntToString(n_plain);
-        if ( !name.empty() ) {
-            msg += " (\"" + name + "\")";
-        }
-    } else {
-        msg = "Argument \"" + name + "\"";
-    }
-    ARG_THROW1(msg + " -- " + arg_msg);
+    return m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
 }
 
-
-// Try to process argument's default value
-static void s_VerifyDefaultValue
-(CArgDesc_Plain& pl_arg,
- const string&   name,
- unsigned        n_plain = 0)
-{
-    if (pl_arg.GetType() == CArgDescriptions::eInputFile  ||
-        pl_arg.GetType() == CArgDescriptions::eOutputFile) {
-        return;
-    }
-
-    string arg_msg;
-    try {
-        CRef<CArgValue> arg_value =
-            s_ProcessArgument(pl_arg, name, pl_arg.GetDefault(), n_plain);
-        return;
-    } catch (exception& e) {
-        arg_msg = e.what();
-    }
-    ARG_THROW("(Invalid default value)", arg_msg);
-}
 
 
 void CArgDescriptions::x_PreCheck(void) const
 {
-    // Check for the consistency of constraints for the # of positional args
-    bool     has_extra     = (m_Args.find(kEmptyStr) != m_Args.end());
-    unsigned n_policy_args = m_ConstrArgs ?
-        m_ConstrArgs : (unsigned) m_PlainArgs.size();
-    const char* err_msg = 0;
-    switch ( m_Constraint ) {
-    case eAny:
-        if ( !has_extra ) {
-            err_msg = "Must describe \"extra\" arguments";
-        }
-        break;
-    case eLessOrEqual:
-    case eEqual:
-        if (m_PlainArgs.size() > n_policy_args) {
-            err_msg = "Too many \"plain\" arguments described";
-        } else if (has_extra  &&  m_PlainArgs.size() == n_policy_args) {
-            err_msg = "The described \"extra\" arguments would never be used";
-        } else if (!has_extra  &&  m_PlainArgs.size() < n_policy_args) {
-            err_msg = "Too few \"plain\" (and no \"extra\") args described";
-        }
-        break;
-    case eMoreOrEqual:
-        if (!has_extra  &&  m_PlainArgs.size() < n_policy_args) {
-            err_msg = "Too few \"plain\" (and no \"extra\") args described";
-        }
-        break;
-    }
+    // Check for the consistency of positional args
+    if ( m_nExtra ) {
+        for (TPosArgs::const_iterator name = m_PosArgs.begin();
+             name != m_PosArgs.end();  ++name) {
+            TArgsCI arg_it = x_Find(*name);
+            _ASSERT(arg_it != m_Args.end());
+            CArgDesc& arg = **arg_it;
 
-    // Inconsistent #-of-args constraints...
-    if ( err_msg ) {
-        static const char* s_PolicyStr[] = {
-            "eAny", "eLessOrEqual",  "eEqual", "eMoreOrEqual" };
-
-        ARG_THROW1(string("CArgDescriptions::CreateArgs() inconsistency:  "
-                          "policy=") +  s_PolicyStr[(int) m_Constraint]
-                   + ", policy_args="
-                   + (m_ConstrArgs ?
-                      NStr::UIntToString(m_ConstrArgs) :
-                      string("0<plain_args>"))
-                   + ", plain_args=" + NStr::UIntToString(m_PlainArgs.size())
-                   + ", extra_args=" + NStr::BoolToString(has_extra) + " -- "
-                   + err_msg + "!");
-    }
-
-    // Check for the validity of default values of optional key args
-    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
-        CArgDesc_OptionalKey* opt_arg =
-            dynamic_cast<CArgDesc_OptionalKey*> (it->second.get());
-
-        if (opt_arg  &&  !dynamic_cast<CArgDesc_Key*> (opt_arg)) {
-            s_VerifyDefaultValue(*opt_arg, it->first);
-        }
-    }
-
-    // Check for the validity of default values of positional args
-    for (unsigned n = 0;  n < m_PlainArgs.size();  n++) {
-        TArgsCI it = m_Args.find(m_PlainArgs[n]);
-        CArgDesc_Plain& pl_arg = dynamic_cast<CArgDesc_Plain&> (*it->second);
-
-        if ( s_IsOptionalPlain(n, m_Constraint, m_ConstrArgs) ) {
-            // Check the default value against the argument description
-            s_VerifyDefaultValue(pl_arg, it->first, n+1);
-        } else {
-            // Mandatory arguments should not have a default value at all
-            if ( !pl_arg.GetDefault().empty() ) {
-                string msg = "Mandatory pos.arg " + NStr::UIntToString(n+1);
-                if ( !it->first.empty() ) {
-                    msg += " (\"" + it->first + "\")";
-                }
-                msg += " should not have a default value";
-                ARG_THROW(msg, pl_arg.GetDefault());
+            if (dynamic_cast<const CArgDesc_PosOpt*> (&arg)) {
+                ARG_THROW2("Cannot have both optional named and required "
+                           "unnamed positional args simultaneously. Name of "
+                           "the offending argument", arg.GetName());
             }
         }
-    }    
+    }
+
+    // Check for the validity of default values
+    string arg_msg;
+    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
+        CArgDesc& arg = **it;
+
+        if (dynamic_cast<CArgDescDefault*> (&arg) == 0) {
+            continue;
+        }
+
+        try {
+            arg.VerifyDefault();
+            continue;
+        } catch (exception& e) {
+            arg_msg = e.what();
+        }
+        ARG_THROW1("(Invalid default value) " + arg_msg);
+    }
 }
 
 
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
-    static const string s_Help("-h");
     _ASSERT(m_AutoHelp);
-
-    if (s_Help.compare(arg) == 0) {
+    if (arg.compare('-' + s_AutoHelp) == 0) {
         throw CArgHelpException();
     }
 }
@@ -1430,53 +1531,69 @@ bool CArgDescriptions::x_CreateArg
  unsigned* n_plain, CArgs& args)
     const
 {
-    bool arg2_used = false;
+    // Argument name
+    string name;
 
-    // Extract arg. tag
-    string tag;
-    if (*n_plain == 0  &&
-        (arg1.length() > 1)  &&  arg1[0] == '-'  &&  arg1[1] != '-') {
-        // "<key> <value>", or "<flag>"
-        tag = arg1.substr(1);
-        if (tag.empty()  ||  !VerifyName(tag)) {
-            ARG_THROW("Illegal argument tag", arg1);
+    // Check if to start processing the args as positional
+    if (*n_plain == kMax_UInt) {
+        // Check for the "--" delimiter
+        if (arg1.compare("--") == 0) {
+            *n_plain = 0;  // pos.args started
+            return false;
         }
-    } else if (*n_plain < m_PlainArgs.size()) {
-        // pos.arg -- plain
-        tag = m_PlainArgs[*n_plain];
-        (*n_plain)++;
-    } else {
-        // pos.arg -- extra
-        tag = kEmptyStr;
-        (*n_plain)++;
+        // Check if argument has not a key/flag syntax
+        if ((arg1.length() > 1)  &&  arg1[0] == '-') {
+            // Extract name of flag or key
+            name = arg1.substr(1);
+            if ( !VerifyName(name) ) {
+                *n_plain = 0;  // pos.args started
+            }
+        } else {
+            *n_plain = 0;  // pos.args started
+        }
     }
 
-    // Check for too many plain/extra arguments
-    if ((m_Constraint == eEqual  ||  m_Constraint == eLessOrEqual)  &&
-        *n_plain > (m_ConstrArgs ? m_ConstrArgs : m_PlainArgs.size())) {
-        ARG_THROW("Too many positional arguments (" +
-                  NStr::UIntToString(*n_plain) + ")", arg1);
+    // Whether the value of "arg2" is used
+    bool arg2_used = false;
+
+    // Extract name of positional argument
+    if (*n_plain != kMax_UInt) {
+        if (*n_plain < m_PosArgs.size()) {
+            name = m_PosArgs[*n_plain];  // named positional argument
+        } else {
+            name = kEmptyStr;  // unnamed (extra) positional argument
+        }
+        (*n_plain)++;
+
+        // Check for too many positional arguments
+        if (kMax_UInt - m_nExtraOpt > m_nExtra + m_PosArgs.size()  &&
+            *n_plain > m_PosArgs.size() + m_nExtra + m_nExtraOpt) {
+            ARG_THROW2("Too many positional arguments (" +
+                       NStr::UIntToString(*n_plain) +
+                       "), the offending value", arg1);
+        }
     }
 
     // Get arg. description
-    TArgsCI it = m_Args.find(tag);
+    TArgsCI it = x_Find(name);
     if (it == m_Args.end()) {
-        if ( tag.empty() ) {
-            ARG_THROW("Unexpected plain (extra) argument, at position #",
+        if ( name.empty() ) {
+            ARG_THROW2("Unexpected extra argument, at position #",
                       NStr::UIntToString(*n_plain));
         } else {
-            ARG_THROW("Unknown argument, with tag", tag);
+            ARG_THROW2("Unknown argument, with name", name);
         }
     }
-    _ASSERT(it->second.get());
-    const CArgDesc* desc = it->second.get();
+    _ASSERT(*it);
+
+    const CArgDesc& arg = **it;
 
     // Get argument value
     const string* value;
-    if ( dynamic_cast<const CArgDesc_OptionalKey*> (desc) ) {
-        // <key> <value> arg  -- advance from the arg.tag to the arg.value
+    if ( s_IsKey(arg) ) {
+        // <key> <value> arg  -- advance from the arg.name to the arg.value
         if ( !have_arg2 ) {
-            ARG_THROW("Missing argument value, at tag", arg1);
+            ARG_THROW3(arg1, "Value is missing", kEmptyStr);
         }
         value = &arg2;
         arg2_used = true;
@@ -1485,11 +1602,10 @@ bool CArgDescriptions::x_CreateArg
     }
 
     // Process the "raw" argument value into "CArgValue"
-    CRef<CArgValue> arg_value =
-        s_ProcessArgument(*desc, tag, *value, *n_plain);
+    CRef<CArgValue> arg_value(arg.ProcessArgument(*value));
 
     // Add the argument value to "args"
-    args.Add(tag, arg_value);
+    args.Add(arg_value);
 
     // Success (also indicate whether one or two "raw" args have been used)
     return arg2_used;
@@ -1498,80 +1614,39 @@ bool CArgDescriptions::x_CreateArg
 
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
-    // Check if all mandatory positional arguments are provided
-    unsigned n_policy_args = m_ConstrArgs ?
-        m_ConstrArgs : (unsigned) m_PlainArgs.size();
-    switch ( m_Constraint ) {
-    case eAny:
-        break;
-    case eLessOrEqual:
-        _ASSERT(n_plain <= n_policy_args);  // (due to checks in x_CreateArg)
-        break;
-    case eEqual:
-        _ASSERT(n_plain <= n_policy_args);  // (due to checks in x_CreateArg)
-        if (n_plain != n_policy_args) {
-            ARG_THROW("Too few position arguments -- must provide exactly",
-                      NStr::UIntToString(n_policy_args));
-        }
-        break;
-    case eMoreOrEqual:
-        if (n_plain < n_policy_args) {
-            ARG_THROW("Too few position arguments -- must provide at least",
-                      NStr::UIntToString(n_policy_args));
-        }
-        break;
+    // Check if all mandatory unnamed positional arguments are provided
+    if (m_PosArgs.size() < n_plain  &&  n_plain < m_PosArgs.size() + m_nExtra){
+        ARG_THROW1("Too few (" + NStr::UIntToString(n_plain) +
+                   "unnamed positional arguments. Must define at least " +
+                   NStr::UIntToString(m_nExtra));
     }
 
-    // Check for unset mandatory args;  set unset optional args and flags
-    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
-        // Nothing to do if the argument was provided in the command-line
-        if ( args.Exist(it->first) ) {
+    // Compose an ordered list of args
+    list<const CArgDesc*> def_args;
+    iterate (TKeyFlagArgs, it, m_KeyFlagArgs) {
+        const CArgDesc& arg = **x_Find(*it);
+        def_args.push_back(&arg);
+    }
+    iterate (TPosArgs, it, m_PosArgs) {
+        const CArgDesc& arg = **x_Find(*it);
+        def_args.push_back(&arg);
+    }
+
+    // Set default values (if available) for the arguments not defined
+    // in the command line.
+    iterate (list<const CArgDesc*>, it, def_args) {
+        const CArgDesc& arg = **it;
+
+        // Nothing to do if defined in the command-line
+        if ( args.Exist(arg.GetName()) ) {
             continue;
         }
 
-        // Special case for "-h" flag
-        static const string s_Help("h");
-        if (m_AutoHelp  &&  s_Help.compare(it->first) == 0) {
-            continue;
-        }
+        // Use default argument value
+        CRef<CArgValue> arg_value(arg.ProcessDefault());
 
-        // No mandatory "-<key> <value>" argument:   error
-        CArgDesc_Key* key_arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
-        if ( key_arg ) {
-            ARG_THROW("Must specify mandatory argument",
-                      key_arg->GetUsageSynopsis(it->first, false));
-        }
-
-        // No optional "[-<key> <value>]" argument:  set to the default value
-        CArgDesc_OptionalKey* opt_arg =
-            dynamic_cast<CArgDesc_OptionalKey*> (it->second.get());
-        if ( opt_arg ) {
-            args.Add(it->first,
-                     opt_arg->ProcessArgument(opt_arg->GetDefault(), true));
-            continue;
-        }
-
-        // No optional plain "[value]" argument:  set to the default value
-        CArgDesc_Plain* pl_arg =
-            dynamic_cast<CArgDesc_Plain*> (it->second.get());
-        if ( pl_arg ) {
-            if ( !it->first.empty() ) {
-                args.Add(it->first,
-                         pl_arg->ProcessArgument(pl_arg->GetDefault(), true));
-            }
-            continue;
-        }
-
-        // No flag "-<flag>" argument:  set to the "no-show" value
-        CArgDesc_Flag* flag_arg =
-            dynamic_cast<CArgDesc_Flag*> (it->second.get());
-        if ( flag_arg ) {
-            args.Add(it->first,
-                     flag_arg->ProcessArgument(kEmptyStr/*dummy*/, true));
-            continue;
-        }
-
-        _TROUBLE;
+        // Add the value to "args"
+        args.Add(arg_value);
     }
 }
 
@@ -1597,39 +1672,57 @@ void CArgDescriptions::SetUsageContext
 }
 
 
-bool CArgDescriptions::VerifyName(const string& name)
+bool CArgDescriptions::VerifyName(const string& name, bool extended)
 {
-    for(string::const_iterator it = name.begin();  it != name.end();  ++it) {
-        if(!isalnum(*it)  &&  *it != '#') {
-            return false;
+    if ( name.empty() )
+        return true;
+
+    string::const_iterator it = name.begin();
+    if (extended  &&  *it == '#') {
+        for (++it;  it != name.end();  ++it) {
+            if ( !isdigit(*it) ) {
+                return false;
+            }
+        }
+    } else {
+        for ( ;  it != name.end();  ++it) {
+            if (!isalnum(*it)  &&  *it != '_')
+                return false;
         }
     }
+
     return true;
 }
 
 
-void CArgDescriptions::x_AddDesc(const string& name, CArgDesc& arg)
+void CArgDescriptions::x_AddDesc(CArgDesc& arg)
 {
-    if ( !VerifyName(name) ) {
-        ARG_THROW("Invalid argument name", name);
+    const string& name = arg.GetName();
+
+    if ( Exist(name) ) {
+        ARG_THROW2("Argument with this name already exists, cannot add", name);
     }
 
-    if (m_Args.find(name) != m_Args.end()) {
-        ARG_THROW("Argument with this name already exists, cannot add", name);
-    }
-
-    if (dynamic_cast<const CArgDesc_OptionalKey*> (&arg)  ||
-        !dynamic_cast<const CArgDesc_Plain*> (&arg)) {
+    if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
         _ASSERT(find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name)
                 == m_KeyFlagArgs.end());
         m_KeyFlagArgs.push_back(name);
     } else if ( !name.empty() ) {
-        _ASSERT(find(m_PlainArgs.begin(), m_PlainArgs.end(), name)
-                == m_PlainArgs.end());
-        m_PlainArgs.push_back(name);
+        _ASSERT(find(m_PosArgs.begin(), m_PosArgs.end(), name)
+                == m_PosArgs.end());
+        if ( s_IsOptional(arg) ) {
+            m_PosArgs.push_back(name);
+        } else {
+            TPosArgs::iterator it;
+            for (it = m_PosArgs.begin();  it != m_PosArgs.end();  ++it) {
+                if ( s_IsOptional(**x_Find(*it)) )
+                    break;
+            }
+            m_PosArgs.insert(it, name);
+        }
     }
 
-    m_Args[name] = &arg;
+    m_Args.insert(&arg);
 }
 
 
@@ -1638,27 +1731,20 @@ void CArgDescriptions::x_AddDesc(const string& name, CArgDesc& arg)
 //  CArgDescriptions::PrintUsage()
 
 
-class CArgUsage {
-public:
-    const string*   m_Name;
-    const CArgDesc* m_Desc;
-    bool            m_Optional;
-    CArgUsage(void) : m_Name(0), m_Desc(0), m_Optional(false) {}
-    CArgUsage(const string& name, const CArgDesc& desc, bool optional = false)
-        : m_Name(&name), m_Desc(&desc), m_Optional(optional) {}
-};
-
-
-static void s_PrintSynopsis(string& str, const CArgUsage& arg,
+static void s_PrintSynopsis(string& str, const CArgDesc& arg,
                             SIZE_TYPE* pos, SIZE_TYPE width)
 {
-    const static string s_NewLine("\n   ");
-    const static string s_Space(" ");
-
-    string s =
-        s_Space + arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
+    string s;
+    if ( s_IsOptional(arg) ) {
+        s += " [" + arg.GetUsageSynopsis() + ']';
+    } else if ( s_IsPositional(arg) ) {
+        s += " <" + arg.GetUsageSynopsis() + '>';
+    } else {
+        s += ' ' + arg.GetUsageSynopsis();
+    }
 
     if (*pos + s.length() > width) {
+        const static string s_NewLine("\n   ");
         str += s_NewLine;
         *pos = s_NewLine.length();
     }
@@ -1725,88 +1811,102 @@ static void s_PrintCommentBody(string& str, const string& s, SIZE_TYPE width)
 }
 
 
-static void s_PrintComment(string& str, const CArgUsage& arg, SIZE_TYPE width)
+static void s_PrintComment(string& str, const CArgDesc& arg, SIZE_TYPE width)
 {
     // Print synopsis
     str += "\n ";
-    str += arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
+    str += arg.GetUsageSynopsis(true/*name_only*/);
 
-    // Print type and other attributes, if any
-    string attr = arg.m_Desc->GetUsageCommentAttr(arg.m_Optional);
+    // Print type (and value constraint, if any)
+    string attr = arg.GetUsageCommentAttr();
     if ( !attr.empty() ) {
-        str += "      /";
+        str += " <";
         str += attr;
-        str += "/";
-    }
-
-    // Print constraint info, if any
-    string constr = arg.m_Desc->GetUsageConstraint();
-    if ( !constr.empty() ) {
-        str += constr.insert(0, "\n    * constraint:  ");
+        str += '>';
     }
 
     // Print description
-    s_PrintCommentBody(str, arg.m_Desc->GetUsageCommentBody(), width);
+    s_PrintCommentBody(str, arg.GetComment(), width);
+
+    // Print default value, if any
+    const CArgDescDefault* dflt = dynamic_cast<const CArgDescDefault*> (&arg);
+    if ( dflt ) {
+        s_PrintCommentBody
+            (str, "Default = `" + dflt->GetDefaultValue() + '\'', width);
+    }
 }
 
 
 string& CArgDescriptions::PrintUsage(string& str) const
 {
-    typedef list<CArgUsage>       TList;
+    typedef list<const CArgDesc*> TList;
     typedef TList::iterator       TListI;
     typedef TList::const_iterator TListCI;
 
     TList args;
 
+    args.push_front(0);
+    TListI it_pos = args.begin();
+
     // Keys and Flags
     if ( m_UsageSortArgs ) {
-        // Alphabetically ordered
-        args.push_front(CArgUsage());
-        TListI it_keys  = args.begin();
-        args.push_front(CArgUsage());
+        // Alphabetically ordered,
+        // mandatory keys to go first, then flags, then optional keys
+        TListI& it_opt_keys = it_pos; 
+        args.push_front(0);
         TListI it_flags = args.begin();
+        args.push_front(0);
+        TListI it_keys  = args.begin();
 
         for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
-            const CArgDesc* desc = it->second.get();
+            const CArgDesc* arg = it->get();
 
-            if (dynamic_cast<const CArgDesc_OptionalKey*> (desc)) {
-                args.insert(it_keys, CArgUsage(it->first, *desc));
-            } else if (dynamic_cast<const CArgDesc_Flag*> (desc)  &&
-                       !dynamic_cast<const CArgDesc_Plain*> (desc)) {
-                args.insert(it_flags, CArgUsage(it->first, *desc));
+            if (dynamic_cast<const CArgDesc_KeyOpt*> (arg)  ||
+                dynamic_cast<const CArgDesc_KeyDef*> (arg)) {
+                args.insert(it_opt_keys, arg);
+            } else if (dynamic_cast<const CArgDesc_Key*> (arg)) {
+                args.insert(it_keys, arg);
+            } else if (dynamic_cast<const CArgDesc_Flag*> (arg)) {
+                if (s_AutoHelp.compare(arg->GetName()) == 0)
+                    args.push_front(arg);
+                else
+                    args.insert(it_flags, arg);
             }
         }
-        args.erase(it_flags);
         args.erase(it_keys);
+        args.erase(it_flags);
     } else {
         // Unsorted, just the order they were described by user
         for (TKeyFlagArgs::const_iterator name = m_KeyFlagArgs.begin();
              name != m_KeyFlagArgs.end();  ++name) {
-            TArgsCI it = m_Args.find(*name);
+            TArgsCI it = x_Find(*name);
             _ASSERT(it != m_Args.end());
 
-            args.push_back( CArgUsage(it->first, *it->second) );
+            args.insert(it_pos, it->get());
         }
     }
 
-    // Plain
-    for (unsigned n = 0;  n < m_PlainArgs.size();  n++) {
-        TArgsCI it = m_Args.find(m_PlainArgs[n]);
+    // Positional
+    for (TPosArgs::const_iterator name = m_PosArgs.begin();
+         name != m_PosArgs.end();  ++name) {
+        TArgsCI it = x_Find(*name);
         _ASSERT(it != m_Args.end());
+        const CArgDesc* arg = it->get();
 
-        args.push_back(CArgUsage
-                       (it->first, *it->second,
-                        s_IsOptionalPlain(n, m_Constraint, m_ConstrArgs)));
+        // Mandatory args to go first, then go optional ones
+        if (dynamic_cast<const CArgDesc_PosOpt*> (arg)) {
+            args.push_back(arg);
+        } else if (dynamic_cast<const CArgDesc_Pos*> (arg)) {
+            args.insert(it_pos, arg);
+        }
     }
+    args.erase(it_pos);
 
     // Extra
     {{
-        TArgsCI it = m_Args.find(kEmptyStr);
+        TArgsCI it = x_Find(kEmptyStr);
         if (it != m_Args.end()) {
-            args.push_back(CArgUsage
-                           (it->first, *it->second,
-                            s_IsOptionalPlain((unsigned) m_PlainArgs.size(),
-                                              m_Constraint, m_ConstrArgs)));
+            args.push_back(it->get());
         }
     }}
 
@@ -1815,12 +1915,12 @@ string& CArgDescriptions::PrintUsage(string& str) const
     TListCI it;
 
     // SYNOPSYS
-    str += "SYNOPSYS\n   ";
+    str += "USAGE\n  ";
     str += m_UsageName;
     SIZE_TYPE pos = 3 + m_UsageName.length();
 
     for (it = args.begin();  it != args.end();  ++it) {
-        s_PrintSynopsis(str, *it, &pos, m_UsageWidth);
+        s_PrintSynopsis(str, **it, &pos, m_UsageWidth);
     }
 
     // DESCRIPTION
@@ -1831,11 +1931,38 @@ string& CArgDescriptions::PrintUsage(string& str) const
         s_PrintCommentBody(str, m_UsageDescription, m_UsageWidth);
     }
 
-    // OPERANDS
-    str += "\n\nOPERANDS   ";
-
+    // REQUIRED & OPTIONAL ARGUMENTS
+    string s_req;
+    string s_opt;
     for (it = args.begin();  it != args.end();  ++it) {
-        s_PrintComment(str, *it, m_UsageWidth);
+        s_PrintComment((s_IsOptional(**it) || s_IsFlag(**it)) ? s_opt : s_req,
+                       **it, m_UsageWidth);
+    }
+    if ( !s_req.empty() ) {
+        str += "\n\nREQUIRED ARGUMENTS";
+        str += s_req;
+    }
+    if ( !s_opt.empty() ) {
+        str += "\n\nOPTIONAL ARGUMENTS";
+        str += s_opt;
+    }
+
+    // # of extra arguments
+    if (m_nExtra  ||  (m_nExtraOpt != 0  &&  m_nExtraOpt != kMax_UInt)) {
+        string str_extra = "\nNOTE:  Specify ";
+        if ( m_nExtra ) {
+            str_extra += "at least ";
+            str_extra += NStr::UIntToString(m_nExtra);
+            if (m_nExtraOpt != kMax_UInt) {
+                str_extra += ", and ";
+            }
+        }
+        if (m_nExtraOpt != kMax_UInt) {
+            str_extra += "no more than ";
+            str_extra += NStr::UIntToString(m_nExtra + m_nExtraOpt);
+        }
+        str_extra += " arguments in \"....\"";
+        s_PrintCommentBody(str, str_extra, m_UsageWidth);
     }
 
     str += "\n";
@@ -1862,7 +1989,7 @@ CArgs* CArgDescriptions::CreateArgs(int argc, const char* argv[])
     }
     // Create new "CArgs" to fill up, and parse cmd.-line args into it
     auto_ptr<CArgs> args(new CArgs());
-    unsigned n_plain = 0;
+    unsigned n_plain = kMax_UInt;
     for (int i = 1;  i < argc;  i++) {
         bool have_arg2 = (i + 1 < argc);
         if ( x_CreateArg(argv[i], have_arg2,
@@ -1888,7 +2015,7 @@ CArgs* CArgDescriptions::CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv)
     }
     // Create new "CArgs" to fill up, and parse cmd.-line args into it
     auto_ptr<CArgs> args(new CArgs());
-    unsigned n_plain = 0;
+    unsigned n_plain = kMax_UInt;
     for (SIZE_TYPE i = 1;  i < argc;  i++) {
         bool have_arg2 = (i + 1 < argc);
         if ( x_CreateArg(argv[i], have_arg2,
@@ -1914,6 +2041,8 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 // CArgAllow::
+//   CArgAllow_Symbols::
+//   CArgAllow_String::
 //   CArgAllow_Strings::
 //   CArgAllow_Integers::
 //   CArgAllow_Doubles::
@@ -1927,6 +2056,135 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 CArgAllow::~CArgAllow(void)
 {
     return;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  s_IsSymbol() -- check if the symbol belongs to one of standard character
+//                  classes from <ctype.h>, or to user-defined symbol set
+//
+
+inline bool s_IsAllowedSymbol(unsigned char                   ch,
+                              CArgAllow_Symbols::ESymbolClass symbol_class,
+                              const string&                   symbol_set)
+{
+    switch ( symbol_class ) {
+    case CArgAllow_Symbols::eAlnum:   return isalnum(ch) != 0;
+    case CArgAllow_Symbols::eAlpha:   return isalpha(ch) != 0;
+    case CArgAllow_Symbols::eCntrl:   return iscntrl(ch) != 0;
+    case CArgAllow_Symbols::eDigit:   return isdigit(ch) != 0;
+    case CArgAllow_Symbols::eGraph:   return isgraph(ch) != 0;
+    case CArgAllow_Symbols::eLower:   return islower(ch) != 0;
+    case CArgAllow_Symbols::ePrint:   return isprint(ch) != 0;
+    case CArgAllow_Symbols::ePunct:   return ispunct(ch) != 0;
+    case CArgAllow_Symbols::eSpace:   return isspace(ch) != 0;
+    case CArgAllow_Symbols::eUpper:   return isupper(ch) != 0;
+    case CArgAllow_Symbols::eXdigit:  return isxdigit(ch) != 0;
+    case CArgAllow_Symbols::eUser:
+        return symbol_set.find_first_of(ch) != NPOS;
+    }
+    _TROUBLE;  return false;
+}
+
+
+static string s_GetUsageSymbol(CArgAllow_Symbols::ESymbolClass symbol_class,
+                               const string&                   symbol_set)
+{
+    switch ( symbol_class ) {
+    case CArgAllow_Symbols::eAlnum:   return "alphanumeric";
+    case CArgAllow_Symbols::eAlpha:   return "alphabetic";
+    case CArgAllow_Symbols::eCntrl:   return "control symbol";
+    case CArgAllow_Symbols::eDigit:   return "decimal";
+    case CArgAllow_Symbols::eGraph:   return "graphical symbol";
+    case CArgAllow_Symbols::eLower:   return "lower case";
+    case CArgAllow_Symbols::ePrint:   return "printable";
+    case CArgAllow_Symbols::ePunct:   return "punctuation";
+    case CArgAllow_Symbols::eSpace:   return "space";
+    case CArgAllow_Symbols::eUpper:   return "upper case";
+    case CArgAllow_Symbols::eXdigit:  return "hexadecimal";
+    case CArgAllow_Symbols::eUser:
+        return "'" + NStr::PrintableString(symbol_set) + "'";
+    }
+    _TROUBLE;  return kEmptyStr;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgAllow_Symbols::
+//
+
+CArgAllow_Symbols::CArgAllow_Symbols(ESymbolClass symbol_class)
+    : CArgAllow(),
+      m_SymbolClass(symbol_class)
+{
+    return;
+}
+
+
+CArgAllow_Symbols::CArgAllow_Symbols(const string& symbol_set)
+    : CArgAllow(),
+      m_SymbolClass(eUser), m_SymbolSet(symbol_set)
+{
+    return;
+}
+
+
+bool CArgAllow_Symbols::Verify(const string& value) const
+{
+    if (value.length() != 1)
+        return false;
+
+    return s_IsAllowedSymbol(value[0], m_SymbolClass, m_SymbolSet);
+}
+
+
+string CArgAllow_Symbols::GetUsage(void) const
+{
+    return "one symbol: " + s_GetUsageSymbol(m_SymbolClass, m_SymbolSet);
+}
+
+
+CArgAllow_Symbols::~CArgAllow_Symbols(void)
+{
+    return;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgAllow_String::
+//
+
+CArgAllow_String::CArgAllow_String(ESymbolClass symbol_class)
+    : CArgAllow_Symbols(symbol_class)
+{
+    return;
+}
+
+
+CArgAllow_String::CArgAllow_String(const string& symbol_set)
+    : CArgAllow_Symbols(symbol_set)
+{
+    return;
+}
+
+
+bool CArgAllow_String::Verify(const string& value) const
+{
+    for (string::const_iterator it = value.begin();  it != value.end(); ++it) {
+        if ( !s_IsAllowedSymbol(*it, m_SymbolClass, m_SymbolSet) )
+            return false;
+    }
+    return true;
+}
+
+
+string CArgAllow_String::GetUsage(void) const
+{
+    return "to contain only symbols: " +
+        s_GetUsageSymbol(m_SymbolClass, m_SymbolSet);
 }
 
 
@@ -1949,7 +2207,7 @@ CArgAllow_Strings* CArgAllow_Strings::Allow(const string& value)
 }
 
 
-bool CArgAllow_Strings::Verify(const string &value) const
+bool CArgAllow_Strings::Verify(const string& value) const
 {
     return (m_Strings.find(value) != m_Strings.end());
 }
@@ -1961,7 +2219,7 @@ string CArgAllow_Strings::GetUsage(void) const
         return "ERROR:  Constraint with no values allowed(?!)";
     }
 
-    string str = "{";
+    string str;
     set<string>::const_iterator it = m_Strings.begin();
     for (;;) {
         str += "`";
@@ -1972,12 +2230,15 @@ string CArgAllow_Strings::GetUsage(void) const
             str += "'";
             break;
         }
-
         str += "', ";
     }
-
-    str += "}";
     return str;
+}
+
+
+CArgAllow_Strings::~CArgAllow_Strings(void)
+{
+    return;
 }
 
 
@@ -2008,10 +2269,7 @@ bool CArgAllow_Integers::Verify(const string& value) const
 
 string CArgAllow_Integers::GetUsage(void) const
 {
-    return
-        NStr::IntToString(m_Min) +
-        " <= X <= " +
-        NStr::IntToString(m_Max);
+    return NStr::IntToString(m_Min) + ".." + NStr::IntToString(m_Max);
 }
 
 
@@ -2042,10 +2300,7 @@ bool CArgAllow_Doubles::Verify(const string& value) const
 
 string CArgAllow_Doubles::GetUsage(void) const
 {
-    return
-        NStr::DoubleToString(m_Min) +
-        " <= X <= " +
-        NStr::DoubleToString(m_Max);
+    return NStr::DoubleToString(m_Min) + ".." + NStr::DoubleToString(m_Max);
 }
 
 

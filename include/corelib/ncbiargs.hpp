@@ -31,18 +31,19 @@
  * File Description:
  *   Command-line arguments' processing:
  *      descriptions  -- CArgDescriptions,  CArgDesc
- *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
  *      parsed values -- CArgs,             CArgValue
- *      exceptions    -- CArgException, ARG_THROW()
+ *      exceptions    -- CArgException,     CArgHelpException
+ *      constraints   -- CArgAllow; CArgAllow_{Strings, ..., Integers, Doubles}
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.16  2000/12/12 14:20:13  vasilche
- * Added operator bool to CArgValue.
- * Added standard typedef element_type to CRef<> and CConstRef<>.
- * Macro iterate() now calls method end() only once and uses temporary variable.
- * Various NStr::Compare() methods made faster.
- * Added class Upcase for printing strings to ostream with automatic conversion.
+ * Revision 1.17  2000/12/24 00:12:59  vakatov
+ * Radically revamped NCBIARGS.
+ * Introduced optional key and posit. args without default value.
+ * Added new arg.value constraint classes.
+ * Passed flags to be detected by HasValue() rather than AsBoolean.
+ * Simplified constraints on the number of mandatory and optional extra args.
+ * Improved USAGE info and diagnostic messages. Etc...
  *
  * Revision 1.15  2000/11/29 00:07:25  vakatov
  * Flag and key args not to be sorted in alphabetical order by default; see
@@ -101,33 +102,44 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <map>
-#include <deque>
+#include <memory>
+#include <set>
+#include <list>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
+
+// Some necessary forward declarations
 class CNcbiArguments;
 class CArgAllow;
 
 
+
 ///////////////////////////////////////////////////////
 //  Parsing and validating command-line arguments according to
-//  the user-provided descriptions
+//  user-provided descriptions.
 //
 //  See also in:  "doc/programming_manual/argdescr.html"
-
-
+//
+//
 // Command string:
-//    progname  {arg_key, arg_key_opt, arg_flag}  {arg_plain}  {arg_extra}
+//    progname  {arg_key, arg_key_opt, arg_key_dflt, arg_flag} [--]
+//              {arg_pos} {arg_pos_opt, arg_pos_dflt}
+//              {arg_extra} {arg_extra_opt}
 //
 // where:
-//    arg_key       :=  -<key> <value>     -- (mandatory)
-//    arg_key_opt   := [-<key> <value>]    -- (optional)
-//    arg_flag      := -<flag>             -- (always optional)
-//    arg_plain     := <value> | [value]   -- (dep. on the constraint policy)
-//    arg_extra     := <value> | [value]   -- (dep. on the constraint policy)
+//    arg_key        :=  -<key> <value>    -- (mandatory)
+//    arg_key_opt    := [-<key> <value>]   -- (optional, without default value)
+//    arg_key_dflt   := [-<key> <value>]   -- (optional, with default value)
+//    arg_flag       := -<flag>            -- (always optional)
+//    "--" is an optional delimiter to indicate the beginning of pos. args
+//    arg_pos        := <value>            -- (mandatory)
+//    arg_pos_opt    := [<value>]          -- (optional, without default value)
+//    arg_pos_dflt   := [<value>]          -- (optional, with default value)
+//    arg_extra      := <value>            -- (dep. on the constraint policy)
+//    arg_extra_opt  := [<value>]          -- (dep. on the constraint policy)
 //
 // and:
 //    <key> must be followed by <value>
@@ -136,11 +148,13 @@ class CArgAllow;
 //    <value> is an arbitrary string (additional constraints can
 //            be applied in the argument description, see "EType")
 //
-// {arg_plain} and {arg_extra} are position dependent arguments, with
-// no tag preceeding them. {arg_plain} have individual names and descriptions
-// (see method AddPlain), while {arg_extra} have only one description for all
-// of them (see method AddExtra). User can apply constraints on the number
-// of position arguments (see SetConstraint).
+// {arg_pos***} and {arg_extra***} -- position-dependent arguments, with
+// no tag preceeding them.
+// {arg_pos***} -- have individual names and descriptions (see methods
+// AddPositional***).
+// {arg_extra***} have one description for all (see method AddExtra).
+// User can apply constraints on the number of mandatory and optional
+// {arg_extra***} arguments.
 
 
 
@@ -152,7 +166,9 @@ class CArgException : public runtime_error
 {
 public:
     CArgException(const string& what) THROWS_NONE;
-    CArgException(const string& what, const string& arg_value) THROWS_NONE;
+    CArgException(const string& what, const string& attr) THROWS_NONE;
+    CArgException(const string& name, const string& what, const string& attr)
+        THROWS_NONE;
 };
 
 
@@ -170,40 +186,41 @@ public:
 
 class CArgValue : public CObject
 {
-    friend class CArgs;
 public:
-    // check if value exists
-    virtual bool HasValue(void) const;
-    operator bool(void) const { return HasValue(); }
-    bool operator!(void) const { return !HasValue(); }
+    // Get argument name
+    const string& GetName(void) const { return m_Name; }
 
-    // check if value is default
-    bool IsDefaultValue(void) const { return m_IsDefaultValue; }
+    // Check if the argument holds a value.
+    // Argument does not hold value if it was described as optional argument
+    // without default value, and if it was not passed a value in the command
+    // line.  On attempt to retrieve the value from such "no-value" argument,
+    // exception will be thrown.
+    virtual bool HasValue(void) const = 0;
+    operator bool (void) const { return  HasValue(); }
+    bool operator!(void) const { return !HasValue(); }
 
     // Get the argument's string value.
     // (If it is a value of flag argument, then return one of "true", "false".)
-    const string&  AsString(void) const { return m_String; }
+    virtual const string& AsString(void) const = 0;
 
     // These functions throw an exception if you requested the wrong
     // value type (e.g. if called "AsInteger()" for a "boolean" arg).
-    virtual long   AsInteger(void) const;
-    virtual double AsDouble (void) const;
-    virtual bool   AsBoolean(void) const;
+    virtual long   AsInteger(void) const = 0;
+    virtual double AsDouble (void) const = 0;
+    virtual bool   AsBoolean(void) const = 0;
 
-    virtual CNcbiIstream& AsInputFile (void) const;
-    virtual CNcbiOstream& AsOutputFile(void) const;
-    virtual void          CloseFile   (void) const;  // safe close and destroy
+    virtual CNcbiIstream& AsInputFile (void) const = 0;
+    virtual CNcbiOstream& AsOutputFile(void) const = 0;
+    virtual void          CloseFile   (void) const = 0; // safe close&destroy
 
 protected:
+    friend class CArgs;
+
     // Prohibit explicit instantiation of "CArg" objects
-    CArgValue(const string& value, bool is_default);
+    CArgValue(const string& name);
     virtual ~CArgValue(void);
 
-private:
-    // Value of the argument as passed to the constructor ("value")
-    string m_String;
-    // TRUE if was not specified by user (i.e. was assigned the default value)
-    bool   m_IsDefaultValue;
+    string m_Name;
 };
 
 
@@ -211,7 +228,7 @@ private:
 //
 // Argument values -- obtained from the raw cmd.-line arguments
 // (such like in "CNcbiArguments") and then verified and processed
-// according to the arg. descriptions given by the user in "CArgDescriptions".
+// according to the arg. descriptions defined by user in "CArgDescriptions".
 //
 // NOTE:  the extra arguments can be accessed using virtual names:
 //           "#1", "#2", "#3", ..., "#<GetNExtra()>"
@@ -224,19 +241,17 @@ public:
     CArgs(void);
     ~CArgs(void);
 
-    // Return TRUE if there was a description for argument with name "name"
+    // Return TRUE if arg "name" was described in the parent CArgDescriptions
     bool Exist(const string& name) const;
-    // Return TRUE if argument with name "name" was provided in command line
-    bool IsProvided(const string& name) const;
 
-    // Get value of any argument by its name
-    // Throw an exception if such argument does not exist
-    const CArgValue& operator [](const string& name) const;
+    // Get value of any argument by its name.
+    // Throw an exception if such argument does not exist;  see Exist() above.
+    const CArgValue& operator[] (const string& name) const;
 
-    // Get the number of passed unnamed (extra) position args
+    // Get the number of unnamed positional (a.k.a. extra) args
     size_t GetNExtra(void) const { return m_nExtra; }
-    // Return N-th extra (unnamed) position arg value,  N = 1..GetNExtra()
-    const CArgValue& operator [](size_t idx) const;
+    // Return N-th extra arg value,  N = 1..GetNExtra()
+    const CArgValue& operator[] (size_t idx) const;
 
     // Print (add to the end) all arguments to the string "str". Return "str".
     string& Print(string& str) const;
@@ -246,37 +261,27 @@ public:
     // there is an argument with this name already.
     // HINT:  use empty "name" to add extra (unnamed) args, and they will be
     // automagically assigned with the virtual names: "#1", "#2", "#3", ...
-    void Add(const string& name, CArgValue* arg);
+    void Add(CArgValue* arg);
 
 private:
-    typedef map< string, CRef<CArgValue> >  TArgs;
-    typedef TArgs::iterator                 TArgsI;
-    typedef TArgs::const_iterator           TArgsCI;
+    typedef set< CRef<CArgValue> >  TArgs;
+    typedef TArgs::iterator         TArgsI;
+    typedef TArgs::const_iterator   TArgsCI;
 
     TArgs  m_Args;    // assoc.map of arguments' name/value
-    size_t m_nExtra;  // cached # of unnamed arguments 
+    size_t m_nExtra;  // cached # of unnamed positional arguments 
+
+    // Find arg.value with name "name"
+    TArgsCI x_Find(const string& name) const;
 };
 
 
 
 //
-// Generic abstract base class for all arg. description classes
-// (intended for internal use only!)
+// Base class for the description of various types of argument
 //
 
-class CArgDesc
-{
-public:
-    virtual ~CArgDesc(void);
-    virtual string GetUsageSynopsis   (const string& name,
-                                       bool optional=false) const = 0;
-    virtual string GetUsageCommentAttr(bool optional=false) const = 0;
-    virtual string GetUsageCommentBody(void)                const = 0;
-    virtual string GetUsageConstraint(void)                 const = 0;
-    virtual CArgValue* ProcessArgument(const string& value,
-                                       bool is_default = false) const = 0;
-    virtual void SetConstraint(CArgAllow* constraint) = 0;
-};
+class CArgDesc;
 
 
 
@@ -300,7 +305,6 @@ public:
     // Available argument types
     enum EType {
         eString = 0, // an arbitrary string
-        eAlnum,      // [a-zA-Z0-9]
         eBoolean,    // {'true', 't', 'false', 'f'},  case-insensitive
         eInteger,    // conversible into an integer number (long)
         eDouble,     // conversible into a floating point number (double)
@@ -323,71 +327,87 @@ public:
     };
     typedef unsigned int TFlags;  // binary OR of "EFlags"
 
-    /////  arg_key := -<key> <value>,     <key> := "name"
-    // Throw an exception if description with name "name" already exists.
-    void AddKey(const string& name,
-                const string& synopsis,  // must be {alnum, '_'} word
+    //// AddXXX() -- the methods to add argument description.
+    // They throw exception (CArgException) if:
+    //  - description with name "name" already exists;
+    //  - "name"     contains symbols other than {alnum}
+    //  - "synopsis" contains symbols other than {alnum, '_'}
+    //  - "flags" are inconsistent with "type"
+    // Any argument can be later referenced using his (unique) name "name".
+
+    // Mandatory key::   arg_key := -<key> <value>
+    void AddKey(const string& name,     // <key>
+                const string& synopsis,
                 const string& comment,
                 EType         type,
                 TFlags        flags = 0);
 
-    /////  arg_key_opt := [-<key> <value>],     <key> := "name"
-    // Throw an exception if description with name "name" already exists.
-    void AddOptionalKey(const string& name,
-                        const string& synopsis,  // must be {alnum, '_'} word
+    // Optional key without default value::   arg_key_opt := [-<key> <value>]
+    void AddOptionalKey(const string& name,     // <key>
+                        const string& synopsis,
                         const string& comment,
                         EType         type,
-                        const string& default_value = kEmptyStr,
-                        TFlags        flags         = 0);
+                        TFlags        flags = 0);
+
+    // Optional key with default value::   arg_key_dflt := [-<key> <value>]
+    void AddDefaultKey(const string& name,     // <key>
+                       const string& synopsis,
+                       const string& comment,
+                       EType         type,
+                       const string& default_value,
+                       TFlags        flags = 0);
 
     /////  arg_flag  := -<flag>,     <flag> := "name"
-    // If the flag is provided (in the command-line), then its value
-    // will be set to "set_value"; else it will be set to "!set_value".
-    // Throw an exception if description with name "name" already exists.
+    // If "set_value" is TRUE, then:
+    //   if the flag is provided (in the command-line), then the resultant
+    //   CArgValue::HasValue() will be TRUE; else it will be FALSE.
+    // Setting "set_value" to FALSE will reverse the situation.
+    // NOTE:  if CArgValue::HasValue() is TRUE, then AsBoolean() always TRUE.
     void AddFlag(const string& name,
                  const string& comment,
                  bool          set_value = true);
 
-    /////  arg_plain := <value>
-    // The order is important! -- the N-th plain argument passed in
+    // Mandatory positional::   arg_pos := <value>
+    // NOTE:  (for all types of positional arguments)
+    // The order is important! -- the N-th positional argument passed in
     // the cmd.-line will be matched against (and processed according to)
-    // the N-th added named plain arg. description.
-    // This plain arg. can later be referenced by its name "name".
-    // Throw an exception if description with name "name" already exists.
-    void AddPlain(const string& name,
-                  const string& comment,
-                  EType         type,
-                  const string& default_value = kEmptyStr,
-                  TFlags        flags         = 0);
+    // the N-th added named positional arg. description.
+    // NOTE 2:  mandatory positional args always go first.
+    void AddPositional(const string& name,
+                       const string& comment,
+                       EType         type,
+                       TFlags        flags = 0);
 
-    // Provide description for the extra position args -- the ones
-    // that have not been described by AddPlain().
-    // By default, no extra (unnamed) position args are allowed, and you
-    // have to call SetConstraint() to enable them.
+    // Optional positional, without default value::   arg_pos_opt := [<value>]
+    // NOTE:  see NOTE for AddPositional() above.
+    void AddOptionalPositional(const string& name,
+                               const string& comment,
+                               EType         type,
+                               TFlags        flags = 0);
+
+    // Optional positional, with default value::   arg_pos_dflt := [<value>]
+    // NOTE:  see NOTE for AddPositional() above.
+    void AddDefaultPositional(const string& name,
+                              const string& comment,
+                              EType         type,
+                              const string& default_value,
+                              TFlags        flags = 0);
+
+    // Provide description for the extra (unnamed positional) args.
+    // By default, no extra args are allowed.
     // The name of this description is always empty string.
+    // Names of the resulting arg.values will be:  "#1", "#2", ...
     // Throw an exception if the extra arg. description already exists.
-    void AddExtra(const string& comment,  // def = "extra argument"
+    void AddExtra(unsigned      n_mandatory,
+                  unsigned      n_optional,
+                  const string& comment,
                   EType         type,
                   TFlags        flags = 0);
 
-    // Restrictions on the # of position args ({arg_plain} and {arg_extra})
-    // that can be passed to the program (see method SetConstraint)
-    enum EConstraint {
-        eAny = 0,      // any # of position cmd.-line arguments can be passed
-        // The # of passed args. must be:
-        eLessOrEqual,  // less or equal to "num_args"
-        eEqual,        // exactly equal to "num_args"
-        eMoreOrEqual   // more or equal to "num_args"
-    };
-
-    // The default constraint policy is eEqual, and "num_args" is zero.
-    // If "num_args" is zero, then the "num_args" will be the # of
-    // described (named) position args (i.e. the # of calls to AddPlain).
-    void SetConstraint(EConstraint policy, unsigned num_args = 0);
-
-    // Additional (user-defined) restriction on the argument value
-    // NOTE: "constraint" must be allocated by "new" and must not be
+    // Impose an additional (user-defined) restriction on the argument value.
+    // NOTE: "constraint" must be allocated by "new", and it must NOT be
     //       freed by "delete" after it has been passed to CArgDescriptions!
+    // See "CArgAllow_***" classes below for some pre-defined constraints.
     void SetConstraint(const string& name, CArgAllow* constraint);
 
     // Check if there is already a description with name "name".
@@ -408,22 +428,22 @@ public:
     string& PrintUsage(string& str) const;
 
     // Check if the "name" is syntaxically correct: it can contain only
-    // alphanumeric characters and underscore ('_')
-    static bool VerifyName(const string& name);
+    // alphanumeric characters and underscore ('_'), or be empty.
+    static bool VerifyName(const string& name, bool extended = false);
 
 
 private:
-    typedef map< string, AutoPtr<CArgDesc> >  TArgs;
-    typedef TArgs::iterator                   TArgsI;
-    typedef TArgs::const_iterator             TArgsCI;
-    typedef /*deque*/vector<string>           TPlainArgs;
-    typedef list<string>                      TKeyFlagArgs;
+    typedef set< AutoPtr<CArgDesc> >  TArgs;
+    typedef TArgs::iterator           TArgsI;
+    typedef TArgs::const_iterator     TArgsCI;
+    typedef /*deque*/vector<string>   TPosArgs;
+    typedef list<string>              TKeyFlagArgs;
 
     TArgs        m_Args;        // assoc.map of arguments' name/descr
-    TPlainArgs   m_PlainArgs;   // pos. args, ordered by position in cmd.-line
+    TPosArgs     m_PosArgs;     // pos. args, ordered by position in cmd.-line
     TKeyFlagArgs m_KeyFlagArgs; // key/flag args, ordered in order of insertion
-    EConstraint  m_Constraint;  // policy for the position args
-    unsigned     m_ConstrArgs;  // # of args to impose the constraint upon
+    unsigned     m_nExtra;      // # of mandatory extra args
+    unsigned     m_nExtraOpt;   // # of optional  extra args
 
     // extra USAGE info
     string    m_UsageName;         // program name
@@ -433,12 +453,14 @@ private:
     bool      m_AutoHelp;          // special flag "-h" activated
 
     // internal methods
-    void x_AddDesc(const string& name, CArgDesc& arg);
-    void x_PreCheck(void) const;
-    void x_CheckAutoHelp(const string& arg) const;
-    bool x_CreateArg(const string& arg1, bool have_arg2, const string& arg2,
-                     unsigned* n_plain, CArgs& args) const;
-    void x_PostCheck(CArgs& args, unsigned n_plain) const;
+    TArgsI  x_Find(const string& name);
+    TArgsCI x_Find(const string& name) const;
+    void    x_AddDesc(CArgDesc& arg);
+    void    x_PreCheck(void) const;
+    void    x_CheckAutoHelp(const string& arg) const;
+    bool    x_CreateArg(const string& arg1, bool have_arg2, const string& arg2,
+                       unsigned* n_plain, CArgs& args) const;
+    void    x_PostCheck(CArgs& args, unsigned n_plain) const;
 
 public:
     //
@@ -474,7 +496,7 @@ public:
         }
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
         auto_ptr<CArgs> args(new CArgs());
-        unsigned n_plain = 0;
+        unsigned n_plain = kMax_UInt;
         for (TSize i = 1;  i < argc;  i++) {
             bool have_arg2 = (i + 1 < argc);
             if ( x_CreateArg(argv[i], have_arg2,
@@ -493,9 +515,19 @@ public:
 
 
 
-///////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // Classes to describe additional (user-defined) constraints
 // to impose upon the argument value.
+//
+//  CArgAllow -- abstract base class
+//
+//  CArgAllow_Symbols  -- symbol from a set of allowed symbols
+//  CArgAllow_String   -- string to contain only allowed symbols 
+//  CArgAllow_Strings  -- string from a set of allowed strings
+//  CArgAllow_Integers -- integer value to fall within a given interval
+//  CArgAllow_Doubles  -- floating-point value to fall within a given interval
 //
 
 
@@ -515,13 +547,66 @@ protected:
 
 
 
-// Allow an argument to have only particular string values.
-// Use "Allow()" to add the allowed string values, can daisy-chain it:
-//  SetConstraint("a", (new CArgAllow_Strings)->
-//                      Allow("foo")->Allow("bar")->Allow("etc"));
-// One can also use "operator,()" in order to shorten the notation:
-//  SetConstraint("b", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+// CArgAllow_Symbols::
+// Argument to be exactly one symbol, and of the specified set of symbols.
 //
+// To allow only symbols 'a', 'b' and 'Z' for argument "MyArg":
+//   SetConstraint("MyArg", new CArgAllow_Symbols("abZ"))
+// To allow only printable symbols (according to "isprint()" from <ctype.h>):
+//   SetConstraint("MyArg", new CArgAllow_Symbols(CArgAllow_Symbols::ePrint))
+
+class CArgAllow_Symbols : public CArgAllow
+{
+public:
+    enum ESymbolClass {
+        // Standard character class from <ctype.h>:  isalpha(), isdigit(), etc.
+        eAlnum, eAlpha, eCntrl, eDigit, eGraph,
+        eLower, ePrint, ePunct, eSpace, eUpper,
+        eXdigit,
+        // As specified by user (using constructor with "string&")
+        eUser
+    };
+    CArgAllow_Symbols(ESymbolClass symbol_class);
+    CArgAllow_Symbols(const string& symbol_set);  // set eUser, use symbol_set
+protected:
+    virtual bool   Verify(const string& value) const;
+    virtual string GetUsage(void) const;
+    virtual ~CArgAllow_Symbols(void);
+
+    ESymbolClass m_SymbolClass;
+    string       m_SymbolSet;  // to use if  m_SymbolSet == eUser
+};
+
+
+
+// CArgAllow_String::
+// Argument to be a string containing only allowed symbols.
+//
+// To allow string containing only symbols 'a', 'b' and 'Z' for arg "MyArg":
+//   SetConstraint("MyArg", new CArgAllow_String("abZ"))
+// To allow only numeric symbols (according to "isdigit()" from <ctype.h>):
+//   SetConstraint("MyArg", new CArgAllow_String(CArgAllow_String::eDigit))
+
+class CArgAllow_String : public CArgAllow_Symbols
+{
+public:
+    CArgAllow_String(ESymbolClass symbol_class);
+    CArgAllow_String(const string& symbol_set);  // set eUser, use symbol_set
+protected:
+    virtual bool Verify(const string& value) const;
+    virtual string GetUsage(void) const;
+};
+
+
+
+// CArgAllow_Strings::
+// Allow argument to have only particular string values.
+//
+// Use "Allow()" to add the allowed string values, can daisy-chain it:
+//   SetConstraint("a", (new CArgAllow_Strings)->
+//                       Allow("foo")->Allow("bar")->Allow("etc"))
+// Use "operator,()" to shorten the notation:
+//   SetConstraint("b", &(*new CArgAllow_Strings, "foo", "bar", "etc"))
 
 class CArgAllow_Strings : public CArgAllow
 {
@@ -532,15 +617,17 @@ public:
 protected:
     virtual bool   Verify(const string& value) const;
     virtual string GetUsage(void) const;
+    virtual ~CArgAllow_Strings(void);
 private:
     set<string> m_Strings;
 };
 
 
 
-// Allow an argument to have only integer values falling within given interval
-// Example:  SetConstraint("a2", new CArgAllow_Integers(-3, 34))
+// CArgAllow_Integers::
+// Allow argument to have only integer values falling within given interval.
 //
+// Example:  SetConstraint("a2", new CArgAllow_Integers(-3, 34))
 
 class CArgAllow_Integers : public CArgAllow
 {
@@ -555,9 +642,11 @@ private:
 };
 
 
-// Allow an argument to have only integer values falling within given interval
-// Example:  SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
+
+// CArgAllow_Doubles::
+// Allow argument to have only integer values falling within given interval.
 //
+// Example:  SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
 
 class CArgAllow_Doubles : public CArgAllow
 {
