@@ -38,12 +38,12 @@ knows how to communicate with that service, whereas the service can be
 implemented in various ways on hosts across NCBI.
 That is, the service could be implemented as a standalone server on
 a host <tt>X</tt>, and as a CGI program on the same or another host <tt>Y</tt>.
-(Note however, that on a certain host, there should <i>not</i> more than one
+(Note however, that on a certain host there should <i>not</i> more than one
 server of the same <a href="#ref_ServerType">type</a> for the same service.)
 Moreover, the same server can implement several services, that is
-the services with different names. For example, one service (like,
+services with different names. For example, one service (like
 <tt>Entrez2</tt>) can accept binary data only, and another one
-(say, <tt>Entrez2Text</tt>) can accept data only in text format.
+(say <tt>Entrez2Text</tt>) can accept data only in text format.
 For the server, the distinction between those two could be in this case
 made by using a <a href="#ref_ContentType">content type specifier</a>.
 
@@ -83,7 +83,7 @@ which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>
 which is also shared with <a href="DISPD.html#ref_NCBID">NCBI CGI engine</a>, <tt>NCBID.CGI</tt>.
 Each line in the file either defines a service,
 or is a part of the host environment (including address substitutions),
-or is en empty line (the one entirely blank or containing a
+or is an empty line (the one entirely blank or containing a
 comment only). Empty lines are all ignored in the file.
 Any single configuration line can be split into several physical lines by
 inserting a backslash symbol (\) before the line breaks.
@@ -95,19 +95,19 @@ A configuration line of the form
 <font color="#009900">name=value</font>
 </pre>
 places itself in the <i>host environment</i>. The host environment can be accessed by
-clients while making the service name resolution. Often, the host environment
+clients while they make the service name resolution. Often, the host environment
 tells the client about limitations/options, which the host has, and based on this
-additional information, the client can make a decision whether the server
+additional information the client can make a decision whether the server
 (despite that it is implementing the service) is suitable for carrying out client's request.
 Host environment entries come in 2 flavors: simple environment and address substitutions.
 For example, the simple host environment can give the client an idea about what are the databases
 available on the host. The simple host environment is not interpreted or used in any way both by the daemon and
 by the load-balancing algorithm, except for that <tt>name</tt> must be a valid identifier.
 The <tt>value</tt> may be practically anything, even empty.
-It is left solely on the client to parse the environment and to look for the information in interest.
+It is left solely to the client to parse the environment and to look for the information in interest.
 <br>
 <u>Note</u>: White characters surrounding <tt>name</tt> are not preserved, but they are
-preserved in <tt>value</tt>, i.e. when appear after the equal sign.
+preserved in <tt>value</tt>, i.e. when appear after the assignment sign.
 <p>
 Address substitution environment, on the contrary, is parsed by the daemon. The syntax of
 the substitution is following:
@@ -118,18 +118,18 @@ where <tt>host</tt> can be either domain-name or IP address in a dotted notation
 rule that address 127.0.0.1 (or a name corresponding to it, like "localhost") is always replaced
 with an actual host IP address. If <tt>port</tt> is specified, it has to be preceded by a semicolon,
 and must present on both sides from the equal sign. If host is omitted, the localhost is assumed.
-Spaces surrounding equal sign are allowed. The daemon parses the left-hand side to verify whether
+Spaces surrounding assignment sign are allowed but ignored. The daemon parses the left-hand side to verify whether
 host address and port number are legal. Then the right hand-side is checked, and if valid,
 the entire text is placed in the host environment, with exception that left-hand side is
 always in the form IP:host (i.e. name converted to dotted IP notation), while the right-hand
-side is completely preserved. IP address substitutions are used by dispatcher, when non-local
-client tries to access a service, located at NCBI site. The substitution is seen as a part of host
+side is completely preserved. IP address substitutions are used by dispatcher when non-local
+client tries to access a service located at NCBI site. The substitution is seen as a part of host
 environment obtained from the service iterator via call to
 <a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
 which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>.
 Partial IP substitutions in the form <tt>@host=host</tt> are used when no detailed
 IP substitution like <tt>@host:port=host:port</tt> matches the host and port of
-the server, just by preserving the port number, and substituting the host only.
+the server, just by preserving the port number and substituting the host only.
 
 <p>
 A <a name="ref_Service"><i>service</i></a> is defined by a line of the form
@@ -150,8 +150,8 @@ An example of the <tt>server_descriptor</tt>:
 <pre>
 <font color="navy">STANDALONE somehost:1234 R=3000 L=yes S=yes B=-20</font>
 </pre>
-<li><font color="#CC33CC"><tt>launcher_info</tt></font> is basically a command line,
-preceded by a pipe symbol (|), delimiting from <tt>server_descriptor</tt>.
+<li><font color="#CC33CC"><tt>launcher_info</tt></font> is basically a command line
+preceded by a pipe symbol (<tt>|</tt>), delimiting from <tt>server_descriptor</tt>.
 It is only required for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>.
 </ul>
 
@@ -168,24 +168,24 @@ where:
   <ul compact type=bullet>
   <li><font color="#CC33CC"><tt>NCBID</tt></font> for servers launched by <a href="DISPD.html#ref_NCBID"><tt>ncbid.cgi</tt></a>;
   <li><font color="#CC33CC"><tt>STANDALONE</tt></font> for standalone servers listening on dedicated ports;
-  <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> for servers, which are the CGI programs, accepting only <i>GET</i> request method;
-  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs, accepting only <i>POST</i> request method;
-  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs, accepting both of either <i>GET</i> or <i>POST</i> request methods.<br>
+  <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> for servers, which are the CGI programs accepting only <i>GET</i> request method;
+  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting only <i>POST</i> request method;
+  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting both of either <i>GET</i> or <i>POST</i> request methods.<br>
   <u>Note</u>: Despite valid <tt>FIREWALL</tt> server specification may not be used in configuration file.
   </ul>
-<li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host, and
+<li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host and
 port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
 <a name="ref_Static">If <tt>host</tt> <b><u>is specified</u></b></a> (either <tt>localhost</tt> or local host name/IP)
 then the described server is not a subject for variable load-balancing, but is a so-called <i>static</i>
 server. Such a server always has a constant rate, independent on the host load.
 <li><font color="#009900"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must specify
-local part of URL of the CGI program, and optionally parameters, like:
+local part of URL of the CGI program and optionally parameters, like:
 <ol>
 <font color="navy"><tt>/somepath/somecgi.cgi?param1&amp;param2=value2&amp;param3=value3</tt></font>
 </ol>
-If no parameters are to be supplied, then question mark (?) must be omitted, too.<br>
+If no parameters are to be supplied then the question mark (?) must be omitted, too.<br>
 For <tt>NCBID</tt> servers, arguments are parameters to
-pass to the server, and are formed as arguments for CGI programs, i.e.
+pass to the server and are formed as arguments for CGI programs, i.e.
 <ol>
 <font color="navy"><tt>param1&amp;param2&amp;param3=value</tt></font>
 </ol>
@@ -197,7 +197,7 @@ recognized:
 <ul type=circle>
   <li>load calculation keyword:
   <ul type=bullet>
-    <li><font color="#CC33CC"><tt>Blast</tt></font> to use special algorithm for rate calculation, acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
+    <li><font color="#CC33CC"><tt>Blast</tt></font> to use special algorithm for rate calculation acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
 	applications. The algorithm uses instant values of the host load, and thus is less conservative and more
 	reactive than the ordinary one;
     <li><font color="#CC33CC"><tt>Regular</tt></font> to use an ordinary rate calculation (default, and the only load calculation
@@ -206,8 +206,8 @@ recognized:
   <li>base rate:
   <ul type=bullet>
   <li><font color="#CC33CC"><tt>R=value</tt></font> sets base server reachability rate (as a floating point number),
-  default is 1000. Any negative value makes the server unreachable, and a value of 0
-  uses the default. The maximal base rate is 100000.
+  default is 1000. Any negative value makes the server unreachable, and a value of&nbsp;0 uses the default.
+  The maximal base rate is 100000.
   </ul>
   <li><a name="ref_Local">locality marker</a>:
   <ul type=bullet>
@@ -255,8 +255,8 @@ The main loop of the daemon comprises of periodic checks of configuration file a
 necessary, checks and processings of incoming messages from load-balancing daemons running on
 other hosts, generating and brodacasting messages to the other hosts about the load of the system and
 configured services. Also, the daemon periodically checks whether the configured servers are alive, trying
-to connect to them, and then to immediately disconnect, without any data exchange. This way the daemon
-is only able to check whether the network port is working. Further server accessibility information could
+to connect to them, and then to immediately disconnect, without sending/receiving any data. This way the daemon
+is only able to check if the network port is working. Further server accessibility information could
 be sent back to the daemon in the form of <a href="#ref_Penalizer">penalty</a> by applications,
 which actually use the server.
 
@@ -286,9 +286,9 @@ to the logfile, which has to exist. Otherwise, the log messages are not stored.
 <tt>-s&nbsp;<i>positive_number</i></tt> instructs to create (if necessary) and to append to the logfile
 up to the file reaches the specified size in kilobytes. After that, the log message writing is suspended,
 and excessive messages are discarded. Note that the limiting file size is only approximate, and sometimes
-the logfile can grow bigger. The daemon keeps track of logfiles, and leaves final logging message, when
-for example switching from one file to another in case the file was moved or removed, or finishing
-logging due to file size restriction.
+the logfile can grow slightly bigger. The daemon keeps track of logfiles and leaves final logging message
+when switching from one file to another in case the file was moved or removed or when finishing
+logging due to the file size restriction.
 
 <p>
 <hr>
@@ -298,7 +298,7 @@ logging due to file size restriction.
 
 Below is an excerpt from sample configuration file, which declares some of the host environment,
 advertizes one standalone stateful server, and one <tt>NCBID</tt> service, both implementing the same
-service, and one HTTP service, which is a local service only.
+service, and one local HTTP service.
 
 <pre>
 #         This is a configuration file of new NCBI service dispatcher
@@ -343,11 +343,11 @@ by clicking <a href="http://pluto.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
 <h2><a name="ref_Client">Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</a></h2>
 
 This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program</a>, which repeatedly
-dumps onto the screen a table, representing current contents of shared memory segment, where the daemon
-collects all the information about hosts and services. The client's output can be controlled by a number
+dumps onto the screen a table representing current contents of shared memory segment, where the daemon
+collects all information about hosts and services. The client's output can be controlled by a number
 of switches, full list of which may be obtained via switch <tt>-h</tt> alone, or NCBI Intranet users can click
 <a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
-the hosts currently running the daemon, one can use the following command:
+the hosts currently running the daemon one can use the following command:
 <pre>
 >./lbsmc -s none 0
 08/23/01 11:36:35 ================== sampson ===================================
@@ -363,7 +363,7 @@ schroeder         60/8     0.45   0.00   285.72  8000.00  0  0  0  0  0  0  0  0
 
 08/23/01 11:36:35 LBSMD PID was detected as 9733
 </pre>
-For NCBI Intranet users <i>only</i>, the following live lists are available for browsing:
+For NCBI Intranet users <i>only</i> the following live lists are available for browsing:
 <ul type=circle>
 <li><a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-s_none_-w_-a">Currently running hosts</a>;
 <li><a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
@@ -376,65 +376,65 @@ For NCBI Intranet users <i>only</i>, the following live lists are available for 
 
 There is a means for application to report problems of accessing a certain server back to
 the load-balancing daemon, in the form of the penalty, a value in the range <tt>[0..100]</tt>,
-showing in percents, how bad the server is. The value of 0 means the server is completely okay,
-while 100 means the server (is misbehaving and) should <i>not</i> be used at all. The penalty is
-not a constant value: once set it starts to decrease in time, first slowly, then faster and
-faster, until reaches zero. This way, if a server was penalized for some reason beyond its control
+showing in percents how bad the server is. The value&nbsp;0 means the server is completely okay,
+while&nbsp;100 means the server (is misbehaving and) should <i>not</i> be used at all. The penalty is
+not a constant value: once set it starts to decrease in time first slowly, then faster and
+faster until reaches zero. This way, if a server was penalized for some reason beyond its control
 but afterwards the reason has gone, then the server becomes gradually available as its penalty
-(not been reset by applications again in the absence of the offending reason) goes itself to zero.
+(not being reset by applications again in the absence of the offending reason) goes itself to zero.
 
 <p>
 Technically, the penalty is maintained by a daemon, which has the server configured.
-That is, received by a certain host, which may be different from the one, where the
+That is, received by a certain host, which may be different from the one where the
 server was put into configuration file, the penalty first migrates to that host,
 and then the daemon on that host announces that the server was penalized.</br>
 <u>Note</u>: Once the daemon is restarted, the penalty information is lost.
 
 <p>
 <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> has a call
-<a href="../../lxr/ident?i=SERV_Penalize"><b><i>SERV_Penalize()</i></b></a>,
+<a href="../../lxr/ident?i=SERV_Penalize"><b><i>SERV_Penalize()</i></b></a>
 declared in <a href="../../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>,
 which can be used to set the penalty for the last server obtained from the mapping iterator.
 
 <p>
-For the script files (like ones used to start/stop servers), there is a dedicated utility program called
+For script files (like ones used to start/stop servers) there is a dedicated utility program called
 <a href="../../lxr/source/src/connect/daemons/lbsm_penalize.c"><b><i>lbsm_penalize</i></b></a>,
-which sets the penalty from the command line. Because of intervening  the load-balancing
-mechanism substantially, this command should be used with extreme care.
+which sets penalty from command line. Because of intervening the load-balancing
+mechanism substantially this command should be used with extreme care.
 
 <p>
-<b><i>lbsm_penalize</i></b> is now a part of LBSM set of tools, installed on all hosts, running <tt>LBSMD</tt>.
+<b><i>lbsm_penalize</i></b> is now a part of LBSM set of tools installed on all hosts that run <tt>LBSMD</tt>.
 As explained above, penalizing means making a server less favorable for choosing by load-balancing
-mechanism. Because of the fact that the full penalty of 100% makes a server unavailable for clients at all,
-at the time when the server is about to shut down (restart), it is wise to increase the server penalty
+mechanism. Because of the fact that the full penalty of&nbsp;100% makes a server unavailable for clients at all,
+at the time when the server is about to shut down (restart) it is wise to increase the server penalty
 to the maximal value, thus excluding the server from the service mapping. (Otherwise, the load-balancing daemon
-might not immediately notice that the server is down, and continue dispatching to that server.)
+might not immediately notice that the server is down and continue dispatching to that server.)
 Usually penalty takes at most 5 seconds to propagate to all participating network hosts.
-That is, before the actual server shutdown, the following sequence of commands can be used:
+That is, before an actual server shutdown the following sequence of commands can be used:
 <pre>
 <font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 100 host 120'
 &gt; sleep 5
 &gt; <i>shutdown the server</i></font>
 </pre>
 
-The effect of the above is to set the maximal penalty <tt>100</tt> for the service <tt>Servicename</tt> (of type
+The effect of the above is to set the maximal penalty&nbsp;<tt>100</tt> for the service <tt>Servicename</tt> (of type
 <tt>STANDALONE</tt>) running on host <tt>host</tt> for at least <tt>120</tt> seconds - note the last numeric value.
-(After 120 seconds the normal behavior of the penalty occurs, i.e. automatical decreasing in time, if not reset again
-to a different value with optional hold time.) Default hold time equals 0.
-In order to be realized by all hosts of the subnet, <tt>sleep 5</tt> precedes the server shutdown.
-Please note single quotes surrounding penalty specification: they are required in the command shell because
+(After&nbsp;120 seconds the normal behavior of the penalty occurs, i.e. automatical decreasing in time if not reset again
+to a different value with optional hold time.) Default hold time equals&nbsp;0.
+In order for penalty to be realized by all hosts of the subnet, <tt>sleep 5</tt> precedes the server shutdown.
+Please note single quotes surrounding penalty specification: they are required in a command shell because
 <b><i>lbsm_penalize</i></b> takes only one argument, the entire penalty specification.
 
 <p>
 As soon as the server is down, <tt>LBSMD</tt> detects it in the matter of several seconds
-(if not instructed otherwise via configuration file), and then never dispatches to the server until it is up.
+(if not instructed otherwise via configuration file) and then never dispatches to the server until it is up.
 
-In some circumstances, the following command may come handy:
+In some circumstances the following command may come handy:
 <pre>
 <font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'</font>
 </pre> 
-which resets the penalty to 0 (no penalty), and is useful, when e.g. as for the previous example, the server is restarted
-and ready in less than 120 seconds, but the penalty is still held high by <tt>LBSMD</tt>.
+it resets the penalty to&nbsp;0 (no penalty) and is useful when, e.g. as for the previous example, the server is restarted
+and ready in less than 120 seconds but the penalty is still held high by <tt>LBSMD</tt>.
 
 <p>
 <hr>
