@@ -184,7 +184,8 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
             return (int)f;
         }
     case SQL_SUCCESS:
-        return (int)f;
+        if(target_type==SQL_C_CHAR) buffer_size--;
+        return (f > buffer_size)? buffer_size : (int)f;
     case SQL_NO_DATA:
         return 0;
     case SQL_ERROR:
@@ -485,6 +486,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                     else if(f < 0) m_Reporter.ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
+                        if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
                         val->Append(buffer, f);
                     }
                     continue;
@@ -509,6 +511,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                     else m_Reporter.ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
+                        if(f > sizeof(buffer)) f= sizeof(buffer);
                         val->Append(buffer, f);
                     }
                     continue;
@@ -666,6 +669,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
                 else if(f < 0) m_Reporter.ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
+                    if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
                     val->Append(buffer, f);
                 }
                 continue;
@@ -691,6 +695,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
                 else if(f < 0) m_Reporter.ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
+                    if(f > sizeof(buffer)) f= sizeof(buffer);
                     val->Append(buffer, f);
                 }
                 continue;
@@ -1031,6 +1036,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/09 17:35:29  sapojnik
+ * data sizes returned by SQLGetData() adjusted to fit within the buffer
+ *
  * Revision 1.9  2003/12/09 15:42:15  sapojnik
  * CODBC_RowResult::ReadItem(): * was missing in *is_null=false; corrected
  *
