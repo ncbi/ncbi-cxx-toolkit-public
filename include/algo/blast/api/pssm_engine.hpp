@@ -93,7 +93,7 @@ private:
     /// @param query_length length of the sequence above [in]
     /// @throws CBlastException if does not have enough memory
     /// @return copy of query guarded by protein sentinel bytes
-    unsigned char*
+    static unsigned char*
     x_GuardProteinQuery(const unsigned char* query,
                         unsigned int query_length);
 
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2005/03/22 15:32:22  camacho
+ * Minor change
+ *
  * Revision 1.20  2005/03/07 17:00:07  camacho
  * Fix includes
  *
