@@ -83,6 +83,17 @@ CFileSourceCollector</li>
 </ul>
 </ul>
 
+<h2>Thread pools</h2>
+
+<ul>
+ <li><a href="#CBlockingQueue">CBlockingQueue&lt;typename TRequest></a></li>
+ <li><a href="#CStdRequest">CStdRequest</a></li>
+ <li><a href="#CThreadInPool">CThreadInPool&lt;typename TRequest></a>
+  <ul><li><a href="#CStdThreadInPool">CStdThreadInPool</a></li></ul></li>
+ <li><a href="#CPoolOfThreads">CPoolOfThreads&lt;typename TRequest></a>
+  <ul><li><a href="#CStdPoolOfThreads">CStdPoolOfThreads</a></li></ul></li>
+</ul>
+
 <h2>Other classes</h2>
 
 <ul>
@@ -300,6 +311,65 @@ calculate if CIntervalTree is acceptable. For example, it becomes less
 efficient than <a href="#CRangeMap">CRangeMap</a> when total memory becomes
 greater than processor cache.
 <br>
+
+<hr WIDTH="100%">
+<h3>
+  <a name="CBlockingQueue"></a>class CBlockingQueue&lt;typename TRequest></a>
+</h3>
+A blocking queue is a first-in-first-out container with the special
+property that attempting to extract an element from an empty queue
+blocks efficiently until more elements are available.  Thread pools
+use this class internally to manage requests.
+<hr WIDTH="100%">
+<h3> <a name="CStdRequest"></a>class CStdRequest</a> </h3>
+Abstract class, derived from CObject, encapsulating requests to a
+<a href="#CStdPoolOfThreads">CStdPoolOfThreads</a>.  The pure virtual
+method <tt>void Process(void)</tt> gets called when a thread handles
+the request.
+<hr WIDTH="100%">
+<h3>
+  <a name="CThreadInPool"></a>class CThreadInPool&lt;typename TRequest></a>
+</h3>
+Abstract class, derived from CThread, for the threads in a pool.
+Three virtual methods control its behavior:
+<pre>
+    virtual void Init(void) {} // called at beginning of Main()
+
+    // Called from Main() for each request this thread handles
+    virtual void ProcessRequest(const TRequest& req) = 0;
+
+    virtual void x_OnExit(void) {} // called by OnExit()
+</pre>
+<hr WIDTH="100%">
+<h3> <a name="CStdThreadInPool"></a>class CStdThreadInPool</a> </h3>
+A specialization of CThreadInPool for
+CRef&lt;<a href="#CStdRequest">CStdRequest</a>>, which simply
+processes each request by calling its <tt>Process</tt> method.
+<hr WIDTH="100%">
+<h3>
+  <a name="CPoolOfThreads"></a>class CPoolOfThreads&lt;typename TRequest></a>
+</h3>
+Abstract class for a pool of request-handling threads.  The
+constructor takes three arguments: the maximum size of the pool, the
+maximum size of the queue of pending requests, and an optional
+threshold (compared to the difference between the number of unfinished
+requests and the number of threads in the pool) indicating when to
+create another thread automatically.  Due to some limitations of C++,
+the constructor does not create any threads itself; you have to call
+<tt>Spawn</tt> for that.  In addition, <tt>AcceptRequest</tt> passes
+requests to the pool, and the protected pure virtual function
+<tt>NewThread</tt> creates the actual threads.
+<hr WIDTH="100%">
+<h3> <a name="CStdPoolOfThreads"></a>class CStdPoolOfThreads</a> </h3>
+A specialization of CPoolOfThreads for
+CRef&lt;<a href="#CStdRequest">CStdRequest</a>>; its
+<tt>NewThread</tt> method creates objects of class <a
+href="#CStdThreadInPool">CStdThreadInPool</a>.  It also introduces a
+new method: <tt>KillAllThreads</tt>, which causes all the threads in
+the pool to exit cleanly after finishing all pending requests, and
+takes an argument indicating whether to return immediately or to wait
+for them to finish.
+
 <hr WIDTH="100%">
 <h3>
 <a NAME="CLightString"></a>class CLightString</h3>

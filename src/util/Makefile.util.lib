@@ -1,6 +1,6 @@
 # $Id$
 
 LIBOBJ = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
-         stream_pushback
+         stream_pushback thread_pool
 
 LIB    = xutil
