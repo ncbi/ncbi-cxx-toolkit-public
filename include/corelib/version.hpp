@@ -65,6 +65,12 @@ public:
                  int  patch_level = 0,
                  const string& name        = kEmptyStr);
 
+    /// @param version
+    ///    version string in rcs format (like 1.2.4)
+    ///
+    CVersionInfo(const string& version,
+                 const string& name        = kEmptyStr);
+
     /// Constructor.
     CVersionInfo(const CVersionInfo& version);
 
@@ -211,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/01/03 16:39:08  kuznets
+ * Added constructor taking a rcs formatted string
+ *
  * Revision 1.12  2004/04/26 14:47:25  ucko
  * Fix a typo in FindVersion.
  *

@@ -53,6 +53,42 @@ CVersionInfo::CVersionInfo(int ver_major,
 }
 
 
+CVersionInfo::CVersionInfo(const string& version,
+                           const string& name)
+{
+    vector<string> lst;
+    NStr::Tokenize(version, ".", lst, NStr::eNoMergeDelims);
+
+    if (lst.size() == 0) {
+        NCBI_THROW2(CStringException, eFormat,
+                            "Invalid version format", 0);
+    }
+
+    for (unsigned i = 0; i < 3; ++i) {
+        string tmp;
+        if (i < lst.size()) {
+            tmp = lst[i];
+        }
+        int value = tmp.empty() ? 0 : NStr::StringToInt(tmp);
+        switch (i) {
+        case 0: 
+            if (value == 0) {
+                NCBI_THROW2(CStringException, eFormat,
+                            "Invalid version format (major is 0)", 0);
+            }
+            m_Major = value;
+            break;
+        case 1:
+            m_Minor = value;
+            break;
+        case 2:
+            m_PatchLevel = value;
+            break;
+        } 
+    } // for
+}
+
+
 CVersionInfo::CVersionInfo(const CVersionInfo& version)
     : m_Major(version.m_Major),
       m_Minor(version.m_Minor),
@@ -148,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/01/03 16:39:17  kuznets
+ * Added constructor taking a rcs formatted string
+ *
  * Revision 1.7  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
