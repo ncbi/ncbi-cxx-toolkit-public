@@ -37,6 +37,7 @@
 #include <connect/netcache_client.hpp>
 #include <connect/ncbi_service.h>
 
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -90,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/20 17:29:27  ucko
+ * +<memory> (once indirectly included?) for auto_ptr<>
+ *
  * Revision 1.2  2004/12/20 13:48:56  kuznets
  * Fixed compilation problem (GCC)
  *
