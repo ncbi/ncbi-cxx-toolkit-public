@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/04/08 15:18:16  gouriano
+* disable data assignment verification
+*
 * Revision 1.75  2003/04/03 21:47:24  gouriano
 * verify initialization of data members
 *
@@ -402,7 +405,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
     : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
-      m_Separator(""), m_AutoSeparator(false), m_VerifyData(true)
+      m_Separator(""), m_AutoSeparator(false), m_VerifyData(false)
 {
 }
 
