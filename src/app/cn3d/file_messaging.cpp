@@ -78,7 +78,7 @@ FileMessenger::~FileMessenger(void)
         }
         if (c == ce) okay = true;
     }
-    if (!okay) ERRORMSG("FileMessenger: did not receive a reply to all commands sent!");
+    if (!okay) WARNINGMSG("FileMessenger: did not receive a reply to all commands sent!");
 
     // check to make sure each command received was sent a reply
     okay = false;
@@ -447,6 +447,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/10/02 18:45:22  thiessen
+* make non-reply message warning only
+*
 * Revision 1.6  2003/09/22 17:33:12  thiessen
 * add AlignmentChanged flag; flush message file; check row order of repeats
 *
