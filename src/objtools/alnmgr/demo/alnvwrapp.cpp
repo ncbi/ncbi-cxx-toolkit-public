@@ -86,6 +86,7 @@ class CAlnVwrApp : public CNcbiApplication
     void             View9(int row0, int row1);
     void             View10(int row0, int row1);
     void             GetSeqPosFromAlnPosDemo();
+    void             GetAlnPosFromSeqPosDemo();
 private:
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>  m_Scope;
@@ -367,9 +368,20 @@ void CAlnVwrApp::View10(int row0, int row1)
 void CAlnVwrApp::GetSeqPosFromAlnPosDemo()
 {
     NcbiCout << "["
-        << m_AV->GetSeqPosFromAlnPos(2, 1390, CAlnMap::eForward, false)
+        << m_AV->GetSeqPosFromAlnPos(0, 707, CAlnMap::eForward, false)
         << "-" 
-        << m_AV->GetSeqPosFromAlnPos(2, 1390, (CAlnMap::ESearchDirection)7, false)
+        << m_AV->GetSeqPosFromAlnPos(0, 708, (CAlnMap::ESearchDirection)7, false)
+        << "]"
+        << NcbiEndl;
+}
+
+
+void CAlnVwrApp::GetAlnPosFromSeqPosDemo()
+{
+    NcbiCout << "["
+        << m_AV->GetAlnPosFromSeqPos(0, 707, CAlnMap::eLeft, false)
+        << "-" 
+        << m_AV->GetAlnPosFromSeqPos(0, 708, CAlnMap::eRight, false)
         << "]"
         << NcbiEndl;
 }
@@ -435,6 +447,7 @@ int CAlnVwrApp::Run(void)
             NcbiCout << "Unknown view format." << NcbiEndl;
         }
     }
+    GetAlnPosFromSeqPosDemo();
     return 0;
 }
 
@@ -453,6 +466,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/03/01 17:23:10  todorov
+* + void GetAlnPosFromSeqPosDemo()
+*
 * Revision 1.5  2004/10/04 16:12:25  todorov
 * Added Seq-align as input type. It's segs must be of type Dense-seg
 *
