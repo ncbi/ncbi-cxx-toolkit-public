@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2003/11/04 21:39:03  vakatov
+* Minor style fixes;  also explicitly put into the NCBI_SCOPE.
+*
 * Revision 1.5  2002/11/25 15:32:06  kholodov
 * Modified: using STL vector istead of CDynamicArray.
 *
@@ -51,16 +54,17 @@
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
-*
-*
-*
 */
+
+#include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/public.hpp>
 
 #include "rsmeta_impl.hpp"
 #include "rs_impl.hpp"
 
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/public.hpp>
+
+BEGIN_NCBI_SCOPE
+
 
 CResultSetMetaData::CResultSetMetaData(CDB_Result *rs)
   : m_totalColumns(rs->NofItems())
@@ -100,3 +104,4 @@ void CResultSetMetaData::Action(const CDbapiEvent& e)
 }
 
 
+END_NCBI_SCOPE
