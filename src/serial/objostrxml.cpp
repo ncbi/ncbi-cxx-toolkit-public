@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/05/04 17:04:43  gouriano
+* Check double for being finite
+*
 * Revision 1.70  2004/01/29 20:43:04  gouriano
 * Corrected writing of AnyContent objects in case it has attributes
 * with previously undefined namespaces, or tags with empty content
@@ -737,6 +740,9 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
 {
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
+    }
+    if (!finite(data)) {
+        ThrowError(fInvalidData, "invalid double: infinite");
     }
     char buffer[512];
     SIZE_TYPE width;

@@ -536,6 +536,9 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
     }
+    if (!finite(data)) {
+        ThrowError(fInvalidData, "invalid double: infinite");
+    }
     int shift = int(ceil(log10(fabs(data))));
     int precision = int(digits - shift);
     if ( precision < 0 )
@@ -1136,6 +1139,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2004/05/04 17:04:43  gouriano
+* Check double for being finite
+*
 * Revision 1.86  2004/01/12 22:39:33  ucko
 * Drop trailing-zero removal code altogether; it could still mangle
 * other cases, and %g doesn't seem to generate any extra zeros.

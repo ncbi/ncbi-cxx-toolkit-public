@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2004/05/04 17:04:43  gouriano
+* Check double for being finite
+*
 * Revision 1.83  2004/01/05 14:25:21  gouriano
 * Added possibility to set serialization hooks by stack path
 *
@@ -484,6 +487,9 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
 {
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
+    }
+    if (!finite(data)) {
+        ThrowError(fInvalidData, "invalid double: infinite");
     }
     if ( data == 0.0 ) {
         m_Output.PutString("{ 0, 10, 0 }");
