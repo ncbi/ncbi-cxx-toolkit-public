@@ -513,7 +513,7 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
             vec->m_LeftDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
         } else {
             last_seg = GetRawSeg(row, range.GetFrom());
-            vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
+            vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, last_seg);
         }
     }
     if (range.GetTo() > GetSeqStop(row)) {
@@ -742,6 +742,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/01/31 17:22:14  todorov
+* Fixed a typo
+*
 * Revision 1.23  2003/01/15 18:48:30  todorov
 * Added GetSeqChunks to be used with native seq range
 *
