@@ -83,11 +83,15 @@ int CNucProp::Nmer2Int(const char *seq, int n)
 
 // convert int from Nmer2Int back to a string
 // char *out must point to enough memory
-void CNucProp::Int2Nmer(int nmer_int, int nmer_size, char *out)
+void CNucProp::Int2Nmer(int nmer_int, int nmer_size, string *out)
 {
-    out[nmer_size] = 0;  // null terminate the string
+    if ( !out ) {
+        return;
+    }
+
+    out->reserve(nmer_size + 1);
     for (int i = nmer_size-1;  i >= 0; i--) {
-        out[i] = Nybble2Nuc(nmer_int & 3);   // analyze two low-order bits
+        *out += Nybble2Nuc(nmer_int & 3);   // analyze two low-order bits
         nmer_int >>= 2;
     }
 }
@@ -163,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/28 11:54:34  dicuccio
+ * Changed Int2Nmer to use std::string instead of char*
+ *
  * Revision 1.2  2003/07/01 19:01:13  ucko
  * Fix scope use
  *
