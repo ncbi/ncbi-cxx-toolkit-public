@@ -101,6 +101,35 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
     key->port = atoi(ch);
 }
 
+void CNetCache_GenerateBlobKey(string*        key, 
+                               unsigned       id, 
+                               const string&  host, 
+                               unsigned short port)
+{
+    string tmp;
+    *key = "NCID_01";    // NetCacheId prefix plus version
+
+    NStr::IntToString(tmp, id);
+    *key += "_";
+    *key += tmp;
+
+    *key += "_";
+    *key += host;    
+
+    NStr::IntToString(tmp, port);
+    *key += "_";
+    *key += tmp;
+
+    CTime time_stamp(CTime::eCurrent);
+    unsigned tm = (unsigned)time_stamp.GetTimeT();
+    NStr::IntToString(tmp, tm);
+    *key += "_";
+    *key += tmp;
+}
+
+
+
+
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
     : m_Sock(0),
@@ -175,6 +204,14 @@ string CNetCacheClient::PutData(const void*  buf,
                                 size_t       size,
                                 unsigned int time_to_live)
 {
+    return PutData(kEmptyStr, buf, size, time_to_live);
+}
+
+string  CNetCacheClient::PutData(const string& key,
+                                 const void*   buf,
+                                 size_t        size,
+                                 unsigned int  time_to_live)
+{
     string blob_id;
     string request;
     
@@ -182,11 +219,11 @@ string CNetCacheClient::PutData(const void*  buf,
         !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
 
     request = client;
-    request.append("\r\nPUT");    
+    request.append("\r\nPUT ");
 
-    if (time_to_live) {
-        request += NStr::IntToString(time_to_live);
-    }
+    request += NStr::IntToString(time_to_live);
+    request += " ";
+    request += key;
    
     WriteStr(request.c_str(), request.length() + 1);
     s_WaitForServer(*m_Sock);
@@ -275,7 +312,7 @@ void CNetCacheClient::Remove(const string& key)
         !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
 
     request = client;
-    request.append("\r\nREMOVE");    
+    request.append("\r\nREMOVE ");    
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
 }
@@ -289,7 +326,7 @@ IReader* CNetCacheClient::GetData(const string& key)
         !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
 
     request = client;
-    request.append("\r\nGET");    
+    request.append("\r\nGET ");    
     
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
@@ -417,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/11/01 14:39:45  kuznets
+ * Implemented BLOB update
+ *
  * Revision 1.13  2004/10/28 16:16:20  kuznets
  * +CNetCacheClient::Remove()
  *

@@ -72,7 +72,10 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
 };
 
-
+/// Meaningful information encoded in the NetCache key
+///
+/// @sa CNetCache_ParseBlobKey
+///
 struct CNetCache_Key
 {
     string       prefix;    ///< Key prefix
@@ -82,8 +85,23 @@ struct CNetCache_Key
     unsigned     port;      ///< TCP/IP port number
 };
 
+/// Parse blob key string into a CNetCache_Key structure
 extern NCBI_XCONNECT_EXPORT
 void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str);
+
+/// Generate blob key string
+///
+/// Please note that "id" is an integer issued by the netcache server.
+/// Clients should not use this function with custom ids. 
+/// Otherwise it may disrupt the interserver communication.
+///
+extern NCBI_XCONNECT_EXPORT
+void CNetCache_GenerateBlobKey(string*        key, 
+                               unsigned       id, 
+                               const string&  host, 
+                               unsigned short port);
+
+
 
 
 /// Client API for NetCache server
@@ -121,6 +139,14 @@ public:
     string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
+
+    /// Update an existing BLOB
+    ///
+    string PutData(const string& key,
+                   const void*   buf,
+                   size_t        size,
+                   unsigned int  time_to_live = 0);
+
 
     /// Retrieve BLOB from server by key
     /// If BLOB not found method returns NULL
@@ -186,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/01 14:39:30  kuznets
+ * Implemented BLOB update
+ *
  * Revision 1.8  2004/10/28 16:16:09  kuznets
  * +CNetCacheClient::Remove()
  *
