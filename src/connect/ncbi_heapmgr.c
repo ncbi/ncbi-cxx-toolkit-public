@@ -175,35 +175,45 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
 }
 
 
-HEAP HEAP_Attach(char* base)
+HEAP HEAP_AttachEx(char* base, size_t size)
 {
-    SHEAP_Block* b;
     HEAP heap;
 
-    if (!base || !(heap = (HEAP) malloc(sizeof(*heap))))
+    if (!base || !size || !(heap = malloc(sizeof(*heap))))
         return 0;
     if ((char*) HEAP_ALIGN(base) != base) {
         CORE_LOGF(eLOG_Warning,
                   ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
-    heap->size = 0;
+    heap->base   = base;
+    heap->size   = size;
+    heap->chunk  = 0/*read-only*/;
+    heap->expand = 0;
+    heap->copy   = 0/*original*/;
+    return heap;
+}
+
+
+HEAP HEAP_Attach(char* base)
+{
+    TNCBI_Size size;
+    SHEAP_Block* b;
+
+    if (!base)
+        return 0;
+    size = 0;
     for (b = (SHEAP_Block*) base; ; b = (SHEAP_Block*) ((char*) b + b->size)) {
         if (!HEAP_ISUSED(b) && !HEAP_ISFREE(b)) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Attach: Heap corrupted (0x%08X, %u)",
                        b->flag, (unsigned) b->size));
-            free(heap);
             return 0;
         }
-        heap->size += b->size;
+        size += b->size;
         if (HEAP_ISLAST(b))
             break;
     }
-    heap->base   = base;
-    heap->chunk  = 0/*read-only*/;
-    heap->expand = 0;
-    heap->copy   = 0/*original*/;
-    return heap;
+    return HEAP_AttachEx(base, size);
 }
 
 
@@ -453,7 +463,7 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
 
 TNCBI_Size HEAP_Trim(HEAP heap)
 {
-    TNCBI_Size   size;
+    TNCBI_Size   size, last_size;
     SHEAP_Block* f;
 
     if (!heap)
@@ -463,32 +473,47 @@ TNCBI_Size HEAP_Trim(HEAP heap)
         return 0;
     }
 
-    f = s_HEAP_Collect(heap);
-    if (!f || HEAP_ISUSED(f) || f->size < heap->chunk)
+    if (!(f = s_HEAP_Collect(heap)) || HEAP_ISUSED(f) || f->size < heap->chunk)
         return heap->size;
-    if ((char*) f == heap->base) {
-        heap->size = heap->chunk;
-        f->size = heap->chunk;
-        return heap->chunk;
+
+    if ((char*) f != heap->base) {
+        assert(f->size >= _HEAP_ALIGNMENT);
+        last_size = f->size % heap->chunk;
+        if (last_size) {
+            if (last_size < _HEAP_ALIGNMENT)
+                last_size += heap->chunk;
+            size = heap->size - f->size + last_size;
+        } else {
+            SHEAP_Block* b = (SHEAP_Block*) heap->base, *p = 0;
+            while (b != f) {
+                p = b;
+                b = (SHEAP_Block*) ((char*) b + b->size);
+            }
+            size = heap->size - f->size;
+            assert(p);
+            f = p;
+        }
+    } else {
+        last_size = heap->chunk;
+        size      = heap->chunk;
     }
 
-    size = f->size % heap->chunk;
-    if (size) {
-        if (size < _HEAP_ALIGNMENT)
-            size += heap->chunk;
-        heap->size -= f->size - size;
-        f->size = size;
-    } else {
-        SHEAP_Block* b = (SHEAP_Block*) heap->base, *p = 0;
-        while (b != f) {
-            p = b;
-            b = (SHEAP_Block*) ((char*) b + b->size);
-        }
-        assert(p);
-        p->flag |= HEAP_LAST;
-        heap->size -= f->size;
+    assert(size % heap->chunk == 0);
+    if (size != heap->size) {
+        if (heap->expand) {
+            ptrdiff_t dp = (char*) f - heap->base;
+            char* base = (*heap->expand)(heap->base, size);
+            if (!base)
+                return 0;
+            f = (SHEAP_Block*)(base + dp);
+            f->flag |= HEAP_LAST;
+            if (last_size)
+                f->size = last_size;
+            heap->base = base;
+            heap->size = size;
+        } else
+            CORE_LOG(eLOG_Error, "Heap Trim: Heap is not trimmable");
     }
-    assert(heap->size % heap->chunk == 0);
     return heap->size;
 }
 
@@ -564,6 +589,10 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/08/11 19:08:04  lavr
+ * HEAP_Attach() reimplemented via HEAP_AttachEx() [not public yet]
+ * HEAP_Trim() fixed to call expansion routine where applicable
+ *
  * Revision 6.18  2003/07/31 17:54:03  lavr
  * +HEAP_Trim()
  *
