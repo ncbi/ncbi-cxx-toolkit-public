@@ -32,9 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <sstream>
-
-#include "algo/winmask/seq_masker_ostat.hpp"
+#include <algo/winmask/seq_masker_ostat.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -53,9 +51,10 @@ void CSeqMaskerOstat::setUnitSize( Uint1 us )
 {
     if( state != start )
     {
-        ostringstream s;
-        s << "can not set unit size in state " << state;
-        NCBI_THROW( CSeqMaskerOstatException, eBadState, s.str() );
+        CNcbiOstrstream ostr;
+        ostr << "can not set unit size in state " << state;
+        string s = CNcbiOstrstreamToString(ostr);
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s );
     }
 
     doSetUnitSize( us );
@@ -67,9 +66,10 @@ void CSeqMaskerOstat::setUnitCount( Uint4 unit, Uint4 count )
 {
     if( state != ulen && state != udata )
     {
-        ostringstream s;
-        s << "can not set unit count data in state " << state;
-        NCBI_THROW( CSeqMaskerOstatException, eBadState, s.str() );
+        CNcbiOstrstream ostr;
+        ostr << "can not set unit count data in state " << state;
+        string s = CNcbiOstrstreamToString(ostr);
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s );
     }
 
     doSetUnitCount( unit, count );
@@ -81,9 +81,10 @@ void CSeqMaskerOstat::setParam( const string & name, Uint4 value )
 {
     if( state != udata && state != thres )
     {
-        ostringstream s;
-        s << "can not set masking parameters in state " << state;
-        NCBI_THROW( CSeqMaskerOstatException, eBadState, s.str() );
+        CNcbiOstrstream ostr;
+        ostr << "can not set masking parameters in state " << state;
+        string s = CNcbiOstrstreamToString(ostr);
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s );
     }
 
     doSetParam( name, value );
@@ -95,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/29 13:33:15  dicuccio
+ * Use <> for includes.  Use CNcbiOstrstream instead of raw ostrstream
+ *
  * Revision 1.1  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *
