@@ -389,10 +389,10 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
  * @param parameters Resulting parameters [out]
 */
 Int2
-BlastInitialWordParametersNew(BlastInitialWordOptionsPtr options, 
-   BlastHitSavingOptionsPtr hit_options, BlastExtensionParametersPtr ext_params, 
-   BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
-   BlastInitialWordParametersPtr *parameters);
+BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
+   BlastHitSavingOptionsPtr hit_options, 
+   BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
+   BlastQueryInfoPtr query_info, BlastInitialWordParametersPtr *parameters);
 
 /** Deallocate memory for BlastExtensionOptions. */
 BlastExtensionOptionsPtr
