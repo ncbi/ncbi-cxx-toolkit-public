@@ -28,6 +28,7 @@ ARGUMENTS:
                   app/gui     to build an FLTK application
                   app/objects to build an application using ASN.1 objects
                   app/objmgr  to build an application using the object manager
+                  app/alnmgr  to build an application using the alignment mgr.
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = $def_builddir)
 
