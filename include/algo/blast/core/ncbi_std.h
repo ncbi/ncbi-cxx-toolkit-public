@@ -86,9 +86,8 @@ extern "C" {
 
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
-#endif
-#ifdef _MSC_VER
 #define strdup _strdup
+#define snprintf _snprintf
 #endif
 
 #ifndef _NCBISTD_ /* if we're not in the C toolkit... */
