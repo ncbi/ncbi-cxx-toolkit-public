@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.79  2004/02/06 22:49:30  dondosha
+ * Check for NULL pointer in PSIBlastOptionsNew
+ *
  * Revision 1.78  2004/02/03 18:33:39  dondosha
  * Correction to previous change: word size can be 11 if discontiguous words
  *
@@ -1241,6 +1244,8 @@ BlastHitSavingParametersNew(Uint1 program_number,
 
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
 {
+   if (!psi_options)
+      return 0;
    PSIBlastOptions* options = 
       (PSIBlastOptions*) calloc(1, sizeof(PSIBlastOptions));
    *psi_options = options;
