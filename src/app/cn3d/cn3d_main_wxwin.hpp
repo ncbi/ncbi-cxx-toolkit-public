@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/09/24 16:43:10  thiessen
+* add wxGLApp test code
+*
 * Revision 1.40  2001/09/06 21:38:33  thiessen
 * tweak message log / diagnostic system
 *
@@ -199,6 +202,9 @@
 #endif
 #include <wx/glcanvas.h>
 
+// for testing my new wxGLApp class
+//#define TEST_WXGLAPP 1
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -208,7 +214,11 @@ class OpenGLRenderer;
 class StructureSet;
 
 // Define a new application type
+#ifdef TEST_WXGLAPP
+class Cn3DApp: public wxGLApp
+#else
 class Cn3DApp: public wxApp
+#endif        
 {
 public:
     Cn3DApp();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2001/09/24 16:43:25  thiessen
+* add wxGLApp test code
+*
 * Revision 1.84  2001/09/20 14:07:08  thiessen
 * remove visual selection stuff
 *
@@ -575,18 +578,33 @@ static void SaveFavorites(void)
 }
 
 
+#ifdef TEST_WXGLAPP
+BEGIN_EVENT_TABLE(Cn3DApp, wxGLApp)
+#else
 BEGIN_EVENT_TABLE(Cn3DApp, wxApp)
+#endif
     EVT_IDLE(Cn3DApp::OnIdle)
 END_EVENT_TABLE()
 
+#ifdef TEST_WXGLAPP
+Cn3DApp::Cn3DApp() : wxGLApp()
+#else
 Cn3DApp::Cn3DApp() : wxApp()
+#endif
 {
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
 
+#ifdef TEST_WXGLAPP
+    if (InitGLVisual(NULL))
+        TESTMSG("InitGLVisual succeeded");
+    else
+        ERR_POST(Fatal << "InitGLVisual failed");
+#else
     // try to force all windows to use best (TrueColor) visuals
     SetUseBestVisual(true);
+#endif
 }
 
 void Cn3DApp::InitRegistry(void)
