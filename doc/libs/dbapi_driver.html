@@ -114,7 +114,9 @@ replaced with the real driver name.
 <pre>#include &lt;iostream>
 #include &lt;dbapi/driver/public.hpp>
 #include &lt;dbapi/driver/exception.hpp>
-#include &lt;dbapi/driver/XXXlib/interfaces.hpp> /* XXXlib has to be replaced with the real name */
+
+/* Here, XXXlib has to be replaced with the real name, e.g. "ctlib" */
+#include &lt;dbapi/driver/XXXlib/interfaces.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -125,13 +127,17 @@ int main()
     try { // to be sure that we are catching all driver related exceptions 
 
         // We need to create a driver context first
-        CXXXContext my_context; // In real program we have to replace CXXXContext with something real
+        // In real program we have to replace CXXXContext with something real
+        CXXXContext my_context;
 
-        // connecting to server "MyServer" with user name "my_user_name" and password "my_password"
-        CDB_Connection* con= my_context.Connect("MyServer", "my_user_name", "my_password", 0); 
+        // connecting to server "MyServer"
+        // with user name "my_user_name" and password "my_password"
+        CDB_Connection* con = my_context.Connect("MyServer", "my_user_name",
+                                                 "my_password", 0); 
 
         // Preparing a SQL query
-        CDB_LangCmd* lcmd= con->LangCmd("select name, crdate from sysdatabases");
+        CDB_LangCmd* lcmd =
+            con->LangCmd("select name, crdate from sysdatabases");
     
         // Sending this query to a server
         lcmd->Send();
@@ -149,14 +155,17 @@ int main()
             }
 
             // printing the names of selected columns
-            cout &lt;&lt; r->ItemName(0) &lt;&lt; " \t\t\t" &lt;&lt; r->ItemName(1) &lt;&lt; endl;
+            cout &lt;&lt; r->ItemName(0) &lt;&lt; " \t\t\t"
+                 &lt;&lt; r->ItemName(1) &lt;&lt; endl;
 
             // fetching the rows
-            while(r->Fetch()) {
+            while ( r->Fetch() ) {
                 r->GetItem(&amp;dbname); // get the database name
                 r->GetItem(&amp;crdate); // get the creation date
 
-                cout &lt;&lt; dbname.Value() &lt;&lt; ' ' &lt;&lt; crdate.Value().AsString("M/D/Y h:m") &lt;&lt; endl
+                cout &lt;&lt; dbname.Value() &lt;&lt; ' '
+                     &lt;&lt; crdate.Value().AsString("M/D/Y h:m")
+                     &lt;&lt; endl;
             }
             delete r; // we don't need this result anymore
         }
@@ -168,7 +177,9 @@ int main()
 
         myExHandler.HandleIt(&amp;e);
     }
-}</pre>
+}
+</pre>
+
 
 <a name="ref_Topics"></a>
 <h2>
@@ -183,7 +194,8 @@ the error messages through the return codes, callbacks, handlers and/or
 exceptions. These messages could have a different formats. It could be
 just integer (error code) or some structure or a set of callback's arguments.
 The <i>NCBI DBAPI driver</i> intercepts all those error messages in all
-different formats and converts them into the objects of <a href="../docxx/CDB_Exception.html">CDB_Exception</a>
+different formats and converts them into the objects of
+<a href="../docxx/CDB_Exception.html">CDB_Exception</a>
 derived types. The following types are used:
 <dl>
 <dt>
@@ -355,7 +367,8 @@ setting. The <i>SetLoginTimeout()</i> and <i>SetTimeout()</i> methods do
 the job. If you are going to work with text or image objects in your program,
 you need to call <i>SetMaxTextImageSize()</i> to define the maximal size
 for such objects. Objects which exceed this limit could be truncated.
-<pre>class CMyHandlerForConnectionBoundErrors : public CDB_UserHandler
+<pre>
+class CMyHandlerForConnectionBoundErrors : public CDB_UserHandler
 {
     virtual bool HandleIt(CDB_Exception* ex);
     ...
@@ -376,20 +389,25 @@ int main()
     try { // to be sure that we are catching all driver related exceptions 
 
         // We need to create a driver context first
-        CXXXContext my_context; // In real program we have to replace CXXXContext with something real
+        // In real program we have to replace CXXXContext with something real
+        CXXXContext my_context;
         my_context.PushCntxMsgHandler(&amp;other_handler);
         my_context.PushDefConnMsgHandler(&amp;conn_handler);
-        my_context.SetLoginTimeout(10); // set a 10 seconds timeout for logins
-        my_context.SetTimeout(15);      // set a 15 seconds timeout for client/server communications
-        my_context.SetMaxTextImageSize(0x7FFFFFFF); // set the text/image size limit
+        // set timeouts (in seconds) and size limits (in bytes):
+        my_context.SetLoginTimeout(10); // for logins
+        my_context.SetTimeout(15);      // for client/server communications
+        my_context.SetMaxTextImageSize(0x7FFFFFFF); // text/image size limit
         ...
-        CDB_Connection* my_con= my_context.Connect("MyServer", "my_user_name", "my_password", I_DriverContext::fBcpIn);
+        CDB_Connection* my_con =
+            my_context.Connect("MyServer", "my_user_name", "my_password",
+                               I_DriverContext::fBcpIn);
         ...
     }
     catch (CDB_Exception&amp; e) {
         other_handler.HandleIt(&amp;e);
     }
-}</pre>
+}
+</pre>
 The only way to get a connection to a server in <i>NCBI DBAPI driver</i>
 is through a <i>Connect()</i> method in <a href="../docxx/I_DriverContext.html">driver
 context</a>. The first three arguments: server name, user name and password
@@ -410,17 +428,19 @@ bin" first and opens a new connection only if it is necessary.
 could use this argument to assign a name to one or more connections (to
 create a connection pool) or to invoke a connection by name from this pool.
 <pre>    ...
-    // Create a pool of four connections (two to one server and two to another) with the default database "DatabaseA"
+    // Create a pool of four connections (two to one server and two to another)
+    // with the default database "DatabaseA"
     CDB_Connection* con[4];
     int i;
-    for(i= 4; i--;) {
-        con[i]= my_context.Connect((i%2 == 0)? "MyServer1" : "MyServer2", 
-                                   "my_user_name", "my_password", 0, true, "ConnectionPoolA");
+    for (i = 4;  i--; ) {
+        con[i]= my_context.Connect((i%2 == 0) ? "MyServer1" : "MyServer2", 
+                                   "my_user_name", "my_password", 0, true,
+                                   "ConnectionPoolA");
         CDB_LangCmd* lcmd= con[i]->LangCmd("use DatabaseA");
         lcmd->Send();
         while(lcmd->HasMoreResults()) {
-            CDB_Result* r= lcmd->Result();
-            if(r) delete r;
+            CDB_Result* r = lcmd->Result();
+            delete r;
         }
         delete lcmd;
     }
@@ -429,17 +449,20 @@ create a connection pool) or to invoke a connection by name from this pool.
     ...
 
     // in some other part of the program
-    // we want to get a connection from "ConnectionPoolA" but we don't want driver to open a
-    // new connection if pool is empty
+    // we want to get a connection from "ConnectionPoolA"
+    // but we don't want driver to open a new connection if pool is empty
     try {
-        CDB_Connection* my_con= my_context.Connect("","","",0,true,"ConnectionPoolA");
+        CDB_Connection* my_con= my_context.Connect("", "", "", 0, true,
+                                                   "ConnectionPoolA");
         // Note that server name, user name and password are empty
         ...
     }
     catch (CDB_Exception&amp; e) {
         // the pool is empty
         ...
-    }</pre>
+    }
+</pre>
+
 Application could combine in one pool the connections to the different
 servers. This mechanism could also be used to group together the connections
 with some particular settings (default database, transaction isolation
@@ -523,8 +546,10 @@ while(lcmd->HasMoreResults()) {
     }
     // fetching the row
     while(r->Fetch()) {
-        r->ReadItem(0, 0); // Reading 0 bytes from the text (some clients need this trick)
-        my_deskr= r->GetImageOrTextDescriptor();
+        // read 0 bytes from the text (some clients need this trick)
+        r->ReadItem(0, 0);
+
+        my_deskr = r->GetImageOrTextDescriptor();
     }
     delete r; // we don't need this result anymore
 }
@@ -581,8 +606,10 @@ while(lcmd->HasMoreResults()) {
     }
     // fetching the row
     while(r->Fetch()) {
-        r->ReadItem(0, 0); // Reading 0 bytes from the text (some clients need this trick)
-        my_deskr= r->GetImageOrTextDescriptor();
+        // read 0 bytes from the text (some clients need this trick)
+        r->ReadItem(0, 0);
+
+        my_deskr = r->GetImageOrTextDescriptor();
     }
     delete r; // we don't need this result anymore
 }
@@ -611,11 +638,15 @@ but all of them need to be retrieved. The following results loop is recommended 
 <pre>
 CDB_XXXCmd* cmd; // XXX could be Lang, RPC, etc.
 ...
-while(cmd-&gt;HasMoreResults()) {// HasMoreResults() method returns <b>true</b>
-                                 // if the Result() method needs to be called.
-                                 // It doesn't guarantee that Result() will return not NULL result
-   CDB_Result* res= cmd-&gt;Result();
-   if(res == 0) continue; // if res is NULL it doesn't mean that there is no more results
+while (cmd-&gt;HasMoreResults()) {
+        // HasMoreResults() method returns <b>true</b>
+        // if the Result() method needs to be called.
+        // It doesn't guarantee that Result() will return not NULL result
+
+   CDB_Result* res = cmd-&gt;Result();
+   if (res == 0)
+       continue; // a NULL res doesn't mean that there is no more results
+
    switch(res-&gt;ResultType()) {
       case eDB_RowResult: // row result 
           while(res-&gt;Fetch()) {
