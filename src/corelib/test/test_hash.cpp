@@ -51,7 +51,7 @@ public:
 
 
 int MaxHashSize = 10000;
-int ReadLoops = 1000;
+int ReadLoops = 100;
 
 void CTestHash::Init(void)
 {
@@ -68,7 +68,7 @@ void CTestHash::Init(void)
 
     d->AddDefaultKey("cycles", "Cycles",
                      "Number of read/search cycles over the whole container",
-                     CArgDescriptions::eInteger, "1000");
+                     CArgDescriptions::eInteger, "100");
 
     d->AddFlag("test_std",
                "Compare results to statndard (non-hash) containers");
@@ -335,6 +335,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/10 16:13:49  grichenk
+ * Reduced number of test cycles
+ *
  * Revision 1.2  2005/02/09 16:33:02  grichenk
  * Improved test
  *
