@@ -57,7 +57,7 @@ void CMMAligner::EnableMultipleThreads(bool allow)
 }
 
 
-CNWAligner::TScore CMMAligner::Run()
+CNWAligner::TScore CMMAligner::x_Run()
 {
     m_score = kMin_Int;
     m_TransList.clear();
@@ -869,6 +869,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/04/14 19:01:49  kapustin
+ * Run() -> x_Run()
+ *
  * Revision 1.7  2003/03/18 15:15:51  kapustin
  * Implement virtual memory checking function. Allow separate free end gap specification
  *
