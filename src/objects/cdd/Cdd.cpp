@@ -506,7 +506,7 @@ bool CCdd::AlignAnnotsAligned() {
 // check if the alignannot's are covered by aligned blocks
 //-------------------------------------------------------------------------
   int  From, To, NewFrom, NewTo;
-  TDendiag*  pDenDiagSet;
+  const TDendiag*  pDenDiagSet;
   list< CRef< CAlign_annot > >::const_iterator  m;
   list< CRef< CSeq_interval > >::const_iterator  n;
 
@@ -671,18 +671,18 @@ bool CCdd::ReMaster(int Row) {
 }
 
 
-int CCdd::GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow) {
+int CCdd::GetSeqPosition(const TDendiag* pDenDiagSet, int Position, bool OnMasterRow) {
 //---------------------------------------------------------------------------
 // if OnMasterRow is true, then get position on slave row that corresponds
 // to Position on master row.  Otherwise, get position on master row that
 // corresponds to Position on slave row.
 //---------------------------------------------------------------------------
-  list< CRef< CDense_diag > >::iterator  i;
-  list< TSeqPos >::iterator  k;
+  list< CRef< CDense_diag > >::const_iterator  i;
+  list< TSeqPos >::const_iterator  k;
   int  Start, Len, OtherStart;
 
   for (i=pDenDiagSet->begin(); i!=pDenDiagSet->end(); i++) {
-    k = (*i)->SetStarts().begin();
+    k = (*i)->GetStarts().begin();
     Len = (*i)->GetLen();
     Start = OnMasterRow ? *k : *(++k);
     k = (*i)->SetStarts().begin();
@@ -1255,6 +1255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/08/02 18:57:19  hurwitz
+ * fix STL inconsistencies
+ *
  * Revision 1.9  2002/08/02 17:21:40  hurwitz
  * fix due to change in asn1 container class, plus bug fix
  *

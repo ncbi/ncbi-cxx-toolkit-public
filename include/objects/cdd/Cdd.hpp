@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/08/02 18:57:40  hurwitz
+ * fix STL inconsistencies
+ *
  * Revision 1.5  2002/08/02 14:39:34  hurwitz
  * many new features
  *
@@ -138,7 +141,7 @@ public:
     // get dense-diag info for one row
     bool   GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet);
     // get corresponding location on other row
-    int    GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
+    int    GetSeqPosition(const TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
     // get the list of Seq-aligns
     bool   IsSeqAligns();
     const  list< CRef< CSeq_align > >& GetSeqAligns();
