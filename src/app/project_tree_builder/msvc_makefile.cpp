@@ -103,7 +103,7 @@ string CMsvcMetaMakefile::GetUsePchThroughHeader
     CDirEntry::SplitPath(source_file_full_path, &source_file_dir);
     source_file_dir = CDirEntry::AddTrailingPathSeparator(source_file_dir);
 
-    int max_match = 0;
+    size_t max_match = 0;
     string pch_file;
     ITERATE(SPchInfo::TSubdirPchfile, p, pch_info.m_PchUsageMap) {
         const string& branch_subdir = p->first;
@@ -355,6 +355,8 @@ static string s_CreateRuleMakefileFilename(CProjItem::TProjType project_type,
     case CProjKey::eDll:
         name += ".dll";
         break;
+    default:
+        break;
     }
     return name + ".msvc";
 }
@@ -371,7 +373,8 @@ CMsvcCombinedProjectMakefile::CMsvcCombinedProjectMakefile
         string rule_path = rules_basedir;
         rule_path = 
             CDirEntry::ConcatPath(rule_path, 
-                                  s_CreateRuleMakefileFilename(project_type, requires));
+                                  s_CreateRuleMakefileFilename(project_type, 
+                                                               requires));
         
         TRule rule(new CMsvcProjectRuleMakefile(rule_path));
         if ( !rule->IsEmpty() )
@@ -380,18 +383,22 @@ CMsvcCombinedProjectMakefile::CMsvcCombinedProjectMakefile
 }
 
 
+CMsvcCombinedProjectMakefile::~CMsvcCombinedProjectMakefile(void)
+{
+}
+
 #define IMPLEMENT_COMBINED_MAKEFILE_OPT(X)  \
-string CMsvcCombinedProjectMakefile::##X(const string&       opt,             \
+string CMsvcCombinedProjectMakefile::X(const string&       opt,               \
                                          const SConfigInfo&  config) const    \
 {                                                                             \
-    string prj_val = m_ProjectMakefile->##X(opt, config);                     \
+    string prj_val = m_ProjectMakefile->X(opt, config);                       \
     if ( !prj_val.empty() )                                                   \
         return prj_val;                                                       \
     string val;                                                               \
     int priority = 0;                                                         \
     ITERATE(TRules, p, m_Rules) {                                             \
         const TRule& rule = *p;                                               \
-        string rule_val = rule->##X(opt, config);                             \
+        string rule_val = rule->X(opt, config);                               \
         if ( !rule_val.empty() && priority < rule->GetRulePriority(config)) { \
             val      = rule_val;                                              \
             priority = rule->GetRulePriority(config);                         \
@@ -430,11 +437,11 @@ static void s_ConvertRelativePaths(const string&       rule_base_dir,
 
 
 #define IMPLEMENT_COMBINED_MAKEFILE_VALUES(X)  \
-void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
+void CMsvcCombinedProjectMakefile::X(const SConfigInfo& config,               \
                                        list<string>*      values_list) const  \
 {                                                                             \
     list<string> prj_val;                                                     \
-    m_ProjectMakefile->##X(config, &prj_val);                                 \
+    m_ProjectMakefile->X(config, &prj_val);                                   \
     if ( !prj_val.empty() ) {                                                 \
         *values_list = prj_val;                                               \
         return;                                                               \
@@ -444,7 +451,7 @@ void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
     ITERATE(TRules, p, m_Rules) {                                             \
         const TRule& rule = *p;                                               \
         list<string> rule_val;                                                \
-        rule->##X(config, &rule_val);                                         \
+        rule->X(config, &rule_val);                                           \
         if ( !rule_val.empty() && priority < rule->GetRulePriority(config)) { \
             val      = rule_val;                                              \
             priority = rule->GetRulePriority(config);                         \
@@ -455,11 +462,11 @@ void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
 
 
 #define IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(X)  \
-void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
+void CMsvcCombinedProjectMakefile::X(const SConfigInfo& config,               \
                                        list<string>*      values_list) const  \
 {                                                                             \
     list<string> prj_val;                                                     \
-    m_ProjectMakefile->##X(config, &prj_val);                                 \
+    m_ProjectMakefile->X(config, &prj_val);                                   \
     if ( !prj_val.empty() ) {                                                 \
         *values_list = prj_val;                                               \
         return;                                                               \
@@ -470,7 +477,7 @@ void CMsvcCombinedProjectMakefile::##X(const SConfigInfo& config,             \
     ITERATE(TRules, p, m_Rules) {                                             \
         const TRule& rule = *p;                                               \
         list<string> rule_val;                                                \
-        rule->##X(config, &rule_val);                                         \
+        rule->X(config, &rule_val);                                           \
         if ( !rule_val.empty() && priority < rule->GetRulePriority(config)) { \
             val      = rule_val;                                              \
             priority = rule->GetRulePriority(config);                         \
@@ -555,6 +562,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/06/10 15:16:46  gorelenk
+ * Changed macrodefines to be comply with GCC 3.4.0 .
+ *
  * Revision 1.14  2004/06/07 13:50:29  gorelenk
  * Added implementation of classes
  * CMsvcProjectRuleMakefile and CMsvcCombinedProjectMakefile.

@@ -687,21 +687,21 @@ CMsvcTools::~CMsvcTools()
 static bool s_IsExe(const CMsvcPrjGeneralContext& general_context,
                     const CMsvcPrjProjectContext& project_context)
 {
-    return general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eExe;
+    return general_context.m_Type == CMsvcPrjGeneralContext::eExe;
 }
 
 
 static bool s_IsLib(const CMsvcPrjGeneralContext& general_context,
                     const CMsvcPrjProjectContext& project_context)
 {
-    return general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eLib;
+    return general_context.m_Type == CMsvcPrjGeneralContext::eLib;
 }
 
 
 static bool s_IsDll(const CMsvcPrjGeneralContext& general_context,
                     const CMsvcPrjProjectContext& project_context)
 {
-    return general_context.m_Type == CMsvcPrjGeneralContext::TTargetType::eDll;
+    return general_context.m_Type == CMsvcPrjGeneralContext::eDll;
 }
 
 
@@ -861,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/06/10 15:16:46  gorelenk
+ * Changed macrodefines to be comply with GCC 3.4.0 .
+ *
  * Revision 1.31  2004/06/07 19:16:07  gorelenk
  * + Taking into account 'impl' in creation of header dir list.
  *

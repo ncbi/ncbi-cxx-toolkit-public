@@ -85,7 +85,7 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
         CRef<CConfiguration> conf(new CConfiguration());
 
 #define BIND_TOOLS(tool, msvctool, X) \
-                  tool->SetAttlist().Set##X(msvctool->##X())
+                  tool->SetAttlist().Set##X(msvctool->X())
 
         {{
             //Configuration
@@ -588,6 +588,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/06/10 15:16:46  gorelenk
+ * Changed macrodefines to be comply with GCC 3.4.0 .
+ *
  * Revision 1.34  2004/05/26 18:01:46  gorelenk
  * Changed CMsvcProjectGenerator::Generate :
  * Changed insertion fo source files, headers, inlines.
