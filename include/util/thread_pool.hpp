@@ -40,35 +40,13 @@
 *      CStdRequest       -- abstract request type
 *      CStdThreadInPool  -- thread handling CStdRequest
 *      CStdPoolOfThreads -- pool of threads handling CStdRequest
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2002/04/11 15:12:52  ucko
-* Added GetSize and GetMaxSize methods to CBlockingQueue and rewrote
-* Is{Empty,Full} in terms of them.
-*
-* Revision 1.4  2002/01/25 15:46:06  ucko
-* Add more methods needed by new threaded-server code.
-* Minor cleanups.
-*
-* Revision 1.3  2002/01/24 20:17:49  ucko
-* Introduce new exception class for full queues
-* Allow waiting for a full queue to have room again
-*
-* Revision 1.2  2002/01/07 20:15:06  ucko
-* Fully initialize thread-pool state.
-*
-* Revision 1.1  2001/12/11 19:54:44  ucko
-* Introduce thread pools.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_limits.hpp>
 
-#include <queue>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -93,7 +71,7 @@ public:
     };
 
     CBlockingQueue(unsigned int max_size = kMax_UInt)
-        : m_MaxSize(max_size), m_GetSem(0,1), m_PutSem(1,1) {}
+        : m_GetSem(0,1), m_PutSem(1,1), m_MaxSize(max_size) {}
 
     void         Put(const TRequest& data); // Throws exception if full
     void         WaitForRoom(void) const;
@@ -103,12 +81,15 @@ public:
     bool         IsEmpty(void) const    { return GetSize() == 0; }
     bool         IsFull(void) const     { return GetSize() == GetMaxSize(); }
 
-private:
-    volatile queue<TRequest> m_Queue;
-    unsigned int             m_MaxSize;
+protected:
+    // Derived classes should take care to use these members properly.
+    volatile deque<TRequest> m_Queue;
     CSemaphore               m_GetSem; // Raised iff the queue contains data
     mutable CSemaphore       m_PutSem; // Raised iff the queue has room
     mutable CMutex           m_Mutex;  // Guards access to queue
+
+private:
+    unsigned int             m_MaxSize;
 };
 
 
@@ -247,14 +228,14 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data)
 {
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
-    queue<TRequest>& q = const_cast<queue<TRequest>&>(m_Queue);
+    deque<TRequest>& q = const_cast<deque<TRequest>&>(m_Queue);
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
         throw CException("Attempt to insert into a full queue");
     } else if (q.empty()) {
         m_GetSem.Post();
     }
-    q.push(data);
+    q.push_back(data);
 }
 
 
@@ -274,15 +255,18 @@ TRequest CBlockingQueue<TRequest>::Get(void)
 
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
-    queue<TRequest>& q = const_cast<queue<TRequest>&>(m_Queue);
+    deque<TRequest>& q = const_cast<deque<TRequest>&>(m_Queue);
     TRequest result = q.front();
-    q.pop();
+    q.pop_front();
     if ( ! q.empty() ) {
         m_GetSem.Post();
     }
-    if (q.size() == m_MaxSize - 1) {
-        m_PutSem.Post();
-    }
+
+    // Get the attention of WaitForRoom() or the like; do this
+    // regardless of queue size because derived classes may want
+    // to insert multiple objects atomically.
+    m_PutSem.TryWait();
+    m_PutSem.Post();
     return result;
 }
 
@@ -291,7 +275,7 @@ template <typename TRequest>
 unsigned int CBlockingQueue<TRequest>::GetSize(void) const
 {
     CMutexGuard guard(m_Mutex);
-    return const_cast<const queue<TRequest>&>(m_Queue).size();
+    return const_cast<const deque<TRequest>&>(m_Queue).size();
 }
 
 
@@ -368,5 +352,37 @@ void CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req)
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.6  2002/04/18 15:38:19  ucko
+* Use "deque" instead of "queue" -- more general, and less likely to
+* yield any name conflicts.
+* Make most of CBlockingQueue<>'s data protected for the benefit of
+* derived classes.
+* Move CVS log to end.
+*
+* Revision 1.5  2002/04/11 15:12:52  ucko
+* Added GetSize and GetMaxSize methods to CBlockingQueue and rewrote
+* Is{Empty,Full} in terms of them.
+*
+* Revision 1.4  2002/01/25 15:46:06  ucko
+* Add more methods needed by new threaded-server code.
+* Minor cleanups.
+*
+* Revision 1.3  2002/01/24 20:17:49  ucko
+* Introduce new exception class for full queues
+* Allow waiting for a full queue to have room again
+*
+* Revision 1.2  2002/01/07 20:15:06  ucko
+* Fully initialize thread-pool state.
+*
+* Revision 1.1  2001/12/11 19:54:44  ucko
+* Introduce thread pools.
+*
+* ===========================================================================
+*/
 
 #endif  /* THREAD_POOL__HPP */
