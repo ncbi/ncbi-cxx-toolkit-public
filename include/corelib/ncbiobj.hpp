@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/07 15:25:42  vasilche
+* Fixed implementation of CRef::->
+*
 * Revision 1.1  2000/03/07 14:03:11  vasilche
 * Added CObject class as base for reference counted objects.
 * Added CRef templace for reference to CObject descendant.
@@ -151,6 +154,11 @@ public:
     
     // check whether reference in not null
     inline
+    operator bool(void)
+        {
+            return m_Ptr != 0;
+        }
+    inline
     operator bool(void) const
         {
             return m_Ptr != 0;
@@ -187,20 +195,20 @@ public:
             return *ptr;
         }
     inline
-    const TObjectType& operator->(void) const THROWS((CNullPointerError))
+    const TObjectType* operator->(void) const THROWS((CNullPointerError))
         {
             const TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 throw CNullPointerError();
-            return *ptr;
+            return ptr;
         }
     inline
-    TObjectType& operator->(void) THROWS((CNullPointerError))
+    TObjectType* operator->(void) THROWS((CNullPointerError))
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 throw CNullPointerError();
-            return *ptr;
+            return ptr;
         }
 
     inline
