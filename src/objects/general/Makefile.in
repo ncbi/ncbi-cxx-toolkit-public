@@ -1,5 +1,4 @@
 SUB_PROJ = test
 ASN_PROJ = general
-DATATOOL_DLL_FLAGS = -oex NNN 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
