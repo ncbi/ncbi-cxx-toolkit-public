@@ -170,33 +170,27 @@ CDB_Connection *CPubseqReader::x_NewConnection(void)
     for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
         if ( !m_Context ) {
             C_DriverMgr drvMgr;
+            map<string, string> args;
+            args["packet"] = "3584"; // 7*512
             //DBAPI_RegisterDriver_CTLIB(drvMgr);
             //DBAPI_RegisterDriver_DBLIB(drvMgr);
             string errmsg;
-            FDBAPI_CreateContext createContextFunc =
-                drvMgr.GetDriver("ctlib",&errmsg);
-            if ( !createContextFunc ) {
+            m_Context = drvMgr.GetDriverContext("ctlib", &errmsg, &args);
+            if ( !m_Context ) {
                 LOG_POST(errmsg);
 #if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
                 m_NoMoreConnections = true;
                 NCBI_THROW(CLoaderException, eNoConnection,
-                           "Neither ctlib nor dblib are available");
+                           "Cannot create dbapi context");
 #else
-                createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
-                if ( !createContextFunc ) {
+                m_Context = drvMgr.GetDriverContext("dblib", &errmsg, &args);
+                if ( !m_Context ) {
                     LOG_POST(errmsg);
                     m_NoMoreConnections = true;
                     NCBI_THROW(CLoaderException, eNoConnection,
-                               "Neither ctlib nor dblib are available");
+                               "Cannot create dbapi context");
                 }
 #endif
-            }
-            map<string,string> args;
-            args["packet"]="3584"; // 7*512
-            m_Context = (*createContextFunc)(&args);
-            if ( !m_Context ) {
-                NCBI_THROW(CLoaderException, eNoConnection,
-                           "Cannot create dbapi context");
             }
         }
         try {
