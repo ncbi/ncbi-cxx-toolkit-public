@@ -548,7 +548,7 @@ int CTestApplication::Run(void)
     }
 
     {{
-        int i = 0;
+        size_t i = 0;
         ITERATE(list<string>, it, split) {
             assert(i < sizeof(split_result) / sizeof(split_result[0]));
             assert(NStr::Compare(*it, split_result[i++]) == 0);
@@ -849,6 +849,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.30  2004/08/04 16:52:01  vakatov
+ * Signed/unsigned warning fix
+ *
  * Revision 6.29  2004/07/20 18:47:29  ucko
  * Use the Split test-cases for Tokenize(..., eMergeDelims).
  *
