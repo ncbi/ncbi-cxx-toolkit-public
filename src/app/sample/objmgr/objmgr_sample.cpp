@@ -155,15 +155,16 @@ int CSampleObjmgrApplication::Run(void)
 
     /////////////////////////////////////////////////////////////////////////
     // Get the sequence using CSeqVector.
-    // Use default encoding:  CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-    CSeqVector seq_vect = bioseq_handle.GetSeqVector();
+    // Use Iupac encoding: CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
+    CSeqVector seq_vect = bioseq_handle.GetSeqVector
+        (CBioseq_Handle::eCoding_Iupac);
     // Printout length of the sequence.
     NcbiCout << "Sequence:  length=" << seq_vect.size();
     NcbiCout << ",  data=";
 
     // Copy up to 10 first symbmols into string and print it.
     string str;
-    seq_vect.GetSeqData(0, 9, str);
+    seq_vect.GetSeqData(0, 10, str);
     // Use NStr::PrintableString() to print the sequence since it may
     // contain non-printable characters.
     NcbiCout << NStr::PrintableString(str) << NcbiEndl;
@@ -273,6 +274,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/08/31 21:05:35  grichenk
+ * Updated seq-vector coding
+ *
  * Revision 1.17  2004/08/19 21:10:51  grichenk
  * Updated object manager sample code
  *
