@@ -1,4 +1,4 @@
---$Revision: 6.5 $
+--$Revision: 6.6 $
 --**********************************************************************
 --
 --  NCBI Taxonomy Server
@@ -35,7 +35,10 @@ Taxon1-req ::= CHOICE {
 	id4gi		INTEGER,  	-- get taxid by gi
 	taxachildren	INTEGER,	-- get children
 	taxalineage     INTEGER,        -- get extended lineage for org
-	maxtaxid        NULL}           -- get max taxid
+        maxtaxid        NULL,           -- get max taxid
+        getproptypes    NULL,           -- get property types
+        getorgprop      Taxon1-info,    -- get properties for organism
+        searchname      Taxon1-info}    -- fancy search (token set, wild card)
 
 Taxon1-resp ::= CHOICE {
 	error		Taxon1-error,	-- sent on any error
@@ -59,7 +62,10 @@ Taxon1-resp ::= CHOICE {
 	taxabyid	Taxon2-data,
 	taxachildren	SEQUENCE OF Taxon1-name,
 	taxalineage	SEQUENCE OF Taxon1-name,
-	maxtaxid        INTEGER}
+        maxtaxid        INTEGER,
+	getproptypes    SET OF Taxon1-info,
+        getorgprop      SET OF Taxon1-info,
+        searchname      SET OF Taxon1-name}
 
 Taxon1-info ::= SEQUENCE {
 	ival1	INTEGER,
