@@ -64,8 +64,10 @@ string JoinNoRedund(const list<string>& l, const string& delim);
 // meet several spaces (spaces and tabs) in succession it replaces them
 // with one space. Strips all spaces after '(' and before ')'
 void StripSpaces(string& str);
+void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
+
 
 bool ValidateAccession(const string& accn);
 void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
@@ -117,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/08/30 13:37:53  shomrat
+* + TrimSpacesAndJunkFromEnds
+*
 * Revision 1.9  2004/08/23 15:50:38  shomrat
 * + new tilde format
 *

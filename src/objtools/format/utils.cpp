@@ -106,7 +106,7 @@ string ExpandTildes(const string& s, ETildeStyle style)
             break;
 
         case eTilde_comment:
-            if (tilde > 0  &&  tilde - 1 == '`') {
+            if (tilde > 0  &&  s[tilde - 1] == '`') {
                 result[result.length() - 1] = '~';
             } else {
                 result += '\n';
@@ -185,6 +185,45 @@ void AddPeriod(string& str)
     size_t pos = str.find_last_not_of(kChars);
     if (pos != NPOS) {
         str.erase(pos + 1);
+        str += '.';
+    }
+}
+
+
+void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
+{
+    if (str.empty()) {
+        return;
+    }
+
+    size_t strlen = str.length();
+    size_t begin = 0;
+    while (begin != strlen) {
+        if (str[begin] > ' ') {
+            break;
+        } else {
+            ++begin;
+        }
+    }
+    if (begin == strlen) {
+        str.erase();
+        return;
+    }
+
+    size_t end = strlen - 1;
+    bool has_period = false;
+    while (end > begin) {
+        char ch = str[end];
+        if (ch <= ' '  ||  ch == '.'  ||  ch ==  ','  ||  ch == '~'  ||  ch == ';') {
+            has_period = (has_period  ||  ch == '.');
+            --end;
+        } else {
+            break;
+        }
+    }
+
+    str = str.substr(begin, end + 1);
+    if (has_period) {
         str += '.';
     }
 }
@@ -597,6 +636,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/08/30 13:38:13  shomrat
+* + TrimSpacesAndJunkFromEnds
+*
 * Revision 1.12  2004/08/23 15:50:53  shomrat
 * + new tilde format
 *
