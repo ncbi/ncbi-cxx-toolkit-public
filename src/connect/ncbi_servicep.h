@@ -91,6 +91,14 @@ SSERV_Info* SERV_GetInfoP
  double              preference     /* [0=min..100=max] preference in %%     */
  );
 
+/* same as above but creates an iterator to get services one by one */
+SERV_ITER SERV_OpenP
+(const char*         service,
+ TSERV_Type          type,
+ unsigned int        preferred_host,
+ double              preference
+ );
+
 
 /* Private interface: update mapper information from the given text
  * (<CR><LF> separated lines, usually taken from HTTP header).
@@ -142,6 +150,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/06/09 19:53:11  lavr
+ * +SERV_OpenP()
+ *
  * Revision 6.21  2003/03/07 22:21:55  lavr
  * Explain what is "preference" for SERV_GetInfoP()
  *

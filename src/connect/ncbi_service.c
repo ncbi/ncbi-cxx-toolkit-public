@@ -188,6 +188,13 @@ SERV_ITER SERV_OpenEx(const char* service,
 }
 
 
+SERV_ITER SERV_OpenP(const char* service, TSERV_Type type,
+                     unsigned int preferred_host, double preference)
+{
+    return s_Open(service, type, preferred_host, preference, 0, 0, 0, 0, 0);
+}
+
+
 static SSERV_Info* s_GetInfo(const char* service, TSERV_Type type,
                              unsigned int preferred_host, double preference,
                              const SConnNetInfo* net_info,
@@ -471,6 +478,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2003/06/09 19:53:01  lavr
+ * +SERV_OpenP()
+ *
  * Revision 6.46  2003/04/30 17:00:47  lavr
  * Name collision resolved
  *
