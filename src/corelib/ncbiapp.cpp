@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/12/28 15:43:12  sandomir
+* minor fixed in CgiApp and Resource
+*
 * Revision 1.11  1998/12/14 15:30:07  sandomir
 * minor fixes in CNcbiApplication; command handling fixed
 *
@@ -133,7 +136,7 @@ CCgiApplication* CCgiApplication::Instance(void)
 CCgiApplication::CCgiApplication(int argc, char** argv,
                                  CNcbiIstream* istr, bool indexes_as_entries)
     : CNcbiApplication(argc, argv),
-      m_CgiRequest( 0 ), m_Istr( istr ), m_Iase( indexes_as_entries )
+      m_Istr( istr ), m_Iase( indexes_as_entries )
 {}
 
 CCgiApplication::~CCgiApplication(void)
@@ -142,13 +145,16 @@ CCgiApplication::~CCgiApplication(void)
 void CCgiApplication::Init(void)
 {
   CNcbiApplication::Init();
-  m_CgiRequest = new CCgiRequest(m_Argc, m_Argv, m_Istr, m_Iase);
 }
 
 void CCgiApplication::Exit(void)
 {
-    delete m_CgiRequest;
-    CNcbiApplication::Exit();
+  CNcbiApplication::Exit();
+}
+
+CCgiRequest* CCgiApplication::GetRequest(void) const
+{
+  return new CCgiRequest(m_Argc, m_Argv, m_Istr, m_Iase);
 }
 
 //
@@ -162,8 +168,9 @@ CSimpleCgiApp::CSimpleCgiApp(int argc, char ** argv, CNcbiIstream * istr,
 
 void CSimpleCgiApp::Init(void)
 {
-CCgiApplication::Init();
-m_CgiEntries = m_CgiRequest->GetEntries();
+  CCgiApplication::Init();
+  m_CgiRequest = GetRequest();
+  m_CgiEntries = m_CgiRequest->GetEntries();
 }
 
 END_NCBI_SCOPE

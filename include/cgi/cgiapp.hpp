@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/28 15:43:09  sandomir
+* minor fixed in CgiApp and Resource
+*
 * Revision 1.8  1998/12/10 17:36:54  sandomir
 * ncbires.cpp added
 *
@@ -81,11 +84,10 @@ public:
   virtual void Init(void); // initialization
   virtual void Exit(void); // cleanup
 
-  const CCgiRequest* GetRequest(void) const 
-    { return m_CgiRequest; }
+  virtual CCgiRequest* GetRequest(void) const;
 
 protected:
-  CCgiRequest*  m_CgiRequest;
+
   CNcbiIstream* m_Istr;
   bool          m_Iase; // indexes_as_entries
 };
@@ -102,6 +104,8 @@ public:
     virtual void Init(void);
     virtual int Run(void) = 0;  // to be defined by user
     TCgiEntries m_CgiEntries;
+
+    CCgiRequest*  m_CgiRequest;
 };
 
 

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/28 15:43:11  sandomir
+* minor fixed in CgiApp and Resource
+*
 * Revision 1.9  1998/12/21 17:19:36  sandomir
 * VC++ fixes in ncbistd; minor fixes in Resource
 *
@@ -69,6 +72,38 @@
 #include <functional>
 
 BEGIN_NCBI_SCOPE
+
+//
+// class CNcbiMsgRequest
+//
+
+class CNcbiMsgRequest : public CCgiRequest
+{
+public:
+
+  typedef list<string> TMsgList;
+  
+  CNcbiMsgRequest(CNcbiIstream* istr=0, bool indexes_as_entries=true);
+  CNcbiMsgRequest(int argc, char* argv[], CNcbiIstream* istr=0,
+              bool indexes_as_entries=true);
+  virtual~CNcbiMsgRequest(void);
+
+  void PutMsg( const string& msg );
+  const TMsgList& GetMsgList( void ) const;
+  void ClearMsgList( void );
+
+protected:
+
+  TMsgList m_msg;
+
+};
+
+//
+// class CNcbiRequest
+//
+
+
+//class CNcbiMsgRequest : public CCgiRequest
 
 //
 // class CNcbiResource
@@ -109,7 +144,7 @@ public:
 
   virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
 
-  virtual void HandleRequest( const CCgiRequest& request );
+  virtual void HandleRequest( CNcbiMsgRequest& request );
 
 protected:
 
@@ -149,9 +184,9 @@ public:
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
 
-  virtual void Execute( const CCgiRequest& request ) = 0;
+  virtual void Execute( CNcbiMsgRequest& request ) = 0;
 
-  virtual bool IsRequested( const CCgiRequest& request ) const;
+  virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
 
 protected:
 
@@ -175,7 +210,7 @@ public:
   virtual const CNcbiDbPresentation* GetPresentation() const
     { return 0; }
 
-  virtual bool IsRequested( const CCgiRequest& request ) const;
+  virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
 
 protected:
 
@@ -206,7 +241,7 @@ public:
   const TFilterList& GetFilterList( void ) const
     { return m_filter; }
 
-  virtual CNcbiQueryResult* Execute( const CCgiRequest& request ) = 0;
+  virtual CNcbiQueryResult* Execute( CNcbiMsgRequest& request ) = 0;
 
 protected:
 
@@ -232,7 +267,7 @@ public:
 
   virtual ~CNcbiDbFilterReport() {}
 
-  virtual CNCBINode* CreateView( const CCgiRequest& request ) const = 0;
+  virtual CNCBINode* CreateView( CNcbiMsgRequest& request ) const = 0;
 };
 
 //
@@ -297,9 +332,9 @@ public:
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
 
-  virtual CNCBINode* CreateView( const CCgiRequest& request ) const = 0;
+  virtual CNCBINode* CreateView( CNcbiMsgRequest& request ) const = 0;
 
-  virtual bool IsRequested( const CCgiRequest& request ) const;
+  virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
 
 protected:
 
@@ -314,11 +349,11 @@ protected:
 template<class T>
 class PRequested : public unary_function<T,bool>
 {  
-  const CCgiRequest& m_request;
+  const CNcbiMsgRequest& m_request;
   
 public:
   
-  explicit PRequested( const CCgiRequest& request ) 
+  explicit PRequested( const CNcbiMsgRequest& request ) 
     : m_request( request ) {}
 
   bool operator() ( const T* t ) const 

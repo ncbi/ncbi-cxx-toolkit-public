@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/28 15:43:13  sandomir
+* minor fixed in CgiApp and Resource
+*
 * Revision 1.7  1998/12/21 17:19:37  sandomir
 * VC++ fixes in ncbistd; minor fixes in Resource
 *
@@ -63,6 +66,40 @@
 BEGIN_NCBI_SCOPE
 
 //
+// class CNcbiMsgRequest
+//
+
+CNcbiMsgRequest::CNcbiMsgRequest( CNcbiIstream* istr /* =0 */, 
+                                  bool indexes_as_entries /* =true */ )
+  : CCgiRequest( istr, indexes_as_entries )
+{}
+
+CNcbiMsgRequest::CNcbiMsgRequest( int argc, char* argv[], 
+                                  CNcbiIstream* istr /* =0 */,
+                                  bool indexes_as_entries /* =true */ )
+  : CCgiRequest( argc, argv, istr, indexes_as_entries )
+{}
+
+
+CNcbiMsgRequest::~CNcbiMsgRequest(void)
+{}
+
+void CNcbiMsgRequest::PutMsg( const string& msg )
+{
+  m_msg.push_back( msg );
+}
+
+const CNcbiMsgRequest::TMsgList& CNcbiMsgRequest::GetMsgList( void ) const
+{
+  return m_msg;
+}
+
+void CNcbiMsgRequest::ClearMsgList( void )
+{
+  m_msg.clear();
+}
+
+//
 // class CNcbiResource
 //
 
@@ -72,23 +109,25 @@ CNcbiResource::CNcbiResource( void )
 CNcbiResource::~CNcbiResource( void )
 {}
 
-void CNcbiResource::HandleRequest( const CCgiRequest& request )
+void CNcbiResource::HandleRequest( CNcbiMsgRequest& request )
 {
   try {
     TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
                                      PRequested<CNcbiCommand>( request ) );
     
     if( it == m_cmd.end() ) {
+      request.PutMsg( "Unknown command" );
       throw runtime_error( "Unknown command" );      
     } 
-
-    for( ; it != m_cmd.end(); it++ ) {
-      auto_ptr<CNcbiCommand> cmd( (*it)->Clone() );
-      cmd->Execute( request );
-    } // for
     
-  } catch( exception& e ) {
+    auto_ptr<CNcbiCommand> cmd( (*it)->Clone() );
+    cmd->Execute( request );
+    
+  } catch( std::exception& e ) {
     _TRACE( e.what() );
+    if( request.GetMsgList().empty() ) {
+      request.PutMsg( e.what() );
+    }
     auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
     cmd->Execute( request );
   }
@@ -105,7 +144,7 @@ CNcbiCommand::CNcbiCommand( CNcbiResource& resource )
 CNcbiCommand::~CNcbiCommand( void )
 {}
 
-bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
+bool CNcbiCommand::IsRequested( const CNcbiMsgRequest& request ) const
 {
   const string value = GetName();
   
@@ -131,7 +170,7 @@ string CNcbiCommand::GetEntry() const
 // class CNcbiDatabaseInfo
 //
 
-bool CNcbiDatabaseInfo::IsRequested( const CCgiRequest& request ) const
+bool CNcbiDatabaseInfo::IsRequested( const CNcbiMsgRequest& request ) const
 {  
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
   pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
@@ -166,7 +205,7 @@ CNcbiDatabase::~CNcbiDatabase( void )
 // class CNcbiDatabaseReport
 //
 
-bool CNcbiDataObjectReport::IsRequested( const CCgiRequest& request ) const
+bool CNcbiDataObjectReport::IsRequested( const CNcbiMsgRequest& request ) const
 {
   const string value = GetName();
   
