@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/03/07 15:26:13  vasilche
+* Removed second definition of CRef.
+*
 * Revision 1.16  1999/12/28 18:55:46  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -126,7 +129,7 @@ void CNCBINode::Destroy(void)
     delete this;
 }
 
-void CNCBINode::BadRef(void)
+void CNCBINode::BadReference(void)
 {
     if ( m_RefCount <= 0 ) {
         THROW1_TRACE(runtime_error,

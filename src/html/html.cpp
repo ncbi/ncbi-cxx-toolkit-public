@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/03/07 15:26:12  vasilche
+* Removed second definition of CRef.
+*
 * Revision 1.52  1999/12/28 21:01:08  vasilche
 * Fixed conflict on MS VC between bool and const string& arguments by
 * adding const char* argument.
@@ -982,7 +985,7 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
         for ( TChildren::iterator iRow = ChildBegin();
               iRow != ChildEnd(); ++iRow ) {
             
-            CNCBINode* rowNode = *iRow;
+            CNCBINode* rowNode = Node(iRow);
             if ( !sx_IsRow(rowNode) )
                 rowNode->Print(out,mode);
             else {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 15:26:13  vasilche
+* Removed second definition of CRef.
+*
 * Revision 1.6  1999/10/28 13:40:36  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -96,7 +99,7 @@ ReadyTagMapper::ReadyTagMapper(CNCBINode* node)
 
 CNCBINode* ReadyTagMapper::MapTag(CNCBINode*, const string&) const
 {
-    return m_Node;
+    return &*m_Node;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/03/07 15:26:06  vasilche
+* Removed second definition of CRef.
+*
 * Revision 1.13  1999/12/28 18:55:29  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -81,6 +84,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <map>
 #include <list>
 #include <memory>
@@ -88,110 +92,6 @@
 BEGIN_NCBI_SCOPE
 
 class CNCBINode;
-
-template<class T>
-class CRef
-{
-public:
-    typedef T TObjectType;
-
-private:
-    void Ref(void) const
-        {
-            TObjectType* data = m_Data;
-            if ( data )
-                data->Ref();
-        }
-    void UnRef(void) const
-        {
-            TObjectType* data = m_Data;
-            if ( data )
-                data->UnRef();
-        }
-
-public:
-    // constructors
-    CRef(void)
-        : m_Data(0)
-        {
-        }
-    CRef(TObjectType* data)
-        : m_Data(data)
-        {
-            Ref();
-        }
-    CRef(const CRef<T>& ref)
-        : m_Data(ref.m_Data)
-        {
-            Ref();
-        }
-    // destructor
-    ~CRef(void)
-        {
-            UnRef();
-        }
-
-    // assignement operators
-    CRef<T>& operator=(TObjectType* data)
-        {
-            if ( data != m_Data ) {
-                UnRef();
-                m_Data = data;
-                Ref();
-            }
-            return *this;
-        }
-    CRef<T>& operator=(const CRef<T>& ref)
-        {
-            return *this = ref.m_Data;
-        }
-
-    // testers
-    operator bool(void)
-        {
-            return m_Data != 0;
-        }
-    operator bool(void) const
-        {
-            return m_Data != 0;
-        }
-    // getters
-    operator TObjectType*(void)
-        {
-            return m_Data;
-        }
-    operator const TObjectType*(void) const
-        {
-            return m_Data;
-        }
-    TObjectType& operator*(void)
-        {
-            return *m_Data;
-        }
-    const TObjectType& operator*(void) const
-        {
-            return *m_Data;
-        }
-    TObjectType* operator->(void)
-        {
-            return m_Data;
-        }
-    const TObjectType* operator->(void) const
-        {
-            return m_Data;
-        }
-    TObjectType* get(void)
-        {
-            return m_Data;
-        }
-    const TObjectType* get(void) const
-        {
-            return m_Data;
-        }
-
-private:
-    TObjectType* m_Data;
-};
 
 typedef CRef<CNCBINode> CNodeRef;
 
@@ -329,9 +229,9 @@ private:
     TAttributes& GetAttributes(void);
     void DoAppendChild(CNCBINode* child);
 
-    void Ref(void);
-    void UnRef(void);
-    void BadRef(void);
+    void AddReference(void);
+    void RemoveReference(void);
+    void BadReference(void);
     void Destroy(void);
 };
 

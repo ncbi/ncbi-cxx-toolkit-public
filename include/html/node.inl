@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 15:26:06  vasilche
+* Removed second definition of CRef.
+*
 * Revision 1.6  1999/12/28 18:55:29  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -59,14 +62,14 @@
 */
 
 inline
-void CNCBINode::Ref(void)
+void CNCBINode::AddReference(void)
 {
     if ( m_RefCount++ <= 0 )
-        BadRef();
+        BadReference();
 }
 
 inline
-void CNCBINode::UnRef(void)
+void CNCBINode::RemoveReference(void)
 {
     if ( --m_RefCount <= 0 )
         Destroy();
@@ -136,7 +139,7 @@ CNCBINode::TChildren::iterator CNCBINode::ChildEnd(void)
 inline
 CNCBINode* CNCBINode::Node(TChildren::iterator i)
 {
-    return i->get();
+    return &**i;
 }
 
 inline
@@ -154,7 +157,7 @@ CNCBINode::TChildren::const_iterator CNCBINode::ChildEnd(void) const
 inline
 const CNCBINode* CNCBINode::Node(TChildren::const_iterator i)
 {
-    return i->get();
+    return &**i;
 }
 
 // append a child
