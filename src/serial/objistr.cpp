@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/16 19:22:15  vasilche
+* Removed some warnings under GCC.
+*
 * Revision 1.21  1999/09/14 18:54:17  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -164,6 +167,10 @@ int CObjectIStream::ReadEnumValue(void)
     int value;
     ReadStd(value);
     return value;
+}
+
+CTypeMapper::~CTypeMapper(void)
+{
 }
 
 void CObjectIStream::SetTypeMapper(CTypeMapper* typeMapper)
