@@ -36,6 +36,7 @@
 /// BDB File management.
 
 #include <bdb/bdb_types.hpp>
+#include <stdio.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -516,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/08/12 20:17:42  ucko
+ * #include <stdio.h> so we can use FILE.
+ *
  * Revision 1.34  2004/08/12 19:13:18  kuznets
  * +CBDB_File::Verify()
  *
