@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/12/05 17:37:23  kholodov
+* Fixed: potential memory leak in CStatement::HasMoreResults() method
+* Modified: getter and setter name for the internal CDB_Result pointer.
+*
 * Revision 1.7  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -91,7 +95,7 @@ IConnection* CStatement::GetParentConn()
     return m_conn;
 }
 
-void CStatement::SetRs(CDB_Result *rs) 
+void CStatement::SetCDB_Result(CDB_Result *rs) 
 { 
     delete m_rs;
     m_rs = rs;
@@ -106,7 +110,7 @@ bool CStatement::HasMoreResults()
             SetFailed(true);
             return false;
         }
-        m_rs = GetBaseCmd()->Result(); 
+        SetCDB_Result(GetBaseCmd()->Result()); 
         if( m_rs == 0 )
             m_rowCount = GetBaseCmd()->RowCount();
     }

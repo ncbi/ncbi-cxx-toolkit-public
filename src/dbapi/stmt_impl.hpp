@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/12/05 17:37:23  kholodov
+* Fixed: potential memory leak in CStatement::HasMoreResults() method
+* Modified: getter and setter name for the internal CDB_Result pointer.
+*
 * Revision 1.6  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -109,7 +113,7 @@ public:
         return m_conn;
     }
 
-    CDB_Result* GetResult() {
+    CDB_Result* GetCDB_Result() {
         return m_rs;
     }
 
@@ -123,7 +127,7 @@ protected:
     void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
     I_BaseCmd* GetBaseCmd() { return m_cmd; }
 
-    void SetRs(CDB_Result *rs);
+    void SetCDB_Result(CDB_Result *rs);
 
     void SetFailed(bool f) {
         m_failed = f;

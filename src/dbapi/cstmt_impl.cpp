@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/12/05 17:37:23  kholodov
+* Fixed: potential memory leak in CStatement::HasMoreResults() method
+* Modified: getter and setter name for the internal CDB_Result pointer.
+*
 * Revision 1.7  2002/10/03 18:50:00  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -94,12 +98,12 @@ bool CCallableStatement::HasMoreResults()
 
   bool more = CStatement::HasMoreResults();
   if( more 
-      && GetResult() != 0 
-      && GetResult()->ResultType() == eDB_StatusResult ) {
+      && GetCDB_Result() != 0 
+      && GetCDB_Result()->ResultType() == eDB_StatusResult ) {
 
     CDB_Int *res = 0;
-    while( GetResult()->Fetch() ) {
-      res = dynamic_cast<CDB_Int*>(GetResult()->GetItem());
+    while( GetCDB_Result()->Fetch() ) {
+      res = dynamic_cast<CDB_Int*>(GetCDB_Result()->GetItem());
     }
     if( res != 0 )
       m_status = res->Value();
