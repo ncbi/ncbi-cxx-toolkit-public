@@ -1,4 +1,4 @@
---$Revision: 1.8 $ 
+--$Revision: 1.9 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -42,7 +42,7 @@ Entrezgene ::= SEQUENCE {
         pseudo  (7) ,
         other (255) } ,
     source BioSource , 
-    gene Gene-ref , 
+    gene Gene-ref ,                     -- for locus-tag see note 3
     prot Prot-ref OPTIONAL , 
     rna RNA-ref OPTIONAL , 
     summary VisibleString OPTIONAL ,    -- short summary 
@@ -53,9 +53,10 @@ Entrezgene ::= SEQUENCE {
     refgene SEQUENCE OF Gene-commentary OPTIONAL , -- NG for this? 
     homology SEQUENCE OF Gene-commentary OPTIONAL , 
     comments SEQUENCE OF Gene-commentary OPTIONAL ,
+    unique-keys SEQUENCE OF Dbtag OPTIONAL ,              -- see note 3
     xtra-index-terms SEQUENCE OF VisibleString OPTIONAL , -- see note 2
-    xtra-properties SEQUENCE OF Xtra-Terms OPTIONAL ,
-    xtra-iq SEQUENCE OF Xtra-Terms OPTIONAL } 
+    xtra-properties SEQUENCE OF Xtra-Terms OPTIONAL ,     -- see note 2
+    xtra-iq SEQUENCE OF Xtra-Terms OPTIONAL }             -- see note 2
  
 Gene-track ::= SEQUENCE { 
     geneid INTEGER ,     -- required unique document id 
@@ -72,7 +73,7 @@ Gene-source ::= SEQUENCE {
     src VisibleString ,                -- key to the source within NCBI locuslink, Ecoli, etc 
     src-int INTEGER OPTIONAL ,         -- eg. locuslink id 
     src-str1 VisibleString OPTIONAL ,  -- eg. chromosome1 
-    src-str2 VisibleString OPTIONAL ,  -- eg. HI00056, or protein accession 
+    src-str2 VisibleString OPTIONAL ,  -- see note 3
     gene-display BOOLEAN DEFAULT FALSE ,  -- do we have a URL for gene display? 
     locus-display BOOLEAN DEFAULT FALSE , -- do we have a URL for map/locus display? 
     extra-terms BOOLEAN DEFAULT FALSE }   -- do we have a URL for extra indexing terms? 
@@ -97,7 +98,7 @@ Gene-commentary ::= SEQUENCE {
     heading VisibleString OPTIONAL ,      -- appears above text 
     label VisibleString OPTIONAL ,        -- occurs to left of text 
     text VisibleString OPTIONAL ,         -- block of text 
-    accession VisibleString OPTIONAL ,    -- accession for the gi in the seqloc
+    accession VisibleString OPTIONAL ,    -- accession for the gi in the seqloc, see note 3
     refs SEQUENCE OF Pub OPTIONAL ,       -- refs for this 
     source SEQUENCE OF Other-source OPTIONAL ,    -- links and refs 
     genomic-coords SEQUENCE OF Seq-loc OPTIONAL , -- referenced sequences in genomic coords
@@ -146,5 +147,8 @@ END
 --          xtra-iq are tag/value pairs of Entrez database/UID as defined
 --              in the Entrezgene indexing code (i.e.: NUCLEOTIDE/20270626)
 --
+--  3)  Locus-tag and src-str2 are expected to be unique per organism (tax_id).
+--      Protein accessions and the tag-value pairs in unique-keys
+--      are expected to be unique over all organisms.
 --********************************************************************** 
 
