@@ -210,7 +210,7 @@ void CGBDataLoader::x_CreateReaderPluginManager(void)
     m_ReaderPluginManager->RegisterWithEntryPoint(ep1);
 
 #if defined(HAVE_PUBSEQ_OS)
-    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_EntryPoint_Pubseqos_Reader;
+    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_EntryPoint_Reader_Pubseqos;
     m_ReaderPluginManager->RegisterWithEntryPoint(ep2);
 #endif
 
@@ -1160,6 +1160,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2004/02/04 20:59:46  ucko
+* Fix the PubSeq entry point name to something that actually exists....
+*
 * Revision 1.102  2004/02/04 17:47:40  kuznets
 * Fixed naming of entry points
 *
