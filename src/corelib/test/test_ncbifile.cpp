@@ -22,9 +22,9 @@
  *
  * ===========================================================================
  *
- * Author: Vladimir Ivanov
+ * Author:  Vladimir Ivanov
  *
- * File Description:   Test program for file's accessory functions
+ * File Description:  Test program for file's accessory functions
  *
  */
 
@@ -33,6 +33,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_mask.hpp>
 #include <stdio.h>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -302,26 +303,46 @@ static void s_TEST_MatchesMask(void)
 {
     CDirEntry d;
     
-    assert( d.MatchesMask(""        ,""));
-    assert( d.MatchesMask("file"    ,"*"));
-    assert(!d.MatchesMask("file"    ,"*.*"));
-    assert( d.MatchesMask("file.cpp","*.cpp"));
-    assert( d.MatchesMask("file.cpp","*.c*"));
-    assert( d.MatchesMask("file"    ,"file*"));
-    assert( d.MatchesMask("file"    ,"f*"));
-    assert( d.MatchesMask("file"    ,"f*le"));
-    assert( d.MatchesMask("file"    ,"f**l*e"));
-    assert(!d.MatchesMask("file"    ,"???"));
-    assert( d.MatchesMask("file"    ,"????"));
-    assert(!d.MatchesMask("file"    ,"?????"));
-    assert( d.MatchesMask("file"    ,"?i??"));
-    assert(!d.MatchesMask("file"    ,"?l??"));
-    assert(!d.MatchesMask("file"    ,"?i?"));
-    assert( d.MatchesMask("file"    ,"?*?"));
-    assert( d.MatchesMask("file"    ,"?***?"));
-    assert( d.MatchesMask("file"    ,"?*"));
-    assert( d.MatchesMask("file"    ,"*?"));
-    assert( d.MatchesMask("file"    ,"********?"));
+    assert( d.MatchesMask(""        , ""));
+    assert( d.MatchesMask("file"    , "*"));
+    assert(!d.MatchesMask("file"    , "*.*"));
+    assert( d.MatchesMask("file.cpp", "*.cpp"));
+    assert( d.MatchesMask("file.cpp", "*.c*"));
+    assert( d.MatchesMask("file"    , "file*"));
+    assert( d.MatchesMask("file"    , "f*"));
+    assert( d.MatchesMask("file"    , "f*le"));
+    assert( d.MatchesMask("file"    , "f**l*e"));
+    assert(!d.MatchesMask("file"    , "???"));
+    assert( d.MatchesMask("file"    , "????"));
+    assert(!d.MatchesMask("file"    , "?????"));
+    assert( d.MatchesMask("file"    , "?i??"));
+    assert(!d.MatchesMask("file"    , "?l??"));
+    assert(!d.MatchesMask("file"    , "?i?"));
+    assert( d.MatchesMask("file"    , "?*?"));
+    assert( d.MatchesMask("file"    , "?***?"));
+    assert( d.MatchesMask("file"    , "?*"));
+    assert( d.MatchesMask("file"    , "*?"));
+    assert( d.MatchesMask("file"    , "********?"));
+
+    CMaskFileName mask;
+    assert( d.MatchesMask(""        , mask));
+    assert( d.MatchesMask("file"    , mask));
+
+    mask.Add("*.c");
+    mask.Add("*.cpp");
+    mask.Add("????.h");
+    mask.AddExclusion("e*.cpp");
+
+    assert( d.MatchesMask("file.c"      , mask));
+    assert( d.MatchesMask("file.cpp"    , mask));
+    assert( d.MatchesMask("dir/file.cpp", mask));
+    assert(!d.MatchesMask("exclude.cpp" , mask));
+    assert(!d.MatchesMask("e.cpp"       , mask));
+    assert( d.MatchesMask("file.h"      , mask));
+    assert(!d.MatchesMask("include.h"   , mask));
+
+    mask.Remove("*.cpp");
+    assert(!d.MatchesMask("file.cpp"    , mask));
 }
 
 
@@ -500,115 +521,122 @@ static void s_TEST_Dir(void)
     assert( !CDir("dir_1").Exists() );
     assert( !CDir("dir_2").Exists() );
 
-    // Current directory list
     CDir dir(CWD);
 
-    cout << endl;
-    CDir::TEntries contents = dir.GetEntries("*", CDir::eIgnoreRecursive);
-    ITERATE(CDir::TEntries, i, contents) {
-        string entry = (*i)->GetPath();
-        cout << entry << endl;
-    }
-    cout << endl;
+    // Current directory list
+    {{
+        cout << endl;
+        CDir::TEntries contents = dir.GetEntries("*", CDir::eIgnoreRecursive);
+        ITERATE(CDir::TEntries, i, contents) {
+            string entry = (*i)->GetPath();
+            cout << entry << endl;
+        }
+        cout << endl;
 
+        // The same but using vector of masks
+        vector<string> masks;
+        masks.push_back("*");
+        CDir::TEntries contents2 = dir.GetEntries(masks, CDir::eIgnoreRecursive);
+        assert(contents.size() == contents2.size());
 
-    vector<string> masks;
-    masks.push_back("*");
-    CDir::TEntries contents2 = dir.GetEntries(masks, CDir::eIgnoreRecursive);
-    assert(contents.size() == contents2.size());
+        vector<string> files;
+        vector<string> paths;
+        paths.push_back(".");
 
-    vector<string> files;
-    vector<string> paths;
-    paths.push_back(".");
+        FindFiles(files, paths.begin(), paths.end(), 
+                         masks.begin(), masks.end());
 
-    FindFiles(files, paths.begin(), paths.end(), 
-                     masks.begin(), masks.end());
+        for (unsigned int i = 0; i < contents.size(); ++i) {
+            const CDirEntry& entry1 = *contents[i];
+            const CDirEntry& entry2 = *contents2[i];
+            string ep1 = entry1.GetPath();
+            string ep2 = entry2.GetPath();
+            const string& f = files[i];
+            assert(ep1 == ep2);
+            assert(ep1 == f);
+        }
 
+        // Recursive content
+        cout << "Recursive content" << endl;
+        files.clear();
+        FindFiles(files, paths.begin(), paths.end(), 
+                        masks.begin(), masks.end(), 
+                        fFF_File | fFF_Dir | fFF_Recursive);
+        ITERATE(vector<string>, fit, files) {
+            cout << *fit << endl;
+        }
+    }}
 
-    for (unsigned int i = 0; i < contents.size(); ++i) {
-        const CDirEntry& entry1 = *contents[i];
-        const CDirEntry& entry2 = *contents2[i];
-        string ep1 = entry1.GetPath();
-        string ep2 = entry2.GetPath();
-        const string& f = files[i];
-        assert(ep1 == ep2);
-        assert(ep1 == f);
-    }
+    // Create directory structure for deletion
+    {{
+        assert( CDir("dir_3").Create() );
+        assert( CDir(REL "dir_3" SEP "subdir_1").Create() );
+        assert( CDir(REL "dir_3" SEP "subdir_2").Create() );
+        
+        file = fopen(REL "dir_3" SEP "file", "w+");
+        assert( file );
+        fclose(file);
+        file = fopen(REL "dir_3" SEP "subdir_1" SEP "file", "w+");
+        assert( file );
+        fclose(file);
 
+        // Delete dir
+        dir.Reset("dir_3");
+        assert( !dir.Remove(CDir::eOnlyEmpty) );
+        assert( dir.Exists() );
 
-    cout << "Recursive content" << endl;
-    files.clear();
-    FindFiles(files, paths.begin(), paths.end(), 
-                     masks.begin(), masks.end(), 
-                     fFF_File | fFF_Dir | fFF_Recursive);
-    ITERATE(vector<string>, fit, files) {
-        cout << *fit << endl;
-    }
+        assert( !dir.Remove(CDir::eNonRecursive) );
+        assert( dir.Exists() );
+        assert( CDir(REL "dir_3" SEP "subdir_1").Exists() );
+        assert( CFile(REL "dir_3" SEP "subdir_1" SEP "file").Exists() );
+        assert( !CFile(REL "dir_3" SEP "file").Exists() );
 
-    // Create dir structure for deletion
-    assert( CDir("dir_3").Create() );
-    assert( CDir(REL "dir_3" SEP "subdir_1").Create() );
-    assert( CDir(REL "dir_3" SEP "subdir_2").Create() );
-    
-    file = fopen(REL "dir_3" SEP "file", "w+");
-    assert( file );
-    fclose(file);
-    file = fopen(REL "dir_3" SEP "subdir_1" SEP "file", "w+");
-    assert( file );
-    fclose(file);
-
-    // Delete dir
-    dir.Reset("dir_3");
-    assert( !dir.Remove(CDir::eOnlyEmpty) );
-    assert( dir.Exists() );
-
-    assert( !dir.Remove(CDir::eNonRecursive) );
-    assert( dir.Exists() );
-    assert( CDir(REL "dir_3" SEP "subdir_1").Exists() );
-    assert( CFile(REL "dir_3" SEP "subdir_1" SEP "file").Exists() );
-    assert( !CFile(REL "dir_3" SEP "file").Exists() );
-
-    assert( dir.Remove(CDir::eRecursive) );
-    assert( !dir.Exists() );
-    
+        assert( dir.Remove(CDir::eRecursive) );
+        assert( !dir.Exists() );
+    }}
+        
     // Home dir
-    string homedir = CDir::GetHome();
-    assert ( !homedir.empty() );
-    cout << homedir << endl;
+    {{
+        string homedir = CDir::GetHome();
+        assert ( !homedir.empty() );
+        cout << homedir << endl;
+    }}
 
     // Creation of relative path from 2 absolute pathes:
-    string rel_path;
+    {{
+        string rel_path;
 
-#if defined(NCBI_OS_MSWIN)
-    assert( CDirEntry::CreateRelativePath(
-            "C:\\x\\y\\z\\",
-            "C:\\x\\a\\b\\") == "..\\..\\a\\b\\" );
+#  if defined(NCBI_OS_MSWIN)
+        assert( CDirEntry::CreateRelativePath(
+                "C:\\x\\y\\z\\",
+                "C:\\x\\a\\b\\") == "..\\..\\a\\b\\" );
 
-    assert( CDirEntry::CreateRelativePath(
-            "C:\\x\\y\\z\\",
-            "C:\\x\\a\\b\\file.txt") == "..\\..\\a\\b\\file.txt" );
- 
-    assert( CDirEntry::CreateRelativePath(
-            "C:\\x\\y\\z\\", 
-            "C:\\x\\y\\z\\").empty() );
+        assert( CDirEntry::CreateRelativePath(
+                "C:\\x\\y\\z\\",
+                "C:\\x\\a\\b\\file.txt") == "..\\..\\a\\b\\file.txt" );
+     
+        assert( CDirEntry::CreateRelativePath(
+                "C:\\x\\y\\z\\", 
+                "C:\\x\\y\\z\\").empty() );
 
-    assert( CDirEntry::CreateRelativePath(
-            "C:\\x\\y\\z\\", 
-            "C:\\x\\y\\a\\") == "..\\a\\" );
+        assert( CDirEntry::CreateRelativePath(
+                "C:\\x\\y\\z\\", 
+                "C:\\x\\y\\a\\") == "..\\a\\" );
 
-    assert( CDirEntry::CreateRelativePath(
-            "\\x\\y\\z\\", 
-            "\\x\\y\\") == "..\\" );
+        assert( CDirEntry::CreateRelativePath(
+                "\\x\\y\\z\\", 
+                "\\x\\y\\") == "..\\" );
 
-#elif defined(NCBI_OS_UNIX )
-    assert( CDirEntry::CreateRelativePath(
-            "/usr/bin/", "/usr/" ) == "../" );
-    assert( CDirEntry::CreateRelativePath(
-            "/usr/bin/", "/etc/" ) == "../../etc/" );
+#  elif defined(NCBI_OS_UNIX )
+        assert( CDirEntry::CreateRelativePath(
+                "/usr/bin/", "/usr/" ) == "../" );
+        assert( CDirEntry::CreateRelativePath(
+                "/usr/bin/", "/etc/" ) == "../../etc/" );
 
-#elif defined(NCBI_OS_MAC)
-    // NOT implemented!
-#endif
+#  elif defined(NCBI_OS_MAC)
+        // NOT implemented!
+#  endif
+    }}
 }
 
 
@@ -878,6 +906,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/01/31 11:50:29  ivanov
+ * Added tests for CMaskFileName. Some cosmetics.
+ *
  * Revision 1.43  2004/12/22 12:27:35  ivanov
  * Removed redundant variable declaration
  *
