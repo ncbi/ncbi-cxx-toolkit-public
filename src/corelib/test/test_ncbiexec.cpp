@@ -34,6 +34,10 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiexec.hpp>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> // for _exit
+#endif
+
 #include <test/test_assert.h>  // This header must go last
 
 USING_NCBI_SCOPE;
@@ -202,12 +206,12 @@ int main(int argc, const char* argv[], const char* envp[])
             if (!ptr || !*ptr) {
                 cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
                 cout.flush();
-                exit(88);
+                _exit(88);
             } else {
                 cout << "TEST_NCBI_EXEC=" << ptr << endl;
             }
         }
-        exit(TEST_RESULT_C);
+        _exit(TEST_RESULT_C);
     }
     cout << "Start tests:" << endl << endl;
     // Execute main application function
@@ -218,6 +222,10 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2002/08/14 17:06:20  ucko
+ * Reinstate calls to _exit, but be sure to include <unistd.h> first for
+ * the prototype.
+ *
  * Revision 6.11  2002/08/14 14:33:29  ivanov
  * Changed allcalls _exit() to exit() back -- non crossplatform function
  *
