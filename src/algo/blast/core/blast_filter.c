@@ -46,6 +46,10 @@ static char const rcsid[] =
 #include <algo/blast/core/urkpcc.h>
 #endif
 
+/****************************************************************************/
+/* Constants */
+const Uint1 kNuclMask = 14;     /* N in BLASTNA */
+const Uint1 kProtMask = 21;     /* X in NCBISTDAA */
 
 BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to)
 {
@@ -1198,12 +1202,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
     SSeqRange *loc = NULL;
     Int2 status = 0;
     Int4 index, start, stop;
-    Uint1 mask_letter;
-
-    if (is_na)
-        mask_letter = 14;
-    else
-        mask_letter = 21;
+    const Uint1 kMaskingLetter = is_na ? kNuclMask : kProtMask;
 
     for (; mask_loc; mask_loc = mask_loc->next) {
         loc = (SSeqRange *) mask_loc->ssr;
@@ -1219,7 +1218,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
         stop -= offset;
 
         for (index = start; index <= stop; index++)
-            buffer[index] = mask_letter;
+            buffer[index] = kMaskingLetter;
     }
 
     return status;
