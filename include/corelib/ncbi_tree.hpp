@@ -187,6 +187,10 @@ struct CTreePair
     {}
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///    Bi-directionaly linked N way tree.
+///    Parameterized by id - value pair
 
 template <class TId, class TValue> class CTreePairNWay
     : public CTreeNWay< CTreePair<TId, TValue> >
@@ -213,7 +217,23 @@ public:
     /// @return pointer to new subtree
     CTreePairNWay<TId, TValue>* AddNode(const TId& id, const TValue& value);
 
+    /// Return node's value
     const TValue& GetValue() const { return m_Value.value; }
+
+    /// Return node's id
+    const TId& GetId() const { return m_Value.id; }
+
+    /// Return node's value
+    TValue& GetValue() { return m_Value.value; }
+
+    /// Return node's id
+    TId& GetId() { return m_Value.id; }
+
+    /// Set value for the node
+    void SetValue(const TValue& value) { m_Value.value = value; }
+
+    /// Set id for the node
+    void SetId(const TId& id) { m_Value.id = id; }
 
     /// Find tree nodes corresponding to the path from the top
     ///
@@ -465,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/01/12 16:49:48  kuznets
+ * CTreePairNWay added id, value accessor functions
+ *
  * Revision 1.9  2004/01/12 15:26:22  kuznets
  * Fixed various compilation warnings (GCC & WorkShop)
  *
