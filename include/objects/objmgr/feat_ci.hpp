@@ -229,6 +229,8 @@ public:
     const CMappedFeat* operator-> (void) const;
 
 private:
+    CFeat_CI& operator++ (int);
+
     mutable CMappedFeat m_Feat; // current feature object returned by operator->()
 };
 
@@ -313,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/02/10 22:03:55  grichenk
+* operator++(int) made private
+*
 * Revision 1.18  2003/02/10 15:50:44  grichenk
 * + CMappedFeat, CFeat_CI resolves to CMappedFeat
 *
