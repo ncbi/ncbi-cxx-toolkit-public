@@ -223,6 +223,8 @@ typedef struct BLAST_ResFreq {
 
 BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
 
+Int2 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp);
+
 BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
 
 Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
