@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/28 20:29:13  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.4  1998/12/24 16:15:37  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -50,7 +53,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  !!! PUT YOUR OTHER #include's HERE !!!
@@ -144,7 +147,7 @@ private:
     CNCBINode* (C::*m_Method)(const string& name);
 };
 
-#include <nodemap.inl>
+#include <html/nodemap.inl>
 
 END_NCBI_SCOPE
 

@@ -1,4 +1,4 @@
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 20:29:19  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.5  1998/12/23 21:21:04  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -49,8 +52,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <node.hpp>
+#include <html/node.hpp>
 
 BEGIN_NCBI_SCOPE
 

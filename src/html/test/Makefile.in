@@ -1,0 +1,10 @@
+#################################
+# $Id$
+#################################
+
+# Meta-makefile ("XHTML" test)
+#################################
+
+PROJECT = Makefile.htmltest
+SUBPROJ =
+include @builddir@/Makefile.meta

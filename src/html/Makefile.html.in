@@ -1,0 +1,15 @@
+#################################
+# $Id$
+#################################
+
+# Build library "XHTML"
+#################################
+
+srcdir = @srcdir@
+include @builddir@/Makefile.mk
+
+LIBOBJ  = node html page nodemap components querypages
+LIB     = xhtml
+OBJ     = 
+
+include @builddir@/Makefile.lib

@@ -1,8 +1,7 @@
 #ifndef NODE__HPP
 #define NODE__HPP
 
-
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -34,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 20:29:13  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.6  1998/12/23 21:20:58  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -56,7 +58,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 #include <map>
 #include <list>
 
@@ -148,7 +150,7 @@ private:
 };
 
 // inline functions are defined here:
-#include <node.inl>
+#include <html/node.inl>
 
 END_NCBI_SCOPE
 #endif

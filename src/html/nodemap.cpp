@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/28 20:29:19  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.2  1998/12/24 16:15:42  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -40,8 +43,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <page.hpp>
+#include <html/page.hpp>
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // NCBI_USING_NAMESPACE_STD;
