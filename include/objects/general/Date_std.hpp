@@ -57,7 +57,8 @@ public:
     CDate_std(void);
     CDate_std(const CTime& time,
               CDate::EPrecision prec = CDate::ePrecision_second);
-    CDate_std(time_t time, CDate::EPrecision prec = CDate::ePrecision_second);
+    explicit CDate_std(time_t time,
+                       CDate::EPrecision prec = CDate::ePrecision_second);
     
     // destructor
     ~CDate_std(void);
@@ -98,7 +99,7 @@ CDate_std::CDate_std(const CTime& time, CDate::EPrecision prec)
 inline
 CDate_std::CDate_std(time_t time, CDate::EPrecision prec)
 {
-    SetToTime(time, prec);
+    SetToTime(CTime(time), prec);
 }
 
 
@@ -113,6 +114,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2003/02/10 21:55:43  ucko
+ * Make time_t-based ctors explicit, and explicitly construct temporary CTimes.
+ *
  * Revision 1.5  2002/12/26 12:40:33  dicuccio
  * Added Win32 export specifiers
  *
