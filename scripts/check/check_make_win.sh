@@ -303,7 +303,6 @@ for x_conf in $x_confs; do
       mkdir -p "$x_build_dir/$res_bin/$x_conf" > /dev/null 2>&1
       if test $? -ne 0; then
          echo "Unable to create directory \"$x_build_dir/$res_bin/$x_conf\"."
-        exit 1
       fi
    fi
    # Make soft link for all binaries in <x_conf> folders
@@ -366,7 +365,6 @@ for x_row in $x_tests; do
                   cp -prf "$x_copy" "$x_path"
                else
                   echo "Warning:  \"$x_copy\" must be file or directory!"
-                  exit 0
                fi
             done
          fi
