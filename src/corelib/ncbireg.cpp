@@ -1328,13 +1328,14 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
     if ( !(flags & fPersistent) ) {
         flags |= fTransient;
     }
+    bool was_empty = Get(section, name, flags).empty();
+    if ((flags & fNoOverride)  &&  !was_empty) {
+        return false;
+    }
     if (value.empty()) {
-        if ( !(flags & fNoOverride) ) {
-            bool was_empty = Get(section, name, flags).empty();
-            m_MainRegistry->Set(section, name, value, flags, comment);
-            m_ClearedEntries[s_FlatKey(section, name)] |= flags;
-            return !was_empty;
-        }
+        m_MainRegistry->Set(section, name, value, flags, comment);
+        m_ClearedEntries[s_FlatKey(section, name)] |= flags;
+        return !was_empty;
     } else {
         TClearedEntries::iterator it
             = m_ClearedEntries.find(s_FlatKey(section, name));
@@ -1373,6 +1374,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/03/16 22:54:22  ucko
+ * CNcbiRegistry::x_Set: fix behavior in fNoOverride case, sometimes
+ * mishandled in previous revision.
+ *
  * Revision 1.46  2005/03/14 15:52:09  ucko
  * Support taking settings from the environment.
  *
