@@ -451,6 +451,48 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
 }
 
 
+TNCBI_Size HEAP_Trim(HEAP heap)
+{
+    TNCBI_Size   size;
+    SHEAP_Block* f;
+
+    if (!heap)
+        return 0;
+    if (!heap->chunk) {
+        CORE_LOG(eLOG_Error, "Heap Trim: Heap is read-only");
+        return 0;
+    }
+
+    f = s_HEAP_Collect(heap);
+    if (!f || HEAP_ISUSED(f) || f->size < heap->chunk)
+        return heap->size;
+    if ((char*) f == heap->base) {
+        heap->size = heap->chunk;
+        f->size = heap->chunk;
+        return heap->chunk;
+    }
+
+    size = f->size % heap->chunk;
+    if (size) {
+        if (size < _HEAP_ALIGNMENT)
+            size += heap->chunk;
+        heap->size -= f->size - size;
+        f->size = size;
+    } else {
+        SHEAP_Block* b = (SHEAP_Block*) heap->base, *p = 0;
+        while (b != f) {
+            p = b;
+            b = (SHEAP_Block*) ((char*) b + b->size);
+        }
+        assert(p);
+        p->flag |= HEAP_LAST;
+        heap->size -= f->size;
+    }
+    assert(heap->size % heap->chunk == 0);
+    return heap->size;
+}
+
+
 HEAP HEAP_CopySerial(HEAP heap, int serial)
 {
     HEAP newheap;
@@ -522,6 +564,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/07/31 17:54:03  lavr
+ * +HEAP_Trim()
+ *
  * Revision 6.17  2003/03/24 19:45:15  lavr
  * Added few minor changes and comments
  *

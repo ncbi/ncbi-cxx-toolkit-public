@@ -126,6 +126,16 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
  );
 
 
+/* Trim the heap, making garbage collection first. Returned is
+ * the size of the resultant heap, which has its last block trimmed
+ * to the size of heap chunk size as specified at the time of the
+ * heap creation. No change in size is made if the last block is
+ * not free or large enough to allow the trimming. 0 returned on
+ * NULL or read-only heaps, or if an error has occured.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Trim(HEAP heap);
+
+
 /* Make a snapshot of a given heap. Return a read-only heap
  * (like one after HEAP_Attach), which must be freed by a call to
  * either HEAP_Detach or HEAP_Destroy when no longer needed.
@@ -174,6 +184,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/07/31 17:53:43  lavr
+ * +HEAP_Trim()
+ *
  * Revision 6.14  2003/04/09 17:58:51  siyan
  * Added doxygen support
  *
