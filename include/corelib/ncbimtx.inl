@@ -359,6 +359,12 @@ bool CFastMutex::TryLock(void)
 // CFastMutexGuard
 
 inline
+CFastMutexGuard::CFastMutexGuard(void)
+    : m_Mutex(0)
+{
+}
+
+inline
 CFastMutexGuard::CFastMutexGuard(SSystemFastMutex& mtx)
     : m_Mutex(&mtx)
 {
@@ -428,6 +434,12 @@ bool CMutex::TryLock(void)
 }
 
 inline
+CMutexGuard::CMutexGuard(void)
+    : m_Mutex(0)
+{
+}
+
+inline
 CMutexGuard::CMutexGuard(SSystemMutex& mtx)
     : m_Mutex(&mtx)
 {
@@ -464,6 +476,9 @@ void CMutexGuard::Guard(SSystemMutex& mtx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/19 19:16:37  vasilche
+ * Added CMutexGuard and CFastMutexGuard constructors.
+ *
  * Revision 1.2  2002/09/20 20:02:07  vasilche
  * Added public Lock/Unlock/TryLock
  *
