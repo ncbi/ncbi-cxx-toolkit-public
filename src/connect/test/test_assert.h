@@ -57,7 +57,7 @@
  * and in debug libraries, as well as all General Protection Fault messages.
  * Environment variable DIAG_SILENT_ABORT must be set to "Y" or "y".
  */
-static void _SuppressDiagPopupMessages(void)
+static int _SuppressDiagPopupMessages(void)
 {
     /* Check environment variable for silent abort app at error */
     const char* value = getenv("DIAG_SILENT_ABORT");
@@ -76,6 +76,7 @@ static void _SuppressDiagPopupMessages(void)
         _CrtSetReportFile(_CRT_ASSERT, stderr);
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     }
+    return 0;
 }
 
 /* Put this function at startup init level 'V', far enough not to mess up with
@@ -83,7 +84,7 @@ static void _SuppressDiagPopupMessages(void)
  */
 #  pragma data_seg(".CRT$XIV")
 
-static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
+static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 
 #  pragma data_seg()
 
@@ -129,6 +130,9 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2004/06/10 19:20:27  ivanov
+ * _SuppressDiagPopupMessages() returns 'int' to avoid runtime errors on MSVC7
+ *
  * Revision 6.21  2003/03/12 21:25:19  lavr
  * More elaborate conditional branch for Mac's Codewarrior
  *
