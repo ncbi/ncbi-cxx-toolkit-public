@@ -39,7 +39,6 @@ Contents: Structures used for BLAST extension
 #define __BLAST_EXTEND__
 
 #include <blast_def.h>
-#include <mbalign.h>
 #include <mb_lookup.h>
 #include <na_lookup.h>
 #include <blastkar.h>
