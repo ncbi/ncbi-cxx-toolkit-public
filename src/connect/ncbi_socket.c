@@ -33,6 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/11/15 18:51:21  vakatov
+ * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
+ * Add more checking and diagnostics.
+ * [NOTE: not tested on Mac]
+ *
  * Revision 6.7  2000/06/23 19:34:44  vakatov
  * Added means to log binary data
  *
@@ -93,7 +98,7 @@
 #  include <signal.h>
 
 #elif defined(NCBI_OS_MSWIN)
-#  include <winsock.h>
+#  include <winsock2.h>
 
 #elif defined(NCBI_OS_MAC)
 #  include <macsockd.h>
@@ -154,51 +159,66 @@ extern void bzero(char* target, long numbytes);
 #if defined(NCBI_OS_MSWIN)
 
 typedef SOCKET TSOCK_Handle;
-#  define SOCK_INVALID     INVALID_SOCKET
-#  define SOCK_ERRNO       WSAGetLastError()
-#  define SOCK_EINTR       WSAEINTR
-#  define SOCK_EWOULDBLOCK WSAEWOULDBLOCK
-#  define SOCK_ECONNRESET  WSAECONNRESET
-#  define SOCK_EPIPE       WSAESHUTDOWN
-#  define SOCK_EAGAIN      WSAEINPROGRESS
-#  define SOCK_EINPROGRESS WSAEINPROGRESS
-#  define SOCK_NFDS(s)     0
-#  define SOCK_CLOSE(s)    closesocket(s)
+#  define SOCK_INVALID        INVALID_SOCKET
+#  define SOCK_ERRNO          WSAGetLastError()
+#  define SOCK_EINTR          WSAEINTR
+#  define SOCK_EWOULDBLOCK    WSAEWOULDBLOCK
+#  define SOCK_ECONNRESET     WSAECONNRESET
+#  define SOCK_EPIPE          WSAESHUTDOWN
+#  define SOCK_EAGAIN         WSAEINPROGRESS
+#  define SOCK_EINPROGRESS    WSAEINPROGRESS
+#  define SOCK_NFDS(s)        0
+#  define SOCK_CLOSE(s)       closesocket(s)
+#  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
+#  define SOCK_SHUTDOWN_RD    SD_RECEIVE
+#  define SOCK_SHUTDOWN_WR    SD_SEND
 /* NCBI_OS_MSWIN */
 
 #elif defined(NCBI_OS_UNIX)
 
 typedef int TSOCK_Handle;
-#  define SOCK_INVALID     (-1)
-#  define SOCK_ERRNO       errno
-#  define SOCK_EINTR       EINTR
-#  define SOCK_EWOULDBLOCK EWOULDBLOCK
-#  define SOCK_ECONNRESET  ECONNRESET
-#  define SOCK_EPIPE       EPIPE
-#  define SOCK_EAGAIN      EAGAIN
-#  define SOCK_EINPROGRESS EINPROGRESS
-#  define SOCK_NFDS(s)     (s + 1)
-#  define SOCK_CLOSE(s)    close(s)
+#  define SOCK_INVALID        (-1)
+#  define SOCK_ERRNO          errno
+#  define SOCK_EINTR          EINTR
+#  define SOCK_EWOULDBLOCK    EWOULDBLOCK
+#  define SOCK_ECONNRESET     ECONNRESET
+#  define SOCK_EPIPE          EPIPE
+#  define SOCK_EAGAIN         EAGAIN
+#  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_NFDS(s)        (s + 1)
+#  define SOCK_CLOSE(s)       close(s)
+#  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
+#  if !defined(SHUT_RD)
+#    define SHUT_RD           0
+#  endif
+#  define SOCK_SHUTDOWN_RD    SHUT_RD
+#  if !defined(SHUT_WR)
+#    define SHUT_WR           1
+#  endif
+#  define SOCK_SHUTDOWN_WR    SHUT_WR
 #  ifndef INADDR_NONE
-#    define INADDR_NONE    (unsigned int)(-1)
+#    define INADDR_NONE       (unsigned int)(-1)
 #  endif
 /* NCBI_OS_UNIX */
 
 #elif defined(NCBI_OS_MAC)
 
 typedef int TSOCK_Handle;
-#  define SOCK_INVALID     (-1)
+#  define SOCK_INVALID        (-1)
 #  ifndef SOCK_ERRNO
-#    define SOCK_ERRNO     errno
+#    define SOCK_ERRNO        errno
 #  endif
-#  define SOCK_EINTR       EINTR
-#  define SOCK_EWOULDBLOCK EWOULDBLOCK
-#  define SOCK_ECONNRESET  ECONNRESET
-#  define SOCK_EPIPE       EPIPE
-#  define SOCK_EAGAIN      EAGAIN
-#  define SOCK_EINPROGRESS EINPROGRESS
-#  define SOCK_NFDS(s)     (s + 1)
-#  define SOCK_CLOSE(s)    close(s)
+#  define SOCK_EINTR          EINTR
+#  define SOCK_EWOULDBLOCK    EWOULDBLOCK
+#  define SOCK_ECONNRESET     ECONNRESET
+#  define SOCK_EPIPE          EPIPE
+#  define SOCK_EAGAIN         EAGAIN
+#  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_NFDS(s)        (s + 1)
+#  define SOCK_CLOSE(s)       close(s)
+#  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
+#  define SOCK_SHUTDOWN_RD    0
+#  define SOCK_SHUTDOWN_WR    1
 
 /* (but see ni_lib.c line 2508 for gethostname substitute for Mac) */
 extern int gethostname(char* machname, long buflen);
@@ -229,7 +249,11 @@ typedef struct SOCK_tag {
     unsigned int    host;       /* peer host (in the network byte order) */
     unsigned short  port;       /* peer port (in the network byte order) */
     BUF             buf;        /* read buffer */
-    int/*bool*/     is_eof;     /* if EOF has been detected (on read) */
+
+    /* current status and EOF indicator */
+    int/*bool*/  is_eof;    /* if EOF has been detected (on read) */
+    EIO_Status   r_status;  /* read  status:  eIO_Closed if was shutdown */
+    EIO_Status   w_status;  /* write status:  eIO_Closed if was shutdown */
 
     /* for the tracing/statistics */
     ESwitch      log_data;
@@ -562,6 +586,9 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     /* success:  create new SOCK structure */
     *sock = (SOCK) calloc(1, sizeof(SOCK_struct));
     (*sock)->sock = x_sock;
+    (*sock)->is_eof = 0/*false*/;
+    (*sock)->r_status = eIO_Success;
+    (*sock)->w_status = eIO_Success;
     verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, 0) == eIO_Success);
     (*sock)->host = x_host;
     (*sock)->port = x_port;
@@ -737,23 +764,22 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->sock   = x_sock;
     sock->host   = x_host;
     sock->port   = x_port;
-    sock->is_eof = 0/*false*/;
+    sock->is_eof   = 0/*false*/;
+    sock->r_status = eIO_Success;
+    sock->w_status = eIO_Success;
 
     return eIO_Success;
 }
 
 
-/* Shutdown the socket (close its system file descriptor)
+/* Shutdown and close the socket
  */
-static EIO_Status s_Shutdown(SOCK sock)
+static EIO_Status s_Close(SOCK sock)
 {
-    /* set EOF flag */
-    sock->is_eof = 1/*true*/;
-
-  /* Just checking */
+    /* Check against an invalid socket */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Warning,
-                 "[SOCK::s_Shutdown]  Attempt to shutdown an invalid socket");
+                 "[SOCK::s_Close]  Attempt to close an invalid socket");
         return eIO_Unknown;
     }
 
@@ -761,15 +787,15 @@ static EIO_Status s_Shutdown(SOCK sock)
         size_t buf_size = BUF_Size(sock->buf);
         if (BUF_Read(sock->buf, 0, buf_size) != buf_size) {
             CORE_LOG(eLOG_Error,
-                     "[SOCK::s_Shutdown]  Cannot reset aux. data buffer");
-            return eIO_Unknown;
+                     "[SOCK::s_Close]  Cannot reset aux. data buffer");
+            assert(0);
         }
     }}
 
     /* Set the socket back to blocking mode */
     if ( !s_SetNonblock(sock->sock, 0/*false*/) ) {
         CORE_LOG(eLOG_Error,
-                 "[SOCK::s_Shutdown]  Cannot set socket to blocking mode");
+                 "[SOCK::s_Close]  Cannot set socket to blocking mode");
     }
 
     /* Set the close()'s linger period be equal to the close timeout */
@@ -780,11 +806,21 @@ static EIO_Status s_Shutdown(SOCK sock)
         if (setsockopt(sock->sock, SOL_SOCKET, SO_LINGER, 
                        (char*) &lgr, sizeof(lgr)) != 0) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
-                           "[SOCK::s_Shutdown]  Failed setsockopt()");
+                           "[SOCK::s_Close]  Failed setsockopt()");
         }
-    }   
+    }
 
-    /* Close (persistently -- retry if interrupted by a signal) */
+    /* Shutdown in both directions */
+    if (SOCK_Shutdown(sock, eIO_Read) != eIO_Success) {
+        CORE_LOG(eLOG_Warning,
+                 "[SOCK::s_Close]  Cannot shutdown socket for reading");
+    }
+    if (SOCK_Shutdown(sock, eIO_Write) != eIO_Success) {
+        CORE_LOG(eLOG_Warning,
+                 "[SOCK::s_Close]  Cannot shutdown socket for writing");
+    }
+
+    /* Close (persistently retry if interrupted by a signal) */
     for (;;) {
         /* success */
         if (SOCK_CLOSE(sock->sock) == 0)
@@ -793,7 +829,7 @@ static EIO_Status s_Shutdown(SOCK sock)
         /* error */
         if (SOCK_ERRNO != SOCK_EINTR) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
-                           "[SOCK::s_Shutdown]  Failed close()");
+                           "[SOCK::s_Close]  Failed close()");
             sock->sock = SOCK_INVALID;
             return (SOCK_ERRNO == SOCK_ECONNRESET || SOCK_ERRNO == SOCK_EPIPE)
                 ? eIO_Closed : eIO_Unknown;
@@ -806,41 +842,53 @@ static EIO_Status s_Shutdown(SOCK sock)
 }
 
 
-/* Emulate "peek" using the NCBI data buffering.
+/* To allow emulating "peek" using the NCBI data buffering.
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves)
  */
 static int s_NCBI_Recv(SOCK          sock,
                        void*         buffer,
                        size_t        size,
-                       int  /*bool*/ peek,
-                       int* /*bool*/ read_error)
+                       int  /*bool*/ peek)
 {
     char*  x_buffer = (char*) buffer;
     size_t n_readbuf;
     int    n_readsock;
 
-    *read_error = 0/*false*/;
-
-    /* read(or peek) from the internal buffer */
+    /* read (or peek) from the internal buffer */
     n_readbuf = peek ?
         BUF_Peek(sock->buf, x_buffer, size) :
         BUF_Read(sock->buf, x_buffer, size);
-    if (n_readbuf == size)
-        return (int)n_readbuf;
+    if (n_readbuf == size  ||  sock->r_status == eIO_Closed) {
+        return (int) n_readbuf;
+    }
     x_buffer += n_readbuf;
     size     -= n_readbuf;
 
-    /* read(dont peek) from the socket */
+    /* read (not just peek) from the socket */
     n_readsock = recv(sock->sock, x_buffer, size, 0);
-    if (n_readsock <= 0) {
-        *read_error = 1/*true*/;
-        return (int)(n_readbuf ? n_readbuf : n_readsock);
+
+    /* catch EOF */
+    if (n_readsock == 0) {
+        sock->r_status = eIO_Closed;
+        sock->is_eof   = 1/*true*/;
+        return (int) (n_readbuf ? n_readbuf : 0);
+    }
+    /* catch unknown ERROR */
+    if (n_readsock < 0) {
+        int x_errno = SOCK_ERRNO;
+        if (x_errno != SOCK_EWOULDBLOCK  &&
+            x_errno != SOCK_EAGAIN  &&
+            x_errno != SOCK_EINTR) {
+            sock->r_status = eIO_Unknown;
+        }
+        return (int) (n_readbuf ? n_readbuf : -1);
     }
 
     /* if "peek" -- store the new read data in the internal buffer */
-    if ( peek )
+    if ( peek ) {
         verify(BUF_Write(&sock->buf, x_buffer, n_readsock));
+    }
 
     /* statistics & logging */
     if (sock->log_data == eOn  ||
@@ -861,10 +909,9 @@ static EIO_Status s_Recv(SOCK        sock,
                          size_t*     n_read,
                          int/*bool*/ peek)
 {
-    int/*bool*/ read_error;
-    int         x_errno;
+    int x_errno;
 
-    /* just checking */
+    /* Check against an invalid socket */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error,
                  "[SOCK::s_Recv]  Attempted to read from an invalid socket");
@@ -875,28 +922,21 @@ static EIO_Status s_Recv(SOCK        sock,
     *n_read = 0;
     for (;;) {
         /* try to read */
-        int buf_read = s_NCBI_Recv(sock, buf, size, peek, &read_error);
+        int buf_read = s_NCBI_Recv(sock, buf, size, peek);
         if (buf_read > 0) {
-            assert(buf_read <= (int)size);
+            assert(buf_read <= (int) size);
             *n_read = buf_read;
-            if ( read_error ) {
-                x_errno = SOCK_ERRNO;
-                if (x_errno != SOCK_EWOULDBLOCK  &&  x_errno != SOCK_EAGAIN  &&
-                    x_errno != SOCK_EINTR)
-                    sock->is_eof = 1/*true*/;
-            }
             return eIO_Success; /* success */
         }
 
-        x_errno = SOCK_ERRNO;
-
-        if (buf_read == 0) {
-            /* NOTE: an empty message may cause the same effect, and it does */
-            /* not (!) get discarded from the input queue; therefore, the    */
-            /* subsequent attempts to read will cause just the same effect)  */
-            sock->is_eof = 1/*true*/;
-            return eIO_Closed;  /* the connection has been closed by peer */
+        if (sock->r_status == eIO_Unknown) {
+            return eIO_Unknown;  /* some error */
         }
+        if (sock->r_status == eIO_Closed) {
+            return eIO_Closed;  /* hit EOF or shut down */
+        }
+
+        x_errno = SOCK_ERRNO;
 
         /* blocked -- wait for a data to come;  exit if timeout/error */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
@@ -911,22 +951,7 @@ static EIO_Status s_Recv(SOCK        sock,
         if (x_errno == SOCK_EINTR)
             continue;
 
-        /* forcibly closed by peer, or shut down */
-        if (x_errno == SOCK_ECONNRESET  ||  x_errno == SOCK_EPIPE) {
-            sock->is_eof = 1/*true*/;
-            return eIO_Closed;
-        }
-
-#if defined(NCBI_OS_MAC)
-        if (buf_read == -1) {
-            sock->is_eof = 1/*true*/;
-            return eIO_Closed;
-        }
-#endif
-
         /* dont want to handle all possible errors... let them be "unknown" */
-        /* and assume EOF */
-        sock->is_eof = 1/*true*/;
         break;
     }
 
@@ -1059,8 +1084,9 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
                                  const STimeout* timeout)
 {
     /* Close the socket, if necessary */
-    if (sock->sock != SOCK_INVALID)
-        s_Shutdown(sock);
+    if (sock->sock != SOCK_INVALID) {
+        s_Close(sock);
+    }
 
     /* Connect */
     sock->id++;
@@ -1068,9 +1094,48 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
 }
 
 
+extern EIO_Status SOCK_Shutdown(SOCK      sock,
+                                EIO_Event how)
+{
+    int x_how;
+    switch ( how ) {
+    case eIO_Read:
+        if (sock->r_status == eIO_Closed) {
+            if ( !sock->is_eof ) {
+                return eIO_Success;  /* has been shutdown already */
+            } else {
+                sock->is_eof = 0/*false*/;  /* hit EOF, but not shutdown yet */
+            }
+        }
+        x_how = SOCK_SHUTDOWN_RD;
+        sock->r_status = eIO_Closed;
+        break;
+    case eIO_Write:
+        if (sock->w_status == eIO_Closed) {
+            return eIO_Success;  /* has been shutdown already */
+        }
+        x_how = SOCK_SHUTDOWN_WR;
+        sock->w_status = eIO_Closed;
+        break;
+    case eIO_ReadWrite:
+        verify(SOCK_Shutdown(sock, eIO_Read ) == eIO_Success);
+        verify(SOCK_Shutdown(sock, eIO_Write) == eIO_Success);
+        return eIO_Success;
+    default:
+        CORE_LOG(eLOG_Warning, "[SOCK_Shutdown]  Invalid argument");
+        return eIO_InvalidArg;
+    }
+
+    if (SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
+        CORE_LOG(eLOG_Warning, "[SOCK_Shutdown]  shutdown() failed");
+    }
+    return eIO_Success;
+}
+
+
 extern EIO_Status SOCK_Close(SOCK sock)
 {
-    EIO_Status status = s_Shutdown(sock);
+    EIO_Status status = s_Close(sock);
     BUF_Destroy(sock->buf);
     free(sock);
     return status;
@@ -1081,8 +1146,52 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
                             EIO_Event       event,
                             const STimeout* timeout)
 {
-    struct timeval tv;
-    return s_Select(sock->sock, event, s_to2tv(timeout, &tv));
+    /* Check against already shutdown socket */
+    switch ( event ) {
+    case eIO_Read:
+        if (sock->r_status == eIO_Closed) {
+            CORE_LOG(eLOG_Warning,
+                     "[SOCK_Wait(Read)]  Attempt to wait on shutdown socket");
+            return eIO_Closed;
+        }
+        break;
+    case eIO_Write:
+        if (sock->w_status == eIO_Closed) {
+            CORE_LOG(eLOG_Warning,
+                     "[SOCK_Wait(Write)]  Attempt to wait on shutdown socket");
+            return eIO_Closed;
+        }
+        break;
+    case eIO_ReadWrite:
+        if (sock->r_status == eIO_Closed  &&  sock->w_status == eIO_Closed) {
+            CORE_LOG(eLOG_Warning,
+                     "[SOCK_Wait(RW)]  Attempt to wait on shutdown socket");
+            return eIO_Closed;
+        }
+        if (sock->r_status == eIO_Closed) {
+            CORE_LOG(eLOG_Note,
+                     "[SOCK_Wait(RW)]  Attempt to wait on R-shutdown socket");
+            event = eIO_Write;
+            break;
+        }
+        if (sock->w_status == eIO_Closed) {
+            CORE_LOG(eLOG_Note,
+                     "[SOCK_Wait(RW)]  Attempt to wait on W-shutdown socket");
+            event = eIO_Read;
+            break;
+        }
+        break;
+    default:
+        CORE_LOG(eLOG_Error,
+                 "[SOCK_Wait]  Invalid (not eIO_[Read][Write]) event type");
+        return eIO_InvalidArg;
+    }
+
+    /* Do select */
+    {{
+        struct timeval tv;
+        return s_Select(sock->sock, event, s_to2tv(timeout, &tv));
+    }}
 }
 
 
@@ -1105,7 +1214,7 @@ extern EIO_Status SOCK_SetTimeout(SOCK            sock,
         sock->c_timeout = s_to2tv(timeout, &sock->c_tv);
         break;
     default:
-        CORE_LOG(eLOG_Error, "[SOCK::SetTimeout]  Invalid argument");
+        CORE_LOG(eLOG_Error, "[SOCK_SetTimeout]  Invalid argument");
         assert(0);
         return eIO_Unknown;
     }
@@ -1149,7 +1258,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         EIO_Status status = eIO_Success;
         for (*n_read = 0;  size; ) {
             size_t x_read;
-            status = SOCK_Read(sock, (char*)buf + *n_read, size, &x_read,
+            status = SOCK_Read(sock, (char*) buf + *n_read, size, &x_read,
                                eIO_Plain);
             if (status != eIO_Success)
                 return status;
@@ -1174,9 +1283,17 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
 }
 
 
-extern int/*bool*/ SOCK_Eof(SOCK sock)
+extern EIO_Status SOCK_Status(SOCK      sock,
+                              EIO_Event direction)
 {
-    return sock->is_eof;
+    switch ( direction ) {
+    case eIO_Read:
+        return sock->r_status;
+    case eIO_Write:
+        return sock->w_status;
+    default:
+        return eIO_InvalidArg;
+    }
 }
 
 
@@ -1185,15 +1302,22 @@ extern EIO_Status SOCK_Write(SOCK        sock,
                              size_t      size,
                              size_t*     n_written)
 {
-    /* just checking */
+    /* Check against an invalid socket */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error,
-                 "[SOCK_Write]  Attempted to write to an invalid socket");
+                 "[SOCK_Write]  Attempt to write to an invalid socket");
         assert(0);
         return eIO_Unknown;
     }
 
-    /* write */
+    /* Check against already shutdown socket */
+    if (sock->w_status == eIO_Closed) {
+        CORE_LOG(eLOG_Warning,
+                 "[SOCK_Write]  Attempt to write to already shutdown socket");
+        return eIO_Closed;
+    }
+
+    /* Do write */
 #if defined(SOCK_WRITE_SLICE)
     return s_WriteSliced(sock, buf, size, n_written);
 #else
