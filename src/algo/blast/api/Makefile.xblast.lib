@@ -11,10 +11,13 @@ tblastn_options \
 blast_nucl_options \
 disc_nucl_options
 
-SRC  = $(SRC_C:%=../core/%) $(SRC_CXX)
+SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
 LIB = xblast
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+.core_%.c: # $(srcdir)/../core/%.c
+	echo '#include "$(srcdir)/../core/$*.c"' > $@
