@@ -51,13 +51,13 @@ public:
     static int Nmer2Int(const char *seq, int n);
 
     /// Decode an integer representation of an n-mer.
-    static void Int2Nmer(int nmer_int, int nmer_size, string* out);
+    static void Int2Nmer(int nmer_int, int nmer_size, string& out);
 
     /// The number of distinct n-mers (4^n)
     static int NumberOfNmers(int n);
 
     /// Calculate percent G+C+S
-    static int GetPercentGC(CSeqVector& seqvec);
+    static int GetPercentGC(const CSeqVector& seqvec);
 
 private:
     static int Nuc2Nybble(char nuc);
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/18 17:23:34  jcherry
+ * Changed string parameter to be passed by reference.
+ *
  * Revision 1.5  2003/08/04 15:43:20  dicuccio
  * Modified export specifiers to be more flexible
  *
