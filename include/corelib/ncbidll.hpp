@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Vladimir Ivanov
+ * Author:  Denis Vakatov, Vladimir Ivanov, Anatoliy Kuznetsov
  *
  *
  */
@@ -36,15 +36,15 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 
+
+BEGIN_NCBI_SCOPE
 
 /** @addtogroup Dll
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
 
 
 // Forward declaration of struct containing OS-specific DLL handle.
@@ -116,7 +116,7 @@ public:
     ///   Can be either DLL basename or an absolute file path.
     /// @param when_to_load
     ///   Choice to load now or later using Load().
-    /// @param auto_load
+    /// @param auto_unload
     ///   Choice to unload DLL in destructor.
     /// @param treat_as
     ///   Choice to transform the DLL base name.
@@ -192,6 +192,19 @@ public:
         return ptr.type_ptr;
     }
 
+    /// Get the name of the DLL file 
+    const string& GetName() const { return m_Name; }
+
+    /// Get DLLs entry point.
+    ///
+    /// Same as GetEntryPoint, but returns a raw (void*) pointer on the 
+    /// resolved entry function.
+    /// @sa GetEntryPoint
+    void* GetVoidEntryPoint(const string& name) 
+    {
+        return x_GetEntryPoint(name, sizeof(void*)); 
+    }
+
 private:
     /// Helper find method for getting a DLLs entry point.
     ///
@@ -242,15 +255,120 @@ private:
 };
 
 
-END_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Class for entry point resolution when there are several DLL candidates.
+///
+/// If Dll resolver finds DLL with the specified entry point it is
+/// stored in the internal list (provided by GetResolvedEntries method).
+/// All DLL libraries are unloaded upon resolver's destruction
+///
+class NCBI_XNCBI_EXPORT CDllResolver
+{
+public:
+    /// DLL resolution descriptor.
+    struct SResolvedEntry
+    {
+        CDll*    dll;           ///! Loaded DLL instance
+        void*    entry_point;   ///! Entry point pointer
+
+        SResolvedEntry(CDll* dll_ptr, void* entry_point_ptr)
+        : dll(dll_ptr), 
+          entry_point(entry_point_ptr)
+        {}
+    };
+
+    /// Container, keeps list of all resolved entry points
+    typedef vector<SResolvedEntry>  TEntries;
+
+
+    /// Constructor
+    ///
+    /// @param entry_point_name
+    ///    - name of the DLL entry point
+    CDllResolver(const string& entry_point_name);
+
+    
+    ~CDllResolver();
+
+    /// Try to load DLL from the specified file and resolve the entry point
+    ///
+    /// If DLL resolution successfull loaded entry point is registered in the
+    /// internal list of resolved entries.
+    ///
+    /// @param file_name
+    ///     Name of the DLL file. Can be full name with path of the base name
+    /// @return
+    ///     TRUE if DLL is succesfully loaded and entry point resolved
+    /// @sa GetResolvedEntries
+    bool TryCandidate(const string& file_name);
+
+    /// Try to resolve file candidates
+    ///
+    /// @param candidates
+    ///    container with file names to try
+    /// @sa GetResolvedEntries
+    template<class TClass>
+    void Try(const TClass& candidates)
+    {
+        ITERATE(TClass, it, candidates) {
+            TryCandidate(*it);
+        }
+    }
+
+    /// Try to resolve all files matching the specified masks in the
+    /// specified directories.
+    ///
+    /// @param paths
+    ///    container with directory names
+    /// @param masks
+    ///    container with file candidate masks
+    /// @sa GetResolvedEntries
+    template<class TClass1, class TClass2>
+    void FindCandidates(const TClass1& paths, const TClass2& masks)
+    {
+        vector<string> candidates;
+        FindFiles(candidates, paths.begin(), paths.end(), 
+                              masks.begin(), masks.end());
+        Try(candidates);
+    }
+
+    /// Get all resolved entry points
+    const TEntries& GetResolvedEntries() const 
+    { 
+        return m_ResolvedEntries; 
+    }
+
+    /// Get all resolved entry points
+    TEntries& GetResolvedEntries() 
+    { 
+        return m_ResolvedEntries; 
+    }
+
+private:
+    CDllResolver(const CDllResolver&);
+    CDllResolver& operator=(const CDllResolver&);
+
+protected:
+    string      m_EntryPoinName;
+    TEntries    m_ResolvedEntries;
+};
 
 /* @} */
+
+
+END_NCBI_SCOPE
+
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/11/06 12:59:15  kuznets
+ * Added new class CDllResolver
+ * (searches for DLLs with the specified entry point)
+ *
  * Revision 1.11  2003/09/11 16:17:33  ivanov
  * Fixed lines wrapped at 79th column
  *
