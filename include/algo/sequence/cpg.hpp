@@ -38,14 +38,21 @@ BEGIN_NCBI_SCOPE
 
 /*---------------------------------------------------------------------------*/
 
-struct SCpGIsland {
-    TSeqPos m_Start, m_Stop;
-    unsigned int m_CG, m_A, m_C, m_G, m_T, m_N;
+struct NCBI_XALGO_EXPORT SCpGIsland {
+    TSeqPos m_Start;
+    TSeqPos m_Stop;
+    unsigned int m_CG;
+    unsigned int m_A;
+    unsigned int m_C;
+    unsigned int m_G;
+    unsigned int m_T;
+    unsigned int m_N;
 };
 
 /*---------------------------------------------------------------------------*/
 
-class CCpGIslands : public list<SCpGIsland> {
+class NCBI_XALGO_EXPORT CCpGIslands : public list<SCpGIsland>
+{
 public:
     CCpGIslands(const char* seq, TSeqPos seqLength, int window = 200,
                 int minLen = 200, double GC = 0.5, double CpG = 0.6);
@@ -94,6 +101,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.2  2003/06/17 19:44:13  dicuccio
+* Minor code reformatting.  Added export specifiers
+*
 * Revision 1.1  2003/06/17 15:32:27  johnson
 * initial revision
 *
