@@ -3,12 +3,12 @@
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
    <meta name="Author" content="Anton Lavrentiev">
-   <title>MSVC++ Project File Automation</title>
+   <title>MSVC++ Project File Conversion Tools</title>
 </head>
 <body>
 
 <h2>
-Automatic Project File Conversion</h2>
+MSVC++ Project File Conversion Tools</h2>
 This manual assumes that the UNIX-like environment is used to prepare
 and manage MSVC++ project files, which in turn can be used to build NCBI
 C++ Toolkit by MSVC++ Developer Studio. The following tools must be available in order for
@@ -40,74 +40,9 @@ There are some limitations to the above scheme:
 	without explicit paths.</li>
 </ul>
 
-<h4>
-Working with project files</h4>
-<ol>
-<li>
-Create a temporary directory, copy the entire project
-file subtree (assuming it's your current directory) there, and then generate
-multi-configuration project files, using script <a href="#one2all_sh"><i><tt><font color="#3333FF">one2all.sh</font></tt></i></a>:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/temp</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> tar cvf . - | ( cd ~/temp; tar xf - )</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find ~/temp -name CVS -exec rm -rf {} \;</font></tt>
-<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find ~/temp -name "*.dsp" -print -exec ./one2all.sh {} \;</font></tt></ol>
-</ol>
-The generated project files replace originals,
-which are saved as backup copies (<tt><font color="#3333FF">.bak</font></tt>). Remove backup copies:
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find ~/temp -name "*.dsp.bak" -exec rm -f {}  \;</font></tt></ol>
-</ol>
-<li>
-We recommend to do the above step in a separate directory
-just to be sure that nothing is clobbered. You can however do this in the
-checked out copy of the mentioned directory, and even do CVS update later.
-As the CVS tracks the file modification by first checking the date
-and time of the file, and the scripts do not modify either, so none
-of the project files will be committed to the repository (despite the contents of the files
-have been altered). This behavior (or bug/feature) could however change in a further version of
-CVS, and then <a href="#commit_sh"><i><tt><font color="#3333FF">commit.sh</font></tt></i></a> will not allow the commit
-to go through, because all the project files became multi-configuration.</li>
-<br>
-Note that when obtainting the entire NCBI C++ Toolkit tree by using the script
-<a href="config.html#ref_MsvcProjDownload"><i><tt><font color="#3333FF">cvs_core.sh</font></tt></i></a> the
-complete procedure of conversion is automatically done unless
-you specify <i><tt><font color="#3333FF">--wihout-vc-cfgs</font></tt></i> option.
-
-<li>
-Now, you can transfer the project file subtree to PC (just override the project files,
-which were extracted by CVS), and then start building the Toolkit.</li>
-
-<li>
-<a name="all_bat"></a>Batch file <i><tt><font color="#3333FF">all.bat</font></tt></i> can
-generate all projects in a batch mode, provided that <tt><font color="#3333FF">msdev.exe</font></tt>
-is in your <tt><font color="#3333FF">PATH</font></tt>.
-As an argument to the batch file you can specify either ALL (or no arguments at all),
-or any combination of Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL to build either
-all available, or particular configuration(s) respectively.</li>
-Instead you can always use MSVC++ Developer Studio (just load workspace file <tt>ncbi_cpp.dsw</tt>)
-to build the Toolkit in the interactive manner.
-</ol>
 <p>
-Please also see <a href="#notes"><b>notes</b></a>.
-
-<h4>
-Transition</h4>
-During this step all current project files are converted to single-configuration
-files, which later can be automatically expanded to multi-configuration
-project files, used for (production and/or regular) builds.
-<ol>
-<li>
-Check out the MSVC++ project files and tool scripts from <tt><font color="#3333FF">internal/c++/compilers/msvc_prj</font></tt>
-directory:</li>
-
-<ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/msvc_prj; cd ~/msvc_prj</font></tt></ol>
-<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs co -d . internal/c++/compilers/msvc_prj</font></tt></ol>
-</ol>
-
-The scripts are:<a name="scripts"></a>
+All the work of managing the project files is done by using of one or more of the
+following shell <a name="scripts">scripts</a>:
 
 <ul>
 <li>
@@ -129,10 +64,9 @@ and derives multi-configuration project file containing 3 production configurati
 Release, ReleaseMT, and ReleaseDLL; and 3 debug configurations: Debug,
 DebugMT, DebugDLL. Output file is always produced in DOS text file format (that is suitable
 for immediate consumption by MSVC++), whereas input file can be in either UNIX or DOS format.</li>
-
-<p>
+<br>
 <u>Note</u>: Aside the project file name, the second argument can be given to the script. This argument
-is used as a name of configuration to extract, without interactive inquiry. If the specified configuration
+is used as a name of configuration to extract without interactive inquiry. If the specified configuration
 is not found, the script aborts with an error message.
 
 <li>
@@ -152,7 +86,7 @@ The main purpose of the script is to eliminate "global" configuration through "T
 which is otherwise required to specify include file directories. Generated paths to include files are
 always relative to the project file. The script is to be used from the <tt><font color="#3333FF">msvc_prj</font></tt>
 directory each time, when the project file subtree
-is a kind rearranged and must be updated in the CVS. Therefore the project files are always produced in UNIX
+is a kind rearranged and must be updated in the CVS. Therefore, the project files are always produced in UNIX
 text file format.</li>
 
 <li>
@@ -162,13 +96,38 @@ that the project being checked in contains one fixed configuration only (namely,
 This script as well checks that the file being committed is in UNIX text file format, and
 rejects if not. The extensions (and only in directories specified in <tt><font color="#3333FF">DIRLIST</font></tt>
 parameter, as described below) checked are: <tt><font color="#3333FF">.dsw</font></tt>,
-<tt><font color="#3333FF">.dsp</font></tt>, <tt><font color="#3333FF">.bat</font></tt>.</li></ul>
+<tt><font color="#3333FF">.dsp</font></tt>, <tt><font color="#3333FF">.bat</font></tt>.</li>
 
+<br>
 <a name="notes"><br><b><u>Please note</u></b></a> that the above tools are <b><i>not</i></b> project file <i>generation</i>
 tools, but rather the project file <i>conversion</i> tools. That is, the resulting project file is correct if and only if the
 source project file is. When a project file gets converted to a single-configuration template,
-all the compiler switches and definitions, as well as other vital environment, have to be defined in a right way.
+all the compiler switches and definitions, as well as other vital environment, have to be defined in a right way.</ul>
+
 <p>
+DOS batch file <a name="all_bat"><i><tt><font color="#3333FF">all.bat</font></tt></i></a> can
+generate all projects in a batch mode, provided that <tt><font color="#3333FF">msdev.exe</font></tt>
+is in your <tt><font color="#3333FF">PATH</font></tt>.
+As an argument to the batch file you can specify either ALL (or no arguments at all),
+or any combination of Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL to build either
+all available, or particular configuration(s) respectively.
+You can always use MSVC++ Developer Studio (just load workspace file <tt>ncbi_cpp.dsw</tt>)
+to build the Toolkit in the interactive manner.
+
+<h4>
+Transition to single-configuration project files</h4>
+This step applies only once, when all current project files are converted to single-configuration
+ones, which later can be automatically expanded back to multi-configuration project files,
+as required for (production and/or regular) builds.
+<ol>
+<li>
+Check out the MSVC++ project files and tool scripts from <tt><font color="#3333FF">internal/c++/compilers/msvc_prj</font></tt>
+directory:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/msvc_prj; cd ~/msvc_prj</font></tt></ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs co -d . internal/c++/compilers/msvc_prj</font></tt></ol>
+</ol>
 
 <li>
 Apply the following command to convert multi-configuration
