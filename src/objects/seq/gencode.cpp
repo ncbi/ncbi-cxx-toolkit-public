@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/09/07 14:16:50  ucko
+ * Cleaned up external interface.
+ *
  * Revision 6.2  2001/09/06 20:45:27  ucko
  * Fix scope of i_out (caught by gcc 3.0.1).
  *
@@ -51,13 +54,84 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
+#include <memory>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 
-// Create the only instance of "CGencode" here.
-CSafeStaticPtr<CGencode> CGencode::sm_pInstance;
+// Singleton object holding needed state.
+
+class CGencode_implementation
+{
+public:
+    CGencode_implementation();
+    ~CGencode_implementation();
+
+    // see CGencode::Translate()
+    void Translate
+    (const CSeq_data&               in_seq,
+     CSeq_data*                     out_seq,
+     const CGenetic_code&           genetic_code,
+     const map<unsigned int, char>& code_breaks,
+     unsigned int                   uBeginIdx,
+     unsigned int                   uLength,
+     bool                           bCheck_first,
+     bool                           bPartial_start,
+     ENa_strand                     eStrand,
+     bool                           bStop,
+     bool                           bRemove_trailing_x)
+        const;
+
+private:
+    // Holds gc.prt Genetic-code-table
+    static const char* sm_StrGcAsn[];
+
+    // Genetic code table data
+    CRef<CGenetic_code_table> m_GcTable;
+
+    // Initialize genetic codes.
+    void InitGcTable();
+
+    // Table to ensure that all codon codes are
+    // one of TCAGN and to translate these to 0-4,
+    // respectively. Result used as an index to second
+    // dimension in m_AaIdx
+    unsigned char m_Tran[256];
+
+    // Same as m_Tran but for complements
+    // AGTCN translate to 0-4, respectively
+    unsigned char m_CTran[256];
+
+    // Table used to determine index into genetic code.
+    // First dimension is na residue position in triplet
+    // Second dimenstion is 0=T, 1=C, 2=A, 3=G, 4=X
+    // Three values are bitwise ORed to determine index
+    // into Ncbieaa or Sncbieaa string.
+    unsigned char m_AaIdx[3][5];
+
+    // Function to initialize m_Tran, m_CTran, and m_AaIdx
+    void InitTran();
+
+    // Function to get requested ncbieaa and sncbieaa strings
+    void GetGeneticCode
+    (const CGenetic_code& genetic_code,
+     bool                 bCheck_first, // false => sncbieaa not needed
+     string*              gc,           // ncbieaa string
+     string*              sc)           // sncbieaa string
+        const;
+
+    // Functions to get ncbieaa genetic code string
+    const string& GetNcbieaa(int id) const;
+    const string& GetNcbieaa(const string& name) const;
+
+    // Functions to get start code
+    const string& GetSncbieaa(int id) const;
+    const string& GetSncbieaa(const string& name) const;
+};
+
+static CGencode_implementation s_Implementation;
 
 
 // Implement the public interface.
@@ -74,7 +148,7 @@ void CGencode::Translate
  bool                           bStop,
  bool                           bRemove_trailing_x)
 {
-    sm_pInstance->x_Translate
+    s_Implementation.Translate
         (in_seq,
          out_seq,
          genetic_code,
@@ -89,9 +163,8 @@ void CGencode::Translate
 }
 
 
-// Constructor. This is private. It can only be called by
-// CSafeStaticPtr<CGencode> because this is a friend class
-CGencode::CGencode()
+// Constructor.
+CGencode_implementation::CGencode_implementation()
 {
     InitGcTable();
     InitTran();
@@ -101,7 +174,7 @@ CGencode::CGencode()
 // Destructor. All memory allocation on the free store
 // is wrapped in smart pointers and does not need
 // deallocation.
-CGencode::~CGencode()
+CGencode_implementation::~CGencode_implementation()
 {
     return;
 }
@@ -109,7 +182,7 @@ CGencode::~CGencode()
 
 
 // Translate na to aa
-void CGencode::x_Translate
+void CGencode_implementation::Translate
 (const CSeq_data&               in_seq,
  CSeq_data*                     out_seq,
  const CGenetic_code&           genetic_code,
@@ -395,7 +468,7 @@ void CGencode::x_Translate
 
 // Initialize CGenetic_code_table object from "sm_StrGcAsn"
 // (see its initialization at the very end of this file)
-void CGencode::InitGcTable()
+void CGencode_implementation::InitGcTable()
 {
     // Compose a long-long string
     string str;
@@ -415,7 +488,7 @@ void CGencode::InitGcTable()
 
 
 // Function to initialize m_Tran, m_CTran, and m_AaIdx
-void CGencode::InitTran()
+void CGencode_implementation::InitTran()
 {
     int i;
 
@@ -444,7 +517,7 @@ void CGencode::InitTran()
 
 // Fuction to return Ncbieaa string (genetic code)
 // given a genetic code id.
-const string& CGencode::GetNcbieaa(int id) const
+const string& CGencode_implementation::GetNcbieaa(int id) const
 {
     // Get list of genetic codes
     const list <CRef<CGenetic_code> >& gcl = m_GcTable->Get();
@@ -481,7 +554,7 @@ const string& CGencode::GetNcbieaa(int id) const
 
 // Fuction to return Ncbieaa string (genetic code)
 // given a genetic code name.
-const string& CGencode::GetNcbieaa(const string& name) const
+const string& CGencode_implementation::GetNcbieaa(const string& name) const
 {
     // Get list of genetic codes
     const list<CRef<CGenetic_code> >& gcl = m_GcTable->Get();
@@ -517,7 +590,7 @@ const string& CGencode::GetNcbieaa(const string& name) const
 
 // Fuction to return Sncbieaa string (start codon string)
 // given a genetic code id.
-const string& CGencode::GetSncbieaa(int id) const
+const string& CGencode_implementation::GetSncbieaa(int id) const
 {
     // Get list of genetic codes
     const list<CRef<CGenetic_code> >& gcl = m_GcTable->Get();
@@ -555,7 +628,7 @@ const string& CGencode::GetSncbieaa(int id) const
 
 // Fuction to return Sncbieaa string (start codon string)
 // given a genetic code name.
-const string& CGencode::GetSncbieaa(const string& name) const
+const string& CGencode_implementation::GetSncbieaa(const string& name) const
 {
     // Get list of genetic codes
     const list<CRef<CGenetic_code> >& gcl = m_GcTable->Get();
@@ -591,7 +664,7 @@ const string& CGencode::GetSncbieaa(const string& name) const
 
 
 // Function to get requested ncbieaa and sncbieaa strings
-void CGencode::GetGeneticCode
+void CGencode_implementation::GetGeneticCode
 (const CGenetic_code&       genetic_code,
  bool                       bCheck_first,   // false => sncbieaa not needed
  string*                    gc,             // ncbieaa string
@@ -687,13 +760,13 @@ void CGencode::GetGeneticCode
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CGencode::sm_StrGcAsn  --  some very long and ugly string
+//  CGencode_implementation::sm_StrGcAsn  --  some very long and ugly string
 //
 //  NOTE:  because of the weird MSVC++ compiler limitations on the string
 //         length (2096), it had to be split into parts.
 //
 
-const char* CGencode::sm_StrGcAsn[] =
+const char* CGencode_implementation::sm_StrGcAsn[] =
 {
     " --**************************************************************************\n--  This is the NCBI genetic code table\n--  Initial base data set from Andrzej Elzanowski while at PIR International\n--  Addition of Eubacterial and Alternative Yeast by J.Ostell at NCBI\n--  Base 1-3 of each codon have been added as comments to facilitate\n--    readability at the suggestion of Peter Rice, EMBL\n--\n--  Version 3.0 - 1994\n--  Updated as per Andrzej Elzanowski at NCBI\n--     Complete documentation in NCBI toolkit documentation\n--  Note: 2 genetic codes have been deleted\n--\n--   Old id   Use id	 - Notes\n--\n--   id 7      id 4      - Kinetoplast code now merged in code id 4\n--                       - 7 still here, but is just a copy of 4\n--                       -    will be removed soon \n--   id 8      id 1      - all plant chloroplast differences due to RNA edit\n--\n--*************************************************************************\n\nGenetic-code-table ::= {\n	{\n		name \"Standard\" ,\n		name \"SGC0\" ,\n		id 1 ,\n		ncbieaa  \"FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n		sncbieaa \"-----------------------------------M----------------------------\"\n        -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG\n        -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG\n        -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG\n	} ,\n	{\n		name \"Vertebrate Mitochondrial\" ,\n		name \"SGC1\" ,\n		id 2 ,\n		ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSS**VVVVAAAADDEEGGGG\",\n		sncbieaa \"--------------------------------MMMM---------------M------------\"\n        -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG\n        -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG\n",
         "        -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG\n	} ,\n	{\n		name \"Yeast Mitochondrial\" ,\n		name \"SGC2\" ,\n		id 3 ,\n		ncbieaa  \"FFLLSSSSYY**CCWWTTTTPPPPHHQQRRRRIIMMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n		sncbieaa \"-----------------------------------M----------------------------\"\n        -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG\n        -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG\n        -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG\n	} ,\n	{\n		name \"Mold, Protozoan, Coelenterate Mitochondrial and Mycoplasma/Spiroplasma\" ,\n		name \"SGC3\" ,\n		id 4 ,\n		ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n		sncbieaa \"--MM---------------M------------MMMM---------------M------------\"\n        -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG\n        -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG\n        -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG\n	} ,\n	{\n		name \"Invertebrate Mitochondrial\" ,\n		name \"SGC4\" ,\n		id 5 ,\n		ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSSSVVVVAAAADDEEGGGG\",\n		sncbieaa \"---M----------------------------M-MM----------------------------\"\n        -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG\n        -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG\n        -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG\n	} ,\n	{\n		name \"Ciliate Macronuclear and Daycladacean\" ,\n		name \"SGC5\" ,\n		id 6 ,\n		ncbieaa  \"FFLLSSSSYYQQCC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n		sncbieaa \"-----------------------------------M----------------------------\"\n",

@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/09/07 14:16:49  ucko
+ * Cleaned up external interface.
+ *
  * Revision 1.1  2001/08/24 00:32:44  vakatov
  * Initial revision
  *
@@ -41,9 +44,7 @@
  */
 
 #include <objects/seqloc/Na_strand.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 #include <map>
-#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -52,11 +53,10 @@ BEGIN_objects_SCOPE
 
 class CSeq_data;
 class CGenetic_code;
-class CGenetic_code_table;
 
 
-///  CGencode is a Singleton which provides a utility
-///  function Translate() supporting na -> aa translations.
+// Public front-end for hidden singleton object of class
+// CGencode_implementation.
 
 class CGencode
 {
@@ -80,77 +80,6 @@ public:
      ENa_strand                     eStrand            = eNa_strand_plus,
      bool                           bStop              = true,
      bool                           bRemove_trailing_x = false);
-
-private:
-    // Prevent creation and assignment except by call to Instance()
-    CGencode();
-    CGencode(const CGencode&);
-    CGencode& operator= (const CGencode&);
-    ~CGencode();
-
-    // see Translate() in the "public" section above
-    void x_Translate
-    (const CSeq_data&               in_seq,
-     CSeq_data*                     out_seq,
-     const CGenetic_code&           genetic_code,
-     const map<unsigned int, char>& code_breaks,
-     unsigned int                   uBeginIdx,
-     unsigned int                   uLength,
-     bool                           bCheck_first,
-     bool                           bPartial_start,
-     ENa_strand                     eStrand,
-     bool                           bStop,
-     bool                           bRemove_trailing_x)
-        const;
-
-    // The unique instance of CGencode
-    static CSafeStaticPtr<CGencode> sm_pInstance;
-    friend class CSafeStaticPtr<CGencode>;
-
-    // Holds gc.prt Genetic-code-table
-    static const char* sm_StrGcAsn[];
-
-    // Genetic code table data
-    CRef<CGenetic_code_table> m_GcTable;
-
-    // Initialize genetic codes.
-    void InitGcTable();
-
-    // Table to ensure that all codon codes are
-    // one of TCAGN and to translate these to 0-4,
-    // respectively. Result used as an index to second
-    // dimension in m_AaIdx
-    unsigned char m_Tran[256];
-
-    // Same as m_Tran but for complements
-    // AGTCN translate to 0-4, respectively
-    unsigned char m_CTran[256];
-
-    // Table used to determine index into genetic code.
-    // First dimension is na residue position in triplet
-    // Second dimenstion is 0=T, 1=C, 2=A, 3=G, 4=X
-    // Three values are bitwise ORed to determine index
-    // into Ncbieaa or Sncbieaa string.
-    unsigned char m_AaIdx[3][5];
-
-    // Function to initialize m_Tran, m_CTran, and m_AaIdx
-    void InitTran();
-
-    // Function to get requested ncbieaa and sncbieaa strings
-    void GetGeneticCode
-    (const CGenetic_code& genetic_code,
-     bool                 bCheck_first, // false => sncbieaa not needed
-     string*              gc,           // ncbieaa string
-     string*              sc)           // sncbieaa string
-        const;
-
-    // Functions to get ncbieaa genetic code string
-    const string& GetNcbieaa(int id) const;
-    const string& GetNcbieaa(const string& name) const;
-
-    // Functions to get start code
-    const string& GetSncbieaa(int id) const;
-    const string& GetSncbieaa(const string& name) const;
 };
 
 
