@@ -83,7 +83,8 @@ typedef struct BlastQueryInfo {
    int num_queries;   /**< Number of query sequences */
    Int4 total_length; /**< Total length of all query sequences/strands/frames */
    Int4Ptr context_offsets; /**< Offsets of the individual queries in the
-                                     concatenated super-query */
+                               concatenated super-query */
+   Int4Ptr length_adjustments; /**< Length adjustments for boundary conditions */
    Int8Ptr eff_searchsp_array; /**< Array of effective search spaces for
                                   multiple queries. Dimension = number of 
                                   query sequences. */
