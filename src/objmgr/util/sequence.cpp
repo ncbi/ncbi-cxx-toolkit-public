@@ -1637,6 +1637,15 @@ int TestForOverlap(const CSeq_loc& loc1,
             }
             return -1;
         }
+    case eOverlap_Contains:
+        {
+            if ( rg2.GetFrom() <= rg1.GetFrom()  &&
+                rg2.GetTo() >= rg1.GetTo() ) {
+                return (rg1.GetFrom() - rg2.GetFrom()) +
+                    (rg2.GetTo() - rg1.GetTo());
+            }
+            return -1;
+        }
     case eOverlap_Subset:
         {
             // loc1 should contain loc2
@@ -1704,6 +1713,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
     switch (overlap_type) {
     case eOverlap_Simple:
     case eOverlap_Contained:
+    case eOverlap_Contains:
         // Require total range overlap
         annot_overlap_type = CAnnot_CI::eOverlap_TotalRange;
         break;
@@ -1746,6 +1756,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
     switch (overlap_type) {
     case eOverlap_Simple:
     case eOverlap_Contained:
+    case eOverlap_Contains:
         // Require total range overlap
         annot_overlap_type = CAnnot_CI::eOverlap_TotalRange;
         break;
@@ -2815,6 +2826,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.37  2003/02/13 14:35:40  grichenk
+* + eOverlap_Contains
+*
 * Revision 1.36  2003/02/10 15:54:01  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *

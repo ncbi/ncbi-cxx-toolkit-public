@@ -232,11 +232,12 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
                        EOffsetType how = eOffset_FromStart, CScope* scope = 0);
 
 enum EOverlapType {
-    eOverlap_Simple,          // any overlap of extremes
-    eOverlap_Contained,       // contained within extremes
-    eOverlap_Subset,          // is a subset of ranges
-    eOverlap_CheckIntervals,  // is a subset with matching boundaries
-    eOverlap_Interval         // at least one pair of intervals must overlap
+    eOverlap_Simple,         // any overlap of extremes
+    eOverlap_Contained,      // 2nd contained within 1st extremes
+    eOverlap_Contains,       // 2nd contains 1st extremes
+    eOverlap_Subset,         // 2nd is a subset of 1st ranges
+    eOverlap_CheckIntervals, // 2nd is a subset of 1st with matching boundaries
+    eOverlap_Interval        // at least one pair of intervals must overlap
 };
 
 // Check if the two locations have ovarlap of a given type
@@ -494,6 +495,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2003/02/13 14:35:23  grichenk
+* + eOverlap_Contains
+*
 * Revision 1.26  2003/01/22 21:02:44  ucko
 * Add a comment about LocationOffset's return value.
 *
