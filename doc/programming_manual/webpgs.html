@@ -288,8 +288,8 @@ are available that do not require an application argument.
 
 The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTMLPage">
 <i>CHTMLPage</i></a> class is derived from the <i>CHTMLBasicPage</i>. In combination with the
-appropriate <a href="template.txt"> <i>template</i></a> file, this class can be used to generate
-the standard <a href="template.html"> NCBI web page</a>, which includes:
+appropriate template file, this class can be used to generate
+the standard <a href="ncbi_page.html"> NCBI web page</a>, which includes:
 <ul>
 <li> the NCBI logo 
 <li> a hook for the application-specific logo
@@ -301,7 +301,7 @@ the standard <a href="template.html"> NCBI web page</a>, which includes:
 
 The template file is a simple HTML text file with one extension -- the use of named tags
 (<i><@tagname@></i>) which allow the insertion of new HTML blocks into a pre-formatted
-page. The standard NCBI page <a href="template.txt"> <i>template</i></a> file contains one such
+page. The standard NCBI page template file contains one such
 tag, <i>VIEW</i>. <p>
 
 The <i>CHTMLPage</i> class introduces two new data members: <b><i>m_Title</i></b>
@@ -365,7 +365,7 @@ with tag "TITLE" and tag "VIEW", respectively.
 
 An example using the NCBI standard template file should help make these concepts more concrete. The following
 code excerpt uses the standard NCBI template and inserts a text node at the <i>VIEW</i> tag position
-(compare <a href="xmplOut.html"> output</a> to <a href="template.html">unaltered template</a>):
+(compare <a href="xmplOut.html"> output</a> to <a href="ncbi_page.html">unaltered template</a>):
 
 <font color = "#000080"> <pre>
 #include &lt;html/html.hpp>
@@ -376,7 +376,7 @@ USING_NCBI_SCOPE;
 int main() 
 {
     try {
-        CHTMLPage *Page = new CHTMLPage("A CHTMLPage!", "template.html");
+        CHTMLPage *Page = new CHTMLPage("A CHTMLPage!", "ncbi_page.html");
 	Page->AddTagMap( "VIEW", new CHTMLText("Insert this string at VIEW tag"));
 	Page->Print(cout);
         cout.flush();
@@ -495,7 +495,7 @@ int main()
 {
     try {
 
-        CHTMLPage *Page = new CHTMLPage("myTitle", "template.html");
+        CHTMLPage *Page = new CHTMLPage("myTitle", "ncbi_page.html");
         CNCBINode *tagHolder = new CNCBINode();
 
 	Page->AddTagMap( "VIEW", tagHolder);
@@ -1279,11 +1279,4 @@ and contains a pointer to a <a href="#CPageList"> <i>CPageList</i></a>. See also
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
-
-
-
-
-
-
-
 
