@@ -112,6 +112,8 @@ public:
         eDefault
     };
 
+    typedef unsigned long TRecordCount;
+    
 public:
     CBDB_FileCursor(CBDB_File& dbf);
     CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans);
@@ -130,6 +132,9 @@ public:
     EBDB_ErrCode Update(CBDB_File::EAfterWrite = CBDB_File::eDiscardData);
     EBDB_ErrCode Delete(CBDB_File::EIgnoreError on_error = 
                         CBDB_File::eThrowOnError);
+
+    // Returns number of records with same key as this cursor refers
+    TRecordCount KeyDupCount() const;
 
 protected:
     /// Test "TO" search criteria. Return "true" if current value satisfies it
@@ -225,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/06 19:18:46  rotmistr
+ * Cursor KeyDupCount added
+ *
  * Revision 1.9  2004/05/06 18:17:58  rotmistr
  * Cursor Update/Delete implemented
  *

@@ -244,6 +244,19 @@ EBDB_ErrCode CBDB_FileCursor::Delete(CBDB_File::EIgnoreError on_error)
     return m_Dbf.DeleteCursor(m_DBC, on_error);
 }
 
+CBDB_FileCursor::TRecordCount CBDB_FileCursor::KeyDupCount() const
+{
+    if(m_DBC == 0) 
+        BDB_THROW(eInvalidValue, "Try to use invalid cursor");
+
+    db_recno_t ret;
+    
+    if( int err = m_DBC->c_count(m_DBC, &ret, 0) )
+        BDB_ERRNO_THROW(err, "Failed to count duplicate entries for cursor");
+    
+    return TRecordCount(ret);
+}
+
 EBDB_ErrCode CBDB_FileCursor::FetchFirst()
 {
     m_FirstFetched = true;
@@ -471,6 +484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/06 19:19:22  rotmistr
+ * Cursor KeyDupCount added
+ *
  * Revision 1.11  2004/05/06 18:18:14  rotmistr
  * Cursor Update/Delete implemented
  *
