@@ -39,6 +39,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <util/strsearch.hpp>
@@ -481,6 +482,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2002/12/27 13:09:59  dicuccio
+* Added missing #include for SeqFeatData.hpp
+*
 * Revision 1.19  2002/12/26 21:45:28  grichenk
 * + GetBestOverlappingFeat()
 *
