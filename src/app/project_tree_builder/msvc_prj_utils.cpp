@@ -85,7 +85,9 @@ void PromoteIfDifferent(const string& present_path,
     CNcbiIfstream ifs_present(present_path.c_str(), 
                               IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs_present ) {
-        NCBI_THROW(CProjBulderAppException, eFileOpen, present_path);
+        CDirEntry(present_path).Remove();
+        CDirEntry(candidate_path).Rename(present_path);
+        return;
     }
 
     ifs_present.seekg(0, ios::end);
@@ -1045,6 +1047,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/10/26 14:40:31  gouriano
+ * Update ncbicfg.*.c only when needed
+ *
  * Revision 1.32  2004/10/12 16:18:26  ivanov
  * Added configurable file support
  *

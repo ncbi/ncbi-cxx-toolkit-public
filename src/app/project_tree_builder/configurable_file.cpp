@@ -40,6 +40,8 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
                             const string& config_name)
 {
     LOG_POST(Info << "Preparing configurable file: " << dst_path);
+    string dst(dst_path);
+    dst += ".candidate";
 
     // Create dir if no such dir...
     string dir;
@@ -53,7 +55,7 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
     if ( !is ) {
         NCBI_THROW(CProjBulderAppException, eFileOpen, src_path);
     }
-    CNcbiOfstream os(dst_path.c_str(),
+    CNcbiOfstream os(dst.c_str(),
                      IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
     if ( !os ) {
         NCBI_THROW(CProjBulderAppException, eFileCreation, dst_path);
@@ -96,6 +98,8 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
     if ( !os ) {
         NCBI_THROW(CProjBulderAppException, eFileCreation, dst_path);
     }
+    os.close();
+    PromoteIfDifferent(dst_path,dst);
     return true;
 }
 
@@ -113,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/26 14:40:31  gouriano
+ * Update ncbicfg.*.c only when needed
+ *
  * Revision 1.1  2004/10/12 14:35:12  ivanov
  * Initial revision
  *
