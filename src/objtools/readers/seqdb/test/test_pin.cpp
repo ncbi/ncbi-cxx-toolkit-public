@@ -581,6 +581,7 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-dyn]";
         
+#if defined(NCBI_OS_UNIX)
         if (s == "-xlate3") {
             string dbname("nr");
             //string dbname("prot_dbs");
@@ -636,6 +637,7 @@ int test1(int argc, char ** argv)
             }
             return 0;
         } else desc += " [-xlate3]";
+#endif
         
         if (s == "-x4mutate") {
             x4mutate = true;
@@ -643,6 +645,7 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-x4-mutate]";
         
+#if defined(NCBI_OS_UNIX)
         if ((s == "-xlate4r") || 
             (s == "-xlate4rx")) {
             
@@ -712,6 +715,7 @@ int test1(int argc, char ** argv)
             
             return 0;
         } else desc += " [-xlate4r] [-xlate4rx]";
+#endif
         
         if (s == "-xlate4") {
             CSeqDB db("nr", 'p');
