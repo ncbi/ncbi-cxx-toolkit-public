@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/12/03 21:36:45  vasilche
+* Added forward decaration of CEnumeratedTypeValues
+*
 * Revision 1.30  1999/11/26 18:45:08  golikov
 * NStr::Replace added
 *
@@ -210,6 +213,7 @@ bool AStrEquiv( const string& x, const string& y, Pred pr )
 }
 
 class CTypeInfo;
+class CEnumeratedTypeValues;
 
 // auto_ptr
 
