@@ -347,6 +347,18 @@ CBlastSeqSrc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
      * BlastSeqSrc? Might be useful for debugging */
 }
 
+void
+CBlast_Message::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlast_Message");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("severity", m_Ptr->severity);
+    ddc.Log("message", m_Ptr->message);
+    // code and subcode are unused
+}
+
 void 
 CBlastMaskLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
@@ -592,6 +604,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.63  2004/12/29 15:11:52  camacho
+ * +CBlast_Message::DebugDump
+ *
  * Revision 1.62  2004/12/28 18:48:13  dondosha
  * Added DebugDump implementation for CBlastMaskLoc wrapper class
  *
