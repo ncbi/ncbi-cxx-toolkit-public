@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.2  1999/07/07 21:15:02  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -472,6 +475,18 @@ void CObjectIStreamAsnBinary::StartMember(Member& member)
 void CObjectIStreamAsnBinary::EndMember(const Member& )
 {
     ExpectEndOfContent();
+}
+
+void CObjectIStreamAsnBinary::Begin(ByteBlock& block)
+{
+	ExpectSysTag(eOctetString);
+	SetBlockLength(block, ReadLength());
+}
+
+size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& , char* dst, size_t length)
+{
+	ReadBytes(dst, length);
+	return length;
 }
 
 TObjectPtr CObjectIStreamAsnBinary::ReadPointer(TTypeInfo declaredType)

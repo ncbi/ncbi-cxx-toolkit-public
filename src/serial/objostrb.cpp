@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.11  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -73,6 +76,8 @@
 #include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
+
+using namespace CObjectStreamBinaryDefs;
 
 CObjectOStreamBinary::CObjectOStreamBinary(CNcbiOstream& out)
     : m_Output(out)
@@ -361,6 +366,17 @@ void CObjectOStreamBinary::VEnd(const Block& )
 void CObjectOStreamBinary::StartMember(Member& , const CMemberId& id)
 {
     WriteStringValue(id.GetName());
+}
+
+void CObjectOStreamBinary::Begin(const ByteBlock& block)
+{
+	WriteByte(eBytes);
+	WriteSize(block.GetLength());
+}
+
+void CObjectOStreamBinary::WriteBytes(const ByteBlock& block, const char* bytes, size_t length)
+{
+	WriteBytes(bytes, length);
 }
 
 END_NCBI_SCOPE

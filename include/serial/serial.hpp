@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.15  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -312,6 +315,12 @@ CTypeRef GetSetOfTypeRef(const T* const* )
     return CTypeRef(new CSetOfTypeInfo(GetTypeRef(object)));
 }
 
+inline
+CTypeRef GetOctetStringTypeRef(const void* const* )
+{
+    return CTypeRef(new COctetStringTypeInfo());
+}
+
 template<typename T>
 inline
 CTypeRef GetSequenceOfTypeRef(const T* const* )
@@ -448,6 +457,12 @@ CMemberInfo* SequenceOfMemberInfo(const T* const* member)
 }
 
 inline
+CMemberInfo* OctetStringMemberInfo(const void* const* member)
+{
+	return MemberInfo(member, GetOctetStringTypeRef(member));
+}
+
+inline
 CMemberInfo* ChoiceMemberInfo(const valnode* const* member, TTypeInfo (*func)(void))
 {
 	return MemberInfo(member, GetChoiceTypeRef(func));
@@ -472,26 +487,6 @@ CMemberInfo* ChoiceMemberInfo(const valnode* const* member, TTypeInfo (*func)(vo
 	NAME2(Type, MemberInfo)(&static_cast<const CClass*>(0)->Member)
 #define ADD_ASN_MEMBER(Member, Type) \
 	AddMember(#Member, ASN_MEMBER(Member, Type))
-
-#define SET_MEMBER(Member) \
-	SetMemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_SET_MEMBER(Member) \
-	AddMember(#Member, SET_MEMBER(Member))
-
-#define SEQUENCE_MEMBER(Member) \
-	SequenceMemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_SEQUENCE_MEMBER(Member) \
-	AddMember(#Member, SEQUENCE_MEMBER(Member))
-
-#define SET_OF_MEMBER(Member) \
-	SetOfMemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_SET_OF_MEMBER(Member) \
-	AddMember(#Member, SET_OF_MEMBER(Member))
-
-#define SEQUENCE_OF_MEMBER(Member) \
-	SequenceOfMemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_SEQUENCE_OF_MEMBER(Member) \
-	AddMember(#Member, SEQUENCE_OF_MEMBER(Member))
 
 #define CHOICE_MEMBER(Member, Choices) \
     ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, NAME2(GetTypeInfo_struct_, Choices))

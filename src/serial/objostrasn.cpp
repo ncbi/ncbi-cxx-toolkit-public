@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.9  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -283,6 +286,26 @@ void CObjectOStreamAsn::VEnd(const Block& )
 void CObjectOStreamAsn::StartMember(Member& , const CMemberId& id)
 {
     m_Output << id.GetName() << ' ';
+}
+
+void CObjectOStreamAsn::Begin(const ByteBlock& block)
+{
+	m_Output << '\'';
+}
+
+static const char* const HEX = "0123456789ABCDEF";
+
+void CObjectOStreamAsn::WriteBytes(const ByteBlock& block, const char* bytes, size_t length)
+{
+	while ( length-- > 0 ) {
+		char c = *bytes++;
+		m_Output << HEX[(c >> 4) & 0xf] << HEX[c & 0xf];
+	}
+}
+
+void CObjectOStreamAsn::End(const ByteBlock& block)
+{
+	m_Output << "\'H";
 }
 
 END_NCBI_SCOPE

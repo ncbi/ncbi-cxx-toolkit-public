@@ -29,7 +29,7 @@ int CTestSerial::Run(void)
         {
             {
                 CObjectIStreamAsn(ifstream("webenv.ent")).
-                    Read(&env, GetSequenceTypeRef(&env).Get());
+                    Read(&env, GetTypeInfo_struct_Web_Env());
             }
             {
                 CObjectOStreamAsnBinary(ofstream("webenv.bino", ios::out | ios::binary)).

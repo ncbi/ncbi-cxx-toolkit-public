@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.12  1999/07/07 21:15:02  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -488,6 +491,52 @@ bool CObjectIStreamAsn::VNext(const Block& block)
 void CObjectIStreamAsn::StartMember(Member& member)
 {
     member.SetName(ReadId());
+}
+
+void CObjectIStreamAsn::Begin(ByteBlock& )
+{
+	Expect('\'', true);
+}
+
+size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& , char* dst, size_t length)
+{
+	size_t count = 0;
+	while ( length-- > 0 ) {
+		char c = GetChar();
+		char cc;
+		if ( c >= '0' && c <= '9' ) {
+			cc = c - '0';
+		}
+		else if ( c >= 'A' && c <= 'F' ) {
+			cc = c - 'A' + 10;
+		}
+		else if ( c == '\'' ) {
+			UngetChar();
+			return count;
+		}
+		else {
+			THROW1_TRACE(runtime_error, "bad char in octet string");
+		}
+		c = GetChar();
+		if ( c >= '0' && c <= '9' ) {
+			cc = (cc << 4) | (c - '0');
+		}
+		else if ( c >= 'A' && c <= 'F' ) {
+			cc = (cc << 4) | (c - 'A' + 10);
+		}
+		else {
+			THROW1_TRACE(runtime_error, "bad char in octet string");
+		}
+		*dst++ = cc;
+		count++;
+	}
+	return count;
+}
+
+void CObjectIStreamAsn::End(const ByteBlock& )
+{
+	Expect('\'');
+	Expect('H');
 }
 
 TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)

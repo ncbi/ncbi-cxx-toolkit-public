@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/09 16:32:53  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.4  1999/07/07 19:58:43  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -55,6 +58,9 @@
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
 #include <vector>
+
+struct valnode;
+struct bytestore;
 
 BEGIN_NCBI_SCOPE
 
@@ -233,6 +239,39 @@ protected:
 private:
     CMembers m_Variants;
     vector<CTypeRef> m_VariantTypes;
+};
+
+class COctetStringTypeInfo : public CTypeInfo {
+public:
+	typedef bytestore* TObjectType;
+
+    COctetStringTypeInfo(void);
+
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+
+    virtual size_t GetSize(void) const;
+
+    virtual TConstObjectPtr GetDefault(void) const;
+
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
+
+protected:
+    
+    void CollectExternalObjects(COObjectList& list,
+                                TConstObjectPtr object) const;
+
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
 
 //#include <serial/asntypes.inl>

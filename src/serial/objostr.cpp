@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.12  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -288,6 +291,14 @@ CObjectOStream::Block::~Block(void)
     else {
         m_Out.VEnd(*this);
     }
+}
+
+void CObjectOStream::Begin(const ByteBlock& )
+{
+}
+
+void CObjectOStream::End(const ByteBlock& )
+{
 }
 
 END_NCBI_SCOPE

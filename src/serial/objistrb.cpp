@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.15  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -87,6 +90,7 @@
 
 BEGIN_NCBI_SCOPE
 
+using namespace CObjectStreamBinaryDefs;
 
 CObjectIStreamBinary::CObjectIStreamBinary(CNcbiIstream& in)
     : m_Input(in)
@@ -100,6 +104,13 @@ unsigned char CObjectIStreamBinary::ReadByte(void)
         THROW1_TRACE(runtime_error, "unexpected EOF");
     }
     return c;
+}
+
+void CObjectIStreamBinary::ReadBytes(char* mem, size_t length)
+{
+    if ( !m_Input.read(mem, length) ) {
+        THROW1_TRACE(runtime_error, "unexpected EOF");
+    }
 }
 
 typedef unsigned char TByte;
@@ -625,6 +636,19 @@ bool CObjectIStreamBinary::VNext(const Block& )
 void CObjectIStreamBinary::StartMember(Member& member)
 {
     member.SetName(ReadStringValue());
+}
+
+void CObjectIStreamBinary::Begin(ByteBlock& block)
+{
+	if ( ReadByte() != eBytes )
+		THROW1_TRACE(runtime_error, "invalid byte string start");
+	SetBlockLength(block, ReadSize());
+}
+
+size_t CObjectIStreamBinary::ReadBytes(const ByteBlock& block, char* dst, size_t length)
+{
+	ReadBytes(dst, length);
+	return length;
 }
 
 TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)

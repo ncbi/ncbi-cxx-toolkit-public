@@ -21,18 +21,6 @@ TTypeInfo GetTypeInfo_struct_Web_Env(void)
     return info;
 }
 
-TTypeInfo GetTypeInfo_struct_Argument(void)
-{
-    static CClassInfoTmpl* info = 0;
-    typedef struct_Argument CClass;
-    if ( info == 0 ) {
-        info = new CStructInfo<CClass>();
-        info->ADD_CLASS_MEMBER(name);
-        info->ADD_CLASS_MEMBER(value);
-    }
-    return info;
-}
-
 TTypeInfo GetTypeInfo_struct_Db_Env(void)
 {
     static CClassInfoTmpl* info = 0;
@@ -47,13 +35,14 @@ TTypeInfo GetTypeInfo_struct_Db_Env(void)
     return info;
 }
 
-TTypeInfo GetTypeInfo_struct_Time(void)
+TTypeInfo GetTypeInfo_struct_Argument(void)
 {
-    static CChoiceValNodeInfo* info = 0;
+    static CClassInfoTmpl* info = 0;
+    typedef struct_Argument CClass;
     if ( info == 0 ) {
-        info = new CChoiceValNodeInfo();
-        info->ADD_CHOICE_STD_VARIANT(unix, int);
-        info->ADD_CHOICE_VARIANT("full", Sequence, Full_Time);
+        info = new CStructInfo<CClass>();
+        info->ADD_CLASS_MEMBER(name);
+        info->ADD_CLASS_MEMBER(value);
     }
     return info;
 }
@@ -67,30 +56,6 @@ TTypeInfo GetTypeInfo_struct_Query_History(void)
         info->ADD_CLASS_MEMBER(seqNumber);
         info->ADD_CHOICE_MEMBER(time, Time);
         info->ADD_CHOICE_MEMBER(command, QueryCommand);
-    }
-    return info;
-}
-
-TTypeInfo GetTypeInfo_struct_Filter_Value(void)
-{
-    static CClassInfoTmpl* info = 0;
-    typedef struct_Filter_Value CClass;
-    if ( info == 0 ) {
-        info = new CStructInfo<CClass>();
-        info->ADD_CLASS_MEMBER(name);
-        info->ADD_CLASS_MEMBER(value);
-    }
-    return info;
-}
-
-TTypeInfo GetTypeInfo_struct_Item_Set(void)
-{
-    static CClassInfoTmpl* info = 0;
-    typedef struct_Item_Set CClass;
-    if ( info == 0 ) {
-        info = new CStructInfo<CClass>();
-        //info->ADD_CLASS_MEMBER(items);
-        info->ADD_CLASS_MEMBER(count);
     }
     return info;
 }
@@ -118,6 +83,7 @@ TTypeInfo GetTypeInfo_struct_Query_Search(void)
         info->ADD_CLASS_MEMBER(field);
         info->ADD_ASN_MEMBER(filters, SetOf)->SetOptional();
         info->ADD_CLASS_MEMBER(count);
+		info->ADD_CLASS_MEMBER(flags)->SetOptional();
     }
     return info;
 }
@@ -159,6 +125,29 @@ TTypeInfo GetTypeInfo_struct_Query_Related(void)
     return info;
 }
 
+TTypeInfo GetTypeInfo_struct_Filter_Value(void)
+{
+    static CClassInfoTmpl* info = 0;
+    typedef struct_Filter_Value CClass;
+    if ( info == 0 ) {
+        info = new CStructInfo<CClass>();
+        info->ADD_CLASS_MEMBER(name);
+        info->ADD_CLASS_MEMBER(value);
+    }
+    return info;
+}
+
+TTypeInfo GetTypeInfo_struct_Time(void)
+{
+    static CChoiceValNodeInfo* info = 0;
+    if ( info == 0 ) {
+        info = new CChoiceValNodeInfo();
+        info->ADD_CHOICE_STD_VARIANT(unix, int);
+        info->ADD_CHOICE_VARIANT("full", Sequence, Full_Time);
+    }
+    return info;
+}
+
 TTypeInfo GetTypeInfo_struct_Full_Time(void)
 {
     static CClassInfoTmpl* info = 0;
@@ -171,6 +160,18 @@ TTypeInfo GetTypeInfo_struct_Full_Time(void)
         info->ADD_CLASS_MEMBER(hour);
         info->ADD_CLASS_MEMBER(minute);
         info->ADD_CLASS_MEMBER(second);
+    }
+    return info;
+}
+
+TTypeInfo GetTypeInfo_struct_Item_Set(void)
+{
+    static CClassInfoTmpl* info = 0;
+    typedef struct_Item_Set CClass;
+    if ( info == 0 ) {
+        info = new CStructInfo<CClass>();
+        info->ADD_ASN_MEMBER(items, OctetString);
+        info->ADD_CLASS_MEMBER(count);
     }
     return info;
 }

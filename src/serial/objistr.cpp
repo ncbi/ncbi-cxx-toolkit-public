@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.13  1999/07/07 21:15:02  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -198,6 +201,14 @@ CObjectIStream::Block::~Block(void)
         }
         m_In.VEnd(*this);
     }
+}
+
+void CObjectIStream::Begin(ByteBlock& )
+{
+}
+
+void CObjectIStream::End(const ByteBlock& )
+{
 }
 
 void CObjectIStream::ReadStr(string& data)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/09 16:32:53  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.12  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -190,11 +193,43 @@ public:
         unsigned m_NextIndex;
         unsigned m_Size;
     };
+	class ByteBlock {
+	public:
+		ByteBlock(CObjectOStream& out, size_t length)
+			: m_Out(out), m_Length(length)
+		{
+			out.Begin(*this);
+		}
+		~ByteBlock(void)
+		{
+			if ( m_Length != 0 )
+				THROW1_TRACE(runtime_error, "not all bytes written");
+			m_Out.End(*this);
+		}
+
+		size_t GetLength(void) const
+		{
+			return m_Length;
+		}
+
+		void Write(const void* bytes, size_t length)
+		{
+			if ( length > m_Length )
+				THROW1_TRACE(runtime_error, "too many bytes written");
+			m_Out.WriteBytes(*this, static_cast<const char*>(bytes), length);
+			m_Length -= length;
+		}
+
+	private:
+		CObjectOStream& m_Out;
+		size_t m_Length;
+	};
     
 protected:
     // block interface
     friend class Block;
     friend class Member;
+	friend class ByteBlock;
     static void SetNonFixed(Block& block)
         {
             block.m_Fixed = false;
@@ -209,6 +244,10 @@ protected:
     // write member name
     virtual void StartMember(Member& member, const CMemberId& id) = 0;
     virtual void EndMember(const Member& member);
+	// write byte blocks
+	virtual void Begin(const ByteBlock& block);
+	virtual void WriteBytes(const ByteBlock& block, const char* bytes, size_t length) = 0;
+	virtual void End(const ByteBlock& block);
 
     // low level writers
     virtual void WriteMemberPrefix(COObjectInfo& info);

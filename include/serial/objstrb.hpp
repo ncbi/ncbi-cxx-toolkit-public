@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.4  1999/06/15 16:20:05  vasilche
 * Added ASN.1 object output stream.
 *
@@ -52,9 +55,8 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectStreamBinaryDefs
+namespace CObjectStreamBinaryDefs
 {
-public:
     enum {
         eNull = 0,
 
@@ -72,7 +74,8 @@ public:
         eThisClass,
         eOtherClass,
         eElement,
-        eEndOfElements
+        eEndOfElements,
+		eBytes
     };
 };
 

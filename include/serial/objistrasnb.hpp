@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/09 16:32:53  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.2  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -72,7 +75,7 @@ public:
 
     unsigned char ReadByte(void);
     signed char ReadSByte(void);
-    void ReadBytes(char* bytes, unsigned size);
+    void ReadBytes(char* bytes, size_t size);
     virtual string ReadString(void);
     virtual char* ReadCString(void);
 
@@ -102,6 +105,8 @@ protected:
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member);
     virtual void EndMember(const Member& member);
+	virtual void Begin(ByteBlock& block);
+	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
 
 private:
     CIObjectInfo ReadObjectPointer(void);

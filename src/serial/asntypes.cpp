@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.6  1999/07/07 19:59:03  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -53,12 +56,115 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
+
+static inline
+void* Alloc(size_t size)
+{
+	return NotNull(calloc(size, 1));
+}
+
+template<class T>
+static inline
+T* Alloc(T*& ptr)
+{
+	return ptr = static_cast<T*>(Alloc(sizeof(T)));
+}
+
+static inline
+bsunit* BSUnitNew(size_t size)
+{
+	bsunit* unit;
+	Alloc(unit);
+	if ( size ) {
+		unit->len_avail = size;
+		unit->str = static_cast<char*>(Alloc(size));
+	}
+	return unit;
+}
+
+static
+bytestore* BSNew(size_t size)
+{
+	bytestore* bs;
+	Alloc(bs)->chain = BSUnitNew(size);
+	return bs;
+}
+
+static
+void BSFree(bytestore* bs)
+{
+	if ( bs ) {
+		bsunit* unit = bs->chain;
+		while ( unit ) {
+			free(unit->str);
+			bsunit* next = unit->next;
+			free(unit);
+			unit = next;
+		}
+		free(bs);
+	}
+}
+
+static
+bytestore* BSDup(const bytestore* bs)
+{
+	bytestore* copy = BSNew(0);
+	size_t totlen = copy->totlen = bs->totlen;
+	bsunit** unitPtr = &copy->chain;
+	for ( const bsunit* unit; unit; unit = unit->next, unitPtr = &(*unitPtr)->next ) {
+		size_t len = unit->len;
+		*unitPtr = BSUnitNew(len);
+		(*unitPtr)->len = len;
+		memcpy((*unitPtr)->str, unit->str, len);
+		totlen -= len;
+	}
+	if ( totlen != 0 )
+		THROW1_TRACE(runtime_error, "bad totlen in bytestore");
+	return copy;
+}
+
+static
+void BSWrite(bytestore* bs, char* data, size_t length)
+{
+	bsunit* unit = bs->curchain;
+	if ( !unit ) {
+		_ASSERT(bs->chain_offset == 0);
+		_ASSERT(bs->totlen == 0);
+		if ( length == 0 )
+			return;
+		unit = bs->chain;
+		if ( !unit )
+			unit = bs->chain = BSUnitNew(length);
+		bs->curchain = unit;
+	}
+	while ( length > 0 ) {
+		size_t currLen = unit->len;
+		size_t count = min(length, unit->len_avail - currLen);
+		if ( !count ) {
+			_ASSERT(unit->next == 0);
+			bs->curchain = unit = unit->next = BSUnitNew(length);
+			bs->chain_offset += currLen;
+			unit->len = length;
+			memcpy(unit->str, data, length);
+			bs->totlen += length;
+			bs->seekptr += length;
+			return;
+		}
+		unit->len = currLen + count;
+		memcpy(static_cast<char*>(unit->str) + currLen, data, count);
+		bs->totlen += count;
+		bs->seekptr += count;
+		data += count;
+		length -= count;
+	}
+}
 
 CSequenceTypeInfo::CSequenceTypeInfo(const CTypeRef& typeRef)
     : m_DataType(typeRef)
@@ -74,7 +180,9 @@ static const TConstObjectPtr zeroPointer = 0;
 
 TConstObjectPtr CSequenceTypeInfo::GetDefault(void) const
 {
-    return &zeroPointer;
+	TObjectPtr def = Alloc(sizeof(TObjectPtr));
+	Get(def) = GetDataTypeInfo()->Create();
+    return def;
 }
 
 bool CSequenceTypeInfo::Equals(TConstObjectPtr object1,
@@ -96,7 +204,7 @@ void CSequenceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 
     TObjectPtr dstObj = Get(dst);
     if ( dstObj == 0 ) {
-        ERR_POST("null sequence pointer");
+        ERR_POST(Warning << "null sequence pointer");
         dstObj = Get(dst) = GetDataTypeInfo()->Create();
     }
     GetDataTypeInfo()->Assign(dstObj, srcObj);
@@ -125,7 +233,7 @@ void CSequenceTypeInfo::ReadData(CObjectIStream& in,
 {
     TObjectPtr obj = Get(object);
     if ( obj == 0 ) {
-        ERR_POST("null sequence pointer"); 
+        ERR_POST(Warning << "null sequence pointer"); 
         obj = Get(object) = GetDataTypeInfo()->Create();
     }
     in.ReadExternalObject(obj, GetDataTypeInfo());
@@ -201,7 +309,7 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     while ( block.Next() ) {
         TObjectPtr obj = Get(object);
         if ( obj == 0 ) {
-            ERR_POST("null sequence pointer"); 
+            ERR_POST(Warning << "null sequence pointer"); 
             obj = Get(object) = GetDataTypeInfo()->Create();
         }
         in.ReadExternalObject(obj, GetDataTypeInfo());
@@ -258,7 +366,7 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 
     TObjectPtr dstObj = Get(dst);
     if ( dstObj == 0 ) {
-        ERR_POST("null valnode pointer");
+        ERR_POST(Warning << "null valnode pointer");
         dstObj = Get(dst) = GetChoiceTypeInfo()->Create();
     }
 
@@ -290,7 +398,7 @@ void CChoiceTypeInfo::ReadData(CObjectIStream& in,
 {
     TObjectPtr obj = Get(object);
     if ( obj == 0 ) {
-        ERR_POST("null valnode pointer");
+        ERR_POST(Warning << "null valnode pointer");
         obj = Get(object) = GetChoiceTypeInfo()->Create();
     }
 
@@ -322,7 +430,7 @@ size_t CChoiceValNodeInfo::GetSize(void) const
 
 TObjectPtr CChoiceValNodeInfo::Create(void) const
 {
-    return calloc(sizeof(valnode), 1);
+    return Alloc(sizeof(valnode));
 }
 
 bool CChoiceValNodeInfo::Equals(TConstObjectPtr object1,
@@ -394,6 +502,60 @@ void CChoiceValNodeInfo::ReadData(CObjectIStream& in,
     valnode* node = static_cast<valnode*>(object);
     node->choice = index + 1;
     GetVariantTypeInfo(index)->ReadData(in, &node->data);
+}
+
+COctetStringTypeInfo::COctetStringTypeInfo(void)
+{
+}
+
+size_t COctetStringTypeInfo::GetSize(void) const
+{
+	return sizeof(void*);
+}
+
+TConstObjectPtr COctetStringTypeInfo::GetDefault(void) const
+{
+	return &zeroPointer;
+}
+
+bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const
+{
+	return false;
+}
+
+void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+{
+	if ( Get(src) == 0 )
+		THROW1_TRACE(runtime_error, "null bytestore pointer");
+	BSFree(Get(dst));
+	Get(dst) = BSDup(Get(src));
+}
+
+void COctetStringTypeInfo::CollectExternalObjects(COObjectList& l, TConstObjectPtr object) const
+{
+}
+
+void COctetStringTypeInfo::WriteData(CObjectOStream& out, TConstObjectPtr object) const
+{
+	const bytestore* bs = Get(object);
+	if ( bs == 0 )
+		THROW1_TRACE(runtime_error, "null bytestore pointer");
+	CObjectOStream::ByteBlock block(out, bs->totlen);
+	for ( const bsunit* unit = bs->chain; unit; unit = unit->next ) {
+		block.Write(unit->str, unit->len);
+	}
+}
+
+void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+	CObjectIStream::ByteBlock block(in);
+	BSFree(Get(object));
+	bytestore* bs = Get(object) = BSNew(block.GetExpectedLength());
+	char buffer[1024];
+	size_t count;
+	while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
+		BSWrite(bs, buffer, count);
+	}
 }
 
 END_NCBI_SCOPE

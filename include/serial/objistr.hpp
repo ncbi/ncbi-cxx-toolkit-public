@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/09 16:32:53  vasilche
+* Added OCTET STRING write/read.
+*
 * Revision 1.12  1999/07/07 21:15:03  vasilche
 * Cleaned processing of string types (string, char*, const char*).
 *
@@ -220,11 +223,60 @@ public:
         unsigned m_Size;
         unsigned m_NextIndex;
     };
+	class ByteBlock {
+	public:
+		ByteBlock(CObjectIStream& in)
+			: m_In(in), m_KnownLength(false), m_Length(1)
+		{
+			in.Begin(*this);
+		}
+
+		~ByteBlock(void)
+		{
+			if ( m_Length != 0 )
+				THROW1_TRACE(runtime_error, "not all bytes read");
+			m_In.End(*this);
+		}
+
+		size_t GetExpectedLength(void) const
+		{
+			return m_Length;
+		}
+
+		size_t Read(void* dst, size_t length)
+		{
+			if ( !m_KnownLength ) {
+				if ( m_Length == 0 )
+					return 0;
+				length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
+				if ( length == 0 )
+					m_Length = 0;
+				return length;
+			}
+			else {
+				if ( length > m_Length )
+					length = m_Length;
+				if ( length == 0 )
+					return 0;
+				length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
+				m_Length -= length;
+				return length;
+			}
+		}
+
+	private:
+		CObjectIStream& m_In;
+		bool m_KnownLength;
+		size_t m_Length;
+
+		friend class CObjectIStream;
+	};
 
 protected:
     // block interface
     friend class Block;
     friend class Member;
+	friend class ByteBlock;
     static void SetNonFixed(Block& block)
         {
             block.m_Fixed = false;
@@ -243,6 +295,14 @@ protected:
     virtual void VEnd(const Block& block);
     virtual void StartMember(Member& member) = 0;
     virtual void EndMember(const Member& member);
+	static void SetBlockLength(ByteBlock& block, size_t length)
+		{
+			block.m_Length = length;
+			block.m_KnownLength = true;
+		}
+	virtual void Begin(ByteBlock& block);
+	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length) = 0;
+	virtual void End(const ByteBlock& block);
 
 protected:
     // low level readers
