@@ -323,7 +323,14 @@ void CBDB_RawFile::x_Open(const char* filename,
             open_flags = 0;
             break;
         }
-        DB_TXN* txn = GetTxn();
+
+        DB_TXN* txn = 0; // GetTxn();
+
+        if (m_Env) {
+            if (m_Env->IsTransactional()) {
+                open_flags |= DB_THREAD | DB_AUTO_COMMIT;
+            }
+        }
 
         ret = m_DB->open(m_DB,
                          txn,
@@ -748,6 +755,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/12/12 19:12:21  kuznets
+ * Fixed bug in transactional file opening
+ *
  * Revision 1.27  2003/12/12 14:09:12  kuznets
  * Changed file opening code to work correct in transactional environment.
  *
