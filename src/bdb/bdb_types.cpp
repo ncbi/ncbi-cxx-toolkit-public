@@ -110,7 +110,7 @@ void CBDB_BufferManager::Construct()
         m_BufferSize += m_NullSetSize;
     }
 
-    m_Buffer = auto_ptr<char>(new char[m_BufferSize]);
+    m_Buffer.reset(new char[m_BufferSize]);
     ::memset(m_Buffer.get(), 0, m_BufferSize);
 
     // Record construction: set element offsets(pointers)
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/27 18:43:45  kuznets
+ * Fixed some compilation problems with GCC 2.95
+ *
  * Revision 1.5  2003/05/02 14:12:11  kuznets
  * Bug fix
  *

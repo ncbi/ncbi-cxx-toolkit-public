@@ -63,12 +63,12 @@ int bdb_int_cmp(DB*, const DBT* val1, const DBT* val2)
 int bdb_cmp(DB* db, const DBT* val1, const DBT* val2)
 {
     const CBDB_BufferManager* fbuf1 =
-          static_cast<const CBDB_BufferManager*> (db->app_private);
+          static_cast<CBDB_BufferManager*> (db->app_private);
 
     _ASSERT(fbuf1);
 
-    const char* p1 = static_cast<const char*> (val1->data);
-    const char* p2 = static_cast<const char*> (val2->data);
+    const char* p1 = static_cast<char*> (val1->data);
+    const char* p2 = static_cast<char*> (val2->data);
 
     for (unsigned int i = 0;  i < fbuf1->FieldCount();  ++i) {
         const CBDB_Field& fld1 = fbuf1->GetField(i);
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/05/27 18:43:45  kuznets
+ * Fixed some compilation problems with GCC 2.95
+ *
  * Revision 1.7  2003/05/09 13:44:57  kuznets
  * Fixed a bug in cursors based on BLOB storage
  *
