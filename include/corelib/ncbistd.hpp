@@ -33,26 +33,42 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/05 21:04:34  vakatov
+* Introduced #NCBI_SGI_STL_PORT and #NCBI_NO_NAMESPACES flags
+*
 * Revision 1.1  1998/10/05 19:43:38  vakatov
 * Initial revision
 *
 * ==========================================================================
 */
 
+/////////////////////////////////////////////////////////////////////////////
+// Effective preprocessor switches:
+//
+//   NCBI_SGI_STL_PORT  -- use the STLport package based on SGI STL
+//                         ("http://corp.metabyte.com/~fbp/stl/effort.html")
+//   NCBI_NO_NAMESPACES -- assume no namespace support
+//
+/////////////////////////////////////////////////////////////////////////////
 
-#if ( __SGI_STL >= 0x300 )  &&  ( __SGI_STL_PORT >= 0x3010 )
 
+
+// Use of the STLport package("http://corp.metabyte.com/~fbp/stl/effort.html")
+#ifdef NCBI_SGI_STL_PORT
 #include <stl_config.h>
 
-// use standard STL namespace
-__STL_USING_NAMESPACE;
-
-// replace "namespace" by "class" if namespaces are not supported
-#if !defined(__STL_NAMESPACES)  ||  defined(__STL_NO_NAMESPACES)
-#define namespace class
+#if !defined(NCBI_NO_NAMESPACES)  &&  (!defined(__STL_NAMESPACES)  ||  defined(__STL_NO_NAMESPACES))
+#define NCBI_NO_NAMESPACES
+#endif
 #endif
 
-#endif /* __SGI_STL && __SGI_STL_PORT */
+
+// Namespace or quasi-namespace support
+#if defined(NCBI_NO_NAMESPACES)
+#define namespace class
+#else
+using namespace std;
+#endif
 
 
 #endif /* NCBISTD__HPP */
