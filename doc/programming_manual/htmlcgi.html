@@ -7,21 +7,77 @@
     <h1> Developing web-based applications </h1>
 
 <ul>
-  <li> <a href="#t1"> TOPIC </a>
+  <li> <a href="#descrip"> Program description </a>
   <li> <a href="#t2"> TOPIC </a>
 </ul>
 
 The previous two chapters described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> and
 <a href="webpgs.html"> HTML</a> classes, with an emphasis on their independence from one 
 another. In practice however, a real application must employ both types of objects, with
-a good deal of inter-dependency. The 
-<a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/tools/hello/hello.html"> <i>hello</i></a>
-demo program provides an example of using these classes in coordination with each other. 
+a good deal of inter-dependency. <p>
 
+As described in the description of the CGI classes, the <a href="cgi.html#cncbires">
+<i>CNcbiResource</i></a> class can be used to implement an application whose functionality varies
+with the query string. Specifically, the resource class contains a list of <i>CNcbiCommand</i>
+objects, each of which has a defined <i>GetName()</i> and <i>GetEntry() </i> method. The only command
+selected for execution on a given query is the one whose <i>GetName()</i> and <i>GetEntry()</i> values
+match the leading <i>key=value</i> pair in the query string.<p>
+
+The <a href="../tools/hello/hello.html"> <i>hello</i></a> demo program provides an example of using
+these CGI mechanisms as they were intended for complex applications requiring this kind of
+flexibility. The <i>CHelloResource</i> class has different commands which will be executed depending
+on whether the query string invoked an <i>init</i> or a <i>reply</i> command.  For many applications
+however, this selection mechanism adds unnecessary complexity to the interface, as the application
+always performs the same function, albeit on different input. In these cases, there is no need to
+use a <i>CNcbiResource</i> object, or <i>CNcbiCommand</i> objects, as the application's
+functionality can be encoded directly in the application's <i>ProcessRequest()</i> method. The
+example program described in this section uses this simpler approach.<p>
+
+<a name="descrip"> <h3> Program description </h3>
+
+The <a href="http://ray:6224/staff/zimmerman/car.cgi"><i>car.cgi</i></a> program presents an HTML
+form for ordering a custom color car with selected features. The form includes a group of checkboxes
+(listing individual features) and a set of radio buttons listing possible colors. Initially, no
+features are selected, and the default color is white. Following the form, a summary stating the
+currently selected features and color, along with a price quote, is displayed. <p>
+
+The program uses a <a href="../docxx/CHTMLPage.html"><i>CHTMLPage</i></a> object with a template
+file (<a href="car.html"><i>car.html</i></a>) to create the display. The template file contains
+three &lt;@tag@&gt; locations, which the program uses to map <i>CNCBINode</i>s to the page, using
+the <i>AddTagMap()</i> method.  Here is an outline of the execution sequence:
+
+<ol>
+<li> Create an instance of class <i>CCar</i> named <i>car</i>.<p>
+
+<li> Create a <i>CHTMLPage</i> named <i>page</i>.<p>
+
+<li> Load <i>car</i> with the color and features specified in the query string. <p>
+
+<li> Generate a <i>CHTML_form</i> object using the features and color currently selected
+for <i>car</i>, and map that HTML form to the &lt;@FORM@&gt; tag in <i>page</i>.<p>
+
+<li> Generate the summary statement and save it in a <i>CHTMLText</i> node mapped
+to the &lt;@SUMMARY@&gt; tag.<p>
+
+<li> Generate a price quote and save it in a <i>CHTMLText</i> node mapped to the &lt;@PRICE@&gt; tag,<p>
+
+<li> Output <i>page</i> and exit.
+</ol>
 <p>
+The <i>CCar</i> created in step 1 initially has the default color (white) and no features. Any features or colors
+specified in the query string with which the program was invoked are added to <i>car</i> in step 3, prior
+to generating the HTML display elements. In step 4, the form element is created using the lists of
+possible features and colors stored as static data members in class <i>CCar</i>. Each feature corresponds
+to a <i>CHTML_checkbox</i> element in the form, and each color corresponds to a <i>CHTML_radio</i> button.
+The selected color, along with all currently selected features will be displayed as selected in the form.<p>
 
-<a name="t1"> <h3> TOPIC </h3>
-<a name="t2"> <h3> TOPIC </h3>
+The summary statement uses a <i>CHTML_ol</i> list element to itemize the selected features in <i>car</i>.
+The price is calculated as <i>CCar::m_BasePrice</i> (a static data member) plus an additional $1000 per
+feature. The <i>submit</i> button generates a fresh page with the new query string, as the <i>action</i>
+attribute of the form is the URL of <i>car.cgi</i>.
+
+
+<a name="t2"> <h3> Program design: Distributing the work</h3>
 <p>
 
    </body>

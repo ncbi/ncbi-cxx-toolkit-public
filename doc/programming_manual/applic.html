@@ -20,7 +20,7 @@ you to the foundation classes of the library.
 <a name="using">
 <h3> Using the NCBI Application Class </h3>
 
-Five fundmental classes form the foundation of the C++ toolkit and more generally, the C++
+Five fundamental classes form the foundation of the C++ toolkit and more generally, the C++
 libraries at NCBI:
 
 <ul>
@@ -261,6 +261,11 @@ add their own methods for specific applications. As this example does not requir
 additional initialization/termination, these two functions simply return. The <i> Run() </i>
 method prints out the message defined in <i>justApp.cpp</i> and exits.
 <p>
+
+As exemplified here, source files which utilize the <i>NCBIApplication</i> class must
+<i>#include</i> the header file where that class is defined, <i>corelib/ncbiapp.hpp</i>, in the
+<i>include</i> directory.  This header file in turn includes <i>corelib/ncbistd.hpp</i>, which
+should <i>always</i> be <i>#included</i>. <p>
 
 </body>
 <a href="../index.html"> <i> up </i> </a>

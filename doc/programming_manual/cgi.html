@@ -18,19 +18,20 @@
   <li> <a href="#xmpl"> Example code using the CGI classes </a>
 </ul>
 
-Although CGI programs are generally run as web applications with HTML interfaces, this
-section of the Programming Manual places emphasis on the CGI side of things, omitting HTML
-details of the implementation where possible. Similarly, the section on <a
-href="webpgs.html"> Generating Web pages</a> focuses largely on the usage of
-HTML components independent of CGI details. The two branches of the NCBI C++ Toolkit
-hierarchy are all but independent of one another - with but one explicit hook between them: 
-the constructors for HTML <a href="webpgs.html#page"> page</a> components accept a 
-<i>CCgiApplication</i> as an argument. This <i>CCgiApplication</i> argument provides the
-HTML page component with access to all of the CGI objects used in the application. <p>
+Although CGI programs are generally run as web applications with HTML interfaces, this section of
+the Programming Manual places emphasis on the CGI side of things, omitting HTML details of the
+implementation where possible. Similarly, the section on <a href="webpgs.html"> Generating Web
+pages</a> focuses largely on the usage of HTML components independent of CGI details. The two
+branches of the NCBI C++ Toolkit hierarchy are all but independent of one another - with but one
+explicit hook between them: the constructors for HTML <a href="webpgs.html#page"> page</a>
+components accept a <i>CCgiApplication</i> as an optional argument. This <i>CCgiApplication</i>
+argument provides the HTML page component with access to all of the CGI objects used in the
+application. <p>
 
-Further discussion of combining a CGI application with the HTML classes can be found
-in the section on <a href="htmlcgi.html"> Developing web-based applications</a>.
-For additional information about the CGI classes, the reader is also referred to the discussion of 
+Further discussion of combining a CGI application with the HTML classes can be found in the section
+on <a href="htmlcgi.html"> Developing web-based applications</a>. The focus in this chapter is on
+the CGI classes only.  For additional information about the CGI classes, the reader is also referred
+to the discussion of
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs/cgi.html">
 NCBI C++ CGI Classes</a> in the Reference Manual.
 
@@ -67,12 +68,12 @@ context is the request and its associated response.
 <p>
 
 The <i>CCgiApplication</i> class is a specialization of <i>CNcbiApplication</i>.  Figure 2
-illustrates the adaptation of the <i>Init()</i> and <i>Run</i> member functions to the
-requirements of CGI programming. Although the application is <i>contained</i> in the 
-context, it is the application which creates and initializes each context in which it
-participates. The program arguments and environmental variables are passed along to 
-the context, where they will be stored, thus freeing the application to be restarted
-in a new context, as in Fast-CGI. 
+illustrates the adaptation of the <i>Init()</i> and <i>Run</i> member functions inherited from the
+<i>CNCbiApplication</i> class to the requirements of CGI programming. Although the application is
+<i>contained</i> in the context, it is the application which creates and initializes each context in
+which it participates. The program arguments and environmental variables are passed along to the
+context, where they will be stored, thus freeing the application to be restarted in a new context,
+as in Fast-CGI.
 
 <center><img SRC="cgirun.gif"> <br> Figure 2</center><p>
 
@@ -271,7 +272,7 @@ member function.  For example, <i>GetProperty(eCgi_HttpCookie)</i> is used to ac
 cookies from the HTTP Header, and <i> GetProperty(eCgi_RequestMethod)</i> is used to
 determine where the query string should be read from. <p>
 
-<font color="red">CAVEAT:</font> 
+<font color="red">NOTE:</font> 
 
 Setting <i>$QUERY_STRING without</i> also setting <i>$REQUEST_METHOD</i> will result in a
 failure by <i>x_init()</i> to read the input query.
@@ -329,8 +330,8 @@ href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.<
 
 The <i>CCgiResponse</i> class provides an interface to the program's output
 stream (usually <i>cout</i>) - which is the sole argument to the constructor for <i>CCgiResponse</i>.
-The output stream is accessed by the program using <i>CCgiResponse::GetOutput()</i>, which
-returns a pointer to the ouput stream, or <i>CCgiResponse::out()</i>. which returns 
+The output stream can be accessed by the program using <i>CCgiResponse::GetOutput()</i>, which
+returns a pointer to the ouput stream, or, using <i>CCgiResponse::out()</i>, which returns 
 a reference to that stream. <p>
 
 In addition to implementing controlled access to the output stream, the primary function
@@ -493,7 +494,7 @@ With the exception of <i>m_Name</i>, all of the cookie's data members can be res
 the <i>SetXxx(), Reset()</i>, and <i>CopyAttributes()</i> member functions; <i>m_Name</i> is
 non-mutable. As with the constructor, format errors in the arguments to these functions
 will cause the invalid argument to be thrown. By default, <i>m_Secure</i> is
-<i>false</i>. The <i>GetXXX()</i> methods return the stored value for that attribute or,
+<i>false</i>. The <i>GetXxx()</i> methods return the stored value for that attribute or,
 if no value has been set, a reference to <i>NcbiEmptyString</i>. <i>GetExpDate(tm*)</i>
 returns <i>false</i> if no expiration date was previously set. Otherwise, <i>tm</i> is
 reset to <i>m_Expire</i>, and <i>true</i> is returned.
@@ -571,9 +572,6 @@ list of string objects whose class definition
 includes a <i>Write()</i> output function. <i>GetServCtx()</i> returns <i>m_srvCtx</i> if it
 has been defined and otherwise, calls the application's
 <i>CCgiApplication::LoadServerContext()</i> to obtain it.
-
-Further discussion of these features is given
-in the section on <a href="webcgi.html"> Developing Web-based Applications</a>.<p>
 
 <font color = "#000080"> <pre>
 class CCgiContext
