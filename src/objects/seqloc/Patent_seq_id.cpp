@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/08 22:19:45  ostell
+ * changed MakeFastString to AsFastaString and to use ostream instead of string
+ *
  * Revision 6.3  2000/12/08 20:45:15  ostell
  * added MakeFastaString()
  *
@@ -75,19 +78,18 @@ bool CPatent_seq_id::Match(const CPatent_seq_id& psip2) const
 }
 
     // format a FASTA style string
-void CPatent_seq_id::MakeFastaString(string& s) const
+ostream& CPatent_seq_id::AsFastaString(ostream& s) const
 {
 	const CId_pat& idp = GetCit();
 	
-	s += idp.GetCountry();
-	s += '|';
+	s << idp.GetCountry() << '|';
+
 	if (idp.GetId().IsNumber())
-		s += idp.GetId().GetNumber();
+		s << idp.GetId().GetNumber();
 	else
-		s += idp.GetId().GetApp_number();
-	s += '|';
-	s += NStr::IntToString(GetSeqid());
-	return;
+		s << idp.GetId().GetApp_number();
+	s << '|' << GetSeqid();
+	return s;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

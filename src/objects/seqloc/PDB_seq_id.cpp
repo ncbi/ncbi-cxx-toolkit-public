@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/08 22:19:46  ostell
+ * changed MakeFastString to AsFastaString and to use ostream instead of string
+ *
  * Revision 6.3  2000/12/08 20:45:15  ostell
  * added MakeFastaString()
  *
@@ -76,12 +79,10 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 }
 
     // format a FASTA style string
-void CPDB_seq_id::MakeFastaString(string& s) const
+ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {
-	s += GetMol().Get();
-	s += '|';
-	s += (char)(GetChain());
-	return;
+	s << GetMol().Get() << '|' << (char)(GetChain());
+	return s;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2000/12/08 22:18:41  ostell
+ * changed MakeFastString to AsFastaString and to use ostream instead of string
+ *
  * Revision 1.3  2000/12/08 20:45:56  ostell
  * added MakeFastaString()
  *
@@ -74,7 +77,7 @@ public:
     bool Match(const CTextseq_id& tsip2) const;
 
     // format the contents FASTA string style
-    void MakeFastaString(string& s) const;
+    ostream& AsFastaString(ostream& s) const;
 };
 
 

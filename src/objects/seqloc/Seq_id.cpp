@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/12/08 22:19:45  ostell
+ * changed MakeFastString to AsFastaString and to use ostream instead of string
+ *
  * Revision 6.6  2000/12/08 20:45:14  ostell
  * added MakeFastaString()
  *
@@ -254,75 +257,72 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
                 "prf",          /* prf = prf|accession|name */
                 "pdb" };        /* pdb = pdb|entry name (string)|chain id (char) */
 
-void CSeq_id::MakeFastaString(string& s) const
+ostream& CSeq_id::AsFastaString(ostream& s) const
 {
 	E_Choice the_type = Which();
 	if (the_type > e_Pdb)  // new SeqId type
 		the_type = e_not_set;
 
-	s += txtid[the_type];
-	s += '|';
+	s << txtid[the_type] << '|';
 
 	switch (the_type)
 	{
            case e_not_set:
 		break;
            case e_Local:
-		GetLocal().MakeString(s);
+		GetLocal().AsString(s);
 		break;
            case e_Gibbsq:
-		s += NStr::IntToString(GetGibbsq());
+		s << GetGibbsq();
 		break;
            case e_Gibbmt:
-		s += NStr::IntToString(GetGibbsq());
+		s << GetGibbmt();
 		break;
            case e_Giim:
-		s += NStr::IntToString(GetGiim().GetId());
+		s << (GetGiim().GetId());
 		break;
            case e_Genbank:
-		GetGenbank().MakeFastaString(s);
+		GetGenbank().AsFastaString(s);
 		break;
            case e_Embl:
-		GetEmbl().MakeFastaString(s);
+		GetEmbl().AsFastaString(s);
 		break;
            case e_Pir:
-		GetPir().MakeFastaString(s);
+		GetPir().AsFastaString(s);
 		break;
            case e_Swissprot:
-		GetSwissprot().MakeFastaString(s);
+		GetSwissprot().AsFastaString(s);
 		break;
            case e_Patent:
-		GetPatent().MakeFastaString(s);
+		GetPatent().AsFastaString(s);
 		break;
            case e_Other:
-		GetOther().MakeFastaString(s);
+		GetOther().AsFastaString(s);
 		break;
            case e_General:
 		{
 		const CDbtag& dbt = GetGeneral();
-		s += dbt.GetDb();
-		s += '|';
-		dbt.GetTag().MakeString(s);
+		s << dbt.GetDb() << '|' << (dbt.GetTag().AsString(s));
 		}
 		break;
            case e_Gi:
-		s += NStr::IntToString(GetGibbsq());
+		s << GetGi();
 		break;
            case e_Ddbj:
-		GetDdbj().MakeFastaString(s);
+		GetDdbj().AsFastaString(s);
 		break;
            case e_Prf:
-		GetPrf().MakeFastaString(s);
+		GetPrf().AsFastaString(s);
 		break;
            case e_Pdb:
-		GetPdb().MakeFastaString(s);
+		GetPdb().AsFastaString(s);
 		break;
 	   default:
-		s += "[UnknownSeqIdType]";
+		s << "[UnknownSeqIdType]";
 		break;
 
 	}
-	return;
+	return s;
 }
 END_objects_SCOPE // namespace ncbi::objects::
 

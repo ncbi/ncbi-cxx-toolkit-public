@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/08 22:19:45  ostell
+ * changed MakeFastString to AsFastaString and to use ostream instead of string
+ *
  * Revision 6.2  2000/12/08 20:45:14  ostell
  * added MakeFastaString()
  *
@@ -108,26 +111,25 @@ bool CTextseq_id::Match(const CTextseq_id& tsip2) const
 }
 
     // format the contents FASTA string style
-void CTextseq_id::MakeFastaString(string& s) const
+ostream& CTextseq_id::AsFastaString(ostream& s) const
 {
 
 	if (IsSetAccession())
 	{
-		s += GetAccession();
+		s << GetAccession();
 		if (IsSetVersion())
 		{
 			int version = GetVersion();
 			if (version)
 			{
-				s += '.';
-				s += NStr::IntToString(version);
+				s << '.' << version;
 			}
 		}
 	}
-	s += '|';
+	s << '|';
 	if (IsSetName())
-		s += GetName();
-	return;
+		s << GetName();
+	return s;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
