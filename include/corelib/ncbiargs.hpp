@@ -238,6 +238,9 @@ public:
     // automagically assigned with the virtual names: "#1", "#2", "#3", ...
     void Add(CArgValue* arg);
 
+    // If there is no arguments in this container
+    bool IsEmpty(void) const;
+
 private:
     typedef set< CRef<CArgValue> >  TArgs;
     typedef TArgs::iterator         TArgsI;
@@ -393,6 +396,10 @@ public:
                          bool          usage_sort_args = false,
                          SIZE_TYPE     usage_width = 78);
 
+    // Force to print USAGE unconditionally (and then exit) if no cmd.-line
+    // args are present.
+    void PrintUsageIfNoArgs(bool do_print = true);
+
     // Printout (add to the end of) USAGE to the string "str" using
     // provided arg. descriptions and usage context. Return "str".
     string& PrintUsage(string& str) const;
@@ -421,6 +428,7 @@ private:
     bool      m_UsageSortArgs;     // sort alphabetically on usage printout
     SIZE_TYPE m_UsageWidth;        // max. length of a usage line
     bool      m_AutoHelp;          // special flag "-h" activated
+    bool      m_UsageIfNoArgs;     // print usage and exit if no args passed
 
     // internal methods
     TArgsI  x_Find(const string& name);
@@ -453,25 +461,26 @@ public:
     {
         // Pre-processing consistency checks
         x_PreCheck();
+
         // Check for "-h" flag
         if ( m_AutoHelp ) {
             for (TSize i = 1;  i < argc;  i++) {
                 x_CheckAutoHelp(argv[i]);
             }
         }
+
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
         auto_ptr<CArgs> args(new CArgs());
-        unsigned n_plain = kMax_UInt;
+        unsigned int n_plain = kMax_UInt;
         for (TSize i = 1;  i < argc;  i++) {
             bool have_arg2 = (i + 1 < argc);
             if ( x_CreateArg(argv[i], have_arg2,
-                             have_arg2 ? (string)argv[i+1] : kEmptyStr,
+                             have_arg2 ? (string) argv[i+1] : kEmptyStr,
                              &n_plain, *args) )
                 i++;
         }
 
         // Check if there were any arguments at all
-
         if (n_plain == kMax_UInt) {
             n_plain = 0;
         }
@@ -675,6 +684,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/05/16 16:00:39  vakatov
+ * + CArgs::IsEmpty()
+ * + CArgDescriptions::PrintUsageIfNoArgs()
+ *
  * Revision 1.28  2003/03/31 13:36:39  siyan
  * Added doxygen support
  *

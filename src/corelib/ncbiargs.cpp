@@ -1132,6 +1132,11 @@ void CArgs::Add(CArgValue* arg)
 }
 
 
+bool CArgs::IsEmpty(void) const
+{
+    return m_Args.empty();
+}
+
 
 
 ///////////////////////////////////////////////////////
@@ -1143,7 +1148,8 @@ void CArgs::Add(CArgValue* arg)
 CArgDescriptions::CArgDescriptions(bool auto_help)
     : m_nExtra(0),
       m_nExtraOpt(0),
-      m_AutoHelp(auto_help)
+      m_AutoHelp(auto_help),
+      m_UsageIfNoArgs(false)
 {
     SetUsageContext("NCBI_PROGRAM", kEmptyStr);
     if ( m_AutoHelp ) {
@@ -1540,6 +1546,12 @@ bool CArgDescriptions::x_CreateArg
 
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
+    // If explicitly specified, printout usage and exit in case there
+    // was no args passed to the application
+    if (m_UsageIfNoArgs  &&  args.IsEmpty()) {
+        NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
+    }
+
     // Check if all mandatory unnamed positional arguments are provided
     if (m_PosArgs.size() <= n_plain  &&  
         n_plain < m_PosArgs.size() + m_nExtra){
@@ -1652,6 +1664,12 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
     }
 
     m_Args.insert(&arg);
+}
+
+
+void CArgDescriptions::PrintUsageIfNoArgs(bool do_print)
+{
+    m_UsageIfNoArgs = do_print;
 }
 
 
@@ -2135,6 +2153,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2003/05/16 16:00:41  vakatov
+ * + CArgs::IsEmpty()
+ * + CArgDescriptions::PrintUsageIfNoArgs()
+ *
  * Revision 1.44  2003/03/10 18:57:07  kuznets
  * iterate->ITERATE
  *
