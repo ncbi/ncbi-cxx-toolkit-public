@@ -115,7 +115,7 @@ CBDB_LobFile::CBDB_LobFile()
 
 void CBDB_LobFile::SetCmp(DB* db)
 {
-    int ret = db->set_bt_compare(db, bdb_uint_cmp);
+    int ret = db->set_bt_compare(db, BDB_UintCompare);
     BDB_CHECK(ret, 0);
 }
 
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/10 20:08:27  kuznets
+ * Fixed function names.
+ *
  * Revision 1.6  2003/05/09 13:44:57  kuznets
  * Fixed a bug in cursors based on BLOB storage
  *

@@ -40,7 +40,7 @@ extern "C"
 {
 
 
-int bdb_uint_cmp(DB*, const DBT* val1, const DBT* val2)
+int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2)
 {
     unsigned int v1, v2;
     ::memcpy(&v1, val1->data, sizeof(unsigned));
@@ -50,7 +50,7 @@ int bdb_uint_cmp(DB*, const DBT* val1, const DBT* val2)
 }
 
 
-int bdb_int_cmp(DB*, const DBT* val1, const DBT* val2)
+int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
 {
     int v1, v2;
     ::memcpy(&v1, val1->data, sizeof(int));
@@ -60,7 +60,7 @@ int bdb_int_cmp(DB*, const DBT* val1, const DBT* val2)
 }
 
 
-int bdb_cmp(DB* db, const DBT* val1, const DBT* val2)
+int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 {
     const CBDB_BufferManager* fbuf1 =
           static_cast<CBDB_BufferManager*> (db->app_private);
@@ -430,7 +430,7 @@ void CBDB_File::Discard()
 
 void CBDB_File::SetCmp(DB* db)
 {
-    int ret = db->set_bt_compare(db, bdb_cmp);
+    int ret = db->set_bt_compare(db, BDB_Compare);
     BDB_CHECK(ret, 0);
 }
 
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/06/10 20:08:27  kuznets
+ * Fixed function names.
+ *
  * Revision 1.8  2003/05/27 18:43:45  kuznets
  * Fixed some compilation problems with GCC 2.95
  *

@@ -34,6 +34,22 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
+//  CBDB_Field::
+//
+
+CBDB_Field::CBDB_Field(ELengthType length_type)
+: m_BufferManager(0),
+  m_Buffer(0),
+  m_BufferSize(0),
+  m_BufferIdx(0)
+{   
+    m_Flags.VariableLength = (length_type == eFixedLength) ? 0 : 1;
+    m_Flags.Attached = 0;
+    m_Flags.Nullable = 0;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CBDB_BufferManager::
 //
 
@@ -267,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/10 20:08:27  kuznets
+ * Fixed function names.
+ *
  * Revision 1.6  2003/05/27 18:43:45  kuznets
  * Fixed some compilation problems with GCC 2.95
  *
