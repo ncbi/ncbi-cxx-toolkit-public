@@ -30,10 +30,12 @@
  */
 
 #include "image_io_tiff.hpp"
+#include <corelib/ncbifile.hpp>
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
 
 #ifdef HAVE_LIBTIFF
+
 //
 //
 // LIBTIFF functions
@@ -43,6 +45,39 @@
 #include <tiffio.h>
 
 BEGIN_NCBI_SCOPE
+
+
+static void s_TiffReadErrorHandler(const char* module, const char* fmt,
+                                   va_list args)
+{
+    string msg("Error reading TIFF image: ");
+    msg += module;
+    msg += ": ";
+    msg += NStr::FormatVarargs(fmt, args);
+    NCBI_THROW(CImageException, eReadError, msg);
+}
+
+
+static void s_TiffWriteErrorHandler(const char* module, const char* fmt,
+                                    va_list args)
+{
+    string msg("Error writing TIFF image: ");
+    msg += module;
+    msg += ": ";
+    msg += NStr::FormatVarargs(fmt, args);
+    NCBI_THROW(CImageException, eWriteError, msg);
+}
+
+
+static void s_TiffWarningHandler(const char* module, const char* fmt,
+                                 va_list args)
+{
+    string msg = module;
+    msg += ": ";
+    msg += NStr::FormatVarargs(fmt, args);
+    LOG_POST(Warning << "Warning reading TIFF image: " << msg);
+}
+
 
 //
 // ReadImage()
@@ -54,50 +89,82 @@ BEGIN_NCBI_SCOPE
 //
 CImage* CImageIOTiff::ReadImage(const string& file)
 {
-    // open our file
-    TIFF* tiff = TIFFOpen(file.c_str(), "r");
-    if ( !tiff ) {
-        string msg("x_ReadTiff(): error reading file ");
-        msg += file;
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
+    TIFF* tiff = NULL;
+    uint32* raster = NULL;
+    TIFFErrorHandler old_err_handler = NULL;
+    TIFFErrorHandler old_warn_handler = NULL;
+    CRef<CImage> image;
 
-    // extract the size parameters
-    int width = 0;
-    int height = 0;
-    TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH,  &width);
-    TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
+    try {
 
-    // allocate a temporary strip for our data
-    uint32* raster = (uint32*)_TIFFmalloc(width * height * sizeof(uint32));
-    if ( !TIFFReadRGBAImage(tiff, width, height, raster, 0) ) {
-        _TIFFfree(raster);
+        old_err_handler  = TIFFSetErrorHandler(&s_TiffReadErrorHandler);
+        old_warn_handler = TIFFSetWarningHandler(&s_TiffWarningHandler);
 
-        string msg("x_ReadTiff(): error reading file ");
-        msg += file;
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // now we need to copy this data and pack it appropriately
-    CRef<CImage> image(new CImage(width, height, 4));
-    unsigned char* data = image->SetData();
-    for (int j = 0;  j < height;  ++j) {
-        for (int i = 0;  i < width;  ++i) {
-            size_t idx = j * width + i;
-
-            // TIFFReadRGBAImage(0 returns data in ABGR image, packed as a
-            // 32-bit value, so we need to pick this apart here
-            uint32 pixel = raster[idx];
-            data[4 * idx + 0] = (unsigned char)((pixel & 0x000000ff));
-            data[4 * idx + 1] = (unsigned char)((pixel & 0x0000ff00) >> 8);
-            data[4 * idx + 2] = (unsigned char)((pixel & 0x00ff0000) >> 16);
-            data[4 * idx + 3] = (unsigned char)((pixel & 0xff000000) >> 24);
+        // open our file
+        TIFF* tiff = TIFFOpen(file.c_str(), "r");
+        if ( !tiff ) {
+            string msg("x_ReadTiff(): error reading file ");
+            msg += file;
+            NCBI_THROW(CImageException, eReadError, msg);
         }
+
+        // extract the size parameters
+        int width = 0;
+        int height = 0;
+        TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH,  &width);
+        TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
+
+        // allocate a temporary buffer for the image
+        raster = (uint32*)_TIFFmalloc(width * height * sizeof(uint32));
+        if ( !TIFFReadRGBAImage(tiff, width, height, raster, 1) ) {
+            _TIFFfree(raster);
+
+            string msg("x_ReadTiff(): error reading file ");
+            msg += file;
+            NCBI_THROW(CImageException, eReadError, msg);
+        }
+
+        // now we need to copy this data and pack it appropriately
+        image = new CImage(width, height, 4);
+        unsigned char* data = image->SetData();
+        for (int j = 0;  j < height;  ++j) {
+            for (int i = 0;  i < width;  ++i) {
+                size_t idx = j * width + i;
+
+                // TIFFReadRGBAImage(0 returns data in ABGR image, packed as a
+                // 32-bit value, so we need to pick this apart here
+                uint32 pixel = raster[idx];
+                data[4 * idx + 0] = (unsigned char)((pixel & 0x000000ff));
+                data[4 * idx + 1] = (unsigned char)((pixel & 0x0000ff00) >> 8);
+                data[4 * idx + 2] = (unsigned char)((pixel & 0x00ff0000) >> 16);
+                data[4 * idx + 3] = (unsigned char)((pixel & 0xff000000) >> 24);
+            }
+        }
+
+        // clean-up
+        _TIFFfree(raster);
+        TIFFClose(tiff);
+    }
+    catch (...) {
+        if (raster) {
+            _TIFFfree(raster);
+            raster = NULL;
+        }
+
+        if (tiff) {
+            TIFFClose(tiff);
+            tiff = NULL;
+        }
+
+        TIFFSetErrorHandler(old_err_handler);
+        TIFFSetWarningHandler(old_warn_handler);
+
+        // throw to a higher level
+        throw;
     }
 
-    // clean-up
-    _TIFFfree(raster);
-    TIFFClose(tiff);
+    TIFFSetErrorHandler(old_err_handler);
+    TIFFSetWarningHandler(old_warn_handler);
     return image.Release();
 }
 
@@ -122,39 +189,66 @@ CImage* CImageIOTiff::ReadImage(const string& file,
 void CImageIOTiff::WriteImage(const CImage& image, const string& file,
                               CImageIO::ECompress)
 {
-    if ( !image.GetData() ) {
-        NCBI_THROW(CImageException, eWriteError,
-                   "CImageIOTiff::WriteImage(): cannot write empty image");
+    TIFF* fp = NULL;
+    TIFFErrorHandler old_err_handler = NULL;
+    TIFFErrorHandler old_warn_handler = NULL;
+
+    try {
+        if ( !image.GetData() ) {
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOTiff::WriteImage(): cannot write empty image");
+        }
+
+        old_err_handler  = TIFFSetErrorHandler(&s_TiffWriteErrorHandler);
+        old_warn_handler = TIFFSetWarningHandler(&s_TiffWarningHandler);
+
+        // open our file
+        fp = TIFFOpen(file.c_str(), "w");
+        if ( !fp ) {
+            string msg("CImageIOTiff::WriteImage(): cannot open file ");
+            msg += file;
+            msg += " for writing";
+            NCBI_THROW(CImageException, eWriteError, msg);
+        }
+
+        // set a bunch of standard fields, defining our image dimensions
+        TIFFSetField(fp, TIFFTAG_IMAGEWIDTH,        image.GetWidth());
+        TIFFSetField(fp, TIFFTAG_IMAGELENGTH,       image.GetHeight());
+        TIFFSetField(fp, TIFFTAG_BITSPERSAMPLE,     8);
+        TIFFSetField(fp, TIFFTAG_SAMPLESPERPIXEL,   image.GetDepth());
+        TIFFSetField(fp, TIFFTAG_ROWSPERSTRIP,      image.GetHeight());
+
+        // TIFF options
+        TIFFSetField(fp, TIFFTAG_COMPRESSION,   COMPRESSION_DEFLATE);
+        TIFFSetField(fp, TIFFTAG_PHOTOMETRIC,   PHOTOMETRIC_RGB);
+        TIFFSetField(fp, TIFFTAG_FILLORDER,     FILLORDER_MSB2LSB);
+        TIFFSetField(fp, TIFFTAG_PLANARCONFIG,  PLANARCONFIG_CONTIG);
+
+        // write our information
+        TIFFWriteEncodedStrip(fp, 0,
+                              const_cast<void*>
+                              (reinterpret_cast<const void*> (image.GetData())),
+                              image.GetWidth() * image.GetHeight() * image.GetDepth());
+        TIFFClose(fp);
+
+        TIFFSetErrorHandler(old_err_handler);
+        TIFFSetWarningHandler(old_warn_handler);
     }
+    catch (...) {
 
-    // open our file
-    TIFF* fp = TIFFOpen(file.c_str(), "w");
-    if ( !fp ) {
-        string msg("CImageIOTiff::WriteImage(): cannot open file ");
-        msg += file;
-        msg += " for writing";
-        NCBI_THROW(CImageException, eWriteError, msg);
+        // close our file and wipe it from the system
+        TIFFClose(fp);
+        CFile f(file);
+        if (f.Exists()) {
+            f.Remove(CFile::eNonRecursive);
+        }
+
+        // restore the standard error handlers
+        TIFFSetErrorHandler(old_err_handler);
+        TIFFSetWarningHandler(old_warn_handler);
+
+        throw;
     }
-
-    // set a bunch of standard fields, defining our image dimensions
-    TIFFSetField(fp, TIFFTAG_IMAGEWIDTH,        image.GetWidth());
-    TIFFSetField(fp, TIFFTAG_IMAGELENGTH,       image.GetHeight());
-    TIFFSetField(fp, TIFFTAG_BITSPERSAMPLE,     8);
-    TIFFSetField(fp, TIFFTAG_SAMPLESPERPIXEL,   image.GetDepth());
-    TIFFSetField(fp, TIFFTAG_ROWSPERSTRIP,      image.GetHeight());
-
-    // TIFF options
-    TIFFSetField(fp, TIFFTAG_COMPRESSION,   COMPRESSION_DEFLATE);
-    TIFFSetField(fp, TIFFTAG_PHOTOMETRIC,   PHOTOMETRIC_RGB);
-    TIFFSetField(fp, TIFFTAG_FILLORDER,     FILLORDER_MSB2LSB);
-    TIFFSetField(fp, TIFFTAG_PLANARCONFIG,  PLANARCONFIG_CONTIG);
-
-    // write our information
-    TIFFWriteEncodedStrip(fp, 0,
-                          const_cast<void*>
-                          (reinterpret_cast<const void*> (image.GetData())),
-                          image.GetWidth() * image.GetHeight() * image.GetDepth());
-    TIFFClose(fp);
 }
 
 
@@ -226,6 +320,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/12 17:49:04  dicuccio
+ * Intercept libtiff error messages and translate them into LOG_POST()/exception
+ * where appropriate
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *
