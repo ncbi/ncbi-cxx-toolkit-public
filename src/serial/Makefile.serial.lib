@@ -4,11 +4,11 @@
 #################################
 
 LIBOBJ = \
-	hookdata typeinfo object typeref stdtypes ptrinfo autoptrinfo \
-	continfo stltypes enumerated asntypes \
-	memberid memberlist item classinfob \
-	member classinfo variant choice choiceptr \
-	objistr objostr objcopy object iterator \
+	hookdata typeinfo object typeref \
+    stdtypes enumerated ptrinfo autoptrinfo continfo stltypes asntypes \
+	memberid memberlist item classinfob member classinfo \
+	variant choice choiceptr \
+	objistr objostr objcopy iterator \
 	serial serialasn delaybuf \
 	exception strbuffer objhook objlist objstack bytesrc \
 	$(serial_ws50_rtti_kludge) \
