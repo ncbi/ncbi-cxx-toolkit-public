@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/22 22:37:13  thiessen
+* check data registry path
+*
 * Revision 1.10  2001/05/22 19:09:30  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -146,6 +149,14 @@ ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(fals
         sbp->number_of_contexts = 1;
         Nlm_Char BLOSUM62[20];
         Nlm_StrCpy(BLOSUM62, "BLOSUM62");
+
+        // test C-toolkit data directory registry - which BlastScoreBlkMatFill() uses
+        Nlm_Char dataPath[255];
+        if (Nlm_FindPath("ncbi", "ncbi", "data", dataPath, 255))
+            TESTMSG("FindPath() returned '" << dataPath << "'");
+        else
+            ERR_POST(Warning << "FindPath() failed!");
+
         if (BlastScoreBlkMatFill(sbp, BLOSUM62) != 0) goto on_error;
         stdrfp = BlastResFreqNew(sbp);
         if (!stdrfp) goto on_error;
