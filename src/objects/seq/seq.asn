@@ -1,0 +1,312 @@
+--$Revision: 1.1 $
+--**********************************************************************
+--
+--  NCBI Sequence elements
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Sequence DEFINITIONS ::=
+BEGIN
+
+EXPORTS Bioseq, Seq-annot, Pubdesc, Seq-descr;
+
+IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
+        Seq-align FROM NCBI-Seqalign
+        Seq-feat FROM NCBI-Seqfeat
+        Seq-graph FROM NCBI-Seqres
+        Pub-equiv FROM NCBI-Pub
+        Org-ref FROM NCBI-Organism
+        Seq-id, Seq-loc FROM NCBI-Seqloc;
+
+--*** Sequence ********************************
+--*
+
+Bioseq ::= SEQUENCE {
+    id SET OF Seq-id ,            -- equivalent identifiers
+    descr Seq-descr OPTIONAL , -- descriptors
+    inst Seq-inst ,            -- the sequence data
+    annot SET OF Seq-annot OPTIONAL }
+
+--*** Descriptors *****************************
+--*
+
+Seq-descr ::= SET OF CHOICE {
+    mol-type GIBB-mol ,          -- type of molecule
+    modif SET OF GIBB-mod ,      -- modifiers
+    method GIBB-method ,         -- sequencing method
+    name VisibleString ,         -- a name for this sequence
+    title VisibleString ,        -- a title for this sequence
+    org Org-ref ,                -- if all from one organism
+    comment VisibleString ,      -- a more extensive comment
+    num Numbering ,              -- a numbering system
+    maploc Dbtag ,               -- map location of this sequence
+    pir PIR-block ,              -- PIR specific info
+    genbank GB-block ,           -- GenBank specific info
+    pub Pubdesc ,                -- a reference to the publication
+    region VisibleString ,       -- overall region (globin locus)
+    user User-object }           -- user defined object
+
+GIBB-mol ::= ENUMERATED {       -- type of molecule represented
+    unknown (0) ,
+    genomic (1) ,
+    pre-mRNA (2) ,
+    mRNA (3) ,
+    rRNA (4) ,
+    tRNA (5) ,
+    snRNA (6) ,
+    scRNA (7) ,
+    peptide (8) ,
+	other-genetic (9) ,      -- other genetic material
+	genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
+    index-seq (11) ,         -- GenInfo Backbone index sequence
+    other (255) }
+    
+GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
+    dna (0) ,
+    rna (1) ,
+    extrachrom (2) ,
+    plasmid (3) ,
+    mitochondrial (4) ,
+    chloroplast (5) ,
+    kinetoplast (6) ,
+    cyanelle (7) ,
+    synthetic (8) ,
+    recombinant (9) ,
+    partial (10) ,
+    complete (11) ,
+    mutagen (12) ,    -- subject of mutagenesis ?
+    natmut (13) ,     -- natural mutant ?
+    transposon (14) ,
+    insertion-seq (15) ,
+    other (255) }
+
+GIBB-method ::= ENUMERATED {        -- sequencing methods
+    concept-trans (1) ,
+    seq-pept (2) ,
+    both (3) ,
+	seq-pept-homol (4) ,   -- sequenced peptide, ordered by homology
+	seq-pept-overlap (5) , -- sequenced peptide, ordered by overlap
+    other (255) }
+    
+Numbering ::= CHOICE {           -- any display numbering system
+    cont Num-cont ,              -- continuous numbering
+    enum Num-enum ,              -- enumerated names for residues
+    ref Num-ref ,                -- by reference to another sequence
+    real Num-real ,              -- supports mapping to a float system
+    mix SEQUENCE OF Numbering }  -- absolutely anything
+    
+Num-cont ::= SEQUENCE {          -- continuous display numbering system
+    refnum INTEGER DEFAULT 1,         -- number assigned to first residue
+    has-zero BOOLEAN DEFAULT FALSE ,  -- 0 used?
+    ascending BOOLEAN DEFAULT TRUE ,  -- ascending numbers?
+    loc Seq-loc OPTIONAL }            -- region to apply numbers over
+
+Num-enum ::= SEQUENCE {          -- any tags to residues
+    num INTEGER ,                        -- number of tags to follow
+    names SEQUENCE OF VisibleString ,    -- the tags
+    loc Seq-loc OPTIONAL }               -- region to cover
+
+Num-ref ::= SEQUENCE {           -- by reference to other sequences
+    type ENUMERATED {            -- type of reference
+        not-set (0) ,
+        sources (1) ,            -- by segmented or const seq sources
+        aligns (2) } ,           -- by alignments given below
+    aligns Seq-align OPTIONAL }
+
+Num-real ::= SEQUENCE {          -- mapping to floating point system
+    a REAL ,                     -- from an integer system used by Bioseq
+    b REAL ,                     -- position = (a * int_position) + b
+    units VisibleString OPTIONAL ,
+    loc Seq-loc OPTIONAL }       -- region to cover
+
+Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
+    pub Pub-equiv ,                 -- the citation(s)
+    name VisibleString OPTIONAL ,   -- name used in paper
+    fig VisibleString OPTIONAL ,    -- figure in paper
+    num Numbering OPTIONAL ,        -- numbering from paper
+    numexc BOOLEAN OPTIONAL ,       -- numbering problem with paper
+    poly-a BOOLEAN OPTIONAL ,       -- poly A tail indicated in figure?
+    maploc VisibleString OPTIONAL , -- map location reported in paper
+    seq-raw StringStore OPTIONAL ,  -- original sequence from paper
+    align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
+    index-seqs SET OF Bioseq OPTIONAL }     -- index sequences
+
+PIR-block ::= SEQUENCE {          -- PIR specific descriptions
+    had-punct BOOLEAN OPTIONAL ,      -- had punctuation in sequence ?
+    host VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL ,     -- source line
+    summary VisibleString OPTIONAL ,
+    genetic VisibleString OPTIONAL ,
+    includes VisibleString OPTIONAL ,
+    placement VisibleString OPTIONAL ,
+    superfamily VisibleString OPTIONAL ,
+    keywords SEQUENCE OF VisibleString OPTIONAL ,
+    cross-reference VisibleString OPTIONAL ,
+    date VisibleString OPTIONAL ,
+	seq-raw VisibleString OPTIONAL }  -- seq with punctuation
+
+GB-block ::= SEQUENCE {          -- GenBank specific descriptions
+    extra-accessions SEQUENCE OF VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL ,     -- source line
+    keywords SEQUENCE OF VisibleString OPTIONAL ,
+    origin VisibleString OPTIONAL,
+    date VisibleString OPTIONAL ,       -- old form Entry Date
+    entry-date Date OPTIONAL ,          -- replaces date
+    div VisibleString OPTIONAL }        -- GenBank division
+    
+
+--*** Instances of sequences *******************************
+--*
+
+Seq-inst ::= SEQUENCE {            -- the sequence data itself
+    repr ENUMERATED {              -- representation class
+        not-set (0) ,              -- empty
+        virtual (1) ,              -- no seq data
+        raw (2) ,                  -- continuous sequence
+        seg (3) ,                  -- segmented sequence
+        const (4) ,                -- constructed sequence
+        ref (5) ,                  -- reference to another sequence
+        consen (6) ,               -- consensus sequence or pattern
+        map (7) ,                  -- ordered map (genetic, restriction)
+        other (255) } ,
+    mol ENUMERATED {               -- molecule class in living organism
+        not-set (0) ,              --   > cdna = rna
+        dna (1) ,
+        rna (2) ,
+        aa (3) ,
+        na (4) ,                   -- just a nucleic acid
+        other (255) } ,
+    length INTEGER OPTIONAL ,      -- length of sequence in residues
+    fuzz Int-fuzz OPTIONAL ,       -- length uncertainty
+    topology ENUMERATED {          -- topology of molecule
+        not-set (0) ,
+        linear (1) ,
+        circular (2) ,
+        tandem (3) ,               -- some part of tandem repeat
+        other (255) } DEFAULT linear ,
+    strand ENUMERATED {            -- strandedness in living organism
+        not-set (0) ,
+        ss (1) ,                   -- single strand
+        ds (2) ,                   -- double strand
+        mixed (3) ,
+        other (255) } OPTIONAL ,   -- default ds for DNA, ss for RNA, pept
+    seq-data Seq-data OPTIONAL ,   -- the sequence
+    ext Seq-ext OPTIONAL }         -- extensions for special types
+
+--*** Sequence Extensions **********************************
+--*  for representing more complex types
+
+Seq-ext ::= CHOICE {
+    seg Seg-ext ,        -- segmented sequences
+    const Const-ext ,    -- constructed sequences
+    ref Ref-ext ,        -- hot link to another sequence (a view)
+    map Map-ext }        -- ordered map of markers
+
+Seg-ext ::= SEQUENCE OF Seq-loc
+
+Const-ext ::= SET OF Seq-align
+
+Ref-ext ::= Seq-loc
+
+Map-ext ::= SEQUENCE OF Seq-feat
+
+--*** Various internal sequence representations ************
+--*      all are controlled, fixed length forms
+
+Seq-data ::= CHOICE {              -- sequence representations
+    iupacna IUPACna ,              -- IUPAC 1 letter nuc acid code
+    iupacaa IUPACaa ,              -- IUPAC 1 letter amino acid code
+    ncbi2na NCBI2na ,              -- 2 bit nucleic acid code
+    ncbi4na NCBI4na ,              -- 4 bit nucleic acid code
+    ncbi8na NCBI8na ,              -- 8 bit extended nucleic acid code
+    ncbipna NCBIpna ,              -- nucleic acid probabilities
+    ncbi8aa NCBI8aa ,              -- 8 bit extended amino acid codes
+    ncbieaa NCBIeaa ,              -- extended ASCII 1 letter aa codes
+    ncbipaa NCBIpaa }              -- amino acid probabilities
+
+IUPACna ::= StringStore       -- IUPAC 1 letter codes, no spaces
+IUPACaa ::= StringStore       -- IUPAC 1 letter codes, no spaces
+NCBI2na ::= OCTET STRING      -- 00=A, 01=C, 10=G, 11=T
+NCBI4na ::= OCTET STRING      -- 1 bit each for agct
+                              -- 0001=A, 0010=C, 0100=G, 1000=T/U
+                              -- 0101=Purine, 1010=Pyrimidine, etc
+NCBI8na ::= OCTET STRING      -- for modified nucleic acids
+NCBIpna ::= OCTET STRING      -- 5 octets/base, prob for a,c,g,t,n
+                              -- probabilities are coded 0-255 = 0.0-1.0
+NCBI8aa ::= OCTET STRING      -- for modified amino acids
+NCBIeaa ::= StringStore       -- ASCII extended 1 letter aa codes
+                              -- IUPAC codes + U=selenocysteine
+NCBIpaa ::= OCTET STRING      -- 25 octets/aa, prob for IUPAC aas in order:
+                              -- A-Y,B,Z,X,(ter),anything
+                              -- probabilities are coded 0-255 = 0.0-1.0
+--  *********************************************************************
+--
+--  Seq-map-table and Seq-code-table REQUIRE that codes start with 0
+--    and increase continuously.  So IUPAC codes, which are upper case
+--    letters will always have 65 0 cells before the codes begin.  This
+--    allows all codes to do indexed lookups for things
+--
+--  Valid names for code tables are:
+--    IUPACna
+--    IUPACaa
+--    IUPACeaa
+--    IUPACaa3     3 letter amino acid codes : parallels IUPACeaa
+--                   display only, not a data exchange type
+--    NCBI2na
+--    NCBI4na
+--    NCBI8na
+--    NCBI8aa
+--     probability types map to IUPAC types for display as characters
+
+Seq-code-type ::= ENUMERATED {              -- sequence representations
+    iupacna (1) ,              -- IUPAC 1 letter nuc acid code
+    iupacaa (2) ,              -- IUPAC 1 letter amino acid code
+    ncbi2na (3) ,              -- 2 bit nucleic acid code
+    ncbi4na (4) ,              -- 4 bit nucleic acid code
+    ncbi8na (5) ,              -- 8 bit extended nucleic acid code
+    ncbipna (6) ,              -- nucleic acid probabilities
+    ncbi8aa (7) ,              -- 8 bit extended amino acid codes
+    ncbieaa (8) ,              -- extended ASCII 1 letter aa codes
+    ncbipaa (9) ,              -- amino acid probabilities
+    iupacaa3 (10) }            -- 3 letter code only for display
+
+Seq-map-table ::= SEQUENCE { -- for tables of sequence mappings 
+    from Seq-code-type ,      -- code to map from
+    to Seq-code-type ,        -- code to map to
+    num INTEGER ,             -- number of rows in table
+    start-at INTEGER DEFAULT 0 ,   -- index offset of first element
+    table SEQUENCE OF INTEGER }  -- table of values, in from-to order
+
+Seq-code-table ::= SEQUENCE { -- for names of coded values
+    code Seq-code-type ,      -- name of code
+    num INTEGER ,             -- number of rows in table
+    one-letter BOOLEAN ,   -- symbol is ALWAYS 1 letter?
+    start-at INTEGER DEFAULT 0 ,   -- index offset of first element
+    table SEQUENCE OF
+        SEQUENCE {
+            symbol VisibleString ,      -- the printed symbol or letter
+            name VisibleString } ,      -- an explanatory name or string
+    comps SEQUENCE OF INTEGER OPTIONAL } -- pointers to complement nuc acid
+
+Seq-code-set ::= SEQUENCE {    -- for distribution
+    codes SET OF Seq-code-table OPTIONAL ,
+    maps SET OF Seq-map-table OPTIONAL }
+
+--*** Sequence Annotation *************************************
+--*
+
+Seq-annot ::= SEQUENCE {
+    id Object-id OPTIONAL ,
+    db Dbtag OPTIONAL ,
+    name VisibleString OPTIONAL ,
+    desc VisibleString OPTIONAL ,
+    data CHOICE {
+        ftable SET OF Seq-feat ,
+        align SET OF Seq-align ,
+        graph SET OF Seq-graph } }
+
+END
+
+

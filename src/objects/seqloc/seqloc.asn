@@ -1,0 +1,109 @@
+--$Revision: 1.1 $
+--**********************************************************************
+--
+--  NCBI Sequence location and identifier elements
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Seqloc DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-id, Seq-loc, Seq-interval, Packed-seqint, Seq-point, Packed-seqpnt,
+        Na-strand, Giimport-id;
+
+IMPORTS Object-id, Int-fuzz, Dbtag FROM NCBI-General
+        Id-pat FROM NCBI-Biblio
+        Feat-id FROM NCBI-Seqfeat;
+
+--*** Sequence identifiers ********************************
+--*
+
+Seq-id ::= CHOICE {
+    local Object-id ,      -- local use
+    gibbsq INTEGER ,         -- Geninfo backbone seqid
+    gibbmt INTEGER ,         -- Geninfo backbone moltype
+    giim Giimport-id ,       -- Geninfo import id
+    genbank Textseq-id ,
+    embl Textseq-id ,
+    pir Textseq-id ,
+    swissprot Textseq-id ,
+    patent Patent-seq-id ,
+    other Textseq-id ,       -- catch all
+    general Dbtag ,          -- for other databases
+    gi INTEGER }             -- GenInfo Integrated Database
+
+Patent-seq-id ::= SEQUENCE {
+    seqid INTEGER ,         -- number of sequence in patent
+    cit Id-pat }           -- patent citation
+
+Textseq-id ::= SEQUENCE {
+    name VisibleString OPTIONAL ,
+    accession VisibleString OPTIONAL ,
+    release VisibleString OPTIONAL }
+
+Giimport-id ::= SEQUENCE {
+    id INTEGER ,               -- the id to use here
+    db VisibleString OPTIONAL ,  -- dbase used in
+    release VisibleString OPTIONAL }   -- the release
+
+
+--*** Sequence locations **********************************
+--*
+
+Seq-loc ::= CHOICE {
+    null NULL ,           -- not placed
+    empty Seq-id ,        -- to NULL one Seq-id in a collection
+    whole Seq-id ,        -- whole sequence
+    int Seq-interval ,    -- from to
+    packed-int Packed-seqint ,
+    pnt Seq-point ,
+    packed-pnt Packed-seqpnt ,
+    mix Seq-loc-mix ,
+    equiv Seq-loc-equiv ,  -- equivalent sets of locations
+    bond Seq-bond ,
+    feat Feat-id }         -- indirect, through a Seq-feat
+    
+
+Seq-interval ::= SEQUENCE {
+    from INTEGER ,
+    to INTEGER ,
+    strand Na-strand OPTIONAL ,
+    id Seq-id OPTIONAL ,
+    fuzz-from Int-fuzz OPTIONAL ,
+    fuzz-to Int-fuzz OPTIONAL }
+
+Packed-seqint ::= SEQUENCE OF Seq-interval
+
+Seq-point ::= SEQUENCE {
+    point INTEGER ,
+    strand Na-strand OPTIONAL ,
+    id Seq-id OPTIONAL ,
+    fuzz Int-fuzz OPTIONAL }
+
+Packed-seqpnt ::= SEQUENCE {
+    strand Na-strand OPTIONAL ,
+    id Seq-id OPTIONAL ,
+    fuzz Int-fuzz OPTIONAL ,
+    points SEQUENCE OF INTEGER }
+
+Na-strand ::= ENUMERATED {          -- strand of nucleid acid
+    unknown (0) ,
+    plus (1) ,
+    minus (2) ,               
+    both (3) ,                -- in forward orientation
+    both-rev (4) ,            -- in reverse orientation
+    other (255) }
+
+Seq-bond ::= SEQUENCE {         -- bond between residues
+	a Seq-point ,           -- connection to a least one residue
+	b Seq-point OPTIONAL }  -- other end may not be available
+
+Seq-loc-mix ::= SEQUENCE OF Seq-loc   -- this will hold anything
+
+Seq-loc-equiv ::= SET OF Seq-loc      -- for a set of equivalent locations
+
+END
+    
+

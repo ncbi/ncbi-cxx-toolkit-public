@@ -1,0 +1,79 @@
+--$Revision: 1.1 $
+--**********************************************************************
+--
+--  NCBI Sequence Alignment elements
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Seqalign DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-align;
+
+IMPORTS Seq-id, Seq-loc , Na-strand FROM NCBI-Seqloc
+        Object-id FROM NCBI-General;
+
+--*** Sequence Alignment ********************************
+--*
+
+Seq-align ::= SEQUENCE {
+    type ENUMERATED {
+        not-set (0) ,
+        global (1) ,
+        diags (2) ,
+        partial (3) ,           -- mapping pieces together
+        other (255) } ,
+    dim INTEGER OPTIONAL ,     -- dimensionality
+    score SET OF Score OPTIONAL ,   -- for whole alignment
+    segs CHOICE {                   -- alignment data
+        dendiag SEQUENCE OF Dense-diag ,
+        denseg Dense-seg ,
+        std SEQUENCE OF Std-seg } }
+        
+        
+Dense-diag ::= SEQUENCE {         -- for (multiway) diagonals
+    dim INTEGER DEFAULT 2 ,    -- dimensionality
+    ids SEQUENCE OF Seq-id ,   -- sequences in order
+    starts SEQUENCE OF INTEGER ,  -- start OFFSETS in ids order
+    len INTEGER ,                 -- len of aligned segments
+    strands SEQUENCE OF Na-strand OPTIONAL ,
+    scores SET OF Score OPTIONAL }
+
+    -- Dense-seg: the densist packing for sequence alignments only.
+    --            a start of -1 indicates a gap for that sequence of
+    --            length lens.
+    --
+    -- id=100  AAGGCCTTTTAGAGATGATGATGATGATGA
+    -- id=200  AAGGCCTTTTAG.......GATGATGATGA
+    -- id=300  ....CCTTTTAGAGATGATGAT....ATGA
+    --
+    -- dim = 3, numseg = 6, ids = { 100, 200, 300 }
+    -- starts = { 0,0,-1, 4,4,0, 12,-1,8, 19,12,15, 22,15,-1, 26,19,18 }
+    -- lens = { 4, 8, 7, 3, 4, 4 }
+    --
+
+Dense-seg ::= SEQUENCE {          -- for (multiway) global or partial alignments
+    dim INTEGER DEFAULT 2 ,       -- dimensionality
+    numseg INTEGER ,              -- number of segments here
+    ids SEQUENCE OF Seq-id ,      -- sequences in order
+    starts SEQUENCE OF INTEGER ,  -- start OFFSETS in ids order within segs
+    lens SEQUENCE OF INTEGER ,    -- lengths in ids order within segs
+    strands SEQUENCE OF Na-strand OPTIONAL ,
+    scores SEQUENCE OF Score OPTIONAL }  -- score for each seg
+
+Std-seg ::= SEQUENCE {
+    dim INTEGER DEFAULT 2 ,       -- dimensionality
+    ids SEQUENCE OF Seq-id OPTIONAL ,
+    loc SEQUENCE OF Seq-loc ,
+    scores SET OF Score OPTIONAL }
+
+Score ::= SEQUENCE {
+    id Object-id OPTIONAL ,
+    value CHOICE {
+        real REAL ,
+        int INTEGER  } }
+
+END 
+

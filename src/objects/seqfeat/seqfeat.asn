@@ -1,0 +1,363 @@
+--$Revision: 1.1 $
+--**********************************************************************
+--
+--  NCBI Sequence Feature elements
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Seqfeat DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-feat, Feat-id;
+
+IMPORTS Gene-ref FROM NCBI-Gene
+        Prot-ref FROM NCBI-Protein
+        Org-ref FROM NCBI-Organism
+        RNA-ref FROM NCBI-RNA
+        Seq-loc, Giimport-id FROM NCBI-Seqloc
+        Pubdesc FROM NCBI-Sequence
+        Rsite-ref FROM NCBI-Rsite
+        Txinit FROM NCBI-TxInit
+        Pub-set FROM NCBI-Pub
+        Object-id, Dbtag, User-object FROM NCBI-General;
+
+--*** Feature identifiers ********************************
+--*
+
+Feat-id ::= CHOICE {
+    gibb INTEGER ,            -- geninfo backbone
+    giim Giimport-id ,        -- geninfo import
+    local Object-id ,         -- for local software use
+    general Dbtag }           -- for use by various databases
+
+--*** Seq-feat *******************************************
+--*  sequence feature generalization
+
+Seq-feat ::= SEQUENCE {
+    id Feat-id OPTIONAL ,
+    data SeqFeatData ,           -- the specific data
+    partial BOOLEAN OPTIONAL ,    -- incomplete in some way?
+    except BOOLEAN OPTIONAL ,     -- something funny about this?
+    comment VisibleString OPTIONAL ,
+    product Seq-loc OPTIONAL ,    -- product of process
+    location Seq-loc ,            -- feature made from
+    qual SEQUENCE OF Gb-qual OPTIONAL ,  -- qualifiers
+    title VisibleString OPTIONAL ,   -- for user defined label
+    ext User-object OPTIONAL ,    -- user defined structure extension
+    cit Pub-set OPTIONAL }        -- citations for this feature
+    
+
+SeqFeatData ::= CHOICE {
+    gene Gene-ref ,
+    org Org-ref ,
+    cdregion Cdregion ,
+    prot Prot-ref ,
+    rna RNA-ref ,
+    pub Pubdesc ,              -- publication applies to this seq 
+    seq Seq-loc ,              -- to annotate origin from another seq
+    imp Imp-feat ,
+    region VisibleString,      -- named region (globin locus)
+    comment NULL ,             -- just a comment
+    bond ENUMERATED {
+        disulfide (1) ,
+        thiolester (2) ,
+        xlink (3) ,
+		thioether (4) ,
+        other (255) } ,
+    site ENUMERATED {
+        active (1) ,
+        binding (2) ,
+        cleavage (3) ,
+        inhibit (4) ,
+        modified (5),
+		glycosylation (6) ,
+		myristoylation (7) ,
+		mutagenized (8) ,
+		metal-binding (9) ,
+        other (255) } ,
+    rsite Rsite-ref ,       -- restriction site  (for maps really)
+    user User-object ,      -- user defined structure
+    txinit Txinit }         -- transcription initiation
+
+--*** CdRegion ***********************************************
+--*
+--*  Instructions to translate from a nucleic acid to a peptide
+--*    conflict means it's supposed to translate but doesn't
+--*
+
+
+Cdregion ::= SEQUENCE {
+    orf BOOLEAN OPTIONAL ,             -- just an ORF ?
+    frame ENUMERATED {
+        not-set (0) ,                  -- not set, default to one
+        one (1) ,
+        two (2) ,
+        three (3) } DEFAULT one ,      -- reading frame
+    conflict BOOLEAN OPTIONAL ,        -- conflict
+    gaps INTEGER OPTIONAL ,            -- number of gaps on conflict/except
+    mismatch INTEGER OPTIONAL ,        -- number of mismatches on above
+    code Genetic-code OPTIONAL ,       -- genetic code used
+    code-break SEQUENCE OF Code-break OPTIONAL}   -- individual exceptions
+
+                    -- each code is 64 cells long, in the order where
+                    -- A=0,G=1,C=2,T=3, AAA=0, AAG=1, AGA=4, etc
+                    -- the value in each cell is the AA coded for
+
+Genetic-code ::= SET OF CHOICE {
+    name VisibleString ,               -- name of a code
+    id INTEGER ,                       -- id in dbase
+    iupac VisibleString ,              -- indexed to IUPAC aas
+    iupace VisibleString ,             -- indexed to IUPAC extended
+    ncbi8 OCTET STRING }               -- indexed to NCBI8aa
+
+Code-break ::= SEQUENCE {              -- specific codon exceptions
+    loc Seq-loc ,                      -- location of exception
+    aa CHOICE {                        -- the amino acid
+        iupac INTEGER ,                -- ASCII value of iupac code
+        iupace INTEGER ,               -- ASCII value of iupace code
+        ncbi8 INTEGER }}               -- NCBI8aa code
+
+Code-table ::= SET OF Genetic-code     -- table of genetic codes
+
+--*** Import ***********************************************
+--*
+--*  Features imported from other databases
+--*
+
+Imp-feat ::= SEQUENCE {
+    key VisibleString ,
+    loc VisibleString OPTIONAL ,         -- original location string
+    descr VisibleString OPTIONAL }       -- text description
+
+Gb-qual ::= SEQUENCE {
+    qual VisibleString ,
+    val VisibleString }
+
+
+END 
+
+--**********************************************************************
+--
+--  NCBI Restriction Sites
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Rsite DEFINITIONS ::=
+BEGIN
+
+EXPORTS Rsite-ref;
+
+Rsite-ref ::= CHOICE {
+    str VisibleString ,     -- may be unparsable
+    std VisibleString ,     -- from a standard list of enzyme names
+    id INTEGER }            -- pointer to a database
+
+END
+
+--**********************************************************************
+--
+--  NCBI RNAs
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-RNA DEFINITIONS ::=
+BEGIN
+
+EXPORTS RNA-ref, Trna-ext;
+
+--*** rnas ***********************************************
+--*
+--*  various rnas
+--*
+                         -- minimal RNA sequence
+RNA-ref ::= SEQUENCE {
+    type ENUMERATED {            -- type of RNA feature
+        unknown (0) ,
+        premsg (1) ,
+        mRNA (2) ,
+        tRNA (3) ,
+        rRNA (4) ,
+        snRNA (5) ,
+        scRNA (6) ,
+        other (255) } ,
+    pseudo BOOLEAN OPTIONAL ,  
+    ext CHOICE {
+        name VisibleString ,        -- for naming "other" type
+        tRNA Trna-ext } OPTIONAL }  -- for tRNAs
+
+Trna-ext ::= SEQUENCE {                -- tRNA feature extensions
+    aa CHOICE {                         -- aa this carries
+        iupac INTEGER ,
+        iupace INTEGER ,
+        ncbi8 INTEGER } OPTIONAL ,
+    codon SET OF INTEGER OPTIONAL }     -- codon(s) as in Genetic-code
+                                        -- NOT anti-codons
+END
+
+--**********************************************************************
+--
+--  NCBI Genes
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Gene DEFINITIONS ::=
+BEGIN
+
+EXPORTS Gene-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+--*** Gene ***********************************************
+--*
+--*  reference to a gene
+--*
+
+Gene-ref ::= SEQUENCE {
+    locus VisibleString OPTIONAL ,     -- Official gene symbol
+    allele VisibleString OPTIONAL ,    -- Official allele designation
+    desc VisibleString OPTIONAL ,      -- descriptive name
+    maploc VisibleString OPTIONAL ,    -- descriptive map location
+    pseudo BOOLEAN OPTIONAL ,          -- pseudogene
+    db SET OF Dbtag OPTIONAL }      -- ids in other dbases
+
+END
+
+--**********************************************************************
+--
+--  NCBI Organism
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Organism DEFINITIONS ::=
+BEGIN
+
+EXPORTS Org-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+--*** Org-ref ***********************************************
+--*
+--*  Reference to an organism
+--*
+
+Org-ref ::= SEQUENCE {
+    taxname VisibleString OPTIONAL ,   -- scientific name
+    common VisibleString OPTIONAL ,    -- common name
+    mod SET OF VisibleString OPTIONAL , -- modifier for tissue/strain/line
+    db SET OF Dbtag OPTIONAL }         -- ids in other dbases
+
+END 
+
+--**********************************************************************
+--
+--  NCBI Protein
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Protein DEFINITIONS ::=
+BEGIN
+
+EXPORTS Prot-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+--*** Prot-ref ***********************************************
+--*
+--*  Reference to a protein name
+--*
+
+Prot-ref ::= SEQUENCE {
+    name SET OF VisibleString OPTIONAL ,      -- protein name
+    desc VisibleString OPTIONAL ,      -- description (instead of name)
+    ec SET OF VisibleString OPTIONAL , -- E.C. number(s)
+    activity SET OF VisibleString OPTIONAL ,  -- activities
+    db SET OF Dbtag OPTIONAL }         -- ids in other dbases
+
+
+
+END 
+--********************************************************************
+--
+--  Transcription Initiation Site Feature Data Block
+--  James Ostell, 1991
+--  Philip Bucher, David Ghosh
+--  version 1.0
+--
+--  
+--
+--********************************************************************
+
+NCBI-TxInit DEFINITIONS ::=
+BEGIN
+
+EXPORTS Txinit;
+
+IMPORTS Gene-ref, Prot-ref, Org-ref FROM NCBI-SeqFeat;
+
+Txinit ::= SEQUENCE {
+    name VisibleString ,    -- descriptive name of initiation site
+    syn SEQUENCE OF VisibleString OPTIONAL ,   -- synonyms
+    gene SEQUENCE OF Gene-ref OPTIONAL ,  -- gene(s) transcribed
+    protein SEQUENCE OF Prot-ref OPTIONAL ,   -- protein(s) produced
+    rna SEQUENCE OF VisibleString OPTIONAL ,  -- rna(s) produced
+    expression VisibleString OPTIONAL ,  -- tissue/time of expression
+    txsystem ENUMERATED {       -- transcription apparatus used at this site
+        unknown (0) ,
+        pol1 (1) ,      -- eukaryotic Pol I
+        pol2 (2) ,      -- eukaryotic Pol II
+        pol3 (3) ,      -- eukaryotic Pol III
+        bacterial (4) ,
+        viral (5) ,
+        rna (6) ,       -- RNA replicase
+        organelle (7) ,
+        other (255) } ,
+    txdescr VisibleString OPTIONAL ,   -- modifiers on txsystem
+    txorg Org-ref OPTIONAL ,  -- organism supplying transcription apparatus
+    mapping-precise BOOLEAN DEFAULT FALSE ,  -- mapping precise or approx
+    location-accurate BOOLEAN DEFAULT FALSE , -- does Seq-loc reflect mapping
+    inittype ENUMERATED {
+        unknown (0) ,
+        single (1) ,
+        multiple (2) ,
+        region (3) } OPTIONAL ,
+    evidence SET OF Tx-evidence OPTIONAL }
+
+Tx-evidence ::= SEQUENCE {
+    exp-code ENUMERATED {
+        unknown (0) ,    
+        rna-seq (1) ,   -- direct RNA sequencing
+        rna-size (2) ,  -- RNA length measurement
+        np-map (3) ,    -- nuclease protection mapping with homologous sequence ladder
+        np-size (4) ,   -- nuclease protected fragment length measurement
+        pm-seq (5) ,    -- dideoxy RNA sequencing 
+        cDNA-seq (6) ,  -- full-length cDNA sequencing
+        pe-map (7) ,    -- primer extension mapping with homologous sequence ladder    
+        pe-size (8) ,   -- primer extension product length measurement
+        pseudo-seq (9) , -- full-length processed pseudogene sequencing
+        other (255) } ,
+    expression-system ENUMERATED {
+        unknown (0) ,
+        physiological (1) ,
+        in-vitro (2) ,
+        oocyte (3) ,
+        transfection (4) ,
+        transgenic (5) ,
+        other (255) } DEFAULT physiological ,
+    low-prec-data BOOLEAN DEFAULT FALSE ,
+    from-homolog BOOLEAN DEFAULT FALSE }     -- experiment actually done on
+                                             --  close homolog
+    
+END
+

@@ -1,0 +1,143 @@
+--$Revision: 1.1 $
+--****************************************************************
+--
+--  NCBI Bibliographic data elements
+--  by James Ostell, 1990
+--  version 0.8
+--
+--  Taken from the American National Standard for
+--      Bibliographic References
+--      ANSI Z39.29-1977
+--
+--****************************************************************
+
+NCBI-Biblio DEFINITIONS ::=
+BEGIN
+
+EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
+		Cit-proc;
+
+IMPORTS Person-id, Date FROM NCBI-General;
+
+    -- Citation Types
+
+Cit-art ::= SEQUENCE {                  -- article in journal or book
+    title Title ,                       -- title of paper
+    authors Auth-list,                  -- authors
+    from CHOICE {                       -- journal or book
+        journal Cit-jour ,
+        book Cit-book ,
+        proc Cit-proc } }
+
+Cit-jour ::= SEQUENCE {             -- Journal citation
+    title Title ,                   -- title of journal
+    imp Imprint }
+
+Cit-book ::= SEQUENCE {              -- Book citation
+    title Title ,                    -- Title of book
+    coll Title OPTIONAL ,            -- part of a collection
+    authors Auth-list,               -- authors
+    imp Imprint }
+
+Cit-proc ::= SEQUENCE {             -- Meeting proceedings
+    book Cit-book ,                 -- citation to meeting
+    meet Meeting }                  -- time and location of meeting
+    
+Cit-pat ::= SEQUENCE {                  -- patent citation
+    title VisibleString ,
+    authors Auth-list,                  -- authors
+    country VisibleString ,             -- Patent Document Country
+    doc-type VisibleString ,            -- Patent Document Type
+    number VisibleString ,              -- Patent Document Number
+    date-issue Date ,                   -- Patent-Issue Date
+    class VisibleString OPTIONAL ,      -- Patent Doc Class Code 
+    app-number VisibleString OPTIONAL , -- Patent Doc Appl Number
+    app-date Date OPTIONAL }            -- Patent Appl File Date
+
+Id-pat ::= SEQUENCE {                   -- just to identify a patent
+    country VisibleString ,             -- Patent Document Country
+    id CHOICE {
+        number VisibleString ,          -- Patent Document Number
+        app-number VisibleString } }    -- Patent Doc Appl Number
+
+Cit-let ::= SEQUENCE {                  -- letter or manuscript
+    cit Cit-book ,                      -- same fields as a book
+    man-id VisibleString OPTIONAL }     -- Manuscript identifier
+    
+    
+    -- Authorship Group
+Auth-list ::= SEQUENCE {
+        names CHOICE {
+            std SEQUENCE OF Author ,        -- full citations
+            ml SEQUENCE OF VisibleString ,  -- MEDLINE, semi-structured
+            str SEQUENCE OF VisibleString } , -- free for all
+        affil Affil OPTIONAL }        -- author affiliation
+
+Author ::= SEQUENCE {
+    name Person-id ,                        -- Author, Primary or Secondary
+    level ENUMERATED {
+        primary (1),
+        secondary (2) } OPTIONAL ,
+    role ENUMERATED {                   -- Author Role Indicator
+        compiler (1),
+        editor (2),
+        patent-assignee (3),
+        translator (4) } OPTIONAL ,
+    affil Affil OPTIONAL }
+
+Affil ::= CHOICE {
+    str VisibleString ,                 -- unparsed string
+    std SEQUENCE {                      -- std representation
+    affil VisibleString OPTIONAL ,      -- Author Affiliation, Name
+    div VisibleString OPTIONAL ,        -- Author Affiliation, Division
+    city VisibleString OPTIONAL ,       -- Author Affiliation, City
+    sub VisibleString OPTIONAL ,        -- Author Affiliation, County Sub
+    country VisibleString OPTIONAL } }  -- Author Affiliation, Country
+
+    -- Title Group
+    -- Valid for = A = Analytic (Cit-art)
+    --             J = Journals (Cit-jour)
+    --             B = Book (Cit-book)
+                                                 -- Valid for:
+Title ::= SET OF CHOICE {
+    name VisibleString ,    -- Title, Anal,Coll,Mono    AJB
+    tsub VisibleString ,    -- Title, Subordinate       A B
+    trans VisibleString ,   -- Title, Translated        AJB
+    jta VisibleString ,     -- Title, Abbreviated        J
+    iso-jta VisibleString , -- specifically ISO jta      J
+    ml-jta VisibleString ,  -- specifically MEDLINE jta  J
+    coden VisibleString ,   -- a coden                   J
+    issn VisibleString ,    -- ISSN                      J
+    abr VisibleString ,     -- Title, Abbreviated         B
+    isbn VisibleString }    -- ISBN                       B
+
+Imprint ::= SEQUENCE {                  -- Imprint group
+    date Date ,                         -- date of publication
+    volume VisibleString OPTIONAL ,
+    issue VisibleString OPTIONAL ,
+    pages VisibleString OPTIONAL ,
+    section VisibleString OPTIONAL ,
+    pub Affil OPTIONAL,                     -- publisher, required for book
+    cprt Date OPTIONAL,                     -- copyright date, "    "   "
+    part-sup VisibleString OPTIONAL ,       -- used in MEDLINE
+    language VisibleString DEFAULT "ENG" }  -- put here for simplicity
+
+Meeting ::= SEQUENCE {
+    number VisibleString ,
+    date Date ,
+    place Affil OPTIONAL }
+
+Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
+    cit VisibleString OPTIONAL ,     -- anything, not parsable
+    authors Auth-list OPTIONAL ,
+    muid INTEGER OPTIONAL ,      -- medline uid
+    journal Title OPTIONAL ,
+    volume VisibleString OPTIONAL ,
+    issue VisibleString OPTIONAL ,
+    pages VisibleString OPTIONAL ,
+    date Date OPTIONAL }
+    
+            
+END
+
+
