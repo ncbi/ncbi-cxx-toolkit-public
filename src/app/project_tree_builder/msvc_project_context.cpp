@@ -333,8 +333,11 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( CMsvcSite::IsLibOk(lib_info, true) ) {
             if ( !lib_info.m_Libs.empty() ) {
-                copy(lib_info.m_Libs.begin(), 
-                    lib_info.m_Libs.end(), 
+                copy(lib_info.m_Libs.begin(), lib_info.m_Libs.end(), 
+                    back_inserter(additional_libs));
+            }
+            if ( !lib_info.m_StdLibs.empty() ) {
+                copy(lib_info.m_StdLibs.begin(), lib_info.m_StdLibs.end(), 
                     back_inserter(additional_libs));
             }
         } else {
@@ -953,6 +956,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/12/30 17:47:51  gouriano
+ * Also add StdLibs to the list of additional libraries
+ *
  * Revision 1.42  2004/12/20 15:24:23  gouriano
  * Changed diagnostic output
  *
