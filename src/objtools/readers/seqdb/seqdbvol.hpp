@@ -58,17 +58,9 @@ using namespace ncbi::objects;
 
 class CSeqDBVol : public CObject {
 public:
-    CSeqDBVol(CSeqDBMemPool & mempool,
+    CSeqDBVol(CSeqDBAtlas   & atlas,
               const string  & name,
-              char            prot_nucl,
-              bool            use_mmap)
-        : m_MemPool(mempool),
-          m_VolName(name),
-          m_Idx(mempool, name, prot_nucl, use_mmap),
-          m_Seq(mempool, name, prot_nucl, use_mmap),
-          m_Hdr(mempool, name, prot_nucl, use_mmap)
-    {
-    }
+              char            prot_nucl);
     
     Int4 GetSeqLength(Uint4 oid, bool approx) const;
     
@@ -106,6 +98,13 @@ public:
         return m_VolName;
     }
     
+    void UnLease()
+    {
+        m_Idx.UnLease();
+        m_Seq.UnLease();
+        m_Hdr.UnLease();
+    }
+    
 private:
     CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid) const;
 
@@ -123,9 +122,8 @@ private:
     char * x_AllocType(Uint4           length,
                        ESeqDBAllocType alloc_type) const;
     
-    CSeqDBMemPool      & m_MemPool;
+    CSeqDBAtlas        & m_Atlas;
     string               m_VolName;
-    mutable CFastMutex   m_Lock;
     CSeqDBIdxFile        m_Idx;
     CSeqDBSeqFile        m_Seq;
     CSeqDBHdrFile        m_Hdr;

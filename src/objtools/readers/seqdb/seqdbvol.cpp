@@ -32,6 +32,17 @@
 
 BEGIN_NCBI_SCOPE
 
+CSeqDBVol::CSeqDBVol(CSeqDBAtlas   & atlas,
+                     const string  & name,
+                     char            prot_nucl)
+    : m_Atlas   (atlas),
+      m_VolName (name),
+      m_Idx     (atlas, name, prot_nucl),
+      m_Seq     (atlas, name, prot_nucl),
+      m_Hdr     (atlas, name, prot_nucl)
+{
+}
+
 char CSeqDBVol::GetSeqType(void) const
 {
     return x_GetSeqType();
@@ -44,10 +55,10 @@ char CSeqDBVol::x_GetSeqType(void) const
 
 Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
 {
-    Uint4 start_offset = 0;
-    Uint4 end_offset   = 0;
+    Uint8 start_offset = 0;
+    Uint8 end_offset   = 0;
     
-    Int4 length = -1;
+    Int8 length = -1;
     
     if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
         return -1;
@@ -58,7 +69,7 @@ Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
         // Subtract one, for the inter-sequence null.
         length = end_offset - start_offset - 1;
     } else if (kSeqTypeNucl == seqtype) {
-        Int4 whole_bytes = end_offset - start_offset - 1;
+        Int4 whole_bytes = Int4(end_offset - start_offset - 1);
         
         if (approx) {
             // Same principle as below - but use lower bits of oid
@@ -85,7 +96,7 @@ Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
     return length;
 }
 
-static CFastMutex s_MapNaMutex;
+static CMutex s_MapNaMutex;
 
 static vector<Uint1>
 s_SeqDBMapNA2ToNA4Setup(void)
@@ -668,7 +679,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     }
     
     if (seq_buffer) {
-        m_MemPool.Free((void*) seq_buffer);
+        m_Atlas.RetRegion(seq_buffer);
         seq_buffer = 0;
     }
     
@@ -720,9 +731,9 @@ Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer) const
 
 char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type) const
 {
-    // Specifying an allocation type of zero, uses the memory pool to
-    // do the allocation.  This is not intended to be visible to the
-    // end user, so it is not enumerated in seqdbcommon.hpp.
+    // Specifying an allocation type of zero uses the atlas to do the
+    // allocation.  This is not intended to be visible to the end
+    // user, so it is not enumerated in seqdbcommon.hpp.
     
     char * retval = 0;
     
@@ -741,7 +752,7 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type) const
         break;
         
     default:
-        retval = (char*) m_MemPool.Alloc(length);
+        retval = m_Atlas.Alloc(length);
     }
     
     return retval;
@@ -777,7 +788,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
             char * obj = x_AllocType(base_length, alloc_type);
             
             memcpy(obj, buf2, base_length);
-            m_MemPool.Free((void*) buf2);
+            m_Atlas.RetRegion(buf2);
             
             *buffer = obj;
         }
@@ -822,7 +833,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
             
             // Return probably-mmapped sequence
             
-            m_MemPool.Free((void*) seq_buffer);
+            m_Atlas.RetRegion(seq_buffer);
         }
         
         // NOTE:!! This is a memory leak; this is known, and I am
@@ -844,16 +855,16 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
 
 Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer) const
 {
-    Uint4 start_offset = 0;
-    Uint4 end_offset   = 0;
-        
+    Uint8 start_offset = 0;
+    Uint8 end_offset   = 0;
+    
     Int4 length = -1;
-        
+    
     if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
         return -1;
-        
+    
     char seqtype = m_Idx.GetSeqType();
-        
+    
     if (kSeqTypeProt == seqtype) {
         // Subtract one, for the inter-sequence null.
                 
@@ -910,8 +921,8 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
 {
     CRef<CBlast_def_line_set> nullret;
         
-    Uint4 hdr_start = 0;
-    Uint4 hdr_end   = 0;
+    Uint8 hdr_start = 0;
+    Uint8 hdr_end   = 0;
         
     if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
         return nullret;
@@ -933,7 +944,7 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
     
     istringstream asndata( string(asn_region, asn_region + (hdr_end - hdr_start)) );
     
-    m_MemPool.Free((void*) asn_region);
+    m_Atlas.RetRegion(asn_region);
     
     auto_ptr<CObjectIStream> inpstr(CObjectIStream::Open(eSerial_AsnBinary, asndata));
     
@@ -947,8 +958,8 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
 
 bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
 {
-    Uint4 start_offset = 0;
-    Uint4 end_offset   = 0;
+    Uint8 start_offset = 0;
+    Uint8 end_offset   = 0;
     
     bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset);
     
@@ -956,7 +967,7 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
         return false;
     }
     
-    Int4 length = end_offset - start_offset;
+    Int4 length = Int4(end_offset - start_offset);
     
     if (0 == length)
         return true;
@@ -975,7 +986,7 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
 	ambchars[i] = SeqDB_GetStdOrd((const unsigned char *)(& buffer[i]));
     }
     
-    m_MemPool.Free((void*) buffer);
+    m_Atlas.RetRegion((const char*) buffer);
     
     return true;
 }
