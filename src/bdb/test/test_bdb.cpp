@@ -73,12 +73,14 @@ struct TestDBF1 : public CBDB_IdFile
     CBDB_FieldInt4      idata;
     CBDB_FieldString    str;
     CBDB_FieldInt4      i2;
+    CBDB_FieldInt2      ishort;
     
     TestDBF1()
     {
         BindData("idata", &idata);
         BindData("str", &str, 256);
         BindData("i2", &i2);
+        BindData("ishort", &ishort);
     }
 };
 
@@ -1108,6 +1110,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/16 15:15:16  kuznets
+ * Test corrected to use Int2 field
+ *
  * Revision 1.16  2003/08/27 20:05:33  kuznets
  * Added test working with file locking environment
  *
