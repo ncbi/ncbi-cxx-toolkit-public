@@ -71,9 +71,6 @@ private:
     template<class Seq> friend
     void x_PredictSignalSeq(const Seq& seq, CSignalSeq::EDomain domain,
                             TSeqPos max_pos, TSeqPos& pos, double& score);
-
-    static const double EukMat[26][15];
-    static const double BacMat[26][15];
 };
 
 
@@ -85,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/11 17:12:07  dicuccio
+ * Removed member static const arrays in favor of private static arrays
+ *
  * Revision 1.1  2003/09/10 15:31:34  jcherry
  * Initial version
  *
