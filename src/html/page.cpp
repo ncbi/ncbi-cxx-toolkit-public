@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/05/27 21:46:25  vakatov
+* CHTMLPage::CreateTemplate():  throw exception if cannot open or read
+* the page template file specified by user
+*
 * Revision 1.14  1999/04/28 16:52:45  vasilche
 * Restored optimized code for reading from file.
 *
@@ -153,19 +157,32 @@ void CHTMLPage::CreateSubNodes(void)
     AppendChild(CreateTemplate());
 }
 
+
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
+    if (m_TemplateFile.compare(NcbiEmptyString) == 0)
+        return new CHTMLText(NcbiEmptyString);
+
     string        str;
     char          buf[1024];
     CNcbiIfstream ifstr(m_TemplateFile.c_str());
+    if ( !ifstr.good() ) {
+        THROW1_TRACE(runtime_error, "\
+CHTMLPage::CreateTemplate():  failed to open template file");
+    }
 
     while ( ifstr ) {
         ifstr.read(buf, sizeof(buf));
         str.append(buf, ifstr.gcount());
     }
-    
+
+    if ( !ifstr.eof() ) {
+        THROW1_TRACE(runtime_error, "\
+CHTMLPage::CreateTemplate():  error reading template file");
+    }
     return new CHTMLText(str);
 }
+
 
 CNCBINode* CHTMLPage::CreateTitle(void) 
 {
