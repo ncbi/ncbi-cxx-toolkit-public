@@ -125,6 +125,61 @@ access the input argument values specifically type-cast according to their
 description.
   </li>
 </ul>
+
+Normally, <var>CArgDescriptions</var> object is required and 
+<a name="#ref_CArgDescriptions_App">should be created</a>
+in application's <var>Init()</var> function before any other initialization.
+Otherwise <var>CNcbiApplication</var> creates a default one,
+which allows any program which utilizes NCBI C++ toolkit to provide
+some <tt>standard</tt> command line options, namely:
+<ul>
+  <li>
+to obtain a general description of the program as well as description
+of all available command line parameters (<tt>-h</tt> flag),
+  </li>
+  <li>
+to redirect the program's
+<a href="programming_manual/diag.html">diagnostic messages</a>
+into a specified file (<tt>-logfile</tt> key),
+  </li>
+  <li>
+to read the program's
+<a href="programming_manual/registry.html">configuration data</a>
+from a specified file (<tt>-conffile</tt> key).
+  </li>
+</ul>
+<table border=1 cellpadding=5>
+<tr>
+  <th>Flag</th><th>Description</th><th>Example</th>
+</tr>
+<tr>
+  <td>-h</td>
+  <td>Print description of the application's command line parameters.</td>
+  <td>theapp -h</td>
+</tr>
+<tr>
+  <td>-logfile</td>
+  <td>Redirect program's log into the specified file</td>
+  <td>theapp -logfile theapp_log</td>
+</tr>
+<tr>
+  <td>-conffile</td>
+  <td>Read the program's configuration data from the specified file</td>
+  <td>theapp -conffile theapp_cfg</td>
+</tr>
+</table>
+</p>
+<p>
+To avoid creation of a default <var>CArgDescriptions</var> object (sometimes it
+is inappropriate), one should call <var>CNcbiApplication::DisableArgDescriptions()</var>
+function from an application object constructor.
+<br />
+Also, it is possible to use
+<var>CNcbiApplication::HideStdArgs(THideStdArgs hide_mask)</var> method
+to hide description of the standard arguments (<tt>-h, -logfile, -conffile</tt>)
+in the <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i> message.
+Please note, this only hides the description of these flags - it is still
+possible to use them.
 </p>
 
 
