@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.6  2003/07/30 18:41:25  dondosha
+* Changed ValNode to ListNode
+*
 * Revision 1.5  2003/07/24 22:37:28  dondosha
 * Removed some unused function parameters
 *
@@ -412,7 +415,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Uint1Ptr 	ambiguous_res;	/* Array of ambiguous res. (e.g, 'X', 'N')*/
 	Int2		ambig_size,	/* size of array above. */
 			ambig_occupy;	/* How many occupied? */
-	ValNodePtr	comments;	/* Comments about matrix. */
+	ListNodePtr	comments;	/* Comments about matrix. */
 /**** Andy's modification ****/
 	Int4    	query_length;   /* the length of the query. */
 /**** end Andy's modification ****/
@@ -584,7 +587,7 @@ BLAST_MatrixPtr BLAST_MatrixFill (BLAST_ScoreBlkPtr sbp);
 BLAST_MatrixPtr BLAST_MatrixFetch (CharPtr matrix_name);
 
 
-Int2 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Int4 residues_size);
+Int2 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Uint4 residues_size);
 /*
 Functions used to convert between Stephen's pseudo scores
 and E or p-values.

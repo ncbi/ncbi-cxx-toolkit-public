@@ -39,9 +39,8 @@ Detailed Contents:
 #ifndef __BLAST_DEF__
 #define __BLAST_DEF__
 
-
 #include <ncbi_std.h>
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
 #include <ncbithr.h>
 #endif
 
@@ -122,15 +121,15 @@ typedef struct DoubleInt {
    Int4 i2;
 } DoubleInt, PNTR DoubleIntPtr;
 
-/** BlastSeqLoc is a ValNode with choice equal to the sequence local id,
+/** BlastSeqLoc is a ListNode with choice equal to the sequence local id,
  * and data->ptrvalue pointing to a DoubleInt structure defining the 
  * location interval in the sequence.
  */
-#define BlastSeqLoc ValNode
-#define BlastSeqLocPtr ValNodePtr
+#define BlastSeqLoc ListNode
+#define BlastSeqLocPtr ListNodePtr
 
 typedef struct BlastThrInfo {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
     TNlmMutex db_mutex;  /**< Lock for access to database*/
     TNlmMutex results_mutex; /**< Lock for storing results */
     TNlmMutex callback_mutex;/**< Lock for issuing update ticks on the screen*/
@@ -173,7 +172,7 @@ typedef struct BlastReturnStat {
 /** Structure for keeping the query masking information */
 typedef struct BlastMask {
    Int4 index; /**< Index of the query sequence this mask is applied to */
-   ValNodePtr loc_list; /**< List of mask locations */
+   ListNodePtr loc_list; /**< List of mask locations */
    struct BlastMask PNTR next; /**< Pointer to the next query mask */
 } BlastMask, PNTR BlastMaskPtr;
 

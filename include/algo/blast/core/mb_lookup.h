@@ -214,7 +214,7 @@ typedef struct MBLookupTable {
  * @param mb_lt_ptr Pointer to the lookup table to be created [out]
  * @param lookup_options Options for lookup table creation [in]
  */
-Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
+Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
                        MBLookupTablePtr PNTR mb_lt_ptr,
                        LookupTableOptionsPtr lookup_options);
 

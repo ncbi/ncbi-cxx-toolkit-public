@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 /* some defines for the pv_array, as this changes from 32-bit to 64-bit systems. */
-#if LONG_BIT==64
+#if defined(LONG_BIT) && LONG_BIT==64
 
 #define PV_ARRAY_TYPE Uint8     /* The pv_array 'native' type. */
 #define PV_ARRAY_BYTES 8        /* number of BYTES in 'native' type. */
@@ -160,14 +160,14 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut,
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
- * @param unmasked_regions an array of ValNodePtrs, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
+ * @param unmasked_regions an array of ListNodePtrs, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
  * @param num_queries the number of queries [in]
  * @return Zero.
  */
 Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlkPtr query,
-			       ValNodePtr unmasked_regions,
+			       ListNodePtr unmasked_regions,
 			       Int4 num_queries);
 
 /** Index a single query.
@@ -175,7 +175,7 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
- * @param unmasked_regions a ValNodePtr which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
+ * @param unmasked_regions a ListNodePtr which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
 i
  * @return Zero.
  */
@@ -183,7 +183,7 @@ i
 Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlkPtr query,
-			      ValNodePtr unmasked_regions);
+			      ListNodePtr unmasked_regions);
 
 /** Create a sequence containing all possible words as subsequences.
  *

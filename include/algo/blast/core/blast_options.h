@@ -263,6 +263,10 @@ typedef struct BlastHitSavingParameters {
    FloatHi gap_prob;       /**< Probability of decay for linking HSPs */
    FloatHi gap_decay_rate; /**< Decay rate for linking HSPs */
    Int4 gap_size;          /**< Small gap size for linking HSPs */
+   Int4 cutoff_small_gap; /**< Cutoff sum score for linked HSPs with small 
+                             gaps */
+   Int4 cutoff_big_gap; /**< Cutoff sum score for linked HSPs with big gaps */
+   Boolean ignore_small_gaps; /**< Should small gaps be ignored? */
 } BlastHitSavingParameters, *BlastHitSavingParametersPtr;
 	
 
@@ -334,7 +338,7 @@ typedef struct BlastDatabaseOptions {
    CharPtr database; /**< Name of the database */
                              tblast[nx] only */
    CharPtr gifile;   /**< File to get a gi list from: REMOVE? */
-   ValNodePtr gilist; /**< A list of gis this database should be restricted to:
+   ListNodePtr gilist; /**< A list of gis this database should be restricted to:
                          REMOVE? */
    CharPtr entrez_query;/**< An Entrez query to get a OID list from: REMOVE? */
    Int4 first_db_seq; /**< The first ordinal id number (OID) to search */
@@ -540,16 +544,13 @@ Int2 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options);
 
 /** Fill the non-default values in the BlastEffectiveLengthsOptions structure.
  * @param options The options [in] [out]
- * @param database BLAST database [in]
- * @param is_protein Protein if TRUE [in]
  * @param dbseq_num Number of sequences in the database (if zero real value will be used) [in]
  * @param db_length Total length of the database (if zero real value will be used) [in]
  * @param searchsp_eff Effective search space (if zero real value will be used) [in]
  */
 Int2 
 BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options, 
-   CharPtr database, Boolean is_protein, Int4 dbseq_num, Int8 db_length,
-   Int8 searchsp_eff);
+   Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff);
 
 
 /** Allocate memory for lookup table options and fill with default values.

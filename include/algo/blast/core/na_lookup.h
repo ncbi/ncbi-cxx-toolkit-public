@@ -143,7 +143,7 @@ LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup);
  * @param location What locations on the query sequence to index? [in]
  */
 Int4 BlastNaLookupIndexQuery(LookupTablePtr lookup, BLAST_SequenceBlkPtr query,
-                             ValNodePtr location);
+                             ListNodePtr location);
 
 #ifdef __cplusplus
 }
