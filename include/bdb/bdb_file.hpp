@@ -205,16 +205,24 @@ public:
     // Reopen the db file
     void Reopen(EOpenMode open_mode);
 
-    // Fetches the record corresponding to the current Key value.
+    // Fetches the record corresponding to the current key value.
     EBDB_ErrCode Fetch();
 
     enum EAfterWrite {
         eKeepData,    // Keep the inserted data for a while
         eDiscardData  // Invalidate the inserted data immediately after write
     };
+
+    // Insert new record
     EBDB_ErrCode Insert(EAfterWrite write_flag = eDiscardData);
 
+    // Delete record corresponding to the current key value.
     EBDB_ErrCode Delete();
+
+    // Update record corresponding to the current key value. If record does not exist
+    // it will be inserted.
+    EBDB_ErrCode UpdateInsert(EAfterWrite write_flag = eDiscardData);
+    
     
     void BindKey (const char* field_name, 
                   CBDB_Field* key_field,  
@@ -361,6 +369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/02 14:14:18  kuznets
+ * new method UpdateInsert
+ *
  * Revision 1.2  2003/04/29 16:48:31  kuznets
  * Fixed minor warnings in Sun Workshop compiler
  *
