@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/18 17:06:29  gouriano
+* renamed CScope::GetSequence to CScope::GetSeqVector
+*
 * Revision 1.3  2002/01/18 15:54:14  gouriano
 * changed DropTopLevelSeqEntry()
 *
@@ -167,7 +170,7 @@ CBioseqHandle CScope::GetBioseqHandle(const CSeq_id& id)
 }
 
 
-CSeqVector CScope::GetSequence(const CBioseqHandle& handle,
+CSeqVector CScope::GetSeqVector(const CBioseqHandle& handle,
                                 bool plus_strand)
 {
     return CSeqVector(handle, plus_strand, *this);
