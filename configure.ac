@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.211 2003/08/28 21:11:12 ucko Exp $
+#  $Id: configure.ac,v 1.212 2003/08/29 16:59:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1101,8 +1101,8 @@ esac
 
 #### GNU compiler::  common flags and definitions
 if test "$compiler" = "GCC" ; then
-   CFLAGS="-Wall $CFLAGS"
-   CXXFLAGS="-Wall $CXXFLAGS"
+   CFLAGS="-Wall -Wno-format-y2k $CFLAGS"
+   CXXFLAGS="-Wall -Wno-format-y2k $CXXFLAGS"
    case "$compiler_version" in
       2* ) CXXFLAGS="-ftemplate-depth-32 $CXXFLAGS" ;;
    esac

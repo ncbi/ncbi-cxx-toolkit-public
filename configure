@@ -4095,8 +4095,8 @@ esac
 
 #### GNU compiler::  common flags and definitions
 if test "$compiler" = "GCC" ; then
-   CFLAGS="-Wall $CFLAGS"
-   CXXFLAGS="-Wall $CXXFLAGS"
+   CFLAGS="-Wall -Wno-format-y2k $CFLAGS"
+   CXXFLAGS="-Wall -Wno-format-y2k $CXXFLAGS"
    case "$compiler_version" in
       2* ) CXXFLAGS="-ftemplate-depth-32 $CXXFLAGS" ;;
    esac
