@@ -53,6 +53,20 @@ class CSocket;
  * @{
  */
 
+/// Meaningful information encoded in the NetSchedule key
+///
+/// @sa CNetSchedule_ParseBlobKey
+///
+struct CNetSchedule_Key
+{
+    string       prefix;    ///< Key prefix
+    unsigned     version;   ///< Key version
+    unsigned     id;        ///< Job id
+    string       hostname;  ///< server name
+    unsigned     port;      ///< TCP/IP port number
+};
+
+
 /// Client API for NCBI NetSchedule server
 ///
 /// This API is logically divided into two sections:
@@ -141,12 +155,14 @@ public:
     ///    to keep the actual data and pass NetCache key as job input.
     ///
     /// @return job key
+    virtual
     string SubmitJob(const string& input);
 
     /// Cancel job
     ///
     /// @param job_key
     ///    Job identification string
+    virtual
     void CancelJob(const string& job_key);
 
 
@@ -174,6 +190,7 @@ public:
     ///
     /// @sa WaitJob
     ///
+    virtual
     bool GetJob(string* job_key, 
                 string* input, 
                 unsigned short udp_port = 0);
@@ -205,6 +222,7 @@ public:
     ///
     /// @sa GetJob
     ///
+    virtual
     bool WaitJob(string*        job_key, 
                  string*        input, 
                  unsigned       wait_time,
@@ -220,6 +238,7 @@ public:
     /// @param output
     ///     Job output data (NetCache key). 
     ///
+    virtual
     void PutResult(const string& job_key, 
                    int           ret_code, 
                    const string& output);
@@ -228,6 +247,7 @@ public:
     /// eJobNotFound is returned if job status cannot be found 
     /// (job record timed out)
     ///
+    virtual
     EJobStatus GetStatus(const string& job_key, 
                          int*          ret_code,
                          string*       output);
@@ -238,9 +258,11 @@ public:
     /// Node may decide to return the job if it cannot process it right
     /// now (does not have resources, being asked to shutdown, etc.)
     ///
+    virtual
     void ReturnJob(const string& job_key);
 
     /// Return version string
+    virtual
     string ServerVersion();
 
 
@@ -287,12 +309,125 @@ private:
     CNetScheduleClient& operator=(const CNetScheduleClient&);
 
 protected:
-    string         m_Queue;
-    bool           m_RequestRateControl;
+    string            m_Queue;
+    bool              m_RequestRateControl;
+    CNetSchedule_Key  m_JobKey;
 
 private:
     string         m_Tmp; ///< Temporary string
 };
+
+
+
+
+
+/// Client API for NetSchedule server.
+///
+/// The same API as provided by CNetScheduleClient, 
+/// only integrated with NCBI load balancer
+///
+/// Rebalancing is based on a combination of rebalance parameters.
+/// When rebalance parameter is not zero and parameter criteria has been 
+/// satisfied client connects to NCBI load balancing service (could be a 
+/// daemon or a network instance) and obtains the most available server.
+/// 
+/// The intended use case for this client is long living programs like
+/// services or fast CGIs or any other program running a lot of NetSchedule
+/// requests.
+///
+/// @sa CNetScheduleClient
+///
+
+class NCBI_XCONNECT_EXPORT CNetScheduleClient_LB : public CNetScheduleClient
+{
+public:
+    typedef CNetScheduleClient  TParent;
+
+
+    /// Construct the client without linking it to any particular
+    /// server. Actual server (host and port) will be extracted from the
+    /// job key 
+    ///
+    /// @param client_name
+    ///    Name of the client program(project)
+    /// @param lb_service_name
+    ///    Service name as listed in NCBI load balancer
+    /// @param queue_name
+    ///    Name of the job queue
+    ///
+    /// @param rebalance_time
+    ///    Number of seconds after which client is rebalanced
+    /// @param rebalance_requests
+    ///    Number of requests before rebalancing. 
+    ///    0 value means this criteria will not be evaluated.
+
+    CNetScheduleClient_LB(const string& client_name,
+                          const string& lb_service_name,
+                          const string& queue_name,
+                          unsigned int  rebalance_time     = 10,
+                          unsigned int  rebalance_requests = 0);
+/*
+    virtual
+    string SubmitJob(const string& input);
+    virtual
+    void CancelJob(const string& job_key);
+    virtual
+    bool GetJob(string* job_key, 
+                string* input, 
+                unsigned short udp_port = 0);
+    virtual
+    bool WaitJob(string*        job_key, 
+                 string*        input, 
+                 unsigned       wait_time,
+                 unsigned short udp_port);
+    virtual
+    void PutResult(const string& job_key, 
+                   int           ret_code, 
+                   const string& output);
+    virtual
+    EJobStatus GetStatus(const string& job_key, 
+                         int*          ret_code,
+                         string*       output);
+    virtual
+    void ReturnJob(const string& job_key);
+*/
+protected:
+    virtual 
+    void CheckConnect(const string& key);
+
+protected:
+
+    struct SServiceAddress
+    {
+        unsigned int     host; ///< host address in network bo
+        unsigned short   port;
+
+        SServiceAddress() : host(0), port(0) {}
+        SServiceAddress(unsigned int host_addr, unsigned short port_num)
+            : host(host_addr), port(port_num)
+        {}
+    };
+
+    typedef vector<SServiceAddress>  TServiceList;
+
+private:
+
+    void x_GetServerList(const string& service_name);
+
+private:
+    string        m_LB_ServiceName;
+
+    unsigned int  m_RebalanceTime;
+    unsigned int  m_RebalanceRequests;
+
+    time_t        m_LastRebalanceTime;
+    unsigned int  m_Requests;
+    bool          m_StickToHost;
+
+    TServiceList  m_ServList;
+};
+
+
 
 
 /// NetSchedule internal exception
@@ -326,18 +461,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };
 
-/// Meaningful information encoded in the NetSchedule key
-///
-/// @sa CNetSchedule_ParseBlobKey
-///
-struct CNetSchedule_Key
-{
-    string       prefix;    ///< Key prefix
-    unsigned     version;   ///< Key version
-    unsigned     id;        ///< Job id
-    string       hostname;  ///< server name
-    unsigned     port;      ///< TCP/IP port number
-};
 
 /// Parse blob key string into a CNetSchedule_Key structure
 extern NCBI_XCONNECT_EXPORT
@@ -376,6 +499,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/07 17:29:35  kuznets
+ * Added load-balanced client
+ *
  * Revision 1.7  2005/03/04 12:04:31  kuznets
  * Implemented WaitJob() method
  *
