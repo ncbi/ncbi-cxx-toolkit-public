@@ -1,0 +1,192 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>The NCBI C++ Toolkit Iterators</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<h1>
+The NCBI C++ Toolkit Iterators</h1>
+
+<ul>
+ <li><a href="#generic"><i>STL</i> generic iterators</a></li>
+ <li><a href="#typeIt"><i>CTypeIterator</i> and <i>CTypeConstIterator</i></a></li>
+ <li><a href="#stdType"><i>CStdTypeIterator</i> and <i>CStdTypeConstIterator</i></a></li>
+ <li><a href="#typesIt"><i>CTypesIterator</a></i></li>
+</ul>
+<a NAME="generic"></a>
+<h3>
+<i>STL</i> generic iterators</h3> Iterators are an important cornerstone in the generic
+programming paradigm - they serve as intermediaries between generic containers and generic
+algorithms.  Different containers have different access properties, and the interface to a
+generic algorithm must account for this. This is depicted graphically below, for the
+<i>list</i> and <i>vector</i> containers and the <i>sort, find,</i> and <i>merge</i>
+algorithms.<p>
+
+<center><img SRC="../new3.gif"> </center><p>
+
+<p>The <i>vector</i> class allows <i>input, output, bidirectional,</i> and <i>random
+access</i> iterators. In contrast, the <i>list</i> container class does <i>not</i> allow
+random access to its elements. This is depicted graphically by one less strand in the
+ribbon connector. In addition to the iterators, the generic algorithms may require 
+function objects such as <i>less&lt;T&gt;</i> to support the template implementations.
+
+<p>
+The STL standard iterators are 
+designed to iterate through any STL container of homogeneous elements, e.g., 
+<i> vectors, lists, deques, stacks, maps, multimaps, sets, multisets, </i> etc.
+A prerequisite however, is that the container must have <i>begin()</i> and
+<i> end()</i> functions defined on it as start and end points for the iteration. 
+<p>
+While these standard iterators are powerful tools for generic programming, they
+are of no help in iterating over the elements of <i>aggregate</i> objects - e.g.,
+over the heterogeneous data members of a class object. But this is an essential operation in 
+processing serialized data structures, and the NCBI C++ Toolkit provides 
+additional types of iterators for just this purpose.
+
+<a NAME="typeIt"></a>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeIterator.html">
+<h3><i>CTypeIterator</i></a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeConstIterator.html">
+<i>CTypeConstIterator</i></h3></a>
+
+Although STL provides a built-in <i>list</i> data structure, it is very common to represent 
+a linked list of objects by encoding a <i>next</i> field that embeds an object of the same
+type. For example, suppose you had a <i> CPerson </i> class defined as:
+
+<font color = "#000080"> <pre>
+class CPerson
+{ 
+public:
+    CPerson(void);
+    CPerson(string n, string s, CPerson* p);
+    virtual ~CPerson(void);
+
+    static const CTypeInfo* GetTypeInfo(void);
+
+    string name, address;
+    CPerson *next_door;
+}
+</pre><font color = black>
+
+Given this definition, one might then define a <i>neighborhood</i> using a single <i>CPerson</i>.
+Assuming a function <i>FullerBrush(CPerson&)</i> must now be applied to each person in the
+neighborhood, this could be implemented using a <i>CTypeIterator</i> as follows:
+
+<font color = "#000080"> <pre>
+CPerson neighborhood("Moe", "123 Main St", 
+                     new CPerson("Larry", "127 Main St", 
+                                new CPerson("Curly", "131 Main St", 0)));
+
+for (CTypeIterator&lt;CPerson&gt; house = Begin(neighborhood); house; ++house ) {
+    FullerBrush(*house);
+}
+</pre><font color = black>
+
+Lets compare the syntax of this new iterator class to the standard iterators:
+
+<font color = "#000080"><pre>
+  for (ContainerType&lt;ObjectType&gt;::IteratorType i = ContainerName.begin();
+       i != ContainerName.end(); ++i) 
+
+  for (CTypeIterator&lt;ObjectType&gt; i = Begin(ObjectName); 
+       i; ++i)
+</pre><font color = black>
+The expression <i>Begin(ObjectName)</i> returns an "object iterator" that is actually an
+STL <i>pair</i> containing a pointer to the object itself as well as a data structure
+containing type information about the object. This type information is used to define
+what the iterator points to during each iteration. In this case, the iterator initially
+points to the object itself, and with each iteration, it is reset to point to <i>*next_door</i>.
+The loop terminates when <i>next_door</i> becomes <i>NULL</i>. <p>
+
+Similarly, the standard iterator begins pointing to the first item in the container, and
+with each iteration, visits subsequent items until the <i>end</i> of the container is
+reached.  Two important differences however, are: (1) all items in the container must be
+of the same <i>ObjectType</i>, and (2) the standard iterator will visit <i>all</i> items
+in the container.  In contrast, the <i>CTypeIterator</i> (1) operates on a class object
+containing heterogeneous types, and (2) skips over all data members that are not of the
+specified type. <p>
+
+In the above example, the data members visited by the iterator were of the same type as
+the object itself. This is not necessary however, as the aggregate object's type
+information is derived from the <i>Begin(ObjectName)</i> expresssion, while the type to
+be visited is defined by <i>ObjectType.</i> 
+All <i>CObject</i>s defined in the NCBI C++ Toolkit have a <i>GetTypeInfo()</i> member
+function that is used in the implementation of <i>Begin(ObjectName)</i>. In order to
+implement the <i>Begin()</i> member function for a class derived from <i>CObject</i>, you
+will need to include some explicit type information in one of your implementation
+files. For the CPerson example above, the required information is:
+
+<font color = "#000080"> <pre>
+BEGIN_CLASS_INFO(CPerson)
+{
+    ADD_STD_M(m_name);
+    ADD_STD_M(m_addr);
+    ADD_M(m_next_door, POINTER, (CLASS, (CPerson)))->SetOptional();
+}
+END_CLASS_INFO
+</pre><font color = black>
+
+In addition, the derived class definition must include the static class member function
+<i>GetTypeInfo()</i> in the class's public section. The <i>CTypeConstIterator</i>
+parallels the <i>CTypeIterator</i>, and is intended for use with <i>const</i> objects. <p>
+
+<a NAME="stdType"></a>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeIterator.html">
+<h3><i>CStdTypeIterator</i></a> and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeConstIterator.html">
+<i>CStdTypeConstIterator</i></h3></a>
+
+Standard STL objects such as <i>int, float</i>, and <i>string</i> do not have
+<i>GetTypeInfo()</i> member functions, and consequently, cannot be used in a
+<i>Begin(ObjectName)</i> expression. Similar to the <i>CTypeIterator</i>s, the
+<i>CStdTypeIterator</i> and <i>CStdTypeConstIterator</i> classes selectively iterate
+over data members of a specified type, but for these iterators, the type must be
+a standard STL type. For example, to iterate over all the string data members in a
+<i>CPerson</i> object, we could use:
+<font color = "#000080"> <pre>
+    for (CStdTypeIterator&lt;string> i = Begin(neighborhood); i; ++i) {
+        cout << *i << ' ';
+    }
+</pre></font>
+All of the NCBI C++ Toolkit iterators are <i>recursive</i>. Thus, if <i>neighborhood</i>
+has additional embedded objects which also contain <i>string</i>s, all of these data
+members will also be visited by the above iterator. In summary, given a hierarchical
+structured object containing data elements of a given type at different layers, the
+NCBI C++ Toolkit iterators effectively generate a "flat" list of these elements. 
+Further examples of using the <i>CTypeIterator</i> and <i>CStdTypeIterator</i> 
+are given in <a href="ctypeiter_cpp.html"><i>ctypeiter.cpp</i></a>. 
+
+<a NAME="typesIt"></a>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypesIterator.html">
+<h3><i>CTypesIterator</i></h3></a>
+
+Occasionally it is desirable to iterate over a <i>set</i> of types contained inside an
+object. Work is in progress on developing an interface for such an iterator, and
+documentation will be made available once this has been implemented.
+
+<p>
+
+<p>
+<a href="cref.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
+<i><a href="../index.html">up&nbsp;</a></i>
+<a href="diag.html"> <i> next</i> </a>
+</font>
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+</td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
+</table>
+
+</body>
+</html>

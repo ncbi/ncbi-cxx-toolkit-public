@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>ctypeiter.hpp</title>
+  </head>
+
+  <body BGCOLOR="#FFFFFF">
+  <pre><font color = "red">// File name: ctypeiter.hpp <font color = "green">
+
+#ifndef SERIALOBJECT_HPP
+#define SERIALOBJECT_HPP
+
+#include &lt;corelib/ncbistd.hpp>
+#include &lt;corelib/ncbiobj.hpp>
+#include &lt;string>
+#include &lt;list>
+<font color = "blue">
+USING_NCBI_SCOPE;
+<font color = "black">
+class CPerson : public CObject
+{ 
+<font color = "blue">public:</font>
+  CPerson(void)
+    : m_name(0), m_addr(0), m_next_door(0)
+    {}
+
+  CPerson(string n, string s, CPerson* p)
+    : m_name(n), m_addr(s), m_next_door(p)
+    {}
+
+  virtual ~CPerson(void) {}
+
+  static const CTypeInfo* GetTypeInfo(void);
+
+  string m_name, m_addr;
+  CPerson *m_next_door;
+};
+
+class CDistrict : public CObject
+{ 
+<font color = "blue">public:</font>
+  CDistrict(void) : m_number(0) {}
+  CDistrict(int n) : m_number(n) {}
+  virtual ~CDistrict(void) {}
+
+  static const CTypeInfo* GetTypeInfo(void);
+
+  int m_number;
+
+  void AddBlock (CPerson p) { m_blocks.push_back(p); }
+  list&lt;CPerson> GetBlocks() { return m_blocks; }
+
+<font color = "blue">private:</font>
+  list&lt;CPerson> m_blocks;
+};
+<font color = "green">
+#endif
+
+
+</pre>
+</body>
+</html>
+
+
+
