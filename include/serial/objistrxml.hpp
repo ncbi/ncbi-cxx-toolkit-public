@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/29 16:18:14  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.7  2000/09/18 20:00:06  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -86,7 +94,7 @@ public:
 
     virtual string GetPosition(void) const;
 
-    virtual string ReadTypeName(void);
+    virtual string ReadFileHeader(void);
 
 protected:
     EPointerType ReadPointerType(void);

@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/09/29 16:18:15  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.31  2000/09/18 20:00:11  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -161,6 +169,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/hookdata.hpp>
+#include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -180,9 +189,7 @@ class CReadObjectHook;
 class CWriteObjectHook;
 class CCopyObjectHook;
 
-class CReadObjectHookData;
-class CWriteObjectHookData;
-class CCopyObjectHookData;
+class CTypeInfoFunctions;
 
 // CTypeInfo class contains all information about C++ types (both basic and
 // classes): members and layout in memory.
@@ -295,24 +302,12 @@ private:
     // type specific function pointers
     TTypeCreate m_CreateFunction;
 
-    CHookData<CObjectIStream, CReadObjectHook, TTypeRead> m_ReadHookData;
-    CHookData<CObjectOStream, CWriteObjectHook, TTypeWrite> m_WriteHookData;
-    CHookData<CObjectStreamCopier, CCopyObjectHook, TTypeCopy> m_CopyHookData;
+    CHookData<CReadObjectHook, TTypeRead> m_ReadHookData;
+    CHookData<CWriteObjectHook, TTypeWrite> m_WriteHookData;
+    CHookData<CCopyObjectHook, TTypeCopy> m_CopyHookData;
     TTypeSkip m_SkipFunction;
 
-    void SetReadHook(CObjectIStream* stream, CReadObjectHook* hook);
-    void SetWriteHook(CObjectOStream* stream, CWriteObjectHook* hook);
-    void SetCopyHook(CObjectStreamCopier* stream, CCopyObjectHook* hook);
-    void ResetReadHook(CObjectIStream* stream);
-    void ResetWriteHook(CObjectOStream* stream);
-    void ResetCopyHook(CObjectStreamCopier* stream);
-
-    static void ReadWithHook(CObjectIStream& in,
-                             TTypeInfo objectType, TObjectPtr objectPtr);
-    static void WriteWithHook(CObjectOStream& out,
-                              TTypeInfo objectType, TConstObjectPtr objectPtr);
-    static void CopyWithHook(CObjectStreamCopier& copier,
-                             TTypeInfo objectType);
+    friend class CTypeInfoFunctions;
 };
 
 #include <serial/typeinfo.inl>

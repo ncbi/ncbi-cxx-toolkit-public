@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/09/29 16:18:12  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.16  2000/09/26 17:38:07  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -109,7 +117,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
-#include <memory>
+#include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -251,18 +259,11 @@ private:
 		TMemberCopy m_Main, m_Missing;
 	};
 
-    CHookData<CObjectIStream, CReadClassMemberHook, SMemberRead> m_ReadHookData;
-    CHookData<CObjectOStream, CWriteClassMemberHook, TMemberWrite> m_WriteHookData;
-    CHookData<CObjectStreamCopier, CCopyClassMemberHook, SMemberCopy> m_CopyHookData;
+    CHookData<CReadClassMemberHook, SMemberRead> m_ReadHookData;
+    CHookData<CWriteClassMemberHook, TMemberWrite> m_WriteHookData;
+    CHookData<CCopyClassMemberHook, SMemberCopy> m_CopyHookData;
     TMemberSkip m_SkipFunction;
     TMemberSkip m_SkipMissingFunction;
-
-    void SetReadHook(CObjectIStream* stream, CReadClassMemberHook* hook);
-    void SetWriteHook(CObjectOStream* stream, CWriteClassMemberHook* hook);
-    void SetCopyHook(CObjectStreamCopier* stream, CCopyClassMemberHook* hook);
-    void ResetReadHook(CObjectIStream* stream);
-    void ResetWriteHook(CObjectOStream* stream);
-    void ResetCopyHook(CObjectStreamCopier* stream);
 
     void SetReadFunction(TMemberRead func);
     void SetReadMissingFunction(TMemberRead func);

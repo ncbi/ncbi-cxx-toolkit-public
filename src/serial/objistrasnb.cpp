@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/09/29 16:18:23  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.43  2000/09/18 20:00:23  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -558,24 +566,29 @@ void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
     T n;
     if ( length > sizeof(data) ) {
         // skip
+        --length;
         signed char c = in.ReadSByte();
-        if ( c != 0 || c != -1 ) {
+        if ( c != 0 && c != -1 ) {
             in.ThrowError(in.eOverflow, "overflow error");
         }
-        length--;
-        while ( length-- > sizeof(data) )
-            in.ExpectByte(c);
-        length--;
+        while ( length > sizeof(data) ) {
+            --length;
+            if ( in.ReadSByte() != c ) {
+                in.ThrowError(in.eOverflow, "overflow error");
+            }
+        }
+        --length;
         n = in.ReadSByte();
         if ( ((n ^ c) & 0x80) != 0 ) {
             in.ThrowError(in.eOverflow, "overflow error");
         }
     }
     else {
-        length--;
+        --length;
         n = in.ReadSByte();
     }
-    while ( length-- > 0 ) {
+    while ( length > 0 ) {
+        --length;
         n = (n << 8) | in.ReadByte();
     }
     data = n;
@@ -592,16 +605,20 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
     T n;
     if ( length > sizeof(data) ) {
         // skip
-        while ( length-- > sizeof(data) )
-            in.ExpectByte(0);
-        length--;
+        while ( length > sizeof(data) ) {
+            --length;
+            if ( in.ReadSByte() != 0 ) {
+                in.ThrowError(in.eOverflow, "overflow error");
+            }
+        }
+        --length;
         n = in.ReadByte();
         if ( (n & 0x80) != 0 ) {
             in.ThrowError(in.eOverflow, "overflow error");
         }
     }
     else if ( length == sizeof(data) ) {
-        length--;
+        --length;
         n = in.ReadByte();
         if ( (n & 0x80) != 0 ) {
             in.ThrowError(in.eOverflow, "overflow error");
@@ -610,7 +627,8 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
     else {
         n = 0;
     }
-    while ( length-- > 0 ) {
+    while ( length > 0 ) {
+        --length;
         n = (n << 8) | in.ReadByte();
     }
     data = n;

@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/29 16:18:25  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.3  2000/09/26 19:24:58  vasilche
 * Added user interface for setting read/write/copy hooks.
 *
@@ -622,28 +630,28 @@ void CVariantInfoFunctions::WriteDelayedVariant(CObjectOStream& out,
 void CVariantInfoFunctions::CopyNonObjectVariant(CObjectStreamCopier& copier,
                                                  const CVariantInfo* variantInfo)
 {
-    _ASSERT(!variantInfo->IsNotObject());
+    _ASSERT(variantInfo->IsNotObject());
     copier.CopyObject(variantInfo->GetTypeInfo());
 }
 
 void CVariantInfoFunctions::CopyObjectPointerVariant(CObjectStreamCopier& copier,
                                                      const CVariantInfo* variantInfo)
 {
-    _ASSERT(variantInfo->IsObject());
+    _ASSERT(variantInfo->IsObjectPointer());
     copier.CopyExternalObject(variantInfo->GetTypeInfo());
 }
 
 void CVariantInfoFunctions::SkipNonObjectVariant(CObjectIStream& in,
                                                  const CVariantInfo* variantInfo)
 {
-    _ASSERT(!variantInfo->IsNotObject());
+    _ASSERT(variantInfo->IsNotObject());
     in.SkipObject(variantInfo->GetTypeInfo());
 }
 
 void CVariantInfoFunctions::SkipObjectPointerVariant(CObjectIStream& in,
-                                            const CVariantInfo* variantInfo)
+                                                     const CVariantInfo* variantInfo)
 {
-    _ASSERT(variantInfo->IsObject());
+    _ASSERT(variantInfo->IsObjectPointer());
     in.SkipExternalObject(variantInfo->GetTypeInfo());
 }
 
@@ -652,7 +660,7 @@ void CVariantInfoFunctions::ReadHookedVariant(CObjectIStream& stream,
                                               TObjectPtr choicePtr)
 {
     CReadChoiceVariantHook* hook =
-        variantInfo->m_ReadHookData.GetHook(&stream);
+        variantInfo->m_ReadHookData.GetHook(stream.m_ChoiceVariantHookKey);
     if ( hook ) {
         CObjectInfo type(choicePtr, variantInfo->GetChoiceType(),
                          CConstObjectInfo::eNonCObject);
@@ -670,7 +678,7 @@ void CVariantInfoFunctions::WriteHookedVariant(CObjectOStream& stream,
                                                TConstObjectPtr choicePtr)
 {
     CWriteChoiceVariantHook* hook =
-        variantInfo->m_WriteHookData.GetHook(&stream);
+        variantInfo->m_WriteHookData.GetHook(stream.m_ChoiceVariantHookKey);
     if ( hook ) {
         CConstObjectInfo type(choicePtr, variantInfo->GetChoiceType(),
                               CConstObjectInfo::eNonCObject);
@@ -687,7 +695,7 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
                                               const CVariantInfo* variantInfo)
 {
     CCopyChoiceVariantHook* hook =
-        variantInfo->m_CopyHookData.GetHook(&stream);
+        variantInfo->m_CopyHookData.GetHook(stream.m_ChoiceVariantHookKey);
     if ( hook ) {
         CObjectTypeInfo type(variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
@@ -699,37 +707,67 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
         variantInfo->DefaultCopyVariant(stream);
 }
 
-void CVariantInfo::SetReadHook(CObjectIStream* stream,
-                               CReadChoiceVariantHook* hook)
+void CVariantInfo::SetGlobalReadHook(CReadChoiceVariantHook* hook)
 {
-    m_ReadHookData.SetHook(stream, hook);
+    m_ReadHookData.SetGlobalHook(hook);
 }
 
-void CVariantInfo::ResetReadHook(CObjectIStream* stream)
+void CVariantInfo::SetLocalReadHook(CObjectIStream& stream,
+                                    CReadChoiceVariantHook* hook)
 {
-    m_ReadHookData.ResetHook(stream);
+    m_ReadHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
-void CVariantInfo::SetWriteHook(CObjectOStream* stream,
-                                CWriteChoiceVariantHook* hook)
+void CVariantInfo::ResetGlobalReadHook(void)
 {
-    m_WriteHookData.SetHook(stream, hook);
+    m_ReadHookData.ResetGlobalHook();
 }
 
-void CVariantInfo::ResetWriteHook(CObjectOStream* stream)
+void CVariantInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
-    m_WriteHookData.ResetHook(stream);
+    m_ReadHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
-void CVariantInfo::SetCopyHook(CObjectStreamCopier* stream,
-                               CCopyChoiceVariantHook* hook)
+void CVariantInfo::SetGlobalWriteHook(CWriteChoiceVariantHook* hook)
 {
-    m_CopyHookData.SetHook(stream, hook);
+    m_WriteHookData.SetGlobalHook(hook);
 }
 
-void CVariantInfo::ResetCopyHook(CObjectStreamCopier* stream)
+void CVariantInfo::SetLocalWriteHook(CObjectOStream& stream,
+                                     CWriteChoiceVariantHook* hook)
 {
-    m_CopyHookData.ResetHook(stream);
+    m_WriteHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
+}
+
+void CVariantInfo::ResetGlobalWriteHook(void)
+{
+    m_WriteHookData.ResetGlobalHook();
+}
+
+void CVariantInfo::ResetLocalWriteHook(CObjectOStream& stream)
+{
+    m_WriteHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
+}
+
+void CVariantInfo::SetGlobalCopyHook(CCopyChoiceVariantHook* hook)
+{
+    m_CopyHookData.SetGlobalHook(hook);
+}
+
+void CVariantInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                    CCopyChoiceVariantHook* hook)
+{
+    m_CopyHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
+}
+
+void CVariantInfo::ResetGlobalCopyHook(void)
+{
+    m_CopyHookData.ResetGlobalHook();
+}
+
+void CVariantInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
+{
+    m_CopyHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
 END_NCBI_SCOPE

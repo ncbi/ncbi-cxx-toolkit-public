@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/09/29 16:18:28  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.40  2000/09/26 17:38:26  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -554,7 +562,7 @@ TObject LoadValue(CFileSet& types, const string& defTypeName,
                                                      fileIn.name,
                                                      eSerial_StdWhenAny));
     //    in->SetTypeMapper(&types);
-    string typeName = in->ReadTypeName();
+    string typeName = in->ReadFileHeader();
     if ( typeName.empty() ) {
         if ( defTypeName.empty() ) {
             ERR_POST("ASN.1 value type must be specified (-t)");
@@ -565,7 +573,7 @@ TObject LoadValue(CFileSet& types, const string& defTypeName,
     TTypeInfo typeInfo =
         types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
     AnyType value;
-    in->Read(&value, typeInfo, CObjectIStream::eNoTypeName);
+    in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
     return make_pair(value, typeInfo);
 }
 
@@ -587,7 +595,7 @@ void CopyValue(CFileSet& types, const string& defTypeName,
                                                       fileOut.name,
                                                       eSerial_StdWhenAny));
     CObjectStreamCopier copier(*in, *out);
-    string typeName = in->ReadTypeName();
+    string typeName = in->ReadFileHeader();
     if ( typeName.empty() ) {
         if ( defTypeName.empty() ) {
             ERR_POST("ASN.1 value type must be specified (-t)");
@@ -597,7 +605,7 @@ void CopyValue(CFileSet& types, const string& defTypeName,
     }
     TTypeInfo typeInfo =
         types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
-    copier.Copy(typeInfo, CObjectStreamCopier::eNoTypeName);
+    copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
 }
 
 END_NCBI_SCOPE

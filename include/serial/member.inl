@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.9  2000/09/19 14:10:24  vasilche
 * Added files to MSVC project
 * Updated shell scripts to use new datattool path on MSVC
@@ -229,81 +237,6 @@ inline
 void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
-}
-
-inline
-void CMemberInfo::SetGlobalReadHook(CReadClassMemberHook* hook)
-{
-    SetReadHook(0, hook);
-}
-
-inline
-void CMemberInfo::SetLocalReadHook(CObjectIStream& in,
-                                   CReadClassMemberHook* hook)
-{
-    SetReadHook(&in, hook);
-}
-
-inline
-void CMemberInfo::ResetGlobalReadHook(void)
-{
-    ResetReadHook(0);
-}
-
-inline
-void CMemberInfo::ResetLocalReadHook(CObjectIStream& in)
-{
-    ResetReadHook(&in);
-}
-
-inline
-void CMemberInfo::SetGlobalWriteHook(CWriteClassMemberHook* hook)
-{
-    SetWriteHook(0, hook);
-}
-
-inline
-void CMemberInfo::SetLocalWriteHook(CObjectOStream& stream,
-                                    CWriteClassMemberHook* hook)
-{
-    SetWriteHook(&stream, hook);
-}
-
-inline
-void CMemberInfo::ResetGlobalWriteHook(void)
-{
-    ResetWriteHook(0);
-}
-
-inline
-void CMemberInfo::ResetLocalWriteHook(CObjectOStream& stream)
-{
-    ResetWriteHook(&stream);
-}
-
-inline
-void CMemberInfo::SetGlobalCopyHook(CCopyClassMemberHook* hook)
-{
-    SetCopyHook(0, hook);
-}
-
-inline
-void CMemberInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
-                                   CCopyClassMemberHook* hook)
-{
-    SetCopyHook(&stream, hook);
-}
-
-inline
-void CMemberInfo::ResetGlobalCopyHook(void)
-{
-    ResetCopyHook(0);
-}
-
-inline
-void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
-{
-    ResetCopyHook(&stream);
 }
 
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */

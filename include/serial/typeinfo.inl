@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/29 16:18:15  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.3  2000/09/18 20:00:11  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -124,81 +132,6 @@ inline
 void CTypeInfo::DefaultCopyData(CObjectStreamCopier& copier) const
 {
     m_CopyHookData.GetDefaultFunction()(copier, this);
-}
-
-inline
-void CTypeInfo::SetGlobalReadHook(CReadObjectHook* hook)
-{
-    SetReadHook(0, hook);
-}
-
-inline
-void CTypeInfo::SetLocalReadHook(CObjectIStream& in,
-                                 CReadObjectHook* hook)
-{
-    SetReadHook(&in, hook);
-}
-
-inline
-void CTypeInfo::ResetGlobalReadHook(void)
-{
-    ResetReadHook(0);
-}
-
-inline
-void CTypeInfo::ResetLocalReadHook(CObjectIStream& in)
-{
-    ResetReadHook(&in);
-}
-
-inline
-void CTypeInfo::SetGlobalWriteHook(CWriteObjectHook* hook)
-{
-    SetWriteHook(0, hook);
-}
-
-inline
-void CTypeInfo::SetLocalWriteHook(CObjectOStream& stream,
-                                 CWriteObjectHook* hook)
-{
-    SetWriteHook(&stream, hook);
-}
-
-inline
-void CTypeInfo::ResetGlobalWriteHook(void)
-{
-    ResetWriteHook(0);
-}
-
-inline
-void CTypeInfo::ResetLocalWriteHook(CObjectOStream& stream)
-{
-    ResetWriteHook(&stream);
-}
-
-inline
-void CTypeInfo::SetGlobalCopyHook(CCopyObjectHook* hook)
-{
-    SetCopyHook(0, hook);
-}
-
-inline
-void CTypeInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
-                                 CCopyObjectHook* hook)
-{
-    SetCopyHook(&stream, hook);
-}
-
-inline
-void CTypeInfo::ResetGlobalCopyHook(void)
-{
-    ResetCopyHook(0);
-}
-
-inline
-void CTypeInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
-{
-    ResetCopyHook(&stream);
 }
 
 #endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */

@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/29 16:18:22  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.13  2000/09/26 18:09:48  vasilche
 * Fixed some warnings.
 *
@@ -422,37 +430,67 @@ void CMemberInfo::SetSkipMissingFunction(TMemberSkip func)
     m_SkipMissingFunction = func;
 }
 
-void CMemberInfo::SetReadHook(CObjectIStream* stream,
-                              CReadClassMemberHook* hook)
+void CMemberInfo::SetGlobalReadHook(CReadClassMemberHook* hook)
 {
-    m_ReadHookData.SetHook(stream, hook);
+    m_ReadHookData.SetGlobalHook(hook);
 }
 
-void CMemberInfo::ResetReadHook(CObjectIStream* stream)
+void CMemberInfo::SetLocalReadHook(CObjectIStream& stream,
+                                   CReadClassMemberHook* hook)
 {
-    m_ReadHookData.ResetHook(stream);
+    m_ReadHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
-void CMemberInfo::SetWriteHook(CObjectOStream* stream,
-                               CWriteClassMemberHook* hook)
+void CMemberInfo::ResetGlobalReadHook(void)
 {
-    m_WriteHookData.SetHook(stream, hook);
+    m_ReadHookData.ResetGlobalHook();
 }
 
-void CMemberInfo::ResetWriteHook(CObjectOStream* stream)
+void CMemberInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
-    m_WriteHookData.ResetHook(stream);
+    m_ReadHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
-void CMemberInfo::SetCopyHook(CObjectStreamCopier* stream,
-                              CCopyClassMemberHook* hook)
+void CMemberInfo::SetGlobalWriteHook(CWriteClassMemberHook* hook)
 {
-    m_CopyHookData.SetHook(stream, hook);
+    m_WriteHookData.SetGlobalHook(hook);
 }
 
-void CMemberInfo::ResetCopyHook(CObjectStreamCopier* stream)
+void CMemberInfo::SetLocalWriteHook(CObjectOStream& stream,
+                                    CWriteClassMemberHook* hook)
 {
-    m_CopyHookData.ResetHook(stream);
+    m_WriteHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
+}
+
+void CMemberInfo::ResetGlobalWriteHook(void)
+{
+    m_WriteHookData.ResetGlobalHook();
+}
+
+void CMemberInfo::ResetLocalWriteHook(CObjectOStream& stream)
+{
+    m_WriteHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
+}
+
+void CMemberInfo::SetGlobalCopyHook(CCopyClassMemberHook* hook)
+{
+    m_CopyHookData.SetGlobalHook(hook);
+}
+
+void CMemberInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                   CCopyClassMemberHook* hook)
+{
+    m_CopyHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
+}
+
+void CMemberInfo::ResetGlobalCopyHook(void)
+{
+    m_CopyHookData.ResetGlobalHook();
+}
+
+void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
+{
+    m_CopyHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
 TConstObjectPtr
@@ -689,7 +727,8 @@ void CMemberInfoFunctions::ReadHookedMember(CObjectIStream& stream,
                                             const CMemberInfo* memberInfo,
                                             TObjectPtr classPtr)
 {
-    CReadClassMemberHook* hook = memberInfo->m_ReadHookData.GetHook(&stream);
+    CReadClassMemberHook* hook =
+        memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
         CObjectInfo object(classPtr, memberInfo->GetClassType(),
                            CObjectInfo::eNonCObject);
@@ -706,7 +745,8 @@ void CMemberInfoFunctions::ReadMissingHookedMember(CObjectIStream& stream,
                                                    const CMemberInfo* memberInfo,
                                                    TObjectPtr classPtr)
 {
-    CReadClassMemberHook* hook = memberInfo->m_ReadHookData.GetHook(&stream);
+    CReadClassMemberHook* hook =
+        memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
         CObjectInfo object(classPtr, memberInfo->GetClassType(),
                            CObjectInfo::eNonCObject);
@@ -723,7 +763,8 @@ void CMemberInfoFunctions::WriteHookedMember(CObjectOStream& stream,
                                              const CMemberInfo* memberInfo,
                                              TConstObjectPtr classPtr)
 {
-    CWriteClassMemberHook* hook = memberInfo->m_WriteHookData.GetHook(&stream);
+    CWriteClassMemberHook* hook =
+        memberInfo->m_WriteHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
         CConstObjectInfo object(classPtr, memberInfo->GetClassType(),
                                 CObjectInfo::eNonCObject);
@@ -739,7 +780,8 @@ void CMemberInfoFunctions::WriteHookedMember(CObjectOStream& stream,
 void CMemberInfoFunctions::CopyHookedMember(CObjectStreamCopier& stream,
                                             const CMemberInfo* memberInfo)
 {
-    CCopyClassMemberHook* hook = memberInfo->m_CopyHookData.GetHook(&stream);
+    CCopyClassMemberHook* hook =
+        memberInfo->m_CopyHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -754,7 +796,8 @@ void CMemberInfoFunctions::CopyHookedMember(CObjectStreamCopier& stream,
 void CMemberInfoFunctions::CopyMissingHookedMember(CObjectStreamCopier& stream,
                                                    const CMemberInfo* memberInfo)
 {
-    CCopyClassMemberHook* hook = memberInfo->m_CopyHookData.GetHook(&stream);
+    CCopyClassMemberHook* hook =
+        memberInfo->m_CopyHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();

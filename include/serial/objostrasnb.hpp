@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/09/29 16:18:14  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.28  2000/09/18 20:00:07  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -178,11 +186,13 @@ public:
 
     void WriteTag(EClass c, bool constructed, TTag index);
     void WriteShortTag(EClass c, bool constructed, TTag index);
+    void WriteLongTag(EClass c, bool constructed, TTag index);
     void WriteSysTag(ETag index);
     void WriteClassTag(TTypeInfo typeInfo);
 
     void WriteLength(size_t length);
     void WriteShortLength(size_t length);
+    void WriteLongLength(size_t length);
     void WriteIndefiniteLength(void);
 
     void WriteEndOfContent(void);
@@ -279,7 +289,7 @@ private:
 #endif
 };
 
-//#include <serial/objostrasnb.inl>
+#include <serial/objostrasnb.inl>
 
 END_NCBI_SCOPE
 

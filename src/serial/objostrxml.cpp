@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/29 16:18:24  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.10  2000/09/26 17:38:22  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -112,7 +120,7 @@ ESerialDataFormat CObjectOStreamXml::GetDataFormat(void) const
     return eSerial_Xml;
 }
 
-void CObjectOStreamXml::WriteTypeName(TTypeInfo type)
+void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
 {
     if ( true || m_Output.ZeroIndentLevel() ) {
         m_Output.PutString("<!DOCTYPE ");

@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/29 16:18:22  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.2  2000/09/18 20:00:22  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -52,17 +60,25 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistrimpl.hpp>
+#include <serial/object.hpp>
 
 BEGIN_NCBI_SCOPE
 
-void CObjectStreamCopier::Copy(TTypeInfo type)
+CObjectStreamCopier::CObjectStreamCopier(CObjectIStream& in,
+                                         CObjectOStream& out)
+    : m_In(in), m_Out(out)
 {
+}
+
+void CObjectStreamCopier::Copy(const CObjectTypeInfo& objectType)
+{
+    TTypeInfo type = objectType.GetTypeInfo();
     // root object
     BEGIN_OBJECT_FRAME_OF2(In(), eFrameNamed, type);
-    In().SkipTypeName(type);
+    In().SkipFileHeader(type);
 
     BEGIN_OBJECT_FRAME_OF2(Out(), eFrameNamed, type);
-    Out().WriteTypeName(type);
+    Out().WriteFileHeader(type);
 
     CopyObject(type);
     
@@ -73,13 +89,13 @@ void CObjectStreamCopier::Copy(TTypeInfo type)
     END_OBJECT_FRAME_OF(In());
 }
 
-void CObjectStreamCopier::Copy(TTypeInfo type, ENoTypeName)
+void CObjectStreamCopier::Copy(TTypeInfo type, ENoFileHeader)
 {
     // root object
     BEGIN_OBJECT_FRAME_OF2(In(), eFrameNamed, type);
 
     BEGIN_OBJECT_FRAME_OF2(Out(), eFrameNamed, type);
-    Out().WriteTypeName(type);
+    Out().WriteFileHeader(type);
 
     CopyObject(type);
     

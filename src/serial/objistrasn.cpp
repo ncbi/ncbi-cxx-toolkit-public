@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/09/29 16:18:23  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.54  2000/09/18 20:00:23  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -528,7 +536,7 @@ void CObjectIStreamAsn::ReadNull(void)
     ExpectString("NULL", true);
 }
 
-string CObjectIStreamAsn::ReadTypeName()
+string CObjectIStreamAsn::ReadFileHeader()
 {
     CLightString id = ReadTypeId(SkipWhiteSpace());
     string s(id);

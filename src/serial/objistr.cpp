@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2000/09/29 16:18:22  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.61  2000/09/26 17:38:22  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -561,11 +569,11 @@ CObjectIStream::GetRegisteredObject(TObjectIndex index) const
 }
 
 // root reader
-void CObjectIStream::SkipTypeName(TTypeInfo typeInfo)
+void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 {
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
     
-    string name = ReadTypeName();
+    string name = ReadFileHeader();
     if ( !name.empty() && name != typeInfo->GetName() ) {
         ThrowError(eFormatError,
                    "incompatible type "+name+"<>"+typeInfo->GetName());
@@ -579,7 +587,7 @@ void CObjectIStream::EndOfRead(void)
     m_Objects.clear();
 }
 
-void CObjectIStream::Read(const CObjectInfo& object, ENoTypeName)
+void CObjectIStream::Read(const CObjectInfo& object, ENoFileHeader)
 {
     // root object
     BEGIN_OBJECT_FRAME2(eFrameNamed, object.GetTypeInfo());
@@ -594,11 +602,11 @@ void CObjectIStream::Read(const CObjectInfo& object, ENoTypeName)
 void CObjectIStream::Read(const CObjectInfo& object)
 {
     // root object
-    SkipTypeName(object.GetTypeInfo());
-    Read(object, eNoTypeName);
+    SkipFileHeader(object.GetTypeInfo());
+    Read(object, eNoFileHeader);
 }
 
-void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo, ENoTypeName)
+void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo, ENoFileHeader)
 {
     // root object
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
@@ -613,11 +621,11 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo, ENoTypeName)
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
     // root object
-    SkipTypeName(typeInfo);
-    Read(object, typeInfo, eNoTypeName);
+    SkipFileHeader(typeInfo);
+    Read(object, typeInfo, eNoFileHeader);
 }
 
-void CObjectIStream::Skip(TTypeInfo typeInfo, ENoTypeName)
+void CObjectIStream::Skip(TTypeInfo typeInfo, ENoFileHeader)
 {
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
 
@@ -630,8 +638,8 @@ void CObjectIStream::Skip(TTypeInfo typeInfo, ENoTypeName)
 
 void CObjectIStream::Skip(TTypeInfo typeInfo)
 {
-    SkipTypeName(typeInfo);
-    Skip(typeInfo, eNoTypeName);
+    SkipFileHeader(typeInfo);
+    Skip(typeInfo, eNoFileHeader);
 }
 
 void CObjectIStream::StartDelayBuffer(void)
@@ -678,7 +686,7 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 
 CObjectInfo CObjectIStream::ReadObject(void)
 {
-    TTypeInfo typeInfo = MapType(ReadTypeName());
+    TTypeInfo typeInfo = MapType(ReadFileHeader());
     CObjectInfo object;
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
 
@@ -689,7 +697,7 @@ CObjectInfo CObjectIStream::ReadObject(void)
     return object;
 }
 
-string CObjectIStream::ReadTypeName(void)
+string CObjectIStream::ReadFileHeader(void)
 {
     return NcbiEmptyString;
 }

@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.8  2000/09/18 20:00:05  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -85,6 +93,12 @@ inline
 void CObjectIStream::SkipObject(const CObjectTypeInfo& objectType)
 {
     SkipObject(objectType.GetTypeInfo());
+}
+
+inline
+void CObjectIStream::SkipSeparateObject(const CObjectTypeInfo& objectType)
+{
+    SkipObject(objectType);
 }
 
 inline

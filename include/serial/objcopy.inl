@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.2  2000/09/18 20:00:04  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -45,13 +53,6 @@
 *
 * ===========================================================================
 */
-
-inline
-CObjectStreamCopier::CObjectStreamCopier(CObjectIStream& in,
-                                         CObjectOStream& out)
-    : m_In(in), m_Out(out)
-{
-}
 
 inline
 CObjectIStream& CObjectStreamCopier::In(void) const

@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/09/29 16:18:14  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.45  2000/09/18 20:00:06  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -212,8 +220,8 @@
 #include <serial/strbuffer.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/objstack.hpp>
+#include <serial/weakmap.hpp>
 #include <serial/objhook.hpp>
-#include <map>
 
 struct asnio;
 
@@ -222,7 +230,7 @@ BEGIN_NCBI_SCOPE
 class CMemberId;
 class CDelayBuffer;
 
-class CWriteContainerElementsHook;
+class CWriteObjectHook;
 class CWriteClassMembersHook;
 class CWriteChoiceVariantHook;
 
@@ -294,7 +302,7 @@ public:
     // low level writers
 
     // root object
-    virtual void WriteTypeName(TTypeInfo type);
+    virtual void WriteFileHeader(TTypeInfo type);
     virtual void EndOfWrite(void);
 
     // std C types readers
@@ -306,21 +314,21 @@ public:
         {
             WriteChar(data);
         }
-    void WriteStd(const unsigned char& data)
-        {
-            WriteUChar(data);
-        }
     void WriteStd(const signed char& data)
         {
-            WriteSChar(data);
+            WriteInt(data);
+        }
+    void WriteStd(const unsigned char& data)
+        {
+            WriteUInt(data);
         }
     void WriteStd(const short& data)
         {
-            WriteShort(data);
+            WriteInt(data);
         }
     void WriteStd(const unsigned short& data)
         {
-            WriteUShort(data);
+            WriteUInt(data);
         }
     void WriteStd(const int& data)
         {
@@ -340,7 +348,7 @@ public:
         }
     void WriteStd(const float& data)
         {
-            WriteFloat(data);
+            WriteDouble(data);
         }
     void WriteStd(const double& data)
         {
@@ -518,15 +526,10 @@ protected:
 
     virtual void WriteBool(bool data) = 0;
     virtual void WriteChar(char data) = 0;
-    virtual void WriteSChar(signed char data);
-    virtual void WriteUChar(unsigned char data);
-    virtual void WriteShort(short data);
-    virtual void WriteUShort(unsigned short data);
-    virtual void WriteInt(int data);
-    virtual void WriteUInt(unsigned int data);
+    virtual void WriteInt(int data) = 0;
+    virtual void WriteUInt(unsigned int data) = 0;
     virtual void WriteLong(long data) = 0;
     virtual void WriteULong(unsigned long data) = 0;
-    virtual void WriteFloat(float data);
     virtual void WriteDouble(double data) = 0;
 
     void RegisterObject(TTypeInfo typeInfo);
@@ -541,6 +544,12 @@ protected:
     COStreamBuffer m_Output;
 
     COObjectList m_Objects;
+
+public:
+    // hook support
+    CWeakMapKey< CRef<CWriteObjectHook> > m_ObjectHookKey;
+    CWeakMapKey< CRef<CWriteClassMemberHook> > m_ClassMemberHookKey;
+    CWeakMapKey< CRef<CWriteChoiceVariantHook> > m_ChoiceVariantHookKey;
 };
 
 #include <serial/objostr.inl>

@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/29 16:18:15  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.2  2000/09/26 17:38:08  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -49,6 +57,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
+#include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -177,20 +186,10 @@ private:
     TVariantGetConst m_GetConstFunction;
     TVariantGet m_GetFunction;
 
-    CHookData<CObjectIStream, CReadChoiceVariantHook,
-        TVariantRead> m_ReadHookData;
-    CHookData<CObjectOStream, CWriteChoiceVariantHook,
-        TVariantWrite> m_WriteHookData;
-    CHookData<CObjectStreamCopier, CCopyChoiceVariantHook,
-        TVariantCopy> m_CopyHookData;
+    CHookData<CReadChoiceVariantHook, TVariantRead> m_ReadHookData;
+    CHookData<CWriteChoiceVariantHook, TVariantWrite> m_WriteHookData;
+    CHookData<CCopyChoiceVariantHook, TVariantCopy> m_CopyHookData;
     TVariantSkip m_SkipFunction;
-
-    void SetReadHook(CObjectIStream* stream, CReadChoiceVariantHook* hook);
-    void SetWriteHook(CObjectOStream* stream, CWriteChoiceVariantHook* hook);
-    void SetCopyHook(CObjectStreamCopier* stream, CCopyChoiceVariantHook* hook);
-    void ResetReadHook(CObjectIStream* stream);
-    void ResetWriteHook(CObjectOStream* stream);
-    void ResetCopyHook(CObjectStreamCopier* stream);
 
     void SetReadFunction(TVariantRead func);
     void SetWriteFunction(TVariantWrite func);

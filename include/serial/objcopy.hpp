@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.2  2000/09/18 20:00:03  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -51,6 +59,8 @@
 #include <serial/typeinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/weakmap.hpp>
+#include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,6 +68,10 @@ class CContainerTypeInfo;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CMemberInfo;
+
+class CCopyObjectHook;
+class CCopyClassMemberHook;
+class CCopyChoiceVariantHook;
 
 class CObjectStreamCopier
 {
@@ -68,16 +82,19 @@ public:
     CObjectOStream& Out(void) const;
 
     // main copy
-    void Copy(TTypeInfo type);
+    void Copy(const CObjectTypeInfo& type);
 
-    enum ENoTypeName {
-        eNoTypeName
+    enum ENoFileHeader {
+        eNoFileHeader
     };
     // copy without source typename
-    void Copy(TTypeInfo type, ENoTypeName noTypeName);
+    void Copy(const CObjectTypeInfo& type, ENoFileHeader noFileHeader);
+    void Copy(TTypeInfo type, ENoFileHeader noFileHeader);
 
     // copy object
+    void CopyObject(const CObjectTypeInfo& type);
     void CopyObject(TTypeInfo type);
+
     void CopyExternalObject(TTypeInfo type);
 
     // primitive types copy
@@ -102,6 +119,12 @@ public:
 private:
     CObjectIStream& m_In;
     CObjectOStream& m_Out;
+
+public:
+    // hook support
+    CWeakMapKey< CRef<CCopyObjectHook> > m_ObjectHookKey;
+    CWeakMapKey< CRef<CCopyClassMemberHook> > m_ClassMemberHookKey;
+    CWeakMapKey< CRef<CCopyChoiceVariantHook> > m_ChoiceVariantHookKey;
 };
 
 #include <serial/objcopy.inl>

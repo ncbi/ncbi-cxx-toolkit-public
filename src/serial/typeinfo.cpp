@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/09/29 16:18:24  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.25  2000/09/18 20:00:26  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -134,15 +142,31 @@
 #include <serial/typeinfo.hpp>
 #include <serial/typeinfoimpl.hpp>
 #include <serial/object.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CTypeInfoFunctions
+{
+public:
+    static void ReadWithHook(CObjectIStream& in,
+                             TTypeInfo objectType, TObjectPtr objectPtr);
+    static void WriteWithHook(CObjectOStream& out,
+                              TTypeInfo objectType, TConstObjectPtr objectPtr);
+    static void CopyWithHook(CObjectStreamCopier& copier,
+                             TTypeInfo objectType);
+};
+
+typedef CTypeInfoFunctions TFunc;
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
       m_CreateFunction(&CVoidTypeFunctions::Create),
-      m_ReadHookData(&CVoidTypeFunctions::Read, &ReadWithHook),
-      m_WriteHookData(&CVoidTypeFunctions::Write, &WriteWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &CopyWithHook),
+      m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
+      m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
       m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
 }
@@ -150,9 +174,9 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_CreateFunction(&CVoidTypeFunctions::Create),
-      m_ReadHookData(&CVoidTypeFunctions::Read, &ReadWithHook),
-      m_WriteHookData(&CVoidTypeFunctions::Write, &WriteWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &CopyWithHook),
+      m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
+      m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
       m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
 }
@@ -160,9 +184,9 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_CreateFunction(&CVoidTypeFunctions::Create),
-      m_ReadHookData(&CVoidTypeFunctions::Read, &ReadWithHook),
-      m_WriteHookData(&CVoidTypeFunctions::Write, &WriteWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &CopyWithHook),
+      m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
+      m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
       m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
 }
@@ -215,15 +239,67 @@ void CTypeInfo::SetCreateFunction(TTypeCreate func)
     m_CreateFunction = func;
 }
 
-void CTypeInfo::SetReadHook(CObjectIStream* stream,
-                            CReadObjectHook* hook)
+void CTypeInfo::SetLocalReadHook(CObjectIStream& stream,
+                                 CReadObjectHook* hook)
 {
-    m_ReadHookData.SetHook(stream, hook);
+    m_ReadHookData.SetLocalHook(stream.m_ObjectHookKey, hook);
 }
 
-void CTypeInfo::ResetReadHook(CObjectIStream* stream)
+void CTypeInfo::SetGlobalReadHook(CReadObjectHook* hook)
 {
-    m_ReadHookData.ResetHook(stream);
+    m_ReadHookData.SetGlobalHook(hook);
+}
+
+void CTypeInfo::ResetLocalReadHook(CObjectIStream& stream)
+{
+    m_ReadHookData.ResetLocalHook(stream.m_ObjectHookKey);
+}
+
+void CTypeInfo::ResetGlobalReadHook(void)
+{
+    m_ReadHookData.ResetGlobalHook();
+}
+
+void CTypeInfo::SetGlobalWriteHook(CWriteObjectHook* hook)
+{
+    m_WriteHookData.SetGlobalHook(hook);
+}
+
+void CTypeInfo::SetLocalWriteHook(CObjectOStream& stream,
+                                 CWriteObjectHook* hook)
+{
+    m_WriteHookData.SetLocalHook(stream.m_ObjectHookKey, hook);
+}
+
+void CTypeInfo::ResetGlobalWriteHook(void)
+{
+    m_WriteHookData.ResetGlobalHook();
+}
+
+void CTypeInfo::ResetLocalWriteHook(CObjectOStream& stream)
+{
+    m_WriteHookData.ResetLocalHook(stream.m_ObjectHookKey);
+}
+
+void CTypeInfo::SetGlobalCopyHook(CCopyObjectHook* hook)
+{
+    m_CopyHookData.SetGlobalHook(hook);
+}
+
+void CTypeInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                 CCopyObjectHook* hook)
+{
+    m_CopyHookData.SetLocalHook(stream.m_ObjectHookKey, hook);
+}
+
+void CTypeInfo::ResetGlobalCopyHook(void)
+{
+    m_CopyHookData.ResetGlobalHook();
+}
+
+void CTypeInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
+{
+    m_CopyHookData.ResetLocalHook(stream.m_ObjectHookKey);
 }
 
 void CTypeInfo::SetReadFunction(TTypeRead func)
@@ -231,31 +307,9 @@ void CTypeInfo::SetReadFunction(TTypeRead func)
     m_ReadHookData.GetDefaultFunction() = func;
 }
 
-void CTypeInfo::SetWriteHook(CObjectOStream* stream,
-                             CWriteObjectHook* hook)
-{
-    m_WriteHookData.SetHook(stream, hook);
-}
-
-void CTypeInfo::ResetWriteHook(CObjectOStream* stream)
-{
-    m_WriteHookData.ResetHook(stream);
-}
-
 void CTypeInfo::SetWriteFunction(TTypeWrite func)
 {
     m_WriteHookData.GetDefaultFunction() = func;
-}
-
-void CTypeInfo::SetCopyHook(CObjectStreamCopier* stream,
-                            CCopyObjectHook* hook)
-{
-    m_CopyHookData.SetHook(stream, hook);
-}
-
-void CTypeInfo::ResetCopyHook(CObjectStreamCopier* stream)
-{
-    m_CopyHookData.ResetHook(stream);
 }
 
 void CTypeInfo::SetCopyFunction(TTypeCopy func)
@@ -268,11 +322,12 @@ void CTypeInfo::SetSkipFunction(TTypeSkip func)
     m_SkipFunction = func;
 }
 
-void CTypeInfo::ReadWithHook(CObjectIStream& stream,
-                             TTypeInfo objectType,
-                             TObjectPtr objectPtr)
+void CTypeInfoFunctions::ReadWithHook(CObjectIStream& stream,
+                                      TTypeInfo objectType,
+                                      TObjectPtr objectPtr)
 {
-    CReadObjectHook* hook = objectType->m_ReadHookData.GetHook(&stream);
+    CReadObjectHook* hook =
+        objectType->m_ReadHookData.GetHook(stream.m_ObjectHookKey);
     if ( hook )
         hook->ReadObject(stream, CObjectInfo(objectPtr, objectType,
                                              CObjectInfo::eNonCObject));
@@ -280,11 +335,12 @@ void CTypeInfo::ReadWithHook(CObjectIStream& stream,
         objectType->DefaultReadData(stream, objectPtr);
 }
 
-void CTypeInfo::WriteWithHook(CObjectOStream& stream,
-                              TTypeInfo objectType,
-                              TConstObjectPtr objectPtr)
+void CTypeInfoFunctions::WriteWithHook(CObjectOStream& stream,
+                                       TTypeInfo objectType,
+                                       TConstObjectPtr objectPtr)
 {
-    CWriteObjectHook* hook = objectType->m_WriteHookData.GetHook(&stream);
+    CWriteObjectHook* hook =
+        objectType->m_WriteHookData.GetHook(stream.m_ObjectHookKey);
     if ( hook )
         hook->WriteObject(stream, CConstObjectInfo(objectPtr, objectType,
                                                    CObjectInfo::eNonCObject));
@@ -292,10 +348,11 @@ void CTypeInfo::WriteWithHook(CObjectOStream& stream,
         objectType->DefaultWriteData(stream, objectPtr);
 }
 
-void CTypeInfo::CopyWithHook(CObjectStreamCopier& stream,
-                             TTypeInfo objectType)
+void CTypeInfoFunctions::CopyWithHook(CObjectStreamCopier& stream,
+                                      TTypeInfo objectType)
 {
-    CCopyObjectHook* hook = objectType->m_CopyHookData.GetHook(&stream);
+    CCopyObjectHook* hook =
+        objectType->m_CopyHookData.GetHook(stream.m_ObjectHookKey);
     if ( hook )
         hook->CopyObject(stream, objectType);
     else

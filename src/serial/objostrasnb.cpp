@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/09/29 16:18:24  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.43  2000/09/26 17:38:22  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -387,13 +395,6 @@ void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
     }
 }
 
-template<typename T>
-inline
-void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value)
-{
-    WriteBytesOf(out, value, sizeof(value));
-}
-
 inline
 void CObjectOStreamAsnBinary::WriteShortTag(EClass c, bool constructed,
                                             TTag tag)
@@ -407,31 +408,38 @@ void CObjectOStreamAsnBinary::WriteSysTag(ETag tag)
     WriteShortTag(eUniversal, false, tag);
 }
 
+void CObjectOStreamAsnBinary::WriteLongTag(EClass c, bool constructed,
+                                           TTag tag)
+{
+    if ( tag <= 0 )
+        THROW1_TRACE(runtime_error, "negative tag number");
+    
+    // long form
+    WriteShortTag(c, constructed, eLongTag);
+    // calculate largest shift enough for TTag to fit
+    size_t shift = (sizeof(TTag) * 8 - 1) / 7 * 7;
+    TByte bits;
+    // find first non zero 7bits
+    while ( (bits = (tag >> shift) & 0x7f) == 0 ) {
+        shift -= 7;
+    }
+    
+    // beginning of tag
+    WriteByte(bits | 0x80); // write high bits
+    // write remaining bits
+    while ( (shift -= 7) != 0 ) {
+        WriteByte((tag >> shift) | 0x80);
+    }
+    WriteByte(tag & 0x7f);
+}
+
+inline
 void CObjectOStreamAsnBinary::WriteTag(EClass c, bool constructed, TTag tag)
 {
-    if ( tag < 0 )
-        THROW1_TRACE(runtime_error, "negative tag number");
-
-    if ( tag < eLongTag ) {
-        // short form
+    if ( tag >= 0 && tag < eLongTag )
         WriteShortTag(c, constructed, tag);
-    }
-    else {
-        // long form
-        WriteShortTag(c, constructed, eLongTag);
-        bool write = false;
-        for ( size_t shift = (sizeof(TTag) * 8 - 1) / 7 * 7;
-              shift != 0; shift -= 7 ) {
-            TByte bits = tag >> shift;
-            if ( !write ) {
-                if ( bits & 0x7f == 0 )
-                    continue;
-                write = true;
-            }
-            WriteByte(bits | 0x80);
-        }
-        WriteByte(tag & 0x7f);
-    }
+    else
+        WriteLongTag(c, constructed, tag);
 }
 
 void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
@@ -466,29 +474,37 @@ void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
     WriteByte(length);
 }
 
+void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
+{
+    // long form
+    size_t count;
+    if ( length <= 0xffU )
+        count = 1;
+    else if ( length <= 0xffffU )
+        count = 2;
+    else if ( length <= 0xffffffU )
+        count = 3;
+    else {
+        count = sizeof(length);
+        if ( sizeof(length) > 4 ) {
+            for ( size_t shift = (count-1)*8;
+                  count > 0; --count, shift -= 8 ) {
+                if ( TByte(length >> shift) != 0 )
+                    break;
+            }
+        }
+    }
+    WriteByte(0x80 + count);
+    WriteBytesOf(*this, length, count);
+}
+
+inline
 void CObjectOStreamAsnBinary::WriteLength(size_t length)
 {
-    if ( length <= 127 ) {
-        // short form
+    if ( length <= 127 )
         WriteShortLength(length);
-    }
-    else {
-        // long form
-        size_t count;
-        if ( length <= 0xff )
-            count = 1;
-        else if ( length <= 0xffff )
-            count = 2;
-        else if ( length <= 0xffffff )
-            count = 3;
-        else if ( length < 0xffffffff )
-            count = 4;
-        else
-            THROW1_TRACE(runtime_error, "length too big");
-
-        WriteByte(0x80 + count);
-        WriteBytesOf(*this, length, count);
-    }
+    else
+        WriteLongLength(length);
 }
 
 inline
@@ -504,86 +520,151 @@ void CObjectOStreamAsnBinary::WriteNull(void)
     WriteShortLength(0);
 }
 
-template<typename T>
-void WriteSNumberValue(CObjectOStreamAsnBinary& out, const T& data)
+static
+void WriteNumberValue(CObjectOStreamAsnBinary& out, int data)
 {
     size_t length;
-    if ( data >= -0x80 && data < 0x80 ) {
+    if ( data >= int(-0x80) && data <= int(0x7f) ) {
         // one byte
         length = 1;
     }
-    else if ( data >= -0x8000 && data < 0x8000 ) {
+    else if ( data >= int(-0x8000) && data <= int(0x7fff) ) {
         // two bytes
         length = 2;
     }
-    else if ( data >= -0x800000 && data < 0x800000 ) {
+    else if ( data >= int(-0x800000) && data <= int(0x7fffff) ) {
         // three bytes
         length = 3;
     }
-    else {
-        if ( T(-1) >= 0 && (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
-            // full length unsigned - and doesn't fit in signed place
-            out.WriteShortLength(sizeof(data) + 1);
-            out.WriteByte(0);
-        }
-        else {
-            // full length signed
-            out.WriteShortLength(sizeof(data));
-        }
-        WriteBytesOf(out, data);
-        return;
+    else if ( data >= int(-0x80000000) && data <= int(0x7fffffff) ) {
+        // four bytes
+        length = 4;
     }
-    
+    else {
+        // full length signed
+        length = sizeof(data);
+    }
     out.WriteShortLength(length);
     WriteBytesOf(out, data, length);
 }
 
-template<typename T>
-void WriteUNumberValue(CObjectOStreamAsnBinary& out, const T& data)
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+static inline
+void WriteNumberValue(CObjectOStreamAsnBinary& out, long data)
+{
+    WriteNumberValue(out, int(data));
+}
+#else
+static
+void WriteNumberValue(CObjectOStreamAsnBinary& out, long data)
 {
     size_t length;
-    if ( data < 0x80 ) {
+    if ( data >= -long(0x80) && data <= long(0x7f) ) {
+        // one byte
         length = 1;
     }
-    else if ( data < 0x8000 ) {
+    else if ( data >= long(-0x8000) && data <= long(0x7fff) ) {
+        // two bytes
         length = 2;
     }
-    else if ( data < 0x800000 ) {
+    else if ( data >= long(-0x800000) && data <= long(0x7fffff) ) {
+        // three bytes
         length = 3;
     }
+    else if ( data >= long(-0x80000000L) && data <= long(0x7fffffffL) ) {
+        // four bytes
+        length = 4;
+    }
     else {
-        if ( (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
+        // full length signed
+        length = sizeof(data);
+    }
+    out.WriteShortLength(length);
+    WriteBytesOf(out, data, length);
+}
+#endif
+
+static
+void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned data)
+{
+    size_t length;
+    if ( data <= 0x7fU ) {
+        length = 1;
+    }
+    else if ( data <= 0x7fffU ) {
+        // two bytes
+        length = 2;
+    }
+    else if ( data <= 0x7fffffU ) {
+        // three bytes
+        length = 3;
+    }
+    else if ( data <= 0x7fffffffU ) {
+        // three bytes
+        length = 4;
+    }
+    else {
+        // check for high bit to avoid storing unsigned data as negative
+        if ( (data & (1 << (sizeof(data) * 8 - 1))) != 0 ) {
             // full length unsigned - and doesn't fit in signed place
             out.WriteShortLength(sizeof(data) + 1);
             out.WriteByte(0);
+            WriteBytesOf(out, data, sizeof(data));
+            return;
         }
         else {
-            // full length signed
-            out.WriteShortLength(sizeof(data));
+            // full length
+            length = sizeof(data);
         }
-        WriteBytesOf(out, data);
-        return;
     }
-    
     out.WriteShortLength(length);
     WriteBytesOf(out, data, length);
 }
 
-template<typename T>
+#if ULONG_MAX == UINT_MAX
 static inline
-void WriteStdUNumber(CObjectOStreamAsnBinary& out, const T& data)
+void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned long data)
 {
-    out.WriteSysTag(eInteger);
-    WriteUNumberValue(out, data);
+    WriteNumberValue(out, unsigned(data));
 }
-
-template<typename T>
-static inline
-void WriteStdSNumber(CObjectOStreamAsnBinary& out, const T& data)
+#else
+static
+void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned long data)
 {
-    out.WriteSysTag(eInteger);
-    WriteSNumberValue(out, data);
+    size_t length;
+    if ( data <= 0x7fUL ) {
+        length = 1;
+    }
+    else if ( data <= 0x7fffUL ) {
+        // two bytes
+        length = 2;
+    }
+    else if ( data <= 0x7fffffUL ) {
+        // three bytes
+        length = 3;
+    }
+    else if ( data <= 0x7fffffffUL ) {
+        // three bytes
+        length = 4;
+    }
+    else {
+        // check for high bit to avoid storing unsigned data as negative
+        if ( (data & (1 << (sizeof(data) * 8 - 1))) != 0 ) {
+            // full length unsigned - and doesn't fit in signed place
+            out.WriteShortLength(sizeof(data) + 1);
+            out.WriteByte(0);
+            WriteBytesOf(out, data, sizeof(data));
+            return;
+        }
+        else {
+            // full length
+            length = sizeof(data);
+        }
+    }
+    out.WriteShortLength(length);
+    WriteBytesOf(out, data, length);
 }
+#endif
 
 void CObjectOStreamAsnBinary::WriteBool(bool data)
 {
@@ -601,30 +682,26 @@ void CObjectOStreamAsnBinary::WriteChar(char data)
 
 void CObjectOStreamAsnBinary::WriteInt(int data)
 {
-    WriteStdSNumber(*this, data);
+    WriteSysTag(eInteger);
+    WriteNumberValue(*this, data);
 }
 
 void CObjectOStreamAsnBinary::WriteUInt(unsigned data)
 {
-    WriteStdUNumber(*this, data);
+    WriteSysTag(eInteger);
+    WriteNumberValue(*this, data);
 }
 
 void CObjectOStreamAsnBinary::WriteLong(long data)
 {
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    WriteStdSNumber(*this, int(data));
-#else
-    WriteStdSNumber(*this, data);
-#endif
+    WriteSysTag(eInteger);
+    WriteNumberValue(*this, data);
 }
 
 void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
 {
-#if ULONG_MAX == UINT_MAX
-    WriteStdUNumber(*this, unsigned(data));
-#else
-    WriteStdUNumber(*this, data);
-#endif
+    WriteSysTag(eInteger);
+    WriteNumberValue(*this, data);
 }
 
 void CObjectOStreamAsnBinary::WriteDouble(double data)
@@ -729,11 +806,7 @@ void CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
         values.FindName(value, false); // check value
         WriteSysTag(eEnumerated);
     }
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    WriteSNumberValue(*this, int(value));
-#else
-    WriteSNumberValue(*this, value);
-#endif
+    WriteNumberValue(*this, value);
 }
 
 void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
@@ -744,17 +817,13 @@ void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
         WriteSysTag(eInteger);
     else
         WriteSysTag(eEnumerated);
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    WriteSNumberValue(*this, int(value));
-#else
-    WriteSNumberValue(*this, value);
-#endif
+    WriteNumberValue(*this, value);
 }
 
 void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
 {
     WriteTag(eApplication, false, eObjectReference);
-    WriteSNumberValue(*this, index);
+    WriteNumberValue(*this, index);
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)

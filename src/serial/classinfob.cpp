@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/29 16:18:22  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.5  2000/09/26 17:38:21  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -62,6 +70,50 @@
 #include <serial/object.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
+                                       size_t size, const char* name,
+                                       const void* /*nonCObject*/,
+                                       TTypeCreate createFunc,
+                                       const type_info& ti)
+    : CParent(typeFamily, size, name), m_IsCObject(false)
+{
+    InitClassTypeInfoBase(ti);
+    SetCreateFunction(createFunc);
+}
+
+CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
+                                       size_t size, const char* name,
+                                       const CObject* /*cObject*/,
+                                       TTypeCreate createFunc,
+                                       const type_info& ti)
+    : CParent(typeFamily, size, name), m_IsCObject(true)
+{
+    InitClassTypeInfoBase(ti);
+    SetCreateFunction(createFunc);
+}
+
+CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
+                                       size_t size, const string& name,
+                                       const void* /*nonCObject*/,
+                                       TTypeCreate createFunc,
+                                       const type_info& ti)
+    : CParent(typeFamily, size, name), m_IsCObject(false)
+{
+    InitClassTypeInfoBase(ti);
+    SetCreateFunction(createFunc);
+}
+
+CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
+                                       size_t size, const string& name,
+                                       const CObject* /*cObject*/,
+                                       TTypeCreate createFunc,
+                                       const type_info& ti)
+    : CParent(typeFamily, size, name), m_IsCObject(true)
+{
+    InitClassTypeInfoBase(ti);
+    SetCreateFunction(createFunc);
+}
 
 CClassTypeInfoBase::~CClassTypeInfoBase(void)
 {

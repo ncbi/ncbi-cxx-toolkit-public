@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.49  2000/09/18 20:00:04  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -220,10 +228,9 @@
 #include <serial/object.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/objstack.hpp>
+#include <serial/weakmap.hpp>
 #include <serial/objhook.hpp>
-#include <memory>
 #include <vector>
-#include <map>
 
 struct asnio;
 
@@ -240,9 +247,9 @@ class CChoiceTypeInfo;
 class CContainerTypeInfo;
 class CObjectStreamCopier;
 
+class CReadObjectHook;
 class CReadClassMemberHook;
 class CReadChoiceVariantHook;
-class CReadContainerElementHook;
 
 class CObjectIStream : public CObjectStack
 {
@@ -281,17 +288,20 @@ public:
 
     // USER INTERFACE
     // root reader
-    void SkipTypeName(TTypeInfo typeInfo);
-    enum ENoTypeName {
-        eNoTypeName
-    };
-    void Read(const CObjectInfo& object, ENoTypeName noTypeName);
-    void Read(TObjectPtr object, TTypeInfo type, ENoTypeName noTypeName);
-    void Skip(TTypeInfo type, ENoTypeName noTypeName);
-
     void Read(const CObjectInfo& object);
     void Read(TObjectPtr object, TTypeInfo type);
     void Skip(TTypeInfo type);
+
+    // file header readers
+    virtual string ReadFileHeader(void);
+    void SkipFileHeader(TTypeInfo typeInfo);
+
+    enum ENoFileHeader {
+        eNoFileHeader
+    };
+    void Read(const CObjectInfo& object, ENoFileHeader noFileHeader);
+    void Read(TObjectPtr object, TTypeInfo type, ENoFileHeader noFileHeader);
+    void Skip(TTypeInfo type, ENoFileHeader noFileHeader);
 
     // subtree reader
     void ReadObject(const CObjectInfo& object);
@@ -299,17 +309,18 @@ public:
     void SkipObject(const CObjectTypeInfo& objectType);
     void SkipObject(TTypeInfo typeInfo);
 
+    // temporary reader
     void ReadSeparateObject(const CObjectInfo& object);
+    void SkipSeparateObject(const CObjectTypeInfo& objectType);
+
+    // END OF USER INTERFACE
 
     // internal reader
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
     void SkipExternalObject(TTypeInfo typeInfo);
 
-    // END OF USER INTERFACE
-
     CObjectInfo ReadObject(void);
 
-    virtual string ReadTypeName(void);
     virtual void EndOfRead(void);
     
     // try to read enum value name, "" if none
@@ -699,8 +710,8 @@ protected:
     void RegisterAndSkip(TTypeInfo typeInfo);
     void RegisterObject(TTypeInfo typeInfo);
 
-    // open helpers
 public:
+    // open helpers
     static CObjectIStream* Create(ESerialDataFormat format);
     static CObjectIStream* Create(ESerialDataFormat format,
                                   const CRef<CByteSource>& source);
@@ -718,6 +729,12 @@ private:
     vector<TReadObjectInfo> m_Objects;
 
     unsigned m_Fail;
+
+public:
+    // hook support
+    CWeakMapKey< CRef<CReadObjectHook> > m_ObjectHookKey;
+    CWeakMapKey< CRef<CReadClassMemberHook> > m_ClassMemberHookKey;
+    CWeakMapKey< CRef<CReadChoiceVariantHook> > m_ChoiceVariantHookKey;
 };
 
 #include <serial/objistr.inl>

@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/09/29 16:18:24  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
 * Revision 1.48  2000/09/26 19:24:57  vasilche
 * Added user interface for setting read/write/copy hooks.
 *
@@ -326,7 +334,7 @@ void CObjectOStream::Write(const CConstObjectInfo& object)
     // root writer
     BEGIN_OBJECT_FRAME2(eFrameNamed, object.GetTypeInfo());
     
-    WriteTypeName(object.GetTypeInfo());
+    WriteFileHeader(object.GetTypeInfo());
 
     WriteObject(object);
 
@@ -340,7 +348,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
     // root writer
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
     
-    WriteTypeName(typeInfo);
+    WriteFileHeader(typeInfo);
 
     WriteObject(object, typeInfo);
 
@@ -458,7 +466,7 @@ bool CObjectOStream::Write(const CRef<CByteSource>& source)
     return true;
 }
 
-void CObjectOStream::WriteTypeName(TTypeInfo /*type*/)
+void CObjectOStream::WriteFileHeader(TTypeInfo /*type*/)
 {
     // do nothing by default
 }
@@ -515,41 +523,6 @@ void CObjectOStream::WritePointer(CWriteObjectInfo& info,
             WriteOther(info.GetObject().GetObjectPtr(), info.GetTypeInfo());
         }
     }
-}
-
-void CObjectOStream::WriteSChar(signed char data)
-{
-    WriteInt(data);
-}
-
-void CObjectOStream::WriteUChar(unsigned char data)
-{
-    WriteUInt(data);
-}
-
-void CObjectOStream::WriteShort(short data)
-{
-    WriteInt(data);
-}
-
-void CObjectOStream::WriteUShort(unsigned short data)
-{
-    WriteUInt(data);
-}
-
-void CObjectOStream::WriteInt(int data)
-{
-    WriteLong(data);
-}
-
-void CObjectOStream::WriteUInt(unsigned data)
-{
-    WriteULong(data);
-}
-
-void CObjectOStream::WriteFloat(float data)
-{
-    WriteDouble(data);
 }
 
 void CObjectOStream::WriteThis(TConstObjectPtr object, TTypeInfo typeInfo)
