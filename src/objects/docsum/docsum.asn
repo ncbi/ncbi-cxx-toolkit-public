@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.24 2001/08/21 14:52:56 sherry Exp $
+-- $Id: docsum.asn,v 1.25 2001/11/28 20:58:42 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.25  2001/11/28 20:58:42  sherry
+-- added UCSC mapping coordinates, and added amino-acid position to function-set
+--
 -- Revision 1.24  2001/08/21 14:52:56  sherry
 -- added subsnp-class (8) = mnp for multiple nucleotide polymorphisms with alleles of common length > 1 bp
 --
@@ -266,10 +269,15 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 						-- Sequence should be assembled as seq-5 + observed + seq-3
 	seq-ss-exemplar INTEGER,		-- dbSNP ss# selected as source of refSNP flanking sequence, ss# part of ss-list below 
 	ncbi-build-id INTEGER OPTIONAL,		-- NCBI build number for data on genome mapping to synchronize with NCBI MapViewer
-	num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in genome-mapset
-	num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in genome-mapset
-	num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in genome-mapset
-	mapweight INTEGER OPTIONAL,		-- location quality score for map display
+	ncbi-num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in contig-mapset
+	ncbi-num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in contig-mapset
+	ncbi-num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in contig-mapset
+	ncbi-mapweight INTEGER OPTIONAL,		-- location quality score for NCBI map display
+	ucsc-build-id INTEGER OPTIONAL,		-- UCSC build number for data on genome mapping to synchronize with UCSC genome browser
+	ucsc-num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in ucsc-mapset
+	ucsc-num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in ucsc-mapset
+	ucsc-num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in ucsc-mapset
+	ucsc-mapweight INTEGER OPTIONAL,		-- location quality score for ucsc build analysis
 
 	het REAL OPTIONAL,			-- average heterozygosity 
 	het-SE REAL OPTIONAL,			-- standard error of heterozygosity 
@@ -288,6 +296,7 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	ss-list SET OF NSE-ss,			-- set of all subsnp id's in the refSNP cluster	
 	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates and functional relationships
 						-- between variations and genes as annotated on contig sequence
+	ucsc-mapset SET OF NSE-rsUCSCContigHit OPTIONAL, -- list of hits to genome in golden path contig coordinates 
 	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
 	gene-info SET OF NSE-rsLocusID OPTIONAL	-- set of gene information inferred by blast similarity of variation and GenBank sequences.
 						-- analysis is independent of annotation of genome sequence (contig-mapset, above) and
@@ -356,7 +365,7 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 
 
 
-NSE-rsContigHit ::= SEQUENCE {			
+NSE-rsContigHit ::= SEQUENCE {		-- data from SNPContigLoc, ContigInfo tables, & SNPContigLocusId tables
 	contig-id VisibleString,		-- Id of contig when naming files for refSNPs x contig		
 	locations SET OF NSE-rsMaploc,		-- set of all valid locations for variation on contig
 	accession VisibleString OPTIONAL,	-- Accession number of the contig
@@ -364,6 +373,13 @@ NSE-rsContigHit ::= SEQUENCE {
 	chromosome VisibleString OPTIONAL	-- Chromosome number
 }
 	
+NSE-rsUCSCContigHit ::= SEQUENCE {	-- data from SNPGoldenPathContigLoc & GoldenPathContigInfo tables
+	contig-id VisibleString,		-- Id of contig when naming files for refSNPs x contig		
+	locations SET OF NSE-rsMaploc,		-- set of all valid locations for variation on contig
+	accession VisibleString OPTIONAL,	-- Accession number of the contig
+	version INTEGER OPTIONAL,		-- version number of the contig	
+	chromosome VisibleString OPTIONAL	-- Chromosome number
+}
 
 
 NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a contig
@@ -382,6 +398,7 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
 	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
 	fxn-set SET OF NSE-FxnSet OPTIONAL	-- functional relationship of SNP (and possibly alleles) to genes at contig location
+										-- fxn-set analysis is only available for NCBI contig-set
 }
 
 NSE-FxnSet ::= SEQUENCE {
@@ -405,7 +422,8 @@ NSE-FxnSet ::= SEQUENCE {
 	} ,
 	reading-frame INTEGER OPTIONAL,		-- position of variation in reading frame of transcript		SNPContigLocusId.reading_Frame
 	allele VisibleString OPTIONAL,		-- allele, * denotes allele observed in contig sequence		SNPContigLocusId.allele
-	residue VisibleString OPTIONAL		-- translated amino acid residue for allele			SNPContigLocusId.residue
+	residue VisibleString OPTIONAL,		-- translated amino acid residue for allele			SNPContigLocusId.residue
+	aa-position INTEGER OPTIONAL		-- position of the variant residue in peptide sequence	SNPContigLocusId.aa_position
 }
 
 
