@@ -13,11 +13,12 @@
   <li>Using the <a href="#ncbipage"> <i>CHTMLPage</i></a> class with template files 
   <li>The <a href="#tag"> <i>CHTMLTagNode</i> </a> class
   <li>The <a href="#htmnode"> <i>CHTMLNode</i> </a> class
+  <li>Using the HTML classes with a <a href="#cgiapp"> <i>CCgiApplication</i></a> object
   <!--li> <a href="#compons"> Other HTML Components </a-->
-  <li> <a href="#appendix"> Appendix</a>
+  <li><a href="#appendix"> Appendix</a>
   <ul>
     <li>The <a href="#tmode"> <i>CNCBINode::TMode</i></a> class
-    <li> HTML Classes - <a href="#quickRef">Quick Reference Guide</a>
+    <li><a href="#quickRef">Quick Reference Guide</a>
   </ul>
 </ul>
 
@@ -27,13 +28,16 @@ the complexity of interacting with a CGI client from the complexity of generatin
 output by defining separate class hierarchies for these activities.  In fact, one useful
 application of the HTML classes is to generate web pages "offline". <p>
 
-The section on 
-<a href="cgi.html"> Developing CGI Applications</a> considers only the activities involved in
+The chapter on 
+<a href="cgi.html"> Developing CGI Applications</a> discussed only the activities involved in
 processing the client's request and generating a response.  This section introduces the
-C++ Toolkit components that support the creation of HTML pages (see also 
+C++ Toolkit components that support the creation of HTML pages, and concludes with a 
+brief consideration of how the HTML classes can be used in consort with a running
+<i>CCgiApplication</i>. Further discussion of combining a CGI application with the HTML classes can be found
+in the section on <a href="htmlcgi.html"> Developing web-based applications</a>.
+See also 
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs/newhtml.html">NCBI C++ HTML Classes</a>
-in the Reference Manual). These two sections are
-brought together in <a href=="webcgi.html"> Developing Web-based Applications</a>.
+in the Reference Manual. 
 
 <a name="node"> <h3> The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNCBINode.html">
 <i>CNCBINode</i></a> class </h3>
@@ -534,7 +538,21 @@ subclasses of <i>CHTMLNode</i> are defined by the preprocessor macro <a href=
 elements have the same interface as other <i>CHTMLNode</i> classes however, and the
 distinction is invisible to the user.
 
-<!--a name="compons"> <h3>Other HTML Components  </h3-->
+<a name="cgiapp"> <h3>Using the HTML classes with a <i>CCgiApplication</i> object</h3> 
+
+The previous chapter described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> classes, with
+an emphasis on their independence from the HTML classes. In practice however, a real
+application must employ both types of objects, and they must communicate with one another. 
+The only explicit connection between the CGI and HTML components is in the HTML page
+classes, whose constructors accept a <a href="cgi.html#ccgiapp"> <i>CCgiApplication</i></a> as
+an input parameter. The open-ended definition of the page's <i>m_TagMap</i> data member also
+allows the user to install <i>tagmapper</i> functions that are under control of the application,
+thus providing an "output port" for the application. In particular, an application-specific 
+<i>CreateView()</i> method can easily be installed as the function to be associated with
+a page's <i>VIEW</i> tag. The <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/tools/hello/hello.html">
+<i>Hello</i></a> demo program provides a simple example of using these classes in coordination
+with each other.
+
 <p>
 <a name="appendix"> <h1>Appendix</h1>
 <a name="tmode"> <h3> The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/TMode.html">
@@ -615,7 +633,7 @@ method will first call
 the associated set of <i>TagMap</i> functions are discussed in the section on the
 NCBI <a href="#tagmap"> Page</a> classes. <p>
 
-<a name="quickRef">  <h3> HTML Classes - Quick Reference Guide</h3>
+<a name="quickRef">  <h3> Quick Reference Guide</h3>
 
 <ul>
 <li> <a href="#CNCBINode"> <i>CNCBINode</i></a>
@@ -1261,3 +1279,11 @@ and contains a pointer to a <a href="#CPageList"> <i>CPageList</i></a>. See also
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+
+
+
+
+
+
+

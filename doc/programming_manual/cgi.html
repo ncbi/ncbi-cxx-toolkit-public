@@ -25,8 +25,11 @@ href="webpgs.html"> Generating Web pages</a> focuses largely on the usage of
 HTML components independent of CGI details. The two branches of the NCBI C++ Toolkit
 hierarchy are all but independent of one another - with but one explicit hook between them: 
 the constructors for HTML <a href="webpgs.html#page"> page</a> components accept a 
-<i>CCgiApplication</i> as an argument.<p>
+<i>CCgiApplication</i> as an argument. This <i>CCgiApplication</i> argument provides the
+HTML page component with access to all of the CGI objects used in the application. <p>
 
+Further discussion of combining a CGI application with the HTML classes can be found
+in the section on <a href="htmlcgi.html"> Developing web-based applications</a>.
 For additional information about the CGI classes, the reader is also referred to the discussion of 
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs/cgi.html">
 NCBI C++ CGI Classes</a> in the Reference Manual.
@@ -93,7 +96,7 @@ definitions, refer to the header files via the source browsers.
 <h3> The CCgiApplication class </h3></a>
 As mentioned, the <i>CCgiApplication </i> class implements its own version of 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Init">
-<i>Init()</i></a>, where it instantiates a <i>CNcbiResource</i> object using 
+<i>Init()</i></a>, where it instantiates a <a href="#cncbires"><i>CNcbiResource</i></a> object using 
 <i>LoadResource()</i>. 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Run">
 <i>Run</i></a> is no longer a pure virtual
@@ -139,11 +142,11 @@ private:
 If the program was <i>not</i> compiled as a Fast-CGI application (or the environment does
 not support Fast-CGI), then 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=RunFastCGI">
-<i> RunFastCGI()</i></a> will return <i>False</i>. Otherwise, a "Fast-CGI loop" will be
+<i> RunFastCGI()</i></a> will return <i>false</i>. Otherwise, a "Fast-CGI loop" will be
 iterated over <i>def_iter</i> times, with the initialization methods and
 <i>ProcessRequest()</i> function being executed on each iteration. The value returned by
-<i> RunFastCGI()</i> in this case is <i>True</i>.  <i>Run()</i> first calls <i>
-RunFastCGI()</i>, and if that returns <i>False</i>, the application is run as a plain CGI
+<i> RunFastCGI()</i> in this case is <i>true</i>.  <i>Run()</i> first calls <i>
+RunFastCGI()</i>, and if that returns <i>false</i>, the application is run as a plain CGI
 program.
 
 <a name="cncbires">
@@ -168,13 +171,13 @@ public:
 
     CNcbiResource(CNcbiRegistry& config);
 
-    CNcbiRegistry&  GetConfig(void);
-    const TCmdList& GetCmdList(void) const;
+    CNcbiRegistry&	  GetConfig(void);
+    const TCmdList&	  GetCmdList(void) const;
     virtual CNcbiCommand* GetDefaultCommand(void) const = 0;
+    virtual const CNcbiResPresentation* GetPresentation(void) const;
 
     void AddCommand(CNcbiCommand* command);
     virtual void HandleRequest(CCgiContext& ctx);
-    virtual const CNcbiResPresentation* GetPresentation(void) const;
 
 protected:   
 
@@ -228,12 +231,12 @@ resource it belongs to, and most of its methods - with the exception of
 <i>GetResource()</i> and <i>IsRequested()</i> - are pure virtual functions.
 <i>IsRequested()</i> examines the <i>key=value</i> entries stored with the context's
 request object. When an entry is found where <i>key==GetEntry()</i> and
-<i>value==GetName()</i>, <i>IsRequested()</i> returns <i>True</i>.
+<i>value==GetName()</i>, <i>IsRequested()</i> returns <i>true</i>.
 <p>
 
 The resource's <i>HandleRequest()</i> method iterates over its command list, calling
 <i>CNcbiCommand::IsRequested()</i> until the first match between a command and a request
-entry is found.  When <i>IsRequested()</i> returns <i>True</i>, the command is <i>cloned</i>,
+entry is found.  When <i>IsRequested()</i> returns <i>true</i>, the command is <i>cloned</i>,
 and the cloned command is then <i>executed</i>.  Both the <i>Execute()</i> and <i>Clone</i>
 methods are pure virtual functions which must be implemented by the user.
 
@@ -284,7 +287,8 @@ try to read the query string from the command line only.
 class CCgiRequest {
 public:
 
-    CCgiRequest(const CNcbiArguments*, const CNcbiEnvironment*, CNcbiIstream*, TFlags);
+    CCgiRequest(const CNcbiArguments*, const CNcbiEnvironment*,
+		CNcbiIstream*, TFlags);
 
     static const string& GetPropertyName(ECgiProp prop);    
     const string& GetProperty(ECgiProp prop) const;         
@@ -295,7 +299,8 @@ public:
 
 private:
 
-    void x_Init(const CNcbiArguments*, const CNcbiEnvironment*, CNcbiIstream*, TFlags);
+    void x_Init(const CNcbiArguments*, const CNcbiEnvironment*,
+		CNcbiIstream*, TFlags);
 
     const CNcbiEnvironment*    m_Env;
     auto_ptr&lt;CNcbiEnvironment> m_OwnEnv;
@@ -324,7 +329,7 @@ href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.<
 
 The <i>CCgiResponse</i> class provides an interface to the program's output
 stream (usually <i>cout</i>) - which is the sole argument to the constructor for <i>CCgiResponse</i>.
-The output stream is accessed by the program using <i>CCgiResponse::Getoutput()</i>, which
+The output stream is accessed by the program using <i>CCgiResponse::GetOutput()</i>, which
 returns a pointer to the ouput stream, or <i>CCgiResponse::out()</i>. which returns 
 a reference to that stream. <p>
 
@@ -431,8 +436,8 @@ The <i>CCgiCookie::Write(CNcbiOstream&)</i> member function creates a <i>Set-Coo
 directive using its private data members, and places the resulting string on the specified
 output stream:<p>
 
-<center>Set-Cookie: <i>m_Name=m_Value</i>; expires=<i>m_Expires</i>; path=<i>m_Path</i>; domain=m_Domain; 
-<i>m_Secure</i></center>
+Set-Cookie: <i>m_Name=m_Value</i>; expires=<i>m_Expires</i>; path=<i>m_Path</i>; 
+domain=<i>m_Domain</i>; <i>m_Secure</i>
 
 <p>As with the constructor, and in compliance with the proposed standard 
 (<a href="ftp://ftp.isi.edu/in-notes/rfc2109.txt">RFC 2109</a>), only the
@@ -485,13 +490,13 @@ private:
 
 
 With the exception of <i>m_Name</i>, all of the cookie's data members can be reset using
-the <i>SetXxx(), Reset()</i>, and <i>CopyAttributes</i> member functions; <i>m_Name</i> is
+the <i>SetXxx(), Reset()</i>, and <i>CopyAttributes()</i> member functions; <i>m_Name</i> is
 non-mutable. As with the constructor, format errors in the arguments to these functions
 will cause the invalid argument to be thrown. By default, <i>m_Secure</i> is
-<i>False</i>. The <i>GetXXX()</i> methods return the stored value for that attribute or,
+<i>false</i>. The <i>GetXXX()</i> methods return the stored value for that attribute or,
 if no value has been set, a reference to <i>NcbiEmptyString</i>. <i>GetExpDate(tm*)</i>
-returns <i>False</i> if no expiration date was previously set. Otherwise, <i>tm</i> is
-reset to <i>m_Expire</i>, and <i>True</i> is returned.
+returns <i>false</i> if no expiration date was previously set. Otherwise, <i>tm</i> is
+reset to <i>m_Expire</i>, and <i>true</i> is returned.
 
 <a name="cookies"> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiCookies.html">
@@ -512,7 +517,7 @@ As with the constructor, a single string of name-value pairs may be used to crea
 cookies to the set at once. Previously created cookies can also be added to the set individually or 
 as sets. Similarly, the <i>Remove()</i> methods allow individual cookies or sets of cookies (in the
 specified range) to be removed. All of the remove functions destroy the removed cookies when
-<i>destroy==True</i>. <i>CCgiCookies::Write(CNcbiOstream&)</i> iteratively invokes the <i>CCgiCookie::Write()</i> 
+<i>destroy==true</i>. <i>CCgiCookies::Write(CNcbiOstream&)</i> iteratively invokes the <i>CCgiCookie::Write()</i> 
 on each element. 
 
 <font color = "#000080"> <pre>
@@ -524,8 +529,8 @@ public:
     typedef pair&lt;TIter,  TIter>    TRange;
     typedef pair&lt;TCIter, TCIter>   TCRange;
 
-    CCgiCookies(void);				// create empty set of cookies
-    CCgiCookies(const string& str);		// create set: "name1=value1; name2=value2; ..."
+    CCgiCookies(void);		     // create empty set of cookies
+    CCgiCookies(const string& str);  // str = "name1=value1; name2=value2; ..."
     bool Empty(void) const;
 
     CCgiCookie* Add(const string& name, const string& value,
@@ -588,10 +593,10 @@ public:
     CNcbiResource&	   GetResource(void);
     CCgiServerContext&	   GetServCtx(void);
 
-    CNcbiOstream& PrintMsg(CNcbiOstream& os);	// output all messages in m_lmsg to os
+    CNcbiOstream& PrintMsg(CNcbiOstream& os);	// output all msgs in m_lmsg to os
     void PutMsg(const string& msg);		// add message to m_lmsg
     void PutMsg(CCtxMsg* msg);			// add message to m_lmsg
-    bool EmptyMsg(void);			// True iff m_lmsg is empty
+    bool EmptyMsg(void);			// true iff m_lmsg is empty
     void ClearMsg(void);			// delete all messages in m_lmsg
 
     string GetRequestValue(const string& name) const;    
