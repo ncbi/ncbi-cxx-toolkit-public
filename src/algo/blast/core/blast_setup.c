@@ -276,7 +276,8 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
       }
    }
    
-   if (scoring_options->is_ooframe) {
+   if (program_number == blast_type_blastx && 
+       scoring_options->is_ooframe) {
       BLAST_InitDNAPSequence(query_blk, query_info);
    }
 
