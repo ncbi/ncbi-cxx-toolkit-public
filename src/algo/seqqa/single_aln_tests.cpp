@@ -114,8 +114,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos consensus_cds_splices = 0;
     
     int exon_index = 0;
-    TSeqPos min_exon_length, max_exon_length;
-    TSeqPos min_intron_length, max_intron_length;
+    TSeqPos min_exon_length = 0, max_exon_length = 0;      // initialize to
+    TSeqPos min_intron_length = 0, max_intron_length = 0;  // avoid warnings
     TSeqPos exon_length, intron_length;
     TSeqPos exon_match_count;
     double worst_exon_match_frac = 1.1;  // guarantee that something is worse
@@ -472,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/28 16:10:17  jcherry
+ * Initialize variables to eliminate compilation warnings
+ *
  * Revision 1.11  2005/02/07 19:26:58  jcherry
  * Deal properly with negative result of modulo operator
  *
