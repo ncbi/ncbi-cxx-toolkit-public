@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/07/25 20:27:23  lavr
+ * Included header files rearranged
+ *
  * Revision 6.10  2001/07/25 19:12:57  lavr
  * Added date/time stamp for message logging
  *
@@ -67,14 +70,15 @@
 
 #include "ncbi_priv.h"
 #ifndef NCBI_CXX_TOOLKIT
-#include <ncbitime.h>
+#  include <ncbistd.h>
+#  include <ncbitime.h>
+#else
+#  include <ctype.h>
+#  include <errno.h>
+#  include <stdlib.h>
+#  include <string.h>
+#  include <time.h>
 #endif
-
-#include <ctype.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 
 /* Static function pre-declarations to avoid C++ compiler warnings
