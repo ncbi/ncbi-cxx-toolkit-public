@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>An example of the NCBI C++ makefile hierarchy(<i>"corelib/"</i>)
+	 </title>
+  </head>
+
+  <body>
+	 <h1>An example of the NCBI C++ makefile hierarchy(<i>"corelib/"</i>)
+	 </h1>
+
+	 <p><br><p>
+	 See also the
+	 <a href="src_tree.gif">source</a>
+	 and
+	 <a href="bld_tree.gif">build</a>
+	 hierarchy charts.
+
+	 <p><br><p>
+	 >>>>>>>>>> c++/src/Makefile.in:  <br>
+
+    <p>
+	 SUB_PROJ = corelib html history comm  <br>
+	 include @builddir@/Makefile.meta  <br>
+
+	 <p>
+	 >>>>>>>>>> c++/src/corelib/Makefile.in:  <br>
+
+	 <p>
+	 LIB_PROJ = corelib  <br>
+	 SUB_PROJ = demo test  <br>
+	 srcdir = @srcdir@  <br>
+	 include @builddir@/Makefile.meta  <br>
+
+	 <p>
+	 >>>>>>>>>> c++/src/corelib/Makefile.corelib.lib:  <br>
+
+	 <p>
+	 LIBOBJ = ncbidiag ncbiexpt ncbistre ncbicgi ncbiapp cgiapp \  <br>
+	 cgictx ncbireg ncbicgir ncbires ncbistd asnio fcgibuf  <br>
+	 LIB    = xncbi  <br>
+	 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(NCBI_C_INCLUDE)  <br>
+
+	 <p>
+	 >>>>>>>>>> c++/src/corelib/test/Makefile.in:  <br>
+
+	 <p>
+	 APP_PROJ = coretest  <br>
+	 srcdir = @srcdir@  <br>
+	 include @builddir@/Makefile.meta  <br>
+
+	 <p>
+	 >>>>>>>>>> c++/src/corelib/demo/Makefile.in:  <br>
+
+	 <p>
+	 APP_PROJ = cgidemo  <br>
+	 srcdir = @srcdir@  <br>
+	 include @builddir@/Makefile.meta  <br>
+
+	 <p>
+	 >>>>>>>>>> c++/src/corelib/demo/Makefile.cgidemo.app:  <br>
+
+	 <p>
+	 APP = cgidemo  <br>
+	 OBJ = cgidemo  <br>
+	 LIB = xncbi  <br>
+	 LIBS = $(ORIG_LIBS) \  <br>
+	 -L$(NCBI_C_LIB) -lsocket -lnsl -lfcgi`sh -c 'CC -V 2>&1'|cut -f4 -d' '`
+	 <br>
+
+	 <p>
+	 >>>>>>>>>> c++/src/corelib/test/Makefile.coretest.app:   <br>
+
+	 <p>
+	 APP = coretest  <br>
+	 OBJ = coretest  <br>
+	 LIB = xncbi  <br>
+
+
+<br>
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+<td align=right>($Revision$)</td></tr>
+</table>
+
+  </body>
+</html>
