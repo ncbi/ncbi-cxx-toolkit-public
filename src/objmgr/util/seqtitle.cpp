@@ -363,13 +363,13 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                 }
             }
             if (pieces == 1) {
-                suffix += (", 1 " + un + "ordered piece");
+                // suffix += (", 1 " + un + "ordered piece");
             } else {
                 suffix += (", " + NStr::IntToString(pieces)
                            + ' ' + un + "ordered pieces");
             }
         } else {
-            suffix += ", in " + un + "ordered pieces";
+            // suffix += ", in " + un + "ordered pieces";
         }
         break;
     }
@@ -815,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2003/03/26 18:57:56  ucko
+* Limit HTGS suffix to deltas containing actual gaps.
+*
 * Revision 1.18  2003/03/18 21:48:35  grichenk
 * Removed obsolete class CAnnot_CI
 *
