@@ -126,7 +126,8 @@ static void s_Dump(const SNCBIPackedScoreMatrix& psm,
     cout << '\n';
     for (int i = 0;  i < NCBI_FSM_DIM;  ++i) {
         if (fsm.s[i][i] != psm.defscore) {
-            cout << setw(3) << left << s_FormatAA(i) << ' ';
+            // The use of c_str() here is to work around a GCC 2.95 bug.
+            cout << setw(3) << s_FormatAA(i).c_str() << ' ';
             for (int j = 0;  j < NCBI_FSM_DIM;  ++j) {
                 if (fsm.s[j][j] != psm.defscore) {
                     cout << char(fsm.s[i][j] + '0');
@@ -186,9 +187,11 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/08/22 01:32:36  ucko
+ * Fix for GCC 2.95.
+ *
  * Revision 1.1  2003/08/21 19:48:21  ucko
  * Add tables library (shared with C) for raw score matrices, etc.
- *
  *
  * ===========================================================================
  */
