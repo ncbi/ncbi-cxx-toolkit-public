@@ -153,7 +153,7 @@ typedef struct RPSLookupFileHeader {
 typedef struct RPSProfileHeader {
     Int4 magic_number;
     Int4 num_profiles;
-    Int4 start_offsets[];
+    Int4 start_offsets[1]; /* variable number of Int4's beyond this point */
 } RPSProfileHeader;
 
 typedef struct RPSAuxInfo {
