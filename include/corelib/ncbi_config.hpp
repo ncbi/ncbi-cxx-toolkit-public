@@ -29,12 +29,18 @@
  * Authors:  Anatoliy Kuznetsov
  *
  */
-/// @file ncbi_paramtree.hpp
+/// @file ncbi_config.hpp
 /// Parameters initialization model
 
 #include <corelib/ncbi_tree.hpp>
 
 BEGIN_NCBI_SCOPE
+
+/** @addtogroup ModuleConfig
+ *
+ * @{
+ */
+
 
 /// Instantiation parameters tree.
 /// 
@@ -56,6 +62,8 @@ NCBI_XNCBI_EXPORT
 TParamTree* ParamTree_ConvertRegToTree(const CNcbiRegistry&  reg);
 
 
+/* @} */
+
 
 END_NCBI_SCOPE
 
@@ -63,6 +71,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/09/22 18:04:36  kuznets
+ * Put doxygen tags in place
+ *
  * Revision 1.2  2004/09/22 15:33:30  kuznets
  * MAGIC: rename ncbi_paramtree->ncbi_config
  *
