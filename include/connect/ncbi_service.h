@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/08/20 21:57:49  lavr
+ * Parameter change for clarity: info -> net_info if type is SConnNetInfo
+ *
  * Revision 6.19  2001/07/18 17:39:56  lavr
  * Comment added for SERV_OpenSimple() to note about absence of preferred host
  *
@@ -140,13 +143,13 @@ SERV_ITER SERV_OpenEx
 (const char*         service,       /* service name                          */
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
- const SConnNetInfo* info,          /* connection information                */
+ const SConnNetInfo* net_info,      /* connection information                */
  const SSERV_Info    *const skip[], /* array of servers NOT to select        */
  size_t              n_skip         /* number of servers in preceding array  */
  );
 
-#define SERV_Open(service, types, preferred_host, info) \
-        SERV_OpenEx(service, types, preferred_host, info, 0, 0)
+#define SERV_Open(service, types, preferred_host, net_info) \
+        SERV_OpenEx(service, types, preferred_host, net_info, 0, 0)
 
 
 /* Get the next server meta-address, optionally accompanied by a host
@@ -175,7 +178,7 @@ const SSERV_Info* SERV_GetNextInfoEx
  */
 int/*bool*/ SERV_Penalize
 (SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- double              penalty        /* penalty in a range [0..100] (percents)*/
+ double              fine           /* fine in a range [0=min..100=max] (%%) */
  );
 
 

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2001/08/20 21:58:19  lavr
+ * Parameter change for clarity: info -> net_info if type is SConnNetInfo
+ *
  * Revision 6.24  2001/06/25 15:35:54  lavr
  * Added function: SERV_GetNextInfoEx
  *
@@ -121,9 +124,9 @@
 
 SERV_ITER SERV_OpenSimple(const char* service)
 {
-    SConnNetInfo* info = ConnNetInfo_Create(service);
-    SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, info);
-    ConnNetInfo_Destroy(info);
+    SConnNetInfo* net_info = ConnNetInfo_Create(service);
+    SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, net_info);
+    ConnNetInfo_Destroy(net_info);
     return iter;
 }
 
@@ -150,8 +153,9 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 }
 
 
-SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
-                      unsigned int preferred_host, const SConnNetInfo* info,
+SERV_ITER SERV_OpenEx(const char* service,
+                      TSERV_Type type, unsigned int preferred_host,
+                      const SConnNetInfo* net_info,
                       const SSERV_Info* const skip[], size_t n_skip)
 {
     const SSERV_VTable* op;
@@ -179,7 +183,6 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     for (i = 0; i < n_skip; i++) {
         size_t infolen = SERV_SizeOfInfo(skip[i]);
         SSERV_Info* info = (SSERV_Info*) malloc(infolen);
-
         if (!info) {
             SERV_Close(iter);
             return 0;
@@ -193,17 +196,17 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     }
     assert(n_skip == iter->n_skip);
 
-    if (!info) {
+    if (!net_info) {
         if (!(op = SERV_LBSMD_Open(iter))) {
             /* LBSMD failed in non-DISPD mapping */
             SERV_Close(iter);
             return 0;
         }
     } else {
-        if (info->stateless)
+        if (net_info->stateless)
             iter->type |= fSERV_StatelessOnly;
-        if ((info->lb_disable || !(op = SERV_LBSMD_Open(iter))) &&
-            !(op = SERV_DISPD_Open(iter, info))) {
+        if ((net_info->lb_disable || !(op = SERV_LBSMD_Open(iter))) &&
+            !(op = SERV_DISPD_Open(iter, net_info))) {
             SERV_Close(iter);
             return 0;
         }
@@ -222,7 +225,7 @@ static void s_SkipSkip(SERV_ITER iter)
 
     i = 0;
     while (i < iter->n_skip) {
-        SSERV_Info *info = iter->skip[i];
+        SSERV_Info* info = iter->skip[i];
         if (info->time < t) {
             if (i < --iter->n_skip)
                 memmove(iter->skip + i, iter->skip + i + 1,
@@ -238,18 +241,18 @@ const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, char** env)
 {
     SSERV_Info* info = 0;
 
-    if (!iter)
-        return 0;
-    /* First, remove all outdated entries from our skip list */
-    s_SkipSkip(iter);
-    /* Next, obtain a fresh entry from the actual mapper */
-    if (iter->op && iter->op->GetNextInfo &&
-        (info = (*iter->op->GetNextInfo)(iter, env)) != 0 &&
-        !s_AddSkipInfo(iter, info)) {
-        free(info);
-        info = 0;
+    if (iter) {
+        /* First, remove all outdated entries from our skip list */
+        s_SkipSkip(iter);
+        /* Next, obtain a fresh entry from the actual mapper */
+        if (iter->op && iter->op->GetNextInfo &&
+            (info = (*iter->op->GetNextInfo)(iter, env)) != 0 &&
+            !s_AddSkipInfo(iter, info)) {
+            free(info);
+            info = 0;
+        }
+        iter->last = iter->skip[iter->n_skip - 1];
     }
-    iter->last = iter->skip[iter->n_skip - 1];
     return info;
 }
 
@@ -260,20 +263,19 @@ const char* SERV_MapperName(SERV_ITER iter)
 }
 
 
-int/*bool*/ SERV_Penalize(SERV_ITER iter, double penalty)
+int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
     if (!iter || !iter->op || !iter->op->Penalize || !iter->last)
         return 0;
-    return (*iter->op->Penalize)(iter, penalty);
+    return (*iter->op->Penalize)(iter, fine);
 }
 
 
 void SERV_Close(SERV_ITER iter)
 {
     size_t i;
-    if ( !iter )
+    if (!iter)
         return;
-
     if (iter->op && iter->op->Close)
         (*iter->op->Close)(iter);
     for (i = 0; i < iter->n_skip; i++)
