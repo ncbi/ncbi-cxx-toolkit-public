@@ -222,6 +222,22 @@ public:
     /// Note that the "path" can be for any OS (MSWIN, UNIX, MAC).
     static bool IsAbsolutePathEx(const string& path);
 
+    /// Create relative path from 2 absolute pathes.
+    ///
+    /// @param path_from 
+    ///   Absolute path that defines the start of the relative path.
+    /// @param path_to
+    ///   Absolute path that defines the defines the endpoint of the relative path.
+    /// @param path
+    ///   Created relative path.
+    /// @return
+    ///   Return true if relative path was created.
+    ///   Return false if input pathes are not absolute,
+    ///   or it's impossible to create relative path (different diskc on MSWIN ).
+    static bool CreateRelativePath( const string& path_from, 
+                                    const string& path_to, 
+                                    string& path);
+
     /// Concatenate the two parts of the path for the current OS.
     ///
     /// Note that the arguments must be for the current OS.
@@ -988,6 +1004,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/01/05 20:06:44  gorelenk
+ * + CDirEntry::CreateRelativePath()
+ *
  * Revision 1.33  2003/11/28 16:23:03  ivanov
  * + CDirEntry::SetTime()
  *

@@ -396,6 +396,98 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
 }
 
 
+/// Helper : strips dir to parts:
+///     c:\a\b\     will be <c:><a><b>
+///     /usr/bin/   will be </><usr><bin>
+static void s_StripDir(const string& dir, vector<string>& dir_parts)
+{
+    dir_parts.clear();
+    if (dir.empty()) 
+        return;
+
+    char sep = CDirEntry::GetPathSeparator();
+
+    size_t sep_pos = 0;
+    size_t last_ind = dir.length() - 1;
+    size_t part_start = 0;
+    for (;;) {
+        sep_pos = dir.find(sep, sep_pos);
+        if (sep_pos == NPOS) {
+            dir_parts.push_back(string(part_start, dir.length() - part_start));
+            break;
+        }
+
+        // If path starts from '/' - it's a root directory
+        if (sep_pos == 0) {
+            dir_parts.push_back(string(1, sep));
+        } else {
+            dir_parts.push_back(string(dir, part_start, sep_pos - part_start));
+        }
+
+        sep_pos++;
+        part_start = sep_pos;
+        if (sep_pos >= last_ind) 
+            break;
+    }
+
+}
+
+
+bool CDirEntry::CreateRelativePath( const string& path_from, 
+                                    const string& path_to, 
+                                    string& path)
+{
+
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+
+    path.erase();
+    if (!IsAbsolutePath(path_from)  ||  !IsAbsolutePath(path_to)) 
+        return false;
+
+    // Split and strip FROM
+    string dir_from;
+    SplitPath(path_from, &dir_from);
+    vector<string> dir_from_parts;
+    s_StripDir(dir_from, dir_from_parts);
+
+    // Split and strip TO
+    string dir_to;
+    string base_to;
+    string ext_to;
+    SplitPath(path_to, &dir_to, &base_to, &ext_to);    
+    vector<string> dir_to_parts;
+    s_StripDir(dir_to, dir_to_parts);
+
+    if (dir_from_parts.empty() || // must be
+        dir_to_parts.empty()   || // must be
+        dir_from_parts.front() != dir_to_parts.front() ) //roots must be the same
+        return false;
+
+    size_t min_parts = min(dir_from_parts.size(), dir_to_parts.size());
+    size_t common_length = min_parts;
+    for (size_t i = 0; i < min_parts; i++) {
+        if (dir_from_parts[i] != dir_to_parts[i]) {
+            common_length = i;
+            break;
+        }
+    }
+
+    for (size_t i = common_length; i < dir_from_parts.size(); i++) {
+        path += "..";
+        path += GetPathSeparator();
+    }
+    for (size_t i = common_length; i < dir_to_parts.size(); i++) {
+        path += dir_to_parts[i];
+        path += GetPathSeparator();
+    }
+
+    return true;
+#else
+    return false;
+#endif
+}
+
+
 string CDirEntry::ConvertToOSPath(const string& path)
 {
     // Not process empty and absolute path
@@ -1804,6 +1896,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2004/01/05 20:04:05  gorelenk
+ * + CDirEntry::CreateRelativePath()
+ *
  * Revision 1.64  2003/11/28 16:51:48  ivanov
  * Fixed CDirEntry::SetTime() to set current time if parameter is empty
  *
