@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
 * Revision 1.32  2002/08/15 22:13:14  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -1105,7 +1108,7 @@ cleanup:
     if (masterCorDef) FreeCorDef(masterCorDef);
     if (rcxPtl) FreeRcxPtl(rcxPtl);
     if (gibScd) FreeGibScd(gibScd);
-    if (trajectory) delete trajectory;
+    if (trajectory) delete[] trajectory;
 
     return retval;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
 * Revision 1.63  2002/09/14 18:14:31  thiessen
 * fix trigonometry error
 *
@@ -1251,7 +1254,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         }
     }
 
-    if (fblock) delete fblock;
+    if (fblock) delete[] fblock;
 }
 
 static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, double length)

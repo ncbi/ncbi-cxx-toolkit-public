@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
 * Revision 1.7  2002/06/12 18:45:41  thiessen
 * more linux/gcc fixes
 *
@@ -123,7 +126,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
         *err = std::string("uncaught exception: ") + e.what();
     }
 
-    if (asnDataBlock) delete asnDataBlock;
+    if (asnDataBlock) delete[] asnDataBlock;
     if (aibp) AsnIoBSClose(aibp);
     if (bsp) Nlm_BSFree(bsp);
     return retval;

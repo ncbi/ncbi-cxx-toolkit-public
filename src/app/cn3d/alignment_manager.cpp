@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
 * Revision 1.76  2002/09/30 17:13:02  thiessen
 * change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
 *
@@ -614,11 +617,11 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
         if (nStructureAlignments == 0) masterMol->parentSet->RemoveStructureAlignments();
     }
 
-    delete masterSeqIndexes;
-    delete slaveSeqIndexes;
-    delete masterCoords;
-    delete slaveCoords;
-    delete weights;
+    delete[] masterSeqIndexes;
+    delete[] slaveSeqIndexes;
+    delete[] masterCoords;
+    delete[] slaveCoords;
+    delete[] weights;
     return;
 }
 
