@@ -167,10 +167,11 @@ string FilterDefine(const string& define)
     string res;
     for(string::const_iterator p = define.begin(); p != define.end(); ++p) {
         char ch = *p;
-        if ( !(ch == '$' || 
-               ch == '(' || 
-               ch == '_' || 
-               isalpha(ch) ) )
+        if ( !(ch == '$'   || 
+               ch == '('   || 
+               ch == '_'   || 
+               isalpha(ch) || 
+               isdigit(ch) ) )
             break;
         res += ch;
     }
@@ -185,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/17 16:18:33  gorelenk
+ * Added digit as an allowed symbol for makefile defines.
+ *
  * Revision 1.6  2004/02/10 18:16:00  gorelenk
  * Fixed recursive resolving procedure.
  *
