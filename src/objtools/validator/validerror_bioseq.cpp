@@ -2609,7 +2609,11 @@ bool CValidError_bioseq::x_IsArtificial(const CBioseq& seq) const
         if ( sd ) {
             const CSeqdesc::TSource& source = sd->GetSource();
             if ( source.CanGetOrigin() ) {
-                return  source.GetOrigin() == CBioSource::eOrigin_artificial;
+                CBioSource::TOrigin origin = source.GetOrigin();
+                return  
+                    origin == CBioSource::eOrigin_artificial  ||
+                    origin == CBioSource::eOrigin_mut         ||
+                    origin == CBioSource::eOrigin_synthetic;
             }
         }
     }
@@ -3383,6 +3387,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2003/12/15 21:08:16  shomrat
+* artificial, mutagenized, or synthetic suppress other-genetic message
+*
 * Revision 1.57  2003/12/15 20:42:16  shomrat
 * segmented bioseq doesn't need TPA user object; Terminal Ns set to warning if NC record
 *
