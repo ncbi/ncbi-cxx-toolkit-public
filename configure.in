@@ -1513,7 +1513,7 @@ esac
 
 
 ### Get rid of the KCC "anti-license-warning" filter
-if test -n "$kcc_license" ; then
+if test "$KCC" = "yes"  -a  -n "$kcc_license" ; then
    CC="$kcc_CC"
    CXXCPP="$kcc_CXX -E"
    CXX="$kcc_CXX"
