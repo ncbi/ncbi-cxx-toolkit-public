@@ -30,7 +30,7 @@
  *
  */
 
-#include "testserial.hpp"
+#include "test_serial.hpp"
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
 #include <serial/serialasn.hpp>
@@ -772,6 +772,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2003/06/02 16:48:51  lavr
+ * Renamed testserial -> test_serial
+ *
  * Revision 1.59  2003/03/11 20:07:11  kuznets
  * iterate -> ITERATE
  *
