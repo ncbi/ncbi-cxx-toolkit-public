@@ -172,11 +172,19 @@ s_SeqDBMapNA2ToNA8Setup(void)
 static void
 s_SeqDBMapNA2ToNA8(const char   * buf2bit,
                    vector<char> & buf8bit,
-                   Uint4          base_length)
+                   Uint4          base_length,
+                   bool           sentinel_bytes)
 {
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
     
-    buf8bit.reserve(base_length);
+    int sreserve = 0;
+    
+    if (sentinel_bytes) {
+        sreserve = 2;
+        buf8bit.push_back((unsigned char)(0));
+    }
+    
+    buf8bit.reserve(base_length + sreserve);
     
     int whole_input_chars = base_length/4;
     
@@ -209,7 +217,11 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
         }
     }
     
-    _ASSERT(base_length == buf8bit.size());
+    if (sentinel_bytes) {
+        buf8bit.push_back((unsigned char)(0));
+    }
+    
+    _ASSERT(base_length == (buf8bit.size() - sreserve));
 }
 
 #if 0
@@ -797,10 +809,12 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
             
             // Combine and translate to 4 bits-per-character encoding.
             
-            s_SeqDBMapNA2ToNA8(seq_buffer, buffer_na8, base_length);
+            bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
+            
+            s_SeqDBMapNA2ToNA8(seq_buffer, buffer_na8, base_length, sentinel);
             s_SeqDBRebuildDNA_NA8(buffer_na8, ambchars);
             
-            if (nucl_code == kSeqDBNuclBlastNA8) {
+            if (sentinel) {
                 // Translate bytewise, in place.
                 s_SeqDBMapNcbiNA8ToBlastNA8(buffer_na8);
             }
