@@ -4,29 +4,44 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.9 2001/03/16 20:09:44 juran Exp $
+	$Id: maketests.met,v 1.10 2001/03/19 16:31:18 juran Exp $
 	
    ================================================================================ *)
 
+--
+-- Properties
+--
 
-property CREATEDEBUGPROJECTS : "TRUE" (* whether to create debug projects from scratch *)
-property BUILDDEBUGBINS : "TRUE" (* whether to compile debug binaries *)
+property pProjectFileExtension : ".µ"
+property pCPlusPlusExtension : ".cpp"
 
-property CREATERELEASEPROJECTS : "FALSE" (* whether to create release projects from scratch *)
-property BUILDRELEASEBINS : "FALSE" (* whether to compile optimized release binaries *)
+-- Whether to recreate existing project files.
+property pAlwaysCreateProjects : false
 
+property pBuildApps : true
+
+-- Which targets to create.
+-- If these are changed you must recreate the project files.  There is no direct effect on building.
+property pCreateBlueTargets : true -- 'Blue' was the codename for System 7.  Here, it means pre-Carbon.
+property pCreateCarbonTargets : true
+property pCreateDebugTargets : true
+property pCreateOptimizedTargets : true
+
+-- Putting a project tree inside a tool tree is evil.
 property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
 
 --property DOSOCKETS : "FALSE" (* whether to create/compile socket libs *)
---property NCSASOCKDIR : "ncbi:connect:ncsasock:" (* location of ncsasock files within CodeWarrior folder *)
 
+--
+-- Global variables
+--
 
-(* ==== These symbols will be derived ==== *)
-
-global HARDDISK
-global METRO
-global METROWERKSCW
---global OTLIB
+global gStartupDisk
+global gMW6root
+global gMWCWfolder
+global gMacLibs
+global gStubLibs
+global gPPCLibs
 
 global NCBICPP
 
@@ -35,9 +50,135 @@ global INCLUDEFILES
 global LIBRARIES
 global BINARIES
 
-global DODEBUG
---global DOOPENTPT
---global NCSASOCK
+global gProjectData
+
+--
+-- Routines specific to this project
+--
+
+on SimpleProgramData(projName, section, features)
+	
+	set myFileList to {projName}
+	set infix to "ncbi_"
+	if projName contains infix then
+		set offst to (offset of infix in projName)
+		set pre to characters 1 through (offst - 1) of projName as string
+		set post to characters (offst + (count characters of infix)) Â
+			through (count characters of projName) Â
+			of projName as string
+		set projName to pre & post
+	end if
+	
+	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		if features does not contain "C" and features does not contain "C++" then
+			error "Project " & projName & "'s default language (a feature) must be C or C++."
+		end if
+		set myFeatures to features
+		--copy "BNDL" to end of myFeatures
+		if section contains ":" then
+			set myLibs to {}
+			set myPath to section & ":"
+		else
+			set myLibs to {section}
+			set myPath to section & ":test:"
+		end if
+		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
+			{Prefix File:"", ppcProject:{}}, projLibs:myLibs, fileData:Â
+			{{projPath:myPath, fileList:myFileList}}}
+		
+	end tell
+end SimpleProgramData
+
+on DataPlusLibs(dataRec, newLibs)
+	
+	repeat with i in newLibs
+		copy i to end of projLibs of dataRec
+	end repeat
+	return dataRec
+	
+end DataPlusLibs
+
+on DataPlusSources(dataRec, newSrcs)
+	
+	copy items of newSrcs to end of fileList of item 1 of fileData of dataRec
+	return dataRec
+	
+end DataPlusSources
+
+on SetProjectData()
+	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		set corelib to "corelib"
+		set connect to "connect"
+		set serial to "serial"
+		set util to "util"
+		
+		-- datatool
+		set myName to "datatool"
+		set myFeatures to {"C++"}
+		set mySettings to Â
+			{Prefix File:"", ppcProject:{}}
+		set myRsrcs to {}
+		set myLibs to {"corelib", "serial", "util"}
+		set myFiles to Â
+			{{projPath:"serial:datatool:", fileList:{"datatool", "type", "namespace", "statictype", Â
+				"enumtype", "reftype", "unitype", "blocktype", "choicetype", "typestr", "ptrstr", Â
+				"stdstr", "classstr", "enumstr", "stlstr", "choicestr", "choiceptrstr", "value", Â
+				"mcontainer", "module", "moduleset", "generate", "filecode", "code", "fileutil", Â
+				"alexer", "aparser", "parser", "lexer", "exceptions", "comments", "srcutil"}}}
+		set datatoolData to Â
+			{name:myName, features:myFeatures, settings:mySettings, rsrcs:myRsrcs, projLibs:Â
+				myLibs, fileData:myFiles}
+		
+		set commonObjLibs to {Â
+			"corelib", "serial", "util", Â
+			"object_seqset", "object_seq", "object_seqres", Â
+			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", Â
+			"object_medline", "object_biblio", "object_general"}
+		
+		tell me to Â
+			set gProjectData to {Â
+				SimpleProgramData("coretest", corelib, {"C++"}), Â
+				datatoolData, Â
+				SimpleProgramData("test_ncbitime", corelib, {"C++"}), Â
+				SimpleProgramData("test_ncbi_limits", corelib, {"C++"}), Â
+				SimpleProgramData("test_ncbi_core", connect, {"C"}), Â
+				SimpleProgramData("test_ncbi_buffer", connect, {"C"}), Â
+				SimpleProgramData("test_ncbi_socket_", connect, {"C", "sockets"}), Â
+				SimpleProgramData("test_ncbi_heapmgr", connect, {"C"}), Â
+				SimpleProgramData("test_ncbi_connutil_hit", connect, {"C"}), Â
+				SimpleProgramData("test_ncbi_connutil_misc", connect, {"C"}), Â
+				SimpleProgramData("socket_io_bouncer", connect, {"C"}), Â
+				SimpleProgramData("test_ncbi_file_connector", connect, {"C"}), Â
+				SimpleProgramData("test_sock_connutil_misc", connect, {"C++", "sockets"}), Â
+				SimpleProgramData("test_http_connutil_misc", connect, {"C", "sockets"}), Â
+				SimpleProgramData("test_srv_connutil_misc", connect, {"C", "sockets"}), Â
+				DataPlusLibs(SimpleProgramData("test_ncbi_conn_stream", connect, {"C++"}), Â
+					{"corelib"}), Â
+				DataPlusLibs(DataPlusSources(SimpleProgramData("testserial", serial, {"C++"}), Â
+					{"serialobject", "serialobject_Base", "cppwebenv"}), Â
+					{"corelib", "util"}), Â
+				DataPlusLibs(SimpleProgramData("asn2asn", "objects:asn2asn", {"C++"}), Â
+					commonObjLibs), Â
+				DataPlusLibs(DataPlusLibs(SimpleProgramData("testmedline", "objects:testmedline", Â
+					{"C++"}), commonObjLibs), Â
+					{"object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
+						"object_medlars"}), Â
+				DataPlusLibs(DataPlusLibs(SimpleProgramData("testobjmgr", "objects:objmgr:test", Â
+					{"C++"}), commonObjLibs), {"objmgr"}), Â
+				DataPlusLibs(SimpleProgramData("testrangemap", util, {"C++"}), Â
+					{"corelib"}), Â
+				DataPlusLibs(DataPlusLibs(SimpleProgramData("id1_fetch", "app:id1_fetch", Â
+					{"C++", "sockets"}), commonObjLibs), {"object_id1", "connect", "mitsock"}) Â
+					}
+		
+	end tell
+end SetProjectData
+
+--
+-- Routines generic to all projects
+--
 
 on ResolveAlias(pathname)
 	tell application "Finder"
@@ -53,15 +194,17 @@ end ResolveAlias
 on DoSetGlobals()
 	tell application "Finder"
 		
-		set HARDDISK to startup disk as string
-		set METRO to HARDDISK & "Metrowerks CodeWarrior 6.0:" as string
-		set METROWERKSCW to METRO & "Metrowerks CodeWarrior:" as string
-		--set OTLIB to METROWERKSCW & "MacOS Support:OpenTransport:Open Tpt Client Developer:PPC Libraries:"
+		set gStartupDisk to startup disk as string
+		set gMW6root to gStartupDisk & "Metrowerks CodeWarrior 6.0:" as string
+		set gMWCWfolder to gMW6root & "Metrowerks CodeWarrior:" as string
+		set gMacLibs to gMWCWfolder & "MacOS Support:Universal:Libraries:"
+		set gStubLibs to gMacLibs & "StubLibraries:"
+		set gPPCLibs to gMacLibs & "PPCLibraries:"
 		
-		set NCBICPP to METRO & CPPROOT as string
+		set NCBICPP to gMW6root & CPPROOT
 		
 		try
-			tell me to set Dev to ResolveAlias(HARDDISK & "Development")
+			tell me to set Dev to ResolveAlias(gStartupDisk & "Development")
 			tell me to set Trees to ResolveAlias(Dev & "Trees")
 			tell me to set NCBIgroup to ResolveAlias(Trees & "NCBI")
 			tell me to set Vault to ResolveAlias(NCBIgroup & "ncbi.vault")
@@ -70,24 +213,10 @@ on DoSetGlobals()
 			set NCBICPP to IntCpp
 		end try
 		
-		set SOURCEFILES to NCBICPP & "src:" as string
-		set INCLUDEFILES to NCBICPP & "include:" as string
-		set LIBRARIES to NCBICPP & "compilers:mac_prj:lib:" as string
-		set BINARIES to NCBICPP & "compilers:mac_prj:bin:" as string
-		
-		(*
-		if DOSOCKETS = "TRUE" then
-			set NCSASOCK to METRO & NCSASOCKDIR as string
-			if (exists (folder OTLIB)) then
-				set DOOPENTPT to "TRUE"
-			else
-				set DOOPENTPT to "FALSE"
-				display dialog "Did not find OpenTransport folder inside MacOS Support folder" & return & Â
-					return & "Will use MacTCP interfaces to build networking" & return Â
-					buttons "OK" default button 1
-			end if
-		end if
-*)
+		set SOURCEFILES to NCBICPP & "src:"
+		set INCLUDEFILES to NCBICPP & "include:"
+		set LIBRARIES to NCBICPP & "compilers:mac_prj:lib:"
+		set BINARIES to NCBICPP & "compilers:mac_prj:bin:"
 		
 	end tell
 end DoSetGlobals
@@ -103,7 +232,7 @@ on CreateFolders()
 end CreateFolders
 
 on DoSetDebugPreferences()
-	tell application "CodeWarrior IDE 4.1"
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		(* ==== ONLY settings that are directly relevant to debugging and optimization should go here! ==== *)
 		
@@ -141,56 +270,20 @@ on DoSetDebugPreferences()
 end DoSetDebugPreferences
 
 on DoSetPreferences()
-	tell application "CodeWarrior IDE 4.1"
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
-		(* ===== Panel Target ===== *)
+		(* ===== Section "Target" ===== *)
+		
+		-- Panel "Target Settings"
 		Set Preferences of panel "Target Settings" to {Linker:"MacOS PPC Linker"}
 		
-		(* ===== Panel Project ===== *)
-		Set Preferences of panel "PPC Project" to {Project Type:standard application}
+		-- Panel "PPC Target"
+		Set Preferences of panel "PPC Project" to Â
+			{Project Type:standard application, SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL", Preferred Size:8000, Minimum Size:5000, Stack Size:64}
 		
-		(* ===== Panel C/C++ Warnings ===== *)
-		Set Preferences of panel "C/C++ Warnings" to Â
-			{Treat Warnings As Errors:false Â
-				, Illegal Pragmas:true Â
-				, Empty Declarations:true Â
-				, Possible Errors:true Â
-				, Unused Variables:true Â
-				, Unused Arguments:false Â
-				, Extra Commas:true Â
-				, Extended Error Checking:true Â
-				, Hidden Virtual Functions:true Â
-				, Implicit Arithmetic Conversions:false Â
-				, NonInlined Functions:false Â
-				, Inconsistent Class Struct:true}
+		(* ===== Section "Language Settings" ===== *)
 		
-		(* ===== Panel PPC Processor =====  *)
-		Set Preferences of panel "PPC CodeGen" to Â
-			{Struct Alignment:Align_PPC Â
-				, Make Strings ReadOnly:true Â
-				, Store Data in TOC:true Â
-				, Use FMADD Instructions:false Â
-				, Use Profiler:false Â
-				, Traceback Tables:TB_Inline Â
-				, Schedule:false Â
-				, Peephole Optimizer:true}
-		
-		(* ===== Panel PPC PEF =====  *)
-		Set Preferences of panel "PPC PEF" to Â
-			{Export Symbols:none Â
-				, Old Definition:0 Â
-				, Old Implementation:0 Â
-				, Current Version:0 Â
-				, Code Sorting:nosort Â
-				, Share Data Section:false Â
-				, Expand Uninitialized Data:false Â
-				, Fragment Name:""}
-		
-		(* ===== Panel Debugger =====  *)
-		Set Preferences of panel "Debugger Target" to Â
-			{Log System Messages:false}
-		
-		(* ===== Panel C/C++ Language =====  *)
+		-- Panel "C/C++ Language"
 		Set Preferences of panel "C/C++ Compiler" to Â
 			{Activate CPlusPlus:false Â
 				, ARM Conformance:false Â
@@ -209,7 +302,37 @@ on DoSetPreferences()
 				, Enums Always Ints:false Â
 				, Prefix File:"debug.pfx"}
 		
-		(* ===== Panel PPC Linker ===== *)
+		-- Panel "C/C++ Warnings"
+		Set Preferences of panel "C/C++ Warnings" to Â
+			{Treat Warnings As Errors:false Â
+				, Illegal Pragmas:true Â
+				, Empty Declarations:true Â
+				, Possible Errors:true Â
+				, Unused Variables:true Â
+				, Unused Arguments:false Â
+				, Extra Commas:true Â
+				, Extended Error Checking:true Â
+				, Hidden Virtual Functions:true Â
+				, Implicit Arithmetic Conversions:false Â
+				, NonInlined Functions:false Â
+				, Inconsistent Class Struct:true}
+		
+		(* ===== Section "Code Generation" ===== *)
+		
+		-- Panel "PPC Processor"
+		Set Preferences of panel "PPC CodeGen" to Â
+			{Struct Alignment:Align_PPC Â
+				, Make Strings ReadOnly:true Â
+				, Store Data in TOC:true Â
+				, Use FMADD Instructions:false Â
+				, Use Profiler:false Â
+				, Traceback Tables:TB_Inline Â
+				, Schedule:false Â
+				, Peephole Optimizer:true}
+		
+		(* ===== Section "Linker" ===== *)
+		
+		-- Panel "PPC Linker"
 		Set Preferences of panel "PPC Linker" to Â
 			{Generate SYM File:true Â
 				, Full Path In Sym Files:true Â
@@ -218,11 +341,24 @@ on DoSetPreferences()
 				, Link Mode:fast Â
 				, Initialization Name:Â
 				"", Main Name:Â
-				"__start", Termination Name:""}
+				"__start", Termination Name:""} Â
+				
+		-- Panel "PPC PEF"
+		Set Preferences of panel "PPC PEF" to Â
+			{Export Symbols:none Â
+				, Old Definition:0 Â
+				, Old Implementation:0 Â
+				, Current Version:0 Â
+				, Code Sorting:nosort Â
+				, Share Data Section:false Â
+				, Expand Uninitialized Data:false Â
+				, Fragment Name:""}
 		
-		(* ===== Panel PPC Global Optimizer =====  *)
-		(* ==== ... moved into DoSetDebugPreferences() to allow switching for debug on/off ==== *)
-		my DoSetDebugPreferences()
+		(* ===== Section "Debugger" ===== *)
+		
+		-- Panel "Debugger Settings"
+		Set Preferences of panel "Debugger Target" to Â
+			{Log System Messages:false}
 		
 		my DoSetPaths1()
 		
@@ -230,41 +366,45 @@ on DoSetPreferences()
 end DoSetPreferences
 
 on DoSetPaths1()
-	tell application "CodeWarrior IDE 4.1"
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		(* ===== Panel Access Paths ===== *)
 		-- We need to be able to move the default system compiler folder to the end of the list
 		-- because certain files like "all.h" and "all" are defined by both Metrowerks and NCBI.
 		-- We want to find the NCBI "all.h" first.
 		Set Preferences of panel "Access Paths" to {System Paths:{}} -- This removes the compiler default folder
+		
 		Set Preferences of panel "Access Paths" to {Convert Paths:true}
 		Set Preferences of panel "Access Paths" to {User Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}}
 		Set Preferences of panel "Access Paths" to {System Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}} -- Added for speed
+		Set Preferences of panel "Access Paths" to {User Paths:{{name:LIBRARIES, recursive:true, origin:absolute}}}
 		
 	end tell
 end DoSetPaths1
 
 on DoSetPaths2()
-	tell application "CodeWarrior IDE 4.1"
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		-- After we have added all paths, reinsert compiler default at end of list
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Headers:", recursive:true, origin:shell relative}}}
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Libraries:", recursive:true, origin:shell relative}}}
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Universal:", recursive:true, origin:shell relative}}}
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:Profiler:", recursive:true, origin:shell relative}}}
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MSL:MSL_C:", recursive:true, origin:shell relative}}}
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:":MSL:MSL_C++:", recursive:true, origin:shell relative}}}
-		(*
-		if DOSOCKETS = "TRUE" and DOOPENTPT = "TRUE" then
-			Set Preferences of panel "Access Paths" to {System Paths:{{name:":MacOS Support:OpenTransport:", recursive:true, origin:shell relative}}}
-		end if
-		*)
+		set dirsToAdd to {Â
+			":MacOS Support:Headers:", Â
+			":MacOS Support:Libraries:", Â
+			":MacOS Support:Universal:", Â
+			":MacOS Support:Profiler:", Â
+			":MSL:MSL_C:", Â
+			":MSL:MSL_C++:"}
+		
+		set pathsToAdd to {}
+		repeat with i in dirsToAdd
+			copy {name:i, recursive:true, origin:shell relative} to end of pathsToAdd
+		end repeat
+		Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		
 	end tell
 end DoSetPaths2
 
 on AddLibraries()
-	tell application "CodeWarrior IDE 4.1"
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		Add Files {METROWERKSCW & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.PPC.Lib"} To Segment 1
 		Add Files {METROWERKSCW & "MSL:MSL_C++:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib"} To Segment 1
@@ -276,261 +416,323 @@ on AddLibraries()
 	end tell
 end AddLibraries
 
-(* ==== This function creates a project with the given name and object files ==== *)
+on SetWeakLink(libName)
+	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		set the weak link of every target file of target (count targets of project document 1) of project document 1 Â
+			whose path ends with ":" & libName Â
+			to true
+		
+	end tell
+end SetWeakLink
 
-on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
-	tell application "CodeWarrior IDE 4.1"
+on AddBlueLibs()
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
-		if DODEBUG = "TRUE" then
-			Create Project {BINARIES & projName & " dbg.µ"}
-		else
-			Create Project {BINARIES & projName & ".µ"}
+		set libsToAdd to {Â
+			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.PPC.Lib", Â
+			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib", Â
+			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL SIOUX.PPC.Lib", Â
+			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", Â
+			gStubLibs & "InterfaceLib", Â
+			gStubLibs & "AppearanceLib", Â
+			gStubLibs & "NavigationLib", Â
+			gStubLibs & "MathLib", Â
+			gPPCLibs & "CarbonAccessors.o"}
+		
+		Add Files libsToAdd
+		
+		my SetWeakLink("AppearanceLib")
+		my SetWeakLink("NavigationLib")
+		
+	end tell
+end AddBlueLibs
+
+on AddCarbonLibs()
+	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		set libsToAdd to {Â
+			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.Carbon.Lib", Â
+			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib", Â
+			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL SIOUX.Carbon.Lib", Â
+			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", Â
+			gStubLibs & "CarbonLib"}
+		
+		Add Files libsToAdd
+		
+	end tell
+end AddCarbonLibs
+
+on AddFeatures(features, flags)
+	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		if features contains "BNDL" then
+			Set Preferences of panel "Output Flags" to {Has Bundle:true}
 		end if
 		
+		if features contains "sockets" and flags does not contain "Carbon" then
+			set libsToAdd to {Â
+				gStubLibs & "ThreadsLib", Â
+				gStubLibs & "OpenTransportLib", Â
+				gStubLibs & "OpenTptInternetLib", Â
+				gStubLibs & "InternetConfigLib", Â
+				gPPCLibs & "OpenTptInetPPC.o", Â
+				gPPCLibs & "OpenTransportAppPPC.o"}
+			
+			Add Files libsToAdd
+			
+		end if
+		
+		if features contains "OpenGL" then
+			set OpenGLLibs to OGLSDK & "Libraries:"
+			Set Preferences of panel "Access Paths" to {System Paths:{{name:OpenGLLibs, recursive:true, origin:absolute}}}
+			Add Files {OpenGLLibs & "OpenGLLibraryStub", OpenGLLibs & "OpenGLUtilityStub"}
+		end if
+		
+	end tell
+end AddFeatures
+
+on SetupTarget(proj, flags)
+	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		-- initialize variables
+		set projRsrcs to {}
+		set projFeatures to {}
+		
+		-- Grab the fields of our project record and store them in local variables.
+		set projName to proj's name
+		set projSettings to proj's settings
+		try
+			set projFeatures to proj's features
+		end try
+		try
+			set projRsrcs to proj's rsrcs
+		end try
+		set projLibs to proj's projLibs
+		set projFileData to proj's fileData
+		
+		-- Figure out what our output file and input libraries will be named.
+		if flags contains "Carbon" then
+			set targetAPI to "C2"
+		else
+			set targetAPI to "Mac"
+		end if
+		if flags contains "debug" then
+			set targetDebug to "dbg"
+		else
+			set targetDebug to ""
+		end if
+		set targetName to projName & " " & targetAPI
+		set fnSuffix to "-" & targetAPI
+		if targetDebug is not "" then
+			set targetName to targetName & " " & targetDebug
+			set fnSuffix to fnSuffix & "-" & targetDebug
+		end if
+		set targetFilename to targetName
+		
+		-- Make the new target, and set the current target to be it.
+		make new target at project document 1 with properties {name:targetName}
+		set the current target of project document 1 to the result
+		
+		-- Set default settings.  do this BEFORE setting per-project settings!
 		my DoSetPreferences()
-		Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
-		if DODEBUG = "TRUE" then
-			Set Preferences of panel "PPC Project" to {File Name:(projName & " dbg")}
-		else
-			Set Preferences of panel "PPC Project" to {File Name:projName}
+		
+		-- Set the name of the output file (the application)
+		Set Preferences of panel "PPC Project" to {File Name:targetFilename}
+		
+		-- If we have any per-project override settings, set them.
+		if (count ppcProject of projSettings) > 0 then
+			Set Preferences of panel "PPC Project" to ppcProject of projSettings
 		end if
-		Set Preferences of panel "PPC Project" to {SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL"}
-		Set Preferences of panel "PPC Project" to {Preferred Size:8000, Minimum Size:5000, Stack Size:64}
+		--Set Preferences of panel "Access Paths" to {User Paths:{{name:NCBISOURCE & projPath, origin:absolute}}}
 		my DoSetPaths2()
 		
-		my AddLibraries()
-		
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:LIBRARIES, origin:absolute}}}
-		repeat with i in projNCBILibs
-			if DODEBUG = "TRUE" then
-				Add Files {LIBRARIES & i & " debug"} To Segment 1
+		-- Set the appropriate prefix file.
+		set prefixFile to Prefix File of projSettings
+		if flags contains "Carbon" then
+			if prefixFile is "" then
+				set prefixFile to "CarbonPrefix.h"
 			else
-				Add Files {LIBRARIES & i} To Segment 1
+				set prefixFile to "Carbon-" & prefixFile
 			end if
+		end if
+		Set Preferences of panel "C/C++ Compiler" to {Prefix File:prefixFile}
+		
+		-- Are we assuming a .c or a .cpp extension?
+		if projFeatures contains "C++" then
+			set fileExtension to ".cpp"
+		else
+			set fileExtension to ".c"
+		end if
+		
+		-- Add source files.
+		repeat with group in projFileData
+			set projPath to projPath of group
+			Set Preferences of panel "Access Paths" to Â
+				{User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
+			set fileList to group's fileList
+			set filesToAdd to {}
+			repeat with i in fileList
+				copy SOURCEFILES & projPath & i & fileExtension to end of filesToAdd
+			end repeat
+			Add Files filesToAdd
 		end repeat
 		
-		repeat with i in projFiles
-			Add Files {SOURCEFILES & projPath & ":" & i & ".cpp"} To Segment 1
+		-- To debug, or not to debug
+		if flags contains "debug" then
+			set the debug of every target file of target (count targets of project document 1) Â
+				of project document 1 to true
+			Set Preferences of panel "PPC Global Optimizer" to Â
+				{Optimize For:code_Speed, Level:0}
+			Set Preferences of panel "PPC Linker" to Â
+				{Generate SYM File:true}
+			Set Preferences of panel "C/C++ Compiler" to Â
+				{Inlining:inline_none Â
+					, AutoInlining:false Â
+					, Prefix File:"debug.pfx"}
+		else
+			Set Preferences of panel "PPC Global Optimizer" to Â
+				{Optimize For:code_Speed, Level:4}
+			Set Preferences of panel "PPC Linker" to Â
+				{Generate SYM File:false}
+			Set Preferences of panel "C/C++ Compiler" to Â
+				{Inlining:inline_smart Â
+					, AutoInlining:true Â
+					, Prefix File:"release.pfx"}
+		end if
+		
+		-- Add appropriate system libraries.
+		if flags contains "Carbon" then
+			my AddCarbonLibs()
+		else
+			my AddBlueLibs()
+		end if
+		my AddFeatures(projFeatures, flags)
+		
+		set filesToAdd to {}
+		
+		-- Add user libraries.
+		repeat with i in projLibs
+			copy LIBRARIES & i & fnSuffix & ".lib" to end of filesToAdd
 		end repeat
+		
+		-- Add resources.
+		repeat with i in projRsrcs
+			copy gResources & i to end of filesToAdd
+		end repeat
+		
+		Add Files filesToAdd
 		
 		Reset File Paths
-		Close Project
 		
 	end tell
-end DoCreateDefaultProject
+end SetupTarget
 
-on DoCreateDefaultCProject(projName, projPath, projFiles, projNCBILibs)
-	tell application "CodeWarrior IDE 4.1"
+on CreateProject(proj)
+	tell application "CodeWarrior IDE 4.1.0.3"
 		
-		if DODEBUG = "TRUE" then
-			Create Project {BINARIES & projName & " dbg.µ"}
-		else
-			Create Project {BINARIES & projName & ".µ"}
+		set projFilename to proj's name & pProjectFileExtension
+		set projPathname to BINARIES & projFilename
+		if pAlwaysCreateProjects or not (exists file projPathname of application "Finder") then
+			
+			try
+				close (the first project document whose name is projFilename)
+			end try
+			
+			Create Project {projPathname}
+			
+			if pCreateBlueTargets and pCreateDebugTargets then
+				my SetupTarget(proj, "Blue debug")
+			end if
+			
+			if pCreateBlueTargets and pCreateOptimizedTargets then
+				my SetupTarget(proj, "Blue")
+			end if
+			
+			if pCreateCarbonTargets and pCreateDebugTargets then
+				my SetupTarget(proj, "Carbon debug")
+			end if
+			
+			if pCreateCarbonTargets and pCreateOptimizedTargets then
+				my SetupTarget(proj, "Carbon")
+			end if
+			
+			set the current target of project document 1 to target 1 of project document 1
+			
+			Close Project
+			
 		end if
 		
-		my DoSetPreferences()
-		Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
-		if DODEBUG = "TRUE" then
-			Set Preferences of panel "PPC Project" to {File Name:(projName & " dbg")}
-		else
-			Set Preferences of panel "PPC Project" to {File Name:projName}
-		end if
-		Set Preferences of panel "PPC Project" to {SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL"}
-		Set Preferences of panel "PPC Project" to {Preferred Size:8000, Minimum Size:5000, Stack Size:64}
-		my DoSetPaths2()
-		
-		my AddLibraries()
-		
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:LIBRARIES, origin:absolute}}}
-		repeat with i in projNCBILibs
-			if DODEBUG = "TRUE" then
-				Add Files {LIBRARIES & i & " debug"} To Segment 1
-			else
-				Add Files {LIBRARIES & i} To Segment 1
+	end tell
+end CreateProject
+
+on CreateAllProjects()
+	
+	repeat with proj in gProjectData
+		CreateProject(proj)
+	end repeat
+	
+end CreateAllProjects
+
+on BuildProgram(projName)
+	tell application "CodeWarrior IDE 4.1.0.3"
+		open (BINARIES & projName & pProjectFileExtension)
+		repeat with i from 2 to (count targets of project document 1)
+			set the current target of project document 1 to target i of project document 1
+			Make Project
+			-- If there were compiler warnings, then a compiler window will be in front.
+			-- For whatever reason, this causes the next "set the current target..." to fail.
+			-- An easy way to make the window go away without having to know if it's there or not 
+			-- is to build again, which, because everything is already compiled, finishes instantly
+			-- and produces no warnings.
+			--Make Project
+			-- An even better way is to check for the window and close it.
+			if the name of window 1 is "Errors & Warnings" then
+				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
 		end repeat
-		
-		repeat with i in projFiles
-			Add Files {SOURCEFILES & projPath & ":" & i & ".c"} To Segment 1
-		end repeat
-		
-		Reset File Paths
+		set the current target of project document 1 to target 1 of project document 1
 		Close Project
-		
 	end tell
-end DoCreateDefaultCProject
+end BuildProgram
 
-(* ==== This section populates and builds the libraries ==== *)
-
-on DoCreateProjects()
-	tell application "CodeWarrior IDE 4.1"
-		
-		activate
-		
-		(* ==== This subsection populates all the libraries with the appropriate source files and libraries ==== *)
-		
-		my DoCreateDefaultProject("coretest", "corelib:test", Â
-			{"coretest"}, {"corelib"})
-		
-		my DoCreateDefaultProject("datatool", "serial:datatool", Â
-			{"datatool", "type", "namespace", "statictype", "enumtype", "reftype", "unitype", Â
-				"blocktype", "choicetype", "typestr", "ptrstr", "stdstr", "classstr", Â
-				"enumstr", "stlstr", "choicestr", "choiceptrstr", "value", "mcontainer", Â
-				"module", "moduleset", "generate", "filecode", "code", "fileutil", Â
-				"alexer", "aparser", "parser", "lexer", "exceptions", Â
-				"comments", "srcutil"}, Â
-			{"corelib", "serial", "util"})
-		
-		my DoCreateDefaultProject("test_ncbitime", "corelib:test", Â
-			{"test_ncbitime"}, {"corelib"})
-		
-		my DoCreateDefaultProject("test_ncbi_limits", "corelib:test", Â
-			{"test_ncbi_limits"}, {"corelib"})
-		
-		my DoCreateDefaultCProject("test_core", "connect:test", Â
-			{"test_ncbi_core"}, {"connect"})
-		
-		my DoCreateDefaultCProject("test_buffer", "connect:test", Â
-			{"test_ncbi_buffer"}, {"connect"})
-		
-		my DoCreateDefaultCProject("test_socket", "connect:test", Â
-			{"test_ncbi_socket_"}, {"ncsasock", "connect"})
-		
-		my DoCreateDefaultCProject("test_heapmgr", "connect:test", Â
-			{"test_ncbi_heapmgr"}, {"connect"})
-		
-		my DoCreateDefaultCProject("test_connutil_hit", "connect:test", Â
-			{"test_ncbi_connutil_hit"}, {"ncsasock", "connect"})
-		
-		my DoCreateDefaultCProject("test_connutil_misc", "connect:test", Â
-			{"test_ncbi_connutil_misc"}, {"connect"})
-		
-		my DoCreateDefaultCProject("socket_io_bouncer", "connect:test", Â
-			{"socket_io_bouncer"}, {"ncsasock", "connect"})
-		
-		my DoCreateDefaultCProject("test_file_connector", "connect:test", Â
-			{"ncbi_conntest", "test_ncbi_file_connector"}, {"connect"})
-		
-		my DoCreateDefaultCProject("test_sock_connector", "connect:test", Â
-			{"ncbi_conntest", "test_ncbi_socket_connector"}, {"ncsasock", "connect"})
-		
-		my DoCreateDefaultCProject("test_http_connector", "connect:test", Â
-			{"ncbi_conntest", "test_ncbi_http_connector"}, {"ncsasock", "connect"})
-		
-		my DoCreateDefaultCProject("test_srv_connector", "connect:test", Â
-			{"ncbi_conntest", "test_ncbi_service_connector"}, {"ncsasock", "connect"})
-		
-		my DoCreateDefaultProject("test_conn_stream", "connect:test", Â
-			{"test_ncbi_conn_stream"}, {"ncsasock", "connect", "corelib"})
-		
-		my DoCreateDefaultProject("serialtest", "serial:test", Â
-			{"serialobject", "serialobject_Base", "testserial", "cppwebenv"}, {"corelib", "serial", "util"})
-		
-		my DoCreateDefaultProject("asn2asn", "objects:asn2asn", Â
-			{"asn2asn"}, {"corelib", "serial", "util", "object_seqset", "object_seq", "object_seqres", Â
-			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", Â
-			"object_medline", "object_biblio", "object_general"})
-		
-		my DoCreateDefaultProject("testmedline", "objects:testmedline", Â
-			{"testmedline"}, {"corelib", "serial", "util", "object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
-			"object_seqset", "object_seq", "object_seqres", "object_seqloc", "object_seqalign", "object_seqfeat", Â
-			"object_seqblock", "object_pub", "object_medline", "object_medlars", "object_biblio", "object_general"})
-		
-		my DoCreateDefaultProject("testobjmgr", "objects:objmgr:test", Â
-			{"testobjmgr"}, {"corelib", "serial", "util", "objmgr", "object_seqset", "object_seq", "object_seqres", Â
-			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", "object_medline", Â
-			"object_biblio", "object_general"})
-		
-		my DoCreateDefaultProject("testrangemap", "util:test", Â
-			{"testrangemap"}, {"corelib", "util"})
-		
-	end tell
-end DoCreateProjects
-
-(* ==== This function compiles a project ==== *)
-
-on DoCompileBinary(projName)
-	tell application "CodeWarrior IDE 4.1"
-		
-		if DODEBUG = "TRUE" then
-			open (BINARIES & projName & " dbg.µ")
-			set the debug of every target file of target 1 of project document 1 to true
-		else
-			open (BINARIES & projName & ".µ")
-			set the debug of every target file of target 1 of project document 1 to false
-		end if
-		
-		Make Project
-		Close Project
-		
-	end tell
-end DoCompileBinary
-
-on DoCompileBinaries()
+on BuildAllPrograms()
 	
-	(*
-	if DOSOCKETS = "TRUE" then
-		my DoCompileBinary("ncsasock")
-		if DOOPENTPT = "TRUE" then
-			my DoCompileBinary("ncsasockOT")
-		end if
-		my DoCompileBinary("connect")
-	end if
-	*)
+	repeat with proj in gProjectData
+		BuildProgram(proj's name)
+	end repeat
 	
-	my DoCompileBinary("coretest")
-	my DoCompileBinary("datatool")
-	my DoCompileBinary("test_ncbitime")
-	my DoCompileBinary("test_ncbi_limits")
-	my DoCompileBinary("test_core")
-	my DoCompileBinary("test_buffer")
-	my DoCompileBinary("test_socket")
-	my DoCompileBinary("test_heapmgr")
-	my DoCompileBinary("test_connutil_hit")
-	my DoCompileBinary("test_connutil_misc")
-	my DoCompileBinary("socket_io_bouncer")
-	my DoCompileBinary("test_file_connector")
-	my DoCompileBinary("test_sock_connector")
-	my DoCompileBinary("test_http_connector")
-	my DoCompileBinary("test_srv_connector")
-	my DoCompileBinary("test_conn_stream")
-	my DoCompileBinary("serialtest")
-	my DoCompileBinary("asn2asn")
-	my DoCompileBinary("testmedline")
-	my DoCompileBinary("testobjmgr")
-	my DoCompileBinary("testrangemap")
+end BuildAllPrograms
+
+on SignalCompletion()
 	
-end DoCompileBinaries
+	try
+		say "Make complete."
+	on error
+		beep
+	end try
+	
+end SignalCompletion
 
 (* ==== here's where actual work gets done ! ==== *)
 
 with timeout of 60000 seconds
 	
-	my DoSetGlobals()
+	DoSetGlobals()
 	
-	if CREATEDEBUGPROJECTS = "TRUE" then
-		set DODEBUG to "TRUE"
-		my CreateFolders()
-		my DoCreateProjects()
+	SetProjectData()
+	
+	CreateFolders()
+	
+	tell application "CodeWarrior IDE 4.1.0.3" to activate
+	
+	CreateAllProjects()
+	
+	if pBuildApps then
+		BuildAllPrograms()
 	end if
 	
-	if CREATERELEASEPROJECTS = "TRUE" then
-		set DODEBUG to "FALSE"
-		my CreateFolders()
-		my DoCreateProjects()
-	end if
-	
-	if BUILDDEBUGBINS = "TRUE" then
-		set DODEBUG to "TRUE"
-		my DoCompileBinaries()
-	end if
-	
-	if BUILDRELEASEBINS = "TRUE" then
-		set DODEBUG to "FALSE"
-		my DoCompileBinaries()
-	end if
-	
-	beep
+	SignalCompletion()
 	
 end timeout
 
