@@ -1358,8 +1358,7 @@ BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list,
 	if (hsp_list && hsp_list->hspcnt > 0)
 	{
       /* Link up the HSP's for this hsp_list. */
-      if ((program_number != blast_type_tblastn &&
-           program_number != blast_type_psitblastn) || 
+      if (program_number != blast_type_tblastn ||
           hit_params->options->longest_intron <= 0)
       {
          link_hsps(program_number, hsp_list, query_info, subject, sbp, 
