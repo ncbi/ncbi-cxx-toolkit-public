@@ -195,6 +195,24 @@ public:
     /// Remove all non-active LOG files
     void CleanLog();
 
+    /// Number of records in scanned at once by Purge
+    /// Cache is exclusively locks an internal mutex while 
+    /// scanning the batch and all other threads is getting locked.
+    void SetPurgeBatchSize(unsigned batch_size);
+
+    unsigned GetPurgeBatchSize() const;
+
+    /// Set sleep in milliseconds between Purge batches 
+    /// (for low priority Purge processes)
+    void SetBatchSleep(unsigned sleep);
+
+    unsigned GetBatchSleep() const;
+
+    /// Request to stop Purge. Use this method when Purge runs in
+    /// it's own thread and you need the stop that thread in the
+    /// middle of processing
+    void StopPurge();
+
 
     // ICache interface 
 
@@ -385,16 +403,22 @@ private:
     string                  m_Name;       ///< Cache name
     CPIDGuard*              m_PidGuard;   ///< Cache lock
     bool                    m_ReadOnly;   ///< read-only flag
-    CBDB_Env*               m_Env;          ///< Common environment for cache DBs
+    CBDB_Env*               m_Env;        ///< Common environment for cache DBs
     SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
     int                     m_Timeout;      ///< Timeout expiration policy
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
-    CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attributes
+    CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attrs
     EPageSize               m_PageSizeHint; ///< Suggested page size
     EWriteSyncMode          m_WSync;        ///< Write syncronization
+    /// Number of records to process in Purge() (with locking)
+    unsigned                m_PurgeBatchSize;
+    /// Sleep interval (milliseconds) between batches
+    unsigned                m_BatchSleep;
+    /// TRUE when Purge processing requested to stop
+    bool                    m_PurgeStop;
 };
 
 
@@ -456,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/10/13 12:52:19  kuznets
+ * Changes in Purge processing: more options to allow Purge in a thread
+ *
  * Revision 1.33  2004/09/27 14:03:58  kuznets
  * +option not to use transactions, and method to clean log files
  *

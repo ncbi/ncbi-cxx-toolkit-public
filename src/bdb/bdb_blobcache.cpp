@@ -34,7 +34,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-
+#include <corelib/ncbi_system.hpp>
 
 #include <db.h>
 
@@ -454,7 +454,10 @@ CBDB_Cache::CBDB_Cache()
   m_CacheAttrDB(0),
   m_VersionFlag(eDropOlder),
   m_PageSizeHint(eLarge),
-  m_WSync(eWriteNoSync)
+  m_WSync(eWriteNoSync),
+  m_PurgeBatchSize(50),
+  m_BatchSleep(100),
+  m_PurgeStop(false)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -630,7 +633,23 @@ void CBDB_Cache::Open(const char* cache_path,
     }}
 
     if (m_TimeStampFlag & fPurgeOnStartup) {
+        unsigned batch_sleep = m_BatchSleep;
+        unsigned batch_size = m_PurgeBatchSize;
+
+        // setup parameters which favor fast Purge execution 
+        // (Open purge needs to be fast because all waiting for it)
+
+        if (m_PurgeBatchSize < 2500) {
+            m_PurgeBatchSize = 2500;
+        }
+        m_BatchSleep = 0;
+
         Purge(GetTimeout());
+
+        // Restore parameters
+
+        m_BatchSleep = batch_sleep;
+        m_PurgeBatchSize = batch_size;
     }
     //m_Env->TransactionCheckpoint();
 
@@ -960,7 +979,6 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 	if (!rec_exists) {
 		return 0;
 	}
-
     // check expiration
     if (m_TimeStampFlag & fCheckExpirationAlways) {
         if (x_CheckTimestampExpired(key, version, subkey)) {
@@ -1214,62 +1232,147 @@ time_t CBDB_Cache::GetAccessTime(const string&  key,
     return (int) m_CacheAttrDB->time_stamp;
 }
 
+void CBDB_Cache::SetPurgeBatchSize(unsigned batch_size)
+{
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+    m_PurgeBatchSize = batch_size;
+}
+
+unsigned CBDB_Cache::GetPurgeBatchSize() const
+{
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+    unsigned ret = m_PurgeBatchSize;
+    return ret;
+}
+
+void CBDB_Cache::SetBatchSleep(unsigned sleep)
+{
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+    m_BatchSleep = sleep;
+}
+
+unsigned CBDB_Cache::GetBatchSleep() const
+{
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+    unsigned ret = m_BatchSleep;
+    return ret;
+}
+
+void CBDB_Cache::StopPurge()
+{
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+    m_PurgeStop = true;
+}
 
 void CBDB_Cache::Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version)
 {
+    unsigned delay = 0;
     if (IsReadOnly()) {
         return;
     }
 
-    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-
     if (keep_last_version == eDropAll && access_timeout == 0) {
+        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
         x_TruncateDB();
         return;
     }
 
-    // Search the database for obsolete cache entries
-
     vector<SCacheDescr> cache_entries;
-
-    {{
-    CBDB_FileCursor cur(*m_CacheAttrDB);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-
+    cache_entries.reserve(1000);
 
     CTime time_stamp(CTime::eCurrent);
     time_t curr = (int)time_stamp.GetTimeT();
     int timeout = GetTimeout();
 
-    while (cur.Fetch() == eBDB_Ok) {
-        time_t db_time_stamp = m_CacheAttrDB->time_stamp;
-        int version = m_CacheAttrDB->version;
-        const char* key = m_CacheAttrDB->key;
-        int overflow = m_CacheAttrDB->overflow;
-        const char* subkey = m_CacheAttrDB->subkey;
+    // Search the database for obsolete cache entries
 
-        if (curr - timeout > db_time_stamp) {
-            cache_entries.push_back(
-                            SCacheDescr(key, version, subkey, overflow));
+    string last_key;
+
+    for (bool flag = true; flag;) {
+        unsigned batch_size = GetPurgeBatchSize();
+        {{
+            CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+            delay = m_BatchSleep;
+
+            CBDB_FileCursor cur(*m_CacheAttrDB);
+            cur.SetCondition(CBDB_FileCursor::eGE);
+            cur.From << last_key;
+
+            for (unsigned i = 0; i < batch_size; ++i) {
+                if (cur.Fetch() != eBDB_Ok) {
+                    flag = false;
+                    break;
+                }
+
+                time_t db_time_stamp = m_CacheAttrDB->time_stamp;
+                int version = m_CacheAttrDB->version;
+                const char* key = m_CacheAttrDB->key;
+                last_key = key;
+                int overflow = m_CacheAttrDB->overflow;
+                const char* subkey = m_CacheAttrDB->subkey;
+
+                if (curr - timeout > db_time_stamp) {
+                    cache_entries.push_back(
+                         SCacheDescr(key, version, subkey, overflow));
+                }
+            } // for i
+
+            if (m_PurgeStop) {
+                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+                m_PurgeStop = false;
+                return;
+            }
+
+        }}
+
+        if (delay) {
+            SleepMilliSec(delay);
         }
 
-    } // while
-    }}
+    } // for flag
+    
 
-    CBDB_Transaction trans(*m_Env, BDB_TRAN_SYNC);
-    m_CacheDB->SetTransaction(&trans);
-    m_CacheAttrDB->SetTransaction(&trans);
+    // Delete BLOBs
+    
 
-    ITERATE(vector<SCacheDescr>, it, cache_entries) {
-        x_DropBlob(it->key.c_str(), 
-                   it->version, 
-                   it->subkey.c_str(), 
-                   it->overflow);
-    }
+    for (unsigned i = 0; i < cache_entries.size(); ) {
+        unsigned batch_size = GetPurgeBatchSize();
 
-    trans.Commit();
+        {{
+        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+        CBDB_Transaction trans(*m_Env, BDB_TRAN_SYNC);
+        m_CacheDB->SetTransaction(&trans);
+        m_CacheAttrDB->SetTransaction(&trans);
+
+        for (unsigned j = 0; 
+             (j < m_PurgeBatchSize) && (i < cache_entries.size()); 
+             ++i,++j) {
+                 const SCacheDescr& it = cache_entries[i];
+                 x_DropBlob(it.key.c_str(), 
+                            it.version, 
+                            it.subkey.c_str(), 
+                            it.overflow);
+                
+        } // for j
+        trans.Commit();
+        delay = m_BatchSleep;
+
+        if (m_PurgeStop) {
+            LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+            m_PurgeStop = false;
+            return;
+        }
+
+        }}
+
+        // temporarily unlock the mutex to let other threads go
+        if (delay) {
+            SleepMilliSec(delay);
+        }
+
+    } // for i
 }
 
 
@@ -1728,6 +1831,9 @@ static const string kCFParam_read_update_limit = "read_update_limit";
 static const string kCFParam_write_sync        = "write_sync";
 static const string kCFParam_use_transactions  = "use_transactions";
 
+static const string kCFParam_purge_batch_size  = "purge_batch_size";
+static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
+
 
 ICache* CBDB_CacheReaderCF::CreateInstance(
            const string&                  driver,
@@ -1796,6 +1902,14 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     bool use_trans = 
         GetParamBool(params, kCFParam_use_transactions, false, true);
 
+    unsigned batch_size = 
+        GetParamInt(params, kCFParam_purge_batch_size, false, 70);
+    drv->SetPurgeBatchSize(batch_size);
+
+    unsigned batch_sleep = 
+        GetParamInt(params, kCFParam_purge_batch_sleep, false, 0);
+    drv->SetBatchSleep(batch_sleep);
+
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
@@ -1853,6 +1967,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2004/10/13 12:52:25  kuznets
+ * Changes in Purge processing: more options to allow Purge in a thread
+ *
  * Revision 1.80  2004/09/28 17:05:10  kuznets
  * Bug fix: IWriter::Write() bytes_written is optional
  *
