@@ -58,7 +58,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             LOG_POST(Info << "Configuration "
                           << cfg_info.m_Name
                           << " disabled in project "
-                          << project_context.ProjectId().Id());
+                          << project_context.ProjectId());
             continue;
         }
 
@@ -603,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/03/10 16:39:56  gorelenk
+ * Changed LOG_POST inside CMsvcProjectGenerator::Generate.
+ *
  * Revision 1.25  2004/03/08 23:35:04  gorelenk
  * Changed implementation of CMsvcProjectGenerator::Generate.
  *
