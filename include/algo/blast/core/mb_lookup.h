@@ -289,7 +289,7 @@ extern "C" {
 typedef struct BlastMBLookupTable {
    Int4 hashsize;       /**< = 2^(8*width) */ 
    Int4 mask;           /**< hashsize - 1 */
-   Int2 compressed_wordsize;/**< Number of bytes in intersection between 
+   Int4 compressed_wordsize;/**< Number of bytes in intersection between 
                                consecutive words */
    Int4 word_length;      /**< The length of the initial word without the 
                              extra part */
@@ -312,6 +312,9 @@ typedef struct BlastMBLookupTable {
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
+   Boolean variable_wordsize; /**< if TRUE then only full bytes are compared as initial words. */
+   Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if TRUE, so that 
+                               not every base is checked.  */
 } BlastMBLookupTable;
 
 /**
