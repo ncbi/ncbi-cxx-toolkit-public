@@ -40,7 +40,10 @@
 #include <ncbi_pch.hpp>
 #include <objects/id1/id1_client.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <serial/exception.hpp>
+
+#include <objects/id1/ID1server_maxcomplex.hpp>
 
 // generated classes
 
@@ -67,6 +70,32 @@ CRef<CSeq_entry> CID1Client::AskGetsefromgi(const CID1server_maxcomplex& req,
 }
 
 
+CRef<CSeq_entry> CID1Client::FetchEntry(int gi, int max_complexity)
+{
+    CRef<CID1server_maxcomplex> mc(new CID1server_maxcomplex);
+    mc->SetGi(gi);
+    mc->SetMaxplex(max_complexity);
+    return AskGetsefromgi(*mc);
+}
+
+
+CRef<CSeq_entry> CID1Client::FetchEntry(const CSeq_id& id, int max_complexity)
+{
+    int gi = AskGetgi(id);
+    if (gi == 0) {
+        return CRef<CSeq_entry>();
+    }
+    return FetchEntry(gi, max_complexity);
+}
+
+
+CRef<CSeq_entry> CID1Client::FetchEntry(const string& id_string,
+                                        int max_complexity)
+{
+    return FetchEntry(CSeq_id(id_string), max_complexity);
+}
+
+
 // destructor
 CID1Client::~CID1Client(void)
 {
@@ -81,6 +110,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/20 18:23:21  jcherry
+* Added a simplified interface for retrieving entries
+*
 * Revision 1.2  2004/05/19 17:22:32  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

@@ -61,6 +61,11 @@ public:
 
     virtual CRef<CSeq_entry> AskGetsefromgi(const CID1server_maxcomplex& req,
                                             TReply* reply = 0);
+    // Simplified interface for retrieving entries by gi or sequence id
+    CRef<CSeq_entry> FetchEntry(int gi, int max_complexity = 0);
+    CRef<CSeq_entry> FetchEntry(const CSeq_id& id, int max_complexity = 0);
+    CRef<CSeq_entry> FetchEntry(const string& id_string,
+                                int max_complexity = 0);
 
 private:
     bool m_AllowDeadEntries;
@@ -95,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/20 18:23:21  jcherry
+* Added a simplified interface for retrieving entries
+*
 * Revision 1.1  2003/04/09 16:00:13  ucko
 * Give all RPC clients unique basenames.
 *
