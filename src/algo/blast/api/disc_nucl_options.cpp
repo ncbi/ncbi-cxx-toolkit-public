@@ -71,7 +71,7 @@ CDiscNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
     SetWindowSize(BLAST_WINDOW_SIZE_DISC);
     SetSeedContainerType(eDiagArray);
     SetVariableWordSize(BLAST_VARWORD_NUCL);
-    SetSeedExtensionMethod(eRight);
+    SetSeedExtensionMethod(eUpdateDiag);
     SetUngappedExtension();
 }
 
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/08/03 20:21:09  dondosha
+ * Set seed extension method to eUpdateDiag rather than eRight
+ *
  * Revision 1.9  2004/06/08 15:20:23  dondosha
  * Skip traceback option has been moved to the traceback extension method enum
  *
