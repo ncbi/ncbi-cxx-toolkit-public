@@ -223,6 +223,12 @@ else
     target_dir=$2
 fi
 
+if test "`uname`" = Darwin -a -x /Developer/Tools/CpMac \
+    -a "$BINCOPY" != "ln -s"; then
+    BINCOPY="/Developer/Tools/CpMac -p"
+fi
+
+
 src_dir=`echo $src_dir | sed -e 's|/\$||'`
 target_dir=`echo $target_dir | sed -e 's|/\$||'`
 
