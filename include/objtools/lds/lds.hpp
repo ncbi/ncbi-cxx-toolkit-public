@@ -107,8 +107,10 @@ private:
 class NCBI_LDS_EXPORT CLDS_DatabaseHolder : public CObject
 {
 public:
-    CLDS_DatabaseHolder(CLDS_Database* db);
+    CLDS_DatabaseHolder(CLDS_Database* db = 0);
     ~CLDS_DatabaseHolder();
+
+    void AddDatabase(CLDS_Database* db) { m_DataBases.push_back(db); }
 
     CLDS_Database* GetDefaultDatabase() { return *(m_DataBases.begin()); }
 
@@ -128,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/10/27 19:18:08  kuznets
+ * +CLDS_DatabaseHolder::AddDatabase
+ *
  * Revision 1.17  2003/10/09 19:55:30  kuznets
  * +SetAlias function
  *
