@@ -129,8 +129,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
-     (Uint1, BLAST_SequenceBlk*, BLAST_SequenceBlk*, 
-      BlastGapAlignStruct*, const BlastScoringOptions*,
+     (Uint1, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
+      BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringOptions*,
       BlastExtensionParameters*, BlastHitSavingParameters*,
       BlastInitHitList*, BlastHSPList**);
      
