@@ -304,6 +304,10 @@ struct LSOCK_tag {
     unsigned/*bool*/     eof:1; /* 0                                         */
     EBIO_Status     w_status:3; /* MBZ (NB: eIO_Success)                     */
     unsigned/*bool*/ pending:1; /* 0                                         */
+
+#ifdef NCBI_OS_UNIX
+    char            file[1];    /* must go last                              */
+#endif /*NCBI_OS_UNIX*/
 };
 
 
@@ -912,6 +916,7 @@ static STimeout *s_tv2to(const struct timeval* tv, STimeout* to)
     return to;
 }
 
+
 static struct timeval* s_to2tv(const STimeout* to, struct timeval* tv)
 {
     if ( !to )
@@ -1053,6 +1058,13 @@ static EIO_Status s_Select(size_t                n,
             if (polls[i].event  &&
                 (EIO_Event)(polls[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
                 TSOCK_Handle fd = polls[i].sock->sock;
+#ifdef FD_SETSIZE
+                if (fd >= FD_SETSIZE) {
+                    polls[i].revent = eIO_Close;
+                    ready = 1;
+                    continue;
+                }
+#endif /*FD_SETSIZE*/
                 if (fd != SOCK_INVALID) {
                     int/*bool*/ ls = IS_LISTENING(polls[i].sock);
                     if (!ls && n != 1 && polls[i].sock->type == eSOCK_Datagram)
@@ -1136,7 +1148,11 @@ static EIO_Status s_Select(size_t                n,
             if ( !tv )
                 continue;
             if ( s_Less(s_SelectTimeout, &x_tv) ) {
-                x_tv.tv_sec  -= s_SelectTimeout->tv_sec;
+                x_tv.tv_sec -= s_SelectTimeout->tv_sec;
+                if (x_tv.tv_usec < s_SelectTimeout->tv_usec) {
+                    x_tv.tv_sec--;
+                    x_tv.tv_usec += 1000000;
+                }
                 x_tv.tv_usec -= s_SelectTimeout->tv_usec;
                 continue;
             }
@@ -1169,10 +1185,10 @@ static EIO_Status s_Select(size_t                n,
         if ( polls[i].sock ) {
             TSOCK_Handle fd = polls[i].sock->sock;
             assert(polls[i].revent == eIO_Open);
-            if (fd != SOCK_INVALID) {
+            if (fd != SOCK_INVALID  &&  fd < FD_SETSIZE) {
                 if (!write_only  &&  FD_ISSET(fd, &r_fds))
                     polls[i].revent = eIO_Read;
-                if (!read_only   &&   FD_ISSET(fd, &w_fds))
+                if (!read_only   &&  FD_ISSET(fd, &w_fds))
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
                 if (!polls[i].revent  &&  FD_ISSET(fd, &e_fds))
                     polls[i].revent = eIO_Close;
@@ -1196,10 +1212,13 @@ static EIO_Status s_Select(size_t                n,
 
 extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
 {
-    static struct timeval  s_NewTmo;
-    static STimeout        s_OldTmo;
-    const  STimeout* retval = s_tv2to(s_SelectTimeout, &s_OldTmo);
-    s_SelectTimeout         = s_to2tv(t,               &s_NewTmo);
+    static struct timeval s_NewTmo;
+    static STimeout       s_OldTmo;
+    const  STimeout*      retval;
+    CORE_LOCK_WRITE;
+    retval          = s_tv2to(s_SelectTimeout, &s_OldTmo);
+    s_SelectTimeout = s_to2tv(t,               &s_NewTmo);
+    CORE_UNLOCK;
     return retval;
 }
 
@@ -1245,7 +1264,7 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
      * It was confirmed(?) that at least under Solaris 2.5 this precaution:
      * 1) makes the address released immediately after the process
      *    termination;
-     * 2) still issue EADDINUSE error on the attempt to bind() to the
+     * 2) still issue EADDRINUSE error on the attempt to bind() to the
      *    same address being in-use by a living process (if SOCK_STREAM).
      */
     if ( !s_SetReuseAddress(x_lsock, 1/*true*/) ) {
@@ -3238,6 +3257,21 @@ extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
 }
 
 
+extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
+{
+    if (sock->sock != SOCK_INVALID) {
+        int n = (int) on_off;
+        if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY, &n, sizeof(n))) {
+            int x_errno = SOCK_ERRNO;
+            char _id[32];
+            CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                               "%s[SOCK::DisableOSSendDelay] "
+                               " Failed setsockopt(%sTCP_NODELAY)",
+                               s_ID(sock, _id), on_off ? "" : "!");
+    }
+}
+
+
 extern EIO_Status DSOCK_Create(SOCK* sock)
 {
     return DSOCK_CreateEx(sock, eDefault);
@@ -4066,9 +4100,12 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.150  2004/10/19 18:05:44  lavr
+ * +SOCK_DisableOSSendDelay; few other minor patches
+ *
  * Revision 6.149  2004/09/08 15:12:43  ucko
- * SOCK_gethostbyaddr: use getnameinfo only if EAI_SYSTEM is defined.
- * (OSF headers provide it conditionally.)
+ * SOCK_gethostbyaddr: use getnameinfo only if EAI_SYSTEM is defined
+ * (OSF headers provide it conditionally)
  *
  * Revision 6.148  2004/08/20 21:24:29  lavr
  * Fix CORE_LOGF_ERRNO_EX() in conditional branches we never compiled :-)
