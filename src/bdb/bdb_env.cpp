@@ -152,7 +152,34 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
         
         ret = db_env_create(&m_Env, 0);
         BDB_CHECK(ret, "DB_ENV");
+    } else 
+    if (opt & eRunRecoveryFatal) {
+        // use private environment as prescribed by "db_recover" utility
+        int recover_flag = flag | DB_RECOVER_FATAL | DB_CREATE; 
+        
+        if (!(recover_flag & DB_SYSTEM_MEM)) {
+            recover_flag |= DB_PRIVATE;
+        }
+        
+        ret = x_Open(db_home, recover_flag);
+        BDB_CHECK(ret, "DB_ENV");
+        
+        // non-private recovery
+        if (!(recover_flag & DB_PRIVATE)) {
+            m_Transactional = true;
+            return;
+        }
+
+        // "Private" recovery requires reopening, to make
+        // it available for other programs
+
+        ret = m_Env->close(m_Env, 0);
+        BDB_CHECK(ret, "DB_ENV");
+        
+        ret = db_env_create(&m_Env, 0);
+        BDB_CHECK(ret, "DB_ENV");
     }
+
     
 
     Open(db_home,  flag);
@@ -333,6 +360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/08/13 15:56:35  kuznets
+ * +eRunRecoveryFatal
+ *
  * Revision 1.24  2004/08/13 11:02:59  kuznets
  * +Remove(), ForceRemove(), Close()
  *

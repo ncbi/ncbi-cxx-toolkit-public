@@ -54,8 +54,9 @@ class NCBI_BDB_EXPORT CBDB_Env
 {
 public:
     enum EEnvOptions {
-        eThreaded = (1 << 0),     ///< corresponds to DB_THREAD 
-        eRunRecovery = (1 << 1),  ///< Run DB recovery first
+        eThreaded = (1 << 0),          ///< corresponds to DB_THREAD 
+        eRunRecovery = (1 << 1),       ///< Run DB recovery first
+        eRunRecoveryFatal = (1 << 2),  ///< Run DB recovery first
     };
     
     /// OR-ed combination of EEnvOptions    
@@ -183,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/08/13 15:56:19  kuznets
+ * +eRunRecoveryFatal
+ *
  * Revision 1.16  2004/08/13 11:02:53  kuznets
  * +Remove(), ForceRemove(), Close()
  *
