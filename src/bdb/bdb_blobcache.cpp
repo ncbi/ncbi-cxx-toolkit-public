@@ -1566,7 +1566,7 @@ void CBDB_Cache::Verify(const char*  cache_path,
 void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
 {
     m_BytesWritten += bytes_written;
-    if (m_BytesWritten > (1 * (1024 * 1024))) {
+    if (m_BytesWritten > (100 * (1024 * 1024))) {
         m_Env->TransactionCheckpoint();
         m_BytesWritten = 0;
     }
@@ -2026,6 +2026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2004/10/19 17:24:50  kuznets
+ * Set 100M checkpoint limit
+ *
  * Revision 1.85  2004/10/19 17:18:21  kuznets
  * GCC warning fixed
  *
