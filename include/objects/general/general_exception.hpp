@@ -34,17 +34,17 @@
 */
 
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistr.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_GENERAL_EXPORT CGeneralException : public CException
+class CGeneralException : public CException
 {
     NCBI_EXCEPTION_DEFAULT(CGeneralException,CException);
 };
 
-class NCBI_GENERAL_EXPORT CGeneralParseException :
-    public CParseTemplException<CGeneralException>
+class CGeneralParseException : public CParseTemplException<CGeneralException>
 {
 public:
     enum EErrCode {
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/19 13:04:16  dicuccio
+* Dropped export specifiers on exceptions.  Included ncbistr for CParseException
+*
 * Revision 1.1  2003/02/24 20:04:09  gouriano
 * use template-based exceptions instead of errno and parse exceptions
 *
