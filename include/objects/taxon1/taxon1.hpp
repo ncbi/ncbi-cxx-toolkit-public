@@ -38,7 +38,7 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <serial/serialdef.hpp>
 #include <connect/ncbi_types.h>
-#include <connect/ncbi_limits.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include <list>
 #include <vector>
@@ -566,6 +566,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.10  2003/05/07 01:56:46  vakatov
+// Cut&Paste typo fixed
+//
 // Revision 1.9  2003/05/06 22:20:43  vakatov
 // + <ncbi_limits.hpp> (for MSVC++)
 //
