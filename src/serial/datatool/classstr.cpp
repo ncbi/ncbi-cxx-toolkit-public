@@ -30,6 +30,7 @@
 */
 
 #include <serial/datatool/type.hpp>
+#include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
@@ -258,6 +259,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->delayed )
                 delayed = true;
+        }
+    }
+    // check if the class is Attlist
+    bool isAttlist = false;
+    if (!m_Members.empty()) {
+        TMembers::const_iterator i = m_Members.begin();
+        if (i->dataType) {
+            const CDataType* t2 = i->dataType->GetParentType();
+            if (t2) {
+                const CDataMember* d = t2->GetDataMember();
+                if (d) {
+                    isAttlist = d->Attlist();
+                }
+            }
         }
     }
     if ( GetKind() != eKindObject )
@@ -869,7 +884,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             methods << ";\n";
         }
-        if ( useTags ) {
+        if ( isAttlist || useTags ) {
             // Tagged class is not sequential
             methods << "    info->SetRandomOrder(true);\n";
         }
@@ -1078,6 +1093,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2002/12/12 21:04:17  gouriano
+* changed code generation so XML attribute list became random access class
+*
 * Revision 1.42  2002/11/19 19:48:28  gouriano
 * added support of XML attributes of choice variants
 *

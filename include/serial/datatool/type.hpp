@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/12/12 21:03:25  gouriano
+* changed code generation so XML attribute list became random access class
+*
 * Revision 1.15  2002/11/14 21:07:10  gouriano
 * added support of XML attribute lists
 *
@@ -285,7 +288,6 @@ public:
     }
 
     const CDataMember* GetDataMember(void) const {
-        _ASSERT(m_DataMember);
         return m_DataMember;
     }
 
