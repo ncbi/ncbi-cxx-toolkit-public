@@ -534,8 +534,6 @@ int CAlnMgrTestApp::Run(void)
         m_AV->SetAnchor(args["a"].AsInteger());
     }
 
-    cout << m_AV->GetAlnPosFromSeqPos(46, 3841, CAlnMap::eLeft);
-
     int screen_width = args["w"].AsInteger();
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
@@ -568,6 +566,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/12/09 16:13:34  todorov
+* code cleanup
+*
 * Revision 1.11  2003/12/08 21:28:04  todorov
 * Forced Translation of Nucleotide Sequences
 *
