@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2003/03/24 16:14:31  ucko
+ * +IsFastCGI (always false)
+ *
  * Revision 1.3  2003/01/23 19:59:02  kuznets
  * CGI logging improvements
  *
@@ -47,6 +50,11 @@
 #include <cgi/cgiapp.hpp>
 
 BEGIN_NCBI_SCOPE
+
+bool CCgiApplication::IsFastCGI(void) const
+{
+    return false;
+}
 
 bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
 {
