@@ -164,8 +164,9 @@ public:
     do { \
         if ( errnum ) { \
             std::string message = "BerkeleyDB error:"; \
+            message.append(::db_strerror(errnum)); \
             if (dbfile) { \
-                message.append("File:'"); \
+                message.append(" File:'"); \
                 message.append(dbfile); \
                 message.append("'"); \
             } \
@@ -180,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/30 19:04:06  kuznets
+ * Error diagnostics improved
+ *
  * Revision 1.2  2003/04/29 16:48:31  kuznets
  * Fixed minor warnings in Sun Workshop compiler
  *
