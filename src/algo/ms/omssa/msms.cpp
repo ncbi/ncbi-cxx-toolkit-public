@@ -146,7 +146,7 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 {
     char SeqChar;
     // iterator thru mods
-    CMSRequest::TVariable::iterator iMods;
+    CMSSearchSettings::TVariable::iterator iMods;
     // iterate thru mods characters
     int iChar;
 
@@ -227,12 +227,12 @@ void CFormicAcid::Cleave(char *Seq, int SeqLen, TCleave& Positions)
 //  Holds AA indexed mass array
 //
 
-void CMassArray::Init(const CMSRequest::TSearchtype &SearchType)
+void CMassArray::Init(const CMSSearchSettings::TSearchtype &SearchType)
 {
     x_Init(SearchType);
 }
 
-void CMassArray::x_Init(const CMSRequest::TSearchtype &SearchType)
+void CMassArray::x_Init(const CMSSearchSettings::TSearchtype &SearchType)
 {
     int i;
     if(SearchType == eMSSearchType_average) {
@@ -252,11 +252,11 @@ void CMassArray::x_Init(const CMSRequest::TSearchtype &SearchType)
 }
 
 // set up the mass array with fixed mods
-void CMassArray::Init(const CMSRequest::TFixed &Mods, 
-		      const CMSRequest::TSearchtype &SearchType)
+void CMassArray::Init(const CMSSearchSettings::TFixed &Mods, 
+		      const CMSSearchSettings::TSearchtype &SearchType)
 {
     x_Init(SearchType);
-    CMSRequest::TFixed::const_iterator i;  // iterate thru fixed mods
+    CMSSearchSettings::TFixed::const_iterator i;  // iterate thru fixed mods
     int j; // the number of characters affected by the fixed mod
     for(i = Mods.begin(); i != Mods.end(); i++) {
 	for(j = 0; j < NumModChars[*i]; j++) {
@@ -269,6 +269,9 @@ void CMassArray::Init(const CMSRequest::TFixed &Mods,
 
 /*
   $Log$
+  Revision 1.7  2004/06/08 19:46:21  lewisg
+  input validation, additional user settable parameters
+
   Revision 1.6  2004/05/21 21:41:03  gorelenk
   Added PCH ncbi_pch.hpp
 

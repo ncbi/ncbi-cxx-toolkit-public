@@ -349,10 +349,9 @@ bool CMSPeak::CompareTop(CLadder& Ladder)
 
 
 // read in an asn.1 spectrum and initialize peak values
-int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance)
+int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
 {
     try {
-	int Scale = Spectrum.GetScale();
 	TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
 	SetTolerance(MSMSTolerance);
 	Charge = *(Spectrum.GetCharge().begin());
@@ -451,11 +450,11 @@ void CMSPeak::SetComputedCharge(int MaxCharge)
 }
 
 // initializes arrays used to track hits
-void CMSPeak::InitHitList(void)
+void CMSPeak::InitHitList(int Minhit)
 {
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++) {
-	LastHitNum[iCharges] = MSHITMIN - 1;
+	LastHitNum[iCharges] = Minhit - 1;
 	HitListIndex[iCharges] = 0;
 	HitList[iCharges] = new CMSHit[HitListSize];
 	PeptidesExamined[iCharges] = 0;
@@ -605,7 +604,8 @@ void CMSPeak::CullH20NH3(CMZI *Temp, int& TempLen)
 
 // use smartcull on all charges
 void CMSPeak::CullAll(double Threshold, int SingleWindow,
-		      int DoubleWindow, int SingleHit, int DoubleHit)
+		      int DoubleWindow, int SingleHit, int DoubleHit,
+		      int Tophitnum)
 {    
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
@@ -619,7 +619,7 @@ void CMSPeak::CullAll(double Threshold, int SingleWindow,
     copy(MZI[Which], MZI[Which] + Num[Which], Temp);
     sort(Temp, Temp + Num[Which], CMZICompareIntensity());
 
-    if(Num[Which] > MSNUMTOP)  Num[MSTOPHITS] = MSNUMTOP;
+    if(Num[Which] > MSNUMTOP)  Num[MSTOPHITS] = Tophitnum;
     else  Num[MSTOPHITS] = Num[Which];
 
     MZI[MSTOPHITS] = new CMZI [Num[MSTOPHITS]]; // holds highest hits

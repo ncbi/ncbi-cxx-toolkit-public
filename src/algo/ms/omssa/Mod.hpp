@@ -40,7 +40,7 @@
 
 // generated includes
 #include <objects/omssa/MSMod.hpp>
-#include <objects/omssa/MSRequest.hpp>
+#include <objects/omssa/MSSearchSettings.hpp>
 
 // generated classes
 
@@ -137,17 +137,17 @@ const int ModMass[] = { 1403, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997};
 class NCBI_XOMSSA_EXPORT CMSMod {
 public:
     CMSMod(void) {};
-    CMSMod(const CMSRequest::TVariable &Mods);
+    CMSMod(const CMSSearchSettings::TVariable &Mods);
     // initialize variable mod type array
-    void Init(const CMSRequest::TVariable &Mods);
-    CMSRequest::TVariable &GetAAMods(EMSModType Type);    
+    void Init(const CMSSearchSettings::TVariable &Mods);
+    CMSSearchSettings::TVariable &GetAAMods(EMSModType Type);    
 private:
-    CMSRequest::TVariable ModLists[kNumModType];
+    CMSSearchSettings::TVariable ModLists[kNumModType];
 };
 
 ///////////////////  CMSMod  inline methods
 
-inline CMSRequest::TVariable & CMSMod::GetAAMods(EMSModType Type) 
+inline CMSSearchSettings::TVariable & CMSMod::GetAAMods(EMSModType Type) 
 { 
     return ModLists[Type]; 
 }
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/06/08 19:46:21  lewisg
+* input validation, additional user settable parameters
+*
 * Revision 1.3  2004/05/27 20:52:15  lewisg
 * better exception checking, use of AutoPtr, command line parsing
 *

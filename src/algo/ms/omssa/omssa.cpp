@@ -199,34 +199,39 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 	    return;
 	}
 		
-	Peaks = new CMSPeak(MyRequest.GetHitlistlen());
+	Peaks = new CMSPeak(MyRequest.GetSettings().GetHitlistlen());
 	if(!Peaks) {
 	    ERR_POST(Error << "omssa: unable to allocate CMSPeak");
 	    return;
 	}
-	if(Peaks->Read(*Spectrum, MyRequest.GetMsmstol()) != 0) {
+	if(Peaks->Read(*Spectrum, MyRequest.GetSettings().GetMsmstol(), 
+		       MyRequest.GetSettings().GetScale()) != 0) {
 	    ERR_POST(Error << "omssa: unable to read spectrum into CMSPeak");
 	    return;
 	}
-	if(Spectrum->CanGetName()) Peaks->SetName() = Spectrum->GetName();
+	if(Spectrum->CanGetIds()) Peaks->SetName() = Spectrum->GetIds();
 	if(Spectrum->CanGetNumber())
 	    Peaks->SetNumber() = Spectrum->GetNumber();
 		
 	Peaks->Sort();
 	Peaks->SetComputedCharge(3);
-	Peaks->InitHitList();
-	Peaks->CullAll(MyRequest.GetCutlo(), MyRequest.GetSinglewin(),
-		       MyRequest.GetDoublewin(), MyRequest.GetSinglenum(),
-		       MyRequest.GetDoublenum());
+	Peaks->InitHitList(MyRequest.GetSettings().GetMinhit());
+	Peaks->CullAll(MyRequest.GetSettings().GetCutlo(),
+		       MyRequest.GetSettings().GetSinglewin(),
+		       MyRequest.GetSettings().GetDoublewin(),
+		       MyRequest.GetSettings().GetSinglenum(),
+		       MyRequest.GetSettings().GetDoublenum(),
+		       MyRequest.GetSettings().GetTophitnum());
 		
-	if(Peaks->GetNum(MSCULLED1) < MSPEAKMIN)  {
+	if(Peaks->GetNum(MSCULLED1) < MyRequest.GetSettings().GetMinspectra())
+	    {
 	    ERR_POST(Info << "omssa: not enough peaks in spectra");
 	    Peaks->SetError(eMSHitError_notenuffpeaks);
 	}
 	PeakSet.AddPeak(Peaks);
 		
     }
-    PeakSet.SortPeaks(static_cast <int> (MyRequest.GetPeptol()*MSSCALE));
+    PeakSet.SortPeaks(static_cast <int> (MyRequest.GetSettings().GetPeptol()*MSSCALE));
 	
 }
 
@@ -393,14 +398,14 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	bool LadderCalc[MAXMOD2];  // have the ladders been calculated?
 	CAA AA;
 		
-	int Missed = MyRequest.GetMissedcleave()+1;  // number of missed cleaves allowed + 1
+	int Missed = MyRequest.GetSettings().GetMissedcleave()+1;  // number of missed cleaves allowed + 1
 	int iMissed; // iterate thru missed cleavages
     
 	int iSearch, hits;
 	unsigned char *Sequence;  // start position
 	int endposition, position;
-	MassArray.Init(MyRequest.GetFixed(), MyRequest.GetSearchtype());
-	VariableMods.Init(MyRequest.GetVariable());
+	MassArray.Init(MyRequest.GetSettings().GetFixed(), MyRequest.GetSettings().GetSearchtype());
+	VariableMods.Init(MyRequest.GetSettings().GetVariable());
 	const int *IntMassArray = MassArray.GetIntMass();
 	const char *PepStart[MAXMISSEDCLEAVE];
 	const char *PepEnd[MAXMISSEDCLEAVE];
@@ -429,8 +434,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	
 	bool SequenceDone;  // are we done iterating through the sequences?
 	int taxid;
-	const CMSRequest::TTaxids& Tax = MyRequest.GetTaxids();
-	CMSRequest::TTaxids::const_iterator iTax;
+	const CMSSearchSettings::TTaxids& Tax = MyRequest.GetSettings().GetTaxids();
+	CMSSearchSettings::TTaxids::const_iterator iTax;
 	CMSHit NewHit;  // a new hit of a ladder to an m/z value
 	CMSHit *NewHitOut;  // copy of new hit
 	
@@ -440,7 +445,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	CMSPeak* Peaks;
 	
 	Spectrum2Peak(MyRequest, PeakSet);
-		
+
 #ifdef MSSTATRUN
 	ofstream charge1("charge1.txt");
 	ofstream charge2("charge2.txt");
@@ -455,7 +460,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 #ifdef CHECKGI
 	    int testgi;
 #endif 
-	    if(MyRequest.IsSetTaxids()) {
+	    if(MyRequest.GetSettings().IsSetTaxids()) {
 		while(readdb_get_header_ex(rdfp, iSearch, &header, 
 #ifdef CHECKGI
 					   &sip, &blastdefline,
@@ -653,7 +658,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 					break;
 				    }
 #endif
-				if(hits >= MSHITMIN) {
+				if(hits >= MyRequest.GetSettings().GetMinhit()) {
 				    // need to save mods.  bool map?
 				    NewHit.SetHits(hits);	
 				    NewHit.SetCharge(MassPeak->Charge);
@@ -707,8 +712,10 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	}
 	
 	// read out hits
-	SetResult(PeakSet, MyResponse, MyRequest.GetCutlo(), 
-		  MyRequest.GetCuthi(), MyRequest.GetCutinc());
+	SetResult(PeakSet, MyResponse, MyRequest.GetSettings().GetCutlo(), 
+		  MyRequest.GetSettings().GetCuthi(),
+		  MyRequest.GetSettings().GetCutinc(),
+		  MyRequest.GetSettings().GetTophitnum());
 	
     } catch (NCBI_NS_STD::exception& e) {
 	ERR_POST(Info << "Exception caught in CSearch::Search: " << e.what());
@@ -722,7 +729,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 
 void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 			double ThreshStart, double ThreshEnd,
-			double ThreshInc)
+			double ThreshInc, int Tophitnum)
 {
     CMSPeak* Peaks;
     TPeakSet::iterator iPeakSet;
@@ -749,7 +756,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 	    return;
 	}
 	HitSet->SetNumber(Peaks->GetNumber());
-	HitSet->SetFilename(Peaks->GetName());
+	HitSet->SetIds() = Peaks->GetName();
 	MyResponse.SetHitsets().push_back(HitSet);
 		
 	if(Peaks->GetError() == eMSHitError_notenuffpeaks) {
@@ -762,7 +769,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 	// now calculate scores and sort
 	for(Threshold = ThreshStart; Threshold <= ThreshEnd; 
 	    Threshold += ThreshInc) {
-	    CalcNSort(ScoreList, Threshold, Peaks, false);
+	    CalcNSort(ScoreList, Threshold, Peaks, false, Tophitnum);
 	    if(!ScoreList.empty()) {
 		_TRACE("Threshold = " << Threshold <<
 		       "EVal = " << ScoreList.begin()->first);
@@ -780,7 +787,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 #else
  MinThreshold
 #endif
-, Peaks, true);
+, Peaks, true, Tophitnum);
 		
 		
 	// keep a list of redundant peptides
@@ -849,7 +856,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 
 
 // calculate the evalues of the top hits and sort
-void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks, bool NewScore)
+void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks, bool NewScore, int Tophitnum)
 {
     int iCharges;
     int iHitList;
@@ -897,7 +904,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
 		int High, Low, NumPeaks, NumLo, NumHi;
 		Peaks->HighLow(High, Low, NumPeaks, tempMass, Charge, Threshold, NumLo, NumHi);
  
-		double TopHitProb = ((double)MSNUMTOP)/NumPeaks;
+		double TopHitProb = ((double)Tophitnum)/NumPeaks;
 		double Normal = CalcNormalTopHit(a, TopHitProb);
 		pval = CalcPvalueTopHit(a, 
 					HitList[iHitList].GetHits(Threshold, Peaks->GetMaxI(Which)),
@@ -1053,6 +1060,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.21  2004/06/08 19:46:21  lewisg
+input validation, additional user settable parameters
+
 Revision 1.20  2004/05/27 20:52:15  lewisg
 better exception checking, use of AutoPtr, command line parsing
 

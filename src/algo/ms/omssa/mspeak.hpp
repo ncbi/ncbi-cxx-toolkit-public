@@ -289,7 +289,7 @@ inline CMZI::CMZI(double MZIn, double IntensityIn)
 typedef CMSHit * TMSHitList;
 
 // min number of peaks to be considered a hit
-#define MSHITMIN 6
+#define MSHITMIN 2
 
 // min number of peaks to consider a spectra
 // two is absolute minimum in order to get m/z range
@@ -353,7 +353,7 @@ public:
     void Sort(int Which = MSORIGINAL);
 	
     // Read a spectrum set into a CMSPeak
-    int Read(CMSSpectrum& Spectrum, double MSMSTolerance);
+    int Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale);
     // Write out a CMSPeak in dta format (useful for debugging)
     enum EFileType { eDTA, eASC, ePKL, ePKS, eSCIEX, eUnknown };
     void Write(std::ostream& FileOut, EFileType FileType = eDTA, int Which = MSORIGINAL);
@@ -382,7 +382,9 @@ public:
 		 int SingleWindow,
 		 int DoubleWindow,
 		 int SingleNum,
-		 int DoubleNum);
+		 int DoubleNum,
+		 int Tophitnum // the number of top hits where at least one has to match
+		 );
 
 
     // return the lowest culled peak and the highest culled peak less than the
@@ -441,7 +443,9 @@ public:
 
 
     // initializes arrays used to track hits
-    void CMSPeak::InitHitList(void);
+    void InitHitList(int Minhit  // minimal number of hits for a match
+		      );
+
     TMSHitList& GetHitList(int Index);
     int GetHitListIndex(int Index);
     // add hit to hitlist.  returns true and the added hit if successful
@@ -459,8 +463,8 @@ public:
     int GetCharge(void);
     EMSHitError GetError(void);
     void SetError(EMSHitError ErrorIn);
-    string& SetName(void);
-    const string& GetName(void) const;
+    CMSSpectrum::TIds& SetName(void);
+    const CMSSpectrum::TIds& GetName(void) const;
     int& SetNumber(void);
     const int GetNumber(void) const;
     // set the mass tolerance.  input in Daltons.
@@ -496,7 +500,7 @@ private:
     CAA AA;
     char *AAMap;
 
-    string Name;  // name taken from spectrum
+    CMSSpectrum::TIds Name;  // name taken from spectrum
     int Number;  // spectrum number taken from spectrum
 
     // list of hits
@@ -576,12 +580,12 @@ inline void CMSPeak::SetError(EMSHitError ErrorIn)
     Error = ErrorIn; 
 }
 
-inline string& CMSPeak::SetName(void) 
+inline CMSSpectrum::TIds& CMSPeak::SetName(void) 
 { 
     return Name; 
 }
 
-inline const string& CMSPeak::GetName(void) const 
+inline const CMSSpectrum::TIds& CMSPeak::GetName(void) const 
 { 
     return Name; 
 }
@@ -729,6 +733,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.15  2004/06/08 19:46:21  lewisg
+  input validation, additional user settable parameters
+
   Revision 1.14  2004/05/27 20:52:15  lewisg
   better exception checking, use of AutoPtr, command line parsing
 

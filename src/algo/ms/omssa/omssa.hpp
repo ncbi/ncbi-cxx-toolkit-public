@@ -54,6 +54,7 @@ BEGIN_SCOPE(omssa)
 // maximum number of calculable ladders
 #define MAXMOD2 64
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  TMassMask::
@@ -132,10 +133,14 @@ public:
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		   double ThreshStart, double ThreshEnd,
-		   double ThreshInc);
+		   double ThreshInc, 
+		   int Tophitnum // the number of top hits where at least one has to match
+		   );
     // calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
-		   bool NewScore);
+		   bool NewScore,
+		   int Tophitnum // the number of top hits where at least one has to match
+		   );
     // update sites and masses for new peptide
     void UpdateWithNewPep(int Missed,
 			  const char *PepStart[],
@@ -233,6 +238,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.11  2004/06/08 19:46:21  lewisg
+  input validation, additional user settable parameters
+
   Revision 1.10  2004/04/05 20:49:16  lewisg
   fix missed mass bug and reorganize code
 

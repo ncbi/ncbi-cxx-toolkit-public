@@ -99,7 +99,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA)
 	    CRegexp RxpGetName("\\sname\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
 	    if((Match = RxpGetName.GetMatch(Line.c_str(), 0, 2)) != "" ||
 	       (Match = RxpGetName.GetMatch(Line.c_str(), 0, 3)) != "") {
-		MySpectrum->SetName(Match);
+		MySpectrum->SetIds().push_back(Match);
 	    }
     
 	    GetDTAHeader(DTA, MySpectrum);
@@ -177,7 +177,6 @@ void CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
 {
     double dummy;
 
-    MySpectrum->SetScale(MSSCALE);
     DTA >> dummy;
     MySpectrum->SetPrecursormz(static_cast <int> (dummy*MSSCALE));
     DTA >> dummy;
@@ -215,7 +214,6 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
     try {
 	MySpectrum = new CMSSpectrum;
 	MySpectrum->SetNumber(1);
-	MySpectrum->SetScale(MSSCALE);
 	GetDTAHeader(DTA, MySpectrum);
     
 	while(DTA) {
@@ -243,6 +241,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/06/08 19:46:21  lewisg
+ * input validation, additional user settable parameters
+ *
  * Revision 1.8  2004/05/27 20:52:15  lewisg
  * better exception checking, use of AutoPtr, command line parsing
  *

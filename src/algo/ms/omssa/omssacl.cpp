@@ -71,17 +71,23 @@ typedef list <string> TStringList;
 
 class COMSSA : public CNcbiApplication {
 public:
+    COMSSA();
+private:
     virtual int Run();
     virtual void Init();
     void PrintMods(void);
-    void InsertMods(TStringList& List, CMSRequest::TVariable& Mods);
+    void InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods);
 };
 
+COMSSA::COMSSA()
+{
+    SetVersion(CVersionInfo(0, 9, 1));
+}
 
 ///
 /// Insert modifications
 ///
-void COMSSA::InsertMods(TStringList& List, CMSRequest::TVariable& Mods)
+void COMSSA::InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods)
 {
     TStringList::iterator iList(List.begin());
     int ModNum;
@@ -111,6 +117,7 @@ void COMSSA::PrintMods(void)
 
 void COMSSA::Init()
 {
+
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
     argDesc->AddDefaultKey("d", "blastdb", "Blast sequence library to search",
@@ -121,9 +128,17 @@ void COMSSA::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fb", "dtainfile", "multiple dta files separated by blank lines to search",
 			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("o", "outfile", "asn.1 format search results filenam",
+    argDesc->AddDefaultKey("o", "textasnoutfile", "filename for text asn.1 formatted search results",
 			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("ox", "outfile", "xml format search results filename",
+    argDesc->AddDefaultKey("ob", "binaryasnoutfile", "filename for binary asn.1 formatted search results",
+			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
+			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("wi", "textasninfile", "filename to _write_ text asn.1 formatted search input",
+			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("wib", "binaryasninfile", "filename to _write_ binary asn.1 formatted search input",
+			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("wix", "xmlinfile", "filename to _write_ xml formatted search input",
 			   CArgDescriptions::eString, "");
 #if MSGRAPH
     argDesc->AddDefaultKey("g", "graph", "graph file to write out",
@@ -133,11 +148,11 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
-    argDesc->AddDefaultKey("cl", "cutlo", "low intensity cutoff in % of max peak",
+    argDesc->AddDefaultKey("cl", "cutlo", "low intensity cutoff as a fraction of max peak",
 			   CArgDescriptions::eDouble, "0.0");
-    argDesc->AddDefaultKey("ch", "cuthi", "high intensity cutoff in % of max peak",
+    argDesc->AddDefaultKey("ch", "cuthi", "high intensity cutoff as a fraction of max peak",
 			   CArgDescriptions::eDouble, "0.2");
-    argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment in % of max peak",
+    argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment as a fraction of max peak",
 			   CArgDescriptions::eDouble, "0.0005");
     //    argDesc->AddDefaultKey("u", "cull", 
     //			   "number of peaks to leave in each 100Da bin",
@@ -166,16 +181,23 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("hl", "hitlist", 
 			   "maximum number of hits retained for one spectrum",
 			   CArgDescriptions::eInteger, "30");
+    argDesc->AddDefaultKey("ht", "tophitnum", 
+			   "number of m/z values corresponding to the most intense peaks that must include one match to the theoretical peptide",
+			   CArgDescriptions::eInteger, "3");
+    argDesc->AddDefaultKey("hm", "minhit", 
+			   "the minimum number of m/z matches a sequence library peptide must have for the hit to the peptide to be recorded",
+			   CArgDescriptions::eInteger, "2");
+    argDesc->AddDefaultKey("hs", "minspectra", 
+			   "the minimum number of m/z values a spectrum must have to be searched",
+			   CArgDescriptions::eInteger, "4");
     argDesc->AddDefaultKey("mf", "fixedmod", 
 			   "comma delimited list of id numbers for fixed modifications",
 			   CArgDescriptions::eString,
 			   "");
-    //  NStr::IntToString(eMSMod_Ccarbamidomethyl));
     argDesc->AddDefaultKey("mv", "variablemod", 
 			   "comma delimited list of id numbers for variable modifications",
 			   CArgDescriptions::eString,
 			   "");
-    // NStr::IntToString(eMSMod_Moxy));
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
 
 
@@ -204,7 +226,6 @@ int COMSSA::Run()
 	    PrintMods();
 	    return 0;
 	}
-
 
 	_TRACE("omssa: initializing score");
 	CSearch Search;
@@ -263,33 +284,45 @@ int COMSSA::Run()
 
 	CMSResponse Response;
 	CMSRequest Request;
-	Request.SetSearchtype(eMSSearchType_monoisotopic);
-	Request.SetPeptol(args["te"].AsDouble());
-	Request.SetMsmstol(args["to"].AsDouble());
-	Request.SetCutlo(args["cl"].AsDouble());
-	Request.SetCuthi(args["ch"].AsDouble());
-	Request.SetCutinc(args["ci"].AsDouble());
-	Request.SetSinglewin(args["w1"].AsInteger());
-	Request.SetDoublewin(args["w2"].AsInteger());
-	Request.SetSinglenum(args["h1"].AsInteger());
-	Request.SetDoublenum(args["h2"].AsInteger());
-	Request.SetEnzyme(eMSEnzymes_trypsin);
-	Request.SetMissedcleave(args["v"].AsInteger());
+	Request.SetSettings().SetSearchtype(eMSSearchType_monoisotopic);
+	Request.SetSettings().SetPeptol(args["te"].AsDouble());
+	Request.SetSettings().SetMsmstol(args["to"].AsDouble());
+	Request.SetSettings().SetCutlo(args["cl"].AsDouble());
+	Request.SetSettings().SetCuthi(args["ch"].AsDouble());
+	Request.SetSettings().SetCutinc(args["ci"].AsDouble());
+	Request.SetSettings().SetSinglewin(args["w1"].AsInteger());
+	Request.SetSettings().SetDoublewin(args["w2"].AsInteger());
+	Request.SetSettings().SetSinglenum(args["h1"].AsInteger());
+	Request.SetSettings().SetDoublenum(args["h2"].AsInteger());
+	Request.SetSettings().SetEnzyme(eMSEnzymes_trypsin);
+	Request.SetSettings().SetMissedcleave(args["v"].AsInteger());
 	Request.SetSpectra(*Spectrumset);
 	{
 	    TStringList List;
 	    NStr::Split(args["mv"].AsString(), ",", List);
-	    InsertMods(List, Request.SetVariable());
+	    InsertMods(List, Request.SetSettings().SetVariable());
 	    List.clear();
 	    NStr::Split(args["mf"].AsString(), ",", List);
-	    InsertMods(List, Request.SetFixed());
+	    InsertMods(List, Request.SetSettings().SetFixed());
 	}
-	Request.SetDb(args["d"].AsString());
+	Request.SetSettings().SetDb(args["d"].AsString());
 	//	Request.SetCull(args["u"].AsInteger());
-	Request.SetHitlistlen(args["hl"].AsInteger());
+	Request.SetSettings().SetHitlistlen(args["hl"].AsInteger());
+	Request.SetSettings().SetTophitnum(args["ht"].AsInteger());
+	Request.SetSettings().SetMinhit(args["hm"].AsInteger());
+	Request.SetSettings().SetMinspectra(args["hs"].AsInteger());
 	if(args["x"].AsInteger() != 0) 
-	    Request.SetTaxids().push_back(args["x"].AsInteger());
+	    Request.SetSettings().SetTaxids().push_back(args["x"].AsInteger());
 
+
+	// validate the input
+        list <string> ValidError;
+	if(Request.GetSettings().Validate(ValidError) != 0) {
+	    list <string>::iterator iErr;
+	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
+		ERR_POST(Warning << *iErr);
+	    ERR_POST(Fatal << "Unable to validate settings");
+	}
 
 	_TRACE("omssa: search begin");
 	Search.Search(Request, Response);
@@ -326,11 +359,24 @@ int COMSSA::Run()
 	}
 #endif
 
+	// Check to see if there is a hitset
+
+	if(!Response.CanGetHitsets()) {
+	  ERR_POST(Fatal << "No results found");
+	}
+
+	// output
 
 	if(args["o"].AsString() != "") {
 	    auto_ptr<CObjectOStream>
 		txt_out(CObjectOStream::Open(args["o"].AsString().c_str(),
 					     eSerial_AsnText));
+	    txt_out->Write(ObjectInfo(Response));
+	}
+	else if(args["ob"].AsString() != "") {
+	    auto_ptr<CObjectOStream>
+		txt_out(CObjectOStream::Open(args["ob"].AsString().c_str(),
+					     eSerial_AsnBinary));
 	    txt_out->Write(ObjectInfo(Response));
 	}
 	else if(args["ox"].AsString() != "") {
@@ -339,6 +385,28 @@ int COMSSA::Run()
 		txt_out(new CObjectOStreamXml(os, false));
 	    //txt_out->SetEnforcedStdXml();
 	    txt_out->Write(ObjectInfo(Response));
+	}
+
+	// write out input 
+
+	if(args["wi"].AsString() != "") {
+	    auto_ptr<CObjectOStream>
+		txt_out(CObjectOStream::Open(args["wi"].AsString().c_str(),
+					     eSerial_AsnText));
+	    txt_out->Write(ObjectInfo(Request));
+	}
+	else if(args["wib"].AsString() != "") {
+	    auto_ptr<CObjectOStream>
+		txt_out(CObjectOStream::Open(args["wib"].AsString().c_str(),
+					     eSerial_AsnBinary));
+	    txt_out->Write(ObjectInfo(Request));
+	}
+	else if(args["wix"].AsString() != "") {
+	    CNcbiOfstream os(args["wix"].AsString().c_str());
+	    auto_ptr<CObjectOStreamXml>
+		txt_out(new CObjectOStreamXml(os, false));
+	    //txt_out->SetEnforcedStdXml();
+	    txt_out->Write(ObjectInfo(Request));
 	}
 
 #if MSGRAPH
@@ -366,6 +434,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.14  2004/06/08 19:46:21  lewisg
+  input validation, additional user settable parameters
+
   Revision 1.13  2004/05/27 20:52:15  lewisg
   better exception checking, use of AutoPtr, command line parsing
 

@@ -45,7 +45,7 @@
 #include <set>
 #include <deque>
 #include <map>
-#include <objects/omssa/MSRequest.hpp>
+#include <objects/omssa/MSSearchSettings.hpp>
 #include "Mod.hpp"
 
 // #include <corelib/ncbistd.hpp>
@@ -107,13 +107,13 @@ public:
     const int* GetIntMass(void);
 
     // initialize mass arrays
-    void Init(const CMSRequest::TSearchtype &SearchType);
+    void Init(const CMSSearchSettings::TSearchtype &SearchType);
     // initialize mass arrays with fixed mods
-    void Init(const CMSRequest::TFixed &Mods, 
-	      const CMSRequest::TSearchtype &SearchType);
+    void Init(const CMSSearchSettings::TFixed &Mods, 
+	      const CMSSearchSettings::TSearchtype &SearchType);
 private:
     // inits mass arrays
-    void x_Init(const CMSRequest::TSearchtype &SearchType);
+    void x_Init(const CMSSearchSettings::TSearchtype &SearchType);
     // masses as doubles
     double CalcMass[kNumUniqueAA];
     // mass in scaled integer Daltons
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.7  2004/06/08 19:46:21  lewisg
+  input validation, additional user settable parameters
+
   Revision 1.6  2004/03/30 19:36:59  lewisg
   multiple mod code
 

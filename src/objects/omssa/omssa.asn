@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.7 2004/05/27 21:07:33 lewisg Exp $
+-- $Id: omssa.asn,v 1.8 2004/06/08 19:46:20 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -19,11 +19,10 @@ BEGIN
 
 MSSpectrum ::= SEQUENCE {
 	charge SEQUENCE OF INTEGER,  -- may be more than one if unknown
-	precursormz INTEGER,  -- scaled
-	scale INTEGER,
-	mz SEQUENCE OF INTEGER,  -- scaled
+	precursormz INTEGER,  -- scaled Da
+	mz SEQUENCE OF INTEGER,  -- scaled Da
 	abundance SEQUENCE OF INTEGER,  -- scaled
-	name VisibleString OPTIONAL, -- unique name of spectrum
+	ids SEQUENCE OF VisibleString OPTIONAL, -- unique name of spectrum
 	number INTEGER -- unique number of spectrum
 	}
 
@@ -65,6 +64,7 @@ MSMod ::= INTEGER {
     sphosphorylation (6), -- phosphorylation of S
     tphosphorylation (7), -- phosphorylation of T
     yphosphorylation (8), -- phosphorylation of Y    
+    ntermacetyl (9),      -- N terminal acetylation
     none(255)
     }
 
@@ -85,10 +85,7 @@ MSSearchType ::= INTEGER {
 	}
 
 
--- The search request that is given to the OMSSA algorithm
-
-MSRequest ::= SEQUENCE {
-	spectra MSSpectrumset,
+MSSearchSettings ::= SEQUENCE {
 	searchtype MSSearchType,  -- average or monoisotopic?
 	peptol REAL,  -- peptide mass tolerance
 	msmstol REAL, -- msms mass tolerance
@@ -108,10 +105,21 @@ MSRequest ::= SEQUENCE {
 	hitlistlen INTEGER DEFAULT 25,  -- the number of hits kept in memory
 	                                -- for a spectrum
 	db VisibleString,  -- sequence set to search, e.g. "nr"
-	cull INTEGER,  -- parameter for s/n cutoff
+        tophitnum INTEGER, -- number of m/z to consider in first pass
+        minhit INTEGER DEFAULT 2, -- minimum number of m/z values for a valid hit
+        minspectra INTEGER DEFAULT 4, -- minimum number of m/z for a valid spectra
+        scale INTEGER DEFAULT 100,  -- scale for m/z float to integer
 	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search
-	rid VisibleString OPTIONAL,  -- request id
 	chargehandling MSChargeHandle OPTIONAL  -- how to deal with charges
+}
+
+
+-- The search request that is given to the OMSSA algorithm
+
+MSRequest ::= SEQUENCE {
+	spectra MSSpectrumset,
+        settings MSSearchSettings,
+	rid VisibleString OPTIONAL  -- request id
 	}
 
 
@@ -133,7 +141,7 @@ MSMZHit ::= SEQUENCE {
 	ion MSIonType,
 	charge INTEGER,
 	number INTEGER,
-	mz INTEGER  -- scaled m/z value
+	mz INTEGER  -- scaled m/z value in Da
 }
 
 
@@ -157,7 +165,7 @@ MSHits ::= SEQUENCE {
 	pephits SEQUENCE OF MSPepHit,
 	mzhits SEQUENCE OF MSMZHit OPTIONAL,
 	pepstring VisibleString OPTIONAL,  -- the peptide sequence
-	threshold REAL OPTIONAL -- significance threshold
+        mass INTEGER OPTIONAL  -- scaled mass of peptide in Da
 	}
 
 
@@ -177,7 +185,7 @@ MSHitSet ::= SEQUENCE {
     number INTEGER, -- unique number of spectrum
     error MSHitError OPTIONAL,
     hits SEQUENCE OF MSHits OPTIONAL,
-    filename VisibleString OPTIONAL -- place to put corresponding filename
+    ids SEQUENCE OF VisibleString OPTIONAL -- filenames or other ids of spectra searched
 	}
 
 
@@ -195,8 +203,10 @@ MSResponseError ::= INTEGER {
 
 MSResponse ::= SEQUENCE {
 	hitsets SEQUENCE OF MSHitSet,
+        scale INTEGER DEFAULT 100,  -- scale to change m/z float to integer
 	rid VisibleString OPTIONAL,  -- request id
-	error MSResponseError OPTIONAL
+	error MSResponseError OPTIONAL,
+        version VisibleString OPTIONAL  -- version of OMSSA
 	}	
 	
 END
