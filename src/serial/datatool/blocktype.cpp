@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/02/01 21:47:53  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.8  1999/12/21 17:18:33  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -57,14 +64,14 @@
 * ===========================================================================
 */
 
+#include <serial/tool/blocktype.hpp>
+#include <serial/autoptrinfo.hpp>
+#include <serial/tool/value.hpp>
+//#include <serial/tool/module.hpp>
+#include <serial/tool/classstr.hpp>
+//#include <serial/tool/fileutil.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
-#include <serial/autoptrinfo.hpp>
-#include "blocktype.hpp"
-#include "code.hpp"
-#include "typestr.hpp"
-#include "value.hpp"
-#include "fileutil.hpp"
 
 class CContainerTypeInfo : public CClassInfoTmpl
 {
@@ -147,7 +154,7 @@ CClassInfoTmpl* CDataContainerType::CreateClassInfo(void)
           i != GetMembers().end(); ++i, ++index ) {
         CDataMember* member = i->get();
         CMemberInfo* memberInfo =
-            typeInfo->AddMember(member->GetName(),
+            typeInfo->GetMembers().AddMember(member->GetName(),
                 new CRealMemberInfo(CContainerTypeInfo::MemberOffset(index),
                                     new CAnyTypeSource(member->GetType())));
         if ( member->GetDefault() ) {
@@ -161,52 +168,35 @@ CClassInfoTmpl* CDataContainerType::CreateClassInfo(void)
     return typeInfo.release();
 }
 
-void CDataContainerType::GenerateCode(CClassCode& code) const
+AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 {
-    for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end();
-          ++i ) {
-        const CDataMember* m = i->get();
-        if ( m->GetName().empty() )
-            continue;
-        
-        CTypeStrings tType;
-        m->GetType()->GetFullCType(tType, code);
-
-        string memberType = GetVar(m->GetName() + "._pointer_type");
-        if ( !memberType.empty() ) {
-            if ( memberType == "*" ) {
-                tType.ToPointer();
-            }
-            else {
-                tType.AddHPPInclude(GetTemplateHeader(memberType));
-                tType.ToPointer(
-                    GetTemplateNamespace(memberType)+"::"+memberType,
-                    GetTemplateMacro(memberType),
-                    IsSimplePointerTemplate(memberType));
-            }
-        }
-
-        tType.AddMember(code, m->GetName(), "m_" + Identifier(m->GetName()));
-
-        if ( m->GetDefault() ) {
-            code.TypeInfoBody() << "->SetDefault(" <<
-                m->GetType()->GetDefaultString(*m->GetDefault()) << ')';
-        }
-        else if ( m->Optional() ) {
-            code.TypeInfoBody() << "->SetOptional()";
-        }
-        code.TypeInfoBody() << ';' << NcbiEndl;
-    }
+    return GetFullCType();
 }
 
-void CDataContainerType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
+AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
-    string className = ClassName();
-    string ns = Namespace();
-    tType.SetClass(ns + "::" + className);
-    tType.AddHPPInclude(FileName());
-    tType.AddForwardDeclaration(className, ns);
+    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
+                                                          ClassName()));
+    iterate ( TMembers, i, GetMembers() ) {
+        string defaultCode;
+        bool optional = (*i)->Optional();
+
+        const CDataValue* defaultValue = (*i)->GetDefault();
+        if ( defaultValue ) {
+            defaultCode = (*i)->GetType()->GetDefaultString(*defaultValue);
+        }
+        code->AddMember((*i)->GetName(), (*i)->GetType()->GetFullCType(),
+                        optional, defaultCode);
+    }
+    SetParentClassTo(*code);
+    return AutoPtr<CTypeStrings>(code.release());
+}
+
+AutoPtr<CTypeStrings> CDataContainerType::GetRefCType(void) const
+{
+    return AutoPtr<CTypeStrings>(new CClassRefTypeStrings(ClassName(),
+                                                          Namespace(),
+                                                          FileName()));
 }
 
 const char* CDataSetType::GetASNKeyword(void) const

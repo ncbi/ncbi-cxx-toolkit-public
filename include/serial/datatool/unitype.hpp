@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:25  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.3  1999/12/03 21:42:14  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -42,7 +49,7 @@
 * ===========================================================================
 */
 
-#include "type.hpp"
+#include <serial/tool/type.hpp>
 
 class CUniSequenceDataType : public CDataType {
     typedef CDataType CParent;
@@ -68,7 +75,7 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
     
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 
 private:
@@ -82,7 +89,7 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
     
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 };
 

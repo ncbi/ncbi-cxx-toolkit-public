@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:21  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.4  1999/12/03 21:42:13  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -45,7 +52,7 @@
 * ===========================================================================
 */
 
-#include "type.hpp"
+#include <serial/tool/type.hpp>
 
 class CReferenceDataType : public CDataType {
     typedef CDataType CParent;
@@ -61,8 +68,8 @@ public:
 
     const CTypeInfo* GetTypeInfo(void);
 
-    void GenerateCode(CClassCode& code) const;
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GenerateCode(void) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
 
     virtual const CDataType* Resolve(void) const; // resolve or this
     virtual CDataType* Resolve(void); // resolve or this

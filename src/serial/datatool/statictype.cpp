@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/02/01 21:48:05  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.7  2000/01/10 19:46:46  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -58,9 +65,10 @@
 * ===========================================================================
 */
 
-#include "statictype.hpp"
-#include "typestr.hpp"
-#include "value.hpp"
+#include <serial/tool/statictype.hpp>
+#include <serial/tool/stdstr.hpp>
+#include <serial/tool/stlstr.hpp>
+#include <serial/tool/value.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/autoptrinfo.hpp>
 
@@ -69,12 +77,12 @@ void CStaticDataType::PrintASN(CNcbiOstream& out, int ) const
     out << GetASNKeyword();
 }
 
-void CStaticDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
+AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
 {
     string type = GetVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
-    tType.SetStd(type);
+    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type));
 }
 
 string CStaticDataType::GetDefaultCType(void) const
@@ -107,9 +115,9 @@ TTypeInfo CNullDataType::GetTypeInfo(void)
     return new CNullBoolTypeInfo();
 }
 
-void CNullDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
+AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
 {
-    tType.SetStd("bool", "null", false);
+    return AutoPtr<CTypeStrings>(new CNullTypeStrings());
 }
 
 string CNullDataType::GetDefaultCType(void) const
@@ -135,9 +143,8 @@ TObjectPtr CBoolDataType::CreateDefault(const CDataValue& value) const
 
 string CBoolDataType::GetDefaultString(const CDataValue& value) const
 {
-    string s = "new bool(";
-    s += (dynamic_cast<const CBoolDataValue&>(value).GetValue()? "true": "false");
-    return s + ')';
+    return (dynamic_cast<const CBoolDataValue&>(value).GetValue()?
+            "true": "false");
 }
 
 TTypeInfo CBoolDataType::GetTypeInfo(void)
@@ -210,7 +217,8 @@ TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
 
 string CStringDataType::GetDefaultString(const CDataValue& value) const
 {
-    string s = "new NCBI_NS_STD::string(\"";
+    string s;
+    s += '\"';
     const string& v = dynamic_cast<const CStringDataValue&>(value).GetValue();
     for ( string::const_iterator i = v.begin(); i != v.end(); ++i ) {
         switch ( *i ) {
@@ -230,7 +238,7 @@ string CStringDataType::GetDefaultString(const CDataValue& value) const
             s += *i;
         }
     }
-    return s + "\")";
+    return s + '\"';
 }
 
 TTypeInfo CStringDataType::GetTypeInfo(void)
@@ -239,15 +247,12 @@ TTypeInfo CStringDataType::GetTypeInfo(void)
         CStdTypeInfo<string>::GetTypeInfo());
 }
 
-void CStringDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
+AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
 {
     string type = GetVar("_type");
-    if ( type.empty() ) {
-        tType.SetStd(GetDefaultCType(), true);
-    }
-    else {
-        tType.SetStd(type);
-    }
+    if ( type.empty() )
+        type = GetDefaultCType();
+    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type));
 }
 
 string CStringDataType::GetDefaultCType(void) const
@@ -270,16 +275,13 @@ TTypeInfo CStringStoreDataType::GetTypeInfo(void)
         CStringStoreTypeInfo::GetTypeInfo());
 }
 
-void CStringStoreDataType::GetFullCType(CTypeStrings& tType,
-                                        CClassCode& ) const
+AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
 {
     string type = GetVar("_type");
     if ( type.empty() ) {
-        tType.SetStd(GetDefaultCType(), "StringStore", true);
+        type = GetDefaultCType();
     }
-    else {
-        tType.SetStd(type);
-    }
+    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type));
 }
 
 const char* CBitStringDataType::GetASNKeyword(void) const
@@ -314,15 +316,12 @@ TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
     THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
 }
 
-void COctetStringDataType::GetFullCType(CTypeStrings& tType,
-                                        CClassCode& ) const
+AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
 {
     string charType = GetVar("_char");
     if ( charType.empty() )
         charType = "char";
-    tType.SetTemplate("NCBI_NS_STD::vector<" + charType + '>',
-                      "STL_CHAR_vector, (" + charType + ')');
-    tType.AddHPPInclude("<vector>");
+    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType));
 }
 
 const char* CIntDataType::GetASNKeyword(void) const
@@ -343,9 +342,7 @@ TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
 
 string CIntDataType::GetDefaultString(const CDataValue& value) const
 {
-    return "new int(" +
-        NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue()) +
-        ')';
+    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 TTypeInfo CIntDataType::GetTypeInfo(void)

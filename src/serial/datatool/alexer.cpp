@@ -30,14 +30,21 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/01 21:47:51  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.6  1999/11/15 19:36:11  vasilche
 * Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
-#include "alexer.hpp"
-#include "atoken.hpp"
+#include <serial/tool/alexer.hpp>
+#include <serial/tool/atoken.hpp>
 
 USING_NCBI_SCOPE;
 

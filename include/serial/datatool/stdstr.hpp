@@ -1,3 +1,6 @@
+#ifndef STDSTR_HPP
+#define STDSTR_HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -26,46 +29,84 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Abstract parser class
+*   C++ class info: includes, used classes, C++ code etc.
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.5  2000/02/01 21:47:52  vasilche
+* Revision 1.1  2000/02/01 21:46:22  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
 * Added support for DEFAULT/OPTIONAL members.
 * Changed class generation.
 * Moved datatool headers to include/internal/serial/tool.
 *
-* Revision 1.4  1999/11/15 19:36:12  vasilche
+* Revision 1.5  2000/01/10 19:46:47  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
+* Revision 1.4  1999/12/01 17:36:28  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.3  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
+* Revision 1.2  1999/11/15 19:36:21  vasilche
 * Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
-#include <serial/tool/aparser.hpp>
+#include <serial/tool/typestr.hpp>
 
-USING_NCBI_SCOPE;
-
-AbstractParser::AbstractParser(AbstractLexer& lexer)
-    : m_Lexer(lexer)
+class CStdTypeStrings : public CTypeStrings
 {
-}
+public:
+    CStdTypeStrings(const string& type);
 
-AbstractParser::~AbstractParser(void)
-{
-}
+    string GetCType(void) const;
+    string GetRef(void) const;
+    string GetInitializer(void) const;
 
-void AbstractParser::ParseError(const char* error, const char* expected,
-                                const AbstractToken& token)
-{
-    throw runtime_error(NStr::IntToString(token.GetLine()) +
-                        ": Parse error: " + error + ": " +
-                        expected + " expected");
-}
+    string GetTypeInfoCode(const string& externalName,
+                           const string& memberName) const;
 
-string AbstractParser::Location(void) const
+private:
+    string m_CType;
+};
+
+class CNullTypeStrings : public CTypeStrings
 {
-    const AbstractToken& token = NextToken();
-    return NStr::IntToString(token.GetLine()) + ':';
-}
+public:
+    string GetCType(void) const;
+    string GetRef(void) const;
+    string GetInitializer(void) const;
+};
+
+class CStringTypeStrings : public CStdTypeStrings
+{
+    typedef CStdTypeStrings CParent;
+public:
+    CStringTypeStrings(const string& type);
+
+    string GetInitializer(void) const;
+    string GetResetCode(const string& var) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+};
+
+class CStringStoreTypeStrings : public CStringTypeStrings
+{
+    typedef CStringTypeStrings CParent;
+public:
+    CStringStoreTypeStrings(const string& type);
+
+    string GetRef(void) const;
+};
+
+#endif

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/01 21:47:59  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.6  2000/01/05 19:34:53  vasilche
 * Fixed warning on MS VC
 *
@@ -55,7 +62,7 @@
 * ===========================================================================
 */
 
-#include "fileutil.hpp"
+#include <serial/tool/fileutil.hpp>
 #include <corelib/ncbistre.hpp>
 
 static const int BUFFER_SIZE = 4096;
@@ -291,3 +298,96 @@ bool CDelayedOfstream::rewrite(void)
     }
     return true;
 }
+
+CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& src)
+{
+    CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(src);
+    size_t size = source.pcount();
+    if ( size != 0 ) {
+        out.write(source.str(), size);
+        source.freeze(false);
+    }
+    return out;
+}
+
+CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
+                          const char* tab)
+{
+    CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(code);
+    size_t size = source.pcount();
+    if ( size != 0 ) {
+        if ( !tab )
+            tab = "    ";
+        const char* ptr = source.str();
+        source.freeze(false);
+        while ( size > 0 ) {
+            out << tab;
+            const char* endl =
+                reinterpret_cast<const char*>(memchr(ptr, '\n', size));
+            if ( !endl ) { // no more '\n'
+                out.write(ptr, size) << '\n';
+                break;
+            }
+            ++endl; // skip '\n'
+            size_t lineSize = endl - ptr;
+            out.write(ptr, lineSize);
+            ptr = endl;
+            size -= lineSize;
+        }
+    }
+    return out;
+}
+
+CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
+                          const char* tab)
+{
+    size_t size = code.size();
+    if ( size != 0 ) {
+        if ( !tab )
+            tab = "    ";
+        const char* ptr = code.data();
+        while ( size > 0 ) {
+            out << tab;
+            const char* endl =
+                reinterpret_cast<const char*>(memchr(ptr, '\n', size));
+            if ( !endl ) { // no more '\n'
+                out.write(ptr, size) << '\n';
+                break;
+            }
+            ++endl; // skip '\n'
+            size_t lineSize = endl - ptr;
+            out.write(ptr, lineSize);
+            ptr = endl;
+            size -= lineSize;
+        }
+    }
+    return out;
+}
+
+string Tabbed(const string& code, const char* tab)
+{
+    string out;
+    size_t size = code.size();
+    if ( size != 0 ) {
+        if ( !tab )
+            tab = "    ";
+        const char* ptr = code.data();
+        while ( size > 0 ) {
+            out += tab;
+            const char* endl =
+                reinterpret_cast<const char*>(memchr(ptr, '\n', size));
+            if ( !endl ) { // no more '\n'
+                out.append(ptr, ptr + size);
+                out += '\n';
+                break;
+            }
+            ++endl; // skip '\n'
+            size_t lineSize = endl - ptr;
+            out.append(ptr, ptr + lineSize);
+            ptr = endl;
+            size -= lineSize;
+        }
+    }
+    return out;
+}
+

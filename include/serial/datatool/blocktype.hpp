@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:14  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.5  1999/12/03 21:42:11  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -48,7 +55,7 @@
 * ===========================================================================
 */
 
-#include "type.hpp"
+#include <serial/tool/type.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -127,8 +134,9 @@ class CDataContainerType : public CDataMemberContainerType {
 public:
     CTypeInfo* CreateTypeInfo(void);
     
-    void GenerateCode(CClassCode& code) const;
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GenerateCode(void) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    AutoPtr<CTypeStrings> GetRefCType(void) const;
 
 protected:
     virtual CClassInfoTmpl* CreateClassInfo(void);

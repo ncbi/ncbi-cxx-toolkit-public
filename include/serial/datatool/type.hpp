@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:24  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.25  1999/12/29 16:01:53  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -80,8 +87,9 @@ class CDataValue;
 class CChoiceDataType;
 class CUniSequenceDataType;
 class CReferenceDataType;
-class CClassCode;
 class CTypeStrings;
+class CFileCode;
+class CClassTypeStrings;
 
 typedef int TInteger;
 
@@ -158,10 +166,11 @@ public:
 
     void Warning(const string& mess) const;
 
-    virtual void GenerateCode(CClassCode& code) const;
+    virtual AutoPtr<CTypeStrings> GenerateCode(void) const;
+    void SetParentClassTo(CClassTypeStrings& code) const;
 
-    virtual void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
-    virtual void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    virtual AutoPtr<CTypeStrings> GetRefCType(void) const;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     virtual const CDataType* Resolve(void) const;

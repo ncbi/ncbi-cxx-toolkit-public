@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/01 21:48:02  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.2  1999/12/28 18:55:58  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -42,7 +49,7 @@
 * ===========================================================================
 */
 
-#include "mcontainer.hpp"
+#include <serial/tool/mcontainer.hpp>
 
 CModuleContainer::CModuleContainer(void)
     : m_Parent(0)

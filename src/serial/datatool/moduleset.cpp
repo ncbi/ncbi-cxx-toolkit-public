@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/02/01 21:48:03  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.17  1999/12/30 21:33:40  vasilche
 * Changed arguments - more structured.
 * Added intelligence in detection of source directories.
@@ -53,11 +60,11 @@
 */
 
 #include <typeinfo>
-#include "moduleset.hpp"
-#include "module.hpp"
-#include "type.hpp"
-#include "exceptions.hpp"
-#include "fileutil.hpp"
+#include <serial/tool/moduleset.hpp>
+#include <serial/tool/module.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/exceptions.hpp>
+#include <serial/tool/fileutil.hpp>
 
 CFileModules::CFileModules(const string& name)
     : m_SourceFileName(name)

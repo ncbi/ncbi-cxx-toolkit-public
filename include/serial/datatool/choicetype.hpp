@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:15  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.2  1999/12/28 18:55:57  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -45,9 +52,9 @@
 * ===========================================================================
 */
 
-#include "blocktype.hpp"
+#include <serial/tool/blocktype.hpp>
 #include <serial/choice.hpp>
-#include "statictype.hpp"
+#include <serial/tool/statictype.hpp>
 
 class CChoiceDataType : public CDataMemberContainerType {
     typedef CDataMemberContainerType CParent;
@@ -56,9 +63,9 @@ public:
     bool CheckValue(const CDataValue& value) const;
 
     CTypeInfo* CreateTypeInfo(void);
-    void GenerateCode(CClassCode& code) const;
-    void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GenerateCode(void) const;
+    AutoPtr<CTypeStrings> GetRefCType(void) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 };
 
@@ -93,7 +100,7 @@ public:
 protected:
     virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
     virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
-    virtual TObjectPtr x_GetData(TObjectPtr object) const;
+    virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 };
 
 #endif

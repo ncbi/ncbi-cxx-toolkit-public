@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:16  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.15  1999/12/29 16:01:50  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -51,35 +58,20 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <set>
-#include <map>
+#include <serial/tool/classctx.hpp>
 #include <list>
 
 USING_NCBI_SCOPE;
 
 class CDataType;
-class CChoiceDataType;
 class CFileCode;
 
-class CClassCode
+class CClassCode : public CClassContext
 {
 public:
-    typedef set<string> TIncludes;
-    typedef map<string, string> TForwards;
-    typedef list< pair<string, string> > TMethods;
-
-    CClassCode(CFileCode& file, const string& typeName, const CDataType* type);
-    ~CClassCode(void);
-    
-    const string& GetTypeName(void) const
-        {
-            return m_TypeName;
-        }
-    const CDataType* GetType(void) const
-        {
-            return m_Type;
-        }
+    CClassCode(CClassContext& ownerClass, const string& className,
+               const string& namespaceName = NcbiEmptyString);
+    virtual ~CClassCode(void);
 
     const string& GetNamespace(void) const
         {
@@ -89,33 +81,32 @@ public:
         {
             return m_ClassName;
         }
-
-    const CDataType* GetParentType(void) const;
-    string GetParentClass(void) const;
-
-    enum EClassType {
-        eNormal,
-        eAbstract,
-        eEnum,
-        eAlias
-    };
-    void SetClassType(EClassType type);
-    EClassType GetClassType(void) const
+    const string& GetParentClassName(void) const
         {
-            return m_ClassType;
+            return m_ParentClassName;
+        }
+    const string& GetParentClassNamespaceName(void) const
+        {
+            return m_ParentClassNamespaceName;
         }
 
-    void AddHPPInclude(const string& s);
-    void AddCPPInclude(const string& s);
+    void SetParentClass(const string& className, const string& namespaceName);
+
+    string GetMethodPrefix(void) const;
+    bool InternalClass(void) const;
+    TIncludes& HPPIncludes(void);
+    TIncludes& CPPIncludes(void);
     void AddForwardDeclaration(const string& s, const string& ns);
-    void AddHPPIncludes(const TIncludes& includes);
-    void AddCPPIncludes(const TIncludes& includes);
-    void AddForwardDeclarations(const TForwards& forwards);
     void AddInitializer(const string& member, const string& init);
+    void AddDestructionCode(const string& code);
 
     CNcbiOstream& ClassPublic(void)
         {
             return m_ClassPublic;
+        }
+    CNcbiOstream& ClassProtected(void)
+        {
+            return m_ClassProtected;
         }
     CNcbiOstream& ClassPrivate(void)
         {
@@ -125,31 +116,29 @@ public:
         {
             return m_Methods;
         }
-    CNcbiOstream& TypeInfoBody(void)
-        {
-            return m_TypeInfoBody;
-        }
 
     CNcbiOstream& GenerateHPP(CNcbiOstream& header) const;
     CNcbiOstream& GenerateCPP(CNcbiOstream& code) const;
     CNcbiOstream& GenerateUserHPP(CNcbiOstream& header) const;
     CNcbiOstream& GenerateUserCPP(CNcbiOstream& code) const;
 
+    void AddHPPCode(const CNcbiOstrstream& code);
+    void AddCPPCode(const CNcbiOstrstream& code);
+
 private:
-    CFileCode& m_Code;
-    string m_TypeName;
-    const CDataType* m_Type;
+    CClassContext& m_Code;
     string m_Namespace;
     string m_ClassName;
-    string m_ParentClass;
+    string m_ParentClassName;
+    string m_ParentClassNamespaceName;
 
+    bool m_VirtualDestructor;
     CNcbiOstrstream m_ClassPublic;
+    CNcbiOstrstream m_ClassProtected;
     CNcbiOstrstream m_ClassPrivate;
-    CNcbiOstrstream m_Methods;
     CNcbiOstrstream m_Initializers;
-    CNcbiOstrstream m_TypeInfoBody;
-
-    EClassType m_ClassType;
+    list<string> m_DestructionCode;
+    CNcbiOstrstream m_Methods;
 
     CClassCode(const CClassCode&);
     CClassCode& operator=(const CClassCode&);

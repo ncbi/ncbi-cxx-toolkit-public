@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/02/01 21:48:02  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.17  1999/12/30 21:33:40  vasilche
 * Changed arguments - more structured.
 * Added intelligence in detection of source directories.
@@ -63,10 +70,10 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
 #include <typeinfo>
-#include "module.hpp"
-#include "exceptions.hpp"
-#include "type.hpp"
-#include "fileutil.hpp"
+#include <serial/tool/module.hpp>
+#include <serial/tool/exceptions.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/fileutil.hpp>
 
 CDataTypeModule::CDataTypeModule(const string& n)
     : m_Errors(false), m_Name(n)
@@ -111,8 +118,10 @@ void CDataTypeModule::AddImports(const string& module, const list<string>& types
 
 void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 {
-    out << GetName() << " DEFINITIONS ::=" << NcbiEndl;
-    out << "BEGIN" << NcbiEndl << NcbiEndl;
+    out <<
+        GetName() << " DEFINITIONS ::=\n"
+        "BEGIN\n"
+        "\n";
 
     if ( !m_Exports.empty() ) {
         out << "EXPORTS ";
@@ -122,7 +131,9 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
                 out << ", ";
             out << *i;
         }
-        out << ';' << NcbiEndl << NcbiEndl;
+        out <<
+            ";\n"
+            "\n";
     }
 
     if ( !m_Imports.empty() ) {
@@ -130,7 +141,9 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
         for ( TImports::const_iterator mbegin = m_Imports.begin(),
                   mend = m_Imports.end(), m = mbegin; m != mend; ++m ) {
             if ( m != mbegin )
-                out << NcbiEndl << "        ";
+                out <<
+                    "\n"
+                    "        ";
 
             const Import& imp = **m;
             for ( list<string>::const_iterator begin = imp.types.begin(),
@@ -141,17 +154,23 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
             }
             out << " FROM " << imp.moduleName;
         }
-        out << ';' << NcbiEndl << NcbiEndl;
+        out <<
+            ";\n"
+            "\n";
     }
 
     for ( TDefinitions::const_iterator i = m_Definitions.begin();
           i != m_Definitions.end(); ++i ) {
         out << i->first << " ::= ";
         i->second->PrintASN(out, 0);
-        out << NcbiEndl << NcbiEndl;
+        out <<
+            "\n"
+            "\n";
     }
 
-    out << "END" << NcbiEndl << NcbiEndl;
+    out <<
+        "END\n"
+        "\n";
 }
 
 bool CDataTypeModule::Check()

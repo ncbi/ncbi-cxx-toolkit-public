@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:22  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.6  2000/01/10 19:46:46  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -56,14 +63,14 @@
 * ===========================================================================
 */
 
-#include "type.hpp"
+#include <serial/tool/type.hpp>
 
 class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
 
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const = 0;
 };
@@ -75,7 +82,7 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
     const CTypeInfo* GetTypeInfo(void);
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
@@ -113,7 +120,7 @@ public:
     virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetTypeInfo(void);
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
@@ -124,7 +131,7 @@ public:
     CStringStoreDataType(void);
 
     const CTypeInfo* GetTypeInfo(void);
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
 
@@ -141,7 +148,7 @@ class COctetStringDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 };
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:19  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.11  1999/12/28 18:55:58  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -58,7 +65,7 @@
 #include <corelib/ncbireg.hpp>
 #include <set>
 #include <map>
-#include "moduleset.hpp"
+#include <serial/tool/moduleset.hpp>
 
 class CFileCode;
 
@@ -73,6 +80,7 @@ public:
 
     // setup interface
     void LoadConfig(const string& fileName);
+    void AddConfigLine(const string& s);
 
     void IncludeTypes(const string& types);
     void ExcludeTypes(const string& types);

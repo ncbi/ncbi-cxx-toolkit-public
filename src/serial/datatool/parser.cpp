@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/02/01 21:48:04  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.18  2000/01/10 19:46:45  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -55,18 +62,18 @@
 * ===========================================================================
 */
 
-#include "parser.hpp"
-#include "tokens.hpp"
-#include "module.hpp"
-#include "moduleset.hpp"
-#include "type.hpp"
-#include "statictype.hpp"
-#include "enumtype.hpp"
-#include "reftype.hpp"
-#include "unitype.hpp"
-#include "blocktype.hpp"
-#include "choicetype.hpp"
-#include "value.hpp"
+#include <serial/tool/parser.hpp>
+#include <serial/tool/tokens.hpp>
+#include <serial/tool/module.hpp>
+#include <serial/tool/moduleset.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/statictype.hpp>
+#include <serial/tool/enumtype.hpp>
+#include <serial/tool/reftype.hpp>
+#include <serial/tool/unitype.hpp>
+#include <serial/tool/blocktype.hpp>
+#include <serial/tool/choicetype.hpp>
+#include <serial/tool/value.hpp>
 
 AutoPtr<CFileModules> ASNParser::Modules(const string& fileName)
 {

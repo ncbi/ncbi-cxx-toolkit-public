@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:18  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.5  1999/12/29 16:01:50  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -51,20 +58,25 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/tool/classctx.hpp>
 #include <map>
-#include <set>
 
 USING_NCBI_SCOPE;
 
 class CDataType;
-class CClassCode;
+class CTypeStrings;
 
-class CFileCode
+class CFileCode : public CClassContext
 {
 public:
-    typedef set<string> TIncludes;
     typedef map<string, string> TForwards;
-    typedef map<string, AutoPtr<CClassCode> > TClasses;
+    typedef set<string> TAddedClasses;
+    struct SClassInfo {
+        string namespaceName;
+        AutoPtr<CTypeStrings> code;
+        SClassInfo(const string& namespaceName, AutoPtr<CTypeStrings> code);
+    };
+    typedef list< SClassInfo > TClasses;
 
     CFileCode(const string& baseName);
     ~CFileCode(void);
@@ -88,14 +100,15 @@ public:
     string GetHPPDefine(void) const;
     string GetUserHPPDefine(void) const;
 
-    void AddHPPInclude(const string& s);
-    void AddCPPInclude(const string& s);
-    void AddForwardDeclaration(const string& cls,
-                               const string& ns = NcbiEmptyString);
-    void AddHPPIncludes(const TIncludes& includes);
-    void AddCPPIncludes(const TIncludes& includes);
-    void AddForwardDeclarations(const TForwards& forwards);
+    string GetMethodPrefix(void) const;
+    TIncludes& HPPIncludes(void);
+    TIncludes& CPPIncludes(void);
+    void AddForwardDeclaration(const string& className,
+                               const string& namespaceName);
+    void AddHPPCode(const CNcbiOstrstream& code);
+    void AddCPPCode(const CNcbiOstrstream& code);
 
+    void GenerateCode(void);
     void GenerateHPP(const string& path) const;
     void GenerateCPP(const string& path) const;
     bool GenerateUserHPP(const string& path) const;
@@ -109,8 +122,10 @@ private:
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;
     TForwards m_ForwardDeclarations;
+    CNcbiOstrstream m_HPPCode, m_CPPCode;
 
     // classes code
+    TAddedClasses m_AddedClasses;
     TClasses m_Classes;
     
     CFileCode(const CFileCode&);

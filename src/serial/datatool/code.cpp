@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/02/01 21:47:56  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.24  2000/01/11 16:59:02  vasilche
 * Changed macros generation for compilation on MS VC.
 *
@@ -46,53 +53,67 @@
 * ===========================================================================
 */
 
-#include "code.hpp"
-#include "filecode.hpp"
-#include "type.hpp"
-#include "blocktype.hpp"
+#include <serial/tool/code.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/fileutil.hpp>
 
-static inline
-void
-Write(CNcbiOstream& out, const CNcbiOstrstream& src)
+CClassContext::~CClassContext(void)
 {
-    CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(src);
-    size_t size = source.pcount();
-    if ( size != 0 ) {
-        out.write(source.str(), size);
-        source.freeze(false);
-    }
 }
 
-CClassCode::CClassCode(CFileCode& code,
-                       const string& typeName, const CDataType* type)
-    : m_Code(code), m_TypeName(typeName), m_Type(type), m_ClassType(eNormal)
+CClassCode::CClassCode(CClassContext& owner, const string& className,
+                       const string& namespaceName)
+    : m_Code(owner),
+      m_Namespace(namespaceName), m_ClassName(className),
+      m_ParentClassName(""), m_VirtualDestructor(false)
 {
-    m_Namespace = type->Namespace();
-    m_ClassName = type->ClassName();
-    string include = type->GetVar("_include");
-    if ( !include.empty() )
-        code.AddHPPInclude(include);
-    type->GenerateCode(*this);
 }
 
 CClassCode::~CClassCode(void)
 {
+    CNcbiOstrstream hpp;
+    GenerateHPP(hpp);
+    CNcbiOstrstream cpp;
+    GenerateCPP(cpp);
+    m_Code.AddHPPCode(hpp);
+    m_Code.AddCPPCode(cpp);
 }
 
-void CClassCode::SetClassType(EClassType type)
+void CClassCode::AddHPPCode(const CNcbiOstrstream& code)
 {
-    _ASSERT(GetClassType() == eNormal);
-    m_ClassType = type;
+    WriteTabbed(m_ClassPublic, code);
 }
 
-void CClassCode::AddHPPInclude(const string& s)
+void CClassCode::AddCPPCode(const CNcbiOstrstream& code)
 {
-    m_Code.AddHPPInclude(s);
+    Write(m_Methods, code);
 }
 
-void CClassCode::AddCPPInclude(const string& s)
+string CClassCode::GetMethodPrefix(void) const
 {
-    m_Code.AddCPPInclude(s);
+    return m_Code.GetMethodPrefix() + GetClassName() + "::";
+}
+
+bool CClassCode::InternalClass(void) const
+{
+    return !m_Code.GetMethodPrefix().empty();
+}
+
+CClassCode::TIncludes& CClassCode::HPPIncludes(void)
+{
+    return m_Code.HPPIncludes();
+}
+
+CClassCode::TIncludes& CClassCode::CPPIncludes(void)
+{
+    return m_Code.CPPIncludes();
+}
+
+void CClassCode::SetParentClass(const string& className,
+                                const string& namespaceName)
+{
+    m_ParentClassName = className;
+    m_ParentClassNamespaceName = namespaceName;
 }
 
 void CClassCode::AddForwardDeclaration(const string& s, const string& ns)
@@ -100,164 +121,107 @@ void CClassCode::AddForwardDeclaration(const string& s, const string& ns)
     m_Code.AddForwardDeclaration(s, ns);
 }
 
-void CClassCode::AddHPPIncludes(const TIncludes& includes)
-{
-    m_Code.AddHPPIncludes(includes);
-}
-
-void CClassCode::AddCPPIncludes(const TIncludes& includes)
-{
-    m_Code.AddCPPIncludes(includes);
-}
-
-void CClassCode::AddForwardDeclarations(const TForwards& forwards)
-{
-    m_Code.AddForwardDeclarations(forwards);
-}
-
 void CClassCode::AddInitializer(const string& member, const string& init)
 {
+    if ( init.empty() )
+        return;
     if ( m_Initializers.pcount() != 0 )
         m_Initializers << ", ";
     m_Initializers << member << '(' << init << ')';
 }
 
-const CDataType* CClassCode::GetParentType(void) const
+void CClassCode::AddDestructionCode(const string& code)
 {
-    const CDataType* t = GetType();
-    const CDataType* parent = t->InheritFromType();
-    if ( parent ) {
-        m_Code.AddHPPInclude(parent->FileName());
-        m_Code.AddForwardDeclaration(parent->ClassName(),
-                                     parent->Namespace());
-    }
-    return parent;
-}
-
-string CClassCode::GetParentClass(void) const
-{
-    const CDataType* parent = GetParentType();
-    if ( parent )
-        return parent->ClassName();
-    else
-        return GetType()->InheritFromClass();
+    if ( code.empty() )
+        return;
+    m_DestructionCode.push_front(code);
 }
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
-    if ( GetClassType() == eEnum ) {
-        // enum
-        Write(header, m_ClassPublic);
-        return header;
-    }
     header <<
-        "class " << GetClassName() << "_Base";
-    if ( !GetParentClass().empty() )
-        header << " : public " << GetParentClass();
-    header << NcbiEndl <<
-        '{' << NcbiEndl <<
-        "public:" << NcbiEndl <<
-        "    " << GetClassName() << "_Base(void);" << NcbiEndl <<
-        "    " << (GetClassType() == eAbstract? "virtual ": "") << '~' <<
-        GetClassName() << "_Base(void);" << NcbiEndl <<
-        NcbiEndl;
-    if ( GetClassType() != eAlias ) {
-        header <<
-            "    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);" <<
-            NcbiEndl;
-    }
+        "class "<<GetClassName();
+    if ( !GetParentClassName().empty() )
+        header << " : public "<<GetParentClassName();
+    header <<
+        "\n"
+        "{\n"
+        "public:\n"
+        "    // constructor/destructor\n"
+        "    "<<GetClassName()<<"(void);\n"
+        "    "<<(m_VirtualDestructor? "virtual ": "")<<'~'<<GetClassName()<<"(void);\n"
+        "\n";
     Write(header, m_ClassPublic);
-    header << NcbiEndl <<
-        "private:" << NcbiEndl <<
-        "    friend class " << GetClassName() << ';' << NcbiEndl <<
-        NcbiEndl;
+    header << 
+        "\n"
+        "protected:\n";
+    Write(header, m_ClassProtected);
+    header << 
+        "\n"
+        "private:\n";
     Write(header, m_ClassPrivate);
     header <<
-        "};" << NcbiEndl;
+        "};\n";
     return header;
 }
 
 CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
 {
-    if ( GetClassType() == eEnum ) {
-        // enum
-        Write(code, m_Methods);
-        return code;
-    }
+    string methodPrefix = GetMethodPrefix();
     code <<
-        GetClassName() << "_Base::" <<
-        GetClassName() << "_Base(void)" << NcbiEndl;
+        methodPrefix<<GetClassName()<<"(void)\n";
     if ( const_cast<CNcbiOstrstream&>(m_Initializers).pcount() != 0 ) {
         code << "    : ";
         Write(code, m_Initializers);
-        code << NcbiEndl;
+        code << "\n";
     }
     code <<
-        '{' << NcbiEndl <<
-        '}' << NcbiEndl <<
-        NcbiEndl <<
-        GetClassName() << "_Base::~" <<
-        GetClassName() << "_Base(void)" << NcbiEndl <<
-        '{' << NcbiEndl <<
-        '}' << NcbiEndl <<
-        NcbiEndl;
-    Write(code, m_Methods);
-    code << NcbiEndl;
-    if ( GetClassType() != eAlias ) {
-        if ( GetClassType() == eAbstract )
-            code << "BEGIN_ABSTRACT_BASE_CLASS_INFO2(\"";
-        else
-            code << "BEGIN_BASE_CLASS_INFO2(\"";
-        code << GetType()->IdName() << "\", " << GetClassName() << ")\n" <<
-            "{\n";
-        if ( GetParentType() ) {
-            code << "    SET_PARENT_CLASS(" <<
-                GetParentClass() << ")->SetOptional();" << NcbiEndl;
-        }
-        code << NcbiEndl;
-        Write(code, m_TypeInfoBody);
-        code <<
-            '}' << NcbiEndl <<
-            "END_CLASS_INFO" << NcbiEndl << NcbiEndl;
+        "{\n"
+        "}\n"
+        "\n"
+         <<methodPrefix<<"~"<<GetClassName()<<"(void)\n"
+        "{\n";
+    iterate ( list<string>, i, m_DestructionCode ) {
+        WriteTabbed(code, *i);
     }
+    code <<
+        "}\n"
+        "\n";
+    Write(code, m_Methods);
+    code << "\n";
     return code;
 }
 
 CNcbiOstream& CClassCode::GenerateUserHPP(CNcbiOstream& header) const
 {
-    if ( GetClassType() == eEnum ) {
-        // enum
+    if ( InternalClass() ) {
         return header;
     }
     header <<
-        "class " << GetClassName() << " : public " <<
-        GetClassName() << "_Base" << NcbiEndl <<
-        '{' << NcbiEndl <<
-        "public:" << NcbiEndl <<
-        "    " << GetClassName() << "();" << NcbiEndl <<
-        "    " << '~' << GetClassName() << "();" << NcbiEndl <<
-        NcbiEndl <<
-        "};" << NcbiEndl;
+        "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
+        "{\n"
+        "public:\n"
+        "    "<<GetClassName()<<"();\n"
+        "    "<<'~'<<GetClassName()<<"();\n"
+        "\n"
+        "};\n";
     return header;
 }
 
 CNcbiOstream& CClassCode::GenerateUserCPP(CNcbiOstream& code) const
 {
-    if ( GetClassType() == eEnum ) {
-        // enum
+    if ( InternalClass() ) {
         return code;
     }
     code <<
-        GetClassName() << "::" <<
-        GetClassName() << "()" << NcbiEndl <<
-        '{' << NcbiEndl <<
-        '}' << NcbiEndl <<
-        NcbiEndl <<
-        GetClassName() << "::~" <<
-        GetClassName() << "()" << NcbiEndl <<
-        '{' << NcbiEndl <<
-        '}' << NcbiEndl <<
-        NcbiEndl;
+        GetClassName()<<"::"<<GetClassName()<<"()\n"
+        "{\n"
+        "}\n"
+        "\n"
+         <<GetClassName()<<"::~"<<GetClassName()<<"()\n"
+        "{\n"
+        "}\n"
+        "\n";
     return code;
 }
 

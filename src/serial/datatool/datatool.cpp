@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/02/01 21:48:01  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.25  2000/01/06 16:13:43  vasilche
 * Updated help messages.
 *
@@ -68,13 +75,13 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <memory>
-#include "fileutil.hpp"
-#include "parser.hpp"
-#include "lexer.hpp"
-#include "moduleset.hpp"
-#include "module.hpp"
-#include "type.hpp"
-#include "generate.hpp"
+#include <serial/tool/fileutil.hpp>
+#include <serial/tool/parser.hpp>
+#include <serial/tool/lexer.hpp>
+#include <serial/tool/moduleset.hpp>
+#include <serial/tool/module.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/generate.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -82,47 +89,51 @@ typedef pair<AnyType, TTypeInfo> TObject;
 
 static void Help(void)
 {
-    NcbiCout << NcbiEndl <<
-        "DataTool 1.0 arguments:\n" <<
-        NcbiEndl <<
-        "  -H           display this message (optional)\n" <<
-        "  -oH          display code generation arguments (optional)\n" <<
-        "  -m <file>    ASN.1 module file\n" <<
-        "  -mx <file>   XML module file\n" <<
-        "  -M <files>   external ASN.1 module files (optional)\n" <<
-        "  -Mx <files>  external XML module files (optional)\n" <<
-        "  -i           ignore unresolved symbols (optional)\n" <<
-        "  -f <file>    write ASN.1 module file (optional)\n" <<
-        "  -fx <file>   write XML module file (optional)\n" <<
-        "  -v <file>    read value in ASN.1 text format (optional)\n" <<
-        "  -p <file>    write value in ASN.1 text format (optional)\n" <<
-        "  -vx <file>   read value in XML format (optional)\n" <<
-        "  -px <file>   write value in XML format (optional)\n" <<
-        "  -d <file>    read value in ASN.1 binary format (type required) (optianal)\n" <<
-        "  -t <type>    binary value type (optional)\n" <<
-        "  -e <file>    write value in ASN.1 binary format (optional)\n";
+    NcbiCout <<
+        "\n"
+        "DataTool 1.0 arguments:\n"
+        "\n"
+        "  -H           display this message (optional)\n"
+        "  -oH          display code generation arguments (optional)\n"
+        "  -m <file>    ASN.1 module file\n"
+        "  -mx <file>   XML module file\n"
+        "  -M <files>   external ASN.1 module files (optional)\n"
+        "  -Mx <files>  external XML module files (optional)\n"
+        "  -i           ignore unresolved symbols (optional)\n"
+        "  -f <file>    write ASN.1 module file (optional)\n"
+        "  -fx <file>   write XML module file (optional)\n"
+        "  -v <file>    read value in ASN.1 text format (optional)\n"
+        "  -p <file>    write value in ASN.1 text format (optional)\n"
+        "  -vx <file>   read value in XML format (optional)\n"
+        "  -px <file>   write value in XML format (optional)\n"
+        "  -d <file>    read value in ASN.1 binary format (type required) (optianal)\n"
+        "  -t <type>    binary value type (optional)\n"
+        "  -e <file>    write value in ASN.1 binary format (optional)\n" <<
+        NcbiFlush;
 }
 
 static void GenerateHelp(void)
 {
-    NcbiCout << NcbiEndl <<
-        "DataTool 1.0 code generation arguments (all optional):\n" <<
-        NcbiEndl <<
-        "  -oH          display this message\n" <<
-        "  -oA          generate C++ files for all types\n" <<
-        "  -ot <types>  generate C++ files for listed types\n" <<
-        "  -ox <types>  exclude listed types from generation\n" <<
-        "  -oX          turn off recursive type generation\n" <<
-        "  -od <file>   C++ code definition file\n" <<
-        "  -of <file>   write list of generated C++ files\n" <<
-        "  -opm <dir>   directory for searching source modules\n" <<
-        "  -oph <dir>   directory for generated *.hpp files\n" <<
-        "  -opc <dir>   directory for generated *.cpp files\n" <<
-        "  -or <prefix> add prefix to generated file names\n" <<
-        "  -ors         add source file dir to generated file names\n" <<
-        "  -orm         add module name to generated file names\n" <<
-        "  -orA         combine all -or* prefixes\n" <<
-        "  -oR <dir>    set -op* and -or* arguments for NCBI dir tree\n";
+    NcbiCout <<
+        "\n"
+        "DataTool 1.0 code generation arguments (all optional):\n"
+        "\n"
+        "  -oH          display this message\n"
+        "  -oA          generate C++ files for all types\n"
+        "  -ot <types>  generate C++ files for listed types\n"
+        "  -ox <types>  exclude listed types from generation\n"
+        "  -oX          turn off recursive type generation\n"
+        "  -od <file>   C++ code definition file\n"
+        "  -of <file>   write list of generated C++ files\n"
+        "  -opm <dir>   directory for searching source modules\n"
+        "  -oph <dir>   directory for generated *.hpp files\n"
+        "  -opc <dir>   directory for generated *.cpp files\n"
+        "  -or <prefix> add prefix to generated file names\n"
+        "  -ors         add source file dir to generated file names\n"
+        "  -orm         add module name to generated file names\n"
+        "  -orA         combine all -or* prefixes\n"
+        "  -oR <dir>    set -op* and -or* arguments for NCBI dir tree\n" <<
+        NcbiFlush;
 }
 
 static
@@ -217,6 +228,7 @@ int main(int argc, const char*argv[])
     string dataInTypeName;
     FileInfo dataOut;
     bool ignoreErrors = false;
+    list<string> additionalDefinitions;
 
     bool generateAllTypes = false;
     CCodeGenerator generator;
@@ -282,6 +294,9 @@ int main(int argc, const char*argv[])
                 case 'd':
                     generator.LoadConfig(FileInArgument(argv[++i]));
                     break;
+                case 'D':
+                    additionalDefinitions.push_back(StringArgument(argv[++i]));
+                    break;
                 case 'f':
                     generator.SetFileListFileName(FileOutArgument(argv[++i]));
                     break;
@@ -343,6 +358,11 @@ int main(int argc, const char*argv[])
             }
         }
     }
+
+    iterate ( list<string>, i, additionalDefinitions ) {
+        generator.AddConfigLine(*i);
+    }
+    additionalDefinitions.clear();
 
     try {
         if ( mainModules.empty() )

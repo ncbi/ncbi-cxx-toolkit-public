@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/01 21:47:55  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.5  2000/01/05 19:43:59  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -54,13 +61,12 @@
 * ===========================================================================
 */
 
-#include "choicetype.hpp"
+#include <serial/tool/choicetype.hpp>
 #include <serial/autoptrinfo.hpp>
-#include "enumtype.hpp"
-#include "value.hpp"
-#include "code.hpp"
-#include "typestr.hpp"
-#include "fileutil.hpp"
+#include <serial/tool/value.hpp>
+//#include <serial/tool/module.hpp>
+#include <serial/tool/choicestr.hpp>
+//#include <serial/tool/fileutil.hpp>
 
 CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const string& name)
     : CParent(name)
@@ -100,7 +106,8 @@ void CChoiceTypeInfoAnyType::SetIndex(TObjectPtr object,
     Get(object).index = index;
 }
 
-TObjectPtr CChoiceTypeInfoAnyType::x_GetData(TObjectPtr object) const
+TObjectPtr CChoiceTypeInfoAnyType::x_GetData(TObjectPtr object,
+                                             TMemberIndex /*index*/) const
 {
     return &Get(object).data;
 }
@@ -147,70 +154,25 @@ CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
     return new CAutoPointerTypeInfo(typeInfo.release());
 }
 
-void CChoiceDataType::GenerateCode(CClassCode& code) const
+AutoPtr<CTypeStrings> CChoiceDataType::GenerateCode(void) const
 {
-    code.SetClassType(code.eAbstract);
-    string className = ClassName();
-    for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end();
-          ++i ) {
-        const CDataMember* m = i->get();
-        string fieldName = Identifier(m->GetName());
-        if ( fieldName.empty() ) {
-            continue;
-        }
-        const CDataType* variant = m->GetType();
-        const CDataType* variantResolved = variant->Resolve();
-        if ( variantResolved->InheritFromType() == this &&
-             dynamic_cast<const CEnumDataType*>(variantResolved) == 0 ) {
-            // named choice AND variant appears only in this choice
-            variant = variantResolved;
-        }
-        string variantName = Identifier(m->GetName());
-        if ( dynamic_cast<const CNullDataType*>(variant) != 0 ) {
-            // NULL variant
-            code.ClassPublic() <<
-                "    bool Is"<<variantName<<"(void) const"<<NcbiEndl<<
-                "        { return this == 0; }"<<NcbiEndl<<
-                NcbiEndl;
-            code.TypeInfoBody() <<
-                "    ADD_SUB_CLASS2_NULL(\"" << m->GetName() << "\");" <<
-                NcbiEndl;
-            continue;
-        }
-        string variantClass = variant->ClassName();
-        code.AddCPPInclude(variant->FileName());
-        code.AddForwardDeclaration(variantClass, variant->Namespace());
-        code.TypeInfoBody() <<
-            "    ADD_SUB_CLASS2(\"" << m->GetName() << "\", " << variantClass <<
-                   ");" << NcbiEndl;
-        code.ClassPublic() << NcbiEndl <<
-            "    bool Is"<<variantName<<"(void) const;" << NcbiEndl <<
-            "    "<<variantClass<<"* Get"<<variantName<<"(void);" << NcbiEndl <<
-            "    const "<<variantClass<<"* Get"<<variantName<<"(void) const;" << NcbiEndl;
-        code.Methods() << "CHOICE_VARIANT_METHODS("<<className<<","<<variantClass<<","<<variantName<<')'<<NcbiEndl;
-    }
+    return GetFullCType();
 }
 
-void CChoiceDataType::GetRefCType(CTypeStrings& tType, CClassCode& ) const
+AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 {
-    string className = ClassName();
-    string ns = Namespace();
-    tType.SetClass(ns + "::" + className);
-    tType.AddHPPInclude(FileName());
-    tType.AddForwardDeclaration(className, ns);
-    tType.ToPointer();
-    tType.SetChoice();
+    return AutoPtr<CTypeStrings>(new CChoiceRefTypeStrings(ClassName(),
+                                                           Namespace(),
+                                                           FileName()));
 }
 
-void CChoiceDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
+AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
-    if ( GetParentType() == 0 ) {
-        // root choice: invalid
-        CParent::GetFullCType(tType, code);
-        return;
+    AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(IdName(),
+                                                            ClassName()));
+    iterate ( TMembers, i, GetMembers() ) {
+        code->AddVariant((*i)->GetName(), (*i)->GetType()->GetFullCType());
     }
-
-    // generate internal class for internal choice
-    GetRefCType(tType, code);
+    SetParentClassTo(*code);
+    return AutoPtr<CTypeStrings>(code.release());
 }

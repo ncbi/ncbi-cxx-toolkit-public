@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:12  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.6  1999/11/19 15:48:09  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -46,7 +53,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbistre.hpp>
 #include <vector>
-#include "atoken.hpp"
+#include <serial/tool/atoken.hpp>
 
 USING_NCBI_SCOPE;
 

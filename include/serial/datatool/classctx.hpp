@@ -1,3 +1,6 @@
+#ifndef CLASSCTX_HPP
+#define CLASSCTX_HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -26,46 +29,58 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Abstract parser class
+*   Class code generator
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.5  2000/02/01 21:47:52  vasilche
+* Revision 1.1  2000/02/01 21:46:15  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
 * Added support for DEFAULT/OPTIONAL members.
 * Changed class generation.
 * Moved datatool headers to include/internal/serial/tool.
 *
-* Revision 1.4  1999/11/15 19:36:12  vasilche
+* Revision 1.15  1999/12/29 16:01:50  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
+* Revision 1.14  1999/11/19 15:48:09  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
+* Revision 1.13  1999/11/18 17:13:06  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
+* Revision 1.12  1999/11/15 19:36:14  vasilche
 * Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
-#include <serial/tool/aparser.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
+#include <set>
 
 USING_NCBI_SCOPE;
 
-AbstractParser::AbstractParser(AbstractLexer& lexer)
-    : m_Lexer(lexer)
-{
-}
+class CDataType;
+class CChoiceDataType;
+class CFileCode;
 
-AbstractParser::~AbstractParser(void)
+class CClassContext
 {
-}
+public:
+    virtual ~CClassContext(void);
 
-void AbstractParser::ParseError(const char* error, const char* expected,
-                                const AbstractToken& token)
-{
-    throw runtime_error(NStr::IntToString(token.GetLine()) +
-                        ": Parse error: " + error + ": " +
-                        expected + " expected");
-}
+    typedef set<string> TIncludes;
 
-string AbstractParser::Location(void) const
-{
-    const AbstractToken& token = NextToken();
-    return NStr::IntToString(token.GetLine()) + ':';
-}
+    virtual string GetMethodPrefix(void) const = 0;
+    virtual TIncludes& HPPIncludes(void) = 0;
+    virtual TIncludes& CPPIncludes(void) = 0;
+    virtual void AddForwardDeclaration(const string& className,
+                                       const string& namespaceName) = 0;
+    virtual void AddHPPCode(const CNcbiOstrstream& code) = 0;
+    virtual void AddCPPCode(const CNcbiOstrstream& code) = 0;
+};
+
+#endif

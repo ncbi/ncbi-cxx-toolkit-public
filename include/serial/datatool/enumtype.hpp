@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2000/02/01 21:46:17  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.3  1999/12/03 21:42:12  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -42,25 +49,14 @@
 * ===========================================================================
 */
 
-#include "type.hpp"
+#include <serial/tool/type.hpp>
 #include <list>
 
 class CEnumDataType : public CDataType {
     typedef CDataType CParent;
 public:
-    class Value {
-    public:
-        Value()
-            {
-            }
-        Value(const string& i, int v)
-            : id(i), value(v)
-            {
-            }
-        string id;
-        int value;
-    };
-    typedef list<Value> TValues;
+    typedef pair<string, long> TValue;
+    typedef list<TValue> TValues;
 
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
@@ -89,13 +85,10 @@ public:
     SEnumCInfo GetEnumCInfo(void) const;
 public:
 
-    void GenerateCode(CClassCode& code,
-                      CTypeStrings* tType) const;
-
     CTypeInfo* CreateTypeInfo(void);
-    void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
-    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
-    void GenerateCode(CClassCode& code) const;
+    AutoPtr<CTypeStrings> GetRefCType(void) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    AutoPtr<CTypeStrings> GenerateCode(void) const;
 
 private:
     TValues m_Values;

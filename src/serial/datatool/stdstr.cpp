@@ -30,7 +30,7 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  2000/02/01 21:48:09  vasilche
+* Revision 1.1  2000/02/01 21:48:06  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
 * Added support for DEFAULT/OPTIONAL members.
@@ -71,84 +71,81 @@
 * ===========================================================================
 */
 
-#include <serial/tool/typestr.hpp>
+#include <serial/tool/stdstr.hpp>
 #include <serial/tool/classctx.hpp>
-#include <serial/tool/stlstr.hpp>
+#include <serial/tool/fileutil.hpp>
 
-CTypeStrings::~CTypeStrings(void)
+CStdTypeStrings::CStdTypeStrings(const string& type)
+    : m_CType(type)
 {
 }
 
-string CTypeStrings::GetInitializer(void) const
+string CStdTypeStrings::GetCType(void) const
 {
-    return string();
+    return m_CType;
 }
 
-string CTypeStrings::GetDestructionCode(const string& /*expr*/) const
+string CStdTypeStrings::GetRef(void) const
 {
-    return string();
+    return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_CType+" >::GetTypeInfo";
 }
 
-string CTypeStrings::GetResetCode(const string& /*var*/) const
+string CStdTypeStrings::GetInitializer(void) const
 {
-    return string();
+    return "0";
 }
 
-bool CTypeStrings::CanBeKey(void) const
-{
-    return true;
-}
-
-bool CTypeStrings::CanBeInSTL(void) const
-{
-    return true;
-}
-
-bool CTypeStrings::NeedSetFlag(void) const
-{
-    return true;
-}
-
-string CTypeStrings::GetIsSetCode(const string& /*var*/) const
-{
-    return "...";
-}
-
-CTypeStrings* CTypeStrings::ToPointer(void)
-{
-    return new CPointerTypeStrings(this);
-}
-
-void CTypeStrings::GenerateCode(CClassContext& ctx) const
-{
-    //    AddForwardDeclarations(ctx);
-    //    AddIncludes(ctx.HPPIncludes(), ctx.CPPIncludes());
-    GenerateTypeCode(ctx);
-}
-
-void CTypeStrings::GenerateTypeCode(CClassContext& ctx) const
-{
-}
-
-void CTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
-{
-    GenerateTypeCode(ctx);
-}
-
-void CTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
-{
-}
-
-void CTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
-{
-}
-
-string CTypeStrings::GetTypeInfoCode(const string& externalName,
-                                     const string& memberName) const
+string CStdTypeStrings::GetTypeInfoCode(const string& externalName,
+                                        const string& memberName) const
 {
     return "NCBI_NS_NCBI::AddMember("
         "info->GetMembers(), "
         "\""+externalName+"\", "
-        "NCBI_NS_NCBI::Check< "+GetCType()+" >::Ptr(MEMBER_PTR("+memberName+")), "
-        +GetRef()+')';
+        "MEMBER_PTR("+memberName+"), "
+        "NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR("+memberName+")))";
+}
+
+string CNullTypeStrings::GetCType(void) const
+{
+    return "bool";
+}
+
+string CNullTypeStrings::GetRef(void) const
+{
+    return "&NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo";
+}
+
+string CNullTypeStrings::GetInitializer(void) const
+{
+    return "false";
+}
+
+CStringTypeStrings::CStringTypeStrings(const string& type)
+    : CParent(type)
+{
+}
+
+string CStringTypeStrings::GetInitializer(void) const
+{
+    return string();
+}
+
+string CStringTypeStrings::GetResetCode(const string& var) const
+{
+    return var+".erase();\n";
+}
+
+void CStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+{
+    ctx.HPPIncludes().insert("<string>");
+}
+
+CStringStoreTypeStrings::CStringStoreTypeStrings(const string& type)
+    : CParent(type)
+{
+}
+
+string CStringStoreTypeStrings::GetRef(void) const
+{
+    return "&NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo";
 }

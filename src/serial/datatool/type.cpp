@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/02/01 21:48:07  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.39  2000/01/10 19:46:46  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -73,18 +80,17 @@
 * ===========================================================================
 */
 
+#include <serial/tool/type.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <serial/tool/value.hpp>
+#include <serial/tool/module.hpp>
+#include <serial/tool/classstr.hpp>
+#include <serial/tool/exceptions.hpp>
+#include <serial/tool/reftype.hpp>
+#include <serial/tool/unitype.hpp>
+#include <serial/tool/choicetype.hpp>
+#include <serial/tool/fileutil.hpp>
 #include <algorithm>
-#include "type.hpp"
-#include "value.hpp"
-#include "module.hpp"
-#include "code.hpp"
-#include "typestr.hpp"
-#include "exceptions.hpp"
-#include "reftype.hpp"
-#include "unitype.hpp"
-#include "choicetype.hpp"
-#include "fileutil.hpp"
 
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
@@ -207,7 +213,8 @@ bool CDataType::CheckType(void) const
 
 CNcbiOstream& CDataType::NewLine(CNcbiOstream& out, int indent)
 {
-    out << NcbiEndl;
+    out <<
+        "\n";
     for ( int i = 0; i < indent; ++i )
         out << "  ";
     return out;
@@ -275,11 +282,13 @@ string CDataType::ClassName(void) const
     const string& cls = GetVar("_class");
     if ( !cls.empty() )
         return cls;
+/*
     const CDataType* parent = GetParentType();
     if ( parent ) {
         return parent->ClassName() +
             "__" + Identifier(m_MemberName, false);
     }
+*/
     return Identifier(m_MemberName);
 }
 
@@ -313,12 +322,12 @@ const CDataType* CDataType::InheritFromType(void) const
 
     // try to detect implicit inheritance
     if ( IsInChoice() ) // directly in CHOICE
-        return GetInChoice();
+        return 0; //GetInChoice();
 
     if ( IsReferenced() ) {
         // have references to me
-        const CDataType* namedParent = 0;
-        const CDataType* unnamedParent = 0;
+        const CChoiceDataType* namedParent = 0;
+        const CChoiceDataType* unnamedParent = 0;
         int unnamedParentCount = 0;
         // try to find exactly one reference from named CHOICE
         iterate ( TReferences, ri, GetReferences() ) {
@@ -340,10 +349,10 @@ const CDataType* CDataType::InheritFromType(void) const
             }
         }
         if ( namedParent ) {
-            return namedParent;
+            return 0; //namedParent;
         }
         if ( unnamedParentCount == 1 ) {
-            return unnamedParent;
+            return 0; // unnamedParent;
         }
     }
     return 0;
@@ -369,48 +378,33 @@ TTypeInfo CDataType::GetTypeInfo(void)
     return m_CreatedTypeInfo.get();
 }
 
-void CDataType::GenerateCode(CClassCode& code) const
+AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
-    // by default, generate implicit class with one data member
-    string memberName = GetVar("_member");
-    string idName = Identifier(IdName());
-    string typeDefName;
-    if ( memberName.empty() ) {
-        memberName = "m_" + idName;
-        typeDefName = 'T' + idName;
-    }
-    else {
-        typeDefName = 'T' + Identifier(memberName);
-    }
-    code.TypeInfoBody() <<
-        "    info->SetImplicit();" << NcbiEndl;
-    CTypeStrings tType;
-    GetFullCType(tType, code);
-    tType.AddMember(code, memberName);
-    code.TypeInfoBody() << ';' << NcbiEndl;
-    code.ClassPublic() << NcbiEndl <<
-        "    operator "<<typeDefName<<"&(void)"<<NcbiEndl<<
-        "    {"<<NcbiEndl<<
-        "        return "<<memberName<<';'<<NcbiEndl<<
-        "    }"<<NcbiEndl<<
-        "    operator const "<<typeDefName<<"&(void) const"<<NcbiEndl<<
-        "    {"<<NcbiEndl<<
-        "        return "<<memberName<<';'<<NcbiEndl<<
-        "    }"<<NcbiEndl<<
-        NcbiEndl;
+    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
+                                                          ClassName()));
+    code->AddMember(NcbiEmptyString, GetFullCType(), false);
+    SetParentClassTo(*code);
+    return AutoPtr<CTypeStrings>(code.release());
 }
 
-void CDataType::GetRefCType(CTypeStrings& tType, CClassCode& code) const
+void CDataType::SetParentClassTo(CClassTypeStrings& code) const
 {
-    code.AddHPPInclude(FileName());
-    string className = ClassName();
-    string ns = Namespace();
-    code.AddForwardDeclaration(className, ns);
-    tType.SetClass(ns + "::" + ClassName());
+    const CDataType* parent = InheritFromType();
+    if ( parent ) {
+        code.SetParentClass(parent->ClassName(),
+                            parent->Namespace(),
+                            parent->FileName());
+    }
 }
 
-void CDataType::GetFullCType(CTypeStrings& /*tType*/,
-                             CClassCode& /*code*/) const
+AutoPtr<CTypeStrings> CDataType::GetRefCType(void) const
+{
+    return AutoPtr<CTypeStrings>(new CClassRefTypeStrings(ClassName(),
+                                                          Namespace(),
+                                                          FileName()));
+}
+
+AutoPtr<CTypeStrings> CDataType::GetFullCType(void) const
 {
     THROW1_TRACE(runtime_error, LocationString() + ": C++ type undefined");
 }

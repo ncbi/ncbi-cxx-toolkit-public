@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/02/01 21:48:00  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.25  2000/01/06 16:13:18  vasilche
 * Fail of file generation now fatal.
 *
@@ -66,19 +73,19 @@
 #include <corelib/ncbistd.hpp>
 #include <algorithm>
 #include <typeinfo>
-#include "moduleset.hpp"
-#include "module.hpp"
-#include "type.hpp"
-#include "statictype.hpp"
-#include "reftype.hpp"
-#include "unitype.hpp"
-#include "enumtype.hpp"
-#include "blocktype.hpp"
-#include "choicetype.hpp"
-#include "filecode.hpp"
-#include "generate.hpp"
-#include "exceptions.hpp"
-#include "fileutil.hpp"
+#include <serial/tool/moduleset.hpp>
+#include <serial/tool/module.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/statictype.hpp>
+#include <serial/tool/reftype.hpp>
+#include <serial/tool/unitype.hpp>
+#include <serial/tool/enumtype.hpp>
+#include <serial/tool/blocktype.hpp>
+#include <serial/tool/choicetype.hpp>
+#include <serial/tool/filecode.hpp>
+#include <serial/tool/generate.hpp>
+#include <serial/tool/exceptions.hpp>
+#include <serial/tool/fileutil.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -137,6 +144,19 @@ void CCodeGenerator::LoadConfig(const string& fileName)
             ERR_POST(Fatal << "cannot open file " << fileName);
         m_Config.Read(in);
     }
+}
+
+void CCodeGenerator::AddConfigLine(const string& line)
+{
+    SIZE_TYPE bra = line.find('[');
+    SIZE_TYPE ket = line.find(']');
+    SIZE_TYPE eq = line.find('=', ket + 1);
+    if ( bra != 0 || ket == NPOS || eq == NPOS )
+        ERR_POST(Fatal << "bad config line: " << line);
+    
+    m_Config.Set(line.substr(bra + 1, ket - bra - 1),
+                 line.substr(ket + 1, eq - ket - 1),
+                 line.substr(eq + 1));
 }
 
 CDataType* CCodeGenerator::ExternalResolve(const string& module,
@@ -246,6 +266,7 @@ void CCodeGenerator::GenerateCode(void)
     // generate output files
     iterate ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
+        code->GenerateCode();
         code->GenerateHPP(m_HPPDir);
         code->GenerateCPP(m_CPPDir);
         code->GenerateUserHPP(m_HPPDir);
@@ -265,14 +286,14 @@ void CCodeGenerator::GenerateCode(void)
                 fileList << ' ' << filei->first;
             }
         }
-        fileList << NcbiEndl;
+        fileList << "\n";
         fileList << "GENFILES_LOCAL =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
                 fileList << ' ' << BaseName(filei->first);
             }
         }
-        fileList << NcbiEndl;
+        fileList << "\n";
     }
 }
 
@@ -298,6 +319,62 @@ bool CCodeGenerator::Imported(const CDataType* type) const
     return true;
 }
 
+void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
+{
+    if ( type->GetParentType() == 0 ) {
+        if ( !AddType(type) )
+            return;
+    }
+
+    if ( m_ExcludeRecursion )
+        return;
+
+    const CUniSequenceDataType* array =
+        dynamic_cast<const CUniSequenceDataType*>(type);
+    if ( array != 0 ) {
+        // we should add element type
+        CollectTypes(array->GetElementType(), eElement);
+        return;
+    }
+
+    const CReferenceDataType* user =
+        dynamic_cast<const CReferenceDataType*>(type);
+    if ( user != 0 ) {
+        // reference to another type
+        const CDataType* resolved;
+        try {
+            resolved = user->Resolve();
+        }
+        catch (CTypeNotFound& exc) {
+            ERR_POST(Warning <<
+                     "Skipping type: " << user->GetUserTypeName() <<
+                     ": " << exc.what());
+            return;
+        }
+        if ( resolved->Skipped() ) {
+            ERR_POST(Warning << "Skipping type: " << user->GetUserTypeName());
+            return;
+        }
+        if ( !Imported(resolved) ) {
+            CollectTypes(resolved, eReference);
+        }
+        return;
+    }
+
+    const CDataMemberContainerType* cont =
+        dynamic_cast<const CDataMemberContainerType*>(type);
+    if ( cont != 0 ) {
+        // collect member's types
+        iterate ( CDataMemberContainerType::TMembers, mi,
+                  cont->GetMembers() ) {
+            const CDataType* memberType = mi->get()->GetType();
+            CollectTypes(memberType, eMember);
+        }
+        return;
+    }
+}
+
+#if 0
 void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
 {
     const CUniSequenceDataType* array =
@@ -388,7 +465,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         iterate ( CDataMemberContainerType::TMembers, mi,
                   choice->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
-            CollectTypes(memberType, eChoice);
+            CollectTypes(memberType, eMember); // eChoice
         }
     }
 
@@ -412,3 +489,4 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
     if ( !AddType(type) )
         return;
 }
+#endif

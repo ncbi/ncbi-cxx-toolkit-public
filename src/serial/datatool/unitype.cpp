@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/02/01 21:48:09  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.7  2000/01/10 19:46:47  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -59,11 +66,10 @@
 
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>
-#include "unitype.hpp"
-#include "blocktype.hpp"
-#include "code.hpp"
-#include "typestr.hpp"
-#include "value.hpp"
+#include <serial/tool/unitype.hpp>
+#include <serial/tool/blocktype.hpp>
+#include <serial/tool/stlstr.hpp>
+#include <serial/tool/value.hpp>
 
 CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
@@ -128,19 +134,16 @@ CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
             new CAnyTypeSource(m_ElementType.get())));
 }
 
-void CUniSequenceDataType::GetFullCType(CTypeStrings& tType,
-                                    CClassCode& code) const
+AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
 {
+    AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
+    if ( !tData->CanBeInSTL() ) {
+        tData.reset(tData.release()->ToPointer());
+    }
     string templ = GetVar("_type");
-    CTypeStrings tData;
-    GetElementType()->GetFullCType(tData, code);
-    if ( !tData.CanBeInSTL() )
-        tData.ToPointer();
     if ( templ.empty() )
         templ = "list";
-    tType.AddHPPInclude(GetTemplateHeader(templ));
-    tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
-                      GetTemplateMacro(templ), tData);
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData));
 }
 
 CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
@@ -161,47 +164,37 @@ CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
     return new CAutoPointerTypeInfo(l);
 }
 
-void CUniSetDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
+AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
 {
     string templ = GetVar("_type");
     const CDataSequenceType* seq =
         dynamic_cast<const CDataSequenceType*>(GetElementType());
     if ( seq && seq->GetMembers().size() == 2 ) {
-        CTypeStrings tKey;
-        seq->GetMembers().front()->GetType()->GetFullCType(tKey, code);
-        if ( tKey.CanBeKey() ) {
-            CTypeStrings tValue;
-            seq->GetMembers().back()->GetType()->GetFullCType(tValue, code);
-            if ( !tValue.CanBeInSTL() )
-                tValue.ToPointer();
+        AutoPtr<CTypeStrings> tKey =
+            seq->GetMembers().front()->GetType()->GetFullCType();
+        if ( tKey->CanBeKey() ) {
+            AutoPtr<CTypeStrings> tValue =
+                seq->GetMembers().back()->GetType()->GetFullCType();
+            if ( !tValue->CanBeInSTL() )
+                tValue.reset(tValue.release()->ToPointer());
             if ( templ.empty() )
                 templ = "multimap";
-
-            tType.AddHPPInclude(GetTemplateHeader(templ));
-            tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
-                              GetTemplateMacro(templ), tKey, tValue);
-            return;
+            return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
+                                                             tKey, tValue));
         }
     }
-    CTypeStrings tData;
-    GetElementType()->GetFullCType(tData, code);
-    if ( !tData.CanBeInSTL() )
-        tData.ToPointer();
-
-    string macro;
+    AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
+    if ( !tData->CanBeInSTL() ) {
+        tData.reset(tData.release()->ToPointer());
+    }
     if ( templ.empty() ) {
-        if ( tData.CanBeKey() )
+        if ( tData->CanBeKey() ) {
             templ = "multiset";
+        }
         else {
-            templ = "list";
-            macro = "STL_list_set";
+            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData, true));
         }
     }
-    if ( macro.empty() )
-        macro = GetTemplateMacro(templ);
-    
-    tType.AddHPPInclude(GetTemplateHeader(templ));
-    tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
-                      macro, tData);
+    return AutoPtr<CTypeStrings>(new CSetTypeStrings(templ, tData));
 }
 

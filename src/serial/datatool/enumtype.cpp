@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/01 21:47:57  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.5  1999/12/21 17:18:33  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -45,12 +52,11 @@
 * ===========================================================================
 */
 
+#include <serial/tool/enumtype.hpp>
+#include <serial/tool/value.hpp>
+#include <serial/tool/enumstr.hpp>
+#include <serial/tool/fileutil.hpp>
 #include <serial/enumerated.hpp>
-#include "enumtype.hpp"
-#include "code.hpp"
-#include "typestr.hpp"
-#include "value.hpp"
-#include "fileutil.hpp"
 
 const char* CEnumDataType::GetASNKeyword(void) const
 {
@@ -76,7 +82,7 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
         if ( i != m_Values.begin() )
             out << ',';
         NewLine(out, indent);
-        out << i->id << " (" << i->value << ")";
+        out << i->first << " (" << i->second << ")";
     }
     NewLine(out, indent - 1);
     out << "}";
@@ -88,7 +94,7 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
     if ( id ) {
         for ( TValues::const_iterator i = m_Values.begin();
               i != m_Values.end(); ++i ) {
-            if ( i->id == id->GetValue() )
+            if ( i->first == id->GetValue() )
                 return true;
         }
         value.Warning("illegal ENUMERATED value: " + id->GetValue());
@@ -105,7 +111,7 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
     if ( !IsInteger() ) {
         for ( TValues::const_iterator i = m_Values.begin();
               i != m_Values.end(); ++i ) {
-            if ( i->value == intValue->GetValue() )
+            if ( i->second == intValue->GetValue() )
                 return true;
         }
         value.Warning("illegal INTEGER value: " + intValue->GetValue());
@@ -123,8 +129,8 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
     }
     for ( TValues::const_iterator i = m_Values.begin();
           i != m_Values.end(); ++i ) {
-        if ( i->id == id->GetValue() )
-            return new int(i->value);
+        if ( i->first == id->GetValue() )
+            return new int(i->second);
     }
     value.Warning("illegal ENUMERATED value: " + id->GetValue());
     return 0;
@@ -132,18 +138,15 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
 
 string CEnumDataType::GetDefaultString(const CDataValue& value) const
 {
-    SEnumCInfo enumInfo = GetEnumCInfo();
-    string s = "new " + enumInfo.cType + '(';
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id ) {
-        s += enumInfo.valuePrefix + Identifier(id->GetValue());
+        return GetEnumCInfo().valuePrefix + Identifier(id->GetValue());
     }
     else {
         const CIntDataValue* intValue =
             dynamic_cast<const CIntDataValue*>(&value);
-        s += NStr::IntToString(intValue->GetValue());
+        return NStr::IntToString(intValue->GetValue());
     }
-    return s + ')';
 }
 
 CTypeInfo* CEnumDataType::CreateTypeInfo(void)
@@ -152,7 +155,7 @@ CTypeInfo* CEnumDataType::CreateTypeInfo(void)
                                                                   IsInteger()));
     for ( TValues::const_iterator i = m_Values.begin();
           i != m_Values.end(); ++i ) {
-        info->AddValue(i->id, i->value);
+        info->AddValue(i->first, i->second);
     }
     return new CEnumeratedTypeInfo(info.release());
 }
@@ -194,74 +197,28 @@ CEnumDataType::SEnumCInfo CEnumDataType::GetEnumCInfo(void) const
     return SEnumCInfo(enumName, typeName, prefix);
 }
 
-void CEnumDataType::GetRefCType(CTypeStrings& tType, CClassCode& code) const
-{
-    code.AddHPPInclude(FileName());
-    SEnumCInfo enumInfo = GetEnumCInfo();
-    tType.SetEnum(enumInfo.cType, enumInfo.enumName);
-}
-
-void CEnumDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
-{
-    GenerateCode(code, &tType);
-/*
-    if ( code.GetType() == this ) {
-        // generate enum definition && reference name
-        GenerateCode(code, &tType);
-    }
-    else {
-        // only generate reference name
-        GetRefCType(tType, code);
-    }
-*/
-}
-
-void CEnumDataType::GenerateCode(CClassCode& code) const
-{
-    if ( IsInChoice() ) {
-        CParent::GenerateCode(code);
-        return;
-    }
-    code.SetClassType(code.eEnum);
-    GenerateCode(code, 0);
-}
-
-void CEnumDataType::GenerateCode(CClassCode& code,
-                                 CTypeStrings* tType) const
+AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
 {
     SEnumCInfo enumInfo = GetEnumCInfo();
-    string tab;
-    string method;
-    if ( tType ) {
-        tab = "    ";
-        method = code.GetType()->ClassName() + "_Base::";
-        tType->SetEnum(enumInfo.cType, enumInfo.enumName);
-    }
-    code.ClassPublic() <<
-        tab << "enum " << enumInfo.enumName << " {";
-    code.Methods() <<
-        "BEGIN_ENUM_INFO(" << method << "GetEnumInfo_" << enumInfo.enumName <<
-        ", " << enumInfo.enumName << ", " << (IsInteger()? "true": "false") << ")" <<
-        NcbiEndl <<
-        '{' << NcbiEndl;
-    for ( TValues::const_iterator i = m_Values.begin();
-          i != m_Values.end(); ++i ) {
-        if ( i != m_Values.begin() )
-            code.ClassPublic() << ',';
-        code.ClassPublic() << NcbiEndl <<
-            tab << "    " << enumInfo.valuePrefix << Identifier(i->id) <<
-            " = " << i->value;
-        code.Methods() << "    ADD_ENUM_VALUE(\"" << i->id << "\", " <<
-            enumInfo.valuePrefix << Identifier(i->id) << ");" << NcbiEndl;
-    }
-    code.ClassPublic() << NcbiEndl <<
-        tab << "};" << NcbiEndl <<
-        tab << (tType? "static ": "") <<
-        "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_" <<
-        enumInfo.enumName << "(void);" << NcbiEndl;
-    code.Methods() <<
-        '}' << NcbiEndl <<
-        "END_ENUM_INFO" << NcbiEndl;
+    return AutoPtr<CTypeStrings>(new CEnumRefTypeStrings(enumInfo.enumName,
+                                                         enumInfo.cType,
+                                                         Namespace(),
+                                                         FileName()));
+}
+
+AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
+{
+    SEnumCInfo enumInfo = GetEnumCInfo();
+    return AutoPtr<CTypeStrings>(new CEnumTypeStrings(enumInfo.enumName,
+                                                      enumInfo.cType,
+                                                      IsInteger(),
+                                                      m_Values,
+                                                      enumInfo.valuePrefix));
+}
+
+AutoPtr<CTypeStrings> CEnumDataType::GenerateCode(void) const
+{
+    return GetFullCType();
 }
 
 const char* CIntEnumDataType::GetASNKeyword(void) const

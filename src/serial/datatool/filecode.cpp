@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/02/01 21:47:58  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.9  2000/01/06 16:13:17  vasilche
 * Fail of file generation now fatal.
 *
@@ -60,11 +67,11 @@
 * ===========================================================================
 */
 
-#include "filecode.hpp"
-#include "code.hpp"
-#include "type.hpp"
+#include <serial/tool/filecode.hpp>
+#include <serial/tool/type.hpp>
+#include <serial/tool/typestr.hpp>
+#include <serial/tool/fileutil.hpp>
 #include <typeinfo>
-#include "fileutil.hpp"
 
 CFileCode::CFileCode(const string& baseName)
     : m_BaseName(baseName)
@@ -133,14 +140,19 @@ string CFileCode::Include(const string& s) const
     }
 }
 
-void CFileCode::AddHPPInclude(const string& s)
+string CFileCode::GetMethodPrefix(void) const
 {
-    m_HPPIncludes.insert(Include(s));
+    return string();
 }
 
-void CFileCode::AddCPPInclude(const string& s)
+CFileCode::TIncludes& CFileCode::HPPIncludes(void)
 {
-    m_CPPIncludes.insert(Include(s));
+    return m_HPPIncludes;
+}
+
+CFileCode::TIncludes& CFileCode::CPPIncludes(void)
+{
+    return m_CPPIncludes;
 }
 
 void CFileCode::AddForwardDeclaration(const string& cls, const string& ns)
@@ -148,25 +160,31 @@ void CFileCode::AddForwardDeclaration(const string& cls, const string& ns)
     m_ForwardDeclarations[cls] = ns;
 }
 
-void CFileCode::AddHPPIncludes(const TIncludes& includes)
+void CFileCode::AddHPPCode(const CNcbiOstrstream& code)
 {
-    iterate ( TIncludes, i, includes ) {
-        AddHPPInclude(*i);
-    }
+    Write(m_HPPCode, code);
 }
 
-void CFileCode::AddCPPIncludes(const TIncludes& includes)
+void CFileCode::AddCPPCode(const CNcbiOstrstream& code)
 {
-    iterate ( TIncludes, i, includes ) {
-        AddCPPInclude(*i);
-    }
+    Write(m_CPPCode, code);
 }
 
-void CFileCode::AddForwardDeclarations(const TForwards& forwards)
+void CFileCode::GenerateCode(void)
 {
-	iterate ( TForwards, i, forwards ) {
-		m_ForwardDeclarations.insert(*i);
+    if ( !m_Classes.empty() ) {
+        CNamespace nsHPP(m_HPPCode);
+        CNamespace nsCPP(m_CPPCode);
+        iterate ( TClasses, ci, m_Classes ) {
+            nsHPP.Set(ci->namespaceName);
+            nsCPP.Set(ci->namespaceName);
+            ci->code->GenerateCode(*this);
+        }
     }
+    m_HPPIncludes.erase(NcbiEmptyString);
+    m_CPPIncludes.erase(NcbiEmptyString);
+    m_HPPIncludes.erase(GetFileBaseName());
+    m_CPPIncludes.erase(GetFileBaseName());
 }
 
 void CFileCode::GenerateHPP(const string& path) const
@@ -180,52 +198,43 @@ void CFileCode::GenerateHPP(const string& path) const
 
     string hppDefine = GetHPPDefine();
     header <<
-        "// This is generated file, don't modify" << NcbiEndl <<
-        "#ifndef " << hppDefine << NcbiEndl <<
-        "#define " << hppDefine << NcbiEndl <<
-        NcbiEndl <<
-        "// standard includes" << NcbiEndl <<
-        "#include <corelib/ncbistd.hpp>" << NcbiEndl;
-
-    // collect parent classes
-    iterate ( TClasses, ci, m_Classes ) {
-        ci->second->GetParentType();
-    }
+        "// This is generated file, don't modify\n"
+        "#ifndef " << hppDefine << "\n"
+        "#define " << hppDefine << "\n"
+        "\n"
+        "// standard includes\n"
+        "#include <corelib/ncbistd.hpp>\n";
 
     if ( !m_HPPIncludes.empty() ) {
-        header << NcbiEndl <<
-            "// generated includes" << NcbiEndl;
+        header <<
+            "\n"
+            "// generated includes\n";
         iterate ( TIncludes, stri, m_HPPIncludes ) {
             header <<
-                "#include " << *stri << NcbiEndl;
+                "#include " << Include(*stri) << "\n";
         }
     }
 
-    CNamespace ns(header);
-    
     if ( !m_ForwardDeclarations.empty() ) {
-        header << NcbiEndl <<
-            "// forward declarations" << NcbiEndl;
+        CNamespace ns(header);
+        header <<
+            "\n"
+            "// forward declarations\n";
         iterate ( TForwards, fi, m_ForwardDeclarations ) {
             ns.Set(fi->second);
             header <<
-                "class " << fi->first << ';'<< NcbiEndl;
+                "class " << fi->first << ";\n";
         }
     }
     
-    if ( !m_Classes.empty() ) {
-        header << NcbiEndl <<
-            "// generated classes" << NcbiEndl;
-        iterate ( TClasses, ci, m_Classes ) {
-            CClassCode* cls = ci->second.get();
-            ns.Set(cls->GetNamespace());
-            cls->GenerateHPP(header);
-        }
-    }
-    ns.End();
+    header <<
+        "\n"
+        "// generated classes\n";
+    Write(header, m_HPPCode);
     
-    header << NcbiEndl <<
-        "#endif // " << hppDefine << NcbiEndl;
+    header <<
+        "\n"
+        "#endif // " << hppDefine << "\n";
     header.close();
     if ( !header )
         ERR_POST("Error writing file " << fileName);
@@ -241,32 +250,26 @@ void CFileCode::GenerateCPP(const string& path) const
     }
 
     code <<
-        "// This is generated file, don't modify" << NcbiEndl <<
-        NcbiEndl <<
-        "// standard includes" << NcbiEndl <<
-        "#include <serial/serialimpl.hpp>" << NcbiEndl <<
-        NcbiEndl <<
-        "// generated includes" << NcbiEndl <<
-        "#include <" << GetUserHPPName() << ">" << NcbiEndl;
+        "// This is generated file, don't modify\n"
+        "\n"
+        "// standard includes\n"
+        "#include <serial/serialimpl.hpp>\n"
+        "\n"
+        "// generated includes\n"
+        "#include <" << GetUserHPPName() << ">\n";
 
     if ( !m_CPPIncludes.empty() ) {
         iterate ( TIncludes, stri, m_CPPIncludes ) {
             code <<
-                "#include " << *stri << NcbiEndl;
+                "#include " << Include(*stri) << "\n";
         }
     }
 
-    CNamespace ns(code);
-    
-    if ( !m_Classes.empty() ) {
-        code << NcbiEndl <<
-            "// generated classes" << NcbiEndl;
-        iterate ( TClasses, ci, m_Classes ) {
-            CClassCode* cls = ci->second.get();
-            ns.Set(cls->GetNamespace());
-            cls->GenerateCPP(code);
-        }
-    }
+    code <<
+        "\n"
+        "// generated classes\n";
+    Write(code, m_CPPCode);
+
     code.close();
     if ( !code )
         ERR_POST("Error writing file " << fileName);
@@ -289,32 +292,34 @@ bool CFileCode::GenerateUserHPP(const string& path) const
 
     string hppDefine = GetUserHPPDefine();
     header <<
-        "// This is generated file, you may modify it freely" << NcbiEndl <<
-        "#ifndef " << hppDefine << NcbiEndl <<
-        "#define " << hppDefine << NcbiEndl <<
-        NcbiEndl <<
-        "// standard includes" << NcbiEndl <<
-        "#include <corelib/ncbistd.hpp>" << NcbiEndl;
+        "// This is generated file, you may modify it freely\n"
+        "#ifndef " << hppDefine << "\n"
+        "#define " << hppDefine << "\n"
+        "\n"
+        "// standard includes\n"
+        "#include <corelib/ncbistd.hpp>\n";
 
-    header << NcbiEndl <<
-        "// generated includes" << NcbiEndl <<
-        "#include <" << GetHPPName() << '>' << NcbiEndl;
+    header <<
+        "\n"
+        "// generated includes\n"
+        "#include <" << GetHPPName() << ">\n";
     
     CNamespace ns(header);
     
     if ( !m_Classes.empty() ) {
-        header << NcbiEndl <<
-            "// generated classes" << NcbiEndl;
+        header <<
+            "\n"
+            "// generated classes\n";
         iterate ( TClasses, ci, m_Classes ) {
-            CClassCode* cls = ci->second.get();
-            ns.Set(cls->GetNamespace());
-            cls->GenerateUserHPP(header);
+            ns.Set(ci->namespaceName);
+            ci->code->GenerateUserHPPCode(header);
         }
     }
     ns.End();
     
-    header << NcbiEndl <<
-        "#endif // " << hppDefine << NcbiEndl;
+    header <<
+        "\n"
+        "#endif // " << hppDefine << "\n";
     header.close();
     if ( !header )
         ERR_POST("Error writing file " << fileName);
@@ -337,22 +342,22 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     }
 
     code <<
-        "// This is generated file, you may modify it freely" << NcbiEndl <<
-        NcbiEndl <<
-        "// standard includes" << NcbiEndl <<
-        NcbiEndl <<
-        "// generated includes" << NcbiEndl <<
-        "#include <" << GetUserHPPName() << ">" << NcbiEndl;
+        "// This is generated file, you may modify it freely\n"
+        "\n"
+        "// standard includes\n"
+        "\n"
+        "// generated includes\n"
+        "#include <" << GetUserHPPName() << ">\n";
 
     CNamespace ns(code);
     
     if ( !m_Classes.empty() ) {
-        code << NcbiEndl <<
-            "// generated classes" << NcbiEndl;
+        code <<
+            "\n"
+            "// generated classes\n";
         iterate ( TClasses, ci, m_Classes ) {
-            CClassCode* cls = ci->second.get();
-            ns.Set(cls->GetNamespace());
-            cls->GenerateUserCPP(code);
+            ns.Set(ci->namespaceName);
+            ci->code->GenerateUserCPPCode(code);
         }
     }
 
@@ -362,16 +367,19 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     return true;
 }
 
+CFileCode::SClassInfo::SClassInfo(const string& ns, AutoPtr<CTypeStrings> c)
+    : namespaceName(ns), code(c)
+{
+}
+
 bool CFileCode::AddType(const CDataType* type)
 {
-    AutoPtr<CClassCode>& cls = m_Classes[type->IdName()];
-    if ( cls ) {
-        _ASSERT(cls->GetType() == type);
+    string idName = type->IdName();
+    if ( m_AddedClasses.find(idName) != m_AddedClasses.end() )
         return false;
-    }
-
-    _TRACE("AddType: " << type->IdName() << ": " << typeid(*type).name());
-    cls = new CClassCode(*this, type->IdName(), type);
+    m_AddedClasses.insert(idName);
+    _TRACE("AddType: " << idName << ": " << typeid(*type).name());
+    m_Classes.push_front(SClassInfo(type->Namespace(), type->GenerateCode()));
     return true;
 }
 
@@ -388,17 +396,20 @@ CNamespace::~CNamespace(void)
 void CNamespace::Begin(void)
 {
     if ( !m_Namespace.empty() ) {
-        m_Out << NcbiEndl <<
-            "namespace " << m_Namespace << " {" << NcbiEndl <<
-            NcbiEndl;
+        m_Out <<
+            "\n"
+            "namespace " << m_Namespace << " {\n"
+            "\n";
     }
 }
 
 void CNamespace::End(void)
 {
     if ( !m_Namespace.empty() ) {
-        m_Out << NcbiEndl <<
-            "}" << NcbiEndl << NcbiEndl;
+        m_Out <<
+            "\n"
+            "}\n"
+            "\n";
         m_Namespace.erase();
     }
 }

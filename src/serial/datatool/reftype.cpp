@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/02/01 21:48:05  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.7  1999/12/29 16:01:51  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -51,12 +58,11 @@
 * ===========================================================================
 */
 
-#include "reftype.hpp"
-#include "code.hpp"
-#include "typestr.hpp"
-#include "value.hpp"
-#include "module.hpp"
-#include "exceptions.hpp"
+#include <serial/tool/reftype.hpp>
+#include <serial/tool/typestr.hpp>
+#include <serial/tool/value.hpp>
+#include <serial/tool/module.hpp>
+#include <serial/tool/exceptions.hpp>
 
 CReferenceDataType::CReferenceDataType(const string& n)
     : m_UserTypeName(n)
@@ -106,50 +112,18 @@ TObjectPtr CReferenceDataType::CreateDefault(const CDataValue& value) const
     return ResolveOrThrow()->CreateDefault(value);
 }
 
-void CReferenceDataType::GenerateCode(CClassCode& code) const
+AutoPtr<CTypeStrings> CReferenceDataType::GenerateCode(void) const
 {
-    if ( GetParentType() == 0 ) {
-        // alias type
-        // skip members
-        code.SetClassType(code.eAlias);
-        return;
-    }
-    CParent::GenerateCode(code);
+    return CParent::GenerateCode();
 }
 
-/*
-void CReferenceDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
-{
-    const CDataType* resolved = ResolveOrThrow();
-    if ( dynamic_cast<const CChoiceDataType*>(resolved) ) {
-        // choice will process itself
-        resolved->GetCType(tType, code);
-    }
-    else if ( dynamic_cast<const CEnumDataType*>(resolved) ) {
-        CEnumDataType::SEnumCInfo enumInfo =
-            dynamic_cast<const CEnumDataType*>(resolved)->GetEnumCInfo();
-        tType.AddHPPInclude(resolved->FileName());
-        tType.SetEnum(enumInfo.cType, enumInfo.enumName);
-    }
-    else {
-        // generate class reference
-        tType.AddHPPInclude(resolved->FileName());
-        string className = resolved->ClassName();
-        string ns = resolved->Namespace();
-        tType.AddForwardDeclaration(className, ns);
-        tType.SetClass(ns + "::" + className);
-    }
-}
-*/
-
-void CReferenceDataType::GetFullCType(CTypeStrings& tType,
-                                      CClassCode& code) const
+AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
 {
     const CDataType* resolved = ResolveOrThrow();
     if ( resolved->Skipped() )
-        resolved->GetFullCType(tType, code);
+        return resolved->GetFullCType();
     else
-        resolved->GetRefCType(tType, code);
+        return resolved->GetRefCType();
 }
 
 CDataType* CReferenceDataType::ResolveOrNull(void) const

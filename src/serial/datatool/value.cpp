@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/02/01 21:48:10  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
 * Revision 1.9  1999/12/29 16:01:53  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -41,13 +48,13 @@
 */
 
 #include <corelib/ncbidiag.hpp>
-#include "value.hpp"
-#include "module.hpp"
+#include <serial/tool/value.hpp>
+#include <serial/tool/module.hpp>
 
 inline
 CNcbiOstream& NewLine(CNcbiOstream& out, int indent)
 {
-    out << NcbiEndl;
+    out << "\n";
     for ( int i = 0; i < indent; ++i )
         out << "  ";
     return out;
@@ -103,22 +110,7 @@ void CNullDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
     out << "NULL";
 }
-/*
-template<>
-CDataValueTmpl<bool>::~CDataValueTmpl(void)
-{
-}
 
-template<>
-CDataValueTmpl<long>::~CDataValueTmpl(void)
-{
-}
-
-template<>
-CDataValueTmpl<string>::~CDataValueTmpl(void)
-{
-}
-*/
 template<>
 void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 {

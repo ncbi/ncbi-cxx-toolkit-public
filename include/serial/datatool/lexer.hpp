@@ -1,5 +1,5 @@
-#ifndef DATATOOL_EXCEPTIONS_HPP
-#define DATATOOL_EXCEPTIONS_HPP
+#ifndef ASNLEXER_HPP
+#define ASNLEXER_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,43 +29,39 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   datatool exceptions
+*   ASN.1 lexer
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/11/15 19:36:14  vasilche
+* Revision 1.1  2000/02/01 21:46:19  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.3  1999/11/15 19:36:16  vasilche
 * Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
-#include <stdexcept>
+#include <serial/tool/alexer.hpp>
 
-class CTypeNotFound : public runtime_error
-{
+class ASNLexer : public AbstractLexer {
 public:
-    CTypeNotFound(const string& msg)
-        : runtime_error(msg)
-        {
-        }
-};
+    ASNLexer(CNcbiIstream& in);
+    virtual ~ASNLexer();
 
-class CModuleNotFound : public CTypeNotFound
-{
-public:
-    CModuleNotFound(const string& msg)
-        : CTypeNotFound(msg)
-        {
-        }
-};
+protected:
+    TToken LookupToken(void);
 
-class CAmbiguiousTypes : public CTypeNotFound
-{
-public:
-    CAmbiguiousTypes(const string& msg)
-        : CTypeNotFound(msg)
-        {
-        }
+    void SkipComment(void);
+    void LookupNumber(void);
+    void LookupIdentifier(void);
+    void LookupString(void);
+    TToken LookupBinHexString(void);
+    TToken LookupKeyword(void);
 };
 
 #endif
