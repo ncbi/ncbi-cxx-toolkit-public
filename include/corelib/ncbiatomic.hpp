@@ -75,7 +75,7 @@ void* x_SwapPointers(void * volatile * location, void* new_value);
 // asm is awkward and a lot of platforms supply compare-and-swap but
 // no suitable unconditional swap.  It also doesn't help that standard
 // interfaces are typically for integral types.
-#if !defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COUNTER_IMPLEMENTATION)
+#if !defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COUNTER_IMPLEMENTATION)  ||  defined(NCBI_NO_THREADS)
 #  if defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(NCBI_NO_THREADS)
 #    ifdef __sparcv9
 extern "C"
@@ -186,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/02 12:35:08  ucko
+ * Always define SwapPointers (as inline) for ST WorkShop builds.
+ *
  * Revision 1.2  2003/09/23 19:46:41  rsmith
  * Get rid of old Boolean macros and use built in bool on Mac OSX
  *
