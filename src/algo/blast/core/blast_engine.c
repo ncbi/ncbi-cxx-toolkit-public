@@ -279,9 +279,9 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    *hsp_list_out = NULL;
 
    if (gap_align->positionBased)
-      matrix = gap_align->sbp->posMatrix;
+      matrix = gap_align->sbp->psi_matrix->pssm->data;
    else
-      matrix = gap_align->sbp->matrix;
+      matrix = gap_align->sbp->matrix->data;
 
    hsp_num_max = (hit_options->hsp_num_max ? hit_options->hsp_num_max : INT4_MAX);
 
@@ -616,7 +616,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
       use with RPS blast. */
 
    gap_align->positionBased = TRUE;
-   gap_align->sbp->posMatrix = lookup->rps_pssm;
+   RPSPsiMatrixAttach(gap_align->sbp, lookup->rps_pssm);
 
    /* determine the total number of residues in the db.
       This figure must also include one trailing NULL for
@@ -683,7 +683,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
    BlastSequenceBlkFree(one_query);
 
    /* Restore original settings in the gapped alignment structure. */
-   gap_align->sbp->posMatrix = NULL;
+   RPSPsiMatrixDetach(gap_align->sbp);
    gap_align->positionBased = FALSE;
 
    /* Fill the cutoff values in the diagnostics structure */

@@ -1735,7 +1735,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                 /* As specified in 2001 paper, underlying matrix frequency 
                    ratios are used here */
                 for (i = 0; i < msa->alphabet_size; i++) {
-                    if (sbp->matrix[r][i] != BLAST_SCORE_MIN) {
+                    if (sbp->matrix->data[r][i] != BLAST_SCORE_MIN) {
                         pseudo += (seq_weights->match_weights[p][i] *
                                    freq_ratios->data[r][i]);
                     }
@@ -1915,18 +1915,18 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
             }
 
             if ( (j == kXResidue || j == kStarResidue) &&
-                 (sbp->matrix[kResidue][kXResidue] != BLAST_SCORE_MIN) ) {
+                 (sbp->matrix->data[kResidue][kXResidue] != BLAST_SCORE_MIN) ) {
                 internal_pssm->scaled_pssm[i][j] = 
-                    sbp->matrix[kResidue][j] * kPSIScaleFactor;
+                    sbp->matrix->data[kResidue][j] * kPSIScaleFactor;
             }
         }
 
         if (is_unaligned_column) {
             for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
 
-                internal_pssm->pssm[i][j] = sbp->matrix[kResidue][j];
+                internal_pssm->pssm[i][j] = sbp->matrix->data[kResidue][j];
 
-                if (sbp->matrix[kResidue][j] != BLAST_SCORE_MIN) {
+                if (sbp->matrix->data[kResidue][j] != BLAST_SCORE_MIN) {
                     double tmp = 
                         kPSIScaleFactor * freq_ratios->bit_scale_factor *
                         log(freq_ratios->data[kResidue][j])/NCBIMATH_LN2;
@@ -2378,6 +2378,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/02/14 14:07:49  camacho
+ * Changes to use SBlastScoreMatrix
+ *
  * Revision 1.46  2005/01/31 16:50:21  camacho
  * 1. Moved constants to private header.
  * 2. Changed signature of functions to copy matrices.

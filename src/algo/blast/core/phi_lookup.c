@@ -476,7 +476,7 @@ s_InitPattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
        (patternSearchItems*) calloc(1, sizeof(patternSearchItems));
 
     s_InitProbs(seedSearch);
-    s_InitOrder(sbp->matrix, PAT_SEED_FLAG, FALSE, seedSearch);
+    s_InitOrder(sbp->matrix->data, PAT_SEED_FLAG, FALSE, seedSearch);
 
     patternSearch->flagPatternLength = ONE_WORD_PATTERN; 
     patternSearch->patternProbability = 1.0;

@@ -563,7 +563,7 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    if (!gap_align)
       return -1;
 
-   gap_align->positionBased = (sbp->posMatrix != NULL);
+   gap_align->positionBased = (sbp->psi_matrix != NULL);
 
    return status;
 }
@@ -627,8 +627,9 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     Int4 x_dropoff;
     Int4 best_score;
   
-    Int4* *matrix;
-    Int4* matrix_row;
+    Int4** matrix = NULL;
+    Int4** pssm = NULL;
+    Int4* matrix_row = NULL;
   
     Int4 score;
     Int4 score_gap_row;
@@ -648,7 +649,11 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     Int4 align_len;
     Int4 num_extra_cells;
 
-    matrix = gap_align->sbp->matrix;
+    matrix = gap_align->sbp->matrix->data;
+    if (gap_align->positionBased) {
+        pssm = gap_align->sbp->psi_matrix->pssm->data;
+    }
+
     *a_offset = 0;
     *b_offset = 0;
     gap_open = score_params->gap_open;
@@ -782,9 +787,9 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
         }
         else {
             if(reversed || reverse_sequence)
-                matrix_row = gap_align->sbp->posMatrix[M - a_index];
+                matrix_row = pssm[M - a_index];
             else
-                matrix_row = gap_align->sbp->posMatrix[a_index + query_offset];
+                matrix_row = pssm[a_index + query_offset];
         }
 
         if(reverse_sequence)
@@ -1075,8 +1080,9 @@ s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 decline_penalty;
     Int4 x_dropoff;
   
-    Int4* *matrix;              /* pointers to the score matrix */
-    Int4* matrix_row;
+    Int4** matrix = NULL;       /* pointers to the score matrix */
+    Int4** pssm = NULL;
+    Int4* matrix_row = NULL;
   
     Int4 score;                 /* score tracking variables */
     Int4 score_gap_row;
@@ -1094,7 +1100,10 @@ s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     
     /* do initialization and sanity-checking */
 
-    matrix = gap_align->sbp->matrix;
+    matrix = gap_align->sbp->matrix->data;
+    if (gap_align->positionBased) {
+        pssm = gap_align->sbp->psi_matrix->pssm->data;
+    }
     *a_offset = 0;
     *b_offset = 0;
     gap_open = score_params->gap_open;
@@ -1165,9 +1174,9 @@ s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
         }
         else {
             if(reversed || reverse_sequence)
-                matrix_row = gap_align->sbp->posMatrix[M - a_index];
+                matrix_row = pssm[M - a_index];
             else 
-                matrix_row = gap_align->sbp->posMatrix[a_index + query_offset];
+                matrix_row = pssm[a_index + query_offset];
         }
 
         if(reverse_sequence)
@@ -1387,8 +1396,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 shift_penalty;
     Int4 x_dropoff;
   
-    Int4* *matrix;              /* pointers to the score matrix */
-    Int4* matrix_row;
+    Int4** matrix = NULL;       /* pointers to the score matrix */
+    Int4** pssm = NULL;
+    Int4* matrix_row = NULL;
   
     Int4 score;                 /* score tracking variables */
     Int4 score_row1; 
@@ -1413,7 +1423,10 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
     /* do initialization and sanity-checking */
 
-    matrix = gap_align->sbp->matrix;
+    matrix = gap_align->sbp->matrix->data;
+    if (gap_align->positionBased) {
+        pssm = gap_align->sbp->psi_matrix->pssm->data;
+    }
     *a_offset = 0;
     *b_offset = -2;
     gap_open = score_params->gap_open;
@@ -1525,9 +1538,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
         }
         else {
             if(reversed)
-                matrix_row = gap_align->sbp->posMatrix[M - a_index];
+                matrix_row = pssm[M - a_index];
             else 
-                matrix_row = gap_align->sbp->posMatrix[a_index + query_offset];
+                matrix_row = pssm[a_index + query_offset];
         }
 
         score = MININT;
@@ -1965,8 +1978,9 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 shift_penalty;
     Int4 x_dropoff;
   
-    Int4* *matrix;              /* pointers to the score matrix */
-    Int4* matrix_row;
+    Int4** matrix = NULL;       /* pointers to the score matrix */
+    Int4** pssm = NULL;
+    Int4* matrix_row = NULL;
   
     Int4 score;                 /* score tracking variables */
     Int4 score_row1; 
@@ -1988,7 +2002,10 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     
     /* do initialization and sanity-checking */
 
-    matrix = gap_align->sbp->matrix;
+    matrix = gap_align->sbp->matrix->data;
+    if (gap_align->positionBased) {
+        pssm = gap_align->sbp->psi_matrix->pssm->data;
+    }
     *a_offset = 0;
     *b_offset = -2;
     gap_open = score_params->gap_open;
@@ -2056,9 +2073,9 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
         }
         else {
             if(reversed)
-                matrix_row = gap_align->sbp->posMatrix[M - a_index];
+                matrix_row = pssm[M - a_index];
             else 
-                matrix_row = gap_align->sbp->posMatrix[a_index + query_offset];
+                matrix_row = pssm[a_index + query_offset];
         }
 
         /* initialize running-score variables */
@@ -2827,7 +2844,7 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
   
     /* do initialization and sanity-checking */
 
-    matrix = gap_align->sbp->matrix;
+    matrix = gap_align->sbp->matrix->data;
     *a_offset = 0;
     *b_offset = 0;
     gap_open = score_params->gap_open;
@@ -3050,7 +3067,7 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
 {
     Int4 index1, max_offset, score, max_score, hsp_end;
     Uint1* query_var,* subject_var;
-    Boolean positionBased = (sbp->posMatrix != NULL);
+    Boolean positionBased = (sbp->psi_matrix != NULL);
     
     if (q_length <= HSP_MAX_WINDOW) {
         max_offset = q_start + q_length/2;
@@ -3063,9 +3080,9 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
     score=0;
     for (index1=q_start; index1<hsp_end; index1++) {
         if (!(positionBased))
-            score += sbp->matrix[*query_var][*subject_var];
+            score += sbp->matrix->data[*query_var][*subject_var];
         else
-            score += sbp->posMatrix[index1][*subject_var];
+            score += sbp->psi_matrix->pssm->data[index1][*subject_var];
         query_var++; subject_var++;
     }
     max_score = score;
@@ -3073,11 +3090,11 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
     hsp_end = q_start + MIN(q_length, s_length);
     for (index1=q_start + HSP_MAX_WINDOW; index1<hsp_end; index1++) {
         if (!(positionBased)) {
-            score -= sbp->matrix[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
-            score += sbp->matrix[*query_var][*subject_var];
+            score -= sbp->matrix->data[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
+            score += sbp->matrix->data[*query_var][*subject_var];
         } else {
-            score -= sbp->posMatrix[index1-HSP_MAX_WINDOW][*(subject_var-HSP_MAX_WINDOW)];
-            score += sbp->posMatrix[index1][*subject_var];
+            score -= sbp->psi_matrix->pssm->data[index1-HSP_MAX_WINDOW][*(subject_var-HSP_MAX_WINDOW)];
+            score += sbp->psi_matrix->pssm->data[index1][*subject_var];
         }
         if (score > max_score) {
             max_score = score;
@@ -3126,7 +3143,8 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
     Int4 index;
     BLAST_SequenceBlk query_tmp;
     Int4 context;
-    Int4 **orig_pssm;
+    Int4 **rpsblast_pssms = NULL;   /* Pointer to concatenated PSSMs in
+                                       RPS-BLAST database */
     Boolean further_process = FALSE;
     Int4 cutoff_score;
     Boolean is_prot;
@@ -3135,7 +3153,10 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
 
     cutoff_score = hit_params->cutoff_score;
     is_prot = (program_number != eBlastTypeBlastn);
-    orig_pssm = gap_align->sbp->posMatrix;
+    if (program_number == eBlastTypeRpsTblastn || 
+        program_number == eBlastTypeRpsBlast) {
+        rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
+    }
 
     ASSERT(Blast_InitHitListIsSortedByScore(init_hitlist));
 
@@ -3164,8 +3185,8 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
                done again if further processing is required */
             s_GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
                                    &init_hsp_tmp, &context);
-            if (orig_pssm)
-                gap_align->sbp->posMatrix = orig_pssm + 
+            if (rpsblast_pssms)
+                gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms + 
                     query_info->contexts[context].query_offset;
 
             if(is_prot && !score_params->options->is_ooframe) {
@@ -3206,8 +3227,8 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
             ++gapped_stats->seqs_ungapped_passed;
     }
 
-    if (! further_process) {
-        gap_align->sbp->posMatrix = orig_pssm;
+    if (rpsblast_pssms) {
+        gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
     }
 
     return further_process;
@@ -3237,7 +3258,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    const BlastHitSavingOptions* hit_options = hit_params->options;
    BLAST_SequenceBlk query_tmp;
    Int4 context;
-   Int4 **orig_pssm;
+   Int4 **rpsblast_pssms = NULL;   /* Pointer to concatenated PSSMs in
+                                       RPS-BLAST database */
 
    if (!query || !subject || !gap_align || !score_params || !ext_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -3247,7 +3269,10 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       return 0;
 
    is_prot = (program_number != eBlastTypeBlastn);
-   orig_pssm = gap_align->sbp->posMatrix;
+   if (program_number == eBlastTypeRpsTblastn || 
+       program_number == eBlastTypeRpsBlast) {
+       rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
+   }
 
    if (*hsp_list_ptr == NULL)
       *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
@@ -3273,8 +3298,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       s_GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
                              NULL, &context);
 
-      if (orig_pssm)
-         gap_align->sbp->posMatrix = orig_pssm + 
+      if (rpsblast_pssms)
+         gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms + 
              query_info->contexts[context].query_offset;
 
       /* This prefetches this value for the test below. */
@@ -3392,7 +3417,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          }
 
          if (status) {
-            gap_align->sbp->posMatrix = orig_pssm;
+             if (rpsblast_pssms) {
+                 gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
+             }
             return status;
          }
         
@@ -3427,7 +3454,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    }   
 
    sfree(helper);
-   gap_align->sbp->posMatrix = orig_pssm;
+   if (rpsblast_pssms) {
+       gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
+   }
 
    /* Remove any HSPs that share a starting or ending diagonal
       with a higher-scoring HSP. */
