@@ -169,8 +169,15 @@ public:
     
     /// Check whether the search has completed.
     ///
-    /// This checks the status of the search.  Please delay at least 10 seconds
-    /// between subsequent calls.
+    /// This checks the status of the search.  Please delay at least
+    /// 10 seconds between subsequent calls.  If this function returns
+    /// true, it will already have gotten the results as part of its
+    /// processing.  With the common technique of polling with
+    /// CheckDone before calling GetAlignments (or other results
+    /// access operations), the first CheckDone call after results are
+    /// available will perform the CPU, network, and memory intensive
+    /// processing, and the GetAlignments() (for example) call will
+    /// simply return a pointer to part of this data.
     ///
     /// @return true If search is not still running.
     bool CheckDone(void);
@@ -426,6 +433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/01/21 19:56:57  bealer
+ * - Expand CheckDone() documentation.
+ *
  * Revision 1.15  2004/12/08 20:27:56  camacho
  * Update comment on CRemoteBlast::CheckDone
  *
