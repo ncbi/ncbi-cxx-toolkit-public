@@ -74,20 +74,15 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
     lookup->mask = makemask(opt->word_size * lookup->charsize);
   } else {
      lookup->word_length = opt->word_size;
+     lookup->scan_step = opt->scan_step;
      lookup->charsize = ilog2(opt->alphabet_size / COMPRESSION_RATIO); 
-     lookup->wordsize = (opt->word_size - 3) / COMPRESSION_RATIO;
+     lookup->wordsize = 
+        (opt->word_size - MIN(lookup->scan_step,COMPRESSION_RATIO) + 1) 
+        / COMPRESSION_RATIO;
      lookup->reduced_wordsize = (lookup->wordsize >= 2) ? 2 : 1;
      lookup->backbone_size = 
        iexp(2,lookup->reduced_wordsize*lookup->charsize*COMPRESSION_RATIO);
      lookup->mask = lookup->backbone_size - 1;
-     if (opt->scan_step > 0) {
-        /* For old style word finding, scan_step MUST be set to non-zero in 
-           options */
-        lookup->scan_step = opt->scan_step;
-     } else { /* For AG style word finding */
-        lookup->scan_step = lookup->word_length - 
-           lookup->reduced_wordsize*COMPRESSION_RATIO + 1;
-     }
   }
   lookup->alphabet_size = opt->alphabet_size;
   lookup->exact_matches=0;
