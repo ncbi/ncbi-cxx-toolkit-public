@@ -517,26 +517,57 @@ public:
     /// - -1, if there was an error obtaining file size.
     Int8 GetLength(void) const;
 
+
+    //
+    // Temporary files
+    //
+
+    /// Temporary file creation mode
+    enum ETmpFileCreationMode {
+        eTmpFileCreate,     ///< Create empty file for each GetTmpName* call.
+        eTmpFileGetName     ///< Get name of the file only.
+    };
+
     /// Get temporary file name.
     ///
+    /// @param mode
+    ///   Temporary file creation mode.
     /// @return
     ///   Name of temporary file, or "kEmptyStr" if there was an error
     ///   getting temporary file name.
-    static string GetTmpName(void);
+    /// @sa
+    ///    GetTmpNameEx(), ETmpFileCreationMode
+    static string GetTmpName(ETmpFileCreationMode mode = eTmpFileGetName);
 
     /// Get temporary file name.
     ///
     /// @param dir
-    ///   Directory in which temporary file is to be created.
+    ///   Directory in which temporary file is to be created;
+    ///   default of kEmptyStr means that system temporary directory will
+    ///   be used or current, if a system temporary directory cannot
+    ///   be determined.
     /// @param prefix
     ///   Temporary file name will be prefixed by value of this parameter;
     ///   default of kEmptyStr means that, effectively, no prefix value will
     ///   be used.
+    /// @param mode
+    ///   Temporary file creation mode. 
+    ///   If set to "eTmpFileCreate", empty file with unique name will be
+    ///   created. Please, do not forget to remove it youself as soon as it
+    ///   is no longer needed. On some platforms "eTmpFileCreate" mode is 
+    ///   equal to "eTmpFileGetName".
+    ///   If set to "eTmpFileGetName", returns only the name of the temporary
+    ///   file, without creating it. This method is faster but it have
+    ///   potential race condition, when other process can leave as behind and
+    ///   create file with the same name first.
     /// @return
     ///   Name of temporary file, or "kEmptyStr" if there was an error
     ///   getting temporary file name.
-    static string GetTmpNameEx(const string& dir,
-                               const string& prefix = kEmptyStr);
+    /// @sa
+    ///    GetTmpName(), ETmpFileCreationMode
+    static string GetTmpNameEx(const string&        dir    = kEmptyStr,
+                               const string&        prefix = kEmptyStr,
+                               ETmpFileCreationMode mode   = eTmpFileGetName);
 
     /// What type of temporary file to create.
     enum ETextBinary {
@@ -1013,6 +1044,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/03/17 15:39:37  ivanov
+ * CFile:: Fixed possible race condition concerned with temporary file name
+ * generation. Added ETmpFileCreationMode enum. Fixed GetTmpName[Ex] and
+ * CreateTmpFile[Ex] class methods.
+ *
  * Revision 1.36  2004/03/11 22:16:52  vakatov
  * Cosmetics
  *

@@ -42,6 +42,7 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
+#  include <corelib/ncbi_limits.hpp>
 #  include <io.h>
 #  include <direct.h>
 #  include <sys/utime.h>
@@ -1094,17 +1095,16 @@ Int8 CFile::GetLength(void) const
 }
 
 
-string CFile::GetTmpName(void)
+string CFile::GetTmpName(ETmpFileCreationMode mode)
 {
-#if defined(NCBI_OS_UNIX)
-#  if defined(P_tmpdir)
-    const string kDefaultTmpDir = P_tmpdir;
-#  else
-    const string kDefaultTmpDir = kEmptyStr;
-#  endif
-    char* tmpdir = getenv("TMPDIR");
-    return GetTmpNameEx(tmpdir ? tmpdir : kDefaultTmpDir);
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    return GetTmpNameEx(kEmptyStr, kEmptyStr, mode);
 #else
+    if (mode == eTmpFileCreate) {
+        ERR_POST(Warning << "CFile::GetTmpNameEx: "
+                 "The temporary file cannot be auto-created on this " \
+                 "platform, returns its name only");
+    }
     char* filename = tempnam(0,0);
     if ( !filename ) {
         return kEmptyStr;
@@ -1116,28 +1116,97 @@ string CFile::GetTmpName(void)
 }
 
 
-string CFile::GetTmpNameEx(const string& dir, const string& prefix)
+static string s_StdGetTmpName(const char* dir, const char* prefix)
 {
-#if defined(NCBI_OS_UNIX)
-    string pattern;
-	if ( !dir.empty() ) {
-        pattern = AddTrailingPathSeparator(dir);
-	}
-    pattern += prefix + "XXXXXX";
-    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
-    int fd = mkstemp(filename.get());
-	close(fd);
-    remove(filename.get());
-    string res(filename.get());
-#else
-    char* filename = tempnam(dir.c_str(), prefix.c_str());
+    char* filename = tempnam(dir, prefix);
     if ( !filename ) {
         return kEmptyStr;
     }
-    string res(filename);
+    string str(filename);
     free(filename);
+    return str;
+}
+
+
+string CFile::GetTmpNameEx(const string&        dir, 
+                           const string&        prefix,
+                           ETmpFileCreationMode mode)
+{
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    string x_dir = dir;
+    if ( x_dir.empty() ) {
+#  if defined(NCBI_OS_MSWIN)
+        char* tmpdir = getenv("TEMP");
+#  else
+        char* tmpdir = getenv("TMPDIR");
+#  endif
+        if ( tmpdir ) {
+            x_dir = tmpdir;
+        }
+    }
+    if ( x_dir.empty() ) {
+#  if defined(P_tmpdir)
+        x_dir = P_tmpdir;
+#  else
+        x_dir = kEmptyStr;
+#  endif
+    }
+    if ( !x_dir.empty() ) {
+        x_dir = AddTrailingPathSeparator(x_dir);
+    }
+
+    string fn;
+
+#  if defined(NCBI_OS_UNIX)
+    string pattern = x_dir + prefix + "XXXXXX";
+    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
+    int fd = mkstemp(filename.get());
+    close(fd);
+    if (mode != eTmpFileCreate) {
+        remove(filename.get());
+    }
+    fn = filename.get();
+
+#  elif defined(NCBI_OS_MSWIN)
+    if (mode == eTmpFileGetName) {
+        fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
+    } else {
+        char   buffer[MAX_PATH];
+        HANDLE hFile = INVALID_HANDLE_VALUE;
+
+        srand((unsigned)time(0));
+        unsigned long ofs = rand();
+
+        while ( ofs < numeric_limits<unsigned long>::max() ) {
+            _ultoa((unsigned long)ofs, buffer, 24);
+            fn = x_dir + prefix + buffer;
+            hFile = CreateFile(fn.c_str(), GENERIC_ALL, 0, NULL,
+                               CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
+            if (hFile != INVALID_HANDLE_VALUE) {
+                break;
+            }
+            ofs++;
+        }
+        CloseHandle(hFile);
+        if (ofs == numeric_limits<unsigned long>::max() ) {
+            return kEmptyStr;
+        }
+        if (mode != eTmpFileCreate) {
+            remove(fn.c_str());
+        }
+    }
+
+#  endif
+
+#else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    if (mode == eTmpFileCreate) {
+        ERR_POST(Warning << "CFile::GetTmpNameEx: "
+                 "The file cannot be auto-created on this platform, " \
+                 "return its name only");
+    }
+    fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
 #endif
-    return res;
+    return fn;
 }
 
 
@@ -1169,7 +1238,10 @@ fstream* CFile::CreateTmpFile(const string& filename,
     if ( allow_read == eAllowRead ) {
         mode = mode | ios::in;
     }
-    string tmpname = filename.empty() ? GetTmpName() : filename;
+    string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
+    if ( tmpname.empty() ) {
+        return 0;
+    }
     fstream* stream = new CTmpStream(tmpname.c_str(), mode);
     return stream;
 }
@@ -1179,7 +1251,8 @@ fstream* CFile::CreateTmpFileEx(const string& dir, const string& prefix,
                                 ETextBinary text_binary, 
                                 EAllowRead allow_read)
 {
-    return CreateTmpFile(GetTmpNameEx(dir, prefix), text_binary, allow_read);
+    return CreateTmpFile(GetTmpNameEx(dir, prefix, eTmpFileCreate),
+                         text_binary, allow_read);
 }
 
 
@@ -1892,6 +1965,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2004/03/17 15:39:54  ivanov
+ * CFile:: Fixed possible race condition concerned with temporary file name
+ * generation. Added ETmpFileCreationMode enum. Fixed GetTmpName[Ex] and
+ * CreateTmpFile[Ex] class methods.
+ *
  * Revision 1.71  2004/03/05 12:26:43  ivanov
  * Moved CDirEntry::MatchesMask() to NStr class.
  *
