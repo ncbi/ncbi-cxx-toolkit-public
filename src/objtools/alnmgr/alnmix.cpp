@@ -937,7 +937,7 @@ void CAlnMix::x_Merge()
                     tmp_start_i--;
                     seg->m_StartIts[seq1] = tmp_start_i;
                     if (start_i != starts.end()  &&
-                        start + curr_len > start_i->first) {
+                        start + curr_len * width1 > start_i->first) {
                         //       x--..
                         // x--------..
                         seg->m_Len = (start_i->first - start) / width1;
@@ -1903,6 +1903,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2004/01/16 23:59:45  todorov
+* + missing width in seg calcs
+*
 * Revision 1.85  2003/12/22 19:30:35  kuznets
 * Fixed compilation error (operator ambiguity) (MSVC)
 *
