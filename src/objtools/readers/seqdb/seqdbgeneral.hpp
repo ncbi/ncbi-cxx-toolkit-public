@@ -32,7 +32,9 @@
 
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 
+
 BEGIN_NCBI_SCOPE
+
 
 // Temporary development tools/tricks
 
@@ -98,7 +100,8 @@ inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 #define ALIGNED_TO_POW2(x,y)  (! ((x) & (-y)))
 
 #define PTR_ALIGNED_TO_SELF_SIZE(x) \
-    (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2(size_t(x), sizeof(*x)))
+    (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2((size_t)(x), sizeof(*x)))
+
 
 // Portable byte swapping from marshalled version
 
@@ -170,8 +173,7 @@ string SeqDB_GetBaseName(string s);
 string SeqDB_FindBlastDBPath(const string & file_name, char dbtype);
 
 
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBGENERAL_HPP
-
-
