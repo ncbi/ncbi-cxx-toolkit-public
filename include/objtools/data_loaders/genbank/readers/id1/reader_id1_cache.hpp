@@ -39,7 +39,7 @@ class IIntCache;
 class IReader;
 class IWriter;
 
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class CID2_Reply_Data;
 
@@ -144,6 +144,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.11  2003/11/26 18:59:46  ucko
+* Remove stray semicolon after BEGIN_SCOPE(objects) to fix the WorkShop build.
+*
 * Revision 1.10  2003/11/26 17:55:53  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

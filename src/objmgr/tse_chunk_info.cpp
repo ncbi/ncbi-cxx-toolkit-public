@@ -51,7 +51,7 @@
 #include <objects/id2/ID2S_Feat_type_Info.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_Chunk_Info
@@ -338,6 +338,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/11/26 18:59:56  ucko
+* Remove stray semicolon after BEGIN_SCOPE(objects) to fix the WorkShop build.
+*
 * Revision 1.4  2003/11/26 17:56:00  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.
