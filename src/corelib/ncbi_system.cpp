@@ -33,6 +33,10 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/07/04 20:03:37  vakatov
+* Added missing header <unistd.h>.
+* Check for the exit code of the signal() function calls.
+*
 * Revision 1.3  2001/07/02 21:33:07  vakatov
 * Fixed against SIGXCPU during the signal handling.
 * Increase the amount of reserved memory for the memory limit handler
@@ -59,6 +63,7 @@
 #  include <sys/resource.h>
 #  include <sys/times.h>
 #  include <limits.h>
+#  include <unistd.h>
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
 #endif
@@ -161,8 +166,9 @@ static bool s_SetExitHandler()
     // Set exit routine if it not set yet
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
     if ( !s_ExitHandlerIsSet ) {
-        if ( atexit(s_ExitHandler) !=0 )
+        if (atexit(s_ExitHandler) != 0) {
             return false;
+        }
         s_ExitHandlerIsSet = true;
         s_TimeSet.SetCurrent();
         // Reserve some memory (10Kb)
@@ -243,7 +249,7 @@ static void s_SignalHandler(int sig)
 {
     _ASSERT(sig == SIGXCPU);
 
-    signal(SIGXCPU, SIG_IGN);
+    _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
 
     s_ExitCode = eEC_Cpu;
     exit(-1);
@@ -276,7 +282,9 @@ bool SetCpuTimeLimit(size_t max_cpu_time)
     s_CpuTimeLimit = max_cpu_time;
 
     // Set signal handler for SIGXCPU
-    signal(SIGXCPU, s_SignalHandler);
+    if (signal(SIGXCPU, s_SignalHandler) == SIG_ERR) {
+        return false;
+    }
 
     return true;
 }
