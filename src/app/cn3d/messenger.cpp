@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/08/27 00:06:23  thiessen
+* add structure evidence to CDD annotation
+*
 * Revision 1.20  2001/08/14 17:18:22  thiessen
 * add user font selection, store in registry
 *
@@ -97,6 +100,15 @@
 #include <wx/string.h> // name conflict kludge
 #include <corelib/ncbistd.hpp>
 
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Mmdb_id.hpp>
+#include <objects/mmdb3/Biostruc_feature_set.hpp>
+#include <objects/mmdb3/Biostruc_feature_set_id.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/mmdb3/Chem_graph_pntrs.hpp>
+#include <objects/mmdb3/Residue_pntrs.hpp>
+#include <objects/mmdb3/Residue_interval_pntr.hpp>
+
 #include "cn3d/messenger.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/opengl_renderer.hpp"
@@ -107,6 +119,7 @@
 #include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -331,7 +344,14 @@ void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int index
         h = highlights.find(identifier);
     }
 
-    for (int i=indexFrom; i<=indexTo; i++) h->second[i] = !h->second[i];
+    int i;
+    for (i=indexFrom; i<=indexTo; i++) h->second[i] = !h->second[i];
+
+    // remove sequence from store if no highlights left
+    for (i=0; i<h->second.size(); i++)
+        if (h->second[i] == true) break;
+    if (i == h->second.size())
+        highlights.erase(h);
 
     PostRedrawAllSequenceViewers();
     RedrawMoleculesWithIdentifier(identifier, set);
@@ -399,6 +419,75 @@ bool Messenger::GetHighlightedResiduesWithStructure(MoleculeHighlightMap *residu
     }
 
     return (residues->size() > 0);
+}
+
+CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObject(void) const
+{
+    if (!IsAnythingHighlighted()) {
+        ERR_POST(Error << "Nothing highlighted");
+        return NULL;
+    }
+
+    // check to see that all highlights are on a single structure object
+    int mmdbID;
+    MoleculeHighlightMap::const_iterator h, he = highlights.end();
+    for (h=highlights.begin(); h!=he; h++) {
+        if (h == highlights.begin()) mmdbID = h->first->mmdbID;
+        if (h->first->mmdbID == MoleculeIdentifier::VALUE_NOT_SET || h->first->mmdbID != mmdbID) {
+            ERR_POST(Error << "All highlights must be on a single PDB structure");
+            return NULL;
+        }
+        if (h->first->moleculeID == MoleculeIdentifier::VALUE_NOT_SET) {
+            ERR_POST(Error << "internal error - MoleculeIdentifier has no moleculeID");
+            return NULL;
+        }
+    }
+
+    // create the Biostruc-annot-set
+    CRef < CBiostruc_annot_set > bas(new CBiostruc_annot_set());
+
+    // set id
+    CRef < CBiostruc_id > bid(new CBiostruc_id());
+    bas->SetId().push_back(bid);
+    bid->SetMmdb_id().Set(mmdbID);
+
+    // create feature set and feature
+    CRef < CBiostruc_feature_set > bfs(new CBiostruc_feature_set());
+    bas->SetFeatures().push_back(bfs);
+    bfs->SetId().Set(1);
+    CRef < CBiostruc_feature > bf(new CBiostruc_feature());
+    bfs->SetFeatures().push_back(bf);
+
+    // create Chem-graph-pntrs with residues
+    CRef < CChem_graph_pntrs > cgp(new CChem_graph_pntrs());
+    bf->SetLocation().SetSubgraph(cgp);
+    CRef < CResidue_pntrs > rp(new CResidue_pntrs());
+    cgp->SetResidues(rp);
+
+    // add all residue intervals
+    for (h=highlights.begin(); h!=he; h++) {
+        int first = 0, last = 0;
+        while (first < h->second.size()) {
+
+            // find first highlighted residue
+            while (first < h->second.size() && !h->second[first]) first++;
+            if (first >= h->second.size()) break;
+            // find last in contiguous stretch of highlighted residues
+            last = first;
+            while (last + 1 < h->second.size() && h->second[last + 1]) last++;
+
+            // add new interval to list
+            CRef < CResidue_interval_pntr > rip(new CResidue_interval_pntr());
+            rip->SetMolecule_id().Set(h->first->moleculeID);
+            rip->SetFrom().Set(first + 1);  // assume residueID == index + 1
+            rip->SetTo().Set(last + 1);
+            rp->SetInterval().push_back(rip);
+
+            first = last + 2;
+        }
+    }
+
+    return bas.Release();
 }
 
 END_SCOPE(Cn3D)

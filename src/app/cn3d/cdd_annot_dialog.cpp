@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/08/27 00:06:23  thiessen
+* add structure evidence to CDD annotation
+*
 * Revision 1.3  2001/08/06 20:22:00  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -51,6 +54,16 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/PubMedId.hpp>
+#include <objects/mmdb1/Biostruc_annot_set.hpp>
+#include <objects/mmdb1/Biostruc_descr.hpp>
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Mmdb_id.hpp>
+#include <objects/mmdb3/Biostruc_feature_set.hpp>
+#include <objects/mmdb3/Biostruc_feature_set_descr.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/mmdb3/Chem_graph_pntrs.hpp>
+#include <objects/mmdb3/Residue_pntrs.hpp>
+#include <objects/mmdb3/Residue_interval_pntr.hpp>
 
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/structure_set.hpp"
@@ -59,6 +72,7 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/chemical_graph.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +99,7 @@
 #define ID_B_NEW_EVID 10006
 #define ID_B_DEL_EVID 10007
 #define ID_B_EDIT_EVID 10008
-#define ID_B_LAUNCH 10009
+#define ID_B_SHOW 10009
 #define ID_B_DONE 10010
 #define ID_B_CANCEL 10011
 wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
@@ -97,8 +111,11 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_si
 #define ID_R_PMID 10016
 #define ID_ST_PMID 10017
 #define ID_T_PMID 10018
-#define ID_B_EDIT_OK 10019
-#define ID_B_EDIT_CANCEL 10020
+#define ID_R_STRUCTURE 10019
+#define ID_ST_STRUCTURE 10020
+#define ID_T_STRUCTURE 10021
+#define ID_B_EDIT_OK 10022
+#define ID_B_EDIT_CANCEL 10023
 wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +125,21 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
+
+// a "structure evidence" biostruc-annot-set has these qualities - basically, a specific
+// comment tag as the first entry in the set's description, and a 'name' descr in the feature set
+static const std::string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidence for CDD Annotation";
+#define IS_STRUCTURE_EVIDENCE_BSANNOT(evidence) \
+    ((evidence).IsBsannot() && \
+     (evidence).GetBsannot().IsSetDescr() && \
+     (evidence).GetBsannot().GetDescr().size() > 0 && \
+     (evidence).GetBsannot().GetDescr().front()->IsOther_comment() && \
+     (evidence).GetBsannot().GetDescr().front()->GetOther_comment() == STRUCTURE_EVIDENCE_COMMENT && \
+     (evidence).GetBsannot().GetFeatures().size() > 0 && \
+     (evidence).GetBsannot().GetFeatures().front()->IsSetDescr() && \
+     (evidence).GetBsannot().GetFeatures().front()->GetDescr().size() > 0 && \
+     (evidence).GetBsannot().GetFeatures().front()->GetDescr().front()->IsName())
+
 
 #define DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(var, id, type) \
     type *var; \
@@ -225,8 +257,8 @@ void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
         case ID_B_EDIT_EVID:
             EditEvidence();
             break;
-        case ID_B_LAUNCH:
-            LaunchEvidence();
+        case ID_B_SHOW:
+            ShowEvidence();
             break;
 
         default:
@@ -257,7 +289,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewEvid, ID_B_NEW_EVID, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelEvid, ID_B_DEL_EVID, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEditEvid, ID_B_EDIT_EVID, wxButton)
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bLaunch, ID_B_LAUNCH, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bShow, ID_B_SHOW, wxButton)
 
     // fill out annots listbox
     annots->Clear();
@@ -288,6 +320,9 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
                 evidTitle.Printf("Comment: %s", (*e)->GetComment().c_str());
             else if ((*e)->IsReference() && (*e)->GetReference().IsPmid())
                 evidTitle.Printf("PMID: %i", (*e)->GetReference().GetPmid().Get());
+            else if (IS_STRUCTURE_EVIDENCE_BSANNOT(**e))
+                evidTitle.Printf("Structure: %s",
+                    (*e)->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str());
             else
                 evidTitle = "(unknown type)";
             evids->Append(evidTitle, e->GetPointer());
@@ -308,8 +343,9 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     bNewEvid->Enable(selectedAnnot != NULL);
     bDelEvid->Enable(selectedEvid != NULL);
     bEditEvid->Enable(selectedEvid != NULL);
-    bLaunch->Enable(selectedEvid != NULL &&
-        selectedEvid->IsReference() && selectedEvid->GetReference().IsPmid());
+    bShow->Enable(selectedEvid != NULL &&
+        ((selectedEvid->IsReference() && selectedEvid->GetReference().IsPmid()) ||
+         IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvid)));
 }
 
 void CDDAnnotateDialog::NewAnnotation(void)
@@ -575,7 +611,66 @@ void CDDAnnotateDialog::EditEvidence(void)
     }
 }
 
-void CDDAnnotateDialog::LaunchEvidence(void)
+static void HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
+{
+    try {
+        if (!annot.IsSetId() || annot.GetId().size() == 0 || !annot.GetId().front()->IsMmdb_id())
+            throw "no MMDB ID found in annotation";
+        int mmdbID = annot.GetId().front()->GetMmdb_id().Get();
+
+        // find the first object with the annotation's mmdbID
+        StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
+        for (o=set->objects.begin(); o!=oe; o++) {
+            if ((*o)->mmdbID == mmdbID) {
+
+                // iterate over molecule/residue intervals
+                if (annot.GetFeatures().size() > 0 &&
+                    annot.GetFeatures().front()->GetFeatures().size() > 0 &&
+                    annot.GetFeatures().front()->GetFeatures().front()->IsSetLocation() &&
+                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().IsSubgraph() &&
+                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                        GetSubgraph().IsResidues() &&
+                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                        GetSubgraph().GetResidues().IsInterval() &&
+                    annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                        GetSubgraph().GetResidues().GetInterval().size() > 0)
+                {
+                    GlobalMessenger()->RemoveAllHighlights(true);
+
+                    CResidue_pntrs::TInterval::const_iterator i, ie =
+                        annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                            GetSubgraph().GetResidues().GetInterval().end();
+                    for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
+                            GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++) {
+
+                        // find molecule with moleculeID
+                        ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+                        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+                            if (m->second->id == (*i)->GetMolecule_id().Get()) {
+
+                                // highlight residues in interval
+                                for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); r++)
+                                    GlobalMessenger()->ToggleHighlight(m->second, r);
+                                break;
+                            }
+                        }
+                        if (m == (*o)->graph->molecules.end())
+                            throw "molecule with given ID not found";
+                    }
+                    return; // finished!
+                }
+                throw "unrecognized annotation structure";
+            }
+        }
+        throw "no object of annotation's MMDB ID";
+
+    } catch (const char *err) {
+        ERR_POST(Error << "HighlightResidues() - " << err);
+    }
+    return;
+}
+
+void CDDAnnotateDialog::ShowEvidence(void)
 {
     // get selected evidence
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
@@ -583,7 +678,7 @@ void CDDAnnotateDialog::LaunchEvidence(void)
     CFeature_evidence *selectedEvidence =
         reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
     if (!selectedEvidence) {
-        ERR_POST(Error << "CDDAnnotateDialog::LaunchEvidence() - error getting evidence pointer");
+        ERR_POST(Error << "CDDAnnotateDialog::ShowEvidence() - error getting evidence pointer");
         return;
     }
 
@@ -594,8 +689,15 @@ void CDDAnnotateDialog::LaunchEvidence(void)
             "cmd=Retrieve&db=PubMed&dopt=Abstract&list_uids=%i",
             selectedEvidence->GetReference().GetPmid().Get());
         LaunchWebPage(url);
-    } else {
-        ERR_POST(Error << "CDDAnnotateDialog::LaunchEvidence() - can't launch web page on that evidence type");
+    }
+
+    // highlight residues if structure evidence
+    else if (IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvidence)) {
+        HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+    }
+
+    else {
+        ERR_POST(Error << "CDDAnnotateDialog::ShowEvidence() - can't show that evidence type");
     }
 }
 
@@ -636,12 +738,19 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFea
         pmid.Printf("%i", initial.GetReference().GetPmid().Get());
         tPMID->SetValue(pmid);
         tPMID->SetFocus();
+    } else if (IS_STRUCTURE_EVIDENCE_BSANNOT(initial)) {
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rSTRUCTURE, ID_R_STRUCTURE, wxRadioButton)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSTRUCTURE, ID_T_STRUCTURE, wxTextCtrl)
+        rSTRUCTURE->SetValue(true);
+        tSTRUCTURE->SetValue(
+            initial.GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str());
+        // automatically pick up highlights if structure evidence selected
+        changed = true;
     } else {
         ERR_POST(Error << "CDDEvidenceDialog::CDDEvidenceDialog() - "
             "don't (yet) know how to edit this evidence type");
     }
     SetupGUIControls();
-    changed = false;
 }
 
 // same as hitting cancel button
@@ -680,17 +789,23 @@ void CDDEvidenceDialog::SetupGUIControls(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rPMID, ID_R_PMID, wxRadioButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stPMID, ID_ST_PMID, wxStaticText)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tPMID, ID_T_PMID, wxTextCtrl)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rSTRUCTURE, ID_R_STRUCTURE, wxRadioButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stSTRUCTURE, ID_ST_STRUCTURE, wxStaticText)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSTRUCTURE, ID_T_STRUCTURE, wxTextCtrl)
 
     stComment->Enable(rComment->GetValue());
     tComment->Enable(rComment->GetValue());
     stPMID->Enable(rPMID->GetValue());
     tPMID->Enable(rPMID->GetValue());
+    stSTRUCTURE->Enable(rSTRUCTURE->GetValue());
+    tSTRUCTURE->Enable(rSTRUCTURE->GetValue());
 }
 
 bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(rComment, ID_R_COMMENT, wxRadioButton)
     DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(rPMID, ID_R_PMID, wxRadioButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(rSTRUCTURE, ID_R_STRUCTURE, wxRadioButton)
 
     if (rComment->GetValue()) {
         DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tComment, ID_T_COMMENT, wxTextCtrl)
@@ -711,6 +826,25 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
             return true;
         } else {
             ERR_POST(Error << "CDDEvidenceDialog::GetData() - PMID must be a positive integer");
+            return false;
+        }
+    }
+
+    else if (rSTRUCTURE->GetValue()) {
+        DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tSTRUCTURE, ID_T_STRUCTURE, wxTextCtrl)
+        CRef < CBiostruc_annot_set > ref(GlobalMessenger()->
+            CreateBiostrucAnnotSetForHighlightsOnSingleObject());
+        if (ref.NotEmpty()) {
+            evidence->SetBsannot(ref);
+            CRef < CBiostruc_descr > descr(new CBiostruc_descr());
+            descr->SetOther_comment(STRUCTURE_EVIDENCE_COMMENT);
+            evidence->SetBsannot().SetDescr().push_front(descr);
+            CRef < CBiostruc_feature_set_descr > name(new CBiostruc_feature_set_descr());
+            name->SetName(tSTRUCTURE->GetValue().c_str());
+            evidence->SetBsannot().SetFeatures().front()->SetDescr().push_front(name);
+            return true;
+        } else {
+            ERR_POST(Error << "CDDEvidenceDialog::GetData() - error setting up structure evidence data");
             return false;
         }
     }
@@ -775,7 +909,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxButton *item16 = new wxButton( parent, ID_B_EDIT_EVID, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
     item13->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item17 = new wxButton( parent, ID_B_LAUNCH, "Launch", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item17 = new wxButton( parent, ID_B_SHOW, "Show", wxDefaultPosition, wxDefaultSize, 0 );
     item13->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item10->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
@@ -845,24 +979,41 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     item8->Add( item10, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5 );
 
     wxTextCtrl *item11 = new wxTextCtrl( parent, ID_T_PMID, "", wxDefaultPosition, wxDefaultSize, 0 );
-    item8->Add( item11, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item8->Add( item11, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     item1->Add( item8, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
 
+    wxStaticLine *item12 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
+    item1->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxFlexGridSizer *item13 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item13->AddGrowableCol( 2 );
+
+    wxRadioButton *item14 = new wxRadioButton( parent, ID_R_STRUCTURE, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item13->Add( item14, 0, wxALIGN_BOTTOM|wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
+
+    wxStaticText *item15 = new wxStaticText( parent, ID_ST_STRUCTURE, "Structure:", wxDefaultPosition, wxDefaultSize, 0 );
+    item13->Add( item15, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5 );
+
+    wxTextCtrl *item16 = new wxTextCtrl( parent, ID_T_STRUCTURE, "", wxDefaultPosition, wxSize(80,-1), 0 );
+    item13->Add( item16, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item1->Add( item13, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxFlexGridSizer *item12 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    wxFlexGridSizer *item17 = new wxFlexGridSizer( 1, 0, 0, 0 );
 
-    wxButton *item13 = new wxButton( parent, ID_B_EDIT_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
-    item13->SetDefault();
-    item12->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item18 = new wxButton( parent, ID_B_EDIT_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
+    item18->SetDefault();
+    item17->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item12->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item17->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item14 = new wxButton( parent, ID_B_EDIT_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item12->Add( item14, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item19 = new wxButton( parent, ID_B_EDIT_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item17->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/08/27 00:06:35  thiessen
+* add structure evidence to CDD annotation
+*
 * Revision 1.3  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -97,7 +100,7 @@ private:
     void NewEvidence(void);
     void DeleteEvidence(void);
     void EditEvidence(void);
-    void LaunchEvidence(void);
+    void ShowEvidence(void);
 
     // event callbacks
     void OnCloseWindow(wxCloseEvent& event);

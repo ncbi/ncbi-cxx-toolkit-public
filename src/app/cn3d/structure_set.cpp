@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2001/08/27 00:06:23  thiessen
+* add structure evidence to CDD annotation
+*
 * Revision 1.75  2001/08/13 22:30:59  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -1056,6 +1059,8 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return;
     GlobalMessenger()->ToggleHighlight(molecule, residue->id);
+    TESTMSG("selected " << molecule->identifier->ToString()
+        << " rID " << residue->id << " aID " << atomID);
 
     // if indicate, use atom site as rotation center; use coordinate from first CoordSet, default altConf
     if (setCenter) {

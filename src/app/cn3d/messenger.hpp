@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/08/27 00:06:35  thiessen
+* add structure evidence to CDD annotation
+*
 * Revision 1.16  2001/08/14 17:17:48  thiessen
 * add user font selection, store in registry
 *
@@ -86,6 +89,7 @@
 #define CN3D_MESSENGER__HPP
 
 #include <corelib/ncbistl.hpp>
+#include <objects/mmdb1/Biostruc_annot_set.hpp>
 
 #include <list>
 #include <map>
@@ -204,6 +208,10 @@ public:
 
     // to get lists of highlighted molecules with structure only (for user annotations)
     bool GetHighlightedResiduesWithStructure(MoleculeHighlightMap *residues) const;
+
+    // to get lists of highlighted residues that come from a single structure object
+    // (for cdd annotations) - returns NULL if highlights aren't from one structure
+    ncbi::objects::CBiostruc_annot_set * CreateBiostrucAnnotSetForHighlightsOnSingleObject(void) const;
 
     // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(ViewerBase *sequenceViewer)
