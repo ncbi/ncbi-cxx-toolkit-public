@@ -361,7 +361,9 @@ void CProcessor::SetLoaded(CReaderRequestResult& result,
                            CLoadLockBlob& blob)
 {
     if ( chunk_id == kMain_ChunkId ) {
-        blob.SetLoaded();
+        if ( !blob.IsLoaded() ) {
+            blob.SetLoaded();
+        }
         if ( !blob->IsUnavailable() ) {
             result.AddTSE_Lock(blob);
         }
