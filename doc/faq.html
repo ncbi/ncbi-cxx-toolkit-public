@@ -15,10 +15,6 @@ in something like:
 <i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></a></li>
 
 <li>
-<a href="#ref_CannotFindSer">The linker complains about undefined symbols
-Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a</a></li>
-
-<li>
 <a href="#ref_CannotFindObjectSymbol">How does one find the libraries to
 link when the linker complains of <i>undefined symbols</i></a></li>
 
@@ -64,21 +60,6 @@ symbol"</i> in something like:
 Go to the relevant build dir, clean and rebuild everything using:
 <pre>&nbsp;&nbsp; cd /home/qqq/c++/WorkShop6-Debug/build/FooBar
 &nbsp;&nbsp; make purge_r all_r</pre>
-
-<hr>
-<h4>
-<a NAME="ref_CannotFindSer"></a>The linker complains about undefined symbols
-Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a.</h4>
-The cause of this error is that the serialization library, by default,
-links in some code that references the C Toolkit library. You must link
- in the C Toolkit library by putting the following into your makefile:
-
-<pre>
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
-</pre>
-
-If you are using the makefile created by script <i>new_project.sh</i>,
-then just uncomment the applicable lines.
 
 <p>
 <hr>
@@ -161,9 +142,21 @@ directory name. These variants are summarized below.
 </tr>
 
 <tr>
+<td>objects/alnmgr</td>
+
+<td>xalnmgr</td>
+</tr>
+
+<tr>
 <td>objects/objmgr</td>
 
 <td>xobjmgr</td>
+</tr>
+
+<tr>
+<td>objects/util</td>
+
+<td>xobjutil</td>
 </tr>
 
 <tr>
@@ -259,8 +252,15 @@ This happens when you link to the public C++ Toolkit libraries (from <i>"$NCBI/c
 which are built on other hosts and thus hard-coded with the source paths
 on these other hosts. All you have to do is to point DBX to the public
 sources (at <i>"$NCBI/c++"</i>) by just adding to your DBX resource file
-(<i>~/.dbxrc</i>) the following line:
-<pre>pathmap /home/coremake/c++ /netopt/ncbi_tools/c++</pre>
+(<i>~/.dbxrc</i>) the following lines:
+<pre>
+pathmap /home/coremake/c++ /netopt/ncbi_tools/c++
+pathmap /home/coremake/c++2 /netopt/ncbi_tools/c++
+pathmap /home/coremake/c++3 /netopt/ncbi_tools/c++
+pathmap /j/coremake/c++ /netopt/ncbi_tools/c++
+pathmap /j/coremake/c++2 /netopt/ncbi_tools/c++
+pathmap /j/coremake/c++3 /netopt/ncbi_tools/c++
+</pre>
 
 <hr><!-- **************************************************************** -->
 <h4>
