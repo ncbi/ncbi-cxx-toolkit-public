@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.15  2002/09/13 14:21:45  thiessen
 * finish hooking up browser launch on unix
 *
@@ -131,6 +134,8 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer 
 
 #define ID_C_ANNOT_RO 10018
 #define ID_T_LAUNCH 10019
+#define ID_T_NSTRUCT 10020
+#define ID_T_FOOT 10021
 wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -142,7 +147,7 @@ BEGIN_SCOPE(Cn3D)
 
 static IntegerSpinCtrl
     *giWormSegments, *giWormSides, *giBondSides, *giHelixSides, *giAtomSlices, *giAtomStacks,
-    *giCacheSize;
+    *giCacheSize, *giMaxStructs, *giFootRes;
 
 #define DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(var, id, type) \
     type *var; \
@@ -158,7 +163,7 @@ BEGIN_EVENT_TABLE(PreferencesDialog, wxDialog)
     EVT_CHECKBOX    (-1,    PreferencesDialog::OnCheckbox)
 END_EVENT_TABLE()
 
-#define SET_ISPINCRTL_FROM_REGISTRY_VALUE(section, name, iSpinCtrl) \
+#define SET_ISPINCTRL_FROM_REGISTRY_VALUE(section, name, iSpinCtrl) \
     do { \
         int value; \
         if (!RegistryGetInteger((section), (name), &value) || !((iSpinCtrl)->SetInteger(value))) \
@@ -211,21 +216,23 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     iAtomSlices = giAtomSlices;
     iAtomStacks = giAtomStacks;
     iCacheSize = giCacheSize;
+    iMaxStructs = giMaxStructs;
+    iFootRes = giFootRes;
 
     // set initial values
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, iAtomSlices);
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, iAtomStacks);
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, iBondSides);
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, iWormSides);
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, iWormSegments);
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, iHelixSides);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, iAtomSlices);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, iAtomStacks);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, iBondSides);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, iWormSides);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, iWormSegments);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, iHelixSides);
     SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
     SET_RADIOBOX_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, ID_RADIOBOX);
 
     SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_ENABLED, ID_C_CACHE_ON);
     SET_TEXTCTRL_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_FOLDER, ID_T_CACHE_FOLDER);
-    
-    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize);
+
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize);
     wxCommandEvent fakeCheck(wxEVT_COMMAND_CHECKBOX_CLICKED, ID_C_CACHE_ON);
     OnCheckbox(fakeCheck);  // set initial GUI enabled state
 
@@ -233,6 +240,8 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
 #ifdef __WXGTK__
     SET_TEXTCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, ID_T_LAUNCH);
 #endif
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, iMaxStructs);
+    SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, iFootRes);
 
     // call sizer stuff
     topSizer->Fit(this);
@@ -248,6 +257,8 @@ PreferencesDialog::~PreferencesDialog(void)
     delete iAtomSlices;
     delete iAtomStacks;
     delete iCacheSize;
+    delete iMaxStructs;
+    delete iFootRes;
 }
 
 #define SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(section, name, iSpinCtrl, changedPtr) \
@@ -335,6 +346,8 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tLaunch, ID_T_LAUNCH, wxTextCtrl)
         SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, tLaunch);
 #endif
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, iMaxStructs, NULL);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, iFootRes, NULL);
 
         // Limit cache size to current value now
         int size;
@@ -515,6 +528,33 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
 
     item1->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
 #endif
+
+    wxFlexGridSizer *item7 = new wxFlexGridSizer( 2, 0, 0, 0 );
+    item7->AddGrowableCol( 3 );
+
+    wxStaticText *item8 = new wxStaticText( parent, ID_TEXT, "Max structures to load:", wxDefaultPosition, wxDefaultSize, 0 );
+    item7->Add( item8, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    giMaxStructs = new IntegerSpinCtrl(parent,
+        0, 100, 1, 10,
+        wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
+    item7->Add(giMaxStructs->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item7->Add(giMaxStructs->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    item7->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item11 = new wxStaticText( parent, ID_TEXT, "Footprint excess residues:", wxDefaultPosition, wxDefaultSize, 0 );
+    item7->Add( item11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    giFootRes = new IntegerSpinCtrl(parent,
+        0, 1000, 5, 15,
+        wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
+    item7->Add(giFootRes->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item7->Add(giFootRes->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    item7->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item1->Add( item7, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 

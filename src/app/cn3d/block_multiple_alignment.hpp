@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.34  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -303,6 +306,9 @@ public:
 
     // deletes the block containing this index; returns true if deletion occurred.
     bool DeleteBlock(int alignmentIndex);
+
+    // deletes all blocks; returns true if there were any blocks to delete
+    bool DeleteAllBlocks(void);
 
     // shifts (horizontally) the residues in and immediately surrounding an
     // aligned block; returns true if any shift occurs.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.65  2003/01/29 01:41:05  thiessen
 * add merge neighbor instead of merge near highlight
 *
@@ -726,6 +729,15 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         // operations specific to the update window
         UpdateViewerWindow *updateWindow = dynamic_cast<UpdateViewerWindow*>(*viewerWindow);
         if (updateWindow && row >= 0) {
+
+            // delete all blocks
+            if (updateWindow->DoDeleteAllBlocks()) {
+                if (alignment->DeleteAllBlocks()) {
+                    if (!controlDown) updateWindow->DeleteAllBlocksOff();
+                    UpdateAfterEdit(alignment);
+                }
+                return false;
+            }
 
             // thread single
             if (updateWindow->DoThreadSingle()) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.24  2002/12/19 15:56:16  thiessen
 * use wxCHECK_VERSION
 *
@@ -218,10 +221,12 @@ static const std::string
     REG_CACHE_MAX_SIZE = "CacheSizeMax",
     // advanced options
     REG_ADVANCED_SECTION = "Cn3D-4-Advanced",
+    REG_CDD_ANNOT_READONLY = "CDDAnnotationsReadOnly",
 #ifdef __WXGTK__
     REG_BROWSER_LAUNCH = "BrowserLaunchCommand",
 #endif
-    REG_CDD_ANNOT_READONLY = "CDDAnnotationsReadOnly";
+    REG_MAX_N_STRUCTS = "MaxNumStructures",
+    REG_FOOTPRINT_RES = "FootprintExcessResidues";
 
 
 // utility function to remove some elements from a vector

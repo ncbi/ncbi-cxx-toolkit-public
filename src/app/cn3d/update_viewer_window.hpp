@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/01/31 17:18:59  thiessen
+* many small additions and changes...
+*
 * Revision 1.33  2003/01/29 01:41:06  thiessen
 * add merge neighbor instead of merge near highlight
 *
@@ -164,7 +167,8 @@ private:
 
     // menu identifiers - additional items beyond base class items
     enum {
-        MID_SORT_UPDATES = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_DELETE_ALL_BLOCKS = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_SORT_UPDATES,
         MID_SORT_UPDATES_IDENTIFIER,
         MID_IMPORT_SEQUENCES,
         MID_IMPORT_STRUCTURE,
@@ -193,6 +197,11 @@ private:
     void OnDelete(wxCommandEvent& event);
     void OnImport(wxCommandEvent& event);
 
+    void DeleteAllBlocksOff(void)
+    {
+        menuBar->Check(MID_DELETE_ALL_BLOCKS, false);
+        SetCursor(wxNullCursor);
+    }
     void ThreadSingleOff(void)
     {
         menuBar->Check(MID_THREAD_ONE, false);
@@ -247,6 +256,7 @@ private:
     DECLARE_EVENT_TABLE()
 
 public:
+    bool DoDeleteAllBlocks(void) const { return menuBar->IsChecked(MID_DELETE_ALL_BLOCKS); }
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
@@ -259,6 +269,7 @@ public:
 
     void CancelDerivedSpecialModesExcept(int id)
     {
+        if (id != MID_DELETE_ALL_BLOCKS && DoDeleteAllBlocks()) DeleteAllBlocksOff();
         if (id != MID_THREAD_ONE && DoThreadSingle()) ThreadSingleOff();
         if (id != MID_BLAST_ONE && DoBlastSingle()) BlastSingleOff();
         if (id != MID_BLAST_PSSM_ONE && DoBlastPSSMSingle()) BlastPSSMSingleOff();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.27  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -225,8 +228,15 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
             uaBlocks(multiple->GetUngappedAlignedBlocks());
         if (uaBlocks->size() > 0) {
-            masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from;
-            masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to;
+            int excess = 0;
+            if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
+                ERR_POST(Warning << "Can't get footprint excess residues from registry");
+            masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from - excess;
+            if (masterSeqInt->from < 0)
+                masterSeqInt->from = 0;
+            masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to + excess;
+            if (masterSeqInt->to >= multiple->GetMaster()->Length())
+                masterSeqInt->to = multiple->GetMaster()->Length() - 1;
         } else {
             masterSeqInt->from = 0;
             masterSeqInt->to = multiple->GetMaster()->Length() - 1;
@@ -457,7 +467,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     const Sequence *masterSeq = multiple->GetMaster();
     Bioseq *masterBioseq = masterSeq->parentSet->GetOrCreateBioseq(masterSeq);
 
-    // create Seq-loc interval for master
+    // create Seq-loc interval for master and slave
     SeqLocPtr masterSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
     masterSeqLoc->choice = SEQLOC_INT;
     SeqIntPtr masterSeqInt = SeqIntNew();
@@ -469,8 +479,14 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         ERR_POST(Error << "Self-hit requires at least one aligned block");
         return;
     }
-    masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from;
-    masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to;
+    int excess = 0;
+    if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
+        ERR_POST(Warning << "Can't get footprint excess residues from registry");
+    masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from - excess;
+    if (masterSeqInt->from < 0) masterSeqInt->from = 0;
+    masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to + excess;
+    if (masterSeqInt->to >= masterSeq->Length()) masterSeqInt->to = masterSeq->Length() - 1;
+
     SeqLocPtr slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
     slaveSeqLoc->choice = SEQLOC_INT;
     SeqIntPtr slaveSeqInt = SeqIntNew();
@@ -489,8 +505,10 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
 
         // setup Seq-loc interval for slave
         slaveSeqInt->id = slaveBioseq->id;
-        slaveSeqInt->from = uaBlocks->front()->GetRangeOfRow(row)->from;
-        slaveSeqInt->to = uaBlocks->back()->GetRangeOfRow(row)->to;
+        slaveSeqInt->from = uaBlocks->front()->GetRangeOfRow(row)->from - excess;
+        if (slaveSeqInt->from < 0) slaveSeqInt->from = 0;
+        slaveSeqInt->to = uaBlocks->back()->GetRangeOfRow(row)->to + excess;
+        if (slaveSeqInt->to >= slaveSeq->Length()) slaveSeqInt->to = slaveSeq->Length() - 1;
 //        TESTMSG("for BLAST: master range " <<
 //                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
 //                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.55  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -1226,8 +1229,15 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
             new BlockMultipleAlignment(seqs, updateSeq->parentSet->alignmentManager);
         if (newAlignment->AddUnalignedBlocks() && newAlignment->UpdateBlockMapAndColors(false))
         {
-            newAlignment->alignMasterFrom = uaBlocks->front()->GetRangeOfRow(row)->from;
-            newAlignment->alignMasterTo = uaBlocks->back()->GetRangeOfRow(row)->to;
+            int excess = 0;
+            if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
+                ERR_POST(Warning << "Can't get footprint excess residues from registry");
+            newAlignment->alignMasterFrom = uaBlocks->front()->GetRangeOfRow(row)->from - excess;
+            if (newAlignment->alignMasterFrom < 0)
+                newAlignment->alignMasterFrom = 0;
+            newAlignment->alignMasterTo = uaBlocks->back()->GetRangeOfRow(row)->to + excess;
+            if (newAlignment->alignMasterTo >= (*seqs)[0]->Length())
+                newAlignment->alignMasterTo = (*seqs)[0]->Length() - 1;
             newAlignment->alignSlaveFrom = update->alignSlaveFrom;
             newAlignment->alignSlaveTo = update->alignSlaveTo;
             toRealign.push_back(newAlignment);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.4  2002/08/15 22:13:15  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -78,7 +81,7 @@ private:
     // GUI elements
     IntegerSpinCtrl
         *iWormSegments, *iWormSides, *iBondSides, *iHelixSides, *iAtomSlices, *iAtomStacks,
-        *iCacheSize;
+        *iCacheSize, *iMaxStructs, *iFootRes;
 
     DECLARE_EVENT_TABLE()
 };

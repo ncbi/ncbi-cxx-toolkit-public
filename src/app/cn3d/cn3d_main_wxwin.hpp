@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.73  2003/01/30 14:00:23  thiessen
 * add Block Z Fit coloring
 *
@@ -363,7 +366,6 @@ public:
             MID_SAVE_AS,
             MID_PNG,
             MID_REFIT_ALL,
-            MID_LIMIT_STRUCT,
             MID_PREFERENCES,
             MID_FONTS,
                 MID_OPENGL_FONT,
@@ -480,7 +482,6 @@ private:
     void OnOpen(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
     void OnPNG(wxCommandEvent& event);
-    void OnLimit(wxCommandEvent& event);
     void OnAlignStructures(wxCommandEvent& event);
     void OnAdjustView(wxCommandEvent& event);
     void OnShowHide(wxCommandEvent& event);
@@ -494,9 +495,6 @@ private:
     void OnAnimate(wxCommandEvent& event);
     void OnTimer(wxTimerEvent& event);
     void OnHelp(wxCommandEvent& event);
-
-    static const int UNLIMITED_STRUCTURES;
-    int structureLimit;
 
     wxMenuBar *menuBar;
     wxMenu *favoritesMenu;

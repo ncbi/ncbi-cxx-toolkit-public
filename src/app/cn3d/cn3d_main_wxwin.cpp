@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.177  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.176  2003/01/30 14:00:23  thiessen
 * add Block Z Fit coloring
 *
@@ -931,6 +934,8 @@ void Cn3DApp::InitRegistry(void)
 //        "( netscape -raise -remote 'openURL(<URL>)' || netscape '<URL>' ) >/dev/null 2>&1 &"
     );
 #endif
+    RegistrySetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, 10);
+    RegistrySetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, 15);
 
     // load program registry - overriding defaults if present
     if (GetPrefsDir().size() > 0)
@@ -1177,7 +1182,6 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_CDD_OVERVIEW, MID_CDD_SHOW_REJECTS,  Cn3DMainFrame::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
-    EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
     EVT_MENU_RANGE(MID_PLAY, MID_SET_DELAY,                 Cn3DMainFrame::OnAnimate)
     EVT_TIMER     (MID_ANIMATE,                             Cn3DMainFrame::OnTimer)
     EVT_MENU_RANGE(MID_HELP_COMMANDS, MID_ONLINE_HELP,      Cn3DMainFrame::OnHelp)
@@ -1186,9 +1190,8 @@ END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
-    glCanvas(NULL), structureLimit(1000),
-    cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL), cddRefDialog(NULL),
-    helpController(NULL), helpConfig(NULL), cddOverview(NULL)
+    glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
+    cddRefDialog(NULL), helpController(NULL), helpConfig(NULL), cddOverview(NULL)
 {
     topWindow = this;
     GlobalMessenger()->AddStructureWindow(this);
@@ -1205,7 +1208,6 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_PNG, "&Export PNG");
     menu->AppendSeparator();
     menu->Append(MID_REFIT_ALL, "&Realign Structures");
-    menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
     menu->AppendSeparator();
     menu->Append(MID_PREFERENCES, "&Preferences...");
     wxMenu *subMenu = new wxMenu;
@@ -1302,7 +1304,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu2->Append(MID_INFO, "&Information Content", "", true);
     subMenu2->Append(MID_FIT, "&Fit", "", true);
     subMenu2->Append(MID_BLOCK_FIT, "&Block Fit", "", true);
-    subMenu2->Append(MID_BLOCK_Z_FIT, "Block &Z Fit", "", true);
+    subMenu2->Append(MID_BLOCK_Z_FIT, "&Normalized Block Fit", "", true);
     subMenu->Append(MID_CONS, "Sequence &Conservation", subMenu2);
     subMenu->Append(MID_OBJECT, "&Object", "", true);
     subMenu->Append(MID_DOMAIN, "&Domain", "", true);
@@ -2155,6 +2157,11 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         isBinary = false;
     }
 
+    // get current structure limit
+    int structureLimit = kMax_Int;
+    if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, &structureLimit))
+        ERR_POST(Warning << "Can't get structure limit from registry");
+
     // try to read the file as various ASN types (if it's not clear from the first ascii word).
     // If read is successful, the StructureSet will own the asn data object, to keep it
     // around for output later on
@@ -2306,14 +2313,6 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         SetWorkingTitle(glCanvas->structureSet);
         GlobalMessenger()->SetAllWindowTitles();
     }
-}
-
-void Cn3DMainFrame::OnLimit(wxCommandEvent& event)
-{
-    long newLimit = wxGetNumberFromUser("Enter the maximum number of structures to display",
-        "Max: ", "Structure Limit", structureLimit, 0, 1000, this);
-    if (newLimit >= 0)
-        structureLimit = (int) newLimit;
 }
 
 

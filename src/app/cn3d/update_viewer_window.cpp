@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/01/31 17:18:59  thiessen
+* many small additions and changes...
+*
 * Revision 1.55  2003/01/29 01:41:06  thiessen
 * add merge neighbor instead of merge near highlight
 *
@@ -226,6 +229,7 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
     EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
+    EVT_MENU      (MID_DELETE_ALL_BLOCKS,               UpdateViewerWindow::OnDelete)
     EVT_MENU      (MID_SORT_UPDATES_IDENTIFIER,         UpdateViewerWindow::OnSortUpdates)
     EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
@@ -250,6 +254,8 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     editMenu->AppendSeparator();
     editMenu->Append(MID_IMPORT_SEQUENCES, "&Import Sequences");
     editMenu->Append(MID_IMPORT_STRUCTURE, "Import S&tructure");
+    // insert at hard-coded location, since FindItem doesn't seem to work...
+    editMenu->Insert(8, MID_DELETE_ALL_BLOCKS, "Delete A&ll Blocks", "", true);
 
     // Mouse mode menu
     menuBar->Enable(MID_SELECT_COLS, false);
@@ -392,6 +398,13 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
 void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
 {
     switch (event.GetId()) {
+        case MID_DELETE_ALL_BLOCKS:
+            CancelAllSpecialModesExcept(MID_DELETE_ALL_BLOCKS);
+            if (DoDeleteAllBlocks())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                DeleteAllBlocksOff();
+            break;
         case MID_DELETE_ONE:
             CancelAllSpecialModesExcept(MID_DELETE_ONE);
             if (DoDeleteSingle())

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.25  2003/01/30 14:00:23  thiessen
 * add Block Z Fit coloring
 *
@@ -290,9 +293,9 @@ void ConservationColorer::CalculateConservationColors(void)
     float totalInformationContent = 0.0f;
 
     int nRows = alignment->NRows();
-    typedef std::map < char, float > CharFloatMap;
-    std::vector < CharFloatMap > fitScores(nColumns);
-    float minFit, maxFit;
+    typedef std::map < char, int > CharIntMap;
+    std::vector < CharIntMap > fitScores(nColumns);
+    int minFit, maxFit;
 
     typedef std::map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
     BlockRowScores blockFitScores, blockZFitScores;
@@ -366,12 +369,14 @@ void ConservationColorer::CalculateConservationColors(void)
                     }
                 }
                 // fit score
-                fitScores[profileColumn][p->first] = residueScore;
+                int& fit = fitScores[profileColumn][p->first];
+                fit = GetPSSMScore(alignment->GetPSSM(),
+                    p->first, b->first->GetRangeOfRow(0)->from + blockColumn);
                 if (blockColumn == 0 && b == blocks.begin() && p == profile.begin()) {
-                    minFit = maxFit = residueScore;
+                    minFit = maxFit = fit;
                 } else {
-                    if (residueScore < minFit) minFit = residueScore;
-                    else if (residueScore > maxFit) maxFit = residueScore;
+                    if (fit < minFit) minFit = fit;
+                    else if (fit > maxFit) maxFit = fit;
                 }
             }
             totalInformationContent += columnInfo;
@@ -461,7 +466,7 @@ void ConservationColorer::CalculateConservationColors(void)
         informationContentColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
 
         // fit
-        CharFloatMap::const_iterator c, ce = fitScores[profileColumn].end();
+        CharIntMap::const_iterator c, ce = fitScores[profileColumn].end();
         for (c=fitScores[profileColumn].begin(); c!=ce; c++) {
             if (maxFit == minFit)
                 scale = 1.0;

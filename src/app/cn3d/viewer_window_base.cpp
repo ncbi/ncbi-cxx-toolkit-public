@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/01/31 17:18:59  thiessen
+* many small additions and changes...
+*
 * Revision 1.43  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -241,6 +244,15 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     mouseModeMenu->Append(MID_SELECT_ROWS, "Select &Rows", "", true);
     mouseModeMenu->Append(MID_DRAG_HORIZ, "&Horizontal Drag", "", true);
     menuBar->Append(mouseModeMenu, "&Mouse Mode");
+
+    // accelerators for special mouse mode keys
+    wxAcceleratorEntry entries[4];
+    entries[0].Set(wxACCEL_NORMAL, 's', MID_SELECT_RECT);
+    entries[1].Set(wxACCEL_NORMAL, 'c', MID_SELECT_COLS);
+    entries[2].Set(wxACCEL_NORMAL, 'r', MID_SELECT_ROWS);
+    entries[3].Set(wxACCEL_NORMAL, 'h', MID_DRAG_HORIZ);
+    wxAcceleratorTable accel(4, entries);
+    SetAcceleratorTable(accel);
 
     justificationMenu = new wxMenu;
     justificationMenu->Append(MID_LEFT, "&Left", "", true);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
 * Revision 1.46  2003/01/30 14:00:23  thiessen
 * add Block Z Fit coloring
 *
@@ -1371,6 +1374,17 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     return true;
 }
 
+bool BlockMultipleAlignment::DeleteAllBlocks(void)
+{
+    if (blocks.size() == 0) return false;
+
+    DELETE_ALL_AND_CLEAR(blocks, BlockList);
+    InitCache();
+    AddUnalignedBlocks();   // one single unaligned block for whole alignment
+    UpdateBlockMapAndColors();
+    return true;
+}
+
 bool BlockMultipleAlignment::DeleteRow(int row)
 {
     if (row < 0 || row >= NRows()) {
@@ -1470,8 +1484,17 @@ bool BlockMultipleAlignment::ExtractRows(
 
             // add aligned region info (for threader to use later on)
             if (uaBlocks->size() > 0) {
-                newAlignment->alignSlaveFrom = uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from;
-                newAlignment->alignSlaveTo = uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to;
+                int excess = 0;
+                if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
+                    ERR_POST(Warning << "Can't get footprint excess residues from registry");
+                newAlignment->alignSlaveFrom =
+                    uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from - excess;
+                if (newAlignment->alignSlaveFrom < 0)
+                    newAlignment->alignSlaveFrom = 0;
+                newAlignment->alignSlaveTo =
+                    uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to + excess;
+                if (newAlignment->alignSlaveTo >= (*newSeqs)[1]->Length())
+                    newAlignment->alignSlaveTo = (*newSeqs)[1]->Length() - 1;
                 TESTMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
                     << newAlignment->alignSlaveFrom << " to " << newAlignment->alignSlaveTo);
             }
