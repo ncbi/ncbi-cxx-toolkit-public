@@ -47,17 +47,19 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/flat_expt.hpp>
-
+#include <objects/seqset/gb_release_file.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class CAsn2FlatApp : public CNcbiApplication
+class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
 public:
     void Init(void);
     int  Run (void);
+
+    bool HandleSeqEntry(CRef<CSeq_entry>& se);
 
 private:
     // types
@@ -80,6 +82,11 @@ private:
     void x_GetLocation(const CSeq_entry_Handle& entry,
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
+
+    // data
+    CRef<CObjectManager>        m_Objmgr;       // Object Manager
+    CNcbiOstream*               m_Os;           // Output stream
+    CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
 };
 
 
@@ -102,13 +109,16 @@ void CAsn2FlatApp::Init(void)
             CArgDescriptions::eString, "text");
         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
             "text", "binary", "XML"));
-        
-        // compression
-        arg_desc->AddFlag("c", "Compressed file");
-        
-        // batch processing
+    }}
+
+    // batch processing
+    {{
         arg_desc->AddOptionalKey("batch", "BatchMode",
             "Process NCBI release file", CArgDescriptions::eString);
+        // compression
+        arg_desc->AddFlag("c", "Compressed file");
+        // propogate top descriptors
+        arg_desc->AddFlag("p", "Propogate top descriptors");
     }}
     
     // output
@@ -118,7 +128,6 @@ void CAsn2FlatApp::Init(void)
             "Output file name", CArgDescriptions::eOutputFile);
     }}
     
-
     // loaders
     {{
         arg_desc->AddOptionalKey("load", "Loader", "Add data loader",
@@ -157,16 +166,16 @@ void CAsn2FlatApp::Init(void)
         arg_desc->SetConstraint("view", 
             &(*new CArgAllow_Strings, "all", "prot", "nuc"));
         
-        // propagate top descriptors
-        
-        // remote fetching
-        
+        // id
+        arg_desc->AddOptionalKey("id", "ID", 
+            "Specific ID to display", CArgDescriptions::eString);
+
         // from
-        arg_desc->AddOptionalKey("from", "From", 
+        arg_desc->AddOptionalKey("from", "From",
             "Begining of shown range", CArgDescriptions::eInteger);
         
         // to
-        arg_desc->AddOptionalKey("to", "To", 
+        arg_desc->AddOptionalKey("to", "To",
             "End of shown range", CArgDescriptions::eInteger);
         
         // strand
@@ -182,34 +191,62 @@ int CAsn2FlatApp::Run(void)
 {
     const CArgs&   args = GetArgs();
 
-    CRef<CObjectManager> objmgr(new CObjectManager);
-    if ( !objmgr ) {
+    // create object manager
+    m_Objmgr.Reset(new CObjectManager);
+    if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
     if ( args["load"]  &&  args["load"].AsString() == "gb" ) {
-        objmgr->RegisterDataLoader(*new CGBDataLoader("ID"),
+        m_Objmgr->RegisterDataLoader(*new CGBDataLoader("ID"),
                                  CObjectManager::eDefault);
     }
 
-    CRef<CScope> scope(new CScope(*objmgr));
+    // open the output stream
+    m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+    if ( m_Os == 0 ) {
+        NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
+    }
+
+    // create the flat-file generator
+    m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
+
+    if ( args["batch"] ) {
+        CGBReleaseFile in(args["i"].AsString());
+        in.RegisterHandler(this);
+        in.Read();  // HandleSeqEntry will be called from this function
+    } else {
+        // open the input file (default: stdin)
+        auto_ptr<CObjectIStream> in(x_OpenIStream(args));
+
+        // read in the seq-entry
+        CRef<CSeq_entry> se(new CSeq_entry);
+        if ( !se ) {
+            NCBI_THROW(CFlatException, eInternal, 
+                "Could not allocate Seq-entry object");
+        }
+        in->Read(ObjectInfo(*se));
+        if ( se->Which() == CSeq_entry::e_not_set ) {
+            NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
+        }
+        HandleSeqEntry(se);
+    }
+
+    m_Os->flush();
+
+    return 0;
+}
+
+
+bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
+{
+    const CArgs&   args = GetArgs();
+
+    // create new scope
+    CRef<CScope> scope(new CScope(*m_Objmgr));
     if ( !scope ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create scope");
     }
     scope->AddDefaults();
-    
-    // open the input file (default: stdin)
-    auto_ptr<CObjectIStream> in(x_OpenIStream(args));
-
-    // read in the seq-entry
-    CRef<CSeq_entry> se(new CSeq_entry);
-    if ( !se ) {
-        NCBI_THROW(CFlatException, eInternal, 
-            "Could not allocate Seq-entry object");
-    }
-    in->Read(ObjectInfo(*se));
-    if ( se->Which() == CSeq_entry::e_not_set ) {
-        NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
-    }
 
     // add entry to scope    
     CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
@@ -217,46 +254,42 @@ int CAsn2FlatApp::Run(void)
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
     }
 
-    // open the output stream
-    CNcbiOstream* os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-    if ( os == 0 ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
-    }
-    
-    // create the flat-file generator
-    CRef<CFlatFileGenerator> ffg(x_CreateFlatFileGenerator(args));
-    
     // generate flat file
     if ( args["from"]  ||  args["to"] ) {
         CSeq_loc loc;
         x_GetLocation(entry, args, loc);
-        ffg->Generate(loc, *scope, *os);
+        m_FFGenerator->Generate(loc, *scope, *m_Os);
     } else {
-        ffg->Generate(entry, *os);
+        m_FFGenerator->Generate(entry, *m_Os);
     }
 
-    return 0;
+    m_FFGenerator->Reset();
+
+    return true;
 }
 
 
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
-    // file format
-    ESerialDataFormat format = eSerial_AsnText;
+    // determine the file serialization format.
+    // use user specifications (if available) otherwise the defualt
+    // is AsnText.
+    ESerialDataFormat serial = eSerial_AsnText;
     if ( args["serial"] ) {
-        string serial = args["serial"].AsString();
-        if ( serial == "text" ) {
-            format = eSerial_AsnText;
-        } else if ( serial == "binary" ) {
-            format = eSerial_AsnBinary;
-        } else if ( serial == "XML" ) {
-            format = eSerial_Xml;
+        const string& val = args["serial"].AsString();
+        if ( val == "text" ) {
+            serial = eSerial_AsnText;
+        } else if ( val == "binary" ) {
+            serial = eSerial_AsnBinary;
+        } else if ( val == "XML" ) {
+            serial = eSerial_Xml;
         }
     }
 
+    // open the input file, or standard input if no file specified.
     return args["i"] ?
-        CObjectIStream::Open(args["i"].AsString(), format) :
-        CObjectIStream::Open(format, cin);
+        CObjectIStream::Open(args["i"].AsString(), serial) :
+        CObjectIStream::Open(serial, cin);
 }
 
 
@@ -466,6 +499,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/19 14:48:36  shomrat
+* Implemented batch processing
+*
 * Revision 1.7  2004/04/22 16:04:37  shomrat
 * Support partial region
 *
