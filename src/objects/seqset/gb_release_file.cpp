@@ -56,6 +56,8 @@ public:
     typedef CGBReleaseFile::ISeqEntryHandler*   THandler;
 
     CGBReleaseFileImpl(const string& file_name);
+	CGBReleaseFileImpl(CObjectIStream& in);
+
     void Read(void);
     void RegisterHandler(THandler handler);
 
@@ -72,6 +74,13 @@ private:
 CGBReleaseFileImpl::CGBReleaseFileImpl(const string& file_name) :
     m_In(CObjectIStream::Open(file_name, eSerial_AsnBinary)),
     m_Stopped(false)
+{
+    _ASSERT(m_In.get() != 0  &&  m_In->InGoodState());
+}
+
+
+CGBReleaseFileImpl::CGBReleaseFileImpl(CObjectIStream& in) :
+    m_In(&in), m_Stopped(false)
 {
     _ASSERT(m_In.get() != 0  &&  m_In->InGoodState());
 }
@@ -134,6 +143,13 @@ CGBReleaseFile::CGBReleaseFile(const string& file_name) :
 }
 
 
+CGBReleaseFile::CGBReleaseFile(CObjectIStream& in) :
+    m_Impl(new CGBReleaseFileImpl(in))
+{
+    _ASSERT(m_Impl);
+}
+
+
 CGBReleaseFile::~CGBReleaseFile(void)
 {
 }
@@ -164,6 +180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/06 18:35:54  shomrat
+* Added constructor from CObjectIStream
+*
 * Revision 1.2  2004/05/19 17:26:48  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

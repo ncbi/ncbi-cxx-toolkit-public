@@ -64,8 +64,10 @@ public:
         virtual bool HandleSeqEntry(CRef<CSeq_entry>& entry) = 0;
     };
     
-    // constructor
+    // constructors
     CGBReleaseFile(const string& file_name);
+    CGBReleaseFile(CObjectIStream& in);
+
     // destructor
     virtual ~CGBReleaseFile(void);
     
@@ -89,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/06 18:35:38  shomrat
+* Added constructor from CObjectIStream
+*
 * Revision 1.1  2004/05/19 14:40:22  shomrat
 * Initial Revision
 *
