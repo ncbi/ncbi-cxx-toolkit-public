@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.10  1999/07/02 21:32:01  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -260,25 +263,25 @@ void CObjectOStreamBinary::WriteStd(const double& data)
     WriteStdFloat(this, data);
 }
 
-void CObjectOStreamBinary::WriteStd(const string& data)
+void CObjectOStreamBinary::WriteString(const string& str)
 {
-    if ( data.empty() ) {
+    if ( str.empty() ) {
         WriteNull();
     }
     else {
         WriteByte(CObjectStreamBinaryDefs::eStd_string);
-        WriteString(data);
+        WriteStringValue(str);
     }
 }
 
-void CObjectOStreamBinary::WriteStd(const char* const& data)
+void CObjectOStreamBinary::WriteCString(const char* str)
 {
-    if ( data == 0 ) {
+    if ( str == 0 ) {
         WriteNull();
     }
     else {
         WriteByte(CObjectStreamBinaryDefs::eStd_string);
-        WriteString(data);
+        WriteStringValue(str);
     }
 }
 
@@ -292,7 +295,7 @@ void CObjectOStreamBinary::WriteSize(unsigned size)
     WriteNumber(this, size);
 }
 
-void CObjectOStreamBinary::WriteString(const string& str)
+void CObjectOStreamBinary::WriteStringValue(const string& str)
 {
     TStrings::iterator i = m_Strings.find(str);
     if ( i == m_Strings.end() ) {
@@ -312,7 +315,7 @@ void CObjectOStreamBinary::WriteMemberPrefix(COObjectInfo& info)
 {
     while ( info.IsMember() ) {
         WriteByte(CObjectStreamBinaryDefs::eMemberReference);
-        WriteId(info.GetMemberId().GetName());
+        WriteStringValue(info.GetMemberId().GetName());
         info.ToContainerObject();
     }
 }
@@ -336,7 +339,7 @@ void CObjectOStreamBinary::WriteThisTypeReference(TTypeInfo )
 void CObjectOStreamBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
 {
     WriteByte(CObjectStreamBinaryDefs::eOtherClass);
-    WriteId(typeInfo->GetName());
+    WriteStringValue(typeInfo->GetName());
 }
 
 void CObjectOStreamBinary::FBegin(Block& block)
@@ -357,7 +360,7 @@ void CObjectOStreamBinary::VEnd(const Block& )
 
 void CObjectOStreamBinary::StartMember(Member& , const CMemberId& id)
 {
-    WriteId(id.GetName());
+    WriteStringValue(id.GetName());
 }
 
 END_NCBI_SCOPE

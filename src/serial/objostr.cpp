@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.11  1999/07/02 21:31:58  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -170,6 +173,26 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
     }
 }
 
+void CObjectOStream::WriteStr(const string& data)
+{
+	WriteString(data);
+}
+
+void CObjectOStream::WriteStr(const char* const& data)
+{
+	WriteCString(data);
+}
+
+void CObjectOStream::WriteStr(char* const& data)
+{
+	WriteCString(data);
+}
+
+void CObjectOStream::WriteCString(const char* str)
+{
+	WriteString(str);
+}
+
 void CObjectOStream::WriteMemberPrefix(COObjectInfo& )
 {
 }
@@ -180,16 +203,6 @@ void CObjectOStream::WriteMemberSuffix(COObjectInfo& )
 
 void CObjectOStream::WriteThisTypeReference(TTypeInfo )
 {
-}
-
-void CObjectOStream::WriteStd(char* const& data)
-{
-    WriteStd(static_cast<const char* const&>(data));
-}
-
-void CObjectOStream::WriteId(const string& id)
-{
-    WriteString(id);
 }
 
 void CObjectOStream::EndMember(const Member& )

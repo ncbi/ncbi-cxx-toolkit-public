@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.4  1999/07/02 21:32:00  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -306,22 +309,26 @@ void CObjectOStreamAsnBinary::WriteStd(const double& data)
     WriteBytes(buffer, length);
 }
 
-void CObjectOStreamAsnBinary::WriteString(const string& data)
+void CObjectOStreamAsnBinary::WriteString(const string& str)
 {
     WriteSysTag(eVisibleString);
-    size_t length = data.size();
+    size_t length = str.size();
     WriteLength(length);
-    WriteBytes(data.data(), length);
+    WriteBytes(str.data(), length);
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const string& data)
+void CObjectOStreamAsnBinary::WriteCString(const char* str)
 {
-    WriteString(data);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(const char* const& data)
-{
-    WriteString(data);
+	if ( str == 0 ) {
+		WriteSysTag(eNull);
+		WriteShortLength(0);
+	}
+	else {
+		WriteSysTag(eVisibleString);
+	    size_t length = strlen(str);
+		WriteLength(length);
+		WriteBytes(str, length);
+	}
 }
 
 void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.5  1999/07/07 19:59:08  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -101,6 +104,16 @@ TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = new CStdTypeInfo;
     return typeInfo;
+}
+
+void CStdTypeInfo<string>::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+	in.ReadStr(Get(object));
+}
+
+void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object) const
+{
+	out.WriteStr(Get(object));
 }
 
 END_NCBI_SCOPE

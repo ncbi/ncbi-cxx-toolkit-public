@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.7  1999/07/02 21:31:47  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -91,8 +94,6 @@ public:
     virtual void WriteStd(const unsigned long& data);
     virtual void WriteStd(const float& data);
     virtual void WriteStd(const double& data);
-    virtual void WriteStd(const string& data);
-    virtual void WriteStd(const char* const& data);
 
 protected:
 
@@ -101,7 +102,8 @@ protected:
     virtual void WriteObjectReference(TIndex index);
     virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
     virtual void WriteString(const string& str);
-    virtual void WriteId(const string& str);
+    virtual void WriteCString(const char* str);
+    void WriteId(const string& str);
 
     void WriteNull(void);
     void WriteEscapedChar(char c);

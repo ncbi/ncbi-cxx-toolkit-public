@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.14  1999/07/07 19:59:07  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -541,34 +544,6 @@ void CObjectIStreamBinary::ReadStd(double& )
     throw runtime_error("double is not supported");
 }
 
-void CObjectIStreamBinary::ReadStd(string& data)
-{
-    switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eNull:
-        data.erase();
-        break;
-    case CObjectStreamBinaryDefs::eStd_string:
-        data = ReadString();
-        break;
-    default:
-        THROW1_TRACE(runtime_error, "invalid string code");
-    }
-}
-
-void CObjectIStreamBinary::ReadStd(char*& data)
-{
-    switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eNull:
-        data = 0;
-        break;
-    case CObjectStreamBinaryDefs::eStd_string:
-        data = strdup(ReadString().c_str());
-        break;
-    default:
-        THROW1_TRACE(runtime_error, "invalid string code");
-    }
-}
-
 CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
 {
     TIndex index;
@@ -584,6 +559,18 @@ unsigned CObjectIStreamBinary::ReadSize(void)
 }
 
 string CObjectIStreamBinary::ReadString(void)
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eNull:
+        return string();
+    case CObjectStreamBinaryDefs::eStd_string:
+        return ReadStringValue();
+    default:
+        THROW1_TRACE(runtime_error, "invalid string code");
+    }
+}
+
+const string& CObjectIStreamBinary::ReadStringValue(void)
 {
     TIndex index = ReadIndex();
     if ( index == m_Strings.size() ) {
@@ -637,7 +624,7 @@ bool CObjectIStreamBinary::VNext(const Block& )
 
 void CObjectIStreamBinary::StartMember(Member& member)
 {
-    member.SetName(ReadId());
+    member.SetName(ReadStringValue());
 }
 
 TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
@@ -649,7 +636,7 @@ TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
         return 0;
     case CObjectStreamBinaryDefs::eMemberReference:
         {
-            const string& memberName = ReadId();
+            const string& memberName = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadPointer: member " << memberName);
             CIObjectInfo info = ReadObjectPointer();
             CTypeInfo::TMemberIndex index =
@@ -694,7 +681,7 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
     switch ( ReadByte() ) {
     case CObjectStreamBinaryDefs::eMemberReference:
         {
-            const string& memberName = ReadId();
+            const string& memberName = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadObjectPointer: member " <<
                    memberName);
             CIObjectInfo info = ReadObjectPointer();
@@ -717,7 +704,7 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
         }
     case CObjectStreamBinaryDefs::eOtherClass:
         {
-            const string& className = ReadId();
+            const string& className = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadPointer: new " << className);
             TTypeInfo typeInfo = CTypeInfo::GetTypeInfoByName(className);
             TObjectPtr object = typeInfo->Create();
@@ -759,7 +746,7 @@ void CObjectIStreamBinary::SkipValue()
         ReadIndex();
         return;
     case CObjectStreamBinaryDefs::eMemberReference:
-        ReadId();
+        ReadStringValue();
         SkipObjectPointer();
         return;
     case CObjectStreamBinaryDefs::eThisClass:
@@ -767,7 +754,7 @@ void CObjectIStreamBinary::SkipValue()
         SkipObjectData();
         return;
     case CObjectStreamBinaryDefs::eOtherClass:
-        ReadId();
+        ReadStringValue();
         RegisterInvalidObject();
         SkipObjectData();
         return;
@@ -786,11 +773,11 @@ void CObjectIStreamBinary::SkipObjectPointer(void)
         ReadIndex();
         return;
     case CObjectStreamBinaryDefs::eMemberReference:
-        ReadId();
+        ReadStringValue();
         SkipObjectPointer();
         return;
     case CObjectStreamBinaryDefs::eOtherClass:
-        ReadId();
+        ReadStringValue();
         RegisterInvalidObject();
         SkipObjectData();
         return;

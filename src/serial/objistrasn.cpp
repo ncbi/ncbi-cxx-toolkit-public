@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/07 21:15:02  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.11  1999/07/07 19:59:05  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -424,16 +427,6 @@ void CObjectIStreamAsn::ReadStd(float& data)
 void CObjectIStreamAsn::ReadStd(double& data)
 {
     ReadStdNumber(*this, data);
-}
-
-void CObjectIStreamAsn::ReadStd(string& data)
-{
-    data = ReadString();
-}
-
-void CObjectIStreamAsn::ReadStd(char*& data)
-{
-    data = strdup(ReadString().c_str());
 }
 
 CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)

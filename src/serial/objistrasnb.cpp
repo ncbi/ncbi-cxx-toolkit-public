@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/07 21:15:02  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.1  1999/07/02 21:31:56  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -169,7 +172,7 @@ CObjectIStreamAsnBinary::TTag CObjectIStreamAsnBinary::ReadTag(void)
 inline
 bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed)
 {
-    return (m_LastTagByte >> 5) == ((c << 1) | constructed);
+    return (m_LastTagByte >> 5) == ((c << 1) | (constructed? 1: 0));
 }
 
 inline
@@ -419,16 +422,6 @@ void CObjectIStreamAsnBinary::ReadStd(double& data)
         THROW1_TRACE(runtime_error, "bad REAL data string");
 }
 
-void CObjectIStreamAsnBinary::ReadStd(string& data)
-{
-    data = ReadString();
-}
-
-void CObjectIStreamAsnBinary::ReadStd(char*& data)
-{
-    data = strdup(ReadString().c_str());
-}
-
 string CObjectIStreamAsnBinary::ReadString(void)
 {
     ExpectSysTag(eVisibleString);
@@ -438,6 +431,16 @@ string CObjectIStreamAsnBinary::ReadString(void)
     for ( size_t i = 0; i < length; ++i ) {
         s += char(ReadByte());
     }
+    return s;
+}
+
+char* CObjectIStreamAsnBinary::ReadCString(void)
+{
+    ExpectSysTag(eVisibleString);
+    size_t length = ReadLength();
+	char* s = static_cast<char*>(malloc(length + 1));
+	ReadBytes(s, length);
+	s[length] = 0;
     return s;
 }
 

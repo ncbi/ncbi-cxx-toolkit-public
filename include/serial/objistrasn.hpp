@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.8  1999/07/07 19:58:45  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -102,8 +105,6 @@ public:
     virtual void ReadStd(unsigned long& data);
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
-    virtual void ReadStd(string& data);
-    virtual void ReadStd(char*& data);
 
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
 
@@ -113,7 +114,7 @@ public:
     void ReadBytes(TByte* bytes, unsigned size);
     TIndex ReadIndex(void);
     virtual string ReadString(void);
-    virtual string ReadId(void);
+    string ReadId(void);
 
 protected:
     virtual void VBegin(Block& block);

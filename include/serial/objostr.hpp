@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.11  1999/07/02 21:31:46  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -102,9 +105,10 @@ public:
     virtual void WriteStd(const unsigned long& data) = 0;
     virtual void WriteStd(const float& data) = 0;
     virtual void WriteStd(const double& data) = 0;
-    virtual void WriteStd(const string& data) = 0;
-    virtual void WriteStd(const char* const& data) = 0;
-    virtual void WriteStd(char* const& data);
+
+    virtual void WriteStr(const string& data);
+    virtual void WriteStr(const char* const& data);
+    virtual void WriteStr(char* const& data);
 
     // object level writers
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
@@ -214,7 +218,7 @@ protected:
     virtual void WriteThisTypeReference(TTypeInfo typeInfo);
     virtual void WriteOtherTypeReference(TTypeInfo typeInfo) = 0;
     virtual void WriteString(const string& str) = 0;
-    virtual void WriteId(const string& id);
+	virtual void WriteCString(const char* str);
 
     COObjectList m_Objects;
     void RegisterObject(CORootObjectInfo& info)

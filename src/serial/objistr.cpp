@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/07 21:15:02  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.12  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -197,16 +200,24 @@ CObjectIStream::Block::~Block(void)
     }
 }
 
-void CObjectIStream::ReadStd(const char*& data)
+void CObjectIStream::ReadStr(string& data)
 {
-    char* d = 0;
-    ReadStd(d);
-    data = d;
+	data = ReadString();
 }
 
-string CObjectIStream::ReadId(void)
+void CObjectIStream::ReadStr(const char*& data)
 {
-    return ReadString();
+	data = ReadCString();
+}
+
+void CObjectIStream::ReadStr(char*& data)
+{
+	data = ReadCString();
+}
+
+char* CObjectIStream::ReadCString(void)
+{
+	return strdup(ReadString().c_str());
 }
 
 CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.6  1999/07/07 19:58:46  vasilche
 * Reduced amount of data allocated on heap
 * Cleaned ASN.1 structures info
@@ -100,15 +103,6 @@ protected:
         : CTypeInfo(typeid(TObjectType))
         {
         }
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            in.ReadStd(Get(object));
-        }
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            out.WriteStd(Get(object));
-        }
 };
 
 template<class TYPE>
@@ -130,6 +124,16 @@ public:
         {
             static TTypeInfo typeInfo = new CStdTypeInfo;
             return typeInfo;
+        }
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            in.ReadStd(Get(object));
+        }
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            out.WriteStd(Get(object));
         }
 };
 
@@ -156,6 +160,49 @@ private:
         }
 };
 
+template<typename TYPE>
+class CStrTypeInfoTmpl : public CStdTypeInfoTmpl<TYPE>
+{
+public:
+    virtual TConstObjectPtr GetDefault(void) const
+        {
+            static TObjectType def = 0;
+            return &def;
+        }
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            in.ReadStr(Get(object));
+        }
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            out.WriteStr(Get(object));
+        }
+};
+
+template<>
+class CStdTypeInfo<char*> : public CStrTypeInfoTmpl<char*>
+{
+public:
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStdTypeInfo;
+            return typeInfo;
+        }
+};
+
+template<>
+class CStdTypeInfo<const char*> : public CStrTypeInfoTmpl<const char*>
+{
+public:
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStdTypeInfo;
+            return typeInfo;
+        }
+};
+
 template<>
 class CStdTypeInfo<string> : public CStdTypeInfoTmpl<string>
 {
@@ -165,6 +212,10 @@ public:
     virtual TConstObjectPtr GetDefault(void) const;
 
     static TTypeInfo GetTypeInfo(void);
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
 
 #include <serial/stdtypes.inl>

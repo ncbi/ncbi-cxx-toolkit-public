@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/07 21:15:03  vasilche
+* Cleaned processing of string types (string, char*, const char*).
+*
 * Revision 1.7  1999/07/02 21:31:45  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -83,8 +86,6 @@ public:
     virtual void ReadStd(unsigned long& data);
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
-    virtual void ReadStd(string& data);
-    virtual void ReadStd(char*& data);
 
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
 
@@ -95,6 +96,7 @@ public:
     TIndex ReadIndex(void);
     unsigned ReadSize(void);
     virtual string ReadString(void);
+	const string& ReadStringValue(void);
 
 protected:
     virtual void FBegin(Block& block);
