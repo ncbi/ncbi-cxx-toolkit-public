@@ -74,7 +74,7 @@ x_GetCurrPos(int& pos, int pos2advance)
 }
 
 static TSeqPos
-x_GetAlignmentStart(int& curr_pos, const GapXEditScriptPtr esp, 
+x_GetAlignmentStart(int& curr_pos, const GapEditScriptPtr esp, 
         ENa_strand strand, bool translate, int length, int original_length, 
         short frame)
 {
@@ -105,14 +105,14 @@ x_GetAlignmentStart(int& curr_pos, const GapXEditScriptPtr esp,
 /// Note that even though the edit_block is passed in, data for seqalign is
 /// collected from the esp argument for nsegs segments
 static void
-x_CollectSeqAlignData(const GapXEditBlockPtr edit_block, 
-        const GapXEditScriptPtr esp_head, unsigned int nsegs,
+x_CollectSeqAlignData(const GapEditBlockPtr edit_block, 
+        const GapEditScriptPtr esp_head, unsigned int nsegs,
         vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
         vector<ENa_strand>& strands)
 {
     _ASSERT(edit_block != NULL);
 
-    GapXEditScriptPtr esp = esp_head;   // start of list of esp's
+    GapEditScriptPtr esp = esp_head;   // start of list of esp's
     ENa_strand m_strand, s_strand;      // strands of alignment
     TSignedSeqPos m_start, s_start;     // running starts of alignment
     int start1 = edit_block->start1;    // start of alignment on master sequence
@@ -310,10 +310,10 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
 /// Assumes GAPALIGN_DECLINE regions are to the right of GAPALIGN_{INS,DEL}.
 /// This function swaps them (GAPALIGN_DECLINE ends to the right of the gap)
 static void 
-x_CorrectUASequence(GapXEditBlockPtr edit_block)
+x_CorrectUASequence(GapEditBlockPtr edit_block)
 {
-    GapXEditScriptPtr curr = NULL, curr_last = NULL;
-    GapXEditScriptPtr indel_prev = NULL; // pointer to node before the last
+    GapEditScriptPtr curr = NULL, curr_last = NULL;
+    GapEditScriptPtr indel_prev = NULL; // pointer to node before the last
             // insertion or deletion followed immediately by GAPALIGN_DECLINE
     bool last_indel = false;    // last operation was an insertion or deletion
 
@@ -372,7 +372,7 @@ x_CreateSeqAlign(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
 }
 
 static CRef<CSeq_align>
-x_GapXEditBlock2SeqAlign(const GapXEditBlockPtr edit_block, 
+x_GapEditBlock2SeqAlign(const GapEditBlockPtr edit_block, 
         CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
 {
     _ASSERT(edit_block != NULL);
@@ -383,7 +383,7 @@ x_GapXEditBlock2SeqAlign(const GapXEditBlockPtr edit_block,
     bool is_disc_align = false;
     int nsegs = 0;      // number of segments in edit_block->esp
 
-    for (GapXEditScriptPtr t = edit_block->esp; t; t = t->next, nsegs++) {
+    for (GapEditScriptPtr t = edit_block->esp; t; t = t->next, nsegs++) {
         if (t->op_type == GAPALIGN_DECLINE)
             is_disc_align = true;
     }
@@ -401,7 +401,7 @@ x_GapXEditBlock2SeqAlign(const GapXEditBlockPtr edit_block,
         seqalign->SetDim(2);         // BLAST only creates pairwise alignments
 
         bool skip_region;
-        GapXEditScriptPtr curr = NULL, curr_head = edit_block->esp;
+        GapEditScriptPtr curr = NULL, curr_head = edit_block->esp;
 
         while (curr_head) {
             skip_region = false;
@@ -588,7 +588,7 @@ x_ProcessBlastHitList(BlastHitListPtr hit_list,
         for (int j = 0; j < hsp_list->hspcnt; j++) {
             BlastHSPPtr hsp = hsp_list->hsp_array[j];
             CRef<CSeq_align> seqalign = 
-                x_GapXEditBlock2SeqAlign(hsp->gap_info, query_seqid,
+                x_GapEditBlock2SeqAlign(hsp->gap_info, query_seqid,
                         curr_subject);
 
             x_AddScoresToSeqAlign(seqalign, hsp, sbp, program, score_options);
@@ -642,6 +642,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/23 21:28:23  camacho
+* Use new local gapinfo structures
+*
 * Revision 1.2  2003/07/14 21:40:22  camacho
 * Pacify compiler warnings
 *

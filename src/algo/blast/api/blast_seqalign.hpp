@@ -38,10 +38,11 @@
 #include <ctools/asn_converter.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/seqalign__.hpp>
-#include <gapxdrop.h>
+#include <readdb.h>
 
 // NewBlast includes
 #include <blast_hits.h>
+#include <gapinfo.h>
 
 // Blast++ includes
 #include <BlastOption.hpp>
@@ -78,6 +79,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/23 21:28:23  camacho
+* Use new local gapinfo structures
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *
