@@ -846,12 +846,12 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
              break;
        }
        if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
-          query_offset = mb_lt->hashtable[index2];
+          query_offset = mb_lt->hashtable2[index2];
           subject_offset = (s - abs_start)*COMPRESSION_RATIO;
           while (query_offset) {
              q_offsets[hitsfound] = query_offset;
              s_offsets[hitsfound++] = subject_offset;
-             query_offset = mb_lt->next_pos[query_offset];
+             query_offset = mb_lt->next_pos2[query_offset];
           }
        }
        word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
@@ -891,12 +891,12 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
                break;
          }
          if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
-            query_offset = mb_lt->hashtable[index2];
+            query_offset = mb_lt->hashtable2[index2];
             subject_offset = (s - abs_start)*COMPRESSION_RATIO + bit/2;
             while (query_offset) {
                q_offsets[hitsfound] = query_offset;
                s_offsets[hitsfound++] = subject_offset;
-               query_offset = mb_lt->next_pos[query_offset];
+               query_offset = mb_lt->next_pos2[query_offset];
             }
          }
          bit += scan_shift;
