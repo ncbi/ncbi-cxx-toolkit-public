@@ -33,6 +33,7 @@
  *
  */
 
+#include <corelib/ncbimisc.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <html/html.hpp>
@@ -54,6 +55,41 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class CGridCgiApplication;
+/////////////////////////////////////////////////////////////////////////////
+///  Grid Cgi Context
+///  Context in which a request is processed
+///
+class CGridCgiContext
+{
+public: 
+    /// Get an HTML page 
+    ///
+    CHTMLPage&    GetHTMLPage(void)       { return m_Page; }
+
+    /// Get Sefl URL
+    ///
+    string        GetSelfURL(void) const;
+
+    /// Get Current job key
+    ///
+    const string& GetJobKey(void) const   { return m_JobKey; }
+
+private:
+    friend class CGridCgiApplication;
+    CGridCgiContext(CHTMLPage& page, CCgiContext& ctx);
+    void SetJobKey(const string& job_key);
+
+    CHTMLPage&   m_Page;
+    CCgiContext& m_CgiContext;
+    string       m_JobKey;
+
+    /// A copy constructor and an assignemt operator
+    /// are prohibited
+    ///
+    CGridCgiContext(const CGridCgiContext&);
+    CGridCgiContext& operator=(const CGridCgiContext&);
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -85,7 +121,7 @@ protected:
 
     /// Show a page with input data
     ///
-    virtual void ShowParamsPage(CHTMLPage& page) const  = 0;
+    virtual void ShowParamsPage(CGridCgiContext& ctx) const  = 0;
 
     /// Collect parameters from HTML form
     /// If this method returns false that means that input parameters were
@@ -97,25 +133,25 @@ protected:
     /// This method is called when a job is ready to be send to a the queue.
     /// Override this method to prepare input data for the worker node.
     /// 
-    virtual void OnJobSubmit(CNcbiOstream& os,CHTMLPage& page) = 0;
+    virtual void OnJobSubmit(CNcbiOstream& os,CGridCgiContext& ctx) = 0;
 
     /// This method is call when a worker node finishes its job and 
     /// result is ready to be retrieved.
     /// Override this method to get a result from a worker node 
     /// and render a result HTML page
     ///
-    virtual void OnJobDone(CNcbiIstream& is, CHTMLPage& page) = 0;
+    virtual void OnJobDone(CNcbiIstream& is, CGridCgiContext& ctx) = 0;
 
     /// This method is called when worker node repored a failure.
     /// Override this method to get a error message and render 
     /// a error HTML page.
     ///
-    virtual void OnJobFailed(const string& msg, CHTMLPage& page) {}
+    virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx) {}
 
     /// This method is called if job was canceled during its execution.
     /// Override this message to show a job cancelation message.
     ///
-    virtual void OnJobCanceled(CHTMLPage& page) {}
+    virtual void OnJobCanceled(CGridCgiContext& ctx) {}
 
     /// When a job is running, the HTML page periodically (using java script)
     /// calls this CGI to check job status. If the job is not ready yet
@@ -123,7 +159,7 @@ protected:
     /// Override this method to render information HTML page with option
     /// to cancel the job.
     ///
-    virtual void OnStatusCheck(CHTMLPage& page) {}
+    virtual void OnStatusCheck(CGridCgiContext& ctx) {}
 
     /// Return page name. It is used when an inctance of CHTMLPage
     /// class is created.
@@ -150,16 +186,21 @@ protected:
     ///
     virtual bool JobStopRequested(void) const { return false; }
 
+    /// This method is call at the very end of the request processing
+    ///
+    virtual void OnEndProcessRequest(CGridCgiContext&) {}
+
     /// Get a Grid Client.
     ///
     CGridClient& GetGridClient(void) { return *m_GridClient; }
+
 
 private:
 
     auto_ptr<CNetScheduleClient> m_NSClient;
     auto_ptr<INetScheduleStorage> m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
-
+    
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -170,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/31 20:13:37  didenko
+ * Added CGridCgiContext
+ *
  * Revision 1.3  2005/03/31 19:53:59  kuznets
  * Documentation changes
  *
