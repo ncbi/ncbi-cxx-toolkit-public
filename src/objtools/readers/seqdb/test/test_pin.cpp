@@ -1747,7 +1747,7 @@ int test1(int argc, char ** argv)
             Uint4 nseqs = dbi.GetNumSeqs();
             Uint8 tleng = dbi.GetTotalLength();
             
-            if ((num_display <= 0) || (num_display > nseqs)) {
+            if ((num_display <= 0) || (Uint4(num_display) > nseqs)) {
                 num_display = nseqs;
             }
             
@@ -1790,7 +1790,7 @@ int test1(int argc, char ** argv)
             
             Uint8 qsum = 0;
             
-            for(Uint4 i = 0; i < num_display; i++) {
+            for(Uint4 i = 0; i < Uint4(num_display); i++) {
                 Int4 thislength = 0;
                 
                 cleng += (thislength = (approx ? dbi.GetSeqLengthApprox(i) : dbi.GetSeqLength(i)));
@@ -1859,14 +1859,14 @@ int test1(int argc, char ** argv)
                     if (i >= report_at) {
                         double t = sw.Elapsed() - cstart;
                         double s_per_t = i / (t ? t : 0.00001);
-                
+                        
                         cout << "t[" << t << "] s/t[" << s_per_t << "] REPORTING: i=" << i
                              << ", accumulated length = " << cleng
                              << ", (this length = " << thislength << "), qsum=" << qsum << "\n";
-                    
+                        
                         report_at = Uint4(i * 1.5);
-                    
-                        if (report_at > num_display) {
+                        
+                        if (report_at > Uint4(num_display)) {
                             report_at = Uint4(num_display - 1);
                         }
                         
