@@ -125,7 +125,7 @@ EPolyTail FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
         AutoPtr<char, ArrayDeleter<char> > otherStrand(new char[seqLen+1]);
         CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, seqLen,
                                      otherStrand.get());
-        otherStrand[seqLen] = '\0';
+        otherStrand.get()[seqLen] = '\0';
 
         cleavageSite = FindPolyA(otherStrand.get(), (possCleavageSite5p >= 0) ?
                                  seqLen - possCleavageSite5p - 1 : -1);
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.6  2004/01/02 20:50:24  johnson
+* missing .get()
+*
 * Revision 1.5  2004/01/02 20:19:32  johnson
 * null terminate opposite strand string
 *
