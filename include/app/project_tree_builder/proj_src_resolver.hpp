@@ -44,9 +44,9 @@ BEGIN_NCBI_SCOPE
 class CProjSRCResolver
 {
 public:
-    CProjSRCResolver(const string&    applib_mfilepath,
-                  const string&       source_base_dir,
-                  const list<string>& sources_src);
+    CProjSRCResolver(const string&       applib_mfilepath,
+                     const string&       source_base_dir,
+                     const list<string>& sources_src);
     
     ~CProjSRCResolver(void);
 
@@ -54,9 +54,10 @@ public:
 
 private:
     const string        m_MakefilePath;
-    const string        m_m_SourcesBaseDir;
+    const string        m_SourcesBaseDir;
     const list<string>& m_SourcesSrc;
-    
+    list<string>        m_MakefileDirs;
+
     CSymResolver m_Resolver;
     void PrepereResolver(void);
 
@@ -72,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 18:04:42  gorelenk
+ * Added list of Makefiles (m_MakefileDirs) for class CProjSRCResolver.
+ *
  * Revision 1.1  2004/02/04 23:07:40  gorelenk
  * Initial revision
  *
