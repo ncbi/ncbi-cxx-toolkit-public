@@ -453,11 +453,47 @@ string CreateProjectName(const CProjKey& project_id)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+CBuildType::CBuildType(bool dll_flag)
+    :m_Type(dll_flag? eDll: eStatic)
+{
+    
+}
+
+
+CBuildType::TBuildType CBuildType::GetType(void) const
+{
+    return m_Type;
+}
+    
+
+string CBuildType::GetTypeStr(void) const
+{
+    switch (m_Type) {
+    case eStatic:
+        return "static";
+    case eDll:
+        return "dll";
+    }
+
+    NCBI_THROW(CProjBulderAppException, 
+               eProjectType, 
+               NStr::IntToString(m_Type));
+    return "";
+}
+
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/03/02 23:32:54  gorelenk
+ * Added implemetation of class CBuildType member-functions.
+ *
  * Revision 1.15  2004/02/20 22:53:26  gorelenk
  * Added analysis of ASN projects depends.
  *
