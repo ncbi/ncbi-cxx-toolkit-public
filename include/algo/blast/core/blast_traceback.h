@@ -44,26 +44,42 @@ extern "C" {
 
 #include <blast_hits.h>
 
-/** Given the preliminary alignment results, redo the gapped alignment
- * with traceback, if it has not yet been done.
+/** Given the preliminary alignment results from a database search, redo 
+ * the gapped alignment with traceback, if it has not yet been done.
  * @param results Results of this BLAST search [in] [out]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]
  * @param rdfp BLAST database structure [in]
- * @param subject The subject sequence, in BLAST 2 Sequences case [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options The scoring related options [in]
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
  */
-Int2 BLAST_ComputeTraceback(BlastResultsPtr results, 
+Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results, 
         BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
-        BlastGapAlignStructPtr gap_align,
+        ReadDBFILEPtr rdfp, BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params);
 
+/** Given the preliminary alignment results from a two sequences search
+ * (possibly with multiple query sequences), redo the gapped alignment
+ * with traceback, if it has not yet been done.
+ * @param results Results of this BLAST search [in] [out]
+ * @param query The query sequence [in]
+ * @param query_info Information about the query [in]
+ * @param subject The subject sequence [in]
+ * @param gap_align The auxiliary structure for gapped alignment [in]
+ * @param score_options The scoring related options [in]
+ * @param ext_params Gapped extension parameters [in]
+ * @param hit_params Parameters for saving hits [in]
+ */
+Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
+        BlastResultsPtr results, BLAST_SequenceBlkPtr query, 
+        BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
+        BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
+        BlastExtensionParametersPtr ext_params,
+        BlastHitSavingParametersPtr hit_params);
 
 #ifdef __cplusplus
 }
