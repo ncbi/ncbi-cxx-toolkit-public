@@ -58,26 +58,26 @@ public:
 protected:
 
     // Render the job input paramers HTML page
-    virtual void ShowParamsPage(CHTMLPage& page) const ;
+    virtual void ShowParamsPage(CGridCgiContext& ctx) const ;
 
     // Collect parameters from the HTML page.
     virtual bool CollectParams(void);
 
     // Prepare the job's input data
-    virtual void OnJobSubmit(CNcbiOstream& os,CHTMLPage& page);
+    virtual void OnJobSubmit(CNcbiOstream& os, CGridCgiContext& ctx);
 
     // Get the job's result.
-    virtual void OnJobDone(CNcbiIstream& is, CHTMLPage& page);
+    virtual void OnJobDone(CNcbiIstream& is, CGridCgiContext& ctx);
     
     // Report the job's failure.
-    virtual void OnJobFailed(const string& msg, CHTMLPage& page);
+    virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx);
 
     // Report when the job is canceled
-    virtual void OnJobCanceled(CHTMLPage& page);
+    virtual void OnJobCanceled(CGridCgiContext& ctx);
 
     // Report a running status and allow the user to 
     // cancel the job.
-    virtual void OnStatusCheck(CHTMLPage& page);
+    virtual void OnStatusCheck(CGridCgiContext& ctx);
 
     // Return a job cancelation status.
     virtual bool JobStopRequested(void) const;
@@ -135,14 +135,14 @@ void CGridCgiSampleApplication::Init()
 }
 
 
-void CGridCgiSampleApplication::ShowParamsPage(CHTMLPage& page) const 
+void CGridCgiSampleApplication::ShowParamsPage(CGridCgiContext& ctx) const 
 {
     CHTMLText* inp_text = new CHTMLText(
             "<p>Enter your Input doubles here:  "
             "<INPUT TYPE=\"text\" NAME=\"message\" VALUE=\"\"><p>"
             "<INPUT TYPE=\"submit\" NAME=\"SUBMIT\" VALUE=\"Submit\">"
             "<INPUT TYPE=\"reset\"  VALUE=\"Reset\">" );
-    page.AddTagMap("VIEW", inp_text);
+    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
 bool CGridCgiSampleApplication::CollectParams()
@@ -173,7 +173,7 @@ bool CGridCgiSampleApplication::CollectParams()
 }
 
 
-void CGridCgiSampleApplication::OnJobSubmit(CNcbiOstream& os,CHTMLPage& page)
+void CGridCgiSampleApplication::OnJobSubmit(CNcbiOstream& os, CGridCgiContext& ctx)
 {   
     // Send jobs input data
     os << m_Doubles.size() << ' ';
@@ -185,15 +185,15 @@ void CGridCgiSampleApplication::OnJobSubmit(CNcbiOstream& os,CHTMLPage& page)
     CHTMLText* inp_text = new CHTMLText(
             "<p/>Input Data : <@INPUT_DATA@><br/>"
             "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check Status\">");
-    page.AddTagMap("VIEW", inp_text);
+    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
     CHTMLPlainText* idoubles = new CHTMLPlainText(VectorToString(m_Doubles));
-    page.AddTagMap("INPUT_DATA", idoubles);
+    ctx.GetHTMLPage().AddTagMap("INPUT_DATA", idoubles);
 }
 
 
 
 void CGridCgiSampleApplication::OnJobDone(CNcbiIstream& is, 
-                                          CHTMLPage& page)
+                                          CGridCgiContext& ctx)
 {
     int count;
                 
@@ -216,12 +216,13 @@ void CGridCgiSampleApplication::OnJobDone(CNcbiIstream& is,
             "<p>Result received : <@OUTPUT_DATA@> <br/>"
             "<INPUT TYPE=\"submit\" NAME=\"Submint new Data\" "
                                    "VALUE=\"Submint new Data\">");
-    page.AddTagMap("VIEW", inp_text);
+    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
     CHTMLPlainText* idoubles = new CHTMLPlainText(VectorToString(m_Doubles));
-    page.AddTagMap("OUTPUT_DATA",idoubles);
+    ctx.GetHTMLPage().AddTagMap("OUTPUT_DATA",idoubles);
 }
 
-void CGridCgiSampleApplication::OnJobFailed(const string& msg, CHTMLPage& page)
+void CGridCgiSampleApplication::OnJobFailed(const string& msg, 
+                                            CGridCgiContext& ctx)
 {
     // Render a error page
     CHTMLText* inp_text = new CHTMLText(
@@ -229,22 +230,22 @@ void CGridCgiSampleApplication::OnJobFailed(const string& msg, CHTMLPage& page)
                      "Error Message : <@MSG@><br/>"
                      "<INPUT TYPE=\"submit\" NAME=\"Submint new Data\" "
                                             "VALUE=\"Submint new Data\">");
-    page.AddTagMap("VIEW", inp_text);
+    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
     CHTMLPlainText* err = new CHTMLPlainText(msg);
-    page.AddTagMap("MSG",err);
+    ctx.GetHTMLPage().AddTagMap("MSG",err);
 }
 
-void CGridCgiSampleApplication::OnJobCanceled(CHTMLPage& page)
+void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
 {
     // Render a job cancelation page
     CHTMLText* inp_text = new CHTMLText(
                "<p/>Job is canceled.<br/>"
                "<INPUT TYPE=\"submit\" NAME=\"Submint new Data\" "
                                       "VALUE=\"Submint new Data\">");
-    page.AddTagMap("VIEW", inp_text);
+    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
-void CGridCgiSampleApplication::OnStatusCheck(CHTMLPage& page)
+void CGridCgiSampleApplication::OnStatusCheck(CGridCgiContext& ctx)
 {
     // Render a status report page
     CHTMLText* inp_text = new CHTMLText(
@@ -252,7 +253,7 @@ void CGridCgiSampleApplication::OnStatusCheck(CHTMLPage& page)
                   "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check\">"
                   "<INPUT TYPE=\"submit\" NAME=\"Stop\" "
                                          "VALUE=\"Stop job\">");
-    page.AddTagMap("VIEW", inp_text);
+   ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
 bool CGridCgiSampleApplication::JobStopRequested(void) const
@@ -328,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/31 20:14:59  didenko
+ * Added CGrigCgiContext
+ *
  * Revision 1.2  2005/03/31 15:57:14  didenko
  * Code cleanup
  *
