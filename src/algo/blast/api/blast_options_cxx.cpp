@@ -142,7 +142,7 @@ CBlastOptions::SetBlastp()
     m_ScoringOpts->gapped_calculation = TRUE;
 
     // Hit saving options
-    m_HitSaveOpts->is_gapped = TRUE;
+    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -202,7 +202,7 @@ CBlastOptions::SetBlastn()
     m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
 
     // Hit saving options
-    m_HitSaveOpts->is_gapped = TRUE;
+    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -264,7 +264,7 @@ void CBlastOptions::SetMegablast()
     m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
 
     // Hit saving options
-    m_HitSaveOpts->is_gapped = TRUE;
+    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -314,7 +314,7 @@ CBlastOptions::SetBlastx()
     m_ScoringOpts->gapped_calculation = TRUE;
 
     // Hit saving options
-    m_HitSaveOpts->is_gapped = TRUE;
+    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -364,7 +364,7 @@ CBlastOptions::SetTblastn()
     m_ScoringOpts->gapped_calculation = TRUE;
 
     // Hit saving options
-    m_HitSaveOpts->is_gapped = TRUE;
+    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -415,7 +415,7 @@ CBlastOptions::SetTblastx()
     m_ScoringOpts->gapped_calculation = FALSE;
 
     // Hit saving options
-    m_HitSaveOpts->is_gapped = FALSE;
+    m_HitSaveOpts->gapped_calculation = FALSE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -482,6 +482,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/10/21 22:15:33  camacho
+* Rearranging of C options structures, fix seed extension method
+*
 * Revision 1.24  2003/10/21 09:41:14  camacho
 * Initialize variable_wordsize for eBlastn
 *

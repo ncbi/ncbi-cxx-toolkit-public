@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.66  2003/10/21 22:15:34  camacho
+ * Rearranging of C options structures, fix seed extension method
+ *
  * Revision 1.65  2003/10/17 18:20:20  dondosha
  * Use separate variables for different initial word extension options
  *
@@ -484,7 +487,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    (*parameters)->x_dropoff = (Int4)
       ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
 
-   if (hit_params->options->is_gapped && 
+   if (hit_params->options->gapped_calculation && 
        program_number != blast_type_blastn)
       kbp = sbp->kbp_gap[context];
    else
@@ -504,7 +507,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
 
    /* For non-blastn programs, the cutoff score should not be larger than 
       gap trigger */
-   if (hit_params->options->is_gapped && 
+   if (hit_params->options->gapped_calculation && 
        program_number != blast_type_blastn) {
       (*parameters)->cutoff_score = 
          MIN((Int4)ext_params->gap_trigger, cutoff_score);
@@ -1050,7 +1053,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
    if (!options)
       return 1;
 
-   options->is_gapped = is_gapped;
+   options->gapped_calculation = is_gapped;
    if (hitlist_size)
       options->hitlist_size = hitlist_size;
    if (evalue)
@@ -1067,7 +1070,7 @@ BlastHitSavingOptionsValidate(Uint1 program_number,
 	if (options == NULL)
 		return 1;
 
-   if (program_number == blast_type_tblastx && options->is_gapped) {
+   if (program_number == blast_type_tblastx && options->gapped_calculation) {
 		Int4 code=2;
 		Int4 subcode=1;
       Blast_MessageWrite(blast_msg, 2, code, subcode, 
@@ -1142,7 +1145,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
          FALSE);
    }
    
-   if (program_number == blast_type_blastn || !options->is_gapped) {
+   if (program_number == blast_type_blastn || !options->gapped_calculation) {
       params->gap_prob = BLAST_GAP_PROB;
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE;
    } else {

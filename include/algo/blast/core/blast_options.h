@@ -167,15 +167,16 @@ typedef struct QuerySetUpOptions {
                              [t]blastx only */
 } QuerySetUpOptions;
 
-typedef enum {
-    eDiagArray,         /**< EXTEND_WORD_DIAG_ARRAY */
-    eMbStacks,          /**< EXTEND_WORD_MB_STACKS */
+typedef enum SeedContainerType {
+    eDiagArray,         /**< FIXME: EXTEND_WORD_DIAG_ARRAY */
+    eMbStacks,          /**< FIXME: EXTEND_WORD_MB_STACKS */
     eMaxContainerType
 } SeedContainerType;
 
-typedef enum {
-    eRight,             /**< EXTEND_WORD_BLASTN */
-    eRightAndLeft      /**< EXTEND_WORD_AG */
+typedef enum SeedExtensionMethod {
+    eRight,             /**< FIXME: EXTEND_WORD_BLASTN */
+    eRightAndLeft,      /**< FIXME: EXTEND_WORD_AG */
+    eMaxSeedExtensionMethod
 } SeedExtensionMethod;
 
 /** Options needed for initial word finding and processing */
@@ -237,6 +238,11 @@ typedef struct BlastExtensionParameters {
  *  c. Parameters used to evaluate the quality of hits.
  */
 typedef struct BlastHitSavingOptions {
+   double expect_value; /**< The expect value cut-off threshold for an HSP, or
+                            a combined hit if sum statistics is used */
+   Int4 cutoff_score; /**< The (raw) score cut-off threshold */
+   double percent_identity; /**< The percent identity cut-off threshold */
+
    Int4 hitlist_size;/**< Maximal number of database sequences to save hits 
                         for */
    Int4 hsp_num_max; /**< Maximal number of HSPs to save for one database 
@@ -245,26 +251,36 @@ typedef struct BlastHitSavingOptions {
    Int4 hsp_range_max; /**< Maximal number of HSPs to save in a region: 
                           used for culling only */
    Boolean perform_culling;/**< Perform culling of hit lists by keeping at 
-                              most a certain number of HSPs in a range */
+                              most a certain number of HSPs in a range
+                              (not implemented) */
+   /* PSI-BLAST Hit saving options */
    Int4 required_start;  /**< Start of the region required to be part of the
                             alignment */
    Int4 required_end;    /**< End of the region required to be part of the
                             alignment */
-   double expect_value; /**< The expect value cut-off threshold for an HSP, or
-                            a combined hit if sum statistics is used */
    double original_expect_value; /**< Needed for PSI-BLAST??? */
+
+   /********************************************************************/
+   /* Merge all these in a structure for clarity? */
+   /* applicable to all, except blastn */
+   Boolean do_sum_stats; /**< Should sum statistics be used to combine HSPs? */
    double single_hsp_evalue; /**< When sum statistics is used, the largest 
                                  e-value allowed for an individual HSP */
-   Int4 cutoff_score; /**< The (raw) score cut-off threshold */
    Int4 single_hsp_score; /**< The score cut-off for a single HSP when sum
                              statistics is used */
-   double percent_identity; /**< The percent identity cut-off threshold */
-   Boolean do_sum_stats; /**< Should sum statistics be used to combine HSPs? */
+   /* tblastn w/ sum statistics */
    Int4 longest_intron; /**< The longest distance between HSPs allowed for
                            combining via sum statistics with uneven gaps */
-   Boolean is_neighboring;/**< Neighboring has different hit saving criteria */
-   Boolean is_gapped;	/**< gapping is used. */
-   Uint1 handle_results_method; /**< Formatting results on the fly if set to 
+   /********************************************************************/
+
+   Int4 min_hit_length;
+   Boolean is_neighboring; /**< FIXME: neighboring is specified by a percent 
+                             identity and a minimum hit length */
+
+   Boolean gapped_calculation;	/**< gapping is used. */
+
+   /* Will be dealt with when needed *
+   Uint1 handle_results_method; **< Formatting results on the fly if set to 
                                    non-zero */
    Boolean phi_align;   /**< Is this a PHI BLAST search? */
 } BlastHitSavingOptions;
@@ -302,14 +318,16 @@ typedef struct BlastScoringOptions {
    char* matrix_path; /**< Directory path to where matrices are stored. */
    Int2 reward;      /**< Reward for a match */
    Int2 penalty;     /**< Penalty for a mismatch */
-   Boolean gapped_calculation; /**< Will a gapped extension be performed? */
+   Boolean gapped_calculation; /**< identical to the one in hit saving opts */
    Int4 gap_open;    /**< Extra penalty for starting a gap */
    Int4 gap_extend;  /**< Penalty for each gap residue */
-   Int4 shift_pen;   /**< Penalty for shifting a frame in out-of-frame 
-                        gapping */
-   Int4 decline_align; /**< Cost for declining alignment */
+   Int4 decline_align; /**< Cost for declining alignment (PSI-BLAST) */
+
+   /* only blastx and tblastn (When query & subj are diff) */
    Boolean is_ooframe; /**< Should out-of-frame gapping be used in a translated
                           search? */
+   Int4 shift_pen;   /**< Penalty for shifting a frame in out-of-frame 
+                        gapping */
 } BlastScoringOptions;
 
 /** Options for setting up effective lengths and search spaces.  

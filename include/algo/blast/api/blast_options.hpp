@@ -114,11 +114,11 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
-    int GetSeedContainerType() const;
-    void SetSeedContainerType(int t);
+    SeedContainerType GetSeedContainerType() const;
+    void SetSeedContainerType(SeedContainerType type);
 
-    int GetSeedExtensionMethod() const;
-    void SetSeedExtensionMethod(bool t);
+    SeedExtensionMethod GetSeedExtensionMethod() const;
+    void SetSeedExtensionMethod(SeedExtensionMethod method);
 
     bool GetVariableWordsize() const;
     void SetVariableWordsize(bool val);
@@ -196,7 +196,9 @@ public:
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
 
+    // Deprecated
     bool GetNeighboringMode() const;
+    // Deprecated
     void SetNeighboringMode(bool m = true);
 
     /************************ Scoring options ************************/
@@ -531,32 +533,30 @@ CBlastOptions::SetWindowSize(int s)
     m_InitWordOpts->window_size = s;
 }
 
-inline int
+inline SeedContainerType
 CBlastOptions::GetSeedContainerType() const
 {
     return m_InitWordOpts->container_type;
 }
 
 inline void 
-CBlastOptions::SetSeedContainerType(int type)
+CBlastOptions::SetSeedContainerType(SeedContainerType type)
 {
-    if (type < eMaxContainerType)
-        m_InitWordOpts->container_type = (SeedContainerType) type;
+    ASSERT(type < eMaxContainerType);
+    m_InitWordOpts->container_type = type;
 }
 
-inline int
+inline SeedExtensionMethod
 CBlastOptions::GetSeedExtensionMethod() const
 {
-    return (int) m_InitWordOpts->extension_method;
+    return m_InitWordOpts->extension_method;
 }
 
 inline void 
-CBlastOptions::SetSeedExtensionMethod(bool ag)
+CBlastOptions::SetSeedExtensionMethod(SeedExtensionMethod method)
 {
-    if (ag)
-        m_InitWordOpts->extension_method = eRightAndLeft;
-    else
-        m_InitWordOpts->extension_method = eRight;
+    ASSERT(method < eMaxSeedExtensionMethod);
+    m_InitWordOpts->extension_method = method;
 }
 
 inline bool
@@ -831,14 +831,13 @@ CBlastOptions::SetLongestIntronLength(int l)
 inline bool
 CBlastOptions::GetGappedMode() const
 {
-    return m_HitSaveOpts->is_gapped ? true : false;
+    return m_HitSaveOpts->gapped_calculation ? true : false;
 }
 
 inline void
 CBlastOptions::SetGappedMode(bool m)
 {
-    m_HitSaveOpts->is_gapped = m;
-    m_ScoringOpts->gapped_calculation = m;
+    m_HitSaveOpts->gapped_calculation = m_ScoringOpts->gapped_calculation = m;
 }
 
 inline bool
@@ -1054,6 +1053,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/10/21 22:15:33  camacho
+* Rearranging of C options structures, fix seed extension method
+*
 * Revision 1.29  2003/10/21 17:31:06  camacho
 * Renaming of gap open/extension accessors/mutators
 *

@@ -46,6 +46,7 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/blast_option.hpp>
 #include "blast_input.hpp"
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -294,7 +295,13 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        opt.SetSeedExtensionMethod(args["ag"].AsBoolean());
+        SeedExtensionMethod sem;
+        if (args["ag"].AsBoolean()) {
+            sem = eRightAndLeft;
+        } else {
+            sem = eRight;
+        }
+        opt.SetSeedExtensionMethod(sem);
         opt.SetVariableWordsize(args["varword"].AsBoolean());
         if (args["stride"].AsInteger()) {
             opt.SetScanStep(args["stride"].AsInteger());
@@ -410,8 +417,7 @@ int CBlast2seqApplication::Run(void)
     if (args["asnout"]) {
         auto_ptr<CObjectOStream> asnout(
             CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-        int index;
-        for (index = 0; index < seqalignv.size(); ++index)
+        for (unsigned int index = 0; index < seqalignv.size(); ++index)
             *asnout << *seqalignv[index];
     }
 #ifdef WRITE_SEQALIGNS
@@ -506,6 +512,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/10/21 22:15:33  camacho
+ * Rearranging of C options structures, fix seed extension method
+ *
  * Revision 1.24  2003/10/21 17:34:34  camacho
  * Renaming of gap open/extension accessors/mutators
  *

@@ -129,7 +129,7 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    if (hsp_list == NULL)
       return 1;
    
-   if (hit_options->is_gapped && program != blast_type_blastn)
+   if (hit_options->gapped_calculation && program != blast_type_blastn)
       kbp = sbp->kbp_gap_std;
    else
       kbp = sbp->kbp_std;
@@ -508,7 +508,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    /* In case of no traceback, return without doing anything */
-   if (!hsp_list->traceback_done && hit_options->is_gapped) {
+   if (!hsp_list->traceback_done && hit_options->gapped_calculation) {
       return status;
    }
 
@@ -660,7 +660,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
          }
          last_esp->num = last_esp_num;
          BlastHSPGetNumIdentical(query_start, subject_start, hsp, 
-            hit_options->is_gapped, &hsp->num_ident, &align_length);
+            hit_options->gapped_calculation, &hsp->num_ident, &align_length);
          /* Check if this HSP passes the percent identity test */
          if (((double)hsp->num_ident) / align_length * 100 < 
              hit_options->percent_identity)
