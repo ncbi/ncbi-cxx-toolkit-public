@@ -646,6 +646,11 @@ CBioseq_Handle::CopyToSeq(const CSeq_entry_EditHandle& entry) const
 // CBioseq_EditHandle
 /////////////////////////////////////////////////////////////////////////////
 
+CBioseq_EditHandle::CBioseq_EditHandle(void)
+{
+}
+
+
 CBioseq_EditHandle::CBioseq_EditHandle(const CBioseq_Handle& h)
     : CBioseq_Handle(h)
 {
@@ -789,6 +794,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/05/27 14:59:49  shomrat
+* Added CBioseq_EditHandle constructor implementation
+*
 * Revision 1.65  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.
