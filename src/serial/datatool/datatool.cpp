@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/10/17 18:19:52  grichenk
+* Updated to use CObjectOStreamXml::GetFileXXX
+*
 * Revision 1.50  2001/04/16 17:53:45  kholodov
 * Added: Option -dn to specify the DTD file name in XML header
 *
@@ -416,13 +419,6 @@ bool CDataTool::ProcessData(void)
         outFormat = eSerial_None;
     }
 
-    // Set DTD file name
-    if( const CArgValue& dn = args["dn"] ) {
-      SetDTDFileName(dn.AsString());
-    }
-    else
-      SetDTDFileName("");
-
     if ( const CArgValue& F = args["F"] ) {
         // read fully in memory
         AnyType value;
@@ -432,6 +428,13 @@ bool CDataTool::ProcessData(void)
             auto_ptr<CObjectOStream>
                 out(CObjectOStream::Open(outFormat, outFileName,
                                          eSerial_StdWhenAny));
+            if ( outFormat == eSerial_Xml ) {
+                // Set DTD file name (default prefix is added in any case)
+                if( const CArgValue& dn = args["dn"] ) {
+                  dynamic_cast<CObjectOStreamXml*>(out.get())->
+                      SetDTDFileName(dn.AsString());
+                }
+            }
             out->Write(&value, typeInfo);
         }
     }
@@ -441,6 +444,13 @@ bool CDataTool::ProcessData(void)
             auto_ptr<CObjectOStream>
                 out(CObjectOStream::Open(outFormat, outFileName,
                                          eSerial_StdWhenAny));
+            if ( outFormat == eSerial_Xml ) {
+                // Set DTD file name (default prefix is added in any case)
+                if( const CArgValue& dn = args["dn"] ) {
+                  dynamic_cast<CObjectOStreamXml*>(out.get())->
+                      SetDTDFileName(dn.AsString());
+                }
+            }
             CObjectStreamCopier copier(*in, *out);
             copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
         }
