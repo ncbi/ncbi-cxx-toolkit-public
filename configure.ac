@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.84 2002/06/05 22:43:36 vakatov Exp $
+#  $Id: configure.ac,v 1.85 2002/06/06 03:30:20 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1758,7 +1758,8 @@ fi
 AC_MSG_CHECKING(if FreeTDS libraries are available)
 freetds=
 if test "$with_ftds" != "no" ; then
-   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
+#   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
+   if "$with_ftds" = "yes" ; then
       FTDS_LOCAL_PATH="dbapi/driver/ftds/freetds"
       if test -f ${srcdir}/src/$FTDS_LOCAL_PATH/Makefile.in ; then
          FTDS_LIBS="-lsybdb_ftds -ltds_ftds" 
