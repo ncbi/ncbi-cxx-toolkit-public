@@ -97,11 +97,22 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
 }
 #endif  /* NCBI_USE_OLD_IOSTREAM || NCBI_OS_DARWIN */
 
+#ifdef NCBI_COMPILER_GCC
+#  if NCBI_COMPILER_VERSION < 300
+#    define NCBI_COMPILER_GCC29x
+#  endif
+#endif
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
-#if !defined(NCBI_USE_OLD_IOSTREAM)
-    // return getline(is, str, delim); // slow -- appends chars individually
+#if defined(NCBI_USE_OLD_IOSTREAM)
+    return s_NcbiGetline(is, str, delim, delim);
+#elif defined(NCBI_COMPILER_GCC29x)
+    // The code below is normally somewhat faster than this call,
+    // which typically appends one character at a time to str;
+    // however, it blows up when built with some GCC versions.
+    return getline(is, str, delim);
+#else
     char buf[1024];
     str.erase();
     while (is.good()) {
@@ -115,9 +126,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         str.append(buf, is.gcount());
     }
     return is;
-#else
-    return s_NcbiGetline(is, str, delim, delim);
-#endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
+#endif
 }
 
 
@@ -360,6 +369,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/08/27 18:58:22  ucko
+ * NcbiGetline: revert to std::getline for GCC 2.9x, since the custom
+ * version blows up mysteriously (at least in debug builds).
+ *
  * Revision 1.26  2003/08/25 21:14:58  ucko
  * [s_]NcbiGetline: take care to append characters to str in bulk rather
  * than one at a time, which can be pretty inefficient.
