@@ -110,10 +110,11 @@ void* CTestThread::Main(void)
     }
 
     // Run the test
-    if ( s_Application != 0 )
-        assert(s_Application->Thread_Run(m_Idx));
+    if ( s_Application != 0 && s_Application->Thread_Run(m_Idx) ) {
+        return this;
+    }
 
-    return this;
+    return 0;
 }
 
 
@@ -264,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/22 17:55:54  vasilche
+ * Do not call assert() from threads - check result in main function.
+ *
  * Revision 1.6  2003/05/16 15:58:28  grichenk
  * Display running/simulating message only once.
  *
