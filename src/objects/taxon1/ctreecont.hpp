@@ -85,7 +85,7 @@ protected:
     CTreeContNodeBase*       Parent()        { return m_parent;  }
     CTreeContNodeBase*       Sibling()       { return m_sibling; }
     CTreeContNodeBase*       Child()         { return m_child;   }
-    ~CTreeContNodeBase(){};
+    virtual ~CTreeContNodeBase(){};
 private:
     CTreeContNodeBase* m_parent;
     CTreeContNodeBase* m_sibling;
@@ -344,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.5  2003/05/09 22:08:15  domrach
+ * Destructor of CTreeContNodeBase made virtual
+ *
  * Revision 6.4  2003/05/08 16:00:07  ucko
  * Remove inappropriate dynamic_cast<>.
  *
