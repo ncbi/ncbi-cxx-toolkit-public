@@ -91,3 +91,22 @@ COMMON_Exec()
         COMMON_Error "$@"
     fi
 }
+
+
+#  Variant of COMMON_Exec with RollBack functionality
+#  In case of error checks x_common_rb variable and if it has been set
+#  runs it as a rollback command, then posts error message to STDERR and abort.
+#  NOTE:  call "COMMON_SetupScriptName()" beforehand for nicer diagnostics.
+#
+
+COMMON_ExecRB()
+{
+    "$@"
+
+    if test $? -ne 0 ; then
+        if [ ! -z "$x_common_rb" ]; then
+            "$x_common_rb"
+        fi
+        COMMON_Error "$@"
+    fi
+}
