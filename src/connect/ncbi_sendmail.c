@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/07/13 20:15:12  lavr
+ * Write lock then unlock when using not MT-safe s_ComposeFrom()
+ *
  * Revision 6.9  2001/05/18 20:41:43  lavr
  * Beautifying: change log corrected
  *
@@ -194,15 +197,18 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
 {
     size_t buf_len, hostname_len;
 #ifdef NCBI_OS_UNIX
-    struct passwd *pwd;
     /* Get the user login name. FIXME: not MT-safe */
-    const char* login_name = getlogin();
+    const char* login_name;
+    CORE_LOCK_WRITE;
+    login_name = getlogin();
     if (!login_name) {
-        pwd = getpwuid(getuid());
+        struct passwd* pwd = getpwuid(getuid());
         if (!pwd) {
             if (!(login_name = getenv("USER")) &&
-                !(login_name = getenv("LOGNAME")))
+                !(login_name = getenv("LOGNAME"))) {
+                CORE_UNLOCK;
                 return 0;
+            }
         } else
             login_name = pwd->pw_name;
     }
@@ -211,6 +217,9 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
     const char* login_name = "anonymous";
 #endif
     strncpy(buf, login_name, buf_size - 1);
+#ifdef NCBI_OS_UNIX
+    CORE_UNLOCK;
+#endif
     buf[buf_size - 1] = '\0';
     buf_len = strlen(buf);
     hostname_len = buf_size - buf_len;
