@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/06 20:49:14  thiessen
+* fix row->alignment bug
+*
 * Revision 1.3  2001/03/06 20:20:50  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -199,6 +202,7 @@ void SequenceDisplay::AddRow(DisplayRow *row)
 
 BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(int row) const
 {
+    if (row < 0 || row >= rows.size()) return NULL;
     const DisplayRowFromAlignment *displayRow = dynamic_cast<const DisplayRowFromAlignment*>(rows[row]);
     if (displayRow) return displayRow->alignment;
     const DisplayRowFromString *stringRow = dynamic_cast<const DisplayRowFromString*>(rows[row]);
