@@ -1,4 +1,4 @@
---$Revision: 3.5 $
+--$Revision: 3.6 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -51,7 +51,8 @@ Seq-feat ::= SEQUENCE {
     exp-ev ENUMERATED {           -- evidence for existence of feature
         experimental (1) ,        -- any reasonable experimental check
         not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
-    xref SET OF SeqFeatXref OPTIONAL }   -- cite other relevant features
+    xref SET OF SeqFeatXref OPTIONAL ,   -- cite other relevant features
+	dbxref SET OF Dbtag OPTIONAL }  -- support for xref to other databases
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
@@ -214,6 +215,8 @@ BEGIN
 
 EXPORTS RNA-ref, Trna-ext;
 
+IMPORTS Seq-loc FROM NCBI-Seqloc;
+
 --*** rnas ***********************************************
 --*
 --*  various rnas
@@ -240,8 +243,9 @@ Trna-ext ::= SEQUENCE {                -- tRNA feature extensions
         ncbieaa INTEGER ,
         ncbi8aa INTEGER ,
         ncbistdaa INTEGER } OPTIONAL ,
-    codon SET OF INTEGER OPTIONAL }     -- codon(s) as in Genetic-code
-                                        -- NOT anti-codons
+    codon SET OF INTEGER OPTIONAL ,     -- codon(s) as in Genetic-code
+	anticodon Seq-loc OPTIONAL }        -- location of anticodon
+
 END
 
 --**********************************************************************
