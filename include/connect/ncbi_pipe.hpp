@@ -82,10 +82,10 @@ public:
     enum EErrCode {
         eInit,      ///< Pipe initialization error
         eOpen,      ///< Unable to open pipe (from constructor)
-        eSetBuf     ///< setbuf() not permited error
+        eSetBuf     ///< setbuf() not permitted
     };
 
-    /// Translate from the error code value to its string representation.
+    /// Translate from an error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -95,7 +95,7 @@ public:
         default:      return CException::GetErrCodeString();
         }
     }
-    // Standard exception bolier plate code.
+    // Standard exception boiler plate code.
     NCBI_EXCEPTION_DEFAULT(CPipeException,CCoreException);
 };
 
@@ -105,7 +105,7 @@ public:
 ///
 /// CPipe --
 ///
-/// Create a pipe between program and some child process.
+/// Create a pipe between program and a child process.
 ///
 /// Program can read from stdin/stderr and write to stdin of the
 /// executed child process using pipe object functions Read/Write.
@@ -116,20 +116,20 @@ public:
 class NCBI_XCONNECT_EXPORT CPipe
 {
 public:
-    /// Flags for creating a standart I/O handles of a child process.
+    /// Flags for creating standard I/O handles of child process.
     ///
     /// Default is 0 (fStdIn_Open | fStdOut_Open | fStdErr_Close).
     enum ECreateFlags {
-        fStdIn_Open    =    0,  ///< do     open child stdin (default)
-        fStdIn_Close   = 0x01,  ///< do not open child's stdin
-        fStdOut_Open   =    0,  ///< do     open child stdout (default)
-        fStdOut_Close  = 0x02,  ///< do not open child's stdout
-        fStdErr_Open   = 0x04,  ///< do     open child stderr
-        fStdErr_Close  =    0   ///, do not open child stderr (default)
+        fStdIn_Open      =    0,  ///< do     open child stdin (default)
+        fStdIn_Close     = 0x01,  ///< do not open child's stdin
+        fStdOut_Open     =    0,  ///< do     open child stdout (default)
+        fStdOut_Close    = 0x02,  ///< do not open child's stdout
+        fStdErr_Open     = 0x04,  ///< do     open child stderr
+        fStdErr_Close    =    0,  ///< do not open child stderr (default)
     };
     typedef unsigned int TCreateFlags;  ///< bit-wise OR of "ECreateFlags"
 
-    /// Which of the child I/O handles to used.
+    /// Which of the child I/O handles to use.
     enum EChildIOHandle {
         eStdIn,
         eStdOut,
@@ -141,13 +141,13 @@ public:
 
     /// Constructor.
     ///
-    /// Calls the Open() method to open a pipe. Throws CPipeException defined
-    /// errors on failure to create a pipe.
+    /// Call the Open() method to open a pipe.
+    /// Throw CPipeException on failure to create the pipe.
     ///
     /// @param cmd
     ///   Command name to execute.
     /// @param args
-    ///   Vector of string arguments for command.
+    ///   Vector of string arguments for the command.
     /// @param create_flags
     ///   Specifies the options to be applied when creating the pipe.
     /// @sa
@@ -161,25 +161,23 @@ public:
 
     /// Destructor. 
     ///
-    /// If pipe was created, destructor waits for new child process
-    /// and closes stream on associated pipe by calling the Close() method.
+    /// If the pipe was opened then close it by calling Close().
     ~CPipe(void);
 
-    /// Open a pipe.
+    /// Open pipe.
     ///
     /// Create a pipe and execute a command with the vector of arguments
     /// "args". The other end of the pipe is associated with the spawned
-    /// command's standard input or standard output according to the open mode
-    /// setting. 
+    /// command's standard input/output/error according to "create_flags".
     ///
     /// @param cmd
     ///   Command name to execute.
     /// @param args
     ///   Vector of string arguments for command.
     /// @param create_flags
-    ///   Specifies the options to be applied when creating the pipe.
+    ///   Specifies options to be applied when creating the pipe.
     /// @return 
-    ///   Status of the operation.
+    ///   Completion status.
     /// @sa
     ///   Open()
     EIO_Status Open
@@ -190,59 +188,56 @@ public:
 
     /// Close pipe.
     ///
-    /// Waits for new spawned child process to terminate and then closes
+    /// Wait for the spawned child process to terminate and then close
     /// the associated pipe.
     ///
     /// @param exitcode
-    ///   Return here the exit code of child process if it has terminate
-    ///   succesfully, or -1 if an error has occurs.
+    ///   Pointer to store the exit code at, if the child process terminated
+    ///   successfully, or -1 in case of an error. Can be passed as NULL.
     /// @return
-    ///   Status of the operation.
+    ///   Completion status.
     ///   The returned status eIO_Timeout means that child process is still 
-    ///   running and pipe handle not closed yet. Otherwise, the pipe handle
-    ///   goes invalid after this function call, regardless of whether the call
-    ///   was successful or not.
+    ///   running and the pipe was not yet closed. Otherwise, the pipe was
+    ///   actually closed and is not suitable for I/O until reopened.
     EIO_Status Close(int* exitcode = 0);
 
-    /// Close a specified pipe handle.
+    /// Close specified pipe handle.
     ///
     /// @param handle
     ///   Pipe handle to close
     /// @return
-    ///   Status of the operation.
+    ///   Completion status.
     /// @sa
     ///   Close()
     EIO_Status CloseHandle(EChildIOHandle handle);
 
-    /// Read data from the pipe. 
+    /// Read data from pipe. 
     ///
     /// @param buf
     ///   Buffer into which data is read.
     /// @param count
     ///   Number of bytes to read.
     /// @param read
-    ///   Number of bytes actually read, which may be less than "count" if an
-    ///   error occurs or if the end of the pipe file stream is encountered. 
+    ///   Number of bytes actually read, which may be less than "count". 
     /// @param from_handle
     ///   Handle to read data from.
     /// @return
     ///   Always return eIO_Success if some data were read (regardless of pipe
     ///   conditions that may include EOF/error).
-    //    Return other (error) code only if no data at all could be obtained.
+    ///   Return other (error) code only if no data at all could be obtained.
     /// @sa
     ///   Write(), SetTimeout()
     EIO_Status Read(void* buf, size_t count, size_t* read = 0,
         const EChildIOHandle from_handle = eStdOut);
 
-    /// Write data to the pipe. 
+    /// Write data to pipe. 
     ///
     /// @param buf
     ///   Buffer from which data is written.
     /// @param count
     ///   Number of bytes to write.
     /// @param written
-    ///   Number of bytes actually written, which may be less than "count" if
-    ///   an error occurs. 
+    ///   Number of bytes actually written, which may be less than "count".
     /// @return
     ///   Return eIO_Success if some data were written.
     ///   Return other (error) code only if no data at all could be written.
@@ -253,7 +248,7 @@ public:
     /// Return a status of the last I/O operation.
     /// 
     /// @param direction
-    ///   Direction to get status from.
+    ///   Direction to get status for.
     /// @return
     ///   I/O status for the specified direction.
     ///   eIO_Closed     -- if the pipe is closed;
@@ -268,22 +263,22 @@ public:
     /// Specify timeout for the pipe I/O.
     ///
     /// @param event
-    ///   I/O event for which timeout will be set.
+    ///   I/O event for which the timeout is set.
     /// @param timeout
-    ///   Timeout value to set from.
+    ///   Timeout value to set.
     ///   If "timeout" is NULL then set the timeout to be infinite.
     ///   - By default, initially all timeouts are infinite;
     ///   - kDefaultTimeout has no effect.
     /// @return
-    ///   Status of the operation.
+    ///   Completion status.
     /// @sa
     ///   Read(), Write(), Close(), GetTimeout()
     EIO_Status SetTimeout(EIO_Event event, const STimeout* timeout);
 
-    /// Get the pipe I/O timeout.
+    /// Get pipe I/O timeout.
     ///
     /// @param event
-    ///   I/O event for which timeout will be get.
+    ///   I/O event for which timeout is obtained.
     /// @return
     //    Timeout for specified event (or NULL, if the timeout is infinite).
     ///   The returned timeout is guaranteed to be pointing to a valid
@@ -360,6 +355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/09/09 19:23:16  ivanov
+ * Comment changes
+ *
  * Revision 1.14  2003/09/02 20:46:59  lavr
  * -<connect/connect_export.h> -- included from <connect/ncbi_core.h>
  *
