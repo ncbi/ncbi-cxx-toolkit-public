@@ -80,7 +80,6 @@ enum EBlastOptIdx {
     eBlastOpt_LookupTableType,
     eBlastOpt_WordSize,
     eBlastOpt_AlphabetSize,
-    eBlastOpt_ScanStep,
     eBlastOpt_MBTemplateLength,
     eBlastOpt_MBTemplateType,
     eBlastOpt_MBMaxPositions,
@@ -92,6 +91,7 @@ enum EBlastOptIdx {
     eBlastOpt_SeedContainerType,
     eBlastOpt_SeedExtensionMethod,
     eBlastOpt_VariableWordSize,
+    eBlastOpt_FullByteScan,
     eBlastOpt_UngappedExtension,
     eBlastOpt_XDropoff,
     eBlastOpt_GapXDropoff,
@@ -159,12 +159,6 @@ public:
     int GetWordSize() const;
     void SetWordSize(int ws);
 
-    int GetAlphabetSize() const;
-    void SetAlphabetSize(int s);
-
-    unsigned char GetScanStep() const;
-    void SetScanStep(unsigned char s);
-
     /// Megablast only lookup table options
     unsigned char GetMBTemplateLength() const;
     void SetMBTemplateLength(unsigned char len);
@@ -174,6 +168,12 @@ public:
 
     int GetMBMaxPositions() const;
     void SetMBMaxPositions(int m);
+
+    bool GetVariableWordSize() const;
+    void SetVariableWordSize(bool val = true);
+
+    bool GetFullByteScan() const;
+    void SetFullByteScan(bool val = true);
 
     bool GetUsePssm() const;
     void SetUsePssm(bool m = true);
@@ -191,15 +191,6 @@ public:
     /******************* Initial word options ***********************/
     int GetWindowSize() const;
     void SetWindowSize(int w);
-
-    ESeedContainerType GetSeedContainerType() const;
-    void SetSeedContainerType(ESeedContainerType type);
-
-    ESeedExtensionMethod GetSeedExtensionMethod() const;
-    void SetSeedExtensionMethod(ESeedExtensionMethod method);
-
-    bool GetVariableWordSize() const;
-    void SetVariableWordSize(bool val = true);
 
     bool GetUngappedExtension() const;
     void SetUngappedExtension(bool val = true);
@@ -728,40 +719,6 @@ public:
         }
     }
 
-    int GetAlphabetSize() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetAlphabetSize() not available.");
-        }
-        return m_Local->GetAlphabetSize();
-    }
-    void SetAlphabetSize(int s)
-    {
-        if (m_Local) {
-            m_Local->SetAlphabetSize(s);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_AlphabetSize, s);
-        }
-    }
-
-    unsigned char GetScanStep() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetScanStep() not available.");
-        }
-        return m_Local->GetScanStep();
-    }
-    void SetScanStep(unsigned char s)
-    {
-        if (m_Local) {
-            m_Local->SetScanStep(s);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_ScanStep, s);
-        }
-    }
-
     /// Megablast only lookup table options
     unsigned char GetMBTemplateLength() const
     {
@@ -811,6 +768,40 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_MBMaxPositions, m);
+        }
+    }
+
+    bool GetVariableWordSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetVariableWordSize() not available.");
+        }
+        return m_Local->GetVariableWordSize();
+    }
+    void SetVariableWordSize(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetVariableWordSize(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_VariableWordSize, val);
+        }
+    }
+
+    bool GetFullByteScan() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetFullByteScan() not available.");
+        }
+        return m_Local->GetFullByteScan();
+    }
+    void SetFullByteScan(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetFullByteScan(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_FullByteScan, val);
         }
     }
 
@@ -898,57 +889,6 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_WindowSize, w);
-        }
-    }
-
-    ESeedContainerType GetSeedContainerType() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetSeedContainerType() not available.");
-        }
-        return m_Local->GetSeedContainerType();
-    }
-    void SetSeedContainerType(ESeedContainerType type)
-    {
-        if (m_Local) {
-            m_Local->SetSeedContainerType(type);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_SeedContainerType, type);
-        }
-    }
-
-    ESeedExtensionMethod GetSeedExtensionMethod() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetSeedExtensionMethod() not available.");
-        }
-        return m_Local->GetSeedExtensionMethod();
-    }
-    void SetSeedExtensionMethod(ESeedExtensionMethod method)
-    {
-        if (m_Local) {
-            m_Local->SetSeedExtensionMethod(method);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_SeedExtensionMethod, method);
-        }
-    }
-
-    bool GetVariableWordSize() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetVariableWordSize() not available.");
-        }
-        return m_Local->GetVariableWordSize();
-    }
-    void SetVariableWordSize(bool val = true)
-    {
-        if (m_Local) {
-            m_Local->SetVariableWordSize(val);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_VariableWordSize, val);
         }
     }
 
@@ -1848,30 +1788,6 @@ CBlastOptionsLocal::SetWordSize(int ws)
     m_LutOpts->word_size = ws;
 }
 
-inline int
-CBlastOptionsLocal::GetAlphabetSize() const
-{
-    return m_LutOpts->alphabet_size;
-}
-
-inline void
-CBlastOptionsLocal::SetAlphabetSize(int s)
-{
-    m_LutOpts->alphabet_size = s;
-}
-
-inline unsigned char
-CBlastOptionsLocal::GetScanStep() const
-{
-    return m_LutOpts->scan_step;
-}
-
-inline void
-CBlastOptionsLocal::SetScanStep(unsigned char s)
-{
-    m_LutOpts->scan_step = s;
-}
-
 inline unsigned char
 CBlastOptionsLocal::GetMBTemplateLength() const
 {
@@ -1906,6 +1822,30 @@ inline void
 CBlastOptionsLocal::SetMBMaxPositions(int m)
 {
     m_LutOpts->max_positions = m;
+}
+
+inline bool
+CBlastOptionsLocal::GetVariableWordSize() const
+{
+    return m_LutOpts->variable_wordsize ? true: false;
+}
+
+inline void
+CBlastOptionsLocal::SetVariableWordSize(bool val)
+{
+    m_LutOpts->variable_wordsize = val;
+}
+
+inline bool
+CBlastOptionsLocal::GetFullByteScan() const
+{
+    return m_LutOpts->full_byte_scan ? true: false;
+}
+
+inline void
+CBlastOptionsLocal::SetFullByteScan(bool val)
+{
+    m_LutOpts->full_byte_scan = val;
 }
 
 inline bool
@@ -1982,44 +1922,6 @@ inline void
 CBlastOptionsLocal::SetWindowSize(int s)
 {
     m_InitWordOpts->window_size = s;
-}
-
-inline ESeedContainerType
-CBlastOptionsLocal::GetSeedContainerType() const
-{
-    return m_InitWordOpts->container_type;
-}
-
-inline void 
-CBlastOptionsLocal::SetSeedContainerType(ESeedContainerType type)
-{
-    ASSERT(type < eMaxContainerType);
-    m_InitWordOpts->container_type = type;
-}
-
-inline ESeedExtensionMethod
-CBlastOptionsLocal::GetSeedExtensionMethod() const
-{
-    return m_InitWordOpts->extension_method;
-}
-
-inline void 
-CBlastOptionsLocal::SetSeedExtensionMethod(ESeedExtensionMethod method)
-{
-    ASSERT(method < eMaxSeedExtensionMethod);
-    m_InitWordOpts->extension_method = method;
-}
-
-inline bool
-CBlastOptionsLocal::GetVariableWordSize() const
-{
-    return m_InitWordOpts->variable_wordsize ? true: false;
-}
-
-inline void 
-CBlastOptionsLocal::SetVariableWordSize(bool val)
-{
-    m_InitWordOpts->variable_wordsize = val;
 }
 
 inline bool
@@ -2478,6 +2380,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2005/01/10 13:29:25  madden
+* Remove [GS]etAlphabetSize as well as [GS]etScanStep
+* Remove [GS]etSeedContainerType as well as [GS]etSeedExtensionMethod
+* Add [GS]etFullByteScan
+*
 * Revision 1.81  2004/12/28 16:42:19  camacho
 * Consistently use the RAII idiom for C structures using wrapper classes in CBlastOptions
 *
