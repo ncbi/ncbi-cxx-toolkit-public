@@ -469,14 +469,14 @@ static Int2 BLAST_CalcEffLengths (const Uint1 program_number,
          length_adjustment = 0;
          last_length_adjustment = 0;
          
-         min_query_length = (Int4) 1/(kbp->K);
+         min_query_length = (Int4) (1/(kbp->K));
 
          for (i=0; i<5; i++) {
             if (program_number != blast_type_blastn && 
                 scoring_options->gapped_calculation) {
                length_adjustment = Nlm_Nint((((kbp->logK)+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
             } else {
-               length_adjustment = (Int4) (kbp->logK+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H);
+               length_adjustment = (Int4) ((kbp->logK+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
             }
 
             if (length_adjustment >= query_length-min_query_length) {

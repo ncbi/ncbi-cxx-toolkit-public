@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.25  2003/06/09 20:13:17  dondosha
+ * Minor type casting compiler warnings fixes
+ *
  * Revision 1.24  2003/06/06 17:02:30  dondosha
  * Typo fix
  *
@@ -390,7 +393,7 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
 
    (*parameters)->options = word_options;
 
-   (*parameters)->x_dropoff = 
+   (*parameters)->x_dropoff = (Int4)
       ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
 
    if (hit_options->is_gapped && 
@@ -1111,7 +1114,8 @@ BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
       params->cutoff_score = options->cutoff_score;
    } else {
       BlastCutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
-         query_info->eff_searchsp_array[query_info->first_context], FALSE);
+         (FloatHi)query_info->eff_searchsp_array[query_info->first_context], 
+         FALSE);
    }
 
    return 0;

@@ -159,7 +159,7 @@ static Int4 wo (Int4 len, Uint1Ptr seq_start, Int4 iseg, DCURLOC PNTR cloc,
 
 static void wo1 (Int4 len, UcharPtr seq, Int4 iwo, DCURLOC PNTR cloc)
 {
-        Uint4 sum;
+   Uint4 sum;
 	Int4 loop;
 	Int4 newlevel;
 
@@ -176,7 +176,7 @@ static void wo1 (Int4 len, UcharPtr seq, Int4 iwo, DCURLOC PNTR cloc)
 		countsptr = &counts[*seq++];
 		if (*countsptr)
 		{
-			sum += (Uint8)(*countsptr);
+			sum += (Uint4)(*countsptr);
 
 			newlevel = 10 * sum / loop;
 

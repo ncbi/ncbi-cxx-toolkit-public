@@ -117,7 +117,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
    }
 
    if (word_options->extend_word_method & EXTEND_WORD_MB_STACKS) {
-      Int8 av_search_space;
+      FloatHi av_search_space;
       Int4 stack_size, num_stacks;
       MB_StackTablePtr stack_table;
 
@@ -125,8 +125,8 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
          (MB_StackTablePtr) Malloc(sizeof(MB_StackTable));
 
       av_search_space = 
-         ((Int8) query->length) * dblen / dbseq_num;
-      num_stacks = MIN(1 + (Int4) sqrt(av_search_space)/100, 500);
+         ((FloatHi) query->length) * dblen / dbseq_num;
+      num_stacks = MIN(1 + (Int4) (sqrt(av_search_space)/100), 500);
       stack_size = 5000/num_stacks;
       stack_table->stack_index = (Int4Ptr) MemNew(num_stacks*sizeof(Int4));
       stack_table->stack_size = (Int4Ptr) Malloc(num_stacks*sizeof(Int4));

@@ -140,11 +140,11 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfoPtr query_info,
          query information block, in order of preference */
       if (sbp->effective_search_sp) {
          hsp->evalue = BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
-                          sbp->effective_search_sp);
+                          (FloatHi)sbp->effective_search_sp);
       } else {
          hsp->evalue = 
             BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
-               query_info->eff_searchsp_array[hsp->context/factor]);
+               (FloatHi)query_info->eff_searchsp_array[hsp->context/factor]);
       }
    }
    
@@ -494,7 +494,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
       context = hsp->context;
 
       query_start = query_blk->sequence + query_info->context_offsets[context];
-      searchsp_eff = query_info->eff_searchsp_array[context/2];
+      searchsp_eff = (FloatHi)query_info->eff_searchsp_array[context/2];
       
       query = query_start + hsp->query.offset; 
       subject = subject_start + hsp->subject.offset;
