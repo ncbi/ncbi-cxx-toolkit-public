@@ -41,6 +41,7 @@
 #include <serial/objostr.hpp>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -49,6 +50,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <assert.h>
+#include <readdb.h>
 
 volatile int gnum = 0;
 
@@ -399,6 +401,58 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-here]";
         
+        if (s == "-bs9") {
+            const char * dbname = "nt";
+            
+            bool is_prot = false;
+            Uint4 gi = 12831944;
+            
+            ostringstream oss_fn;
+            oss_fn << dbname << "." << gi;
+            
+            {
+                CSeqDB db(dbname, is_prot ? 'p' : 'n');
+                
+                Uint4 oid(0);
+                
+                if (db.GiToOid(gi, oid)) {
+                    CRef<CBioseq> bs = db.GetBioseq(oid);
+                    
+                    string fn = string("seqdb") + oss_fn.str() + ".txt";
+                    ofstream outf(fn.c_str());
+                    
+                    auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, outf));
+                    *os << *bs;
+                    
+                    cout << "seqdb: got bioseq." << endl;
+                } else {
+                    cout << "seqdb: could not get bioseq." << endl;
+                }
+            }
+            {
+                ReadDBFILEPtr rdfp = readdb_new((char*) dbname, is_prot ? 1 : 0);
+                
+                Uint4 oid = readdb_gi2seq(rdfp, gi, 0);
+                
+                BioseqPtr bsp = readdb_get_bioseq(rdfp, oid);
+                
+                if (bsp) {
+                    string fn = string("seqdb") + oss_fn.str() + ".txt";
+                    
+                    AsnIoPtr myaip = AsnIoOpen((char*) fn.c_str(), "w");
+                    BioseqAsnWrite(bsp, myaip, NULL);
+                    AsnIoClose(myaip);
+                    
+                    cout << "seqdb: got bioseq." << endl;
+                } else {
+                    cout << "seqdb: could not get bioseq." << endl;
+                }
+                
+                BioseqFree(bsp);
+            }
+            return 0;
+        } else desc += " [-bs9]";
+
         if (s == "-dyn") {
             CSeqDB db("nr", 'p');
             
