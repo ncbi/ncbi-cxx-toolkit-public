@@ -989,9 +989,13 @@ void CAlnMix::x_Merge()
                         // this seg already exists
                         if (start2_i->second != start_i->second) {
                             // merge the two segments
+
+                            // the following will delay deletion of the seg
+                            // until after the iteration on it is finished
+                            CRef<CAlnMixSegment> tmp_seg = start2_i->second;
                             ITERATE (CAlnMixSegment::TStartIterators,
                                      it, 
-                                     start2_i->second->m_StartIts) {
+                                     tmp_seg->m_StartIts) {
                                 CAlnMixSeq * tmp_seq = it->first;
                                 tmp_start_i = it->second;
                                 tmp_start_i->second = start_i->second;
@@ -1859,6 +1863,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2003/09/12 15:42:36  todorov
+* +CRef to delay obj deletion while iterating on it
+*
 * Revision 1.73  2003/09/08 20:44:21  todorov
 * expression bug fix
 *
