@@ -161,6 +161,12 @@ public:
     ///    subnode subtree pointer
     void InsertNode(TNodeList_I it, TTreeType* subnode);
 
+    /// Report whether this is a leaf node
+    ///
+    /// @return true if this is a leaf node (has no children),
+    /// false otherwise
+    bool IsLeaf() const { return m_Nodes.empty(); };
+
 protected:
     void CopyFrom(const TTreeType& tree);
     void SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
@@ -485,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/01/12 18:01:15  jcherry
+ * Added IsLeaf method
+ *
  * Revision 1.10  2004/01/12 16:49:48  kuznets
  * CTreePairNWay added id, value accessor functions
  *
