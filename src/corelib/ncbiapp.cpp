@@ -808,9 +808,9 @@ string CNcbiApplication::FindProgramExecutablePath
 #  if defined(NCBI_OS_LINUX)
     // Linux OS: Try more accurate method of detection for real_path
     if (real_path) {
-        char   buf[FILENAME_MAX + 1];
+        char   buf[PATH_MAX + 1];
         string procfile = "/proc/" + NStr::IntToString(getpid()) + "/exe";
-        int    ncount   = readlink((procfile).c_str(), buf, FILENAME_MAX);
+        int    ncount   = readlink((procfile).c_str(), buf, PATH_MAX);
         if (ncount > 0) {
             real_path->assign(buf, ncount);
             real_path = 0;
@@ -957,6 +957,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2004/08/09 20:05:32  ucko
+ * FindProgramExecutablePath: On Linux, consult PATH_MAX, not FILENAME_MAX,
+ * which is less relevant and might not have been defined (via stdio.h).
+ *
  * Revision 1.93  2004/08/09 19:12:19  ucko
  * {Find,Get}ProgramExecutablePath: make fully resolved paths available too,
  * using the /proc method on Linux.
