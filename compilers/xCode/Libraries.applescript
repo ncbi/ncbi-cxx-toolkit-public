@@ -281,25 +281,25 @@ property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxp
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_textaln, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_widgets gui_widgets_seq", req:true} --gui_core
 -- PLUG-INS
-property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_bdb ncbi_core" & gui2link, bundle:true, req:true}
-property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd" & gui2link, bundle:true, req:true}
+property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_bdb ncbi_core ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 
-property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb" & gui2link, bundle:true, req:true}
-property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web" & gui2link, bundle:true, req:true}
-property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext" & gui2link, bundle:true, req:true}
+property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils gui_dialogs gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos" & gui2link, bundle:true, req:true}
-property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & gui2link, bundle:true, req:true}
-property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext" & gui2link, bundle:true, req:true}
-property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & gui2link, bundle:true, req:true}
+property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_bdb ncbi_core ncbi_lds ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
-property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table" & gui2link, bundle:true, req:true}
-property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config" & gui2link, bundle:true, req:true}
-property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & gui2link, bundle:true, req:true}
-property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc gui_core gui_utils gui_widgets gui_widgets_misc" & gui2link, bundle:true, req:true}
-property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq" & gui2link, bundle:true, req:true}
-property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs" & gui2link, bundle:true, req:true}
-property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs" & gui2link, bundle:true, req:true}
-property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets" & gui2link, bundle:true, req:true}
+property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc gui_core gui_utils gui_widgets gui_widgets_misc ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 
 
 
@@ -355,7 +355,7 @@ property demo_tex : {name:"demo_texture", path:"gui:opengl:demo", inc:{"tex_demo
 
 
 property gbench : {name:"gbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_config" & gui2link, gbench:true, req:true}
-property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils" & FLTK_LIBS & Z_LIBS & IMG_LIBS, req:true}
+property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils" & FLTK_LIBS & Z_LIBS & IMG_LIBS, req:true}
 (* ====================================================================================================== *)
 
 
@@ -389,6 +389,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/09/29 16:15:17  lebedev
+ * Missing dependencies added
+ *
  * Revision 1.24  2004/09/29 15:24:07  lebedev
  * More demos and tests added
  *
