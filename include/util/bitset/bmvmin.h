@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2002 Anatoliy Kuznetsov.
+Copyright (c) 2002-2004 Anatoliy Kuznetsov.
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 

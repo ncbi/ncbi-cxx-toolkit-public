@@ -169,8 +169,7 @@ void combine_count_operation_with_block(const bm::word_t* blk,
                         dmd.result += gap_bitset_or_count(arg_blk, g1); 
                      break;
                  case bm::COUNT_SUB_AB:
-                     gap_convert_to_bitset((bm::word_t*) temp_blk, 
-                                           g1, bm::set_block_size);
+                     gap_convert_to_bitset((bm::word_t*) temp_blk, g1);
                      dmd.result += 
                        bit_operation_sub_count((bm::word_t*)temp_blk, 
                           ((bm::word_t*)temp_blk) + bm::set_block_size,
@@ -363,7 +362,7 @@ void distance_operation(const BV& bv1,
             if (it->metric == bm::COUNT_SUB_AB || 
                 it->metric == bm::COUNT_SUB_BA)
             {
-                temp_blk = BV::allocate_tempblock();
+                temp_blk = bv1.allocate_tempblock();
                 break;
             }
         }
@@ -435,7 +434,7 @@ void distance_operation(const BV& bv1,
     
     if (temp_blk)
     {
-        BV::free_tempblock(temp_blk);
+        bv1.free_tempblock(temp_blk);
     }
 
 }

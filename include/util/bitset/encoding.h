@@ -42,9 +42,11 @@ public:
 
     encoder(unsigned char* buf, unsigned size);
     void put_8(unsigned char c);
-    void put_16(bm::short_t s);
+    void put_16(bm::short_t  s);
+    void put_16(const bm::short_t* s, unsigned count);
     void put_32(bm::word_t  w);
-    void memcpy(const void* mem, unsigned size);
+    void put_32(const bm::word_t* w, unsigned count);
+    //void memcpy(const void* mem, unsigned size);
     unsigned size() const;
 
 private:
@@ -113,6 +115,17 @@ inline void encoder::put_16(bm::short_t s)
 }
 
 /*!
+   \brief Method puts array of short words (16 bits) into the encoding buffer.
+*/
+inline void encoder::put_16(const bm::short_t* s, unsigned count)
+{
+    for (unsigned i = 0; i < count; ++i) {
+        put_16(s[i]);
+    }
+}
+
+
+/*!
    \fn unsigned encoder::size() const
    \brief Returns size of the current encoding stream.
 */
@@ -135,17 +148,28 @@ inline void encoder::put_32(bm::word_t w)
 }
 
 /*!
+    \brief Encodes array of 32-bit words
+*/
+inline void encoder::put_32(const bm::word_t* w, unsigned count)
+{
+    for (unsigned i = 0; i < count; ++i) {
+        put_32(w[i]);
+    }
+}
+
+/*!
    \fn encoder::memcpy(const void* mem, unsigned size)
    \brief Puts block of memory into encoding buffer.
    \param mem - pointer on memory to encode.
    \param size - size of the memory block.
 */
+/*
 inline void encoder::memcpy(const void* mem, unsigned size)
 {
    ::memcpy(buf_, mem, size);
    buf_ += size;
 }
-
+*/
 
 // ---------------------------------------------------------------------
 

@@ -57,7 +57,7 @@ template<bool T> struct gap_len_table
 };
 
 template<bool T>
-const gap_word_t gap_len_table<T>::_len[] = 
+const gap_word_t gap_len_table<T>::_len[bm::gap_levels] = 
                 { 128, 256, 512, bm::gap_max_buff_len }; 
 
 
@@ -72,7 +72,7 @@ template<bool T> struct gap_len_table_min
 };
 
 template<bool T>
-const gap_word_t gap_len_table_min<T>::_len[] = 
+const gap_word_t gap_len_table_min<T>::_len[bm::gap_levels] = 
                                 { 32, 96, 128, 512 }; 
 
 
@@ -89,7 +89,7 @@ template<bool T> struct bit_count_table
 };
 
 template<bool T>
-const unsigned char bit_count_table<T>::_count[] = {
+const unsigned char bit_count_table<T>::_count[256] = {
     0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
     1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
     1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
@@ -112,7 +112,7 @@ template<bool T> struct block_set_table
 };
 
 template<bool T>
-const unsigned block_set_table<T>::_left[] = {
+const unsigned block_set_table<T>::_left[32] = {
     0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
     0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
     0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff,
@@ -120,7 +120,7 @@ const unsigned block_set_table<T>::_left[] = {
 };
 
 template<bool T>
-const unsigned block_set_table<T>::_right[] = {
+const unsigned block_set_table<T>::_right[32] = {
     0xffffffff, 0xfffffffe, 0xfffffffc, 0xfffffff8, 0xfffffff0,
     0xffffffe0, 0xffffffc0, 0xffffff80, 0xffffff00, 0xfffffe00,
     0xfffffc00, 0xfffff800, 0xfffff000, 0xffffe000, 0xffffc000,
@@ -141,7 +141,7 @@ template<bool T> struct first_bit_table
 };
 
 template<bool T>
-const char first_bit_table<T>::_idx[] = {
+const char first_bit_table<T>::_idx[256] = {
     -1,
     0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,4,0,1,0,2,0,1,0,3,0,1,0,2,0,
     1,0,5,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,4,0,1, 0,2,0,1,0,3,0,
@@ -285,7 +285,7 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic Library. v.3.2.1 (c) 2002-2003 Anatoliy Kuznetsov.";
+    "BitMagic Library. v.3.3.0 (c) 2002-2003 Anatoliy Kuznetsov.";
 
 
 /*! 
@@ -1436,15 +1436,29 @@ void bit_block_set(bm::word_t* BMRESTRICT dst, bm::word_t value)
    \brief GAP block to bitblock conversion.
    \param dest - bitblock buffer pointer.
    \param buf  - GAP buffer pointer.
+
+   @ingroup gapfunc
+*/
+template<typename T> 
+void gap_convert_to_bitset(unsigned* dest, const T*  buf)
+{
+    bit_block_set(dest, 0);
+    gap_add_to_bitset(dest, buf);
+}
+
+
+/*!
+   \brief GAP block to bitblock conversion.
+   \param dest - bitblock buffer pointer.
+   \param buf  - GAP buffer pointer.
    \param dest_size - length of the destination buffer.
 
    @ingroup gapfunc
 */
 template<typename T> 
-void gap_convert_to_bitset(unsigned* dest, const T*  buf,  unsigned)
+void gap_convert_to_bitset(unsigned* dest, const T*  buf,  unsigned  dest_len)
 {
-    bit_block_set(dest, 0);
-// ::memset(dest, 0, dest_len * sizeof(unsigned));
+   ::memset(dest, 0, dest_len * sizeof(unsigned));
     gap_add_to_bitset(dest, buf);
 }
 
@@ -1458,7 +1472,6 @@ void gap_convert_to_bitset(unsigned* dest, const T*  buf,  unsigned)
 
    \param dest - bitblock buffer pointer.
    \param buf  - GAP buffer pointer.
-   \param dest_size - length of the destination buffer.
    \param set_max - max possible bitset length
 
    @ingroup gapfunc
@@ -1466,7 +1479,6 @@ void gap_convert_to_bitset(unsigned* dest, const T*  buf,  unsigned)
 template<typename T> 
         unsigned* gap_convert_to_bitset_smart(unsigned* dest,
                                               const T* buf, 
-                                              unsigned dest_size,
                                               id_t set_max)
 {
     if (buf[1] == set_max - 1)
@@ -1474,7 +1486,7 @@ template<typename T>
         return (buf[0] & 1) ? FULL_BLOCK_ADDR : 0;
     }
 
-    gap_convert_to_bitset(dest, buf, dest_size);
+    gap_convert_to_bitset(dest, buf);
     return dest;
 }
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2002,2003 Anatoliy Kuznetsov.
+Copyright (c) 2002-2004 Anatoliy Kuznetsov.
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -124,20 +124,44 @@ public:
 template<class BA, class PA> class mem_alloc
 {
 public:
+    typedef BA  block_allocator_type;
+    typedef PA  ptr_allocator_type;
+
+public:
+
+    mem_alloc(const BA& block_alloc = BA(), const PA& ptr_alloc = PA())
+    : block_alloc_(block_alloc),
+      ptr_alloc_(ptr_alloc)
+    {}
+    
+    /*! @brief Returns copy of the block allocator object
+    */
+    block_allocator_type get_block_allocator() const 
+    { 
+        return BA(block_alloc_); 
+    }
+
+    /*! @brief Returns copy of the ptr allocator object
+    */
+    ptr_allocator_type get_ptr_allocator() const 
+    { 
+       return PA(block_alloc_); 
+    }
+
 
     /*! @brief Allocates and returns bit block.
     */
-    static bm::word_t* alloc_bit_block()
+    bm::word_t* alloc_bit_block()
     {
-        return BA::allocate(bm::set_block_size, 0);
+        return block_alloc_.allocate(bm::set_block_size, 0);
     }
 
     /*! @brief Frees bit block allocated by alloc_bit_block.
     */
-    static void free_bit_block(bm::word_t* block)
+    void free_bit_block(bm::word_t* block)
     {
         if (IS_VALID_ADDR(block)) 
-            BA::deallocate(block, bm::set_block_size);
+            block_alloc_.deallocate(block, bm::set_block_size);
     }
 
     /*! @brief Allocates GAP block using bit block allocator (BA).
@@ -147,42 +171,44 @@ public:
         
         @param level GAP block level.
     */
-    static bm::gap_word_t* alloc_gap_block(unsigned level, 
-                                           const gap_word_t* glevel_len)
+    bm::gap_word_t* alloc_gap_block(unsigned level, 
+                                    const gap_word_t* glevel_len)
     {
-        assert(level < bm::gap_levels);
+        BM_ASSERT(level < bm::gap_levels);
         unsigned len = 
             glevel_len[level] / (sizeof(bm::word_t) / sizeof(gap_word_t));
 
-        return (bm::gap_word_t*)BA::allocate(len, 0);
+        return (bm::gap_word_t*)block_alloc_.allocate(len, 0);
     }
 
     /*! @brief Frees GAP block using bot block allocator (BA)
     */
-    static void free_gap_block(bm::gap_word_t* block,
-                               const gap_word_t* glevel_len)
+    void free_gap_block(bm::gap_word_t*   block,
+                        const gap_word_t* glevel_len)
     {
-        if (IS_VALID_ADDR((bm::word_t*)block)) 
-        {
-            unsigned len = gap_capacity(block, glevel_len);
-            len /= sizeof(bm::word_t) / sizeof(bm::gap_word_t);
-            BA::deallocate((bm::word_t*)block, len);        
-        }
+        BM_ASSERT(IS_VALID_ADDR((bm::word_t*)block));
+         
+        unsigned len = gap_capacity(block, glevel_len);
+        len /= sizeof(bm::word_t) / sizeof(bm::gap_word_t);
+        block_alloc_.deallocate((bm::word_t*)block, len);        
     }
 
     /*! @brief Allocates block of pointers.
     */
-    static void* alloc_ptr(unsigned size = bm::set_array_size)
+    void* alloc_ptr(unsigned size = bm::set_array_size)
     {
-        return PA::allocate(size, 0);
+        return ptr_alloc_.allocate(size, 0);
     }
 
     /*! @brief Frees block of pointers.
     */
-    static void free_ptr(void* p, unsigned size = bm::set_array_size)
+    void free_ptr(void* p, unsigned size = bm::set_array_size)
     {
-        PA::deallocate(p, size);
+        ptr_alloc_.deallocate(p, size);
     }
+private:
+    BA            block_alloc_;
+    PA            ptr_alloc_;
 };
 
 typedef mem_alloc<block_allocator, ptr_allocator> standard_allocator;
