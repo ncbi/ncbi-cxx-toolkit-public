@@ -2078,6 +2078,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(gene);
 
     DO_QUAL(locus_tag);
+    DO_QUAL(old_locus_tag);
     x_FormatQual(eFQ_gene_syn_refseq, "synonym", qvec);
     //DO_QUAL(gene_syn_refseq);
 
@@ -2462,6 +2463,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_mod_base, CSeqFeatData::eQual_mod_base),
     TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
     TQualPair(eFQ_number, CSeqFeatData::eQual_number),
+    TQualPair(eFQ_old_locus_tag, CSeqFeatData::eQual_old_locus_tag),
     TQualPair(eFQ_operon, CSeqFeatData::eQual_operon),
     TQualPair(eFQ_organism, CSeqFeatData::eQual_organism),
     TQualPair(eFQ_partial, CSeqFeatData::eQual_partial),
@@ -3561,6 +3563,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2005/03/29 18:58:15  shomrat
+* Added old_locus_tag qualifier
+*
 * Revision 1.49  2005/03/28 17:24:51  shomrat
 * Optimizations
 *
