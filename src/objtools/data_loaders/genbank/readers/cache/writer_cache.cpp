@@ -231,7 +231,7 @@ public:
 
     bool CanWrite(void) const
         {
-            return m_Stream.get();
+            return m_Stream.get() != 0;
         }
     
     CNcbiOstream& operator*(void)
@@ -300,7 +300,7 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
 
 bool CCacheWriter::CanWrite(EType type) const
 {
-    return type == eIdWriter ? m_IdCache : m_BlobCache;
+    return (type == eIdWriter ? m_IdCache : m_BlobCache) != 0;
 }
 
 
