@@ -103,7 +103,8 @@ static int DoubleIntSortByStartPosition(const void *vp1, const void *vp2)
 
 /* This will go in place of CombineSeqLocs to combine filtered locations */
 Int2
-CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
+CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
+                     Int4 link_value)
 {
    Int2 status=0;		/* return value. */
    Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
@@ -141,7 +142,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
       di = loc_var->ptr;
       if (loc_var->next)
          di_next = loc_var->next->ptr;
-      if (di_next && stop+1 >= di_next->i1) {
+      if (di_next && ((stop + link_value) > di_next->i1)) {
          stop = MAX(stop, di_next->i2);
       } else {
          di_tmp = (DoubleInt*) malloc(sizeof(DoubleInt));
@@ -152,8 +153,8 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
          else
             new_loc_last = ListNodeAddPointer(&new_loc_last, 0, di_tmp);
          if (loc_var->next) {
-               start = di_next->i1;
-               stop = di_next->i2;
+             start = di_next->i1;
+             stop = di_next->i2;
          }
       }
       loc_var = loc_var->next;

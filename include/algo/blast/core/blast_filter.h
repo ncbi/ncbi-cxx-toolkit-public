@@ -63,9 +63,12 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
  * were on the list, produce a new (merged) list of locations. 
  * @param mask_loc The list of masks to be merged [in] 
  * @param mask_loc_out The new (merged) list of masks. [out]
+ * @param link_value Largest gap size between locations fow which they
+ *                   should be linked together [in] 
 */
 Int2
-CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out);
+CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
+                     Int4 link_value);
 
 /** This function takes the list of mask locations (i.e., regions that 
  * should not be searched or not added to lookup table) and makes up a set 
