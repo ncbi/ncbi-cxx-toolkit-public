@@ -237,7 +237,7 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
 
 void CSeq_annot_SNP_Info::Reset(void)
 {
-    m_Gi = 0;
+    m_Gi = -1;
     m_Comments.Clear();
     m_Alleles.Clear();
     m_SNP_Set.clear();
@@ -435,6 +435,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.8  2003/10/23 13:47:56  vasilche
+ * Fixed Reset() method: m_Gi should be -1.
+ *
  * Revision 1.7  2003/10/21 16:29:13  vasilche
  * Added check for errors in SNP table loaded from cache.
  *
