@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/06/14 17:44:46  thiessen
+* progress in styles<->asn ; add structure limits
+*
 * Revision 1.27  2001/05/31 18:46:25  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -209,6 +212,7 @@ public:
         // File menu
             MID_OPEN,
             MID_SAVE,
+            MID_LIMIT_STRUCT,
             MID_EXIT,
         // View menu
             MID_TRANSLATE,
@@ -252,6 +256,7 @@ public:
 
     void OnOpen(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
+    void OnLimit(wxCommandEvent& event);
 
     void OnAlignStructures(wxCommandEvent& event);
 
@@ -261,6 +266,10 @@ public:
     void OnSetQuality(wxCommandEvent& event);
 
 private:
+
+    static const int UNLIMITED_STRUCTURES;
+    int structureLimit;
+
     DECLARE_EVENT_TABLE()
 };
 

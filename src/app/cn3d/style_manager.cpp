@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/06/14 17:45:10  thiessen
+* progress in styles<->asn ; add structure limits
+*
 * Revision 1.37  2001/06/14 00:34:02  thiessen
 * asn additions
 *
@@ -148,6 +151,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <memory>
 #include <string.h> // for memcpy()
 
 #include "cn3d/style_manager.hpp"
@@ -171,7 +175,7 @@ BEGIN_SCOPE(Cn3D)
 
 ///// StyleSettings stuff /////
 
-CCn3d_style_settings * StyleSettings::CreateASNStyleSettings(void) const
+bool StyleSettings::SaveSettingsToASN(ncbi::objects::CCn3d_style_settings *styleASN) const
 {
 	return NULL;
 }
@@ -953,7 +957,9 @@ bool StyleManager::EditGlobalStyle(wxWindow *parent, const StructureSet *set)
 
 CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
 {
-    return NULL;
+    auto_ptr<CCn3d_style_dictionary> dictionary(new CCn3d_style_dictionary());
+    if (!globalStyle.SaveSettingsToASN(&(dictionary->SetGlobal_style()))) return NULL;
+    return dictionary.release();
 }
 
 bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styleDictionary)

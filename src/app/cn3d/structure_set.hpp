@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/06/14 17:44:46  thiessen
+* progress in styles<->asn ; add structure limits
+*
 * Revision 1.47  2001/06/14 00:33:23  thiessen
 * asn additions
 *
@@ -217,8 +220,8 @@ class StructureSet : public StructureBase
 public:
     StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime);
     // to load in a CDD, need "dataDir" to be pathname to dir. that contains MMDB Biostrucs,
-    // must end with trailing path separator
-    StructureSet(ncbi::objects::CCdd *cdd, const char *dataDir);
+    // must end with trailing path separator; load at most structureLimit # Biostrucs
+    StructureSet(ncbi::objects::CCdd *cdd, const char *dataDir, int structureLimit);
     ~StructureSet(void);
 
     // public data

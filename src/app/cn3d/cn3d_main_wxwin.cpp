@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/06/14 17:45:10  thiessen
+* progress in styles<->asn ; add structure limits
+*
 * Revision 1.51  2001/06/07 19:05:37  thiessen
 * functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
 *
@@ -442,11 +445,14 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 
 // data and methods for the main program window (a Cn3DMainFrame)
 
+const int Cn3DMainFrame::UNLIMITED_STRUCTURES = -2;
+
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_CLOSE(                                          Cn3DMainFrame::OnCloseWindow)
     EVT_MENU(       MID_EXIT,                           Cn3DMainFrame::OnExit)
     EVT_MENU(       MID_OPEN,                           Cn3DMainFrame::OnOpen)
     EVT_MENU(       MID_SAVE,                           Cn3DMainFrame::OnSave)
+    EVT_MENU(       MID_LIMIT_STRUCT,                   Cn3DMainFrame::OnLimit)
     EVT_MENU_RANGE( MID_TRANSLATE,  MID_RESET,          Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE( MID_SHOW_HIDE,  MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
     EVT_MENU(       MID_REFIT_ALL,                      Cn3DMainFrame::OnAlignStructures)
@@ -457,7 +463,7 @@ END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
-    glCanvas(NULL)
+    glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES)
 {
     topWindow = this;
     SetSizeHints(150, 150); // min size
@@ -470,6 +476,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     wxMenu *menu = new wxMenu;
     menu->Append(MID_OPEN, "&Open");
     menu->Append(MID_SAVE, "&Save");
+    menu->AppendSeparator();
+    menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
     menu->AppendSeparator();
     menu->Append(MID_EXIT, "E&xit");
     menuBar->Append(menu, "&File");
@@ -799,7 +807,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, *cdd, isBinary, err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            glCanvas->structureSet = new StructureSet(cdd, userDir.c_str());
+            glCanvas->structureSet = new StructureSet(cdd, userDir.c_str(), structureLimit);
         } else {
             ERR_POST(Warning << "error: " << err);
             delete cdd;
@@ -841,6 +849,17 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
     if (!outputFilename.IsEmpty())
         glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
+}
+
+void Cn3DMainFrame::OnLimit(wxCommandEvent& event)
+{
+    long newLimit = wxGetNumberFromUser(
+        "Enter the maximum number of structures to display (-1 for unlimited)",
+        "Max:", "Structure Limit", 10, -1, 1000, this);
+    if (newLimit >= 0)
+        structureLimit = (int) newLimit;
+    else
+        structureLimit = UNLIMITED_STRUCTURES;
 }
 
 void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2001/06/14 17:45:10  thiessen
+* progress in styles<->asn ; add structure limits
+*
 * Revision 1.64  2001/06/14 00:34:01  thiessen
 * asn additions
 *
@@ -512,7 +515,7 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
     return okay;
 }
 
-StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
+StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
     StructureBase(NULL), isMultipleStructure(true)
 {
     Init();
@@ -525,7 +528,9 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     vector < int > mmdbIDs;
     SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
     for (s=sequenceSet->sequences.begin(); s!=se; s++)
-        if ((*s)->mmdbLink != Sequence::VALUE_NOT_SET) mmdbIDs.push_back((*s)->mmdbLink);
+        if ((*s)->mmdbLink != Sequence::VALUE_NOT_SET &&
+                (structureLimit < 0 || mmdbIDs.size() < structureLimit))
+            mmdbIDs.push_back((*s)->mmdbLink);
 
     // if more than one structure, the Biostruc-annot-set should contain structure alignments
     // for slaves->master - and thus also the identity of the master.
@@ -836,6 +841,13 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     // create and temporarily attach a style dictionary to the data (and then remove it again,
     // so it's never out of date)
     CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
+    if (mimeData) {
+        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().SetStyle_dictionary(styleDictionary);
+//        else if (mimeData->IsAlignseq()) mimeData->SetAlignseq().SetStyle_dictionary(styleDictionary);
+        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().SetStyle_dictionary(styleDictionary);
+        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().SetStyle_dictionary(styleDictionary);
+    } else if (cddData) {
+    }
 
     std::string err;
     bool writeOK = false;
@@ -850,6 +862,13 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     }
 
     // remove style dictionary from asn
+    if (mimeData) {
+        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
+//        else if (mimeData->IsAlignseq()) mimeData->SetAlignseq().ResetStyle_dictionary();
+        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
+        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
+    } else if (cddData) {
+    }
 
     return writeOK;
 }

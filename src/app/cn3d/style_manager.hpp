@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/14 17:44:46  thiessen
+* progress in styles<->asn ; add structure limits
+*
 * Revision 1.26  2001/06/14 00:33:24  thiessen
 * asn additions
 *
@@ -221,7 +224,7 @@ public:
     StyleSettings& operator = (const StyleSettings& v);
 
     // to convert to/from asn
-    ncbi::objects::CCn3d_style_settings * CreateASNStyleSettings(void) const;
+    bool SaveSettingsToASN(ncbi::objects::CCn3d_style_settings *styleASN) const;
     bool LoadSettingsFromASN(const ncbi::objects::CCn3d_style_settings& styleASN);
 };
 
