@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/25 16:53:22  lavr
+ * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
+ *
  * Revision 6.4  2000/12/29 17:41:44  lavr
  * Pretty printed; HTTP_CreateConnectorEx constructor interface changed
  *
@@ -118,7 +121,8 @@ typedef enum {
     fHCC_UrlDecodeInput   = 0x8,  /* strip HTTP header, URL-decode content   */
     fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data              */
     fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
-    fHCC_UrlEncodeArgs    = 0x20  /* URL-encode "info->args"                 */
+    fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
+    fHCC_DropUnread       = 0x40  /* Each microsession drops yet unread data */
 } EHCC_Flags;
 typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
 
