@@ -223,7 +223,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 
     bool anchored = IsSetAnchor();
     bool plus     = IsPositiveStrand(row);
-    int  width    = x_GetWidth(row);
+    int  width    = GetWidth(row);
 
     scrn_width *= width;
 
@@ -841,6 +841,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/08/25 16:34:59  todorov
+* exposed GetWidth
+*
 * Revision 1.41  2003/08/20 17:50:52  todorov
 * resize + direct string access rather than appending
 *

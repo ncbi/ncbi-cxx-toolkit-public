@@ -121,6 +121,9 @@ public:
     bool IsNegativeStrand(TNumrow row) const;
     int  StrandSign      (TNumrow row) const; // returns +/- 1
 
+    // Widths
+    int  GetWidth        (TNumrow row) const;
+
     // Sequence visible range
     TSignedSeqPos GetSeqAlnStart(TNumrow row) const; //aln coords, strand ignored
     TSignedSeqPos GetSeqAlnStop (TNumrow row) const;
@@ -307,7 +310,6 @@ protected:
     TSignedSeqPos     x_GetRawStart     (TNumrow row, TNumseg seg) const;
     TSignedSeqPos     x_GetRawStop      (TNumrow row, TNumseg seg) const;
     TSeqPos           x_GetLen          (TNumrow row, TNumseg seg) const;
-    int               x_GetWidth        (TNumrow row)              const;
 
     bool x_SkipType               (TSegTypeFlags type,
                                    TGetChunkFlags flags) const;
@@ -473,7 +475,7 @@ TSignedSeqPos CAlnMap::x_GetRawStart(TNumrow row, TNumseg seg) const
 }
 
 inline
-int CAlnMap::x_GetWidth(TNumrow row) const
+int CAlnMap::GetWidth(TNumrow row) const
 {
     return
         m_Widths.size() == m_NumRows ? m_Widths[row] : 1;
@@ -482,7 +484,7 @@ int CAlnMap::x_GetWidth(TNumrow row) const
 inline
 TSeqPos CAlnMap::x_GetLen(TNumrow row, TNumseg seg) const
 {
-    return m_Lens[seg] * x_GetWidth(row);
+    return m_Lens[seg] * GetWidth(row);
 }
 
 inline
@@ -629,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/08/25 16:35:06  todorov
+* exposed GetWidth
+*
 * Revision 1.25  2003/08/20 14:35:14  todorov
 * Support for NA2AA Densegs
 *

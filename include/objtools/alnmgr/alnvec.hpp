@@ -202,7 +202,7 @@ string& CAlnVec::GetSeqString(string& buffer,
                               TNumrow row,
                               TSeqPos seq_from, TSeqPos seq_to) const
 {
-    if (x_GetWidth(row) == 3) {
+    if (GetWidth(row) == 3) {
         string buff;
         buffer.erase();
         if (IsPositiveStrand(row)) {
@@ -353,6 +353,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2003/08/25 16:35:06  todorov
+ * exposed GetWidth
+ *
  * Revision 1.23  2003/08/20 14:35:14  todorov
  * Support for NA2AA Densegs
  *

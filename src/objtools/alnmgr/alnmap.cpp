@@ -400,7 +400,7 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
 
     // main case: seq_pos is within an alnseg
     //assert(seq_pos >= start  &&  seq_pos <= stop);
-    TSeqPos delta = (seq_pos - start) / x_GetWidth(row);
+    TSeqPos delta = (seq_pos - start) / GetWidth(row);
     return m_AlnStarts[seg.GetAlnSeg()]
         + (plus ? delta : m_Lens[raw_seg] - 1 - delta);
 }
@@ -416,7 +416,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
     TNumseg seg = GetSeg(aln_pos);
     TSignedSeqPos pos = GetStart(for_row, seg);
     if (pos >= 0) {
-        TSeqPos delta = (aln_pos - GetAlnStart(seg)) * x_GetWidth(for_row);
+        TSeqPos delta = (aln_pos - GetAlnStart(seg)) * GetWidth(for_row);
         if (IsPositiveStrand(for_row)) {
             pos += delta;
         } else {
@@ -486,8 +486,8 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
     TSeqPos delta
         = seq_pos - m_Starts[raw_seg * m_NumRows + row];
-    if (x_GetWidth(for_row) != x_GetWidth(row)) {
-        delta = delta / x_GetWidth(row) * x_GetWidth(for_row);
+    if (GetWidth(for_row) != GetWidth(row)) {
+        delta = delta / GetWidth(row) * GetWidth(for_row);
     }
 
     return (GetStart(for_row, raw_seg)
@@ -866,13 +866,13 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().Set
                     (chunk->GetRange().GetFrom()
-                     + m_LeftDelta * m_AlnMap.x_GetWidth(m_Row),
+                     + m_LeftDelta * m_AlnMap.GetWidth(m_Row),
                      chunk->GetRange().GetTo());
             } else {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom(),
                                       chunk->GetRange().GetTo()
                                       - m_LeftDelta
-                                      * m_AlnMap.x_GetWidth(m_Row));
+                                      * m_AlnMap.GetWidth(m_Row));
             }
             chunk->SetType(chunk->GetType() & ~fNoSeqOnLeft);
         }            
@@ -884,11 +884,11 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                 chunk->SetRange().Set
                     (chunk->GetRange().GetFrom(),
                      chunk->GetRange().GetTo()
-                     - m_RightDelta * m_AlnMap.x_GetWidth(m_Row));
+                     - m_RightDelta * m_AlnMap.GetWidth(m_Row));
             } else {
                 chunk->SetRange().Set
                     (chunk->GetRange().GetFrom()
-                     + m_RightDelta * m_AlnMap.x_GetWidth(m_Row),
+                     + m_RightDelta * m_AlnMap.GetWidth(m_Row),
                      chunk->GetRange().GetTo());
             }
             chunk->SetType(chunk->GetType() & ~fNoSeqOnRight);
@@ -906,6 +906,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/08/25 16:34:59  todorov
+* exposed GetWidth
+*
 * Revision 1.36  2003/08/20 14:34:58  todorov
 * Support for NA2AA Densegs
 *
