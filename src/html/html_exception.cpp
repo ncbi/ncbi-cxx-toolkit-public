@@ -61,7 +61,7 @@ void CHTMLException::ReportExtra(ostream& out) const
 void CHTMLException::x_Assign(const CException& src)
 {
     CException::x_Assign(src);
-    m_Trace = dynamic_cast<CHTMLException&>(src).m_Trace;
+    m_Trace = dynamic_cast<const CHTMLException&>(src).m_Trace;
 }
 
 
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/23 18:08:08  ivanov
+ * Added forgotten const for dynamic_cast conversion
+ *
  * Revision 1.1  2003/12/23 17:55:30  ivanov
  * Initial revision
  *
