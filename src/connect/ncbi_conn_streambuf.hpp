@@ -83,7 +83,8 @@ private:
 
     bool                m_Tie;       // always flush before reading
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
-    CT_POS_TYPE         x_Pos;       // put position [for istream.tellp()]
+    CT_POS_TYPE         x_PPos;      // put position [for istream.tellp()]
+    CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
 
     EIO_Status          x_LogIfError(const CDiagCompileInfo& diag_info,
                                      EIO_Status status, const string& msg);
@@ -96,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2004/10/26 20:31:33  lavr
+ * Track both Put(formerly only) and Get(newly added) stream positions
+ *
  * Revision 6.33  2004/10/01 18:55:56  lavr
  * Formatting
  *

@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
     : m_Conn(0), m_ReadBuf(0), m_BufSize(buf_size ? buf_size : 1),
-      m_Tie(tie), x_Pos((CT_OFF_TYPE)(0))
+      m_Tie(tie), x_PPos((CT_OFF_TYPE)(0)), x_GPos((CT_OFF_TYPE)(0))
 {
     if ( !connector ) {
         ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");
@@ -104,7 +104,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
                 memmove(m_WriteBuf, m_WriteBuf + n_written,
                         (n_write - n_written)*sizeof(CT_CHAR_TYPE));
             }
-            x_Pos += (CT_OFF_TYPE)(n_written);
+            x_PPos += (CT_OFF_TYPE)(n_written);
             setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
         }
 
@@ -150,14 +150,15 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     EIO_Status status = CONN_Read(m_Conn, m_ReadBuf,
                                   m_BufSize*sizeof(CT_CHAR_TYPE),
                                   &n_read, eIO_ReadPlain);
-    if ( !n_read ) {
+    if ( !(n_read /= sizeof(CT_CHAR_TYPE)) ) {
         if (status != eIO_Closed)
             LOG_IF_ERROR(status, "underflow(): CONN_Read() failed");
         return CT_EOF;
     }
 
     // update input buffer with data just read
-    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
+    x_GPos += n_read;
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
     return CT_TO_INT_TYPE(*m_ReadBuf);
 }
@@ -190,10 +191,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     } else
         n_read = 0;
 
-    if (n == 0)
-        return (streamsize) n_read;
-
-    do {
+    while ( n ) {
         size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         EIO_Status   status = CONN_Read(m_Conn, x_buf,
@@ -201,6 +199,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                                         &x_read, eIO_ReadPlain);
         if (!(x_read /= sizeof(CT_CHAR_TYPE)))
             break;
+        x_GPos += x_read;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
@@ -219,7 +218,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             break;
         buf    += x_read;
         n      -= x_read;
-    } while ( n );
+    }
     return (streamsize) n_read;
 }
 
@@ -271,8 +270,16 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                      IOS_BASE::openmode which)
 {
-    if (off == 0  &&  whence == IOS_BASE::cur  &&  which == IOS_BASE::out)
-        return x_Pos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
+    if (off == 0  &&  whence == IOS_BASE::cur) {
+        switch (which) {
+        case IOS_BASE::out:
+            return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
+        case IOS_BASE::in:
+            return x_GPos - (CT_OFF_TYPE)(gptr() ? m_WriteBuf - gptr() : 0);
+        default:
+            break;
+        }
+    }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
 }
 
@@ -294,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2004/10/26 20:31:33  lavr
+ * Track both Put(formerly only) and Get(newly added) stream positions
+ *
  * Revision 6.47  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
