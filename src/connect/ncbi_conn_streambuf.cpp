@@ -121,7 +121,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         return n_written == sizeof(b) ? c : CT_EOF;
     }
 
-    assert(CT_EQ_INT_TYPE(c, CT_EOF));
+    _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
     return CONN_Flush(m_Conn) == eIO_Success ? CT_NOT_EOF(CT_EOF) : CT_EOF;
 }
 
@@ -299,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2005/02/03 21:43:00  lavr
+ * assert() -> _ASSERT()
+ *
  * Revision 6.51  2005/02/03 19:37:56  lavr
  * Fix flush() problem in overflow()
  *
