@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/04/03 18:21:23  grichenk
+ * + test for CThread::Exit()
+ *
  * Revision 6.1  2001/03/13 22:45:20  vakatov
  * Initial revision
  *
@@ -245,6 +248,22 @@ void CTestThread::OnExit(void)
     states[m_Index] = eTerminated;
 }
 
+
+bool Test_CThreadExit(void)
+{
+    static CFastMutex s_Exit_Mutex;
+    CFastMutexGuard guard(s_Exit_Mutex);
+    // The mutex must be unlocked after call to CThread::Exit()
+    try {
+        CThread::Exit(reinterpret_cast<void*>(-1));
+    }
+    catch (...) {
+        throw;
+    }
+    return false;   // this line should never be executed
+}
+
+
 void* CTestThread::Main(void)
 {
     {{
@@ -443,6 +462,14 @@ void* CTestThread::Main(void)
         CMutexGuard exit_guard(*exit_locks[m_Index]);
         delay(10); // Provide delay for join-before-exit
     }
+
+    if (m_Index % 3 == 0)
+    {
+        // Never verified, since CThread::Exit() terminates the thread
+        // inside Test_CThreadExit().
+        s_Verify(Test_CThreadExit());
+    }
+
     return reinterpret_cast<void*>(-1);
 }
 
