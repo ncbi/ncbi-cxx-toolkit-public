@@ -758,8 +758,8 @@ string CNcbiApplication::FindProgramExecutablePath
                  LPDWORD lpcbNeeded    // number of bytes required
                  ) = NULL;
 
-        dllEnumProcessModules = dll_psapi.GetEntryPoint("EnumProcessModules",
-                                                        &dllEnumProcessModules );
+        dllEnumProcessModules =
+            dll_psapi.GetEntryPoint_Func("EnumProcessModules", &dllEnumProcessModules);
         if ( !dllEnumProcessModules ) {
             NCBI_THROW(CException, eUnknown, kEmptyStr);
         }
@@ -892,6 +892,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2003/11/19 13:54:19  ivanov
+ * FindProgramExecutablePath: Replaced GetEntryPoint with GetEntryPoint_Func
+ *
  * Revision 1.76  2003/10/10 19:37:13  lavr
  * Ugly workaround for G++/Solaris C RTL (FILE*) interactions that affect
  * stdio constructed on pipes (sockets).  To be fully investigated later...
