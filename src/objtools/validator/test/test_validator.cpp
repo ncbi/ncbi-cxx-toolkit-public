@@ -41,7 +41,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <objects/util/validate.hpp>
+#include <objects/validator/validator.hpp>
 
 // Object Manager includes
 #include <objects/objmgr/object_manager.hpp>
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/01/07 17:57:05  ucko
+ * Use the new path to the validator's public header.
+ *
  * Revision 1.1  2002/12/23 21:11:59  shomrat
  * Moved from objects/objmgr/test
  *
