@@ -48,10 +48,30 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign{
 
 public:
   //Defines
+
+  //frame defines for translated alignment
+  enum TranslatedFrames{
+    eFrameNotSet =0,
+    ePlusStrand1 = 1,
+    ePlusStrand2 = 2,
+    ePlusStrand3 = 3,
+    eMinusStrand1 = -1,
+    eMinusStrand2 = -2,
+    eMinusStrand3 = -3
+  };
+
+  //Alignment display type, specific for showing blast-related info
+  enum AlignType {
+    eNotSet = 0, //Default
+    eNuc = 1,
+    eProt
+  };
+
   struct SeqlocInfo {
     CRef<CSeq_loc> seqloc; //must be seqloc int
-    int frame;  //For translated nucleotide sequence
+    TranslatedFrames frame;  //For translated nucleotide sequence
   };
+
   struct FeatureInfo {
     CConstRef<CSeq_loc> seqloc;  //must be seqloc int
     char featureChar;  //Character for feature
@@ -97,22 +117,7 @@ public:
     ePurple
   };
    
-  //frame defines for translated alignment
-  enum TranslatedFrames{
-    eFrameNotSet =0,
-    ePlusStrand1 = 1,
-    ePlusStrand2 = 2,
-    ePlusStrand3 = 3,
-    eMinusStrand1 = -1,
-    eMinusStrand2 = -2,
-    eMinusStrand3 = -3
-  };
-  //Alignment display type, specific for showing blast-related info
-  enum AlignType {
-    eNotSet = 0, //Default
-    eNuc = 1,
-    eProt
-  };
+
   //Constructors
   /* CSeq_align_set: seqalign to display.
      maskSeqloc: seqloc to be displayed with different characters such as masked sequence.  Must be seqloc-int
@@ -245,6 +250,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.10  2003/10/09 15:06:11  jianye
+*Change int to enum defs in SeqlocInfo
+*
 *Revision 1.9  2003/10/08 17:45:13  jianye
 *Added translated frame defs
 * 
