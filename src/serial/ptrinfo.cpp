@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/30 16:05:04  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.4  1999/06/24 14:45:01  vasilche
 * Added binary ASN.1 output.
 *
@@ -62,27 +65,36 @@ TObjectPtr CPointerTypeInfo::Create(void) const
     return new(void*);
 }
 
-TConstObjectPtr CPointerTypeInfo::GetDefault(void) const
-{
-    static const void* def = 0;
-    return &def;
-}
-
 bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
                               TConstObjectPtr object2) const
 {
-    if ( GetObject(object1) == 0 ) {
-        return GetObject(object2) == 0;
+    TConstObjectPtr data1 = GetObject(object1);
+    TConstObjectPtr data2 = GetObject(object2);
+    if ( data1 == 0 ) {
+        return data2 == 0;
     }
     else {
-        if ( GetObject(object2) == 0 )
+        if ( data2 == 0 )
             return false;
         TTypeInfo dataTypeInfo = GetDataTypeInfo();
-        TTypeInfo typeInfo1 = dataTypeInfo->GetRealTypeInfo(object1);
-        TTypeInfo typeInfo2 = dataTypeInfo->GetRealTypeInfo(object2);
+        TTypeInfo typeInfo1 = dataTypeInfo->GetRealTypeInfo(data1);
+        TTypeInfo typeInfo2 = dataTypeInfo->GetRealTypeInfo(data2);
         return typeInfo1 == typeInfo2 &&
-            typeInfo1->Equals(object1, object2);
+            typeInfo1->Equals(data1, data2);
     }
+}
+
+void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+{
+    TConstObjectPtr srcObject = GetObject(src);
+    if ( srcObject == 0 ) {
+        GetObject(dst) = 0;
+        return;
+    }
+    
+    TTypeInfo srcTypeInfo = GetDataTypeInfo()->GetRealTypeInfo(srcObject);
+    TObjectPtr dstObject = GetObject(dst) = srcTypeInfo->Create();
+    srcTypeInfo->Assign(dstObject, GetObject(src));
 }
 
 void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,

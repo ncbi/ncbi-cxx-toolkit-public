@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/30 16:04:37  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.4  1999/06/24 14:44:45  vasilche
 * Added binary ASN.1 output.
 *
@@ -83,6 +86,11 @@ public:
             return Get(object1) == Get(object2);
         }
 
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
+        {
+            Get(dst) = Get(src);
+        }
+
 protected:
     CStdTypeInfoTmpl()
         : CTypeInfo(typeid(TObjectType))
@@ -113,12 +121,6 @@ public:
             static TTypeInfo typeInfo = new CStdTypeInfo;
             return typeInfo;
         }
-
-    virtual TConstObjectPtr GetDefault(void) const
-        {
-            static TYPE def = 0;
-            return &def;
-        }
 };
 
 template<>
@@ -131,9 +133,9 @@ public:
     
     static TTypeInfo GetTypeInfo(void);
 
-    virtual TConstObjectPtr GetDefault(void) const;
-
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
+
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
 protected:
     virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
@@ -153,8 +155,6 @@ public:
     virtual TObjectPtr Create(void) const;
 
     static TTypeInfo GetTypeInfo(void);
-
-    virtual TConstObjectPtr GetDefault(void) const;
 };
 
 #include <serial/stdtypes.inl>

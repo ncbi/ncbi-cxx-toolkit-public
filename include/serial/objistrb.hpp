@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/30 16:04:29  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.5  1999/06/16 20:35:23  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -78,6 +81,7 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
     virtual void ReadStd(string& data);
+    virtual void ReadStd(char*& data);
 
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
 

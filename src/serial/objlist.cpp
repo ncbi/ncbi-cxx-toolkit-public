@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/30 16:04:57  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.6  1999/06/24 14:44:57  vasilche
 * Added binary ASN.1 output.
 *
@@ -157,7 +160,7 @@ bool COObjectList::CheckMember(TConstObjectPtr owner, TTypeInfo ownerTypeInfo,
 {
     while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
         const CMemberInfo* memberInfo =
-            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
+            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo).second;
         if ( memberInfo == 0 ) {
             return false;
         }
@@ -201,14 +204,14 @@ void COObjectList::SetObject(COObjectInfo& info,
     TTypeInfo ownerTypeInfo = info.GetRootObjectInfo().GetTypeInfo();
 
     while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
-        const CMemberInfo* memberInfo =
+        pair<const CMemberId*, const CMemberInfo*> memberInfo =
             ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
-        if ( memberInfo == 0 ) {
+        if ( memberInfo.second == 0 ) {
             THROW1_TRACE(runtime_error, "object is not collected");
         }
         info.m_Members.push_back(memberInfo);
-        ownerTypeInfo = memberInfo->GetTypeInfo();
-        owner = memberInfo->GetMember(owner);
+        ownerTypeInfo = memberInfo.second->GetTypeInfo();
+        owner = memberInfo.second->GetMember(owner);
     }
 }
 

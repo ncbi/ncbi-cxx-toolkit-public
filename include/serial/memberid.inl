@@ -1,5 +1,5 @@
-#if defined(MEMBER__HPP)  &&  !defined(MEMBER__INL)
-#define MEMBER__INL
+#if defined(MEMBERID__HPP)  &&  !defined(MEMBERID__INL)
+#define MEMBERID__INL
 
 /*  $Id$
 * ===========================================================================
@@ -33,82 +33,34 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/06/30 16:04:22  vasilche
+* Revision 1.1  1999/06/30 16:04:25  vasilche
 * Added support for old ASN.1 structures.
-*
-* Revision 1.1  1999/06/24 14:44:39  vasilche
-* Added binary ASN.1 output.
 *
 * ===========================================================================
 */
 
 inline
-CMemberInfo::CMemberInfo(void)
-    : m_Default(0)
+CMemberId::CMemberId(void)
+    : m_Tag(-1)
 {
 }
 
 inline
-TConstObjectPtr CMemberInfo::GetDefault(void) const
-{
-    return m_Default;
-}
-
-inline
-bool CMemberInfo::Optional(void) const
-{
-    return GetDefault() != 0;
-}
-
-inline
-TObjectPtr CMemberInfo::GetMember(TObjectPtr object) const
-{
-    return Add(object, GetOffset());
-}
-
-inline
-TConstObjectPtr CMemberInfo::GetMember(TConstObjectPtr object) const
-{
-    return Add(object, GetOffset());
-}
-
-inline
-TObjectPtr CMemberInfo::GetContainer(TObjectPtr object) const
-{
-    return Add(object, -GetOffset());
-}
-
-inline
-TConstObjectPtr CMemberInfo::GetContainer(TConstObjectPtr object) const
-{
-    return Add(object, -GetOffset());
-}
-
-inline
-size_t CMemberInfo::GetEndOffset(void) const
-{
-    return GetOffset() + GetSize();
-}
-
-inline
-CRealMemberInfo::CRealMemberInfo(size_t offset, const CTypeRef& type)
-    : m_Offset(offset), m_Type(type)
+CMemberId::CMemberId(const string& name)
+    : m_Name(name), m_Tag(-1)
 {
 }
 
 inline
-CMemberAliasInfo::CMemberAliasInfo(const CTypeRef& containerType,
-                                   const string& memberName)
-    : m_ContainerType(containerType), m_MemberName(memberName)
+const string& CMemberId::GetName(void) const
 {
+    return m_Name;
 }
 
 inline
-CTypedMemberAliasInfo::CTypedMemberAliasInfo(const CTypeRef& type,
-                                             const CTypeRef& containerType,
-                                             const string& memberName)
-    : CMemberAliasInfo(containerType, memberName), m_Type(type)
+CMemberId::TTag CMemberId::GetTag(void) const
 {
+    return m_Tag;
 }
 
-#endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */
+#endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */

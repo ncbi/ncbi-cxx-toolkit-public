@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/30 16:04:28  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.4  1999/06/18 16:26:49  vasilche
 * Fixed bug with unget() in MSVS
 *
@@ -88,6 +91,7 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
     virtual void ReadStd(string& data);
+    virtual void ReadStd(char*& data);
 
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
 

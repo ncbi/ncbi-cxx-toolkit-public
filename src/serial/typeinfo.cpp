@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/30 16:05:06  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.7  1999/06/24 14:45:02  vasilche
 * Added binary ASN.1 output.
 *
@@ -171,16 +174,31 @@ void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
     // there is no members by default
 }
 
+TConstObjectPtr CTypeInfo::GetDefault(void) const
+{
+    TConstObjectPtr def = m_Default;
+    if ( !def ) {
+        def = m_Default = Create();
+    }
+    return def;
+}
+
+TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const
+{
+    return this;
+}
+
 const CMemberInfo* CTypeInfo::FindMember(const string& ) const
 {
     return 0;
 }
 
-const CMemberInfo* CTypeInfo::LocateMember(TConstObjectPtr ,
-                                           TConstObjectPtr ,
-                                           TTypeInfo ) const
+pair<const CMemberId*, const CMemberInfo*>
+CTypeInfo::LocateMember(TConstObjectPtr ,
+                        TConstObjectPtr ,
+                        TTypeInfo ) const
 {
-    return 0;
+    return pair<const CMemberId*, const CMemberInfo*>(0, 0);
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/30 16:04:38  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.8  1999/06/24 14:44:46  vasilche
 * Added binary ASN.1 output.
 *
@@ -101,7 +104,8 @@ class CStlClassInfoList : CStlClassInfoListImpl
     typedef CStlClassInfoListImpl CParent;
 
 public:
-    typedef list<Data> TObjectType;
+    typedef Data TDataType;
+    typedef list<TDataType> TObjectType;
 
     CStlClassInfoList(void);
 
@@ -130,12 +134,6 @@ public:
             return typeInfo;
         }
 
-    virtual TConstObjectPtr GetDefault(void) const
-        {
-            static TObjectType def;
-            return &def;
-        }
-
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
         {
             const TObjectType& l1 = Get(object1);
@@ -149,6 +147,19 @@ public:
                     return false;
             }
             return true;
+        }
+
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
+        {
+            TObjectType& to = Get(dst);
+            const TObjectType& from = Get(src);
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            to.clear();
+            for ( TObjectType::const_iterator i = from.begin();
+                  i != from.end(); ++i ) {
+                to.push_back(TDataType());
+                dataTypeInfo->Assign(&to.back(), &*i);
+            }
         }
 
 protected:
@@ -183,7 +194,7 @@ protected:
             CObjectIStream::Block block(in, CObjectIStream::eSequence,
                                         CObjectIStream::eFixed);
             while ( block.Next() ) {
-                l.push_back(Data());
+                l.push_back(TDataType());
                 in.ReadExternalObject(&l.back(), dataTypeInfo);
             }
         }

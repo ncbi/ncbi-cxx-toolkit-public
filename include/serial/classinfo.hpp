@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/30 16:04:20  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.8  1999/06/24 14:44:37  vasilche
 * Added binary ASN.1 output.
 *
@@ -63,7 +66,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
-#include <list>
+#include <serial/memberlist.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -71,14 +74,14 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 class CObjectOStream;
 class COObjectList;
+class CMemberId;
 class CMemberInfo;
 
 class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    typedef list<CMemberInfo*> TMembers;
-    typedef map<string, const CMemberInfo*> TMembersByName;
-    typedef map<size_t, const CMemberInfo*> TMembersByOffset;
+    typedef map<size_t, pair<const CMemberId*, const CMemberInfo*> >
+        TMembersByOffset;
 
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void));
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
@@ -89,16 +92,31 @@ public:
 
     virtual TObjectPtr Create(void) const;
 
-    virtual TConstObjectPtr GetDefault(void) const;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
     // AddMember will take ownership of member
-    CClassInfoTmpl* AddMember(CMemberInfo* member);
+    CMemberInfo* AddMember(const string& name, CMemberInfo* member);
+    CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
+
+    bool RandomOrder(void) const
+        {
+            return m_RandomOrder;
+        }
+    CClassInfoTmpl* SetRandomOrder(bool random = true)
+        {
+            m_RandomOrder = random;
+            return this;
+        }
+
+    const TMembersByOffset& GetMembersByOffset(void) const;
 
     virtual const CMemberInfo* FindMember(const string& name) const;
-    virtual const CMemberInfo* LocateMember(TConstObjectPtr object,
-                                            TConstObjectPtr member,
-                                            TTypeInfo memberTypeInfo) const;
+    virtual pair<const CMemberId*, const CMemberInfo*>
+        LocateMember(TConstObjectPtr object,
+                     TConstObjectPtr member,
+                     TTypeInfo memberTypeInfo) const;
 
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
@@ -113,9 +131,55 @@ private:
     size_t m_Size;
     TObjectPtr (*m_Creator)(void);
 
-    TMembers m_Members;
-    TMembersByName m_MembersByName;
-    TMembersByOffset m_MembersByOffset;
+    CMembers m_Members;
+    mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
+
+    bool m_RandomOrder;
+};
+
+class CAliasInfo;
+
+class CClassInfoAlias : public CTypeInfo {
+    typedef CTypeInfo CParent;
+public:
+    typedef list<CAliasInfo*> TAliases;
+    typedef map<string, const CAliasInfo*> TAliasesByName;
+
+    CClassInfoAlias(const string& name, const CTypeRef& baseTypeInfo);
+    virtual ~CClassInfoAlias(void);
+
+    virtual size_t GetSize(void) const;
+
+    virtual TObjectPtr Create(void) const;
+
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+    // AddMember will take ownership of member
+    CClassInfoAlias* AddMember(const string& name, const string& realName);
+
+    virtual const CMemberInfo* FindMember(const string& name) const;
+    virtual pair<const CMemberId*, const CMemberInfo*>
+        LocateMember(TConstObjectPtr object,
+                     TConstObjectPtr member,
+                     TTypeInfo memberTypeInfo) const;
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+    virtual void CollectExternalObjects(COObjectList& list,
+                                        TConstObjectPtr object) const;
+
+    virtual void WriteData(CObjectOStream& out,
+                           TConstObjectPtr object) const;
+
+private:
+    size_t m_Size;
+    TObjectPtr (*m_Creator)(void);
+
+    TAliases m_Aliases;
+    TAliasesByName m_AliasesByName;
 };
 
 template<class CLASS, class PCLASS = CLASS>

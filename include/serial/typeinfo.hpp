@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/30 16:04:39  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.7  1999/06/24 14:44:47  vasilche
 * Added binary ASN.1 output.
 *
@@ -68,12 +71,12 @@ class CObjectOStream;
 class CClassInfoTmpl;
 class COObjectList;
 class CTypeRef;
+class CMemberId;
 class CMemberInfo;
 
-class CTypeInfoOrder
+struct CTypeInfoOrder
 {
-public:
-    bool operator()(const type_info* const i1, const type_info* const i2) const
+    bool operator()(const type_info* i1, const type_info* i2) const
         { return i1->before(*i2); }
 };
 
@@ -102,23 +105,23 @@ public:
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const = 0;
 
-    virtual TConstObjectPtr GetDefault(void) const = 0;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const = 0;
 
-    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const
-        {
-            return this;
-        }
+    TConstObjectPtr GetDefault(void) const;
+
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const;
 
     virtual ~CTypeInfo(void);
 
     virtual const CMemberInfo* FindMember(const string& name) const;
-    virtual const CMemberInfo* LocateMember(TConstObjectPtr object,
-                                            TConstObjectPtr member,
-                                            TTypeInfo memberTypeInfo) const;
-
+    virtual pair<const CMemberId*, const CMemberInfo*>
+        LocateMember(TConstObjectPtr object,
+                     TConstObjectPtr member,
+                     TTypeInfo memberTypeInfo) const;
+    
     // collect info about all memory chunks for writing
     void CollectObjects(COObjectList& objectList,
                         TConstObjectPtr object) const;
@@ -148,6 +151,7 @@ private:
 
     const type_info& m_Id;
     string m_Name;
+    mutable TConstObjectPtr m_Default;
 
     static TTypesByName* sm_TypesByName;
     static TTypesById* sm_TypesById;

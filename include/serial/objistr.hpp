@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/30 16:04:27  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.8  1999/06/24 14:44:39  vasilche
 * Added binary ASN.1 output.
 *
@@ -64,11 +67,10 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/memberid.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
-
-class CClassInfoTmpl;
 
 class CIObjectInfo
 {
@@ -114,6 +116,8 @@ public:
     virtual void ReadStd(float& data) = 0;
     virtual void ReadStd(double& data) = 0;
     virtual void ReadStd(string& data) = 0;
+    virtual void ReadStd(char*& data) = 0;
+    virtual void ReadStd(const char*& data);
 
     // object level readers
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
@@ -122,7 +126,7 @@ public:
 
     virtual void SkipValue(void);
 
-    virtual string ReadMemberName(void);
+    virtual CMemberId ReadMember(void);
 
     // block interface
     enum EFixed {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/30 16:05:05  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.3  1999/06/24 14:45:01  vasilche
 * Added binary ASN.1 output.
 *
@@ -65,14 +68,14 @@ TTypeInfo CStdTypeInfo<void>::GetTypeInfo(void)
     return typeInfo;
 }
 
-TConstObjectPtr CStdTypeInfo<void>::GetDefault(void) const
-{
-    throw runtime_error("void does not have default");
-}
-
 bool CStdTypeInfo<void>::Equals(TConstObjectPtr , TConstObjectPtr ) const
 {
-    throw runtime_error("void cannot compare");
+    throw runtime_error("void cannot be compared");
+}
+
+void CStdTypeInfo<void>::Assign(TObjectPtr , TConstObjectPtr ) const
+{
+    throw runtime_error("void cannot be assigned");
 }
 
 void CStdTypeInfo<void>::ReadData(CObjectIStream& , TObjectPtr ) const
@@ -94,12 +97,6 @@ TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = new CStdTypeInfo;
     return typeInfo;
-}
-
-TConstObjectPtr CStdTypeInfo<string>::GetDefault(void) const
-{
-    static string def;
-    return &def;
 }
 
 END_NCBI_SCOPE

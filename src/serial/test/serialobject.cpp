@@ -17,6 +17,34 @@ const CTypeInfo* CSerialObject::GetTypeInfo(void)
     return info;
 }
 
+/*
+
+Serial-Object ::= SEQUENCE {
+    name VisibleString,
+    attributes SEQUENCE OF VisibleString { "none" },
+    next Serial-Object OPTIONAL
+}
+
+const CTypeInfo* GetTypeInfo_Serial_Object(void)
+{
+    static CClassInfoTmpl* info = 0;
+    typedef CSerialObject CClass;
+    if ( info == 0 ) {
+        CTypeRef typeRef = GetTypeRef(static_cast<const CSerialObject*>(0));
+        info = new CClassInfoTmpl("Serial-Object", typeRef);
+        info->ADD_ALIAS_MEMBER("name", "m_Name");
+        info->ADD_ALIAS_MEMBER("attributes", "m_Attributes", new list<string>("none"));
+        info->ADD_ALIAS_MEMBER("next", "m_Next", GetTypeInfo_Serial_Object(), null);
+    }
+    return info;
+}
+
+    CSerialObject s;
+    CObjectOStream out;
+    out.Write(&s, GetTypeInfo_Serial_Object());
+
+*/
+
 CSerialObject::CSerialObject(void)
     : m_NamePtr(0), m_Size(0), m_Next(0)
 {

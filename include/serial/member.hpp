@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/30 16:04:21  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.1  1999/06/24 14:44:38  vasilche
 * Added binary ASN.1 output.
 *
@@ -45,33 +48,19 @@
 
 BEGIN_NCBI_SCOPE
 
-class CClassInfoTmpl;
-
 class CMemberInfo {
 public:
-    typedef int TTag;
-
-    // default constructor for using in map
     CMemberInfo(void);
-
-    // superclass member
-    CMemberInfo(size_t offset, const CTypeRef& type);
-    
-    // common member
-    CMemberInfo(const string& name, size_t offset, const CTypeRef& type);
-
-    const string& GetName(void) const;
-
-    size_t GetOffset(void) const;
-
-    TTag GetTag(void) const;
-    CMemberInfo* SetTag(TTag tag);
+    virtual ~CMemberInfo(void);
 
     bool Optional(void) const;
+    CMemberInfo* SetOptional(void);
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);
 
-    TTypeInfo GetTypeInfo(void) const;
+    virtual size_t GetOffset(void) const = 0;
+
+    virtual TTypeInfo GetTypeInfo(void) const = 0;
 
     size_t GetSize(void) const;
 
@@ -83,13 +72,55 @@ public:
     size_t GetEndOffset(void) const;
 
 private:
-    string m_Name;
-    size_t m_Offset;
-    TTag m_Tag;
+    // default value
     TConstObjectPtr m_Default;
-    CTypeRef m_Type;
+};
 
-    friend class CClassInfoTmpl;
+class CRealMemberInfo : public CMemberInfo {
+public:
+    // common member
+    CRealMemberInfo(size_t offset, const CTypeRef& type);
+
+    virtual size_t GetOffset(void) const;
+    virtual TTypeInfo GetTypeInfo(void) const;
+
+private:
+    // physical description
+    size_t m_Offset;
+    CTypeRef m_Type;
+};
+
+class CMemberAliasInfo : public CMemberInfo {
+public:
+    // common member
+    CMemberAliasInfo(const CTypeRef& containerType,
+                     const string& memberName);
+
+    virtual size_t GetOffset(void) const;
+    virtual TTypeInfo GetTypeInfo(void) const;
+
+protected:
+    const CMemberInfo* GetBaseMember(void) const;
+
+private:
+    // physical description
+    mutable const CMemberInfo* m_BaseMember;
+    CTypeRef m_ContainerType;
+    string m_MemberName;
+};
+
+class CTypedMemberAliasInfo : public CMemberAliasInfo {
+public:
+    // common member
+    CTypedMemberAliasInfo(const CTypeRef& type,
+                          const CTypeRef& containerType,
+                          const string& memberName);
+
+    virtual TTypeInfo GetTypeInfo(void) const;
+
+private:
+    // physical description
+    CTypeRef m_Type;
 };
 
 #include <serial/member.inl>

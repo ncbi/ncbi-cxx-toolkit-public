@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/06/30 16:04:57  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.10  1999/06/24 14:44:56  vasilche
 * Added binary ASN.1 output.
 *
@@ -485,6 +488,20 @@ void CObjectIStreamBinary::ReadStd(string& data)
     }
 }
 
+void CObjectIStreamBinary::ReadStd(char*& data)
+{
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eNull:
+        data = 0;
+        break;
+    case CObjectStreamBinaryDefs::eStd_string:
+        data = strdup(ReadString().c_str());
+        break;
+    default:
+        THROW1_TRACE(runtime_error, "invalid string code");
+    }
+}
+
 CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
 {
     return CStdDataReader<TIndex>::ReadNumber(*this, false);
@@ -699,7 +716,7 @@ void CObjectIStreamBinary::SkipObjectData(void)
 {
     Block block(*this);
     while ( block.Next() ) {
-        ReadMemberName();
+        ReadMember();
         SkipValue();
     }
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/30 16:04:30  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.3  1999/06/24 14:44:40  vasilche
 * Added binary ASN.1 output.
 *
@@ -53,6 +56,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CMemberId;
 class CMemberInfo;
 class COObjectList;
 
@@ -100,9 +104,15 @@ public:
         {
             return !m_Members.empty();
         }
+
+    const CMemberId& GetMemberId(void) const
+        {
+            return *(m_Members.back().first);
+        }
+
     const CMemberInfo& GetMemberInfo(void) const
         {
-            return *m_Members.back();
+            return *(m_Members.back().second);
         }
 
     void ToContainerObject(void)
@@ -114,7 +124,7 @@ private:
     friend class COObjectList;
 
     const pair<const TConstObjectPtr, CORootObjectInfo>* m_RootObject;
-    list<const CMemberInfo*> m_Members;
+    list<pair<const CMemberId*, const CMemberInfo*> > m_Members;
 };
 
 class COObjectList

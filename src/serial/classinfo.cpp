@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/06/30 16:04:48  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.10  1999/06/24 14:44:53  vasilche
 * Added binary ASN.1 output.
 *
@@ -71,6 +74,7 @@
 #include <serial/member.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -86,14 +90,11 @@ CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
                                const CTypeRef& parent, size_t offset)
     : CParent(ti), m_Size(size), m_Creator(creator)
 {
-    _TRACE(ti.name());
-    AddMember(new CMemberInfo(offset, parent));
-    _TRACE(ti.name());
+    AddMember(NcbiEmptyString, new CRealMemberInfo(offset, parent));
 }
 
 CClassInfoTmpl::~CClassInfoTmpl(void)
 {
-    DeleteElements(m_Members);
 }
 
 size_t CClassInfoTmpl::GetSize(void) const
@@ -106,71 +107,23 @@ TObjectPtr CClassInfoTmpl::Create(void) const
     return m_Creator();
 }
 
-CClassInfoTmpl* CClassInfoTmpl::AddMember(CMemberInfo* member)
+CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)
 {
-    const string& name = member->GetName();
-    if ( !m_Members.empty() ) {
-        _TRACE("AddMember: " << name << ", " << 
-               member->GetTypeInfo()->GetName() << ", " <<
-               member->GetOffset() << "-" << member->GetEndOffset() << ", " <<
-               " in " << GetSize());
-        // check for conflicts
-        if ( m_MembersByName.find(name) != m_MembersByName.end() ) {
-            THROW1_TRACE(runtime_error, "duplicated members: " + name);
-        }
+    m_MembersByOffset.reset(0);
+    return m_Members.AddMember(id, member);
+}
 
-        // check for valid offset and size
-        size_t memberOffset = member->GetOffset();
-        size_t memberEnd = memberOffset + member->GetSize();
-        if ( member->GetSize() == 0 ) {
-            THROW1_TRACE(runtime_error, "zero size members are not supported");
-        }
-        // check for limits of object
-        if ( member->GetEndOffset() > GetSize() ) {
-            THROW1_TRACE(runtime_error, "member out of object: " + name);
-        }
-
-        // member right after the one to be inserted, garanteed by lower_bound:
-        // after is first member with offset >= memberEnd
-        TMembersByOffset::const_iterator after =
-            m_MembersByOffset.lower_bound(member->GetEndOffset());
-        {
-            if ( after == m_MembersByOffset.end() )
-                _TRACE("after: end");
-            else
-                _TRACE("after: " << after->second->GetName() << ", " <<
-                       after->second->GetOffset());
-        }
-        // if there are members before
-        if ( after != m_MembersByOffset.begin() ) {
-            // check for overlapping
-            // member right before to be inserted:
-            const CMemberInfo* memberBefore = after == m_MembersByOffset.end()?
-                m_MembersByOffset.rbegin()->second:
-                (--after)->second;
-
-            _TRACE("before: " << memberBefore->GetName() << ", " <<
-                   memberBefore->GetOffset() << "-" << memberBefore->GetEndOffset());
-
-            // check overlapping
-            if ( memberBefore->GetEndOffset() > member->GetOffset() ) {
-                THROW1_TRACE(runtime_error, "overlapping member: " + name);
-            }
-        }
-    }
-    member->SetTag(m_Members.size());
-    m_Members.push_back(member);
-    m_MembersByName[name] = member;
-    m_MembersByOffset[member->GetOffset()] = member;
-    return this;
+CMemberInfo* CClassInfoTmpl::AddMember(const string& name, CMemberInfo* member)
+{
+    return AddMember(CMemberId(name), member);
 }
 
 void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
                                             TConstObjectPtr object) const
 {
-    for ( TMembers::const_iterator i = m_Members.begin();
+    for ( CMembers::TMembers::const_iterator i = m_Members.begin();
           i != m_Members.end(); ++i ) {
-        const CMemberInfo* memberInfo = *i;
+        const CMemberInfo* memberInfo = i->second;
         TTypeInfo memberTypeInfo = memberInfo->GetTypeInfo();
         TConstObjectPtr member = memberInfo->GetMember(object);
         memberTypeInfo->CollectExternalObjects(objectList, member);
@@ -181,15 +134,17 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
     CObjectOStream::Block block(out);
-    for ( TMembers::const_iterator i = m_Members.begin();
+    CMemberId currentId;
+    for ( CMembers::TMembers::const_iterator i = m_Members.begin();
           i != m_Members.end(); ++i ) {
-        const CMemberInfo& memberInfo = **i;
+        const CMemberInfo& memberInfo = *i->second;
         TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
         TConstObjectPtr member = memberInfo.GetMember(object);
         TConstObjectPtr def = memberInfo.GetDefault();
+        currentId.SetNext(i->first);
         if ( !def || !memberTypeInfo->Equals(member, def) ) {
             block.Next();
-            out.WriteMember(memberInfo);
+            out.WriteMember(currentId);
             memberTypeInfo->WriteData(out, member);
         }
     }
@@ -197,69 +152,168 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    CObjectIStream::Block block(in);
-    while ( block.Next() ) {
-        const string& memberName = in.ReadMemberName();
-        TMembersByName::const_iterator i =
-            m_MembersByName.find(memberName);
-        if ( i == m_MembersByName.end() ) {
-            ERR_POST("unknown member: " + memberName + ", trying to skip...");
-            in.SkipValue();
-            continue;
+    if ( RandomOrder() ) {
+        set<const CMemberInfo*> read;
+        CObjectIStream::Block block(in);
+        while ( block.Next() ) {
+            CMemberId memberId = in.ReadMember();
+            const CMemberInfo* memberInfo = m_Members.FindMember(memberId);
+            if ( !memberInfo ) {
+                ERR_POST("unknown member: " +
+                         memberId.ToString() + ", skipping");
+                in.SkipValue();
+                continue;
+            }
+            if ( read.find(memberInfo) != read.end() ) {
+                ERR_POST("duplicated member: " +
+                         memberId.ToString() + ", skipping");
+                in.SkipValue();
+                continue;
+            }
+            read.insert(memberInfo);
+            TTypeInfo memberTypeInfo = memberInfo->GetTypeInfo();
+            TObjectPtr member = memberInfo->GetMember(object);
+            memberTypeInfo->ReadData(in, member);
         }
-        const CMemberInfo* memberInfo = i->second;
-        TTypeInfo memberTypeInfo = memberInfo->GetTypeInfo();
-        TObjectPtr member = memberInfo->GetMember(object);
-        memberTypeInfo->ReadData(in, member);
+        // init all absent members
+        for ( CMembers::TMembers::const_iterator i = m_Members.begin();
+              i != m_Members.end(); ++i ) {
+            const CMemberInfo* memberInfo = i->second;
+            if ( read.find(memberInfo) == read.end() ) {
+                // check if this member have defaults
+                TConstObjectPtr def = memberInfo->GetDefault();
+                if ( def != 0 ) {
+                    // copy defult
+                    memberInfo->GetTypeInfo()->
+                        Assign(memberInfo->GetMember(object), def);
+                }
+                else {
+                    // error: absent member w/o defult
+                    THROW1_TRACE(runtime_error,
+                                 "member " + i->first.GetName() +
+                                 " is missing and doesn't have default");
+                }
+            }
+        }
     }
+    else {
+        // sequential order
+        CMembers::TMembers::const_iterator i = m_Members.begin();
+        CObjectIStream::Block block(in);
+        CMemberId currentId;
+        while ( block.Next() ) {
+            CMemberId memberId = in.ReadMember();
+            // find desired member
+            const CMemberInfo* memberInfo;
+            for ( ;; ++i ) {
+                if ( i == m_Members.end() ) {
+                    THROW1_TRACE(runtime_error,
+                                 "unexpected member: " + memberId.ToString());
+                }
+                memberInfo = i->second;
+                currentId.SetNext(i->first);
+                if ( currentId == memberId )
+                    break;
+                
+                TConstObjectPtr def = memberInfo->GetDefault();
+                if ( def == 0 ) {
+                    THROW1_TRACE(runtime_error, "member " +
+                                 i->first.GetName() + " expected");
+                }
+                memberInfo->GetTypeInfo()->
+                    Assign(memberInfo->GetMember(object), def);
+            }
+            ++i;
+            memberInfo->GetTypeInfo()->
+                ReadData(in, memberInfo->GetMember(object));
+        }
+        for ( ; i != m_Members.end(); ++i ) {
+            const CMemberInfo* memberInfo = i->second;
+            TConstObjectPtr def = memberInfo->GetDefault();
+            if ( def == 0 ) {
+                THROW1_TRACE(runtime_error,
+                             "member " + i->first.GetName() + " expected");
+            }
+            memberInfo->GetTypeInfo()->
+                Assign(memberInfo->GetMember(object), def);
+        }
+    }
+}
+
+const CClassInfoTmpl::TMembersByOffset& CClassInfoTmpl::GetMembersByOffset(void) const
+{
+    TMembersByOffset* members = m_MembersByOffset.get();
+    if ( !members ) {
+        m_MembersByOffset.reset(members = new TMembersByOffset);
+        const CMembers::TMembers& mlist = m_Members.GetMembers();
+        for ( CMembers::TMembers::const_iterator i = mlist.begin();
+              i != mlist.end(); ++i ) {
+            const CMemberInfo* info = i->second;
+            size_t offset = info->GetOffset();
+            if ( !members->insert(TMembersByOffset::
+                                  value_type(offset,
+                                             make_pair(&i->first,
+                                                       i->second))).second ) {
+                THROW1_TRACE(runtime_error,
+                             "conflict member offset: " +
+                             NStr::UIntToString(offset));
+            }
+        }
+        size_t nextOffset = 0;
+        for ( TMembersByOffset::const_iterator i = members->begin();
+              i != members->end(); ++i ) {
+            size_t offset = i->first;
+            if ( offset < nextOffset ) {
+                THROW1_TRACE(runtime_error,
+                             "overlapping members");
+            }
+            nextOffset = offset + i->second.second->GetSize();
+        }
+    }
+    return *members;
 }
 
 const CMemberInfo* CClassInfoTmpl::FindMember(const string& name) const
 {
-    TMembersByName::const_iterator i = m_MembersByName.find(name);
-    if ( i == m_MembersByName.end() )
-        return 0;
-    return i->second;
+    return m_Members.FindMember(name);
 }
 
-const CMemberInfo* CClassInfoTmpl::LocateMember(TConstObjectPtr object,
-                                                TConstObjectPtr member,
-                                                TTypeInfo memberTypeInfo) const
+pair<const CMemberId*, const CMemberInfo*>
+CClassInfoTmpl::LocateMember(TConstObjectPtr object,
+                             TConstObjectPtr member,
+                             TTypeInfo memberTypeInfo) const
 {
-    _TRACE("LocateMember(" << unsigned(object) << ", " << unsigned(member) << ", " << memberTypeInfo->GetName() << ")");
+    _TRACE("LocateMember(" << unsigned(object) << ", " << unsigned(member) <<
+           ", " << memberTypeInfo->GetName() << ")");
     TConstObjectPtr objectEnd = EndOf(object);
     TConstObjectPtr memberEnd = memberTypeInfo->EndOf(member);
     if ( member < object || memberEnd > objectEnd ) {
-        return 0;
+        return pair<const CMemberId*, const CMemberInfo*>(0, 0);
     }
     size_t memberOffset = Sub(member, object);
     size_t memberEndOffset = Sub(memberEnd, object);
+    const TMembersByOffset& members = GetMembersByOffset();
     TMembersByOffset::const_iterator after =
-        m_MembersByOffset.lower_bound(memberEndOffset);
-    if ( after == m_MembersByOffset.begin() )
-        return 0;
+        members.lower_bound(memberEndOffset);
+    if ( after == members.begin() )
+        return pair<const CMemberId*, const CMemberInfo*>(0, 0);
 
-    const CMemberInfo* before = after == m_MembersByOffset.end()?
-        m_MembersByOffset.rbegin()->second:
+    pair<const CMemberId*, const CMemberInfo*> before = after == members.end()?
+        members.rbegin()->second:
         (--after)->second;
-    if ( memberOffset >= before->GetOffset() &&
-         memberEndOffset <= before->GetEndOffset() ) {
-        return before;
-    }
-    return 0;
-}
 
-TConstObjectPtr CClassInfoTmpl::GetDefault(void) const
-{
-    static TConstObjectPtr def = Create();
-    return def;
+    if ( memberOffset < before.second->GetOffset() ||
+         memberEndOffset > before.second->GetEndOffset() ) {
+        return pair<const CMemberId*, const CMemberInfo*>(0, 0);
+    }
+    return before;
 }
 
 bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
 {
-    for ( TMembers::const_iterator i = m_Members.begin();
+    for ( CMembers::TMembers::const_iterator i = m_Members.begin();
           i != m_Members.end(); ++i ) {
-        const CMemberInfo& member = **i;
+        const CMemberInfo& member = *i->second;
         if ( !member.GetTypeInfo()->Equals(member.GetMember(object1),
                                            member.GetMember(object2)) )
             return false;
@@ -267,21 +321,14 @@ bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) co
     return true;
 }
 
-size_t CMemberInfo::GetSize(void) const
+void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    return GetTypeInfo()->GetSize();
-}
-
-CMemberInfo* CMemberInfo::SetTag(TTag tag)
-{
-    m_Tag = tag;
-    return this;
-}
-
-CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
-{
-    m_Default = def;
-    return this;
+    for ( CMembers::TMembers::const_iterator i = m_Members.begin();
+          i != m_Members.end(); ++i ) {
+        const CMemberInfo& member = *i->second;
+        member.GetTypeInfo()->Assign(member.GetMember(dst),
+                                     member.GetMember(src));
+    }
 }
 
 END_NCBI_SCOPE

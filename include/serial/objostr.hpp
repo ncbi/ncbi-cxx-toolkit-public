@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/30 16:04:30  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.8  1999/06/24 14:44:40  vasilche
 * Added binary ASN.1 output.
 *
@@ -69,6 +72,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CMemberId;
+
 class CObjectOStream
 {
 public:
@@ -100,7 +105,7 @@ public:
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
     // write member name
-    virtual void WriteMember(const CMemberInfo& member);
+    virtual void WriteMember(const CMemberId& member);
 
     enum ESequence {
         eSequence

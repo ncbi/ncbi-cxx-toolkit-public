@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/06/30 16:04:35  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.12  1999/06/24 14:44:43  vasilche
 * Added binary ASN.1 output.
 *
@@ -80,6 +83,9 @@
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/asntypes.hpp>
+
+struct valnode;
 
 BEGIN_NCBI_SCOPE
 
@@ -117,7 +123,6 @@ inline CTypeRef GetTypeRef(const T* const* object);
 inline
 CTypeRef GetTypeRef(const void*)
 {
-    _TRACE("GetTypeRef(void)");
     return CTypeRef(typeid(void), CStdTypeInfo<void>::GetTypeInfo);
 }
 
@@ -125,7 +130,6 @@ template<typename T>
 inline
 CTypeRef GetStdTypeRef(const T* )
 {
-    _TRACE("GetStdTypeRef(const T&) T: " << typeid(T).name());
     return CTypeRef(typeid(T), CStdTypeInfo<T>::GetTypeInfo);
 }
 
@@ -148,23 +152,92 @@ CTypeRef GetTypeRef(const signed char* object)
 }
 
 inline
+CTypeRef GetTypeRef(const short* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const unsigned short* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
 CTypeRef GetTypeRef(const int* object)
 {
-    _TRACE("GetTypeRef(const int&)");
     return GetStdTypeRef(object);
 }
 
 inline
 CTypeRef GetTypeRef(const unsigned int* object)
 {
-    _TRACE("GetTypeRef(const unsigned int&)");
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const long* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const unsigned long* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const float* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const double* object)
+{
     return GetStdTypeRef(object);
 }
 
 inline
 CTypeRef GetTypeRef(const string* object)
 {
-    _TRACE("GetTypeRef(const string&)");
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(char* const* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(unsigned char* const* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(signed char* const* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const char* const* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const unsigned char* const* object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const signed char* const* object)
+{
     return GetStdTypeRef(object);
 }
 
@@ -173,7 +246,6 @@ template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const CLASS* )
 {
-    _TRACE("GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name());
     return CTypeRef(typeid(CLASS), CLASS::GetTypeInfo);
 }
 
@@ -181,7 +253,6 @@ template<typename Data>
 inline
 CTypeRef GetTypeRef(const list<Data>* )
 {
-    _TRACE("GetTypeRef(const list<Data>&) Data: " << typeid(Data).name());
     return CTypeRef(typeid(list<Data>),
                     CStlClassInfoList<Data>::GetTypeInfo);
 }
@@ -190,7 +261,6 @@ template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const list<Data>* )
 {
-    _TRACE("GetStlTypeRef(const list<Data>&) Data: " << typeid(Data).name());
     return CTypeRef(typeid(list<Data>),
                     CStlClassInfoList<Data>::GetTypeInfo);
 }
@@ -201,7 +271,6 @@ inline
 CTypeRef GetPtrTypeRef(const T* const* object, CTypeRef typeRef)
 {
     typename T* p = 0;
-    _TRACE("GetTypeRef(const T*) T: " << typeid(*p).name());
     return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(p), typeRef));
 }
 
@@ -213,12 +282,54 @@ CTypeRef GetPtrTypeRef(const T* const* object)
     return GetPtrTypeRef(object, GetTypeRef(p));
 }
 
+template<typename T>
+inline
+CTypeRef GetSetTypeRef(const T* const* )
+{
+    const T* object = 0;
+    return CTypeRef(new CSetTypeInfo(GetTypeRef(object)));
+}
+
+template<typename T>
+inline
+CTypeRef GetSequenceTypeRef(const T* const* )
+{
+    const T* object = 0;
+    return CTypeRef(new CSequenceTypeInfo(GetTypeRef(object)));
+}
+
+template<typename T>
+inline
+CTypeRef GetSetOfTypeRef(const T* const* )
+{
+    const T* object = 0;
+    return CTypeRef(new CSetOfTypeInfo(GetTypeRef(object)));
+}
+
+template<typename T>
+inline
+CTypeRef GetSequenceOfTypeRef(const T* const* )
+{
+    const T* object = 0;
+    return CTypeRef(new CSequenceOfTypeInfo(GetTypeRef(object)));
+}
+
+inline
+CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
+{
+    return CTypeRef(new CChoiceTypeInfo(CTypeRef(typeid(void), func)));
+}
+
+
+
 template<typename Data>
 inline
 CStlClassInfoList<Data>::CStlClassInfoList(void)
     : CParent(typeid(TObjectType), GetTypeRef(static_cast<const Data*>(0)))
 {
 }
+
+
 
 inline
 TTypeInfo GetTypeInfo(void)
@@ -266,48 +377,124 @@ CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
     return Read(in, object);
 }
 
+
 template<typename T>
 inline
-CMemberInfo* MemberInfo(const string& name,
-                        const T* member, const CTypeRef typeRef)
+CMemberInfo* MemberInfo(const T* member, const CTypeRef typeRef)
 {
-	return new CMemberInfo(name, size_t(member), typeRef);
+	return new CRealMemberInfo(size_t(member), typeRef);
 }
 
 template<typename T>
 inline
-CMemberInfo* MemberInfo(const string& name, const T* member)
+CMemberInfo* MemberInfo(const T* member)
 {
-	return MemberInfo(name, member, GetTypeRef(member));
+	return MemberInfo(member, GetTypeRef(member));
 }
 
 template<typename T>
 inline
-CMemberInfo* PtrMemberInfo(const string& name, const T* member, CTypeRef typeRef)
+CMemberInfo* PtrMemberInfo(const T* member, CTypeRef typeRef)
 {
-	return MemberInfo(name, member, GetPtrTypeRef(member, typeRef));
+	return MemberInfo(member, GetPtrTypeRef(member, typeRef));
 }
 
 template<typename T>
 inline
-CMemberInfo* PtrMemberInfo(const string& name, const T* member)
+CMemberInfo* PtrMemberInfo(const T* const* member)
 {
-	return MemberInfo(name, member, GetPtrTypeRef(member));
+	return MemberInfo(member, GetPtrTypeRef(member));
 }
 
 template<typename T>
 inline
-CMemberInfo* StlMemberInfo(const string& name, const T* member)
+CMemberInfo* StlMemberInfo(const T* member)
 {
-	return MemberInfo(name, member, GetStlTypeRef(member));
+	return MemberInfo(member, GetStlTypeRef(member));
 }
 
+template<typename T>
+inline
+CMemberInfo* SetMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSetTypeRef(member));
+}
+
+template<typename T>
+inline
+CMemberInfo* SequenceMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSequenceTypeRef(member));
+}
+
+template<typename T>
+inline
+CMemberInfo* SetOfMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSetOfTypeRef(member));
+}
+
+template<typename T>
+inline
+CMemberInfo* SequenceOfMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSequenceOfTypeRef(member));
+}
+
+inline
+CMemberInfo* ChoiceMemberInfo(const valnode* const* member, TTypeInfo (*func)(void))
+{
+	return MemberInfo(member, GetChoiceTypeRef(func));
+}
+
+#define CLASS_MEMBER(Member) \
+	MemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_CLASS_MEMBER(Member) \
-	AddMember(MemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
+	AddMember(#Member, CLASS_MEMBER(Member))
+
+#define PTR_CLASS_MEMBER(Member) \
+	PtrMemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_PTR_CLASS_MEMBER(Member) \
-	AddMember(PtrMemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
+	AddMember(#Member, PTR_CLASS_MEMBER(Member))
+
+#define STL_CLASS_MEMBER(Member) \
+	StlMemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_STL_CLASS_MEMBER(Member) \
-	AddMember(StlMemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
+	AddMember(#Member, STL_CLASS_MEMBER(Member))
+
+#define ASN_MEMBER(Member, Type) \
+	NAME2(Type, MemberInfo)(&static_cast<const CClass*>(0)->Member)
+#define ADD_ASN_MEMBER(Member, Type) \
+	AddMember(#Member, ASN_MEMBER(Member, Type))
+
+#define SET_MEMBER(Member) \
+	SetMemberInfo(&static_cast<const CClass*>(0)->Member)
+#define ADD_SET_MEMBER(Member) \
+	AddMember(#Member, SET_MEMBER(Member))
+
+#define SEQUENCE_MEMBER(Member) \
+	SequenceMemberInfo(&static_cast<const CClass*>(0)->Member)
+#define ADD_SEQUENCE_MEMBER(Member) \
+	AddMember(#Member, SEQUENCE_MEMBER(Member))
+
+#define SET_OF_MEMBER(Member) \
+	SetOfMemberInfo(&static_cast<const CClass*>(0)->Member)
+#define ADD_SET_OF_MEMBER(Member) \
+	AddMember(#Member, SET_OF_MEMBER(Member))
+
+#define SEQUENCE_OF_MEMBER(Member) \
+	SequenceOfMemberInfo(&static_cast<const CClass*>(0)->Member)
+#define ADD_SEQUENCE_OF_MEMBER(Member) \
+	AddMember(#Member, SEQUENCE_OF_MEMBER(Member))
+
+#define CHOICE_MEMBER(Member, Choices) \
+    ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, NAME2(GetTypeInfo_struct_, Choices))
+#define ADD_CHOICE_MEMBER(Member, Choices) \
+    AddMember(#Member, CHOICE_MEMBER(Member, Choices))
+#define ADD_CHOICE_STD_VARIANT(Name, Member) \
+    AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
+#define ADD_CHOICE_VARIANT(Name, Type, Struct) \
+    AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(&static_cast<const valnode*>(0)->data.ptrvalue)))
 
 #include <serial/serial.inl>
 

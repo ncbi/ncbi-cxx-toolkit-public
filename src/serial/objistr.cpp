@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/30 16:04:53  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.8  1999/06/24 14:44:54  vasilche
 * Added binary ASN.1 output.
 *
@@ -187,14 +190,21 @@ CObjectIStream::Block::~Block(void)
     }
 }
 
+void CObjectIStream::ReadStd(const char*& data)
+{
+    char* d = 0;
+    ReadStd(d);
+    data = d;
+}
+
 string CObjectIStream::ReadId(void)
 {
     return ReadString();
 }
 
-string CObjectIStream::ReadMemberName(void)
+CMemberId CObjectIStream::ReadMember(void)
 {
-    return ReadId();
+    return CMemberId(ReadId());
 }
 
 CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,

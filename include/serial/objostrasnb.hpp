@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/30 16:04:33  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.1  1999/06/24 14:44:42  vasilche
 * Added binary ASN.1 output.
 *
@@ -127,7 +130,7 @@ public:
 
 protected:
 
-    virtual void WriteMember(const CMemberInfo& member);
+    virtual void WriteMember(const CMemberId& member);
     virtual void WriteMemberPrefix(COObjectInfo& info);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);

@@ -1,6 +1,3 @@
-#ifndef PTRINFO__HPP
-#define PTRINFO__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,68 +30,73 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1999/06/30 16:04:34  vasilche
+* Revision 1.1  1999/06/30 16:04:50  vasilche
 * Added support for old ASN.1 structures.
-*
-* Revision 1.3  1999/06/24 14:44:42  vasilche
-* Added binary ASN.1 output.
-*
-* Revision 1.2  1999/06/15 16:20:05  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.1  1999/06/04 20:51:36  vasilche
-* First compilable version of serialization.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/member.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CPointerTypeInfo : public CTypeInfo
+CMemberInfo::~CMemberInfo(void)
 {
-public:
-    typedef void* TObjectType;
+}
 
-    static TObjectPtr& GetObject(TObjectPtr object)
-        { return *static_cast<TObjectPtr*>(object); }
-    static const TConstObjectPtr& GetObject(TConstObjectPtr object)
-        { return *static_cast<const TConstObjectPtr*>(object); }
+size_t CMemberInfo::GetSize(void) const
+{
+    return GetTypeInfo()->GetSize();
+}
 
-    CPointerTypeInfo(const type_info& id, const CTypeRef& typeRef)
-        : CTypeInfo(id), m_DataTypeRef(typeRef)
-        { }
+CMemberInfo* CMemberInfo::SetOptional(void)
+{
+    return SetDefault(GetTypeInfo()->GetDefault());
+}
 
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataTypeRef.Get();
-        }
+CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
+{
+    m_Default = def;
+    return this;
+}
 
-    virtual size_t GetSize(void) const;
+size_t CRealMemberInfo::GetOffset(void) const
+{
+    return m_Offset;
+}
 
-    virtual TObjectPtr Create(void) const;
+TTypeInfo CRealMemberInfo::GetTypeInfo(void) const
+{
+    return m_Type.Get();
+}
 
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+const CMemberInfo* CMemberAliasInfo::GetBaseMember(void) const
+{
+    const CMemberInfo* baseMember = m_BaseMember;
+    if ( !baseMember ) {
+        m_BaseMember = baseMember =
+            m_ContainerType.Get()->FindMember(m_MemberName);
+        if ( !baseMember )
+            THROW1_TRACE(runtime_error, "member not found: " + m_MemberName);
+    }
+    return baseMember;
+}
 
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+size_t CMemberAliasInfo::GetOffset(void) const
+{
+    return GetBaseMember()->GetOffset();
+}
 
-protected:
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
+TTypeInfo CMemberAliasInfo::GetTypeInfo(void) const
+{
+    return GetBaseMember()->GetTypeInfo();
+}
 
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-private:
-    CTypeRef m_DataTypeRef;
-};
-
-//#include <ptrinfo.inl>
+TTypeInfo CTypedMemberAliasInfo::GetTypeInfo(void) const
+{
+    return m_Type.Get();
+}
 
 END_NCBI_SCOPE
-
-#endif  /* PTRINFO__HPP */

@@ -6,6 +6,11 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objistrasn.hpp>
+#include "webenv.hpp"
+
+#include <asn.h>
+#include <internal/webenv/asn/webenv.h>
+
 #include <fstream>
 
 int main(int argc, char** argv)
@@ -19,6 +24,21 @@ int CTestSerial::Run(void)
     ofstream diag("test.log");
     SetDiagStream(&diag);
     try {
+        WebEnv* env = (WebEnv*)GetTypeInfo_struct_Web_Env()->Create();
+        {
+            {
+                CObjectOStreamAsnBinary(ofstream("webenv.bino")).
+                    Write(env, GetTypeRef(env).Get());
+                //                CObjectOStreamAsnBinary(ofstream("webenv.bino")) << *env;
+            }
+            {
+/*
+                CObjectIStreamAsnBinary(ifstream("webenv.bini")) >> *env;
+*/
+            }
+        }
+        
+
         CSerialObject write;
         CSerialObject write1;
 

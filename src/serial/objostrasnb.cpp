@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/30 16:05:01  vasilche
+* Added support for old ASN.1 structures.
+*
 * Revision 1.1  1999/06/24 14:44:59  vasilche
 * Added binary ASN.1 output.
 *
@@ -38,7 +41,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasnb.hpp>
-#include <serial/member.hpp>
+#include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -313,7 +316,7 @@ void CObjectOStreamAsnBinary::WriteStd(char* const& data)
     WriteString(data);
 }
 
-void CObjectOStreamAsnBinary::WriteMember(const CMemberInfo& member)
+void CObjectOStreamAsnBinary::WriteMember(const CMemberId& member)
 {
     WriteTag(eContextSpecific, true, member.GetTag());
     WriteIndefiniteLength();
@@ -324,7 +327,7 @@ void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)
     if ( info.IsMember() ) {
         WriteSysTag(eObjectIdentifier);
         WriteIndefiniteLength();
-        WriteString(info.GetMemberInfo().GetName());
+        WriteString(info.GetMemberId().GetName());
         info.ToContainerObject();
         WriteMemberPrefix(info);
         WriteEndOfContent();

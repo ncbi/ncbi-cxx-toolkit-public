@@ -1,6 +1,3 @@
-#ifndef PTRINFO__HPP
-#define PTRINFO__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,68 +30,49 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1999/06/30 16:04:34  vasilche
+* Revision 1.1  1999/06/30 16:04:51  vasilche
 * Added support for old ASN.1 structures.
-*
-* Revision 1.3  1999/06/24 14:44:42  vasilche
-* Added binary ASN.1 output.
-*
-* Revision 1.2  1999/06/15 16:20:05  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.1  1999/06/04 20:51:36  vasilche
-* First compilable version of serialization.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
+#include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CPointerTypeInfo : public CTypeInfo
+CMemberId* CMemberId::SetTag(TTag tag)
 {
-public:
-    typedef void* TObjectType;
+    m_Tag = tag;
+    return this;
+}
 
-    static TObjectPtr& GetObject(TObjectPtr object)
-        { return *static_cast<TObjectPtr*>(object); }
-    static const TConstObjectPtr& GetObject(TConstObjectPtr object)
-        { return *static_cast<const TConstObjectPtr*>(object); }
+void CMemberId::SetNext(const CMemberId& id)
+{
+    m_Name = id.GetName();
+    int tag = id.GetTag();
+    if ( tag < 0 ) {
+        ++m_Tag;
+    }
+    else {
+        m_Tag = tag;
+    }
+}
 
-    CPointerTypeInfo(const type_info& id, const CTypeRef& typeRef)
-        : CTypeInfo(id), m_DataTypeRef(typeRef)
-        { }
+bool CMemberId::operator==(const CMemberId& id) const
+{
+    if ( id.GetTag() < 0 )
+        return GetName() == id.GetName();
+    else
+        return GetTag() == id.GetTag();
+}
 
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataTypeRef.Get();
-        }
-
-    virtual size_t GetSize(void) const;
-
-    virtual TObjectPtr Create(void) const;
-
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-protected:
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
-
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-private:
-    CTypeRef m_DataTypeRef;
-};
-
-//#include <ptrinfo.inl>
+string CMemberId::ToString(void) const
+{
+    if ( m_Name.empty() )
+        return '[' + NStr::IntToString(m_Tag) + ']';
+    else
+        return m_Name;
+}
 
 END_NCBI_SCOPE
-
-#endif  /* PTRINFO__HPP */
