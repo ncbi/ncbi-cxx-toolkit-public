@@ -72,6 +72,11 @@ public:
     /// @param db_home destination directory for the database
     void OpenWithLocks(const char* db_home);
 
+    /// Open environment with CDB locking (DB_INIT_CDB)
+    ///
+    /// @param db_home destination directory for the database
+    void OpenConcurrentDB(const char* db_home);
+
     /// Join the existing environment
     ///
     /// @param db_home destination directory for the database
@@ -97,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/24 13:49:08  kuznets
+ * +OpenConcurrentDB
+ *
  * Revision 1.6  2003/11/03 13:06:55  kuznets
  * + CBDB_Env::JoinEnv
  *

@@ -67,9 +67,17 @@ void CBDB_Env::Open(const char* db_home, int flags)
 
 void CBDB_Env::OpenWithLocks(const char* db_home)
 {
-    // Here comes some magical combination of keys which makes BerkeleyDB 
-    // operational in blocking mode
     Open(db_home, DB_CREATE|DB_RECOVER|DB_INIT_LOCK|DB_INIT_MPOOL);
+}
+
+void CBDB_Env::OpenConcurrentDB(const char* db_home)
+{
+    int ret = 
+      m_Env->set_flags(m_Env, 
+                       DB_CDB_ALLDB|DB_DIRECT_DB, 1);
+    BDB_CHECK(ret, "DB_ENV::set_flags");
+
+    Open(db_home, DB_INIT_CDB|DB_INIT_MPOOL);
 }
 
 void CBDB_Env::JoinEnv(const char* db_home)
@@ -83,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/24 13:49:19  kuznets
+ * +OpenConcurrentDB
+ *
  * Revision 1.4  2003/11/03 13:07:22  kuznets
  * JoinEnv implemented
  *
