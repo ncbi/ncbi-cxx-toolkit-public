@@ -27,7 +27,8 @@
 * ===========================================================================
 *
 * Author: 
-	Vsevolod Sandomirskiy
+*	Vsevolod Sandomirskiy
+*        Denis Vakatov
 *
 * File Description:
 *   NCBI OS-independent C++ exceptions
@@ -35,39 +36,47 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/05 21:45:13  sandomir
+* std:: deleted
+*
 * Revision 1.1  1998/11/02 15:31:53  sandomir
 * Portable exception classes
 *
 * ===========================================================================
 */
 
+#include <ncbistd.hpp>
+
 #include <string>
 #include <stdexcept>
 
 // Portable generic exception
-class CNcbiOSException : public std::exception
+class CNcbiOSException : public exception
 {
 public:
-
-    CNcbiOSException( const std::string& what ) throw()
+    
+    CNcbiOSException( const string& what ) throw()
         : m_what( what ) {}
-
+    
     virtual const char *what() const throw()
-    { return m_what.c_str(); }
-
+        { return m_what.c_str(); }
+    
+    // NOTE: set_unexpected() does not work with VisualC++ 5.0
+    static void UnexpectedHandler() throw( bad_exception );
+    
     // OS depenedent initialization
-    static void SetDefHandler() throw( std::runtime_error );
-
+    static void SetDefHandler() throw( runtime_error );
+    
 protected:
-
-    std::string m_what;
+    
+    string m_what;
 };
 
 // Portable memory-related exception
 class CNcbiMemException : public CNcbiOSException
 {
 public:
-    CNcbiMemException( const std::string& what ) throw()
+    CNcbiMemException( const string& what ) throw()
         : CNcbiOSException( what ) {}
 };
 
@@ -75,7 +84,7 @@ public:
 class CNcbiFPEException : public CNcbiOSException
 {
 public:
-    CNcbiFPEException( const std::string& what ) throw()
+    CNcbiFPEException( const string& what ) throw()
         : CNcbiOSException( what ) {}
 };
 
@@ -83,10 +92,30 @@ public:
 class CNcbiSystemException : public CNcbiOSException
 {
 public:
-    CNcbiSystemException( const std::string& what ) throw()
+    CNcbiSystemException( const string& what ) throw()
         : CNcbiOSException( what ) {}
 };
 
+//
+// diag
+//
+
+// Standard handling of "exception"-derived exceptions
+#define STD_CATCH(message) \
+catch (exception& e) \
+{ \
+      CNcbiDiag diag; \
+      diag << Error << "[" << message << "]" << "Exception: " << e.what(); \
+}
+
+// Standard handling of "exception"-derived and all other exceptions
+#define STD_CATCH_ALL(message) \
+STD_CATCH(message) \
+    catch (...) \
+{ \
+      CNcbiDiag diag; \
+      diag << Error << "[" << message << "]" << "Unknown exception"; \
+}
 
 #endif  /* NCBIEXCP__HPP */
 

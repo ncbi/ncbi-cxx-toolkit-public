@@ -10,7 +10,7 @@ netest.o: netest.cpp
 
 ncbiexcp.o: ../src/ncbiexcp.cpp
 	$(CC) -c ../src/ncbiexcp.cpp -mt -g \
-	-DUNIX -I. -I../include
+	-DUNIX  -I. -I../include
 
 ncbiapp.o: ../src/ncbiapp.cpp
 	$(CC) -c ../src/ncbiapp.cpp -mt -g \
@@ -18,3 +18,4 @@ ncbiapp.o: ../src/ncbiapp.cpp
 clean: 
 	rm *.o
 
+#-DHAVE_IOSTREAM

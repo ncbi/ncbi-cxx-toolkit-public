@@ -31,13 +31,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/05 21:45:14  sandomir
+* std:: deleted
+*
 * Revision 1.1  1998/11/02 22:10:13  sandomir
 * CNcbiApplication added; netest sample updated
 *
 * ===========================================================================
 */
 
-//using namespace std;
+using namespace std;
 
 #include <ncbiapp.hpp>
 #include <ncbiexcp.hpp>
@@ -60,6 +63,7 @@ CNcbiApplication::~CNcbiApplication( void ) throw()
 void CNcbiApplication::Init( void )
 {
   CNcbiOSException::SetDefHandler();
+  set_unexpected( CNcbiOSException::UnexpectedHandler );
   return;
 }
 

@@ -34,11 +34,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/05 21:45:13  sandomir
+* std:: deleted
+*
 * Revision 1.1  1998/11/02 22:10:12  sandomir
 * CNcbiApplication added; netest sample updated
 *
 * ===========================================================================
 */
+
+#include <ncbistd.hpp>
 
 #include <vector>
 #include <string>
@@ -75,7 +80,7 @@ public:
 protected:
 
   // saved command line parameters
-  std::vector< std::string, std::allocator<std::string> > m_argv;
+  vector< string, allocator<string> > m_argv;
 
 };
 

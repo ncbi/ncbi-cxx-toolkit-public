@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/05 21:45:15  sandomir
+* std:: deleted
+*
 * Revision 1.2  1998/11/02 22:10:15  sandomir
 * CNcbiApplication added; netest sample updated
 *
@@ -40,10 +43,7 @@
 * ===========================================================================
 */
 
-#include <ncbiapp.hpp>
-#include <ncbiexcp.hpp>
-#include <iostream>
-
+#define __EXTENSIONS__
 #define _POSIX_C_SOURCE 199506L
 
 #ifdef UNIX
@@ -51,6 +51,11 @@
 #elif WIN32
 #include <windows.h>
 #endif
+
+using namespace std;
+
+#include <ncbiapp.hpp>
+#include <ncbiexcp.hpp>
 
 class CMyApplication : public CNcbiApplication
 {
@@ -62,6 +67,9 @@ public:
   virtual void Exit( void ); // cleanup
 
   virtual int Run();
+
+  void fun() throw()
+    { throw "test"; }
 
 };
 
@@ -78,19 +86,20 @@ int CMyApplication::Run()
     
 #ifdef UNIX
     raise( SIGILL );
+    //abort();
 #elif WIN32    
     RaiseException( STATUS_ACCESS_VIOLATION, 0, 0, 0 );
 #endif
     
-  } catch( CNcbiOSException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( std::runtime_error e ) {
-    std::cout << e.what() << std::endl;
-  } catch( std::exception e ) {
-    std::cout << e.what() << std::endl;
+  } catch( CNcbiOSException& e ) {
+    cout << e.what() << endl;
+  } catch( runtime_error e ) {
+    cout << e.what() << endl;
+  } catch( exception& e ) {
+    cout << e.what() << endl;
   }
   
-  std::cout << "try 1 OK" << std::endl;
+  cout << "try 1 OK" << endl;
   
   try {
     
@@ -100,15 +109,15 @@ int CMyApplication::Run()
     RaiseException( STATUS_BREAKPOINT, 0, 0, 0 );
 #endif    
 
-  } catch( CNcbiOSException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( std::runtime_error e ) {
-    std::cout << e.what() << std::endl;
-  } catch( std::exception e ) {
-    std::cout << e.what() << std::endl;
+  } catch( CNcbiOSException& e ) {
+    cout << e.what() << endl;
+  } catch( runtime_error e ) {
+    cout << e.what() << endl;
+  } catch( exception& e ) {
+    cout << e.what() << endl;
   }
   
-  std::cout << "try 2 OK" << std::endl;
+  cout << "try 2 OK" << endl;
   
   try {
     
@@ -118,17 +127,17 @@ int CMyApplication::Run()
 #elif WIN32    
     RaiseException( STATUS_INTEGER_OVERFLOW, 0, 0, 0 );
 #endif     
-  } catch( CNcbiOSException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( std::runtime_error e ) {
-        std::cout << e.what() << std::endl;
-  } catch( std::exception e ) {
-    std::cout << e.what() << std::endl;
+  } catch( CNcbiOSException& e ) {
+    cout << e.what() << endl;
+  } catch( runtime_error e ) {
+        cout << e.what() << endl;
+  } catch( exception& e ) {
+    cout << e.what() << endl;
   }
   
-  std::cout << "try 3 OK" << std::endl;
+  cout << "try 3 OK" << endl;
   
-  std::cout << "Done" << std::endl;
+  cout << "Done" << endl;
   
   return 0;
 }
@@ -138,20 +147,30 @@ int main( int argc, char* argv[] )
 
   CMyApplication app( argc, argv );
   int res = 1;
+
+  cout << "Start" << endl;
   
   try {
     app.Init();
     res = app.Run();
-    app.Exit();
-  } catch( CNcbiOSException e ) {
-    std::cout << "Failed " << e.what() << std::endl;
-    return res;
-  } catch( ... ) {
-    std::cout << "Failed" << std::endl;
-    return res;
-  }
 
+    CMyApplication a( 0 , NULL );
+    cout << "before fun\n";
+    a.fun();
+    cout << "after fun\n";
+
+    app.Exit();
+  } catch( CNcbiOSException& e ) {
+    cout << "Failed " << e.what() << endl;
+    return res;
+  } catch( bad_exception& ) {
+      cout << "Failed" << endl;
+      return res;
+  } catch( ... ) {
+      cout << "Failed" << endl;
+      return res;
+  }
+  
   return res;
 }
-
-    
+  
