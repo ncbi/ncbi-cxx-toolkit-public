@@ -1063,7 +1063,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
         string value;
         if (str[mid] == '=') { // has a value
             mid++;
-            SIZE_TYPE end = str.find_first_of(" =&", mid);
+            SIZE_TYPE end = str.find_first_of(" &", mid);
             if (end != NPOS  &&  (str[end] != '&'  ||  end == len-1))
                 return end + 1;  // error
             if (end == NPOS)
@@ -1220,6 +1220,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.73  2003/08/20 19:41:34  ucko
+* CCgiRequest::ParseEntries: handle unencoded = signs in values.
+*
 * Revision 1.72  2003/07/14 20:28:46  vakatov
 * CCgiCookie::GetExpDate() -- date format to conform with RFC1123
 *
