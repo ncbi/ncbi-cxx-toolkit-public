@@ -50,7 +50,7 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
       const string&            project_dir)
     :m_Tree          (tree),
      m_Configs       (configs),
-	 m_Name          ("_MasterProject"),
+	 m_Name          ("_HIERARCHICAL_VIEW_"), //_MasterProject
      m_ProjectDir    (project_dir),
      m_ProjectItemExt("._"),
      m_FilesSubdir   ("UtilityProjectsFiles")
@@ -69,7 +69,7 @@ CMsvcMasterProjectGenerator::~CMsvcMasterProjectGenerator(void)
 
 
 void 
-CMsvcMasterProjectGenerator::SaveProject(const string& base_name)
+CMsvcMasterProjectGenerator::SaveProject()
 {
     CVisualStudioProject xmlprj;
     
@@ -161,11 +161,16 @@ CMsvcMasterProjectGenerator::SaveProject(const string& base_name)
     }}
 
 
-    string project_path = CDirEntry::ConcatPath(m_ProjectDir, base_name);
 
-    project_path += ".vcproj";
+    SaveIfNewer(GetPath(), xmlprj);
+}
 
-    SaveIfNewer(project_path, xmlprj);
+
+string CMsvcMasterProjectGenerator::GetPath() const
+{
+    string project_path = CDirEntry::ConcatPath(m_ProjectDir, m_Name);
+    project_path += MSVC_PROJECT_FILE_EXT;
+    return project_path;
 }
 
 
@@ -284,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/12 17:45:12  gorelenk
+ * Redesigned projects saving.
+ *
  * Revision 1.10  2004/02/12 16:27:56  gorelenk
  * Changed generation of command line for datatool.
  *

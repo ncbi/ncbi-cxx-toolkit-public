@@ -59,17 +59,17 @@ CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 
 
 void 
-CMsvcSolutionGenerator::AddMasterProject(const string& base_name)
+CMsvcSolutionGenerator::AddMasterProject(const string& full_path)
 {
-    m_MasterProject.first  = base_name;
+    m_MasterProject.first  = full_path;
     m_MasterProject.second = GenerateSlnGUID();
 }
 
 
 void 
-CMsvcSolutionGenerator::AddConfigureProject(const string& base_name)
+CMsvcSolutionGenerator::AddConfigureProject(const string& full_path)
 {
-    m_ConfigureProject.first  = base_name;
+    m_ConfigureProject.first  = full_path;
     m_ConfigureProject.second = GenerateSlnGUID();
 }
 
@@ -263,10 +263,11 @@ CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
         << "\") = \"" 
-        << project.first //basename
+        << CDirEntry(project.first).GetBase() //basename
         << "\", \"";
 
-    ofs << project.first + MSVC_PROJECT_FILE_EXT 
+    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, 
+                                         project.first)
         << "\", \"";
 
     ofs << project.second //m_GUID 
@@ -342,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/12 17:45:12  gorelenk
+ * Redesigned projects saving.
+ *
  * Revision 1.9  2004/02/12 16:27:58  gorelenk
  * Changed generation of command line for datatool.
  *
