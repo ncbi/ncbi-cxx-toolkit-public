@@ -825,7 +825,7 @@ extern SOCK URL_Connect
          (!BUF_Write(&buf, (const void*) X_REQ_Q, strlen(X_REQ_Q))    ||
           !BUF_Write(&buf, (const void*) x_args, strlen(x_args))))    ||
         !BUF_Write(&buf, (const void*) X_REQ_E, strlen(X_REQ_E))      ||
-        
+
         /* <user_header> */
         (user_hdr  &&
          !BUF_Write(&buf,  (const void*) user_hdr, strlen(user_hdr))) ||
@@ -870,7 +870,7 @@ extern SOCK URL_Connect
         return 0/*error*/;
     }
 
-    /* setup i/o timeout for the connection */
+    /* setup I/O timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
         CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
         SOCK_Close(sock);
@@ -1476,6 +1476,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2003/05/19 16:44:45  lavr
+ * Minor style adjustements
+ *
  * Revision 6.55  2003/05/14 03:51:54  lavr
  * URL_Connect() rewritten to submit HTTP header as SOCK's initial buffer
  *
