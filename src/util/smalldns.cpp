@@ -34,7 +34,12 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <sys/utsname.h>
+#ifdef NCBI_OS_MAC
+#	include <utsname.h>
+#else
+#	include <sys/utsname.h>
+#endif
+
 #include <errno.h>
 
 BEGIN_NCBI_SCOPE
