@@ -40,6 +40,9 @@
 * -------  ----------  -----------------------------------------------------
 *
 * $Log$
+* Revision 1.2  2003/08/01 21:18:48  dondosha
+* Correction of a #include
+*
 * Revision 1.1  2003/08/01 21:03:40  madden
 * Cleaned up version of file for C++ toolkit
 *
@@ -72,7 +75,7 @@
 /*
 #include <ncbi.h>
 */
-#include "../../include/ncbi_std.h" 
+#include "ncbi_std.h" 
 
 #ifndef _NCBIMATH_
 #define _NCBIMATH_
