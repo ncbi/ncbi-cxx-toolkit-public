@@ -124,7 +124,10 @@ if test -r "$install_dir" ; then
          purge_dirs=`ls $install_dir/*/inc/ncbiconf.h 2>/dev/null | \
                      sed 's%/inc/ncbiconf\.h *$%%g'`
          if test "$purge_dirs" != "" ; then
-            rm -r $purge_dirs  ||  Usage "Cannot purge build dir $purge_dirs"
+            for d in $purge_dirs ; do
+               test -h $d  ||  rm -r $d  ||  \
+                 Usage "Failed to purge build dir $d"
+            done
          fi
       fi
    fi
