@@ -1,36 +1,36 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Christiam Camacho
-*
-* File Description:
-*   Utility function to convert internal BLAST result structures into
-*   CSeq_align_set objects
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ * File Description:
+ *   Utility function to convert internal BLAST result structures into
+ *   CSeq_align_set objects
+ *
+ * ===========================================================================
+ */
 
 #include <algo/blast/blast_seqalign.hpp>
 #include <objects/seqloc/seqloc__.hpp>
@@ -47,49 +47,54 @@
 static ENa_strand
 x_Frame2Strand(short frame)
 {
-    if (frame > 0)
+    if (frame > 0) {
         return eNa_strand_plus;
-    else if (frame < 0)
+    } else if (frame < 0) {
         return eNa_strand_minus;
-    else
+    } else {
         return eNa_strand_unknown;
+    }
 }
+
 
 static int 
 x_GetCurrPos(int& pos, int pos2advance)
 {
     int retval;
 
-    if (pos < 0)
+    if (pos < 0) {
         retval = -(pos + pos2advance - 1);
-    else
+    } else {
         retval = pos;
+    }
     pos += pos2advance;
     return retval;
 }
 
+
 static TSeqPos
 x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp, 
-        ENa_strand strand, bool translate, int length, int original_length, 
-        short frame)
+                    ENa_strand strand, bool translate, int length,
+                    int original_length, short frame)
 {
     TSeqPos retval;
 
     if (strand == eNa_strand_minus) {
-
-        if (translate)
+        if (translate) {
             retval = original_length - 
                 CODON_LENGTH*(x_GetCurrPos(curr_pos, esp->num) + esp->num)
                 + frame + 1;
-        else
+        } else {
             retval = length - x_GetCurrPos(curr_pos, esp->num) - esp->num;
+        }
 
     } else {
 
-        if (translate)
+        if (translate) {
             retval = frame - 1 + CODON_LENGTH*x_GetCurrPos(curr_pos, esp->num);
-        else
+        } else {
             retval = x_GetCurrPos(curr_pos, esp->num);
+        }
 
     }
 
@@ -101,9 +106,9 @@ x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp,
 /// collected from the esp argument for nsegs segments
 static void
 x_CollectSeqAlignData(const GapEditBlock* edit_block, 
-        const GapEditScript* esp_head, unsigned int nsegs,
-        vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-        vector<ENa_strand>& strands)
+                      const GapEditScript* esp_head, unsigned int nsegs,
+                      vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
+                      vector<ENa_strand>& strands)
 {
     _ASSERT(edit_block != NULL);
 
@@ -121,12 +126,16 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
         case GAPALIGN_DECLINE:
         case GAPALIGN_SUB:
             m_start = x_GetAlignmentStart(start1, esp, m_strand,
-                    edit_block->translate1, edit_block->length1,
-                    edit_block->original_length1, edit_block->frame1);
+                                          edit_block->translate1,
+                                          edit_block->length1,
+                                          edit_block->original_length1,
+                                          edit_block->frame1);
 
             s_start = x_GetAlignmentStart(start2, esp, s_strand,
-                    edit_block->translate2, edit_block->length2,
-                    edit_block->original_length2, edit_block->frame2);
+                                          edit_block->translate2,
+                                          edit_block->length2,
+                                          edit_block->original_length2,
+                                          edit_block->frame2);
 
             if (edit_block->reverse) {
                 strands.push_back(s_strand);
@@ -141,11 +150,13 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
             }
             break;
 
-        // Insertion on the master sequence (gap on slave)
+            // Insertion on the master sequence (gap on slave)
         case GAPALIGN_INS:
             m_start = x_GetAlignmentStart(start1, esp, m_strand,
-                    edit_block->translate1, edit_block->length1,
-                    edit_block->original_length1, edit_block->frame1);
+                                          edit_block->translate1,
+                                          edit_block->length1,
+                                          edit_block->original_length1,
+                                          edit_block->frame1);
 
             s_start = GAP_VALUE;
 
@@ -162,13 +173,15 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
             }
             break;
 
-        // Deletion on master sequence (gap; insertion on slave)
+            // Deletion on master sequence (gap; insertion on slave)
         case GAPALIGN_DEL:
             m_start = GAP_VALUE;
 
             s_start = x_GetAlignmentStart(start2, esp, s_strand,
-                    edit_block->translate2, edit_block->length2,
-                    edit_block->original_length2, edit_block->frame2);
+                                          edit_block->translate2,
+                                          edit_block->length2,
+                                          edit_block->original_length2,
+                                          edit_block->frame2);
 
             if (edit_block->reverse) {
                 strands.push_back(s_strand);
@@ -191,20 +204,24 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
     }
 
     // Make sure the vectors have the right size
-    if (lengths.size() != nsegs)
+    if (lengths.size() != nsegs) {
         lengths.resize(nsegs);
+    }
 
-    if (starts.size() != nsegs*2)
+    if (starts.size() != nsegs*2) {
         starts.resize(nsegs*2);
+    }
 
-    if (strands.size() != nsegs*2)
+    if (strands.size() != nsegs*2) {
         strands.resize(nsegs*2);
+    }
 }
+
 
 static CRef<CDense_seg>
 x_CreateDenseg(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
-        vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-        vector<ENa_strand>& strands)
+               vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
+               vector<ENa_strand>& strands)
 {
     _ASSERT(master.NotEmpty());
     _ASSERT(slave.NotEmpty());
@@ -230,11 +247,12 @@ x_CreateDenseg(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
     return dense_seg;
 }
 
+
 static CSeq_align::C_Segs::TStd
 x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave, 
-        vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-        vector<ENa_strand>& strands, bool reverse, bool translate_master, bool
-        translate_slave)
+                vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
+                vector<ENa_strand>& strands,
+                bool reverse, bool translate_master, bool translate_slave)
 {
     _ASSERT(master.NotEmpty());
     _ASSERT(slave.NotEmpty());
@@ -246,7 +264,7 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
 
     CRef<CSeq_id> master_id(new CSeq_id(master->AsFastaString()));
     CRef<CSeq_id> slave_id(new CSeq_id(slave->AsFastaString()));
-    
+
     for (int i = 0; i < nsegs; i++) {
         CRef<CStd_seg> std_seg(new CStd_seg());
         CRef<CSeq_loc> master_loc(new CSeq_loc());
@@ -259,10 +277,11 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
         if ( (m_start = starts[2*i]) != GAP_VALUE) {
             master_loc->SetInt().SetId(*master_id);
             master_loc->SetInt().SetFrom(m_start);
-            if (translate_master || (reverse && translate_slave))
+            if (translate_master || (reverse && translate_slave)) {
                 m_stop = m_start + CODON_LENGTH*lengths[i] - 1;
-            else
+            } else {
                 m_stop = m_start + lengths[i] - 1;
+            }
             master_loc->SetInt().SetTo(m_stop);
             master_loc->SetInt().SetStrand(strands[2*i]);
         } else {
@@ -273,10 +292,11 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
         if ( (s_start = starts[2*i+1]) != GAP_VALUE) {
             slave_loc->SetInt().SetId(*slave_id);
             slave_loc->SetInt().SetFrom(s_start);
-            if (translate_slave || (reverse && translate_master))
+            if (translate_slave || (reverse && translate_master)) {
                 s_stop = s_start + CODON_LENGTH*lengths[i] - 1;
-            else
+            } else {
                 s_stop = s_start + lengths[i] - 1;
+            }
             slave_loc->SetInt().SetTo(s_stop);
             slave_loc->SetInt().SetStrand(strands[2*i+1]);
         } else {
@@ -301,6 +321,7 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
     return retval;
 }
 
+
 /// Clone of GXECorrectUASequence (tools/gapxdrop.c)
 /// Assumes GAPALIGN_DECLINE regions are to the right of GAPALIGN_{INS,DEL}.
 /// This function swaps them (GAPALIGN_DECLINE ends to the right of the gap)
@@ -309,20 +330,20 @@ x_CorrectUASequence(GapEditBlock* edit_block)
 {
     GapEditScript* curr = NULL,* curr_last = NULL;
     GapEditScript* indel_prev = NULL; // pointer to node before the last
-            // insertion or deletion followed immediately by GAPALIGN_DECLINE
+    // insertion or deletion followed immediately by GAPALIGN_DECLINE
     bool last_indel = false;    // last operation was an insertion or deletion
 
     for (curr = edit_block->esp; curr; curr = curr->next) {
-
         // if GAPALIGN_DECLINE immediately follows an insertion or deletion
         if (curr->op_type == GAPALIGN_DECLINE && last_indel) {
             /* This is invalid condition and regions should be
                exchanged */
 
-            if (indel_prev != NULL)
+            if (indel_prev != NULL) {
                 indel_prev->next = curr;
-            else
-                edit_block->esp = curr; /* First element in a list */
+            } else {
+                edit_block->esp = curr;
+            } /* First element in a list */
 
             // CC: If flaking gaps are allowed, curr_last could be NULL and the
             // following statement would core dump...
@@ -342,12 +363,13 @@ x_CorrectUASequence(GapEditBlock* edit_block)
     return;
 }
 
+
 /// C++ version of GXEMakeSeqAlign (tools/gapxdrop.c)
 static CRef<CSeq_align>
 x_CreateSeqAlign(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
-    vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
-    vector<ENa_strand> strands, bool translate_master, bool translate_slave,
-    bool reverse)
+                 vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
+                 vector<ENa_strand> strands,
+                 bool translate_master, bool translate_slave, bool reverse)
 {
     CRef<CSeq_align> sar(new CSeq_align());
     sar->SetType(CSeq_align::eType_partial);
@@ -356,7 +378,7 @@ x_CreateSeqAlign(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
     if (translate_master || translate_slave) {
         sar->SetSegs().SetStd() =
             x_CreateStdSegs(master, slave, starts, lengths, strands,
-                    reverse, translate_master, translate_slave);
+                            reverse, translate_master, translate_slave);
     } else {
         CRef<CDense_seg> dense_seg = 
             x_CreateDenseg(master, slave, starts, lengths, strands);
@@ -366,9 +388,10 @@ x_CreateSeqAlign(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
     return sar;
 }
 
+
 static CRef<CSeq_align>
 x_GapEditBlock2SeqAlign(GapEditBlock* edit_block, 
-        CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
+                        CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
 {
     _ASSERT(edit_block != NULL);
 
@@ -379,12 +402,12 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
     int nsegs = 0;      // number of segments in edit_block->esp
 
     for (GapEditScript* t = edit_block->esp; t; t = t->next, nsegs++) {
-        if (t->op_type == GAPALIGN_DECLINE)
+        if (t->op_type == GAPALIGN_DECLINE) {
             is_disc_align = true;
+        }
     }
 
     if (is_disc_align) {
-
         /* By request of Steven Altschul - we need to have 
            the unaligned part being to the left if it is adjacent to the
            gap (insertion or deletion) - so this function will do
@@ -401,7 +424,7 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
         while (curr_head) {
             skip_region = false;
 
-            for (nsegs = 0, curr = curr_head; curr; curr = curr->next, nsegs++){
+            for (nsegs = 0, curr = curr_head; curr; curr = curr->next, nsegs++) {
                 if (curr->op_type == GAPALIGN_DECLINE) {
                     if (nsegs != 0) { // end of aligned region
                         break;
@@ -418,17 +441,19 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
 
             // build seqalign for required regions only
             if (!skip_region) {
-
                 x_CollectSeqAlignData(edit_block, curr_head, nsegs, starts,
-                        lengths, strands);
+                                      lengths, strands);
 
-                CRef<CSeq_align> sa_tmp = x_CreateSeqAlign(id1, id2, starts,
-                        lengths, strands, edit_block->translate1,
-                        edit_block->translate2, edit_block->reverse);
+                CRef<CSeq_align> sa_tmp =
+                    x_CreateSeqAlign(id1, id2, starts,
+                                     lengths, strands, edit_block->translate1,
+                                     edit_block->translate2,
+                                     edit_block->reverse);
 
                 // Add this seqalign to the list
-                if (sa_tmp)
+                if (sa_tmp) {
                     seqalign->SetSegs().SetDisc().Set().push_back(sa_tmp);
+                }
             }
             curr_head = curr;
         }
@@ -438,13 +463,14 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
     } else {
 
         x_CollectSeqAlignData(edit_block, edit_block->esp, nsegs, 
-                starts, lengths, strands);
+                              starts, lengths, strands);
 
         return x_CreateSeqAlign(id1, id2, starts, lengths, strands,
-                edit_block->translate1, edit_block->translate2,
-                edit_block->reverse);
+                                edit_block->translate1, edit_block->translate2,
+                                edit_block->reverse);
     }
 }
+
 
 /// Creates and initializes CScore with i (if it's non-zero) or d
 static CRef<CScore> 
@@ -457,56 +483,66 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
     retval->SetId(*id);
 
     CRef<CScore::C_Value> val(new CScore::C_Value());
-    if (i)
+    if (i) {
         val->SetInt(i);
-    else
+    } else {
         val->SetReal(d);
+    }
     retval->SetValue(*val);
 
     return retval;
 }
 
+
 /// C++ version of GetScoreSetFromBlastHsp (tools/blastutl.c)
 static void
 x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
-        BlastScoringOptions* score_options, CSeq_align::TScore& scores,
-        CBlastOption::EProgram program)
+                 BlastScoringOptions* score_options, CSeq_align::TScore& scores,
+                 CBlastOption::EProgram program)
 {
     string score_type;
     BLAST_KarlinBlk* kbp = NULL;
 
-    if (!hsp)
+    if (!hsp) {
         return;
+    }
 
     score_type = "score";
-    if (hsp->score)
+    if (hsp->score) {
         scores.push_back(x_MakeScore(score_type, 0.0, hsp->score));
+    }
 
     score_type = "sum_n";
-    if (hsp->num > 1)
+    if (hsp->num > 1) {
         scores.push_back(x_MakeScore(score_type, 0.0, hsp->num));
+    }
 
     // Set the E-Value
     double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
     score_type = (hsp->num == 1) ? "e_value" : "sum_e";
-    if (evalue >= 0.0)
+    if (evalue >= 0.0) {
         scores.push_back(x_MakeScore(score_type, evalue));
+    }
 
     // Calculate the bit score from the raw score
     score_type = "bit_score";
-    if (program == CBlastOption::eBlastn || !score_options->gapped_calculation)
+    if (program == CBlastOption::eBlastn ||
+        !score_options->gapped_calculation) {
         kbp = sbp->kbp[hsp->context];
-    else
+    } else {
         kbp = sbp->kbp_gap[hsp->context];
+    }
 
     double bit_score = ((hsp->score*kbp->Lambda) - kbp->logK)/NCBIMATH_LN2;
-    if (bit_score >= 0.0)
+    if (bit_score >= 0.0) {
         scores.push_back(x_MakeScore(score_type, bit_score));
+    }
 
     // Set the identity score
     score_type = "num_ident";
-    if (hsp->num_ident > 0)
+    if (hsp->num_ident > 0) {
         scores.push_back(x_MakeScore(score_type, 0.0, hsp->num_ident));
+    }
 
     if (hsp->num > 1 && hsp->ordering_method == BLAST_SMALL_GAPS) {
         score_type = "small_gap";
@@ -523,8 +559,8 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
 
 static void
 x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp, 
-        const BlastScoreBlk* sbp, CBlastOption::EProgram program,
-        const BlastScoringOptions* score_options)
+                      const BlastScoreBlk* sbp, CBlastOption::EProgram program,
+                      const BlastScoringOptions* score_options)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
@@ -551,10 +587,11 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
 // This is called for each query in the BLAST search
 static CRef<CSeq_align_set>
 x_ProcessBlastHitList(BlastHitList* hit_list, 
-        CConstRef<CSeq_id>& query_seqid,
-        const BlastSeqSrc* bssp, CConstRef<CSeq_id>& subject_id, 
-        const BlastScoringOptions* score_options, const BlastScoreBlk* sbp,
-        CBlastOption::EProgram program)
+                      CConstRef<CSeq_id>& query_seqid,
+                      const BlastSeqSrc* bssp, CConstRef<CSeq_id>& subject_id, 
+                      const BlastScoringOptions* score_options,
+                      const BlastScoreBlk* sbp,
+                      CBlastOption::EProgram program)
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set()); 
 
@@ -565,8 +602,9 @@ x_ProcessBlastHitList(BlastHitList* hit_list,
         BlastHSPList* hsp_list = hit_list->hsplist_array[i];
         CConstRef<CSeq_id> curr_subject;
 
-        if (!hsp_list)
+        if (!hsp_list) {
             continue;
+        }
 
         if (bssp) {
             char* id = BLASTSeqSrcGetSeqIdStr(bssp, (void*) &hsp_list->oid);
@@ -582,26 +620,28 @@ x_ProcessBlastHitList(BlastHitList* hit_list,
             BlastHSP* hsp = hsp_list->hsp_array[j];
             CRef<CSeq_align> seqalign = 
                 x_GapEditBlock2SeqAlign(hsp->gap_info, query_seqid,
-                        curr_subject);
+                                        curr_subject);
 
             x_AddScoresToSeqAlign(seqalign, hsp, sbp, program, score_options);
 
             retval->Set().push_back(seqalign);
         }
     }
-    if ( !(retval->Get().size() > 0))
+    if ( !(retval->Get().size() > 0)) {
         retval.Reset(NULL);
+    }
     return retval;
 }
 
+
 CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
-        CBlastOption::EProgram prog,
-        vector< CConstRef<CSeq_id> >& query_seqids, 
-        const BlastSeqSrc* bssp,
-        CConstRef<CSeq_id>& subject_seqid,
-        const BlastScoringOptions* score_options, 
-        const BlastScoreBlk* sbp)
+                          CBlastOption::EProgram prog,
+                          vector< CConstRef<CSeq_id> >& query_seqids, 
+                          const BlastSeqSrc* bssp,
+                          CConstRef<CSeq_id>& subject_seqid,
+                          const BlastScoringOptions* score_options, 
+                          const BlastScoreBlk* sbp)
 {
     _ASSERT(results->num_queries == (int)query_seqids.size());
     CRef<CSeq_align_set> retval(new CSeq_align_set());
@@ -610,58 +650,64 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
     for (int i = 0; i < results->num_queries; i++) {
         BlastHitList* hit_list = results->hitlist_array[i];
 
-        if (!hit_list)
+        if (!hit_list) {
             continue;
+        }
 
         // Should return a CSeq_align_set for each HSP in every
         // matching sequence (each sequence can have more than one HSP) or for
         // each HSP in subject_seqid (i.e.: bl2seq)
         CRef<CSeq_align_set> seqaligns = 
             x_ProcessBlastHitList(hit_list, query_seqids[i], bssp, 
-                    subject_seqid, score_options, sbp, prog);
-        if (seqaligns)
+                                  subject_seqid, score_options, sbp, prog);
+        if (seqaligns) {
             retval->Set().merge(seqaligns->Set());
+        }
 
         _TRACE("Query " << i << ": " << retval->Get().size() << " seqaligns");
     }
 
-    if ( !(retval->Get().size() > 0))
+    if ( !(retval->Get().size() > 0)) {
         retval.Reset(NULL);
-    
+    }
+
     return retval;
 }
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2003/08/04 15:16:42  dicuccio
-* Changed C++ includes to reference files from correct directory
-*
-* Revision 1.1  2003/08/04 14:22:14  dicuccio
-* Initial import into the C++ toolkit
-*
-* Revision 1.7  2003/08/01 17:40:56  dondosha
-* Use renamed functions and structures from local blastkar.h
-*
-* Revision 1.6  2003/07/31 19:45:33  camacho
-* Eliminate Ptr notation
-*
-* Revision 1.5  2003/07/25 22:12:46  camacho
-* Use BLAST Sequence Source to retrieve sequence identifier
-*
-* Revision 1.4  2003/07/25 13:55:58  camacho
-* Removed unnecessary #includes
-*
-* Revision 1.3  2003/07/23 21:28:23  camacho
-* Use new local gapinfo structures
-*
-* Revision 1.2  2003/07/14 21:40:22  camacho
-* Pacify compiler warnings
-*
-* Revision 1.1  2003/07/10 18:34:19  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.3  2003/08/04 16:40:00  dicuccio
+ * Formatting changes - added braces; wrapped lines to 80-character boundary
+ *
+ * Revision 1.2  2003/08/04 15:16:42  dicuccio
+ * Changed C++ includes to reference files from correct directory
+ *
+ * Revision 1.1  2003/08/04 14:22:14  dicuccio
+ * Initial import into the C++ toolkit
+ *
+ * Revision 1.7  2003/08/01 17:40:56  dondosha
+ * Use renamed functions and structures from local blastkar.h
+ *
+ * Revision 1.6  2003/07/31 19:45:33  camacho
+ * Eliminate Ptr notation
+ *
+ * Revision 1.5  2003/07/25 22:12:46  camacho
+ * Use BLAST Sequence Source to retrieve sequence identifier
+ *
+ * Revision 1.4  2003/07/25 13:55:58  camacho
+ * Removed unnecessary #includes
+ *
+ * Revision 1.3  2003/07/23 21:28:23  camacho
+ * Use new local gapinfo structures
+ *
+ * Revision 1.2  2003/07/14 21:40:22  camacho
+ * Pacify compiler warnings
+ *
+ * Revision 1.1  2003/07/10 18:34:19  camacho
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */

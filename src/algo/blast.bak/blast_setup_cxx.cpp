@@ -1,35 +1,35 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Christiam Camacho
-*
-* File Description:
-*   Auxiliary setup functions for Blast objects interface
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ * File Description:
+ *   Auxiliary setup functions for Blast objects interface
+ *
+ * ===========================================================================
+ */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
@@ -67,21 +67,21 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
     TSeqPos remainder;          // number of bases packed in ncbi2na format in
-                                // last byte of buffer
+    // last byte of buffer
 
     _ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
 
     for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
         buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
-                     ((vec[i+1] & LAST2BITS)<<4) |
-                     ((vec[i+2] & LAST2BITS)<<2) |
-                     ((vec[i+3] & LAST2BITS)<<0);
+            ((vec[i+1] & LAST2BITS)<<4) |
+            ((vec[i+2] & LAST2BITS)<<2) |
+            ((vec[i+3] & LAST2BITS)<<0);
     }
     if ( (remainder = vec.size()%COMPRESSION_RATIO) == 0) {
         buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
-                     ((vec[i+1] & LAST2BITS)<<4) |
-                     ((vec[i+2] & LAST2BITS)<<2) |
-                     ((vec[i+3] & LAST2BITS)<<0);
+            ((vec[i+1] & LAST2BITS)<<4) |
+            ((vec[i+2] & LAST2BITS)<<2) |
+            ((vec[i+3] & LAST2BITS)<<0);
     } else {
         Uint1 bit_shift = 0;
 
@@ -99,9 +99,10 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     }
 }
 
+
 Uint1*
 BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
-        ENa_strand strand, bool add_nucl_sentinel)
+                 ENa_strand strand, bool add_nucl_sentinel)
 {
     Uint1* buf,* buf_var;       // buffers to write sequence
     TSeqPos buflen;             // length of buffer allocated
@@ -118,15 +119,17 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
     CSeqVector sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi, strand);
 
     switch (encoding) {
-    // Protein sequences (query & subject) always have sentinels around sequence
+        // Protein sequences (query & subject) always have sentinels around
+        // sequence
     case BLASTP_ENCODING:
         sentinel = NULLB;
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = sv.size()+2;
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         *buf_var++ = sentinel;
-        for (i = 0; i < sv.size(); i++)
+        for (i = 0; i < sv.size(); i++) {
             *buf_var++ = sv[i];
+        }
         *buf_var++ = sentinel;
         break;
 
@@ -135,46 +138,53 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         sv.SetCoding(CSeq_data::e_Ncbi4na);
         sentinel = 0xF;
         buflen = add_nucl_sentinel ? sv.size() + 2 : sv.size();
-        if (strand == eNa_strand_both)
+        if (strand == eNa_strand_both) {
             buflen = add_nucl_sentinel ? buflen * 2 - 1 : buflen * 2;
+        }
 
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
-        if (add_nucl_sentinel)
+        if (add_nucl_sentinel) {
             *buf_var++ = sentinel;
-        for (i = 0; i < sv.size(); i++) {
-            if (encoding == BLASTNA_ENCODING)
-                *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-            else
-                *buf_var++ = sv[i];
         }
-        if (add_nucl_sentinel)
+        for (i = 0; i < sv.size(); i++) {
+            if (encoding == BLASTNA_ENCODING) {
+                *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
+            } else {
+                *buf_var++ = sv[i];
+            }
+        }
+        if (add_nucl_sentinel) {
             *buf_var++ = sentinel;
+        }
 
         if (strand == eNa_strand_both) {
             // Get the minus strand if both strands are required
             sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi,
-                    eNa_strand_minus);
+                                     eNa_strand_minus);
             sv.SetCoding(CSeq_data::e_Ncbi4na);
             for (i = 0; i < sv.size(); i++) {
-                if (encoding == BLASTNA_ENCODING)
+                if (encoding == BLASTNA_ENCODING) {
                     *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-                else
+                } else {
                     *buf_var++ = sv[i];
+                }
             }
-            if (add_nucl_sentinel)
+            if (add_nucl_sentinel) {
                 *buf_var++ = sentinel;
+            }
         }
         break;
 
-    // Used only in Blast2Sequences for the subject sequence. No sentinels are
-    // required. As in readdb, remainder (sv.size()%4 != 0) goes in the last 
-    // 2 bits of the last byte.
+        // Used only in Blast2Sequences for the subject sequence. No sentinels
+        // are required. As in readdb, remainder (sv.size()%4 != 0) goes in the
+        // last 2 bits of the last byte.
     case NCBI2NA_ENCODING:
         _ASSERT(add_nucl_sentinel == false);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = (sv.size()+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
-        if (strand == eNa_strand_both)
+        if (strand == eNa_strand_both) {
             buflen *= 2;
+        }
 
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         PackDNA(sv, buf_var, (strand == eNa_strand_both) ? buflen/2 : buflen);
@@ -182,7 +192,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         if (strand == eNa_strand_both) {
             // Get the minus strand if both strands are required
             sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi,
-                    eNa_strand_minus);
+                                     eNa_strand_minus);
             sv.SetCoding(CSeq_data::e_Ncbi2na);
             buf_var += buflen/2;
             PackDNA(sv, buf_var, buflen/2);
@@ -203,7 +213,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
 // Not used right now, need to complete implementation
 void
 BLASTGetTranslation(const Uint1* seq, const Uint1* seq_rev,
-        const int nucl_length, const short frame, Uint1* translation)
+                    const int nucl_length, const short frame, Uint1* translation)
 {
     TSeqPos ni = 0;     // index into nucleotide sequence
     TSeqPos pi = 0;     // index into protein sequence
@@ -214,8 +224,9 @@ BLASTGetTranslation(const Uint1* seq, const Uint1* seq_rev,
         Uint1 residue = CGen_code_table::CodonToIndex(nucl_seq[ni+0], 
                                                       nucl_seq[ni+1],
                                                       nucl_seq[ni+2]);
-        if (IS_residue(residue))
+        if (IS_residue(residue)) {
             translation[pi++] = residue;
+        }
     }
     translation[pi++] = NULLB;
 
@@ -228,23 +239,26 @@ BLASTFindGeneticCode(int genetic_code)
 {
     unsigned char* retval = NULL;
     CSeq_data gc_ncbieaa(CGen_code_table::GetNcbieaa(genetic_code),
-            CSeq_data::e_Ncbieaa);
+                         CSeq_data::e_Ncbieaa);
     CSeq_data gc_ncbistdaa;
 
     TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
-            CSeq_data::e_Ncbistdaa);
+                                          CSeq_data::e_Ncbistdaa);
 
     _ASSERT(gc_ncbistdaa.IsNcbistdaa());
     _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
 
-    if ( !(retval = new(nothrow) unsigned char[nconv]))
+    if ( !(retval = new(nothrow) unsigned char[nconv])) {
         return NULL;
+    }
 
-    for (unsigned int i = 0; i < nconv; i++)
+    for (unsigned int i = 0; i < nconv; i++) {
         retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
+    }
 
     return retval;
 }
+
 
 char* 
 BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
@@ -252,8 +266,9 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     char* retval = NULL;
     string full_path;       // full path to matrix file
 
-    if (!matrix_name)
+    if (!matrix_name) {
         return NULL;
+    }
 
     string mtx(matrix_name);
     transform(mtx.begin(), mtx.end(), mtx.begin(), (int (*)(int))toupper);
@@ -301,8 +316,9 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     }
 
     CNcbiApplication* app = CNcbiApplication::Instance();
-    if (!app)
+    if (!app) {
         return NULL;
+    }
 
     const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
     if (CFile(blastmat_env).Exists()) {
@@ -318,7 +334,7 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         }
     }
 
-#ifdef OS_UNIX
+#ifdef NCBI_OS_UNIX
     full_path = BLASTMAT_DIR;
     full_path += CFile::AddTrailingPathSeparator(full_path);
     full_path += is_prot ? "aa" : "nt";
@@ -343,7 +359,7 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         }
     }
 
-#ifdef OS_UNIX
+#ifdef NCBI_OS_UNIX
     full_path = BLASTMAT_DIR;
     full_path += CFile::AddTrailingPathSeparator(full_path);
     full_path += mtx;
@@ -357,44 +373,48 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     return retval;
 }
 
+
 END_NCBI_SCOPE
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2003/08/04 15:16:13  dicuccio
-* Fixed #includes to reference C++ code directly.  Don't use 'vector' as a
-* variable - it conflicts with the STL class.  Fixed thinko in
-* BLASTFindGeneticCode - trailing ';' would produce wrong results and leak
-*
-* Revision 1.1  2003/08/04 14:22:14  dicuccio
-* Initial import into the C++ toolkit
-*
-* Revision 1.8  2003/08/01 22:35:02  camacho
-* Added function to get matrix path (fixme)
-*
-* Revision 1.7  2003/08/01 17:40:56  dondosha
-* Use renamed functions and structures from local blastkar.h
-*
-* Revision 1.6  2003/07/31 19:45:33  camacho
-* Eliminate Ptr notation
-*
-* Revision 1.5  2003/07/30 15:00:01  camacho
-* Do not use Malloc/MemNew/MemFree
-*
-* Revision 1.4  2003/07/25 13:55:58  camacho
-* Removed unnecessary #includes
-*
-* Revision 1.3  2003/07/24 18:22:50  camacho
-* #include blastkar.h
-*
-* Revision 1.2  2003/07/23 21:29:06  camacho
-* Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
-*
-* Revision 1.1  2003/07/10 18:34:19  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.3  2003/08/04 16:40:00  dicuccio
+ * Formatting changes - added braces; wrapped lines to 80-character boundary
+ *
+ * Revision 1.2  2003/08/04 15:16:13  dicuccio
+ * Fixed #includes to reference C++ code directly.  Don't use 'vector' as a
+ * variable - it conflicts with the STL class.  Fixed thinko in
+ * BLASTFindGeneticCode - trailing ';' would produce wrong results and leak
+ *
+ * Revision 1.1  2003/08/04 14:22:14  dicuccio
+ * Initial import into the C++ toolkit
+ *
+ * Revision 1.8  2003/08/01 22:35:02  camacho
+ * Added function to get matrix path (fixme)
+ *
+ * Revision 1.7  2003/08/01 17:40:56  dondosha
+ * Use renamed functions and structures from local blastkar.h
+ *
+ * Revision 1.6  2003/07/31 19:45:33  camacho
+ * Eliminate Ptr notation
+ *
+ * Revision 1.5  2003/07/30 15:00:01  camacho
+ * Do not use Malloc/MemNew/MemFree
+ *
+ * Revision 1.4  2003/07/25 13:55:58  camacho
+ * Removed unnecessary #includes
+ *
+ * Revision 1.3  2003/07/24 18:22:50  camacho
+ * #include blastkar.h
+ *
+ * Revision 1.2  2003/07/23 21:29:06  camacho
+ * Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
+ *
+ * Revision 1.1  2003/07/10 18:34:19  camacho
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
