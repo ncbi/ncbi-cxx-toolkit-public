@@ -49,7 +49,7 @@
 #include <corelib/ncbitime.hpp>
 #include <objtools/readers/fasta.hpp>
 
-#include <Bl2Seq.hpp>
+#include <algo/blast/api/bl2seq.hpp>
 
 #ifdef WRITE_SEQALIGNS
 #include <ctools/asn_converter.hpp>
@@ -389,6 +389,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/08 20:24:31  dicuccio
+ * Adjustments for Unix build: rename 'ncmimath' -> 'ncbi_math'; fix #include in demo app
+ *
  * Revision 1.6  2003/08/01 22:38:31  camacho
  * Added conditional compilation to write seqaligns
  *
