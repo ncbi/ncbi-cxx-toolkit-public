@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/09/28 20:48:23  lavr
+ * Comments revised; parameter (and SHttpConnector's) names adjusted
+ * Retry logic moved entirely into s_Adjust()
+ *
  * Revision 6.16  2001/09/10 21:15:56  lavr
  * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
  *
@@ -114,40 +118,39 @@ typedef enum {
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    SConnNetInfo*        info;      /* generic connection configuration     */
-    THCC_Flags           flags;     /* as passed to HTTP_CreateConnector()  */
-    FHttpParseHTTPHeader parse_http_hdr; /* callback to parse HTTP reply hdr*/
+    THCC_Flags           flags;           /* as passed to constructor        */
+    SConnNetInfo*        net_info;        /* network configuration parameters*/
+    FHttpParseHTTPHeader parse_http_hdr;  /* callback to parse HTTP reply hdr*/
+    FHttpAdjustNetInfo   adjust_net_info; /* for on-the-fly net_info adjust  */
+    FHttpAdjustCleanup   adjust_cleanup;  /* supplemental user data...       */
+    void*                adjust_data;     /* ...and cleanup routine          */
 
-    /* for on-the-fly adjustment of the connection info */
-    FHttpAdjustInfo      adjust_info;
-    void*                adjust_data;
-    FHttpAdjustCleanup   adjust_cleanup;
-
-    SOCK            sock;        /* socket;  NULL if not in the "READ" mode  */
-    BUF             obuf;        /* storage to accumulate output data        */
-    BUF             ibuf;        /* storage to accumulate input data         */
-    const STimeout* c_timeout;   /* NULL(infinite), default or ptr to next   */
-    STimeout        cc_timeout;  /* storage for a (finite) connect timeout   */
-    const STimeout* w_timeout;   /* NULL(infinite), default or ptr to next   */
-    STimeout        ww_timeout;  /* storage for a (finite) write timeout     */
-    ECanConnect     can_connect; /* if still permitted to make a connection  */
-    int/*bool*/     first_read;  /* if the 1st attempt to read after connect */
-    unsigned int    fail_count;  /* incremented each failure since open      */
+    SOCK            sock;         /* socket;  NULL if not in the "READ" mode */
+    BUF             obuf;         /* storage to accumulate output data       */
+    BUF             ibuf;         /* storage to accumulate input data        */
+    const STimeout* c_timeout;    /* NULL(infinite), default or ptr to next  */
+    STimeout        cc_timeout;   /* storage for a (finite) connect timeout  */
+    const STimeout* w_timeout;    /* NULL(infinite), default or ptr to next  */
+    STimeout        ww_timeout;   /* storage for a (finite) write timeout    */
+    int/*bool*/     first_read;   /* if the 1st attempt to read after connect*/
+    ECanConnect     can_connect;  /* if still permitted to make a connection */
+    unsigned int    failure_count;/* incremented each failure since open     */
 } SHttpConnector;
 
 
 static int/*bool*/ s_Adjust(SHttpConnector* uuu)
 {
     /* we're here because something is going wrong */
-    uuu->fail_count++;
+    if (++uuu->failure_count >= uuu->net_info->max_try)
+        return 0;
     /* adjust info before another connection attempt */
-    if (!uuu->adjust_info ||
-        !(*uuu->adjust_info)(uuu->info, uuu->adjust_data, uuu->fail_count))
+    if (!uuu->adjust_net_info || !(*uuu->adjust_net_info)
+        (uuu->net_info, uuu->adjust_data, uuu->failure_count))
         return 0/*false*/;
-    ConnNetInfo_AdjustForHttpProxy(uuu->info);
-    
-    if (uuu->info->debug_printout)
-        ConnNetInfo_Print(uuu->info, stderr);
+    ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
+
+    if (uuu->net_info->debug_printout)
+        ConnNetInfo_Print(uuu->net_info, stderr);
     return 1/*true*/;
 }
 
@@ -156,19 +159,19 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                          size_t size, size_t* n_read)
 {
     assert(uuu->sock);
-    
+
     /* just read, with no URL-decoding */
     if (!(uuu->flags & fHCC_UrlDecodeInput)) {
         return SOCK_Read(uuu->sock, buf, size, n_read, eIO_Plain);
     }
-    
+
     /* read and URL-decode */
     {{
         EIO_Status status;
         size_t     n_peeked, n_decoded;
         size_t     peek_size = 3 * size;
         void*      peek_buf  = malloc(peek_size);
-        
+
         /* peek the data */
         status= SOCK_Read(uuu->sock, peek_buf, peek_size, &n_peeked, eIO_Peek);
         if (status != eIO_Success) {
@@ -176,7 +179,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             free(peek_buf);
             return status;
         }
-        
+
         /* decode, then discard the successfully decoded data from the input */
         if (URL_Decode(peek_buf, n_peeked, &n_decoded, buf, size, n_read)) {
             if (n_decoded) {
@@ -190,10 +193,10 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             } 
         } else
             status = eIO_Unknown;
-        
+
         if (status != eIO_Success)
             CORE_LOG(eLOG_Error, "[HTTP_SockRead]  Cannot URL-decode data");
-        
+
         free(peek_buf);
         return status;
     }}
@@ -210,7 +213,7 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu, int/*bool*/ drop_unread)
     if (!drop_unread) {
         char   buf[4096];
         size_t x_read;
-        
+
         do {
             status = s_Read(uuu, buf, sizeof(buf), &x_read);
             if (!BUF_Write(&uuu->ibuf, buf, x_read))
@@ -239,20 +242,20 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
         return eIO_Closed;
 
     /* the re-try loop... */
-    while (uuu->fail_count < uuu->info->max_try) {
+    for (;;) {
         /* connect & send HTTP header */
         uuu->sock = URL_Connect
-            (uuu->info->host, uuu->info->port, uuu->info->path,
-             uuu->info->args, uuu->info->req_method,
+            (uuu->net_info->host, uuu->net_info->port, uuu->net_info->path,
+             uuu->net_info->args, uuu->net_info->req_method,
              BUF_Size(uuu->obuf),
              uuu->c_timeout == CONN_DEFAULT_TIMEOUT
-             ? uuu->info->timeout : uuu->c_timeout,
+             ? uuu->net_info->timeout : uuu->c_timeout,
              uuu->w_timeout == CONN_DEFAULT_TIMEOUT
-             ? uuu->info->timeout : uuu->w_timeout,
-             uuu->info->http_user_header,
+             ? uuu->net_info->timeout : uuu->w_timeout,
+             uuu->net_info->http_user_header,
              (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs),
-             uuu->info->debug_printout == eDebugPrintout_Data ? eOn :
-             uuu->info->debug_printout == eDebugPrintout_None ? eOff :
+             uuu->net_info->debug_printout == eDebugPrintout_Data ? eOn :
+             uuu->net_info->debug_printout == eDebugPrintout_None ? eOff :
              eDefault);
 
         if (uuu->sock) {
@@ -278,7 +281,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
 static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
 {
     EIO_Status status;
-    
+
     for (;;) {
         size_t size;
 
@@ -293,7 +296,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
 
             SOCK_SetTimeout(uuu->sock, eIO_Write,
                             uuu->w_timeout == CONN_DEFAULT_TIMEOUT 
-                            ? uuu->info->timeout : uuu->w_timeout);
+                            ? uuu->net_info->timeout : uuu->w_timeout);
             do {
                 char       buf[4096];
                 size_t     n_written;
@@ -305,14 +308,16 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
                 off += n_written;
             } while (off < size);
         }
-        /* shutdown the socket for writing */
+
+        if (status == eIO_Success) {
+            /* shutdown the socket for writing */
 #if !defined(NCBI_OS_MSWIN)
-        /* (on MS-Win, socket shutdown on writing apparently messes up (?!)
-         *  with the later reading, especially when reading a lot of data.) */
-        SOCK_Shutdown(uuu->sock, eIO_Write);
+            /* (on MS-Win, socket shutdown on writing apparently messes up (?!)
+             *  with the later reading, esp. when reading a lot of data.) */
+            SOCK_Shutdown(uuu->sock, eIO_Write);
 #endif
-        if (status == eIO_Success)
             break;
+        }
 
         /* write failed, close socket and try to use another server */
         SOCK_Close(uuu->sock);
@@ -338,7 +343,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
 
     if (uuu->flags & fHCC_KeepHeader)
         return eIO_Success;
-    
+
     /* check status (assume the reply status is in the first line) */
     status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &buf, 0);
     if (status == eIO_Success) {
@@ -352,15 +357,14 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
             http_status < 200  ||  299 < http_status) {
             server_error = 1/*true*/;
         }
-        
+
         /* skip HTTP header */
-        if (uuu->info->debug_printout || uuu->parse_http_hdr) {
+        if (uuu->net_info->debug_printout || uuu->parse_http_hdr) {
             char data[256], *header;
             size_t hdrsize, n_read;
-            
+
             /* skip & printout the HTTP header */
-            status = SOCK_StripToPattern(uuu->sock, "\r\n\r\n", 4,
-                                         &buf, 0);
+            status = SOCK_StripToPattern(uuu->sock, "\r\n\r\n", 4, &buf, 0);
             hdrsize = BUF_Size(buf);
             if ((header = (char*) malloc(hdrsize + 1)) != 0) {
                 if (BUF_Read(buf, header, hdrsize) != hdrsize) {
@@ -369,8 +373,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
                 } else
                     header[hdrsize] = '\0';
             }
-            
-            if (uuu->info->debug_printout) {
+
+            if (uuu->net_info->debug_printout) {
                 fprintf(stderr, "\n\
 ----- [BEGIN] HTTP Header(%ld bytes followed by \\n%s) -----\n",
                         (long) hdrsize,
@@ -384,18 +388,18 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
 ----- [END] HTTP Header -----\n\n");
                 fflush(stderr);
             }
-            
+
             if (uuu->parse_http_hdr) {
                 if (!(*uuu->parse_http_hdr)
                     (header, uuu->adjust_data, server_error))
                     server_error = 1;
             }
-            
+
             if (header)
                 free(header);
-            
+
             /* skip & printout the content, if server err detected */
-            if (server_error && uuu->info->debug_printout) {
+            if (server_error && uuu->net_info->debug_printout) {
                 fprintf(stderr, "\n\
 ----- [BEGIN] Detected a server error -----\n");
                 for (;;) {
@@ -415,7 +419,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
             status = SOCK_StripToPattern(uuu->sock, "\r\n\r\n", 4, 0, 0);
         }
     }
-    
+
     BUF_Destroy(buf);
     if (server_error)
         return eIO_Unknown;
@@ -520,8 +524,8 @@ static EIO_Status s_VT_Open
     /* reset the auto-reconnect feature */
     uuu->can_connect = uuu->flags & fHCC_AutoReconnect
         ? eCC_Unlimited : eCC_Once;
-    uuu->fail_count = 0;
-    
+    uuu->failure_count = 0;
+
     /* NOTE: the real connect will be performed on the first "READ", or
      *"CLOSE", or on the "WAIT" on read -- see in "s_ConnectAndSend()";
      * here we just store the timeout value -- for the future connect */
@@ -554,7 +558,7 @@ static EIO_Status s_VT_Wait
                 return status;
         }
         return SOCK_Wait(uuu->sock, eIO_Read, timeout == CONN_DEFAULT_TIMEOUT
-                         ? uuu->info->timeout : timeout);
+                         ? uuu->net_info->timeout : timeout);
     case eIO_Write:
         /* Return 'Closed' if no more writes are allowed (and now - reading) */
         return uuu->can_connect == eCC_None ||
@@ -574,7 +578,7 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
-    
+
     /* if trying to "WRITE" after "READ" then close the socket,
      * and thus switch to "WRITE" mode */
     if (uuu->sock) {
@@ -648,7 +652,7 @@ static EIO_Status s_VT_Read
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     EIO_Status status;
     size_t x_read;
-    
+
     for (;;) {
         if (!uuu->sock) {
             /* not in "READ" mode yet... so "CONNECT" and "WRITE" first */
@@ -661,7 +665,7 @@ static EIO_Status s_VT_Read
         /* set timeout */
         SOCK_SetTimeout(uuu->sock, eIO_Read,
                         timeout == CONN_DEFAULT_TIMEOUT
-                        ? uuu->info->timeout : timeout);
+                        ? uuu->net_info->timeout : timeout);
 
         if (!uuu->first_read)
             break;
@@ -707,7 +711,7 @@ static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
-#if 0
+    SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
         uuu->cc_timeout = *timeout;
         uuu->c_timeout  = &uuu->cc_timeout;
@@ -717,8 +721,7 @@ static EIO_Status s_VT_Close
         uuu->c_timeout  = timeout;
         uuu->w_timeout  = timeout;
     }
-#endif
-    s_FlushAndDisconnect((SHttpConnector*) connector->handle);
+    s_FlushAndDisconnect(uuu);
     return eIO_Success;
 }
 
@@ -755,7 +758,7 @@ static void s_Destroy(CONNECTOR connector)
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
-    ConnNetInfo_Destroy(uuu->info);
+    ConnNetInfo_Destroy(uuu->net_info);
     if (uuu->adjust_cleanup)
         (*uuu->adjust_cleanup)(uuu->adjust_data);
     BUF_Destroy(uuu->ibuf);
@@ -776,7 +779,7 @@ extern CONNECTOR HTTP_CreateConnector
 {
     SConnNetInfo *net_info;
     CONNECTOR connector;
-    
+
     net_info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create(0);
     if (user_header)
         ConnNetInfo_SetUserHeader(net_info, user_header);
@@ -787,10 +790,10 @@ extern CONNECTOR HTTP_CreateConnector
 
 
 extern CONNECTOR HTTP_CreateConnectorEx
-(const SConnNetInfo*  info,
+(const SConnNetInfo*  net_info,
  THCC_Flags           flags,
  FHttpParseHTTPHeader parse_http_hdr,
- FHttpAdjustInfo      adjust_info,
+ FHttpAdjustNetInfo   adjust_net_info,
  void*                adjust_data,
  FHttpAdjustCleanup   adjust_cleanup)
 {
@@ -798,10 +801,11 @@ extern CONNECTOR HTTP_CreateConnectorEx
     SHttpConnector* uuu = (SHttpConnector*) malloc(sizeof(SHttpConnector));
 
     /* initialize internal data structures */
-    uuu->info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create(0);
-    ConnNetInfo_AdjustForHttpProxy(uuu->info);
-    if (uuu->info->debug_printout) {
-        ConnNetInfo_Print(uuu->info, stderr);
+    uuu->net_info = net_info
+        ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
+    ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
+    if (uuu->net_info->debug_printout) {
+        ConnNetInfo_Print(uuu->net_info, stderr);
     }
 
     uuu->flags           = flags;
@@ -809,11 +813,11 @@ extern CONNECTOR HTTP_CreateConnectorEx
         uuu->flags      &= ~fHCC_KeepHeader;
 
     uuu->parse_http_hdr  = parse_http_hdr;
-    
-    uuu->adjust_info     = adjust_info;
+
+    uuu->adjust_net_info = adjust_net_info;
     uuu->adjust_data     = adjust_data;
     uuu->adjust_cleanup  = adjust_cleanup;
-    
+
     uuu->sock = 0;
     uuu->obuf = 0;
     uuu->ibuf = 0;
