@@ -62,6 +62,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/09/27 22:29:35  vakatov
+ * Always define "NDEBUG" if "_DEBUG" is not defined (mostly for the C Toolkit)
+ *
  * Revision 6.12  2001/08/09 16:22:51  lavr
  * Remove last (unneeded) parameter from LOG_Reset()
  *
@@ -106,6 +109,11 @@
 
 #include <connect/ncbi_types.h>
 
+
+/* Run-time debugging */
+#if !defined(NDEBUG)  &&  !defined(_DEBUG)
+#  define NDEBUG
+#endif
 #include <assert.h>
 #if defined(NDEBUG)
 #  define verify(expr)  (void)(expr)
