@@ -39,6 +39,7 @@
 
 #include <util/range.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -46,6 +47,7 @@ BEGIN_SCOPE(objects)
 class IFlatTextOStream;
 class CFlatItemOStream;
 class CSeq_submit;
+class CFFContext;
 
 
 class NCBI_FORMAT_EXPORT CFlatFileGenerator : public CObject
@@ -57,7 +59,8 @@ public:
         eFormat_EMBL,
         eFormat_DDBJ,
         eFormat_GBSeq,
-        eFormat_FTable
+        eFormat_FTable,
+        eFormat_GFF
     };
 
     enum EMode {
@@ -130,19 +133,22 @@ public:
 
     void Generate(const CSeq_entry& entry, CNcbiOstream& os);
     void Generate(const CSeq_submit& submit, CNcbiOstream& os);
+    void Generate(const CSeq_loc& loc, CNcbiOstream& os);
 
     // NB: both the item ostream and the text ostream factory objects should
     //     be allocated on the heap!
     void Generate(const CSeq_entry& entry, CFlatItemOStream& item_os);
     void Generate(const CSeq_submit& submit, CFlatItemOStream& item_os);
+    void Generate(const CSeq_loc& loc, CFlatItemOStream& item_os);
 
 private:
-    CScope&         m_Scope;
-    TFormat         m_Format;
-    TMode           m_Mode;
-    TStyle          m_Style;
-    TFilter         m_Filter;
-    TFlags          m_Flags;
+    CRef<CFFContext>    m_Ctx;
+    //CScope&         m_Scope;
+    //TFormat         m_Format;
+    //TMode           m_Mode;
+    //TStyle          m_Style;
+    //TFilter         m_Filter;
+    //TFlags          m_Flags;
 };
 
 
@@ -154,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:52:40  shomrat
+* Added GFF format
+*
 * Revision 1.1  2003/12/17 19:51:49  shomrat
 * Initial revision (adapted from flat lib)
 *
