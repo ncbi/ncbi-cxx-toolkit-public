@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -161,7 +161,8 @@ GB-block ::= SEQUENCE {          -- GenBank specific descriptions
     origin VisibleString OPTIONAL,
     date VisibleString OPTIONAL ,       -- old form Entry Date
     entry-date Date OPTIONAL ,          -- replaces date
-    div VisibleString OPTIONAL }        -- GenBank division
+    div VisibleString OPTIONAL ,        -- GenBank division
+    taxonomy VisibleString OPTIONAL }   -- continuation line of organism
 
 --*** Instances of sequences *******************************
 --*
