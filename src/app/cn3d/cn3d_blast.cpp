@@ -107,8 +107,7 @@ int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
 static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
 {
     BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
-//    bob->db_length = 2500000;   // approx. # aligned columns in CDD database
-    bob->db_length = 2,494,783;    // size of CDD database v1.60
+    bob->db_length = 2717223;    // size of CDD database v1.62
     bob->scalingFactor = 1.0;
     return bob;
 }
@@ -500,6 +499,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/05/29 16:38:27  thiessen
+* set db length for CDD 1.62
+*
 * Revision 1.29  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
