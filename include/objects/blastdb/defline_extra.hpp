@@ -43,7 +43,8 @@ enum LinkoutTypes {
   eLocuslink = (1<<0),
   eUnigene   = (1<<1),
   eStructure = (1<<2),
-  eGeo       = (1<<3)
+  eGeo       = (1<<3),
+  eGene      = (1<<4)
 };
 
 END_objects_SCOPE
@@ -53,6 +54,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/10 20:08:27  jianye
+* Added gene linkout
+*
 * Revision 1.1  2003/08/06 16:13:00  jianye
 * Add new blastdb spec (aka fastdl in the C Toolkit)
 *
