@@ -26,7 +26,7 @@ Developing Web-based Applications</a>.
 <a name="overview"> <h3> Overview of the CGI classes </h3>
 Figure 1 illustrates the layered design of the CGI classes. 
 
-<center><img SRC="cgi2.gif"> <br> Figure 1</center>
+<center><img SRC="cgi.gif"> <br> Figure 1</center>
 
 This design is best described by starting with a consideration of the capabilities 
 one might need to implement a CGI program, including:
@@ -140,9 +140,10 @@ CNcbiCommand</a> classes </h3>
 
 The resource class is at the heart of the application, and it is here that the program's
 functionality is defined. The single argument to the resource class's constructor is a <a
-href="applic.html#CNcbiRegistry"><i>CNcbiRegistry</i></a> object, which defines data paths
-and resources for the application. This information is stored in the resource class's data
-member, <i>m_config</i>. The only other data member is a
+href="applic.html#CNcbiRegistry"><i>CNcbiRegistry</i></a> object, which defines data
+paths, resources, and possibly environmental variables for the application. This
+information is stored in the resource class's data member, <i>m_config</i>. The only other
+data member is a
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=TCmdList">
 <i>TCmdList</i></a> (a list of <i>CNcbiCommand</i>s) called <i>m_cmd</i>.
 
@@ -172,7 +173,9 @@ protected:
 
 The <i>AddCommand()</i> method is used when a resource is being initialized, to add
 commands to the command list.  Given a <i>CCgiRequest</i> object defined in a particular
-context <i>ctx</i>, <i>HandleRequest(ctx)</i> compares entries in the context's request to
+context <i>ctx</i>, 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=HandleRequest">
+<i>HandleRequest(ctx)</i></a> compares entries in the context's request to
 commands in <i>m_cmd</i>. All commands requested in the query are then executed (see
 below), and the request is considered "handled". If desired, a default command may be
 defined by the user by implementing the function <i>GetDefaultCommand()</i> to return the
@@ -192,8 +195,9 @@ public:
 
     CNcbiCommand(CNcbiResource& resource);
 
-    virtual void Execute(CCgiContext& ctx) = 0;
     virtual bool IsRequested(const CCgiContext& ctx) const;
+    virtual void Execute(CCgiContext& ctx) = 0;
+    virtual string GetName() const = 0;
 
 protected:
 
@@ -206,9 +210,118 @@ private:
 };
 </pre> </font>
 
+The only data member contained in a CNcbiCommand object is a reference back to the resource it
+belongs to. There are however, three member function's which serve to identify each
+command and define its execution: <i>GetName(), GetEntry(),</i> and <i>Execute()</i>.
+All of these are pure virtual functions that must be defined by the application. <p>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/cgi/ncbires.cpp#L202">
+<i>IsRequested()</i> </a>takes a <i>CCgiContext</i> as its single argument, and uses
+<i>ctx.GetRequest().GetEntries()</i> to obtain a <i>multimap</i> of the <i>key=value</i>
+pairs in the query. The multimap is then searched for an entry where <i>key=GetEntry()</i>
+and <i>value=GetName()</i>. <i>IsRequested()</i> is called by the resource's <i>HandleRequest()</i>
+method, and when <i>IsRequested()</i> returns <i>True</i>, the command's <i>Execute()</i> 
+method is invoked. 
+
 <a name="ccgireq"> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiRequest.html">
 <h3> The CCgiRequest class </h3></a>
+
+<i>The CCgiRequest</i> class serves as an interface between the user's query and the CGI
+program. The query may have been submitted as part of the command line, as part of a URL
+(METHOD=GET), or on the input stream (METHOD=POST). Arguments to the constructor include
+the <i>CNcbiArguments, CNcbiEnvironment, CNcbiIstream, </i> and a set of flags. The 
+constructor uses the environment passed in to cache network information as "gettable"
+properties. These properties include:
+
+<ul>
+     // server properties
+353     eCgi_ServerSoftware = 0,
+354     eCgi_ServerName,
+355     eCgi_GatewayInterface,
+356     eCgi_ServerProtocol,
+357     eCgi_ServerPort,        // see also "GetServerPort()"
+358 
+359     // client properties
+360     eCgi_RemoteHost,
+361     eCgi_RemoteAddr,        // see also "GetRemoteAddr()"
+362 
+363     // client data properties
+364     eCgi_ContentType,
+365     eCgi_ContentLength,     // see also "GetContentLength()"
+366 
+367     // request properties
+368     eCgi_RequestMethod,
+369     eCgi_PathInfo,
+370     eCgi_PathTranslated,
+371     eCgi_ScriptName,
+372     eCgi_QueryString,
+373 
+374     // authentication info
+375     eCgi_AuthType,
+376     eCgi_RemoteUser,
+377     eCgi_RemoteIdent,
+378 
+379     // semi-standard properties(from HTTP header)
+380     eCgi_HttpAccept,
+381     eCgi_HttpCookie,
+382     eCgi_HttpIfModifiedSince,
+383     eCgi_HttpReferer,
+384     eCgi_HttpUserAgent,
+385 
+386     // # of CCgiRequest-supported standard properties
+387     // for internal use only!
+388     eCgi_NProperties
+389 };  // ECgiProp
+390 
+
+    // Startup initialization:
+    //   retrieve request's properties and cookies from environment
+    //   retrieve request's entries from "$QUERY_STRING"
+    // If "$REQUEST_METHOD" == "POST" then add entries from stream "istr"
+    // If "$REQUEST_METHOD" is undefined then try to retrieve the request's
+    // entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
+    // and "istr" at all
+
+Flags   // dont handle indexes as regular FORM entries with empty value
+        // do not parse $QUERY_STRING
+        // own the passed "env" (and destroy them it in destructor)
+
+</pre>
+<font color = "#000080"> <pre>
+class CCgiRequest {
+public:
+    typedef int TFlags;
+
+    enum Flags {
+        fIndexesNotEntries  = 0x1,
+        fIgnoreQueryString  = 0x2,
+        fOwnEnvironment     = 0x4
+    };
+
+    CCgiRequest(const CNcbiArguments*, const CNcbiEnvironment*, CNcbiIstream*, TFlags);
+
+    static const string& GetPropertyName(ECgiProp prop);    // name (not value)
+    const string& GetProperty(ECgiProp prop) const;         // value
+    const string& GetRandomProperty(const string& key, bool http=true) const;
+    size_t GetContentLength(void) const;
+    const CCgiCookies& GetCookies(void) const;
+    const TCgiEntries& GetEntries(void) const;
+    const TCgiIndexes& GetIndexes(void) const;
+    static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
+    static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& indexes);
+
+private:
+
+    const CNcbiEnvironment*    m_Env;
+    auto_ptr&lt;CNcbiEnvironment> m_OwnEnv;
+    TCgiEntries m_Entries;
+    TCgiIndexes m_Indexes;
+    CCgiCookies m_Cookies;
+
+    const string& x_GetPropertyByName(const string& name) const;    // retrieve/cache the property
+};  
+</pre> </font>
+
 
 <a name="ccgires"> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiResponse.html">

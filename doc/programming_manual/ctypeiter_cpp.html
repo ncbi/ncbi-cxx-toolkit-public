@@ -33,23 +33,21 @@
 }
 <font color = "blue">END_CLASS_INFO
 
-<font color = "red">// main and free functions <font color = "blue">
+<font color = "red">// main and other functions <font color = "blue">
 
 USING_NCBI_SCOPE;<font color = "black">
 
-void FullerBrushMan (const CPerson& p) {
+static void FullerBrushMan (const CPerson& p) {
     cout << "knock-knock! is " << p.m_name << " home?" << endl;
 }
 
 
 int main(int argc, char** argv)
 {
-
 <font color = "red">    // Instantiate a few CPerson objects </font>
     CPerson neighborhood("Moe", "", 
                          new CPerson("Larry", "",
                                      new CPerson("Curly", "", 0)));
-
     CPerson another ("Harpo", "", 
                      new CPerson("Chico", "", 
                                  new CPerson("Groucho", "", 0)));
@@ -60,17 +58,17 @@ int main(int argc, char** argv)
     district1.AddBlock(another);
 
 <font color = "red">    // Send the FullerBrushMan to all CPersons in district1! </font>
-    for (CTypeIterator<CPerson> house = Begin(district1); house; ++house ) {
+    for (CTypeConstIterator&lt;CPerson> house = Begin(district1); house; ++house ) {
         FullerBrushMan(*house);
     }
 
 <font color = "red">    // Iterate over all strings for the CPersons in district1 </font>
-    list%lt;CPerson> blocks = district1.GetBlocks();
+    list&lt;CPerson> blocks = district1.GetBlocks();
 
-    for (list%lt;CPerson>::iterator b = blocks.begin();
+    for (list&lt;CPerson>::iterator b = blocks.begin();
 	 b != blocks.end(); ++b) {
 
-        for (CStdTypeIterator%lt;string> i = Begin(*b); i; ++i) {
+        for (CStdTypeIterator&lt;string> i = Begin(*b); i; ++i) {
             cout << *i << ' ';
 	}
 	cout << endl;

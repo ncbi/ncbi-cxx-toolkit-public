@@ -11,10 +11,12 @@
 The NCBI C++ Toolkit Iterators</h1>
 
 <ul>
- <li><a href="#generic"><i>STL</i> generic iterators</a></li>
- <li><a href="#typeIt"><i>CTypeIterator</i> and <i>CTypeConstIterator</i></a></li>
- <li><a href="#stdType"><i>CStdTypeIterator</i> and <i>CStdTypeConstIterator</i></a></li>
- <li><a href="#typesIt"><i>CTypesIterator</a></i></li>
+ <li><a href="#generic">  <i> STL</i> generic iterators</a></li>
+ <li><a href="#typeIt">   <i> CTypeIterator</i> and <i>CTypeConstIterator</i></a></li>
+ <li><a href="#cobjType"> <i> CObjectIterator</i> and <i>CObjectConstIterator</i></a></li>
+ <li><a href="#stdType">  <i> CStdTypeIterator</i> and <i>CStdTypeConstIterator</i></a></li>
+ <li><a href="#typesIt">  <i> CTypesIterator</a></i></li>
+ <li><a href="#hier">         Class hierarchies and type iterators </a>
 </ul>
 <a NAME="generic"></a>
 <h3>
@@ -55,7 +57,7 @@ additional types of iterators for just this purpose.
 Although STL provides a built-in <i>list</i> data structure, it is very common to represent 
 a linked list of objects by encoding a <i>next</i> field that embeds an object of the same
 type. For example, suppose you had a <i> CPerson </i> class defined as:
-
+<a name = "CPerson">
 <font color = "#000080"> <pre>
 class CPerson
 { 
@@ -68,7 +70,7 @@ public:
 
     string name, address;
     CPerson *next_door;
-}
+};
 </pre><font color = black>
 
 Given this definition, one might then define a <i>neighborhood</i> using a single <i>CPerson</i>.
@@ -76,48 +78,53 @@ Assuming a function <i>FullerBrushMan(CPerson&)</i> must now be applied to each 
 neighborhood, this could be implemented using a <i>CTypeIterator</i> as follows:
 
 <font color = "#000080"> <pre>
-CPerson neighborhood("Moe", "123 Main St", 
-                     new CPerson("Larry", "127 Main St", 
-                                new CPerson("Curly", "131 Main St", 0)));
+  CPerson neighborhood("Moe", "123 Main St", 
+                       new CPerson("Larry", "127 Main St", 
+                                    new CPerson("Curly", "131 Main St", 0)));
 
-for (CTypeIterator&lt;CPerson&gt; house = Begin(neighborhood); house; ++house ) {
-    FullerBrushMan(*house);
-}
+  for (CTypeIterator&lt;CPerson&gt; house = Begin(neighborhood); house; ++house ) {
+      FullerBrushMan(*house);
+  }
 </pre><font color = black>
 
 Lets compare the syntax of this new iterator class to the standard iterators:
 
 <font color = "#000080"><pre>
-  for (ContainerType&lt;ObjectType&gt;::IteratorType i = ContainerName.begin();
-       i != ContainerName.end(); ++i) 
+  ContainerType&lt;T&gt; x;
+  for (ContainerType&lt;T&gt;::IteratorType i = x.begin(); i != x.end(); ++i) 
 
-  for (CTypeIterator&lt;ObjectType&gt; i = Begin(ObjectName); 
-       i; ++i)
+  for (CTypeIterator&lt;ObjectType&gt; i = Begin(ObjectName); i; ++i)
 </pre><font color = black>
-The expression <i>Begin(ObjectName)</i> returns an "object iterator" that is actually an
-STL <i>pair</i> containing a pointer to the object itself as well as a data structure
-containing type information about the object. This type information is used to define
-what the iterator points to during each iteration. In this case, the iterator initially
-points to the object itself, and with each iteration, it is reset to point to <i>*next_door</i>.
-The loop terminates when <i>next_door</i> becomes <i>NULL</i>. <p>
 
-Similarly, the standard iterator begins pointing to the first item in the container, and
-with each iteration, visits subsequent items until the <i>end</i> of the container is
-reached.  Two important differences however, are: (1) all items in the container must be
-of the same <i>ObjectType</i>, and (2) the standard iterator will visit <i>all</i> items
-in the container.  In contrast, the <i>CTypeIterator</i> (1) operates on a class object
-containing heterogeneous types, and (2) skips over all data members that are not of the
-specified type. <p>
+The standard iterator begins by pointing to the first item in the container
+(<i>x.begin()</i>), and with each iteration, visits subsequent items until the <i>end</i>
+of the container (<i>x.end()</i>) is reached. Similarly, the <i>CTypeIterator</i> begins
+by pointing to the first data member of <i>ObjectName</i> that is of type
+<i>ObjectType</i>, and with each iteration, visits subsequent data members <i>of the
+specified type</i> until the end of the object is reached.  Two important differences are:
+(1) all items in the STL container must be of the same type <i>T</i>, and (2) the STL
+iterator will visit <i>all</i> items in the container.  In contrast, the
+<i>CTypeIterator</i> (1) operates on a class object containing heterogeneous types, and
+(2) skips over all data members that are not of the specified type. <p>
 
-In the above example, the data members visited by the iterator were of the same type as
-the object itself. This is not necessary however, as the aggregate object's type
-information is derived from the <i>Begin(ObjectName)</i> expresssion, while the type to be
-visited is defined by <i>ObjectType.</i> All <i>CObject</i>s defined in the NCBI C++
-Toolkit have a <i>GetTypeInfo()</i> member function that is used in the implementation of
-<i>Begin(ObjectName)</i>. In order to implement the <i>Begin()</i> member function for a
-new class you have derived from <i>CObject</i>, you will need to include some explicit
-type information in one of your implementation files. For the CPerson example above, the
-required information is:
+How is a generic iterator such as this implemented? The 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Begin">
+<i>Begin()</i></a> expression returns an "object iterator" that is actually an STL <i>pair</i>
+consisting of a pointer to the object itself and a data structure containing type
+information about the object. On each iteration, a new pair is created consisting of the
+current object and in turn, its type information. This allows the iterator to recursively
+visit all data members of the specified type at all levels of nesting.
+<p>
+<i>Begin()</i> is implemented as a template function whose sole argument is an an instance
+of a class with a <i>GetTypeInfo()</i> member function. Thus, in order to apply a
+<i>CTypeIterator</i> to a newly defined class, you will need to implement
+<i>GetTypeInfo()</i> for that class. Two macros are provided to support
+this,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_CLASS_INFO">
+<i>BEGIN_CLASS_INFO</i></a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=END_CLASS_INFO">
+<i>END_CLASS_INFO</i></a>. For the CPerson example above, the only
+code required to implement the <i>GetTypeInfo()</i> member function is:
 
 <font color = "#000080"> <pre>
 BEGIN_CLASS_INFO(CPerson)
@@ -129,9 +136,44 @@ BEGIN_CLASS_INFO(CPerson)
 END_CLASS_INFO
 </pre><font color = black>
 
-In addition, the derived class definition must include the static class member function
-<i>GetTypeInfo()</i> in the class's public section. The <i>CTypeConstIterator</i>
-parallels the <i>CTypeIterator</i>, and is intended for use with <i>const</i> objects. <p>
+In addition, the class definition must include the static class member function
+<i>GetTypeInfo()</i> in the class's public section (see the <i>CPerson</i> class
+definition <a href="#CPerson"> above</a>). <p>
+
+In this example the data members visited by the iterator were of the same type as
+the object itself, as <i>neighbor</i> is an instance of <i>CPerson</i>. Thus the
+first "member" visited is the object itself (<i>*this</i>). This is not
+necessary however, as the aggregate object's type information is derived from the
+<i>Begin(ObjectName)</i> expresssion, while the type to be visited is defined by
+<i>ObjectType</i>. The <i>CTypeConstIterator</i>
+parallels the <i>CTypeIterator</i>, and is intended for use with <i>const</i> objects (i.e.
+when you want to prohibit modifications to the objects you are iterating over). <p>
+
+<a NAME="cobjType"></a>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIterator.html">
+<h3><i>CObjectIterator</i></a> and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectConstIterator.html">
+<i>CObjectConstIterator</i></h3></a>
+
+All <i>CObject</i>s defined in the NCBI C++
+Toolkit have a <i>GetTypeInfo()</i> member function that can be used by
+<i>Begin(ObjectName)</i>. In particular, all of the generated serializable objects (in 
+<i>include/objects</i>) are derived from <i>CObject</i> and thus, can be iterated over.
+No additional code is required to apply a type iterator to a C++ Toolkit object. 
+In addition, a special iterator is defined which can automatically distinguish <i>CObject</i>s 
+from other class types. The syntax of a <i>CObjectIterator</i> is:
+<font color = "#000080"> <pre>
+<center> for (CObjectIterator i = Begin(ObjectName); i; ++i) </center></font></pre>
+
+Note that there is no need to specify the object type to iterate over, as the type
+<i>CObject</i> is built into the iterator itself. This iterator will recursively visit all
+<i>CObject</i>s contained in <i>ObjectName</i> The <i>CObjectConstIterator</i> is
+identical to the <i>CObjectIterator</i> but is designed to operate on <i>const</i>
+elements.<p>
+
+User-defined classes that are derived from <i>CObject</i>s can also be iterated over.
+In order to do so however, you must have implemented the <i>GetTypeInfo()</i> function 
+exactly as described above for general objects.
 
 <a NAME="stdType"></a>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeIterator.html">
@@ -139,12 +181,11 @@ parallels the <i>CTypeIterator</i>, and is intended for use with <i>const</i> ob
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeConstIterator.html">
 <i>CStdTypeConstIterator</i></h3></a>
 
-Standard STL objects such as <i>int, float</i>, and <i>string</i> do not have
-<i>GetTypeInfo()</i> member functions, and consequently, cannot be used in a
-<i>Begin(ObjectName)</i> expression. Similar to the <i>CTypeIterator</i>s, the
+Similar to the <i>CTypeIterator</i>s, the
 <i>CStdTypeIterator</i> and <i>CStdTypeConstIterator</i> classes selectively iterate
-over data members of a specified type, but for these iterators, the type must be
-a standard STL type. For example, to iterate over all the string data members in a
+over data members of a specified type. But for these iterators, the type must be
+a simple C type (<i>int, double, char*, etc.</i>) or an STL type <i>string</i>. 
+For example, to iterate over all the string data members in a
 <i>CPerson</i> object, we could use:
 <font color = "#000080"> <pre>
     for (CStdTypeIterator&lt;string> i = Begin(neighborhood); i; ++i) {
@@ -165,10 +206,10 @@ are given in <a href="ctypeiter_cpp.html"><i>ctypeiter.cpp</i></a>.
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypesIterator.html">
 <h3><i>CTypesIterator</i></h3></a>
 
-Occasionally it is necessary to iterate over a <i>set</i> of types contained inside an
+Sometimes it is necessary to iterate over a <i>set</i> of types contained inside an
 object. The <i>CTypesIterator</i>, as its name suggests, is designed for this purpose.
 For example, suppose you have loaded a gene sequence into memory as a <i>CBioseq</i>
-(named <i>seq</i>), and would now like to iterate over all of its references to genes and
+(named <i>seq</i>), and want to iterate over all of its references to genes and
 organisms. The following sequence of statements defines an iterator that will step through
 all of <i>seq</i>'s data members (recursively), stopping only at references to gene and
 organism citations:
@@ -181,12 +222,10 @@ organism citations:
      for (i = Begin(seq); i; ++i) {
  
 	 if (Type&lt;CGene_ref>::Match(i)) {
-
              CGene_ref* geneRef = Type&lt;CGene_ref>::Get(i);
              ...
          } 
 	 else if (Type&lt;COrg_ref>::Match(i) {
-
              COrg_ref* orgRef = Type&lt;COrg_ref>::Get(i);
              ...
          }
@@ -197,21 +236,38 @@ organism citations:
 to use the multiple types iterator:
 <ul>
 <li> <i>Type&lt;TypeName>::AddTo(i)</i> specifies that iterator <i>i</i> should stop at
-that type
-<li> <i>Type&lt;TypeName>::Match(i)</i> returns <i>True</i> if the specified type is the
-type currently pointed to by iterator <i>i</i>
+type <i>TypeName</i>
+<li> <i>Type&lt;TypeName>::Match(i)</i> returns <i>True</i> if the specified type  
+<i>TypeName</i> is the type currently pointed to by iterator <i>i</i>
 <li> <i>Type&lt;TypeName>::Get(i)</i> retrieves
 the object currently pointed to by iterator <i>i</i>, 
-and type casts it to the specified type
+and type casts it to the specified type <i>TypeName</i>
 </ul>
 <p>
 
-The <i>Begin(ObjectName)</i> expression is as described in the above
-<i>CTypeIterator</i> and <i>CTypeConstIterator</i> classes. The fact that it is
-also used here tells us that this type of iterator can <i>not</i> be used for
-standard types, as they can not generate their own type information. 
-
+The <i>Begin(ObjectName)</i> expression is as described for the above
+<i>CTypeIterator</i> and <i>CTypeConstIterator</i> classes. 
 <p>
+<a name="hier"></a>
+<h3>Class hierarchies and type iterators </h3>
+
+All of the iterators described in this section are designed to operate on aggregate
+objects, stopping only at those data members which are of the specified type. By 
+definition, if the aggregate object is itself of the specified type, <i>*this</i> 
+will be included in the iteration. Knowledge of the type hierarchy is implicit to
+these iterators. Thus if object type <i>B</i> is derived from object type <i>A</i>,
+then <i>CTypeIterator&lt;A></i> will visit objects of type <i>B</i> as well as <i>A</i>, 
+since <i>B IS-A A</i>. For example, consider the <i>CObjectIterator</i>:
+
+<center><img SRC="iter_hier.gif"> </center><p>
+
+Class <i>A</i> is derived from <i>CObject</i> and contains a <i>CBiostruc (B)</i> 
+as well as a simple <i>CObject (C)</i>. By definition, a <i>CObjectIterator</i> will
+visit <i>A, B,</i> and <i>C</i>, as well as all of the <i>CObjects</i> contained in
+<i>B</i>. In contrast, a <i>CTypeIterator</i> that visits <i>CBiostruc</i>s 
+will visit <i>B</i> only.
+<p>
+
 <a href="cref.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
 <i><a href="../index.html">up&nbsp;</a></i>
 <a href="diag.html"> <i> next</i> </a>
