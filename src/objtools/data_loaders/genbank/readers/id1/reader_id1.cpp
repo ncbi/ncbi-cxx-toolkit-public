@@ -192,14 +192,27 @@ CSeq_entry *CId1Blob::Seq_entry()
 {
   CObjectIStream *m_ObjStream = CObjectIStream::Open(eSerial_AsnBinary, m_IStream, false);
   CID1server_back id1_reply;
-  *m_ObjStream >> id1_reply;
-  static_cast<CId1StreamBuf *>(m_IStream.rdbuf())->Close();
-
+  bool clenup=false;
+  try
+    {
+      *m_ObjStream >> id1_reply;
+      static_cast<CId1StreamBuf *>(m_IStream.rdbuf())->Close();
+    }
+  catch ( exception e)
+    {
+      LOG_POST( "TROUBLE: reader_id1: can not read Seqentry from reply: " << e.what() );
+      clenup=true;
+    }
   if(id1_reply.IsGotseqentry())
     m_Seq_entry = &id1_reply.GetGotseqentry();
   else if(id1_reply.IsGotdeadseqentry())
     m_Seq_entry = &id1_reply.GetGotdeadseqentry();
-
+  if(clenup && m_Seq_entry)
+    {
+      delete m_Seq_entry;
+      m_Seq_entry=0;
+    }
+  
   return m_Seq_entry;
 }
 
@@ -261,6 +274,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2002/03/25 17:49:13  kimelman
+* ID1 failure handling
+*
 * Revision 1.7  2002/03/25 15:44:47  kimelman
 * proper logging and exception handling
 *

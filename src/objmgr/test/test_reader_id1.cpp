@@ -51,6 +51,9 @@ int main()
   CSeq_id seqId;
   //seqId.SetEmbl().SetAccession("X66994");
   //seqId.SetEmbl().SetVersion(1);
+  for(int k=0;k<100;k++)
+  {
+    cout << "K: " << k << endl;
   seqId.SetGi(5);
 
   for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
@@ -60,18 +63,23 @@ int main()
     for(CIStream bs(seqRef->BlobStreamBuf(0, 0, cl)); ! bs.Eof(); )
     {
       CBlob *blob = seqRef->RetrieveBlob(bs);
-      CObjectOStreamAsn oos(cout);
-      oos << *blob->Seq_entry();
-      cout << endl;
+      //CObjectOStreamAsn oos(cout);
+      //oos << *blob->Seq_entry();
+      //cout << endl;
+      blob->Seq_entry();
       delete blob;
     }
     delete seqRef;
+  }
   }
   return 0;
 }
 
 /*
 * $Log$
+* Revision 1.4  2002/03/25 17:49:13  kimelman
+* ID1 failure handling
+*
 * Revision 1.3  2002/03/21 19:14:55  kimelman
 * GB related bugfixes
 *

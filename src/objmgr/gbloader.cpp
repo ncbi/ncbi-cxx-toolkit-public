@@ -595,10 +595,13 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
           if (blob->Class()==0)
             {
               LOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
-              tse_up->m_mode = CTSEUpload::eDone;
               tse_up->m_tse    = blob->Seq_entry();
-              new_tse=true;
-              GetDataSource()->AddTSE(*(tse_up->m_tse));
+              if(tse_up->m_tse)
+                {
+                  tse_up->m_mode = CTSEUpload::eDone;
+                  new_tse=true;
+                  GetDataSource()->AddTSE(*(tse_up->m_tse));
+                }
             }
           else
             {
@@ -633,6 +636,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/03/25 17:49:12  kimelman
+* ID1 failure handling
+*
 * Revision 1.12  2002/03/25 15:44:46  kimelman
 * proper logging and exception handling
 *
