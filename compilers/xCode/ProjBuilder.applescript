@@ -358,10 +358,10 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			do shell script shScript
 		end try
 		
-		set fullProjName to (TheOUTPath & "/NCBI.xCode/project.pbxproj") as string
+		set fullProjName to (TheOUTPath & "/NCBI.xcode/project.pbxproj") as string
 		(* Call NSDictionary method to save data as XML property list *)
 		--call method "writeToFile:atomically:" of newProject with parameters {"/Users/lebedev/111.txt", "YES"}
-		--call method "writeToFile:atomically:" of newProject with parameters {"/Users/lebedev/!test.xCode/project.pbxproj", "YES"}
+		--call method "writeToFile:atomically:" of newProject with parameters {"/Users/lebedev/!test.xcode/project.pbxproj", "YES"}
 		
 		call method "writeToFile:atomically:" of newProject with parameters {fullProjName, "YES"}
 		(*set the_file to open for access "users:lebedev:111.txt"
@@ -524,6 +524,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/26 18:15:37  lebedev
+ * Use proper extension for projects (xcode instead of xCode)
+ *
  * Revision 1.6  2004/07/08 18:43:47  lebedev
  * Set the required lastKnownFileType for source files
  *
