@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.13  2001/11/27 16:26:06  thiessen
 * major update to data management system
 *
@@ -113,7 +116,7 @@ public:
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
 
     // new alignment data in asn1 format, created from (edited) BlockMultipleAlignment
-    const SeqAnnotList *newAsnAlignmentData;
+    SeqAnnotList *newAsnAlignmentData;
 };
 
 class MasterSlaveAlignment : public StructureBase

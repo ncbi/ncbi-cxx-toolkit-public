@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.50  2002/10/11 17:21:39  thiessen
 * initial Mac OSX build
 *
@@ -257,7 +260,7 @@ static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSe
                 q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
                 continue;
 
-            const Sequence *sequence = new Sequence(parent, q->GetObject().SetSeq());
+            const Sequence *sequence = new Sequence(parent, q->GetObject().GetSeq());
             seqlist.push_back(sequence);
 
         } else { // Bioseq-set
@@ -266,10 +269,10 @@ static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSe
     }
 }
 
-static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+static void UnpackSeqEntry(const CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
     if (seqEntry.IsSeq()) {
-        const Sequence *sequence = new Sequence(parent, seqEntry.SetSeq());
+        const Sequence *sequence = new Sequence(parent, seqEntry.GetSeq());
         seqlist.push_back(sequence);
     } else { // Bioseq-set
         UnpackSeqSet(seqEntry.GetSet(), parent, seqlist);
@@ -353,7 +356,7 @@ static void StringFromStdaa(const std::vector < char >& vec, std::string *str)
         str->at(i) = stdaaMap[vec[i]];
 }
 
-Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
+Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
     StructureBase(parent), bioseqASN(&bioseq), molecule(NULL), isProtein(false)
 {
     int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.42  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -204,7 +207,7 @@ public:
     BlockAligner *blockAligner;
 
     void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
-    void ReplaceUpdatesInASN(const ncbi::objects::CCdd::TPending& newUpdates) const;
+    void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
 
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).

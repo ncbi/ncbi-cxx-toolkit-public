@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.8  2002/06/05 17:50:08  thiessen
 * title tweaks
 *
@@ -102,7 +105,8 @@ private:
     ncbi::CRef < ncbi::objects::CCdd > cddData;
 
     mutable unsigned int dataChanged;
-    ncbi::objects::CCdd * GetInternalCDDData(void) const;
+    ncbi::objects::CCdd * GetInternalCDDData(void);
+    const ncbi::objects::CCdd * GetInternalCDDData(void) const;
     bool ConvertMimeToGeneral(void);
 
     // pointers to lower-level data, filled in by Load
@@ -152,7 +156,7 @@ public:
     // retrieve updates
     const UpdateAlignList * GetUpdates(void) const
         { return (cddUpdates ? cddUpdates : (bundleImports ? &bundleImportsFaked : NULL)); }
-    void ReplaceUpdates(const UpdateAlignList& newUpdates);
+    void ReplaceUpdates(UpdateAlignList& newUpdates);
 
     // style dictionary and user annotations
     const ncbi::objects::CCn3d_style_dictionary * GetStyleDictionary(void) const;
@@ -182,7 +186,7 @@ public:
     bool SetCDDNotes(const TextLines& lines);
     ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
     ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
-    ncbi::objects::CSeq_id * GetCDDMaster3d(void) const;
+    const ncbi::objects::CSeq_id * GetCDDMaster3d(void) const;
 
     // to flag data changes
     bool HasDataChanged(void) const { return (dataChanged > 0); }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.28  2001/12/12 14:04:14  thiessen
 * add missing object headers after object loader change
 *
@@ -248,7 +251,7 @@ Residue::Residue(StructureBase *parent,
         ERR_POST(Fatal << "confused by Molecule #?, Residue #" << id << "; can't find appropriate dictionary");
 
     // look up appropriate Residue_graph
-    CResidue_graph *residueGraph = NULL;
+    const CResidue_graph *residueGraph = NULL;
     ResidueGraphList::const_iterator i, ie=dictionary->end();
     for (i=dictionary->begin(); i!=ie; i++) {
         if (i->GetObject().GetId().Get() == graphID) {

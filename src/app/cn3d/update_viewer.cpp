@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.52  2002/10/27 22:23:51  thiessen
 * save structure alignments from vastalign.cgi imports
 *
@@ -950,7 +953,9 @@ void UpdateViewer::ImportStructure(void)
             seqid->SetGeneral().SetTag().SetId(mmdbID);
             CRef < CSeq_annot > annot(new CSeq_annot());
             annot->SetData().SetIds().push_back(seqid);
-            (const_cast<Sequence*>(*w))->bioseqASN->SetAnnot().push_back(annot);
+			ncbi::objects::CBioseq *bioseq =
+				const_cast<ncbi::objects::CBioseq*>((*w)->bioseqASN.GetPointer());
+            bioseq->SetAnnot().push_back(annot);
         }
 
         // add MMDB and molecule id to identifier if not already set

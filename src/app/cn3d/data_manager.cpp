@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.12  2002/10/27 22:23:51  thiessen
 * save structure alignments from vastalign.cgi imports
 *
@@ -178,9 +181,9 @@ void ASNDataManager::Load(void)
                 if (mimeData->GetGeneral().GetSeq_align_data().GetBundle().IsSetImports()) {
                     bundleImports = &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports());
                     // make "fake" Update-aligns from imports (to pass to alignment manager)
-                    SeqAnnotList::const_iterator i,
-                        ie = mimeData->GetGeneral().GetSeq_align_data().GetBundle().GetImports().end();
-                    for (i=mimeData->GetGeneral().GetSeq_align_data().GetBundle().GetImports().begin();
+                    SeqAnnotList::iterator i,
+                        ie = mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports().end();
+                    for (i=mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports().begin();
                          i!= ie; i++) {
                         CRef < CUpdate_align > update(new CUpdate_align());
                         update->SetSeqannot(**i);
@@ -300,23 +303,23 @@ const CCn3d_style_dictionary * ASNDataManager::GetStyleDictionary(void) const
 {
     if (mimeData.NotEmpty()) {
         if (mimeData->IsAlignstruc() && mimeData->GetAlignstruc().IsSetStyle_dictionary())
-            return &(mimeData->SetAlignstruc().SetStyle_dictionary());
+            return &(mimeData->GetAlignstruc().GetStyle_dictionary());
         else if (mimeData->IsAlignseq() && mimeData->GetAlignseq().IsSetStyle_dictionary())
-            return &(mimeData->SetAlignseq().SetStyle_dictionary());
+            return &(mimeData->GetAlignseq().GetStyle_dictionary());
         else if (mimeData->IsStrucseq() && mimeData->GetStrucseq().IsSetStyle_dictionary())
-            return &(mimeData->SetStrucseq().SetStyle_dictionary());
+            return &(mimeData->GetStrucseq().GetStyle_dictionary());
         else if (mimeData->IsStrucseqs() && mimeData->GetStrucseqs().IsSetStyle_dictionary())
-            return &(mimeData->SetStrucseqs().SetStyle_dictionary());
+            return &(mimeData->GetStrucseqs().GetStyle_dictionary());
         else if (mimeData->IsGeneral()) {
             if (mimeData->GetGeneral().GetSeq_align_data().IsBundle() &&
                 mimeData->GetGeneral().GetSeq_align_data().GetBundle().IsSetStyle_dictionary())
-                return &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetStyle_dictionary());
+                return &(mimeData->GetGeneral().GetSeq_align_data().GetBundle().GetStyle_dictionary());
             else if (mimeData->GetGeneral().GetSeq_align_data().IsCdd() &&
                      mimeData->GetGeneral().GetSeq_align_data().GetCdd().IsSetStyle_dictionary())
-                return &(mimeData->SetGeneral().SetSeq_align_data().SetCdd().SetStyle_dictionary());
+                return &(mimeData->GetGeneral().GetSeq_align_data().GetCdd().GetStyle_dictionary());
         }
     } else if (cddData->IsSetStyle_dictionary())
-        return &(cddData->SetStyle_dictionary());
+        return &(cddData->GetStyle_dictionary());
 
     return NULL;
 }
@@ -359,23 +362,23 @@ const CCn3d_user_annotations * ASNDataManager::GetUserAnnotations(void) const
 {
     if (mimeData.NotEmpty()) {
         if (mimeData->IsAlignstruc() && mimeData->GetAlignstruc().IsSetUser_annotations())
-            return &(mimeData->SetAlignstruc().SetUser_annotations());
+            return &(mimeData->GetAlignstruc().GetUser_annotations());
         else if (mimeData->IsAlignseq() && mimeData->GetAlignseq().IsSetUser_annotations())
-            return &(mimeData->SetAlignseq().SetUser_annotations());
+            return &(mimeData->GetAlignseq().GetUser_annotations());
         else if (mimeData->IsStrucseq() && mimeData->GetStrucseq().IsSetUser_annotations())
-            return &(mimeData->SetStrucseq().SetUser_annotations());
+            return &(mimeData->GetStrucseq().GetUser_annotations());
         else if (mimeData->IsStrucseqs() && mimeData->GetStrucseqs().IsSetUser_annotations())
-            return &(mimeData->SetStrucseqs().SetUser_annotations());
+            return &(mimeData->GetStrucseqs().GetUser_annotations());
         else if (mimeData->IsGeneral()) {
             if (mimeData->GetGeneral().GetSeq_align_data().IsBundle() &&
                 mimeData->GetGeneral().GetSeq_align_data().GetBundle().IsSetUser_annotations())
-                return &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetUser_annotations());
+                return &(mimeData->GetGeneral().GetSeq_align_data().GetBundle().GetUser_annotations());
             else if (mimeData->GetGeneral().GetSeq_align_data().IsCdd() &&
                      mimeData->GetGeneral().GetSeq_align_data().GetCdd().IsSetUser_annotations())
-                return &(mimeData->SetGeneral().SetSeq_align_data().SetCdd().SetUser_annotations());
+                return &(mimeData->GetGeneral().GetSeq_align_data().GetCdd().GetUser_annotations());
         }
     } else if (cddData->IsSetUser_annotations())
-        return &(cddData->SetUser_annotations());
+        return &(cddData->GetUser_annotations());
 
     return NULL;
 }
@@ -488,7 +491,7 @@ bool ASNDataManager::ConvertMimeToGeneral(void)
     return true;
 }
 
-void ASNDataManager::ReplaceUpdates(const UpdateAlignList& newUpdates)
+void ASNDataManager::ReplaceUpdates(UpdateAlignList& newUpdates)
 {
     // if necessary, convert mime data into general type that has a place for imports
     if (mimeData.NotEmpty() && !mimeData->IsGeneral() && newUpdates.size() > 0)
@@ -504,7 +507,7 @@ void ASNDataManager::ReplaceUpdates(const UpdateAlignList& newUpdates)
             // convert to plain imports to store in mime data (some data loss...)
             bundleImports = &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports());
             bundleImports->clear();
-            UpdateAlignList::const_iterator u, ue = newUpdates.end();
+            UpdateAlignList::iterator u, ue = newUpdates.end();
             for (u=newUpdates.begin(); u!=ue; u++)
                 if ((*u)->IsSetSeqannot())
                     bundleImports->push_back(CRef < CSeq_annot > (&((*u)->SetSeqannot())));
@@ -575,12 +578,22 @@ bool ASNDataManager::WriteDataToFile(const char *filename, bool isBinary,
         return WriteASNToFile(filename, cddData.GetObject(), isBinary, err, fixNonPrint);
 }
 
-ncbi::objects::CCdd * ASNDataManager::GetInternalCDDData(void) const
+ncbi::objects::CCdd * ASNDataManager::GetInternalCDDData(void)
 {
     if (cddData.NotEmpty()) return cddData.GetPointer();
     else if (mimeData.NotEmpty() && mimeData->IsGeneral() &&
              mimeData->GetGeneral().GetSeq_align_data().IsCdd())
         return &(mimeData->SetGeneral().SetSeq_align_data().SetCdd());
+    else
+        return NULL;
+}
+
+const ncbi::objects::CCdd * ASNDataManager::GetInternalCDDData(void) const
+{
+    if (cddData.NotEmpty()) return cddData.GetPointer();
+    else if (mimeData.NotEmpty() && mimeData->IsGeneral() &&
+             mimeData->GetGeneral().GetSeq_align_data().IsCdd())
+        return &(mimeData->GetGeneral().GetSeq_align_data().GetCdd());
     else
         return NULL;
 }
@@ -598,7 +611,7 @@ bool ASNDataManager::IsCDDInMime(void) const
 const std::string& ASNDataManager::GetCDDName(void) const
 {
     static const std::string empty = "";
-    CCdd *cdd = GetInternalCDDData();
+    const CCdd *cdd = GetInternalCDDData();
     if (cdd)
         return cdd->GetName();
     else
@@ -617,7 +630,7 @@ bool ASNDataManager::SetCDDName(const std::string& name)
 const std::string& ASNDataManager::GetCDDDescription(void) const
 {
     static const std::string empty = "";
-    CCdd *cdd = GetInternalCDDData();
+    const CCdd *cdd = GetInternalCDDData();
     if (!cdd) return empty;
 
     // find first 'comment' in Cdd-descr-set, assume this is the "long description"
@@ -659,7 +672,7 @@ bool ASNDataManager::SetCDDDescription(const std::string& descr)
 
 bool ASNDataManager::GetCDDNotes(TextLines *lines) const
 {
-    CCdd *cdd = GetInternalCDDData();
+    const CCdd *cdd = GetInternalCDDData();
     if (!lines || !cdd) return false;
     lines->clear();
 
@@ -751,9 +764,9 @@ ncbi::objects::CAlign_annot_set * ASNDataManager::GetCDDAnnotSet(void)
         return NULL;
 }
 
-ncbi::objects::CSeq_id * ASNDataManager::GetCDDMaster3d(void) const
+const ncbi::objects::CSeq_id * ASNDataManager::GetCDDMaster3d(void) const
 {
-    CCdd *cdd = GetInternalCDDData();
+    const CCdd *cdd = GetInternalCDDData();
     if (cdd && cdd->IsSetMaster3d())
         return cdd->GetMaster3d().front().GetPointer(); // just return the first one...
     else

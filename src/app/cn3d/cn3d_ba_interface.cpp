@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.18  2002/09/30 17:13:02  thiessen
 * change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
 *
@@ -193,7 +196,7 @@ static Int4 Round(double d)
         return (Int4) (d - 0.5);
 }
 
-static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
+static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
     const Sequence *master, const Sequence *query)
 {
     auto_ptr<BlockMultipleAlignment> bma;
@@ -213,11 +216,11 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
     bma.reset(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
 
     // get list of segs (can be a single or a set)
-    CSeq_align_set::Tdata segs;
+    std::list < CRef < CSeq_align > > segs;
     if (sa.GetSegs().IsDisc())
         segs = sa.GetSegs().GetDisc().Get();
     else
-        segs.push_back(CRef<CSeq_align>(const_cast<CSeq_align*>(&sa)));
+        segs.push_back(CRef<CSeq_align>(&sa));
 
     // loop through segs, adding aligned block for each starts pair that doesn't describe a gap
     CSeq_align_set::Tdata::const_iterator s, se = segs.end();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.27  2002/09/06 18:28:46  thiessen
 * fix show object bug
 *
@@ -382,8 +385,8 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     // fill out annots listbox
     annots->Clear();
     CAlign_annot *selectedAnnot = NULL;
-    CAlign_annot_set::Tdata::const_iterator a, ae = annotSet->Get().end();
-    for (a=annotSet->Get().begin(); a!=ae; a++) {
+    CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
+    for (a=annotSet->Set().begin(); a!=ae; a++) {
         if ((*a)->IsSetDescription())
             annots->Append((*a)->GetDescription().c_str(), a->GetPointer());
         else
@@ -400,8 +403,8 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     evids->Clear();
     CFeature_evidence *selectedEvid = NULL;
     if (selectedAnnot && selectedAnnot->IsSetEvidence()) {
-        CAlign_annot::TEvidence::const_iterator e, ee = selectedAnnot->GetEvidence().end();
-        for (e=selectedAnnot->GetEvidence().begin(); e!=ee; e++) {
+        CAlign_annot::TEvidence::iterator e, ee = selectedAnnot->SetEvidence().end();
+        for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
             // get evidence "title" depending on type
             wxString evidTitle;
             if ((*e)->IsComment())

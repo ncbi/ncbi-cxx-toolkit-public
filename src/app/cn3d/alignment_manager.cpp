@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.78  2002/10/13 22:58:07  thiessen
 * add redo ability to editor
 *
@@ -950,7 +953,7 @@ bool AlignmentManager::GetStructureProteins(std::vector < const Sequence * > *ch
     return (chains->size() > 0);
 }
 
-void AlignmentManager::ReplaceUpdatesInASN(const ncbi::objects::CCdd::TPending& newUpdates) const
+void AlignmentManager::ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const
 {
     if (sequenceSet)
         sequenceSet->parentSet->ReplaceUpdates(newUpdates);

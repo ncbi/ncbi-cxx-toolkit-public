@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.26  2001/11/27 16:26:09  thiessen
 * major update to data management system
 *
@@ -151,10 +154,10 @@ public:
 class Sequence : public StructureBase
 {
 public:
-    Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq);
+    Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
 
     // keep a reference to the original asn Bioseq
-    const ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
+    const ncbi::CRef < const ncbi::objects::CBioseq > bioseqASN;
 
     std::string sequenceString, description;
     const MoleculeIdentifier *identifier;

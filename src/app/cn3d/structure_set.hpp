@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.69  2002/09/26 17:32:13  thiessen
 * show distance between picked atoms; show RMS for structure alignments
 *
@@ -360,16 +363,16 @@ public:
     void RemoveUnusedSequences(void);
 
     // put in new AlignmentSet - e.g. when alignment has been edited
-    void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
+    void ReplaceAlignmentSet(AlignmentSet *newAlignmentSet);
 
     // replace the ASN update list with the current updates
-    void ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates);
+    void ReplaceUpdates(ncbi::objects::CCdd::TPending& newUpdates);
 
     // writes data to a file; returns true on success
     bool SaveASNData(const char *filename, bool doBinary);
 
     // adds a new Sequence to the SequenceSet
-    const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
+    const Sequence * CreateNewSequence(const ncbi::objects::CBioseq& bioseq);
 
     // reject sequence (from CDD)
     void RejectAndPurgeSequence(const Sequence *reject, std::string reason, bool purge);

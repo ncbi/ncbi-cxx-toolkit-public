@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.118  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
 * Revision 1.117  2002/10/08 12:35:43  thiessen
 * use delete[] for arrays
 *
@@ -1063,7 +1066,7 @@ void StructureSet::RemoveStructureAlignments(void)
     dataManager->SetDataChanged(eStructureAlignmentData);
 }
 
-void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
+void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
 {
     ASNDataManager::SeqAnnotList *seqAnnots = dataManager->GetOrCreateSequenceAlignments();
     if (!seqAnnots) {
@@ -1082,14 +1085,14 @@ void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
     // update the asn alignments
     seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
     ASNDataManager::SeqAnnotList::iterator o = seqAnnots->begin();
-    ASNDataManager::SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
+    ASNDataManager::SeqAnnotList::iterator n, ne = alignmentSet->newAsnAlignmentData->end();
     for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
         o->Reset(n->GetPointer());   // copy each Seq-annot CRef
 
     dataManager->SetDataChanged(eAlignmentData);
 }
 
-void StructureSet::ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates)
+void StructureSet::ReplaceUpdates(ncbi::objects::CCdd::TPending& newUpdates)
 {
     dataManager->ReplaceUpdates(newUpdates);
 }
@@ -1297,7 +1300,7 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);    // don't actually know which alternate...
     Vector pickedAtomCoord = object->coordSets.front()->atomSet->
         GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
-    if (object->IsSlave())
+    if (object->IsSlave() && object->transformToMaster)
         ApplyTransformation(&pickedAtomCoord, *(object->transformToMaster));
 
     // print out distance to previous picked atom
@@ -1331,7 +1334,7 @@ void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly, bool ot
             GlobalMessenger()->ToggleHighlight(r->second, r->first->id, false);
 }
 
-const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
+const Sequence * StructureSet::CreateNewSequence(const ncbi::objects::CBioseq& bioseq)
 {
     // add Sequence to SequenceSet
     SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
