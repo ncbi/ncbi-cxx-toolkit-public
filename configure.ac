@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.233 2003/11/06 19:07:29 ucko Exp $
+#  $Id: configure.ac,v 1.234 2003/11/14 04:29:29 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -711,7 +711,7 @@ case "$host_os:$compiler" in
 
  *:Compaq)
    CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
-   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
+   CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
    case "$host_os" in
       osf*)
         # Suppress link warnings; otherwise, we get "weak symbol multiply
@@ -1060,6 +1060,19 @@ if test "$compiler" = "GCC" ; then
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
       irix*    )  CXXFLAGS="$CXXFLAGS -D_LANGUAGE_C_PLUS_PLUS" ;;
    esac
+   # orig_CFLAGS=$CFLAGS
+   # orig_CXXFLAGS=$CXXFLAGS
+   # flag=-fno-merge-debug-strs
+   # CFLAGS="$flag $CFLAGS"
+   # CXXFLAGS="$flag $CXXFLAGS"
+   # AC_CACHE_CHECK([whether GCC supports $flag], ncbi_cv_prog_gcc_nomerge,
+   #    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],
+   #                       ncbi_cv_prog_gcc_nomerge=yes,
+   #                       ncbi_cv_prog_gcc_nomerge=no)])
+   # if test "$ncbi_cv_prog_gcc_nomerge" = no; then
+   #    CFLAGS=$orig_CFLAGS
+   #    CXXFLAGS=$orig_CXXFLAGS
+   # fi
 fi
 
 
