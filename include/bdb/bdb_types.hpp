@@ -1911,7 +1911,8 @@ inline void CBDB_BufferManager::SetNull(unsigned int field_idx, bool value)
 
 inline void CBDB_BufferManager::SetAllNull()
 {
-    _ASSERT(IsNullable());
+    if ( !IsNullable() )
+        return;
     unsigned char* buf = (unsigned char*) m_Buffer;
     for (size_t i = 0;  i < m_NullSetSize;  ++i) {
         *buf++ = (unsigned char) 0xFF;
@@ -2036,6 +2037,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/11/09 20:03:41  kuznets
+ * Bug fix. Removed obsolete assert
+ *
  * Revision 1.47  2004/09/02 15:37:02  rotmistr
  * Fixed name for UInt1 to Uint1
  *
