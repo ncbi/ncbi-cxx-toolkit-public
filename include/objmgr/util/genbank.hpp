@@ -32,26 +32,10 @@
 *   Code to write Genbank/Genpept flat-file records.
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/bioseq_handle.hpp>
-
+#include <objtools/flat/flat_ncbi_formatter.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-
-// forward declarations
-class CBioSource;
-class CFeat_id;
-class COrg_ref;
-class CSeq_entry;
-class CSeq_feat;
-class CSeq_loc;
-class CSeq_interval;
 
 class NCBI_XOBJUTIL_EXPORT CGenbankWriter
 {
@@ -69,70 +53,26 @@ public:
     
     CGenbankWriter(CNcbiOstream& stream, CScope& scope,
                    EFormat format = eFormat_Genbank,
-                   EVersion version = eVersion_pre127) :
-        m_Stream(stream), m_Scope(scope), m_Format(format), m_Version(version)
-        { SetParameters(); }
+                   EVersion version = eVersion_127) :
+        m_Formatter(*new CFlatTextOStream(stream), scope, eMode_Dump),
+        m_Format(format)
+        { }
 
-    bool Write(const CSeq_entry& entry) const; // returns true on success
+    bool Write(const CSeq_entry& entry) const;
 
 private:
-    // useful constants
-    static const unsigned int sm_KeywordWidth;
-    static const unsigned int sm_LineWidth;
-    static const unsigned int sm_DataWidth;
-    static const unsigned int sm_FeatureNameIndent;
-    static const unsigned int sm_FeatureNameWidth;
-
-    void SetParameters(void); // sets formatting parameters (below)
-
-    bool WriteLocus     (const CBioseq_Handle& handle) const;
-    bool WriteDefinition(const CBioseq_Handle& handle) const;
-    bool WriteAccession (const CBioseq_Handle& handle) const;
-    bool WriteID        (const CBioseq_Handle& handle) const;
-    bool WriteVersion   (const CBioseq_Handle& handle) const;
-    bool WriteDBSource  (const CBioseq_Handle& handle) const;
-    bool WriteKeywords  (const CBioseq_Handle& handle) const;
-    bool WriteSegment   (const CBioseq_Handle& handle) const;
-    bool WriteSource    (const CBioseq_Handle& handle) const;
-    bool WriteReference (const CBioseq_Handle& handle) const;
-    bool WriteComment   (const CBioseq_Handle& handle) const;
-    bool WriteFeatures  (const CBioseq_Handle& handle) const;
-    bool WriteSequence  (const CBioseq_Handle& handle) const;
-
-    void Wrap(const string& keyword, const string& contents,
-              unsigned int indent = sm_KeywordWidth) const;
-    void WriteFeatureLocation(const string& name, const CSeq_loc& location,
-                              const CBioseq& default_seq) const;
-    void WriteFeatureLocation(const string& name, const string& location)
-        const;
-    void WriteFeatureQualifier(const string& qual) const;
-
-    void FormatIDPrefix(const CSeq_id& id, const CBioseq& default_seq,
-                        CNcbiOstream& dest) const;
-    void FormatFeatureInterval(const CSeq_interval& interval,
-                               const CBioseq& default_seq, CNcbiOstream& dest)
-        const;
-    void FormatFeatureLocation(const CSeq_loc& location,
-                               const CBioseq& default_seq, CNcbiOstream& dest)
-        const;
-    const CSeq_feat& FindFeature(const CFeat_id& id,
-                                 const CBioseq& default_seq) const;
-
-    mutable CNcbiOstream& m_Stream;
-    CScope&               m_Scope;
-    EFormat               m_Format;
-    EVersion              m_Version;
-    
-    // formatting parameters; dependent on format and version
-    unsigned int  m_LocusNameWidth;
-    unsigned int  m_SequenceLenWidth;
-    unsigned int  m_MoleculeTypeWidth;
-    unsigned int  m_TopologyWidth;
-    unsigned int  m_DivisionWidth;
-    unsigned int  m_GenpeptBlanks;
-    string        m_LengthUnit; // bases or residues
+    CFlatNCBIFormatter m_Formatter;
+    EFormat            m_Format;
 };
 
+
+bool CGenbankWriter::Write(const CSeq_entry& entry) const
+{
+    m_Formatter.Format
+        (entry, m_Formatter,
+         m_Format == eFormat_Genpept ? fSkipNucleotides : fSkipProteins);
+    return true;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -141,6 +81,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2003/07/16 17:10:55  ucko
+* Replace with a trivial inline wrapper around the new formatter.
+*
 * Revision 1.11  2003/06/02 16:01:38  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
