@@ -82,8 +82,6 @@ CLookupTableOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     if (!m_Ptr)
         return;
 
-    if (m_Ptr->matrixname)
-        DebugDumpValue(ddc, "matrixname", m_Ptr->matrixname);
     DebugDumpValue(ddc, "threshold", m_Ptr->threshold);
     DebugDumpValue(ddc, "lut_type", m_Ptr->lut_type);
     DebugDumpValue(ddc, "word_size", m_Ptr->word_size);
@@ -275,7 +273,7 @@ x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
 
     mask = (BlastMaskPtr) calloc(1, sizeof(BlastMask));
     mask->index = index;
-    mask->loc_list = (ValNodePtr) bsl;
+    mask->loc_list = (ListNode *) bsl;
 
     return mask;
 }
