@@ -1196,7 +1196,7 @@ void CArgs::Add(CArgValue* arg, bool update, bool add_value)
         } else {
             if (add_value) {
                 const string& v = arg->AsString();
-                CRef<CArgValue>& av = *arg_it;
+                CRef<CArgValue> av = *arg_it;
                 av->SetStringList().push_back(v);
             } else {
                 NCBI_THROW(CArgException,eSynopsis,
@@ -2363,6 +2363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/12/03 14:49:15  kuznets
+ * GCC compilation fix
+ *
  * Revision 1.53  2004/12/03 14:30:37  kuznets
  * Implemented multiple argument keys (fAllowMultiple)
  *
