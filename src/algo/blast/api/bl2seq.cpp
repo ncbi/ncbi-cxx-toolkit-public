@@ -368,7 +368,7 @@ CBl2Seq::x_SetupQueries()
 
             // Get both strands of the original nucleotide sequence with
             // sentinels
-            na_buffer = BLASTGetSequence(*itr->seqloc, encoding, na_length, 
+            na_buffer = BLASTGetSequence(*itr->seqloc, encoding, &na_length, 
                                          itr->scope, eNa_strand_both, true);
 
             // Populate the sequence buffer
@@ -399,7 +399,7 @@ CBl2Seq::x_SetupQueries()
                 strand = strand_opt;
             }
             int sbuflen = 0;
-            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, sbuflen,
+            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, &sbuflen,
                                            itr->scope, strand, true);
             int index = (strand == eNa_strand_minus) ? ctx_index + 1 :
                 ctx_index;
@@ -410,7 +410,7 @@ CBl2Seq::x_SetupQueries()
         } else {
 
             int sbuflen = 0;
-            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, sbuflen,
+            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, &sbuflen,
                                              itr->scope, eNa_strand_unknown, 
                                              true);
             int offset = mi_clsQueryInfo->context_offsets[ctx_index];
@@ -480,7 +480,7 @@ CBl2Seq::x_SetupSubjects()
         BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
             calloc(1, sizeof(BLAST_SequenceBlk));
 
-        buf = BLASTGetSequence(*itr->seqloc, encoding, buflen, itr->scope, 
+        buf = BLASTGetSequence(*itr->seqloc, encoding, &buflen, itr->scope, 
                 strand, false);
 
         if (subj_is_na) {
@@ -493,7 +493,7 @@ CBl2Seq::x_SetupSubjects()
                 true : false;
 
             // Retrieve the sequence with ambiguities
-            buf = BLASTGetSequence(*itr->seqloc, encoding, buflen,
+            buf = BLASTGetSequence(*itr->seqloc, encoding, &buflen,
                                    itr->scope, strand, use_sentinels);
             subj->sequence_start = buf;
             subj->length = use_sentinels ? buflen - 2 : buflen;
@@ -635,6 +635,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2003/08/28 22:42:54  camacho
+ * Change BLASTGetSequence signature
+ *
  * Revision 1.26  2003/08/28 17:37:06  camacho
  * Fix memory leaks, properly reset structure wrappers
  *

@@ -53,7 +53,7 @@ BEGIN_SCOPE(blast)
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  */
 Uint1*
-BLASTGetSequence(const objects::CSeq_loc& sl, Uint1 encoding, int& buflen,
+BLASTGetSequence(const objects::CSeq_loc& sl, Uint1 encoding, int* buflen,
                  objects::CScope* scope,
                  objects::ENa_strand strand = objects::eNa_strand_plus, 
                  bool add_nucl_sentinel = true);
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/28 22:43:02  camacho
+* Change BLASTGetSequence signature
+*
 * Revision 1.8  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.

@@ -96,7 +96,7 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 }
 
 Uint1*
-BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
+BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int* len, CScope* scope,
         ENa_strand strand, bool add_nucl_sentinel)
 {
     Uint1* buf,* buf_var;       // buffers to write sequence
@@ -190,7 +190,9 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
         return NULL;
     }
 
-    len = buflen;
+	if (len) {
+		*len = buflen;
+	}
 
     return buf;
 }
@@ -365,6 +367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/08/28 22:42:54  camacho
+* Change BLASTGetSequence signature
+*
 * Revision 1.17  2003/08/28 15:49:02  madden
 * Fix for packing DNA as well as correct buflen
 *
