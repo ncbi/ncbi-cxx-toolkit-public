@@ -8,4 +8,4 @@
 
 APP = serialtest
 OBJ = serialobject testserial
-LIB = xncbi xser
+LIB = xser xncbi

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:28  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:51  vasilche
 * First compilable version of serialization.
 *
@@ -41,6 +44,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/stdtypes.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -54,8 +58,9 @@ inline
 CTypeInfo::TTypesByName& CTypeInfo::TypesByName(void)
 {
     TTypesByName* types = sm_TypesByName;
-    if ( !types )
+    if ( !types ) {
         types = sm_TypesByName = new TTypesByName;
+    }
     return *types;
 }
 
@@ -71,16 +76,12 @@ CTypeInfo::TTypesById& CTypeInfo::TypesById(void)
 CTypeInfo::CTypeInfo(const type_info& id)
     : m_Id(id), m_Name(id.name())
 {
-    NcbiCerr << GetName() << endl;
     if ( !TypesById().insert(TTypesById::value_type(&id, this)).second ) {
-        NcbiCerr << "duplicated types: " << GetName() << endl;
-        throw runtime_error("duplicated types: " + GetName());
+        THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
     }
     if ( !TypesByName().insert(TTypesByName::value_type(GetName(), this)).second ) {
-        NcbiCerr << "duplicated types: " << GetName() << endl;
-        throw runtime_error("duplicated types: " + GetName());
+        THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
     }
-    NcbiCerr << "-" << GetName() << endl;
 }
 
 CTypeInfo::CTypeInfo(void)
@@ -107,8 +108,7 @@ CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoByName(const string& name)
     TTypesByName& types = TypesByName();
     TTypesByName::iterator i = types.find(name);
     if ( i == types.end() ) {
-        NcbiCerr << "type not found: " << name << endl;
-        throw runtime_error("type not found: "+name);
+        THROW1_TRACE(runtime_error, "type not found: "+name);
     }
     return i->second;
 }
@@ -118,8 +118,7 @@ CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoById(const type_info& id)
     TTypesById& types = TypesById();
     TTypesById::iterator i = types.find(&id);
     if ( i == types.end() ) {
-        NcbiCerr << "type not found: " << id.name() << endl;
-        throw runtime_error("type not found: "+string(id.name()));
+        THROW1_TRACE(runtime_error, "type not found: "+string(id.name()));
     }
     return i->second;
 }

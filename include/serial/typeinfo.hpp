@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:21  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:40  vasilche
 * First compilable version of serialization.
 *
@@ -51,6 +54,13 @@ class CObjectIStream;
 class CObjectOStream;
 class COObjectList;
 class CTypeRef;
+
+class CTypeInfoOrder
+{
+public:
+    bool operator()(const type_info* const i1, const type_info* const i2) const
+        { return i1->before(*i2); }
+};
 
 class CTypeInfo
 {
@@ -117,7 +127,7 @@ protected:
 
 private:
     typedef map<string, TTypeInfo> TTypesByName;
-    typedef map<const type_info*, TTypeInfo> TTypesById;
+    typedef map<const type_info*, TTypeInfo, CTypeInfoOrder> TTypesById;
 
     const type_info& m_Id;
     string m_Name;

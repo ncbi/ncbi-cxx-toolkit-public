@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 19:30:20  vasilche
+* More bug fixes
+*
 * Revision 1.3  1999/06/04 20:51:37  vasilche
 * First compilable version of serialization.
 *
@@ -60,25 +63,62 @@ class CObjectOStream;
 inline
 CTypeRef GetTypeRef(void)
 {
+    NcbiCerr << "GetTypeRef(void)" << endl;
     return CTypeRef(typeid(void), CStdTypeInfo<void>::CreateTypeInfo);
 }
 
+template<typename T>
 inline
-CTypeRef GetTypeRef(const int& )
+CTypeRef GetStdTypeRef(const T& )
 {
-    return CTypeRef(typeid(int), CStdTypeInfo<int>::CreateTypeInfo);
+    NcbiCerr << "GetStdTypeRef(const T&) T: " << typeid(T).name() << endl;
+    return CTypeRef(typeid(T), CStdTypeInfo<T>::CreateTypeInfo);
 }
 
 inline
-CTypeRef GetTypeRef(const string& )
+CTypeRef GetTypeRef(const char& object)
 {
-    return CTypeRef(typeid(string), CStdTypeInfo<string>::CreateTypeInfo);
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const unsigned char& object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const signed char& object)
+{
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const int& object)
+{
+    NcbiCerr << "GetTypeRef(const int&)" << endl;
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const unsigned int& object)
+{
+    NcbiCerr << "GetTypeRef(const unsigned int&)" << endl;
+    return GetStdTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const string& object)
+{
+    NcbiCerr << "GetTypeRef(const string&)" << endl;
+    return GetStdTypeRef(object);
 }
 
 template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const list<CLASS>& )
 {
+    NcbiCerr << "GetTypeRef(const list<CLASS>&) CLASS: " << typeid(CLASS).name() << endl;
     return CTypeRef(typeid(list<CLASS>),
                     CStlClassInfoList<CLASS>::CreateTypeInfo);
 }
@@ -95,6 +135,7 @@ template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const CLASS& )
 {
+    NcbiCerr << "GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name() << endl;
     return CTypeRef(typeid(CLASS), CLASS::CreateTypeInfo);
 }
 
@@ -103,6 +144,7 @@ template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const CLASS* object)
 {
+    NcbiCerr << "GetTypeRef(const CLASS*) CLASS: " << typeid(CLASS).name() << endl;
     return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(CLASS*),
                                                   GetTypeRef(*object)));
 }

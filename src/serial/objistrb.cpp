@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:25  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:45  vasilche
 * First compilable version of serialization.
 *
@@ -57,7 +60,7 @@ unsigned char CObjectIStreamBinary::ReadByte(void)
 {
     char c;
     if ( !m_Input->get(c) ) {
-        throw runtime_error("unexpected EOF");
+        THROW1_TRACE(runtime_error, "unexpected EOF");
     }
     return c;
 }
@@ -75,8 +78,7 @@ CTypeInfo::TTypeInfo CObjectIStreamBinary::ReadTypeInfo(void)
     case CObjectStreamBinaryDefs::eTemplate:
         //        return RegisterClass(CTemplateResolver::Resolve(*this));
     default:
-        ERR_POST("CObjectIStreamBinary::ReadTypeInfo(): undefined type: " << code);
-        throw runtime_error("undefined type ");
+        THROW1_TRACE(runtime_error, "undefined type: ");
     }
 }
 
@@ -89,51 +91,51 @@ public:
 
     virtual void ReadStd(char& ) const
         {
-            throw runtime_error("incompatible type: char");
+            THROW1_TRACE(runtime_error, "incompatible type: char");
         }
     virtual void ReadStd(unsigned char& ) const
         {
-            throw runtime_error("incompatible type: unsigned char");
+            THROW1_TRACE(runtime_error, "incompatible type: unsigned char");
         }
     virtual void ReadStd(signed char& ) const
         {
-            throw runtime_error("incompatible type: signed char");
+            THROW1_TRACE(runtime_error, "incompatible type: signed char");
         }
     virtual void ReadStd(short& ) const
         {
-            throw runtime_error("incompatible type: short");
+            THROW1_TRACE(runtime_error, "incompatible type: short");
         }
     virtual void ReadStd(unsigned short& ) const
         {
-            throw runtime_error("incompatible type: unsigned short");
+            THROW1_TRACE(runtime_error, "incompatible type: unsigned short");
         }
     virtual void ReadStd(int& ) const
         {
-            throw runtime_error("incompatible type: int");
+            THROW1_TRACE(runtime_error, "incompatible type: int");
         }
     virtual void ReadStd(unsigned int& ) const
         {
-            throw runtime_error("incompatible type: unsigned int");
+            THROW1_TRACE(runtime_error, "incompatible type: unsigned int");
         }
     virtual void ReadStd(long& ) const
         {
-            throw runtime_error("incompatible type: signed long");
+            THROW1_TRACE(runtime_error, "incompatible type: signed long");
         }
     virtual void ReadStd(unsigned long& ) const
         {
-            throw runtime_error("incompatible type: unsigned long");
+            THROW1_TRACE(runtime_error, "incompatible type: unsigned long");
         }
     virtual void ReadStd(float& ) const
         {
-            throw runtime_error("incompatible type: float");
+            THROW1_TRACE(runtime_error, "incompatible type: float");
         }
     virtual void ReadStd(double& ) const
         {
-            throw runtime_error("incompatible type: double");
+            THROW1_TRACE(runtime_error, "incompatible type: double");
         }
     virtual void ReadStd(string& ) const
         {
-            throw runtime_error("incompatible type: string");
+            THROW1_TRACE(runtime_error, "incompatible type: string");
         }
 
     TByte ReadByte(void) const
@@ -182,6 +184,8 @@ public:
 runtime_error CNumberReader::overflow_error(const type_info& type, bool sign, 
                                             const string& bytes)
 {
+    ERR_POST((sign? "": "un") << "signed number too big to fit in " <<
+             type.name() << " bytes: " << bytes);
     return runtime_error((sign? "": "un") +
                          string("signed number too big to fit in ") +
                          type.name() + " bytes: " + bytes);
@@ -309,7 +313,7 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
         // 1111xxxx (xxxxxxxx)*
         size_t size = (code & 0xF) + 4;
         if ( size > 16 ) {
-            throw runtime_error("reserved number code: " + binary(code));
+            THROW1_TRACE(runtime_error, "reserved number code: " + binary(code));
         }
         // skip high bytes
         while ( size > sizeof(TYPE) ) {
@@ -340,7 +344,8 @@ void CObjectIStreamBinary::ReadStd(char& data)
         data = ReadByte();
         return;
     default:
-        throw runtime_error("bad number code: " + NStr::UIntToString(code));
+        THROW1_TRACE(runtime_error,
+                     "bad number code: " + NStr::UIntToString(code));
     }
 }
 
@@ -357,11 +362,13 @@ void CObjectIStreamBinary::ReadStd(signed char& data)
     case CObjectStreamBinaryDefs::eStd_ubyte:
         if ( (data = ReadByte()) & 0x80 ) {
             // unsigned -> signed overflow
-            throw runtime_error("unsigned char doesn't fit in signed char");
+            THROW1_TRACE(runtime_error,
+                         "unsigned char doesn't fit in signed char");
         }
         return;
     default:
-        throw runtime_error("bad number code: " + NStr::UIntToString(code));
+        THROW1_TRACE(runtime_error,
+                     "bad number code: " + NStr::UIntToString(code));
     }
 }
 
@@ -378,11 +385,13 @@ void CObjectIStreamBinary::ReadStd(unsigned char& data)
     case CObjectStreamBinaryDefs::eStd_sbyte:
         if ( (data = ReadByte()) & 0x80 ) {
             // signed -> unsigned overflow
-            throw runtime_error("signed char doesn't fit in unsigned char");
+            THROW1_TRACE(runtime_error,
+                         "signed char doesn't fit in unsigned char");
         }
         return;
     default:
-        throw runtime_error("bad number code: " + NStr::UIntToString(code));
+        THROW1_TRACE(runtime_error, 
+                     "bad number code: " + NStr::UIntToString(code));
     }
 }
 

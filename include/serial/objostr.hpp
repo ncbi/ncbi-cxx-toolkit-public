@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:17  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:35  vasilche
 * First compilable version of serialization.
 *
@@ -127,24 +130,9 @@ public:
     class Block
     {
     public:
-        Block(CObjectOStream& out, unsigned count, bool tmpl = false)
-            : m_Out(out), m_Count(count)
-            {
-                m_Out.Begin(*this, count, tmpl);
-            }
-        void Next(void)
-            {
-                if ( !m_Count )
-                    throw runtime_error("2");
-                m_Out.Next(*this);
-                --m_Count;
-            }
-        ~Block(void)
-            {
-                if ( m_Count )
-                    throw runtime_error("3");
-                m_Out.End(*this);
-            }
+        Block(CObjectOStream& out, unsigned count, bool tmpl = false);
+        void Next(void);
+        ~Block(void);
 
         unsigned GetCount(void) const
             {
@@ -165,6 +153,9 @@ protected:
     virtual void WriteId(const string& id);
 
     COObjectList m_Objects;
+    void RegisterObject(CORootObjectInfo& info)
+        { m_Objects.RegisterObject(info); }
+
     map<TTypeInfo, COClassInfo> m_Classes;
 };
 

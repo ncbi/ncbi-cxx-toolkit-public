@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/07 19:30:28  vasilche
+* More bug fixes
+*
 * Revision 1.1  1999/06/04 20:51:50  vasilche
 * First compilable version of serialization.
 *
@@ -48,35 +51,35 @@ CTemplateResolver::TResolvers CTemplateResolver::sm_Resolvers;
 CTemplateResolver::CTemplateResolver(const string& name)
     : m_Name(name)
 {
+/*
     if ( !sm_Resolvers.insert(TResolvers::value_type(name,
                                                      this)).second ) {
-        throw runtime_error("duplicate " + name + "<...> template");
+        THROW1_TRACE(runtime_error, "duplicate " + name + "<...> template");
     }
+*/
 }
     
 const CTemplateResolver* CTemplateResolver::GetResolver(const string& name)
 {
     TResolvers::iterator i = sm_Resolvers.find(name);
     if ( i == sm_Resolvers.end() ) {
-        throw runtime_error("undefined " + name + "<...> template");
+        THROW1_TRACE(runtime_error, "undefined " + name + "<...> template");
     }
     return i->second;
 }
 
 CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg) const
 {
-    throw runtime_error("undefined " + GetName() +
-                        "<" + arg->GetName() +
-                        "> template");
+    THROW1_TRACE(runtime_error,
+                 "undefined " + GetName() + "<" + arg->GetName() + "> template");
 }
 
 CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg1,
                                                     TTypeInfo arg2) const
 {
-    throw runtime_error("undefined " + GetName() +
-                        "<" + arg1->GetName() + ", " +
-                        arg2->GetName() +
-                        "> template");
+    THROW1_TRACE(runtime_error,
+                 "undefined " + GetName() + "<" + arg1->GetName() + ", " +
+                        arg2->GetName() + "> template");
 }
 
 CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(const vector<TTypeInfo>& args) const
@@ -87,7 +90,7 @@ CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(const vector<TTypeInfo>& arg
     case 2:
         return GetTemplate(args[0], args[1]);
     default:
-        throw runtime_error("undefined " + GetName() + "<...> template");
+        THROW1_TRACE(runtime_error, "undefined " + GetName() + "<...> template");
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/07 19:30:26  vasilche
+* More bug fixes
+*
 * Revision 1.1  1999/06/04 20:51:46  vasilche
 * First compilable version of serialization.
 *
@@ -41,6 +44,15 @@
 #include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
+
+COObjectList::COObjectList(void)
+    : m_NextObjectIndex(0)
+{
+}
+
+COObjectList::~COObjectList(void)
+{
+}
 
 bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 {
@@ -70,8 +82,7 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
                 // object must be inside beforeObject
                 if ( !CheckMember(beforeObject, beforeTypeInfo,
                                   object, typeInfo) ) {
-                    ERR_POST("overlapping objects");
-                    throw runtime_error("overlapping objects");
+                    THROW1_TRACE(runtime_error, "overlapping objects");
                 }
                 // in this case object completely inside beforeObject so
                 // we'll not check anymore
@@ -91,13 +102,11 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
                     return false;
                 if ( !CheckMember(object, typeInfo,
                                   beforeObject, beforeTypeInfo) ) {
-                    ERR_POST("overlapping objects");
-                    throw runtime_error("overlapping objects");
+                    THROW1_TRACE(runtime_error, "overlapping objects");
                 }
                 // ok object is owner of beforeObject
                 if ( before->second.IsWritten() ) {
-                    ERR_POST("member already written");
-                    throw runtime_error("member already written");
+                    THROW1_TRACE(runtime_error, "member already written");
                 }
                 // lets replace it
                 before->second = CORootObjectInfo(typeInfo);
@@ -114,12 +123,10 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
     // after->first < endOfObject, (after-1) >= endOfObject
     for ( TObjects::iterator i = after; i != before; ++i ) {
         if ( !CheckMember(object, typeInfo, i->first, i->second.m_TypeInfo) ) {
-            ERR_POST("overlapping objects");
-            throw runtime_error("overlapping objects");
+            THROW1_TRACE(runtime_error, "overlapping objects");
         }
         if ( i->second.IsWritten() ) {
-            ERR_POST("member already written");
-            throw runtime_error("member already written");
+            THROW1_TRACE(runtime_error, "member already written");
         }
     }
     // ok all objects from after to before are inside object
@@ -144,7 +151,7 @@ void COObjectList::CheckAllWritten(void) const
           i != m_Objects.end();
           ++i ) {
         if ( !i->second.IsWritten() ) {
-            ERR_POST("object not written");
+            ERR_POST("object not written: " << unsigned(i->first) << '{' << i->second.GetTypeInfo()->GetName() << '}');
             throw runtime_error("object not written");
         }
     }
@@ -157,7 +164,12 @@ void COObjectList::SetObject(COObjectInfo& info,
     if ( i != m_Objects.end() && i->second.GetTypeInfo() == typeInfo ) {
         info.m_RootObject = &*i;
     }
-    throw runtime_error("members not supported yet");
+    THROW1_TRACE(runtime_error, "members not supported yet");
+}
+
+void COObjectList::RegisterObject(CORootObjectInfo& info)
+{
+    info.m_Index = m_NextObjectIndex++;
 }
 
 END_NCBI_SCOPE

@@ -9,7 +9,7 @@ new CClassInfo(typeid(Class).name(), typeid(PClass).name(), Class::s_Create)
 #define ADD_CLASS_MEMBER(Class, Member) \
 AddMember(CMemberInfo(#Member, \
                       offset_t(&static_cast<const Class*>(0)->Member), \
-                      GetTypeRef(&static_cast<const Class*>(0)->Member)))
+                      GetTypeRef(static_cast<const Class*>(0)->Member)))
 #endif
 
 #define NEW_CLASS_INFO(PClass) \
@@ -17,8 +17,8 @@ new CClassInfo(typeid(CClass).name(), typeid(PClass).name(), Class::s_Create)
 
 #define ADD_CLASS_MEMBER(Member) \
 AddMember(CMemberInfo(#Member, \
-                      offset_t(&static_cast<const CClass*>(0)->Member), \
-                      GetTypeRef(&static_cast<const CClass*>(0)->Member)))
+                      offset_t(&KObject->Member), \
+                      GetTypeRef(KObject->Member)))
 
 void CSerialObject::CreateTypeInfo(void)
 {
@@ -26,6 +26,7 @@ void CSerialObject::CreateTypeInfo(void)
     _TRACE("CSerialObject");
 
     CClassInfoTmpl* info = new CClassInfo<CClass>();
+    const CClass* const KObject = 0;
     info->ADD_CLASS_MEMBER(m_Name);
     info->ADD_CLASS_MEMBER(m_Size);
     info->ADD_CLASS_MEMBER(m_Attributes);
@@ -34,7 +35,7 @@ void CSerialObject::CreateTypeInfo(void)
 }
 
 CSerialObject::CSerialObject(void)
-    : m_Size(-1)
+    : m_NamePtr(0), m_Size(-1)
 {
 }
 

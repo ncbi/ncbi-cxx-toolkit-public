@@ -10,9 +10,10 @@ int main(int argc, char** argv)
 
 int CTestSerial::Run(void)
 {
+    SetDiagStream(&NcbiCerr);
     try {
-    CSerialObject t;
-    CObjectOStreamBinary(cout) << t;
+        CSerialObject t;
+        CObjectOStreamBinary(cout) << t;
     }
     catch (exception e) {
         NcbiCerr << typeid(e).name() << ": " << e.what() << endl;

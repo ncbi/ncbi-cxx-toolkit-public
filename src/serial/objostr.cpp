@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:27  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:47  vasilche
 * First compilable version of serialization.
 *
@@ -51,7 +54,22 @@ CObjectOStream::~CObjectOStream(void)
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
+    NcbiCerr << "CObjectOStream::Write(" << unsigned(object) << ", " << typeInfo->GetName() << ')' << endl;
     typeInfo->CollectObjects(m_Objects, object);
+    COObjectInfo info(m_Objects, object, typeInfo);
+    if ( info.IsMember() ) {
+        if ( !info.GetRootObjectInfo().IsWritten() )
+            THROW1_TRACE(runtime_error,
+                         "trying to write member of non written object");
+    }
+    else {
+        if ( info.GetRootObjectInfo().IsWritten() ) {
+            THROW1_TRACE(runtime_error,
+                         "trying to write already written object");
+        }
+    }
+    m_Objects.RegisterObject(const_cast<CORootObjectInfo&>(info.GetRootObjectInfo()));
+    //    RegisterClass(const_cast<CORootObjectInfo&>(info.GetRootObjectInfo()))
     typeInfo->WriteData(*this, object);
     m_Objects.CheckAllWritten();
 }
@@ -81,6 +99,29 @@ void CObjectOStream::RegisterClass(TTypeInfo )
 COClassInfo* CObjectOStream::GetRegisteredClass(TTypeInfo ) const
 {
     throw runtime_error("not implemented");
+}
+
+CObjectOStream::Block::Block(CObjectOStream& out, unsigned count, bool tmpl)
+    : m_Out(out), m_Count(count)
+{
+    m_Out.Begin(*this, count, tmpl);
+}
+
+void CObjectOStream::Block::Next(void)
+{
+    if ( !m_Count ) {
+        THROW1_TRACE(runtime_error, "too many elements");
+    }
+    m_Out.Next(*this);
+    --m_Count;
+}
+
+CObjectOStream::Block::~Block(void)
+{
+    if ( m_Count ) {
+        THROW1_TRACE(runtime_error, "not all elements written");
+    }
+    m_Out.End(*this);
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:15  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:32  vasilche
 * First compilable version of serialization.
 *
@@ -128,35 +131,10 @@ public:
     class Block
     {
     public:
-        Block(CObjectIStream& in, bool tmpl = false)
-            : m_In(in), m_Count(in.Begin(*this, tmpl))
-            {
-            }
-        bool Next(void)
-            {
-                switch ( m_Count ) {
-                case unsigned(-1):
-                    return m_In.Next(*this);
-                case 0:
-                    return false;
-                default:
-                    --m_Count;
-                    return true;
-                }
-            }
-        ~Block(void)
-            {
-                switch ( m_Count ) {
-                case unsigned(-1):
-                    m_In.End(*this);
-                    return;
-                case 0:
-                    return;
-                default:
-                    ERR_POST("not all elements read");
-                    throw runtime_error("not all elements read");
-                }
-            }
+        Block(CObjectIStream& in, bool tmpl = false);
+        bool Next(void);
+        ~Block(void);
+
     private:
         CObjectIStream& m_In;
         unsigned m_Count;

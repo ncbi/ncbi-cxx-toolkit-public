@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:27  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:47  vasilche
 * First compilable version of serialization.
 *
@@ -311,11 +314,14 @@ void CObjectOStreamBinary::WritePointer(TConstObjectPtr object,
 void CObjectOStreamBinary::WriteObject(TConstObjectPtr object,
                                        const CClassInfoTmpl* classInfo)
 {
+    NcbiCerr << "CObjectOStreamBinary::WriteObject(" << unsigned(object) << ", " << classInfo->GetName() << ')' << endl;
     for ( CClassInfoTmpl::TMemberIterator i = classInfo->MemberBegin();
           i != classInfo->MemberEnd(); ++i ) {
         const CMemberInfo& memberInfo = i->second;
         TConstObjectPtr member = memberInfo.GetMember(object);
         TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
+        NcbiCerr << memberInfo.GetName() << '=' << unsigned(member) << '{' <<
+            memberTypeInfo->GetName() << '}' << endl;
         if ( !memberTypeInfo->IsDefault(member) ) {
             WriteByte(CObjectStreamBinaryDefs::eMember);
             WriteId(memberInfo.GetName());

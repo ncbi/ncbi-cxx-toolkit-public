@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:25  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:45  vasilche
 * First compilable version of serialization.
 *
@@ -62,6 +65,37 @@ bool CObjectIStream::Next(Block& )
 
 void CObjectIStream::End(Block& )
 {
+}
+
+CObjectIStream::Block::Block(CObjectIStream& in, bool tmpl)
+    : m_In(in), m_Count(in.Begin(*this, tmpl))
+{
+}
+
+bool CObjectIStream::Block::Next(void)
+{
+    switch ( m_Count ) {
+    case unsigned(-1):
+        return m_In.Next(*this);
+    case 0:
+        return false;
+    default:
+        --m_Count;
+        return true;
+    }
+}
+
+CObjectIStream::Block::~Block(void)
+{
+    switch ( m_Count ) {
+    case unsigned(-1):
+        m_In.End(*this);
+        break;
+    case 0:
+        break;
+    default:
+        THROW1_TRACE(runtime_error, "not all elements read");
+    }
 }
 
 /*

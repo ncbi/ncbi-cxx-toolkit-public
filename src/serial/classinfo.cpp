@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:30:24  vasilche
+* More bug fixes
+*
 * Revision 1.2  1999/06/04 20:51:44  vasilche
 * First compilable version of serialization.
 *
@@ -77,7 +80,7 @@ CClassInfoTmpl* CClassInfoTmpl::AddMember(const CMemberInfo& member)
 {
     // check for conflicts
     if ( m_Members.find(member.GetName()) != m_Members.end() )
-        throw runtime_error("duplicated members: " + member.GetName());
+        THROW1_TRACE(runtime_error, "duplicated members: " + member.GetName());
 
     m_Members[member.GetName()] = member;
     return this;
