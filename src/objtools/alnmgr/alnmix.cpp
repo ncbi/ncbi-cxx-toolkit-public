@@ -123,17 +123,7 @@ void CAlnMix::x_CreateScope()
 void CAlnMix::Merge(TMergeFlags flags)
 {
     if ( !m_DS  ||  m_MergeFlags != flags) {
-        switch (m_InputDSs.size()) {
-        case 0:
-            break; // nothing has been added
-        case 1:
-            // only one ds, nothing to merge
-            m_DS.Reset(const_cast<CDense_seg*>(&**m_InputDSs.begin()));
-            m_Aln = new CSeq_align();
-            m_Aln->SetSegs().SetDenseg(*m_DS);
-            m_Aln->SetDim(m_DS->GetDim());
-            break;
-        default:
+        if (m_InputDSs.size()) {
             m_DS = null;
             m_MergeFlags = flags;
             if (m_MergeFlags & fTryOtherMethodOnFail) {
@@ -435,7 +425,7 @@ void CAlnMix::x_Merge()
                 }
             }
         }
-        if (m_SingleRefseq) {
+        if (m_SingleRefseq  &&  refseq_it != m_Seqs.begin()) {
             // move to the front
             CAlnMixSeq * refseq = *refseq_it;
             m_Seqs.erase(refseq_it);
@@ -1188,6 +1178,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/01/17 18:56:26  todorov
+* Perform merge algorithm even if only one input denseg
+*
 * Revision 1.22  2003/01/16 17:40:19  todorov
 * Fixed strand param when calling GetSeqVector
 *
