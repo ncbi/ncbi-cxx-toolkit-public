@@ -44,14 +44,19 @@ CBDB_Transaction::~CBDB_Transaction()
 {
     if (m_Txn) {       // Active transaction is in progress
         x_Abort(true); // Abort - ignore errors (no except. from constructor)
-        // TODO: Inform all file subscribers we are history now
+    }
+    NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
+        CBDB_RawFile* dbfile = *it;
+        dbfile->x_RemoveTransaction(this);
     }
 }
 
 DB_TXN* CBDB_Transaction::GetTxn()
 {
-    if (m_Txn == 0) {
-        m_Txn = m_Env.CreateTxn(0, 0);
+    if (m_Env.IsTransactional()) {
+        if (m_Txn == 0) {
+            m_Txn = m_Env.CreateTxn(0, 0);
+        }
     }
     return m_Txn;
 }
@@ -104,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/16 13:44:47  kuznets
+ * Added disconnect call to dependent file objects when transaction closes.
+ *
  * Revision 1.1  2003/12/10 19:10:09  kuznets
  * Initial revision
  *
