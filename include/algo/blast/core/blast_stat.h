@@ -230,7 +230,7 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
  *       parameters are bad, as they're calculated for non-coding regions.
  * @param sbp ScoreBlk used to calculate "ideal" values. [in]
 */
-Blast_KarlinBlk* Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
+Blast_KarlinBlk* Blast_KarlinBlkIdealCalc(const BlastScoreBlk* sbp);
 
 
 /** Fills KarlinBlk pointers in BlastScoreBlk with "ideal" values if the 
