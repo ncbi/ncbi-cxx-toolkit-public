@@ -298,17 +298,17 @@ bool SAnnotSelector::ExcludedTSE(const CSeq_entry& tse) const
 }
 
 
-void SAnnotSelector::x_InitializeAnnotTypesSet(void)
+void SAnnotSelector::x_InitializeAnnotTypesSet(bool default_value)
 {
     if (m_AnnotTypesSet.size() > 0) {
         return;
     }
     m_AnnotTypesSet.resize(CAnnotType_Index::GetAnnotTypeRange(
-        CSeq_annot::C_Data::e_Ftable).second);
+        CSeq_annot::C_Data::e_Ftable).second, default_value);
     // Do not try to use flags from an uninitialized selector
     if (GetAnnotType() != CSeq_annot::C_Data::e_not_set) {
         // Copy current state to the set
-        CAnnotType_Index::TIndexRange range = 
+        CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetIndexRange(*this);
         for (size_t i = range.first; i < range.second; ++i) {
             m_AnnotTypesSet[i] = true;
@@ -326,7 +326,7 @@ SAnnotSelector& SAnnotSelector::IncludeAnnotType(TAnnotType type)
         SAnnotTypeSelector::SetAnnotType(type);
     }
     else if (m_AnnotTypesSet.size() > 0  ||  !IncludedAnnotType(type)) {
-        x_InitializeAnnotTypesSet();
+        x_InitializeAnnotTypesSet(false);
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetAnnotTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
@@ -341,7 +341,7 @@ SAnnotSelector& SAnnotSelector::ExcludeAnnotType(TAnnotType type)
 {
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
         ||  m_AnnotTypesSet.size() > 0  ||  IncludedAnnotType(type)) {
-        x_InitializeAnnotTypesSet();
+        x_InitializeAnnotTypesSet(true);
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetAnnotTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
@@ -358,7 +358,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
         SAnnotTypeSelector::SetFeatType(type);
     }
     else if (m_AnnotTypesSet.size() > 0  ||  !IncludedFeatType(type)) {
-        x_InitializeAnnotTypesSet();
+        x_InitializeAnnotTypesSet(false);
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
@@ -373,7 +373,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
 {
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
         ||  m_AnnotTypesSet.size() > 0  ||  IncludedFeatType(type)) {
-        x_InitializeAnnotTypesSet();
+        x_InitializeAnnotTypesSet(true);
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
@@ -390,7 +390,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatSubtype(TFeatSubtype subtype)
         SAnnotTypeSelector::SetFeatSubtype(subtype);
     }
     else if (m_AnnotTypesSet.size() > 0  ||  !IncludedFeatSubtype(subtype)) {
-        x_InitializeAnnotTypesSet();
+        x_InitializeAnnotTypesSet(false);
         m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = true;
     }
     return *this;
@@ -401,7 +401,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
 {
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
         ||  m_AnnotTypesSet.size() > 0  ||  IncludedFeatSubtype(subtype)) {
-        x_InitializeAnnotTypesSet();
+        x_InitializeAnnotTypesSet(true);
         m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = false;
     }
     return *this;
@@ -414,6 +414,16 @@ SAnnotSelector& SAnnotSelector::CheckAnnotType(TAnnotType type)
         SetAnnotType(type);
     }
     _ASSERT(GetAnnotType() == type);
+    if (m_AnnotTypesSet.size() > 0) {
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetAnnotTypeRange(type);
+        for (size_t i = 0; i < range.first; ++i) {
+            m_AnnotTypesSet[i] = false;
+        }
+        for (size_t i = range.second; i < m_AnnotTypesSet.size(); ++i) {
+            m_AnnotTypesSet[i] = false;
+        }
+    }
     return *this;
 }
 
@@ -480,6 +490,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/26 14:41:40  grichenk
+* Fixed types excluding in SAnnotSelector and multiple types search
+* in CAnnotTypes_CI.
+*
 * Revision 1.8  2004/02/11 22:19:24  grichenk
 * Fixed annot type initialization in iterators
 *

@@ -455,7 +455,7 @@ protected:
     static bool x_Has(const TAnnotsNames& names, const CAnnotName& name);
     static void x_Add(TAnnotsNames& names, const CAnnotName& name);
     static void x_Del(TAnnotsNames& names, const CAnnotName& name);
-    void x_InitializeAnnotTypesSet(void);
+    void x_InitializeAnnotTypesSet(bool default_value);
     void x_ClearAnnotTypesSet(void);
 
     typedef vector<bool> TAnnotTypesSet;
@@ -494,6 +494,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/02/26 14:41:40  grichenk
+* Fixed types excluding in SAnnotSelector and multiple types search
+* in CAnnotTypes_CI.
+*
 * Revision 1.26  2004/02/11 22:19:23  grichenk
 * Fixed annot type initialization in iterators
 *

@@ -1045,6 +1045,11 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
             }
             last_bit = cur_bit;
         }
+        if (last_bit) {
+            // search to the end of annot set
+            x_SearchRange(tse, objs, guard, annot_name, id, hr, cvt,
+                range.first, objs->m_AnnotSet.size());
+        }
     }
 
     if ( x_NeedSNPs() ) {
@@ -1342,6 +1347,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2004/02/26 14:41:41  grichenk
+* Fixed types excluding in SAnnotSelector and multiple types search
+* in CAnnotTypes_CI.
+*
 * Revision 1.113  2004/02/19 19:25:08  vasilche
 * Hidded implementation of CAnnotObject_Ref.
 * Added necessary access methods.
