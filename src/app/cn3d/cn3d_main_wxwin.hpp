@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/05/25 15:17:49  thiessen
+* fixes for visual id settings in wxGTK
+*
 * Revision 1.25  2001/05/21 22:06:56  thiessen
 * fix initial glcanvas size bug
 *
@@ -162,6 +165,8 @@ class StructureSet;
 class Cn3DApp: public wxApp
 {
 public:
+    Cn3DApp();
+
     bool OnInit(void);
     int OnExit(void);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/05/25 15:18:24  thiessen
+* fixes for visual id settings in wxGTK
+*
 * Revision 1.36  2001/05/25 01:38:16  thiessen
 * minor fixes for compiling on SGI
 *
@@ -231,7 +234,6 @@ OpenGLRenderer::OpenGLRenderer(void) :
     }
 
     SetLowQuality();
-    AttachStructureSet(NULL);
 }
 
 // will eventually load these from registry...

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/05/25 15:18:23  thiessen
+* fixes for visual id settings in wxGTK
+*
 * Revision 1.44  2001/05/24 19:13:23  thiessen
 * fix to compile on SGI
 *
@@ -352,6 +355,12 @@ BEGIN_EVENT_TABLE(Cn3DApp, wxApp)
     EVT_IDLE(Cn3DApp::OnIdle)
 END_EVENT_TABLE()
 
+Cn3DApp::Cn3DApp() : wxApp()
+{
+    // try to force all windows to use best (TrueColor) visuals
+    SetUseBestVisual(true);
+}
+
 bool Cn3DApp::OnInit(void)
 {
     // setup the diagnostic stream
@@ -388,9 +397,10 @@ bool Cn3DApp::OnInit(void)
     // get file name from command line, if present
     if (argc > 2)
         ERR_POST(Fatal << "\nUsage: cn3d [filename]");
-    else if (argc == 2) {
+    else if (argc == 2)
         structureWindow->LoadFile(argv[1]);
-    }
+    else
+        structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
 
     return true;
 }
@@ -500,17 +510,19 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 #if defined(__WXMSW__)
     int *attribList = NULL;
 #elif defined(__WXGTK__)
+    int *attribList = NULL;
+/*
     int attribList[20] = {
         WX_GL_DOUBLEBUFFER,
         WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1,
-        WX_GL_DEPTH_SIZE, 1,
+        WX_GL_ALPHA_SIZE, 0, WX_GL_DEPTH_SIZE, 1,
         None
     };
+*/
 #else
 #error need to define GL attrib list
 #endif
     glCanvas = new Cn3DGLCanvas(this, attribList);
-    glCanvas->SetCurrent();
 
     GlobalMessenger()->AddStructureWindow(this);
     Show(true);
@@ -821,21 +833,8 @@ Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
     structureSet(NULL)
 {
-#if defined(__WXGTK__)
-    // must create window and establish context before creating OpenGLRenderer
-    parent->Show(true);
-    SetCurrent();
-#endif
-    
     renderer = new OpenGLRenderer();
-
-#if defined(__WXGTK__)
-    // set initial size to fill parent window's client area
-    int width, height;
-    parent->GetClientSize(&width, &height);
-    renderer->SetSize(width, height);
-#endif
-
+    
     // set up font used by OpenGL
 #if defined(__WXMSW__)
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
@@ -845,7 +844,6 @@ Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     font = new wxFont(16, wxSWISS, wxNORMAL, wxNORMAL);
     renderer->SetFont_GTK(font->GetInternalFont());
 #endif
-
 }
 
 Cn3DGLCanvas::~Cn3DGLCanvas(void)
