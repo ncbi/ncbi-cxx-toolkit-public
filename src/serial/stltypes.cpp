@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/09/23 20:38:01  vasilche
+* Fixed ambiguity.
+*
 * Revision 1.10  1999/09/14 18:54:21  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -85,7 +88,7 @@ void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
                                              TConstObjectPtr key,
                                              TConstObjectPtr value) const
 {
-    CObjectOStream::Block block(out, size_t(2));
+    CObjectOStream::Block block(out, unsigned(2));
     block.Next();
     {
         CObjectOStream::Member m(out, CMemberId(1));
