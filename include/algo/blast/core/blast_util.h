@@ -112,12 +112,13 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
  * @param nt_length Length of the nucleotide sequence [in]
  * @param frame What frame to translate into? [in]
  * @param buffer Preallocated buffer for the translated sequence [in][out]
- * @param genetic_code Genetic code to use for translation [in]
+ * @param genetic_code Genetic code to use for translation, 
+ *                     in ncbistdaa encoding [in]
  * @return Length of the traslated protein sequence.
 */
 Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1Ptr buffer, CharPtr genetic_code);
+   Int4 nt_length, Int2 frame, Uint1Ptr buffer, Uint1Ptr genetic_code);
 
 /** Given a GI, read the sequence from the database and fill out a
  *  BLAST_SequenceBlk structure.
@@ -246,7 +247,8 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
  * @param nucl_seq The nucleotide sequence [in] 
  * @param encoding Sequence encoding: ncbi2na or ncbi4na [in]
  * @param nucl_length Length of the nucleotide sequence [in]
- * @param genetic_code The genetic code to be used for translations [in]
+ * @param genetic_code The genetic code to be used for translations,
+ *                     in ncbistdaa encoding [in]
  * @param translation_buffer_ptr Buffer to hold all translated frames [out]
  * @param frame_offsets_ptr Offsets into the translation buffer for each 
  *                          frame [out]
@@ -254,7 +256,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
  *                      out-of-frame gapping [out]
  */
 Int2 BLAST_GetAllTranslations(const Uint1Ptr nucl_seq, Uint1 encoding,
-        Int4 nucl_length, CharPtr genetic_code, 
+        Int4 nucl_length, Uint1Ptr genetic_code, 
         Uint1Ptr PNTR translation_buffer_ptr, Int4Ptr PNTR frame_offsets_ptr,
         Uint1Ptr PNTR mixed_seq_ptr);
 

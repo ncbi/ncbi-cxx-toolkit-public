@@ -40,9 +40,6 @@ Contents: Various BLAST utilities
 
 static char const rcsid[] = "$Id$";
 
-extern Uint1Ptr
-GetPrivatTranslationTable PROTO((CharPtr genetic_code,
-                                 Boolean reverse_complement));
 Int2
 BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
    BLAST_SequenceBlkPtr *seq_blk, Boolean buffer_allocated)
@@ -167,17 +164,63 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
 	return 0;
 }
 
+#define X_STDAA 21
+/** Translate 3 nucleotides into an amino acid
+ * MUST have 'X' as unknown amino acid
+ * @param codon 3 values in ncbi4na code
+ * @param codes Geneic code string to use (must be in ncbistdaa encoding!)
+ * @return Amino acid in ncbistdaa
+ */
+static Uint1 CodonToAA (Uint1Ptr codon, Uint1Ptr codes)
+{
+   register Uint1 aa = 0, taa;
+   register int i, j, k, index0, index1, index2;
+   static Uint1 mapping[4] = { 8,     /* T in ncbi4na */
+                               2,     /* C */
+                               1,     /* A */
+                               4 };   /* G */
+
+   for (i = 0; i < 4; i++) {
+      if (codon[0] & mapping[i]) {
+         index0 = i * 16;
+         for (j = 0; j < 4; j++) {
+            if (codon[1] & mapping[j]) {
+               index1 = index0 + (j * 4);
+               for (k = 0; k < 4; k++) {
+                  if (codon[2] & mapping[k]) {
+                     index2 = index1 + k;
+                     taa = codes[index2];
+                     if (! aa)
+                        aa = taa;
+                     else {
+                        if (taa != aa) {
+                           aa = X_STDAA;
+                           break;
+                        }
+                     }
+                  }
+                  if (aa == X_STDAA)
+                     break;
+               }
+            }
+            if (aa == X_STDAA)
+               break;
+         }
+      }
+      if (aa == X_STDAA)
+         break;
+   }
+   return aa;
+}
+
 Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, CharPtr genetic_code)
+   Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, Uint1Ptr genetic_code)
 {
 	Uint1 codon[CODON_LENGTH];
 	Int4 index, index_prot;
-	SeqMapTablePtr smtp;
-	Uint1 residue, new_residue;
+	Uint1 residue;
    Uint1Ptr nucl_seq;
-
-	smtp = SeqMapTableFind(Seq_code_ncbistdaa, Seq_code_ncbieaa);
 
    nucl_seq = (frame >= 0 ? query_seq : query_seq_rev+1);
 
@@ -189,11 +232,10 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
 		codon[0] = nucl_seq[index];
 		codon[1] = nucl_seq[index+1];
 		codon[2] = nucl_seq[index+2];
-		residue = AAForCodon(codon, genetic_code);
-		new_residue = SeqMapTableConvert(smtp, residue);
-		if (IS_residue(new_residue))
+		residue = CodonToAA(codon, genetic_code);
+		if (IS_residue(residue))
 		{
-			prot_seq[index_prot] = new_residue;
+			prot_seq[index_prot] = residue;
 			index_prot++;
 		}
 	}
@@ -698,8 +740,72 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
    return 0;
 }
 
+/*	Gets the translation array for a given genetic code.  
+ *	This array is optimized for the NCBI2na alphabet.
+ * The reverse complement can also be spcified.
+ * @param genetic_code Genetic code string in ncbistdaa encoding [in]
+ * @param reverse_complement Get translation table for the reverse strand? [in]
+ * @return The translation table.
+*/
+static Uint1Ptr
+BLAST_GetTranslationTable(Uint1Ptr genetic_code, Boolean reverse_complement)
+
+{
+	Int2 index1, index2, index3, bp1, bp2, bp3;
+	Int2 codon;
+  	SeqMapTablePtr smtp;
+	Uint1Ptr translation;
+   /* The next array translate between the ncbi2na rep's and 
+      the rep's used by the genetic_code tables.  The rep used by the 
+      genetic code arrays is in mapping: T=0, C=1, A=2, G=3 */
+  	static Uint1 mapping[4] = {2, /* A in ncbi2na */
+                              1, /* C in ncbi2na. */
+                              3, /* G in ncbi2na. */
+                              0 /* T in ncbi2na. */ };
+
+	if (genetic_code == NULL)
+		return NULL;
+
+	translation = MemNew(64*sizeof(Uint1));
+	if (translation == NULL)
+		return NULL;
+
+	for (index1=0; index1<4; index1++)
+	{
+		for (index2=0; index2<4; index2++)
+		{
+			for (index3=0; index3<4; index3++)
+			{
+            /* The reverse complement codon is saved in it's orginal 
+               (non-complement) form AND with the high-order bits reversed 
+               from the non-complement form, as this is how they appear in 
+               the sequence. 
+            */
+			   if (reverse_complement)
+            {
+               bp1 = 3 - index1;
+               bp2 = 3 - index2;
+               bp3 = 3 - index3;
+			   	codon = (mapping[bp1]<<4) + (mapping[bp2]<<2) + (mapping[bp3]);
+			   	translation[(index3<<4) + (index2<<2) + index1] = 
+                  genetic_code[codon];
+			   }
+			   else
+			   {
+			   	codon = (mapping[index1]<<4) + (mapping[index2]<<2) + 
+                  (mapping[index3]);
+			   	translation[(index1<<4) + (index2<<2) + index3] = 
+                  genetic_code[codon];
+			   }
+			}
+		}
+	}
+	return translation;
+}
+
+
 Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
-        Int4 nucl_length, CharPtr genetic_code,
+        Int4 nucl_length, Uint1Ptr genetic_code,
         Uint1Ptr PNTR translation_buffer_ptr, Int4Ptr PNTR frame_offsets_ptr,
         Uint1Ptr PNTR mixed_seq_ptr)
 {
@@ -722,8 +828,8 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
       GetReverseNuclSequence(nucl_seq, nucl_length, 
                              &nucl_seq_rev);
    } else {
-      translation_table = GetPrivatTranslationTable(genetic_code, FALSE);
-      translation_table_rc = GetPrivatTranslationTable(genetic_code, TRUE);
+      translation_table = BLAST_GetTranslationTable(genetic_code, FALSE);
+      translation_table_rc = BLAST_GetTranslationTable(genetic_code, TRUE);
    } 
 
    *frame_offsets_ptr = frame_offsets = (Int4Ptr) Malloc(7*sizeof(Int4));

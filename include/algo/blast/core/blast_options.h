@@ -343,7 +343,8 @@ typedef struct BlastDatabaseOptions {
  */
 typedef struct BlastDatabaseParameters {
    BlastDatabaseOptionsPtr options; /**< Options related to BLAST database */
-   CharPtr gen_code_string;  /**< Genetic code string, tblast[nx] only */
+   Uint1Ptr gen_code_string;  /**< Genetic code string in ncbistdaa encoding,
+                                 tblast[nx] only */
 } BlastDatabaseParameters, *BlastDatabaseParametersPtr;
 
 /** Options for formatting BLAST results 
