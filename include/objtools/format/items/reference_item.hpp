@@ -108,26 +108,26 @@ public:
     int               GetSerial    (void) const { return m_Serial;     }
 
     // Date
-    bool              IsSetDate    (void) const { return m_Date;       }
+    bool              IsSetDate    (void) const { return m_Date.NotEmpty();       }
     const CDate&      GetDate      (void) const { return *m_Date;       }
     //Authors
-    bool              IsSetAuthors (void) const { return m_Authors;    }
+    bool              IsSetAuthors (void) const { return m_Authors.NotEmpty();    }
     const CAuth_list& GetAuthors   (void) const { return *m_Authors;   }
 
-    bool              IsSetBook    (void) const { return m_Book;       }
+    bool              IsSetBook    (void) const { return m_Book.NotEmpty();       }
     const CCit_book&  GetBook      (void) const { return *m_Book;      }
 
-    bool              IsSetPatent  (void) const { return m_Patent;     }
+    bool              IsSetPatent  (void) const { return m_Patent.NotEmpty();     }
     const CCit_pat&   GetPatent    (void) const { return *m_Patent;    }
     TSeqid            GetPatSeqid  (void) const { return m_PatentId;   }
 
-    bool              IsSetGen     (void) const { return m_Gen;        }
+    bool              IsSetGen     (void) const { return m_Gen.NotEmpty();        }
     const CCit_gen&   GetGen       (void) const { return *m_Gen;       }
 
-    bool              IsSetSub     (void) const { return m_Sub;        }
+    bool              IsSetSub     (void) const { return m_Sub.NotEmpty();        }
     const CCit_sub&   GetSub       (void) const { return *m_Sub;       }
 
-    bool              IsSetJournal (void) const { return m_Journal;    }
+    bool              IsSetJournal (void) const { return m_Journal.NotEmpty();    }
     const CCit_jour&  GetJournal   (void) const { return *m_Journal;   }
 
     int               GetPMID      (void) const { return m_PMID;       }
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/01/12 18:43:30  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.14  2005/01/12 16:42:07  shomrat
 * Code refactoring
 *
