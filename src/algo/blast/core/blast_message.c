@@ -35,10 +35,6 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_message.h>
 
-/*
-	Deallocates message memory.
-*/
-
 Blast_Message* 
 Blast_MessageFree(Blast_Message* blast_msg)
 {
@@ -50,10 +46,6 @@ Blast_MessageFree(Blast_Message* blast_msg)
 	sfree(blast_msg);
 	return NULL;
 }
-
-/*
-	Writes a message to a structure.
-*/
 
 Int2 
 Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity, 
@@ -72,26 +64,44 @@ Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity,
 	return 0;
 }
 
-/*
-	Print a message with ErrPostEx
-*/
-
 Int2 
 Blast_MessagePost(Blast_Message* blast_msg)
 {
 	if (blast_msg == NULL)
 		return 1;
 
-	/*ErrPostEx(blast_msg->severity, blast_msg->code, blast_msg->subcode, "%s", blast_msg->message);*/
 	fprintf(stderr, "%s", blast_msg->message);	/* FIXME! */
 
 	return 0;
+}
+
+Blast_Message*
+Blast_Perror(Int2 error_code)
+{
+    Blast_Message* retval = (Blast_Message*) malloc(sizeof(Blast_Message));
+
+    switch (error_code) {
+    case BLASTERR_IDEALSTATPARAMCALC:
+        retval->message = strdup("Failed to calculate ideal Karlin-Altschul "
+                                 "parameters");
+        retval->severity = BLAST_SEV_ERROR;
+        break;
+    case 0:
+    default:
+        retval = Blast_MessageFree(retval);
+        break;
+    }
+
+    return retval;
 }
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/11/19 00:07:47  camacho
+ * + Blast_Perror
+ *
  * Revision 1.13  2004/11/02 17:56:48  camacho
  * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *

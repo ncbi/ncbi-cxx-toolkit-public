@@ -81,6 +81,21 @@ Int2 Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity,
 
 Int2 Blast_MessagePost(Blast_Message* blast_msg);
 
+/* FIXME: should the code below and its implementation be moved to another
+ * file, say blast_error.[hc]? */
+
+/** Analogous to perror
+ * @param error_code error code returned from BLAST function [in]
+ * @return Blast_Message structure containing error description
+ */
+Blast_Message* Blast_Perror(Int2 error_code);
+
+/* BLAST error codes: these are meant to describe errors that can occur in the
+ * core of BLAST only 
+ */
+
+/** Could not compute the ideal Karlin-Altschul parameters */
+#define BLASTERR_IDEALSTATPARAMCALC         100
 
 #ifdef __cplusplus
 }
