@@ -190,6 +190,9 @@ protected:
     /// @sa SetTransaction
     DB_TXN* GetTxn();
 
+    /// Create DB cursor
+    DBC* CreateCursor(CBDB_Transaction* trans = 0) const;
+
 protected:
     DB*               m_DB;
     DBT*              m_DBT_Key;
@@ -210,6 +213,7 @@ private:
     static const int kOpenFileMask;
     
     friend class CBDB_Transaction;
+    friend class CBDB_FileCursor;
 };
 
 
@@ -298,9 +302,6 @@ protected:
     /// Set comparison function. Default implementation installs bdb_types based
     /// function. Can be overloaded for some specific cases.
     virtual void SetCmp(DB*);
-
-    /// Create DB cursor
-    DBC* CreateCursor() const;
 
     /// Read DB cursor
     EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag);
@@ -439,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/12/29 13:23:01  kuznets
+ * Added support for transaction protected cursors.
+ *
  * Revision 1.26  2003/12/22 18:53:50  kuznets
  * Added legacy(c-string) string format check flag.
  *

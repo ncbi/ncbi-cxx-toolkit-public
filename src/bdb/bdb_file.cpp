@@ -425,6 +425,28 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
 }
 
 
+DBC* CBDB_RawFile::CreateCursor(CBDB_Transaction* trans) const
+{
+    DBC* cursor;
+
+    if (!m_DB) {
+        BDB_THROW(eInvalidValue, "Cannot create cursor for unopen file.");
+    }
+
+    DB_TXN* txn = 0; // GetTxn();
+    if (trans) {
+        txn = trans->GetTxn();
+    }
+
+    int ret = m_DB->cursor(m_DB,
+                           txn,
+                           &cursor,
+                           0);
+    BDB_CHECK(ret, FileName().c_str());
+    return cursor;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CBDB_File::
@@ -641,24 +663,6 @@ void CBDB_File::SetCmp(DB* db)
 }
 
 
-DBC* CBDB_File::CreateCursor() const
-{
-    DBC* cursor;
-
-    if (!m_DB) {
-        BDB_THROW(eInvalidValue, "Cannot create cursor for unopen file.");
-    }
-
-    DB_TXN* txn = 0; // GetTxn();
-
-    int ret = m_DB->cursor(m_DB,
-                           txn,
-                           &cursor,
-                           0);
-    BDB_CHECK(ret, FileName().c_str());
-    return cursor;
-}
-
 
 EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
 {
@@ -780,6 +784,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/12/29 13:23:53  kuznets
+ * Added support for transaction protected cursors.
+ *
  * Revision 1.30  2003/12/22 18:57:02  kuznets
  * Minor implementation changes: DBT size passed to underlying buffer
  * manager in order to better detect c-strings.

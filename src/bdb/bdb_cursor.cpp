@@ -168,6 +168,19 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
     m_DBC = m_Dbf.CreateCursor();
 }
 
+CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans)
+: m_Dbf(dbf),
+  m_DBC(0),
+  From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
+  To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
+  m_CondFrom(eFirst),
+  m_CondTo(eLast),
+  m_FetchDirection(eForward),
+  m_FirstFetched(false)
+{
+    m_DBC = m_Dbf.CreateCursor(&trans);
+}
+
 
 CBDB_FileCursor::~CBDB_FileCursor()
 {
@@ -446,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/29 13:23:53  kuznets
+ * Added support for transaction protected cursors.
+ *
  * Revision 1.8  2003/12/29 12:54:33  kuznets
  * Fixed cursor leak.
  *

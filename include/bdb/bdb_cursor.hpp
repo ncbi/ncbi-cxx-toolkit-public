@@ -114,6 +114,8 @@ public:
 
 public:
     CBDB_FileCursor(CBDB_File& dbf);
+    CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans);
+
     ~CBDB_FileCursor();
 
     void SetCondition(ECondition cond_from, ECondition cond_to = eNotSet);
@@ -218,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/29 13:23:24  kuznets
+ * Added support for transaction protected cursors.
+ *
  * Revision 1.7  2003/09/26 21:01:05  kuznets
  * Comments changed to meet doxygen format requirements
  *
