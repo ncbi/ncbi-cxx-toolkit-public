@@ -50,6 +50,8 @@ void CFindPattern::Find(CSeqVector& vec, const string& pattern,
     // want to ignore case, and to allow white space (and comments) in pattern
     CRegexp re(pattern, PCRE_CASELESS | PCRE_EXTENDED);
 
+    starts.clear();
+    ends.clear();
     unsigned int offset = 0;
     while (!re.GetMatch(seq.data(), offset).empty()) {  // empty string means no match
         const int *res = re.GetResults(0);
@@ -65,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/08 22:08:00  jcherry
+ * Clear 'starts' and 'ends' before using them!
+ *
  * Revision 1.3  2003/07/03 19:14:12  jcherry
  * Initial version
  *
