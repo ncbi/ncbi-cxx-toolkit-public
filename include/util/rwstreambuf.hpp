@@ -83,12 +83,13 @@ protected:
 protected:
     IReader*       m_Reader;
     IWriter*       m_Writer;
-    CT_CHAR_TYPE*  m_Buf;
+
     CT_CHAR_TYPE*  m_ReadBuf;
     CT_CHAR_TYPE*  m_WriteBuf;
     streamsize     m_BufSize;
 
     bool           m_OwnBuf;
+    CT_CHAR_TYPE   x_Buf;
 };
 
 
@@ -98,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/09 17:38:36  lavr
+ * Define internal 1-byte buffer used for unbuffered streams
+ *
  * Revision 1.3  2003/11/12 17:44:32  lavr
  * Uniformed file layout
  *
