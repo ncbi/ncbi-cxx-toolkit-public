@@ -2014,6 +2014,8 @@ void CValidError_bioseq::x_ValidateCompletness
     CMolInfo::TCompleteness comp = mi.GetCompleteness();
     CMolInfo::TBiomol biomol = mi.IsSetBiomol() ? 
         mi.GetBiomol() : CMolInfo::eBiomol_unknown;
+    EDiagSev sev = mi.GetTech() == CMolInfo::eTech_htgs_3 ? 
+        eDiag_Warning : eDiag_Error;
 
     if ( comp == CMolInfo::eCompleteness_complete  &&
          biomol == CMolInfo::eBiomol_genomic ) {
@@ -2032,7 +2034,7 @@ void CValidError_bioseq::x_ValidateCompletness
                 if ( !title.empty()  &&
                      (NStr::FindNoCase(title, "complete sequence") == NPOS  ||
                       NStr::FindNoCase(title, "complete genome") == NPOS) ) {
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                    PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
                         "Suspicious use of complete", *desc);
                 }
             }
@@ -3557,6 +3559,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2004/04/02 22:20:22  shomrat
+* UnwantedCompleteFlag is Warning if tech is htgs_3
+*
 * Revision 1.68  2004/04/02 22:09:15  shomrat
 * clarify explanation of GraphAbove and GraphBelow criteria
 *
