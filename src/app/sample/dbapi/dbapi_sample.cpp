@@ -104,11 +104,15 @@ int CDbapiTest::Run()
         string driver = args["d"].AsString();
 
 
+        // Register driver explicitly for static linkage if needed
 #ifdef WIN32
         DBAPI_RegisterDriver_ODBC(dm);
-        //DBAPI_RegisterDriver_DBLIB(dm);
 #endif
+        //DBAPI_RegisterDriver_DBLIB(dm);
 
+        // Create data source - the root object for all other
+        // objects in the library.
+        //
         // set TDS version for STRAUSS
         if( NStr::CompareNocase(server, "STRAUSS") == 0 ) {
             map<string,string> attr;
@@ -118,14 +122,23 @@ int CDbapiTest::Run()
         else
             ds = dm.CreateDs(driver);
 
+        // Redirect error messages to CMultiEx storage in the
+        // data source object (global). Default output is sent
+        // to standard error
+        //
         //ds->SetLogStream(0);
 
 
-        //ds->SetLogStream(&NcbiCerr);
-
+        // Create connection. 
         IConnection* conn = ds->CreateConnection();
 
+        // Set this mode to be able to use bulk insert
         conn->SetMode(IConnection::eBulkInsert);
+
+        // To ensure, that only one database connection is used
+        // use this method. It will throw an exception, if the
+        // library tries to open additional connections implicitly, 
+        // like creating multiple statements.
         //conn->ForceSingle(true);
 
         conn->Connect("anyone",
@@ -171,7 +184,8 @@ from SelectSample ";
             while( stmt->HasMoreResults() ) {
                 if( stmt->HasRows() ) {   
                     IResultSet *rs = stmt->GetResultSet();
-                    const IResultSetMetaData *rsMeta = rs->GetMetaData();
+
+                    const IResultSetMetaData* rsMeta = rs->GetMetaData();
 
                     rs->BindBlobToVariant(true);
 
@@ -210,7 +224,7 @@ from SelectSample ";
 #endif
                     
                     } 
-                    
+                    //delete rs;
                 }
             }
         }
@@ -369,12 +383,16 @@ end";
         cstmt->SetOutputParam(CVariant(eDB_Int), "@o");
         cstmt->Execute(); 
     
+        // Below is an example of using auto_ptr to avoid resource wasting
+        // in case of multiple resultsets, statements, etc.
+        // NOTE: Use it with caution, when the wrapped parent object
+        // goes out of scope, all child objects are destroyed.
         while(cstmt->HasMoreResults()) {
-            IResultSet *rs = cstmt->GetResultSet();
+            auto_ptr<IResultSet> rs(cstmt->GetResultSet());
 
             //NcbiCout << "Row count: " << cstmt->GetRowCount() << endl;
 
-            if( rs == 0 )
+            if( !cstmt->HasRows() )
                 continue;
 
             switch( rs->GetResultType() ) {
@@ -686,6 +704,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/27 14:35:44  kholodov
+* Comments added, work in progress
+*
 * Revision 1.9  2003/10/09 21:25:36  kholodov
 * Several tests added
 *
