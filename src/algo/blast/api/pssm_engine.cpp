@@ -101,11 +101,8 @@ CPssmEngine::x_CheckAgainstNullData()
     }
 }
 
-/** Converts a PSSM error message into a string
- * @param error_code PSSM engine's error code as defined in blast_psi_priv.h
- */
-static string
-x_PssmEngineErrorToString(int error_code)
+string
+CPssmEngine::x_ErrorCodeToString(int error_code)
 {
     string retval;
 
@@ -189,7 +186,7 @@ CPssmEngine::Run()
                                      &diagnostics);
     if (status != PSI_SUCCESS) {
         // FIXME: need to use core level perror-like facility
-        string msg = x_PssmEngineErrorToString(status);
+        string msg = x_ErrorCodeToString(status);
         NCBI_THROW(CBlastException, eInternal, msg);
     }
 
@@ -338,7 +335,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
 
     // Look for starting gaps in alignments
     unsigned int i = 
-        m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
+        m_PssmInput->GetOptions()->nsg_ignore_consensus == TRUE ? 1 : 0;
     for ( ; i < msa->dimensions->num_seqs + 1; i++) {
         // find the first aligned residue
         for (unsigned int j = 0; j < m_PssmInput->GetQueryLength(); j++) {
@@ -353,7 +350,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
     }
 
     // Look for ending gaps in alignments
-    i = m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
+    i = m_PssmInput->GetOptions()->nsg_ignore_consensus == TRUE ? 1 : 0;
     for ( ; i < msa->dimensions->num_seqs + 1; i++) {
         // find the last aligned residue
         for (unsigned int j = m_PssmInput->GetQueryLength() - 1; j >= 0; j--) {
@@ -375,7 +372,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
 void
 CPssmEngine::x_ValidateNoGapsInQuery()
 {
-    if (m_PssmInput->GetOptions()->ignore_consensus) {
+    if (m_PssmInput->GetOptions()->nsg_ignore_consensus) {
         return;
     }
 
@@ -411,7 +408,7 @@ CPssmEngine::x_ValidateAlignedColumns()
         bool found_non_gap_residue = false;
 
         unsigned int j = 
-            m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
+            m_PssmInput->GetOptions()->nsg_ignore_consensus == TRUE ? 1 : 0;
         for ( ; j < msa->dimensions->num_seqs + 1; j++) {
             if (msa->data[j][i].is_aligned) {
                 found_aligned_sequence = true;
@@ -525,6 +522,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2004/11/22 14:38:57  camacho
+ * + option to set % identity threshold to PSSM engine
+ *
  * Revision 1.20  2004/11/02 20:37:34  camacho
  * Doxygen fixes
  *

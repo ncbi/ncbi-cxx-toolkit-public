@@ -696,7 +696,7 @@ s_PSIPurgeSelfHits(_PSIMsa* msa);
  * @param msa multiple sequence alignment data structure [in]
  */
 static void
-s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa);
+s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa, double identity_threshold);
 
 /** This function compares the sequences in the msa->cell
  * structure indexed by sequence_index1 and seq_index2. If it finds aligned 
@@ -719,14 +719,14 @@ s_PSIPurgeSimilarAlignments(_PSIMsa* msa,
 
 /**************** PurgeMatches stage of PSSM creation ***********************/
 int
-_PSIPurgeBiasedSegments(_PSIMsa* msa)
+_PSIPurgeBiasedSegments(_PSIMsa* msa, double identity_threshold)
 {
     if ( !msa ) {
         return PSIERR_BADPARAM;
     }
 
     s_PSIPurgeSelfHits(msa);
-    s_PSIPurgeNearIdenticalAlignments(msa);
+    s_PSIPurgeNearIdenticalAlignments(msa, identity_threshold);
     _PSIUpdatePositionCounts(msa);
 
     return PSI_SUCCESS;
@@ -745,7 +745,7 @@ s_PSIPurgeSelfHits(_PSIMsa* msa)
 }
 
 static void
-s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
+s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa, double identity_threshold)
 {
     Uint4 i = 0;
     Uint4 j = 0;
@@ -757,8 +757,7 @@ s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
             /* N.B.: The order of comparison of sequence pairs is deliberate,
              * tests on real data indicated that this approach allowed more
              * sequences to be purged */
-            s_PSIPurgeSimilarAlignments(msa, j, (i + j),
-                                       kPSINearIdentical);
+            s_PSIPurgeSimilarAlignments(msa, j, (i + j), identity_threshold);
         }
     }
 }
@@ -2359,6 +2358,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/11/22 14:38:48  camacho
+ * + option to set % identity threshold to PSSM engine
+ *
  * Revision 1.35  2004/11/18 16:25:32  camacho
  * Rename _PSIGetStandardProbabilities to BLAST_GetStandardAaProbabilities
  *

@@ -306,7 +306,7 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
  *         PSI_SUCCESS otherwise
  */
 int 
-_PSIPurgeBiasedSegments(_PSIMsa* msa);
+_PSIPurgeBiasedSegments(_PSIMsa* msa, double identity_threshold);
 
 /** Main validation function for multiple sequence alignment structure. Should
  * be called after _PSIPurgeBiasedSegments.
@@ -531,6 +531,9 @@ _PSICalculateInformationContentFromFreqRatios(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/11/22 14:38:48  camacho
+ * + option to set % identity threshold to PSSM engine
+ *
  * Revision 1.16  2004/11/18 16:25:32  camacho
  * Rename _PSIGetStandardProbabilities to BLAST_GetStandardAaProbabilities
  *

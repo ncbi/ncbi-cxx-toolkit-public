@@ -159,6 +159,13 @@ private:
                      const PSIBlastOptions* opts,
                      const PSIDiagnosticsResponse* diagnostics = NULL);
 
+    /// Convert a PSSM return status into a string
+    /// @param error_code return value of a PSSM engine function as defined in
+    /// blast_psi_priv.h [in]
+    /// @return string containing a description of the error
+    static std::string
+    x_ErrorCodeToString(int error_code);
+
     /// Default constructor available for derived test classes
     CPssmEngine() {}
     /// Prohibit copy constructor
@@ -179,6 +186,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/11/22 14:38:06  camacho
+ * + option to set % identity threshold to PSSM engine
+ *
  * Revision 1.16  2004/11/02 20:37:16  camacho
  * Doxygen fixes
  *

@@ -478,10 +478,22 @@ typedef struct PSIBlastOptions {
      * use all HSPs in a query-subject alignment. */
     Boolean use_best_alignment;
 
+    /* The following are advanced options, provided for NCBI's structure 
+       group (note nsg_ prefix, stands for NCBI's structure group) */
+
     /** Setting this option to TRUE enables a customization of the PSSM 
      * engine implemented for the structure group. It forces the PSSM engine to
      * ignore the query while building the PSSM. It is FALSE by default. */
-    Boolean ignore_consensus;
+    Boolean nsg_ignore_consensus;
+
+    /** Percent identity threshold which determines when similar sequences in
+     * the multiple sequence alignment are to be purged before the creation of
+     * the PSSM. In the past, this was a constant, but for experimentation 
+     * purposes it is being made a variable to allow certain multiple sequence 
+     * alignments to be processed by the PSSM engine. Its default value remains
+     * the constant used by the PSI-BLAST PSSM engine (kPSINearIdentical)
+     */
+    double nsg_identity_threshold;
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 

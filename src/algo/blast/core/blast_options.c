@@ -36,6 +36,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_encoding.h>
+#include "blast_psi_priv.h"
 
 QuerySetUpOptions*
 BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)
@@ -1438,7 +1439,8 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
    options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
    options->use_best_alignment = TRUE;
-   options->ignore_consensus = FALSE;
+   options->nsg_ignore_consensus = FALSE;
+   options->nsg_identity_threshold = kPSINearIdentical;
    
    return 0;
 }
@@ -1635,6 +1637,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.142  2004/11/22 14:38:48  camacho
+ * + option to set % identity threshold to PSSM engine
+ *
  * Revision 1.141  2004/11/15 16:32:37  dondosha
  * Changed constant names and static functions names in accordance with C++ toolkit guidelines
  *
