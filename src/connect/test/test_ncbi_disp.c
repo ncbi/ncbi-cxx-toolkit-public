@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/03/05 23:21:11  lavr
+ * SERV_WriteInfo take only one argument now
+ *
  * Revision 6.2  2001/03/02 20:01:38  lavr
  * SERV_Close() shown; "../ncbi_priv.h" explained
  *
@@ -59,7 +62,7 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Requested service not found");
     
     while ((info = SERV_GetNextInfo(iter)) != 0) {
-        char* info_str = SERV_WriteInfo(info, 0/*do not skip host*/);
+        char* info_str = SERV_WriteInfo(info);
         if (!info_str)
             CORE_LOG(eLOG_Error, "Unable to print server info");
         else
