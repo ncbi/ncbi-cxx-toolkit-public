@@ -4,7 +4,7 @@
 # Build library "xstruct_util"
 #################################
 
-REQUIRES = objects C-toolkit
+REQUIRES = objects C-Toolkit
 
 LIB = xstruct_util
 
