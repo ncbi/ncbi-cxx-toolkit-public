@@ -162,7 +162,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                      BlastScoreBlk * *sbpp, Blast_Message * *blast_message)
 {
     BlastScoreBlk *sbp;
-    Boolean mask_at_hash;       /* mask only for making lookup table? */
+    Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Boolean is_na;              /* Is this nucleotide? */
     Int2 context = 0, index;    /* Loop variables. */
     Int2 total_num_contexts = 0;        /* number of different strands, sequences, etc. */
