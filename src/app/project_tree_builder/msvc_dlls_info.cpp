@@ -222,6 +222,9 @@ static void s_InitalizeDllProj(const string&                  dll_id,
         CDirEntry::ConcatPath(dll_project_dir, 
                               GetApp().GetRegSettings().m_CompilersSubdir);
     dll_project_dir = 
+        CDirEntry::ConcatPath(dll_project_dir, 
+                              GetApp().GetBuildType().GetTypeStr());
+    dll_project_dir = 
         CDirEntry::ConcatPath(dll_project_dir, dll_id);
 
     dll_project_dir = CDirEntry::AddTrailingPathSeparator(dll_project_dir);
@@ -461,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/16 16:37:33  gorelenk
+ * Changed msvc7_prj subdirs structure: Separated "static" and "dll" branches.
+ *
  * Revision 1.7  2004/03/15 21:21:47  gorelenk
  * Added definition of function CollectDllsDepends. Changed implementation of
  * function CreateDllBuildTree.

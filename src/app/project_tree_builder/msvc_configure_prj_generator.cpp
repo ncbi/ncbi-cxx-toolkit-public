@@ -86,6 +86,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
         CDirEntry::ConcatPath(project_tree_builder_sln_dir,
                               GetApp().GetRegSettings().m_CompilersSubdir);
     project_tree_builder_sln_dir = 
+        CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
+    project_tree_builder_sln_dir = 
         CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
     project_tree_builder_sln_dir = 
         CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
@@ -201,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/16 16:37:33  gorelenk
+ * Changed msvc7_prj subdirs structure: Separated "static" and "dll" branches.
+ *
  * Revision 1.8  2004/03/10 21:27:26  gorelenk
  * Changed CMsvcConfigureProjectGenerator constructor and
  * CreateProjectFileItem member-function implementation.

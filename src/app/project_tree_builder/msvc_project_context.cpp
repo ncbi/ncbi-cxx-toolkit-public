@@ -90,6 +90,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                                   GetApp().GetRegSettings().m_CompilersSubdir);
         m_ProjectDir = 
             CDirEntry::ConcatPath(m_ProjectDir, 
+                                  GetApp().GetBuildType().GetTypeStr());
+        m_ProjectDir = 
+            CDirEntry::ConcatPath(m_ProjectDir, 
                                   CDirEntry::CreateRelativePath
                                       (GetApp().GetProjectTreeInfo().m_Src, 
                                       m_SourcesBaseDir));
@@ -368,6 +371,33 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
 
     //m_OutputDirectory;
     // /compilers/msvc7_prj/
+    string output_dir_abs = GetApp().GetProjectTreeInfo().m_Compilers;
+    output_dir_abs = 
+            CDirEntry::ConcatPath(output_dir_abs, 
+                                  GetApp().GetRegSettings().m_CompilersSubdir);
+    output_dir_abs = 
+            CDirEntry::ConcatPath(output_dir_abs, 
+                                  GetApp().GetBuildType().GetTypeStr());
+    if (m_Type == eLib)
+        output_dir_abs = CDirEntry::ConcatPath(output_dir_abs, "lib");
+    else if (m_Type == eExe)
+        output_dir_abs = CDirEntry::ConcatPath(output_dir_abs, "bin");
+    else if (m_Type == eDll) // same dir as exe 
+        output_dir_abs = CDirEntry::ConcatPath(output_dir_abs, "bin"); 
+    else {
+        //TODO - handle Dll(s)
+   	    NCBI_THROW(CProjBulderAppException, 
+                   eProjectType, NStr::IntToString(m_Type));
+    }
+
+    output_dir_abs = 
+        CDirEntry::ConcatPath(output_dir_abs, config.m_Name);
+    m_OutputDirectory = 
+        CDirEntry::CreateRelativePath(prj_context.ProjectDir(), 
+                                      output_dir_abs);
+
+#if 0
+
     const string project_tag(string(1,CDirEntry::GetPathSeparator()) + 
                              "compilers" +
                              CDirEntry::GetPathSeparator() + 
@@ -401,6 +431,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
         CDirEntry::ConcatPath(output_dir_prefix, config.m_Name);
     m_OutputDirectory = 
         CDirEntry::CreateRelativePath(project_dir, output_dir_abs);
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -758,6 +789,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/03/16 16:37:33  gorelenk
+ * Changed msvc7_prj subdirs structure: Separated "static" and "dll" branches.
+ *
  * Revision 1.21  2004/03/10 21:28:42  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext constructor.
  *
