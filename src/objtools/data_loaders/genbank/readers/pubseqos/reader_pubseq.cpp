@@ -44,6 +44,7 @@
 #include <objects/seq/Seq_annot.hpp>
 
 #include <corelib/ncbicntr.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 #include <serial/objostrasn.hpp>
 
@@ -449,11 +450,46 @@ size_t CResultBtSrcRdr::Read(char* buffer, size_t bufferLength)
 
 
 END_SCOPE(objects)
+
+
+/// Class factory for Pubseq reader
+///
+/// @internal
+///
+class CPubseqReaderCF : 
+    public CSimpleClassFactoryImpl<objects::CReader, objects::CPubseqReader>
+{
+public:
+    typedef CSimpleClassFactoryImpl<objects::CReader, 
+                                    objects::CPubseqReader> TParent;
+public:
+
+    CPubseqReaderCF() : TParent("pubseq_reader", 0)
+    {
+    }
+
+    ~CPubseqReaderCF()
+    {
+    }
+};
+
+void NCBI_PubseqReaderEntryPoint(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CPubseqReaderCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
 * $Log$
+* Revision 1.42  2003/12/02 16:18:17  kuznets
+* Added plugin manager support for CReader interface and implementaions
+* (id1 reader, pubseq reader)
+*
 * Revision 1.41  2003/11/26 17:55:59  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

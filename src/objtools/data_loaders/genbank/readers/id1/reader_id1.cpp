@@ -38,6 +38,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -705,11 +706,44 @@ void CId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
 
 END_SCOPE(objects)
+
+/// Class factory for ID1 reader
+///
+/// @internal
+///
+class CId1ReaderCF : 
+    public CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader>
+{
+public:
+    typedef 
+      CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader> TParent;
+public:
+    CId1ReaderCF() : TParent("id1_reader", 0)
+    {
+    }
+    ~CId1ReaderCF()
+    {
+    }
+};
+
+void NCBI_Id1ReaderEntryPoint(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CId1ReaderCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * $Log$
+ * Revision 1.64  2003/12/02 16:18:16  kuznets
+ * Added plugin manager support for CReader interface and implementaions
+ * (id1 reader, pubseq reader)
+ *
  * Revision 1.63  2003/11/26 17:55:59  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.

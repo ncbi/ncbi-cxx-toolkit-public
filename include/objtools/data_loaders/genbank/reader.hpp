@@ -32,6 +32,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -219,11 +220,19 @@ public:
 };
 
 
+
 END_SCOPE(objects)
+
+NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "omreader", 1, 1, 0);
+
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.34  2003/12/02 16:17:42  kuznets
+* Added plugin manager support for CReader interface and implementaions
+* (id1 reader, pubseq reader)
+*
 * Revision 1.33  2003/11/26 17:55:53  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

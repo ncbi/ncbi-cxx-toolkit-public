@@ -124,13 +124,27 @@ private:
 };
 
 
-
 END_SCOPE(objects)
+
+
+extern "C" 
+{
+
+void NCBI_XOBJMGR_EXPORT NCBI_Id1ReaderEntryPoint(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method);
+
+} // extern C
+
 END_NCBI_SCOPE
 
 
 /*
 * $Log$
+* Revision 1.27  2003/12/02 16:17:42  kuznets
+* Added plugin manager support for CReader interface and implementaions
+* (id1 reader, pubseq reader)
+*
 * Revision 1.26  2003/11/26 17:55:53  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.
