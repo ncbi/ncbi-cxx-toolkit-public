@@ -360,7 +360,7 @@ char* SERV_Print(SERV_ITER iter)
             buffer[buflen++] = revision[i++];
     }
     strcpy(&buffer[buflen], "\r\n");
-    assert(strlen(buffer) == buflen + 2 && buflen + 2 < sizeof(buffer));
+    assert(strlen(buffer) == buflen + 2  &&  buflen + 2 < sizeof(buffer));
     if (!BUF_Write(&buf, buffer, buflen + 2)) {
         BUF_Destroy(buf);
         return 0;
@@ -383,7 +383,7 @@ char* SERV_Print(SERV_ITER iter)
         }
         if (buffer[buflen - 1] != ':') {
             strcpy(&buffer[buflen], "\r\n");
-            assert(strlen(buffer) == buflen + 2 && buflen + 2 < sizeof(buffer));
+            assert(strlen(buffer) == buflen+2  &&  buflen+2 < sizeof(buffer));
             if (!BUF_Write(&buf, buffer, buflen + 2)) {
                 BUF_Destroy(buf);
                 return 0;
@@ -429,6 +429,9 @@ char* SERV_Print(SERV_ITER iter)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2002/11/12 05:53:01  lavr
+ * Fit a long line within 80 chars
+ *
  * Revision 6.41  2002/10/28 20:16:00  lavr
  * Take advantage of host info API
  *
