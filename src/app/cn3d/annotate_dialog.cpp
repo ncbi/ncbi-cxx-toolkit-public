@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
 * Revision 1.5  2001/09/20 19:31:30  thiessen
 * fixes for SGI and wxWin 2.3.2
 *
@@ -70,10 +73,6 @@
 #include <wx/listctrl.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
-
-#if wxVERSION_NUMBER >= 2302
-#define wxPanel wxWindow
-#endif
 
 // Declare window functions
 
@@ -136,7 +135,8 @@ AnnotateDialog::AnnotateDialog(wxWindow *parent, StyleManager *manager, const St
     GlobalMessenger()->GetHighlightedResiduesWithStructure(&highlightedResidues);
 
     // construct the panel
-    wxSizer *topSizer = SetupAnnotationControlDialog(this, false);
+    wxPanel *panel = new wxPanel(this, -1);
+    wxSizer *topSizer = SetupAnnotationControlDialog(panel, false);
 
     // fill in list boxes with available and displayed styles
     ResetListBoxes();
@@ -457,7 +457,8 @@ AnnotationEditorDialog::AnnotationEditorDialog(wxWindow *parent,
     styleSettings(settings), structureSet(set)
 {
     // construct the panel
-    wxSizer *topSizer = SetupAnnotationEditorDialog(this, false);
+    wxPanel *panel = new wxPanel(this, -1);
+    wxSizer *topSizer = SetupAnnotationEditorDialog(panel, false);
 
     // set initial state
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_T_NAME, wxTextCtrl)

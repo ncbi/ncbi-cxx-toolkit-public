@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
 * Revision 1.10  2001/09/20 19:31:30  thiessen
 * fixes for SGI and wxWin 2.3.2
 *
@@ -88,10 +91,6 @@
 #include <wx/listctrl.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
-
-#if wxVERSION_NUMBER >= 2302
-#define wxPanel wxWindow
-#endif
 
 // Declare window functions
 
@@ -200,7 +199,8 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
     SetupStyleStrings();
 
     // construct the panel
-    wxSizer *topSizer = LayoutNotebook(this, false);
+    wxPanel *panel = new wxPanel(this, -1);
+    wxSizer *topSizer = LayoutNotebook(panel, false);
 
     // hook in the stuff that the wxDesigner-based code (LayoutPage2()) created
     fpSpaceFill = gfpSpaceFill;

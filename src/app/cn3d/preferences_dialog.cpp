@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
 * Revision 1.3  2001/09/20 19:31:30  thiessen
 * fixes for SGI and wxWin 2.3.2
 *
@@ -69,10 +72,6 @@
 #include <wx/listctrl.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
-
-#if wxVERSION_NUMBER >= 2302
-#define wxPanel wxWindow
-#endif
 
 // Declare window functions
 
@@ -135,7 +134,8 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
         wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
     // construct the panel
-    wxSizer *topSizer = SetupPreferencesNotebook(this, false);
+    wxPanel *panel = new wxPanel(this, -1);
+    wxSizer *topSizer = SetupPreferencesNotebook(panel, false);
 
     // get IntegerSpinCtrl pointers
     iWormSegments = giWormSegments;

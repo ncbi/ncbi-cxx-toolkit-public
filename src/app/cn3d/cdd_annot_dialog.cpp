@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
 * Revision 1.5  2001/09/20 19:31:30  thiessen
 * fixes for SGI and wxWin 2.3.2
 *
@@ -90,10 +93,6 @@
 #include <wx/listctrl.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
-
-#if wxVERSION_NUMBER >= 2302
-#define wxPanel wxWindow
-#endif
 
 // Declare window functions
 
@@ -207,7 +206,8 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, StructureSet *set) :
     }
 
     // construct the panel
-    wxSizer *topSizer = SetupCDDAnnotDialog(this, false);
+    wxPanel *panel = new wxPanel(this, -1);
+    wxSizer *topSizer = SetupCDDAnnotDialog(panel, false);
 
     // call sizer stuff
     topSizer->Fit(this);
@@ -724,7 +724,8 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFea
     changed(false)
 {
     // construct the panel
-    wxSizer *topSizer = SetupEvidenceDialog(this, false);
+    wxPanel *panel = new wxPanel(this, -1);
+    wxSizer *topSizer = SetupEvidenceDialog(panel, false);
 
     // call sizer stuff
     topSizer->Fit(this);

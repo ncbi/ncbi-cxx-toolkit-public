@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/09/24 13:29:55  thiessen
+* fix wxPanel issues
+*
 * Revision 1.6  2001/08/06 20:22:01  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -304,16 +307,17 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
             wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
     // code modified (heavily) from wxDesigner C++ output of fp_dialog.wdr
+    wxPanel *panel = new wxPanel(this, -1);
     wxBoxSizer *item0 = new wxBoxSizer(wxVERTICAL);
-    wxStaticText *item1 = new wxStaticText(this, -1, message, wxDefaultPosition, wxDefaultSize, 0);
+    wxStaticText *item1 = new wxStaticText(panel, -1, message, wxDefaultPosition, wxDefaultSize, 0);
     item0->Add(item1, 0, wxALIGN_CENTRE|wxALL, 5);
     wxFlexGridSizer *grid = new wxFlexGridSizer(1, 0, 0, 0);
     grid->AddGrowableCol(1);
 
-    buttonOK = new wxButton(this, -1, "OK", wxDefaultPosition, wxDefaultSize, 0);
+    buttonOK = new wxButton(panel, -1, "OK", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(buttonOK, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxRIGHT, 5);
 
-    fpSpinCtrl = new FloatingPointSpinCtrl(this,
+    fpSpinCtrl = new FloatingPointSpinCtrl(panel,
         min, max, increment, initial,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
@@ -321,8 +325,8 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     grid->Add(fpSpinCtrl->GetSpinButton(), 0, wxALIGN_CENTRE, 5);
 
     item0->Add(grid, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    this->SetAutoLayout(true);
-    this->SetSizer(item0);
+    panel->SetAutoLayout(true);
+    panel->SetSizer(item0);
     item0->Fit(this);
     item0->SetSizeHints(this);
 }
