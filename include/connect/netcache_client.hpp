@@ -38,8 +38,10 @@
 ///
 
 #include <connect/connect_export.h>
+#include <connect/ncbi_types.h>
 #include <corelib/ncbistd.hpp>
 #include <util/reader_writer.hpp>
+
 
 
 BEGIN_NCBI_SCOPE
@@ -68,14 +70,24 @@ public:
 
     /// Construction.
     /// @param sock
-    ///    Connected socket to the primary server. CNetCacheCleint does not take 
-    ///    socket ownership.
+    ///    Connected socket to the primary server. 
+    ///    CNetCacheCleint does not take socket ownership and does not change 
+    ///    communication parameters (like timeout)
     /// @param client_name
     ///    Identification name of the connecting client
     CNetCacheClient(CSocket*      sock,
                     const string& client_name = kEmptyStr);
 
     ~CNetCacheClient();
+
+
+    /// Set communication timeout default for all new connections
+    static
+    void SetDefaultCommunicationTimeout(const STimeout& to);
+
+    /// Set communication timeout (ReadWrite)
+    void SetCommunicationTimeout(const STimeout& to);
+
 
     /// Put BLOB to server
     ///
@@ -171,6 +183,7 @@ private:
     unsigned short m_Port;
     EOwnership     m_OwnSocket;
     string         m_ClientName;
+    STimeout       m_Timeout;
 };
 
 
@@ -236,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/16 17:32:45  kuznets
+ * + methods to change comm.timeouts
+ *
  * Revision 1.14  2004/12/15 19:04:40  kuznets
  * Code cleanup
  *
