@@ -185,21 +185,26 @@ public:
     // and dir is provided, will return the first seg in according to dir
     TNumseg       GetRawSeg              (TNumrow row, TSeqPos seq_pos,
                                           ESearchDirection dir = eNone,
-                                          bool try_reverse_dir = true) const;
+                                          bool try_reverse_dir = true)  const;
     // if seq_pos is outside the seq range or within an unaligned region or
     // within an insert dir/try_reverse_dir will be used
     TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos,
                                           ESearchDirection dir = eNone,
-                                          bool try_reverse_dir = true) const;
+                                          bool try_reverse_dir = true)  const;
     TSignedSeqPos GetSeqPosFromSeqPos    (TNumrow for_row,
                                           TNumrow row, TSeqPos seq_pos) const;
     // if seq pos is a gap, will use dir/try_reverse_dir
     TSignedSeqPos GetSeqPosFromAlnPos    (TNumrow for_row,
                                           TSeqPos aln_pos,
                                           ESearchDirection dir = eNone,
-                                          bool try_reverse_dir = true) const;
+                                          bool try_reverse_dir = true)  const;
     
- 
+    void          GetResidueIndexMap     (TNumrow row0,
+                                          TNumrow row1,
+                                          TRange aln_rng,
+                                          vector<TSignedSeqPos>& result,
+                                          TRange& rng0,
+                                          TRange& rng1)      const;
 
     // AlnChunks -- declared here for access to typedefs
     class CAlnChunk;
@@ -662,6 +667,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2004/03/03 19:39:43  todorov
+* +GetResidueIndexMap
+*
 * Revision 1.33  2004/01/21 20:59:42  todorov
 * fDoNotTruncate -> fDoNotTruncateSegs; +comments
 *

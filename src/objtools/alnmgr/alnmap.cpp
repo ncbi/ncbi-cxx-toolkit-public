@@ -555,6 +555,218 @@ const CAlnMap::TNumseg& CAlnMap::x_GetSeqRightSeg(TNumrow row) const
 }
     
 
+void CAlnMap::GetResidueIndexMap(TNumrow row0,
+                                 TNumrow row1,
+                                 TRange aln_rng,
+                                 vector<TSignedSeqPos>& result,
+                                 TRange& rng0,
+                                 TRange& rng1) const
+{
+    _ASSERT( ! IsSetAnchor() );
+    TNumseg l_seg, r_seg;
+    TSeqPos aln_start = aln_rng.GetFrom();
+    TSeqPos aln_stop = aln_rng.GetTo();
+    int l_idx0 = row0;
+    int l_idx1 = row1;
+    TSeqPos aln_pos = 0, next_aln_pos, l_len, r_len, l_delta, r_delta;
+    bool plus0 = IsPositiveStrand(row0);
+    bool plus1 = IsPositiveStrand(row1);
+    TSeqPos l_pos0, r_pos0, l_pos1, r_pos1;
+
+    l_seg = 0;
+    while (l_seg < m_NumSegs) {
+        l_len = m_Lens[l_seg];
+        next_aln_pos = aln_pos + l_len;
+        if (m_Starts[l_idx0] >= 0  &&  m_Starts[l_idx1] >= 0  &&
+            aln_start >= aln_pos  &&  aln_start < next_aln_pos) {
+            // found the left seg
+            break;
+        }
+        aln_pos = next_aln_pos;
+        l_idx0 += m_NumRows; l_idx1 += m_NumRows;
+        l_seg++;
+    }
+    _ASSERT(l_seg < m_NumSegs);
+
+    // determine left seq positions
+    l_pos0 = m_Starts[l_idx0];
+    l_pos1 = m_Starts[l_idx1];
+    l_delta = aln_start - aln_pos;
+    l_len -= l_delta;
+    _ASSERT(l_delta >= 0);
+    if (plus0) {
+        l_pos0 += l_delta;
+    } else {
+        l_pos0 += l_len - 1;
+    }
+    if (plus1) {
+        l_pos1 += l_delta;
+    } else {
+        l_pos1 += l_len - 1;
+    }
+        
+    r_seg = m_NumSegs - 1;
+    int r_idx0 = r_seg * m_NumRows + row0;
+    int r_idx1 = r_seg * m_NumRows + row1;
+    aln_pos = GetAlnStop();
+    if (aln_stop > aln_pos) {
+        aln_stop = aln_pos;
+    }
+    while (r_seg >= 0) {
+        r_len = m_Lens[r_seg];
+        next_aln_pos = aln_pos - r_len;
+        if (m_Starts[l_idx0] >= 0  &&  m_Starts[l_idx1] >= 0  &&
+            aln_stop > next_aln_pos  &&  aln_stop <= aln_pos) {
+            // found the right seg
+            break;
+        }
+        aln_pos = next_aln_pos;
+        r_idx0 -= m_NumRows; r_idx1 -= m_NumRows;
+        r_seg--;
+    }
+    
+    // determine right seq positions
+    r_pos0 = m_Starts[r_idx0];
+    r_pos1 = m_Starts[r_idx1];
+    r_delta = aln_pos - aln_stop;
+    r_len -= r_delta;
+    _ASSERT(r_delta >= 0);
+    if (plus0) {
+        r_pos0 += r_len - 1;
+    } else {
+        r_pos0 += r_delta;
+    }
+    if (plus1) {
+        r_pos1 += r_len - 1;
+    } else {
+        r_pos1 += r_delta;
+    }
+        
+    // We now know the size of the resulting vector
+    TSeqPos size = (plus0 ? r_pos0 - l_pos0 : l_pos0 - r_pos0) + 1;
+    result.resize(size, -1);
+
+    // Initialize index positions (from left to right)
+    TSeqPos pos0 = plus0 ? 0 : l_pos0 - r_pos0;
+    TSeqPos pos1 = plus1 ? 0 : l_pos1 - r_pos1;
+
+    // Initialize 'next' positions
+    // -- to determine if there are unaligned pieces
+    TSeqPos next_l_pos0 = plus0 ? l_pos0 + l_len : l_pos0 - l_len;
+    TSeqPos next_l_pos1 = plus1 ? l_pos1 + l_len : l_pos1 - l_len;
+
+    l_idx0 = row0;
+    l_idx1 = row1;
+    TNumseg seg = l_seg;
+    TSeqPos delta;
+    while (true) {
+        if (m_Starts[l_idx0] >= 0) { // if row0 is not gapped
+
+            if (seg > l_seg) {
+                // check for unaligned region / validate
+                if (plus0) {
+                    delta = m_Starts[l_idx0] - next_l_pos0;
+                    next_l_pos0 = m_Starts[l_idx0] + l_len;
+                } else {
+                    delta = next_l_pos0 - m_Starts[l_idx0] - l_len + 1;
+                    next_l_pos0 = m_Starts[l_idx0] - 1;
+                }
+                if (delta > 0) {
+                    // unaligned region
+                    if (plus0) {
+                        pos0 += delta;
+                    } else {
+                        pos0 -= delta;
+                    }
+                } else if (delta < 0) {
+                    // invalid segment
+                    string errstr = string("CAlnMap::GetResidueIndexMap():")
+                        + " Starts are not consistent!"
+                        + " Row=" + NStr::IntToString(row0) +
+                        " Seg=" + NStr::IntToString(seg);
+                    NCBI_THROW(CAlnException, eInvalidDenseg, errstr);
+                }
+            }
+
+            if (m_Starts[l_idx1] >= 0) { // if row1 is not gapped
+                
+                if (seg > l_seg) {
+                    // check for unaligned region / validate
+                    if (plus1) {
+                        delta = m_Starts[l_idx1] - next_l_pos1;
+                        next_l_pos1 = m_Starts[l_idx1] + l_len;
+                    } else {
+                        delta = next_l_pos1 - m_Starts[l_idx1] - l_len + 1;
+                        next_l_pos1 = m_Starts[l_idx1] - 1;
+                    }
+                    if (delta > 0) {
+                        // unaligned region
+                        if (plus1) {
+                            pos1 += delta;
+                        } else {
+                            pos1 -= delta;
+                        }
+                    } else if (delta < 0) {
+                        // invalid segment
+                        string errstr = string("CAlnMap::GetResidueIndexMap():")
+                            + " Starts are not consistent!"
+                            + " Row=" + NStr::IntToString(row1) +
+                            " Seg=" + NStr::IntToString(seg);
+                        NCBI_THROW(CAlnException, eInvalidDenseg, errstr);
+                    }
+                }
+
+                if (plus0) {
+                    if (plus1) { // if row1 on +
+                        while (l_len--) {
+                            result[pos0++] = pos1++;
+                        }
+                    } else { // if row1 on -
+                        while (l_len--) {
+                            result[pos0++] = pos1--;
+                        }
+                    }
+                } else { // if row0 on -
+                    if (plus1) { // if row1 on +
+                        while (l_len--) {
+                            result[pos0--] = pos1++;
+                        }
+                    } else { // if row1 on -
+                        while (l_len--) {
+                            result[pos0--] = pos1--;
+                        }
+                    }
+                }                    
+            } else {
+                if (plus0) {
+                    pos0 += l_len;
+                } else {
+                    pos0 -= l_len;
+                }
+            }
+        }
+
+        // iterate to next segment
+        seg++;
+        l_idx0 += m_NumRows;
+        l_idx1 += m_NumRows;
+        if (seg < r_seg) {
+            l_len = m_Lens[seg];
+        } else if (seg == r_seg) {
+            l_len = r_len;
+        } else {
+            break;
+        }
+    }
+
+    // finally, set the ranges for the two sequences
+    rng0.SetFrom(plus0 ? l_pos0 : r_pos0);
+    rng0.SetTo(plus0 ? r_pos0 : l_pos0);
+    rng1.SetFrom(plus1 ? l_pos1 : r_pos1);
+    rng1.SetTo(plus1 ? r_pos1 : l_pos1);
+}
+
+
 TSignedSeqPos CAlnMap::GetSeqAlnStart(TNumrow row) const
 {
     if (IsSetAnchor()) {
@@ -901,6 +1113,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     return chunk;
 }
 
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -908,6 +1121,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/03/03 19:39:22  todorov
+* +GetResidueIndexMap
+*
 * Revision 1.46  2004/01/21 21:15:59  ucko
 * Fix typos in last revision.
 *

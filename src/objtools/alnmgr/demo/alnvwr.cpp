@@ -86,6 +86,7 @@ class CAlnMgrTestApp : public CNcbiApplication
     void             View6();
     void             View7();
     void             View8(int aln_pos);
+    void             View9(int row0, int row1);
     void             GetSeqPosFromAlnPosDemo();
 private:
     CRef<CObjectManager> m_ObjMgr;
@@ -135,7 +136,9 @@ void CAlnMgrTestApp::Init(void)
          "6. Print chunks\n"
          "7. Alternative ways to get sequence\n"
          "8. Demonstrate obtaining column vector in two alternative ways.\n"
-         "   (Use numeric param n to choose alignment position)\n",
+         "   (Use numeric param n to choose alignment position)\n"
+         "9. Print relative residue index mapping for two rows.\n"
+         "   (Use row0 and row1 params to choose the rows)\n",
          CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
@@ -147,6 +150,16 @@ void CAlnMgrTestApp::Init(void)
         ("n", "Number",
          "Generic Numeric Parameter, used by some viewers",
          CArgDescriptions::eInteger, "0");
+
+    arg_desc->AddDefaultKey
+        ("row0", "Row0",
+         "Generic Row Parameter, used by some viewers",
+         CArgDescriptions::eInteger, "0");
+
+    arg_desc->AddDefaultKey
+        ("row1", "Row1",
+         "Generic Row Parameter, used by some viewers",
+         CArgDescriptions::eInteger, "1");
 
     arg_desc->AddDefaultKey
         ("cf", "GetChunkFlags",
@@ -572,6 +585,23 @@ void CAlnMgrTestApp::View8(int aln_pos)
 }
 
 
+void CAlnMgrTestApp::View9(int row0, int row1)
+{
+    vector<TSignedSeqPos> result;
+    CAlnMap::TRange aln_rng(0, m_AV->GetAlnStop()), rng0, rng1;
+
+    m_AV->GetResidueIndexMap(row0, row1, aln_rng, result, rng0, rng1);
+
+    size_t size = result.size();
+    cout << "(" << rng0.GetFrom() << "-" << rng0.GetTo() << ")" << endl;
+    cout << "(" << rng1.GetFrom() << "-" << rng1.GetTo() << ")" << endl;
+    for (size_t i = 0; i < size; i++) {
+        cout << result[i] << " ";
+    }
+    cout << endl;
+}
+
+
 //////
 // GetSeqPosFromAlnPos
 void CAlnMgrTestApp::GetSeqPosFromAlnPosDemo()
@@ -603,6 +633,8 @@ int CAlnMgrTestApp::Run(void)
 
     int screen_width = args["w"].AsInteger();
     int number       = args["n"].AsInteger();
+    int row0         = args["row0"].AsInteger();
+    int row1         = args["row1"].AsInteger();
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
     if (args["v"]) {
@@ -615,6 +647,7 @@ int CAlnMgrTestApp::Run(void)
         case 6: View6(); break;
         case 7: View7(); break;
         case 8: View8(number); break;
+        case 9: View9(row0, row1); break;
         }
     }
     return 0;
@@ -635,6 +668,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/03/03 19:41:59  todorov
+* +GetResidueIndexMap
+*
 * Revision 1.20  2004/02/12 22:51:27  todorov
 * +optinal seq-entry input file to read a local seq
 *
