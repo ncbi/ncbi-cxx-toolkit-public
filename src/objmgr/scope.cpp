@@ -471,6 +471,18 @@ CScope_Impl::x_GetSeq_id_Info(const CSeq_id_Handle& id)
 }
 
 
+inline
+CScope_Impl::TSeq_idMapValue&
+CScope_Impl::x_GetSeq_id_Info(const CBioseq_Handle& bh)
+{
+    TSeq_idMapValue* info = bh.x_GetBioseq_ScopeInfo().m_ScopeInfo;
+    if ( info->first != bh.GetSeq_id_Handle() ) {
+        info = &x_GetSeq_id_Info(bh.GetSeq_id_Handle());
+    }
+    return *info;
+}
+
+
 CScope_Impl::TSeq_idMapValue*
 CScope_Impl::x_FindSeq_id_Info(const CSeq_id_Handle& id)
 {
@@ -840,7 +852,7 @@ CConstRef<CScope_Impl::TAnnotRefSet>
 CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    TSeq_idMapValue& info = *bh.m_Bioseq_Info->m_ScopeInfo;
+    TSeq_idMapValue& info = x_GetSeq_id_Info(bh);
     _ASSERT(info.second.m_Bioseq_Info);
     CRef<CBioseq_ScopeInfo> binfo = info.second.m_Bioseq_Info;
     {{
@@ -1034,6 +1046,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2003/11/12 15:49:39  vasilche
+* Added loading annotations on non gi Seq-id.
+*
 * Revision 1.88  2003/10/23 13:47:27  vasilche
 * Check CSeq_id_Handle for null in CScope::GetBioseqHandle().
 *

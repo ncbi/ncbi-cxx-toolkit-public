@@ -224,6 +224,7 @@ private:
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Info& tse);
 
+public:
     // GetTSE_Info corresponding to the TSE
     TTSE_Lock GetTSEInfo(const CSeq_entry* tse);
 
@@ -244,6 +245,7 @@ private:
     CConstRef<CSeq_annot_Info> x_GetSeq_annot_Info(const CSeq_annot& annot);
     CRef<CSeq_annot_Info> x_GetSeq_annot_Info(CSeq_annot& annot);
 
+private:
     // Get bioseq handles for sequences from the given TSE using the filter
     typedef vector<CBioseq_Handle> TBioseq_HandleSet;
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
@@ -263,6 +265,7 @@ private:
                          const CSeqMatch_Info& info2) const;
 
     TSeq_idMapValue& x_GetSeq_id_Info(const CSeq_id_Handle& id);
+    TSeq_idMapValue& x_GetSeq_id_Info(const CBioseq_Handle& bh);
     TSeq_idMapValue* x_FindSeq_id_Info(const CSeq_id_Handle& id);
 
     CRef<CBioseq_ScopeInfo> x_InitBioseq_Info(TSeq_idMapValue& info);
@@ -368,6 +371,8 @@ public:
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
+
+    CScope_Impl& GetImpl(void);
 
 private:
     // to prevent copying
@@ -576,12 +581,22 @@ void CScope::ResetHistory(void)
 }
 
 
+inline
+CScope_Impl& CScope::GetImpl(void)
+{
+    return *m_Impl;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/11/12 15:49:48  vasilche
+* Added loading annotations on non gi Seq-id.
+*
 * Revision 1.62  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.
