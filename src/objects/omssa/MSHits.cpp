@@ -60,7 +60,7 @@ CMSHits::~CMSHits(void)
 ///  
 void CMSHits::MakeModString(string& StringOut)
 {
-    StringOut.clear();
+    StringOut.erase();
     if(CanGetMods()) {
         ITERATE(TMods, i, GetMods()) {
             if(!StringOut.empty()) StringOut += ",";
@@ -77,7 +77,7 @@ void CMSHits::MakeModString(string& StringOut)
 ///  
 void CMSHits::MakePepString(string& StringOut)
 {    
-    StringOut.clear();
+    StringOut.erase();
     if(CanGetPepstring()) {
         StringOut = GetPepstring();
         NStr::ToUpper(StringOut);
@@ -98,6 +98,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/12/08 02:00:08  ucko
+* Use string::erase() rather than string::clear(), which is not 100%
+* portable.  (GCC 2.95.x continues not to support it....)
+*
 * Revision 1.1  2004/12/07 23:38:22  lewisg
 * add modification handling code
 *
