@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/29 17:41:44  lavr
+ * Pretty printed; HTTP_CreateConnectorEx constructor interface changed
+ *
  * Revision 6.3  2000/10/03 21:20:34  lavr
  * Request method changed from POST to {GET|POST}
  *
@@ -109,15 +112,15 @@ extern "C" {
  */
 
 typedef enum {
-    fHCC_AutoReconnect    = 0x1,  /* see (*) above */
+    fHCC_AutoReconnect    = 0x1,  /* see (*) above                           */
     fHCC_SureFlush        = 0x2,  /* always send HTTP request on CLOSE/RECONN*/
     fHCC_KeepHeader       = 0x4,  /* dont strip HTTP header from CGI response*/
-    fHCC_UrlDecodeInput   = 0x8,  /* strip HTTP header, URL-decode content */
-    fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data */
-    fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput */
-    fHCC_UrlEncodeArgs    = 0x20  /* URL-encode "info->args" */
+    fHCC_UrlDecodeInput   = 0x8,  /* strip HTTP header, URL-decode content   */
+    fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data              */
+    fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
+    fHCC_UrlEncodeArgs    = 0x20  /* URL-encode "info->args"                 */
 } EHCC_Flags;
-typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags" */
+typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
 
 extern CONNECTOR HTTP_CreateConnector
 (const SConnNetInfo* info,
@@ -129,28 +132,36 @@ extern CONNECTOR HTTP_CreateConnector
 /* An extended version of URL_CreateConnector() to change the URL of the
  * server CGI "on-the-fly":
  *  -- "adjust_info()" will be invoked each time before starting a
- *      new "HTTP micro-session"making a hit;  it will be passed "info"
+ *      new "HTTP micro-session" making a hit;  it will be passed "info"
  *      stored in the connector, and the # of previous unsuccessful
  *      attempts to start the current HTTP micro-session.
  *  -- "adjust_cleanup()" will be called when the connector is destroyed.
- * NOTE:  URL_CreateConnector(...) <==> URL_CreateConnectorEx(..., 0,0,0)
  */
 
-typedef void (*FHttpAdjustInfo)
-         (SConnNetInfo* info,
-          void*         adjust_data,
-          unsigned int  n_failed);
+typedef int/*bool*/ (*FHttpParseHTTPHdr)
+(const char* http_header,
+ void*       adjust_data,
+ int/*bool*/ server_error
+ );
 
-typedef void (*FHttpAdjustCleanup)(void* adjust_data);
+typedef int/*bool*/ (*FHttpAdjustInfo)
+(SConnNetInfo* info,
+ void*         adjust_data,
+ unsigned int  n_failed
+ );
+
+typedef void (*FHttpAdjustCleanup)
+(void* adjust_data
+ );
 
 extern CONNECTOR HTTP_CreateConnectorEx
 (const SConnNetInfo* info,
- const char*         user_header,
  THCC_Flags          flags,
- FHttpAdjustInfo     adjust_info,    /* can be NULL */
+ FHttpParseHTTPHdr   parse_http_hdr, /* can be NULL, then no addtl. parsing  */
+ FHttpAdjustInfo     adjust_info,    /* can be NULL, then no adjustments     */
  void*               adjust_data,    /* for "adjust_info" & "adjust_cleanup" */
- FHttpAdjustCleanup  adjust_cleanup  /* can be NULL */
- );
+ FHttpAdjustCleanup  adjust_cleanup  /* can be NULL                          */
+);
 
 
 #ifdef __cplusplus
