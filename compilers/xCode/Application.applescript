@@ -339,6 +339,12 @@ on CreateProject()
 	if ver ³ "1.5" then
 		if content of button "buildProj" of window "Main" is true then -- build the new project
 			x_AddtoLog("Building")
+			tell application "Xcode"
+				activate
+				tell application "System Events" -- it's a little hack, but it's work
+					keystroke "b" using command down
+				end tell
+			end tell
 			--tell application "Xcode" to build project "NCBI" -- not yet implemented in xCode 1.2
 		end if
 	else
@@ -530,6 +536,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/21 13:23:22  lebedev
+ * Option to automatically build generated project added
+ *
  * Revision 1.11  2004/10/26 17:52:57  lebedev
  * Check for external PCRE library removed
  *
