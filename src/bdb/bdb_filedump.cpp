@@ -129,13 +129,15 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
             unsigned size = blob_db->LobSize();
             out << m_ColumnSeparator;
             if (size) {
+                
+                auto_ptr<CBDB_BLobStream> blob_stream( 
+                        blob_db->CreateStream());
+                
                 if ((m_BlobFormat & eBlobAll) == 0) { // BLOB summary
                     out << "[LOB, size= " 
                         << size 
                         << " {";
-
-                    auto_ptr<CBDB_BLobStream> blob_stream( 
-                            blob_db->CreateStream());
+                    
                     char buf[256];
                     size_t bytes_read;
                     blob_stream->Read(buf, 128, &bytes_read);
@@ -144,13 +146,38 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                           out << setfill('0') << hex << setw(2) 
                               << (int)buf[i] << " ";
                         } else {
-                           out << (char)buf[0];
+                           out << (char)buf[i];
                         }
                     }
                     if (bytes_read < size) {
                         out << " ...";
                     }
                     out << "}]";
+                } else {  // All BLOB
+                    char buf[2048];
+                    
+                    out << "BLOB. size=" << size << "\n";
+                    
+                    size_t bytes_read;
+                    do {
+                        blob_stream->Read(buf, 2048, &bytes_read);
+                        if (m_BlobFormat & eBlobAsHex) {
+                            for (unsigned int i = 0; i < bytes_read; ++i) {
+                               out << setfill('0') << hex << setw(2) 
+                                   << (int)buf[i] << " ";
+                               if (i > 0 && (i % 79 == 0)) {
+                                   out << "\n";
+                               }
+                            }
+                        } else { // BLOB as text
+                            for (unsigned int i = 0; i < bytes_read; ++i) {
+                                out << (char)buf[i];
+                            }
+                        }
+                    } while (bytes_read);
+
+                    out << "\n<<END BLOB>>\n";
+                    
                 }
                 
             } else {
@@ -252,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/23 14:10:27  kuznets
+ * Improved BLOB dumping
+ *
  * Revision 1.5  2004/06/22 18:27:46  kuznets
  * Implemented BLOB dumping(summary)
  *
