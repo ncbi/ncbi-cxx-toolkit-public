@@ -55,6 +55,7 @@ CCgiApplication* CCgiApplication::Instance(void)
 
 int CCgiApplication::Run(void)
 {
+    // Value to return from this method Run()
     int result;
 
     // Try to run as a Fast-CGI loop
@@ -167,6 +168,9 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 
 void CCgiApplication::Init(void)
 {
+    // Disable background reporting for CGI applications
+    CException::EnableBackgroundReporting(false);
+
     CParent::Init();
 
     m_Resource.reset(LoadResource());
@@ -718,6 +722,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.50  2004/03/10 23:35:13  vakatov
+* Disable background reporting for CGI applications
+*
 * Revision 1.49  2004/01/30 14:02:22  lavr
 * Insert a space between "page" and "back" in the exception report
 *
