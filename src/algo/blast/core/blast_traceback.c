@@ -126,8 +126,8 @@ s_BlastCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt,
  * @param sbp Scoring block containing matrix [in]
  * @return TRUE if region aroung starting offsets gives a positive score
 */
-static Boolean
-s_BlastCheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
+Boolean
+BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
                                     Uint1* subject, const BlastScoreBlk* sbp)
 {
    Int4 index1, score, start, end, width;
@@ -555,7 +555,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          if (!hit_options->phi_align && !kIsOutOfFrame && 
              (((hsp->query.gapped_start == 0 && 
                 hsp->subject.gapped_start == 0) ||
-               !s_BlastCheckStartForGappedAlignment(hsp, query, 
+               !BLAST_CheckStartForGappedAlignment(hsp, query, 
                    subject, sbp)))) {
             Int4 max_offset = 
                BlastGetStartForGappedAlignment(query, subject, sbp,
@@ -767,8 +767,9 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    if (program_number == eBlastTypeBlastp && 
          (ext_params->options->compositionBasedStats == TRUE || 
             ext_params->options->eTbackExt == eSmithWatermanTbck)) {
-         Kappa_RedoAlignmentCore(query, query_info, sbp, hsp_stream, seq_src, 
-           score_params, ext_params, hit_params, psi_options, results); 
+          Kappa_RedoAlignmentCore(program_number, query, query_info,
+              sbp, hsp_stream, seq_src, gen_code_string,
+              score_params, ext_params, hit_params, psi_options, results); 
    } else {
       Boolean perform_traceback = 
          (score_params->options->gapped_calculation && 

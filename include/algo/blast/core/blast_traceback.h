@@ -71,6 +71,23 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const BlastHitSavingParameters* hit_params,
    const Uint1* gen_code_string);
 
+
+/** Function to check that the highest scoring region in an HSP still gives a 
+ * positive score. This value was originally calcualted by 
+ * GetStartForGappedAlignment but it may have changed due to the introduction 
+ * of ambiguity characters. Such a change can lead to 'strange' results from 
+ * ALIGN. 
+ * @param hsp An HSP structure [in]
+ * @param query Query sequence buffer [in]
+ * @param subject Subject sequence buffer [in]
+ * @param sbp Scoring block containing matrix [in]
+ * @return TRUE if region aroung starting offsets gives a positive score
+*/
+Boolean
+BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
+                                    Uint1* subject, const BlastScoreBlk* sbp);
+
+
 /** Given the preliminary alignment results from a database search, redo 
  * the gapped alignment with traceback, if it has not yet been done.
  * @param program_number Type of the BLAST program [in]
