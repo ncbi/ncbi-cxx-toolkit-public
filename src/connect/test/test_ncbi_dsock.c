@@ -45,10 +45,10 @@
 #if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1)
    /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
    /* For OSF1 (and FreeBSD) see also: /usr/include/netinet/udp_var.h   */
-#  define MAX_DGRAM_SIZE 9*1024
+#  define MAX_DGRAM_SIZE (9*1024)
 #elif defined(NCBI_OS_IRIX)
    /* This has been found experimentally on IRIX64 6.5 04101931 IP25 */
-#  define MAX_DGRAM_SIZE 60*1024
+#  define MAX_DGRAM_SIZE (60*1024)
 #else
    /* This is the maximal datagram size defined by the UDP standard */
 #  define MAX_DGRAM_SIZE 65535
@@ -321,6 +321,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/03/25 15:07:21  lavr
+ * Protect macros' values by enclosing in parentheses
+ *
  * Revision 6.7  2003/03/25 15:04:13  lavr
  * Add IRIX-specific datagram size limit (60K)
  *
