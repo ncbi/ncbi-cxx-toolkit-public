@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/30 15:49:08  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.8  2000/10/04 17:40:45  thiessen
 * rearrange STL #includes
 *
@@ -81,11 +84,13 @@ class Object3D;
 class CoordSet : public StructureBase
 {
 public:
-    CoordSet(StructureBase *parent, 
+    CoordSet(StructureBase *parent,
                 const ncbi::objects::CBiostruc_model::TModel_coordinates& modelCoords);
 
-    // public data
+    // atom coordinates
     AtomSet *atomSet;
+
+    // map of moleculeID -> objects
     typedef LIST_TYPE < const Object3D * > Object3DList;
     typedef std::map < int, Object3DList > Object3DMap;
     Object3DMap objectMap;

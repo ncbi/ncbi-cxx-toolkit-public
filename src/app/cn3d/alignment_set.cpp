@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/30 15:49:35  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.8  2000/11/11 21:15:54  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -66,7 +69,7 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/structure_set.hpp"
-#include "cn3d/alignment_manager.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

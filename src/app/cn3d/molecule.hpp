@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/30 15:49:08  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.15  2000/11/13 18:05:58  thiessen
 * working structure re-superpositioning
 *
@@ -85,6 +88,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include <objects/mmdb1/Molecule_graph.hpp>
 #include <objects/mmdb1/Residue_graph.hpp>
@@ -135,6 +139,16 @@ public:
     BondList interResidueBonds;
     BondList virtualBonds;
 
+    // maps of sequence location ( = residueID - 1) to secondary structure and domains
+    enum eSecStruc {
+        eHelix,
+        eStrand,
+        eCoil
+    };
+    std::vector < eSecStruc > residueSecondaryStructures;
+    std::vector < int > residueDomains;
+    std::list < int > domainIDs;
+
     // corresponding sequence (if present)
     const Sequence *sequence;
 
@@ -149,7 +163,7 @@ public:
 
     int NResidues(void) const { return residues.size(); }
     const Residue::AtomInfo * GetAtomInfo(int rID, int aID) const
-    { 
+    {
         ResidueMap::const_iterator info=residues.find(rID);
         if (info != residues.end()) return (*info).second->GetAtomInfo(aID);
         ERR_POST(ncbi::Warning << "Molecule #" << id << ": can't find residue #" << rID);
@@ -164,7 +178,17 @@ public:
     // returns true if successful, false on failure
     bool GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const;
 
-private:
+    // secondary structure query methods
+    bool IsResidueInHelix(int residueID) const
+        { return (IsProtein() && residueSecondaryStructures[residueID - 1] == eHelix); }
+    bool IsResidueInStrand(int residueID) const
+        { return (IsProtein() && residueSecondaryStructures[residueID - 1] == eStrand); }
+    bool IsResidueInCoil(int residueID) const
+        { return (!IsProtein() || residueSecondaryStructures[residueID - 1] == eCoil); }
+
+    // domain query
+    int ResidueDomainID(int residueID) const
+        { return residueDomains[residueID - 1]; }
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/30 15:49:39  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.28  2000/11/02 16:56:02  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -196,7 +199,7 @@ OpenGLRenderer::OpenGLRenderer(void) :
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
         ERR_POST(Fatal << "Cn3D requires that sizeof(GLuint) >= sizeof(unsigned int)");
-    
+
     if (!qobj) { // initialize global qobj
         qobj = gluNewQuadric();
         if (!qobj) ERR_POST(Fatal << "unable to allocate GLUQuadricObj");
@@ -204,7 +207,7 @@ OpenGLRenderer::OpenGLRenderer(void) :
         gluQuadricNormals(qobj, GLU_SMOOTH);
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
-   
+
     SetLowQuality();
     AttachStructureSet(NULL);
 }
@@ -292,7 +295,7 @@ void OpenGLRenderer::NewView(int selectX, int selectY) const
     gluPerspective(RadToDegrees(cameraAngleRad),    // viewing angle (degrees)
                    aspect,                          // w/h aspect
                    cameraClipNear,                  // near clipping plane
-                   cameraClipFar);                  // far clipping plane 
+                   cameraClipFar);                  // far clipping plane
     gluLookAt(0.0,0.0,cameraDistance,               // the camera position
               cameraLookAtX,                        // the "look-at" point
               cameraLookAtY,
@@ -344,7 +347,7 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
     GLint viewport[4];
 
     // find out where rotation center is in current GL coordinates
-    if (structureSet && (control==eXYRotateHV || control==eZRotateH) && 
+    if (structureSet && (control==eXYRotateHV || control==eZRotateH) &&
         structureSet->rotationCenter != structureSet->center) {
         Matrix m;
         GL2Matrix(viewMatrix, &m);
@@ -501,7 +504,7 @@ void OpenGLRenderer::Display(void)
         glInitNames();
         glPushName(0);
     }
-    
+
     if (structureSet) {
         if (currentFrame == ALL_FRAMES) {
             for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
@@ -562,10 +565,10 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
         p++;                                // skip max depth
         for (j=0; j<n; j++) {               // loop through n names
             switch (j) {
-                case 0: 
+                case 0:
                     if (top) *name = static_cast<unsigned int>(selectBuf[p]);
                     break;
-                default: 
+                default:
                     ERR_POST(Warning << "GL select: Got more than 1 name!");
             }
             p++;
@@ -604,6 +607,8 @@ void OpenGLRenderer::Construct(void)
         SetColor(GL_NONE);
         ConstructLogo();
     }
+
+    GlobalMessenger()->UnPostStructureRedraws();
 }
 
 // set current GL color; don't change color if it's same as what's current
@@ -722,7 +727,7 @@ void OpenGLRenderer::ConstructLogo(void)
                 glVertex3d(pRingPts[0], pRingPts[1], pRingPts[2]);
                 glEnd();
             }
-            
+
             /* cap the ends */
             glBegin(GL_POLYGON);
             if ((g == 0 && n == 0) || (g == segments && n == 1))
@@ -778,7 +783,7 @@ void OpenGLRenderer::AddTransparentSpheresForList(unsigned int list)
     if (sL == transparentSphereMap.end()) return;
 
     const SphereList& sphereList = sL->second;
- 
+
     Matrix view;
     GL2Matrix(viewMatrix, &view);
 
@@ -1087,7 +1092,7 @@ static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, doubl
 }
 
 static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
-    StyleManager::eDisplayStyle style, double radius, 
+    StyleManager::eDisplayStyle style, double radius,
     bool cap1, bool cap2, int bondSides)
 {
     // straight line bond
@@ -1129,17 +1134,17 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
 
     if (style.end1.style != StyleManager::eNotDisplayed) {
         colorType =
-            (style.end1.style == StyleManager::eLineBond || 
-            style.end1.style == StyleManager::eLineWormBond || 
+            (style.end1.style == StyleManager::eLineBond ||
+            style.end1.style == StyleManager::eLineWormBond ||
             style.end1.radius <= 0.0)
             ? GL_AMBIENT : GL_DIFFUSE;
         SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
         glLoadName(static_cast<GLuint>(style.end1.name));
-        if (style.end1.style == StyleManager::eLineWormBond || 
-            style.end1.style == StyleManager::eThickWormBond) 
+        if (style.end1.style == StyleManager::eLineWormBond ||
+            style.end1.style == StyleManager::eThickWormBond)
             DrawHalfWorm(site0, site1, site2, site3,
                 (style.end1.style == StyleManager::eThickWormBond) ? style.end1.radius : 0.0,
-                style.end1.atomCap, style.midCap, 
+                style.end1.atomCap, style.midCap,
                 style.tension, wormSides, wormSegments);
         else
             DrawHalfBond(site1, midpoint,
@@ -1150,16 +1155,16 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
     if (style.end2.style != StyleManager::eNotDisplayed) {
         colorType =
             (style.end2.style == StyleManager::eLineBond ||
-            style.end2.style == StyleManager::eLineWormBond || 
+            style.end2.style == StyleManager::eLineWormBond ||
             style.end2.radius <= 0.0)
             ? GL_AMBIENT : GL_DIFFUSE;
         SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
         glLoadName(static_cast<GLuint>(style.end2.name));
-        if (style.end2.style == StyleManager::eLineWormBond || 
-            style.end2.style == StyleManager::eThickWormBond) 
+        if (style.end2.style == StyleManager::eLineWormBond ||
+            style.end2.style == StyleManager::eThickWormBond)
             DrawHalfWorm(site3, site2, site1, site0,
                 (style.end2.style == StyleManager::eThickWormBond) ? style.end2.radius : 0.0,
-                style.end2.atomCap, style.midCap, 
+                style.end2.atomCap, style.midCap,
                 style.tension, wormSides, wormSegments);
         else
             DrawHalfBond(midpoint, site2,
@@ -1181,7 +1186,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     if (style.style == StyleManager::eObjectWithArrow)
         length -= style.arrowLength;
     gluCylinder(qobj, style.radius, style.radius, length, helixSides, 1);
-    
+
     // Nterm cap
     glPushMatrix();
     glRotated(180.0, 0.0, 1.0, 0.0);
@@ -1213,11 +1218,11 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
         gluDisk(qobj, 0.0, style.radius, helixSides, 1);
         glPopMatrix();
     }
-   
+
     glPopMatrix();
 }
 
-void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm, 
+void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     const Vector& unitNormal, const StrandStyle& style)
 {
     GLdouble c000[3], c001[3], c010[3], c011[3],
@@ -1231,7 +1236,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     /* in this brick's world coordinates, the long axis (N-C direction) is
        along +Z, with N terminus at Z=0; width is in the X direction, and
        thickness in Y. Arrowhead at C-terminus, of course. */
-         
+
     a = Cterm - Nterm;
     a.normalize();
     h = vector_cross(unitNormal, a);
@@ -1239,7 +1244,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     Vector lCterm(Cterm);
     if (style.style == StyleManager::eObjectWithArrow)
         lCterm -= a * style.arrowLength;
-            
+
     for (i=0; i<3; i++) {
         c000[i] =  Nterm[i] - h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
         c001[i] = lCterm[i] - h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
@@ -1298,19 +1303,19 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 
     } else {
         GLdouble FT[3], LT[3], RT[3], FB[3], LB[3], RB[3];
-    
+
         for (i=0; i<3; i++) {
-            FT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 + 
+            FT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 +
                 a[i]*style.arrowLength;
-            LT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 + 
+            LT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 +
                 h[i]*style.arrowBaseWidthProportion*style.width/2;
-            RT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 - 
+            RT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 -
                 h[i]*style.arrowBaseWidthProportion*style.width/2;
-            FB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 + 
+            FB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 +
                 a[i]*style.arrowLength;
-            LB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 + 
+            LB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 +
                 h[i]*style.arrowBaseWidthProportion*style.width/2;
-            RB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 - 
+            RB[i] = lCterm[i] - unitNormal[i]*style.thickness/2 -
                 h[i]*style.arrowBaseWidthProportion*style.width/2;
         }
 
@@ -1351,14 +1356,14 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 
         glEnd();
         glBegin(GL_TRIANGLES);
-        
+
         // the top and bottom arrow triangles
         for (i=0; i<3; i++) n[i] = unitNormal[i];
         glNormal3dv(n);
         glVertex3dv(FT);
         glVertex3dv(LT);
         glVertex3dv(RT);
-        
+
         for (i=0; i<3; i++) n[i] = -unitNormal[i];
         glNormal3dv(n);
         glVertex3dv(FB);
@@ -1381,8 +1386,7 @@ bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
         ERR_POST(Error << "OpenGLRenderer::SetFont_Windows() - wglUseFontBitmaps() failed");
         return false;
     }
-    if (structureSet)
-        structureSet->messenger->PostRedrawAllStructures(); // text position dependent on font details
+    GlobalMessenger()->PostRedrawAllStructures(); // text position dependent on font details
 	return true;
 }
 

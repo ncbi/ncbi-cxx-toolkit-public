@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/30 15:49:40  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.18  2000/10/16 14:25:48  thiessen
 * working alignment fit coloring
 *
@@ -97,6 +100,7 @@
 #include "cn3d/object_3d.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -111,7 +115,8 @@ void StyleSettings::SetToSecondaryStructure(void)
 {
     proteinBackbone.type = nucleotideBackbone.type = eTrace;
     proteinBackbone.style = nucleotideBackbone.style = eTubeWorm;
-    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eObject;
+    proteinBackbone.colorScheme = eSecondaryStructure;
+    nucleotideBackbone.colorScheme = eObject;
 
     proteinSidechains.isOn = nucleotideSidechains.isOn = true;
     proteinSidechains.style = nucleotideSidechains.style = eWire;
@@ -129,7 +134,7 @@ void StyleSettings::SetToSecondaryStructure(void)
     connections.style = eTubes;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
-    
+
     helixObjects.isOn = strandObjects.isOn = true;
     helixObjects.style = strandObjects.style = eWithArrows;
     helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
@@ -174,7 +179,7 @@ void StyleSettings::SetToWireframe(void)
     connections.style = eWire;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
-    
+
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
     helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
@@ -220,7 +225,7 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     connections.style = eTubes;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
-    
+
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
     helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
@@ -289,7 +294,7 @@ bool StyleManager::CheckStyleSettings(const StructureSet *set)
 // May want to cache this eventually, since a
 // particular atom's style may be queried several times per render (once for
 // drawing atoms, and once for each bond to the atom).
-bool StyleManager::GetAtomStyle(const Residue *residue, 
+bool StyleManager::GetAtomStyle(const Residue *residue,
     const AtomPntr& atom, AtomStyle *atomStyle,
     const StyleSettings::BackboneStyle* *saveBackboneStyle,
     const StyleSettings::GeneralStyle* *saveGeneralStyle) const
@@ -311,7 +316,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     const Residue::AtomInfo *info = residue->GetAtomInfo(atom.aID);
     if (info->atomicNumber == 1 && !settings.hydrogensOn)
         ATOM_NOT_DISPLAYED;
-   
+
     // set up some pointers for more convenient access to style settings
     const StyleSettings::BackboneStyle *backboneStyle = NULL;
     const StyleSettings::GeneralStyle *generalStyle = NULL;
@@ -322,7 +327,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             backboneStyle = &(settings.proteinBackbone);
         else
             backboneStyle = &(settings.nucleotideBackbone);
-    
+
     } else if (info->classification == Residue::eSideChainAtom) {
         if (residue->IsAminoAcid())
             generalStyle = &(settings.proteinSidechains);
@@ -409,12 +414,14 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
 
     // determine color
     static Vector unalignedColor(175.0/255, 175.0/255, 175.0/255);
-    StyleSettings::eColorScheme 
+    StyleSettings::eColorScheme
         colorStyle = backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme;
     switch (colorStyle) {
+
         case StyleSettings::eElement:
             atomStyle->color = element->color;
             break;
+
         case StyleSettings::eAligned:
         case StyleSettings::eIdentity:
         case StyleSettings::eVariety:
@@ -428,7 +435,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 if (color)
                     atomStyle->color = *color;
                 else
-                    atomStyle->color.Set(1,0,0);
+                    atomStyle->color.Set(0.2,0.2,0.2);
                 break;
             }
             if (colorStyle != StyleSettings::eAligned) {
@@ -436,8 +443,10 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 break;
             }
             // if eAligned and not aligned, then use eObject coloring
+
         case StyleSettings::eMolecule:
             // should actually be a color cycle...
+
         case StyleSettings::eObject:
             // should actually be a color cycle...
             if (object->IsMaster())
@@ -445,16 +454,23 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             else
                 atomStyle->color.Set(0,0,1);
             break;
+
         case StyleSettings::eSecondaryStructure:
-            // needs to be done right, once residue->secondary structure lookup is in place
-            atomStyle->color.Set(0,1,1);
+            if (molecule->IsResidueInHelix(residue->id))
+                atomStyle->color = object->parentSet->colors->Get(Colors::eHelix);
+            else if (molecule->IsResidueInStrand(residue->id))
+                atomStyle->color = object->parentSet->colors->Get(Colors::eStrand);
+            else
+                atomStyle->color = object->parentSet->colors->Get(Colors::eCoil);
             break;
+
         case StyleSettings::eUserSelect:
             if (backboneStyle)
                 atomStyle->color = backboneStyle->userColor;
             else
                 atomStyle->color = generalStyle->userColor;
             break;
+
         default:
             ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
             return false;
@@ -473,8 +489,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->style = eSolidAtom;
 
     // determine whether it's highlighted
-    atomStyle->isHighlighted = molecule->parentSet->
-        messenger->IsHighlighted(molecule, residue->id);
+    atomStyle->isHighlighted = GlobalMessenger()->IsHighlighted(molecule, residue->id);
 
     atomStyle->name = info->glName;
     return true;
@@ -530,7 +545,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     if (!bond->GetParentOfType(&object)) return false;
 
     const Residue::AtomInfo
-        *info1 = object->graph->GetAtomInfo(atom1), 
+        *info1 = object->graph->GetAtomInfo(atom1),
         *info2 = object->graph->GetAtomInfo(atom2);
 
     AtomStyle atomStyle1, atomStyle2;
@@ -572,7 +587,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             (backboneStyle1->type != StyleSettings::eTrace ||
             backboneStyle2->type != StyleSettings::eTrace))
             BOND_NOT_DISPLAYED;
-    
+
         bondStyle->end1.color = atomStyle1.color;
         bondStyle->end2.color = atomStyle2.color;
         bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
@@ -615,7 +630,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             bondStyle->end2.color = bondStyle->end1.color;
             bondStyle->end2.radius = bondStyle->end1.radius;
         }
-        
+
         // add midCap if style or radius for two sides of bond is different;
         if (bondStyle->end1.style != bondStyle->end2.style ||
             bondStyle->end1.radius != bondStyle->end2.radius)
@@ -672,9 +687,9 @@ bool StyleManager::GetBondStyle(const Bond *bond,
 
     // set highlighting color if necessary
     if (atomStyle1.isHighlighted)
-        bondStyle->end1.color = bond->parentSet->highlightColor;
+        bondStyle->end1.color = bond->parentSet->colors->Get(Colors::eHighlight);
     if (atomStyle2.isHighlighted)
-        bondStyle->end2.color = bond->parentSet->highlightColor;
+        bondStyle->end2.color = bond->parentSet->colors->Get(Colors::eHighlight);
 
     return true;
 }
@@ -739,7 +754,7 @@ bool StyleManager::GetHelixStyle(const StructureObject *object,
         helixStyle->arrowTipWidthProportion = 0.4;
     }
     if (settings.helixObjects.colorScheme == StyleSettings::eSecondaryStructure)
-        helixStyle->color.Set(0,1,0);
+        helixStyle->color = object->parentSet->colors->Get(Colors::eHelix);
 
     return true;
 }
@@ -767,14 +782,14 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
         strandStyle->arrowBaseWidthProportion = 1.6;
     }
     if (settings.strandObjects.colorScheme == StyleSettings::eSecondaryStructure)
-            strandStyle->color.Set(.7,.7,0);
+        strandStyle->color = object->parentSet->colors->Get(Colors::eStrand);
 
     return true;
 }
 
 const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *object,
     int moleculeID, int residueID) const
-{ 
+{
     // eventually this will know about annotations...
     return globalStyle;
 }

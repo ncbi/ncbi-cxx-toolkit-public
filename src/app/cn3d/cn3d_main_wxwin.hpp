@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/30 15:49:08  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.11  2000/11/13 18:05:58  thiessen
 * working structure re-superpositioning
 *
@@ -124,9 +127,6 @@ public:
     // used for processing display updates when system is idle
     void OnIdle(wxIdleEvent& event);
 
-    // one messenger only
-    Messenger *messenger;
-
     // for now, there is only one structure window
     Cn3DMainFrame *structureWindow;
 
@@ -141,7 +141,7 @@ class Cn3DGLCanvas;
 class Cn3DMainFrame: public wxFrame
 {
 public:
-    Cn3DMainFrame(Messenger *messenger,
+    Cn3DMainFrame(
         wxFrame *parent, const wxString& title,
         const wxPoint& pos, const wxSize& size, long style = wxDEFAULT_FRAME_STYLE);
     ~Cn3DMainFrame();
@@ -196,14 +196,13 @@ public:
     DECLARE_EVENT_TABLE()
 
 private:
-    Messenger *messenger;
     wxString currentDataFilename;
 };
 
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    Cn3DGLCanvas(Messenger *messenger,
+    Cn3DGLCanvas(
         wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
         int *gl_attrib = NULL);
@@ -221,10 +220,8 @@ public:
     void OnChar(wxKeyEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
-    DECLARE_EVENT_TABLE()
-
 private:
-    Messenger *messenger;
+    DECLARE_EVENT_TABLE()
 };
 
 

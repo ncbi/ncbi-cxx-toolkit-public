@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/30 15:49:38  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.4  2000/10/16 20:03:07  thiessen
 * working block creation
 *
@@ -46,7 +49,7 @@
 */
 
 #include "cn3d/conservation_colorer.hpp"
-#include "cn3d/alignment_manager.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/structure_base.hpp"
 
 USING_NCBI_SCOPE;

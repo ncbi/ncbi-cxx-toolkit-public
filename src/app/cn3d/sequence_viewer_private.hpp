@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/11/30 15:49:09  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.3  2000/11/17 19:47:37  thiessen
 * working show/hide alignment row
 *
@@ -160,7 +163,7 @@ public:
     bool DoMergeBlocks(void) const { return menuBar->IsChecked(MID_MERGE_BLOCKS); }
     void MergeBlocksOff(void)
     {
-        menuBar->Check(MID_MERGE_BLOCKS, false); 
+        menuBar->Check(MID_MERGE_BLOCKS, false);
         viewerWidget->SetMouseMode(prevMouseMode);
         SetCursor(wxNullCursor);
     }
@@ -168,7 +171,7 @@ public:
     bool DoCreateBlock(void) const { return menuBar->IsChecked(MID_CREATE_BLOCK); }
     void CreateBlockOff(void)
     {
-        menuBar->Check(MID_CREATE_BLOCK, false); 
+        menuBar->Check(MID_CREATE_BLOCK, false);
         viewerWidget->SetMouseMode(prevMouseMode);
         SetCursor(wxNullCursor);
     }
@@ -216,7 +219,7 @@ public:
 
     DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromAlignment(row, newAlignment); }
-        
+
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
 
@@ -242,15 +245,13 @@ class DisplayRowFromSequence : public DisplayRow
 {
 public:
     const Sequence * const sequence;
-    Messenger *messenger;
 
-    DisplayRowFromSequence(const Sequence *s, Messenger *mesg) :
-        sequence(s), messenger(mesg) { }
+    DisplayRowFromSequence(const Sequence *s) : sequence(s) { }
 
     int Width(void) const { return sequence->sequenceString.size(); }
-    
+
     DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
-        { return new DisplayRowFromSequence(sequence, messenger); }
+        { return new DisplayRowFromSequence(sequence); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
@@ -260,7 +261,7 @@ public:
 
     const Sequence * GetSequence(void) const
         { return sequence; }
-    
+
     void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const;
 };
 
@@ -273,16 +274,16 @@ public:
     const bool hasBackgroundColor;
 
     DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5),
-        const std::string& t = "", bool hasBG = false, Vector bgColor = (1,1,1)) : 
+        const std::string& t = "", bool hasBG = false, Vector bgColor = (1,1,1)) :
         theString(s), stringColor(color), title(t),
         hasBackgroundColor(hasBG), backgroundColor(bgColor) { }
 
     int Width(void) const { return theString.size(); }
-    
+
     DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromString(
             theString, stringColor, title, hasBackgroundColor, backgroundColor); }
-    
+
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
 
@@ -306,12 +307,12 @@ class SequenceDisplay : public ViewableAlignment
     friend class SequenceViewer;
 
 public:
-    SequenceDisplay(SequenceViewerWindow * const *parentViewer, Messenger *messenger);
+    SequenceDisplay(SequenceViewerWindow * const *parentViewer);
     ~SequenceDisplay(void);
 
     // these functions add a row to the end of the display, from various sources
     void AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment);
-    void AddRowFromSequence(const Sequence *sequence, Messenger *messenger);
+    void AddRowFromSequence(const Sequence *sequence);
     void AddRowFromString(const std::string& anyString);
 
     // generic row manipulation functions
@@ -323,8 +324,9 @@ public:
     SequenceDisplay * Clone(BlockMultipleAlignment *newAlignment) const;
 
 private:
-    
-    Messenger *messenger;
+
+    SequenceViewerWindow * const *viewerWindow;
+
     int startingColumn;
     typedef std::vector < DisplayRow * > RowVector;
     RowVector rows;
@@ -334,7 +336,6 @@ private:
     void UpdateAfterEdit(void);
 
     BlockMultipleAlignment *alignment;
-    SequenceViewerWindow * const *viewerWindow;
     bool controlDown;
 
 public:
@@ -352,7 +353,7 @@ public:
         bool *drawBackground,                                   // special background color?
         wxColour *cellBackgroundColor
     ) const;
-    
+
     // callbacks for ViewableAlignment
     void MouseOver(int column, int row) const;
     bool MouseDown(int column, int row, unsigned int controls);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/11/30 15:49:40  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.35  2000/11/13 18:06:53  thiessen
 * working structure re-superpositioning
 *
@@ -167,6 +170,7 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -195,7 +199,7 @@ static bool VerifyMatch(const Sequence *sequence, const StructureObject *object,
 void StructureSet::MatchSequencesToMolecules(void)
 {
     // crossmatch sequences with molecules - at most one molecule per sequence.
-    // Match algorithm: for each molecule, check the sequence list for a matching 
+    // Match algorithm: for each molecule, check the sequence list for a matching
     // sequence that hasn't already been matched to a previous molecule.
     if (sequenceSet && objects.size() > 0) {
 
@@ -233,7 +237,7 @@ void StructureSet::MatchSequencesToMolecules(void)
                                 (const_cast<Sequence*>(*s))->pdbID = m->second->pdbID;
                                 (const_cast<Sequence*>(*s))->pdbChain = m->second->pdbChain;
                             }
-                            
+
                             // if this is the master structure of a mutiple-structure alignment,
                             // then we know that this molecule's sequence must also be the
                             // master sequence for all sequence alignments
@@ -264,12 +268,12 @@ void StructureSet::MatchSequencesToMolecules(void)
     }
 }
 
-StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
+StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
     sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    messenger(mesg), highlightColor(1,1,0), newAlignments(false)
+    newAlignments(false), colors(new Colors())
 {
     StructureObject *object;
     parentSet = this;
@@ -279,15 +283,15 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
         return;
     }
-    messenger->RemoveAllHighlights(false);
-    
+    GlobalMessenger()->RemoveAllHighlights(false);
+
     // create StructureObjects from (list of) biostruc
-    if (mime.IsStrucseq()) { 
+    if (mime.IsStrucseq()) {
         object = new StructureObject(this, mime.GetStrucseq().GetStructure(), true);
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime.GetStrucseq().GetSequences());
         MatchSequencesToMolecules();
-        alignmentManager = new AlignmentManager(sequenceSet, NULL, messenger);
+        alignmentManager = new AlignmentManager(sequenceSet, NULL);
 
     } else if (mime.IsStrucseqs()) {
         object = new StructureObject(this, mime.GetStrucseqs().GetStructure(), true);
@@ -295,7 +299,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
 
     } else if (mime.IsAlignstruc()) {
@@ -317,13 +321,13 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);
         objects.push_back(object);
-    
+
     } else {
         ERR_POST(Fatal << "Can't (yet) handle that Ncbi-mime-asn1 type");
     }
@@ -333,8 +337,9 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
 
 StructureSet::~StructureSet(void)
 {
-    if (showHideManager) delete showHideManager;
-    if (styleManager) delete styleManager;
+    delete colors;
+    delete showHideManager;
+    delete styleManager;
     if (alignmentManager) delete alignmentManager;
 }
 
@@ -483,7 +488,7 @@ void StructureSet::SelectedAtom(unsigned int name)
     if (!molecule->GetParentOfType(&object)) return;
 
     // add highlight
-    object->parentSet->messenger->ToggleHighlightOnAnyResidue(molecule, residue->id);
+    GlobalMessenger()->ToggleHighlightOnAnyResidue(molecule, residue->id);
 
     TESTMSG("rotating about " << object->pdbID
         << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
@@ -545,7 +550,7 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
 
     // get graph - must be done after atom coordinates are loaded, so we can
     // avoid storing graph nodes for atoms not present in the model
-    graph = new ChemicalGraph(this, biostruc.GetChemical_graph());
+    graph = new ChemicalGraph(this, biostruc.GetChemical_graph(), biostruc.GetFeatures());
 }
 
 bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID)
@@ -554,13 +559,12 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
     for (f1=annot.GetFeatures().begin(); f1!=f1e; f1++) {
         CBiostruc_feature_set::TFeatures::const_iterator f2, f2e=f1->GetObject().GetFeatures().end();
         for (f2=f1->GetObject().GetFeatures().begin(); f2!=f2e; f2++) {
-        
+
             // skip if already used
             if (f2->GetObject().IsSetId()) {
                 if (parentSet->usedFeatures.find(f2->GetObject().GetId().Get()) != parentSet->usedFeatures.end())
                     continue;
                 parentSet->usedFeatures[f2->GetObject().GetId().Get()] = true;
-                TESTMSG("using feature " << f2->GetObject().GetId().Get());
             }
 
             // look for alignment feature
@@ -585,7 +589,7 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
                     // unpack transform into matrix, moves in reverse order;
                     Matrix xform;
                     transformToMaster = new Matrix();
-                    CTransform::TMoves::const_iterator 
+                    CTransform::TMoves::const_iterator
                         m, me=graphAlign.GetTransform().front().GetObject().GetMoves().end();
                     for (m=graphAlign.GetTransform().front().GetObject().GetMoves().begin(); m!=me; m++) {
                         Matrix xmat;
@@ -630,7 +634,7 @@ void StructureObject::RealignStructure(int nCoords,
 
     // do the fit
     RigidBodyFit(nCoords, masterCoords, slaveCoords, weights, masterCOM, slaveCOM, slaveRotation);
-    
+
     // apply the resulting transform elements from the fit to this object's transform Matrix
     Matrix single, combined;
     SetTranslationMatrix(&single, -slaveCOM);

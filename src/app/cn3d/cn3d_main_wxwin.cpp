@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/30 15:49:38  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.15  2000/11/13 18:06:52  thiessen
 * working structure re-superpositioning
 *
@@ -144,11 +147,11 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
-#include <serial/serial.hpp>            
-#include <serial/objistrasn.hpp>       
-#include <serial/objistrasnb.hpp>       
-#include <serial/objostrasn.hpp>       
-#include <serial/objostrasnb.hpp>       
+#include <serial/serial.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
@@ -178,8 +181,8 @@ static wxTextCtrl *logText = NULL;
 class MsgFrame : public wxFrame
 {
 public:
-    MsgFrame(wxWindow* parent, wxWindowID id, const wxString& title, 
-        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, 
+    MsgFrame(wxWindow* parent, wxWindowID id, const wxString& title,
+        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize,
         long style = wxDEFAULT_FRAME_STYLE, const wxString& name = "frame") :
         wxFrame(parent, id, title, pos, size, style, name) { }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
@@ -198,10 +201,10 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 		delete dlg;
     } else {
         if (!logFrame) {
-            logFrame = new MsgFrame(NULL, -1, "Cn3D++ Message Log", 
+            logFrame = new MsgFrame(NULL, -1, "Cn3D++ Message Log",
                 wxPoint(500, 0), wxSize(500, 500), wxDEFAULT_FRAME_STYLE);
             logFrame->SetSizeHints(150, 100);
-            logText = new wxTextCtrl(logFrame, -1, "", 
+            logText = new wxTextCtrl(logFrame, -1, "",
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
         }
         // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
@@ -210,6 +213,16 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         logFrame->Show(true);
     }
 }
+
+
+// global Messenger object
+static Messenger *messenger = NULL;
+
+Messenger * GlobalMessenger(void)
+{
+    return messenger;
+}
+
 
 // `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3DApp)
@@ -231,11 +244,11 @@ bool Cn3DApp::OnInit(void)
     messenger = new Messenger();
 
     // create the main frame window
-    structureWindow = new Cn3DMainFrame(messenger, NULL, "Cn3D++",
+    structureWindow = new Cn3DMainFrame(NULL, "Cn3D++",
         wxPoint(0,0), wxSize(500,500), wxDEFAULT_FRAME_STYLE);
 
     // register viewers with messenger
-    messenger->AddStructureWindow(structureWindow);
+    GlobalMessenger()->AddStructureWindow(structureWindow);
 
     // get file name from command line, if present
     if (argc > 2)
@@ -259,7 +272,7 @@ int Cn3DApp::OnExit(void)
 
 void Cn3DApp::OnIdle(wxIdleEvent& event)
 {
-    messenger->ProcessRedraws();
+    GlobalMessenger()->ProcessRedraws();
 
     // call base class OnIdle to continue processing any other system idle-time stuff
     wxApp::OnIdle(event);
@@ -279,10 +292,10 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
 
-Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
+Cn3DMainFrame::Cn3DMainFrame(
     wxFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :
     wxFrame(parent, -1, title, pos, size, style | wxTHICK_FRAME),
-    glCanvas(NULL), messenger(mesg)
+    glCanvas(NULL)
 {
     SetSizeHints(150, 150); // min size
 
@@ -334,12 +347,12 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
 #ifdef __WXMSW__
     int *gl_attrib = NULL;
 #else
-    int gl_attrib[20] = { 
+    int gl_attrib[20] = {
         GLX_RGBA, GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1,
         GLX_BLUE_SIZE, 1, GLX_DEPTH_SIZE, 1,
         GLX_DOUBLEBUFFER, None };
 #endif
-    glCanvas = new Cn3DGLCanvas(messenger,
+    glCanvas = new Cn3DGLCanvas(
         this, -1, wxPoint(0, 0), wxSize(400, 400), wxSUNKEN_BORDER, "Cn3DGLCanvas", gl_attrib);
     glCanvas->SetCurrent();
 
@@ -353,18 +366,18 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
         logText = NULL;
         logFrame = NULL;
     }
-    messenger->RemoveStructureWindow(this);
+    GlobalMessenger()->RemoveStructureWindow(this);
 }
 
 void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 {
-    messenger->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
+    GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
     Destroy();
 }
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
-    messenger->SequenceWindowsSave();
+    GlobalMessenger()->SequenceWindowsSave();
     Destroy();
 }
 
@@ -427,14 +440,14 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             default: ;
         }
         glCanvas->structureSet->styleManager->CheckStyleSettings(glCanvas->structureSet);
-        messenger->PostRedrawAllStructures();
-        messenger->PostRedrawSequenceViewers();
+        GlobalMessenger()->PostRedrawAllStructures();
+        GlobalMessenger()->PostRedrawSequenceViewers();
     }
 }
 
 static bool ReadMimeFromFile(const char *filename, CNcbi_mime_asn1& mime)
 {
-    // initialize the binary input stream 
+    // initialize the binary input stream
     auto_ptr<CNcbiIstream> inStream;
     inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
@@ -450,14 +463,14 @@ static bool ReadMimeFromFile(const char *filename, CNcbi_mime_asn1& mime)
 
     auto_ptr<CObjectIStream> inObject;
     if (firstWord == asciiMimeFirstWord) {
-        // Associate ASN.1 text serialization methods with the input 
+        // Associate ASN.1 text serialization methods with the input
         inObject.reset(new CObjectIStreamAsn(*inStream));
     } else {
-        // Associate ASN.1 binary serialization methods with the input 
+        // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new CObjectIStreamAsnBinary(*inStream));
     }
 
-    // Read the CNcbi_mime_asn1 data 
+    // Read the CNcbi_mime_asn1 data
     try {
         *inObject >> mime;
     } catch (exception& e) {
@@ -470,7 +483,7 @@ static bool ReadMimeFromFile(const char *filename, CNcbi_mime_asn1& mime)
 
 static bool WriteMimeToFile(const char *filename, CNcbi_mime_asn1& mime, boolean doTextAsn = true)
 {
-    // initialize a binary output stream 
+    // initialize a binary output stream
     auto_ptr<CNcbiOstream> outStream;
     outStream.reset(new CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
     if (!(*outStream)) {
@@ -480,14 +493,14 @@ static bool WriteMimeToFile(const char *filename, CNcbi_mime_asn1& mime, boolean
 
     auto_ptr<CObjectOStream> outObject;
     if (doTextAsn) {
-        // Associate ASN.1 text serialization methods with the input 
+        // Associate ASN.1 text serialization methods with the input
         outObject.reset(new CObjectOStreamAsn(*outStream));
     } else {
-        // Associate ASN.1 binary serialization methods with the input 
+        // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new CObjectOStreamAsnBinary(*outStream));
     }
 
-    // Read the CNcbi_mime_asn1 data 
+    // Read the CNcbi_mime_asn1 data
     try {
         *outObject << mime;
     } catch (exception& e) {
@@ -504,7 +517,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     // clear old data
     if (glCanvas->structureSet) {
-        messenger->RemoveAllHighlights(false);
+        GlobalMessenger()->RemoveAllHighlights(false);
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer.AttachStructureSet(NULL);
@@ -515,7 +528,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     CNcbi_mime_asn1 mime;
     if (ReadMimeFromFile(filename, mime)) {
         // Create StructureSet from mime data
-        glCanvas->structureSet = new StructureSet(mime, messenger);
+        glCanvas->structureSet = new StructureSet(mime);
         glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
         glCanvas->Refresh(false);
         currentDataFilename = filename;
@@ -532,8 +545,8 @@ void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet || currentDataFilename.IsEmpty()) return;
-    
-    wxString outputFilename = wxFileSelector("Choose a filename for output", "", "", ".prt", "*.prt", wxSAVE); 
+
+    wxString outputFilename = wxFileSelector("Choose a filename for output", "", "", ".prt", "*.prt", wxSAVE);
     if (!outputFilename.IsEmpty()) {
 
         CNcbi_mime_asn1 mime;
@@ -556,7 +569,7 @@ void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)
         case MID_QHIGH: glCanvas->renderer.SetHighQuality(); break;
         default: ;
     }
-    messenger->PostRedrawAllStructures();
+    GlobalMessenger()->PostRedrawAllStructures();
 }
 
 
@@ -570,11 +583,11 @@ BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
 
-Cn3DGLCanvas::Cn3DGLCanvas(Messenger *mesg,
+Cn3DGLCanvas::Cn3DGLCanvas(
     wxWindow *parent, wxWindowID id,
     const wxPoint& pos, const wxSize& size, long style, const wxString& name, int *gl_attrib) :
-    wxGLCanvas(parent, id, pos, size, style, name, gl_attrib), 
-    structureSet(NULL), messenger(mesg)
+    wxGLCanvas(parent, id, pos, size, style, name, gl_attrib),
+    structureSet(NULL)
 {
     SetCurrent();
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);

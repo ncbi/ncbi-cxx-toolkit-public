@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/30 15:49:38  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.9  2000/11/02 16:56:02  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -101,6 +104,12 @@ void Messenger::PostRedrawSequenceViewers(void)
 void Messenger::UnPostRedrawSequenceViewers(void)
 {
     redrawSequenceViewers = false;
+}
+
+void Messenger::UnPostStructureRedraws(void)
+{
+    redrawAllStructures = false;
+    redrawMolecules.clear();
 }
 
 void Messenger::ProcessRedraws(void)

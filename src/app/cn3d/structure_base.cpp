@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/30 15:49:40  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.9  2000/11/11 21:15:55  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -86,7 +89,7 @@ StructureBase::StructureBase(StructureBase *parent)
 StructureBase::~StructureBase(void)
 {
     _ChildList::iterator i, e=_children.end();
-    for (i=_children.begin(); i!=e; i++) 
+    for (i=_children.begin(); i!=e; i++)
         delete *i;
 }
 
@@ -96,7 +99,7 @@ bool StructureBase::DrawAll(const AtomSet *atomSet) const
     if (!parentSet->renderer) return false;
     if (!Draw(atomSet)) return true;
     _ChildList::const_iterator i, e=_children.end();
-    for (i=_children.begin(); i!=e; i++) 
+    for (i=_children.begin(); i!=e; i++)
         if (!((*i)->DrawAll(atomSet))) return true;
 	return true;
 }

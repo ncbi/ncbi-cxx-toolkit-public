@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/30 15:49:36  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.15  2000/11/02 16:56:01  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -78,11 +81,17 @@
 * ===========================================================================
 */
 
-#include <serial/serial.hpp>            
+#include <serial/serial.hpp>
 #include <serial/objistrasnb.hpp>
-#include <objects/mmdb1/Biostruc_residue_graph_set.hpp>      
+#include <objects/mmdb1/Biostruc_residue_graph_set.hpp>
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/mmdb3/Biostruc_feature_set_descr.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/mmdb3/Chem_graph_pntrs.hpp>
+#include <objects/mmdb3/Residue_pntrs.hpp>
+#include <objects/mmdb3/Residue_interval_pntr.hpp>
+#include <objects/mmdb3/Biostruc_feature_id.hpp>
 
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule.hpp"
@@ -104,17 +113,17 @@ void LoadStandardDictionary(void)
 {
     standardDictionary = new CBiostruc_residue_graph_set;
 
-    // initialize the binary input stream 
+    // initialize the binary input stream
     auto_ptr<CNcbiIstream> inStream;
     inStream.reset(new CNcbiIfstream("bstdt.val", IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream))
         ERR_POST(Fatal << "Cannot open dictionary file 'bstdt.val'");
 
-    // Associate ASN.1 binary serialization methods with the input 
+    // Associate ASN.1 binary serialization methods with the input
     auto_ptr<CObjectIStream> inObject;
     inObject.reset(new CObjectIStreamAsnBinary(*inStream));
 
-    // Read the dictionary data 
+    // Read the dictionary data
     *inObject >> *(const_cast<CBiostruc_residue_graph_set *>(standardDictionary));
 
     // make sure it's the right thing
@@ -132,7 +141,8 @@ void DeleteStandardDictionary(void)
 }
 
 
-ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph) :
+ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph,
+    const FeatureList& features) :
     StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST)
 {
     if (!standardDictionary) {
@@ -140,7 +150,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         return;
     }
 
-    // figure out what models we'll be drawing, based on contents of parent 
+    // figure out what models we'll be drawing, based on contents of parent
     // StructureSet and StructureObject
     const StructureObject *object;
     if (!GetParentOfType(&object)) return;
@@ -218,10 +228,10 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     if (graph.IsSetInter_molecule_bonds()) {
         CBiostruc_graph::TInter_molecule_bonds::const_iterator j, je=graph.GetInter_molecule_bonds().end();
         for (j=graph.GetInter_molecule_bonds().begin(); j!=je; j++) {
-            int order = j->GetObject().IsSetBond_order() ? 
+            int order = j->GetObject().IsSetBond_order() ?
                 j->GetObject().GetBond_order() : Bond::eUnknown;
             const Bond *bond = MakeBond(this,
-                j->GetObject().GetAtom_id_1(), 
+                j->GetObject().GetAtom_id_1(),
                 j->GetObject().GetAtom_id_2(),
                 order);
 
@@ -241,6 +251,109 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     if (displayListOtherStart != OpenGLRenderer::NO_LIST) {
         for (unsigned int n=0; n<nAlts; n++)
             parentSet->frameMap[firstNewFrame + n].push_back(displayListOtherStart + n);
+    }
+
+    // fill out secondary structure maps from NCBI ss assigments (in feature block)
+    FeatureList::const_iterator l, le = features.end();
+    for (l=features.begin(); l!=le; l++) {
+        if (l->GetObject().IsSetDescr()) {
+
+            // find and unpack NCBI sec. struc. or domain features
+            CBiostruc_feature_set::TDescr::const_iterator d, de = l->GetObject().GetDescr().end();
+            for (d=l->GetObject().GetDescr().begin(); d!=de; d++) {
+                if (d->GetObject().IsName()) {
+                    if (d->GetObject().GetName() == "NCBI assigned secondary structure")
+                        UnpackSecondaryStructureFeatures(l->GetObject());
+                    else if (d->GetObject().GetName() == "NCBI Domains")
+                        UnpackDomainFeatures(l->GetObject());
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet)
+{
+    TESTMSG("unpacking NCBI domain features");
+    CBiostruc_feature_set::TFeatures::const_iterator f, fe = featureSet.GetFeatures().end();
+    for (f=featureSet.GetFeatures().begin(); f!=fe; f++) {
+        if (f->GetObject().GetType() == CBiostruc_feature::eType_subgraph &&
+            f->GetObject().IsSetLocation() &&
+            f->GetObject().GetLocation().IsSubgraph() &&
+            f->GetObject().GetLocation().GetSubgraph().IsResidues() &&
+            f->GetObject().GetLocation().GetSubgraph().GetResidues().IsInterval()) {
+
+            int domainID = f->GetObject().GetId().Get();
+
+            // find molecule and set regions, warning about overlaps
+            Molecule *molecule = NULL;
+            CResidue_pntrs::TInterval::const_iterator i,
+                ie = f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().end();
+            for (i=f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++) {
+                MoleculeMap::const_iterator m = molecules.find(i->GetObject().GetMolecule_id());
+                if (m == molecules.end() ||
+                    m->second->id !=    // check to make sure all intervals are on same molecule
+                        f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().
+                            front().GetObject().GetMolecule_id().Get()) {
+                    ERR_POST(Warning << "Bad moleculeID in domain interval");
+                    continue;
+                }
+                molecule = const_cast<Molecule*>(m->second);
+                for (int r=i->GetObject().GetFrom().Get()-1; r<=i->GetObject().GetTo().Get()-1; r++) {
+                    if (molecule->residueDomains[r] != Molecule::NOT_SET) {
+                        ERR_POST(Warning << "Overlapping domain feature at moleculeID "
+                            << molecule->id << " residueID " << r+1);
+                    } else {
+                        molecule->residueDomains[r] = domainID;
+                    }
+                }
+            }
+
+            if (molecule) {
+                const StructureObject *object;
+                if (!GetParentOfType(&object)) return;
+                (const_cast<StructureObject*>(object))->domainMap[domainID] = molecule;
+            }
+        }
+    }
+}
+void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set& featureSet)
+{
+    TESTMSG("unpacking NCBI sec. struc. features");
+    CBiostruc_feature_set::TFeatures::const_iterator f, fe = featureSet.GetFeatures().end();
+    for (f=featureSet.GetFeatures().begin(); f!=fe; f++) {
+        if ((f->GetObject().GetType() == CBiostruc_feature::eType_helix ||
+                f->GetObject().GetType() == CBiostruc_feature::eType_strand) &&
+            f->GetObject().IsSetLocation() &&
+            f->GetObject().GetLocation().IsSubgraph() &&
+            f->GetObject().GetLocation().GetSubgraph().IsResidues() &&
+            f->GetObject().GetLocation().GetSubgraph().GetResidues().IsInterval()) {
+
+            // find molecule and set region, warning about overlaps
+            if (f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().size() > 1) {
+                ERR_POST(Warning << "Can't deal with multi-interval sec. struc. regions");
+                continue;
+            }
+            const CResidue_interval_pntr& interval =
+                f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().front().GetObject();
+            MoleculeMap::const_iterator m = molecules.find(interval.GetMolecule_id());
+            if (m == molecules.end()) {
+                ERR_POST(Warning << "Bad moleculeID in sec. struc. interval");
+                continue;
+            }
+            Molecule *molecule = const_cast<Molecule*>(m->second);
+            for (int r=interval.GetFrom().Get()-1; r<=interval.GetTo().Get()-1; r++) {
+                if (molecule->residueSecondaryStructures[r] != Molecule::eCoil) {
+                    ERR_POST(Warning << "Overlapping sec. struc. feature at moleculeID "
+                        << molecule->id << " residueID " << r+1);
+                } else {
+                    molecule->residueSecondaryStructures[r] =
+                        (f->GetObject().GetType() == CBiostruc_feature::eType_helix) ?
+                            Molecule::eHelix : Molecule::eCoil;
+                }
+            }
+        }
     }
 }
 
@@ -312,13 +425,13 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     // then put everything else (solvents, hets, intermolecule bonds) in a single display list
     if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
     //TESTMSG("drawing hets/solvents/i-m bonds");
-    
+
     // always redraw all these even if only a single molecule is to be redrawn -
     // that way connections can show/hide in cases where a particular residue
     // changes its display
     int n = 0;
     for (a=atomSetList.begin(); a!=ae; a++, n++) {
-    
+
         a->first->SetActiveEnsemble(a->second);
         parentSet->renderer->StartDisplayList(displayListOtherStart + n);
 

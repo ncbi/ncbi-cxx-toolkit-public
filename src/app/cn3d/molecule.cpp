@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/30 15:49:39  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.18  2000/11/13 18:06:53  thiessen
 * working structure re-superpositioning
 *
@@ -152,11 +155,11 @@ Molecule::Molecule(StructureBase *parent,
     if (graph.IsSetInter_residue_bonds()) {
         je = graph.GetInter_residue_bonds().end();
         for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
-            
-            int order = j->GetObject().IsSetBond_order() ? 
+
+            int order = j->GetObject().IsSetBond_order() ?
                 j->GetObject().GetBond_order() : Bond::eUnknown;
-            const Bond *bond = MakeBond(this, 
-                j->GetObject().GetAtom_id_1(), 
+            const Bond *bond = MakeBond(this,
+                j->GetObject().GetAtom_id_1(),
                 j->GetObject().GetAtom_id_2(),
                 order);
             if (bond) interResidueBonds.push_back(bond);
@@ -196,13 +199,13 @@ Molecule::Molecule(StructureBase *parent,
                         (j->GetObject().GetAtom_id_2().GetResidue_id().Get() == prevResidue->id &&
                          j->GetObject().GetAtom_id_1().GetResidue_id().Get() == residue->id)) {
                         found = true;
-                    }    
+                    }
                     j++;
                 } while (!found);
             }
 
             if (found) {
-                const Bond *bond = MakeBond(this, 
+                const Bond *bond = MakeBond(this,
                     id, prevResidue->id, prevResidue->alphaID,
                     id, residue->id, residue->alphaID,
                     Bond::eVirtual);
@@ -220,6 +223,10 @@ Molecule::Molecule(StructureBase *parent,
             prevBond = NULL;
         prevResidue = residue;
     }
+
+    residueDomains.resize(residues.size(), NOT_SET);
+    // keep s.s. maps only for protein chains
+    if (IsProtein()) residueSecondaryStructures.resize(residues.size(), eCoil);
 }
 
 Vector Molecule::GetResidueColor(int sequenceIndex) const
@@ -257,14 +264,14 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         int rID = seqIndexes[i] + 1;    // residueIDs start at 1
         ResidueMap::const_iterator r = residues.find(rID);
         if (r == residues.end()) {
-            ERR_POST(Error << "Can't find residueID " << rID 
+            ERR_POST(Error << "Can't find residueID " << rID
                 << " in " << pdbID << " chain '" << (char) pdbChain << "'");
             return false;
         }
 
         int aID = (r->second->alphaID);
         if (aID == Residue::NO_ALPHA_ID) {
-            ERR_POST(Error << "No alpha atom in residueID " << rID 
+            ERR_POST(Error << "No alpha atom in residueID " << rID
                 << " from " << pdbID << " chain '" << (char) pdbChain << "'");
             return false;
         }

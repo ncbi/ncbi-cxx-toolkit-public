@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/30 15:49:07  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.11  2000/10/04 17:40:45  thiessen
 * rearrange STL #includes
 *
@@ -75,6 +78,7 @@
 #include <string>
 
 #include <objects/mmdb1/Biostruc_graph.hpp>
+#include <objects/mmdb3/Biostruc_feature_set.hpp>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/molecule.hpp"
@@ -96,10 +100,13 @@ class Bond;
 class AtomSet;
 class StructureObject;
 
+typedef list< ncbi::CRef< ncbi::objects::CBiostruc_feature_set > > FeatureList;
+
 class ChemicalGraph : public StructureBase
 {
 public:
-    ChemicalGraph(StructureBase *parent, const ncbi::objects::CBiostruc_graph& graph);
+    ChemicalGraph(StructureBase *parent, const ncbi::objects::CBiostruc_graph& graph,
+        const FeatureList& features);
 
     // public data
     typedef std::map < int, const Molecule * > MoleculeMap;
@@ -112,7 +119,7 @@ public:
     void RedrawMolecule(int moleculeID) const;
     bool DrawAll(const AtomSet *atomSet = NULL) const;
     const Residue::AtomInfo * GetAtomInfo(const AtomPntr& atom) const
-    { 
+    {
         MoleculeMap::const_iterator info=molecules.find(atom.mID);
         if (info != molecules.end()) return (*info).second->GetAtomInfo(atom.rID, atom.aID);
         ERR_POST(ncbi::Warning << "Graph: can't find molecule #" << atom.mID);
@@ -123,6 +130,9 @@ private:
     typedef LIST_TYPE < std::pair < AtomSet *, const std::string * > > AtomSetList;
     AtomSetList atomSetList;
     unsigned int displayListOtherStart;
+
+    void UnpackDomainFeatures(const ncbi::objects::CBiostruc_feature_set& featureSet);
+    void UnpackSecondaryStructureFeatures(const ncbi::objects::CBiostruc_feature_set& featureSet);
 };
 
 END_SCOPE(Cn3D)

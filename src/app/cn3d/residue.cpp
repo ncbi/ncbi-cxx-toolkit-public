@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/11/30 15:49:39  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.16  2000/09/11 22:57:32  thiessen
 * working highlighting
 *
@@ -98,6 +101,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -123,7 +127,7 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
         if (
             (element==CAtom::eElement_c && code==" C  ") ||
             (element==CAtom::eElement_n && code==" N  ")
-           ) 
+           )
             return Residue::ePartialBackboneAtom;
 
         // amino acid complete backbone (all backbone that's not part of "partial")
@@ -131,8 +135,8 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
         if (
             (element==CAtom::eElement_o &&
                 (code==" O  " || code==" OXT")) ||
-            (element==CAtom::eElement_h && 
-                (code==" H  " || code==" HA " || code=="1HA " || code=="2HA " || 
+            (element==CAtom::eElement_h &&
+                (code==" H  " || code==" HA " || code=="1HA " || code=="2HA " ||
                  code==" HXT" || code=="1H  " || code=="2H  " || code=="3H  "))
             )
             return Residue::eCompleteBackboneAtom;
@@ -151,7 +155,7 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
             (element==CAtom::eElement_c && (code==" C5*" || code==" C4*" || code==" C3*")) ||
             (element==CAtom::eElement_o && (code==" O5*" || code==" O3*")) ||
             (element==CAtom::eElement_h && (code==" H3T" || code==" H5T"))
-           ) 
+           )
             return Residue::ePartialBackboneAtom;
 
         // nucleic acid complete backbone (all backbone that's not part of "partial")
@@ -159,9 +163,9 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
             (element==CAtom::eElement_o &&
                 (code==" O1P" || code==" O2P" || code==" O4*" || code==" O2*")) ||
             (element==CAtom::eElement_c && (code==" C2*" || code==" C1*")) ||
-            (element==CAtom::eElement_h && 
-                (code=="1H5*" || code=="2H5*" || code==" H4*" || code==" H3*" || 
-                 code==" H2*" || code==" H1*" || code==" H1P" || code==" H2P" || 
+            (element==CAtom::eElement_h &&
+                (code=="1H5*" || code=="2H5*" || code==" H4*" || code==" H3*" ||
+                 code==" H2*" || code==" H1*" || code==" H1P" || code==" H2P" ||
                  code==" HO2" || code=="1H2*" || code=="2H2*"))
            )
             return Residue::eCompleteBackboneAtom;
@@ -208,8 +212,8 @@ Residue::Residue(StructureBase *parent,
             break;
         }
     }
-    if (!residueGraph) 
-        ERR_POST(Fatal << "confused by Molecule #?, Residue #" << id 
+    if (!residueGraph)
+        ERR_POST(Fatal << "confused by Molecule #?, Residue #" << id
             << "; can't find Residue-graph ID #" << graphID);
 
     // get iupac-code if present - assume it's the first character of the first VisibleString
@@ -288,7 +292,7 @@ Residue::Residue(StructureBase *parent,
     // get bonds
     CResidue_graph::TBonds::const_iterator b, be = residueGraph->GetBonds().end();
     for (b=residueGraph->GetBonds().begin(); b!=be; b++) {
-        int order = b->GetObject().IsSetBond_order() ? 
+        int order = b->GetObject().IsSetBond_order() ?
                 b->GetObject().GetBond_order() : Bond::eUnknown;
         const Bond *bond = MakeBond(this,
             moleculeID, id, b->GetObject().GetAtom_id_1().Get(),
@@ -343,7 +347,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
         // use highlighting color if necessary
         if (atomStyle.isHighlighted)
-            atomStyle.color = parentSet->highlightColor;
+            atomStyle.color = parentSet->colors->Get(Colors::eHighlight);
 
         // get AtomCoord* for appropriate altConf and draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed &&

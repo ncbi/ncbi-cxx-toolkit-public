@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/30 15:49:08  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.8  2000/11/02 16:48:22  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -76,6 +79,13 @@ class Sequence;
 class Cn3DMainFrame;
 class StructureObject;
 class Molecule;
+class Messenger;
+
+
+// for now, there is only a single global messenger, which for convenience
+// can be accessed anywhere via this function
+Messenger * GlobalMessenger(void);
+
 
 class Messenger
 {
@@ -91,6 +101,10 @@ public:
     // un-Post a redraw message - use (carefully!) to avoid redundant redraws
     // (flicker) if some other action is known to cause immediate redraw.
     void UnPostRedrawSequenceViewers(void);
+
+    // un-Post structure redraws - again, use carefully to avoid redundant redraws
+    // when some non-Messenger method causes strucure redraws to occur
+    void UnPostStructureRedraws(void);
 
     // should be called only by Cn3DApp at idle time; processes any redraws
     // that have been posted by prior event(s)
@@ -112,7 +126,7 @@ public:
 
     // highlight any 'ole residue, regardless of molecule type
     void ToggleHighlightOnAnyResidue(const Molecule *molecule, int residueID);
-    
+
     // add/remove highlights based on sequence
     void AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
     void RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);

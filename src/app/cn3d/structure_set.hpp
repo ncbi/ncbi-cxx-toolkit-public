@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/11/30 15:49:09  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.30  2000/11/13 18:05:58  thiessen
 * working structure re-superpositioning
 *
@@ -154,11 +157,13 @@ class AlignmentSet;
 class AlignmentManager;
 class SequenceViewer;
 class Messenger;
+class Colors;
+class Molecule;
 
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime, Messenger *messenger);
+    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime);
     ~StructureSet(void);
 
     // public data
@@ -173,14 +178,11 @@ public:
     const AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
 
-    // messenger - is owned by wxApp
-    Messenger *messenger;
-
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;
     StyleManager *styleManager;
 
-    const Vector highlightColor;
+    Colors *colors;
 
     Vector center; // center of structure (relative to Master's coordinates)
     double maxDistFromCenter; // max distance of any atom from center
@@ -251,11 +253,15 @@ public:
 
     ~StructureObject(void) { if (transformToMaster) delete transformToMaster; }
 
-    // an object has one ChemicalGraph that can be applied to one or more 
+    // an object has one ChemicalGraph that can be applied to one or more
     // CoordSets to generate the object's model(s)
     const ChemicalGraph *graph;
     typedef LIST_TYPE < const CoordSet * > CoordSetList;
     CoordSetList coordSets;
+
+    // map of domainIDs -> Molecule
+    typedef std::map < int, const Molecule * > DomainMap;
+    DomainMap domainMap;
 
     // public methods
 

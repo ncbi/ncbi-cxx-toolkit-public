@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/30 15:49:09  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
 * Revision 1.13  2000/11/11 21:12:07  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -79,7 +82,7 @@
 
 #include <list>
 
-#include "cn3d/alignment_manager.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -95,7 +98,7 @@ class SequenceViewer
     friend class SequenceViewerWindow;
 
 public:
-    SequenceViewer(AlignmentManager *alnMgr, Messenger *messenger);
+    SequenceViewer(AlignmentManager *alnMgr);
     ~SequenceViewer(void);
 
     // to create displays from unaligned sequence(s), or multiple alignment
@@ -133,7 +136,6 @@ private:
     void NewDisplay(SequenceDisplay *display);
 
     AlignmentManager *alignmentManager;
-    Messenger *messenger;
     SequenceViewerWindow *viewerWindow;
 
     typedef std::list < BlockMultipleAlignment * > AlignmentStack;
