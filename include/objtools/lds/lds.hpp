@@ -114,6 +114,9 @@ public:
 
     CLDS_Database* GetDefaultDatabase() { return *(m_DataBases.begin()); }
 
+    /// Find LDS database by the alias
+    CLDS_Database* GetDatabase(const string& alias);
+
 private:
     CLDS_DatabaseHolder(const CLDS_DatabaseHolder&);
     CLDS_DatabaseHolder& operator=(const CLDS_DatabaseHolder&);
@@ -130,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/10/27 20:16:45  kuznets
+ * +CLDS_DatabaseHolder::GetDatabase
+ *
  * Revision 1.18  2003/10/27 19:18:08  kuznets
  * +CLDS_DatabaseHolder::AddDatabase
  *

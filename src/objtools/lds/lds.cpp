@@ -235,6 +235,19 @@ CLDS_DatabaseHolder::~CLDS_DatabaseHolder()
     }   
 }
 
+CLDS_Database* CLDS_DatabaseHolder::GetDatabase(const string& alias)
+{
+    ITERATE(vector<CLDS_Database*>, it, m_DataBases) {
+        CLDS_Database* db = *it;
+        const string& db_alias = db->GetAlias();
+        if (db_alias == alias) {
+            return db;
+        }
+    }
+    return 0;
+    
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -242,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/10/27 20:16:57  kuznets
+ * +CLDS_DatabaseHolder::GetDatabase
+ *
  * Revision 1.13  2003/10/27 19:18:59  kuznets
  * Added NULL database protection into CLDS_DatabaseHolder::CLDS_DatabaseHolder
  *
