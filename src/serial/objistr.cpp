@@ -360,6 +360,11 @@ size_t CObjectIStream::GetStreamOffset(void) const
     return m_Input.GetStreamOffset();
 }
 
+string CObjectIStream::GetPosition(void) const
+{
+    return "byte "+NStr::UIntToString(GetStreamOffset());
+}
+
 void CObjectIStream::ThrowError1(const char* file, int line, 
                                  TFailFlags fail, const char* message)
 {
@@ -1335,6 +1340,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.121  2003/11/26 20:04:46  vasilche
+* Method put in wrong file.
+*
 * Revision 1.120  2003/11/26 19:59:39  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
