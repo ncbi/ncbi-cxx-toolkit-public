@@ -291,7 +291,6 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
    Int4 sumscore, best_sumscore;
    Boolean reverse_link;
    Uint1Ptr subject_seq = NULL;
-   Int4 length, buf_len=0; 
    Int4 longest_intron = hit_params->options->longest_intron;
 
    hspcnt = hsp_list->hspcnt;
@@ -484,9 +483,6 @@ BlastLinkHsps(Uint1 program_number, BlastHSPListPtr hsp_list,
    BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
    BLAST_ScoreBlkPtr sbp, BlastHitSavingParametersPtr hit_params)
 {
-	BlastHSPPtr hsp;
-	Int4 index;
-
 	if (hsp_list && hsp_list->hspcnt > 0)
 	{
       /* Link up the HSP's for this hsp_list. */
