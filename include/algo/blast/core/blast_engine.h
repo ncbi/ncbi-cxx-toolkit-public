@@ -94,7 +94,6 @@ BLAST_SearchEngine(EBlastProgramType program_number,
  * @param hit_options Options for saving the HSPs [in]
  * @param eff_len_options Options for setting effective lengths [in]
  * @param psi_options Options specific to PSI-BLAST [in]
- * @param db_options Options for handling BLAST database [in]
  * @param hsp_stream Placeholder for saving results [in]
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search [out]
@@ -111,7 +110,6 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    const BlastHitSavingOptions* hit_options,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
-   const BlastDatabaseOptions* db_options,
    BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
    BlastHSPResults** results);
 
