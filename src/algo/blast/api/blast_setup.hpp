@@ -49,7 +49,7 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 class CBlastOptions;
 
-NCBI_XBLAST_EXPORT void
+void
 SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo); // out
 
@@ -66,7 +66,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
              Blast_Message** blast_msg);
 
-NCBI_XBLAST_EXPORT void
+void
 SetupSubjects(const TSeqLocVector& subjects, 
               EProgram program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
@@ -112,7 +112,6 @@ enum ESentinelType {
  * @throws CBlastException, CSeqVectorException, CException
  * @return pair containing the buffer and its length. 
  */
-NCBI_XBLAST_EXPORT
 SBlastSequence
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope,
@@ -132,7 +131,6 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
  *        length sequence_length for given encoding and parameter constraints.
  *        If the sequence_length is 0, the return value will be 0 too
  */
-NCBI_XBLAST_EXPORT
 TSeqPos
 CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
                          objects::ENa_strand strand =
@@ -147,7 +145,6 @@ CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
  * @param encoding Encoding for which a sentinel byte is needed [in]
  * @return sentinel byte
  */
-NCBI_XBLAST_EXPORT
 Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException));
 
 #if 0
@@ -160,7 +157,7 @@ Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException));
  * @param translation buffer to hold the translation, should be allocated
  * outside this function [out]
  */
-NCBI_XBLAST_EXPORT void
+void
 BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev, 
                     const int nucl_length, const short frame, Uint1* translation);
 #endif
@@ -170,7 +167,6 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
  * @param matrix_name matrix to search for
  * @param is_prot true if this is a protein matrix
  */
-NCBI_XBLAST_EXPORT
 string
 FindMatrixPath(const char* matrix_name, bool is_prot);
 
@@ -179,14 +175,12 @@ FindMatrixPath(const char* matrix_name, bool is_prot);
  * @param dbname Database to search for
  * @param is_prot true if this is a protein matrix
  */
-NCBI_XBLAST_EXPORT
 string
 FindBlastDbPath(const char* dbname, bool is_prot);
 
 /** Returns the number of frames for a given BLAST program
  * @param p program 
  */
-NCBI_XBLAST_EXPORT
 unsigned int 
 GetNumberOfFrames(EProgram p);
 
@@ -211,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/03/02 14:25:58  camacho
+* Removed unneeded NCBI_XBLAST_EXPORT
+*
 * Revision 1.31  2005/03/01 20:52:42  camacho
 * Doxygen fixes
 *
