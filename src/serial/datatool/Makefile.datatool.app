@@ -16,7 +16,7 @@ SRC = datatool \
 LIB = xser xutil xncbi
 
 # Build even --without-exe, to avoid version skew.
-APP_OR_NONE = app
+APP_OR_NULL = app
 
 CHECK_CMD = datatool.sh
 CHECK_CMD = datatool.sh /net/sampson/a/coremake/test_data/objects
