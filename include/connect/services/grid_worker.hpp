@@ -67,6 +67,7 @@ class CWorkerNodeJobContext;
 class IWorkerNodeJob
 {
 public:
+    virtual ~IWorkerNodeJob() {}
     /// Execute the job.
     ///
     /// Job is considered successfull if method calls 
@@ -341,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/28 16:49:00  didenko
+ * Added virtual desturctors to all new interfaces to prevent memory leaks
+ *
  * Revision 1.6  2005/03/25 16:24:58  didenko
  * Classes restructure
  *

@@ -53,10 +53,13 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT INetScheduleStorage
 {
 public:
+    virtual ~INetScheduleStorage() {}
+
     virtual CNcbiIstream& GetIStream(const string& data_id, 
                                      size_t* blob_size = 0) = 0;
     virtual CNcbiOstream& CreateOStream(string& data_id) = 0;
     virtual void Reset() = 0;
+
 };
 
 
@@ -67,6 +70,7 @@ public:
 class INetScheduleStorageFactory
 {
 public:
+    virtual ~INetScheduleStorageFactory() {}
     /// Create a NetSchedule storage
     ///
     virtual INetScheduleStorage* CreateInstance(void) = 0;
@@ -80,6 +84,7 @@ class CNetScheduleClient;
 class INetScheduleClientFactory
 {
 public:
+    virtual ~INetScheduleClientFactory() {}
     /// Create a NetSchedule client
     ///
     virtual CNetScheduleClient* CreateInstance(void) = 0;
@@ -132,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 16:49:00  didenko
+ * Added virtual desturctors to all new interfaces to prevent memory leaks
+ *
  * Revision 1.4  2005/03/25 16:24:58  didenko
  * Classes restructure
  *

@@ -36,6 +36,10 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <connect/connect_export.h>
+#include <connect/services/grid_client.hpp>
+#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_storage.hpp>
+
 
 /// @file grid_client_app.hpp
 /// NetSchedule Framework specs. 
@@ -47,10 +51,6 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
-
-class CNetScheduleClient;
-class INetScheduleStorage;
-class CGridClient;
 
 /// Grid Client Application
 /// 
@@ -84,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/28 16:49:00  didenko
+ * Added virtual desturctors to all new interfaces to prevent memory leaks
+ *
  * Revision 1.1  2005/03/25 16:23:43  didenko
  * Initail version
  *
