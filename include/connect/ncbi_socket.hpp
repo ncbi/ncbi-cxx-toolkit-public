@@ -129,6 +129,8 @@ public:
     EIO_Status Write(const void* buf, size_t size, size_t* n_written = 0,
                      EIO_WriteMethod how = eIO_WritePersist);
 
+    EIO_Status Abort(void);
+
     // NOTE 1:  either of "host", "port" can be NULL to opt out from
     //          obtaining the corresponding value;
     // NOTE 2:  both "*host" and "*port" come out in the same
@@ -370,6 +372,12 @@ inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
 }
 
 
+inline EIO_Status CSocket::Abort(void)
+{
+    return m_Socket ? SOCK_Abort(m_Socket) : eIO_Closed;
+}
+
+
 inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
 {
     return direction == eIO_Open ? (m_Socket ? eIO_Success : eIO_Closed)
@@ -566,6 +574,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/05/20 21:24:55  lavr
+ * +CSocket::Abort()
+ *
  * Revision 6.24  2003/05/14 03:46:44  lavr
  * Match revised datagram socket API
  *
