@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.121  2002/02/13 00:39:44  thiessen
+* add CN3D_HOME env var under unix
+*
 * Revision 1.120  2002/02/01 13:58:01  thiessen
 * add hourglass cursor on file load
 *
@@ -769,6 +772,11 @@ bool Cn3DApp::OnInit(void)
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
+#ifdef __WXGTK__
+    if (getenv("CN3D_HOME") != NULL)
+        programDir = getenv("CN3D_HOME");
+    else
+#endif
     if (wxIsAbsolutePath(argv[0]))
         programDir = wxPathOnly(argv[0]).c_str();
     else if (wxPathOnly(argv[0]) == "")
