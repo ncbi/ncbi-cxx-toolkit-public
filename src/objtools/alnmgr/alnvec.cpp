@@ -619,10 +619,10 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
 
     int score = 0;
 
-    const char * res1 = s1.c_str();
-    const char * res2 = s2.c_str();
-    const char * end1 = res1 + s1.length();
-    const char * end2 = res2 + s2.length();
+    const unsigned char * res1 = (unsigned char *) s1.c_str();
+    const unsigned char * res2 = (unsigned char *) s2.c_str();
+    const unsigned char * end1 = res1 + s1.length();
+    const unsigned char * end2 = res2 + s2.length();
     
     static bool s_FullScoreMatrixInitialized = false;
     if (s1_is_prot  &&  s2_is_prot) {
@@ -633,6 +633,8 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
         
         // use BLOSUM62 matrix
         for ( ;  res1 != end1;  res1++, res2++) {
+            _ASSERT(*res1 < NCBI_FSM_DIM);
+            _ASSERT(*res2 < NCBI_FSM_DIM);
             score += s_FullScoreMatrix.s[*res1][*res2];
         }
     } else if ( !s1_is_prot  &&  !s2_is_prot ) {
@@ -649,11 +651,15 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
         if (s1_is_prot) {
             TranslateNAToAA(s2, t);
             for ( ;  res1 != end1;  res1++, res2++) {
+                _ASSERT(*res1 < NCBI_FSM_DIM);
+                _ASSERT(*res2 < NCBI_FSM_DIM);
                 score += s_FullScoreMatrix.s[*res1][*res2];
             }
         } else {
             TranslateNAToAA(s1, t);
             for ( ;  res2 != end2;  res1++, res2++) {
+                _ASSERT(*res1 < NCBI_FSM_DIM);
+                _ASSERT(*res2 < NCBI_FSM_DIM);
                 score += s_FullScoreMatrix.s[*res1][*res2];
             }
         }
@@ -844,6 +850,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2004/12/21 18:09:05  todorov
+* Explicit cast (to avoid warning) + range assertion for residues in CalculateScore
+*
 * Revision 1.62  2004/10/28 21:03:53  todorov
 * +argument check for GetColumnVector
 *
