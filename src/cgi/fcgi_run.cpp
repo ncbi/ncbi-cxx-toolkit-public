@@ -105,10 +105,7 @@ class CCgiWatchFile
 {
 public:
     // ignores changes after the first LIMIT bytes
-    CCgiWatchFile(const string& filename, int limit = 1024)
-        : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
-    { m_Count = x_Read(m_Buf.get()); }
-
+    CCgiWatchFile(const string& filename, int limit = 1024);
     bool HasChanged(void);
 
 private:
@@ -122,6 +119,15 @@ private:
     // returns count of bytes read (up to m_Limit), or -1 if opening failed.
     int x_Read(char* buf);
 };
+
+CCgiWatchFile::CCgiWatchFile(const string& filename, int limit)
+        : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
+{
+    m_Count = x_Read(m_Buf.get());
+    if (m_Count < 0) {
+        ERR_POST("Failed to open CGI watch file " << filename);
+    }
+}
 
 inline
 bool CCgiWatchFile::HasChanged(void)
@@ -534,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.46  2004/09/15 14:06:40  ucko
+ * CCgiWatchFile::CCgiWatchFile: log an error if opening the file failed.
+ *
  * Revision 1.45  2004/09/14 19:43:33  ucko
  * CCgiWatchFile::HasChanged: DTRT for unopenable files.
  *
