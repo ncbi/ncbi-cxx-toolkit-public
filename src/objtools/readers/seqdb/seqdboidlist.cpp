@@ -85,10 +85,10 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, CSeqDBLockHold & locked)
     
     // First, get the memory space, clear it.
     
-    // Pad memory space to word boundary.
+    // Pad memory space to word boundary, add 8 bytes for "insurance".
     
     Uint4 num_oids = volset.GetNumSeqs();
-    Uint4 byte_length = ((num_oids + 31) / 32) * 4;
+    Uint4 byte_length = ((num_oids + 31) / 32) * 4 + 8;
     
     m_Bits   = (TUC*) m_Atlas.Alloc(byte_length, locked);
     m_BitEnd = m_Bits + byte_length;
@@ -247,12 +247,10 @@ void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
         
         _ASSERT(endp <= m_BitEnd);
         
-        TCUC * endp2 = endp - 1;
-        
         // This loop iterates over the source bytes.  Each byte is
         // split over two destination bytes.
         
-        while(locp < endp2) {
+        while(locp < endp) {
             // Store left half of source char in one location.
             TCUC source = *srcp;
             *locp |= (source >> Rshift);
@@ -262,6 +260,8 @@ void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
             *locp |= (source << Lshift);
             srcp++;
         }
+        
+        _ASSERT(locp == endp);
     }
     
     m_Atlas.RetRegion(lease);
