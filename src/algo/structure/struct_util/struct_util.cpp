@@ -109,6 +109,8 @@ AlignmentUtility::~AlignmentUtility()
         delete m_sequenceSet;
     if (m_alignmentSet)
         delete m_alignmentSet;
+    if (m_currentMultiple)
+        delete m_currentMultiple;
 }
 
 static bool AlignedToAllSlaves(unsigned int masterResidue, const AlignmentSet::AlignmentList& alignments)
@@ -145,8 +147,15 @@ static bool NoBlockBoundariesBetween(unsigned int masterFrom, unsigned int maste
 
 bool AlignmentUtility::DoIBM(void)
 {
-    if (!m_alignmentSet)
+    if (m_currentMultiple) {
+        WARNING_MESSAGE("DoIBM() - already have a blocked alignment");
+        return true;
+    }
+    if (!m_alignmentSet || m_seqAnnots.size() == 0) {
+        ERROR_MESSAGE("DoIBM() - no alignment data present");
         return false;
+    }
+
     TRACE_MESSAGE("doing IBM");
     const AlignmentSet::AlignmentList& alignments = m_alignmentSet->m_alignments;
     AlignmentSet::AlignmentList::const_iterator a, ae = alignments.end();
@@ -212,10 +221,9 @@ bool AlignmentUtility::DoIBM(void)
         return false;
     }
 
-    // update all internal data according to this new alignment
-    TRACE_MESSAGE("replacing alignment data with IBM results");
+    // switch data to the new multiple alignment
     m_currentMultiple = multipleAlignment.Release();
-    UpdateAlignmentsFromMultiple();
+    RemoveAlignAnnot();
     return true;
 }
 
@@ -225,12 +233,12 @@ int ScoreByPSSM(unsigned int block, unsigned int queryPos)
 }
 
 bool AlignmentUtility::DoLeaveOneOut(
-    unsigned int row, const std::vector < unsigned int >& blocksToRealign,  // what to realign
-    double percentile, unsigned int extension, unsigned int cutoff)         // to calculate max loop lengths
+    unsigned int rowToRealign, const std::vector < unsigned int >& blocksToRealign, // what to realign
+    double percentile, unsigned int extension, unsigned int cutoff)                 // to calculate max loop lengths
 {
-    // first we need to do IBM so that we have consistent blocks
-    if (!DoIBM())
-        return false;
+    // first we need to do IBM -> BlockMultipleAlignment
+    if (!m_currentMultiple && !DoIBM())
+            return false;
 
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     m_currentMultiple->GetUngappedAlignedBlocks(&blocks);
@@ -242,6 +250,8 @@ bool AlignmentUtility::DoLeaveOneOut(
     bool status = false;
     DP_BlockInfo *dpBlocks = NULL;
     DP_AlignmentResult *dpResult = NULL;
+
+    bool prevState = CException::EnableBackgroundReporting(false);
 
     try {
         // fill out DP_BlockInfo structure
@@ -264,14 +274,15 @@ bool AlignmentUtility::DoLeaveOneOut(
                     m_currentMultiple->NRows(), loopLengths, percentile, extension, cutoff);
             }
         }
+        delete loopLengths;
 
         // pull out row that we're realigning
-        if (row < 1 || row >= m_currentMultiple->NRows())
+        if (rowToRealign < 1 || rowToRealign >= m_currentMultiple->NRows())
             THROW_MESSAGE("invalid row number");
-        vector < unsigned int > rowsToRemove(1, row);
+        vector < unsigned int > rowsToRemove(1, rowToRealign);
         BlockMultipleAlignment::AlignmentList toRealign;
         TRACE_MESSAGE("extracting for realignment: "
-            << m_currentMultiple->GetSequenceOfRow(row)->IdentifierString());
+            << m_currentMultiple->GetSequenceOfRow(rowToRealign)->IdentifierString());
         if (!m_currentMultiple->ExtractRows(rowsToRemove, &toRealign))
             THROW_MESSAGE("ExtractRows() failed");
 
@@ -317,13 +328,26 @@ bool AlignmentUtility::DoLeaveOneOut(
             }
         }
 
-        // merge realigned row back into the multiple alignment
+        // merge realigned row back onto the end of the multiple alignment
+        TRACE_MESSAGE("merging DP results back into multiple alignment");
         if (!m_currentMultiple->MergeAlignment(toRealign.front()))
             THROW_MESSAGE("MergeAlignment() failed");
 
-        // update all data according to new alignment
-        TRACE_MESSAGE("replacing alignment data with merged DP results");
-        UpdateAlignmentsFromMultiple();
+        // move extracted row back to where it was
+        vector < unsigned int > rowOrder(m_currentMultiple->NRows());
+        for (r=0; r<m_currentMultiple->NRows(); r++) {
+            if (r < rowToRealign)
+                rowOrder[r] = r;
+            else if (r == rowToRealign)
+                rowOrder[r] = m_currentMultiple->NRows() - 1;
+            else
+                rowOrder[r] = r - 1;
+        }
+        if (!m_currentMultiple->ReorderRows(rowOrder))
+            THROW_MESSAGE("ReorderRows() failed");
+
+        // remove other alignment data, since it can no longer match the multiple
+        RemoveAlignAnnot();
 
         status = true;
 
@@ -331,17 +355,38 @@ bool AlignmentUtility::DoLeaveOneOut(
         ERROR_MESSAGE("DoLeaveOneOut(): exception: " << e.GetMsg());
     }
 
+    CException::EnableBackgroundReporting(prevState);
+
     DP_DestroyBlockInfo(dpBlocks);
     DP_DestroyAlignmentResult(dpResult);
 
     return status;
 }
 
-void AlignmentUtility::UpdateAlignmentsFromMultiple(void)
+void AlignmentUtility::RemoveMultiple(void)
 {
-    delete m_alignmentSet;
+    if (m_currentMultiple) {
+        delete m_currentMultiple;
+        m_currentMultiple = NULL;
+    }
+}
+
+void AlignmentUtility::RemoveAlignAnnot(void)
+{
     m_seqAnnots.clear();
-    m_alignmentSet = AlignmentSet::CreateFromMultiple(m_currentMultiple, &m_seqAnnots, *m_sequenceSet);
+    if (m_alignmentSet) {
+        delete m_alignmentSet;
+        m_alignmentSet = NULL;
+    }
+}
+
+const AlignmentUtility::SeqAnnotList& AlignmentUtility::GetSeqAnnots(void)
+{
+    if (!m_alignmentSet || m_seqAnnots.size() == 0) {
+        m_alignmentSet = AlignmentSet::CreateFromMultiple(
+            m_currentMultiple, &m_seqAnnots, *m_sequenceSet);
+    }
+    return m_seqAnnots;
 }
 
 END_SCOPE(struct_util)
@@ -349,6 +394,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/26 14:30:16  thiessen
+* adjust handling of alingment data ; add row ordering
+*
 * Revision 1.3  2004/05/26 02:40:24  thiessen
 * progress towards LOO - all but PSSM and row ordering
 *

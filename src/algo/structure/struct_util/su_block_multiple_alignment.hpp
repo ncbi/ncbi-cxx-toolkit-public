@@ -207,6 +207,9 @@ public:
     // object's aligned blocks
     bool MergeAlignment(const BlockMultipleAlignment *newAlignment);
 
+    // reorder rows according to newOrder; returns true on success
+    bool ReorderRows(const std::vector < unsigned int >& newOrder);
+
 private:
     SequenceList m_sequences;
 
@@ -295,6 +298,9 @@ public:
 
     unsigned int NSequences(void) const { return m_ranges.size(); }
 
+    // reorder rows according to newOrder; returns true on success
+    bool ReorderRows(const std::vector < unsigned int >& newOrder);
+
 protected:
     Block(const BlockMultipleAlignment *multiple) :
         m_parentAlignment(multiple), m_ranges(multiple->NRows()) { }
@@ -356,6 +362,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/26 14:30:16  thiessen
+* adjust handling of alingment data ; add row ordering
+*
 * Revision 1.3  2004/05/26 02:40:24  thiessen
 * progress towards LOO - all but PSSM and row ordering
 *

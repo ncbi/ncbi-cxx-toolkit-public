@@ -58,8 +58,8 @@ public:
 
     bool Okay(void) const { return m_okay; }
 
-    const SeqEntryList& GetSeqEntries(void) const { return m_seqEntries; }
-    const SeqAnnotList& GetSeqAnnots(void) const { return m_seqAnnots; }
+    // Get ASN data
+    const SeqAnnotList& GetSeqAnnots(void);
 
     // do the intersect-by-master (IBM) algorithm
     bool DoIBM(void);
@@ -71,18 +71,24 @@ public:
         double percentile, unsigned int extension, unsigned int cutoff);        // to calculate max loop lengths
 
 private:
+    // sequence data
     SeqEntryList m_seqEntries;
     SequenceSet *m_sequenceSet;
+
+    // alignment data - the idea is that since these are redundant, we'll either have the
+    // SeqAnnots+AlignmentSet or the BlockMultipleAlignment, not (necessarily) both. If one
+    // changes, the other should be removed or recreated; if both are present, they must
+    // contain the same data.
     SeqAnnotList m_seqAnnots;
     AlignmentSet *m_alignmentSet;
+    BlockMultipleAlignment *m_currentMultiple;
 
     void Init(void);
     bool m_okay;
 
-    BlockMultipleAlignment *m_currentMultiple;
-
-    // re-create AlignmentSet and SeqAnnotList from m_currentMultiple
-    void UpdateAlignmentsFromMultiple(void);
+    // to delete parts of the data
+    void RemoveMultiple(void);
+    void RemoveAlignAnnot(void);
 };
 
 END_SCOPE(struct_util)
@@ -92,6 +98,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/26 14:30:53  thiessen
+* adjust handling of alingment data ; add row ordering
+*
 * Revision 1.3  2004/05/26 02:41:13  thiessen
 * progress towards LOO - all but PSSM and row ordering
 *

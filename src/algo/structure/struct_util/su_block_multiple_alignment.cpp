@@ -1146,6 +1146,8 @@ bool BlockMultipleAlignment::ExtractRows(
     // remove sequences
     TRACE_MESSAGE("deleting sequences");
     VectorRemoveElements(m_sequences, removeRows, slavesToRemove.size());
+    VectorRemoveElements(m_rowDoubles, removeRows, slavesToRemove.size());
+    VectorRemoveElements(m_rowStrings, removeRows, slavesToRemove.size());
 
     // delete row from all blocks, removing any zero-width blocks
     TRACE_MESSAGE("deleting alignment rows from blocks");
@@ -1253,6 +1255,56 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
         return false;
     }
     return true;
+}
+
+template < class T >
+bool ReorderVector(T& v, const std::vector < unsigned int >& newOrder)
+{
+    // check validity of new ordering
+    if (newOrder.size() != v.size()) {
+        ERROR_MESSAGE("ReorderVector() - wrong size newOrder");
+        return false;
+    }
+    vector < bool > isPresent(v.size(), false);
+    unsigned int r;
+    for (r=0; r<v.size(); r++) {
+        if (isPresent[newOrder[r]]) {
+            ERROR_MESSAGE("ReorderVector() - invalid newOrder: repeated/missing row");
+            return false;
+        }
+        isPresent[newOrder[r]] = true;
+    }
+
+    // not terribly efficient - makes a whole new copy with the new order, then re-copies back
+    T reordered(v.size());
+    for (r=0; r<v.size(); r++)
+        reordered[r] = v[newOrder[r]];
+    v = reordered;
+
+    return true;
+}
+
+bool BlockMultipleAlignment::ReorderRows(const std::vector < unsigned int >& newOrder)
+{
+    // can't reorder master
+    if (newOrder[0] != 0) {
+        ERROR_MESSAGE("ReorderRows() - can't move master row");
+        return false;
+    }
+    bool okay =
+        (ReorderVector(m_sequences, newOrder) &&
+         ReorderVector(m_rowDoubles, newOrder) &&
+         ReorderVector(m_rowStrings, newOrder));
+    if (!okay) {
+        ERROR_MESSAGE("reordering of sequences and status info failed");
+        return false;
+    }
+    BlockList::iterator b, be = m_blocks.end();
+    for (b=m_blocks.begin(); b!=be; ++b)
+        okay = (okay && (*b)->ReorderRows(newOrder));
+    if (!okay)
+        ERROR_MESSAGE("reordering of block ranges failed");
+    return okay;
 }
 
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
@@ -1406,6 +1458,12 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
 */
 
 
+bool Block::ReorderRows(const std::vector < unsigned int >& newOrder)
+{
+    return ReorderVector(m_ranges, newOrder);
+}
+
+
 ///// UngappedAlignedBlock methods /////
 
 char UngappedAlignedBlock::GetCharacterAt(unsigned int blockColumn, unsigned int row) const
@@ -1522,6 +1580,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/26 14:30:16  thiessen
+* adjust handling of alingment data ; add row ordering
+*
 * Revision 1.4  2004/05/26 02:40:24  thiessen
 * progress towards LOO - all but PSSM and row ordering
 *
