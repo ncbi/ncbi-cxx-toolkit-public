@@ -784,129 +784,6 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
 }
 
 
-
-// Table element.
-
-class CHTML_tc_Cache
-{
-public:
-    CHTML_tc_Cache(void)
-        : m_Used(false), m_Node(0)
-    {
-        return;
-    }
-
-    bool IsUsed(void) const
-    {
-        return m_Used;
-    }
-
-    bool IsNode(void) const
-    {
-        return m_Node != 0;
-    }
-    CHTML_tc* GetCellNode(void) const
-    {
-        return m_Node;
-    }
-
-    void SetUsed(void);
-    void SetCellNode(CHTML_tc* node);
-
-private:
-    bool m_Used;
-    CHTML_tc* m_Node;
-};
-
-
-class CHTML_tr_Cache
-{
-public:
-    typedef CHTML_table::TIndex TIndex;
-
-    CHTML_tr_Cache(void)
-        : m_Node(0),
-          m_CellCount(0), m_CellsSize(0), m_Cells(0), m_FilledCellCount(0)
-    {
-        return;
-    }
-
-    ~CHTML_tr_Cache(void)
-    {
-        delete[] m_Cells;
-    }
-
-    CHTML_tr* GetRowNode(void) const
-    {
-        return m_Node;
-    }
-
-    void SetRowNode(CHTML_tr* rowNode)
-    {
-        _ASSERT(!m_Node && rowNode);
-        m_Node = rowNode;
-    }
-
-    TIndex GetCellCount(void) const
-    {
-        return m_CellCount;
-    }
-
-    CHTML_tc_Cache& GetCellCache(TIndex col);
-
-    void AppendCell(CHTML_tr* rowNode, TIndex col,
-                    CHTML_tc* cellNode, TIndex colSpan);
-    void SetUsedCells(TIndex colBegin, TIndex colEnd);
-    void SetUsedCells(CHTML_tc* cellNode, TIndex colBegin, TIndex colEnd);
-
-private:
-    CHTML_tr_Cache(const CHTML_tr_Cache&);
-    CHTML_tr_Cache& operator=(const CHTML_tr_Cache&);
-
-    CHTML_tr* m_Node;
-    TIndex m_CellCount;
-    TIndex m_CellsSize;
-    CHTML_tc_Cache* m_Cells;
-    TIndex m_FilledCellCount;
-};
-
-
-class CHTML_table_Cache
-{
-public:
-    typedef CHTML_table::TIndex TIndex;
-
-    CHTML_table_Cache(CHTML_table* table);
-    ~CHTML_table_Cache(void);
-
-    TIndex GetRowCount(void) const
-    {
-        return m_RowCount;
-    }
-
-    CHTML_tr_Cache& GetRowCache(TIndex row);
-    CHTML_tr* GetRowNode(TIndex row);
-    CHTML_tc* GetCellNode(TIndex row, TIndex col,
-                          CHTML_table::ECellType type);
-    CHTML_tc* GetCellNode(TIndex row, TIndex col,
-                          CHTML_table::ECellType type,
-                          TIndex rowSpan, TIndex colSpan);
-
-    void InitRow(TIndex row, CHTML_tr* rowNode);
-    void SetUsedCells(TIndex rowBegin, TIndex rowEnd,
-                      TIndex colBegin, TIndex colEnd);
-private:
-    CHTML_table* m_Node;
-    TIndex m_RowCount;
-    TIndex m_RowsSize;
-    CHTML_tr_Cache** m_Rows;
-    TIndex m_FilledRowCount;
-
-    CHTML_table_Cache(const CHTML_table_Cache&);
-    CHTML_table_Cache& operator=(const CHTML_table_Cache&);
-};
-
-
 CHTML_tr::CHTML_tr(void)
     : CParent("tr"), m_Parent(0)
 {
@@ -2321,6 +2198,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2004/07/20 20:12:22  ucko
+ * Move declarations of CHTML_t*_Cache to html.hpp, as required by
+ * some auto_ptr<> implementations.
+ *
  * Revision 1.104  2004/07/20 16:36:55  ivanov
  * + CHTML_table::SetColumnWidth
  *
