@@ -62,24 +62,26 @@ class ICache
 {
 public:
     
-    /// ICache can keeps timestamps of every cache entry.
+    /// ICache keeps timestamps of every cache entry.
     /// This enum defines the policy how it is managed.
     /// Different policies can be combined by OR (|)
-    /// @sa SetTimeStampPolicy
+    ///
+    /// @sa SetTimeStampPolicy, TTimeStampFlags
+    ///
     enum ETimeStampFlags {
 
         /// Timestamp management disabled
-        fNoTimeStamp       = 0,
+        fNoTimeStamp               = 0,
 
         /// Cache element is created with a certain timestamp (default)
-        fTimeStampOnCreate = (1 << 0),
+        fTimeStampOnCreate         = (1 << 0),
 
         /// Timestamp is updated every on every access (read or write)
-        fTimeStampOnRead   = (1 << 1),
+        fTimeStampOnRead            = (1 << 1),
         
         /// Timestamp full key-subkey pair. By default only key is taken
         /// into account
-        fTrackSubKey       = (1 << 2),
+        fTrackSubKey                = (1 << 2),
 
         /// Expire objects older than a certain time frame
         /// Example: If object is not accessed within a week it is 
@@ -94,11 +96,12 @@ public:
         
         /// Individual time-to-live may exceed the cache wide settings
         /// (Used to allow long term storage of important information)
-        fIndividualTimingPriority      = (1 << 6)
+        fIndividualTimingPriority   = (1 << 6)
     };
 
     typedef ETimeStampFlags ETimeStampPolicy;
 
+    /// @sa ETimeStampFlags
     typedef int TTimeStampFlags;
 
     /// Set timestamp update policy
@@ -112,7 +115,7 @@ public:
     ///   Zero means it is equal to the default "timeout".
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
                                     int             timeout,
-                                    int             max_timeout=0) = 0;
+                                    int             max_timeout = 0) = 0;
 
     /// Get timestamp policy
     /// @return
@@ -316,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/03 17:21:15  kuznets
+ * Formatting...cosmetics...
+ *
  * Revision 1.9  2004/11/03 17:07:05  kuznets
  * ICache revision2. Add individual timeouts
  *
