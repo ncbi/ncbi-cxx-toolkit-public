@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/03/18 21:46:13  grichenk
+ * +ConstructExcludedSequence()
+ *
  * Revision 6.7  2002/01/16 18:56:31  grichenk
  * Removed CRef<> argument from choice variant setter, updated sources to
  * use references instead of CRef<>s
@@ -96,8 +99,7 @@ bool CBioseq::Equals(const CSerialUserOp& object) const
 
 int CBioseq::sm_ConstructedId = 0;
 
-void CBioseq::x_SeqLoc_To_DeltaExt(CSeq_loc& loc,
-                                   CDelta_ext& ext)
+void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
 {
     switch ( loc.Which() ) {
     case CSeq_loc::e_Packed_int:
@@ -154,7 +156,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(CSeq_loc& loc,
 }
 
 
-CBioseq::CBioseq(CSeq_loc& loc, string str_id)
+CBioseq::CBioseq(const CSeq_loc& loc, string str_id)
     : m_ParentEntry(0)
 {
     CBioseq::TId& id_list = SetId();
@@ -176,6 +178,177 @@ CBioseq::CBioseq(CSeq_loc& loc, string str_id)
 
     CDelta_ext& ext = inst.SetExt().SetDelta();
     x_SeqLoc_To_DeltaExt(loc, ext);
+}
+
+
+void CBioseq::x_ExcludeRange(TRanges& ranges, int start, int stop)
+{
+    if (ranges.size() == 0)
+        return;
+    TRanges::iterator lo = ranges.lower_bound(start);
+    TRanges::iterator hi = ranges.upper_bound(stop+1);
+
+    if (lo != ranges.end()) {
+        if (lo->second == eStop) {
+            // eStop will be removed, add the correct one
+            ranges[start] = eStop;
+        }
+    }
+    if (hi != ranges.end()  &&  hi->second == eStop) {
+        // eStart will be removed, add the correct one
+        ranges[stop+1] = eStart;
+        if (hi->first <= lo->first) {
+            return;
+        }
+        --hi;
+    }
+    ranges.erase(lo, hi);
+}
+
+
+void CBioseq::x_ExcludeSeqLoc(const CSeq_loc& loc,
+                              TRanges& ranges,
+                              CSeq_id& id)
+{
+    // Compare all seq-ids to the first one
+    switch ( loc.Which() ) {
+    case CSeq_loc::e_Whole:
+        {
+            if (id.Which() == CSeq_id::e_not_set) {
+                SerialAssign<CSeq_id>(id, loc.GetWhole());
+            }
+            else {
+                _ASSERT(SerialEquals<CSeq_id>(id, loc.GetWhole()));
+            }
+            ranges.clear(); // no ranges left
+            break;
+        }
+    case CSeq_loc::e_Int:
+        {
+            if (id.Which() == CSeq_id::e_not_set) {
+                SerialAssign<CSeq_id>(id, loc.GetInt().GetId());
+            }
+            else {
+                _ASSERT(SerialEquals<CSeq_id>(id, loc.GetInt().GetId()));
+            }
+            x_ExcludeRange(ranges,
+                loc.GetInt().GetFrom(), loc.GetInt().GetTo());
+            break;
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            iterate (CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+                if (id.Which() == CSeq_id::e_not_set) {
+                    SerialAssign<CSeq_id>(id, (*ii)->GetId());
+                }
+                else {
+                    _ASSERT(SerialEquals<CSeq_id>(id, (*ii)->GetId()));
+                }
+                x_ExcludeRange(ranges, (*ii)->GetFrom(), (*ii)->GetTo());
+            }
+            break;
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            if (id.Which() == CSeq_id::e_not_set) {
+                SerialAssign<CSeq_id>(id, loc.GetPnt().GetId());
+            }
+            else {
+                _ASSERT(SerialEquals<CSeq_id>(id, loc.GetPnt().GetId()));
+            }
+            x_ExcludeRange(ranges,
+                loc.GetPnt().GetPoint(), loc.GetPnt().GetPoint());
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            if (id.Which() == CSeq_id::e_not_set) {
+                SerialAssign<CSeq_id>(id, loc.GetPacked_pnt().GetId());
+            }
+            else {
+                _ASSERT(SerialEquals<CSeq_id>(id, loc.GetPacked_pnt().GetId()));
+            }
+            iterate (CPacked_seqpnt::TPoints, pi, loc.GetPacked_pnt().GetPoints()) {
+                x_ExcludeRange(ranges, *pi, *pi);
+            }
+            break;
+        }
+    case CSeq_loc::e_Mix:
+        {
+            iterate (CSeq_loc_mix::Tdata, li, loc.GetMix().Get()) {
+                x_ExcludeSeqLoc(**li, ranges, id);
+            }
+            break;
+        }
+    case CSeq_loc::e_Equiv:
+    case CSeq_loc::e_Bond:
+    case CSeq_loc::e_Feat:
+        {
+            throw runtime_error(
+                "CBioseq::x_ExcludeSeqLoc() -- seq-loc type not allowed");
+        }
+    }
+}
+
+
+void CBioseq::x_RangeToSeqLoc(CSeq_loc& loc,
+                              CSeq_id& id,
+                              int start,
+                              int stop)
+{
+    _ASSERT(start <= stop);
+    if (start < stop) {
+        // interval
+        loc.SetInt().SetId(id);
+        loc.SetInt().SetFrom(start);
+        loc.SetInt().SetTo(stop);
+    }
+    else {
+        // point
+        loc.SetPnt().SetId(id);
+        loc.SetPnt().SetPoint(start);
+    }
+}
+
+
+CBioseq& CBioseq::ConstructExcludedSequence(const CSeq_loc& loc,
+                                            int len,
+                                            string str_id)
+{
+    TRanges rg;
+    rg[0] = eStart;
+    rg[len] = eStop;
+    CSeq_id* id = new CSeq_id;
+    x_ExcludeSeqLoc(loc, rg, *id);
+
+    // Create seq-loc from the remaining intervals
+    CSeq_loc loc_ex;
+    if (rg.size() == 0) {
+        // No unused ranges left
+        loc_ex.SetEmpty();
+    }
+    else if (rg.size() == 2) {
+        // Simple seq-loc
+        TRanges::iterator it_stop = rg.begin();
+        TRanges::iterator it_start = it_stop;
+        ++it_stop;
+        x_RangeToSeqLoc(loc_ex, *id, it_start->first, it_stop->first-1);
+    }
+    else {
+        // Complex seq-loc
+        CSeq_loc_mix::Tdata& mix = loc_ex.SetMix();
+        for (TRanges::iterator rit = rg.begin(); rit != rg.end(); ++rit) {
+            CRef<CSeq_loc> next = new CSeq_loc;
+            _ASSERT(rit->second == eStart);
+            TRanges::iterator rit2 = rit;
+            ++rit;
+            x_RangeToSeqLoc(*next, *id, rit2->first, rit->first-1);
+            mix.push_back(next);
+        }
+    }
+
+    CBioseq* seq = new CBioseq(loc_ex, str_id);
+    return *seq;
 }
 
 
