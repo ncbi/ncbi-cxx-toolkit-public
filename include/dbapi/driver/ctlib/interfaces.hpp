@@ -30,7 +30,6 @@
  *
  * File Description:  Driver for CTLib server
  *
- *
  */
 
 #include <dbapi/driver/public.hpp>
@@ -96,13 +95,13 @@ public:
     // the following methods are optional (driver will use the default values
     // if not called), the values will affect the new connections only
 
-    virtual void CTLIB_SetApplicationName(const string& a_name) { m_AppName = a_name; }
-    virtual void CTLIB_SetHostName(const string& host_name) { m_HostName = host_name; }
-    virtual void CTLIB_SetPacketSize(CS_INT packet_size) { m_PacketSize = packet_size; }
-    virtual void CTLIB_SetLoginRetryCount(CS_INT n)      { m_LoginRetryCount = n; }
-    virtual void CTLIB_SetLoginLoopDelay(CS_INT nof_sec) { m_LoginLoopDelay = nof_sec; }
+    virtual void CTLIB_SetApplicationName(const string& a_name);
+    virtual void CTLIB_SetHostName(const string& host_name);
+    virtual void CTLIB_SetPacketSize(CS_INT packet_size);
+    virtual void CTLIB_SetLoginRetryCount(CS_INT n);
+    virtual void CTLIB_SetLoginLoopDelay(CS_INT nof_sec);
 
-    virtual CS_CONTEXT* CTLIB_GetContext() const { return m_Context; }
+    virtual CS_CONTEXT* CTLIB_GetContext() const;
 
     static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
     static bool CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
@@ -493,7 +492,7 @@ public:
     virtual ~CTL_ITDescriptor();
 
 protected:
-    CTL_ITDescriptor() { return; };
+    CTL_ITDescriptor();
 
     CS_IODESC m_Desc;
 };
@@ -531,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2001/11/06 17:58:56  lavr
+ * Get rid of inline methods - all moved into source files
+ *
  * Revision 1.7  2001/10/22 15:14:50  lavr
  * Beautifications...
  *
