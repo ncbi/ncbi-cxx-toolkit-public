@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.3  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -103,7 +106,7 @@ public:
 
     /// Get Bioseq handle by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
-    CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
+    CBioseq_Handle GetBioseqHandle(CScope& scope, const CSeq_id& id);
 
     // Remove TSE from the datasource, update indexes
     bool DropTSE(const CSeq_entry& tse);

@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+*
 * Revision 1.4  2002/01/23 21:59:32  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -96,11 +100,11 @@ static string s_TitleFromProtein   (const CBioseq_Handle& handle,
 static string s_TitleFromSegment   (const CBioseq_Handle& handle,
                                           CScope&        scope);
 
-string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
+string CBioseq_Handle::GetTitle(TGetTitleFlags flags)
 {
     string                    prefix, title, suffix;
     string                    organism;
-    CBioseq_Handle::TBioseqCore core        = handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore core        = GetBioseqCore();
     CConstRef<CTextseq_id>    tsid        = NULL;
     CConstRef<CPDB_seq_id>    pdb_id      = NULL;
     CConstRef<CPatent_seq_id> pat_id      = NULL;
@@ -140,12 +144,12 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
         }
     }
 
-    for (CSeqdesc_CI it(handle, CSeqdesc::e_Source);  it;  ++it) {
+    for (CSeqdesc_CI it(*this, CSeqdesc::e_Source);  it;  ++it) {
         source = &it->GetSource();
         BREAK(it);
     }
 
-    for (CSeqdesc_CI it(handle, CSeqdesc::e_Molinfo);  it;  ++it) {
+    for (CSeqdesc_CI it(*this, CSeqdesc::e_Molinfo);  it;  ++it) {
         mol_info = &it->GetMolinfo();
         tech = mol_info->GetTech();
         BREAK(it);
@@ -180,12 +184,12 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
         }
     }
 
-    if (title.empty()  &&  use_biosrc) {
+    if (title.empty()  &&  use_biosrc && (source!=NULL)) {
         title = s_TitleFromBioSource(*source);
         flags &= ~fGetTitle_Organism;
     }
 
-    if (title.empty()  &&  is_nc) {
+    if (title.empty()  &&  is_nc && (source!=NULL)) {
         switch (mol_info->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:
         case CMolInfo::eBiomol_other_genetic:
@@ -198,7 +202,7 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
     }
 
     if (title.empty()  &&  pdb_id.NotEmpty()) {
-        for (CSeqdesc_CI it(handle, CSeqdesc::e_Pdb);  it;  ++it) {
+        for (CSeqdesc_CI it(*this, CSeqdesc::e_Pdb);  it;  ++it) {
             if ( !it->GetPdb().GetCompound().empty() ) {
                 if (isprint(pdb_id->GetChain())) {
                     title = string("Chain ") + (char)pdb_id->GetChain() + ", ";
@@ -216,7 +220,7 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
     }
 
     if (title.empty()  &&  core->GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        title = s_TitleFromProtein(handle, *this, organism);
+        title = s_TitleFromProtein(*this, *m_Scope, organism);
         if ( !title.empty() ) {
             flags |= fGetTitle_Organism;
         }
@@ -224,10 +228,10 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
 
     if (title.empty()  &&  !htg_tech
         &&  core->GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-        title = s_TitleFromSegment(handle, *this);
+        title = s_TitleFromSegment(*this, *m_Scope);
     }
 
-    if (title.empty()  &&  !htg_tech) {
+    if (title.empty()  &&  !htg_tech && (source!=NULL)) {
         title = s_TitleFromBioSource(*source);
         if (title.empty()) {
             title = "No definition line found";
@@ -258,7 +262,7 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
     case CMolInfo::eTech_htgs_2:
     {
         bool is_draft = false;
-        for (CSeqdesc_CI gb(handle, CSeqdesc::e_Genbank);  gb;  ++gb) {
+        for (CSeqdesc_CI gb(*this, CSeqdesc::e_Genbank);  gb;  ++gb) {
             iterate (CGB_block::TKeywords, it,
                      gb->GetGenbank().GetKeywords()) {
                 if (NStr::Compare(*it, "HTGS_DRAFT", NStr::eNocase) == 0) {
@@ -327,7 +331,7 @@ string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
         if (source) {
             org = &source->GetOrg();
         } else {
-            for (CSeqdesc_CI it(handle, CSeqdesc::e_Org);  it;  ++it) {
+            for (CSeqdesc_CI it(*this, CSeqdesc::e_Org);  it;  ++it) {
                 org = &it->GetOrg();
                 BREAK(it);
             }

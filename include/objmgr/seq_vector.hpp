@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/28 19:45:34  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.3  2002/01/23 21:59:29  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -80,7 +83,7 @@ public:
     void SetIupacCoding(void);
 
 private:
-    friend class CScope;
+    friend class CBioseq_Handle;
 
     // Created by CScope only
     CSeqVector(const CBioseq_Handle& handle, bool plus_strand, CScope& scope);

@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/28 19:45:33  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.4  2002/01/23 21:59:29  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -65,6 +68,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/Seq_data.hpp>
 
 #include <objects/objmgr1/seq_vector.hpp>
 
@@ -105,24 +109,6 @@ public:
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
     virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
-
-
-    // Get sequence's title (used in various flat-file formats.)
-    // This function is here rather than in CBioseq because it may need
-    // to inspect other sequences.  The reconstruct flag indicates that it
-    // should ignore any existing title Seqdesc.
-    enum EGetTitleFlags {
-        fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
-        fGetTitle_Accession   = 0x2, // prepend (accession)
-        fGetTitle_Organism    = 0x4  // append [organism]
-    };
-    typedef int TGetTitleFlags;
-    virtual string GetTitle(const CBioseq_Handle& handle,
-                            TGetTitleFlags flags = 0);
-
-    // Get sequence: Iupacna or Iupacaa
-    virtual CSeqVector GetSeqVector(const CBioseq_Handle& handle,
-                                    bool plus_strand = true);
 
     // Find mode flags: how to treat duplicate IDs within the same scope
     enum EFindMode {

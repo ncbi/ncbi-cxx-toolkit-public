@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.5  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -143,7 +146,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
     CMutexGuard guard(sm_Scope_Mutex);
     CBioseq_Handle found;
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        CBioseq_Handle handle = (*it)->GetBioseqHandle(id);
+        CBioseq_Handle handle = (*it)->GetBioseqHandle(*this, id);
         if ( handle ) {
             if (m_FindMode == eFirst) {
                 return handle;
@@ -170,13 +173,6 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
         }
     }
     return found;
-}
-
-
-CSeqVector CScope::GetSeqVector(const CBioseq_Handle& handle,
-                                bool plus_strand)
-{
-    return CSeqVector(handle, plus_strand, *this);
 }
 
 

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.4  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -178,7 +181,7 @@ CSeq_entry* CDataSource::GetTopEntry(void)
 }
 
 
-CBioseq_Handle CDataSource::GetBioseqHandle(const CSeq_id& id)
+CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
 {
     if ( m_Loader ) {
         // Send request to the loader
@@ -192,7 +195,7 @@ CBioseq_Handle CDataSource::GetBioseqHandle(const CSeq_id& id)
     TBioseqMap::iterator found = m_BioseqMap.find(h.m_Value);
     if ( found == m_BioseqMap.end() )
         return CBioseq_Handle();
-    h.x_ResolveTo(*this, *found->second->m_Entry);
+    h.x_ResolveTo(scope, *this, *found->second->m_Entry);
     return h;
 }
 

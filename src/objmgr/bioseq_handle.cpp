@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.3  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -84,6 +87,12 @@ CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 {
     return x_GetDataSource().GetSeqMap(*this);
+}
+
+
+CSeqVector CBioseq_Handle::GetSeqVector(bool plus_strand)
+{
+    return CSeqVector(*this, plus_strand, *m_Scope);
 }
 
 

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/28 19:45:33  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.3  2002/01/23 21:59:29  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -58,6 +61,8 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CSeqMap;
+class CSeqVector;
+
 
 // Bioseq handle -- must be a copy-safe const type.
 class CBioseq_Handle
@@ -71,7 +76,8 @@ public:
 
 
     CBioseq_Handle(void)
-        : m_DataSource(0),
+        : m_Scope(0),
+          m_DataSource(0),
           m_Entry(0) {}
     CBioseq_Handle(const CBioseq_Handle& h);
     CBioseq_Handle& operator= (const CBioseq_Handle& h);
@@ -102,6 +108,22 @@ public:
     // length of 0 unless GetSequence() has been called for the handle.
     virtual const CSeqMap& GetSeqMap(void) const;
 
+    // Get sequence: Iupacna or Iupacaa
+    virtual CSeqVector GetSeqVector(bool plus_strand = true);
+
+
+    // Get sequence's title (used in various flat-file formats.)
+    // This function is here rather than in CBioseq because it may need
+    // to inspect other sequences.  The reconstruct flag indicates that it
+    // should ignore any existing title Seqdesc.
+    enum EGetTitleFlags {
+        fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
+        fGetTitle_Accession   = 0x2, // prepend (accession)
+        fGetTitle_Organism    = 0x4  // append [organism]
+    };
+    typedef int TGetTitleFlags;
+    virtual string GetTitle(TGetTitleFlags flags = 0);
+
 private:
     CBioseq_Handle(CSeq_id_Handle value);
 
@@ -110,23 +132,29 @@ private:
     // Get data source
     CDataSource& x_GetDataSource(void) const;
     // Set the handle seq-entry and datasource
-    void x_ResolveTo(CDataSource& datasource, CSeq_entry& entry) const;
+    void x_ResolveTo(CScope& scope, CDataSource& datasource,
+                     CSeq_entry& entry);
 
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
+    CScope*              m_Scope;
     mutable CDataSource* m_DataSource;  // Data source for resolved handles
     mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
 
+/*
     friend class CDesc_CI;
     friend class CScope;
     friend class CSeqVector;
-    friend class CDataSource;
     friend class CHandleRangeMap;
+*/
+    friend class CDataSource;
 };
 
 
 inline
-void CBioseq_Handle::x_ResolveTo(CDataSource& datasource, CSeq_entry& entry) const
+void CBioseq_Handle::x_ResolveTo(
+    CScope& scope, CDataSource& datasource, CSeq_entry& entry)
 {
+    m_Scope = &scope;
     m_DataSource = &datasource;
     m_Entry = &entry;
 }
@@ -148,6 +176,7 @@ const CSeq_id_Handle CBioseq_Handle::GetHandle(void) const
 inline
 CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
     : m_Value(h.m_Value),
+      m_Scope(h.m_Scope),
       m_DataSource(h.m_DataSource),
       m_Entry(h.m_Entry)
 {
@@ -157,6 +186,7 @@ inline
 CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 {
     m_Value = h.m_Value;
+    m_Scope = h.m_Scope;
     m_DataSource = h.m_DataSource;
     m_Entry = h.m_Entry;
     return *this;
@@ -165,6 +195,11 @@ CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 inline
 bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
 {
+    if (m_Scope != h.m_Scope)
+    {
+        throw runtime_error(
+            "Unable to compare CBioseq_Handles from different scopes");
+    }
     if ( m_Entry  &&  h.m_Entry )
         return m_DataSource == h.m_DataSource  &&  m_Entry == h.m_Entry;
     // Compare by id key
@@ -180,6 +215,11 @@ bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 inline
 bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 {
+    if (m_Scope != h.m_Scope)
+    {
+        throw runtime_error(
+            "Unable to compare CBioseq_Handles from different scopes");
+    }
     if ( m_Entry != h.m_Entry )
         return m_Entry < h.m_Entry;
     return m_Value < h.m_Value;

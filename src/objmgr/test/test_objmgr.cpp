@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/01/28 19:44:50  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
 * Revision 1.5  2002/01/23 21:59:34  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -586,6 +589,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
 
     handle.GetTopLevelSeqEntry();
+//    handle.GetTitle();
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         CSeqMap seq_map = handle.GetSeqMap();
@@ -614,7 +618,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
 
     {{
-        CSeqVector seq_vect = scope.GetSeqVector(handle);
+        CSeqVector seq_vect = handle.GetSeqVector();
         string sout = "";
         for (size_t i = 0; i < seq_vect.size(); i++) {
             sout += seq_vect[i];
@@ -623,7 +627,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
-        CSeqVector seq_vect_rev = scope.GetSeqVector(handle, false);
+        CSeqVector seq_vect_rev = handle.GetSeqVector(false);
         string sout_rev = "";
         for (size_t i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];
