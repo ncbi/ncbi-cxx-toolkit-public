@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2000/12/05 23:27:09  lavr
+ * Added SOCK_gethostaddr
+ *
  * Revision 6.10  2000/12/04 17:34:19  beloslyu
  * the order of include files is important, especially on other Unixes! Look the man on inet_ntoa
  *
@@ -675,32 +678,15 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* Get address of the remote host (assume the same host if it is NULL) */
     assert(host  ||  sock->host);
-    x_host = host ? inet_addr(host) : sock->host;
-    if (x_host == INADDR_NONE) {
-        struct hostent *hp;
-#if defined(HAVE_GETHOSTBYNAME_R)
-        struct hostent x_hp;
-        char x_buf[1024];
-        int  x_err;
-        hp = gethostbyname_r(host, &x_hp, x_buf, sizeof(x_buf), &x_err);
-        if ( hp )
-            memcpy(&x_host, hp->h_addr, sizeof(x_host));
-#else
-        CORE_LOCK_WRITE;
-        hp = gethostbyname(host);
-        if ( hp )
-            memcpy(&x_host, hp->h_addr, sizeof(x_host));
-        CORE_UNLOCK;
-#endif
-        if ( !hp ) {
-            if ( CORE_GetLOG() ) {
-                char str[128];
-                sprintf(str, "[SOCK::s_Connect]  Failed gethostbyname(%.64s)",
-                        host ? host : "");
-                CORE_LOG(eLOG_Error, str);
-            }
-            return eIO_Unknown;
+    x_host = host ? SOCK_gethostaddr(host) : sock->host;
+    if (!x_host) {
+        if ( CORE_GetLOG() ) {
+            char str[128];
+            sprintf(str, "[SOCK::s_Connect]  Failed SOCK_gethostaddr(%.64s)",
+                    host ? host : "");
+            CORE_LOG(eLOG_Error, str);
         }
+        return eIO_Unknown;
     }
 
     /* Set the port to connect to(assume the same port if "port" is zero) */
@@ -1411,4 +1397,42 @@ extern int SOCK_ntoa(unsigned int host,
 extern unsigned int SOCK_htonl(unsigned int value)
 {
     return htonl(value);
+}
+
+
+extern unsigned int SOCK_gethostaddr(const char* hostname)
+{
+    unsigned int host;
+    char buf[1024];
+
+    if (!hostname) {
+        if (gethostname(buf, sizeof(buf)) != 0)
+            return 0;
+        hostname = buf;
+    }
+
+    host = inet_addr(hostname);
+    if (host == INADDR_NONE) {
+        struct hostent* hp;
+#if defined(HAVE_GETHOSTBYNAME_R)
+        struct hostent x_hp;
+        char x_buf[1024];
+        int  x_err;
+        
+        hp = gethostbyname_r(hostname, &x_hp, x_buf, sizeof(x_buf), &x_err);
+        if ( hp )
+            memcpy(&host, hp->h_addr, sizeof(host));
+        else
+            host = 0;
+#else
+        CORE_LOCK_WRITE;
+        hp = gethostbyname(hostname);
+        if ( hp )
+            memcpy(&host, hp->h_addr, sizeof(host));
+        else
+            host = 0;
+        CORE_UNLOCK;
+#endif
+    }
+    return host;
 }

@@ -78,6 +78,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/12/05 23:27:44  lavr
+ * Added SOCK_gethostaddr
+ *
  * Revision 6.6  2000/11/15 18:51:05  vakatov
  * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
  *
@@ -439,6 +442,15 @@ extern int SOCK_ntoa
  */
 extern unsigned int SOCK_htonl
 (unsigned int value
+ );
+
+
+/* Return INET host address (in network byte order) of the
+ * specified host, which can be either domain name or an IP address in
+ * dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
+ */
+extern unsigned int SOCK_gethostaddr
+(const char* hostname  /* [in]  return current host address if hostname is 0 */
  );
 
 
