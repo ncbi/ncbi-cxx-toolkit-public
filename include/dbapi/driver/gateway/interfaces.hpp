@@ -205,6 +205,7 @@ protected:
   virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it = true);
   virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt, bool log_it = true);
 
+  virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp) { return NULL; }
 
   virtual void PushMsgHandler(CDB_UserHandler* /*h*/);
   virtual void PopMsgHandler (CDB_UserHandler* /*h*/);
@@ -321,6 +322,10 @@ protected:
   {
     return CGW_BaseCmd::RowCount();
   }
+  virtual void DumpResults()
+  {
+    comprot_void("GWLib:LangCmd:DumpResults",remoteObj);
+  }
 };
 
 
@@ -383,6 +388,10 @@ protected:
   {
     int i = (int)recompile;
     comprot_void1("GWLib:RPCCmd:SetRecompile", remoteObj, &i );
+  }
+  virtual void DumpResults()
+  {
+    comprot_void("GWLib:RPCCmd:DumpResults",remoteObj);
   }
 };
 
@@ -627,6 +636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/16 17:33:11  sapojnik
+ * SetResultProcessor(), DumpResults() - almost empty implementations
+ *
  * Revision 1.6  2003/05/19 21:51:51  sapojnik
  * Client portion of gateway driver back in C++ tree - now assembles as dll, and runs on Sparc Solaris
  *
