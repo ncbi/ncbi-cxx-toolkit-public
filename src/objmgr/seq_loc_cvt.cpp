@@ -595,7 +595,7 @@ void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt,
         m_SingleIndex = loc_index;
         return;
     }
-    else {
+    else if (m_CvtByIndex.size() == 0) {
         TIdMap& id_map = m_CvtByIndex[m_SingleIndex];
         TRangeMap& ranges = id_map[m_SingleConv->m_Src_id_Handle];
         ranges.insert(TRangeMap::value_type
@@ -1021,6 +1021,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/08/13 18:34:28  grichenk
+* Fixed conversion collecting
+*
 * Revision 1.34  2004/08/11 16:41:32  vasilche
 * Assign instead of |= for single bool value.
 *
