@@ -32,7 +32,6 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_server_infop.h"
-#include <connect/ncbi_server_info.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <math.h>
@@ -834,6 +833,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2002/10/28 20:15:06  lavr
+ * -<connect/ncbi_server_info.h> ("ncbi_server_infop.h" should suffice)
+ *
  * Revision 6.43  2002/10/28 15:46:21  lavr
  * Use "ncbi_ansi_ext.h" privately
  *
