@@ -183,7 +183,7 @@ streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
       }
 
       gi = giFound.Value();
-      cout << "gi=" << gi << "\n";
+      // cout << "gi=" << gi << "\n";
     }
   }
 
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.9  2002/04/25 20:54:07  kimelman
+* noise off
+*
 * Revision 1.8  2002/04/12 22:56:23  kimelman
 * processing of ctlib fail
 *
