@@ -93,7 +93,7 @@ typedef struct LinkHSPStruct {
  * @param program_number Type of BLAST program [in]
  * @param sbp Scoring block with statistical parameters [in]
  * @param query_info Query information structure [in]
- * @param subject Subject sequence block [in]
+ * @param subject_length Subject sequence length [in]
  * @param link_hsp_params Parameters for linking HSPs [in]
  * @param head_hsp Set of HSPs with previously calculated sum score/evalue [in]
  * @param hsp New HSP candidate to join the set [in]
@@ -102,7 +102,7 @@ typedef struct LinkHSPStruct {
  */
 static double 
 SumHSPEvalue(EBlastProgramType program_number, BlastScoreBlk* sbp, 
-   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
+   BlastQueryInfo* query_info, Int4 subject_length, 
    const BlastLinkHSPParameters* link_hsp_params, 
    LinkHSPStruct* head_hsp, LinkHSPStruct* new_hsp, Int4* sumscore)
 {
@@ -123,7 +123,7 @@ SumHSPEvalue(EBlastProgramType program_number, BlastScoreBlk* sbp,
    length_adjustment = query_info->length_adjustments[context];
 
    subject_eff_length = 
-      MAX((subject->length - length_adjustment), 1);
+      MAX((subject_length - length_adjustment), 1);
    if (program_number == eBlastTypeTblastn) 
       subject_eff_length /= 3;
    subject_eff_length = MAX(subject_eff_length, 1);
@@ -211,9 +211,9 @@ fwd_compare_hsps_transl(const void* v1, const void* v2)
    context2 = h2->context/3;
 
    if (context1 < context2)
-      return 1;
-   else if (context1 > context2)
       return -1;
+   else if (context1 > context2)
+      return 1;
 
 	if (h1->query.offset < h2->query.offset) 
 		return -1;
@@ -241,9 +241,9 @@ end_compare_hsps(const void* v1, const void* v2)
 	h2 = (*hp2)->hsp;
 
    if (h1->context < h2->context)
-      return 1;
-   else if (h1->context > h2->context)
       return -1;
+   else if (h1->context > h2->context)
+      return 1;
 
 	if (h1->query.end < h2->query.end) 
 		return -1;
@@ -320,14 +320,19 @@ rev_compare_hsps(const void *v1, const void *v2)
 	h1 = (*hp1)->hsp;
 	h2 = (*hp2)->hsp;
 	
-   if (h1->context > h2->context)
-      return 1;
-   else if (h1->context < h2->context)
+   if (h1->context < h2->context)
       return -1;
+   else if (h1->context > h2->context)
+      return 1;
 
 	if (h1->query.offset < h2->query.offset) 
 		return  1;
 	if (h1->query.offset > h2->query.offset) 
+		return -1;
+	/* Necessary in case both HSP's have the same query offset. */
+	if (h1->subject.offset < h2->subject.offset) 
+		return 1;
+	if (h1->subject.offset > h2->subject.offset) 
 		return -1;
 	return 0;
 }
@@ -348,14 +353,19 @@ rev_compare_hsps_transl(const void *v1, const void *v2)
    context1 = h1->context/3;
    context2 = h2->context/3;
 
-   if (context1 > context2)
-      return 1;
-   else if (context1 < context2)
+   if (context1 < context2)
       return -1;
+   else if (context1 > context2)
+      return 1;
 
 	if (h1->query.offset < h2->query.offset) 
 		return  1;
 	if (h1->query.offset > h2->query.offset) 
+		return -1;
+	/* Necessary in case both HSP's have the same query offset. */
+	if (h1->subject.offset < h2->subject.offset) 
+		return 1;
+	if (h1->subject.offset > h2->subject.offset) 
 		return -1;
 	return 0;
 }
@@ -372,10 +382,10 @@ rev_compare_hsps_tbn(const void *v1, const void *v2)
 	h1 = (*hp1)->hsp;
 	h2 = (*hp2)->hsp;
 
-   if (h1->context > h2->context)
-      return 1;
-   else if (h1->context < h2->context)
+   if (h1->context < h2->context)
       return -1;
+   else if (h1->context > h2->context)
+      return 1;
 
 	if (SIGN(h1->subject.frame) != SIGN(h2->subject.frame))
 	{
@@ -388,6 +398,10 @@ rev_compare_hsps_tbn(const void *v1, const void *v2)
 	if (h1->query.offset < h2->query.offset) 
 		return  1;
 	if (h1->query.offset > h2->query.offset) 
+		return -1;
+	if (h1->subject.offset < h2->subject.offset) 
+		return  1;
+	if (h1->subject.offset > h2->subject.offset) 
 		return -1;
 	return 0;
 }
@@ -408,10 +422,10 @@ rev_compare_hsps_tbx(const void *v1, const void *v2)
    context1 = h1->context/3;
    context2 = h2->context/3;
 
-   if (context1 > context2)
-      return 1;
-   else if (context1 < context2)
+   if (context1 < context2)
       return -1;
+   else if (context1 > context2)
+      return 1;
    
 	if (SIGN(h1->subject.frame) != SIGN(h2->subject.frame))
 	{
@@ -424,6 +438,10 @@ rev_compare_hsps_tbx(const void *v1, const void *v2)
 	if (h1->query.offset < h2->query.offset) 
 		return  1;
 	if (h1->query.offset > h2->query.offset) 
+		return -1;
+	if (h1->subject.offset < h2->subject.offset) 
+		return  1;
+	if (h1->subject.offset > h2->subject.offset) 
 		return -1;
 	return 0;
 }
@@ -463,7 +481,7 @@ static LinkHSPStruct* LinkHSPStructReset(LinkHSPStruct* lhsp)
 
 static Int2
 Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
+   BlastQueryInfo* query_info, Int4 subject_length,
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
@@ -481,7 +499,8 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 	Int4 *hp_frame_number;
 	Int4 window_size, trim_size;
    Int4 number_of_hsps, total_number_of_hsps;
-   Int4 query_length, subject_length, length_adjustment;
+   Int4 query_length, length_adjustment;
+   Int4 subject_length_orig = subject_length;
 	LinkHSPStruct* link;
 	Int4 H2_index,H_index;
 	Int4 i;
@@ -541,28 +560,30 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
             rev_compare_hsps_tbn);
    }
 
-	cutoff[0] = link_hsp_params->cutoff_small_gap;
-	cutoff[1] = link_hsp_params->cutoff_big_gap;
-
-	ignore_small_gaps = (cutoff[0] == 0);
-	
-	if (translated_query)
-		num_query_frames = NUM_STRANDS*query_info->num_queries;
-	else
-		num_query_frames = query_info->num_queries;
+   cutoff[0] = link_hsp_params->cutoff_small_gap;
+   cutoff[1] = link_hsp_params->cutoff_big_gap;
+   
+   ignore_small_gaps = (cutoff[0] == 0);
+   
+   /* If query is nucleotide, it has 2 strands that should be separated. */
+   if (translated_query || program_number == eBlastTypeBlastn)
+      num_query_frames = NUM_STRANDS*query_info->num_queries;
+   else
+      num_query_frames = query_info->num_queries;
    
    hp_frame_start = 
        calloc(num_subject_frames*num_query_frames, sizeof(LinkHSPStruct*));
    hp_frame_number = calloc(num_subject_frames*num_query_frames, sizeof(Int4));
 
-/* hook up the HSP's */
-	hp_frame_start[0] = link_hsp_array[0];
+   /* hook up the HSP's */
+   hp_frame_start[0] = link_hsp_array[0];
 
-	/* Put entries with different frame parity into separate 'query_frame's. -cfj */
-	{
-	  Int4 cur_frame=0;
-     for (index=0;index<number_of_hsps;index++) 
-     {
+   /* Put entries from different strands into separate 'query_frame's. */
+   {
+      Int4 cur_frame=0;
+      Int4 strand_factor = (translated_query ? 3 : 1);
+      for (index=0;index<number_of_hsps;index++) 
+      {
         H=link_hsp_array[index];
         H->start_of_chain = FALSE;
         hp_frame_number[cur_frame]++;
@@ -570,7 +591,8 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
         H->prev= index ? link_hsp_array[index-1] : NULL;
         H->next= index<(number_of_hsps-1) ? link_hsp_array[index+1] : NULL;
         if (H->prev != NULL && 
-            ((H->hsp->context/3) != (H->prev->hsp->context/3) ||
+            ((H->hsp->context/strand_factor) != 
+	     (H->prev->hsp->context/strand_factor) ||
              (SIGN(H->hsp->subject.frame) != SIGN(H->prev->hsp->subject.frame))))
         { /* If frame switches, then start new list. */
            hp_frame_number[cur_frame]--;
@@ -579,13 +601,13 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
            H->prev->next = NULL;
            H->prev = NULL;
         }
-     }
-     num_query_frames = cur_frame+1;
-	}
+      }
+      num_query_frames = cur_frame+1;
+   }
 
-	/* trim_size is the maximum amount q.offset can differ from 
+   /* trim_size is the maximum amount q.offset can differ from 
       q.offset_trim */
-	/* This is used to break out of H2 loop early */
+   /* This is used to break out of H2 loop early */
    for (index=0;index<number_of_hsps;index++) 
    {
       H = link_hsp_array[index];
@@ -612,7 +634,7 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
       length_adjustment = query_info->length_adjustments[query_context];
       query_length = BLAST_GetQueryLength(query_info, query_context);
       query_length = MAX(query_length - length_adjustment, 1);
-      subject_length = subject->length; /* in nucleotides even for tblast[nx] */
+      subject_length = subject_length_orig; /* in nucleotides even for tblast[nx] */
       /* If subject is translated, length adjustment is given in nucleotide
          scale. */
       if (program_number == eBlastTypeTblastn || 
@@ -1234,14 +1256,13 @@ AddHSPToLinkedSet(LinkHSPStruct** head_hsp_ptr, LinkHSPStruct* new_hsp,
  * @param program Type of BLAST program (blastx or tblastn) [in]
  * @param hsp_list Structure containing all HSPs for a given subject [in] [out]
  * @param query_info Query information, including effective lengths [in]
- * @param subject Subject sequence; only its length is needed,
- *                for e-value calculations [in]
+ * @param subject_length Subject sequence length [in]
  * @param sbp Scoring and statistical parameters [in]
  * @param link_hsp_params Parameters for linking HSPs [in]
  */
 static Int2
 Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, BlastScoreBlk* sbp, 
+   BlastQueryInfo* query_info, Int4 subject_length, BlastScoreBlk* sbp, 
    const BlastLinkHSPParameters* link_hsp_params)
 {
    BlastHSP** hsp_array;
@@ -1354,7 +1375,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
             continue;
          /* Check if the e-value for the new combined HSP set is better than for
             the previously obtained set. */
-         if ((evalue = SumHSPEvalue(program, sbp, query_info, subject, 
+         if ((evalue = SumHSPEvalue(program, sbp, query_info, subject_length, 
                                     link_hsp_params, head_hsp, lhsp, &sumscore)) < 
              MIN(best_evalue, lhsp->hsp->evalue)) {
             best_hsp = lhsp;
@@ -1392,7 +1413,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
          }
          /* Check if the e-value for the new combined HSP set is better than for
             the previously obtained set. */
-         if ((evalue = SumHSPEvalue(program, sbp, query_info, subject, 
+         if ((evalue = SumHSPEvalue(program, sbp, query_info, subject_length, 
                           link_hsp_params, var_hsp, head_hsp, &sumscore)) < 
              MIN(var_hsp->hsp->evalue, best_evalue)) {
             best_hsp = lhsp;
@@ -1450,8 +1471,8 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
 
 Int2 
 BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, BlastScoreBlk* sbp, 
-   const BlastLinkHSPParameters* link_hsp_params,
+   BlastQueryInfo* query_info, Int4 subject_length,
+   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
 	if (hsp_list && hsp_list->hspcnt > 0)
@@ -1465,8 +1486,9 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
       /* Link up the HSP's for this hsp_list. */
       if (link_hsp_params->longest_intron <= 0)
       {
-         Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, subject, 
-            sbp, link_hsp_params, gapped_calculation);
+         Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, 
+			       subject_length, sbp, link_hsp_params, 
+			       gapped_calculation);
          /* The HSP's may be in a different order than they were before, 
             but hsp contains the first one. */
       } else {
@@ -1477,7 +1499,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
             gapped_calculation, sbp, link_hsp_params->gap_decay_rate);
          
          Blast_UnevenGapLinkHSPs(program_number, hsp_list, query_info, 
-                                 subject, sbp, link_hsp_params);
+                                 subject_length, sbp, link_hsp_params);
       }
 	}
 
