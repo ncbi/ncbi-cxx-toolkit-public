@@ -104,6 +104,8 @@ BEGIN_SCOPE(validator)
 using namespace sequence;
 
 
+auto_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
+
 bool less_seq_id(const CConstRef<CSeq_id>& id1, const CConstRef<CSeq_id>& id2)
 {
     return id1->CompareOrdered(*id2) < 0;
@@ -163,7 +165,9 @@ CValidError_imp::CValidError_imp
       m_NumFeat(0),
       m_NumGraph(0)
 {
-    InitializeSourceQualTags();
+    if ( m_SourceQualTags.get() == 0 ) {
+        InitializeSourceQualTags();
+    }
 }
 
 
@@ -898,11 +902,14 @@ void CValidError_imp::ValidatePubArticle
                     size_t pos = pages.find('-');
                     if ( pos != string::npos ) {
                         try {
-                            int start = NStr::StringToInt(pages.substr(0, pos));
+                            int start = 
+                                NStr::StringToInt(pages.substr(0, pos), 
+                                                  10, NStr::eCheck_Skip);
                             
                             try {
                                 int stop = NStr::StringToInt(
-                                    pages.substr(pos + 1, pages.length()));
+                                        pages.substr(pos + 1, pages.length()),
+                                        10, NStr::eCheck_Skip);
                                 
                                 if ( start == 0  ||  stop == 0 ) {
                                     PostErr(sev, eErr_GENERIC_BadPageNumbering,
@@ -922,8 +929,10 @@ void CValidError_imp::ValidatePubArticle
                                     "Page numbering stop looks strange", obj);
                             }
                         } catch ( CStringException& ) {
-                            PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                "Page numbering start looks strange", obj);
+                            if ( !isalpha(pages[0]) ) {
+                                PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                    "Page numbering start looks strange", obj);
+                            }
                         }
                     }
                 }
@@ -1326,14 +1335,14 @@ void CValidError_imp::ValidateBioSource
 
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
- const CBioseq&  seq,
+ const CBioseq*  seq,
  const string&   prefix,
  const CSerialObject& obj)
 {
     bool circular = false;
-    if ( seq.GetInst().IsSetTopology() ) {
+    if ( seq &&  seq->GetInst().IsSetTopology() ) {
         circular =
-            seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
+            seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
     }
     
     bool ordered = true, adjacent = false, chk = true,
@@ -1380,7 +1389,7 @@ void CValidError_imp::ValidateSeqLoc
                             int_prv->GetTo() == int_cur->GetTo()) {
                             PostErr(eDiag_Error,
                                 eErr_SEQ_FEAT_DuplicateInterval,
-                                "Duplicate exons in location", seq);
+                                "Duplicate exons in location", obj);
                         }
                     }
                 }
@@ -1412,7 +1421,7 @@ void CValidError_imp::ValidateSeqLoc
                 string lbl;
                 lit->GetLabel(&lbl);
                 PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
-                    prefix + ": Seq-loc " + lbl + " out of range", seq);
+                    prefix + ": Seq-loc " + lbl + " out of range", obj);
             }
             
             if (lit->Which() != CSeq_loc::e_Null) {
@@ -1493,7 +1502,7 @@ void CValidError_imp::ValidateSeqLoc
         EDiagSev sev = exception ? eDiag_Warning : eDiag_Error;
         PostErr(sev, eErr_SEQ_FEAT_AbuttingIntervals,
             prefix + ": Adjacent intervals in SeqLoc [" +
-            loc_lbl + "]", seq);
+            loc_lbl + "]", obj);
     }
     if (mixed_strand  ||  unmarked_strand  ||  !ordered) {
         if (loc_lbl.empty()) {
@@ -1502,32 +1511,32 @@ void CValidError_imp::ValidateSeqLoc
         if (mixed_strand) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
                 prefix + ": Mixed strands in SeqLoc [" +
-                loc_lbl + "]", seq);
+                loc_lbl + "]", obj);
         } else if (unmarked_strand) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
                 prefix + ": Mixed plus and unknown strands in SeqLoc "
-                " [" + loc_lbl + "]", seq);
+                " [" + loc_lbl + "]", obj);
         }
         if (!ordered) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqLocOrder,
                 prefix + ": Intervals out of order in SeqLoc [" +
-                loc_lbl + "]", seq);
+                loc_lbl + "]", obj);
         }
         return;
     }
 
-    if (seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
+    if ( seq  &&  seq->GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
         return;
     }
 
     // Check for intervals out of order on segmented Bioseq
-    if ( BadSeqLocSortOrder(seq, loc, m_Scope) ) {
+    if ( seq  &&  BadSeqLocSortOrder(*seq, loc, m_Scope) ) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
         }
         PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqLocOrder,
             prefix + "Intervals out of order in SeqLoc [" +
-            loc_lbl + "]", seq);
+            loc_lbl + "]", obj);
     }
 
     // Check for mixed strand on segmented Bioseq
@@ -1537,7 +1546,7 @@ void CValidError_imp::ValidateSeqLoc
         }
         PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
             prefix + ": Mixed strands in SeqLoc [" +
-            loc_lbl + "]", seq);
+            loc_lbl + "]", obj);
     }
 }
 
@@ -1856,7 +1865,7 @@ bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
         ++curr;
     }
 
-    return true;
+    return false;
 }
 
 
@@ -2134,13 +2143,14 @@ const string CValidError_imp::sm_SourceQualPrefixes[] = {
 
 void CValidError_imp::InitializeSourceQualTags() 
 {
+    m_SourceQualTags.reset(new CTextFsa);
     size_t size = sizeof(sm_SourceQualPrefixes) / sizeof(string);
 
     for (size_t i = 0; i < size; ++i ) {
-        m_SourceQualTags.AddWord(sm_SourceQualPrefixes[i]);
+        m_SourceQualTags->AddWord(sm_SourceQualPrefixes[i]);
     }
 
-    m_SourceQualTags.Prime();
+    m_SourceQualTags->Prime();
 }
 
 
@@ -2152,17 +2162,17 @@ void CValidError_imp::ValidateSourceQualTags
 
     size_t str_len = str.length();
 
-    int state = m_SourceQualTags.GetInitialState();
+    int state = m_SourceQualTags->GetInitialState();
     for ( size_t i = 0; i < str_len; ++i ) {
-        state = m_SourceQualTags.GetNextState(state, str[i]);
-        if ( m_SourceQualTags.IsMatchFound(state) ) {
-            string match = m_SourceQualTags.GetMatches(state)[0];
+        state = m_SourceQualTags->GetNextState(state, str[i]);
+        if ( m_SourceQualTags->IsMatchFound(state) ) {
+            string match = m_SourceQualTags->GetMatches(state)[0];
             if ( match.empty() ) {
                 match = "?";
             }
 
             bool okay = true;
-            if ( i - str_len >= 0 ) {
+            if ( (int)(i - str_len) >= 0 ) {
                 char ch = str[i - str_len];
                 if ( !isspace(ch) || ch != ';' ) {
                     okay = false;
@@ -2350,6 +2360,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/05/28 16:23:23  shomrat
+* SourceQualTags mad static, to improve performance in batch mode; other minor corrections.
+*
 * Revision 1.34  2003/05/15 18:12:10  shomrat
 * Bug fix in ValidatePubArticle
 *
