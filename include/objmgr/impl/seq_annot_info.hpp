@@ -39,7 +39,7 @@
 
 #include <objmgr/impl/tse_info_object.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_name.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/08/05 18:25:05  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.16  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.

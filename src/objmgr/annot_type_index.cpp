@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_type_selector.hpp>
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/annot_object.hpp>
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/08/05 18:26:15  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.3  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -33,7 +33,8 @@
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
 #include <serial/pack_string.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_name.hpp>
+#include <objmgr/annot_type_selector.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/tse_info.hpp>

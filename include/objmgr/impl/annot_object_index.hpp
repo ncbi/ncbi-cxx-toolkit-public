@@ -36,7 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_name.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/handle_range.hpp>
@@ -168,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/05 18:24:52  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.6  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

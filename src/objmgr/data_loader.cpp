@@ -35,7 +35,8 @@
 #include <objmgr/data_loader.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objects/seq/seq_id_mapper.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_name.hpp>
+#include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -321,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/08/05 18:26:25  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.18  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

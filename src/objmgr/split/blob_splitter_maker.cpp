@@ -60,6 +60,7 @@
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/annot_type_selector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -838,6 +839,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/05 18:26:37  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.14  2004/08/04 14:48:21  vasilche
 * Added joining of very small chunks with skeleton.
 *

@@ -35,7 +35,7 @@
 
 
 #include <objmgr/impl/seq_entry_info.hpp>
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_name.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <util/rangemap.hpp>
@@ -197,7 +197,6 @@ private:
     friend class CTSE_Chunk_Info;
     friend class CSeq_annot_SNP_Info;
     friend class CSeqMatch_Info;
-    friend struct SAnnotSelector;
 
     CBioseq_set_Info& GetBioseq_set(int id);
     CBioseq_Info& GetBioseq(int gi);

@@ -44,7 +44,6 @@
 #include <objtools/data_loaders/genbank/seqref.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
-#include <objmgr/annot_selector.hpp>
 
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>

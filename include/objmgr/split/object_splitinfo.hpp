@@ -43,7 +43,7 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
-#include <objmgr/annot_selector.hpp> // for CAnnotName
+#include <objmgr/annot_name.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <memory>
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/05 18:25:42  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.8  2004/08/04 14:48:49  vasilche
 * Added exports for MSVC. Added joining of very small chunks with skeleton.
 *

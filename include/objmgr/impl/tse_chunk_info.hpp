@@ -36,7 +36,8 @@
 
 #include <corelib/ncbiobj.hpp>
 
-#include <objmgr/annot_selector.hpp>
+#include <objmgr/annot_name.hpp>
+#include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 
@@ -189,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/05 18:25:18  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers.
+*
 * Revision 1.8  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
