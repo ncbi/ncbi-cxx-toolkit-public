@@ -59,6 +59,12 @@
 #include <connect/ncbi_socket_connector.h>
 
 
+/** @addtogroup ConnStreams
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -222,9 +228,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/04/09 17:58:42  siyan
+ * Added doxygen support
+ *
  * Revision 6.17  2003/01/17 19:44:20  lavr
  * Reduce dependencies
  *

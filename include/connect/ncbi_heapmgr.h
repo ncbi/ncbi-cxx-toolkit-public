@@ -37,6 +37,12 @@
 #include <connect/ncbi_types.h>
 
 
+/** @addtogroup ServiceSupport
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -162,9 +168,15 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/04/09 17:58:51  siyan
+ * Added doxygen support
+ *
  * Revision 6.13  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

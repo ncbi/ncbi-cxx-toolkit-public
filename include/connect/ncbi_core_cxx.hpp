@@ -41,6 +41,12 @@
 #include <corelib/ncbithr.hpp>
 
 
+/** @addtogroup UtilityFunc
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -65,9 +71,15 @@ extern NCBI_XCONNECT_EXPORT void CONNECT_Init(CNcbiRegistry* reg = 0);
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/04/09 17:58:49  siyan
+ * Added doxygen support
+ *
  * Revision 6.10  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

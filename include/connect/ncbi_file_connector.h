@@ -39,6 +39,12 @@
 #include <connect/ncbi_connector.h>
 
 
+/** @addtogroup Connectors
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -85,9 +91,15 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnectorEx
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/04/09 17:58:50  siyan
+ * Added doxygen support
+ *
  * Revision 6.3  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

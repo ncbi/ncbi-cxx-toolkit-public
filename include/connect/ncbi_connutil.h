@@ -82,6 +82,12 @@
 #include <connect/ncbi_connection.h>
 
 
+/** @addtogroup UtilityFunc
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -622,9 +628,15 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/04/09 17:58:47  siyan
+ * Added doxygen support
+ *
  * Revision 6.28  2003/01/17 19:44:20  lavr
  * Reduce dependencies
  *

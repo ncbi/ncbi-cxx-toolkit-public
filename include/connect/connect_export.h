@@ -34,6 +34,13 @@
  *    explicitly labeled as such.
  */
 
+
+/** @addtogroup WinDLL
+ *
+ * @{
+ */
+
+
 #ifdef _LIB
 #  undef NCBI_DLL_BUILD
 #endif
@@ -76,9 +83,15 @@
 #endif
 
 
+/* @} */
+
+
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.2  2003/04/09 17:58:37  siyan
+ * Added doxygen support
+ *
  * Revision 6.1  2003/01/07 21:58:23  lavr
  * Initial revision
  *

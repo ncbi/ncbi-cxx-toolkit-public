@@ -48,6 +48,12 @@
 #include <connect/ncbi_connector.h>
 
 
+/** @addtogroup Connectors
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -274,9 +280,15 @@ extern EIO_Status CONN_WaitAsync
 #endif
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/04/09 17:58:43  siyan
+ * Added doxygen support
+ *
  * Revision 6.14  2003/01/15 19:50:17  lavr
  * +CONN_PushBack()
  *

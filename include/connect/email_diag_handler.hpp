@@ -37,6 +37,12 @@
 #include <corelib/ncbistd.hpp>
 
 
+/** @addtogroup EmailDiag
+ *
+ * @{
+ */
+
+
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
@@ -69,9 +75,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/04/09 17:58:38  siyan
+ * Added doxygen support
+ *
  * Revision 6.4  2003/01/17 18:53:16  lavr
  * Explicitly include <connect/connect_export.h>
  *

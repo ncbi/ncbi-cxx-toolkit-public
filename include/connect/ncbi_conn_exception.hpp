@@ -37,6 +37,12 @@
 #include <corelib/ncbiexpt.hpp>
 
 
+/** @addtogroup ConnExcep
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -60,9 +66,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/04/09 17:58:41  siyan
+ * Added doxygen support
+ *
  * Revision 6.5  2003/01/17 18:53:16  lavr
  * Explicitly include <connect/connect_export.h>
  *

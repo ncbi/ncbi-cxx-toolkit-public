@@ -53,6 +53,12 @@
 #include <stddef.h>     /* ...to define "size_t"... */
 
 
+/** @addtogroup BuffServices Buffering Services
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,9 +155,15 @@ extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
 #endif
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/04/09 17:58:40  siyan
+ * Added doxygen support
+ *
  * Revision 6.7  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

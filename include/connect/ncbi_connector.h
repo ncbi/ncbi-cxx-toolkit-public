@@ -38,6 +38,13 @@
 
 #include <connect/ncbi_core.h>
 
+
+/** @addtogroup Connectors
+ *
+ * @{
+ */
+
+
 #define CONN_DEFAULT_TIMEOUT  ((STimeout*) (-1))
 #define CONN_INFINITE_TIMEOUT ((STimeout*) 0)
 
@@ -269,9 +276,15 @@ typedef EIO_Status (*FConnectorWaitAsync)
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/04/09 17:58:45  siyan
+ * Added doxygen support
+ *
  * Revision 6.12  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

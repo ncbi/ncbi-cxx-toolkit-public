@@ -87,6 +87,12 @@
 #endif
 
 
+/** @addtogroup UtilityFunc
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -467,10 +473,17 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
 }  /* extern "C" */
 #endif
 
+
+/* @} */
+
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.23  2003/04/09 17:58:48  siyan
+ * Added doxygen support
+ *
  * Revision 6.22  2003/03/06 19:42:47  lavr
  * Isolate special inclusion of <stdio.h>, <stdlib.h> in DEBUG branch only
  *
