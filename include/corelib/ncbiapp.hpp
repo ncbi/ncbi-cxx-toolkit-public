@@ -26,14 +26,23 @@
 *
 * ===========================================================================
 *
-* Author: 
-*	Vsevolod Sandomirskiy
+* Authors:  Vsevolod Sandomirskiy, Denis Vakatov
 *
 * File Description:
 *   CNcbiApplication -- a generic NCBI application class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/01/20 17:51:16  vakatov
+* Major redesign and expansion of the "CNcbiApplication" class to
+*  - embed application arguments   "CNcbiArguments"
+*  - embed application environment "CNcbiEnvironment"
+*  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
+*  - allow memory-resided "per application" temp. diagnostic buffer
+*  - allow one to specify exact name of the config.-file to load, or to
+*    ignore the config.file (via constructor's "conf" arg)
+*  - added detailed comments
+*
 * Revision 1.13  1999/12/29 21:20:16  vakatov
 * More intelligent lookup for the default config.file. -- try to strip off
 * file extensions if cannot find an exact match;  more comments and tracing
@@ -79,57 +88,131 @@
 
 BEGIN_NCBI_SCOPE
 
+
 ///////////////////////////////////////////////////////
 // CNcbiApplication
 //
 
+class CNcbiArguments;
+class CNcbiEnvironment;
 class CNcbiRegistry;
 
-class CNcbiApplication {
-public:
-    static CNcbiApplication* Instance(void); // Singleton method
 
-    // (throw exception if not-only instance)
-    CNcbiApplication(void);
-    virtual ~CNcbiApplication(void);
-
-    // Default AppMain() -- call methods Init,Run,Exit one after another
-    virtual int AppMain(int argc, char** argv);
-
-    virtual void Init(void);     // initialization
-    virtual int  Run(void) = 0;  // main loop
-    virtual void Exit(void);     // cleanup
-
-    const CNcbiRegistry& GetConfig(void) const;
-    CNcbiRegistry& GetConfig(void);
-
-protected:
-    // This default method tries to load from config.file with
-    // the name obtained from the application name "m_Argv[0]", plus ".ini".
-    // It also tries to strip extensions, e.g., for "my_app.cgi.exe" it will
-    // try subsequently:  "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
-    virtual CNcbiRegistry* LoadConfig(void);
-
-protected: 
-    static CNcbiApplication* m_Instance;
-    int    m_Argc;
-    char** m_Argv;
-private:
-    auto_ptr<CNcbiRegistry> m_Config;    
+// Where to write the application's diagnostics to
+enum EAppDiagStream {
+    eDS_ToStdout,    // to standard output stream
+    eDS_ToStderr,    // to standard error  stream
+    eDS_ToStdlog,    // add to standard log file (app.name + ".log")
+    eDS_ToMemory,    // keep in a temp.memory buffer (see "FlushDiag()")
+    eDS_Disable,     // dont write it anywhere
+    eDS_User,        // leave as was previously set (or not set) by user
+    eDS_AppSpecific, // depends on the application type
+    eDS_Default      // "eDS_User" if set, else "eDS_AppSpecific"
 };
 
 
-//
-// INLINE
-//
+// Basic (abstract) NCBI application class
+class CNcbiApplication {
+public:
+    // Singleton method
+    static CNcbiApplication* Instance(void);
 
+    // 'ctors
+    CNcbiApplication(void);
+    virtual ~CNcbiApplication(void);
+
+    // AppMain() -- call SetupDiag(), LoadConfig(), Init(), Run(), Exit(), etc.
+    // You can specify where to write the diagnostics to (see EAppDiagStream),
+    // and where to get the configuration file (see LoadConfig()) to load
+    // to the application registry (accessible via GetConfig()).
+    // Throw exception if:  (a) not-only instance;  (b) cannot load
+    // explicitely specified config.file;  (c) SetupDiag throws an exception. 
+    int AppMain
+    (int                argc,  // as in a regular "main(argc, argv, envp)"
+     const char* const* argv,
+     const char* const* envp = 0,
+     EAppDiagStream     diag = eDS_Default,     /* eDS_ToStderr            */
+     const char*        conf = NcbiEmptyCStr,   /* see LoadConfig()        */
+     const string&      name = NcbiEmptyString  /* app.name (dflt: "ncbi") */
+     );
+
+    virtual void Init(void);     // initialization
+    virtual int  Run(void) = 0;  // main loop
+    virtual void Exit(void);     // cleanup (on the application exit)
+
+    // Get the application's cached command-line arguments
+    const CNcbiArguments& GetArguments(void) const;
+
+    // Get the application's cached environment
+    const CNcbiEnvironment& GetEnvironment(void) const;
+
+    // Get the application's cached configuration parameters
+    const CNcbiRegistry& GetConfig(void) const;
+    CNcbiRegistry& GetConfig(void);
+
+    // "eDS_ToMemory" case only:  diagnostics will be stored in the internal
+    // application buffer (see "m_DiagStream") -- at least until it's
+    // redirected using SetDiagHandler/SetDiagStream.
+    // Then, this function to:
+    //  - dump all the stored diagnostics to stream "os";
+    //  - if "os" is NULL then just purge out the stored diagnostics;
+    //  - if "close_diag" is TRUE, then destroy "m_DiagStream", and if global
+    //    diag.stream was attached to "m_DiagStream" then close it.
+    // Return total # of bytes written to "os".
+    SIZE_TYPE FlushDiag(CNcbiOstream* os, bool close_diag = false);
+
+
+protected:
+    // Setup app. diagnostic stream
+    bool SetupDiag(EAppDiagStream diag);
+
+    // Special, adjustable:  to call if SetupDiag(eDS_AppSpecific)
+    // Default:  eDS_ToStderr.
+    virtual bool SetupDiag_AppSpecific(void);
+
+    // Default method to try load (add to "reg") from the config.file.
+    // If "conf" arg (as passed to the class constructor)
+    //   NULL      -- dont even try to load registry from any file at all;
+    //   non-empty -- try to load from the conf.file of name "conf" only(!)
+    //                TIP:  if the path is not full-qualified then:
+    //                     if it starts from "../" or "./" -- look in the
+    //                     working dir, else look in the program dir.
+    //   empty     -- compose the conf.file name from the application name
+    //                plus ".ini". If it does not match an existing
+    //                file then try to strip file extensions, e.g., for
+    //                "my_app.cgi.exe" -- try subsequently:
+    //                    "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
+    // Throw an exception if "conf" is non-empty, and cannot open file. 
+    // Throw an exception if file exists, but contains some invalid entries.
+    // Return TRUE only if the file was non-NULL, found and successfully read.
+    virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
+
+
+private:
+    static CNcbiApplication*   m_Instance;   // current app.instance
+    auto_ptr<CNcbiArguments>   m_Args;       // command-line arguments
+    auto_ptr<CNcbiEnvironment> m_Environ;    // cached application environment
+    auto_ptr<CNcbiRegistry>    m_Config;     // (guaranteed to be non-NULL)
+    auto_ptr<CNcbiOstream>     m_DiagStream; // opt., aux., see "eDS_ToMemory"
+};
+
+
+
+// Inline (getters)
+
+inline const CNcbiArguments& CNcbiApplication::GetArguments(void) const {
+    return *m_Args;
+}
+inline const CNcbiEnvironment& CNcbiApplication::GetEnvironment(void) const {
+    return *m_Environ;
+}
 inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const {
     return *m_Config;
 }
-
 inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
     return *m_Config;
 }
+
 
 END_NCBI_SCOPE
 

@@ -23,8 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: 
-*	Vsevolod Sandomirskiy
+* Authors:  Vsevolod Sandomirskiy, Denis Vakatov
 *
 * File Description:
 *   CNcbiApplication -- a generic NCBI application class
@@ -32,6 +31,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/01/20 17:51:18  vakatov
+* Major redesign and expansion of the "CNcbiApplication" class to
+*  - embed application arguments   "CNcbiArguments"
+*  - embed application environment "CNcbiEnvironment"
+*  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
+*  - allow memory-resided "per application" temp. diagnostic buffer
+*  - allow one to specify exact name of the config.-file to load, or to
+*    ignore the config.file (via constructor's "conf" arg)
+*  - added detailed comments
+*
 * Revision 1.20  1999/12/29 21:20:18  vakatov
 * More intelligent lookup for the default config.file. -- try to strip off
 * file extensions if cannot find an exact match;  more comments and tracing
@@ -87,6 +96,7 @@
 */
 
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -104,68 +114,285 @@ CNcbiApplication* CNcbiApplication::Instance(void)
     return m_Instance; 
 }
 
-CNcbiApplication::CNcbiApplication(void) 
+
+CNcbiApplication::CNcbiApplication(void)
 {
-    if( m_Instance ) {
-        throw logic_error("CNcbiApplication::CNcbiApplication() -- "
-                          "cannot create second instance");
+    // Register the app. instance
+    if ( m_Instance ) {
+        THROW1_TRACE(logic_error, "\
+CNcbiApplication::CNcbiApplication() -- cannot create second instance");
     }
     m_Instance = this;
+
+    // Create empty application arguments & name
+    m_Args.reset(new CNcbiArguments(0,0));
+
+    // Create empty application environment
+    m_Environ.reset(new CNcbiEnvironment);
+
+    // Create an empty registry
     m_Config.reset(new CNcbiRegistry);
 }
+
 
 CNcbiApplication::~CNcbiApplication(void)
 {
     m_Instance = 0;
+    FlushDiag(0, true);
 }
 
-void CNcbiApplication::Init(void)
-{
-    CNcbiRegistry* reg = LoadConfig();
-    if ( reg )
-        m_Config.reset(reg);
+
+void CNcbiApplication::Init(void) {
+    return;
 }
 
-void CNcbiApplication::Exit(void)
-{
-    m_Config.reset(0);
+void CNcbiApplication::Exit(void) {
+    return;
 }
 
-int CNcbiApplication::AppMain(int argc, char** argv)
-{
-    m_Argc = argc;
-    m_Argv = argv;
 
-    // init application
+SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
+{
+    // dyn.cast to CNcbiOstrstream
+    CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_DiagStream.get());
+    if ( !ostr ) {
+        _ASSERT( !m_DiagStream.get() );
+        return 0;
+    }
+
+    // dump all content to "os"
+    SIZE_TYPE n_write = 0;
+    if ( os ) {
+        n_write = ostr->pcount();
+        os->write(ostr->str(), n_write);
+        ostr->rdbuf()->freeze(0);
+    }
+
+    // reset output buffer or destroy
+    if ( close_diag ) {
+        if ( IsDiagStream(m_DiagStream.get()) ) {
+            SetDiagStream(0);
+        }
+        m_DiagStream.reset(0);
+    } else {
+        ostr->rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+    }
+
+    // return # of bytes dumped to "os"
+    return (os  &&  os->good()) ? n_write : 0;
+}
+
+
+int CNcbiApplication::AppMain
+(int                argc,
+ const char* const* argv,
+ const char* const* envp,
+ EAppDiagStream     diag,
+ const char*        conf,
+ const string&      name)
+{
+    // Reset command-line args and application name
+    m_Args->Reset(argc, argv, name);
+
+    // Reset application environment
+    m_Environ->Reset(envp);
+
+    // Clear registry content
+    m_Config->Clear();
+
+    // Setup for diagnostics
+    try {
+        if ( !SetupDiag(diag) ) {
+            ERR_POST("CNcbiApplication::SetupDiag() returned FALSE");
+        }
+    } catch (exception& e) {
+        ERR_POST("CNcbiApplication::SetupDiag() failed: " << e.what());
+        throw runtime_error("CNcbiApplication::SetupDiag() failed");
+    }
+
+    // Load registry from the config file
+    try {
+        if ( conf ) {
+            string x_conf(conf);
+            LoadConfig(*m_Config, &x_conf);
+        } else {
+            LoadConfig(*m_Config, 0);
+        }
+    } catch (exception& e) {
+        ERR_POST("CNcbiApplication::LoadConfig() failed: " << e.what());
+        throw runtime_error("CNcbiApplication::LoadConfig() failed");
+    }
+
+    // Init application
     try {
         Init();
     } catch (exception& e) {
-        ERR_POST("CCgiApplication::Init() failed: " << e.what());
+        ERR_POST("CNcbiApplication::Init() failed: " << e.what());
         return -1;
     }
 
-    // run application
-    int res;
+    // Run application
+    int exit_code;
     try {
-        res = Run();
+        exit_code = Run();
     } catch (exception& e) {
-        ERR_POST("CCgiApplication::Run() failed: " << e.what());
-        res = -1;
+        ERR_POST("CNcbiApplication::Run() failed: " << e.what());
+        exit_code = -1;
     }
 
-    // close application
+    // Close application
     try {
         Exit();
     } catch (exception& e) {
-        ERR_POST("CCgiApplication::Exit() failed: " << e.what());
+        ERR_POST("CNcbiApplication::Exit() failed: " << e.what());
     }
 
-    return res;
+    // Exit
+    return exit_code;
 }
 
-CNcbiRegistry* CNcbiApplication::LoadConfig(void)
+
+static void s_DiagToStdlog_Cleanup(void* data)
+{  // SetupDiag(eDS_ToStdlog)
+    CNcbiOfstream* os_log = static_cast<CNcbiOfstream*>(data);
+    delete os_log;
+}
+
+
+bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
 {
-    string    fileName = m_Argv[0];
+    // Setup diagnostic stream
+    switch ( diag ) {
+    case eDS_ToStdout: {
+        SetDiagStream(&NcbiCout);
+        break;
+    }
+    case eDS_ToStderr: {
+        SetDiagStream(&NcbiCerr);
+        break;
+    }
+    case eDS_ToStdlog: {
+        // open log.file
+        string log = m_Args->GetProgramName() + ".log";
+        auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log.c_str()));
+        if ( !os->good() ) {
+            _TRACE("CNcbiApplication() -- cannot open log file: " << log);
+            return false;
+        }
+        _TRACE("CNcbiApplication() -- opened log file: " << log);
+
+        // (re)direct the global diagnostics to the log.file
+        CNcbiOfstream* os_log = os.release();
+        SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup, (void*) os_log);
+        break;
+    }
+    case eDS_ToMemory: {
+        // direct global diagnostics to the memory-resident output stream
+        if ( !m_DiagStream.get() ) {
+            m_DiagStream.reset(new CNcbiOstrstream);
+        }
+        SetDiagStream(m_DiagStream.get());
+        break;
+    }
+    case eDS_Disable: {
+        SetDiagStream(0);
+        break;
+    }
+    case eDS_User: {
+        // dont change current diag.stream
+        break;
+    }
+    case eDS_AppSpecific: {
+        return SetupDiag_AppSpecific();
+    }
+    case eDS_Default: {
+        if ( !IsSetDiagHandler() ) {
+            return CNcbiApplication::SetupDiag(eDS_AppSpecific);
+        }
+        // else eDS_User -- dont change current diag.stream
+        break;
+    }
+    default: {
+        _ASSERT(0);
+        break;
+    }
+    } // switch ( diag )
+
+    return true;
+}
+
+
+bool CNcbiApplication::SetupDiag_AppSpecific(void)
+{
+    return SetupDiag(eDS_ToStderr);
+}
+
+
+// for the exclusive use by CNcbiApplication::LoadConfig()
+static bool s_LoadConfig(CNcbiRegistry& reg, const string& conf)
+{
+    CNcbiIfstream is(conf.c_str());
+    if ( !is.good() ) {
+        _TRACE("CNcbiApplication::LoadConfig() -- cannot open registry file: "
+               << conf);
+        return false;
+    }
+
+    _TRACE("CNcbiApplication::LoadConfig() -- reading registry file: " <<conf);
+    reg.Read(is);
+    return true;
+}
+
+
+// detect if the "path" is relative -- used by CNcbiApplication::LoadConfig()
+static bool s_IsAbsolutePath(const string& path)
+{
+    if (path[0] == '/'  ||  path[0] == '\\')
+        return true;
+    if (path.find_first_of(":") != NPOS)
+        return true;
+    if (path[0] != '.')
+        return false;
+    if (path[1] == '/'  ||  path[1] == '\\')
+        return true;
+    return (path[1] == '.'  &&  (path[2] == '/'  ||  path[2] == '\\'));
+}
+
+
+bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
+{
+    // dont load at all
+    if ( !conf ) {
+        return false;
+    }
+
+    // load from the specified file name only
+    if ( !conf->empty() ) {
+        string x_conf;
+        // detect if it is a relative path
+        if ( s_IsAbsolutePath(*conf) ) {
+            // absolute path
+            x_conf = *conf;
+        } else {
+            // path relative to the program location
+            SIZE_TYPE base_pos = m_Args->GetProgramName().find_last_of("/\\:");
+            if (base_pos != NPOS) {
+                x_conf = m_Args->GetProgramName().substr(0, base_pos+1);
+            }
+            x_conf += *conf; 
+        }
+
+        // do load
+        x_conf = NStr::TruncateSpaces(x_conf);
+        if ( !s_LoadConfig(reg, x_conf) ) {
+            THROW1_TRACE(runtime_error, "\
+CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
+        }
+        return true;
+    }
+
+    // try to derive conf.file name from the application name (in the same dir)
+    string    fileName = NStr::TruncateSpaces(m_Args->GetProgramName());
     SIZE_TYPE base_pos = fileName.find_last_of("/\\:");
     if (base_pos == NPOS)
       base_pos = 0;
@@ -174,18 +401,8 @@ CNcbiRegistry* CNcbiApplication::LoadConfig(void)
     for (;;) {
         // try the next variant -- with added ".ini" file extension
         fileName += ".ini";
-        CNcbiIfstream is(fileName.c_str());
-        if ( is.good() ) {
-            _TRACE("CNcbiApplication::LoadConfig() -- reading registry file: "
-                   << fileName);
-            auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
-            config->Read(is);
-            return config.release();
-        }
-
-        // cannot open conf. file
-        _TRACE("CNcbiApplication::LoadConfig() -- cannot open registry file: "
-              << fileName);
+        if ( s_LoadConfig(reg, fileName) )
+            return true;  // success!
 
         // strip ".ini" file extension (the one added above) 
         _ASSERT( fileName.length() > 4 );
@@ -202,7 +419,8 @@ CNcbiRegistry* CNcbiApplication::LoadConfig(void)
 
         fileName.resize(dot_pos);
     }
-    return 0;
+    return false;
 }
+
 
 END_NCBI_SCOPE
