@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/05/02 20:42:37  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.37  2002/04/22 20:05:08  grichenk
 * Fixed minor bug in GetSequence()
 *
@@ -148,7 +151,6 @@
 
 
 #include "data_source.hpp"
-
 #include "annot_object.hpp"
 #include "handle_range_map.hpp"
 #include <objects/objmgr1/seq_vector.hpp>
@@ -233,8 +235,8 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
         CScope::TRequestHistory::const_iterator hst = history.find(*tse);
         if (hst != history.end()) {
             if ( from_history ) {
-                throw runtime_error(
-                    "CDataSource::x_FindBestTSE() -- multiple history matches");
+                THROW1_TRACE(runtime_error,
+                    "CDataSource::x_FindBestTSE() -- Multiple history matches");
             }
             from_history = *tse;
         }
@@ -259,8 +261,8 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
         if ( best ) {
             return *tse_set->second.find(best);
         }
-        throw runtime_error(
-            "Multiple seq-id matches found -- can not resolve to a TSE");
+        THROW1_TRACE(runtime_error,
+            "CDataSource::x_FindBestTSE() -- Multiple seq-id matches found");
     }
     // Multiple live TSEs -- try to resolve the conflict (the status of some
     // TSEs may change)
@@ -268,8 +270,8 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
     if ( best ) {
         return *tse_set->second.find(best);
     }
-    throw runtime_error(
-        "Seq-id conflict: multiple live entries found");
+    THROW1_TRACE(runtime_error,
+        "CDataSource::x_FindBestTSE() -- Multiple live entries found");
 }
 
 
@@ -435,7 +437,8 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
                 x_CreateSeqMap(seq);
             }
             else {
-                throw runtime_error("Sequence map not found");
+                THROW1_TRACE(runtime_error,
+                    "CDataSource::x_GetSeqMap() -- Sequence map not found");
             }
         }
         found = m_SeqMaps.find(&seq);
@@ -564,7 +567,8 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
             }
         case CSeqMap::eSeqEnd:
             {
-                throw runtime_error("Attempt to read beyond sequence end");
+                THROW1_TRACE(runtime_error,
+                    "CDataSource::GetSequence() -- Attempt to read beyond sequence end");
             }
         }
     }
@@ -677,8 +681,8 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
                 // This is not good - we could not find the correct
                 // match for the new segment start. The start should be
                 // in a gap, not in a real literal.
-                throw runtime_error(
-                    "CDataSource::AttachSeqData(): segment position conflict");
+                THROW1_TRACE(runtime_error,
+                    "CDataSource::AttachSeqData() -- Can not insert segment into a literal");
             }
             else {
                 // No data exist - treat it like a gap
@@ -708,11 +712,13 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
                 continue;
             }
             // ex_cur > start
-            throw runtime_error(
-                "CDataSource::AttachSeqData(): segment position conflict");
+            THROW1_TRACE(runtime_error,
+                "CDataSource::AttachSeqData() -- Segment position conflict");
         }
-        else
-            throw runtime_error("CDataSource::AttachSeqData(): Invalid delta-seq type");
+        else {
+            THROW1_TRACE(runtime_error,
+                "CDataSource::AttachSeqData() -- Invalid delta-seq type");
+        }
     }
     if ( gap != delta.end() ) {
         // Found the correct gap
@@ -1098,11 +1104,13 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
         }
     case CSeq_loc::e_Bond:
         {
-            throw runtime_error("e_Bond is not allowed as a reference type");
+            THROW1_TRACE(runtime_error,
+                "CDataSource::x_LocToSeqMap() -- e_Bond is not allowed as a reference type");
         }
     case CSeq_loc::e_Feat:
         {
-            throw runtime_error("e_Feat is not allowed as a reference type");
+            THROW1_TRACE(runtime_error,
+                "CDataSource::x_LocToSeqMap() -- e_Feat is not allowed as a reference type");
         }
     }
 }
@@ -1230,17 +1238,21 @@ without the sequence but with references to the id and all dead TSEs
         CRef<CTSE_Info> unique_live;
         iterate (TTSESet, with_seq, selected_with_seq) {
             if (history.find(*with_seq) != history.end()) {
-                if ( unique_from_history )
-                    throw runtime_error(
-                    "CDataSource: ambiguous request -- multiple history matches");
+                if ( unique_from_history ) {
+                    THROW1_TRACE(runtime_error,
+                        "CDataSource::PopulateTSESet() -- "
+                        "Ambiguous request: multiple history matches");
+                }
                 unique_from_history = *with_seq;
             }
             else if ( !unique_from_history ) {
                 if ((*with_seq)->m_Dead)
                     continue;
-                if ( unique_live )
-                    throw runtime_error(
-                    "CDataSource: ambiguous request -- multiple live TSEs");
+                if ( unique_live ) {
+                    THROW1_TRACE(runtime_error,
+                        "CDataSource::PopulateTSESet() -- "
+                        "Ambiguous request: multiple live TSEs");
+                }
                 unique_live = *with_seq;
             }
         }
@@ -1255,8 +1267,9 @@ without the sequence but with references to the id and all dead TSEs
         }
         else if (selected_with_seq.size() > 1) {
             //### Try to resolve the conflict with the help of loader
-            throw runtime_error(
-                "CDataSource: ambigous request -- multiple TSEs found");
+            THROW1_TRACE(runtime_error,
+                "CDataSource::PopulateTSESet() -- "
+                "Ambigous request: multiple TSEs found");
         }
         iterate(TTSESet, tse, selected_with_ref) {
             if ( !(*tse)->m_Dead  ||  history.find(*tse) != history.end()) {

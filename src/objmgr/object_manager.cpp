@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/02 20:42:37  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.7  2002/04/22 20:04:11  grichenk
 * Fixed TSE dropping
 *
@@ -119,13 +122,13 @@ void CObjectManager::RegisterDataLoader( CDataLoader& loader,
         // must be the same object
         // there should be NO different loaders with the same name
         if (my_loader != &loader) {
-            THROW1_TRACE( runtime_error,
-                          "Attempt to register different data loaders"
-                          "with the same name");
+            THROW1_TRACE(runtime_error,
+                "CObjectManager::RegisterDataLoader() -- "
+                "Attempt to register different data loaders with the same name");
         }
         ERR_POST(Warning <<
-            "CObjectManager::RegisterDataLoader: " <<
-            "data loader " << loader_name << " already registered");
+            "CObjectManager::RegisterDataLoader() -- data loader " <<
+            loader_name << " already registered");
         return;
     }
     // register
@@ -190,8 +193,9 @@ bool CObjectManager::RevokeDataLoader(CDataLoader& loader)
     string loader_name = loader.GetName();
     CDataLoader* my_loader = x_GetLoaderByName(loader_name);
     if (!my_loader || (my_loader != &loader)) {
-        THROW1_TRACE( runtime_error,
-                      "data loader " + loader_name + " not registered");
+        THROW1_TRACE(runtime_error,
+            "CObjectManager::RevokeDataLoader() -- "
+            "Data loader " + loader_name + " not registered");
         return false;
     }
     CDataSource* source = m_mapLoaderToSource[&loader];
@@ -215,8 +219,9 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
     // if not registered
     if (!loader)
     {
-        THROW1_TRACE( runtime_error,
-                      "data loader " + loader_name + " not registered");
+        THROW1_TRACE(runtime_error,
+            "CObjectManager::RevokeDataLoader() -- "
+            "Data loader " + loader_name + " not registered");
         return false;
     }
     return RevokeDataLoader(*loader);
@@ -273,9 +278,9 @@ void CObjectManager::AddDataLoader(
         // must be the same object
         // there should be NO different loaders with the same name
         if (my_loader != &loader) {
-            THROW1_TRACE( runtime_error,
-                          "Attempt to register different data loaders"
-                          "with the same name");
+            THROW1_TRACE(runtime_error,
+                "CObjectManager::AddDataLoader() -- "
+                "Attempt to register different data loaders with the same name");
         }
     }
     else {
@@ -297,7 +302,8 @@ void CObjectManager::AddDataLoader(
     }
     else {
         THROW1_TRACE(runtime_error,
-                     "Data loader " + loader_name + " not found");
+            "CObjectManager::AddDataLoader() -- "
+            "Data loader " + loader_name + " not found");
     }
 }
 

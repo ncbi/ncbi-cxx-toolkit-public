@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/02 20:42:38  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.17  2002/04/29 16:23:28  grichenk
 * GetSequenceView() reimplemented in CSeqVector.
 * CSeqVector optimized for better performance.
@@ -138,7 +141,7 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
     }
     else {
         m_Ranges[TRange::GetWholeTo()] = TRangeWithStrand(TRange(
-            TRange::GetWholeFrom(), TRange::GetWholeTo()), plus_strand);
+            TRange::GetWholeFrom(), TRange::GetWholeTo()), true);
     }
     m_SelRange = m_Ranges.end();
 }
@@ -278,7 +281,9 @@ void CSeqVector::x_UpdateVisibleRange(int pos)
     // mapped by ends, not starts, so that we can use lower_bound()
     m_SelRange = m_Ranges.upper_bound(pos);
     if ( m_SelRange == m_Ranges.end() ) {
-        throw runtime_error("CSeqVector -- position beyond vector end");
+        THROW1_TRACE(runtime_error,
+            "CSeqVector::x_UpdateVisibleRange() -- "
+            "Position beyond vector end");
     }
     int sel_from = m_SelRange->second.first.IsWholeFrom() ?
         0 : m_SelRange->second.first.GetFrom();
@@ -324,7 +329,9 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void)
     case CSeq_data::e_Ncbipna:                 //### Not sure about this
     default:
         {
-            throw runtime_error("CSeqVector -- can not indicate gap using the selected coding");
+            THROW1_TRACE(runtime_error,
+                "CSeqVector::GetGapChar() -- "
+                "Can not indicate gap using the selected coding");
         }
     }
 }
@@ -471,7 +478,8 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 }
             default:
                 {
-                    throw runtime_error("CSeqVector -- unknown coding");
+                    THROW1_TRACE(runtime_error,
+                        "CSeqVector::x_GetResidue() -- Unknown coding");
                 }
             }
             //out.Release();

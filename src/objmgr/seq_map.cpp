@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/02 20:42:38  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.14  2002/04/30 18:55:41  gouriano
 * added GetRefSeqid function
 *
@@ -107,8 +110,8 @@ void CSeqMap::Add(CSegmentInfo& interval)
             break;
     }
     if (it != m_Data.end() ) {
-        throw runtime_error
-            ("CSeqMap::Add() -- duplicate interval in the seq-map");
+        THROW1_TRACE(runtime_error,
+            "CSeqMap::Add() -- Duplicate interval in the seq-map");
     }
     // The new interval will be added AFTER all other intervals with
     // the same position. This will make the map work correctly in case

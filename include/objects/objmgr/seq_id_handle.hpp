@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/02 20:42:35  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.6  2002/03/18 17:26:32  grichenk
 * +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
 *
@@ -145,18 +148,22 @@ CSeq_id_Handle::CSeq_id_Handle(void)
 inline
 bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
 {
-    if (m_Mapper != handle.m_Mapper)
-        throw runtime_error(
-        "Can not compare seq-id handles from different mappers");
+    if (m_Mapper != handle.m_Mapper) {
+        THROW1_TRACE(runtime_error,
+            "CSeq_id_Handle::operator==() -- "
+            "Can not compare seq-id handles from different mappers");
+    }
     return m_Value == handle.m_Value;
 }
 
 inline
 bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
 {
-    if (m_Mapper != handle.m_Mapper)
-        throw runtime_error(
-        "Can not compare seq-id handles from different mappers");
+    if (m_Mapper != handle.m_Mapper) {
+        THROW1_TRACE(runtime_error,
+            "CSeq_id_Handle::operator<() -- "
+            "Can not compare seq-id handles from different mappers");
+    }
     return m_Value < handle.m_Value;
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/02 20:42:38  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.3  2002/03/14 18:39:14  gouriano
 * added mutex for MT protection
 *
@@ -127,11 +130,13 @@ inline
 void CTSE_Info::Unlock(void) const
 {
     CFastMutexGuard guard(sm_LockMutex);
-    if (m_LockCount > 0)
+    if (m_LockCount > 0) {
         m_LockCount--;
-    else
-        throw runtime_error(
-        "CTSE_Info: can not Unlock() -- the TSE is not locked");
+    }
+    else {
+        THROW1_TRACE(runtime_error,
+            "CTSE_Info::Unlock() -- The TSE is not locked");
+    }
 }
 
 inline
