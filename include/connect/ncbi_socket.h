@@ -64,6 +64,7 @@
  *  SOCK_GetReadTimeout
  *  SOCK_GetWriteTimeout
  *  SOCK_Read (including "peek" and "persistent read")
+ *  SOCK_ReadLine
  *  SOCK_PushBack
  *  SOCK_Status
  *  SOCK_Write
@@ -95,6 +96,7 @@
  *  SOCK_IsDatagram
  *  SOCK_IsClientSide
  *  SOCK_IsServerSide
+ *  SOCK_IsUNIX
  *
  * Data logging:
  *
@@ -426,6 +428,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  * NOTE2: the call is applicable to stream [not datagram] sockets only.
  * NOTE3: "timeout"==NULL is infinite; "timeout"=={0,0} causes no wait for
  *        connection to be established and to return immediately.
+ * NOTE4: UNIX sockets can only be reconnected to the same file thus both
+ *        host and port have to be passed as 0s.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
 (SOCK            sock,    /* [in] handle of the socket to reconnect      */
@@ -759,13 +763,15 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 /* Control OS-defined send strategy by disabling/enabling TCP
  * Nagle algorithm that packs multiple requests into a single
  * frame and thus transferring data in fewer transactions,
- * miminizing the network traffic.  Some applications may find
- * it useful to disable this default behavior for the sake
- * of their performance increase.
+ * miminizing the network traffic and bursting the throughput.
+ * Some applications, however, may find it useful to disable this
+ * default behavior for the sake of their performance increase
+ * (like in case of short transactions otherwise held by the system
+ * to be possibly coalesced into larger chunks).
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
 (SOCK        sock,
- int/*bool*/ on_off
+ int/*bool*/ on_off  /* NB: use true to disable; false to enable */
  );
 
 
@@ -899,6 +905,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsClientSide(SOCK sock);
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsServerSide(SOCK sock);
 
 
+/* Return non-zero value if socket "sock" was created by LSOCK_Accept().
+ * Return zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsUNIX(SOCK sock);
+
+
 
 /******************************************************************************
  *  AUXILIARY network-specific functions (added for the portability reasons)
@@ -980,6 +992,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2004/10/26 14:46:06  lavr
+ * <ncbi_socket.h> -> <ncbi_socket_unix.h>
+ *
  * Revision 6.51  2004/10/19 18:05:07  lavr
  * +SOCK_DisableOSSendDelay
  *
