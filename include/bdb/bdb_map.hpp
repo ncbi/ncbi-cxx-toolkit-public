@@ -65,10 +65,10 @@ template<class K, class T> class db_map_base
 {
 protected:
 
-    typedef CBDB_TypeMapper<K>::TFieldType  db_first_type;
-    typedef CBDB_TypeMapper<T>::TFieldType  db_second_type;
+    typedef typename CBDB_TypeMapper<K>::TFieldType  db_first_type;
+    typedef typename CBDB_TypeMapper<T>::TFieldType  db_second_type;
 
-    typedef std::pair<const K, T>   value_type;
+    typedef std::pair<K, T>   value_type;
 
     struct File : public CBDB_File
     {
@@ -130,7 +130,7 @@ protected:
             m_Cur = 0;
             m_OpenMode = it.m_OpenMode;
             m_SearchFlag = it.m_SearchFlag;
-            static_cast<K>(m_pair.first) = it.m_pair.first;
+            m_pair.first = it.m_pair.first;
             m_pair.second = it.m_pair.second;
             m_IStatus = it.m_IStatus;
 
@@ -179,7 +179,7 @@ protected:
                 }
                 if (m_Cur->Fetch() ==  eBDB_Ok) {
                     m_SearchFlag = true;
-                    static_cast<K>(m_pair.first) = m_CursorFile->key;
+                    m_pair.first = m_CursorFile->key;
                     m_pair.second= m_CursorFile->value;
 
                     if (m_IStatus == eEnd) {
@@ -207,7 +207,7 @@ protected:
             m_Cur->ReverseFetchDirection();
 
             if (m_Cur->Fetch() == eBDB_Ok) {
-                static_cast<K>(m_pair.first) = (K)m_CursorFile->key;
+                m_pair.first = (K)m_CursorFile->key;
                 m_pair.second= (T)m_CursorFile->value;
             }
             m_IStatus = eEnd;
@@ -219,7 +219,7 @@ protected:
             check_open_cursor();
 
             if (m_Cur->Fetch() == eBDB_Ok) {
-                static_cast<K>(m_pair.first) = m_CursorFile->key;
+                m_pair.first = m_CursorFile->key;
                 m_pair.second= m_CursorFile->value;
                 m_IStatus = eInFile;
             } else {
@@ -233,7 +233,7 @@ protected:
             check_open_cursor();
 
             if (m_Cur->Fetch(CBDB_FileCursor::eBackward) == eBDB_Ok) {
-                static_cast<K>(m_pair.first) = m_CursorFile->key;
+                m_pair.first = m_CursorFile->key;
                 m_pair.second= m_CursorFile->value;
                 m_IStatus = eInFile;
             } else {
@@ -298,7 +298,7 @@ public:
         : iterator_base(db_file)
         {
             m_SearchFlag = true;
-            static_cast<K>(m_pair.first) = key;
+            m_pair.first = key;
         }
 
         const_iterator& go_end()
@@ -399,15 +399,15 @@ protected:
 template<class K, class T> class db_map : public db_map_base<K, T>
 {
 public:
-    typedef CBDB_TypeMapper<K>::TFieldType  db_first_type;
-    typedef CBDB_TypeMapper<T>::TFieldType  db_second_type;
+    typedef typename CBDB_TypeMapper<K>::TFieldType  db_first_type;
+    typedef typename CBDB_TypeMapper<T>::TFieldType  db_second_type;
 
-    typedef K                       key_type;
-    typedef T                       referent_type;
-    typedef std::pair<const K, T>   value_type;
+    typedef K                                        key_type;
+    typedef T                                        referent_type;
+    typedef std::pair<const K, T>                    value_type;
 
-    typedef db_map<K, T>             self_type;
-    typedef self_type::iterator_base iterator_base_type;
+    typedef db_map<K, T>                             self_type;
+    typedef typename self_type::iterator_base        iterator_base_type;
 
 public:
 
@@ -419,10 +419,6 @@ public:
     bool insert(const value_type& x);
 
     referent_type operator[](const K& key);
-
-protected:
-
-    friend const_iterator;
 
 };
 
@@ -441,23 +437,20 @@ protected:
 template<class K, class T> class db_multimap : public db_map_base<K, T>
 {
 public:
-    typedef CBDB_TypeMapper<K>::TFieldType  db_first_type;
-    typedef CBDB_TypeMapper<T>::TFieldType  db_second_type;
+    typedef typename CBDB_TypeMapper<K>::TFieldType  db_first_type;
+    typedef typename CBDB_TypeMapper<T>::TFieldType  db_second_type;
 
     typedef K                       key_type;
     typedef T                       referent_type;
     typedef std::pair<const K, T>   value_type;
 
     typedef db_multimap<K, T>       self_type;
-    typedef self_type::iterator_base iterator_base_type;
+    typedef typename self_type::iterator_base iterator_base_type;
 public:
     db_multimap() : db_map_base<K, T>(CBDB_File::eDuplicatesEnable) {}
 
     void insert(const value_type& x);
 
-protected:
-
-    friend const_iterator;
 };
 
 
@@ -510,7 +503,7 @@ void db_map_base<K, T>::open(const char* fname,
 }
 
 template<class K, class T>
-db_map_base<K, T>::const_iterator  db_map_base<K, T>::begin() const
+typename db_map_base<K, T>::const_iterator  db_map_base<K, T>::begin() const
 {
     m_Dbf.Sync();
     return const_iterator(&m_Dbf);
@@ -518,7 +511,7 @@ db_map_base<K, T>::const_iterator  db_map_base<K, T>::begin() const
 
 
 template<class K, class T>
-db_map_base<K, T>::const_iterator  db_map_base<K, T>::end() const
+typename db_map_base<K, T>::const_iterator  db_map_base<K, T>::end() const
 {
     m_Dbf.Sync();
     return const_iterator(&m_Dbf).go_end();
@@ -526,7 +519,7 @@ db_map_base<K, T>::const_iterator  db_map_base<K, T>::end() const
 
 
 template<class K, class T>
-db_map_base<K, T>::const_iterator db_map_base<K, T>::find(const K& key) const
+typename db_map_base<K, T>::const_iterator db_map_base<K, T>::find(const K& key) const
 {
     m_Dbf.Sync();
     return const_iterator(&m_Dbf, key);
@@ -555,7 +548,7 @@ bool db_map<K, T>::insert(const value_type& x)
 }
 
 template<class K, class T>
-db_map<K, T>::referent_type  db_map<K, T>::operator[](const K& key)
+typename db_map<K, T>::referent_type  db_map<K, T>::operator[](const K& key)
 {
     m_Dbf.key = key;
     EBDB_ErrCode ret = m_Dbf.Fetch();
@@ -587,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/22 16:38:00  kuznets
+ * Fixing compilation problems
+ *
  * Revision 1.2  2003/07/22 15:15:46  kuznets
  * Work in progress, multiple changes, added db_multimap template.
  *
