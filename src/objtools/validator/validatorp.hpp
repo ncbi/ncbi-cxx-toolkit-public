@@ -375,6 +375,7 @@ public:
     void ReportProtWithoutFullRef(void);
     void ReportBioseqsWithNoMolinfo(void);
 
+    bool IsNucAcc(const string& acc);
     bool IsFarLocation(const CSeq_loc& loc) const;
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
@@ -593,6 +594,7 @@ private:
     bool IsDifferentDbxrefs(const list< CRef< CDbtag > >& dbxref1,
         const list< CRef< CDbtag > >& dbxref2);
     bool IsHistAssemblyMissing(const CBioseq& seq);
+    bool IsFlybaseDbxrefs(const list< CRef< CDbtag > >& dbxrefs);
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
     
@@ -612,7 +614,7 @@ public:
 
 private:
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
-
+    void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
 
@@ -750,6 +752,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/03/21 19:37:04  shomrat
+* Added IsNucAcc and IsFlybaseDbxrefs
+*
 * Revision 1.17  2003/03/21 16:21:46  shomrat
 * Added ValidateIDSetAgainstDb
 *
