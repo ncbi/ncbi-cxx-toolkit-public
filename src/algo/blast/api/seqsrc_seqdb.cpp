@@ -56,7 +56,6 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme);
 
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
 {
@@ -66,7 +65,6 @@ static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
 
 /** Retrieves the number of sequences in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
 {
@@ -76,7 +74,6 @@ static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
 
 /** Retrieves the total length of all sequences in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Int8 SeqDbGetTotLen(void* seqdb_handle, void*)
 {
@@ -98,7 +95,6 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 
 /** Retrieves the name of the BLAST database.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static const char* 
 SeqDbGetName(void* seqdb_handle, void*)
@@ -109,7 +105,6 @@ SeqDbGetName(void* seqdb_handle, void*)
 
 /** Retrieves the date of the BLAST database.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Boolean SeqDbGetIsProt(void* seqdb_handle, void*)
 {
@@ -461,6 +456,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/01/07 14:02:09  camacho
+ * doxygen fixes
+ *
  * Revision 1.23  2004/12/20 17:02:10  bealer
  * - New SeqSrc construction function to share existing SeqDB object.
  *
