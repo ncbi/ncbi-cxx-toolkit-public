@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/01/29 16:21:20  grichenk
+* COStreamBuffer destructor fixed - no exceptions thrown
+*
 * Revision 1.24  2001/05/17 15:01:19  lavr
 * Typos corrected
 *
@@ -267,7 +270,7 @@ class COStreamBuffer
 public:
     COStreamBuffer(CNcbiOstream& out, bool deleteOut = false)
         THROWS1((bad_alloc));
-    ~COStreamBuffer(void) THROWS1((CIOException));
+    ~COStreamBuffer(void);
 
     bool fail(void) const;
     void ResetFail(void);
