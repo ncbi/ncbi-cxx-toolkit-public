@@ -30,6 +30,7 @@
 *
 */
 
+#include <corelib/ncbifile.hpp>
 #include <serial/datatool/filecode.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/typestr.hpp>
@@ -237,7 +238,10 @@ CNcbiOstream& CFileCode::WriteSourceFile(CNcbiOstream& out) const
     iterate ( set<string>, i, m_SourceFiles ) {
         if ( i != m_SourceFiles.begin() )
             out << ", ";
-        out << '\'' << *i << '\'';
+        {
+            CDirEntry entry(*i);
+            out << '\'' << entry.GetName() << '\'';
+        }
     }
     return out;
 }
@@ -712,6 +716,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2002/09/30 19:15:08  gouriano
+* write only the base name of the ASN file (in comments section)
+*
 * Revision 1.32  2002/06/13 15:41:17  ucko
 * Restore generated newline following Log keyword (accidentally dropped in
 * the previous revision).
