@@ -236,8 +236,8 @@ bool ValidateAccession(const string& acc)
     case 1:
         {{
             // RefSeq accession
-            if ( num_alpha != 2  ||
-                 (num_digits != 6  && num_digits != 8) ) { 
+            if ( (num_alpha != 2)  ||
+                 (num_digits != 6  &&  num_digits != 8  &&  num_digits != 9) ) {
                 return false;
             }
             
@@ -547,6 +547,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/05/26 14:08:14  shomrat
+* ValidateAccession allow 2 letters + underscore + 9 digits
+*
 * Revision 1.9  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
