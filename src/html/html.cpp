@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/01/25 19:34:18  vasilche
+* String arguments which are added as HTML text now treated as plain text.
+*
 * Revision 1.25  1999/01/21 21:12:59  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -356,7 +359,7 @@ CHTMLOpenElement::CHTMLOpenElement(const string& name, CNCBINode* node)
 CHTMLOpenElement::CHTMLOpenElement(const string& name, const string& text)
     : CParent(name)
 {
-    AppendHTMLText(text);
+    AppendPlainText(text);
 }
 
 CNCBINode* CHTMLOpenElement::CloneSelf(void) const
@@ -390,7 +393,7 @@ CHTMLElement::CHTMLElement(const string& name, CNCBINode* node)
 CHTMLElement::CHTMLElement(const string& name, const string& text)
     : CParent(name)
 {
-    AppendHTMLText(text);
+    AppendPlainText(text);
 }
 
 CNCBINode* CHTMLElement::CloneSelf(void) const
@@ -853,7 +856,7 @@ CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& d
     : CParent(s_GetInputType(), name)
 {
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
-    AppendHTMLText(description);  // adds the description at the end
+    AppendPlainText(description);  // adds the description at the end
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
@@ -861,7 +864,7 @@ CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool che
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
-    AppendHTMLText(description);  // adds the description at the end
+    AppendPlainText(description);  // adds the description at the end
 }
 
 
@@ -893,7 +896,7 @@ CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, 
 {
     SetAttribute(KHTMLAttributeName_value, value);
     SetAttribute(KHTMLAttributeName_checked, checked);
-    AppendHTMLText(description);  // adds the description at the end
+    AppendPlainText(description);  // adds the description at the end
 }
 
 // hidden tag 

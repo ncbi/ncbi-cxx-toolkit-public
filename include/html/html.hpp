@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/01/25 19:34:14  vasilche
+* String arguments which are added as HTML text now treated as plain text.
+*
 * Revision 1.21  1999/01/21 21:12:54  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -371,7 +374,7 @@ public:
     CHTMLElementTmpl(CNCBINode* node)
         : CParent(s_GetTagName()) { AppendChild(node); }
     CHTMLElementTmpl(const string& text)
-        : CParent(s_GetTagName()) { AppendHTMLText(text); }
+        : CParent(s_GetTagName()) { AppendPlainText(text); }
 
 };
 
@@ -395,7 +398,7 @@ public:
     CHTMLOpenElementTmpl(CNCBINode* node)
         : CParent(s_GetTagName()) { AppendChild(node); }
     CHTMLOpenElementTmpl(const string& text)
-        : CParent(s_GetTagName()) { AppendHTMLText(text); }
+        : CParent(s_GetTagName()) { AppendPlainText(text); }
 };
 
 // template for lists (OL, UL, DIR, MENU)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/01/25 19:34:15  vasilche
+* String arguments which are added as HTML text now treated as plain text.
+*
 * Revision 1.8  1999/01/21 21:12:54  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -238,7 +241,7 @@ inline CHTMLNode* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
 
 inline CHTMLNode* CHTML_table::InsertTextAt(int row, int column, const string& text)
 {
-    return InsertAt(row, column, new CHTMLText(text));
+    return InsertAt(row, column, new CHTMLPlainText(text));
 }
 
 inline void CHTML_table::CheckTable(void) const
@@ -427,7 +430,7 @@ inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, c
 inline CHTML_color::CHTML_color(const string& color, const string& text)
 {
     SetColor(color);
-    AppendHTMLText(text);
+    AppendPlainText(text);
 }
 
 inline CHTML_color::CHTML_color(const string& color, CNCBINode* node)
