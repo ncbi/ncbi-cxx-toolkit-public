@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
+#include <util/rangemap.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/data_loader_factory.hpp>
@@ -277,6 +278,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.10  2004/08/02 21:33:07  ucko
+ * Preemptively include <util/rangemap.hpp> before anything can define
+ * stat() as a macro.
+ *
  * Revision 1.9  2004/08/02 17:34:43  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.
