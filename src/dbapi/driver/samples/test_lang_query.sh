@@ -1,7 +1,7 @@
 #! /bin/sh
 # $Id$
 
-driver_list="ctlib dblib ftds"
+driver_list="ctlib dblib ftds7 ftds"
 server_list="MSSQL3 STRAUSS MOZART"
 
 res_file="/tmp/$0.$$"
