@@ -417,6 +417,7 @@ void CSplign::Run( THits* phits )
       }
      
       try {
+
         THits comp_hits;
         comps.Get(i, comp_hits);
         SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
@@ -426,8 +427,11 @@ void CSplign::Run( THits* phits )
         ac.m_msg = "Ok";
         m_result.push_back(ac);
       }
+
       catch(CException& e) {
+
         m_result.push_back(SAlignedCompartment(0, true, e.GetMsg().c_str()));
+        ++m_model_id;
       }
 
       smin = same_strand? (smax + 1): 0;
@@ -484,6 +488,7 @@ void CSplign::Run( THits* phits )
         }
      
         try {
+
             THits comp_hits;
             comps.Get(i, comp_hits);
             SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin,smax);
@@ -493,8 +498,11 @@ void CSplign::Run( THits* phits )
             ac.m_msg = "Ok";
             m_result.push_back(ac);
         }
+
         catch(CException& e) {
+
             m_result.push_back(SAlignedCompartment(0,true,e.GetMsg().c_str()));
+            ++m_model_id;
         }
         smin = same_strand? box[3] + 1: 0;
     }
@@ -1432,6 +1440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/06/23 18:56:38  kapustin
+ * Increment model id for models with exceptions
+ *
  * Revision 1.16  2004/06/21 18:43:20  kapustin
  * Tweak seg-level post-processing to reconcile boundary identity improvement with rterm-exon cutting
  *
