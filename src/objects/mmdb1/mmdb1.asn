@@ -1,4 +1,3 @@
---$Revision: 5.0 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -179,7 +178,7 @@ EXPORTS Biostruc-graph, Biomol-descr, Residue-graph,
 	Molecule-id, Residue-id, Atom-id;
 
 IMPORTS Pub FROM NCBI-Pub
-	Org-ref FROM NCBI-Organism
+	BioSource FROM NCBI-Organism
 	Seq-id FROM NCBI-Seqloc
 	Biostruc-id FROM MMDB;
 
@@ -209,7 +208,7 @@ Biostruc-graph ::= SEQUENCE {
 -- A biomolecule description refers to the chemical structure of a molecule or 
 -- component substructures.  This descriptor type is used at the level of
 -- assemblies, molecules and residues, and also for residue-graph dictionaries.
--- The Org-ref object type is drawn from NCBI taxonomy data specifications,
+-- The BioSource object type is drawn from NCBI taxonomy data specifications,
 -- and is not repeated here.
 
 Biomol-descr ::= CHOICE {
@@ -218,7 +217,7 @@ Biomol-descr ::= CHOICE {
 	pdb-source		VisibleString,
 	pdb-comment		VisibleString,
 	other-comment		VisibleString,
-	organism		Org-ref,
+	organism		BioSource,
 	attribution		Pub,
 	assembly-type		INTEGER {	physiological-form(1),
 						crystallographic-cell(2),

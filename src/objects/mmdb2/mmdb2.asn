@@ -1,4 +1,3 @@
---$Revision: 5.0 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -12,7 +11,7 @@
 --  National Institutes of Health
 --  Bethesda, MD 20894 USA
 --
---  July, 1995
+--  July, 1996
 --
 --**********************************************************************
 
@@ -23,7 +22,7 @@ BEGIN
 EXPORTS Biostruc-model, Model-id, Model-coordinate-set-id;
 
 IMPORTS Chem-graph-pntrs, Atom-pntrs, Chem-graph-alignment,
-	Sphere, Cone, Cylinder, Brick, Rot-trans-matrix FROM MMDB-features
+	Sphere, Cone, Cylinder, Brick, Transform FROM MMDB-features
 	Biostruc-id FROM MMDB
 	Pub FROM NCBI-Pub;
 
@@ -145,7 +144,7 @@ Model-space ::= SEQUENCE {
 
 Reference-frame ::= SEQUENCE {
 	biostruc-id		Biostruc-id,
-	rotation-translation	Rot-trans-matrix OPTIONAL }
+	rotation-translation	Transform OPTIONAL }
 
 -- Atomic coordinates may be assigned literally or by reference to another
 -- biostruc.  The reference coordinate type is used to represent homology-
