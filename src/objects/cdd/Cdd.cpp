@@ -1307,14 +1307,14 @@ string CCdd::GetCurationStatusStr() {
       if ((*i)->IsCuration_status()) {
         switch((*i)->GetCuration_status()) {
           case 0:   return("unassigned");
-          case 1:   return("pre-in");
-          case 2:   return("out for curation");
-          case 3:   return("in after curation");
-          case 4:   return("out for validation 1");
-          case 5:   return("in after validation 1");
-          case 6:   return("out for validation 2");
-          case 7:   return("in after validation 2");
-          case 8:   return("post-in");
+          case 1:   return("prein");
+          case 2:   return("ofc");       // out for   curation
+          case 3:   return("iac");       // in  after curation
+          case 4:   return("ofv1");      // out for   validation 1
+          case 5:   return("iav1");      // in  after validation 1
+          case 6:   return("ofv2");      // out for   validation 2
+          case 7:   return("iav2");      // in  after validation 2
+          case 8:   return("postin");
           default:  return("other");
         }
       }
@@ -1557,6 +1557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/10/23 22:58:44  hurwitz
+ * changed curation-status strings
+ *
  * Revision 1.20  2002/10/21 22:08:41  hurwitz
  * added check for consensus sequence
  *
