@@ -364,14 +364,17 @@ void CObjectManager::x_ReleaseDataSource(CDataSource* pSource)
             m_mapEntryToSource.erase(pEntry);
         }
         m_setDefaultSource.erase(pSource);
+        pSource->RemoveReference();
     }
-    pSource->RemoveReference();
-    // Destroy data source if it's linked to an entry and is not
-    // referenced by any scope.
-    if ( pSource->ReferencedOnlyOnce()  &&  !pSource->GetDataLoader() ) {
-        // Release the last reference (kept by this OM) and destroy the
-        // data source.
-        x_ReleaseDataSource(pSource);
+    else {
+        pSource->RemoveReference();
+        // Destroy data source if it's linked to an entry and is not
+        // referenced by any scope.
+        if ( pSource->ReferencedOnlyOnce()  &&  !pSource->GetDataLoader() ) {
+            // Release the last reference (kept by this OM) and destroy the
+            // data source.
+            x_ReleaseDataSource(pSource);
+        }
     }
 }
 
@@ -417,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/07/12 18:33:23  grichenk
+* Fixed the bug with querying destroyed datasources
+*
 * Revision 1.13  2002/07/10 21:11:36  grichenk
 * Destroy any data source not linked to a loader
 * and not used by any scope.
