@@ -138,6 +138,7 @@ public:
 
     /// Check if this id can be used to obtain this bioseq handle
     bool IsSynonym(const CSeq_id& id) const;
+    bool IsSynonym(const CSeq_id_Handle& idh) const;
 
     /// Get the bioseq's synonyms
     CConstRef<CSynonymsSet> GetSynonyms(void) const;
@@ -709,6 +710,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/03/29 16:02:30  grichenk
+* Added IsSynonym(const CSeq_id_Handle&)
+*
 * Revision 1.78  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *

@@ -549,8 +549,14 @@ CConstRef<CSynonymsSet> CBioseq_Handle::GetSynonyms(void) const
 
 bool CBioseq_Handle::IsSynonym(const CSeq_id& id) const
 {
+    return IsSynonym(CSeq_id_Handle::GetHandle(id));
+}
+
+
+bool CBioseq_Handle::IsSynonym(const CSeq_id_Handle& idh) const
+{
     CConstRef<CSynonymsSet> syns = GetSynonyms();
-    return syns && syns->ContainsSynonym(CSeq_id_Handle::GetHandle(id));
+    return syns && syns->ContainsSynonym(idh);
 }
 
 
@@ -884,6 +890,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2005/03/29 16:02:30  grichenk
+* Added IsSynonym(const CSeq_id_Handle&)
+*
 * Revision 1.88  2005/02/28 15:23:05  grichenk
 * RemoveDesc() returns CRef<CSeqdesc>
 *
