@@ -26,7 +26,13 @@
        An example of configuration, installation and build</a>
   <li> <a href="#ref_Compilers">
        List of supported compilers</a>
-</ul>
+  <li> <a href="#ref_AdHoc">
+       Ad-hoc installations</a>
+	 <ul>
+		<li> <a href="#ref_MsvcProj">
+		  Ready-to-use MSVC++ projects hierarchy</a>
+	 </ul>
+  </ul>
 
 <p>
 This page describes how to get the NCBI C++ sources and how to deploy
@@ -273,8 +279,8 @@ enviroment and "egc" GNU C/C++ compiler on your NT, then you can use
 <a name="ref_PreBuiltHeaders"></a>
 However, most of NT users have neither <b><i>sh</b></i>-like interpreter nor
 GNU <b><i>make</i></b> installed on their PCs. They can use pre-built
-<b><i>ncbiconf.ms6</i></b> configuration header, and compose a hierarchy of
-projects with the MS Visual C++ Studio.
+<b><i>ncbiconf.ms6</i></b> configuration header, and use a hierarchy of
+<a href="#ref_MsvcProj">projects for the MS Visual C++ Studio</a>.
 
 <p>
 The same is for Mac users -- we have a (manually maintained) 
@@ -322,6 +328,57 @@ libraries and tools:
 </ul>
 NOTE: Some projects(e.g. "query") are very platform-specific, and they cannot
 be adopted(or even compiled) for all supported platforms.
+
+
+<br></br>
+<a name="ref_AdHoc"><h2>Ad-hoc installations</h2>
+</a>
+
+<p>
+<a name="ref_MsvcProj"><h4>Ready-to-use MSVC++ projects hierarchy</h4>
+</a>
+
+<p>
+Suppose you have deployed the NCBI C++ tree on your local PC, in directory
+<i><b>C:\foo</b></i> (you can do it by either performing the CVS checkout of
+<i><b>internal/c++</b></i> or by expanding the distributed self-extracting
+NCBI C++ source archive) and you want to use MSVC++ to work with these
+sources.
+
+<p>
+In order to adjust the MSVC++ project files for your local
+<i><b>C:\foo</b></i> you must do exactly the following:
+<ol>
+  <li> Load workspace <i><b>compilers/msvc_prj/install.dsw</b></i> to the MSVC++
+		Developer Studio. You can do it either from the already
+		running MSVC++ Developer Studio(using menu
+		<i>"File"/"Open Workspace"</i>), or you can just go to the
+		<i><b>compilers/msvc_prj/</b></i> directory and double-click on the
+		<i><b>install.dsw</b></i> file icon in the "Windows NT Explorer".
+  <li> Build (menu <i>"Build"/"Build"</i>) and execute (menu <i>"Build"/"Execute"</i>)
+		the install application.
+  <li> Go to <i>"Tools"/"Options"</i> form, folder <i>"Directories"</i>; choose
+		option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu,
+		and add "C:\foo\include" to the shown directory list.
+  <li> Quit MSVC++ Developer Studio(using menu <i>"File"/"Exit"</i>).
+</ol>
+
+Now when the installation is complete you can load workspace
+<i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i> and build all basic libraries and test
+applications(project <b>core_all</b>) or just libraries(project <b>core_lib</b>),
+or any single library and/or application(other projects in this
+workspace).
+
+<p>
+There are also projects(such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>)
+that engage the
+<a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">
+NCBI C toolkit</a>.
+To build these, you have to have the "old" NCBI C toolkit's libraries and
+header files accessible from your PC, and you must specify path to them in
+<i>"Tools"/"Options"</i> form, folder <i>"Directories"</i>,
+options <i>"Include files"</i>(e.g. <i><b>C:\ncbi\include.32</b></i>),
+<i>"Library files"</i> and <i>"Source files"</i> (e.g. <i><b>C:\ncbi\build_d.m32</b></i>).
 
 
 <br></br>
