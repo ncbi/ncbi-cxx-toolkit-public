@@ -441,6 +441,56 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 }
 
 
+bool CBioseq_Handle::ContainsSegment(const CSeq_id& id) const
+{
+    return ContainsSegment(CSeq_id_Handle::GetHandle(id));
+}
+
+
+bool CBioseq_Handle::ContainsSegment(const CBioseq_Handle& part) const
+{
+    CConstRef<CSynonymsSet> syns = part.GetSynonyms();
+    if ( !syns ) {
+        return false;
+    }
+    SSeqMapSelector sel;
+    sel.SetFlags(CSeqMap::fFindRef);
+    CSeqMap_CI it = GetSeqMap().BeginResolved(&GetScope(), sel);
+    for ( ; it; ++it) {
+        if ( syns->ContainsSynonym(it.GetRefSeqid()) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CBioseq_Handle::ContainsSegment(CSeq_id_Handle id) const
+{
+    CBioseq_Handle h = GetScope().GetBioseqHandle(id);
+    CConstRef<CSynonymsSet> syns;
+    if ( h ) {
+        syns = h.GetSynonyms();
+    }
+    SSeqMapSelector sel;
+    sel.SetFlags(CSeqMap::fFindRef);
+    CSeqMap_CI it = GetSeqMap().BeginResolved(&GetScope(), sel);
+    for ( ; it; ++it) {
+        if ( syns ) {
+            if ( syns->ContainsSynonym(it.GetRefSeqid()) ) {
+                return true;
+            }
+        }
+        else {
+            if (it.GetRefSeqid() == id) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         ENa_strand strand) const
 {
@@ -817,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2005/02/10 22:15:20  grichenk
+* Added ContainsSegment
+*
 * Revision 1.85  2005/02/09 19:11:07  vasilche
 * Implemented setters for Bioseq.descr.
 *

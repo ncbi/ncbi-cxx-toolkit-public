@@ -276,6 +276,11 @@ public:
     /// Get sequence map.
     const CSeqMap& GetSeqMap(void) const;
 
+    /// Check if the seq-id describes a segment of the bioseq
+    bool ContainsSegment(const CSeq_id& id) const;
+    bool ContainsSegment(CSeq_id_Handle id) const;
+    bool ContainsSegment(const CBioseq_Handle& part) const;
+
     /// CSeqVector constructor flags
     enum EVectorCoding {
         eCoding_NotSet, ///< Use original coding - DANGEROUS! - may change
@@ -689,6 +694,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/02/10 22:15:20  grichenk
+* Added ContainsSegment
+*
 * Revision 1.74  2005/02/09 19:11:07  vasilche
 * Implemented setters for Bioseq.descr.
 *
