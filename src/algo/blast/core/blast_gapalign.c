@@ -461,7 +461,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
    if (!gap_align)
       return NULL;
 
-   GapEditBlockDelete(gap_align->edit_block);
+   GapEditScriptDelete(gap_align->edit_script);
    GapPrelimEditBlockFree(gap_align->fwd_prelim_tback);
    GapPrelimEditBlockFree(gap_align->rev_prelim_tback);
    if (gap_align->greedy_align_mem)
@@ -2492,11 +2492,9 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
       tmp_hsp.score = score;
       tmp_hsp.context = context;
       tmp_hsp.query.offset = q_start;
-      tmp_hsp.query.length = q_end - q_start;
       tmp_hsp.query.end = q_end;
       tmp_hsp.query.frame = query_info->contexts[context].frame;
       tmp_hsp.subject.offset = s_start;
-      tmp_hsp.subject.length = s_end - s_start;
       tmp_hsp.subject.end = s_end;
       tmp_hsp.subject.frame = 1;
 
@@ -2532,7 +2530,7 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
                           gap_align->subject_start, gap_align->subject_stop,
                           init_hsp->q_off, init_hsp->s_off, context, 
                           query_info->contexts[context].frame, 1, 
-                          gap_align->score, &(gap_align->edit_block), 
+                          gap_align->score, &(gap_align->edit_script), 
                           &new_hsp);
             Blast_HSPListSaveHSP(hsp_list, new_hsp);
             BlastIntervalTreeAddHSP(new_hsp, tree, query_info);
@@ -2558,9 +2556,9 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
  *  @return Pointer to the resulting edit script, or NULL if there
  *          are no traceback actions specified
  */
-static GapEditScript*
-s_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
-                                  GapPrelimEditBlock* fwd_prelim_tback)
+GapEditScript*
+Blast_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
+                                      GapPrelimEditBlock* fwd_prelim_tback)
 {
    GapEditScript* esp_start = NULL,* esp;
    GapPrelimEditScript *op;
@@ -2632,18 +2630,9 @@ s_BlastGapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start,
    gap_align->subject_stop = s_end;
    gap_align->score = score;
 
-   if (esp) {
-      gap_align->edit_block = GapEditBlockNew(q_start, s_start);
-      gap_align->edit_block->start1 = q_start;
-      gap_align->edit_block->start2 = s_start;
-      gap_align->edit_block->length1 = query_length;
-      gap_align->edit_block->length2 = subject_length;
-      gap_align->edit_block->original_length1 = query_length;
-      gap_align->edit_block->original_length2 = subject_length;
-      gap_align->edit_block->frame1 = gap_align->edit_block->frame2 = 1;
-      gap_align->edit_block->reverse = 0;
-      gap_align->edit_block->esp = esp;
-   }
+   if (esp)
+      gap_align->edit_script = esp;
+
    return 0;
 }
 
@@ -2719,7 +2708,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
    }
 
    if (do_traceback) {
-      esp = s_PrelimEditBlockToGapEditScript(rev_prelim_tback, 
+      esp = Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback, 
                                              fwd_prelim_tback);
    }
    
@@ -3336,11 +3325,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       tmp_hsp.score = score;
       tmp_hsp.context = context;
       tmp_hsp.query.offset = q_start;
-      tmp_hsp.query.length = q_end - q_start;
       tmp_hsp.query.end = q_end;
       tmp_hsp.query.frame = query_info->contexts[context].frame;
       tmp_hsp.subject.offset = s_start;
-      tmp_hsp.subject.length = s_end - s_start;
       tmp_hsp.subject.end = s_end;
       tmp_hsp.subject.frame = subject->frame;
 
@@ -3403,7 +3390,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                            gap_align->subject_stop, init_hsp->q_off, 
                            init_hsp->s_off, context, 
                            query_frame, subject->frame, gap_align->score, 
-                           &(gap_align->edit_block), &new_hsp);
+                           &(gap_align->edit_script), &new_hsp);
              Blast_HSPListSaveHSP(hsp_list, new_hsp);
              BlastIntervalTreeAddHSP(new_hsp, tree, query_info);
          }
@@ -3629,19 +3616,7 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
    return 0;
 }
 
-Int2 
-BLAST_TracebackToGapEditBlock(GapPrelimEditBlock *rev_prelim_tback, 
-                              GapPrelimEditBlock *fwd_prelim_tback, 
-                              Int4 start1, Int4 start2, 
-                              GapEditBlock** edit_block)
-{
-  *edit_block = GapEditBlockNew(start1, start2);
-  (*edit_block)->esp = s_PrelimEditBlockToGapEditScript(rev_prelim_tback,
-                                                        fwd_prelim_tback);
-  return 0;
-}
-
-/** Converts OOF traceback from a gapped alignment to a GapEditBlock.
+/** Converts OOF traceback from a gapped alignment to a GapEditScript.
  * This function is for out-of-frame gapping.
  * @param rev_prelim_tback Traceback operations for left extension [in]
  * @param fwd_prelim_tback Traceback operations for right extension [in]
@@ -3656,7 +3631,7 @@ static Int2
 s_BlastOOFTracebackToGapEditBlock(GapPrelimEditBlock *rev_prelim_tback,
                      GapPrelimEditBlock *fwd_prelim_tback,
                      Int4 q_start, Int4 s_start, Int4 nucl_align_length,
-                     GapEditBlock** edit_block_ptr)
+                     GapEditScript** edit_script_ptr)
 {
     GapEditScript* e_script;
     EGapAlignOpType last_op;
@@ -3758,14 +3733,12 @@ s_BlastOOFTracebackToGapEditBlock(GapPrelimEditBlock *rev_prelim_tback,
 
     /* form the final edit block */
 
-    BLAST_TracebackToGapEditBlock(tmp_prelim_tback, fwd_prelim_tback,
-                                  q_start, s_start, edit_block_ptr);
-    (*edit_block_ptr)->is_ooframe = TRUE;
-
+    *edit_script_ptr = e_script =
+        Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback,
+                                         fwd_prelim_tback);
 
     /* postprocess the edit script */
 
-    e_script = (*edit_block_ptr)->esp;
     num_nuc = 0;
     while (e_script != NULL) {
 
@@ -3811,7 +3784,7 @@ s_BlastOOFTracebackToGapEditBlock(GapPrelimEditBlock *rev_prelim_tback,
     /* finally, add one to the size of any block of substitutions
        that follows a frame shift op */
 
-    e_script = (*edit_block_ptr)->esp;
+    e_script = *edit_script_ptr;
     last_op = e_script->op_type;
     e_script = e_script->next;
     while (e_script != NULL) {
@@ -3935,15 +3908,13 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
         status = s_BlastOOFTracebackToGapEditBlock(rev_prelim_tback, 
                        fwd_prelim_tback, gap_align->query_start, 
                        gap_align->subject_start, nucl_align_length, 
-                       &gap_align->edit_block);
+                       &gap_align->edit_script);
     } else {
-        status = BLAST_TracebackToGapEditBlock(rev_prelim_tback,
-                       fwd_prelim_tback, gap_align->query_start, 
-                       gap_align->subject_start, &gap_align->edit_block);
+        gap_align->edit_script = 
+            Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback,
+                                             fwd_prelim_tback);
     }
 
-    gap_align->edit_block->length1 = query_length;
-    gap_align->edit_block->length2 = subject_length;
     gap_align->score = score_right + score_left;
     return status;
 }
@@ -4016,12 +3987,10 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
         gap_align->subject_stop = s_start;
     }
 
-    status = BLAST_TracebackToGapEditBlock(rev_prelim_tback,
-                          fwd_prelim_tback, gap_align->query_start, 
-                          gap_align->subject_start, &gap_align->edit_block);
+    gap_align->edit_script = 
+        Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback,
+                                         fwd_prelim_tback);
 
-    gap_align->edit_block->length1 = query_length;
-    gap_align->edit_block->length2 = subject_length;
     gap_align->score = score_right + score_left;
     
     return status;
@@ -4219,7 +4188,7 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
                     init_hsp->q_off, init_hsp->s_off, 
                     context, query_info->contexts[context].frame, 
                     subject->frame, gap_align->score,
-                    &(gap_align->edit_block), &new_hsp);
+                    &(gap_align->edit_script), &new_hsp);
       new_hsp->pattern_length = init_hsp->ungapped_data->length;
       Blast_HSPListSaveHSP(hsp_list, new_hsp);
    }   

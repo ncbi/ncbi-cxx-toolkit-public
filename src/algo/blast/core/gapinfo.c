@@ -87,31 +87,6 @@ GapEditScriptDelete(GapEditScript* old)
     return old;
 }
 
-GapEditBlock*
-GapEditBlockNew(Int4 start1, Int4 start2)
-
-{
-    GapEditBlock* edit_block;
-
-    edit_block = (GapEditBlock*) calloc(1, sizeof(GapEditBlock));
-    edit_block->start1 = start1;
-    edit_block->start2 = start2;
-
-    return edit_block;
-}
-
-GapEditBlock*
-GapEditBlockDelete(GapEditBlock* edit_block)
-
-{
-    if (edit_block == NULL)
-        return NULL;
-
-    edit_block->esp = GapEditScriptDelete(edit_block->esp);
-    sfree(edit_block);
-    return edit_block;
-}
-
 /** Ensures that a preliminary edit script has enough memory allocated
  *  to hold a given number of edit operations
  *

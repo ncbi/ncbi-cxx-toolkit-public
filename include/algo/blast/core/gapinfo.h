@@ -67,25 +67,6 @@ typedef struct GapPrelimEditScript {
    Int4 num;                   /**< Number of operations */
 } GapPrelimEditScript;
 
-/** Editing block structure containing all information returned from a 
- * single gapped extension. */
-typedef struct GapEditBlock {
-   Int4 start1;  /**< Start of alignment in query. */
-   Int4 start2;  /**< Start of alignment in subject. */
-   Int4 length1; /**< Length of alignment in query. */
-   Int4 length2; /**< Length of alignment in subject. */
-   Int4 original_length1; /**< Untranslated query length. */
-   Int4 original_length2; /**< Untranslated subject length. */
-   Int2 frame1;  /**< Query frame. */
-   Int2 frame2;	 /**< Subject frame. */
-   Boolean translate1; /**< Is query translated? */
-   Boolean translate2; /**< Is subject translated? */
-   Boolean reverse; /**< reverse sequence 1 and 2 when producing SeqALign? */
-   Boolean is_ooframe; /**< Is this out_of_frame edit block? */
-   Boolean discontinuous; /**< Is this OK to produce discontinuous SeqAlign? */
-   GapEditScript* esp; /**< Editing script for the traceback. */
-} GapEditBlock;
-
 /** Preliminary version of GapEditBlock, used directly by the low-
  * level dynamic programming routines 
  */
@@ -118,20 +99,6 @@ GapEditScriptNew (GapEditScript* old);
  */
 GapEditScript* 
 GapEditScriptDelete (GapEditScript* esp);
-
-/** Initialize an edit block structure. 
- * @param start1 Offset to start alignment in first sequence. [in]
- * @param start2 Offset to start alignment in second sequence. [in]
- */
-GapEditBlock* 
-GapEditBlockNew (Int4 start1, Int4 start2);
-
-/** Free an edit block structure. 
- *  @param edit_block The edit block to delete [in]
- *  @return Always NULL
- */
-GapEditBlock* 
-GapEditBlockDelete (GapEditBlock* edit_block);
 
 /** Frees a preliminary edit block structure 
  *  @param edit_block The edit block to free [in]

@@ -546,20 +546,17 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    /* This is used to break out of H2 loop early */
    for (index=0;index<number_of_hsps;index++) 
    {
-      H = link_hsp_array[index];
-		hsp = H->hsp;
-		H->q_offset_trim = hsp->query.offset + 
-         MIN(((hsp->query.length)/4), trim_size);
-		H->q_end_trim = hsp->query.end - 
-         MIN(((hsp->query.length)/4), trim_size);
-		H->s_offset_trim = 
-         hsp->subject.offset + 
-         MIN(((hsp->subject.length)/4), trim_size);
-		H->s_end_trim = 
-         hsp->subject.end - 
-         MIN(((hsp->subject.length)/4), trim_size);
+       Int4 q_length, s_length;
+       H = link_hsp_array[index];
+       hsp = H->hsp;
+       q_length = (hsp->query.end - hsp->query.offset) / 4;
+       s_length = (hsp->subject.end - hsp->subject.offset) / 4;
+       H->q_offset_trim = hsp->query.offset + MIN(q_length, trim_size);
+       H->q_end_trim = hsp->query.end - MIN(q_length, trim_size);
+       H->s_offset_trim = hsp->subject.offset + MIN(s_length, trim_size);
+       H->s_end_trim = hsp->subject.end - MIN(s_length, trim_size);
    }	    
-
+   
 	for (frame_index=0; frame_index<num_query_frames; frame_index++)
 	{
       hp_start = s_LinkHSPStructReset(hp_start);

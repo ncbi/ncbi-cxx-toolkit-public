@@ -244,6 +244,7 @@ s_HSPsHaveCommonEndpoint(const BlastHSP *in_hsp,
     }
 
     if (match) {
+        Int4 in_q_length, tree_q_length, in_s_length, tree_s_length;
 
         /* keep the higher scoring HSP */
 
@@ -253,15 +254,18 @@ s_HSPsHaveCommonEndpoint(const BlastHSP *in_hsp,
             return tree_hsp;
 
         /* for equal scores, pick the shorter HSP */
-
-        if (in_hsp->query.length > tree_hsp->query.length)
+        in_q_length = in_hsp->query.end - in_hsp->query.offset;
+        tree_q_length = tree_hsp->query.end - tree_hsp->query.offset;
+        if (in_q_length > tree_q_length)
             return tree_hsp;
-        if (in_hsp->query.length < tree_hsp->query.length)
+        if (in_q_length < tree_q_length)
             return in_hsp;
 
-        if (in_hsp->subject.length > tree_hsp->subject.length)
+        in_s_length = in_hsp->subject.end - in_hsp->subject.offset;
+        tree_s_length = tree_hsp->subject.end - tree_hsp->subject.offset;
+        if (in_s_length > tree_s_length)
             return tree_hsp;
-        if (in_hsp->subject.length < tree_hsp->subject.length)
+        if (in_s_length < tree_s_length)
             return in_hsp;
 
         /* HSPs are identical; favor the one already in the tree */

@@ -83,14 +83,9 @@ Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number);
  * functionality.
  * @param gap_align Structure containing gapped alignment information [in]
  * @param hsp Original HSP from the preliminary stage [in] [out]
- * @param query_length Length of the query sequence [in]
- * @param subject_length Length of the subject sequence [in]
- * @param program Type of BLAST program [in]
  */
 Int2
-Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp, 
-                             Uint4 query_length, Uint4 subject_length, 
-                             EBlastProgramType program);
+Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp);
 
 
 /** Given the preliminary alignment results from a database search, redo 

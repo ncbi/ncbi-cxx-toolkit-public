@@ -171,7 +171,7 @@ typedef struct Kappa_DistinctAlignment {
   Int4 matchEnd;         /**< one past the end of the alignment in the
                               subject */
   Int4 frame;            /**< the subject frame */
-  GapEditBlock * editBlock;   /**< the alignment info for a gapped
+  GapEditScript * editScript;   /**< the alignment info for a gapped
                                    alignment */
   struct Kappa_DistinctAlignment * next;  /**< the next alignment in the
                                                list */
@@ -196,8 +196,8 @@ Kappa_DistinctAlignmentsFree(Kappa_DistinctAlignment ** palign)
     Kappa_DistinctAlignment * align_next = align->next;
     align_next = align->next;
 
-    if(align->editBlock) {
-      GapEditBlockDelete(align->editBlock);
+    if(align->editScript) {
+      GapEditScriptDelete(align->editScript);
     }
     sfree(align);
 
@@ -235,7 +235,7 @@ s_HSPListFromDistinctAlignments(
                   align->matchStart,   align->matchEnd,
                   unknown_value, unknown_value,
                   0, 0, align->frame, align->score,
-                  &align->editBlock, &new_hsp);
+                  &align->editScript, &new_hsp);
 
     /* At this point, the subject and possibly the query sequence have
      * been filtered; since it is not clear that num_ident of the
@@ -1942,7 +1942,8 @@ WindowsFromHSPs(
     /* begin and end are the endpoints of the window */
     Int4 begin = MAX(0, hsp_array[k]->subject.offset - border);
     Int4 end   = MIN(sequence_length,
-                     begin + hsp_array[k]->subject.length + 2 * border);
+                     begin + hsp_array[k]->subject.end - 
+                     hsp_array[k]->subject.offset + 2 * border);
 
     windows[k]->begin  = begin;
     windows[k]->end    = end;
@@ -2261,8 +2262,8 @@ StartingPointForHit(
        one in the HSP was unacceptable.*/
     *q_start =
       BlastGetStartForGappedAlignment(query->data, subject->data, sbp,
-          hsp->query.offset, hsp->query.length,
-          hsp->subject.offset, hsp->subject.length);
+          hsp->query.offset, hsp->query.end - hsp->query.offset,
+          hsp->subject.offset, hsp->subject.end - hsp->subject.offset);
 
     *s_start =
       (hsp->subject.offset - hsp->query.offset) + *q_start;
@@ -2324,10 +2325,9 @@ NewAlignmentUsingXdrop(
                                   &queryExtent, &matchExtent,
                                   &newScore);
   obj = malloc(sizeof(Kappa_DistinctAlignment));
-  BLAST_TracebackToGapEditBlock(gap_align->rev_prelim_tback,
-                                gap_align->fwd_prelim_tback,
-                                queryStart, matchStart + window->begin,
-                                &obj->editBlock);
+  obj->editScript = 
+      Blast_PrelimEditBlockToGapEditScript(gap_align->rev_prelim_tback,
+                                           gap_align->fwd_prelim_tback);
 
   obj->score      = newScore;
   obj->queryStart = queryStart;
@@ -2370,14 +2370,8 @@ NewAlignmentFromGapAlign(
   obj->matchEnd   = gap_align->subject_stop  + window->begin;
   obj->frame      = window->frame;
 
-  if(gap_align->edit_block != NULL) {
-    gap_align->edit_block->start2           += window->begin;
-    gap_align->edit_block->length2          += window->begin;
-    gap_align->edit_block->original_length1  = query->length;
-    gap_align->edit_block->original_length2  = full_subject_length;
-  }
-  obj->editBlock        = gap_align->edit_block;
-  gap_align->edit_block = NULL; /* set to NULL to avoid aliasing */
+  obj->editScript        = gap_align->edit_script;
+  gap_align->edit_script = NULL; /* set to NULL to avoid aliasing */
   obj->next             = NULL;
 
   return obj;

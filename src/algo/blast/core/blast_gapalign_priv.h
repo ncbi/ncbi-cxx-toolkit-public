@@ -47,20 +47,18 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Boolean reversed, Boolean reverse_sequence);
 
 
-/** Converts traceback produced by all of the non-out-of-frame
- * gapped alignment routines into a GapEditBlock, which is 
- * normally then further processed to a SeqAlignPtr.
- * @param rev_edit_block Traceback from extension to the left [in]
- * @param fwd_edit_block Traceback from extension to the right [in]
- * @param start1 Starting query offset [in]
- * @param start2 Starting subject offset [in]
- * @param edit_block The constructed edit block [out]
+/** Convert the initial list of traceback actions from a non-OOF
+ *  gapped alignment into a blast edit script. Note that this routine
+ *  assumes the input edit blocks have not been reversed or rearranged
+ *  by calling code
+ *  @param rev_prelim_tback Traceback from extension to the left [in]
+ *  @param fwd_prelim_tback Traceback from extension to the right [in]
+ *  @return Pointer to the resulting edit script, or NULL if there
+ *          are no traceback actions specified
  */
-Int2
-BLAST_TracebackToGapEditBlock(GapPrelimEditBlock *rev_edit_block, 
-                              GapPrelimEditBlock *fwd_edit_block, 
-                              Int4 start1, Int4 start2, 
-                              GapEditBlock** edit_block);
+GapEditScript*
+Blast_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
+                                      GapPrelimEditBlock* fwd_prelim_tback);
 
 /** Window size used to scan HSP for highest score region, where gapped
  * extension starts. 
@@ -127,6 +125,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/04/06 21:00:10  dondosha
+ * GapEditBlock structure removed, use only GapEditScript; length removed from BlastSeg
+ *
  * Revision 1.8  2005/03/08 17:37:19  papadopo
  * change function signatures
  *

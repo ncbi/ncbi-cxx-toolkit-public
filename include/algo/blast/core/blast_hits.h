@@ -46,8 +46,7 @@ extern "C" {
 typedef struct BlastSeg {
    Int2 frame;  /**< Translation frame */
    Int4 offset; /**< Start of hsp */
-   Int4 length; /**< Length of hsp */
-   Int4 end;    /**< End of HSP */
+   Int4 end;    /**< End of hsp */
    Int4 gapped_start;/**< Where the gapped extension started. */
 } BlastSeg;
 
@@ -60,7 +59,7 @@ typedef struct BlastHSP {
    BlastSeg query;       /**< Query sequence info. */
    BlastSeg subject;     /**< Subject sequence info. */
    Int4     context;     /**< Context number of query */
-   GapEditBlock* gap_info;/**< ALL gapped alignment is here */
+   GapEditScript* gap_info;/**< ALL gapped alignment is here */
    Int4 num;             /**< How many HSP's are linked together for sum 
                               statistics evaluation? If unset (0), this HSP is
                               not part of a linked set, i.e. value 0 is treated
@@ -167,7 +166,7 @@ Blast_HSPInit(Int4 query_start, Int4 query_end,
               Int4 subject_start, Int4 subject_end, 
               Int4 query_gapped_start, Int4 subject_gapped_start, 
               Int4 query_context, Int2 query_frame, Int2 subject_frame,
-              Int4 score, GapEditBlock* *gap_edit, BlastHSP** ret_hsp);
+              Int4 score, GapEditScript* *gap_edit, BlastHSP** ret_hsp);
 
 /** Calculate e-value for an HSP found by PHI BLAST.
  * @param hsp An HSP found by PHI BLAST [in]
@@ -255,7 +254,10 @@ void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length,
 
 /** Adjust HSP endpoint offsets according to strand/frame; return values in
  * 1-offset coordinates instead of internal 0-offset.
+ * @param program Type of BLAST program [in]
  * @param hsp An HSP structure [in]
+ * @param query_length Length of query [in]
+ * @param subject_length Length of subject [in]
  * @param q_start Start of alignment in query [out]
  * @param q_end End of alignment in query [out]
  * @param s_start Start of alignment in subject [out]
@@ -263,7 +265,9 @@ void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length,
  */
 NCBI_XBLAST_EXPORT
 void 
-Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
+Blast_HSPGetAdjustedOffsets(EBlastProgramType program, BlastHSP* hsp, 
+                            Int4 query_length, Int4 subject_length, 
+                            Int4* q_start, Int4* q_end,
                             Int4* s_start, Int4* s_end);
 
 /** Performs the translation and coordinates adjustment, if only part of the 

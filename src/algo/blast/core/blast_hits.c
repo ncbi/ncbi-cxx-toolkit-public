@@ -50,7 +50,7 @@ BlastHSP* Blast_HSPFree(BlastHSP* hsp)
 {
    if (!hsp)
       return NULL;
-   hsp->gap_info = GapEditBlockDelete(hsp->gap_info);
+   hsp->gap_info = GapEditScriptDelete(hsp->gap_info);
    sfree(hsp);
    return NULL;
 }
@@ -69,7 +69,7 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
               Int4 subject_end, Int4 query_gapped_start, 
               Int4 subject_gapped_start, Int4 query_context, 
               Int2 query_frame, Int2 subject_frame, Int4 score, 
-              GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
+              GapEditScript* *gap_edit, BlastHSP* *ret_hsp)
 {
    BlastHSP* new_hsp = NULL;
 
@@ -86,8 +86,6 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
 
    new_hsp->query.offset = query_start;
    new_hsp->subject.offset = subject_start;
-   new_hsp->query.length = query_end - query_start;
-   new_hsp->subject.length = subject_end - subject_start;
    new_hsp->query.end = query_end;
    new_hsp->subject.end = subject_end;
    new_hsp->query.gapped_start = query_gapped_start;
@@ -100,8 +98,6 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
    { /* If this is non-NULL transfer ownership. */
         new_hsp->gap_info = *gap_edit;
         *gap_edit = NULL;
-        new_hsp->gap_info->frame1 = new_hsp->query.frame;
-        new_hsp->gap_info->frame2 = new_hsp->subject.frame;
    }
 
    *ret_hsp = new_hsp;
@@ -163,7 +159,7 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
 
     /* Make corrections in edit block and free any parts that are no longer
        needed */
-    if (gapped && best_start_esp && best_start_esp != hsp->gap_info->esp) {
+    if (gapped && best_start_esp && best_start_esp != hsp->gap_info) {
         /* best_prev_esp is the link in the chain exactly preceding the starting
            edit script of the best part of the alignment. If best alignment was
            found, but it does not start from the original start, best_prev_esp 
@@ -172,22 +168,18 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
         /* Unlink the good part of the alignment from the previous 
            (negative-scoring) part that is being deleted. */
         best_prev_esp->next = NULL;
-        GapEditScriptDelete(hsp->gap_info->esp);
-        hsp->gap_info->esp = best_start_esp;
+        GapEditScriptDelete(hsp->gap_info);
+        hsp->gap_info = best_start_esp;
     }
     
     if (hsp->score >= cutoff_score) {
         /* Update all HSP offsets. */
-        hsp->query.length = best_q_end - best_q_start;
-        hsp->subject.length = best_s_end - best_s_start;
         hsp->query.offset = best_q_start - query_start;
-        hsp->query.end = hsp->query.offset + hsp->query.length;
+        hsp->query.end = hsp->query.offset + best_q_end - best_q_start;
         hsp->subject.offset = best_s_start - subject_start;
-        hsp->subject.end = hsp->subject.offset + hsp->subject.length;
+        hsp->subject.end = hsp->subject.offset + best_s_end - best_s_start;
 
         if (gapped) {
-            hsp->gap_info->start1 = hsp->query.offset;
-            hsp->gap_info->start2 = hsp->subject.offset;
             if (best_end_esp->next != NULL) {
                 GapEditScriptDelete(best_end_esp->next);
                 best_end_esp->next = NULL;
@@ -292,7 +284,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    best_q_start = best_q_end = current_q_start = query;
    best_s_start = best_s_end = current_s_start = subject;
    best_start_esp = best_end_esp = current_start_esp = current_esp =
-       hsp->gap_info->esp;
+       hsp->gap_info;
    /* There are no previous edit scripts at the beginning. */
    best_prev_esp = current_prev_esp = current_start_prev_esp = NULL;
    best_end_esp_num = 0;
@@ -431,6 +423,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    Uint1* current_q_start, * current_s_start;
    Int4 index;
    const Uint1 kResidueMask = (translated ? 0xff : 0x0f);
+   Int4 hsp_length = hsp->query.end - hsp->query.offset;
 
    matrix = sbp->matrix->data;
 
@@ -442,7 +435,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    best_s_start = best_s_end = current_s_start = subject;
    index = 0;
    
-   for (index = 0; index < hsp->subject.length; ++index) {
+   for (index = 0; index < hsp_length; ++index) {
       sum += matrix[*query & kResidueMask][*subject];
       query++;
       subject++;
@@ -491,10 +484,9 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject,
 {
    Int4 i, num_ident, align_length, q_off, s_off;
    Uint1* q,* s;
-   GapEditBlock* gap_info;
    GapEditScript* esp;
-
-   gap_info = hsp->gap_info;
+   Int4 q_length = hsp->query.end - hsp->query.offset;
+   Int4 s_length = hsp->subject.end - hsp->subject.offset;
 
    q_off = hsp->query.offset;
    s_off = hsp->subject.offset;
@@ -509,18 +501,18 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject,
    align_length = 0;
 
 
-   if (!gap_info) {
+   if (!hsp->gap_info) {
       /* Ungapped case. Check that lengths are the same in query and subject,
          then count number of matches. */
-      if (hsp->query.length != hsp->subject.length)
+      if (q_length != s_length)
          return -1;
-      align_length = hsp->query.length; 
+      align_length = q_length; 
       for (i=0; i<align_length; i++) {
          if (*q++ == *s++)
             num_ident++;
       }
    } else {
-      for (esp = gap_info->esp; esp; esp = esp->next) {
+      for (esp = hsp->gap_info; esp; esp = esp->next) {
          align_length += esp->num;
          switch (esp->op_type) {
          case eGapAlignSub:
@@ -572,7 +564,7 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
    num_ident = 0;
    align_length = 0;
 
-   for (esp = hsp->gap_info->esp; esp; esp = esp->next) {
+   for (esp = hsp->gap_info; esp; esp = esp->next) {
       switch (esp->op_type) {
       case eGapAlignSub: /* Substitution */
          align_length += esp->num;
@@ -620,11 +612,12 @@ void
 Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
                            Int4* gaps_out, Int4* gap_opens_out)
 {
-   Int4 length = hsp->query.length;
+   Int4 length = hsp->query.end - hsp->query.offset;
+   Int4 s_length = hsp->subject.end - hsp->subject.offset;
    Int4 gap_opens = 0, gaps = 0;
 
    if (hsp->gap_info) {
-      GapEditScript* esp = hsp->gap_info->esp;
+      GapEditScript* esp = hsp->gap_info;
       for ( ; esp; esp = esp->next) {
          if (esp->op_type == eGapAlignDel) {
             length += esp->num;
@@ -635,8 +628,8 @@ Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
             gaps += esp->num;
          }
       }
-   } else if (hsp->subject.length > length) {
-      length = hsp->subject.length;
+   } else if (s_length > length) {
+      length = s_length;
    }
 
    *length_out = length;
@@ -657,53 +650,46 @@ s_BlastSegGetTranslatedOffsets(BlastSeg* segment, Int4 seq_length,
                               Int4* start, Int4* end)
 {
    if (segment->frame < 0)	{
-      *start = seq_length - CODON_LENGTH*segment->offset
-         + segment->frame;
-      *end = seq_length
-         - CODON_LENGTH*(segment->offset+segment->length)
-         + segment->frame + 1;
+      *start = seq_length - CODON_LENGTH*segment->offset + segment->frame;
+      *end = seq_length - CODON_LENGTH*segment->end + segment->frame + 1;
    } else if (segment->frame > 0)	{
       *start = CODON_LENGTH*(segment->offset) + segment->frame - 1;
-      *end = CODON_LENGTH*(segment->offset+segment->length)
-         + segment->frame - 2;
+      *end = CODON_LENGTH*segment->end + segment->frame - 2;
    } else {
       *start = segment->offset + 1;
-      *end = segment->offset + segment->length;
+      *end = segment->end;
    }
 }
 
 void 
-Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
+Blast_HSPGetAdjustedOffsets(EBlastProgramType program, BlastHSP* hsp, 
+                            Int4 query_length, Int4 subject_length,
+                            Int4* q_start, Int4* q_end,
                             Int4* s_start, Int4* s_end)
 {
-   Int4 query_length, subject_length;
-
    if (!hsp->gap_info) {
       *q_start = hsp->query.offset + 1;
-      *q_end = hsp->query.offset + hsp->query.length;
+      *q_end = hsp->query.end;
       *s_start = hsp->subject.offset + 1;
-      *s_end = hsp->subject.offset + hsp->subject.length;
+      *s_end = hsp->subject.end;
       return;
    }
 
-   /* Non-translated lengths are stored in the GapEditBlock */
-   query_length = hsp->gap_info->original_length1;
-   subject_length = hsp->gap_info->original_length2;
-   
-   if (!hsp->gap_info->translate1 && !hsp->gap_info->translate2) {
+   if (program != eBlastTypeTblastn && program != eBlastTypeBlastx &&
+       program != eBlastTypeTblastx && program != eBlastTypeRpsTblastn) {
       if (hsp->query.frame != hsp->subject.frame) {
          /* Blastn: if different strands, flip offsets in query; leave 
             offsets in subject as they are, but change order for correct
             correspondence. */
          *q_end = query_length - hsp->query.offset;
-         *q_start = *q_end - hsp->query.length + 1;
+         *q_start = *q_end - hsp->query.end + hsp->query.offset + 1;
          *s_end = hsp->subject.offset + 1;
-         *s_start = hsp->subject.offset + hsp->subject.length;
+         *s_start = hsp->subject.end;
       } else {
          *q_start = hsp->query.offset + 1;
-         *q_end = hsp->query.offset + hsp->query.length;
+         *q_end = hsp->query.end;
          *s_start = hsp->subject.offset + 1;
-         *s_end = hsp->subject.offset + hsp->subject.length;
+         *s_end = hsp->subject.end;
       }
    } else {
       s_BlastSegGetTranslatedOffsets(&hsp->query, query_length, q_start, q_end);
@@ -819,8 +805,6 @@ Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, Int4 start_shift)
         hsp->subject.offset += start_shift;
         hsp->subject.end += start_shift;
         hsp->subject.gapped_start += start_shift;
-        if (hsp->gap_info)
-            hsp->gap_info->start2 += start_shift;
     }
     
     return;
@@ -1014,8 +998,6 @@ s_BlastHSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
           hsp1->query.end >= hsp2->query.offset) {
          hsp1->query.end = hsp2->query.end;
          hsp1->subject.end = hsp2->subject.end;
-         hsp1->query.length = hsp1->query.end - hsp1->query.offset;
-         hsp1->subject.length = hsp1->subject.end - hsp1->subject.offset;
          return TRUE;
       } else
          return FALSE;
@@ -1023,8 +1005,8 @@ s_BlastHSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    /* Find whether these HSPs have an intersection point */
    segments1 = (BlastHSPSegment*) calloc(1, sizeof(BlastHSPSegment));
    
-   esp1 = hsp1->gap_info->esp;
-   esp2 = hsp2->gap_info->esp;
+   esp1 = hsp1->gap_info;
+   esp2 = hsp2->gap_info;
    
    segments1->q_start = hsp1->query.offset;
    segments1->s_start = hsp1->subject.offset;
@@ -1216,8 +1198,6 @@ s_BlastHSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
       }
       hsp1->query.end = hsp2->query.end;
       hsp1->subject.end = hsp2->subject.end;
-      hsp1->query.length = hsp1->query.end - hsp1->query.offset;
-      hsp1->subject.length = hsp1->subject.end - hsp1->subject.offset;
    }
 
    return (Boolean) intersection_found;
@@ -2108,8 +2088,6 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
       hsp->subject.offset += offset;
       hsp->subject.end += offset;
       hsp->subject.gapped_start += offset;
-      if (hsp->gap_info)
-         hsp->gap_info->start2 += offset;
    }
 }
 
