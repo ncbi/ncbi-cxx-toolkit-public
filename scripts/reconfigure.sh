@@ -16,7 +16,7 @@ if test -z "$builddir" ; then
   builddir=`pwd`
 fi
 
-top_srcdir=`(cd "${script_dir}/.." ; pwd)`
+top_srcdir=`(set -P 2>/dev/null ; cd "${script_dir}/.." ; pwd)`
 status_dir=`(cd "${builddir}/../status" ; pwd)`
 
 ###  What to do (cmd-line arg)
@@ -104,7 +104,7 @@ case "$method" in
     mv config.status config.cache config.log ${status_dir}  && \
     ${status_dir}/config.status
 
-    cd ${top_srcdir}  &&  rm -f config.status config.cache config.log
+    # cd ${top_srcdir}  &&  rm -f config.status config.cache config.log
     ;;
 
   recheck )
@@ -122,7 +122,7 @@ case "$method" in
     mv config.status config.cache config.log ${status_dir}  && \
     ${status_dir}/config.status
 
-    cd ${top_srcdir}  &&  rm -f config.status config.cache config.log
+    # cd ${top_srcdir}  &&  rm -f config.status config.cache config.log
     ;;
 
   * )

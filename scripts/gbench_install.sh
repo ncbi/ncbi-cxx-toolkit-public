@@ -4,6 +4,7 @@
 # GBENCH installation script.
 # Author: Anatoliy Kuznetsov, Denis Vakatov
 
+set -P 2>/dev/null
 
 script_name=`basename $0`
 script_dir=`dirname $0`
@@ -55,7 +56,7 @@ EOF
 FindDirPath()
 {
    path="$1"
-   while [ "$path" != '.' ]; do
+   while [ "$path" != '.' -a "$path" != '/' ]; do
      path=`dirname $path`
      if [ -d "$path/$2" ]; then
         echo $path
@@ -256,7 +257,7 @@ if test "`uname`" = Darwin -a -x "$MAC_BINCOPY"; then
 fi
 
 
-src_dir=`echo $src_dir | sed -e 's|/\$||'`
+src_dir=`cd "$src_dir" && pwd`
 target_dir=`echo $target_dir | sed -e 's|/\$||'`
 
 if [ -z "$src_dir" ]; then
@@ -290,6 +291,7 @@ source_dir="${source_dir}/src/gui/gbench"
 x_common_rb="rm -rf $target_dir"
 
 MakeDirs $target_dir
+target_dir=`cd "$target_dir" && pwd`
 
 CopyFiles
 
