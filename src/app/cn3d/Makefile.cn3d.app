@@ -4,7 +4,7 @@
 # Build application "cn3d"
 #################################
 
-REQUIRES = gui ctools
+REQUIRES = objects wxWindows ctools
 
 APP = cn3d
 
