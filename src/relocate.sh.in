@@ -1,0 +1,63 @@
+@script_shell@
+
+# $Id$
+# Author:  Denis Vakatov, NCBI 
+# 
+#  Adjust paths to this build tree and the relevant source tree
+#  (only at the very top level, just to allow "external" users
+#   to use the major makefile templates)
+
+
+script_name=`basename $0`
+script_dir=`dirname $0`
+script_dir=`(cd "${script_dir}" ; pwd)`
+
+src_tree=`pwd`
+bld_tree=`(cd "${script_dir}/.." ; pwd)`
+
+if test -x "$src_tree/configure"  &&  test -f "$bld_tree/inc/ncbiconf.h" ; then
+   cat <<EOF
+Adjusting makefiles for:
+  - source tree:  $src_tree
+  - build  tree:  $bld_tree
+
+In directory:  $script_dir/
+EOF
+else
+   cat <<EOF
+[$script_name]  USAGE:  This script MUST be
+ 1) located in the build directory
+ 2) run from the top C++ source directory
+EOF
+   exit 1
+fi
+
+
+#### Substitute new $(builddir)
+
+files="\
+Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl"
+
+for f in $files ; do
+   fff="$script_dir/$f"
+   cat "$fff" \
+     | sed 's%^\(builddir *= *\).*%\1'$script_dir'%' \
+     | sed 's%^\(exec_prefix *= *\).*%\1'$bld_tree'%' \
+     | sed 's%^\(top_srcdir *= *\).*%\1'$src_tree'%' \
+     > "$fff.tmp"
+   if test $? -ne 0 ; then
+      echo "[$script_name]  Error in processing file \"$f\"!" 
+      exit 2
+   fi
+done
+
+for f in $files ; do
+   fff="$script_dir/$f"
+   echo "  $f"
+   rm -f "$fff"  &&  mv "$fff.tmp" "$fff"
+   if test $? -ne 0 ; then
+      echo "[$script_name]  Error in processing file \"$f\"!" 
+      exit 3
+   fi
+done
+echo "Done."
