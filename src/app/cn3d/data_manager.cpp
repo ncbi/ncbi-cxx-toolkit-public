@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.2  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -203,7 +206,10 @@ void ASNDataManager::Load(void)
     // sequence list is interpreted differently for single structure
     isSingleStructure = (mimeData.NotEmpty() &&
         (mimeData->IsStrucseq() ||
-         (mimeData->IsGeneral() && !structureAlignments && biostrucList && biostrucList->size() == 1)));
+            (mimeData->IsGeneral() &&
+                !sequenceAlignments && !structureAlignments &&
+                biostrucList && biostrucList->size() == 1)));
+    TESTMSG("is single structure: " << (isSingleStructure ? "yes" : "no"));
 
     // pre-screen sequence alignments to make sure they're all a type we can deal with
     if (sequenceAlignments) {
@@ -243,6 +249,19 @@ void ASNDataManager::Load(void)
             sequenceAlignments->front()->SetData().SetAlign() = validAlignments;
         }
     }
+}
+
+ASNDataManager::SeqAnnotList * ASNDataManager::GetOrCreateSequenceAlignments(void)
+{
+    // if necessary, convert mime data into general type that has a place for alignments
+    if (!sequenceAlignments && mimeData.NotEmpty() && !mimeData->IsGeneral())
+        ConvertMimeToGeneral();
+
+    if (!sequenceAlignments && mimeData.NotEmpty() && mimeData->IsGeneral() &&
+            mimeData->GetGeneral().GetSeq_align_data().IsBundle())
+        sequenceAlignments =
+            &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetSeqaligns());
+    return sequenceAlignments;
 }
 
 const CCn3d_style_dictionary * ASNDataManager::GetStyleDictionary(void) const
@@ -340,47 +359,56 @@ void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *
         ERR_POST(Error << "ASNDataManager::AddStructureAlignments() - can't add to this data type");
 }
 
+bool ASNDataManager::ConvertMimeToGeneral(void)
+{
+    if (mimeData.Empty() || mimeData->IsGeneral()) {
+        ERR_POST(Error << "ASNDataManager::ConvertMimeToGeneral() - can't convert to general mime type");
+        return false;
+    }
+
+    CNcbi_mime_asn1 *newMime = new CNcbi_mime_asn1();
+    std::string err;
+
+    // copy structures
+    if (biostrucList)
+        newMime->SetGeneral().SetStructures() = *biostrucList;
+    if (masterBiostruc) {
+        newMime->SetGeneral().SetStructures().push_front(CRef<CBiostruc>(
+            CopyASNObject(*masterBiostruc, &err)));
+        masterBiostruc = NULL;
+    }
+    biostrucList = (newMime->SetGeneral().SetStructures().size() > 0) ?
+        &(newMime->SetGeneral().SetStructures()) : NULL;
+
+    // copy alignment data into bundle
+    CBundle_seqs_aligns *bundle = new CBundle_seqs_aligns();
+    newMime->SetGeneral().SetSeq_align_data().SetBundle(CRef<CBundle_seqs_aligns>(bundle));
+    if (seqEntryList) {
+        bundle->SetSequences() = *seqEntryList;
+        seqEntryList = &(bundle->SetSequences());
+    }
+    if (structureAlignments) {
+        structureAlignments = CopyASNObject(*structureAlignments, &err);
+        bundle->SetStrucaligns(CRef<CBiostruc_annot_set>(structureAlignments));
+    }
+    if (sequenceAlignments) {
+        bundle->SetSeqaligns() = *sequenceAlignments;
+        sequenceAlignments = &(bundle->SetSeqaligns());
+    }
+    if (err.size() > 0)
+        ERR_POST(Error << "CopyASNObject() - error: " << err);
+
+    // install new root mime structure
+    mimeData.Reset(newMime);
+    SetDataChanged(StructureSet::eOtherData);
+    return true;
+}
+
 void ASNDataManager::ReplaceUpdates(const UpdateAlignList& newUpdates)
 {
-    // if necessary, convert mime data into general type that has a place for imports,
-    // and update various subtree pointers
-    if (mimeData.NotEmpty() && !mimeData->IsGeneral() && newUpdates.size() > 0) {
-        CNcbi_mime_asn1 *newMime = new CNcbi_mime_asn1();
-        std::string err;
-
-        // copy structures
-        if (biostrucList)
-            newMime->SetGeneral().SetStructures() = *biostrucList;
-        if (masterBiostruc) {
-            newMime->SetGeneral().SetStructures().push_front(CRef<CBiostruc>(
-                CopyASNObject(*masterBiostruc, &err)));
-            masterBiostruc = NULL;
-        }
-        biostrucList = (newMime->SetGeneral().SetStructures().size() > 0) ?
-            &(newMime->SetGeneral().SetStructures()) : NULL;
-
-        // copy alignment data into bundle
-        CBundle_seqs_aligns *bundle = new CBundle_seqs_aligns();
-        newMime->SetGeneral().SetSeq_align_data().SetBundle(CRef<CBundle_seqs_aligns>(bundle));
-        if (seqEntryList) {
-            bundle->SetSequences() = *seqEntryList;
-            seqEntryList = &(bundle->SetSequences());
-        }
-        if (structureAlignments) {
-            structureAlignments = CopyASNObject(*structureAlignments, &err);
-            bundle->SetStrucaligns(CRef<CBiostruc_annot_set>(structureAlignments));
-        }
-        if (sequenceAlignments) {
-            bundle->SetSeqaligns() = *sequenceAlignments;
-            sequenceAlignments = &(bundle->SetSeqaligns());
-        }
-        if (err.size() > 0)
-            ERR_POST(Error << "CopyASNObject() - error: " << err);
-
-        // install new root mime structure
-        mimeData.Reset(newMime);
-        SetDataChanged(eOtherData);
-    }
+    // if necessary, convert mime data into general type that has a place for imports
+    if (mimeData.NotEmpty() && !mimeData->IsGeneral() && newUpdates.size() > 0)
+        ConvertMimeToGeneral();
 
     // store new updates in asn data
     if (mimeData.NotEmpty() && mimeData->IsGeneral()) {
@@ -403,7 +431,7 @@ void ASNDataManager::ReplaceUpdates(const UpdateAlignList& newUpdates)
     } else if (newUpdates.size() > 0)
         ERR_POST(Error << "ASNDataManager::ReplaceUpdates() - can't put updates in this data type");
 
-    SetDataChanged(eUpdateData);
+    SetDataChanged(StructureSet::eUpdateData);
 }
 
 void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
@@ -444,7 +472,7 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     for (s=updateSequences.begin(); s!=se; s++)
         CONDITIONAL_ADD_SEQENTRY((*s));
 
-    SetDataChanged(eSequenceData);
+    SetDataChanged(StructureSet::eSequenceData);
 
     // warn user if # structured slaves != # structure alignments
     if (structureAlignments && nStructuredSlaves !=
@@ -493,7 +521,7 @@ bool ASNDataManager::SetCDDName(const std::string& name)
     CCdd *cdd = GetInternalCDDData();
     if (!cdd || name.size() == 0) return false;
     cdd->SetName(name);
-    SetDataChanged(eCDDData);
+    SetDataChanged(StructureSet::eCDDData);
     return true;
 }
 
@@ -525,7 +553,7 @@ bool ASNDataManager::SetCDDDescription(const std::string& descr)
             if ((*d)->IsComment()) {
                 if ((*d)->GetComment() != descr) {
                     (*d)->SetComment(descr);
-                    SetDataChanged(eCDDData);
+                    SetDataChanged(StructureSet::eCDDData);
                 }
                 return true;
             }
@@ -536,7 +564,7 @@ bool ASNDataManager::SetCDDDescription(const std::string& descr)
     CRef < CCdd_descr > comment(new CCdd_descr);
     comment->SetComment(descr);
     cdd->SetDescription().Set().push_front(comment);
-    SetDataChanged(eCDDData);
+    SetDataChanged(StructureSet::eCDDData);
     return true;
 }
 
@@ -580,7 +608,7 @@ bool ASNDataManager::SetCDDNotes(const TextLines& lines)
             if ((*d)->IsScrapbook()) {
                 if (lines.size() == 0) {
                     cdd->SetDescription().Set().erase(d);   // if empty, remove scrapbook item
-                    SetDataChanged(eCDDData);
+                    SetDataChanged(StructureSet::eCDDData);
                     TESTMSG("removed scrapbook");
                 } else
                     scrapbook = &((*d)->SetScrapbook());
@@ -601,7 +629,7 @@ bool ASNDataManager::SetCDDNotes(const TextLines& lines)
     scrapbook->clear();
     for (int i=0; i<lines.size(); i++)
         scrapbook->push_back(lines[i]);
-    SetDataChanged(eCDDData);
+    SetDataChanged(StructureSet::eCDDData);
 
     return true;
 }

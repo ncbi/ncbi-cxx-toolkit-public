@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.107  2001/12/04 16:14:45  thiessen
 * add frame icon
 *
@@ -1020,7 +1023,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     SetAcceleratorTable(accel);
 
     SetMenuBar(menuBar);
-    menuBar->EnableTop(menuBar->FindMenu("&CDD"), false);
+    menuBar->EnableTop(menuBar->FindMenu("CDD"), false);
 
     // Make a GLCanvas
 #if defined(__WXMSW__)
@@ -1060,10 +1063,15 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
         return;
 
     // play
-    if (event.GetId() == MID_PLAY && glCanvas->structureSet->frameMap.size() > 1) {
-        timer.Start(currentDelay, false);
-        menuBar->Check(MID_PLAY, true);
-        menuBar->Check(MID_STOP, false);
+    if (event.GetId() == MID_PLAY) {
+        if (glCanvas->structureSet->frameMap.size() > 1) {
+            timer.Start(currentDelay, false);
+            menuBar->Check(MID_PLAY, true);
+            menuBar->Check(MID_STOP, false);
+        } else {
+            menuBar->Check(MID_PLAY, false);
+            menuBar->Check(MID_STOP, true);
+        }
     }
 
     // stop

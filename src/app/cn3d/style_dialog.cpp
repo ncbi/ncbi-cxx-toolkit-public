@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.14  2001/11/27 16:26:10  thiessen
 * major update to data management system
 *
@@ -562,7 +565,7 @@ void StyleDialog::OnCloseWindow(wxCloseEvent& event)
             *editedSettings = dummy;
             GlobalMessenger()->PostRedrawAllStructures();
             GlobalMessenger()->PostRedrawAllSequenceViewers();
-            structureSet->SetDataChanged(ASNDataManager::eStyleData);
+            structureSet->SetDataChanged(StructureSet::eStyleData);
         }
     } else
         wxBell();
@@ -581,7 +584,7 @@ void StyleDialog::OnButton(wxCommandEvent& event)
                     GlobalMessenger()->PostRedrawAllSequenceViewers();
                 }
                 if (changedEver)
-					structureSet->SetDataChanged(ASNDataManager::eStyleData);
+                    structureSet->SetDataChanged(StructureSet::eStyleData);
                 EndModal(wxOK);
             } else
                 wxBell();
@@ -594,7 +597,7 @@ void StyleDialog::OnButton(wxCommandEvent& event)
                 GlobalMessenger()->PostRedrawAllStructures();
                 GlobalMessenger()->PostRedrawAllSequenceViewers();
                 changedSinceApply = false;
-				structureSet->SetDataChanged(ASNDataManager::eStyleData);
+                structureSet->SetDataChanged(StructureSet::eStyleData);
             } else
                 wxBell();
             break;

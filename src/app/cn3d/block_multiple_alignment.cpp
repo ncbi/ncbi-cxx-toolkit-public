@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.31  2001/11/27 16:26:06  thiessen
 * major update to data management system
 *
@@ -331,10 +334,8 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
     }
 
     // if alignment changes, any scores/status/special colors become invalid
-    if (clearRowInfo) {
-        ClearRowInfo();
-        geometryViolations.clear();
-    }
+    if (clearRowInfo) ClearRowInfo();
+    geometryViolations.clear();
 
     return true;
 }
@@ -412,7 +413,7 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 
         // check for unmergeable alignment
         const BlockMultipleAlignment *referenceAlignment = alignmentManager->GetCurrentMultipleAlignment();
-        if (referenceAlignment && referenceAlignment != this && 
+        if (referenceAlignment && referenceAlignment != this &&
 			seqIndex >= 0 && GetMaster() == referenceAlignment->GetMaster()) {
 
             bool unmergeable = false;

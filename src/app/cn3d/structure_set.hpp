@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.60  2001/11/27 16:26:10  thiessen
 * major update to data management system
 *
@@ -236,7 +239,6 @@
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
-#include "cn3d/data_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -261,6 +263,7 @@ class Sequence;
 class SequenceSet;
 class ChemicalGraph;
 class CoordSet;
+class ASNDataManager;
 
 class StructureSet : public StructureBase
 {
@@ -348,7 +351,7 @@ public:
     void RemoveStructureAlignments(void);
 
 private:
-    ASNDataManager dataManager;
+    ASNDataManager *dataManager;
 
     // data preparation methods
     void Load(int structureLimit);
@@ -371,21 +374,33 @@ private:
     BioseqMap bioseqs;
 
 public:
-    bool IsMultiStructure(void) const { return !dataManager.IsSingleStructure(); }
-    bool HasDataChanged(void) const { return dataManager.HasDataChanged(); }
-    void SetDataChanged(ASNDataManager::eDataChanged what) const { dataManager.SetDataChanged(what); }
+    bool IsMultiStructure(void) const;
+
+    // flags to tell whether various parts of the data have been changed
+    enum eDataChanged {
+        eAlignmentData              = 0x01,
+        eStructureAlignmentData     = 0x02,
+        eSequenceData               = 0x04,
+        eUpdateData                 = 0x08,
+        eStyleData                  = 0x100,
+        eUserAnnotationData         = 0x200,
+        eCDDData                    = 0x400,
+        eOtherData                  = 0x800
+    };
+    bool HasDataChanged(void) const;
+    void SetDataChanged(eDataChanged what) const;
 
     // CDD-specific data accessors
-    bool IsCDD(void) const { return dataManager.IsCDD(); }
-    const std::string& GetCDDName(void) const { return dataManager.GetCDDName(); }
-    bool SetCDDName(const std::string& name) { return dataManager.SetCDDName(name); }
-    const std::string& GetCDDDescription(void) const { return dataManager.GetCDDDescription(); }
-    bool SetCDDDescription(const std::string& descr) { return dataManager.SetCDDDescription(descr); }
+    bool IsCDD(void) const;
+    const std::string& GetCDDName(void) const;
+    bool SetCDDName(const std::string& name);
+    const std::string& GetCDDDescription(void) const;
+    bool SetCDDDescription(const std::string& descr);
     typedef std::vector < std::string > TextLines;
-    bool GetCDDNotes(TextLines *lines) const { return dataManager.GetCDDNotes(lines); }
-    bool SetCDDNotes(const TextLines& lines) { return dataManager.SetCDDNotes(lines); }
-    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void) { return dataManager.GetCDDDescrSet(); }
-    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void) { return dataManager.GetCDDAnnotSet(); }
+    bool GetCDDNotes(TextLines *lines) const;
+    bool SetCDDNotes(const TextLines& lines);
+    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
+    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
 };
 
 class StructureObject : public StructureBase

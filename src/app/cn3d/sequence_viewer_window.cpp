@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.24  2001/10/20 20:16:32  thiessen
 * don't use wxDefaultPosition for dialogs (win2000 problem)
 *
@@ -346,7 +349,11 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
         return;
     }
 
-    // ... else bring up selection dialog for realigning multiple rows
+    // bring up selection dialog for realigning multiple rows
+    if (!sequenceViewer->GetCurrentAlignments()) {
+        ERR_POST(Error << "SequenceViewerWindow::OnRealign() - no alignment!");
+        return;
+    }
     BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments()->front();
 
     // get titles of current slave display rows (*not* rows from the AlignmentSet!)
@@ -445,10 +452,17 @@ void SequenceViewerWindow::OnMarkBlock(wxCommandEvent& event)
                 MarkBlockOff();
             break;
         case MID_CLEAR_MARKS:
-            if (sequenceViewer->GetCurrentAlignments()->front()->ClearMarks())
+            if (sequenceViewer->GetCurrentAlignments() &&
+                    sequenceViewer->GetCurrentAlignments()->front()->ClearMarks())
                 GlobalMessenger()->PostRedrawSequenceViewer(sequenceViewer);
             break;
     }
+}
+
+void SequenceViewerWindow::TurnOnEditor(void)
+{
+    if (!menuBar->IsChecked(MID_ENABLE_EDIT))
+        Command(SequenceViewerWindow::MID_ENABLE_EDIT);
 }
 
 END_SCOPE(Cn3D)

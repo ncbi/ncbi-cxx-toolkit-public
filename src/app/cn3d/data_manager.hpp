@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.2  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -60,10 +63,11 @@
 #include <list>
 #include <vector>
 
+#include "cn3d/structure_set.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
-class StructureSet;
 class Sequence;
 class AlignmentSet;
 
@@ -82,6 +86,7 @@ private:
 
     mutable unsigned int dataChanged;
     ncbi::objects::CCdd * GetInternalCDDData(void) const;
+    bool ConvertMimeToGeneral(void);
 
     // pointers to lower-level data, filled in by Load
     void Load(void);
@@ -119,6 +124,8 @@ public:
 
     // retrieve sequence alignments
     SeqAnnotList * GetSequenceAlignments(void) const { return sequenceAlignments; }
+    // return it, or create the list if not present (and if the data type can hold it)
+    SeqAnnotList * GetOrCreateSequenceAlignments(void);
 
     // retrieve updates
     const UpdateAlignList * GetUpdates(void) const
@@ -159,21 +166,9 @@ public:
     ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
     ncbi::objects::CSeq_id * GetCDDMaster3d(void) const;
 
-    // flags to tell whether various parts of the data have been changed
-    enum eDataChanged {
-        eAlignmentData              = 0x01,
-        eStructureAlignmentData     = 0x02,
-        eSequenceData               = 0x04,
-        eUpdateData                 = 0x08,
-        eStyleData                  = 0x100,
-        eUserAnnotationData         = 0x200,
-        eCDDData                    = 0x400,
-        eOtherData                  = 0x800
-    };
-
     // to flag data changes
     bool HasDataChanged(void) const { return (dataChanged > 0); }
-    void SetDataChanged(eDataChanged what) const { dataChanged |= what; }
+    void SetDataChanged(StructureSet::eDataChanged what) const { dataChanged |= what; }
     void SetDataUnchanged(void) const { dataChanged = 0; }
 };
 

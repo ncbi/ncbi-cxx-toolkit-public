@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.17  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -428,7 +431,7 @@ void CDDAnnotateDialog::NewAnnotation(void)
 
     // add to annotation list
     annotSet->Set().push_back(annot);
-    structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+    structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
 
     // update GUI
     SetupGUIControls(annotSet->Get().size() - 1, 0);
@@ -456,7 +459,7 @@ void CDDAnnotateDialog::DeleteAnnotation(void)
     for (a=annotSet->Set().begin(); a!=ae; a++) {
         if (*a == selectedAnnot) {
             annotSet->Set().erase(a);
-			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
             break;
         }
     }
@@ -496,7 +499,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
                 packed->Set() = intervals;  // copy list
                 selectedAnnot->SetLocation().SetPacked_int(packed);
             }
-		    structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
         }
     }
 
@@ -507,7 +510,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
         "Enter a description for the new annotation:", "Description", initial);
     if (descr.size() > 0 && descr != selectedAnnot->GetDescription().c_str()) {
         selectedAnnot->SetDescription(descr.c_str());
-		structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+        structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
     }
 
     // update GUI
@@ -586,7 +589,7 @@ void CDDAnnotateDialog::NewEvidence(void)
         if (dialog.GetData(newEvidence.GetPointer())) {
             selectedAnnot->SetEvidence().push_back(newEvidence);
             SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
-			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
         } else
             ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting dialog data");
     }
@@ -624,7 +627,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
     for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
         if (*e == selectedEvidence) {
             selectedAnnot->SetEvidence().erase(e);
-			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
             break;
         }
     }
@@ -657,7 +660,7 @@ void CDDAnnotateDialog::EditEvidence(void)
     if (result == wxOK && dialog.HasDataChanged()) {
         if (dialog.GetData(selectedEvidence)) {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
-			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
             SetupGUIControls(annots->GetSelection(), evids->GetSelection());
         } else
             ERR_POST(Error << "CDDAnnotateDialog::EditEvidence() - error getting dialog data");
@@ -816,7 +819,7 @@ void CDDAnnotateDialog::MoveEvidence(bool moveUp)
             tmp = *eSwap;
             *eSwap = *e;
             *e = tmp;
-			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
+            structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
             SetupGUIControls(annots->GetSelection(), evids->GetSelection() + (moveUp ? -1 : 1));
             return;
         }

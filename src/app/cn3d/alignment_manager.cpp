@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2001/12/06 23:13:43  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.67  2001/11/30 14:02:04  thiessen
 * progress on sequence imports to single structures
 *
@@ -258,6 +261,7 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_blast.hpp"
+#include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -374,9 +378,9 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
 {
     // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
     AlignmentSet *newAlignmentSet =
-        AlignmentSet::CreateFromMultiple(alignmentSet->parentSet, multiple, rowOrder);
+        AlignmentSet::CreateFromMultiple(multiple->GetMaster()->parentSet, multiple, rowOrder);
     if (newAlignmentSet) {
-        alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
+        multiple->GetMaster()->parentSet->ReplaceAlignmentSet(newAlignmentSet);
         alignmentSet = newAlignmentSet;
     } else {
         ERR_POST(Error << "Couldn't create pairwise alignments from the current multiple!\n"
@@ -387,7 +391,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
 const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
 {
     const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
-    return ((currentAlignments && currentAlignments->size() > 0) ? currentAlignments->front() : NULL);
+    return ((currentAlignments) ? currentAlignments->front() : NULL);
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
@@ -706,7 +710,8 @@ void AlignmentManager::ShowUpdateWindow(void) const
 void AlignmentManager::RealignSlaveSequences(
     BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign)
 {
-    if (!multiple || multiple != sequenceViewer->GetCurrentAlignments()->front()) {
+    if (!multiple || !sequenceViewer->GetCurrentAlignments() ||
+            multiple != sequenceViewer->GetCurrentAlignments()->front()) {
         ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong multiple alignment");
         return;
     }
@@ -802,6 +807,45 @@ void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
 void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesToMerge)
 {
     if (updatesToMerge.size() == 0) return;
+    const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
+    if (!currentUpdates) return;
+
+    // transform this structure view into an alignment view, and turn on the editor.
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
+    const BlockMultipleAlignment *newMultiple = NULL;
+    if (!sequenceViewer->GetCurrentAlignments()) {
+
+        for (u=currentUpdates->begin(); u!=ue; u++) {   // find first update alignment
+            if (updatesToMerge.find(*u) != updatesToMerge.end()) {
+                newMultiple = *u;
+
+                // create new alignment, then call SavePairwiseFromMultiple to create
+                // an AlignmentSet and the initial ASN data
+                sequenceViewer->DisplayAlignment(newMultiple->Clone());
+                std::vector < int > rowOrder(newMultiple->NRows());
+                for (int i=0; i<newMultiple->NRows(); i++) rowOrder[i] = i;
+                SavePairwiseFromMultiple(newMultiple, rowOrder);
+
+                // editor needs to be on if >1 update is to be merged in
+                sequenceViewer->TurnOnEditor();
+
+                // set default alignment-type style
+                newMultiple->GetMaster()->parentSet->styleManager->
+                    SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+                newMultiple->GetMaster()->parentSet->styleManager->
+                    SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
+                GlobalMessenger()->PostRedrawAllStructures();
+                break;
+            }
+        }
+    }
+
+    BlockMultipleAlignment *multiple =
+        sequenceViewer->GetCurrentAlignments() ? sequenceViewer->GetCurrentAlignments()->front() : NULL;
+    if (!multiple) {
+        ERR_POST(Error << "Must have an alignment in the sequence viewer to merge with");
+        return;
+    }
 
     // make sure the editor is on in the sequenceViewer
     if (!sequenceViewer->EditorIsOn()) {
@@ -809,17 +853,10 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
         return;
     }
 
-    BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments() ?
-        sequenceViewer->GetCurrentAlignments()->front() : NULL;
-    if (!multiple) return;
-
-    const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
-    if (currentUpdates->size() == 0) return;
-
     int nSuccessfulMerges = 0;
     ViewerBase::AlignmentList updatesToKeep;
-    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
     for (u=currentUpdates->begin(); u!=ue; u++) {
+        if (*u == newMultiple) continue;
         bool merged = false;
         if (updatesToMerge.find(*u) != updatesToMerge.end()) {
             merged = multiple->MergeAlignment(*u);
@@ -837,7 +874,7 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
             }
         }
         if (!merged) {
-            BlockMultipleAlignment *keep =(*u)->Clone();
+            BlockMultipleAlignment *keep = (*u)->Clone();
             updatesToKeep.push_back(keep);
         }
     }
@@ -856,6 +893,7 @@ void AlignmentManager::GetUpdateSequences(std::list < const Sequence * > *update
 {
     updateSequences->clear();
     const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
+    if (!currentUpdates) return;
     ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
     for (u=currentUpdates->begin(); u!=ue; u++)
         updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one slave...

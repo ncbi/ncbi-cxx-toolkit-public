@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/12/06 23:13:47  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.25  2001/11/27 16:26:10  thiessen
 * major update to data management system
 *
@@ -236,15 +239,11 @@ void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
     EnableDerivedEditorMenuItems(enabled);
 }
 
-void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableEditor, bool enableSelectByColumn)
+void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableSelectByColumn)
 {
     viewerWidget->AttachAlignment(display);
-    if (!display->IsEditable()) {
-        enableEditor = false;
-        enableSelectByColumn = false;
-    }
-    menuBar->EnableTop(1, enableEditor);    // edit menu
-    menuBar->EnableTop(3, enableEditor);    // justification menu
+    menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
+    menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
     menuBar->Enable(MID_SELECT_COLS, enableSelectByColumn);
 }
 
@@ -253,6 +252,8 @@ void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
     int vsX, vsY;   // to preserve scroll position
     viewerWidget->GetScroll(&vsX, &vsY);
     viewerWidget->AttachAlignment(display, vsX, vsY);
+    menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
+    menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
     GlobalMessenger()->PostRedrawAllSequenceViewers();
 }
 

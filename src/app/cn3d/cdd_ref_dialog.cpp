@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.2  2001/11/27 16:26:07  thiessen
 * major update to data management system
 *
@@ -152,7 +155,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             CRef < CCdd_descr > ref(new CCdd_descr());
             ref->SetReference().SetPmid().Set((int) pmidVal);
             descrSet->Set().push_back(ref);
-            sSet->SetDataChanged(ASNDataManager::eCDDData);
+            sSet->SetDataChanged(StructureSet::eCDDData);
             ResetListBox();
         }
     }
@@ -165,7 +168,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
         unsigned long pmidVal;
         if (pmidStr.size() > 0 && pmidStr.ToULong(&pmidVal)) {
             descr->SetReference().SetPmid().Set((int) pmidVal);
-            sSet->SetDataChanged(ASNDataManager::eCDDData);
+            sSet->SetDataChanged(StructureSet::eCDDData);
             ResetListBox();
         }
     }
@@ -176,7 +179,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
         for (d=descrSet->Set().begin(); d!=de; d++) {
             if (d->GetPointer() == descr) {
                 descrSet->Set().erase(d);
-				sSet->SetDataChanged(ASNDataManager::eCDDData);
+                sSet->SetDataChanged(StructureSet::eCDDData);
                 ResetListBox();
                 break;
             }

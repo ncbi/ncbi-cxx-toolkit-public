@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/12/06 23:13:47  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.19  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -169,7 +172,7 @@ void UpdateViewer::CreateUpdateWindow(void)
         if (display) {
             if (!updateWindow) updateWindow = new UpdateViewerWindow(this);
             if (displayStack.size() > 2) updateWindow->EnableUndo(true);
-            updateWindow->NewDisplay(display, true, false);
+            updateWindow->NewDisplay(display, false);
             updateWindow->ScrollToColumn(display->GetStartingColumn());
             updateWindow->Show(true);
             // ScrollTo causes immediate redraw, so don't need a second one

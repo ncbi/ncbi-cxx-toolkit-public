@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.22  2001/10/01 16:03:58  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -88,6 +91,9 @@ public:
     typedef std::list < const Sequence * > SequenceList;
     void DisplaySequences(const SequenceList *sequenceList);
     void DisplayAlignment(BlockMultipleAlignment *multipleAlignment);
+
+    // turn on the editor (if not already on)
+    void TurnOnEditor(void);
 
     // functions to save edited data
     void SaveDialog(void);

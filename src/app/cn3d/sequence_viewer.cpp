@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.43  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -194,7 +197,7 @@ void SequenceViewer::CreateSequenceWindow(void)
     SequenceDisplay *display = GetCurrentDisplay();
     if (display) {
         if (!sequenceWindow) sequenceWindow = new SequenceViewerWindow(this);
-        sequenceWindow->NewDisplay(display, true, true);
+        sequenceWindow->NewDisplay(display, true);
         sequenceWindow->ScrollToColumn(display->GetStartingColumn());
         sequenceWindow->Show(true);
         // ScrollTo causes immediate redraw, so don't need a second one
@@ -278,6 +281,12 @@ void SequenceViewer::SetWindowTitle(const std::string& title) const
 {
     if (*viewerWindow)
         (*viewerWindow)->SetTitle(wxString(title.c_str()) + " - Sequence/Alignment Viewer");
+}
+
+void SequenceViewer::TurnOnEditor(void)
+{
+    if (!sequenceWindow) CreateSequenceWindow();
+    sequenceWindow->TurnOnEditor();
 }
 
 END_SCOPE(Cn3D)

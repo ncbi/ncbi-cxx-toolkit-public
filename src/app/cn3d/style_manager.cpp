@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.57  2001/11/27 16:26:10  thiessen
 * major update to data management system
 *
@@ -1427,7 +1430,7 @@ bool StyleManager::AddUserStyle(int *id, StyleSettings **newStyle)
         if (userStyles.find(i) == userStyles.end()) {
             *newStyle = &(userStyles[i]);
             *id = i;
-            structureSet->SetDataChanged(ASNDataManager::eStyleData);
+            structureSet->SetDataChanged(StructureSet::eStyleData);
             return true;
         }
     }
@@ -1439,14 +1442,14 @@ bool StyleManager::RemoveUserStyle(int id)
     StyleMap::iterator u = userStyles.find(id);
     if (u == userStyles.end()) return false;
     userStyles.erase(u);
-    structureSet->SetDataChanged(ASNDataManager::eStyleData);
+    structureSet->SetDataChanged(StructureSet::eStyleData);
     return true;
 }
 
 StyleManager::UserAnnotation * StyleManager::AddUserAnnotation(void)
 {
     userAnnotations.resize(userAnnotations.size() + 1);
-    structureSet->SetDataChanged(ASNDataManager::eStyleData);
+    structureSet->SetDataChanged(StructureSet::eStyleData);
     return &(userAnnotations.back());
 }
 
@@ -1480,7 +1483,7 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
         if (u->styleID == removedStyleID) break;
     if (u == ue) RemoveUserStyle(removedStyleID);
 
-    structureSet->SetDataChanged(ASNDataManager::eStyleData);
+    structureSet->SetDataChanged(StructureSet::eStyleData);
     return true;
 }
 
@@ -1509,7 +1512,7 @@ bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
     if (changed) {  // need to redraw if displayed annotations list has changed
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
-		structureSet->SetDataChanged(ASNDataManager::eStyleData);
+        structureSet->SetDataChanged(StructureSet::eStyleData);
     }
 
     return true;
@@ -1536,7 +1539,7 @@ bool StyleManager::ReprioritizeDisplayOrder(UserAnnotation *annotation, bool mov
     if (changed) {  // need to redraw if displayed annotations list has changed
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
-		structureSet->SetDataChanged(ASNDataManager::eStyleData);
+        structureSet->SetDataChanged(StructureSet::eStyleData);
     }
 
     return true;
@@ -1712,13 +1715,13 @@ bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_an
 void StyleManager::SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme)
 {
     globalStyle.SetColorScheme(scheme);
-    structureSet->SetDataChanged(ASNDataManager::eStyleData);
+    structureSet->SetDataChanged(StructureSet::eStyleData);
 }
 
 void StyleManager::SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style)
 {
     globalStyle.SetRenderingStyle(style);
-    structureSet->SetDataChanged(ASNDataManager::eStyleData);
+    structureSet->SetDataChanged(StructureSet::eStyleData);
 }
 
 bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& styleASN)
@@ -1726,7 +1729,7 @@ bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& sty
     bool okay = globalStyle.LoadSettingsFromASN(styleASN);
     if (okay) {
         CheckGlobalStyleSettings();
-		structureSet->SetDataChanged(ASNDataManager::eStyleData);
+        structureSet->SetDataChanged(StructureSet::eStyleData);
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }

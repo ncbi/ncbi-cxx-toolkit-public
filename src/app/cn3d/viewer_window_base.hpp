@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/12/06 23:13:47  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.15  2001/08/14 17:17:48  thiessen
 * add user font selection, store in registry
 *
@@ -116,7 +119,7 @@ class ViewerWindowBase : public wxFrame
 public:
 
     // displays a new alignment, and whether to enable the editor and column selection
-    void NewDisplay(SequenceDisplay *display, bool enableEditor, bool enableSelectByColumn);
+    void NewDisplay(SequenceDisplay *display, bool enableSelectByColumn);
 
     // updates alignment (e.g. if width or # rows has changed); doesn't change scroll
     void UpdateDisplay(SequenceDisplay *display);

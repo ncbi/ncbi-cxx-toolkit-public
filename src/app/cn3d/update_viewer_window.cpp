@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/12/06 23:13:47  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.27  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -228,7 +231,7 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
                 ERR_POST(Error << "Can't run threader without existing core alignment");
                 return;
             }
-            if (updateViewer->GetCurrentAlignments()->size() == 0) return;
+            if (!updateViewer->GetCurrentAlignments()) return;
 
             ThreaderOptions options;
             // base nRS estimate on first update...
@@ -269,9 +272,11 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
         {
             AlignmentManager::UpdateMap all;    // construct map/list of all updates
             const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
-            ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
-            for (u=currentUpdates->begin(); u!=ue; u++) all[*u] = true;
-            UpdateViewerWindow::updateViewer->alignmentManager->MergeUpdates(all);
+            if (currentUpdates) {
+                ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
+                for (u=currentUpdates->begin(); u!=ue; u++) all[*u] = true;
+                UpdateViewerWindow::updateViewer->alignmentManager->MergeUpdates(all);
+            }
             break;
         }
     }

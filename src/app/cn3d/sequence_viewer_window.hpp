@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.12  2001/06/04 14:33:55  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -90,6 +93,7 @@ public:
 
     bool RequestEditorEnable(bool enable);
     void EnableDerivedEditorMenuItems(bool enabled);
+    void TurnOnEditor(void);
 
 private:
     SequenceViewer *sequenceViewer;

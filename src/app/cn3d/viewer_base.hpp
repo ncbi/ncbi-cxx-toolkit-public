@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/12/06 23:13:47  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.8  2001/10/01 16:03:59  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -133,7 +136,8 @@ public:
     void GUIDestroyed(void) { *viewerWindow = NULL; }
 
     const AlignmentList * GetCurrentAlignments(void) const
-        { return ((alignmentStack.size() > 0) ? &(alignmentStack.back()) : NULL); }
+        { return ((alignmentStack.size() > 0 && alignmentStack.back().size() > 0) ?
+            &(alignmentStack.back()) : NULL); }
 
     SequenceDisplay * GetCurrentDisplay(void) const
         { return ((displayStack.size() > 0) ? displayStack.back() : NULL); }

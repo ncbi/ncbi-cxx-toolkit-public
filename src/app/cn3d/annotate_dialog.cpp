@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
 * Revision 1.8  2001/11/27 16:26:06  thiessen
 * major update to data management system
 *
@@ -392,7 +395,7 @@ void AnnotateDialog::EditAnnotation(void)
         annotation->name = tName->GetValue().c_str();
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tDescr, ID_T_DESCR, wxTextCtrl)
         annotation->description = tDescr->GetValue().c_str();
-        structureSet->SetDataChanged(ASNDataManager::eStyleData);
+        structureSet->SetDataChanged(StructureSet::eStyleData);
     } else {    // wxCANCEL
         // restore original settings
         *style = copy;
@@ -422,7 +425,7 @@ void AnnotateDialog::MoveAnnotation(void)
         annotation->residues = highlightedResidues;
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
-        structureSet->SetDataChanged(ASNDataManager::eStyleData);
+        structureSet->SetDataChanged(StructureSet::eStyleData);
     }
 }
 
