@@ -828,6 +828,56 @@ int CTestApplication::Run(void)
     assert(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast) == 0);
     NcbiCout << " completed successfully!" << NcbiEndl;
 
+    NcbiCout << NcbiEndl << "NStr::SoftStringToUInt() tests...";
+
+    {{
+    const char* k10_1 = "10KB";
+    const char* k10_2 = "10K";
+    unsigned v;
+    v = NStr::SoftStringToUInt(k10_1);
+    assert(v == 10 * 1024);
+    v = NStr::SoftStringToUInt(k10_2);
+    assert(v == 10 * 1024);
+    }}
+
+    {{
+    const char* m10_1 = "10MB";
+    const char* m10_2 = "10M";
+    unsigned v;
+    v = NStr::SoftStringToUInt(m10_1);
+    assert(v == 10 * 1024 * 1024);
+    v = NStr::SoftStringToUInt(m10_2);
+    assert(v == 10 * 1024 * 1024);
+    }}
+
+    {{
+    const char* g10_1 = "10GB";
+    const char* g10_2 = "10G";
+    unsigned v;
+    v = NStr::SoftStringToUInt(g10_1);
+    assert(v == 10 * 1024 * 1024 * 1024);
+    v = NStr::SoftStringToUInt(g10_2);
+    assert(v == 10 * 1024 * 1024 * 1024);
+    }}
+
+    {{
+    bool err_catch = false;
+    try {
+        const char* g10_1 = "10GBx";
+        unsigned v;
+        v = NStr::SoftStringToUInt(g10_1);
+    }
+    catch (exception&)
+    {
+        err_catch = true;
+    }
+    assert(err_catch);
+    }}
+
+
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
+
     NcbiCout << NcbiEndl << "TEST_NCBISTR execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
 
@@ -849,6 +899,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.31  2004/09/21 18:24:41  kuznets
+ * +test NStr::SoftStringToUInt
+ *
  * Revision 6.30  2004/08/04 16:52:01  vakatov
  * Signed/unsigned warning fix
  *
