@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: favor-static,v 1.1 2003/03/12 18:18:53 ucko Exp $
+# $Id: favor-static,v 1.2 2003/03/12 19:50:38 ucko Exp $
 # Author: Aaron Ucko, NCBI
 
 linker=$1
@@ -52,7 +52,7 @@ case $style in
         gcc_ver=`$1 -dumpversion`
         case "$gcc_ver" in
             3.[1-9]* )
-                eval set `"$@" '-###' 2>&1 | awk '/\/ld"/ || /\/collect/'`
+                eval set `"$@" -static-libgcc '-###' 2>&1 | awk '/\/ld"/ || /\/collect/'`
                 sys=/usr/lib
                 flag=-B
                 ;;
@@ -60,11 +60,11 @@ case $style in
                 # No dry-run option, but --print-search-dirs helps.
                 sys=`$1 --print-search-dirs | awk '/^libraries: / { print $2 }'`
                 flag="-Wl,-B"
+                extra_libs="-lc -lgcc"
                 ;;
         esac
         case "$gcc_ver" in
-            3.0*) extra_libs="-lc -lgcc_s -lgcc" ;;
-            2.*)  extra_libs="-lc -lgcc"         ;;
+            3.0* ) set "$@" -static-libgcc ;;
         esac
         ;;
 esac
