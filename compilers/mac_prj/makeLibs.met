@@ -412,7 +412,7 @@ on SetProjectData()
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
 		AddGuiProject("w_seq_icon", {}, "widgets:seq_icon")
 		AddGuiProject("w_seq_info", {}, "widgets:seq_info")
-		AddProject(ProjectData("w_table", {"fltk"}, {GuiFileDataList("widgets:table", {"colselect_dlg.cpp"})}))
+		AddGuiProject("w_table", {}, "widgets:table")
 		AddGuiProject("w_toplevel", {}, "widgets:toplevel")
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		
