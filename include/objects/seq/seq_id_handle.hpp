@@ -108,7 +108,10 @@ public:
     // True if "this" is a better bioseq than "h".
     bool IsBetter(const CSeq_id_Handle& h) const;
 
-    string AsString() const;
+    string AsString(void) const;
+    bool IsGi(void) const;
+    int GetGi(void) const;
+    unsigned GetHash(void) const;
 
     CConstRef<CSeq_id> GetSeqId(void) const;
     CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
@@ -295,6 +298,31 @@ bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
 }
 
 
+inline
+bool CSeq_id_Handle::IsGi(void) const
+{
+    return m_Gi != 0;
+}
+
+
+inline
+int CSeq_id_Handle::GetGi(void) const
+{
+    return m_Gi;
+}
+
+
+inline
+unsigned CSeq_id_Handle::GetHash(void) const
+{
+    unsigned hash = m_Gi;
+    if ( !hash ) {
+        hash = unsigned((unsigned long)(m_Info)>>3);
+    }
+    return hash;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -302,6 +330,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/11/26 17:55:54  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.18  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

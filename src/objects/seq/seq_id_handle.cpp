@@ -241,8 +241,8 @@ bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 
 bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 {
-    if ( m_Gi ) {
-        return id.Which() == CSeq_id::e_Gi && id.GetGi() == m_Gi;
+    if ( IsGi() ) {
+        return id.IsGi() && id.GetGi() == GetGi();
     }
     return *this == CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
 }
@@ -251,8 +251,8 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 string CSeq_id_Handle::AsString() const
 {
     CNcbiOstrstream os;
-    if ( m_Gi != 0 ) {
-        os << "gi|" << m_Gi;
+    if ( IsGi() ) {
+        os << "gi|" << GetGi();
     }
     else if ( m_Info ) {
         m_Info->GetSeqId()->WriteAsFasta(os);
@@ -269,6 +269,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/11/26 17:56:00  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.15  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

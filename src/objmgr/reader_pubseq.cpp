@@ -199,88 +199,7 @@ CDB_Connection *CPubseqReader::x_NewConnection(void)
 }
 
 
-void CPubseqReader::RetrieveSeqrefs(TSeqrefs& sr,
-                                    const CSeq_id& seqId,
-                                    TConn conn)
-{
-    x_RetrieveSeqrefs(sr, seqId, x_GetConnection(conn));
-}
-
-
-void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
-                                      const CSeq_id& seqId,
-                                      CDB_Connection* conn)
-{
-    int gi;
-    if ( seqId.IsGi() ) {
-        gi = seqId.GetGi();
-    }
-    else {
-        gi = x_ResolveSeq_id_to_gi(seqId, conn);
-    }
-
-    if ( gi ) {
-        x_RetrieveSeqrefs(srs, gi, conn);
-    }
-}
-
-
-void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
-                                      int gi,
-                                      CDB_Connection* conn)
-{
-    auto_ptr<CDB_RPCCmd> cmd(conn->RPC("id_gi_class", 1));
-    {{
-        CDB_Int giIn(gi);
-        cmd->SetParam("@gi", &giIn);
-        cmd->Send();
-    }}
-
-    while(cmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> result(cmd->Result());
-        if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
-            continue;
-            
-        while(result->Fetch()) {
-            CDB_Int sat;
-            CDB_Int satKey;
-            CDB_Int extFeat;
-            
-            _TRACE("next fetch: " << result->NofItems() << " items");
-            for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
-                const string& name = result->ItemName(pos);
-                _TRACE("next item: " << name);
-                if (name == "sat" ) {
-                    result->GetItem(&sat);
-                }
-                else if(name == "sat_key") {
-                    result->GetItem(&satKey);
-                }
-                else if(name == "ext_feat") {
-                    result->GetItem(&extFeat);
-                }
-                else {
-                    result->SkipItem();
-                }
-            }
-
-            _ASSERT(sat.Value() != kSNP_Sat);
-            srs.push_back(Ref(new CSeqref(gi, sat.Value(), satKey.Value())));
-            if ( TrySNPSplit() ) {
-                if ( extFeat.IsNULL() ) {
-                    AddSNPSeqref(srs, gi, CSeqref::fPossible);
-                }
-                else if ( extFeat.Value() & 1 ) {
-                    AddSNPSeqref(srs, gi);
-                }
-            }
-        }
-    }
-}
-
-
-int CPubseqReader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                                         CDB_Connection* conn)
+int CPubseqReader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 {
     // note: this was
     //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
@@ -295,8 +214,9 @@ int CPubseqReader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
         }}
         asnIn = CNcbiOstrstreamToString(oss);
     }}
-            
-    auto_ptr<CDB_RPCCmd> cmd(conn->RPC("id_gi_by_seqid_asn", 1));
+    
+    CDB_Connection* db_conn = x_GetConnection(conn);
+    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn", 1));
     cmd->SetParam("@asnin", &asnIn);
     cmd->Send();
 
@@ -323,36 +243,102 @@ int CPubseqReader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
 }
 
 
-CRef<CTSE_Info> CPubseqReader::GetMainBlob(const CSeqref& seqref, TConn connid)
+void CPubseqReader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
 {
-    CDB_Connection* conn = x_GetConnection(connid);
-    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, conn, false));
+    _TRACE("x_RetrieveSeqrefs: " << gi);
+    CDB_Connection* db_conn = x_GetConnection(conn);
+    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class", 1));
+    {{
+        CDB_Int giIn(gi);
+        cmd->SetParam("@gi", &giIn);
+        cmd->Send();
+    }}
+
+    while(cmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd->Result());
+        if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
+            continue;
+            
+        while(result->Fetch()) {
+            CDB_Int sat;
+            CDB_Int satKey;
+            CDB_Int extFeat(0);
+            
+            _TRACE("next fetch: " << result->NofItems() << " items");
+            for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
+                const string& name = result->ItemName(pos);
+                _TRACE("next item: " << name);
+                if (name == "sat" ) {
+                    result->GetItem(&sat);
+                    _TRACE("sat: "<<sat.Value());
+                }
+                else if(name == "sat_key") {
+                    result->GetItem(&satKey);
+                    _TRACE("sat_key: "<<satKey.Value());
+                }
+                else if(name == "ext_feat") {
+                    result->GetItem(&extFeat);
+                    if ( extFeat.IsNULL() ) {
+                        _TRACE("ext_feat = NULL");
+                    }
+                    else {
+                        _TRACE("ext_feat = "<<extFeat.Value());
+                    }
+                }
+                else {
+                    result->SkipItem();
+                }
+            }
+
+            _ASSERT(sat.Value() != kSNP_Sat);
+            srs.push_back(Ref(new CSeqref(gi, sat.Value(), satKey.Value())));
+            if ( TrySNPSplit() ) {
+                if ( extFeat.IsNULL() ) {
+                    AddSNPSeqref(srs, gi, CSeqref::fPossible);
+                }
+                else if ( extFeat.Value() & 1 ) {
+                    AddSNPSeqref(srs, gi);
+                }
+            }
+        }
+    }
+}
+
+
+CRef<CTSE_Info> CPubseqReader::GetTSEBlob(CRef<CID2S_Split_Info>& /*info*/,
+                                          const CSeqref& seqref,
+                                          TConn conn)
+{
+    CDB_Connection* db_conn = x_GetConnection(conn);
+    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn, false));
     auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
     return x_ReceiveMainBlob(*result);
 }
 
 
 CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(const CSeqref& seqref,
-                                                     TConn connid)
+                                                     TConn conn)
 {
-    CDB_Connection* conn = x_GetConnection(connid);
-    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, conn, true));
+    CDB_Connection* db_conn = x_GetConnection(conn);
+    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn, true));
     auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
     return x_ReceiveSNPAnnot(*result);
 }
 
 
 CDB_RPCCmd* CPubseqReader::x_SendRequest(const CSeqref& seqref,
-                                         CDB_Connection* conn,
+                                         CDB_Connection* db_conn,
                                          bool is_snp)
 {
-    auto_ptr<CDB_RPCCmd> cmd(conn->RPC("id_get_asn", 4));
+    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_asn", 4));
     CDB_Int giIn(seqref.GetGi());
     CDB_SmallInt satIn(seqref.GetSat());
     CDB_Int satKeyIn(seqref.GetSatKey());
     bool is_external = is_snp;
     bool load_external = is_external || !TrySNPSplit();
     CDB_Int ext_feat(load_external);
+
+    _TRACE("x_SendRequest: "<<seqref.print()<<", ext_feat="<<load_external);
 
     cmd->SetParam("@gi", &giIn);
     cmd->SetParam("@sat_key", &satKeyIn);
@@ -468,6 +454,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.41  2003/11/26 17:55:59  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.40  2003/11/04 14:43:26  vasilche
 * Load SNP only when bit 1 in ext_feat is set.
 *

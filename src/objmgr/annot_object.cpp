@@ -62,60 +62,61 @@ BEGIN_SCOPE(objects)
 
 
 CAnnotObject_Info::CAnnotObject_Info(void)
-    : m_Seq_annot_Info(0),
-      m_Object(0),
+    : m_Object(0),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_not_set)
 {
+    m_Annot_Info = 0;
+    m_Chunk_Info = 0;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
-    : m_Seq_annot_Info(&annot),
-      m_Object(&feat),
+    : m_Object(&feat),
       m_FeatSubtype(feat.GetData().GetSubtype()),
       m_FeatType(feat.GetData().Which()),
       m_AnnotType(CSeq_annot::C_Data::e_Ftable)
 {
+    m_Annot_Info = &annot;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
                                      CSeq_annot_Info& annot)
-    : m_Seq_annot_Info(&annot),
-      m_Object(&align),
+    : m_Object(&align),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_Align)
 {
+    m_Annot_Info = &annot;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
-    : m_Seq_annot_Info(&annot),
-      m_Object(&graph),
+    : m_Object(&graph),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_Graph)
 {
+    m_Annot_Info = &annot;
     _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                                      const SAnnotTypeSelector& sel)
-    : m_Seq_annot_Info(&chunk_info.GetStubSeq_annot_Info()),
-      m_Object(0),
+    : m_Object(0),
       m_FeatSubtype(sel.GetFeatSubtype()),
       m_FeatType(sel.GetFeatChoice()),
       m_AnnotType(sel.GetAnnotChoice())
 {
+    m_Chunk_Info = &chunk_info;
     _ASSERT(IsChunkStub());
 }
 
@@ -224,13 +225,6 @@ const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 }
 
 
-const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
-{
-    _ASSERT(IsChunkStub());
-    return m_Seq_annot_Info->GetTSE_Chunk_Info();
-}
-
-
 void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                                        const CSeq_align& align) const
 {
@@ -274,7 +268,7 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                     CSeq_loc loc;
                     loc.SetInt().SetId().Assign(**it_id);
                     loc.SetInt().SetFrom(*it_start);
-                    loc.SetInt().SetTo(*it_start + len);
+                    loc.SetInt().SetTo(*it_start + len - 1);
                     if ( (*it)->IsSetStrands() ) {
                         loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
@@ -332,7 +326,7 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                     CSeq_loc loc;
                     loc.SetInt().SetId().Assign(**it_id);
                     loc.SetInt().SetFrom(*it_start);
-                    loc.SetInt().SetTo(*it_start + *it_len);
+                    loc.SetInt().SetTo(*it_start + *it_len - 1);
                     if ( denseg.IsSetStrands() ) {
                         loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
@@ -392,7 +386,7 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                         CSeq_loc loc;
                         loc.SetInt().SetId().Assign(**it_id);
                         loc.SetInt().SetFrom(*it_start);
-                        loc.SetInt().SetTo(*it_start + *it_len);
+                        loc.SetInt().SetTo(*it_start + *it_len - 1);
                         if ( packed.IsSetStrands() ) {
                             loc.SetInt().SetStrand(*it_strand);
                             ++it_strand;
@@ -424,6 +418,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/11/26 17:55:56  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.28  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

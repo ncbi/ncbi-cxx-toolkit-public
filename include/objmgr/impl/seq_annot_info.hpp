@@ -61,8 +61,9 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
 {
 public:
     CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry);
+    CSeq_annot_Info(CSeq_annot& annot);
     CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
-    CSeq_annot_Info(CTSE_Chunk_Info& chunk_info);
+    CSeq_annot_Info(CTSE_Chunk_Info& chunk_info, const CAnnotName& name);
     ~CSeq_annot_Info(void);
 
     CDataSource& GetDataSource(void) const;
@@ -95,7 +96,7 @@ public:
     bool x_HaveSNP_annot_Info(void) const;
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
 
-private:
+protected:
     friend class CDataSource;
     friend class CTSE_Info;
     friend class CTSE_Chunk_Info;
@@ -216,10 +217,10 @@ void CSeq_annot_Info::x_DSDetach(void)
 
 
 inline
-const CAnnotObject_Info& CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
+const CAnnotObject_Info&
+CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 {
-    _ASSERT(index < m_ObjectInfos.m_Infos.size());
-    return m_ObjectInfos.m_Infos[index];
+    return m_ObjectInfos.GetInfo(index);
 }
 
 
@@ -243,6 +244,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/11/26 17:55:55  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.8  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

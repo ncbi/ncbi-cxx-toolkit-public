@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/11/26 17:56:03  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.11  2003/11/03 21:21:20  vasilche
 * Limit amount of exceptions to catch while testing.
 *
@@ -240,6 +244,25 @@ bool CTestOM::Thread_Run(int idx)
             }
 
             int count = 0, count_prev;
+
+// check CSeqMap_CI
+            {{
+                /*
+                CSeqMap_CI it =
+                    handle.GetSeqMap().BeginResolved(&scope,
+                                                     kMax_Int,
+                                                     CSeqMap::fFindRef);
+                */
+                CSeqMap_CI it(ConstRef(&handle.GetSeqMap()),
+                              &scope,
+                              0,
+                              kMax_Int,
+                              CSeqMap::fFindRef);
+                while ( it ) {
+                    _ASSERT(it.GetType() == CSeqMap::eSeqRef);
+                    ++it;
+                }
+            }}
 
 // check seqvector
             if ( 0 ) {{

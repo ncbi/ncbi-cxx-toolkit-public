@@ -198,7 +198,8 @@ void CBlobSplitterImpl::SplitPieces(void)
                 max_size = it->second.m_Size;
             }
         }
-        if ( max_size.GetZipSize() < m_Params.m_MinChunkSize ) {
+        if ( max_size.GetZipSize() < m_Params.m_MaxChunkSize ||
+             max_size.GetCount() <= 1 ) {
             break;
         }
 
@@ -221,23 +222,31 @@ void CBlobSplitterImpl::SplitPieces(void)
         }}
 
         // extract long pieces into chunk 0
-        for ( SIdAnnotPieces::iterator it = objs.begin(); it != objs.end(); ) {
+        vector<SAnnotPiece> pieces;
+        ITERATE ( SIdAnnotPieces, it, objs ) {
             const SAnnotPiece& piece = *it;
             if ( piece.m_IdRange.GetLength() > max_piece_length ) {
-                main_chunk.Add(piece);
-                it = objs.Erase(it);
-            }
-            else {
-                ++it;
+                pieces.push_back(piece);
             }
         }
+        if ( !pieces.empty() ) {
+            LOG_POST("  "<<pieces.size()<<" long pieces");
+        }
+        ITERATE ( vector<SAnnotPiece>, it, pieces ) {
+            const SAnnotPiece& piece = *it;
+            main_chunk.Add(piece);
+            m_Pieces->Remove(piece);
+        }
 
-        while ( !objs.empty() ) {
-            SAnnotPiece piece = *objs.begin();
+        pieces.clear();
+        ITERATE ( SIdAnnotPieces, it, objs ) {
+            pieces.push_back(*it);
+        }
+        ITERATE ( vector<SAnnotPiece>, it, pieces ) {
+            const SAnnotPiece piece = *it;
             chunk = NextChunk(chunk, piece.m_Size);
             chunk->Add(piece);
             m_Pieces->Remove(piece);
-            _ASSERT(objs.empty() || *objs.begin() != piece);
         }
 
         _ASSERT(max_iter->second.empty());
@@ -298,6 +307,10 @@ END_NCBI_SCOPE;
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 17:56:01  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.1  2003/11/12 16:18:25  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

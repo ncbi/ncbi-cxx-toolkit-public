@@ -129,7 +129,10 @@ private:
 
     void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
 
-    CSeq_annot_Info*             m_Seq_annot_Info; // container Seq-annot
+    union { // container annot or chunk
+        CSeq_annot_Info*         m_Annot_Info;
+        CTSE_Chunk_Info*         m_Chunk_Info;
+    };
     CRef<CObject>                m_Object;         // annot object itself
     Uint2                        m_FeatSubtype;    // feature subtype
     Uint1                        m_FeatType;       // feature type or e_not_set
@@ -241,14 +244,24 @@ const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
 inline
 const CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void) const
 {
-    return *m_Seq_annot_Info;
+    _ASSERT(!IsChunkStub());
+    return *m_Annot_Info;
 }
 
 
 inline
 CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void)
 {
-    return *m_Seq_annot_Info;
+    _ASSERT(!IsChunkStub());
+    return *m_Annot_Info;
+}
+
+
+inline
+const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
+{
+    _ASSERT(IsChunkStub());
+    return *m_Chunk_Info;
 }
 
 
@@ -258,6 +271,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/11/26 17:55:54  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.13  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

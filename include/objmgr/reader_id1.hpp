@@ -44,6 +44,7 @@ class CID1server_back;
 class CID1server_request;
 class CID1server_maxcomplex;
 class CID1blob_info;
+class CID2S_Split_Info;
 
 class NCBI_XOBJMGR_EXPORT CId1Reader : public CReader
 {
@@ -51,11 +52,11 @@ public:
     CId1Reader(TConn noConn = 5);
     ~CId1Reader();
 
-    virtual void RetrieveSeqrefs(TSeqrefs& sr,
-                                 const CSeq_id& seqId,
-                                 TConn conn);
+    virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
+    virtual void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
 
-    CRef<CTSE_Info> GetMainBlob(const CSeqref& seqref, TConn conn);
+    CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
+                               const CSeqref& seqref, TConn conn);
     CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref, TConn conn);
 
     virtual TConn GetParallelLevel(void) const;
@@ -81,24 +82,22 @@ protected:
     static void LogBlobStat(const char* type,
                             const CSeqref& seqref, double bytes, double time);
 
-    virtual int x_ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
-    virtual void x_RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
-
     virtual int x_GetVersion(const CSeqref& seqref, TConn conn);
 
 
-    virtual void x_GetBlob(CID1server_back& id1_reply,
-                           const CSeqref&   seqref,
-                           TConn            conn);
+    virtual void x_GetTSEBlob(CID1server_back& id1_reply,
+                              CRef<CID2S_Split_Info>& split_info,
+                              const CSeqref&   seqref,
+                              TConn            conn);
     virtual void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                const CSeqref&       seqref,
                                TConn                conn);
 
-    virtual void x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref&   seqref,
-                            CNcbiIstream&    stream);
-    void x_ReadBlob(CID1server_back& id1_reply,
-                    CObjectIStream& stream);
+    virtual void x_ReadTSEBlob(CID1server_back& id1_reply,
+                               const CSeqref&   seqref,
+                               CNcbiIstream&    stream);
+    void x_ReadTSEBlob(CID1server_back& id1_reply,
+                       CObjectIStream& stream);
     virtual void x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                 const CSeqref&       seqref,
                                 CByteSourceReader&   reader);
@@ -132,6 +131,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.26  2003/11/26 17:55:53  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.25  2003/10/24 13:27:40  vasilche
 * Cached ID1 reader made more safe. Process errors and exceptions correctly.
 * Cleaned statistics printing methods.

@@ -90,8 +90,7 @@ public:
 
     // Request from a datasource using handles and ranges instead of seq-loc
     // The TSEs loaded in this call will be added to the tse_set.
-    virtual void GetRecords(const CSeq_id_Handle& idh,
-                            const EChoice choice) = 0;
+    virtual void GetRecords(const CSeq_id_Handle& idh, EChoice choice) = 0;
 
     virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
     
@@ -135,6 +134,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/11/26 17:55:52  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.24  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

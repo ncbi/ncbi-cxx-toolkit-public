@@ -1255,7 +1255,7 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
 {
     // Collect all annotations from the annot
     ITERATE ( SAnnotObjects_Info::TObjectInfos, aoit,
-              annot_info.m_ObjectInfos.m_Infos ) {
+              annot_info.m_ObjectInfos.GetInfos() ) {
         if ( !x_MatchType(*aoit) ) {
             continue;
         }
@@ -1343,6 +1343,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2003/11/26 17:55:56  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.102  2003/11/13 19:12:53  grichenk
 * Added possibility to exclude TSEs from annotations request.
 *

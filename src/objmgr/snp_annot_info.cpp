@@ -271,7 +271,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         m_CommentIndex = kNo_CommentIndex;
     }
 
-    if ( id->Which() != CSeq_id::e_Gi ) {
+    if ( !id->IsGi() ) {
         return eSNP_Complex_LocationIsNotGi;
     }
     if ( !annot_info.x_SetGi(id->GetGi()) ) {
@@ -468,6 +468,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.7  2003/11/26 17:56:00  vasilche
+ * Implemented ID2 split in ID1 cache.
+ * Fixed loading of splitted annotations.
+ *
  * Revision 1.6  2003/10/21 14:27:35  vasilche
  * Added caching of gi -> sat,satkey,version resolution.
  * SNP blobs are stored in cache in preprocessed format (platform dependent).

@@ -168,6 +168,7 @@ private:
 
 CSplitCacheApp::CSplitCacheApp(void)
     : m_DumpAsnText(false), m_DumpAsnBinary(false),
+      m_Resplit(false),
       m_RecursionLevel(0)
 {
 }
@@ -219,6 +220,9 @@ void CSplitCacheApp::Init(void)
 
     arg_desc->AddFlag("compress",
                       "try to compress split data");
+
+    arg_desc->AddFlag("resplit",
+                      "resplit already splitted data");
 
     // debug parameters
     arg_desc->AddFlag("dump",
@@ -345,6 +349,7 @@ void CSplitCacheApp::Process(void)
     if ( args["compress"] ) {
         m_SplitterParams.m_Compression = m_SplitterParams.eCompression_nlm_zip;
     }
+    m_Resplit = args["resplit"];
     m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
 
     if ( args["gi"] ) {
@@ -391,7 +396,7 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
     
     //m_Loader->GetRecords(CSeq_id_Handle::GetHandle(id), CDataLoader::eAll);
     CReader::TSeqrefs srs;
-    m_Reader->RetrieveSeqrefs(srs, id, 0);
+    m_Reader->ResolveSeq_id(srs, id, 0);
     if ( srs.empty() ) {
         LINE << "Skipping: no blobs";
         return;
@@ -405,8 +410,8 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
 class CSplitDataMaker
 {
 public:
-    CSplitDataMaker(const SSplitterParams& params)
-        : m_Params(params)
+    CSplitDataMaker(const SSplitterParams& params, int data_type)
+        : m_Params(params), m_DataType(data_type)
         {
         }
 
@@ -414,7 +419,7 @@ public:
     void operator<<(const C& obj)
         {
             OpenDataStream() << obj;
-            CloseDataStream(-1);
+            CloseDataStream(m_DataType);
         }
 
     CObjectOStream& OpenDataStream(void)
@@ -430,7 +435,7 @@ public:
         {
             m_Data.Reset();
             m_Data.SetData_type(data_type);
-            m_Data.SetData_format(0);
+            m_Data.SetData_format(eSerial_AsnBinary);
             m_Data.SetData_compression(m_Params.m_Compression);
             m_Data.SetData().push_back(new vector<char>());
 
@@ -450,6 +455,7 @@ public:
 private:
     SSplitterParams m_Params;
     CID2_Reply_Data m_Data;
+    int m_DataType;
 
     AutoPtr<CNcbiOstrstream> m_MStream;
     AutoPtr<CObjectOStream>  m_OStream;
@@ -488,16 +494,40 @@ void CSplitCacheApp::Dump(const C& obj, ESerialDataFormat format,
 
 template<class C>
 inline
-void CSplitCacheApp::DumpData(const C& obj,
+void CSplitCacheApp::DumpData(const C& obj, EDataType data_type,
                               const string& key, const string& suffix)
 {
     string file_name = GetFileName(key, suffix, "bin");
     WAIT_LINE << "Storing to " << file_name << " ...";
-    CSplitDataMaker data(m_SplitterParams);
+    CSplitDataMaker data(m_SplitterParams, data_type);
     data << obj;
     AutoPtr<CObjectOStream> out
         (CObjectOStream::Open(file_name, eSerial_AsnBinary));
     *out << data.GetData();
+}
+
+
+template<class C>
+inline
+void CSplitCacheApp::StoreToCache(const C& obj, EDataType data_type,
+                                  const CSeqref& seqref, const string& suffix)
+{
+    string key = m_Reader->GetBlobKey(seqref) + suffix;
+    WAIT_LINE << "Storing to cache " << key << " ...";
+    CNcbiOstrstream stream;
+    {{
+        CSplitDataMaker data(m_SplitterParams, data_type);
+        data << obj;
+        AutoPtr<CObjectOStream> out
+            (CObjectOStream::Open(eSerial_AsnBinary, stream));
+        *out << data.GetData();
+    }}
+    size_t size = stream.pcount();
+    line << setiosflags(ios::fixed) << setprecision(2) <<
+        " " << setw(7) << (size/1024.0) << " KB";
+    const char* data = stream.str();
+    stream.freeze(false);
+    m_Cache->Store(key, seqref.GetVersion(), data, size);
 }
 
 
@@ -506,8 +536,6 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     LINE << "Processing blob "<< seqref.printTSE();
     CLevelGuard level(m_RecursionLevel);
 
-    string blob_key = m_Reader->GetBlobKey(seqref);
-
     int version = m_Reader->GetVersion(seqref, 0);
     if ( version > 1 ) {
         CTime time(time_t(version*60));
@@ -515,6 +543,35 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     }
     else {
         LINE << "Blob version: " << version;
+    }
+
+    string blob_key = m_Reader->GetBlobKey(seqref);
+    if ( m_Cache->GetSize(blob_key+"-main", version) ) {
+        if ( m_Resplit ) {
+            WAIT_LINE << "Removing old split data...";
+            m_Cache->Remove(blob_key+"-main");
+            m_Cache->Remove(blob_key+"-split");
+            size_t missed_count = 0;
+            for ( int chunk = 1; missed_count < 3; ++chunk ) {
+                string key = blob_key + "-chunk-" + NStr::IntToString(chunk);
+                if ( m_Cache->GetSize(key, version) ) {
+                    missed_count = 0;
+                }
+                else {
+                    ++missed_count;
+                }
+                m_Cache->Remove(key);
+            }
+        }
+        else {
+            LINE << "Already splitted: skipping";
+            return;
+        }
+    }
+
+    if ( m_Reader->IsSNPSeqref(seqref) ) {
+        LINE << "Skipping SNP blob: not implemented";
+        return;
     }
 
     CSeq_id seq_id;
@@ -579,27 +636,36 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 
     const CSplittedBlob& blob = splitter.GetBlob();
     if ( m_DumpAsnText ) {
-        Dump(blob.GetMainBlob(), eSerial_AsnText, blob_key, "-split-main");
-        Dump(blob.GetSplitInfo(), eSerial_AsnText, blob_key, "-split-info");
+        Dump(blob.GetMainBlob(), eSerial_AsnText, blob_key, "-main");
+        Dump(blob.GetSplitInfo(), eSerial_AsnText, blob_key, "-split");
         ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
             Dump(*it->second, eSerial_AsnText, blob_key, suffix);
         }
     }
     if ( m_DumpAsnBinary ) {
-        Dump(blob.GetMainBlob(), eSerial_AsnBinary, blob_key, "-split-main");
-        Dump(blob.GetSplitInfo(), eSerial_AsnBinary, blob_key, "-split-info");
+        Dump(blob.GetMainBlob(), eSerial_AsnBinary, blob_key, "-main");
+        Dump(blob.GetSplitInfo(), eSerial_AsnBinary, blob_key, "-split");
         ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
             Dump(*it->second, eSerial_AsnBinary, blob_key, suffix);
         }
     }
     {{ // storing split data
-        DumpData(blob.GetMainBlob(), blob_key, "-split-main");
-        DumpData(blob.GetSplitInfo(), blob_key, "-split-info");
+        DumpData(blob.GetMainBlob(), eDataType_MainBlob, blob_key, "-main");
+        DumpData(blob.GetSplitInfo(), eDataType_SplitInfo, blob_key, "-split");
         ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
-            DumpData(*it->second, blob_key, suffix);
+            DumpData(*it->second, eDataType_Chunk, blob_key, suffix);
+        }
+    }}
+    {{ // storing split data into cache
+        StoreToCache(blob.GetMainBlob(), eDataType_MainBlob, seqref, "-main");
+        StoreToCache(blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
+                     "-split");
+        ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
+            string suffix = "-chunk-" + NStr::IntToString(it->first);
+            StoreToCache(*it->second, eDataType_Chunk, seqref, suffix);
         }
     }}
 }
@@ -628,6 +694,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 17:56:03  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.1  2003/11/12 16:18:32  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

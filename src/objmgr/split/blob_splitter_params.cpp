@@ -33,6 +33,7 @@
 
 #include "blob_splitter_params.hpp"
 
+#include <objmgr/objmgr_exception.hpp>
 #include <util/compress/zlib.hpp>
 
 BEGIN_NCBI_SCOPE;
@@ -53,17 +54,20 @@ void SSplitterParams::Compress(vector<char>& dst,
         dst.resize(size_t(size*1.01) + 32);
         size_t real_size = 0;
         if ( !compr.CompressBuffer(data, size,
-                                   &dst[8], dst.size(), &real_size) ) {
+                                   &dst[12], dst.size(), &real_size) ) {
             NCBI_THROW(CLoaderException, eCompressionError,
                 "zip compression failed");
         }
-        for ( size_t i = 0, s = real_size; i < 4; ++i, s <<= 8 ) {
-            dst[i] = (s >> 24) & 0xff;
+        for ( size_t i = 0; i < 4; ++i ) {
+            dst[i] = "ZIP"[i];
         }
-        for ( size_t i = 0, s = size; i < 4; ++i, s <<= 8 ) {
+        for ( size_t i = 0, s = real_size; i < 4; ++i, s <<= 8 ) {
             dst[i+4] = (s >> 24) & 0xff;
         }
-        dst.resize(8+real_size);
+        for ( size_t i = 0, s = size; i < 4; ++i, s <<= 8 ) {
+            dst[i+8] = (s >> 24) & 0xff;
+        }
+        dst.resize(12+real_size);
         break;
     }}
     default:
@@ -79,6 +83,10 @@ END_NCBI_SCOPE;
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/26 17:56:02  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.2  2003/11/19 22:18:05  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".

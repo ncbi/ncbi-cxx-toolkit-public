@@ -39,7 +39,9 @@ class IIntCache;
 class IReader;
 class IWriter;
 
-BEGIN_SCOPE(objects)
+BEGIN_SCOPE(objects);
+
+class CID2_Reply_Data;
 
 /// ID1 reader with caching capabilities
 ///
@@ -54,42 +56,76 @@ public:
     void SetBlobCache(IBLOB_Cache* blob_cache);
     void SetIdCache(IIntCache* id_cache);
 
+    void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
     void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id);
+
+    /// Return BLOB key string based on CSeqref Sat() and SatKey()
+    /// @sa CSeqref::Sat(), CSeqref::SatKey()
+    string GetBlobKey(const CSeqref& seqref);
+
+    int GetSNPBlobVersion(int gi);
+
+    void GetTSEChunk(const CSeqref& seqref, CTSE_Chunk_Info& chunk_info,
+                     TConn conn);
 
 protected:
     
     void PrintStatistics(void) const;
 
-    void x_RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
     int x_GetVersion(const CSeqref& seqref, TConn conn);
 
-    void x_GetBlob(CID1server_back& id1_reply,
-                   const CSeqref& seqref,
-                   TConn conn);
+    void x_GetTSEBlob(CID1server_back& id1_reply,
+                      CRef<CID2S_Split_Info>& split_info,
+                      const CSeqref& seqref,
+                      TConn conn);
     void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                        const CSeqref& seqref,
                        TConn conn);
 
-    void x_ReadBlob(CID1server_back& id1_reply,
-                    const CSeqref&   seqref,
-                    CNcbiIstream&    stream);
-
-    /// Return BLOB key string based on CSeqref Sat() and SatKey()
-    /// @sa CSeqref::Sat(), CSeqref::SatKey()
-    string x_GetBlobKey(const CSeqref& seqref);
+    void x_ReadTSEBlob(CID1server_back& id1_reply,
+                       const CSeqref&   seqref,
+                       CNcbiIstream&    stream);
 
     bool GetBlobInfo(int gi, TSeqrefs& sr);
     void StoreBlobInfo(int gi, const TSeqrefs& sr);
 
-    int GetSNPBlobVersion(int gi);
     void StoreSNPBlobVersion(int gi, int version);
 
-    bool LoadBlob(CID1server_back& id1_reply, const CSeqref& seqref);
+    bool LoadBlob(CID1server_back& id1_reply,
+                  CRef<CID2S_Split_Info>& split_info,
+                  const CSeqref& seqref);
+    bool LoadWholeBlob(CID1server_back& id1_reply,
+                       const CSeqref& seqref);
+    bool LoadSplitBlob(CID1server_back& id1_reply,
+                       CRef<CID2S_Split_Info>& split_info,
+                       const CSeqref& seqref);
 
     bool LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
                       const CSeqref& seqref);
     void StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
                        const CSeqref& seqref);
+
+    bool LoadData(const string& key, const char* suffix,
+                  int version, CID2_Reply_Data& data);
+
+    enum ECompression
+    {
+        eCompression_none,
+        eCompression_nlm_zip,
+        eCompression_gzip
+    };
+
+    enum EDataType
+    {
+        eDataType_MainBlob = 0,
+        eDataType_SplitInfo = 1,
+        eDataType_Chunk = 2
+    };
+
+    CRef<CByteSourceReader> GetReader(CID2_Reply_Data& data,
+                                      EDataType data_type);
+    AutoPtr<CObjectIStream> OpenData(CID2_Reply_Data& data,
+                                     CByteSourceReader& reader);
 
 private:
 
@@ -108,6 +144,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2003/11/26 17:55:53  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.9  2003/10/27 15:05:41  vasilche
 * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
 * Added recognition of ID1 error codes: private, etc.

@@ -44,6 +44,7 @@ class CSeq_id;
 class CTSE_Info;
 class CSeq_annot_SNP_Info;
 class CTSE_Chunk_Info;
+class CID2S_Split_Info;
 
 class NCBI_XOBJMGR_EXPORT CSeqref : public CObject
 {
@@ -160,24 +161,28 @@ public:
 
     typedef vector< CRef<CSeqref> > TSeqrefs;
 
-    virtual void RetrieveSeqrefs(TSeqrefs& srs,
-                                 const CSeq_id& seqId,
-                                 TConn conn) = 0;
-    virtual void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& seqId);
+    virtual int ResolveSeq_id_to_gi(const CSeq_id& id, TConn conn) = 0;
+    virtual void RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn) = 0;
+    virtual void ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn);
+    virtual void PurgeSeq_id_to_gi(const CSeq_id& id);
+    virtual void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id);
 
     virtual CRef<CTSE_Info> GetBlob(const CSeqref& seqref,
                                     TConn conn,
                                     CTSE_Chunk_Info* chunk_info = 0);
 
-    // for SNP split
-    virtual CRef<CTSE_Info> MakeSNPBlob(const CSeqref& seqref);
+    virtual CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
+                                       const CSeqref& seqref, TConn conn) = 0;
+    virtual CRef<CTSE_Info> GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
+                                       const CSeqref& seqref, TConn conn);
 
+    virtual void GetTSEChunk(const CSeqref& seqref,
+                             CTSE_Chunk_Info& chunk_info,
+                             TConn conn);
     virtual void GetSNPChunk(const CSeqref& seqref,
                              CTSE_Chunk_Info& chunk_info,
                              TConn conn);
 
-    virtual CRef<CTSE_Info> GetMainBlob(const CSeqref& seqref,
-                                        TConn conn) = 0;
     virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref,
                                                   TConn conn) = 0;
 
@@ -219,6 +224,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.33  2003/11/26 17:55:53  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.32  2003/10/27 18:50:48  vasilche
 * Detect 'private' blobs in ID1 reader.
 * Avoid reconnecting after ID1 server replied with error packet.

@@ -57,11 +57,12 @@ public:
 
     ~CPubseqReader();
 
-    virtual void RetrieveSeqrefs(TSeqrefs& sr,
-                                 const CSeq_id& seqId,
-                                 TConn conn);
-    virtual CRef<CTSE_Info> GetMainBlob(const CSeqref& seqref,
-                                        TConn conn);
+    virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
+    virtual void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
+
+    virtual CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
+                                       const CSeqref& seqref,
+                                       TConn conn);
     virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref,
                                                   TConn conn);
 
@@ -74,17 +75,9 @@ private:
     CDB_Connection* x_GetConnection(TConn conn);
     CDB_Connection* x_NewConnection(void);
 
-    void x_RetrieveSeqrefs(TSeqrefs& sr,
-                           const CSeq_id& seqId,
-                           CDB_Connection* conn);
-    void x_RetrieveSeqrefs(TSeqrefs& srs,
-                           int gi,
-                           CDB_Connection* conn);
-    int x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                              CDB_Connection* conn);
 
     CDB_RPCCmd* x_SendRequest(const CSeqref& seqref,
-                              CDB_Connection* conn,
+                              CDB_Connection* db_conn,
                               bool is_snp);
     CDB_Result* x_ReceiveData(CDB_RPCCmd& cmd);
 
@@ -107,6 +100,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.18  2003/11/26 17:55:54  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.17  2003/10/21 14:27:34  vasilche
 * Added caching of gi -> sat,satkey,version resolution.
 * SNP blobs are stored in cache in preprocessed format (platform dependent).

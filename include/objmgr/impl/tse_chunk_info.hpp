@@ -40,8 +40,7 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 
-#include <vector>
-#include <map>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -50,6 +49,8 @@ class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CID2S_Chunk_Info;
+class CID2S_Chunk;
+class CID2S_Chunk_Data;
 class CID2S_Split_Info;
 class CID2S_Chunk_Content;
 class CID2S_Seq_annot_Info;
@@ -64,16 +65,16 @@ public:
     virtual ~CTSE_Chunk_Info(void);
 
     CTSE_Info& GetTSE_Info(void);
-    CSeq_annot_Info& GetStubSeq_annot_Info(void);
 
     TChunkId GetChunkId(void) const;
 
-    typedef SAnnotObjects_Info                     TObjectInfos;
-    typedef map<CAnnotName, TObjectInfos>          TNamedObjectInfos;
+    typedef SAnnotObjects_Info TObjectInfos;
+    typedef list<TObjectInfos> TObjectInfosList;
 
     bool NotLoaded(void) const;
     void Load(void);
 
+    void Load(const CID2S_Chunk& chunk);
     void LoadAnnotBioseq_set(int id, CSeq_annot_Info& annot_info);
 
     CSeq_entry_Info& GetBioseq_set(int id);
@@ -94,8 +95,13 @@ protected:
                         TObjectInfos& infos);
     void x_MapAnnotStub(CAnnotObject_Info* info,
                         TObjectInfos& infos,
+                        const CID2_Seq_loc& loc);
+    void x_MapAnnotStub(CAnnotObject_Info* info,
+                        TObjectInfos& infos,
                         int gi,
                         const CRange<TSeqPos>& range);
+
+    void x_Add(const CID2S_Chunk_Data& data);
 
 private:
     friend class CTSE_Info;
@@ -107,14 +113,12 @@ private:
 
     CConstRef<CID2S_Chunk_Info> m_ChunkInfo;
 
-    CRef<CSeq_annot_Info>       m_StubAnnotInfo;
-
     bool            m_DirtyAnnotIndex;
 
     bool            m_NotLoaded;
     CFastMutex      m_LoadLock;
 
-    TNamedObjectInfos  m_NamedObjectInfos;
+    TObjectInfosList  m_ObjectInfosList;
 };
 
 
@@ -132,12 +136,6 @@ bool CTSE_Chunk_Info::NotLoaded(void) const
 }
 
 
-inline
-CSeq_annot_Info& CTSE_Chunk_Info::GetStubSeq_annot_Info(void)
-{
-    return *m_StubAnnotInfo;
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -145,6 +143,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/26 17:55:55  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.2  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

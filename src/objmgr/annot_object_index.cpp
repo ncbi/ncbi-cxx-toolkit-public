@@ -42,11 +42,16 @@ SAnnotObjects_Info::SAnnotObjects_Info(void)
 }
 
 
+SAnnotObjects_Info::SAnnotObjects_Info(const CAnnotName& name)
+    : m_Name(name)
+{
+}
+
+
 SAnnotObjects_Info::SAnnotObjects_Info(const SAnnotObjects_Info& info)
     : m_Name(info.m_Name)
 {
-    _ASSERT(info.m_Keys.empty());
-    _ASSERT(info.m_Infos.empty());
+    _ASSERT(info.m_Keys.empty() && info.m_Infos.empty());
 }
 
 
@@ -55,9 +60,17 @@ SAnnotObjects_Info::~SAnnotObjects_Info(void)
 }
 
 
-void SAnnotObjects_Info::SetAnnotName(const CAnnotName& name)
+void SAnnotObjects_Info::SetName(const CAnnotName& name)
 {
     m_Name = name;
+}
+
+
+void SAnnotObjects_Info::Reserve(size_t size, double keys_factor)
+{
+    _ASSERT(m_Keys.empty() && m_Infos.empty());
+    m_Keys.reserve(size_t(keys_factor*size));
+    m_Infos.reserve(size);
 }
 
 
@@ -68,8 +81,15 @@ void SAnnotObjects_Info::Clear(void)
 }
 
 
+void SAnnotObjects_Info::AddKey(const SAnnotObject_Key& key)
+{
+    m_Keys.push_back(key);
+}
+
+
 CAnnotObject_Info* SAnnotObjects_Info::AddInfo(const CAnnotObject_Info& info)
 {
+    _ASSERT(m_Infos.capacity() > m_Infos.size());
     m_Infos.push_back(info);
     return &m_Infos.back();
 }
@@ -81,6 +101,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 17:55:56  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.1  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

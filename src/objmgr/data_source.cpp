@@ -345,6 +345,7 @@ const CSeq_entry& CDataSource::GetTSE(const CTSE_Info& info)
     // the handle must be resolved to this data source
     _ASSERT(&info.GetDataSource() == this);
     // Bioseq and TSE must be loaded if there exists a handle
+    const_cast<CTSE_Info&>(info).LoadAllChunks();
     return info.GetTSE();
 }
 
@@ -1153,6 +1154,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.123  2003/11/26 17:55:57  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.122  2003/10/27 16:47:12  vasilche
 * Fixed error:
 * src/objmgr/data_source.cpp", line 913: Fatal: Assertion failed: (it != tse_map.end() && it->first == id)

@@ -62,6 +62,17 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry)
 }
 
 
+CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot)
+    : m_Seq_annot(&annot),
+      m_Seq_entry_Info(0),
+      m_TSE_Info(0),
+      m_Chunk_Info(0),
+      m_DirtyAnnotIndex(true)
+{
+    x_UpdateName();
+}
+
+
 CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
     : m_Seq_annot(&const_cast<CSeq_annot&>(snp_annot.GetSeq_annot())),
       m_Seq_entry_Info(0),
@@ -74,10 +85,12 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
 }
 
 
-CSeq_annot_Info::CSeq_annot_Info(CTSE_Chunk_Info& chunk_info)
+CSeq_annot_Info::CSeq_annot_Info(CTSE_Chunk_Info& chunk_info,
+                                 const CAnnotName& name)
     : m_Seq_annot(0),
       m_Seq_entry_Info(0),
       m_TSE_Info(&chunk_info.GetTSE_Info()),
+      m_Name(name),
       m_Chunk_Info(&chunk_info),
       m_DirtyAnnotIndex(true)
 {
@@ -89,13 +102,11 @@ CSeq_annot_Info::~CSeq_annot_Info(void)
 }
 
 
-size_t CSeq_annot_Info::GetAnnotObjectIndex(const CAnnotObject_Info& info) const
+size_t
+CSeq_annot_Info::GetAnnotObjectIndex(const CAnnotObject_Info& info) const
 {
     _ASSERT(&info.GetSeq_annot_Info() == this);
-    _ASSERT(!m_ObjectInfos.m_Infos.empty());
-    _ASSERT(&info >= &m_ObjectInfos.m_Infos.front() &&
-            &info <= &m_ObjectInfos.m_Infos.back());
-    return &info - &m_ObjectInfos.m_Infos.front();
+    return m_ObjectInfos.GetIndex(info);
 }
 
 
@@ -197,7 +208,7 @@ void CSeq_annot_Info::x_UpdateAnnotIndex(void)
 
 void CSeq_annot_Info::x_UpdateAnnotIndexThis(void)
 {
-    m_ObjectInfos.m_Name = GetName();
+    m_ObjectInfos.SetName(GetName());
 
     CSeq_annot::C_Data& data = GetSeq_annot().SetData();
     switch ( data.Which() ) {
@@ -235,12 +246,7 @@ void CSeq_annot_Info::x_TSEDetach(void)
 
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 {
-    _ASSERT(m_ObjectInfos.m_Keys.empty());
-
-    size_t objCount = objs.size();
-
-    m_ObjectInfos.m_Keys.reserve(size_t(1.1*objCount));
-    m_ObjectInfos.m_Infos.reserve(objCount);
+    m_ObjectInfos.Reserve(objs.size(), 1.1);
 
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
@@ -280,12 +286,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 {
-    _ASSERT(m_ObjectInfos.m_Keys.empty());
-
-    size_t objCount = objs.size();
-
-    m_ObjectInfos.m_Keys.reserve(objCount);
-    m_ObjectInfos.m_Infos.reserve(objCount);
+    m_ObjectInfos.Reserve(objs.size());
 
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
@@ -325,12 +326,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
 {
-    _ASSERT(m_ObjectInfos.m_Keys.empty());
-
-    size_t objCount = objs.size();
-
-    m_ObjectInfos.m_Keys.reserve(objCount);
-    m_ObjectInfos.m_Infos.reserve(objCount);
+    m_ObjectInfos.Reserve(objs.size());
 
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
@@ -386,6 +382,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/11/26 17:56:00  vasilche
+ * Implemented ID2 split in ID1 cache.
+ * Fixed loading of splitted annotations.
+ *
  * Revision 1.10  2003/11/19 22:18:03  grichenk
  * All exceptions are now CException-derived. Catch "exception" rather
  * than "runtime_error".

@@ -387,6 +387,25 @@ void CTSE_Info::UpdateAnnotIndex(CSeq_annot_Info& annot_info)
 }
 
 
+CRef<CTSE_Chunk_Info> CTSE_Info::GetNotLoadedChunk(void)
+{
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        if ( it->second->NotLoaded() ) {
+            return it->second;
+        }
+    }
+    return CRef<CTSE_Chunk_Info>();
+}
+
+
+void CTSE_Info::LoadAllChunks(void)
+{
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        it->second->Load();
+    }
+}
+
+
 // All ranges are in format [x, y)
 
 const size_t kAnnotTypeMax = CSeq_annot::C_Data::e_Graph;
@@ -473,14 +492,22 @@ size_t CTSE_Info::x_GetTypeIndex(const CAnnotObject_Info& info)
             }
         }
     }
+    else if ( info.GetFeatType() != CSeqFeatData::e_not_set ) {
+        if ( size_t(info.GetFeatType()) < s_FeatTypeIndexRange.size() ) {
+            const TIndexRange& r = s_FeatTypeIndexRange[info.GetFeatType()];
+            if ( r.second == r.first + 1 ) {
+                return r.first;
+            }
+        }
+    }
     else {
-        if ( info.GetFeatType() == CSeqFeatData::e_not_set && 
-             size_t(info.GetAnnotType()) < s_AnnotTypeIndexRange.size() ) {
+        if ( size_t(info.GetAnnotType()) < s_AnnotTypeIndexRange.size() ) {
             const TIndexRange& r = s_AnnotTypeIndexRange[info.GetAnnotType()];
             if ( r.second == r.first + 1 ) {
                 return r.first;
             }
         }
+        
     }
     NCBI_THROW(CObjMgrException, eOtherError,
                "CAnnotObject_Info is incompatible with CTSE_Info indexes");
@@ -719,11 +746,9 @@ void CTSE_Info::x_MapAnnotObject(TAnnotObjs& index,
                                  const SAnnotObject_Index& annotRef,
                                  SAnnotObjects_Info& infos)
 {
-    _ASSERT(&index == x_GetAnnotObjs(infos.m_Name));
-    _ASSERT(key.m_AnnotObject_Info == &infos.m_Infos.back());
-    _ASSERT(annotRef.m_AnnotObject_Info == &infos.m_Infos.back());
-    infos.m_Keys.push_back(key);
-    x_MapAnnotObject(index, infos.m_Name, key, annotRef);
+    _ASSERT(&index == x_GetAnnotObjs(infos.GetName()));
+    infos.AddKey(key);
+    x_MapAnnotObject(index, infos.GetName(), key, annotRef);
 }
 
 
@@ -731,20 +756,20 @@ void CTSE_Info::x_MapAnnotObject(const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& annotRef,
                                  SAnnotObjects_Info& infos)
 {
-    x_MapAnnotObject(x_SetAnnotObjs(infos.m_Name), key, annotRef, infos);
+    x_MapAnnotObject(x_SetAnnotObjs(infos.GetName()), key, annotRef, infos);
 }
 
 
 void CTSE_Info::x_UnmapAnnotObjects(SAnnotObjects_Info& infos)
 {
-    TAnnotObjs& index = x_SetAnnotObjs(infos.m_Name);
+    TAnnotObjs& index = x_SetAnnotObjs(infos.GetName());
 
-    ITERATE( SAnnotObjects_Info::TObjectKeys, it, infos.m_Keys ) {
-        x_UnmapAnnotObject(index, infos.m_Name, *it);
+    ITERATE( SAnnotObjects_Info::TObjectKeys, it, infos.GetKeys() ) {
+        x_UnmapAnnotObject(index, infos.GetName(), *it);
     }
 
     if ( index.empty() ) {
-        x_RemoveAnnotObjs(infos.m_Name);
+        x_RemoveAnnotObjs(infos.GetName());
     }
 
     infos.Clear();
@@ -853,6 +878,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/11/26 17:56:00  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.35  2003/11/19 22:18:04  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".

@@ -82,7 +82,7 @@ public:
             return ret;
         }
 
-    size_t GetCound(void) const
+    size_t GetCount(void) const
         {
             return m_Count;
         }
@@ -133,6 +133,10 @@ END_NCBI_SCOPE;
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 17:56:02  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.1  2003/11/12 16:18:32  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

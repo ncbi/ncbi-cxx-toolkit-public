@@ -843,7 +843,7 @@ int CDemoApp::Run(void)
         ITERATE ( CSynonymsSet, it, *syns ) {
             CConstRef<CSeq_id> seq_id =
                 CSynonymsSet::GetSeq_id_Handle(it).GetSeqId();
-            if ( seq_id->Which() == CSeq_id::e_Gi ) {
+            if ( seq_id->IsGi() ) {
                 gi = seq_id->GetGi();
                 NcbiCout << "Sequence gi is "<<gi<<NcbiEndl;
                 break;
@@ -1128,6 +1128,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/11/26 17:56:01  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.45  2003/10/27 15:06:31  vasilche
 * Added option to set ID1 cache keep time.
 *

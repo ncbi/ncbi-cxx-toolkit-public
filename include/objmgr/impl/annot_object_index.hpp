@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/annot_object.hpp>
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/impl/handle_range.hpp>
 
@@ -89,24 +90,76 @@ struct SAnnotObject_Index
 struct NCBI_XOBJMGR_EXPORT SAnnotObjects_Info
 {
     SAnnotObjects_Info(void);
+    SAnnotObjects_Info(const CAnnotName& name);
     SAnnotObjects_Info(const SAnnotObjects_Info&);
     ~SAnnotObjects_Info(void);
 
     typedef vector<SAnnotObject_Key>           TObjectKeys;
     typedef vector<CAnnotObject_Info>          TObjectInfos;
 
-    void SetAnnotName(const CAnnotName& name);
+    void SetName(const CAnnotName& name);
+    const CAnnotName& GetName(void) const;
 
+    // reserve space for size annot objects
+    // keys will be reserved for size*keys_factor objects
+    // this is done to avoid reallocation and invalidation
+    // of m_Infos in AddInfo() method
+    void Reserve(size_t size, double keys_factor = 1.0);
     void Clear(void);
+
+    void AddKey(const SAnnotObject_Key& key);
     CAnnotObject_Info* AddInfo(const CAnnotObject_Info& info);
-    
+
+    const TObjectKeys& GetKeys(void) const;
+    const TObjectInfos& GetInfos(void) const;
+    const CAnnotObject_Info& GetInfo(size_t index) const;
+    size_t GetIndex(const CAnnotObject_Info& info) const;
+
+private:    
     CAnnotName      m_Name;
     TObjectKeys     m_Keys;
     TObjectInfos    m_Infos;
 
-private:
     SAnnotObjects_Info& operator=(const SAnnotObjects_Info&);
 };
+
+
+inline
+const CAnnotName& SAnnotObjects_Info::GetName(void) const
+{
+    return m_Name;
+}
+
+
+inline
+const SAnnotObjects_Info::TObjectKeys& SAnnotObjects_Info::GetKeys(void) const
+{
+    return m_Keys;
+}
+
+
+inline
+const SAnnotObjects_Info::TObjectInfos& SAnnotObjects_Info::GetInfos(void) const
+{
+    return m_Infos;
+}
+
+
+inline
+const CAnnotObject_Info& SAnnotObjects_Info::GetInfo(size_t index) const
+{
+    _ASSERT(index < m_Infos.size());
+    return m_Infos[index];
+}
+
+
+inline
+size_t SAnnotObjects_Info::GetIndex(const CAnnotObject_Info& info) const
+{
+    _ASSERT(!m_Infos.empty());
+    _ASSERT(&info >= &m_Infos.front() && &info <= &m_Infos.back());
+    return &info - &m_Infos.front();
+}
 
 
 END_SCOPE(objects)
@@ -115,6 +168,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/26 17:55:55  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.2  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

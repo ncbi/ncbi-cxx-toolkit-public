@@ -110,9 +110,20 @@ public:
     template<class C>
     void Dump(const C& obj, ESerialDataFormat format,
               const string& key, const string& suffix = "");
+
+    enum EDataType
+    {
+        eDataType_MainBlob = 0,
+        eDataType_SplitInfo = 1,
+        eDataType_Chunk = 2
+    };
+
     template<class C>
-    void DumpData(const C& obj,
+    void DumpData(const C& obj, EDataType data_type,
                   const string& key, const string& suffix = "");
+    template<class C>
+    void StoreToCache(const C& obj, EDataType data_type,
+                      const CSeqref& seqref, const string& suffix = "");
 
 protected:
     CConstRef<CSeqref> GetSeqref(CBioseq_Handle bh);
@@ -123,6 +134,7 @@ private:
     // parameters
     bool m_DumpAsnText;
     bool m_DumpAsnBinary;
+    bool m_Resplit;
     SSplitterParams m_SplitterParams;
     
     // splitter loaders/managers
@@ -144,6 +156,10 @@ END_NCBI_SCOPE;
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 17:56:03  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.1  2003/11/12 16:18:32  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

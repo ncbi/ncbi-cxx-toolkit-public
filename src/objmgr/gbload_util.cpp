@@ -33,7 +33,7 @@
 #include <objmgr/impl/handle_range.hpp>
 #include <objmgr/gbloader.hpp>
 #include <objmgr/objmgr_exception.hpp>
-#include "gbload_util.hpp"
+#include <objmgr/impl/gbload_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -123,10 +123,10 @@ CMutexPool::CMutexPool()
 void CMutexPool::SetSize(int size)
 {
     _VERIFY(m_size==0 && !m_Locks);
-    m_size=size;
+    m_size = size;
     m_Locks = new CMutex[m_size];
     spread  = new int[m_size];
-    for(int i=0;i<m_size;++i) {
+    for ( int i = 0; i < m_size; ++i ) {
         spread[i]=0;
     }
 }
@@ -134,13 +134,13 @@ void CMutexPool::SetSize(int size)
 
 CMutexPool::~CMutexPool(void)
 {
-    if(m_Locks) delete [] m_Locks;
-    if(spread)  {
-        for(int i=0;i<m_size;++i) {
+    delete [] m_Locks;
+    if ( spread )  {
+        for ( int i = 0; i < m_size; ++i ) {
             GBLOG_POST("PoolMutex " << i << " used "<< spread[i] << " times");
         }
-        delete [] spread;
     }
+    delete [] spread;
 }
 #else
 CMutex CMutexPool::sm_Lock;
@@ -320,6 +320,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/11/26 17:55:57  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.20  2003/11/21 16:33:10  vasilche
 * Some code formatting.
 *

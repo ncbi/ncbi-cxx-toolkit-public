@@ -327,26 +327,8 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
     return 0;
 }
 
-void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs,
-                                 const CSeq_id& seqId,
-                                 TConn conn)
-{
-    int gi;
-    if ( !seqId.IsGi() ) {
-        gi = x_ResolveSeq_id_to_gi(seqId, conn);
-    }
-    else {
-        gi = seqId.GetGi();
-    }
 
-    if ( gi ) {
-        x_RetrieveSeqrefs(srs, gi, conn);
-    }
-}
-
-
-int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                                      TConn conn)
+int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 {
     CID1server_request id1_request;
     id1_request.SetGetgi(const_cast<CSeq_id&>(seqId));
@@ -358,9 +340,7 @@ int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
 }
 
 
-void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
-                                   int gi,
-                                   TConn conn)
+void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
 {
     CID1server_request id1_request;
     {{
@@ -441,6 +421,7 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
         CObjectIStreamAsnBinary in(*stream);
         in >> id1_reply;
     }}
+    /*
     if ( id1_reply.IsError() && id1_reply.GetError() == 0 ) {
         char next_byte;
         if ( CStreamUtils::Readsome(*stream, &next_byte, 1) ) {
@@ -450,6 +431,7 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
             in >> id1_reply;
         }
     }
+    */
 
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
@@ -475,14 +457,15 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
 }
 
 
-CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
-                                        TConn conn)
+CRef<CTSE_Info> CId1Reader::GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
+                                       const CSeqref& seqref,
+                                       TConn conn)
 {
     if ( seqref.GetFlags() & CSeqref::fPrivate ) {
         NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
     }
     CID1server_back id1_reply;
-    x_GetBlob(id1_reply, seqref, conn);
+    x_GetTSEBlob(id1_reply, split_info, seqref, conn);
 
     CRef<CSeq_entry> seq_entry;
     bool dead = false;
@@ -512,7 +495,8 @@ CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "bad ID1server-back type");
     }
-    return Ref(new CTSE_Info(*seq_entry, dead));
+    CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry, dead));
+    return ret;
 }
 
 
@@ -543,9 +527,10 @@ void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
 }
 
 
-void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
-                           const CSeqref& seqref,
-                           TConn conn)
+void CId1Reader::x_GetTSEBlob(CID1server_back& id1_reply,
+                              CRef<CID2S_Split_Info>& /*split_info*/,
+                              const CSeqref& seqref,
+                              TConn conn)
 {
     CStopWatch sw;
     if ( CollectStatistics() ) {
@@ -555,7 +540,7 @@ void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
     try {
         CConn_ServiceStream* stream = x_GetConnection(conn);
         x_SendRequest(seqref, stream, false);
-        x_ReadBlob(id1_reply, seqref, *stream);
+        x_ReadTSEBlob(id1_reply, seqref, *stream);
         
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
@@ -686,18 +671,18 @@ void CId1Reader::x_SendRequest(const CSeqref& seqref,
 }
 
 
-void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& /*seqref*/,
-                            CNcbiIstream& stream)
+void CId1Reader::x_ReadTSEBlob(CID1server_back& id1_reply,
+                               const CSeqref& /*seqref*/,
+                               CNcbiIstream& stream)
 {
     CObjectIStreamAsnBinary obj_stream(stream);
     
-    x_ReadBlob(id1_reply, obj_stream);
+    x_ReadTSEBlob(id1_reply, obj_stream);
 }
 
 
-void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                            CObjectIStream& stream)
+void CId1Reader::x_ReadTSEBlob(CID1server_back& id1_reply,
+                               CObjectIStream& stream)
 {
     CReader::SetSeqEntryReadHooks(stream);
 
@@ -725,6 +710,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.63  2003/11/26 17:55:59  vasilche
+ * Implemented ID2 split in ID1 cache.
+ * Fixed loading of splitted annotations.
+ *
  * Revision 1.62  2003/11/21 16:32:52  vasilche
  * Cleaned code avoiding ERROR 0 packets.
  *

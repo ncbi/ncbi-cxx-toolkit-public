@@ -262,9 +262,7 @@ CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range)
     TInt_set int_set;
 
     ITERATE ( CSeqsRange, it, range ) {
-        CConstRef<CSeq_id> id = it->first.GetSeqId();
-        _ASSERT(id->IsGi());
-        int gi = id->GetGi();
+        int gi = it->first.GetGi();
         CSeqsRange::TRange range = it->second.GetTotalRange();
         if ( range == range.GetWhole() ) {
             whole_set.insert(gi);
@@ -320,10 +318,10 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
             annot_info.SetName(it->first.GetName());
         }
         if ( it->second.m_Graph ) {
-            annot_info.SetGraph() = true;
+            annot_info.SetGraph();
         }
         if ( it->second.m_Align ) {
-            annot_info.SetAlign() = true;
+            annot_info.SetAlign();
         }
         ITERATE ( SAnnotTypeLocation::TFeatTypes, ftit, it->second.m_Feat ) {
             CSeqFeatData::E_Choice type = ftit->first;
@@ -455,6 +453,10 @@ END_NCBI_SCOPE;
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 17:56:02  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.1  2003/11/12 16:18:28  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

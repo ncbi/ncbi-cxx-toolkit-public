@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/11/26 17:56:04  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.13  2003/11/03 21:21:41  vasilche
 * Limit amount of exceptions to catch while testing.
 *
@@ -168,10 +172,20 @@ protected:
 
 void CTestOM::SetValue(TValueMap& vm, int gi, int value)
 {
-    CFastMutexGuard guard(s_GlobalLock);
-    pair<TValueMap::iterator, bool> ins =
-        vm.insert(TValueMap::value_type(gi, value));
-    _ASSERT(ins.first->second == value);
+    int old_value;
+    {{
+        CFastMutexGuard guard(s_GlobalLock);
+        old_value = vm.insert(TValueMap::value_type(gi, value)).first->second;
+    }}
+    if ( old_value != value ) {
+        string name;
+        if ( &vm == &m_mapGiToDesc ) name = "desc";
+        if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
+        if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
+        ERR_POST("Inconsistent "<<name<<" on gi "<<gi<<
+                 " was "<<old_value<<" now "<<value);
+    }
+    _ASSERT(old_value == value);
 }
 
 

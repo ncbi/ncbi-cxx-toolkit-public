@@ -46,22 +46,21 @@ int main()
         cout << "K: " << k << endl;
 
         CPubseqReader reader;
-        CSeq_id seqId;
-        seqId.SetGi(156895+k-1);
+        int gi = 156895+k-1;
 
         vector< CRef<CSeqref> > sr;
-        reader.RetrieveSeqrefs(sr, seqId, 0);
+        reader.RetrieveSeqrefs(sr, gi, 0);
         ITERATE ( vector< CRef<CSeqref> >, i, sr ) {
             const CSeqref& seqRef = **i;
 
-            cout << "gi: " << seqId.GetGi() << " SatKey=" << seqRef.GetSatKey() << " Flags=" << seqRef.GetFlags() << endl;
+            cout << "gi: " << gi << " SatKey=" << seqRef.GetSatKey() << " Flags=" << seqRef.GetFlags() << endl;
       
             CRef<CTSE_Info> info = reader.GetBlob(seqRef, 0);
             if (!info) {
                 cout << "blob is not available\n";
                 continue;
             }
-            cout <<"gi: " << seqId.GetGi() << " " << 1 << " blobs" << endl;
+            cout <<"gi: " << gi << " " << 1 << " blobs" << endl;
         }
     }
     return 0;
@@ -69,6 +68,10 @@ int main()
 
 /*
 * $Log$
+* Revision 1.10  2003/11/26 17:56:04  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.9  2003/09/30 16:22:06  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
 // for GBLOG_POST()
 # include <corelib/ncbithr.hpp>
@@ -52,9 +53,8 @@
 #   include <sys/types.h>
 #endif
 
-#include <objects/seq/Seq_annot.hpp>
 #include <objmgr/data_loader.hpp>
-#include <objmgr/reader.hpp>
+#include <objmgr/impl/gbload_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -82,29 +82,8 @@ class CSeq_entry;
 // GBDataLoader
 //
 
-class NCBI_XOBJMGR_EXPORT CTimer
-{
-public:
-    CTimer(void);
-    time_t Time(void);
-    void   Start(void);
-    void   Stop(void);
-    time_t RetryTime(void);
-    bool   NeedCalibration(void);
-private:
-    time_t m_ReasonableRefreshDelay;
-    int    m_RequestsDevider;
-    int    m_Requests;
-    CMutex m_RequestsLock;
-    time_t m_Time;
-    time_t m_LastCalibrated;
-  
-    time_t m_StartTime;
-    CMutex m_TimerLock;
-};
-
 //========================================================================
-class NCBI_XOBJMGR_EXPORT CRefresher
+class CRefresher
 {
 public:
     CRefresher(void)
@@ -131,62 +110,27 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CMutexPool
+struct NCBI_XOBJMGR_EXPORT SSeqrefs : public CObject
 {
-#if defined(NCBI_THREADS)
-    int         m_size;
-    CMutex     *m_Locks;
-    int        *spread;
-#else
-    static CMutex sm_Lock;
-#endif
-public:
-#if defined(NCBI_THREADS)
-    CMutexPool(void);
-    ~CMutexPool(void);
+    typedef vector< CRef<CSeqref> > TSeqrefs;
 
-    void SetSize(int size);
+    SSeqrefs(const CSeq_id_Handle& h);
+    ~SSeqrefs(void);
 
-    CMutex& GetMutex(int x)
-        {
-            int y=x%m_size; spread[y]++; return m_Locks[y];
-        }
-
-    template<class A> int  Select(A *a)
-        {
-            return (((unsigned long) a)/sizeof(A)) % m_size ;
-        }
-#else
-    CMutexPool(void)
-        {
-        }
-    ~CMutexPool(void)
-        {
-        }
-    void SetSize(int size)
-        {
-        }
-    CMutex& GetMutex(int x)
-        {
-            return sm_Lock;
-        }
-    template<class A> int  Select(A *a)
-        {
-            return 0;
-        }
-#endif
+    CSeq_id_Handle  m_Handle;
+    TSeqrefs        m_Sr;
+    CRefresher      m_Timer;
 };
 
 
 class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
-    struct SLeveledMutex
-    {
-        unsigned        m_SlowTraverseMode;
-        CMutex          m_Lookup;
-        CMutexPool      m_Pool;
-    };
+    // typedefs from CReader
+    typedef unsigned TConn;
+    typedef vector< CRef<CSeqref> > TSeqrefs;
+    typedef pair<int, int> TKeyByTSE;
+    typedef int TMask;
 
     CGBDataLoader(const string& loader_name="GENBANK",
                   CReader *driver=0,
@@ -194,8 +138,7 @@ public:
     virtual ~CGBDataLoader(void);
   
     virtual void DropTSE(const CTSE_Info& tse_info);
-    virtual void GetRecords(const CSeq_id_Handle& idh,
-                            const EChoice choice);
+    virtual void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
   
     virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle& handle,
@@ -203,6 +146,8 @@ public:
   
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+    const CSeqref& GetSeqref(const CTSE_Info& tse_info);
   
 private:
     struct STSEinfo : public CObject
@@ -214,7 +159,7 @@ private:
         STSEinfo*         prev;
         bitset<eLast>     mode;
         CRef<CSeqref>     seqref;
-        CSeqref::TKeyByTSE key;
+        TKeyByTSE         key;
         int               locked;
         CTSE_Info        *tseinfop;
   
@@ -231,18 +176,8 @@ private:
         STSEinfo(const STSEinfo&);
         ~STSEinfo();
     };
-    struct SSeqrefs : public CObject
-    {
-        typedef CReader::TSeqrefs TSeqrefs;
-  
-        TSeqrefs        m_Sr;
-        CRefresher      m_Timer;
-        SSeqrefs();
-        SSeqrefs(const SSeqrefs&);
-        ~SSeqrefs();
-    };
 
-    typedef map<CSeqref::TKeyByTSE, CRef<STSEinfo> >    TSr2TSEinfo;
+    typedef map<TKeyByTSE, CRef<STSEinfo> >    TSr2TSEinfo;
     typedef map<CSeq_id_Handle, CRef<SSeqrefs> >        TSeqId2Seqrefs;
   
     CRef<CReader>   m_Driver;
@@ -252,7 +187,7 @@ private:
   
     CTimer          m_Timer;
   
-    SLeveledMutex   m_Locks;
+    CGBLGuard::SLeveledMutex m_Locks;
   
     STSEinfo*       m_UseListHead;
     STSEinfo*       m_UseListTail;
@@ -268,12 +203,6 @@ private:
     // private code
     //
 
-    typedef int TMask;
-  
-    TMask x_Request2SeqrefMask(const EChoice choice);
-    //TMask x_Request2BlobMask(const EChoice choice);
-    TMask x_Request2SeqrefMask(const CSeq_annot::C_Data::E_Choice choice);
-  
     void            x_GetRecords(const char* type_name,
                                  const CSeq_id_Handle& idh,
                                  TMask sr_mask);
@@ -281,10 +210,8 @@ private:
                                  TMask sr_mask);
     CRef<SSeqrefs>  x_ResolveHandle(const CSeq_id_Handle& h);
     bool            x_NeedMoreData(const STSEinfo& tse);
-    void            x_GetData(CRef<STSEinfo> tse,
-                              CReader::TConn conn);
-    void            x_GetChunk(CRef<STSEinfo> tse,
-                               CReader::TConn conn,
+    void            x_GetData(CRef<STSEinfo> tse, TConn conn);
+    void            x_GetChunk(CRef<STSEinfo> tse, TConn conn,
                                CTSE_Chunk_Info& chunk_info);
     void            x_GetChunk(CRef<STSEinfo> tse,
                                CTSE_Chunk_Info& chunk_info);
@@ -301,6 +228,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.43  2003/11/26 17:55:53  vasilche
+ * Implemented ID2 split in ID1 cache.
+ * Fixed loading of splitted annotations.
+ *
  * Revision 1.42  2003/10/27 15:05:41  vasilche
  * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
  * Added recognition of ID1 error codes: private, etc.

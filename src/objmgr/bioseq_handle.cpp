@@ -103,7 +103,8 @@ const CBioseq& CBioseq_Handle::GetBioseq(void) const
 const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
 {
     // Can not use m_TSE->m_TSE since the handle may be unresolved yet
-    return x_GetDataSource().GetTSE(x_GetBioseq_Info().GetTSE_Info());
+    CConstRef<CTSE_Info> tse_info(&x_GetBioseq_Info().GetTSE_Info());
+    return x_GetDataSource().GetTSE(*tse_info);
 }
 
 
@@ -401,6 +402,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/11/26 17:55:57  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.47  2003/11/10 18:12:43  grichenk
 * Added MapLocation()
 *

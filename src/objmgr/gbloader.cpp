@@ -47,15 +47,20 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/interfaces.hpp>
 
-#include "gbload_util.hpp"
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+static
+CSeqref::TFlags x_Request2SeqrefMask(CGBDataLoader::EChoice choice);
+#if 0
+static
+CSeqref::TFlags x_Request2SeqrefMask(CSeq_annot::C_Data::E_Choice choice);
+#endif
 
 //=======================================================================
 //   GBLoader sub classes 
@@ -71,6 +76,17 @@ static const char* const DRV_PUBSEQOS = "PUBSEQOS";
 static const char* const DRV_ID1 = "ID1";
 
 
+SSeqrefs::SSeqrefs(const CSeq_id_Handle& h)
+    : m_Handle(h)
+{
+}
+
+
+SSeqrefs::~SSeqrefs(void)
+{
+}
+
+
 CGBDataLoader::STSEinfo::STSEinfo()
     : next(0), prev(0), locked(0), tseinfop(0), m_LoadState(eLoadStateNone)
 {
@@ -78,16 +94,6 @@ CGBDataLoader::STSEinfo::STSEinfo()
 
 
 CGBDataLoader::STSEinfo::~STSEinfo()
-{
-}
-
-
-CGBDataLoader::SSeqrefs::SSeqrefs()
-{
-}
-
-
-CGBDataLoader::SSeqrefs::~SSeqrefs()
 {
 }
 
@@ -556,31 +562,31 @@ void CGBDataLoader::GC(void)
 }
 
 
-CGBDataLoader::TMask CGBDataLoader::x_Request2SeqrefMask(const EChoice choice)
+CSeqref::TFlags x_Request2SeqrefMask(CGBDataLoader::EChoice choice)
 {
     switch(choice) {
-    case eBlob:
-    case eBioseq:
-    case eAll:
+    case CGBDataLoader::eBlob:
+    case CGBDataLoader::eBioseq:
+    case CGBDataLoader::eAll:
         // whole bioseq
         return CSeqref::fHasAllLocal;
-    case eCore:
-    case eBioseqCore:
+    case CGBDataLoader::eCore:
+    case CGBDataLoader::eBioseqCore:
         // everything except bioseqs & annotations
         return CSeqref::fHasCore;
-    case eSequence:
+    case CGBDataLoader::eSequence:
         // seq data
         return CSeqref::fHasSeqMap|CSeqref::fHasSeqData;
-    case eFeatures:
+    case CGBDataLoader::eFeatures:
         // SeqFeatures
         return CSeqref::fHasFeatures;
-    case eGraph:
+    case CGBDataLoader::eGraph:
         // SeqGraph
         return CSeqref::fHasGraph;
-    case eAlign:
+    case CGBDataLoader::eAlign:
         // SeqGraph
         return CSeqref::fHasAlign;
-    case eAnnot:
+    case CGBDataLoader::eAnnot:
         // all annotations
         return CSeqref::fHasAlign | CSeqref::fHasGraph |
             CSeqref::fHasFeatures | CSeqref::fHasExternal;
@@ -589,9 +595,8 @@ CGBDataLoader::TMask CGBDataLoader::x_Request2SeqrefMask(const EChoice choice)
     }
 }
 
-
-CGBDataLoader::TMask
-CGBDataLoader::x_Request2SeqrefMask(const CSeq_annot::C_Data::E_Choice choice)
+#if 0
+CSeqref::TFlags x_Request2SeqrefMask(const CSeq_annot::C_Data::E_Choice choice)
 {
     switch(choice) {
     case CSeq_annot::C_Data::e_not_set:
@@ -606,7 +611,7 @@ CGBDataLoader::x_Request2SeqrefMask(const CSeq_annot::C_Data::E_Choice choice)
         return 0;
     }
 }
-
+#endif
 
 void CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                                  TMask sr_mask)
@@ -715,7 +720,7 @@ void CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
         // in case of any error we'll force reloading seqrefs
         
         CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_ResolveHandle");
-        g.Lock(&*sr);
+        g.Lock();
         sr->m_Timer.Reset();
         m_Driver->PurgeSeqrefs(sr->m_Sr, *sih.GetSeqId());
     }
@@ -815,61 +820,110 @@ public:
 };
 
 
-CRef<CGBDataLoader::SSeqrefs>
-CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
+CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
 {
     CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_ResolveHandle");
 
     CRef<SSeqrefs> sr;
     TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(h);
     if (bsit == m_Bs2Sr.end() ) {
-        sr.Reset(new SSeqrefs());
+        sr.Reset(new SSeqrefs(h));
         m_Bs2Sr[h] = sr;
     }
     else {
         sr = bsit->second;
     }
 
-    g.Lock(&*sr);
+    int key = sr->m_Handle.GetHash();
+    g.Lock(key);
     if( !sr->m_Timer.NeedRefresh(m_Timer) )
         return sr;
     g.Local();
-    //LOG_POST( "ResolveHandle-before("<< h.AsString()<<") "<<sr->m_Sr.size());
-  
+
     SSeqrefs::TSeqrefs osr;
     bool got = false;
-    for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
-        CTimerGuard tg(m_Timer);
-        CReader::TConn conn = m_Locks.m_Pool.Select(&*sr);
-        try {
+
+    CConstRef<CSeq_id> seq_id = h.GetSeqId();
+    if ( !seq_id->IsGi() ) {
+        //LOG_POST("ResolveHandle-b("<<h.AsString()<<") "<<sr->m_Sr.size());
+
+        int gi = 0;
+        
+        for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
             osr.clear();
-            m_Driver->RetrieveSeqrefs(osr, *h.GetSeqId(), conn);
-            got = true;
-            break;
-        }
-        catch ( CLoaderException& e ) {
-            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
-                throw;
+            CTimerGuard tg(m_Timer);
+            CReader::TConn conn = m_Locks.m_Pool.Select(key);
+            try {
+                gi = m_Driver->ResolveSeq_id_to_gi(*seq_id, conn);
+                got = true;
+                break;
             }
-            LOG_POST(e.what());
+            catch ( CLoaderException& e ) {
+                if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                    throw;
+                }
+                LOG_POST(e.what());
+            }
+            catch(const exception &e) {
+                LOG_POST(e.what());
+            }
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
         }
-        catch(const exception &e) {
-            LOG_POST(e.what());
+        if ( !got ) {
+            ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve failed: "
+                     "exceeded maximum attempts count");
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Multiple attempts to resolve Seq-id failed");
         }
-        LOG_POST("GenBank connection failed: Reconnecting....");
-        m_Driver->Reconnect(conn);
+
+        g.Lock();
+        CSeq_id gi_id;
+        gi_id.SetGi(gi);
+        CRef<SSeqrefs> gi_sr =
+            x_ResolveHandle(CSeq_id_Handle::GetHandle(gi_id));
+        if ( gi_sr ) {
+            osr = gi_sr->m_Sr;
+        }
     }
-    if ( !got ) {
-        ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve request failed: "
-                 "exceeded maximum attempts count");
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Multiple attempts to resolve Seq-id failed");
+    else {
+        int gi = seq_id->GetGi();
+        
+        //LOG_POST("ResolveHandle-b("<<h.AsString()<<") "<<sr->m_Sr.size());
+        
+        for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
+            CTimerGuard tg(m_Timer);
+            CReader::TConn conn = m_Locks.m_Pool.Select(key);
+            try {
+                osr.clear();
+                m_Driver->RetrieveSeqrefs(osr, gi, conn);
+                got = true;
+                break;
+            }
+            catch ( CLoaderException& e ) {
+                if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                    throw;
+                }
+                LOG_POST(e.what());
+            }
+            catch(const exception &e) {
+                LOG_POST(e.what());
+            }
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
+        }
+        if ( !got ) {
+            ERR_POST("CGBLoader:x_ResolveHandle: gi resolve failed: "
+                     "exceeded maximum attempts count");
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Multiple attempts to resolve Seq-id failed");
+        }
     }
+
+    g.Lock(); // will unlock everything and lock lookupMutex again 
 
     swap(sr->m_Sr, osr);
     sr->m_Timer.Reset(m_Timer);
-  
-    g.Lock(); // will unlock everything and lock lookupMutex again 
   
     GBLOG_POST( "ResolveHandle(" << h << ") " << sr->m_Sr.size() );
     ITERATE(SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
@@ -997,6 +1051,16 @@ void CGBDataLoader::x_GetChunk(CRef<STSEinfo> tse,
 }
 
 
+const CSeqref& CGBDataLoader::GetSeqref(const CTSE_Info& tse_info)
+{
+    if ( &tse_info.GetDataSource() != GetDataSource() ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "not mine TSE");
+    }
+    return *GetTSEinfo(tse_info)->seqref;
+}
+
+
 void
 CGBDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
@@ -1014,6 +1078,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2003/11/26 17:55:58  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.90  2003/10/27 19:28:02  vasilche
 * Removed debug message.
 *

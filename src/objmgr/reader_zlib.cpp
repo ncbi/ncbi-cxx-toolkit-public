@@ -59,8 +59,8 @@ public:
         }
 
     enum {
-        kMax_UncomprSize = 128*1024,
-        kMax_ComprSize = 128*1024
+        kMax_UncomprSize = 1024*1024,
+        kMax_ComprSize = 1024*1024
     };
 
 private:
@@ -255,6 +255,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2003/11/26 17:55:59  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.9  2003/10/21 14:27:35  vasilche
 * Added caching of gi -> sat,satkey,version resolution.
 * SNP blobs are stored in cache in preprocessed format (platform dependent).

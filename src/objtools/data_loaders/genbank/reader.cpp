@@ -31,6 +31,7 @@
 
 #include <serial/pack_string.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
@@ -220,6 +221,26 @@ void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
 }
 
 
+void CReader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
+{
+    int gi;
+    if ( id.IsGi() ) {
+        gi = id.GetGi();
+    }
+    else {
+        gi = ResolveSeq_id_to_gi(id, conn);
+    }
+    if ( gi ) {
+        RetrieveSeqrefs(srs, gi, conn);
+    }
+}
+
+
+void CReader::PurgeSeq_id_to_gi(const CSeq_id& /*id*/)
+{
+}
+
+
 void CReader::PurgeSeqrefs(const TSeqrefs& /*srs*/,
                            const CSeq_id& /*id*/)
 {
@@ -232,22 +253,31 @@ CRef<CTSE_Info> CReader::GetBlob(const CSeqref& seqref,
 {
     CRef<CTSE_Info> ret;
     if ( chunk_info ) {
-        GetSNPChunk(seqref, *chunk_info, conn);
-    }
-    else {
-        bool is_snp = IsSNPSeqref(seqref);
-        if ( is_snp ) {
-            ret = MakeSNPBlob(seqref);
+        if ( IsSNPSeqref(seqref) && chunk_info->GetChunkId()==kSNP_ChunkId ) {
+            GetSNPChunk(seqref, *chunk_info, conn);
         }
         else {
-            ret = GetMainBlob(seqref, conn);
+            GetTSEChunk(seqref, *chunk_info, conn);
+        }
+    }
+    else {
+        CRef<CID2S_Split_Info> split_info;
+        if ( IsSNPSeqref(seqref) ) {
+            ret = GetSNPBlob(split_info, seqref, conn);
+        }
+        else {
+            ret = GetTSEBlob(split_info, seqref, conn);
+        }
+        if ( split_info ) {
+            ret->SetSplitInfo(*split_info);
         }
     }
     return ret;
 }
 
 
-CRef<CTSE_Info> CReader::MakeSNPBlob(const CSeqref& seqref)
+CRef<CTSE_Info> CReader::GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
+                                    const CSeqref& seqref, TConn /*conn*/)
 {
     _ASSERT(IsSNPSeqref(seqref));
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
@@ -268,7 +298,7 @@ CRef<CTSE_Info> CReader::MakeSNPBlob(const CSeqref& seqref)
     ret->SetName("SNP");
 
     // make ID2S-Split-Info
-    CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
+    CRef<CID2S_Split_Info> info(new CID2S_Split_Info);
     {{
         CNcbiStrstream str;
         str <<
@@ -294,11 +324,19 @@ CRef<CTSE_Info> CReader::MakeSNPBlob(const CSeqref& seqref)
             "  }\n"
             "}\n";
         CObjectIStreamAsn in(str);
-        in >> *split_info;
+        in >> *info;
     }}
-    // add split info
-    ret->SetSplitInfo(*split_info);
+    split_info = info;
     return ret;
+}
+
+
+void CReader::GetTSEChunk(const CSeqref& seqref,
+                          CTSE_Chunk_Info& chunk_info,
+                          TConn conn)
+{
+    NCBI_THROW(CLoaderException, eNoData,
+               "Chunks are not implemented");
 }
 
 
@@ -320,6 +358,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.26  2003/11/26 17:55:58  vasilche
+ * Implemented ID2 split in ID1 cache.
+ * Fixed loading of splitted annotations.
+ *
  * Revision 1.25  2003/10/27 15:05:41  vasilche
  * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
  * Added recognition of ID1 error codes: private, etc.

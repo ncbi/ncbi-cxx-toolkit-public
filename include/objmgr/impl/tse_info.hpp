@@ -160,6 +160,9 @@ public:
 
     typedef pair<size_t, size_t> TIndexRange;
 
+    CRef<CTSE_Chunk_Info> GetNotLoadedChunk(void);
+    void LoadAllChunks(void);
+
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
@@ -383,6 +386,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/11/26 17:55:55  vasilche
+* Implemented ID2 split in ID1 cache.
+* Fixed loading of splitted annotations.
+*
 * Revision 1.42  2003/10/27 16:47:12  vasilche
 * Fixed error:
 * src/objmgr/data_source.cpp", line 913: Fatal: Assertion failed: (it != tse_map.end() && it->first == id)
