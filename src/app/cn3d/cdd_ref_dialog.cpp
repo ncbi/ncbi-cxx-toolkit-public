@@ -59,14 +59,14 @@
 // Declare window functions
 
 #define ID_L_REFS 10000
-#define ID_B_ADD 10001
-#define ID_B_LAUNCH 10002
+#define ID_B_LAUNCH 10001
+#define ID_B_UP 10002
 #define ID_B_EDIT 10003
-#define ID_B_DELETE 10004
-#define ID_B_DONE 10005
-#define ID_B_UP 10006
-#define ID_B_DOWN 10007
-wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+#define ID_B_DOWN 10004
+#define ID_B_ADD 10005
+#define ID_B_DELETE 10006
+#define ID_B_DONE 10007
+wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -100,9 +100,8 @@ CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
         return;
     }
 
-    // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupReferencesDialog(panel, false);
+    // construct the dialog
+    wxSizer *topSizer = SetupReferencesDialog(this, false);
 
     // fill in list box with available references
     ResetListBox();
@@ -122,7 +121,6 @@ CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
 
     // call sizer stuff
     topSizer->Fit(this);
-    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 }
 
@@ -197,7 +195,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             }
         }
     }
-    
+
     else if ((event.GetId() == ID_B_UP || event.GetId() == ID_B_DOWN) && descr) {
         CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end(), p = descrSet->Set().end(), n;
         for (d=descrSet->Set().begin(); d!=de; d++) {
@@ -256,11 +254,11 @@ END_SCOPE(Cn3D)
 // cdd_ref_dialog.wdr.
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
-    wxStaticBox *item2 = new wxStaticBox( parent, -1, "PubMed IDs" );
+    wxStaticBox *item2 = new wxStaticBox( parent, -1, wxT("PubMed IDs") );
     wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
 
     wxFlexGridSizer *item3 = new wxFlexGridSizer( 1, 0, 0 );
@@ -271,23 +269,23 @@ wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 
     wxGridSizer *item5 = new wxGridSizer( 2, 0, 0 );
 
-    wxButton *item6 = new wxButton( parent, ID_B_ADD, "Add", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item6 = new wxButton( parent, ID_B_LAUNCH, wxT("Launch"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item7 = new wxButton( parent, ID_B_LAUNCH, "Launch", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item7 = new wxButton( parent, ID_B_UP, wxT("Move Up"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item8 = new wxButton( parent, ID_B_EDIT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item8 = new wxButton( parent, ID_B_EDIT, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item9 = new wxButton( parent, ID_B_DELETE, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item9 = new wxButton( parent, ID_B_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item12 = new wxButton( parent, ID_B_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item10 = new wxButton( parent, ID_B_ADD, wxT("Add"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item13 = new wxButton( parent, ID_B_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item11 = new wxButton( parent, ID_B_DELETE, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item3->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
@@ -295,12 +293,12 @@ wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxBoxSizer *item10 = new wxBoxSizer( wxHORIZONTAL );
+    wxBoxSizer *item12 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item11 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
-    item10->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item13 = new wxButton( parent, ID_B_DONE, wxT("Done"), wxDefaultPosition, wxDefaultSize, 0 );
+    item12->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -320,6 +318,9 @@ wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/06/22 09:47:40  thiessen
+* rearrange buttons
+*
 * Revision 1.8  2003/06/13 19:12:58  thiessen
 * add move up/down buttons, selection control
 *
