@@ -62,7 +62,7 @@ methods.
 You can do this only with <tt>new</tt> operator,
 since static or in-stack thread objects are prohibited
 (see below). The best way to reference thread objects
-is to use <i><b>CRef<CThread></i></b> class.
+is to use <i><b>CRef&lt;CThread&gt;</i></b> class.
 <li>Call <i><b>Run()</b></i> to start the thread execution.
 <li>Call <i><b>Detach()</b></i> to let the thread
 run independently (it will destroy itself on termination then),
@@ -93,7 +93,7 @@ private:
 
 void* CMyThread::Main(void)
 {
-    cout << "Thread " << m_Index << endl;
+    cout &lt;&lt; "Thread " &lt;&lt; m_Index &lt;&lt; endl;
 
     heap_var = new int; // to be destroyed by OnExit()
     *heap_var = 12345;
@@ -111,10 +111,10 @@ void CMyThread::OnExit(void)
 int main(void)
 {
     CMyThread* thread = new CMyThread(33);
-    thread->Run();
+    thread-&gt;Run();
     int* result;
-    thread->Join(reinterpret_cast<void**>(&result));
-    cout << "Returned value: " << *result << endl;
+    thread-&gt;Join(reinterpret_cast&lt;void**&gt;(&result));
+    cout &lt;&lt; "Returned value: " &lt;&lt; *result &lt;&lt; endl;
     delete result;
     return 0;
 }
@@ -314,7 +314,7 @@ unless detached or joined. Either <i><b>Detach()</i></b> or <i><b>Join()</i></b>
 destroy the object if the thread has been terminated. One should
 keep in mind, that it is not safe to use the thread object
 after a call to <i><b>Join()</i></b> or <i><b>Detach()</i></b> since the object may happen
-to be destroyed. To avoid this situation, the <i><b>CRef<CThread></i></b> can
+to be destroyed. To avoid this situation, the <i><b>CRef&lt;CThread&gt;</i></b> can
 be used. The thread object will not be destroyed until there is
 at least one <i><b>CRef</i></b> to the object (although it may be terminated
 and scheduled for destruction).
@@ -454,7 +454,7 @@ void Add2(void)
 {
     CMutexGuard guard(CountMutex);
     Count += 2;
-    if (Count < 20) {
+    if (Count &lt; 20) {
         Add3();
     }
 }
@@ -463,7 +463,7 @@ void Add3(void)
 {
     CMutexGuard guard(CountMutex);
     Count += 3;
-    if (Count < 20) {
+    if (Count &lt; 20) {
         Add2();
     }
 }
@@ -559,13 +559,13 @@ void* CMyThread::Main()
 {
     int* p_value = new int;
     *p_value = 1;
-    tls->SetValue(p_value, TlsCleanup);
+    tls-&gt;SetValue(p_value, TlsCleanup);
     ...
     p_value = new int;
     *p_value = 2;
-    tls->SetValue(p_value, TlsCleanup);
+    tls-&gt;SetValue(p_value, TlsCleanup);
     ...
-    if (*tls->GetValue() == 2) {
+    if (*tls-&gt;GetValue() == 2) {
         ...
     }
     ...
@@ -578,7 +578,7 @@ In the above example the second call to <i><b>SetValue()</i></b> will cause
 the <i><b>TlsCleanup</i></b> to deallocate the first integer variable.
 To cleanup the last value stored in each TLS, the
 <i><b>CThread::Exit()</i></b> function will automatically call
-<i><b>CTls<>::Reset()</i></b> for
+<i><b>CTls&lt;&gt;::Reset()</i></b> for
 each TLS used by the thread.
 <p>
 
