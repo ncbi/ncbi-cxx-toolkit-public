@@ -108,6 +108,7 @@ public:
 
     // All data (except for BLOB data) is returned as CVariant.
     virtual const CVariant& GetVariant(unsigned int col) = 0;
+    virtual const CVariant& GetVariant(const string& colName) = 0;
   
     // Reads unformatted data, returns bytes actually read.
     // Advances to next column as soon as data is read from the previous one.
@@ -118,7 +119,7 @@ public:
     // blob_size is the size of the BLOB to be written
     virtual istream& GetBlobIStream(size_t buf_size = 1024) = 0;
     virtual ostream& GetBlobOStream(size_t blob_size, 
-				    size_t buf_size = 1024) = 0;
+                                    size_t buf_size = 1024) = 0;
 
     // Close resultset
     virtual void Close() = 0;
@@ -185,12 +186,16 @@ public:
     // Execute stored procedure
     virtual void Execute() = 0;
 
+    // Executes stored procedure no results returned
+    // NOTE: All resultsets are discarded.
+    virtual void ExecuteUpdate() = 0;
+
     // Get return status from the stored procedure
     virtual int GetReturnStatus() = 0;
 
     // Set input parameters
     virtual void SetParam(const CVariant& v, 
-			  const string& name) = 0;
+                          const string& name) = 0;
 
     // Set output parameter, which will be returned as resultset
     // NOTE: use CVariant(EDB_Type type) constructor or 
@@ -304,6 +309,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/05 19:36:16  kholodov
+ * Added: IResultset::GetVariant(const string& colName) to retrieve
+ * column values by column name
+ * Added: ICallableStatement::ExecuteUpdate() to skip all resultsets returned
+ * if any
+ *
  * Revision 1.4  2002/02/08 22:43:12  kholodov
  * Set/GetDataBase() renamed to Set/GetDatabase() respectively
  *
