@@ -44,7 +44,6 @@ Contents: C++ driver for running BLAST
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/api/blast_options.hpp>
@@ -278,11 +277,9 @@ CBlastApplication::InitScope(void)
         if (!m_ObjMgr) {
             throw std::runtime_error("Could not initialize object manager");
         }
-        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
-
         m_Scope.Reset(new CScope(*m_ObjMgr));
         m_Scope->AddDefaults();
-        _TRACE("Blast2seqApp: Initializing scope");
+        _TRACE("BlastApp: Initializing scope");
     }
 }
 

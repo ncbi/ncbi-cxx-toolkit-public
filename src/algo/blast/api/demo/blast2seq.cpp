@@ -44,7 +44,6 @@ static char const rcsid[] =
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <corelib/ncbitime.hpp>
@@ -228,7 +227,6 @@ CBlast2seqApplication::InitObjMgr(void)
     if (!m_ObjMgr) {
          throw std::runtime_error("Could not initialize object manager");
     }
-    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 }
 
 EProgram
@@ -529,6 +527,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/08/17 17:22:01  dondosha
+ * Removed call to register GenBank loader in object manager
+ *
  * Revision 1.50  2004/08/11 15:25:14  dondosha
  * Use appropriate derived class for options handle in case of megablast and discontiguous megablast; use scantype argument 0 for default setting and 1-3 for specific types
  *
