@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/01 21:49:10  gouriano
+* minor changes to make it compilable and run on Solaris Workshop
+*
 * Revision 1.5  2002/01/29 17:05:53  grichenk
 * GetHandle() -> GetKey()
 *
@@ -161,6 +164,7 @@ void CBioseq_Handle::x_ResolveTo(
 inline
 CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
     : m_Value(value),
+      m_Scope(0),
       m_DataSource(0),
       m_Entry(0)
 {

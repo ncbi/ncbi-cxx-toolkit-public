@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/01 21:49:51  gouriano
+* minor changes to make it compilable and run on Solaris Workshop
+*
 * Revision 1.1  2002/01/23 21:57:49  grichenk
 * Splitted id_handles.hpp
 *
@@ -110,6 +113,13 @@ protected:
 };
 
 
+inline
+void CSeq_id_Which_Tree::x_RemoveFromKeyMap(TSeq_id_Key key)
+{
+    m_KeyMap.erase(key);
+}
+
+
 void CSeq_id_Which_Tree::DropKeysRange(TSeq_id_Key first, TSeq_id_Key last)
 {
     TKeyMap::iterator it_first = m_KeyMap.lower_bound(first);
@@ -139,13 +149,6 @@ inline
 void CSeq_id_Which_Tree::x_AddToKeyMap(const CSeq_id_Handle& handle)
 {
     m_KeyMap[handle.m_Value] = handle;
-}
-
-
-inline
-void CSeq_id_Which_Tree::x_RemoveFromKeyMap(TSeq_id_Key key)
-{
-    m_KeyMap.erase(key);
 }
 
 

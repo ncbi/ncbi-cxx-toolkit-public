@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/01 21:49:38  gouriano
+* minor changes to make it compilable and run on Solaris Workshop
+*
 * Revision 1.4  2002/01/30 22:09:28  gouriano
 * changed CSeqMap interface
 *
@@ -85,9 +88,19 @@ void CSeqMap::Add(CSegmentInfo& interval)
         throw runtime_error
             ("CSeqMap::Add() -- duplicate interval in the seq-map");
     }
-    m_Data.push_back(&interval);
+//    m_Data.push_back(&interval);
     // Sort intervals by starting position
-    sort(m_Data.begin(), m_Data.end());
+//    sort(m_Data.begin(), m_Data.end());
+// insertion sort
+    for ( it = m_Data.begin(); it != m_Data.end(); ++it) {
+        if ((**it).GetPosition() > interval.GetPosition()) {
+            m_Data.insert(it, &interval);
+            break;
+        }
+    }
+    if (it == m_Data.end()) {
+        m_Data.push_back(&interval);
+    }
 }
 
 
@@ -147,7 +160,7 @@ CSeqMap::CSegmentInfo& CSeqMap::x_Resolve(int pos, CScope& scope)
 
 void CSeqMap::x_CalculateSegmentLengths(void)
 {
-    for (size_t i = 0; i < m_Data.size(); i++) {
+    for (size_t i = 0; i < m_Data.size()-1; i++) {
         switch (m_Data[i]->GetType()) {
         case CSeqMap::eSeqData:
         case CSeqMap::eSeqRef:
