@@ -1300,6 +1300,7 @@ double lnfact[] =
 
 #define CHAR_SET 128
 
+/** General sequence information */
 typedef struct SSequence
   {
    struct SSequence* parent;
@@ -1314,6 +1315,7 @@ typedef struct SSequence
    double entropy;
 } SSequence;
 
+/** List of sequence segments */
 typedef struct SSeg
   {
    int begin;
@@ -1322,7 +1324,7 @@ typedef struct SSeg
   } SSeg;
 
 /*---------------------------------------------------------------(SeqNew)---*/
-
+/** Initializes SSequence structure */
 static SSequence* SeqNew(void)
 {
    SSequence* seq;
@@ -1347,6 +1349,7 @@ static SSequence* SeqNew(void)
 
 /*------------------------------------------------------------(AlphaFree)---*/
 
+/** Frees the Alpha structure */
 static void AlphaFree (Alpha* palpha)
 
   {
@@ -1362,6 +1365,7 @@ static void AlphaFree (Alpha* palpha)
 
 /*--------------------------------------------------------------(SeqFree)---*/
 
+/** Frees the SSequence structure */
 static void SeqFree(SSequence* seq)
 {
    if (seq==NULL) return;
@@ -1376,6 +1380,7 @@ static void SeqFree(SSequence* seq)
 
 /*--------------------------------------------------------------(SSegFree)---*/
 
+/** Frees the SSeg structure */
 static void SegFree(SSeg* seg)
 {
    SSeg* nextseg;
@@ -1392,6 +1397,10 @@ static void SegFree(SSeg* seg)
 
 /*--------------------------------------------------------------(hasdash)---*/
 
+/** Checks if sequence contains a dash.
+ * @param win SSequence structure for a piece of a sequence [in]
+ * @return TRUE if dash is found in the sequence, otherwise FALSE [in]
+ */
 static Boolean hasdash(SSequence* win)
 {
 	register char	*seq, *seqmax;
@@ -1408,6 +1417,7 @@ static Boolean hasdash(SSequence* win)
 
 /*------------------------------------------------------------(state_cmp)---*/
 
+/** State comparison function */
 static int state_cmp(const void* s1, const void* s2)
 {
 	int *np1, *np2;
@@ -1420,6 +1430,7 @@ static int state_cmp(const void* s1, const void* s2)
 
 /*---------------------------------------------------------------(compon)---*/
 
+/** Calculates sequence composition array values. */
 static void compon(SSequence* win)
 
 {
@@ -1451,6 +1462,7 @@ static void compon(SSequence* win)
 
 /*--------------------------------------------------------------(stateon)---*/
 
+/** Calculates state array values */
 static void stateon(SSequence* win)
 
 {
@@ -1479,6 +1491,13 @@ static void stateon(SSequence* win)
 
 /*--------------------------------------------------------------(openwin)---*/
 
+/** Initializes an SSequence structure for part of sequence contained in a
+ * window.
+ * @param parent Parent (whole) sequence [in]
+ * @param start Window start in parent [in]
+ * @param length Window length in parent [in]
+ * @return Pointer to the resulting SSequence structure.
+ */
 static SSequence* openwin(SSequence* parent, Int4 start, Int4 length)
 {
    SSequence* win;
@@ -1521,6 +1540,7 @@ static SSequence* openwin(SSequence* parent, Int4 start, Int4 length)
 
 /*--------------------------------------------------------------(entropy)---*/
 
+/** Calculates entropy of an integer array */
 static double entropy(Int4* sv)
 
   {double ent;
@@ -1610,6 +1630,7 @@ static Int4 shiftwin1(SSequence* win)
 
 /*-------------------------------------------------------------(closewin)---*/
 
+/** Frees the SSequence structure corresponding to a sequence window */
 static void closewin(SSequence* win)
 {
    if (win==NULL) return;
@@ -1623,6 +1644,7 @@ static void closewin(SSequence* win)
 
 /*----------------------------------------------------------------(enton)---*/
 
+/** Calculates entropy of a sequence window */
 static void enton(SSequence* win)
 
   {
