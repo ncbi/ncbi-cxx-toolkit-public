@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/04/15 16:12:09  kuznets
+* GetChecksum() method implemented
+*
 * Revision 1.3  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *
@@ -76,6 +79,7 @@ public:
     bool ValidChecksumLine(const string& line) const;
 
     CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
+    Uint4 GetChecksum() const;
 
 private:
     CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;

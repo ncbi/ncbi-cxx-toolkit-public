@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/04/15 16:12:09  kuznets
+* GetChecksum() method implemented
+*
 * Revision 1.2  2001/01/05 20:08:52  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -87,5 +90,12 @@ bool CChecksum::ValidChecksumLine(const string& line) const
 {
     return ValidChecksumLine(line.data(), line.size());
 }
+
+
+inline Uint4 CChecksum::GetChecksum() const
+{
+    return m_Checksum;
+}
+
 
 #endif /* def CHECKSUM__HPP  &&  ndef CHECKSUM__INL */
