@@ -36,6 +36,7 @@ EXPORTS
 IMPORTS
     Bioseq                  FROM NCBI-Sequence
     Bioseq-set              FROM NCBI-Seqset
+    Score-matrix-parameters FROM NCBI-ScoreMat
     Seq-id,
     Seq-loc                 FROM NCBI-Seqloc
     Seq-align,
@@ -155,6 +156,10 @@ Blast4-error-flags ::= ENUMERATED {
 }
 
 Blast4-error-code ::= INTEGER {
+	-- warnings
+	conversion-warning		(1024),
+
+	-- errors
     internal-error          (2048),
     not-implemented         (2049),
     not-allowed             (2050),
@@ -207,17 +212,6 @@ Blast4-ka-block ::= SEQUENCE {
 Blast4-mask ::= SEQUENCE {
     locations               SEQUENCE OF Seq-loc,
     frame                   Blast4-frame-type
-}
-
-Blast4-matrix ::= SEQUENCE {
-    residue-type            Blast4-residue-type,
-    name                    VisibleString,
-    comments                SEQUENCE OF VisibleString OPTIONAL,
-    row-length              INTEGER,
-    column-length           INTEGER,
-    scores                  SEQUENCE OF INTEGER OPTIONAL,
-    karlin-k                REAL,
-    pos-freqs               SEQUENCE OF REAL OPTIONAL
 }
 
 Blast4-matrix-id ::= SEQUENCE {
@@ -277,7 +271,7 @@ Blast4-value ::= CHOICE {
     boolean                 BOOLEAN,
     cutoff                  Blast4-cutoff,
     integer                 INTEGER,
-    matrix                  Blast4-matrix,
+    matrix                  Score-matrix-parameters,
     real                    REAL,
     seq-align               Seq-align,
     seq-id                  Seq-id,
@@ -291,7 +285,7 @@ Blast4-value ::= CHOICE {
     boolean-list            SEQUENCE OF BOOLEAN,
     cutoff-list             SEQUENCE OF Blast4-cutoff,
     integer-list            SEQUENCE OF INTEGER,
-    matrix-list             SEQUENCE OF Blast4-matrix,
+    matrix-list             SEQUENCE OF Score-matrix-parameters,
     real-list               SEQUENCE OF REAL,
     seq-align-list          SEQUENCE OF Seq-align,
     seq-id-list             SEQUENCE OF Seq-id,
