@@ -174,6 +174,7 @@ public:
 };
 
 
+/*
 template <class TBase>
 class CErrnoTemplException : public TBase
 {
@@ -237,6 +238,7 @@ protected:
 private:
     int m_Errno;
 };
+*/
 
 class CErrnoMoreException : public CErrnoTemplException<CCoreException>
 {
@@ -278,6 +280,8 @@ private:
 
     void t1(void);
     void m1(void);
+
+    void tp1(void);
 private:
     virtual int  Run(void);
 };
@@ -434,12 +438,17 @@ void CExceptApplication::s2(void)
 
 void CExceptApplication::t1(void)
 {
-    NCBI_THROW(CErrnoTemplException<CCoreException>,eErrnoTempl2,"from t1");
+    NCBI_THROW(CErrnoTemplException<CCoreException>,eErrnoTempl,"from t1");
 }
 
 void CExceptApplication::m1(void)
 {
     NCBI_THROW(CErrnoMoreException,eMore2,"from m1");
+}
+
+void CExceptApplication::tp1(void)
+{
+    NCBI_THROW2(CParseTemplException<CCoreException>,eParseTempl,"from t1",123);
 }
 
 //---------------------------------------------------------------------------
@@ -654,11 +663,11 @@ int CExceptApplication::Run(void)
         t1();
     } catch (CErrnoTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
-        _ASSERT(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl2);
+        _ASSERT(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl);
     } catch (CCoreException& e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         const CErrnoTemplException<CCoreException>* pe = UppermostCast< CErrnoTemplException<CCoreException> > (e);
-        _ASSERT(pe->GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl2);
+        _ASSERT(pe->GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl);
     } catch (exception&) {
         _ASSERT(0);
     }
@@ -671,6 +680,15 @@ int CExceptApplication::Run(void)
     } catch (CCoreException e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
+    } catch (exception&) {
+        _ASSERT(0);
+    }
+
+    try {
+        tp1();
+    } catch (CParseTemplException<CCoreException>& e) {
+        NCBI_REPORT_EXCEPTION("caught as CParseTemplException<CCoreException>", e);
+        _ASSERT(e.GetErrCode() == CParseTemplException<CCoreException>::eParseTempl);
     } catch (exception&) {
         _ASSERT(0);
     }
@@ -696,6 +714,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2003/02/14 19:32:49  gouriano
+ * added testing of template-based errno and parse exceptions
+ *
  * Revision 6.9  2003/01/31 14:51:00  gouriano
  * corrected template-based exception definition
  *
