@@ -65,6 +65,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objects/seq/MolInfo.hpp>
+
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
 
@@ -757,10 +759,10 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         ValidateCommonMRNAProduct(feat);
     }
 
-    if ( rna.GetExt ().Which() == CRNA_ref::C_Ext::e_TRNA ) {
+    if ( rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.IsSetAnticodon () ) {
-            ECompare comp = Compare( trna.GetAnticodon (), feat.GetLocation () );
+            ECompare comp = Compare(trna.GetAnticodon(), feat.GetLocation());
             if ( comp != eContained  &&  comp != eSame ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_Range,
                     "Anticodon location not in tRNA", feat);
@@ -782,16 +784,67 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
         /* tRNA with string extension */
-        if ( rna.GetExt ().Which () == CRNA_ref::C_Ext::e_Name ) {
+        if ( rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                    "Unparsed product qualifier in tRNA", feat);
+                "Unparsed product qualifier in tRNA", feat);
         }
     }
 
     if ( rna_type == CRNA_ref::eType_unknown ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_RNAtype0,
-                    "RNA type 0 (unknown) not supported", feat);
+            "RNA type 0 (unknown) not supported", feat);
     }
+
+    if ( feat.IsSetProduct() ) {
+        ValidateRnaProductType(rna, feat);
+    }
+}
+
+
+void CValidError_feat::ValidateRnaProductType
+(const CRNA_ref& rna,
+ const CSeq_feat& feat)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if ( !bsh ) {
+        return;
+    }
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
+    if ( !di ) {
+        return;
+    }
+    const CMolInfo& mol_info = di->GetMolinfo();
+    if ( !mol_info.IsSetBiomol() ) {
+        return;
+    }
+    int biomol = mol_info.GetBiomol();
+    
+    switch ( rna.GetType() ) {
+
+    case CRNA_ref::eType_mRNA:
+        if ( biomol == CMolInfo::eBiomol_mRNA ) {
+            return;
+        }        
+        break;
+
+    case CRNA_ref::eType_tRNA:
+        if ( biomol == CMolInfo::eBiomol_tRNA ) {
+            return;
+        }
+        break;
+
+    case CRNA_ref::eType_rRNA:
+        if ( biomol == CMolInfo::eBiomol_snRNA ) {
+            return;
+        }
+        break;
+
+    default:
+        return;
+    }
+
+    PostErr(eDiag_Error, eErr_SEQ_FEAT_RnaProductMismatch,
+        "Type of RNA does not match MolInfo of product Bioseq", feat);
 }
 
 
@@ -1998,6 +2051,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/01/21 20:11:11  shomrat
+* Added check for RNA product mismatch
+*
 * Revision 1.5  2003/01/10 16:29:51  shomrat
 * Added Checks for eErr_SEQ_FEAT_UnnecessaryCitPubEquiv and eErr_SEQ_DESCR_BioSourceNeedsFocus
 *
