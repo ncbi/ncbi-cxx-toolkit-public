@@ -591,8 +591,9 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
     string path = sentry.registry ? sentry.registry->Get("NCBI", "Data") : "";
 
-    full_path = retval = CFile::MakePath(path, mtx);
+    full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
+		retval = full_path;
         retval[retval.find(mtx)] = NULLB;
         return retval;
     }
@@ -707,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/09/29 21:38:29  camacho
+* Assign retval only when successfully found path to matrix
+*
 * Revision 1.30  2003/09/29 20:35:03  camacho
 * Replace abort() with exception in GetNumberOfFrames
 *
