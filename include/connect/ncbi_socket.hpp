@@ -226,7 +226,7 @@ public:
         EIO_Event m_Event;
         EIO_Event m_REvent;        
     };
-    static EIO_Status Poll(vector<SPoll>&  sockets,
+    static EIO_Status Poll(vector<SPoll>&  polls,
                            const STimeout* timeout,
                            size_t*         n_ready = 0);
 
@@ -413,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/08/15 18:45:03  lavr
+ * CSocketAPI::Poll() documented in more details in ncbi_socket.h(SOCK_Poll)
+ *
  * Revision 6.5  2002/08/14 15:04:37  sadykov
  * Prepend "inline" for GetOSHandle() method impl
  *
