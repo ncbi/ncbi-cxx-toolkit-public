@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2004/04/26 14:15:28  kholodov
+* Added: ExecuteQuery() method
+*
 * Revision 1.12  2004/04/22 15:14:53  kholodov
 * Added: PurgeResults()
 *
@@ -111,6 +114,7 @@ public:
     
     virtual void Execute(const string& sql);
     virtual void ExecuteUpdate(const string& sql);
+    virtual IResultSet* ExecuteQuery(const string& sql);
 
     virtual void ExecuteLast();
 

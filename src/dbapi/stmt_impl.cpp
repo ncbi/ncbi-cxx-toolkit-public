@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.21  2004/04/26 14:15:28  kholodov
+* Added: ExecuteQuery() method
+*
 * Revision 1.20  2004/04/22 15:14:53  kholodov
 * Added: PurgeResults()
 *
@@ -215,6 +218,16 @@ void CStatement::Execute(const string& sql)
     ExecuteLast();
 }
 
+IResultSet* CStatement::ExecuteQuery(const string& sql)
+{
+    Execute(sql);
+    while( HasMoreResults() ) {
+        if( HasRows() ) {
+            return GetResultSet();
+        }
+    }
+    return 0;
+}
 void CStatement::ExecuteUpdate(const string& sql)
 {
     Execute(sql);
@@ -271,12 +284,14 @@ void CStatement::FreeResources()
   
 void CStatement::PurgeResults()
 {
-    GetBaseCmd()->DumpResults();
+    if( GetBaseCmd() != 0 )
+        GetBaseCmd()->DumpResults();
 }
 
 void CStatement::Cancel()
 {
-    GetBaseCmd()->Cancel();
+    if( GetBaseCmd() != 0 )
+        GetBaseCmd()->Cancel();
     m_rowCount = -1;
 }
 
@@ -284,7 +299,7 @@ CDB_LangCmd* CStatement::GetLangCmd()
 {
     //if( m_cmd == 0 )
     //throw CDbException("CStatementImpl::GetLangCmd(): no cmd structure");
-    return dynamic_cast<CDB_LangCmd*>(m_cmd);
+    return (CDB_LangCmd*)m_cmd;
 }
 
 void CStatement::Action(const CDbapiEvent& e) 

@@ -202,6 +202,12 @@ public:
     // NOTE: All resultsets are discarded.
     virtual void ExecuteUpdate(const string& sql) = 0;
 
+    // Exectues SQL statement and returns the first resultset.
+    // NOTE: If there is more than one resultset, the rest remain
+    // pending unless either PurgeResults() is called or next statement
+    // is run or the statement is closed.
+    virtual IResultSet* ExecuteQuery(const string& sql) = 0;
+
     // Executes the last command (with changed parameters, if any)
     virtual void ExecuteLast() = 0;
 
@@ -260,7 +266,7 @@ protected:
     // Mask unused methods
     virtual void Execute(const string& /*sql*/);
     virtual void ExecuteUpdate(const string& /*sql*/);
-  
+    virtual IResultSet* ExecuteQuery(const string& /*sql*/);
 
 };
 
@@ -501,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/04/26 14:17:40  kholodov
+ * Added: ExecuteQuery() method
+ *
  * Revision 1.29  2004/04/22 15:15:09  kholodov
  * Added: PurgeResults()
  *
