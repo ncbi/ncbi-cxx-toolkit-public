@@ -41,8 +41,83 @@ Contents: Structures used for saving BLAST hits
 extern "C" {
 #endif
 
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_seqsrc.h>
-#include <algo/blast/core/blast_gapalign.h>
+
+/* One sequence segment within an HSP */
+typedef struct BlastSeg {
+   Int2 frame;  /**< Translation frame */
+   Int4 offset; /**< Start of hsp */
+   Int4 length; /**< Length of hsp */
+   Int4 end;    /**< End of HSP */
+   Int4 offset_trim; /**< Start of trimmed hsp */
+   Int4 end_trim;    /**< End of trimmed HSP */
+   Int4 gapped_start;/**< Where the gapped extension started. */
+} BlastSeg;
+
+/** BLAST_NUMBER_OF_ORDERING_METHODS tells how many methods are used
+ * to "order" the HSP's.
+*/
+#define BLAST_NUMBER_OF_ORDERING_METHODS 2
+
+/** The following structure is used in "link_hsps" to decide between
+ * two different "gapping" models.  Here link is used to hook up
+ * a chain of HSP's (this is a void* as _blast_hsp is not yet
+ * defined), num is the number of links, and sum is the sum score.
+ * Once the best gapping model has been found, this information is
+ * transferred up to the BlastHSP.  This structure should not be
+ * used outside of the function link_hsps.
+*/
+typedef struct BlastHSPLink {
+   void* link[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Used to order the HSPs
+                                           (i.e., hook-up w/o overlapping). */
+   Int2 num[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< number of HSP in the
+                                                  ordering. */
+   Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP. */
+   double xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
+                                     multiplied by the appropriate Lambda. */
+   Int4 changed;
+} BlastHSPLink;
+
+/** Structure holding all information about an HSP */
+typedef struct BlastHSP {
+   struct BlastHSP* next; /**< The next HSP */
+   struct BlastHSP* prev; /**< The previous HSP. */
+   BlastHSPLink  hsp_link;
+   Boolean linked_set;        /**< Is this HSp part of a linked set? */
+   Int2 ordering_method;/**< Which method (max or no max for gaps) was used? */
+   Int4 num;            /**< How many HSP's make up this (sum) segment */
+   Int4 sumscore;/**< Sumscore of a set of "linked" HSP's. */
+   Boolean start_of_chain; /**< If TRUE, this HSP starts a chain along the
+                              "link" pointer. */
+   Int4 score;         /**< This HSP's raw score */
+   Int4 num_ident;         /**< Number of identical base pairs in this HSP */
+   double evalue;        /**< This HSP's e-value */
+   BlastSeg query;            /**< Query sequence info. */
+   BlastSeg subject;          /**< Subject sequence info. */
+   Int2     context;          /**< Context number of query */
+   GapEditBlock* gap_info; /**< ALL gapped alignment is here */
+   Int4 num_ref;              /**< Number of references in the linked set */
+   Int4 linked_to;            /**< Where this HSP is linked to? */
+} BlastHSP;
+
+/** The structure to hold all HSPs for a given sequence after the gapped 
+ *  alignment.
+ */
+typedef struct BlastHSPList {
+   Int4 oid;/**< The ordinal id of the subject sequence this HSP list is for */
+   BlastHSP** hsp_array; /**< Array of pointers to individual HSPs */
+   Int4 hspcnt; /**< Number of HSPs saved */
+   Int4 allocated; /**< The allocated size of the hsp_array */
+   Int4 hsp_max; /**< The maximal number of HSPs allowed to be saved */
+   Boolean do_not_reallocate; /**< Is reallocation of the hsp_array allowed? */
+   Boolean traceback_done; /**< Has the traceback already been done on HSPs in
+                              this list? */
+} BlastHSPList;
+
+/** Creates HSP list structure with a default size HSP array */
+BlastHSPList* BlastHSPListNew(void);
 
 /** The structure to contain all BLAST results for one query sequence */
 typedef struct BlastHitList {
