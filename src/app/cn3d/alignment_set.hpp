@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/17 20:15:23  thiessen
+* load 'pending' Cdd alignments into update window
+*
 * Revision 1.10  2000/12/29 19:23:49  thiessen
 * save row order
 *
@@ -73,6 +76,7 @@
 #include <map>
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/cdd/Update_align.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
 #include "cn3d/structure_base.hpp"
@@ -81,6 +85,7 @@
 BEGIN_SCOPE(Cn3D)
 
 typedef list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
+typedef list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
 
 class MasterSlaveAlignment;
 class Sequence;
@@ -90,6 +95,7 @@ class AlignmentSet : public StructureBase
 {
 public:
     AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
+    AlignmentSet(StructureBase *parent, const UpdateAlignList& updates, const Sequence *masterSeq);
     ~AlignmentSet(void);
 
     // constructs a new AlignmentSet from a multiple alignment

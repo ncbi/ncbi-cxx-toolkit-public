@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/04/17 20:15:38  thiessen
+* load 'pending' Cdd alignments into update window
+*
 * Revision 1.51  2001/04/05 22:55:34  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -210,7 +213,7 @@ BEGIN_SCOPE(Cn3D)
 
 ///// AlignmentManager methods /////
 
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
+void AlignmentManager::Init(void)
 {
     sequenceViewer = new SequenceViewer(this);
     GlobalMessenger()->AddSequenceViewer(sequenceViewer);
@@ -219,8 +222,30 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
     GlobalMessenger()->AddSequenceViewer(updateViewer);
 
     threader = new Threader();
+}
 
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
+{
+    Init();
     NewAlignments(sSet, aSet);
+}
+
+AlignmentManager::AlignmentManager(const SequenceSet *sSet,
+    const AlignmentSet *aSet, const AlignmentSet *updates)
+{
+    Init();
+    NewAlignments(sSet, aSet);
+
+    // create BlockMultipleAlignments from updates; add to update viewer
+    AlignmentList pairwise(1);
+    UpdateViewer::AlignmentList updateAlignments;
+    AlignmentSet::AlignmentList::const_iterator u, ue = updates->alignments.end();
+    for (u=updates->alignments.begin(); u!=ue; u++) {
+        pairwise.front() = *u;
+        BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
+        updateAlignments.push_back(multiple);
+    }
+    updateViewer->AddAlignments(updateAlignments);
 }
 
 AlignmentManager::~AlignmentManager(void)

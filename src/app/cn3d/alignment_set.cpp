@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/04/17 20:15:39  thiessen
+* load 'pending' Cdd alignments into update window
+*
 * Revision 1.15  2001/03/28 23:02:16  thiessen
 * first working full threading
 *
@@ -257,6 +260,28 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
     TESTMSG("number of alignments: " << alignments.size());
 }
 
+AlignmentSet::AlignmentSet(StructureBase *parent, const UpdateAlignList& updates, const Sequence *masterSeq) :
+    StructureBase(parent), master(masterSeq), newAsnAlignmentData(NULL)
+{
+    if (!master) {
+        ERR_POST(Error << "AlignmentSet::AlignmentSet() - got NULL master for updates list");
+        return;
+    }
+
+    UpdateAlignList::const_iterator u, ue = updates.end();
+    for (u=updates.begin(); u!=ue; u++) {
+        if (u->GetObject().IsSetSeqannot() && u->GetObject().GetSeqannot().GetData().IsAlign()) {
+            CSeq_annot::C_Data::TAlign::const_iterator
+                s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
+            for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
+                const MasterSlaveAlignment *alignment =
+                    new MasterSlaveAlignment(this, master, s->GetObject(), NULL);
+                alignments.push_back(alignment);
+            }
+        }
+    }
+}
+
 AlignmentSet::~AlignmentSet(void)
 {
     if (newAsnAlignmentData) delete newAsnAlignmentData;
@@ -359,16 +384,16 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
     for (; s!=se; s++) {
 
         if (*s == master ||
-                ((*s)->molecule != NULL &&
+                ((*s)->molecule != NULL && usedStructuredSequences &&
                  usedStructuredSequences->find(*s) != usedStructuredSequences->end()))
             continue;
 
         if (IsAMatch(*s, sids.back().GetObject())) {
-            if ((*s)->molecule != NULL) (*usedStructuredSequences)[*s] = true;
+            if (usedStructuredSequences && (*s)->molecule != NULL) (*usedStructuredSequences)[*s] = true;
             break;
         } else if (IsAMatch(*s, sids.front().GetObject())) {
             masterFirst = false;
-            if ((*s)->molecule != NULL) (*usedStructuredSequences)[*s] = true;
+            if (usedStructuredSequences && (*s)->molecule != NULL) (*usedStructuredSequences)[*s] = true;
             break;
         }
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/04/17 20:15:24  thiessen
+* load 'pending' Cdd alignments into update window
+*
 * Revision 1.42  2001/03/23 15:13:46  thiessen
 * load sidechains in CDD's
 *
@@ -215,7 +218,7 @@ public:
 
     // sequence and alignment information
     const SequenceSet *sequenceSet;
-    const AlignmentSet *alignmentSet;
+    const AlignmentSet *alignmentSet, *updateSet;
     AlignmentManager *alignmentManager;
 
     OpenGLRenderer *renderer;

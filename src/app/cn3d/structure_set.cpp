@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/04/17 20:15:39  thiessen
+* load 'pending' Cdd alignments into update window
+*
 * Revision 1.55  2001/03/23 15:14:07  thiessen
 * load sidechains in CDD's
 *
@@ -351,7 +354,7 @@ void StructureSet::Init(void)
     lastAtomName = OpenGLRenderer::NO_NAME;
     lastDisplayList = OpenGLRenderer::NO_LIST;
     sequenceSet = NULL;
-    alignmentSet = NULL;
+    alignmentSet = updateSet = NULL;
     alignmentManager = NULL;
     dataChanged = 0;
     nDomains = 0;
@@ -584,7 +587,12 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
 
     MatchSequencesToMolecules();
     alignmentSet = new AlignmentSet(this, cdd->GetSeqannot());
-    alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+    if (cdd->IsSetPending()) {
+        updateSet = new AlignmentSet(this, cdd->GetPending(), alignmentSet->master);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, updateSet);
+    } else {
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+    }
     styleManager->SetToAlignment(StyleSettings::eAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);

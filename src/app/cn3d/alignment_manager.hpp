@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/04/17 20:15:23  thiessen
+* load 'pending' Cdd alignments into update window
+*
 * Revision 1.31  2001/04/05 22:54:50  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -155,6 +158,7 @@ class AlignmentManager : public ShowHideCallbackObject
 {
 public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const AlignmentSet *updates);
     ~AlignmentManager(void);
 
     Threader *threader; // made public so viewers have access to it
@@ -204,6 +208,8 @@ public:
     const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
 
 private:
+    void Init(void);
+
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
 
