@@ -3941,8 +3941,8 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
                 x_errno = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                              ("[SOCK_gethostbyname]  Failed "
-                              "gethostbyname%s(\"%.64s\")", suffix, hostname));
+                               ("[SOCK_gethostbyname]  Failed "
+                                "gethostbyname%s(\"%.64s\")",suffix,hostname));
         }
 
 #endif /*HAVE_GETADDR_INFO*/
@@ -3988,8 +3988,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
                 if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                     strcpy(addr, "<unknown>");
                 CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
-                                  ("[SOCK_gethostbyaddr]  Failed "
-                                   "getnameinfo(%s)", addr));
+                                   ("[SOCK_gethostbyaddr]  Failed "
+                                    "getnameinfo(%s)", addr));
             }
             name[0] = '\0';
             return 0;
@@ -4048,9 +4048,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #  endif /*NETDB_INTERNAL*/
             if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                 strcpy(addr, "<unknown>");
-            CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                              ("[SOCK_gethostbyaddr]  Failed "
-                              "gethostbyaddr%s(%s)", suffix, addr));
+            CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                               ("[SOCK_gethostbyaddr]  Failed "
+                                "gethostbyaddr%s(%s)", suffix, addr));
         }
 
         return name;
@@ -4066,6 +4066,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.148  2004/08/20 21:24:29  lavr
+ * Fix CORE_LOGF_ERRNO_EX() in conditional branches we never compiled :-)
+ *
  * Revision 6.147  2004/07/23 20:26:44  lavr
  * INADDR_LOOPBACK defined conditionally for Mac
  *
