@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/17 18:33:12  thiessen
+* minor fixes to StyleManager
+*
 * Revision 1.17  2000/08/16 14:18:44  thiessen
 * map 3-d objects to molecules
 *
@@ -92,6 +95,7 @@
 
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
 #include "cn3d/main.hpp"
+#include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -181,6 +185,8 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU(MID_ZOOM_IN,   Cn3DMainFrame::OnZoomIn)
     EVT_MENU(MID_ZOOM_OUT,  Cn3DMainFrame::OnZoomOut)
     EVT_MENU(MID_RESET,     Cn3DMainFrame::OnReset)
+    EVT_MENU(MID_SECSTRUC,  Cn3DMainFrame::OnSetSecStruc)
+    EVT_MENU(MID_WIREFRAME, Cn3DMainFrame::OnSetWireframe)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos,
@@ -205,6 +211,12 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
     menu->Append(MID_ZOOM_OUT, "Zoom &Out");
     menu->Append(MID_RESET, "&Reset");
     menuBar->Append(menu, "&View");
+
+    // Style menu
+    menu = new wxMenu;
+    menu->Append(MID_SECSTRUC, "&Secondary Structure");
+    menu->Append(MID_WIREFRAME, "&Wireframe");
+    menuBar->Append(menu, "&Style");
 
     SetMenuBar(menuBar);
 
@@ -273,6 +285,26 @@ void Cn3DMainFrame::OnReset(wxCommandEvent& event)
     glCanvas->SetCurrent();
     glCanvas->renderer.ResetCamera();
     glCanvas->Refresh(FALSE);
+}
+
+void Cn3DMainFrame::OnSetSecStruc(wxCommandEvent& event)
+{
+    if (glCanvas->structureSet) {
+        glCanvas->SetCurrent();
+        glCanvas->structureSet->styleManager->globalStyle.SetToSecondaryStructure();
+        glCanvas->renderer.Construct();
+        glCanvas->Refresh(FALSE);
+    }
+}
+
+void Cn3DMainFrame::OnSetWireframe(wxCommandEvent& event)
+{
+    if (glCanvas->structureSet) {
+        glCanvas->SetCurrent();
+        glCanvas->structureSet->styleManager->globalStyle.SetToWireframe();
+        glCanvas->renderer.Construct();
+        glCanvas->Refresh(FALSE);
+    }
 }
 
 void Cn3DMainFrame::LoadFile(const char *filename)

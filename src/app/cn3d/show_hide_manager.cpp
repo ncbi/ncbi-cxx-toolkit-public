@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/17 18:33:12  thiessen
+* minor fixes to StyleManager
+*
 * Revision 1.1  2000/08/03 15:13:59  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -37,11 +40,17 @@
 */
 
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/residue.hpp"
 
 USING_NCBI_SCOPE;
 
+
 BEGIN_SCOPE(Cn3D)
 
+bool ShowHideManager::IsResidueHidden(const Residue *residue) const
+{
+    return false;
+}
 
 END_SCOPE(Cn3D)
 

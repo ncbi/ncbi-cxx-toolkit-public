@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/17 18:32:38  thiessen
+* minor fixes to StyleManager
+*
 * Revision 1.6  2000/08/17 14:22:01  thiessen
 * added working StyleManager
 *
@@ -130,6 +133,8 @@ public:
 
     // methods to set to predetermined states
     void SetToSecondaryStructure(void);
+    void SetToWireframe(void);
+
     StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
 };
 
@@ -165,18 +170,20 @@ public:
     // style accessors for individual objects
     bool GetAtomStyle(const Residue *residue, const AtomPntr& atom, AtomStyle *atomStyle,
         const StyleSettings::BackboneStyle* *saveBackboneStyle = NULL,
-        const StyleSettings::GeneralStyle* *saveGeneralStyle = NULL);
+        const StyleSettings::GeneralStyle* *saveGeneralStyle = NULL) const;
     bool GetBondStyle(const Bond *bond,
             const AtomPntr& atom1, const AtomPntr& atom2,
-            BondStyle *bondStyle);
-    bool GetHelixStyle(const StructureObject *object, const Helix3D& helix, HelixStyle *helixStyle);
-    bool GetStrandStyle(const StructureObject *object, const Strand3D& strand, StrandStyle *strandStyle);
+            BondStyle *bondStyle) const;
+    bool GetHelixStyle(const StructureObject *object,
+        const Helix3D& helix, HelixStyle *helixStyle) const;
+    bool GetStrandStyle(const StructureObject *object,
+        const Strand3D& strand, StrandStyle *strandStyle) const;
 
+    StyleSettings globalStyle;
 private:
     // StyleSettings accessors
-    StyleSettings globalStyle;
-    const StyleSettings& GetStyleForResidue(const StructureObject *object, int moleculeID, int residueID)
-        { return globalStyle; } // eventually this will know about annotations...
+    const StyleSettings& GetStyleForResidue(const StructureObject *object,
+        int moleculeID, int residueID) const;
 };
 
 // the following are convenience containers to tell the Draw functions how

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/17 18:33:12  thiessen
+* minor fixes to StyleManager
+*
 * Revision 1.5  2000/08/17 14:24:07  thiessen
 * added working StyleManager
 *
@@ -55,6 +58,7 @@
 #include "cn3d/periodic_table.hpp"
 #include "cn3d/bond.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/object_3d.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -106,6 +110,51 @@ void StyleSettings::SetToSecondaryStructure(void)
     backgroundColor = Vector(0,0,0);
 }
 
+void StyleSettings::SetToWireframe(void)
+{
+    proteinBackbone.type = nucleotideBackbone.type = eComplete;
+    proteinBackbone.style = nucleotideBackbone.style = eWire;
+    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eSecondaryStructure;
+
+    proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+    proteinSidechains.style = nucleotideSidechains.style = eWire;
+    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+
+    heterogens.isOn = true;
+    heterogens.style = eTubes;
+    heterogens.colorScheme = eElement;
+
+    solvents.isOn = false;
+    solvents.style = eBallAndStick;
+    solvents.colorScheme = eElement;
+
+    connections.isOn = true;
+    connections.style = eWire;
+    connections.colorScheme = eUserSelect;
+    connections.userColor = Vector(1,1,0); // yellow
+    
+    helixObjects.isOn = strandObjects.isOn = false;
+    helixObjects.style = strandObjects.style = eWithArrows;
+    helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+    helixRadius = 1.8;
+    strandWidth = 2.0;
+    strandThickness = 0.5;
+
+    proteinSidechains.userColor = nucleotideSidechains.userColor =
+    proteinBackbone.userColor = nucleotideBackbone.userColor =
+    heterogens.userColor = solvents.userColor =
+    helixObjects.userColor = strandObjects.userColor = Vector(0.7,0.5,0.5);
+
+    hydrogensOn = true;
+
+    ballRadius = 0.4;
+    stickRadius = 0.2;
+    tubeRadius = 0.3;
+    tubeWormRadius = 0.3;
+
+    backgroundColor = Vector(0,0,0);
+}
+
 #define ATOM_NOT_DISPLAYED do { \
     atomStyle->style = eNotDisplayed; \
     return true; } while (0)
@@ -117,7 +166,7 @@ void StyleSettings::SetToSecondaryStructure(void)
 bool StyleManager::GetAtomStyle(const Residue *residue, 
     const AtomPntr& atom, AtomStyle *atomStyle,
     const StyleSettings::BackboneStyle* *saveBackboneStyle,
-    const StyleSettings::GeneralStyle* *saveGeneralStyle)
+    const StyleSettings::GeneralStyle* *saveGeneralStyle) const
 {
     if (!residue) {
         ERR_POST(Error << "StyleManager::GetAtomStyle() got NULL residue");
@@ -322,7 +371,7 @@ static bool SetBondStyleFromResidueStyle(StyleSettings::eDrawingStyle style,
 // from the atoms - if either is hidden, the bond isn't shown either.
 bool StyleManager::GetBondStyle(const Bond *bond,
         const AtomPntr& atom1, const AtomPntr& atom2,
-        BondStyle *bondStyle)
+        BondStyle *bondStyle) const
 {
     const StructureObject *object;
     if (!bond->GetParentOfType(&object)) return false;
@@ -429,13 +478,34 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         bondStyle->end1.radius != bondStyle->end2.radius)
         bondStyle->midCap = true;
 
-    // atomCaps needed only at ends of thick worms
-    if (bondStyle->end1.style == StyleManager::eThickWormBond &&
-        !bond->previousVirtual)
-        bondStyle->end1.atomCap = true; // add cap if no nextdoor virtual bond
-    if (bondStyle->end2.style == StyleManager::eThickWormBond &&
-        !bond->nextVirtual)
-        bondStyle->end2.atomCap = true;
+    // atomCaps needed at ends of thick worms when at end of chain, or if
+    // internal residues are hidden or of a different style
+    if (bondStyle->end1.style == StyleManager::eThickWormBond ||
+        bondStyle->end1.style == StyleManager::eThickWormBond) {
+
+        const Residue::AtomInfo *infoV;
+        AtomStyle atomStyleV;
+        const StyleSettings::BackboneStyle *backboneStyleV;
+        const StyleSettings::GeneralStyle *generalStyleV;
+
+        if (bondStyle->end1.style == StyleManager::eThickWormBond &&
+                (!bond->previousVirtual ||
+                 !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
+                 !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1,
+                     &atomStyleV, &backboneStyleV, &generalStyleV) ||
+                 atomStyleV.style == StyleManager::eNotDisplayed ||
+                 backboneStyleV->style != style1))
+            bondStyle->end1.atomCap = true;
+
+        if (bondStyle->end2.style == StyleManager::eThickWormBond &&
+                (!bond->nextVirtual ||
+                 !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
+                 !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2,
+                     &atomStyleV, &backboneStyleV, &generalStyleV) ||
+                  atomStyleV.style == StyleManager::eNotDisplayed ||
+                  backboneStyleV->style != style2))
+            bondStyle->end2.atomCap = true;
+    }
 
     // set worm tension, tighter for smaller protein alpha-helix
     if (bond->order == Bond::eVirtual) {
@@ -449,31 +519,35 @@ bool StyleManager::GetBondStyle(const Bond *bond,
 }
 
 bool StyleManager::GetHelixStyle(const StructureObject *object,
-    const Helix3D& helix, HelixStyle *helixStyle)
+    const Helix3D& helix, HelixStyle *helixStyle) const
 {
-    if (!globalStyle.helixObjects.isOn) {
+    // use style of first associated residue
+    const StyleSettings&
+        settings = GetStyleForResidue(object, helix.moleculeID, helix.fromResidueID);
+
+    if (!settings.helixObjects.isOn) {
         helixStyle->style = StyleManager::eNotDisplayed;
         return true;
     }
     // should eventually check to see if the residues covered by the object are visible...
 
     // set drawing style
-    if (globalStyle.helixObjects.style == StyleSettings::eWithArrows) {
+    if (settings.helixObjects.style == StyleSettings::eWithArrows) {
         helixStyle->style = StyleManager::eObjectWithArrow;
         helixStyle->arrowLength = 4.0;
         helixStyle->arrowBaseWidthProportion = 1.2;
         helixStyle->arrowTipWidthProportion = 0.4;
-    } else if (globalStyle.helixObjects.style == StyleSettings::eWithoutArrows) {
+    } else if (settings.helixObjects.style == StyleSettings::eWithoutArrows) {
         helixStyle->style = StyleManager::eObjectWithoutArrow;
     } else {
         ERR_POST(Warning << "StyleManager::GetHelixStyle() - invalid helix style");
         return false;
     }
 
-    helixStyle->radius = globalStyle.helixRadius;
+    helixStyle->radius = settings.helixRadius;
 
     // set color
-    switch (globalStyle.helixObjects.colorScheme) {
+    switch (settings.helixObjects.colorScheme) {
         case StyleSettings::eMolecule:
             // should actually be a color cycle...
         case StyleSettings::eObject:
@@ -495,31 +569,35 @@ bool StyleManager::GetHelixStyle(const StructureObject *object,
 }
 
 bool StyleManager::GetStrandStyle(const StructureObject *object,
-    const Strand3D& strand, StrandStyle *strandStyle)
+    const Strand3D& strand, StrandStyle *strandStyle) const
 {
-    if (!globalStyle.strandObjects.isOn) {
+    // use style of first associated residue
+    const StyleSettings&
+        settings = GetStyleForResidue(object, strand.moleculeID, strand.fromResidueID);
+
+    if (!settings.strandObjects.isOn) {
         strandStyle->style = StyleManager::eNotDisplayed;
         return true;
     }
     // should eventually check to see if the residues covered by the object are visible...
 
     // set drawing style
-    if (globalStyle.strandObjects.style == StyleSettings::eWithArrows) {
+    if (settings.strandObjects.style == StyleSettings::eWithArrows) {
         strandStyle->style = StyleManager::eObjectWithArrow;
         strandStyle->arrowLength = 2.8;
         strandStyle->arrowBaseWidthProportion = 1.6;
-    } else if (globalStyle.strandObjects.style == StyleSettings::eWithoutArrows) {
+    } else if (settings.strandObjects.style == StyleSettings::eWithoutArrows) {
         strandStyle->style = StyleManager::eObjectWithoutArrow;
     } else {
         ERR_POST(Warning << "StyleManager::GetStrandStyle() - invalid strand style");
         return false;
     }
 
-    strandStyle->width = globalStyle.strandWidth;
-    strandStyle->thickness = globalStyle.strandThickness;
+    strandStyle->width = settings.strandWidth;
+    strandStyle->thickness = settings.strandThickness;
 
     // set color
-    switch (globalStyle.strandObjects.colorScheme) {
+    switch (settings.strandObjects.colorScheme) {
         case StyleSettings::eMolecule:
             // should actually be a color cycle...
         case StyleSettings::eObject:
@@ -538,6 +616,13 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
     }
 
     return true;
+}
+
+// eventually this will know about annotations...
+const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *object,
+    int moleculeID, int residueID) const
+{ 
+    return globalStyle;
 }
 
 END_SCOPE(Cn3D)

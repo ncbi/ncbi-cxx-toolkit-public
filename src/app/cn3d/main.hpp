@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/17 18:32:37  thiessen
+* minor fixes to StyleManager
+*
 * Revision 1.7  2000/08/07 14:12:47  thiessen
 * added animation frames
 *
@@ -125,6 +128,9 @@ public:
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
+        MENU3_STYLE,
+            MID_SECSTRUC,
+            MID_WIREFRAME
     };
     void OnOpen(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
@@ -133,6 +139,8 @@ public:
     void OnZoomIn(wxCommandEvent& event);
     void OnZoomOut(wxCommandEvent& event);
     void OnReset(wxCommandEvent& event);
+    void OnSetSecStruc(wxCommandEvent& event);
+    void OnSetWireframe(wxCommandEvent& event);
 
 DECLARE_EVENT_TABLE()
 };

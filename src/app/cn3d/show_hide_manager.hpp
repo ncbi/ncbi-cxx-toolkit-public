@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/17 18:32:37  thiessen
+* minor fixes to StyleManager
+*
 * Revision 1.2  2000/08/17 14:22:01  thiessen
 * added working StyleManager
 *
@@ -56,8 +59,7 @@ public:
     bool OverlayConfEnsembles(void) const { return true; }
 
     // eventually these will actually do something, too...
-    bool IsResidueHidden(const Residue *residue) const
-        { return false; }
+    bool IsResidueHidden(const Residue *residue) const;
     bool IsResidueVisible(const Residue *residue) const
         { return !IsResidueHidden(residue); }    
 
