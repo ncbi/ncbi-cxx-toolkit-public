@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/06/06 19:49:54  clausen
+* Changed CBioseq_Handle::GetTitle() call to GetTitle()
+*
 * Revision 1.12  2002/05/24 14:57:14  grichenk
 * SerialAssign<>() -> CSerialObject::Assign()
 *
@@ -109,6 +112,7 @@
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Date.hpp>
+#include <objects/util/sequence.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -836,7 +840,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
 
     handle.GetTopLevelSeqEntry();
-    handle.GetTitle();
+    GetTitle(handle);
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         const CSeqMap& seq_map = handle.GetSeqMap();
