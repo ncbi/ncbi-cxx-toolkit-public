@@ -97,7 +97,7 @@ CFlatGatherer* CFlatGatherer::New(TFormat format)
 {
     switch ( format ) {
     case eFormat_GenBank:
-        //case CFlatFileGenerator<>::eFormat_GBSeq:
+    case eFormat_GBSeq:
         //case CFlatFileGenerator<>::eFormat_Index:
         return new CGenbankGatherer;
         
@@ -110,8 +110,7 @@ CFlatGatherer* CFlatGatherer::New(TFormat format)
     case eFormat_FTable:
         return new CFtableGatherer;
 
-    case eFormat_DDBJ:
-    case eFormat_GBSeq:
+    case eFormat_DDBJ:    
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
@@ -653,7 +652,7 @@ void CFlatGatherer::x_GatherSequence(void) const
     static const TSeqPos kChunkSize = 2400; // 20 lines
     
     bool first = true;
-    TSeqPos size = m_Context->GetHandle(). GetBioseqLength();
+    TSeqPos size = m_Context->GetHandle().GetBioseqLength();
     for ( TSeqPos start = 0; start < size; start += kChunkSize ) {
         TSeqPos end = min(start + kChunkSize, size);
         *m_ItemOS << new CSequenceItem(start, end, first, *m_Context);
@@ -933,12 +932,16 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
         // if segment show only features ending on that segment
-        if ( !ctx.IsFormatFTable()  &&  ctx.IsPart()  &&  
+        if ( ctx.IsPart()  &&  
              !s_FeatEndsOnBioseq(it->GetOriginalFeature(), ctx.GetHandle()) ) {
             continue;
         }
     
-        out << new CFeatureItem(*it, ctx);
+        if ( ctx.IsPart() ) {
+            out << new CFeatureItem(it->GetOriginalFeature(), ctx);
+        } else {
+            out << new CFeatureItem(*it, ctx);
+        }
 
         // Add more features depending on user preferences
         switch ( it->GetData().GetSubtype() ) {
@@ -1205,6 +1208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/04/13 16:47:15  shomrat
+* Added GBSeq format
+*
 * Revision 1.16  2004/04/07 14:51:24  shomrat
 * Fixed typo
 *
