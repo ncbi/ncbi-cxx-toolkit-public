@@ -1,4 +1,4 @@
---$Revision: 1.16 $ 
+--$Revision: 1.17 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -97,7 +97,9 @@ Gene-commentary ::= SEQUENCE {
         pre-protein (13) ,
         miscRNA  (14) ,
         snoRNA  (15) ,
-        property  (16) ,
+        property  (16) , -- used to display tag/value pair
+	                 -- for this type label is used as property tag, text is used as property value, 
+	                 -- other fields are not used.
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
