@@ -38,6 +38,7 @@
 #include <algo/blast/api/tblastx_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
+#include <algo/blast/api/blast_rps_options.hpp>
 
 
 /** @addtogroup Miscellaneous
@@ -114,6 +115,10 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CB
         retval = new CDiscNucleotideOptionsHandle(locality);
         break;
 
+    case eRPSBlast:
+        retval = new CBlastRPSOptionsHandle(locality);
+        break;
+
     default:
         NCBI_THROW(CBlastException, eBadParameter,
         "CBlastOptionFactory cannot construct options handle: invalid program");
@@ -132,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/10 14:53:06  madden
+ * Add case of eRPSBlast
+ *
  * Revision 1.2  2004/01/16 21:51:35  bealer
  * - Changes for Blast4 API
  *
