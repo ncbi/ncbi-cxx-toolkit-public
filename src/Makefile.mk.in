@@ -35,6 +35,7 @@ libdir      = $(build_root)/lib
 bindir      = $(build_root)/bin
 runpath     = @runpath@
 
+# Destination root for exported headers (overridden by import_project.sh)
 incdest     = $(incdir)
 
 ### Optional top-level project groups
