@@ -209,7 +209,6 @@ int CTest::Run(void)
     assert(status == eIO_Closed);
     assert(n_read == 0);
     assert(CONN_Close(conn) == eIO_Success);
-    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
 
     LOG_POST("\nTEST execution completed successfully!\n");
     CORE_SetLOG(0);
@@ -256,6 +255,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/09 19:47:34  ivanov
+ * Fix for previous commit
+ *
  * Revision 1.4  2003/09/09 19:42:19  ivanov
  * Added more checks
  *
