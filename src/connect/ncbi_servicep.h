@@ -58,7 +58,7 @@ typedef struct {
  */
 struct SSERV_IterTag {
     const char*  service;        /* requested service name                 */
-    TSERV_Type   type;           /* requested server type(s)               */
+    TSERV_Type   types;          /* requested server type(s)               */
     unsigned int preferred_host; /* preferred host to select, network b.o. */
     double       preference;     /* range [0..100] %%                      */
     SSERV_Info** skip;           /* servers to skip                        */
@@ -93,7 +93,7 @@ SSERV_Info* SERV_GetInfoP
  int/*bool*/         external       /* whether mapping is not local to NCBI  */
  );
 
-/* same as above but creates an iterator to get services one by one */
+/* same as the above but creates an iterator to get services one by one */
 SERV_ITER SERV_OpenP
 (const char*         service,
  TSERV_Type          type,
@@ -155,6 +155,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2004/08/19 15:48:04  lavr
+ * SERV_ITER::type renamed into SERV_ITER::types to reflect its bitmask nature
+ *
  * Revision 6.24  2004/07/01 16:27:55  lavr
  * +SERV_PrintEx()
  *

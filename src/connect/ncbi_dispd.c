@@ -431,9 +431,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         srand(s_RandomSeed);
     }
     data->net_info = ConnNetInfo_Clone(net_info); /*called with non-NULL*/
-    if (iter->type & fSERV_StatelessOnly)
+    if (iter->types & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
-    if (iter->type & fSERV_Firewall)
+    if (iter->types & fSERV_Firewall)
         data->net_info->firewall = 1/*true*/;
     iter->data = data;
 
@@ -466,6 +466,9 @@ void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2004/08/19 15:48:15  lavr
+ * SERV_ITER::type renamed into SERV_ITER::types to reflect its bitmask nature
+ *
  * Revision 6.61  2003/10/14 14:40:07  lavr
  * Fix to avoid resolving empty client's host name
  *
