@@ -629,10 +629,12 @@ void CAlnMix::x_Merge()
 
             // this match is used erase from seq1 list
             if ( !first_refseq ) {
-                seq1->m_MatchList.erase(match_list_iter1);
+                if ( !refseq->m_MatchList.empty() ) {
+                    refseq->m_MatchList.erase(match_list_iter1);
+                }
             }
 
-            // if a subect sequence place it in the proper row
+            // if a subject sequence place it in the proper row
             if ( !first_refseq  &&  m_MergeFlags & fQuerySeqMergeOnly) {
                 bool proper_row_found = false;
                 while (true) {
@@ -728,7 +730,9 @@ void CAlnMix::x_Merge()
 
                 // this match is used erase from seq2 list
                 if ( !first_refseq ) {
-                    seq2->m_MatchList.erase(match_list_iter2);
+                    if ( !seq2->m_MatchList.empty() ) {
+                        seq2->m_MatchList.erase(match_list_iter2);
+                    }
                 }
             }
 
@@ -962,6 +966,12 @@ void CAlnMix::x_Merge()
                  
             // try to resolve the second row
             if (seq2) {
+
+                // set the frame if not initialized
+                if (width2 == 3  &&  seq2->m_Starts.empty()) {
+                    seq2->m_Frame = start2 % 3;
+                }
+
                 // save the orig seq2, since we may be modifying match below
                 CAlnMixSeq * orig_seq2 = seq2;
                 while (!x_SecondRowFits(match)) {
@@ -971,6 +981,7 @@ void CAlnMix::x_Merge()
                         row->m_BioseqHandle = seq2->m_BioseqHandle;
                         row->m_SeqId = seq2->m_SeqId;
                         row->m_Width = seq2->m_Width;
+                        row->m_Frame = start2 % 3;
                         row->m_SeqIndex = seq2->m_SeqIndex;
                         if (m_MergeFlags & fQuerySeqMergeOnly) {
                             row->m_DSIndex = match->m_DSIndex;
@@ -1082,8 +1093,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
         }
 
         // check frame
-        if (seq2->m_Width == 3  &&
-            start2 % 3 != starts2.begin()->first % 3) {
+        if (seq2->m_Width == 3  &&  seq2->m_Frame != start2 % 3) {
             return false;
         }
 
@@ -1899,6 +1909,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2003/12/12 22:42:53  todorov
+* Init frames and use refseq instead of seq1 which may be refseqs child
+*
 * Revision 1.81  2003/12/10 16:14:38  todorov
 * + exception when merge with no input
 *
