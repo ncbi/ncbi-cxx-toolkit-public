@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/04/15 22:09:26  vakatov
+* "max" --> "NcbiMax"
+*
 * Revision 1.35  1999/04/15 19:56:24  vasilche
 * More warnings fixed
 *
@@ -638,7 +641,7 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
 
                 // then store span number
                 for ( TIndex i = col; i < colEnd; ++i ) {
-                    rowSpans[i] = max(rowSpans[i], rowSpan - 1);
+                    rowSpans[i] = NcbiMax(rowSpans[i], rowSpan - 1);
                 }
             }
             // skip this cell's columns
@@ -748,8 +751,8 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
             }
 
             // determine current cell size
-            TIndex rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
-            TIndex colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
+            TIndex rowSpan= sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
+            TIndex colSpan= sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
 
             // end of new cell in columns
             const TIndex colEnd = col + colSpan;
@@ -771,7 +774,7 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
 
                 // then store span number
                 for ( TIndex i = col; i < colEnd; ++i ) {
-                    rowSpans[i] = max(rowSpans[i], rowSpan - 1);
+                    rowSpans[i] = NcbiMax(rowSpans[i], rowSpan - 1);
                 }
             }
             // skip this cell's columns
@@ -796,7 +799,7 @@ CHTML_table::CTableInfo::CTableInfo(void)
 void CHTML_table::CTableInfo::AddRowSize(TIndex columns)
 {
     m_RowSizes.push_back(columns);
-    m_Columns = max(m_Columns, columns);
+    m_Columns = NcbiMax(m_Columns, columns);
 }
 
 void CHTML_table::CTableInfo::SetFinalRowSpans(TIndex row,
@@ -808,7 +811,7 @@ void CHTML_table::CTableInfo::SetFinalRowSpans(TIndex row,
     // check for the rest of rowSpans
     TIndex addRows = 0;
     for ( TIndex i = 0; i < rowSpans.size(); ++i ) {
-        addRows = max(addRows, rowSpans[i]);
+        addRows = NcbiMax(addRows, rowSpans[i]);
     }
     m_Rows = row + addRows;
 }
