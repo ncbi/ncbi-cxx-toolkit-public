@@ -385,10 +385,12 @@ int CTestApplication::Run(void)
         NStr::Split(s_SplitStr[i], s_SplitDelim[i], split);
     }
 
-    int i = 0;
-    iterate(list<string>, it, split) {
-        assert(NStr::Compare(*it, split_result[i++]) == 0);
-    }
+    {{
+        int i = 0;
+        iterate(list<string>, it, split) {
+            assert(NStr::Compare(*it, split_result[i++]) == 0);
+        }
+    }}
     
     NcbiCout << " completed successfully!" << NcbiEndl;
 
@@ -422,12 +424,12 @@ int CTestApplication::Run(void)
         NStr::Tokenize(s_TokStr[i], s_TokDelim[i], tok);               
     }
 
-    {
-    int i = 0;
-    iterate(vector<string>, it, tok) {
-        assert(NStr::Compare(*it, tok_result[i++]) == 0);
-    }
-    }
+    {{
+        int i = 0;
+        iterate(vector<string>, it, tok) {
+            assert(NStr::Compare(*it, tok_result[i++]) == 0);
+        }
+    }}
     
     NcbiCout << " completed successfully!" << NcbiEndl;
 
@@ -549,6 +551,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/01/21 23:55:44  vakatov
+ * Get rid of a warning
+ *
  * Revision 6.12  2003/01/14 21:17:58  kuznets
  * + test for NStr::Tokenize
  *
