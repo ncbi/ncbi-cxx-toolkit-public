@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.31  2004/09/29 14:58:07  kholodov
+* Added: SetNull() method
+*
 * Revision 1.30  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -575,6 +578,12 @@ string CVariant::AsNotNullString(const string& v) const
 bool CVariant::IsNull() const
 {
     return GetData() == 0 ? true : GetData()->IsNULL();
+}
+
+void CVariant::SetNull()
+{
+    if( GetData() != 0 )
+        GetData()->AssignNULL();
 }
 
 size_t CVariant::Read(void* buf, size_t len) const

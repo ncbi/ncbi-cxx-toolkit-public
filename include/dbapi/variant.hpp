@@ -152,11 +152,14 @@ public:
     string        GetNumeric(void) const;
     const CTime&  GetCTime(void) const;
 
-    // Get the argument, if the column is NULL
+    // Get the argument as default, if the column is NULL
     string AsNotNullString(const string& v) const;
 
     // Status info
     bool IsNull() const;
+
+    // NULLify
+    void SetNull();
 
     // operators
     CVariant& operator=(const CVariant& v);
@@ -251,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/09/29 14:58:21  kholodov
+ * Added: SetNull() method
+ *
  * Revision 1.21  2004/04/08 15:57:21  kholodov
  * Multiple bug fixes and optimizations
  *
