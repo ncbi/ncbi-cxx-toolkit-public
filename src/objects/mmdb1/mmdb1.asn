@@ -1,16 +1,18 @@
-
-
+--$Revision: 1.2 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB
+--
+--  Definitions for a biomolecular assembly, chemical graph,
+--  and database management
 --
 --  By Hitomi Ohkawa, Jim Ostell, and Steve Bryant 
 --
 --  National Center for Biotechnology Information
 --  National Institutes of Health
---  Betheseda, MD 20894 USA
+--  Bethesda, MD 20894 USA
 --
---  September, 1994
+--  October, 1994
 --
 --**********************************************************************
 
@@ -24,15 +26,14 @@ EXPORTS Biostruc, Biostruc-id;
 IMPORTS Biostruc-graph FROM MMDB-Chemical-graph 
 	Biostruc-model FROM MMDB-Structural-model
 	Biostruc-history FROM MMDB-Database-management
-	Pub-set FROM NCBI-Pub
-        Org-ref FROM NCBI-Organism;
+	Pub-set FROM NCBI-Pub;
 
 -- A structure report or biostruc describes the components of a biomolecular 
 -- assembly in terms of their names, descriptions and chemical graphs, and 
 -- gives one or more three-dimensional model structures. A model structure 
 -- in this context is literally a mapping of the atoms, residues and molecules
 -- of each component into a measured three-dimensional space. A model structure
--- may also desecribe structural features by name and type, and give citations 
+-- may also describe structural features by name and type, and give citations 
 -- to relevant scientific literature. 
 
 -- Note that a biostruc may contain multiple 3D models, i.e. coordinate sets 
@@ -42,40 +43,55 @@ IMPORTS Biostruc-graph FROM MMDB-Chemical-graph
 -- record types.  All other PDB-derived biostrucs have only a single model.
 
 Biostruc ::= SEQUENCE {
-	id			SEQUENCE OF Biostruc-id,
-	description		Biostruc-descr,
+	id			Biostruc-id,
+	descr			Biostruc-descr,
+	history			Biostruc-history, 
 	chemical-graph		Biostruc-graph,
-	model-structures	SEQUENCE OF Biostruc-model }
+	model-structure		SEQUENCE OF Biostruc-model }
 
--- Biostruc id is a collection of ids' assigned to the molecule.
--- mmdb-id's are NCBI-assigned.  They are unique and stable identifiers
--- with respect to the NCBI-maintained molecular modeling database.
+
+-- A Biostruc-id is a collection identifiers for the molecular assembly.
+-- mmdb-id's are NCBI-assigned, and are intended to be unique and stable 
+-- identifiers.  other-id's are synonyms.
 
 Biostruc-id ::= SEQUENCE {
-	mmdb-id			INTEGER,
-	pdb-id			INTEGER }
+	mmdb-id			Mmdb-id,
+	other-id		SEQUENCE OF Other-id OPTIONAL }
 
--- Publications which describe the chemical and spatial structure of the
--- complete biomolecular assembly are collected in the biostruc description.
--- PDB-derived citations appear here, including the data-submission citation
+Mmdb-id ::= INTEGER
+
+Other-id ::= CHOICE {
+	integer-id		INTEGER,
+	character-id		VisibleString }
+
+
+-- The description of a biostruc refers to both the reported chemical
+-- and spatial structure of a biomolecular assembly.  PDB-derived descriptors
+-- which refer specifically to the chemical components or spatial structure
+-- are not provided here, but instead as descriptors of the biostruc-graph or 
+-- biostruc-model. The PDB-derived COMPND record, for example, appears in the 
+-- description of the biostruc-graph, since it specifically describes the
+-- chemical contents of the biomolecular assembly.
+
+-- For PDB-derived structures the biostruc name is assigned the PDB id-code. 
+-- PDB-derived citations appear as publications within the biostruc description,
+-- since they may describe either chemical sequencing or spatial structure
+-- determination.  Biostruc citations also include the data-submission citation 
 -- derived from PDB AUTHOR records.
 
 Biostruc-descr ::= SEQUENCE {
-	name			VisibleString,
+	name			VisibleString OPTIONAL,
 	comments		SEQUENCE OF VisibleString OPTIONAL,
-	organism		Org-ref OPTIONAL,
-	history			Biostruc-history,
-	publications		Pub-set }
+	attribution		Pub-set }
 
 END
-
 
 
 MMDB-Chemical-graph DEFINITIONS ::=
 
 BEGIN
 
-EXPORTS Biostruc-graph, Molecule-id, Residue-id, Atom-id, Atom-pntr;
+EXPORTS Biostruc-graph, Molecule-id, Residue-id, Atom-id;
 
 IMPORTS Pub-set FROM NCBI-Pub
 	Org-ref FROM NCBI-Organism
@@ -84,38 +100,42 @@ IMPORTS Pub-set FROM NCBI-Pub
 
 -- A biostruc graph contains the chemical graph of the biomolecular 
 -- assembly itself, plus the subgraphs of any nonstandard residues 
--- occuring there.  The assembly graph is defined in terms of the 
+-- occurring there.  The assembly graph is defined in terms of the 
 -- chemical graphs of it's component molecules.  For PDB-derived biostrucs,
--- the molecules forming the assembly are the individual biopolyer chains
+-- the molecules forming the assembly are the individual biopolymer chains
 -- and the individual non-polymer or heterogen groups
 
 -- The PDB "compound name" field appears here as the name within the
--- biostruc-graph descriptoin.  PDB "class" and "source" fields appear as 
--- comments within the description.  PDB-derived structures are assigned an 
+-- biostruc-graph description.  PDB "class" and "source" fields appear as 
+-- explicit attributes.  PDB-derived structures are assigned an 
 -- assembly type of "other" unless they have been further classified.  In this 
 -- case the source of the type classification appears as a citation within the 
 -- assembly description. 
 
 Biostruc-graph ::= SEQUENCE {
-	biomol-assembly-descr	Biomol-descr,
-	biomol-assembly-type	ENUMERATED {
+	descr			Biomol-descr,
+	pdb-class		VisibleString,
+	pdb-source		VisibleString,
+	type			ENUMERATED {
 					physiological-form(1),
 					crystallographic-cell(2),
 					other(255) },
 	molecule-graphs		SEQUENCE OF Molecule-graph,
-	inter-molecule-bonds	SEQUENCE OF Atomic-bond OPTIONAL,
-	special-residue-graphs	SEQUENCE OF Residue-graph OPTIONAL }
+	inter-molecule-bonds	SEQUENCE OF Inter-residue-bond OPTIONAL,
+	residue-graphs		SEQUENCE OF Residue-graph OPTIONAL }
+
+
 
 -- A biomolecule description refers to the chemical structure of a molecule or 
--- its component substructures.  This descriptor type is used at the level of
--- assemblies, molecules and residues.  
+-- component substructures.  This descriptor type is used at the level of
+-- assemblies, molecules and residues, and also for residue-graph dictionaries.
 
 Biomol-descr ::= SEQUENCE {
 	name			VisibleString,
 	comments		SEQUENCE OF VisibleString OPTIONAL,
 	organism		Org-ref OPTIONAL,
-	attribution		Pub-set OPTIONAL,
-	partial-graph		BOOLEAN OPTIONAL }
+	attribution		Pub-set OPTIONAL }
+
 
 -- A molecule chemical graph is defined by a sequence of residues, as is
 -- conventional for biopolymers.  Nonpolymers are described in the same way, 
@@ -133,15 +153,15 @@ Biomol-descr ::= SEQUENCE {
 -- Classification is by "majority rule": if more than half of the residues are 
 -- standard groups for one type, then the molecule is that type, and otherwise 
 -- classified as "other".  Note that this classification does not preclude the 
--- presence of modified residues, but insists they constitue less than half the
--- biopolymer.
--- The graph also contains a set of ids' for the sequence entries for the
--- chain, i.e., seq-id and gid.
+-- presence of modified residues, but insists they constitute less than half the
+-- biopolymer. The graph also contains a set of id's for the sequence entries 
+-- for the chain, i.e. seq-id and contained within it, gid.
 
 Molecule-graph ::= SEQUENCE {
 	id			Molecule-id,
-	molecule-descr		Biomol-descr,
-	molecule-type		ENUMERATED {
+	seq-id			Seq-id OPTIONAL,
+	descr			Biomol-descr,
+	type			ENUMERATED {
 					dna(1),
 					rna(2),
 					protein(3),
@@ -150,9 +170,7 @@ Molecule-graph ::= SEQUENCE {
 					other-nonpolymer(6),
 					unknown(255) },
 	residue-sequence	SEQUENCE OF Residue,
-	seq-id			Seq-id OPTIONAL,
-	gid			INTEGER OPTIONAL,
-	inter-residue-bonds	SEQUENCE OF Atomic-bond }
+	inter-residue-bonds	SEQUENCE OF Inter-residue-bond }
    
 Molecule-id ::= INTEGER
 
@@ -161,10 +179,44 @@ Molecule-id ::= INTEGER
 
 Residue ::= SEQUENCE {
 	id			Residue-id,
-	residue-name		VisibleString OPTIONAL,
-	residue-graph-refer	Residue-graph-pntr }
+	name			VisibleString OPTIONAL,
+	residue-graph		Residue-graph-pntr }
 
 Residue-id ::= INTEGER
+
+-- Residue graphs from different sources may be referenced within a molecule
+-- graph.  The allowed choices are the nonstandard residue graphs included in 
+-- the present biostruc, residue graphs within other biostrucs, or residue 
+-- graphs within tables of standard residue definitions.
+
+Residue-graph-pntr ::= CHOICE {
+	local			Residue-graph-id,
+	biostruc		Biostruc-pntr,
+	dictionary		Dictionary-pntr }
+	
+Biostruc-pntr ::= SEQUENCE {
+	biostruc-id		Biostruc-id,
+	residue-graph-id	Residue-graph-id }
+
+Dictionary-pntr ::= SEQUENCE {
+	standard-graphs-id	Dictionary-id,
+	residue-graph-id	Residue-graph-id } 
+
+
+-- A residue dictionary contains a collection of standard residue graphs.
+-- The residue standard graph dictionary supplied with the MMDB database 
+-- contains 20 standard L amino acids and 8 standard ribonucleotide groups. 
+-- These graphs are complete, including explicit hydrogen atoms and separate 
+-- instances for the terminal polypeptide and polynucleotide residues.  Atom 
+-- names in the MMDB dictionary are based on consensus PDB usage.
+
+Residue-graph-dictionary ::= SEQUENCE {
+	id			Dictionary-id,
+	descr			Biomol-descr,
+	residue-graphs		SEQUENCE OF Residue-graph }
+
+Dictionary-id ::= INTEGER
+
 
 -- Residue graphs define atomic formulae, connectivity, chirality, and names.
 -- PDB-assigned residue-type codes appear as the name within the residue graph
@@ -176,8 +228,8 @@ Residue-id ::= INTEGER
 
 Residue-graph ::= SEQUENCE {
 	id			Residue-graph-id,
-	residue-descr		Biomol-descr,
-	residue-type		ENUMERATED {
+	descr			Biomol-descr,
+	type			ENUMERATED {
 					deoxyribonucleotide(1),
 					ribonucleotide(2),
 					amino-acid(3),
@@ -189,50 +241,6 @@ Residue-graph ::= SEQUENCE {
 	formal-charge		Formal-charge OPTIONAL }
 	
 Residue-graph-id ::= INTEGER
-
-Chiral-center ::= SEQUENCE {
-	atom			Atom-id,
-	configuration		ENUMERATED { r(1), s(2) } OPTIONAL }
-
-Atom-id ::= INTEGER
-
-
--- Formal charge describes the ionization state and/or oxidation state of
--- nonpolymer groups.  Units are the difference in the number of electrons
--- present relative to the number required to formally neutralize nuclear
--- charge.
-
-Formal-charge ::= INTEGER
-
-
--- Residue graphs from different sources may be referenced within a molecule
--- graph.  The allowed choices are the nonstandard residue graphs included in 
--- the present biostruc, residue graphs within other biostrucs, or residue 
--- graphs within tables of standard residue definitions.
-
-Residue-graph-pntr ::= CHOICE {
-	local			Residue-graph-id,
-	biostruc		Biostruc-pntr,
-	standard-graphs		Standard-graphs-pntr }
-	
-Biostruc-pntr ::= SEQUENCE {
-	biostruc-id		Biostruc-id,
-	residue-graph-id	Residue-graph-id }
-
-Standard-graphs-pntr ::= SEQUENCE {
-	standard-graphs-id	Standard-graphs-id,
-	residue-graph-id	Residue-graph-id } 
-
--- Standard residue-graph tables are a collection of residue graphs.  The
--- collection may be described by text fields, with further description and
--- citations in the individual residue graphs.
-
-Standard-residue-graphs ::= SEQUENCE {
-	id			Standard-graphs-id,
-	description		SEQUENCE OF VisibleString,
-	residue-graphs		SEQUENCE OF Residue-graph }
-
-Standard-graphs-id ::= INTEGER
 
 
 -- Atoms in residue graphs are defined by elemental symbols and names.  PDB-
@@ -272,30 +280,13 @@ Atom ::= SEQUENCE {
 					true(1),
 					false(2),
 					unknown(255) } OPTIONAL }
-	 
-
-
--- Atomic bonds are defined by a reference to two atoms.  For PDB-derived 
--- structures bonds are identified from CONNECT records, and from distance 
--- calculation and reference to covalent radii.  Disagreements are reconciled
--- in favor of distance-based identification.
-
-Atomic-bond ::= SEQUENCE {
-	atom-id-1		Atom-pntr,
-	atom-id-2		Atom-pntr,
-	bond-order		ENUMERATED {
-					single(1), 
-					partial-double(2),
-					aromatic(3), 
-					double(4),
-					triple(5),
-					other(6),
-					unknown(255)} OPTIONAL }
+	
+Atom-id ::= INTEGER
 
 
 -- Intra-residue-bond specifies connectivity between atoms in Residue-graph.
--- Unlike Atomic-bond above, its participating atoms are not part of 
--- a specific Biostruc-graph.
+-- Unlike Inter-residue-bond above, its participating atoms are not part of 
+-- a specific biostruc-graph.
 
 Intra-residue-bond ::= SEQUENCE {
 	atom-id-1		Atom-id,
@@ -307,8 +298,41 @@ Intra-residue-bond ::= SEQUENCE {
 					double(4),
 					triple(5),
 					other(6),
-					unkown(255)} OPTIONAL }
+					unknown(255)} OPTIONAL }
 
+
+-- Chiral centers are atoms with tetrahedral geometry.  Their absolute
+-- configuration, if known, is described according to CEP convention.
+
+Chiral-center ::= SEQUENCE {
+	atom			Atom-id,
+	configuration		ENUMERATED { r(1), s(2) } OPTIONAL }
+
+
+-- Formal charge describes the ionization state and/or oxidation state of
+-- nonpolymer groups.  Units are the difference in the number of electrons
+-- present relative to the number required to formally neutralize nuclear
+-- charge.
+
+Formal-charge ::= INTEGER
+
+
+-- Inter-residue bonds are defined by a reference to two atoms. For PDB-derived 
+-- structures bonds are identified from CONNECT records, and from distance 
+-- calculation and reference to covalent radii.  Disagreements are reconciled
+-- in favor of distance-based identification.
+
+Inter-residue-bond ::= SEQUENCE {
+	atom-id-1		Atom-pntr,
+	atom-id-2		Atom-pntr,
+	bond-order		ENUMERATED {
+					single(1), 
+					partial-double(2),
+					aromatic(3), 
+					double(4),
+					triple(5),
+					other(6),
+					unknown(255)} OPTIONAL }
 
 -- Atoms, residues and molecules within the current biostruc are referenced 
 -- by hierarchical pointers.
@@ -318,8 +342,9 @@ Atom-pntr ::= SEQUENCE {
 	residue-id		Residue-id,
 	atom-id			Atom-id }
 
-END
+Dummy-for-next ::= SEQUENCE OF Atom-pntr
 
+END
 
 
 MMDB-Database-management DEFINITIONS ::=
@@ -334,8 +359,6 @@ IMPORTS Date FROM NCBI-General
 -- The history of a biostruc indicates it's origin and it's update history
 -- within MMDB, the NCBI-maintained molecular structure database.  
 
-Biostruc-set ::= SEQUENCE OF Biostruc
-
 Biostruc-history ::= SEQUENCE {
 	replaces		Biostruc-replace OPTIONAL,
 	replaced-by		Biostruc-replace OPTIONAL,
@@ -345,22 +368,24 @@ Biostruc-replace ::= SEQUENCE {
 	id			Biostruc-id,
 	date			Date }
 
--- The origin of a biostruc is a reference to another database, and to the
--- entry identifiers provided there.  PDB release date and PDB-assigned id 
--- codes are recorded here, as are the PDB-assigned entry date and 
--- replacement history.
+-- The origin of a biostruc is a reference to another database.  PDB release 
+-- date and PDB-assigned id codes are recorded here, as are the PDB-assigned 
+-- entry date and replacement history.
 
 Biostruc-source ::= SEQUENCE {
 	name-of-database	VisibleString,
 	version-of-database	CHOICE {
 		release-date		Date,
 		release-code		VisibleString } OPTIONAL,
-	database-entry-id	Biostruc-source-id,
+	database-entry-id	VisibleString,
 	database-entry-date	Date,
-	database-entry-replaces	SEQUENCE OF Biostruc-source-id OPTIONAL}
+	database-entry-history	SEQUENCE OF VisibleString OPTIONAL}
 
-Biostruc-source-id ::=	VisibleString
+
+-- A biostruc set is a means to collect ASN.1 data for many biostrucs in 
+-- one file, for purposes of facilitating data management.  The object type
+-- does not imply similarity of the biostrucs grouped together.
+
+Biostruc-set ::= SEQUENCE OF Biostruc
 
 END
-
-

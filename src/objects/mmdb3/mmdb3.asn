@@ -1,22 +1,43 @@
+--$Revision: 1.2 $
+--**********************************************************************
+--
+--  Biological Macromolecule 3-D Structure Data Types for MMDB
+--
+--  Definitions for structural features 
+--
+--  By Hitomi Ohkawa, Jim Ostell, and Steve Bryant 
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  October, 1994
+--
+--**********************************************************************
 
 MMDB-Structural-features DEFINITIONS ::=
 
 BEGIN
 
-EXPORTS Model-feature, Density-coordinate-set, Surface-coordinate-set, RealValue;
+EXPORTS Model-feature, Density-coordinate-set, Surface-coordinate-set, Residue-pntrs, RealValue;
 
-IMPORTS Atom-pntr FROM MMDB-Chemical-graph
-	Model-descr, Residue-pntr, Component-pntr FROM MMDB-Structural-model;
+IMPORTS Molecule-id, Residue-id FROM MMDB-Chemical-graph
+	Model-descr, Atom-pntrs, Component-pntr FROM MMDB-Structural-model;
 
--- Named features refer to sets of residues or atoms, or a region in space.
+-- Named model features refer to sets of residues or atoms, or a region in 
+-- the model space.  A few specific feature types are allowed for compatibility
+-- with common usage, but the purpose of a named model feature is simply to
+-- associate a text and citation-based description with a set of atoms or 
+-- residues, or a spatially-defined region of the model structure. 
+
 -- PDB-derived secondary structure defines a single feature, represented as a
 -- sequence of residue motifs.  The contents of PDB SITE and FTNOTE records
 -- define features represented as sequences of atom motifs.  NCBI-assigned core 
 -- substructure descriptions are represented as a sequence of residue motifs,
--- cited as a data deposition in the feature description.
+-- and cited as a data deposition in the feature description.
 
 Model-feature ::= SEQUENCE{
-	description		Model-descr,
+	descr			Model-descr,
 	motif			SEQUENCE OF Structural-motif }
 	
 Structural-motif ::=	CHOICE {
@@ -31,14 +52,20 @@ Structural-motif ::=	CHOICE {
 -- derived from the PDB "identifier" field.
 
 Residue-motif ::= SEQUENCE {
-	description		Model-descr,
+	descr			Model-descr,
 	type			ENUMERATED {
 					helix(1),
 					strand(2),
 					sheet(3),
 					turn(4),
 					other(255) },
-	residue-id		SEQUENCE OF Residue-pntr }
+	residue-id		Residue-pntrs }
+
+
+Residue-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id,
+	residue-ids		SEQUENCE OF Residue-id }
 
 
 -- Atom motifs describe binding sites, catalytic sites, or other features
@@ -48,20 +75,65 @@ Residue-motif ::= SEQUENCE {
 -- REMARK records if these could be linked to a particular SITE record.
 
 Atom-motif ::= SEQUENCE {
-	description		Model-descr,
-	atom-id			SEQUENCE OF Atom-pntr }
+	descr			Model-descr,
+	atom-ids		Atom-pntrs }
 
 
 -- Region motifs describe features of substructures defined by spatial location,
 -- such as the portion of a density grid believed to contain a binding site.
 
 Region-motif ::= SEQUENCE {
-	description		Model-descr,
+	descr			Model-descr,
 	region-boundary		CHOICE {
 					sphere		Sphere,
 					cylinder	Cylinder,
 					brick		Brick,
 					surface		Surface-grid }}
+
+
+-- Literal density coordinates define the chemical components whose structure
+-- is described by a density grid, parameters of this grid, and density values.
+-- density values are represented as scaled integers to save space.  They are
+-- converted to real values in the units defined in model-space by dividing
+-- by scale-factor.
+
+Density-coordinate-set ::= SEQUENCE {
+	descr			Model-descr,
+	contents		Component-pntr,
+	grid-corners		Brick,
+	grid-steps-x		INTEGER,
+	grid-steps-y		INTEGER,
+	grid-steps-z		INTEGER,
+	fastest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	slowest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	scale-factor		INTEGER,
+	density			SEQUENCE OF INTEGER }
+
+
+
+-- Literal surface coordinates define the chemical components whose structure
+-- is described by a surface, and the surface itself.  The surface may be
+-- either a regular geometric solid or a triangle-mesh of arbitrary shape.
+
+Surface-coordinate-set ::= SEQUENCE {
+	descr			Model-descr,
+	contents		Component-pntr,
+	surface			CHOICE {
+		sphere		Sphere,
+		cylinder	Cylinder,
+		brick		Brick,
+		surface		Surface-grid } }
+
+
+-- Geometrical primitives are used in the definition of non-atomic coordinates
+-- and region motifs.  Spheres, cylinders and bricks are defined by a few 
+-- points in the model space.
 
 Sphere ::= SEQUENCE { 
 	center			Model-space-point,
@@ -71,7 +143,6 @@ Cylinder ::= SEQUENCE {
 	axis-top		Model-space-point,
 	axis-bottom		Model-space-point,
 	radius			RealValue }
-
 
 -- A brick is defined by the coordinates of eight corners.  These are assumed
 -- to appear in the order 000, 001, 010, 011, 100, 101, 110, 111, where the 
@@ -88,62 +159,20 @@ Brick ::= SEQUENCE {
 	corner-110		Model-space-point,
 	corner-111		Model-space-point}
 
-
 -- A grid boundary is a set of points which are assumed to define a triangle
--- mesh surface when each is conected to it's 3 nearest neighbors.
+-- mesh surface when each is connected to it's 3 nearest neighbors.
 
 Surface-grid ::= SEQUENCE OF Model-space-point
-
-
--- A point is a single location in the model space.
 
 Model-space-point ::= SEQUENCE {
 	x			RealValue,
 	y			RealValue,
 	z			RealValue } 
 
-
--- Literal density coordinates define the chemical components whose structure
--- is described by a density grid, parameters of this grid, and density values.
--- density values are represented as scaled integers to save space.
-
-Density-coordinate-set ::= SEQUENCE {
-	description		Model-descr,
-	contents		Component-pntr,
-	grid-corners		Brick,
-	grid-steps-x		INTEGER,
-	grid-steps-y		INTEGER,
-	grid-steps-z		INTEGER,
-	fastest-varying		ENUMERATED {
-					x(1),
-					y(2),
-					z(3)},
-	slowest-varying		ENUMERATED {
-					x(1),
-					y(2),
-					z(3)},
-	density			SEQUENCE OF INTEGER }
-
--- Literal surface coordinates define the chemical components whose structure
--- is described by a surface, and the surface itself.  The surface may be
--- either a regular geometric solid or a triangle-mesh of arbitrary shape.
-
-Surface-coordinate-set ::= SEQUENCE {
-	description		Model-descr,
-	contents		Component-pntr,
-	surface			CHOICE {
-		sphere		Sphere,
-		cylinder	Cylinder,
-		brick		Brick,
-		surface		Surface-grid } }
-
-
--- Referenced density or surface coordinates give pointers to the chemical 
--- components of the present biostruc that are described by a grid or surface,
--- and pointers to the chemical components of another biostruc for which a 
--- density grid or surface has been defined.  
-
-RealValue ::= REAL
+RealValue ::= SEQUENCE {
+	scale-factor		INTEGER,
+	scaled-integer-value	INTEGER }
 
 END
+
 
