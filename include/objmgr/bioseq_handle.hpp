@@ -104,6 +104,7 @@ public:
     /// Get handle of id used to obtain this bioseq handle
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
+    /// State of bioseq handle.
     enum EBioseqStateFlags {
         fState_none          = 0,
         fState_suppress_temp = 1 << 0,
@@ -121,6 +122,8 @@ public:
     };
     typedef int TBioseqStateFlags;
 
+    /// Get state of the bioseq. May be used with an empty bioseq handle
+    /// to check why the bioseq retrieval failed.
     TBioseqStateFlags GetState(void) const;
     bool State_SuppressedTemp(void) const;
     bool State_SuppressedPerm(void) const;
@@ -679,6 +682,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/02/01 21:43:35  grichenk
+* Added comments
+*
 * Revision 1.72  2005/01/26 16:25:21  grichenk
 * Added state flags to CBioseq_Handle.
 *
