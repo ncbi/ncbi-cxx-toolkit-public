@@ -384,10 +384,9 @@ void CPagerViewButtons::CreateSubNodes()
 
     if ( currentPage > 0 ) {
         CHTML_a* prev = new CHTML_a("javascript:var frm = document.frmQueryBox; "
-                                    "frm.cmd.value=''; frm.CMD.value='Pager'; "
 									"frm.inputpage.value=" +
                                     NStr::IntToString(currentPage) + 
-                                    "; frm.submit();", "Previous");
+                                    "; Go('Pager');", "Previous");
         prev->SetClass("dblinks");
         InsertAt(0, column, prev);
         InsertAt(0, column++, new CHTML_nbsp);
@@ -399,7 +398,7 @@ void CPagerViewButtons::CreateSubNodes()
     butt->SetEventHandler(eHTML_EH_Click,
                           "form.cmd.value='';form." + CPager::KParam_InputPage +
                           ".value=form.textpage" + m_jssuffix +
-                          ".value;form.CMD.value='Pager';form.submit();");
+                          ".value;Go('Pager');");
     InsertAt(0, column, butt);
     InsertAt(0, column, new CHTML_nbsp);
 
@@ -413,13 +412,12 @@ void CPagerViewButtons::CreateSubNodes()
     }
                                
     textpage->SetEventHandler(eHTML_EH_Change,
-                              "form.CMD.value='Pager';"
 							  "if(form.textpage" + suffix + "){form.textpage"
                               + suffix +".value=" + "this.value}");
     
     textpage->SetEventHandler(eHTML_EH_KeyPress,
                               "form." + CPager::KParam_InputPage +".value=" 
-							  "this.value;form.CMD.value='Pager';KeyPress('',event);");
+							  "this.value;KeyPress('Pager',event);");
                                          
     InsertAt(0, column++, textpage);
 
@@ -436,10 +434,9 @@ void CPagerViewButtons::CreateSubNodes()
                                            m_jssuffix, kEmptyStr));
     if ( currentPage < lastPage ) {
         CHTML_a* next = new CHTML_a("javascript:var frm = document.frmQueryBox;"
-                                    "frm.cmd.value=''; frm.CMD.value='Pager'; "
 									"frm.inputpage.value=" +
                                     NStr::IntToString(currentPage + 2) + 
-                                    ";frm.submit();", "Next");
+                                    ";Go('Pager');", "Next");
         next->SetClass("dblinks");
         InsertAt(0, column, next);
         InsertAt(0, column++, new CHTML_nbsp(2));
