@@ -4,5 +4,5 @@
 #################################
 
 SRC = node html htmlhelper page nodemap pager selection components \
-         querypages linkbar jsmenu commentdiag
-LIB    = xhtml
+      jsmenu commentdiag
+LIB = xhtml
