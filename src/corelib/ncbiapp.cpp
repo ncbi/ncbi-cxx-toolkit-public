@@ -452,7 +452,6 @@ int CNcbiApplication::AppMain
             }
             // Print USAGE
             string str;
-            LOG_POST(string(72, '='));
             LOG_POST(m_ArgDesc->PrintUsage(str));
             exit_code = 0;
         }
@@ -914,6 +913,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2004/06/02 20:45:27  vakatov
+ * CNcbiApplication::AppMain() not to printout line of '=' before USAGE
+ *
  * Revision 1.84  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *
