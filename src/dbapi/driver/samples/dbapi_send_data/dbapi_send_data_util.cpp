@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.5  2003/01/30 16:09:18  soussov
+* Adopt the new default DateTime constructor
+*
 * Revision 1.4  2002/12/09 16:25:23  starchen
 * remove the text files from samples
 *
@@ -210,7 +213,7 @@ int CreateTable (CDB_Connection* con)
     
   	     CDB_Int int_val;
         CDB_Float fl_val;
-        CDB_DateTime date_val;
+        CDB_DateTime date_val(CTime::eCurrent);
         CDB_VarChar str_val;
         CDB_Text pTxt;
 	     int i;
