@@ -131,6 +131,7 @@ CTar::CTar(const string& file_name)
     : m_FileName(file_name),
       m_Stream(0),
       m_FileStreamMode(eUnknown),
+      m_StreamPos(0),
       m_BufferSize(kDefaultBufferSize),
       m_Buffer(0),
       m_Flags(fDefault),
@@ -817,6 +818,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/02/03 14:01:21  rsmith
+ * must initialize  m_StreamPos since streampos may not have a default cnstr.
+ *
  * Revision 1.8  2005/01/31 20:53:09  ucko
  * Use string::erase() rather than string::clear(), which GCC 2.95
  * continues not to support.
