@@ -60,7 +60,7 @@ extern int           s_SpawnBy;
 //    Core application class for MT-tests
 //
 
-class CThreadedApp : public CNcbiApplication
+class NCBI_XNCBI_EXPORT CThreadedApp : public CNcbiApplication
 {
 public:
     // Override constructor to initialize the application
@@ -100,6 +100,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.2  2002/04/30 19:10:26  gouriano
  * added possibility to add custom arguments
  *

@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 // Portable exec class
 //
 
-class CExec
+class NCBI_XNCBI_EXPORT CExec
 {
 public:
 
@@ -131,6 +131,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.4  2002/07/11 14:17:54  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

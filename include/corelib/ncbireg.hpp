@@ -80,7 +80,7 @@ name1 = value1
 ///      the '\n' converts into/from the platform-specific EOL when writing or
 ///      reading the config stream(file).
 
-class CNcbiRegistry {
+class NCBI_XNCBI_EXPORT CNcbiRegistry {
 public:
     // Flags
     enum EFlags {
@@ -206,6 +206,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.16  2002/04/11 20:39:18  ivanov
  * CVS log moved to end of the file
  *

@@ -57,12 +57,12 @@ class CDiagBuffer
 
     // Flags
     friend bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags);
-    friend TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
-    friend void SetDiagPostFlag(EDiagPostFlag flag);
-    friend void UnsetDiagPostFlag(EDiagPostFlag flag);
-    friend void SetDiagPostPrefix(const char* prefix);
-    friend void PushDiagPostPrefix(const char* prefix);
-    friend void PopDiagPostPrefix();
+    NCBI_XNCBI_EXPORT friend TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
+    NCBI_XNCBI_EXPORT friend void SetDiagPostFlag(EDiagPostFlag flag);
+    NCBI_XNCBI_EXPORT friend void UnsetDiagPostFlag(EDiagPostFlag flag);
+    NCBI_XNCBI_EXPORT friend void SetDiagPostPrefix(const char* prefix);
+    NCBI_XNCBI_EXPORT friend void PushDiagPostPrefix(const char* prefix);
+    NCBI_XNCBI_EXPORT friend void PopDiagPostPrefix();
 
     //
     friend class CNcbiDiag;
@@ -70,24 +70,24 @@ class CDiagBuffer
     friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
 
     // Severity
-    friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
-    friend void SetDiagFixedPostLevel(const EDiagSev post_sev);
-    friend bool DisableDiagPostLevelChange(bool disable_change);
-    friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
+    NCBI_XNCBI_EXPORT friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
+    NCBI_XNCBI_EXPORT friend void SetDiagFixedPostLevel(const EDiagSev post_sev);
+    NCBI_XNCBI_EXPORT friend bool DisableDiagPostLevelChange(bool disable_change);
+    NCBI_XNCBI_EXPORT friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
 
     // Others
-    friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
-    friend bool IsDiagStream(const CNcbiOstream* os);
+    NCBI_XNCBI_EXPORT friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
+    NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
 
     // Handler
-    friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
-    friend CDiagHandler* GetDiagHandler(bool take_ownership);
-    friend bool IsSetDiagHandler(void);
+    NCBI_XNCBI_EXPORT friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
+    NCBI_XNCBI_EXPORT friend CDiagHandler* GetDiagHandler(bool take_ownership);
+    NCBI_XNCBI_EXPORT friend bool IsSetDiagHandler(void);
 
     // Error code information
-    friend void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete);
-    friend CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership);
-    friend bool IsSetDiagErrCodeInfo(void);
+    NCBI_XNCBI_EXPORT friend void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete);
+    NCBI_XNCBI_EXPORT friend CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership);
+    NCBI_XNCBI_EXPORT friend bool IsSetDiagErrCodeInfo(void);
 
 private:
     friend class CDiagRestorer;
@@ -119,10 +119,10 @@ private:
             (*m_Stream) << x;
     }
 
-    void Flush  (void);
-    void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
-    void EndMess(const CNcbiDiag& diag);   // output current diag. message
-    bool SetDiag(const CNcbiDiag& diag);
+    NCBI_XNCBI_EXPORT void Flush  (void);
+    NCBI_XNCBI_EXPORT void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
+    NCBI_XNCBI_EXPORT void EndMess(const CNcbiDiag& diag);   // output current diag. message
+    NCBI_XNCBI_EXPORT bool SetDiag(const CNcbiDiag& diag);
 
     // flush & detach the current user
     void Detach(const CNcbiDiag* diag);
@@ -222,7 +222,6 @@ const CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code) const
 {
     return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
 }
-
 
 inline
 bool operator< (const ErrCode& ec1, const ErrCode& ec2)
@@ -420,6 +419,10 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.34  2002/08/01 18:48:08  ivanov
  * Added stuff to store and output error verbose messages for error codes
  *

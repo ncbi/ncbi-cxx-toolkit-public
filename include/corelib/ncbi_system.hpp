@@ -91,14 +91,20 @@ extern bool SetCpuTimeLimit(size_t max_cpu_time,
 /* [UNIX & Windows]
  * Return number of active CPUs (never less than 1).
  */
+NCBI_XNCBI_EXPORT
 extern unsigned int GetCpuCount(void);
 
 
 /* [UNIX & Windows]
  * Sleep specified number of microseconds/millisecond/seconds
  */
+NCBI_XNCBI_EXPORT
 extern void SleepSec(unsigned long sec);
+
+NCBI_XNCBI_EXPORT
 extern void SleepMilliSec(unsigned long ml_sec);
+
+NCBI_XNCBI_EXPORT
 extern void SleepMicroSec(unsigned long mc_sec);
 
 
@@ -108,6 +114,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.9  2002/07/16 13:38:00  ivanov
  * Little modification and optimization of the Sleep* functions
  *

@@ -34,6 +34,8 @@
  */
 
 #include <ncbiconf.h>
+#include <corelib/mswin_export.hpp>
+
 
 // Get rid of some warnings in MSVC++ 6.00
 #if (_MSC_VER >= 1200)
@@ -120,6 +122,10 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.27  2002/04/18 18:51:07  ucko
  * WorkShop 5.3 fixed the problem with for-loop initializers;
  * conditionalize the special definition of BREAK accordingly.

@@ -122,7 +122,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CAtomicCounter
+class NCBI_XNCBI_EXPORT CAtomicCounter
 {
 public:
     typedef TNCBIAtomicValue TValue;
@@ -146,7 +146,7 @@ private:
 
 
 // Mutable version of atomic counter
-class CMutableAtomicCounter
+class NCBI_XNCBI_EXPORT CMutableAtomicCounter
 {
 public:
     typedef CAtomicCounter::TValue TValue;
@@ -290,6 +290,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2002/12/18 22:53:21  dicuccio
+* Added export specifier for building DLLs in windows.  Added global list of
+* all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+*
 * Revision 1.10  2002/10/30 17:14:33  ucko
 * Enable inline asm for ICC 6, which seems to be okay with our (modern) syntax.
 *

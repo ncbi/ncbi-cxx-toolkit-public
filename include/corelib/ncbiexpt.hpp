@@ -87,8 +87,13 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 // "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW
 extern void DoThrowTraceAbort(void);
 
+NCBI_XNCBI_EXPORT
 extern void DoDbgPrint(const char* file, int line, const char* message);
+
+NCBI_XNCBI_EXPORT
 extern void DoDbgPrint(const char* file, int line, const string& message);
+
+NCBI_XNCBI_EXPORT
 extern void DoDbgPrint(const char* file, int line,
                        const char* msg1, const char* msg2);
 
@@ -271,7 +276,7 @@ STD_CATCH(message) \
 
 class CExceptionReporter;
 
-class CException : public std::exception
+class NCBI_XNCBI_EXPORT CException : public std::exception
 {
 public:
     // Each derived class has its own err.codes and their interpretations
@@ -459,7 +464,7 @@ public: \
 /////////////////////////////////////////////////////////////////////////////
 // CExceptionReporter
 
-class CExceptionReporter
+class NCBI_XNCBI_EXPORT CExceptionReporter
 {
 public:
     CExceptionReporter(void);
@@ -493,7 +498,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // CExceptionReporterStream
 
-class CExceptionReporterStream : public CExceptionReporter
+class NCBI_XNCBI_EXPORT CExceptionReporterStream : public CExceptionReporter
 {
 public:
     CExceptionReporterStream(ostream& out);
@@ -512,7 +517,7 @@ private:
 // CCoreException - corelib exceptions
 
 
-class CCoreException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XNCBI_EXPORT CCoreException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -539,7 +544,7 @@ public:
 //
 
 
-class CErrnoException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XNCBI_EXPORT CErrnoException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
 
@@ -579,7 +584,7 @@ private:
 
 
 
-class CParseException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XNCBI_EXPORT CParseException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
 
@@ -655,6 +660,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.38  2002/08/20 19:13:47  gouriano
  * added DiagPostFlags into CException reporting functions
  *

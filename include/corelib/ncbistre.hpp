@@ -164,14 +164,19 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiBadbit               IOS_PREFIX::badbit
 #define NcbiHardfail             IOS_PREFIX::hardfail
 
+
+
 // Platform-specific EndOfLine
+NCBI_XNCBI_EXPORT
 extern const char* Endl(void);
 
 // Read from "is" to "str" up to the delimiter symbol "delim"(or EOF)
+NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
 
 // Read from "is" to "str" the next line 
 // (taking into account platform specifics of End-of-Line)
+NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 
 
@@ -222,7 +227,7 @@ string GetString(void)
 */
 // Note: there is no requirements to put '\0' char at the end of buffer
 
-class CNcbiOstrstreamToString
+class NCBI_XNCBI_EXPORT CNcbiOstrstreamToString
 {
     CNcbiOstrstreamToString(const CNcbiOstrstreamToString&);
     CNcbiOstrstreamToString& operator= (const CNcbiOstrstreamToString&);
@@ -246,42 +251,42 @@ private:
 //    out << "Original:  \"" << str << "\"\n";
 //    out << "Lowercase: \"" << Locase(str) << "\"\n";
 
-class CUpcaseStringConverter
+class NCBI_XNCBI_EXPORT CUpcaseStringConverter
 {
 public:
     CUpcaseStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
-class CUpcaseCharPtrConverter
+class NCBI_XNCBI_EXPORT CUpcaseCharPtrConverter
 {
 public:
     CUpcaseCharPtrConverter(const char* s) : m_String(s) { }
     const char* m_String;
 };
 
-class CLocaseStringConverter
+class NCBI_XNCBI_EXPORT CLocaseStringConverter
 {
 public:
     CLocaseStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
-class CLocaseCharPtrConverter
+class NCBI_XNCBI_EXPORT CLocaseCharPtrConverter
 {
 public:
     CLocaseCharPtrConverter(const char* s) : m_String(s) { }
     const char* m_String;
 };
 
-class CPrintableStringConverter
+class NCBI_XNCBI_EXPORT CPrintableStringConverter
 {
 public:
     CPrintableStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
-class CPrintableCharPtrConverter
+class NCBI_XNCBI_EXPORT CPrintableCharPtrConverter
 {
 public:
     CPrintableCharPtrConverter(const char* s) : m_String(s) { }
@@ -338,11 +343,22 @@ CPrintableCharPtrConverter Printable(const char* s)
     return CPrintableCharPtrConverter(s);
 }
 
+NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s);
+
+NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s);
+
+NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s);
+
+NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s);
+
+NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
+
+NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
 
@@ -363,6 +379,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.30  2002/10/17 22:06:37  vakatov
  * + Endl() -- platform-specific EndOfLine
  *

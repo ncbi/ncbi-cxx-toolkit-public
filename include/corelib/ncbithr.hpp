@@ -76,7 +76,8 @@ BEGIN_NCBI_SCOPE
 //  Store thread-specific data.
 //
 
-class CTlsBase : public CObject  // only to serve as a base class for CTls<>
+// only to serve as a base class for CTls<>
+class NCBI_XNCBI_EXPORT CTlsBase : public CObject
 {
     friend class CRef<CTlsBase>;
     friend class CThread;
@@ -158,7 +159,7 @@ public:
 //
 
 
-class CThread : public CObject
+class NCBI_XNCBI_EXPORT CThread : public CObject
 {
     friend class CRef<CThread>;
     friend class CTlsBase;
@@ -339,6 +340,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.14  2002/09/30 16:57:34  vasilche
  * Removed extra comma in enum.
  *

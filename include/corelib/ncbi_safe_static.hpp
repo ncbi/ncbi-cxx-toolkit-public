@@ -58,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Base class for CSafeStaticPtr<> and CSafeStaticRef<> templates
-class CSafeStaticPtr_Base
+class NCBI_XNCBI_EXPORT CSafeStaticPtr_Base
 {
 public:
     // User cleanup function type
@@ -290,7 +290,7 @@ private:
 //    Register all on-demand variables,
 //    destroy them on the program termination.
 
-class CSafeStaticGuard
+class NCBI_XNCBI_EXPORT CSafeStaticGuard
 {
 public:
     // Check if already initialized. If not - create the stack,
@@ -340,6 +340,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.10  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *

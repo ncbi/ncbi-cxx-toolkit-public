@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //---------------------------------------------------------------------------
 //  CDebugDumpFormatter defines debug dump formatter interface
  
-class CDebugDumpFormatter
+class NCBI_XNCBI_EXPORT CDebugDumpFormatter
 {
 public:
     enum EValueType {
@@ -66,7 +66,7 @@ public:
 //  CDebugDumpContext provides client interface in the form [name=value]
 
 class CDebugDumpable;
-class CDebugDumpContext
+class NCBI_XNCBI_EXPORT CDebugDumpContext
 {
 public:
     CDebugDumpContext(CDebugDumpFormatter& formatter, const string& bundle);
@@ -117,7 +117,7 @@ private:
 //---------------------------------------------------------------------------
 //  CDebugDumpable defines DebugDump() functionality (abstract base class)
 
-class CDebugDumpable
+class NCBI_XNCBI_EXPORT CDebugDumpable
 {
 public:
     CDebugDumpable(void) {}
@@ -144,7 +144,7 @@ private:
 //---------------------------------------------------------------------------
 //  CDebugDumpFormatterText defines text debug dump formatter class
 
-class CDebugDumpFormatterText : public CDebugDumpFormatter
+class NCBI_XNCBI_EXPORT CDebugDumpFormatterText : public CDebugDumpFormatter
 {
 public:
     CDebugDumpFormatterText(ostream& out);
@@ -331,6 +331,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.3  2002/05/29 21:15:08  gouriano
  * changed formatter interface: added value type
  *

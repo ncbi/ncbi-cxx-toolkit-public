@@ -95,6 +95,7 @@ public:
 
     // The "name" can be either DLL basename (see explanations above) or
     // an absolute file path.
+    NCBI_XNCBI_EXPORT
     CDll(const string& name,
          ELoad         when_to_load = eLoadNow,
          EAutoUnload   auto_unload  = eNoAutoUnload,
@@ -104,6 +105,7 @@ public:
     // "path" and "name" in the following way:
     //  UNIX:    <path>/lib<name>.so ;  <path>/<name> if "name" is not basename
     //  MS-Win:  <path>\<name>.dll   ;  <path>\<name> if "name" is not basename
+    NCBI_XNCBI_EXPORT
     CDll(const string& path, const string& name,
          ELoad         when_to_load = eLoadNow,
          EAutoUnload   auto_unload  = eNoAutoUnload,
@@ -111,15 +113,15 @@ public:
 
     // Unload DLL if constructor was passed "eAutoUnload".
     // Destructor does not throw any exceptions.
-    ~CDll(void);
+    NCBI_XNCBI_EXPORT ~CDll(void);
 
     // Load DLL (name specified in the constructor's "dll_name").
     // If Load() is called more than once without calling Unload() in between,
     // then it will do nothing.
-    void Load(void);
+    NCBI_XNCBI_EXPORT void Load(void);
 
     // Unload DLL. Do nothing (and no error) if the DLL is not loaded.
-    void Unload(void);
+    NCBI_XNCBI_EXPORT void Unload(void);
 
     // Find an entry point (e.g. a function) with name "name" in the DLL.
     // Return the entry point's address on success, NULL on error.
@@ -141,6 +143,7 @@ public:
 private:
     // Find an entry point (e.g. a function) with name "name" in the DLL.
     // Return the entry point's address on success, NULL on error.
+    NCBI_XNCBI_EXPORT
     void* x_GetEntryPoint(const string& name, size_t pointer_size);
 
     // Throw exception with system-specific error message
@@ -170,6 +173,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.7  2002/10/29 15:59:06  ivanov
  * Prohibited copy constructor and assignment operator
  *

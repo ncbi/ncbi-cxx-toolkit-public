@@ -150,11 +150,14 @@ class CException;
 class CNcbiDiag
 {
 public:
+    NCBI_XNCBI_EXPORT
     CNcbiDiag(EDiagSev       sev        = eDiag_Error,
               TDiagPostFlags post_flags = eDPF_Default);
+    NCBI_XNCBI_EXPORT
     CNcbiDiag(const char*  file, size_t line,
               EDiagSev       sev        = eDiag_Error,
               TDiagPostFlags post_flags = eDPF_Default);
+    NCBI_XNCBI_EXPORT
     ~CNcbiDiag(void);
 
     // formatted output
@@ -213,11 +216,15 @@ public:
     TDiagPostFlags GetPostFlags   (void) const;
 
     // display error message
+    NCBI_XNCBI_EXPORT
     static void DiagFatal(const char* file, size_t line, const char* message);
+    NCBI_XNCBI_EXPORT
     static void DiagTrouble(const char* file, size_t line);
+    NCBI_XNCBI_EXPORT
     static void DiagAssert(const char* file, size_t line, const char* expression);
+    NCBI_XNCBI_EXPORT
     static void DiagValidate(const char* file, size_t line,
-                             const char* expression, const char* message);
+                                          const char* expression, const char* message);
     
 private:
     mutable EDiagSev       m_Severity;   // severity level of current message
@@ -248,21 +255,29 @@ inline bool IsSetDiagPostFlag(EDiagPostFlag  flag,
                               TDiagPostFlags flags = eDPF_Default);
 
 // Set all global post flags to "flags";  return previously set flags
+NCBI_XNCBI_EXPORT
 extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
 
 // Set/unset the specified flag (globally)
+NCBI_XNCBI_EXPORT
 extern void SetDiagPostFlag  (EDiagPostFlag flag);
+
+NCBI_XNCBI_EXPORT
 extern void UnsetDiagPostFlag(EDiagPostFlag flag);
 
 // Specify a string to prefix all subsequent error postings with
+NCBI_XNCBI_EXPORT
 extern void SetDiagPostPrefix(const char* prefix);
 
 // Push/pop a string to/from the list of message prefixes
+NCBI_XNCBI_EXPORT
 extern void PushDiagPostPrefix(const char* prefix);
+
+NCBI_XNCBI_EXPORT
 extern void PopDiagPostPrefix (void);
 
 // Auxiliary class to temporarily add a prefix.
-class CDiagAutoPrefix
+class NCBI_XNCBI_EXPORT CDiagAutoPrefix
 {
 public:
     // Add prefix "prefix"
@@ -281,24 +296,29 @@ public:
 // The value of DIAG_POST_LEVEL can be a digital value (0-9) or 
 // string value from CDiagBuffer::sm_SeverityName[] in any case.
 #define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
+NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
 // Disable change the diagnostic post level.
 // Consecutive using SetDiagPostLevel() will not have effect.
+NCBI_XNCBI_EXPORT
 extern bool DisableDiagPostLevelChange(bool disable_change = true);
 
 // Abrupt the application if severity is >= "max_sev"
 // Return previous die-level
+NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
 // Set/unset abort handler.
 // If "func"==0 that will be used default handler
 typedef void (*FAbortHandler)(void);
+NCBI_XNCBI_EXPORT
 extern void SetAbortHandler(FAbortHandler func = 0);
 
 // Smart abort function.
 // It can process user abort handler and don't popup assert windows
 // if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y")
+NCBI_XNCBI_EXPORT
 extern void Abort(void);
 
 // Disable/enable posting of "eDiag_Trace" messages.
@@ -311,6 +331,7 @@ enum EDiagTrace {
     eDT_Disable,      // ignore messages of severity "eDiag_Trace"
     eDT_Enable        // enable messages of severity "eDiag_Trace"
 };
+NCBI_XNCBI_EXPORT
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
 
@@ -361,7 +382,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
 
 
 // Base diag.handler class
-class CDiagHandler
+class NCBI_XNCBI_EXPORT CDiagHandler
 {
 public:
     virtual ~CDiagHandler(void) {}
@@ -371,20 +392,24 @@ public:
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 typedef void (*FDiagCleanup)(void* data);
 
+NCBI_XNCBI_EXPORT
 extern void          SetDiagHandler(CDiagHandler* handler,
                                     bool can_delete = true);
+NCBI_XNCBI_EXPORT
 extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
 
+NCBI_XNCBI_EXPORT
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);
 
 // Return TRUE if user has ever set (or unset) diag. handler
+NCBI_XNCBI_EXPORT
 extern bool IsSetDiagHandler(void);
 
 
 // Specialization of "CDiagHandler" for the stream-based diagnostics
-class CStreamDiagHandler : public CDiagHandler
+class NCBI_XNCBI_EXPORT CStreamDiagHandler : public CDiagHandler
 {
 public:
     // This does *not* own the stream; users will need to clean it up
@@ -393,7 +418,7 @@ public:
         : m_Stream(os), m_QuickFlush(quick_flush) {}
     virtual void Post(const SDiagMessage& mess);
 
-    friend bool IsDiagStream(const CNcbiOstream* os);
+    NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
 
 protected:
     CNcbiOstream* m_Stream;
@@ -405,6 +430,7 @@ private:
 
 // Write the error diagnostics to output stream "os"
 // (this uses the SetDiagHandler() functionality)
+NCBI_XNCBI_EXPORT
 extern void SetDiagStream
 (CNcbiOstream* os,
  bool          quick_flush  = true,// do stream flush after every message
@@ -413,10 +439,11 @@ extern void SetDiagStream
  );
 
 // Return TRUE if "os" is the current diag. stream
+NCBI_XNCBI_EXPORT 
 extern bool IsDiagStream(const CNcbiOstream* os);
 
 
-class CDiagFactory
+class NCBI_XNCBI_EXPORT CDiagFactory
 {
 public:
     virtual CDiagHandler* New(const string& s) = 0;
@@ -424,7 +451,7 @@ public:
 
 
 // Auxiliary class to limit the duration of changes to diagnostic settings.
-class CDiagRestorer
+class NCBI_XNCBI_EXPORT CDiagRestorer
 {
 public:
     CDiagRestorer (void); // captures current settings
@@ -482,7 +509,7 @@ public:
 };
 
 
-class CDiagErrCodeInfo
+class NCBI_XNCBI_EXPORT CDiagErrCodeInfo
 {
 public:
     // Constructors
@@ -532,9 +559,11 @@ private:
 
 #define DIAG_MESSAGE_FILE "MessageFile"
 
+NCBI_XNCBI_EXPORT
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info,
                                bool              can_delete = true);
 
+NCBI_XNCBI_EXPORT
 extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership = false);
 
 
@@ -555,6 +584,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.54  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.53  2002/09/24 18:28:20  vasilche
  * Fixed behavour of CNcbiDiag::DiagValidate() in release mode
  *

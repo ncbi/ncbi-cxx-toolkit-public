@@ -99,7 +99,7 @@ class CArgAllow;
 // Exception the CArg* code can throw
 //
 
-class CArgException : public CCoreException
+class NCBI_XNCBI_EXPORT CArgException : public CCoreException
 {
 public:
     enum EErrCode {
@@ -131,7 +131,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CArgException,CCoreException);
 };
 
-class CArgHelpException : public CArgException
+class NCBI_XNCBI_EXPORT CArgHelpException : public CArgException
 {
 public:
     enum EErrCode {
@@ -152,7 +152,7 @@ public:
 // Generic abstract base class to access arg.value
 //
 
-class CArgValue : public CObject
+class NCBI_XNCBI_EXPORT CArgValue : public CObject
 {
 public:
     // Get argument name
@@ -203,7 +203,7 @@ protected:
 //        in the order of insertion (by method Add).
 //
 
-class CArgs
+class NCBI_XNCBI_EXPORT CArgs
 {
 public:
     CArgs(void);
@@ -252,7 +252,6 @@ private:
 class CArgDesc;
 
 
-
 //
 // Container to store the command-line argument descriptions.
 // Provides the means for the parsing and verification of
@@ -261,7 +260,7 @@ class CArgDesc;
 // It can also compose and print out the USAGE info.
 //
 
-class CArgDescriptions
+class NCBI_XNCBI_EXPORT CArgDescriptions
 {
 public:
     // If "auto_help" is passed TRUE, then a special flag "-h"
@@ -496,7 +495,7 @@ public:
 // Abstract base class
 //
 
-class CArgAllow : public CObject
+class NCBI_XNCBI_EXPORT CArgAllow : public CObject
 {
 public:
     virtual bool   Verify(const string &value) const = 0;
@@ -517,7 +516,7 @@ protected:
 // To allow only printable symbols (according to "isprint()" from <ctype.h>):
 //   SetConstraint("MyArg", new CArgAllow_Symbols(CArgAllow_Symbols::ePrint))
 
-class CArgAllow_Symbols : public CArgAllow
+class NCBI_XNCBI_EXPORT CArgAllow_Symbols : public CArgAllow
 {
 public:
     enum ESymbolClass {
@@ -549,7 +548,7 @@ protected:
 // To allow only numeric symbols (according to "isdigit()" from <ctype.h>):
 //   SetConstraint("MyArg", new CArgAllow_String(CArgAllow_String::eDigit))
 
-class CArgAllow_String : public CArgAllow_Symbols
+class NCBI_XNCBI_EXPORT CArgAllow_String : public CArgAllow_Symbols
 {
 public:
     CArgAllow_String(ESymbolClass symbol_class);
@@ -570,7 +569,7 @@ protected:
 // Use "operator,()" to shorten the notation:
 //   SetConstraint("b", &(*new CArgAllow_Strings, "foo", "bar", "etc"))
 
-class CArgAllow_Strings : public CArgAllow
+class NCBI_XNCBI_EXPORT CArgAllow_Strings : public CArgAllow
 {
 public:
     CArgAllow_Strings(void);
@@ -591,7 +590,7 @@ private:
 //
 // Example:  SetConstraint("a2", new CArgAllow_Integers(-3, 34))
 
-class CArgAllow_Integers : public CArgAllow
+class NCBI_XNCBI_EXPORT CArgAllow_Integers : public CArgAllow
 {
 public:
     CArgAllow_Integers(int x_min, int x_max);
@@ -610,7 +609,7 @@ private:
 //
 // Example:  SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
 
-class CArgAllow_Doubles : public CArgAllow
+class NCBI_XNCBI_EXPORT CArgAllow_Doubles : public CArgAllow
 {
 public:
     CArgAllow_Doubles(double x_min, double x_max);
@@ -623,12 +622,50 @@ private:
 };
 
 
+//
+// Base class for the description of various types of argument
+// This was a pre-declaration; in MSVC, a predeclaration here causes a heap
+// corruption on termination because this class's virtual destructor isn't
+// defined at the moment the compiler instantiates the destructor of
+// AutoPtr<CArgDesc>
+//
+
+class CArgDesc
+{
+public:
+    CArgDesc(const string& name, const string& comment);
+    virtual ~CArgDesc(void);
+
+    const string& GetName   (void) const { return m_Name; }
+    const string& GetComment(void) const { return m_Comment; }
+
+    virtual string GetUsageSynopsis(bool name_only = false) const = 0;
+    virtual string GetUsageCommentAttr(void) const = 0;
+
+    virtual CArgValue* ProcessArgument(const string& value) const = 0;
+    virtual CArgValue* ProcessDefault(void) const = 0;
+    virtual void       VerifyDefault (void) const;
+
+    virtual void             SetConstraint(CArgAllow* constraint);
+    virtual const CArgAllow* GetConstraint(void) const;
+    string                   GetUsageConstraint(void) const;
+
+private:
+    string m_Name;
+    string m_Comment;
+};
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/12/18 22:53:21  dicuccio
+ * Added export specifier for building DLLs in windows.  Added global list of
+ * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
+ *
  * Revision 1.24  2002/07/15 18:17:50  gouriano
  * renamed CNcbiException and its descendents
  *
