@@ -105,8 +105,17 @@ const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
     if (i != m_BioseqHandlesCache.end()) {
         return i->second;
     } else {
-        return m_BioseqHandlesCache[row] = 
+        const CBioseq_Handle& bioseq_handle = m_BioseqHandlesCache[row] =
             GetScope().GetBioseqHandle(GetSeqId(row));
+
+        if ( !bioseq_handle ) {
+            string errstr = string("CAlnVec::GetBioseqHandle(): ") 
+                + "Seq-id cannot be resolved: "
+                + GetSeqId(row).AsFastaString();
+                
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+        }
+        return bioseq_handle;
     }
 }
 
@@ -631,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/07/15 20:46:09  todorov
+* Exception if bioseq handle is null
+*
 * Revision 1.28  2003/06/05 19:03:12  todorov
 * Added const refs to Dense-seg members as a speed optimization
 *
