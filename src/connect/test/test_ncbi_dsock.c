@@ -117,7 +117,7 @@ static int s_Server(int x_port)
     CORE_LOGF(eLOG_Note, ("[Server]  Message received from %s:%hu, %lu bytes",
                           addr, peerport, (unsigned long) msgsize));
 
-    if (!(buf = malloc(msgsize ? msgsize : 1))) {
+    if (!(buf = (char*) malloc(msgsize ? msgsize : 1))) {
         CORE_LOG_ERRNO(eLOG_Error, errno, "[Server]  Cannot alloc msg buf");
         return 1;
     }
@@ -203,7 +203,7 @@ static int s_Client(int x_port)
     CORE_LOGF(eLOG_Note, ("[Client]  Generating a message %lu bytes long",
                           (unsigned long) msgsize));
 
-    if (!(buf = malloc(2*msgsize + 9))) {
+    if (!(buf = (char*) malloc(2*msgsize + 9))) {
         CORE_LOG_ERRNO(eLOG_Error, errno, "[Client]  Cannot alloc msg buf");
         return 1;        
     }
@@ -318,6 +318,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/02/28 14:46:36  lavr
+ * Explicit casts for malloc()'ed memory
+ *
  * Revision 6.5  2003/02/14 15:41:26  lavr
  * Limit packet size on OSF1, too
  *
