@@ -753,7 +753,13 @@ AC_MSG_CHECKING(if SYBASE libraries are available)
 if test "$with_sybase" != "no" ; then
    SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    SYBASE_INCLUDE="-I$SYBASE_PATH/include"
-   SYBASE_LIBS="-L$SYBASE_PATH/lib -lct -lcs -ltcl -lcomn -lintl"
+   SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
+   if test "$with_mt" = "yes" ; then
+      changequote(<<, >>)dnl
+      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z]*\)/\1_r/g'`
+      changequote([, ])dnl
+   fi
+   SYBASE_LIBS="-L$SYBASE_PATH/lib -R/export/home/sybase/clients/current/lib:$SYBASE_PATH/lib $SYBASE_LIBLIST"
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
@@ -777,10 +783,14 @@ if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
    NCBI_C_INCLUDE="-I$NCBI_C_PATH/include"
    if test "$with_debug" = "no" ; then
-     NCBI_C_LIBPATH="-L$NCBI_C_PATH/lib"
+     NCBI_C_LIBPATH="$NCBI_C_PATH/lib"
    else
-     NCBI_C_LIBPATH="-L$NCBI_C_PATH/altlib"
+     NCBI_C_LIBPATH="$NCBI_C_PATH/altlib"
    fi
+   if test "$with_mt" = "yes" ; then
+     NCBI_C_LIBPATH="$NCBI_C_LIBPATH $NCBI_C_LIBPATH/ncbithr.o"
+   fi
+   NCBI_C_LIBPATH="-L$NCBI_C_LIBPATH"
    CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
    LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
