@@ -57,17 +57,14 @@ AC_PROG_CXX
 
 
 #### Detect supported compilers
-changequote(<<, >>)dnl
+changequote(, )dnl
 compiler=
 compiler_ver=
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-    2\.95* ) compiler="GCC" ;;
-    egcs-2\.91\.* )
-      case "$host" in
-       i*86*-pc-cygwin32 ) compiler="EGCS" ;;
-      esac ;;
+    2\.95* )        compiler="GCC" ;;
+    egcs-2\.91\.* ) compiler="EGCS" ;;
    esac
 else
    case "$host" in
@@ -112,15 +109,14 @@ fi
 x_CXX=
 
 
-#### Check if the compiler matches one of the supported compilers
-if test -z "$compiler" ; then
-  AC_MSG_ERROR(["Compiler $CXX $compiler_ver is not supported. Consult doc/config.html#ref_Compilers for the list of supported platforms/compilers"])
-fi
-
-
 #### Provide default environment setup for known platforms/compilers
 compiler_extra=
 case "$host:$compiler" in
+ sparc-sun-solaris2\.6:GCC )
+   echo "GCC compiler is not supported for:  $host"
+   compiler=
+   ;;
+
  *-linux*:GCC )
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
@@ -131,9 +127,7 @@ case "$host:$compiler" in
    ;;
 
  *:WorkShop5 )
-   if test "$with_bincopy" != "yes" ; then
-     with_bincopy="no"
-   fi
+   with_bincopy=${with_bincopy:="no"}
    if test -n "$WS64_CFLAGS" ; then
       if test "$host" != "sparc-sun-solaris2.7" ; then
         echo "64bit flags are for sparc-sun-solaris2.7 only:  $WS64_CFLAGS"
@@ -187,7 +181,19 @@ case "$host:$compiler" in
    script_shell=""
    make_shell=""
    ;;
+
+ *:EGCS )
+   echo "EGCS compiler is not supported for:  $host"
+   compiler=
+   ;;
 esac
+
+
+#### Check if the compiler matches one of supported compilers on this platform
+if test -z "$compiler" ; then
+  AC_MSG_ERROR(["Compiler $CXX $compiler_ver is not supported. Consult doc/config.html#ref_Compilers for the list of supported platforms/compilers"])
+fi
+
 
 
 #### GNU compiler::  common flags and definitions
@@ -216,6 +222,23 @@ if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
    exec_prefix="${srcdir}/${compiler}${compiler_extra}"
 fi
 
+
+#### Add "Release"/"Debug" suffix to "${exec_prefix}"
+if test "$with_debug_sfx" != "no" ; then
+   if test "$with_debug" = "no" ; then
+      exec_prefix="${exec_prefix}-Release"
+   else
+      exec_prefix="${exec_prefix}-Debug"
+   fi
+fi
+
+
+#### Add full host specs to "${exec_prefix}"
+if test "$with_hostspec" = "yes" ; then
+   exec_prefix="${exec_prefix}--${host}"
+fi
+
+
 #### Check if there is "${exec_prefix}" dir
 test -d "${exec_prefix}"  ||  mkdir -p "${exec_prefix}"
 
@@ -234,11 +257,6 @@ case "${exec_prefix}" in
    ;;
    *  ) exec_prefix="`(cd ${exec_prefix}; pwd)`" ;;
 esac
-
-#### Add full host specs to "${exec_prefix}"
-if test "$with_hostspec" = "yes" ; then
-   exec_prefix="${exec_prefix}--${host}"
-fi
 
 
 #### Make "srcdir" absolute
@@ -481,14 +499,14 @@ orig_LIBS="$LIBS"
 ## SYBASE libraries
 AC_MSG_CHECKING(if SYBASE libraries are available)
 if test "$with_sybase" != "no" ; then
-   SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/11.1.0"}
+   SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    SYBASE_INCLUDE="-I$SYBASE_PATH/include"
    SYBASE_LIBS="-L$SYBASE_PATH/lib -lct -lcs -ltcl -lcomn -lintl"
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <ctpublic.h>],
-      [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0);  return 0; ],
+      [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
       [AC_DEFINE_UNQUOTED(HAVE_LIBSYBASE, 1)],
       [with_sybase="no"]
    )
@@ -515,7 +533,7 @@ if test "$with_ncbi_c" != "no" ; then
    LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <ncbi.h>],
-      [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0);  return 0; ],
+      [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ],
       [AC_DEFINE_UNQUOTED(HAVE_NCBI_C, 1)],
       [with_ncbi_c="no"]
    )
@@ -546,7 +564,7 @@ if test "$with_fastcgi" != "no" ; then
    LIBS="$FASTCGI_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <fcgiapp.h>],
-      [return FCGX_IsCGI(); ],
+      [ (void) FCGX_IsCGI(); ],
       [AC_DEFINE_UNQUOTED(HAVE_LIBFASTCGI, 1)],
       [with_fastcgi="no"]
    )
@@ -599,7 +617,7 @@ elif test "$with_pubmed" != "no" ; then
    LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
    AC_TRY_LINK(
       [#include <ncbistr.hpp>],
-      [ CNcbiString("abc");  return 0; ],
+      [ CNcbiString("abc"); ],
       [AC_DEFINE_UNQUOTED(HAVE_PUBMED, 1)],
       [with_pubmed="no"]
    )
@@ -792,6 +810,7 @@ Optional configure flags:
  --without-pubmed        do not use NCBI PubMed libraries
  --without-serial        do not build the serialization library and tests
  --exec-prefix           to specify a non-default build directory name
+ --without-debug-sfx     do not add Release/Debug to the build dir name
  --with-hostspec         add full host specs(OS, CPU) to the build dir name
 
 CFLAGS   = $CFLAGS
@@ -800,7 +819,7 @@ CPPFLAGS = $CPPFLAGS
 LDFLAGS  = $LDFLAGS
 
 Tools / flags / paths are in:  $builddir/Makefile.mk
-Preprocessor defines  are in:   $ncbiconf
+Preprocessor defines  are in:  $ncbiconf
 
 To build everything:    cd $builddir && make all_r
 EOCONF
