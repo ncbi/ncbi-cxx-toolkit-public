@@ -56,27 +56,29 @@
      NAME = 258,
      STRING = 259,
      NUM = 260,
-     AND = 261,
-     OR = 262,
-     EQ = 263,
-     NOTEQ = 264,
-     GT = 265,
-     GE = 266,
-     LT = 267,
-     LE = 268
+     NOT = 261,
+     AND = 262,
+     OR = 263,
+     EQ = 264,
+     NOTEQ = 265,
+     GT = 266,
+     GE = 267,
+     LT = 268,
+     LE = 269
    };
 #endif
 #define NAME 258
 #define STRING 259
 #define NUM 260
-#define AND 261
-#define OR 262
-#define EQ 263
-#define NOTEQ 264
-#define GT 265
-#define GE 266
-#define LT 267
-#define LE 268
+#define NOT 261
+#define AND 262
+#define OR 263
+#define EQ 264
+#define NOTEQ 265
+#define GT 266
+#define GE 267
+#define LT 268
+#define LE 269
 
 
 
@@ -136,7 +138,7 @@ typedef int YYSTYPE;
 
 
 /* Line 214 of yacc.c.  */
-#line 140 "bdb_query_bison.tab.c"
+#line 142 "bdb_query_bison.tab.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
@@ -233,22 +235,22 @@ union yyalloc
 #endif
 
 /* YYFINAL -- State number of the termination state. */
-#define YYFINAL  8
+#define YYFINAL  10
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   58
+#define YYLAST   60
 
 /* YYNTOKENS -- Number of terminals. */
-#define YYNTOKENS  16
+#define YYNTOKENS  17
 /* YYNNTS -- Number of nonterminals. */
 #define YYNNTS  3
 /* YYNRULES -- Number of rules. */
-#define YYNRULES  14
+#define YYNRULES  15
 /* YYNRULES -- Number of states. */
-#define YYNSTATES  26
+#define YYNSTATES  28
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   268
+#define YYMAXUTOK   269
 
 #define YYTRANSLATE(YYX) 						\
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -260,7 +262,7 @@ static const unsigned char yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      14,    15,     2,     2,     2,     2,     2,     2,     2,     2,
+      15,    16,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -282,7 +284,7 @@ static const unsigned char yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,     8,     9,    10,    11,    12,    13
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14
 };
 
 #if YYDEBUG
@@ -291,24 +293,24 @@ static const unsigned char yytranslate[] =
 static const unsigned char yyprhs[] =
 {
        0,     0,     3,     5,     7,     9,    11,    15,    19,    23,
-      27,    31,    35,    39,    43
+      27,    31,    35,    39,    43,    47
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS. */
 static const yysigned_char yyrhs[] =
 {
-      17,     0,    -1,    18,    -1,     5,    -1,     4,    -1,     3,
-      -1,    18,     6,    18,    -1,    18,     7,    18,    -1,    18,
-       8,    18,    -1,    18,     9,    18,    -1,    18,    10,    18,
-      -1,    18,    11,    18,    -1,    18,    12,    18,    -1,    18,
-      13,    18,    -1,    14,    18,    15,    -1
+      18,     0,    -1,    19,    -1,     5,    -1,     4,    -1,     3,
+      -1,    19,     7,    19,    -1,    19,     8,    19,    -1,    19,
+       9,    19,    -1,    19,    10,    19,    -1,    19,    11,    19,
+      -1,    19,    12,    19,    -1,    19,    13,    19,    -1,    19,
+      14,    19,    -1,    15,    19,    16,    -1,     6,    19,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned char yyrline[] =
 {
-       0,    88,    88,   100,   104,   108,   112,   117,   122,   127,
-     133,   138,   143,   148,   153
+       0,    89,    89,   102,   106,   110,   114,   119,   124,   129,
+     135,   140,   145,   150,   155,   159
 };
 #endif
 
@@ -317,9 +319,9 @@ static const unsigned char yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals. */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "NAME", "STRING", "NUM", "AND", "OR", "EQ", 
-  "NOTEQ", "GT", "GE", "LT", "LE", "'('", "')'", "$accept", "input", 
-  "exp", 0
+  "$end", "error", "$undefined", "NAME", "STRING", "NUM", "NOT", "AND", 
+  "OR", "EQ", "NOTEQ", "GT", "GE", "LT", "LE", "'('", "')'", "$accept", 
+  "input", "exp", 0
 };
 #endif
 
@@ -329,22 +331,22 @@ static const char *const yytname[] =
 static const unsigned short yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,   266,   267,   268,    40,    41
+     265,   266,   267,   268,   269,    40,    41
 };
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const unsigned char yyr1[] =
 {
-       0,    16,    17,    18,    18,    18,    18,    18,    18,    18,
-      18,    18,    18,    18,    18
+       0,    17,    18,    19,    19,    19,    19,    19,    19,    19,
+      19,    19,    19,    19,    19,    19
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const unsigned char yyr2[] =
 {
        0,     2,     1,     1,     1,     1,     3,     3,     3,     3,
-       3,     3,     3,     3,     3
+       3,     3,     3,     3,     3,     2
 };
 
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
@@ -352,15 +354,15 @@ static const unsigned char yyr2[] =
    means the default is an error.  */
 static const unsigned char yydefact[] =
 {
-       0,     5,     4,     3,     0,     0,     2,     0,     1,     0,
-       0,     0,     0,     0,     0,     0,     0,    14,     6,     7,
-       8,     9,    10,    11,    12,    13
+       0,     5,     4,     3,     0,     0,     0,     2,    15,     0,
+       1,     0,     0,     0,     0,     0,     0,     0,     0,    14,
+       6,     7,     8,     9,    10,    11,    12,    13
 };
 
 /* YYDEFGOTO[NTERM-NUM]. */
 static const yysigned_char yydefgoto[] =
 {
-      -1,     5,     6
+      -1,     6,     7
 };
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
@@ -368,9 +370,9 @@ static const yysigned_char yydefgoto[] =
 #define YYPACT_NINF -5
 static const yysigned_char yypact[] =
 {
-      -1,    -5,    -5,    -5,    -1,     1,    18,     8,    -5,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -5,    25,    31,
-      36,    40,    43,    45,     9,    -5
+       0,    -5,    -5,    -5,     0,     0,     2,    19,    19,     9,
+      -5,     0,     0,     0,     0,     0,     0,     0,     0,    -5,
+      26,    32,    37,    41,    44,    46,    10,    -5
 };
 
 /* YYPGOTO[NTERM-NUM].  */
@@ -386,31 +388,33 @@ static const yysigned_char yypgoto[] =
 #define YYTABLE_NINF -1
 static const unsigned char yytable[] =
 {
-       7,     8,     1,     2,     3,    18,    19,    20,    21,    22,
-      23,    24,    25,     4,     9,    10,    11,    12,    13,    14,
-      15,    16,    16,    17,     9,    10,    11,    12,    13,    14,
-      15,    16,    10,    11,    12,    13,    14,    15,    16,    11,
-      12,    13,    14,    15,    16,    12,    13,    14,    15,    16,
-      13,    14,    15,    16,    14,    15,    16,    15,    16
+       8,     9,    10,     1,     2,     3,     4,    20,    21,    22,
+      23,    24,    25,    26,    27,     5,    11,    12,    13,    14,
+      15,    16,    17,    18,    18,    19,    11,    12,    13,    14,
+      15,    16,    17,    18,    12,    13,    14,    15,    16,    17,
+      18,    13,    14,    15,    16,    17,    18,    14,    15,    16,
+      17,    18,    15,    16,    17,    18,    16,    17,    18,    17,
+      18
 };
 
 static const unsigned char yycheck[] =
 {
-       4,     0,     3,     4,     5,     9,    10,    11,    12,    13,
-      14,    15,    16,    14,     6,     7,     8,     9,    10,    11,
-      12,    13,    13,    15,     6,     7,     8,     9,    10,    11,
-      12,    13,     7,     8,     9,    10,    11,    12,    13,     8,
-       9,    10,    11,    12,    13,     9,    10,    11,    12,    13,
-      10,    11,    12,    13,    11,    12,    13,    12,    13
+       4,     5,     0,     3,     4,     5,     6,    11,    12,    13,
+      14,    15,    16,    17,    18,    15,     7,     8,     9,    10,
+      11,    12,    13,    14,    14,    16,     7,     8,     9,    10,
+      11,    12,    13,    14,     8,     9,    10,    11,    12,    13,
+      14,     9,    10,    11,    12,    13,    14,    10,    11,    12,
+      13,    14,    11,    12,    13,    14,    12,    13,    14,    13,
+      14
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const unsigned char yystos[] =
 {
-       0,     3,     4,     5,    14,    17,    18,    18,     0,     6,
-       7,     8,     9,    10,    11,    12,    13,    15,    18,    18,
-      18,    18,    18,    18,    18,    18
+       0,     3,     4,     5,     6,    15,    18,    19,    19,    19,
+       0,     7,     8,     9,    10,    11,    12,    13,    14,    16,
+      19,    19,    19,    19,    19,    19,    19,    19
 };
 
 #if ! defined (YYSIZE_T) && defined (__SIZE_TYPE__)
@@ -1021,28 +1025,28 @@ yyreduce:
   switch (yyn)
     {
         case 3:
-#line 101 "bdb_query_bison.y"
+#line 103 "bdb_query_bison.y"
     {
             yyval = yyvsp[0];         
         ;}
     break;
 
   case 4:
-#line 105 "bdb_query_bison.y"
+#line 107 "bdb_query_bison.y"
     {
             yyval = yyvsp[0];         
         ;}
     break;
 
   case 5:
-#line 109 "bdb_query_bison.y"
+#line 111 "bdb_query_bison.y"
     {
             yyval = yyvsp[0];         
         ;}
     break;
 
   case 6:
-#line 113 "bdb_query_bison.y"
+#line 115 "bdb_query_bison.y"
     { 
             yyval = CBDB_Query::NewLogicalNode(CBDB_QueryNode::eAnd, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1050,7 +1054,7 @@ yyreduce:
     break;
 
   case 7:
-#line 118 "bdb_query_bison.y"
+#line 120 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewLogicalNode(CBDB_QueryNode::eOr, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1058,7 +1062,7 @@ yyreduce:
     break;
 
   case 8:
-#line 123 "bdb_query_bison.y"
+#line 125 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1066,7 +1070,7 @@ yyreduce:
     break;
 
   case 9:
-#line 128 "bdb_query_bison.y"
+#line 130 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, yyvsp[-2], yyvsp[0]);
             yyval->GetValue().SetNot();
@@ -1075,7 +1079,7 @@ yyreduce:
     break;
 
   case 10:
-#line 134 "bdb_query_bison.y"
+#line 136 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eGT, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1083,7 +1087,7 @@ yyreduce:
     break;
 
   case 11:
-#line 139 "bdb_query_bison.y"
+#line 141 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eGE, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1091,7 +1095,7 @@ yyreduce:
     break;
 
   case 12:
-#line 144 "bdb_query_bison.y"
+#line 146 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eLT, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1099,7 +1103,7 @@ yyreduce:
     break;
 
   case 13:
-#line 149 "bdb_query_bison.y"
+#line 151 "bdb_query_bison.y"
     {
             yyval = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eLE, yyvsp[-2], yyvsp[0]);
             BisonSaveStageResult(yyval, parm);
@@ -1107,9 +1111,17 @@ yyreduce:
     break;
 
   case 14:
-#line 154 "bdb_query_bison.y"
+#line 156 "bdb_query_bison.y"
     { 
             yyval = yyvsp[-1];
+        ;}
+    break;
+
+  case 15:
+#line 160 "bdb_query_bison.y"
+    {
+            yyval = CBDB_Query::NewLogicalNode(CBDB_QueryNode::eNot, yyvsp[0], 0);
+            BisonSaveStageResult(yyval, parm);
         ;}
     break;
 
@@ -1117,7 +1129,7 @@ yyreduce:
     }
 
 /* Line 999 of yacc.c.  */
-#line 1121 "bdb_query_bison.tab.c"
+#line 1133 "bdb_query_bison.tab.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1323,7 +1335,7 @@ yyreturn:
 }
 
 
-#line 158 "bdb_query_bison.y"
+#line 166 "bdb_query_bison.y"
 
 
 

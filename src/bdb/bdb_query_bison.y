@@ -1,4 +1,4 @@
-/*  $Id: bdb_query_bison.y,v 1.2 2004/03/23 14:51:19 kuznets Exp $
+/*  $Id: bdb_query_bison.y,v 1.3 2004/03/23 16:37:55 kuznets Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -72,6 +72,7 @@ void BisonSaveStageResult(YYSTYPE res, void* parm)
 %token STRING
 %token NUM
 
+%left NOT
 %left AND
 %left OR
 %left EQ
@@ -97,7 +98,8 @@ input0:
 ;
 */
 
-exp:    NUM                
+exp:    
+		NUM                
         {
             $$ = $1;         
         }
@@ -153,6 +155,12 @@ exp:    NUM
         | '(' exp ')'
         { 
             $$ = $2;
+        } 
+        | NOT exp
+        {
+            $$ = CBDB_Query::NewLogicalNode(CBDB_QueryNode::eNot, $2, 0);
+            BisonSaveStageResult($$, parm);
         }
+
 ;
 %%

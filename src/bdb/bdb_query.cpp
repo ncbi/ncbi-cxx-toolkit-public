@@ -178,8 +178,10 @@ CBDB_Query::NewOperatorNode(CBDB_QueryNode::EOperatorType otype,
                             TQueryClause*  arg2)
 {
     auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(otype)));
-    tr->AddNode(arg1);
-    tr->AddNode(arg2);
+    if (arg1)
+        tr->AddNode(arg1);
+    if (arg2)
+        tr->AddNode(arg2);
 
     return tr.release();
 }
@@ -190,8 +192,10 @@ CBDB_Query::NewLogicalNode(CBDB_QueryNode::ELogicalType ltype,
                            TQueryClause*  arg2)
 {
     auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(ltype)));
-    tr->AddNode(arg1);
-    tr->AddNode(arg2);
+    if (arg1)
+        tr->AddNode(arg1);
+    if (arg2)
+        tr->AddNode(arg2);
 
     return tr.release();
 }
@@ -723,6 +727,35 @@ public:
 };
 
 
+/// NOT function 
+///
+/// @internal
+class CScannerFunctorNOT : public CScannerFunctorArgN
+{
+public:
+    CScannerFunctorNOT(CQueryExecEnv& env)
+     : CScannerFunctorArgN(env)
+    {}
+
+    void Eval(CTreeNode<CBDB_QueryNode>& tr)
+    {
+        GetArguments(tr, eCheckAll);
+
+        CBDB_QueryNode& qnode = tr.GetValue();
+
+        unsigned int size = m_ArgVector.size();
+        _ASSERT(size);
+
+        const string* arg = GetArg(0);
+        if (*arg == "0") {
+            qnode.SetValue("1");
+        } else {
+            qnode.SetValue("0");
+        }
+
+    }
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_FileScanner
@@ -903,6 +936,12 @@ CScannerEvaluateFunc::operator()(CTreeNode<CBDB_QueryNode>& tr, int delta)
                 func.Eval(tr);
             }
             break;
+            case CBDB_QueryNode::eNot:
+            {
+                CScannerFunctorNOT func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
             default:
                 _ASSERT(0);
             } // switch elogic
@@ -1035,6 +1074,9 @@ public:
                 case CBDB_QueryNode::eOr:
                     m_OStream << "OR";
                     break;
+                case CBDB_QueryNode::eNot:
+                    m_OStream << "NOT";
+                    break;
                 default:
                     _ASSERT(0);
                 } // switch elogic
@@ -1086,6 +1128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/23 16:37:54  kuznets
+ * Implemented NOT predicate
+ *
  * Revision 1.10  2004/03/23 14:51:19  kuznets
  * Implemented logical NOT, <, <=, >, >=
  *

@@ -127,7 +127,6 @@ int yylex(YYSTYPE *lvalp, void* param)
 
     // Process AND token
     if (toupper(c) == 'A') {
-        const char* tok_start = env->GetBufPtr() - 1;
         // look ahead if it is AND
         if (toupper(tok_start[1]) == 'N' &&
             toupper(tok_start[2]) == 'D' &&
@@ -140,7 +139,6 @@ int yylex(YYSTYPE *lvalp, void* param)
 
     // Process OR token
     if (toupper(c) == 'O') {
-        const char* tok_start = env->GetBufPtr() - 1;
         // look ahead if it is OR
         if (toupper(tok_start[1]) == 'R' &&
             isspace(tok_start[2])
@@ -150,9 +148,20 @@ int yylex(YYSTYPE *lvalp, void* param)
         }
     }
 
+    // Process NOT token
+    if (toupper(c) == 'N') {
+        // look ahead if it is NOT
+        if (toupper(tok_start[1]) == 'O' &&
+            toupper(tok_start[2]) == 'T' &&
+            isspace(tok_start[3])
+           ) {
+            env->Skip(3);
+            return NOT;
+        }
+    }
+
     // Process name-like tokens
     if (isalnum(c)) {
-        const char* tok_start = env->GetBufPtr() - 1;
         do {
             c = env->GetChar();            
         } while (isalnum(c) || c == '_');
@@ -182,6 +191,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/23 16:37:55  kuznets
+ * Implemented NOT predicate
+ *
  * Revision 1.6  2004/03/23 14:51:19  kuznets
  * Implemented logical NOT, <, <=, >, >=
  *

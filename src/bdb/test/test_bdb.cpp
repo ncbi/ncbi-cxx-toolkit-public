@@ -571,6 +571,15 @@ static void s_TEST_BDB_Query(void)
     }}
 
     {{
+    const char* ch = "not '1' = 2";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    cout << endl;
+    BDB_PrintQueryTree(cout, query);
+    assert(bres);
+    }}
+
+    {{
     const char* ch = "'1' != 2";
     BDB_ParseQuery(ch, &query);
     bres = scanner.StaticEvaluate(query);
@@ -782,6 +791,14 @@ static void s_TEST_BDB_Query(void)
     BDB_ParseQuery(ch, &query);
     bres = scanner.StaticEvaluate(query);
     assert(bres);
+    }}
+
+    {{
+    const char* ch = "NOT test AND test";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    BDB_PrintQueryTree(cout, query);
+    assert(!bres);
     }}
 
     cout << "======== Query test ok." << endl;
@@ -1934,6 +1951,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/03/23 16:37:55  kuznets
+ * Implemented NOT predicate
+ *
  * Revision 1.42  2004/03/23 14:51:19  kuznets
  * Implemented logical NOT, <, <=, >, >=
  *
