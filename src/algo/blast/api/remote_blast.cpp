@@ -31,7 +31,9 @@
 * ===========================================================================
 */
 
+#if defined(NCBI_OS_UNIX)
 #include <unistd.h>
+#endif
 
 #include <corelib/ncbi_system.hpp>
 #include <algo/blast/api/remote_blast.hpp>
@@ -608,6 +610,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/26 17:07:40  gorelenk
+* Added #if defined(NCBI_OS_UNIX) for #include <unistd.h>.
+*
 * Revision 1.2  2004/02/18 18:28:51  bealer
 * - Fix verbosity tests.
 *
