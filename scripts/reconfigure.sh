@@ -92,6 +92,7 @@ EOF
 
 case "$method" in
   update )
+    cd ${top_srcdir}  && \
     ${status_dir}/config.status
     ;;
 
