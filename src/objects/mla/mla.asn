@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --********************************************************************
 --
 --  Network MEDLINE Archive message formats
@@ -93,7 +93,8 @@ Error-val ::= ENUMERATED {
     journal-not-found (4),       -- Journal title not found
     citation-not-found (5),      -- Volume, Page and Author do not match any
                                  -- article
-    citation-ambiguous (6)       -- More than one article found
+    citation-ambiguous (6),      -- More than one article found
+    citation-too-many (7)        -- Too many article was found
     }
 
 Mla-back ::= CHOICE {
