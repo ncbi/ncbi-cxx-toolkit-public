@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/11/30 22:08:18  ostell
+ * finished Match()
+ *
  * Revision 6.3  2000/11/30 16:13:12  ostell
  * added support for Textseq_id to Seq_id.Match()
  *
@@ -164,13 +167,41 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 		else
 			return e_NO;
 	}
-        case e_Genbank:
-        case e_Embl:
         case e_Pir:
+	{
+		if (GetPir().Match(sid2.GetPir()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Swissprot:
+	{
+		if (GetSwissprot().Match(sid2.GetSwissprot()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Patent:
+	{
+		if (GetPatent().Match(sid2.GetPatent()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Other:
+	{
+		if (GetOther().Match(sid2.GetOther()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_General:
+	{
+		if (GetGeneral().Match(sid2.GetGeneral()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Gi:
 	{
 		if ((GetGi()) == (sid2.GetGi()))
@@ -178,9 +209,20 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 		else
 			return e_NO;
 	}
-        case e_Ddbj:
         case e_Prf:
+	{
+		if (GetPrf().Match(sid2.GetPrf()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_Pdb:
+	{
+		if (GetPdb().Match(sid2.GetPdb()))
+			return e_YES;
+		else
+			return e_NO;
+	}
         case e_not_set:
         default:
 		break;
