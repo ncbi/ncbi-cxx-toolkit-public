@@ -43,6 +43,7 @@
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/embl_formatter.hpp>
 #include <objtools/format/gff_formatter.hpp>
+#include <objtools/format/ftable_formatter.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/flat_expt.hpp>
 #include "utils.hpp"
@@ -70,9 +71,11 @@ CFlatItemFormatter* CFlatItemFormatter::New(TFormat format)
     case eFormat_GFF:
         return new CGFFFormatter;
 
+    case eFormat_FTable:
+        return new CFtbaleFormatter;
+
     case eFormat_DDBJ:
     case eFormat_GBSeq:
-    case eFormat_FTable:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
@@ -226,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/07 14:28:19  shomrat
+* Added FTable format
+*
 * Revision 1.4  2004/02/11 22:54:00  shomrat
 * using types in flag file
 *
