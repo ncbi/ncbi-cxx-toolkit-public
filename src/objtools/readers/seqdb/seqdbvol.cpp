@@ -89,8 +89,8 @@ Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx)
 
 static CFastMutex s_MapNaMutex;
 
-
-vector<Uint1> CSeqDBMapNa2ToNa4Setup(void)
+static vector<Uint1>
+s_SeqDBMapNA2ToNA4Setup(void)
 {
     vector<Uint1> translated;
     translated.resize(512);
@@ -112,9 +112,12 @@ vector<Uint1> CSeqDBMapNa2ToNa4Setup(void)
     return translated;
 }
 
-void CSeqDBMapNa2ToNa4(const char * buf2bit, vector<char> & buf4bit, int base_length)
+static void
+s_SeqDBMapNA2ToNA4(const char   * buf2bit,
+                   vector<char> & buf4bit,
+                   int            base_length)
 {
-    static vector<Uint1> expanded = CSeqDBMapNa2ToNa4Setup();
+    static vector<Uint1> expanded = s_SeqDBMapNA2ToNA4Setup();
     
     Uint4 estimated_length = (base_length + 1)/2;
     buf4bit.reserve(estimated_length);
@@ -145,7 +148,76 @@ void CSeqDBMapNa2ToNa4(const char * buf2bit, vector<char> & buf4bit, int base_le
     assert(estimated_length == buf4bit.size());
 }
 
-vector<Uint1> CSeqDBMapNcbi4NaToBlastNaSetup(void)
+static vector<Uint1>
+s_SeqDBMapNA2ToNA8Setup(void)
+{
+    // Builds a table; each two bit slice holds 0,1,2 or 3.  These are
+    // converted to whole bytes containing 1,2,4, or 8, respectively.
+    
+    vector<Uint1> translated;
+    translated.reserve(1024);
+    
+    for(Uint4 i = 0; i<256; i++) {
+        Uint4 p1 = (i >> 6) & 0x3;
+        Uint4 p2 = (i >> 4) & 0x3;
+        Uint4 p3 = (i >> 2) & 0x3;
+        Uint4 p4 = i & 0x3;
+        
+        translated.push_back(1 << p1);
+        translated.push_back(1 << p2);
+        translated.push_back(1 << p3);
+        translated.push_back(1 << p4);
+    }
+    
+    return translated;
+}
+
+static void
+s_SeqDBMapNA2ToNA8(const char   * buf2bit,
+                   vector<char> & buf8bit,
+                   Uint4          base_length)
+{
+    static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
+    
+    buf8bit.reserve(base_length);
+    
+    int whole_input_chars = base_length/4;
+    
+    // In a nucleotide search, this loop is probably a noticeable time
+    // consumer, at least relative to the CSeqDB universe.  Each input
+    // byte is used to look up a 4 byte output translation.  That four
+    // byte section is copied to the output vector.  By pre-processing
+    // the arithmetic in the ~Setup() function, we can just pull bytes
+    // from a vector.
+    
+    for(int i = 0; i < whole_input_chars; i++) {
+        Uint4 table_offset = (buf2bit[i] & 0xFF) * 4;
+        
+        buf8bit.push_back(expanded[ table_offset ]);
+        buf8bit.push_back(expanded[ table_offset + 1 ]);
+        buf8bit.push_back(expanded[ table_offset + 2 ]);
+        buf8bit.push_back(expanded[ table_offset + 3 ]);
+    }
+    
+    int bases_remain = base_length & 0x3;
+    
+    if (bases_remain) {
+        // We use the last byte of the input to look up a four byte
+        // translation; but we only use the bytes of it that we need.
+        
+        Uint4 table_offset = (buf2bit[whole_input_chars] & 0xFF) * 4;
+        
+        while(bases_remain--) {
+            buf8bit.push_back(expanded[ ++table_offset ]);
+        }
+    }
+    
+    assert(base_length == buf8bit.size());
+}
+
+#if 0
+static vector<Uint1>
+s_SeqDBMapNcbiNA4ToBlastNA4Setup(void)
 {
     vector<Uint1> translated;
     translated.resize(256);
@@ -184,12 +256,41 @@ vector<Uint1> CSeqDBMapNcbi4NaToBlastNaSetup(void)
     return translated;
 }
 
-void CSeqDBMapNcbiNa4ToBlastNa(vector<char> & buf)
+static void
+s_SeqDBMapNcbiNA4ToBlastNA4(vector<char> & buf)
 {
-    static vector<Uint1> trans = CSeqDBMapNcbi4NaToBlastNaSetup();
+    static vector<Uint1> trans = s_SeqDBMapNcbiNA4ToBlastNA4Setup();
     
     for(Uint4 i = 0; i < buf.size(); i++) {
         buf[i] = trans[ unsigned(buf[i]) & 0xFF ];
+    }
+}
+#endif
+
+static void
+s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
+{
+    Uint1 trans_ncbina8_to_blastna8[] = {
+        15, /* Gap, 0 */
+        0,  /* A,   1 */
+        1,  /* C,   2 */
+        6,  /* M,   3 */
+        2,  /* G,   4 */
+        4,  /* R,   5 */
+        9,  /* S,   6 */
+        13, /* V,   7 */
+        3,  /* T,   8 */
+        8,  /* W,   9 */
+        5,  /* Y,  10 */
+        12, /* H,  11 */
+        7,  /* K,  12 */
+        11, /* D,  13 */
+        10, /* B,  14 */
+        14  /* N,  15 */
+    };
+    
+    for(Uint4 i = 0; i < buf.size(); i++) {
+        buf[i] = trans_ncbina8_to_blastna8[ buf[i] ];
     }
 }
 
@@ -227,7 +328,9 @@ inline Uint4 s_ResPosOld(const vector<Int4> & ambchars, Uint4 i)
 }
 
 
-bool CSeqDBRebuildDNA_4na(vector<char> & buf4bit, const vector<Int4> & amb_chars)
+static bool
+s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
+                      const vector<Int4> & amb_chars)
 {
     if (buf4bit.empty())
         return false;
@@ -286,10 +389,67 @@ bool CSeqDBRebuildDNA_4na(vector<char> & buf4bit, const vector<Int4> & amb_chars
     return true;
 }
 
+static bool
+s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
+                      const vector<Int4> & amb_chars)
+{
+    if (buf4bit.empty())
+        return false;
+    
+    if (amb_chars.empty()) 
+        return true;
+    
+    Uint4 amb_num = amb_chars[0];
+    
+    /* Check if highest order bit set. */
+    bool new_format = (amb_num & 0x80000000) != 0;
+    
+    if (new_format) {
+	amb_num &= 0x7FFFFFFF;
+    }
+    
+    for(Uint4 i = 1; i < amb_num+1; i++) {
+        Int4  row_len  = 0;
+        Int4  position = 0;
+        Uint1 trans_ch = 0;
+        
+	if (new_format) {
+            trans_ch  = s_ResVal   (amb_chars, i);
+            row_len   = s_ResLenNew(amb_chars, i); 
+            position  = s_ResPosNew(amb_chars, i);
+	} else {
+            trans_ch  = s_ResVal   (amb_chars, i);
+            row_len   = s_ResLenOld(amb_chars, i); 
+            position  = s_ResPosOld(amb_chars, i);
+	}
+        
+        Int4 index = position;
+        
+        // This could be made slightly faster for long runs.
+        
+        for(Int4 j = 0; j <= row_len; j++) {
+            buf4bit[index++] = trans_ch;
+//             if (!rem) {
+//            	buf4bit[index] = (buf4bit[index] & 0x0F) + char_l;
+//             	rem = 1;
+//             } else {
+//            	buf4bit[index] = (buf4bit[index] & 0xF0) + char_r;
+//             	rem = 0;
+//                 index++;
+//             }
+    	}
+        
+	if (new_format) /* for new format we have 8 bytes for each element. */
+            i++;
+    }
+    
+    return true;
+}
+
 static void
-s_CSeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
-                         const char * seq_buffer,
-                         Int4         length)
+s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
+                        const char * seq_buffer,
+                        Int4         length)
 {
     // stuff - ncbistdaa
     // mol = aa
@@ -311,9 +471,9 @@ s_CSeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
 }
 
 static void
-s_CSeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
-                         const char   * seq_buffer,
-                         Int4           length)
+s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
+                        const char   * seq_buffer,
+                        Int4           length)
 {
     Int4 whole_bytes  = length / 4;
     Int4 partial_byte = ((length & 0x3) != 0) ? 1 : 0;
@@ -334,14 +494,14 @@ s_CSeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
 }
 
 static void
-s_CSeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
-                         const char   * seq_buffer,
-                         Int4           length,
-                         vector<Int4> & amb_chars)
+s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
+                        const char   * seq_buffer,
+                        Int4           length,
+                        vector<Int4> & amb_chars)
 {
     vector<char> buffer_4na;
-    CSeqDBMapNa2ToNa4(seq_buffer, buffer_4na, length); // length is not /4 here
-    CSeqDBRebuildDNA_4na(buffer_4na, amb_chars);
+    s_SeqDBMapNA2ToNA4(seq_buffer, buffer_4na, length); // length is not /4 here
+    s_SeqDBRebuildDNA_NA4(buffer_4na, amb_chars);
     
     seqinst.SetSeq_data().SetNcbi4na().Set().swap(buffer_4na);
     seqinst.SetMol(CSeq_inst::eMol_na);
@@ -478,7 +638,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     bool is_prot = (x_GetSeqType() == kSeqTypeProt);
     
     if (is_prot) {
-        s_CSeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
+        s_SeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
     } else {
         // nucl
         vector<Int4> ambchars;
@@ -489,10 +649,10 @@ CSeqDBVol::GetBioseq(Int4 oid,
         
         if (ambchars.empty()) {
             // keep as 2 bit
-            s_CSeqDBWriteSeqDataNucl(seqinst, seq_buffer, length);
+            s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length);
         } else {
             // translate to 4 bit
-            s_CSeqDBWriteSeqDataNucl(seqinst, seq_buffer, length, ambchars);
+            s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length, ambchars);
         }
         
         // mol = na
@@ -562,12 +722,12 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
         return x_GetSequence(oid, buffer);
     } else {
-        vector<char> buffer_4na;
+        vector<char> buffer_na8;
         Int4 base_length = -1;
         
         {
             // The code in this block is a few excerpts from
-            // GetBioseq() and s_CSeqDBWriteSeqDataNucl().
+            // GetBioseq() and s_SeqDBWriteSeqDataNucl().
             
             // Get the length and the (probably mmapped) data.
             
@@ -577,11 +737,11 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
             
             if (base_length < 1)
                 assert(0);
-        
+            
             // Get ambiguity characters.
-        
+            
             vector<Int4> ambchars;
-        
+            
             if (! x_GetAmbChar(oid, ambchars) ) {
                 // Should be a throw..
                 assert(0);
@@ -589,12 +749,12 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
             
             // Combine and translate to 4 bits-per-character encoding.
             
-            CSeqDBMapNa2ToNa4(seq_buffer, buffer_4na, base_length);
-            CSeqDBRebuildDNA_4na(buffer_4na, ambchars);
+            s_SeqDBMapNA2ToNA8(seq_buffer, buffer_na8, base_length);
+            s_SeqDBRebuildDNA_NA8(buffer_na8, ambchars);
             
             if (nucl_code == kSeqDBNuclBlastNA8) {
                 // Translate bytewise, in place.
-                CSeqDBMapNcbiNa4ToBlastNa(buffer_4na);
+                s_SeqDBMapNcbiNA8ToBlastNA8(buffer_na8);
             }
             
             // Return probably-mmapped sequence
@@ -606,11 +766,11 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
         // fixing it, but the fix involves reorganization of code, and
         // I don't want to bundle any more in this checkin. (kmb)
         
-        int bytelen = buffer_4na.size();
+        int bytelen = buffer_na8.size();
         char * uncomp_buf = (char*) m_MemPool.Alloc(bytelen);
         
         for(int i = 0; i < bytelen; i++) {
-            uncomp_buf[i] = buffer_4na[i];
+            uncomp_buf[i] = buffer_na8[i];
         }
         
         *buffer = uncomp_buf;
