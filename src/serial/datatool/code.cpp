@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/03/26 14:41:48  dicuccio
+* Deleted dead code
+*
 * Revision 1.39  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -149,13 +152,6 @@ CClassCode::~CClassCode(void)
 void CClassCode::SetExportSpecifier(const string& str)
 {
     sm_ExportSpecifier = str;
-/*
-    int pos;
-    while ( (pos = sm_ExportSpecifier.find_first_of(" !@#$%^&*()")) !=
-        string::npos) {
-        sm_ExportSpecifier.erase (pos, 1);
-    }
-*/
 }
 
 const string& CClassCode::GetExportSpecifier(void)
