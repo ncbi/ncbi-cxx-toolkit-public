@@ -587,7 +587,7 @@ public:
             return GetObject();
         }
 
-    /// Pointing-to operator.
+    /// Reference operator.
     ///
     /// @sa
     ///   GetPointer()
@@ -675,7 +675,7 @@ public:
             return GetObject();
         }
 
-    /// Pointing-to operator -- constant version.
+    /// Reference operator -- constant version.
     ///
     /// @sa
     ///   GetPointer()
@@ -995,7 +995,7 @@ public:
             return GetObject();
         }
 
-    /// Pointing-to operator.
+    /// Reference operator.
     ///
     /// @sa
     ///   GetPointer()
@@ -1235,6 +1235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2003/08/12 13:35:50  siyan
+ * Minor comment changes.
+ *
  * Revision 1.48  2003/08/12 12:03:48  siyan
  * Added documentation. Change private method name from AddReferenceOverflow()
  * to a more meaningful name of its purpose, CheckReferenceOverflow().
