@@ -254,7 +254,13 @@ protected:
     // Find out the path and name of the executable file this app is running
     // from.  Will be accesible by:  GetArguments.GetProgramName().
     string  FindProgramExecutablePath(int argc, const char* const* argv);
-
+    
+    // Throw the switches necessary to make this application complie
+    // with the settings in the [DEBUG] section of the given registry.
+    // uses m_Config by default.
+    void    HonorDebugSettings(CNcbiRegistry* reg = 0);
+    
+    
 private:
     void x_SetupStdio(void);
 
@@ -315,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/06/25 15:58:59  rsmith
+ * factor out config file DEBUG settings into HonorDebugSettings
+ *
  * Revision 1.33  2003/06/23 18:02:21  vakatov
  * CNcbiApplication::MacArgMunging() moved from header to the source file.
  * Fixed, reformatted and added comments.

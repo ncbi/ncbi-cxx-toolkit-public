@@ -336,7 +336,7 @@ int CNcbiApplication::AppMain
     // Reset application environment
     m_Environ->Reset(envp);
 
-    // Setup some debugging features
+    // Setup some debugging features from environment variables.
     if ( !m_Environ->Get(DIAG_TRACE).empty() ) {
         SetDiagTrace(eDT_Enable, eDT_Enable);
     }
@@ -382,35 +382,13 @@ int CNcbiApplication::AppMain
                    "Registry data cannot be loaded:  " + string(e.what()));
     }
 
-    // Setup some debugging features
-    if ( !m_Config->Get("DEBUG", DIAG_TRACE).empty() ) {
-        SetDiagTrace(eDT_Enable, eDT_Enable);
-    }
-    if ( !m_Config->Get("DEBUG", ABORT_ON_THROW).empty() ) {
-        SetThrowTraceAbort(true);
-    }
-    post_level = m_Config->Get("DEBUG", DIAG_POST_LEVEL);
-    if ( !post_level.empty() ) {
-        EDiagSev sev;
-        if (CNcbiDiag::StrToSeverityLevel(post_level.c_str(), sev)) {
-            SetDiagFixedPostLevel(sev);
-        }
-    }
-    string msg_file = m_Config->Get("DEBUG", DIAG_MESSAGE_FILE);
-    if ( !msg_file.empty() ) {
-        CDiagErrCodeInfo* info = new CDiagErrCodeInfo();
-        if (!info  ||  !info->Read(msg_file)) {
-            if ( info ) {
-                delete info;
-            }
-            ERR_POST(Warning << "Applications message file \""
-                     << msg_file
-                     << "\" is not found");
-        } else {
-            SetDiagErrCodeInfo(info);
-        }
-    }
-
+    // Setup the debugging features from the config file.
+    // Don't call till after LoadConfig()
+    // NOTE: this will override environment variables, 
+    // except DIAG_POST_LEVEL which is Set*Fixed*.
+    
+    HonorDebugSettings();
+    
     // Call:  Init() + Run() + Exit()
     int exit_code = 1;
 
@@ -819,12 +797,54 @@ string CNcbiApplication::FindProgramExecutablePath
 }
 
 
+void CNcbiApplication::HonorDebugSettings(CNcbiRegistry* reg)
+{
+    if (reg == 0) {
+        reg = m_Config.get();
+        if (reg == 0)
+            return;
+    }
+    
+    // Setup the debugging features
+    if ( !reg->Get("DEBUG", DIAG_TRACE).empty() ) {
+        SetDiagTrace(eDT_Enable, eDT_Enable);
+    }
+    if ( !reg->Get("DEBUG", ABORT_ON_THROW).empty() ) {
+        SetThrowTraceAbort(true);
+    }
+    string post_level = reg->Get("DEBUG", DIAG_POST_LEVEL);
+    if ( !post_level.empty() ) {
+        EDiagSev sev;
+        if (CNcbiDiag::StrToSeverityLevel(post_level.c_str(), sev)) {
+            SetDiagFixedPostLevel(sev);
+        }
+    }
+    string msg_file = reg->Get("DEBUG", DIAG_MESSAGE_FILE);
+    if ( !msg_file.empty() ) {
+        CDiagErrCodeInfo* info = new CDiagErrCodeInfo();
+        if ( !info  ||  !info->Read(msg_file) ) {
+            if ( info ) {
+                delete info;
+            }
+            ERR_POST(Warning << "Applications message file \""
+                     << msg_file
+                     << "\" is not found");
+        } else {
+            SetDiagErrCodeInfo(info);
+        }
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2003/06/25 15:59:00  rsmith
+ * factor out config file DEBUG settings into HonorDebugSettings
+ *
  * Revision 1.61  2003/06/23 18:02:31  vakatov
  * CNcbiApplication::MacArgMunging() moved from header to the source file.
  * Heed warnings, formally reformat the code and comments.
