@@ -1,4 +1,4 @@
---$Revision: 3.2 $
+--$Revision: 3.3 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -398,7 +398,9 @@ BioSource ::= SEQUENCE {
         extrachrom (8) ,
         plasmid (9) ,
         transposon (10) ,
-        insertion-seq (11) } DEFAULT unknown ,
+        insertion-seq (11) ,
+	cyanelle (12) ,
+	proviral (13) } DEFAULT unknown ,
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
@@ -422,14 +424,14 @@ SubSource ::= SEQUENCE {
         cell-line (8) ,
         cell-type (9) ,
         tissue-type (10) ,
-        cultivar (11) ,   --OBSOLETE.. use only the one in Org-mod
+        clone-lib (11) ,
         dev-stage (12) ,
         frequency (13) ,
         germline (14) ,
         rearranged (15) ,
         lab-host (16) ,
         pop-variant (17) ,
-        variety (18) ,   --OBSOLETE.. use only the one in Org-mod
+        tissue-lib (18) ,
         plasmid-name (19) ,
         transposon-name (20) ,
         insertion-seq-name (21) ,
