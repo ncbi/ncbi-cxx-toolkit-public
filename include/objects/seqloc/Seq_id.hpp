@@ -181,19 +181,21 @@ public:
         eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot,
         eAcc_patent    = e_Patent    | eAcc_other,
 
-        eAcc_refseq_prot            = e_Other | eAcc_other | fAcc_prot,
-        eAcc_refseq_contig          = e_Other | eAcc_segset,
-        eAcc_refseq_wgs_nuc         = e_Other | eAcc_wgs   | fAcc_nuc,
-        eAcc_refseq_wgs_prot        = e_Other | eAcc_wgs   | fAcc_prot,
+        eAcc_refseq_prot            = e_Other | eAcc_other  | fAcc_prot, //NP_
+        eAcc_refseq_genome          = e_Other | eAcc_genome | fAcc_nuc,  //NS_?
+        eAcc_refseq_wgs_nuc         = e_Other | eAcc_wgs    | fAcc_nuc,  //NZ_
+        eAcc_refseq_wgs_prot        = e_Other | eAcc_wgs    | fAcc_prot, //ZP_
+        eAcc_refseq_contig          = e_Other | eAcc_segset,             //NT_
         eAcc_refseq_unreserved      = e_Other | 128 << 8,
-        eAcc_refseq_mrna            = e_Other | 129 << 8   | fAcc_nuc,
-        eAcc_refseq_chromosome      = e_Other | 130 << 8   | fAcc_nuc,
-        eAcc_refseq_genomic         = e_Other | 131 << 8   | fAcc_nuc,
-        // non-coding RNA; currently only present in predicted version (XR_)
-        eAcc_refseq_ncrna           = e_Other | 132 << 8   | fAcc_nuc,
-        eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted,
-        eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted,
-        eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted,
+        eAcc_refseq_mrna            = e_Other | 129 << 8    | fAcc_nuc,  //NM_
+        eAcc_refseq_chromosome      = e_Other | 130 << 8    | fAcc_nuc,  //NC_
+        eAcc_refseq_genomic         = e_Other | 131 << 8    | fAcc_nuc,  //NG_
+        // non-coding RNA
+        eAcc_refseq_ncrna           = e_Other | 132 << 8    | fAcc_nuc,  //NR_
+        eAcc_refseq_wgs_intermed    = e_Other | 133 << 8    | fAcc_nuc,  //NW_
+        eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted,//XP_
+        eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted,//XM_
+        eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted,//XR_
 
         eAcc_general = e_General | eAcc_other,
         eAcc_gi      = e_Gi      | eAcc_other,
@@ -361,6 +363,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2003/01/07 19:52:07  ucko
+ * Add more refseq types (NR_, NS_, NW_) and list the prefixes as comments.
+ *
  * Revision 1.30  2002/12/26 16:39:22  vasilche
  * Object manager class CSeqMap rewritten.
  *
