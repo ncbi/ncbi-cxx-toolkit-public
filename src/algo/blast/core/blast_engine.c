@@ -683,6 +683,7 @@ BLAST_SearchEngine(Uint1 program_number,
    BlastSeqSrcIterator* itr = NULL;
    Int8 db_length = 0;
    BlastRawCutoffs* raw_cutoffs = NULL;
+   Boolean prelim_traceback;
    
    if ((status = 
        BLAST_SetUpAuxStructures(program_number, seq_src,
@@ -691,6 +692,8 @@ BLAST_SearchEngine(Uint1 program_number,
           &gap_align, &score_params, &word_params, &ext_params, 
           &hit_params, &eff_len_params, &aux_struct)) != 0)
       return status;
+
+   prelim_traceback = (ext_options->ePrelimGapExt == eGreedyWithTracebackExt);
 
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
@@ -740,10 +743,12 @@ BLAST_SearchEngine(Uint1 program_number,
  
       if (hsp_list && hsp_list->hspcnt > 0) {
          if (program_number == blast_type_blastn) {
-            status = 
-               Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
-                  seq_arg.seq, hit_options, query_info, sbp, score_params, 
-                  seq_src);
+            if (prelim_traceback || !score_options->gapped_calculation) {
+	       status = 
+		  Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
+                     seq_arg.seq, hit_options, query_info, sbp, score_params, 
+                     seq_src);
+	    }
             /* Check for HSP inclusion */
             status = Blast_HSPListUniqSort(hsp_list);
          }
