@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/22 20:05:35  grichenk
+* +MergeRange()
+*
 * Revision 1.4  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -101,6 +104,27 @@ bool operator< (CHandleRange::TRangeWithStrand r1,
 void CHandleRange::AddRange(TRange range, ENa_strand strand)
 {
     m_Ranges.push_back(TRanges::value_type(range, strand));
+    m_Ranges.sort();
+}
+
+
+void CHandleRange::MergeRange(TRange range, ENa_strand strand)
+{
+    TRange mrg = range;
+    non_const_iterate ( TRanges, it, m_Ranges ) {
+        // Find intersecting intervals, discard strand information
+        // Also merge adjacent ranges, prevent merging whole-to + whole-from
+        if ( it->first.IntersectingWith(mrg)  ||
+            (it->first.GetFrom() == mrg.GetTo()+1 && !mrg.IsWholeTo()) ||
+            (it->first.GetTo()+1 == mrg.GetFrom() && !mrg.IsWholeFrom()) ) {
+            // Remove the intersecting interval, update the merged range.
+            // We assume that WholeFrom is less than any non-whole value
+            // and WholeTo is greater than any non-whole value.
+            mrg += it->first;
+            it = m_Ranges.erase(it);
+        }
+    }
+    m_Ranges.push_back(TRangeWithStrand(mrg, eNa_strand_unknown));
     m_Ranges.sort();
 }
 

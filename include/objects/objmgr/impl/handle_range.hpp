@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/22 20:05:35  grichenk
+* +MergeRange()
+*
 * Revision 1.5  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -78,6 +81,9 @@ public:
     const TRanges& GetRanges(void) const { return m_Ranges; }
     // Add a new range
     void AddRange(TRange range, ENa_strand strand/* = eNa_strand_unknown*/);
+    // Merge a new range with the existing ranges
+    void MergeRange(TRange range, ENa_strand strand);
+
     // Get the range including all ranges in the list (with any strand)
     TRange GetOverlappingRange(void) const;
     // Check if the two sets of ranges do intersect
