@@ -36,19 +36,24 @@
 #include <dbapi/driver/exception.hpp>
 
 #ifdef HAVE_LIBSYBASE
-#include <dbapi/driver/ctlib/interfaces.hpp>
-#define DBContext CTLibContext
+#  include <dbapi/driver/ctlib/interfaces.hpp>
+#  define DBContext CTLibContext
 #else
-#define CPUBSEQREADER_NO_DB
-#define DBContext int
+#  define CPUBSEQREADER_NO_DB
+#  define DBContext int
 #endif
 
-using namespace std;
+#include <vector>
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
 class CPubseqReader;
 class CPubseqBlob;
+
+
 class CPubseqSeqref : public CSeqref
 {
 public:
@@ -78,6 +83,8 @@ private:
   unsigned m_Conn;
 };
 
+
+
 class CPubseqReader : public CReader
 {
 public:
@@ -98,6 +105,8 @@ private:
   vector<CDB_Connection *> m_Pool;
 };
 
+
+
 class CPubseqBlob : public CBlob
 {
 public:
@@ -113,13 +122,21 @@ private:
   CPubseqSeqref *m_Seqref;
 };
 
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+
 #endif
+
 
 /*
 * $Log$
+* Revision 1.2  2002/04/08 23:07:50  vakatov
+* #include <vector>
+* get rid of the "using ..." directive in the header
+*
 * Revision 1.1  2002/04/08 20:52:08  butanaev
 * Added PUBSEQ reader.
 *
