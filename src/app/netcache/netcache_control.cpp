@@ -43,7 +43,20 @@
 
 USING_NCBI_SCOPE;
 
-    
+/// Proxy class to open ShutdownServer in CNetCacheClient
+///
+/// @internal
+class CNetCacheClient_Control : public CNetCacheClient 
+{
+public:
+    CNetCacheClient_Control(const string&  host,
+                            unsigned short port,
+                            const string&  client_name = kEmptyStr)
+      : CNetCacheClient(host, port, client_name)
+    {}
+
+    void ShutdownServer() { CNetCacheClient::ShutdownServer(); }
+};
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -90,7 +103,7 @@ int CNetCacheControl::Run(void)
     const string& host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
 
-    CNetCacheClient nc_client(host, port);
+    CNetCacheClient_Control nc_client(host, port);
 
     if (args["s"]) {  // shutdown
         nc_client.ShutdownServer();
@@ -119,6 +132,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/20 13:29:53  kuznets
+ * Worked around protected NetCacheClient::ShutdownServer()
+ *
  * Revision 1.1  2004/10/25 16:07:43  kuznets
  * netcache_stop renamed to netcache_control
  *
