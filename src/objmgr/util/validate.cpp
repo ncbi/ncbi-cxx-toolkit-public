@@ -1709,11 +1709,18 @@ void CValidError_impl::ValidateSeqIds
         for (j = i, ++j; j != seq.GetId().end(); ++j) {
             if ((**i).Compare(**j) != CSeq_id::e_DIFF) {
                 CNcbiOstrstream os;
+                /*
                 os << "Conflicting ids on a Bioseq: ("
                            << (**i).DumpAsFasta() << " - "
                            << (**j).DumpAsFasta() << ")";
+                */
+                os << "Conflicting ids on a Bioseq: (";
+                (**i).WriteAsFasta(os);
+                os << " - ";
+                (**j).WriteAsFasta(os);
+                os << ")";
                 ValidErr(eDiag_Error, eErr_SEQ_INST_ConflictingIdsOnBioseq,
-                         os.str(), seq);
+                         CNcbiOstrstreamToString (os) /* os.str() */, seq);
             }
         }
     }
@@ -4646,6 +4653,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/10/14 20:44:35  kans
+* use WriteAsFasta and CNcbiOstrstreamToString in ValidateSeqIds
+*
 * Revision 1.12  2002/10/14 20:00:58  kans
 * added multiple titles check, moved big string arrays to end
 *
