@@ -193,7 +193,6 @@ property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entr
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
 --property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
-property gui_dlg_config : {name:"gui_dlg_config", path:"gui:dialogs:config"}
 property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
 
@@ -216,6 +215,7 @@ property w_phylo_tree : {name:"w_phylo_tree", path:"gui:widgets:phylo_tree"}
 property w_serial_browse : {name:"w_serial_browse", path:"gui:widgets:serial_browse"}
 property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare"}
 property w_feat_table : {name:"w_feat_table", path:"gui:widgets:feat_table"}
+property w_config : {name:"w_config", path:"gui:widgets:config"}
 
 (* GUI Plugins *)
 property gui_doc_basic : {name:"gui_doc_basic", path:"gui:plugins:doc:basic"}
@@ -274,8 +274,8 @@ property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, 
 property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", req:true}
-property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable}, dep:"gui_utils ncbi_image ncbi_core", req:true}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_config, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
+property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config}, dep:"gui_utils ncbi_image ncbi_core", req:true}
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets", req:true}
@@ -388,6 +388,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/12/06 19:28:20  lebedev
+ * gui_dlg_config -> w_config
+ *
  * Revision 1.35  2004/11/29 12:40:37  lebedev
  * gui_config updated
  *
