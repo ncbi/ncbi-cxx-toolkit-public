@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/05/08 19:11:16  kuznets
+* + ComputeFileCRC32
+*
 * Revision 1.3  2001/05/17 15:07:15  lavr
 * Typos corrected
 *
@@ -142,5 +145,32 @@ Uint4 CChecksum::UpdateCRC32(Uint4 checksum, const char *str, size_t count)
     }
     return checksum;
 }
+
+// ---------------------------------------------------------------------------
+
+Uint4 ComputeFileCRC32(const string& path)
+{
+    CNcbiIfstream input(path.c_str(), ios_base::in | ios_base::binary);
+
+    if (!input.is_open()) return 0;
+
+    CChecksum crc(CChecksum::eCRC32);
+
+    while (!input.eof()) {
+        char buf[1024];
+        input.read(buf, sizeof(buf));
+
+        size_t count = input.gcount();
+
+        if (count) {
+            crc.AddChars(buf, count);
+        }
+
+    } // while
+    input.close();
+    return crc.GetChecksum();
+}
+
+
 
 END_NCBI_SCOPE
