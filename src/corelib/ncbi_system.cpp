@@ -34,6 +34,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/11/09 16:22:16  ivanov
+* Polish source code of GetCpuCount()
+*
 * Revision 1.12  2001/11/08 21:31:44  ivanov
 * Renamed GetCPUNumber() -> GetCpuCount()
 *
@@ -377,24 +380,23 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 
 int GetCpuCount(void)
 {
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    return sysInfo.dwNumberOfProcessors;
+    return (int)sysInfo.dwNumberOfProcessors;
 
-#elif defined NCBI_OS_UNIX
-    #if defined(_SC_NPROC_ONLN)
-    int nproc = sysconf(_SC_NPROC_ONLN);
-    #else
-    int nproc = sysconf(_SC_NPROCESSORS_ONLN);
-    #endif /* _SC_NPROC_ONLN */
+#elif defined(NCBI_OS_UNIX)
+    int nproc = 0;
+#   if defined(_SC_NPROC_ONLN)
+    nproc = sysconf(_SC_NPROC_ONLN);
+#   elif defined(_SC_NPROCESSORS_ONLN)
+    nproc = sysconf(_SC_NPROCESSORS_ONLN);
+#   endif
     return  nproc <= 0 ? 1 : nproc;
 
-#elif defined NCBI_OS_MAC
-
-#endif
+#else
     return 1;
-
+#endif
 }
 
 
