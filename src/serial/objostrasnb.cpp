@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/22 20:36:38  vasilche
+* Fixed 'using namespace' declaration for MSVC.
+*
 * Revision 1.12  1999/07/22 19:40:59  vasilche
 * Fixed bug with complex object graphs (pointers to members of other objects).
 *
@@ -76,9 +79,9 @@
 #include <serial/memberid.hpp>
 #include <asn.h>
 
-BEGIN_NCBI_SCOPE
+using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 
-using namespace CObjectStreamAsnBinaryDefs;
+BEGIN_NCBI_SCOPE
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
     : m_Output(out)

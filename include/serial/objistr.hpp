@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/22 20:36:37  vasilche
+* Fixed 'using namespace' declaration for MSVC.
+*
 * Revision 1.17  1999/07/22 17:33:40  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -345,9 +348,7 @@ protected:
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length) = 0;
 	virtual void End(const ByteBlock& block);
 
-protected:
-    // low level readers
-    CIObjectInfo ReadObjectInfo(void);
+public:
     enum EPointerType {
         eNullPointer,
         eMemberPointer,
@@ -355,6 +356,9 @@ protected:
         eThisPointer,
         eOtherPointer
     };
+protected:
+    // low level readers
+    CIObjectInfo ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
     virtual string ReadMemberPointer(void);
     virtual void ReadMemberPointerEnd(void);

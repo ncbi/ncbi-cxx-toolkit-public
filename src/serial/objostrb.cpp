@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/22 20:36:38  vasilche
+* Fixed 'using namespace' declaration for MSVC.
+*
 * Revision 1.16  1999/07/22 17:33:58  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -89,9 +92,9 @@
 #include <serial/memberid.hpp>
 #include <asn.h>
 
-BEGIN_NCBI_SCOPE
+using namespace NCBI_NS_NCBI::CObjectStreamBinaryDefs;
 
-using namespace CObjectStreamBinaryDefs;
+BEGIN_NCBI_SCOPE
 
 CObjectOStreamBinary::CObjectOStreamBinary(CNcbiOstream& out)
     : m_Output(out)
