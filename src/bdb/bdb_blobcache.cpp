@@ -855,6 +855,7 @@ void CBDB_Cache::Remove(const string& key)
                    it->overflow);
     }
 
+	trans.Commit();
 
     // Second pass scan if for some resons some cache elements are 
     // still in the database
@@ -1179,6 +1180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/04/28 16:58:56  kuznets
+ * Fixed deadlock in CBDB_Cache::Remove
+ *
  * Revision 1.50  2004/04/28 12:21:32  kuznets
  * Cleaned up dead code
  *
