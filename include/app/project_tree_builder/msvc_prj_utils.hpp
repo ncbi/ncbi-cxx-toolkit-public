@@ -31,19 +31,15 @@
  */
 
 
-#include "VisualStudioProject.hpp"
 #include <corelib/ncbireg.hpp>
 
-#include "Tool.hpp"
-#include "File.hpp"
-#include "Files.hpp"
-#include "Filter.hpp"
-#include "FileConfiguration.hpp"
+#include <app/project_tree_builder/msvc71_project__.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
-/// Creates CVisualStudioProject class instanse from file.
+/// Creates CVisualStudioProject class instance from file.
 ///
 /// @param file_path
 ///   Path to file load from.
@@ -53,7 +49,7 @@ BEGIN_NCBI_SCOPE
 CVisualStudioProject * LoadFromXmlFile(const string& file_path);
 
 
-/// Save CVisualStudioProject class instanse to file.
+/// Save CVisualStudioProject class instance to file.
 ///
 /// @param file_path
 ///   Path to file project will be saved to.
@@ -61,6 +57,21 @@ CVisualStudioProject * LoadFromXmlFile(const string& file_path);
 ///   Project to save.
 void SaveToXmlFile  (const string&               file_path, 
                      const CVisualStudioProject& project);
+
+/// Save CVisualStudioProject class instance to file only if no such file 
+//  or contents of this file will be different from already present file.
+///
+/// @param file_path
+///   Path to file project will be saved to.
+/// @param project
+///   Project to save.
+void SaveIfNewer    (const string&               file_path, 
+                     const CVisualStudioProject& project);
+
+/// Consider promotion candidate to present 
+void PromoteIfDifferent(const string& present_path, 
+                        const string& candidate_path);
+
 
 /// Generate pseudo-GUID.
 string GenerateSlnGUID(void);
@@ -211,6 +222,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/10 18:08:16  gorelenk
+ * Added declaration of functions SaveIfNewer and PromoteIfDifferent
+ * - support for file overwriting only if it was changed.
+ *
  * Revision 1.9  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
