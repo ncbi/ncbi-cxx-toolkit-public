@@ -81,6 +81,14 @@
 		  <li> <a href="#ref_MsvcProjSettings">
 		    Mandatory project settings (RTTI, MT-safety)</a>
 	   </ul>
+      </li>
+		<li> <a href="#ref_Mac">
+		  Macintosh</a>
+	   <ul>
+		  <li> <a href="#ref_MacProjDownload">
+		    Getting the Toolkit sources</a>
+	   </ul>
+      </li>
 	 </ul>
 </ul>
 
@@ -1203,7 +1211,7 @@ Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
 <ul>
 		<li> do <a href="win_cvs.html">CVS checkout</a> of
 		  <i><b>internal/c++</b></i>. This can be done right on your
-		  PC, if you have installed CVS there:
+		  PC, if you have installed CVS client there:
 		  <br> <i>cvs checkout -d cxx internal/c++</i></li>
 		<li> checkout only the core sources on your UNIX workstation by running (<a href="cvs_core_msvc.html">notes here</a>)
 		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --msvc --without-cvs --with-objects</i>
@@ -1499,6 +1507,37 @@ you have to make sure that your projects are built in MT-safe mode as well.
       <li> <i>"Multithreaded"</i> for the <b>ReleaseMT</b> configuration
       <li> <i>"Debug Multithreaded"</i> for the <b>DebugMT</b> configuration
     </ul>
+</ul>
+
+
+
+<p>
+<a name="ref_Mac"><h3>Macintosh</h3>
+</a>
+
+<p>
+<a name="ref_MacProjDownload"><h4>Getting the Toolkit sources</h4>
+</a>
+
+<p>
+
+
+<p>
+Suppose you need to deploy the NCBI C++ tree to your local Mac, in directory
+<i><b>cxx</b></i>. You can do it one of the following ways:
+<ul>
+		<li> do <a href="mac_cvs.html">CVS checkout</a> of
+		  <i><b>internal/c++</b></i>. This can be done right on your
+		  Mac, if you have installed CVS client there:
+		  <br> <i>cvs checkout -d cxx internal/c++</i></li>
+		<li> checkout only the core sources on your UNIX workstation by running
+		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --mac --without-cvs --with-objects</i>
+		  <br> and then copy the whole resultant directory
+		  <i><b>cxx</b></i> to your local Mac directory <i><b>cxx</b></i></li>
+		<li> if you have the Toolkit sources in the publicly distributed
+		  self-extracting archive, then just expand the archive, and you are
+        ready to build any (or all) of the Mac project configurations.
+		  The archive also contains pre-generated ASN classes.</li>
 </ul>
 
 
