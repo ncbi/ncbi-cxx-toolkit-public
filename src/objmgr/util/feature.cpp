@@ -153,7 +153,7 @@ static void s_GetCdregionLabel
             const CSeq_id& id = GetId(feat.GetProduct(), scope);            
             CBioseq_Handle hnd = scope->GetBioseqHandle(id);
             if (hnd) {
-                const CBioseq& seq = hnd.GetBioseq();
+                const CBioseq& seq = *hnd.GetCompleteBioseq();
             
                 // Now look for a CProt_ref feature in seq and
                 // if found call GetLabel() on the CProt_ref
@@ -643,6 +643,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2004/10/07 15:55:28  ucko
+* Eliminate more uses of GetBioseq(Core).
+*
 * Revision 1.13  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

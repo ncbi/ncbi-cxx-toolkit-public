@@ -120,13 +120,12 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
     if ( !scope ) {
         return numeric_limits<TSeqPos>::max();
     }
-    CBioseq_Handle hnd = scope->GetBioseqHandle(id);
-    if ( !hnd ) {
+    try {
+        CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+        return hnd.GetBioseqLength();
+    } catch (...) {
         return numeric_limits<TSeqPos>::max();
     }
-    CBioseq_Handle::TBioseqCore core = hnd.GetBioseqCore();
-    return core->GetInst().IsSetLength() ? core->GetInst().GetLength() :
-        numeric_limits<TSeqPos>::max();
 }
 
 
@@ -2440,10 +2439,8 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
                         CBioseq_Handle hnd =
                             scope->GetBioseqHandle(itv.GetId());
                         bool miss_end = false;
-                        if ( hnd ) {
-                            CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
-                            
-                            if (itv.GetTo() != bc->GetInst().GetLength() - 1) {
+                        if ( hnd ) {                            
+                            if (itv.GetTo() != hnd.GetBioseqLength() - 1) {
                                 miss_end = true;
                             }
                         }
@@ -3006,7 +3003,7 @@ const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope)
         return 0;
     }
     CBioseq_Handle bsh = GetNucleotideParent(scope->GetBioseqHandle(product));
-    return bsh ? &(bsh.GetBioseq()) : 0;
+    return bsh ? bsh.GetCompleteBioseq() : 0;
 }
 
 CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& bsh)
@@ -3061,8 +3058,7 @@ static bool s_IsGap(const CSeq_loc& loc, CScope& scope)
 
     CTypeConstIterator<CSeq_id> id(loc);
     CBioseq_Handle handle = scope.GetBioseqHandle(*id);
-    if (handle  &&  handle.GetBioseqCore()->GetInst().GetRepr()
-        == CSeq_inst::eRepr_virtual) {
+    if (handle  &&  handle.GetInst_Repr() == CSeq_inst::eRepr_virtual) {
         return true;
     }
 
@@ -3998,8 +3994,7 @@ void CSeqSearch::Search(const CBioseq_Handle& bsh)
     size_t seq_len = seq_vec.size();
     size_t search_len = seq_len;
 
-    CSeq_inst::ETopology topology =
-        bsh.GetBioseqCore()->GetInst().GetTopology();    
+    CSeq_inst::ETopology topology = bsh.GetInst_Topology();
     if ( topology == CSeq_inst::eTopology_circular ) {
         search_len += m_MaxPatLen - 1;
     }
@@ -4179,6 +4174,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.93  2004/10/07 15:55:28  ucko
+* Eliminate more uses of GetBioseq(Core).
+*
 * Revision 1.92  2004/10/01 19:16:05  grichenk
 * Fixed bioseq length in TestForOverlap
 *

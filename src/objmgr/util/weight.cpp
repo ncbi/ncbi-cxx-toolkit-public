@@ -104,8 +104,7 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 
 void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 {
-    CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
-    if (core->GetInst().GetMol() != CSeq_inst::eMol_aa) {
+    if (handle.GetBioseqMolType() != CSeq_inst::eMol_aa) {
         NCBI_THROW(CObjmgrUtilException, eBadSequenceType,
             "GetMolecularWeights requires a protein!");
     }
@@ -199,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2004/10/07 15:55:28  ucko
+* Eliminate more uses of GetBioseq(Core).
+*
 * Revision 1.30  2004/06/15 14:03:43  vasilche
 * Optimized GetWeights() - iterate only required features.
 *
