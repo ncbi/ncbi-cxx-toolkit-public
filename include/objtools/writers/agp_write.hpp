@@ -40,41 +40,44 @@ BEGIN_NCBI_SCOPE
 /// which has the GB loader as a default loader.
 /// It is a simple way to write a sequence whose
 /// components are in the database.
-void AgpWrite(CNcbiOstream& os,
-              const objects::CSeqMap& seq_map,
-              const string& object_id,
-              const string& gap_type,
-              bool linkage);
+void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
+                                    const objects::CSeqMap& seq_map,
+                                    const string& object_id,
+                                    const string& gap_type,
+                                    bool linkage);
 /// This version takes an object manager instance.
 /// This is useful to prevent another object manager
 /// from being instantiated when the caller has access
 /// to one that already exists.  It would also be useful
 /// if the caller wanted to use an object manager with
 /// a different set of default loaders than {CGBDataLoader}.
-void AgpWrite(CNcbiOstream& os,
-              const objects::CSeqMap& seq_map,
-              const string& object_id,
-              const string& gap_type,
-              bool linkage,
-              objects::CObjectManager& om);
+void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
+                                    const objects::CSeqMap& seq_map,
+                                    const string& object_id,
+                                    const string& gap_type,
+                                    bool linkage,
+                                    objects::CObjectManager& om);
 /// This version takes a scope.  This is useful when
 /// the sequence being written has components that
 /// are not in the database but have been added to
 /// a scope known by the caller, or when the caller
 /// knows of a scope that somehow goes along with a
 /// sequence (e.g., a gbench plugin).
-void AgpWrite(CNcbiOstream& os,
-              const objects::CSeqMap& seq_map,
-              const string& object_id,
-              const string& gap_type,
-              bool linkage,
-              objects::CScope& scope);
+void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
+                                    const objects::CSeqMap& seq_map,
+                                    const string& object_id,
+                                    const string& gap_type,
+                                    bool linkage,
+                                    objects::CScope& scope);
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/06 13:21:10  jcherry
+ * Added export specifiers
+ *
  * Revision 1.1  2004/06/29 13:29:29  jcherry
  * Initial version
  *
