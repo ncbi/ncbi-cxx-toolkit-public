@@ -413,6 +413,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
         }
     }
 
+    dst.SetSeq_set();
     ITERATE ( CBioseq_set::TSeq_set, it, src.GetSeq_set() ) {
         if ( need_split_bioseq ) {
             const CSeq_entry& entry = **it;
@@ -626,6 +627,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/19 20:04:10  vasilche
+* Initialize Bioseq-set.seq-set field if it became empty after splitting.
+*
 * Revision 1.14  2004/08/19 14:18:54  vasilche
 * Added splitting of whole Bioseqs.
 *
