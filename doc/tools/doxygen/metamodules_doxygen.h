@@ -198,6 +198,11 @@
  *  @ingroup BDB
  */
 
+/** @defgroup BDB_Map	BDB library map templates
+ *  @ingroup BDB
+ */
+
+
 /* ========================================================================= */
 
 
