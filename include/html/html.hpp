@@ -582,8 +582,8 @@ class NCBI_XHTML_EXPORT CHTML_html : public CHTMLElement
     //          nondynamic mode. This parameter have effect only with eSmith
     //          menu type.
     void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
-                         const string& menu_script_url = kEmptyStr,
-                         bool use_dynamic_menu = false);
+                         const string&         menu_script_url  = kEmptyStr,
+                         bool                  use_dynamic_menu = false);
 private:
     // Init members.
     void Init(void);
@@ -1360,6 +1360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2004/04/05 15:50:49  ivanov
+ * Cosmetic changes
+ *
  * Revision 1.74  2004/04/01 14:14:01  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
