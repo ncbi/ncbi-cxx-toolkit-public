@@ -68,6 +68,9 @@ public:
     int GetFrameShiftPenalty() const { return m_Opts->GetFrameShiftPenalty(); }
     void SetFrameShiftPenalty(int p) { m_Opts->SetFrameShiftPenalty(p); }
 
+    int GetLongestIntronLength() const { return m_Opts->GetLongestIntronLength(); }
+    void SetLongestIntronLength(int l) { m_Opts->SetLongestIntronLength(l); }
+
     /******************* Subject sequence options *******************/
     int GetDbGeneticCode() const {
         return m_Opts->GetDbGeneticCode();
@@ -93,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/15 18:42:06  dondosha
+ * Added longest intron length setter/getter
+ *
  * Revision 1.3  2003/12/09 12:40:23  camacho
  * Added windows export specifiers
  *
