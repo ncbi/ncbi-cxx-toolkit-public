@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2001/08/30 00:39:58  vakatov
+* + NStr::StringToNumeric()
+*
 * Revision 6.2  2001/05/17 15:05:09  lavr
 * Typos corrected
 *
@@ -157,6 +160,10 @@ int CTestApplication::Run(void)
         "2147483648",
         "4294967295",
         "4294967296",
+        " 123 ",
+        "-324",
+        " 567",
+        "+890",
         "zzz"
     };
 
@@ -167,6 +174,12 @@ int CTestApplication::Run(void)
     for (size_t i = 0;  i < count;  ++i) {
         const string& str = s_Strings[i];
         NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
+
+        {{
+            int value = NStr::StringToNumeric(str);
+            NcbiCout << "numeric value: " << value << ", toString: '"
+                     << NStr::IntToString(value) << "'" << NcbiEndl;
+        }}
 
         try {
             int value = NStr::StringToInt(str);
