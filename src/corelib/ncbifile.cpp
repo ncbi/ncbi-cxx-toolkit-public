@@ -34,13 +34,10 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
 
-#if !defined(NCBI_OS_MAC)
-#  include <sys/types.h>
-#  if defined(HAVE_SYS_STAT_H)
-#    include <sys/stat.h>
-#  endif
+#include <sys/types.h>
+#if defined(HAVE_SYS_STAT_H)
+#  include <sys/stat.h>
 #endif
-
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -49,6 +46,9 @@
 #  include <io.h>
 #  include <direct.h>
 #  include <sys/utime.h>
+// for CDirEntry::GetOwner()
+#  include <accctrl.h>
+#  include <aclapi.h>
 
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -57,6 +57,8 @@
 #  include <fcntl.h>
 #  include <sys/mman.h>
 #  include <utime.h>
+#  include <pwd.h>
+#  include <grp.h>
 #  if !defined(MAP_FAILED)
 #    define MAP_FAILED ((void *) -1)
 #  endif
@@ -65,14 +67,10 @@
 #    include <ncbi_mslextras.h>
 #  endif
 
-#elif defined(NCBI_OS_MAC)
-#  include <fcntl.h>
-#  include <corelib/ncbi_os_mac.hpp>
-#  include <Script.h>
-#  include <Gestalt.h>
-#  include <Folders.h>
+#else
+#  error "File API defined only for MS Windows and UNIX platforms"
 
-#endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC */
+#endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX */
 
 
 BEGIN_NCBI_SCOPE
@@ -97,37 +95,23 @@ BEGIN_NCBI_SCOPE
 #  define DISK_SEPARATOR    ':'
 #  define DIR_SEPARATORS    "/\\"
 #  define ALL_SEPARATORS    ":/\\"
-
 #elif defined(NCBI_OS_UNIX)
 #  define DIR_SEPARATOR     '/'
 #  define DIR_SEPARATORS    "/"
 #  define ALL_SEPARATORS    "/"
-
-#elif defined(NCBI_OS_MAC)
-#  define DIR_SEPARATOR     ':'
-#  define DIR_SEPARATORS    ':'
-#  define ALL_SEPARATORS    ":"
-#  undef  DIR_PARENT
-#  undef  DIR_CURRENT
 #endif
+
+// Macro to check bits
+#define F_ISSET(flags, mask) ((flags & (mask)) == (mask))
+
+// Default buffer size, used to read/write files
+const size_t kDefaultBufferSize = 32*1024;
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
 // Static functions
 //
-
-#if defined(NCBI_OS_MAC)
-static const FSSpec sNullFSS = {0, 0, "\p"};
-
-static bool operator== (const FSSpec& one, const FSSpec& other)
-{
-    return one.vRefNum == other.vRefNum
-        && one.parID   == other.parID
-        && PString(one.name) == PString(other.name);
-}
-#endif  /* NCBI_OS_MAC */
-
 
 // Construct real entry mode from parts. Parameters can not have "fDefault" 
 // value.
@@ -148,15 +132,30 @@ static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode,
 // CDirEntry
 //
 
-
-CDirEntry::CDirEntry()
-#if defined(NCBI_OS_MAC)
-    : m_FSS(new FSSpec(sNullFSS))
-#endif
+CDirEntry::CDirEntry(const string& name)
 {
+    Reset(name);
+    m_DefaultMode[eUser]  = m_DefaultModeGlobal[eFile][eUser];
+    m_DefaultMode[eGroup] = m_DefaultModeGlobal[eFile][eGroup];
+    m_DefaultMode[eOther] = m_DefaultModeGlobal[eFile][eOther];
 }
 
-#ifndef NCBI_OS_MAC
+
+CDirEntry::CDirEntry(const CDirEntry& other)
+    : m_Path(other.m_Path)
+{
+    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
+    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
+    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+}
+
+
+CDirEntry::~CDirEntry(void)
+{
+    return;
+}
+
+
 void CDirEntry::Reset(const string& path)
 {
     m_Path = path;
@@ -173,62 +172,6 @@ void CDirEntry::Reset(const string& path)
 #  endif
     m_Path = DeleteTrailingPathSeparator(path);
 }
-#endif
-
-
-#if defined(NCBI_OS_MAC)
-CDirEntry::CDirEntry(const CDirEntry& other) : m_FSS(new FSSpec(*other.m_FSS))
-{
-    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
-    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
-    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
-}
-
-
-CDirEntry&
-CDirEntry::operator= (const CDirEntry& other)
-{
-    *m_FSS = *other.m_FSS;
-    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
-    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
-    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
-    return *this;
-}
-
-
-CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(new FSSpec(fss))
-{
-    m_DefaultMode[eUser]  = m_DefaultModeGlobal[eFile][eUser];
-    m_DefaultMode[eGroup] = m_DefaultModeGlobal[eFile][eGroup];
-    m_DefaultMode[eOther] = m_DefaultModeGlobal[eFile][eOther];
-}
-#endif
-
-
-CDirEntry::CDirEntry(const string& name)
-#if defined(NCBI_OS_MAC)
-    : m_FSS(new FSSpec(sNullFSS))
-#endif
-{
-    Reset(name);
-    m_DefaultMode[eUser]  = m_DefaultModeGlobal[eFile][eUser];
-    m_DefaultMode[eGroup] = m_DefaultModeGlobal[eFile][eGroup];
-    m_DefaultMode[eOther] = m_DefaultModeGlobal[eFile][eOther];
-}
-
-
-#if defined(NCBI_OS_MAC)
-bool CDirEntry::operator== (const CDirEntry& other) const
-{
-    return *m_FSS == *other.m_FSS;
-}
-
-const FSSpec& CDirEntry::FSS() const
-{
-    return *m_FSS;
-}
-#endif
-
 
 
 CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
@@ -260,34 +203,17 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 };
 
 
+// Default backup suffix
+string CDirEntry::m_BackupSuffix = ".bak";
 
-#if defined(NCBI_OS_MAC)
-void CDirEntry::Reset(const string& path)
+
+CDirEntry& CDirEntry::operator= (const CDirEntry& other)
 {
-    OSErr err = MacPathname2FSSpec(path.c_str(), m_FSS);
-    if (err != noErr  &&  err != fnfErr) {
-        *m_FSS = sNullFSS;
-    }
-}
-
-string CDirEntry::GetPath(void) const
-{
-    OSErr err;
-    char* path;
-    err = MacFSSpec2FullPathname(&FSS(), &path);
-    if (err != noErr) {
-        return kEmptyStr;
-    }
-    return string(path);
-}
-#endif
-
-
-CDirEntry::~CDirEntry(void)
-{
-#if defined(NCBI_OS_MAC)
-    delete m_FSS;
-#endif
+    m_Path = other.m_Path;
+    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
+    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
+    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+    return *this;
 }
 
 
@@ -358,11 +284,6 @@ bool CDirEntry::IsPathSeparator(const char c)
 string CDirEntry::AddTrailingPathSeparator(const string& path)
 {
     size_t len = path.length();
-#if defined(NCBI_OS_MAC)
-    if ( !len ) {
-        return string(1,GetPathSeparator());
-    }
-#endif
     if (len  &&  string(ALL_SEPARATORS).rfind(path.at(len - 1)) == NPOS) {
         return path + GetPathSeparator();
     }
@@ -386,13 +307,8 @@ bool CDirEntry::IsAbsolutePath(const string& path)
         return false;
     char first = path[0];
 
-#if defined(NCBI_OS_MAC)
-    if ( path.find(DIR_SEPARATOR) != NPOS  &&  first != DIR_SEPARATOR )
-        return true;
-#else
     if ( IsPathSeparator(first) )
         return true;
-#endif
 #if defined(DISK_SEPARATOR)
     if ( path.find(DISK_SEPARATOR) != NPOS )
         return true;
@@ -450,7 +366,7 @@ static void s_StripDir(const string& dir, vector<string> * dir_parts)
         if (sep_pos == 0) {
             dir_parts->push_back(string(1, sep));
         } else {
-            dir_parts->push_back(string(dir, part_start, sep_pos - part_start));
+            dir_parts->push_back(string(dir, part_start, sep_pos -part_start));
         }
 
         sep_pos++;
@@ -501,12 +417,12 @@ string CDirEntry::CreateRelativePath( const string& path_from,
                    "path_to is empty path");
     }
 
-//Platform-dependent compare mode
+// Platform-dependent compare mode
 #ifdef NCBI_OS_MSWIN
-# define DIR_PARTS_CMP_MODE NStr::eNocase
+#  define DIR_PARTS_CMP_MODE NStr::eNocase
 #endif
 #ifdef NCBI_OS_UNIX
-# define DIR_PARTS_CMP_MODE NStr::eCase
+#  define DIR_PARTS_CMP_MODE NStr::eCase
 #endif
     // Roots must be the same to create relative path from one to another
 
@@ -572,26 +488,6 @@ string CDirEntry::ConvertToOSPath(const string& path)
             xpath[i] = DIR_SEPARATOR;
         }
     }
-#if defined(NCBI_OS_MAC)
-    // Fix current and parent refs in the path for MAC
-    string xsearch= "..:";
-    size_t pos = 0;
-    while ((pos = xpath.find(xsearch)) != NPOS) {
-        xpath.replace(pos, xsearch.length(), ":");
-        if ( xpath.substr(pos + 1, 2) == ".:" )  {
-            xpath.erase(pos + 1, 2);
-        } else {
-            if ( xpath.substr(pos + 1, xsearch.length()) != xsearch )  {
-                xpath.insert(pos,":");
-            }
-        }
-    }
-    xpath = NStr::Replace(xpath, ".:", kEmptyStr);
-    // Add leading ":" (criterion of relativity of the dir)
-    if ( xpath[0] != ':' ) {
-        xpath = ":" + xpath;
-    }
-#else
     // Fix current and parent refs in the path after conversion from MAC path
     // Replace all "::" to "/../"
     string xsearch  = string(2,DIR_SEPARATOR);
@@ -606,7 +502,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
     }
     // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
     xpath = NormalizePath(xpath);
-#endif
+
     return xpath;
 }
 
@@ -634,11 +530,6 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
     // Add trailing path separator to first part (OS independence)
 
     size_t pos = path.length();
-#if defined(NCBI_OS_MAC)
-    if ( !pos ) {
-        path = string(1,GetPathSeparator());
-    }
-#endif
     if ( pos  &&  string(ALL_OS_SEPARATORS).find(path.at(pos-1)) == NPOS ) {
         // Find used path separator
         char sep = GetPathSeparator();
@@ -684,9 +575,9 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 ||  pretail.front().find(DISK_SEPARATOR) != NPOS
 #  endif
                 ) {
-                // absolute path
+                // Absolute path
                 head.clear();
-#  ifdef NCBI_OS_MSWIN
+#  if defined(NCBI_OS_MSWIN)
                 // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\".
                 static const char* const kUNC[] = { "", "", "?", "UNC" };
                 list<string>::iterator it = pretail.begin();
@@ -747,9 +638,9 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 }
             }
         }
-#  ifdef NCBI_OS_UNIX
+#  if defined(NCBI_OS_UNIX)
         // Is there a Windows equivalent for readlink?
-        if (follow_links) {
+        if ( follow_links ) {
             string s(head.empty() ? next
                      : NStr::Join(head, string(1, DIR_SEPARATOR))
                      + DIR_SEPARATOR + next);
@@ -783,46 +674,9 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 }
 
 
-// Match "name" against the filename "mask", returning TRUE if
-// it matches, FALSE if not.  
-//
-bool CDirEntry::MatchesMask(const char* name, const char* mask) 
-{
-    return NStr::MatchesMask(name, mask);
-}
-
-
-bool CDirEntry::MatchesMask(const char* name, const CMask& mask) 
-{
-    return mask.Match(name);
-}
-
-
 bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
     const
 {
-#if defined(NCBI_OS_MAC)
-    FSSpec fss = FSS();
-    OSErr err = FSpCheckObjectLock(&fss);
-    if (err != noErr  &&  err != fLckdErr) {
-        return false;
-    }
-    bool locked = (err == fLckdErr);
-    TMode mode = fRead | (locked ? 0 : fWrite);
-    // User
-    if (user_mode) {
-        *user_mode = mode;
-    }
-    // Group
-    if (group_mode) {
-        *group_mode = mode;
-    }
-    // Other
-    if (other_mode) {
-        *other_mode = mode;
-    }
-    return true;
-#else
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
@@ -842,7 +696,6 @@ bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
         *user_mode = st.st_mode & 0007;
     }
     return true;
-#endif
 }
 
 
@@ -852,23 +705,6 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
     if (user_mode == fDefault) {
         user_mode = m_DefaultMode[eUser];
     }
-#if defined(NCBI_OS_MAC)
-    bool wantLocked = (user_mode & fWrite) == 0;
-    FSSpec fss = FSS();
-    OSErr  err = FSpCheckObjectLock(&fss);
-    if (err != noErr  &&  err != fLckdErr) {
-        return false;
-    }
-    bool locked = (err == fLckdErr);
-    if (locked == wantLocked) {
-        return true;
-    }
-    err = wantLocked 
-        ? ::FSpSetFLock(&fss) 
-        : ::FSpRstFLock(&fss);
-    
-    return err == noErr;
-#else
     if (group_mode == fDefault) {
         group_mode = m_DefaultMode[eGroup];
     }
@@ -878,7 +714,6 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
     TMode mode = s_ConstructMode(user_mode, group_mode, other_mode);
 
     return chmod(GetPath().c_str(), mode) == 0;
-#endif
 }
 
 
@@ -990,35 +825,23 @@ bool CDirEntry::SetTime(CTime* modification, CTime* last_access) const
 
     times.modtime = modification ? modification->GetTimeT() : time(0);
     times.actime = last_access ? last_access->GetTimeT() : time(0);
-
     return utime(GetPath().c_str(), &times) == 0;
 }
 
- 
+
 CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 {
-#if defined(NCBI_OS_MAC)
-    OSErr   err;
-    long    dirID;
-    Boolean isDir;
-    err = FSpGetDirectoryID(&FSS(), &dirID, &isDir);
-    if ( err ) {
-        return eUnknown;
-    }
-    return isDir ? eDir : eFile;
-
-#else
     struct stat st;
     int         errcode;
-#  if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
     errcode = stat(GetPath().c_str(), &st);
-#  elif defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     if (follow == eFollowLinks) {
         errcode = stat(GetPath().c_str(), &st);
     } else {
         errcode = lstat(GetPath().c_str(), &st);
     }
-#  endif
+#endif
     if (errcode != 0) {
         return eUnknown;
     }
@@ -1028,10 +851,10 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
         return eDir;
     case S_IFCHR:
         return eCharSpecial;
-#  if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
     case _S_IFIFO:
         return ePipe;
-#  elif defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     case S_IFIFO:
         return ePipe;
     case S_IFLNK:
@@ -1040,35 +863,110 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
         return eSocket;
     case S_IFBLK:
         return eBlockSpecial;
-#    if defined(S_IFDOOR) /* only Solaris seems to have this */
+#  if defined(S_IFDOOR) /* only Solaris seems to have this */
     case S_IFDOOR:
         return eDoor;
-#    endif
 #  endif
+#endif
     }
     // Check regular file bit last
     if ( (st.st_mode & S_IFREG)  == S_IFREG ) {
         return eFile;
     }
     return eUnknown;
+}
+
+
+string CDirEntry::LookupLink(void)
+{
+#if defined(NCBI_OS_UNIX)
+    char buf[PATH_MAX];
+    string name;
+    int  length = readlink(GetPath().c_str(), buf, sizeof(buf));
+    if (length > 0) {
+        name.assign(buf, length);
+    }
+    return name;
+#else
+    return kEmptyStr;
 #endif
 }
 
 
-bool CDirEntry::Rename(const string& newname)
+void CDirEntry::DereferenceLink(void)
 {
-#if defined(NCBI_OS_MAC)
-    const int maxFilenameLength = 31;
-    if (newname.length() > maxFilenameLength) return false;
-    Str31 newNameStr;
-    Pstrcpy(newNameStr, newname.c_str());
-    OSErr err = FSpRename(&FSS(), newNameStr);
-    if (err != noErr) return false;
-#else
-    if (rename(GetPath().c_str(), newname.c_str()) != 0) {
+    while ( IsLink() ) {
+        string name = LookupLink();
+        if ( name.empty() ) {
+            return;
+        }
+        if ( IsAbsolutePath(name) ) {
+            Reset(name);
+        } else {
+            string path = NormalizePath(MakePath(GetDir(), name));
+            Reset(path);
+        }
+    }
+}
+
+
+bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
+{
+    CFile src(*this);
+    CFile dst(newname);
+
+    // Dereference links
+    if ( F_ISSET(flags, fRF_FollowLinks) ) {
+        src.DereferenceLink();
+        dst.DereferenceLink();
+    }
+    // The source entry must exists
+    EType src_type = src.GetType();
+    if ( src_type == eUnknown)  {
         return false;
     }
-#endif
+    EType dst_type   = dst.GetType();
+    bool  dst_exists = (dst_type != eUnknown);
+    
+    // If destination exists...
+    if ( dst_exists ) {
+        // Can rename entries with different types?
+        if ( F_ISSET(flags, fRF_EqualTypes)  &&  (src_type != dst_type) ) {
+            return false;
+        }
+        // Can overwrite entry?
+        if ( !F_ISSET(flags, fRF_Overwrite)  &&  !F_ISSET(flags, fRF_Backup) ) {
+            return false;
+        }
+        // Rename only if destination is older, otherwise just remove source
+        if ( F_ISSET(flags, fRF_Update)  &&  !src.IsNewer(dst.GetPath())) {
+            return src.Remove();
+        }
+        // Backup destination entry first
+        if ( F_ISSET(flags, fRF_Backup) ) {
+            // Use new CDirEntry object for 'dst', because its path
+            // will be changed after backup
+            if ( !CDirEntry(dst).Backup(GetBackupSuffix(), eBackup_Rename) ) {
+                return false;
+            }
+        }
+        // Overwrite destination entry
+        if ( F_ISSET(flags, fRF_Overwrite) ) {
+            dst.Remove();
+        } 
+    }
+
+    // On some platform rename() fails if destination entry exists, 
+    // on others it can overwrite destination.
+    // For consistency return FALSE if destination already exists.
+    if ( dst.Exists() ) {
+        return false;
+    }
+    
+    // Rename
+    if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
+        return false;
+    }
     Reset(newname);
     return true;
 }
@@ -1076,10 +974,6 @@ bool CDirEntry::Rename(const string& newname)
 
 bool CDirEntry::Remove(EDirRemoveMode mode) const
 {
-#if defined(NCBI_OS_MAC)
-    OSErr err = ::FSpDelete(&FSS());
-    return err == noErr;
-#else
     if ( IsDir(eIgnoreLinks) ) {
         if (mode == eOnlyEmpty) {
             return rmdir(GetPath().c_str()) == 0;
@@ -1090,21 +984,476 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
     } else {
         return remove(GetPath().c_str()) == 0;
     }
+}
+
+
+bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
+                       TCopyFlags copyflags, size_t copybufsize)
+{
+    string backup_name = DeleteTrailingPathSeparator(GetPath()) +
+                         (suffix.empty() ? GetBackupSuffix() : suffix);
+    switch (mode) {
+        case eBackup_Copy:
+            return Copy(backup_name, copyflags | fCF_Overwrite, copybufsize);
+        case eBackup_Rename:
+            return Rename(backup_name, fRF_Overwrite);
+        default:
+            break;
+    }
+    return false;
+}
+
+
+bool CDirEntry::IsNewer(const string& entry_name) const
+{
+    CTime current, other;
+    if ( !GetTime(&current) ) {
+        return false;
+    }
+    CDirEntry entry(entry_name);
+    if ( !entry.GetTime(&other) ) {
+        return true;
+    }
+    return current > other;
+}
+
+
+#if defined(NCBI_OS_MSWIN)
+
+// Helper function for GetOwner
+bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
+{
+    // Accordingly MSDN max account name size is 20, domain name size is 256.
+    #define MAX_ACCOUNT_LEN  256
+
+    char account_name[MAX_ACCOUNT_LEN];
+    char domain_name [MAX_ACCOUNT_LEN];
+    DWORD account_size = MAX_ACCOUNT_LEN;
+    DWORD domain_size  = MAX_ACCOUNT_LEN;
+    SID_NAME_USE use   = SidTypeUnknown;
+
+    if ( !LookupAccountSid(NULL /*local computer*/, sid, 
+                            account_name, (LPDWORD)&account_size,
+                            domain_name,  (LPDWORD)&domain_size,
+                            &use) ) {
+        return false;
+    }
+    // Save account information
+    if ( account )
+        *account = account_name;
+    if ( domain )
+        *domain = domain_name;
+
+    // Return result
+    return true;
+}
+
+
+// Helper function for SetOwner
+bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
+{
+    // Get priviledge unique identifier
+    LUID luid;
+    if ( !LookupPrivilegeValue(NULL, privilege, &luid) ) {
+        return false;
+    }
+
+    // Get current privilege setting
+
+    TOKEN_PRIVILEGES tp;
+    TOKEN_PRIVILEGES tp_prev;
+    DWORD            tp_prev_size = sizeof(TOKEN_PRIVILEGES);
+    
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    tp.Privileges[0].Attributes = 0;
+
+    AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
+                            &tp_prev, &tp_prev_size);
+    if ( GetLastError() != ERROR_SUCCESS ) {
+        return false;
+    }
+
+    // Set privilege based on received setting
+
+    tp_prev.PrivilegeCount     = 1;
+    tp_prev.Privileges[0].Luid = luid;
+
+    if ( enable ) {
+        tp_prev.Privileges[0].Attributes |= (SE_PRIVILEGE_ENABLED);
+    } else {
+        tp_prev.Privileges[0].Attributes ^= 
+            (SE_PRIVILEGE_ENABLED & tp_prev.Privileges[0].Attributes);
+    }
+    AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size,
+                            NULL, NULL);
+    if ( GetLastError() != ERROR_SUCCESS ) {
+        return false;
+    }
+
+    // Privilege settings changed
+    return true;
+}
+#endif
+
+
+bool CDirEntry::GetOwner(string* owner, string* group,
+                         EFollowLinks follow) const
+{
+    if ( !owner  &&  !group ) {
+        return false;
+    }
+
+#if defined(NCBI_OS_MSWIN)
+
+    PSID sid_owner;
+    PSID sid_group;
+    PSECURITY_DESCRIPTOR sd = NULL;
+
+    if ( GetNamedSecurityInfo(
+            (LPTSTR)GetPath().c_str(),
+            SE_FILE_OBJECT,
+            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+            &sid_owner,
+            &sid_group,
+            NULL, NULL,
+            &sd ) != ERROR_SUCCESS ) {
+      return 1;
+    }
+    // Get owner
+    if ( owner ) {
+        if ( !s_LookupAccountSid(sid_owner, owner) ) {
+            LocalFree(sd);
+            return false;
+        }
+    }
+    // Get group
+    if ( group ) {
+        if ( !s_LookupAccountSid(sid_group, group) ) {
+            // This is not an error, because the group name on WINDOWS
+            // is an auxiliary information. Sometimes accounts can not
+            // belongs to groups, or we dont have permissions to get
+            // such information.
+            *group = kEmptyStr;
+        }
+    }
+    LocalFree(sd);
+    return true;
+
+#elif defined(NCBI_OS_UNIX)
+
+    struct stat st;
+    int errcode;
+    
+    if ( follow == eFollowLinks ) {
+        errcode = stat(GetPath().c_str(), &st);
+    } else {
+        errcode = lstat(GetPath().c_str(), &st);
+    }
+    if ( errcode ) {
+        return false;
+    }
+    
+    if ( owner ) {
+        struct passwd *pw = getpwuid(st.st_uid);
+        if ( !pw )
+	    return false;
+        *owner = pw->pw_name;
+    }
+    if ( group ) {
+        struct group *gr = getgrgid(st.st_gid);
+        if ( !gr )
+	    return false;
+        *group = gr->gr_name;
+    }
+    return true;
 #endif
 }
 
+
+bool CDirEntry::SetOwner(const string& owner, const string& group,
+                         EFollowLinks follow) const
+{
+#if defined(NCBI_OS_MSWIN)
+
+    // Get access token
+
+    HANDLE process = GetCurrentProcess();
+    if ( !process ) {
+        return false;
+    }
+    HANDLE token = INVALID_HANDLE_VALUE;
+    if ( !OpenProcessToken(process, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                           &token) ) {
+        return false;
+    }
+
+    // Enable privilegies, if failed try without it
+    s_EnablePrivilege(token, SE_TAKE_OWNERSHIP_NAME);
+    s_EnablePrivilege(token, SE_RESTORE_NAME);
+    s_EnablePrivilege(token, SE_BACKUP_NAME);
+
+    PSID  sid     = NULL;
+    char* domain  = NULL;
+    bool  success = true;
+
+    try {
+
+        //--------------------------------------------------------------------
+        // Get SID for new owner
+        //
+
+        // First call to LookupAccountName to get the buffer sizes
+        DWORD sid_size    = 0;
+        DWORD domain_size = 0;
+        SID_NAME_USE use  = SidTypeUnknown;
+        BOOL res;
+        res = LookupAccountName(NULL, owner.c_str(),
+                                NULL, &sid_size, 
+                                NULL, &domain_size, &use);
+        if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER )
+            throw(0);
+
+        // Reallocate memory for the buffers
+        sid    = (PSID) malloc(sid_size);
+        domain = (char*)malloc(domain_size);
+        if ( !sid  || !domain ) {
+            throw(0);
+        }
+
+        // Second call to LookupAccountName to get the account info
+        if ( !LookupAccountName(NULL, owner.c_str(),
+                                sid, &sid_size, 
+                                domain, &domain_size, &use) ) {
+            // Unknown local user
+            throw(0);
+        }
+
+        //--------------------------------------------------------------------
+        // Change owner
+        //
+
+        // Security descriptor (absolute format)
+        UCHAR sd_abs_buf [SECURITY_DESCRIPTOR_MIN_LENGTH];
+        PSECURITY_DESCRIPTOR sd = (PSECURITY_DESCRIPTOR)&sd_abs_buf;
+
+        // Build security descriptor in absolute format
+        if ( !InitializeSecurityDescriptor(
+                sd, SECURITY_DESCRIPTOR_REVISION)) {
+            throw(0);
+        }
+        // Modify security descriptor owner.
+        // FALSE - because new owner was explicitly specified.
+        if ( !SetSecurityDescriptorOwner(sd, sid, FALSE)) {
+            throw(0);
+        }
+        // Check security descriptor
+        if ( !IsValidSecurityDescriptor(sd) ) {
+            throw(0);
+        }
+        // Set new security information for the file object
+        if ( !SetFileSecurity(GetPath().c_str(),
+                (SECURITY_INFORMATION)(OWNER_SECURITY_INFORMATION), sd) ) {
+            throw(0);
+        }
+    }
+    catch (int) {
+        success = false;
+    }
+
+    // Clean up
+    if ( sid )    free(sid);
+    if ( domain ) free(domain);
+    CloseHandle(token);
+
+    // Return result
+    return success;
+
+#elif defined(NCBI_OS_UNIX)
+
+    struct stat st;
+    int errcode;
+    
+    if ( follow == eFollowLinks ) {
+        errcode = stat(GetPath().c_str(), &st);
+    } else {
+        errcode = lstat(GetPath().c_str(), &st);
+    }
+    if ( errcode ) {
+        return false;
+    }
+    
+    uid_t uid = uid_t(-1);
+    gid_t gid = gid_t(-1);
+    
+    if ( !owner.empty() ) {
+        struct passwd *pw = getpwnam(owner.c_str());
+        if ( !pw )
+            return false;
+        uid = pw->pw_uid;
+    }
+    if ( !group.empty() ) {
+        struct group *gr = getgrnam(group.c_str());
+        if ( !gr )
+	    return false;
+        gid = gr->gr_gid;
+    }
+    
+    if ( follow == eFollowLinks ) {
+        if ( chown(GetPath().c_str(), uid, gid) ) {
+            return false;
+        }
+    } else {
+        if ( lchown(GetPath().c_str(), uid, gid) ) {
+            return false;
+        }
+    }
+    return true;
+
+#endif
+}
+
+
+// Helper: Copy attributes (owner/date/time) from one entry to another.
+// Both entries should have equal type.
+//
+// UNIX:
+//     In mostly cases only super-user can change owner for
+//     destination entry.  The owner of a file may change the group of
+//     the file to any group of which that owner is a member.
+// WINDOWS:
+//     This function doesn't support ownerhip change yet.
+//
+static bool s_CopyAttrs(const char* from, const char* to,
+                        CDirEntry::EType type, CDirEntry::TCopyFlags flags)
+{
+#if defined(NCBI_OS_UNIX)
+
+    struct stat st;
+    int errcode;
+    if (type == CDirEntry::eLink) {
+        errcode = lstat(from, &st);
+    } else {
+        errcode = stat(from, &st);
+    }
+    if ( errcode ) {
+        return false;
+    }
+
+    // Date/time
+    if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
+        struct utimbuf times;
+        times.modtime = st.st_mtime;
+        times.actime = st.st_atime;
+        if ( utime(to, &times) ) {
+            return false;
+        }
+    }
+
+    // Owner. 
+    // To improve performance change it right here,
+    // do not use GetOwner/SetOwner.
+
+    if ( F_ISSET(flags, CDirEntry::fCF_PreserveOwner) ) {
+        if ( type == CDirEntry::eLink ) {
+            if ( lchown(to, st.st_uid, st.st_gid) ) {
+                if (errno != EPERM) {
+                    return false;
+                }
+            }
+            // We cannot change permissions for sym.links.
+            return true;
+        } else {
+            // Changing the ownership probably can fails, unless we're super-user.
+            // The uid/gid bits can be cleared by OS. If chown() fails,
+            // lose uid/gid bits.
+            if ( chown(to, st.st_uid, st.st_gid) ) {
+                if ( errno != EPERM ) {
+                    return false;
+                }
+                st.st_mode &= ~(S_ISUID | S_ISGID);
+            }
+        }
+    }
+    // Permissions
+    if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm)  &&
+        type != CDirEntry::eLink ) {
+        if ( chmod(to, st.st_mode) ) {
+            return false;
+        }
+    }
+    return true;
+
+
+#elif defined(NCBI_OS_MSWIN)
+
+    CDirEntry efrom(from), eto(to);
+
+
+    WIN32_FILE_ATTRIBUTE_DATA attr;
+    if ( !::GetFileAttributesEx(from, GetFileExInfoStandard, &attr) ) {
+        return false;
+    }
+
+    // Permissions
+    if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
+        if ( !::SetFileAttributes(to, attr.dwFileAttributes) ) {
+            return false;
+        }
+    }
+
+    // Date/time
+    if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
+        HANDLE h = CreateFile(to, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL,
+                              OPEN_EXISTING,
+                              FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
+        if ( h == INVALID_HANDLE_VALUE ) {
+            return false;
+        }
+        if ( !SetFileTime(h, &attr.ftCreationTime, &attr.ftLastAccessTime,
+                        &attr.ftLastWriteTime) ) {
+            CloseHandle(h);
+            return false;
+        }
+        CloseHandle(h);
+    }
+
+    // Permissions
+    if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
+        TMode user_mode, group_mode, other_mode;
+        if ( !efrom.GetMode(&user_mode, &group_mode, &other_mode)  ||
+            !eto.SetMode(user_mode, group_mode, other_mode) ) {
+            return false;
+        }
+    }
+    // Date/time
+    if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
+        CTime modification, last_access;
+        if ( !efrom.GetTime(&modification, 0, &last_access)  ||
+            !eto.SetTime(&modification, &last_access) ) {
+            return false;
+        }
+    }
+    // Owner
+    if ( F_ISSET(flags, CDirEntry::fCF_PreserveOwner) ) {
+        string owner, group;
+        if ( !efrom.GetOwner(&owner, &group) ) {
+            return false;
+        }
+        // We dont check result here, because often is not impossible
+        // to save an original owner name without administators rights.
+        eto.SetOwner(owner, group);
+    }
+
+    return true;
+#endif
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
 // CFile
 //
-
-CFile::CFile(const string& filename) : CParent(filename)
-{ 
-    // Set default mode
-    SetDefaultMode(eFile, fDefault, fDefault, fDefault);
-}
 
 
 CFile::~CFile(void)
@@ -1115,21 +1464,11 @@ CFile::~CFile(void)
 
 Int8 CFile::GetLength(void) const
 {
-#if defined(NCBI_OS_MAC)
-    long dataSize, rsrcSize;
-    OSErr err = FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
-    if (err != noErr) {
-        return -1;
-    } else {
-        return dataSize;
-    }
-#else
     struct stat buf;
     if ( stat(GetPath().c_str(), &buf) != 0 ) {
         return -1;
     }
     return buf.st_size;
-#endif
 }
 
 
@@ -1151,6 +1490,156 @@ string CFile::GetTmpName(ETmpFileCreationMode mode)
     free(filename);
     return res;
 #endif
+}
+
+
+#if !defined(NCBI_OS_MSWIN)
+
+// Auxiliary function to copy file
+bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
+{
+    CNcbiIfstream is(src, IOS_BASE::binary | IOS_BASE::in);
+    CNcbiOfstream os(dst, IOS_BASE::binary | IOS_BASE::out | IOS_BASE::trunc);
+
+    if ( !buf_size ) {
+        buf_size = kDefaultBufferSize;
+    }
+    char* buf = new char[buf_size];
+    bool failed = false;
+
+    streamsize nread;
+    do {
+        nread = is.rdbuf()->sgetn(buf, buf_size);
+        if ( nread ) {
+            streamsize nwrite = os.rdbuf()->sputn(buf, nread);
+            if ( nwrite != nread ) {
+                failed = true;
+                break;
+            }
+        }
+    } while ( nread );
+
+    // Clean memory
+    delete buf;
+    // Return copy result
+    return !failed;
+}
+#endif
+
+
+bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
+{
+    CFile src(*this);
+    CFile dst(newname);
+
+    // Dereference links
+    if ( F_ISSET(flags, fCF_FollowLinks) ) {
+        src.DereferenceLink();
+        dst.DereferenceLink();
+    }
+    // The source file must exists
+    EType src_type = src.GetType();
+    if ( src_type != eFile )  {
+        return false;
+    }
+    EType dst_type   = dst.GetType();
+    bool  dst_exists = (dst_type != eUnknown);
+    
+    // If destination exists...
+    if ( dst_exists ) {
+        // Can copy entries with different types?
+        // The Destination must be a file too.
+        if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
+            return false;
+        }
+        // Can overwrite entry?
+        if ( !F_ISSET(flags, fCF_Overwrite) && !F_ISSET(flags, fCF_Backup) ) {
+            return false;
+        }
+        // Copy only if destination is older, otherwise just remove source
+        if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath())) {
+            return src.Remove();
+        }
+        // Backup destination entry first
+        if ( F_ISSET(flags, fCF_Backup) ) {
+            // Use new CDirEntry object for 'dst', because its path
+            // will be changed after backup
+            if ( !CDirEntry(dst).Backup(GetBackupSuffix(), eBackup_Rename) ) {
+                return false;
+            }
+        }
+    }
+
+    // Copy
+#if defined(NCBI_OS_MSWIN)
+    if ( !::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) )
+        return false;
+#else
+    if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size)){
+        return false;
+    }
+#endif
+
+    // Verify copied data
+    if ( F_ISSET(flags, fCF_Verify)  &&  !src.Compare(dst.GetPath()) ) {
+        return false;
+    }
+
+    // Preserve attributes.
+#if defined(NCBI_OS_MSWIN)
+    // On MS Windows ::CopyFile() already preserved file attributes
+    // and all date/times.
+    flags &= ~(fCF_PreservePerm | fCF_PreserveTime);
+#endif
+    if ( flags & fCF_PreserveAll ) {
+        if ( !s_CopyAttrs(src.GetPath().c_str(),
+                          dst.GetPath().c_str(), eFile, flags) ) {
+            return false;
+        }
+    } else {
+        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+ bool CFile::Compare(const string& file, size_t buf_size)
+{
+    if ( CFile(GetPath()).GetLength() != CFile(file).GetLength() ) {
+        return false;
+    }
+    CNcbiIfstream f1(GetPath().c_str(), IOS_BASE::binary | IOS_BASE::in);
+    CNcbiIfstream f2(file.c_str(),      IOS_BASE::binary | IOS_BASE::in);
+
+    if ( !buf_size ) {
+        buf_size = kDefaultBufferSize;
+    }
+    char* buf1 = new char[buf_size];
+    char* buf2 = new char[buf_size];
+    bool equal = true;
+
+    while ( f1.good()  &&  f2.good() ) {
+        // Fill buffers
+        f1.read(buf1, buf_size);
+        f2.read(buf2, buf_size);
+        if ( f1.gcount() != f2.gcount() ) {
+            equal = false;
+            break;
+        }
+        // Compare
+        if ( memcmp(buf1, buf2, f1.gcount()) != 0 ) {
+            equal = false;
+            break;
+        }
+    }
+    // Clean memory
+    delete buf1;
+    delete buf2;
+
+    // Both files should be in the EOF state
+    return equal  &&  f1.eof()  &&  f2.eof();
 }
 
 
@@ -1290,29 +1779,6 @@ fstream* CFile::CreateTmpFileEx(const string& dir, const string& prefix,
 // CDir
 //
 
-
-CDir::CDir(void)
-{
-    return;
-}
-
-
-#if defined(NCBI_OS_MAC)
-CDir::CDir(const FSSpec& fss) : CParent(fss)
-{
-    // Set default mode
-    SetDefaultMode(eDir, fDefault, fDefault, fDefault);
-}
-#endif
-
-
-CDir::CDir(const string& dirname) : CParent(dirname)
-{
-    // Set default mode
-    SetDefaultMode(eDir, fDefault, fDefault, fDefault);
-}
-
-
 #if defined(NCBI_OS_UNIX)
 
 static bool s_GetHomeByUID(string& home)
@@ -1367,7 +1833,6 @@ string CDir::GetHome(void)
             home = str;
         }
     }
-   
 #elif defined(NCBI_OS_UNIX)
     // Try get home dir from environment variable
     str = getenv("HOME");
@@ -1379,42 +1844,6 @@ string CDir::GetHome(void)
         if ( !s_GetHomeByUID(home) ) { 
             s_GetHomeByLOGIN(home);
         }
-    }
-   
-#elif defined(NCBI_OS_MAC)
-    // Make sure we can use FindFolder() if not, report error
-    long gesResponse;
-    if (Gestalt(gestaltFindFolderAttr, &gesResponse) != noErr  ||
-        (gesResponse & (1 << gestaltFindFolderPresent) == 0)) {
-        return kEmptyStr;
-    }
-
-    // Store the current active directory
-    long  saveDirID;
-    short saveVRefNum;
-    HGetVol((StringPtr) 0, &saveVRefNum, &saveDirID);
-
-    // Find the preferences folder in the active System folder
-    short vRefNum;
-    long  dirID;
-    OSErr err = FindFolder(kOnSystemDisk, kPreferencesFolderType,
-                           kCreateFolder, &vRefNum, &dirID);
-
-    FSSpec spec;
-    if (err == noErr) {
-        char dummy[FILENAME_MAX+1];
-        dummy [0] = '\0';
-        err = FSMakeFSSpec(vRefNum, dirID, (StringPtr) dummy, &spec);
-    }
-
-    // Restore the current active directory
-    HSetVol((StringPtr) 0, saveVRefNum, saveDirID);
-
-    // Convert to C++ string
-    if (err == noErr) {
-        str = 0;
-        err = MacFSSpec2FullPathname(&spec, &str);
-        home = str;
     }
 #endif 
 
@@ -1475,7 +1904,6 @@ string CDir::GetCwd()
         cwd = buf;
     }
 #endif
-
     return cwd;
 }
 
@@ -1486,39 +1914,44 @@ CDir::~CDir(void)
 }
 
 
-#if defined(NCBI_OS_MAC)
-static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
+// Helper function for GetEntries(). Add entry to the list.
+void s_AddDirEntry(CDir::TEntries& contents, const string& path)
 {
-    FSSpec dir = container.FSS();
-    FSSpec fss;     // FSSpec of item gotten.
-    SInt16 actual;  // Actual number of items gotten.  Should be one or zero.
-    SInt16 itemIndex = index;
-    OSErr err = GetDirItems(dir.vRefNum, dir.parID, dir.name, true, true, 
-                            &fss, 1, &actual, &itemIndex);
-    if ( err != noErr ) {
-        throw err;
+    switch ( CDirEntry(path).GetType() ) {
+        case CDir::eFile:
+            contents.push_back(new CFile(path));
+            break;
+        case CDir::eDir:
+            contents.push_back(new CDir(path));
+            break;
+        case CDir::eLink:
+            contents.push_back(new CSymLink(path));
+            break;
+        default:
+            contents.push_back(new CDirEntry(path));
+            break;
     }
-    return CDirEntry(fss);
 }
-#endif
 
 
 CDir::TEntries CDir::GetEntries(const string&   mask,
-                                EGetEntriesMode mode) const
+                                EGetEntriesMode mode,
+                                NStr::ECase     use_case) const
 {
     CMaskFileName masks;
     if ( !mask.empty() ) {
         masks.Add(mask);
     }
-    return GetEntries(masks, mode);
+    return GetEntries(masks, mode, use_case);
 }
 
 
 CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
-                                EGetEntriesMode        mode) const
+                                EGetEntriesMode        mode,
+                                NStr::ECase            use_case) const
 {
     if ( masks.empty() ) {
-        return GetEntries("", mode);
+        return GetEntries("", mode, use_case);
     }
     TEntries contents;
     string path_base = AddTrailingPathSeparator(GetPath());
@@ -1541,12 +1974,9 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
         if ( !skip_recursive_entry ) {
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if ( mask.empty() ) {
-                    contents.push_back(new CDirEntry(path_base + entry.name));
-                    break;
-                }
-                if ( MatchesMask(entry.name, mask.c_str() ) ) {
-                    contents.push_back(new CDirEntry(path_base + entry.name));
+                if ( mask.empty()  ||
+                     MatchesMask(entry.name, mask.c_str(), use_case) ) {
+                    s_AddDirEntry(contents, path_base + entry.name);
                     break;
                 }                
             } // ITERATE
@@ -1560,12 +1990,9 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
             }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if ( mask.empty() ) {
-                    contents.push_back(new CDirEntry(path_base + entry.name));
-                    break;
-                }
-                if ( MatchesMask(entry.name, mask.c_str()) ) {
-                    contents.push_back(new CDirEntry(path_base + entry.name));
+                if ( mask.empty()  ||
+                     MatchesMask(entry.name, mask.c_str(), use_case) ) {
+                    s_AddDirEntry(contents, path_base + entry.name);
                     break;
                 }
             } // ITERATE
@@ -1585,50 +2012,23 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
             }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if ( mask.empty() ) {
-                    contents.push_back(
-                         new CDirEntry(path_base + entry->d_name));
-                    break;
-                }
-                if ( MatchesMask(entry->d_name, mask.c_str()) ) {
-                    contents.push_back(
-                         new CDirEntry(path_base + entry->d_name));
+                if ( mask.empty()  ||
+                     MatchesMask(entry->d_name, mask.c_str(), use_case) ) {
+                    s_AddDirEntry(contents, path_base + entry->d_name);
                     break;
                 }
             } // ITERATE
         } // while
         closedir(dir);
     }
-
-#elif defined(NCBI_OS_MAC)
-    try {
-        for (int index = 1;  ;  index++) {
-            CDirEntry entry = MacGetIndexedItem(*this, index);
-            ITERATE(vector<string>, it, masks) {
-                const string& mask = *it;
-                if ( mask.empty() ) {
-                    contents.push_back(new CDirEntry(entry));
-                    break;
-                }
-                if ( MatchesMask(entry.GetName().c_str(), mask.c_str()) ) {
-                    contents.push_back(new CDirEntry(entry));
-                    break;
-                }
-            }
-        }
-    } catch (OSErr& err) {
-        if ( err != fnfErr ) {
-            throw COSErrException_Mac(err, "CDir::GetEntries() ");
-        }
-    }
 #endif
-
     return contents;
 }
 
 
 CDir::TEntries CDir::GetEntries(const CMask&    masks,
-                        EGetEntriesMode mode) const
+                                EGetEntriesMode mode,
+                                NStr::ECase     use_case) const
 {
     TEntries contents;
     string path_base = AddTrailingPathSeparator(GetPath());
@@ -1641,20 +2041,20 @@ CDir::TEntries CDir::GetEntries(const CMask&    masks,
     struct _finddata_t entry;
     long desc = _findfirst(pattern.c_str(), &entry);
     if ( desc != -1 ) {
-        if ( masks.Match(entry.name) &&
+        if ( masks.Match(entry.name, use_case) &&
              !( (mode == eIgnoreRecursive)  && 
                 ((::strcmp(entry.name, ".") == 0) ||
                  (::strcmp(entry.name, "..") == 0)) ) ) {
-            contents.push_back(new CDirEntry(path_base + entry.name));
+            s_AddDirEntry(contents, path_base + entry.name);
         }
         while ( _findnext(desc, &entry) != -1 ) {
-            if ( masks.Match(entry.name) ) {
+            if ( masks.Match(entry.name, use_case) ) {
                 if ( (mode == eIgnoreRecursive)  &&
                      ((::strcmp(entry.name, ".")  == 0) ||
                       (::strcmp(entry.name, "..") == 0)) ) {
                       continue;
                 }
-                contents.push_back(new CDirEntry(path_base + entry.name));
+                s_AddDirEntry(contents, path_base + entry.name);
             }
         }
         _findclose(desc);
@@ -1664,33 +2064,18 @@ CDir::TEntries CDir::GetEntries(const CMask&    masks,
     DIR* dir = opendir(GetPath().c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
-            if ( masks.Match(entry->d_name) ) {
+            if ( masks.Match(entry->d_name, use_case) ) {
                 if ( (mode == eIgnoreRecursive)  &&
                      ((::strcmp(entry->d_name, ".")  == 0) ||
                       (::strcmp(entry->d_name, "..") == 0)) ) {
                       continue;
                 }
-                contents.push_back(new CDirEntry(path_base + entry->d_name));
+                s_AddDirEntry(contents, path_base + entry->d_name);
             }
         }
         closedir(dir);
     }
-
-#elif defined(NCBI_OS_MAC)
-    try {
-        for (int index = 1;  ;  index++) {
-            CDirEntry entry = MacGetIndexedItem(*this, index);
-            if ( masks.Match(entry.GetName().c_str() ) {
-                contents.push_back(new CDirEntry(entry));
-            }
-        }
-    } catch (OSErr& err) {
-        if (err != fnfErr) {
-            throw COSErrException_Mac(err, "CDir::GetEntries() ");
-        }
-    }
 #endif
-
     return contents;
 }
 
@@ -1698,7 +2083,6 @@ CDir::TEntries CDir::GetEntries(const CMask&    masks,
 bool CDir::Create(void) const
 {
     TMode user_mode, group_mode, other_mode;
-
     GetDefaultMode(&user_mode, &group_mode, &other_mode);
     TMode mode = s_ConstructMode(user_mode, group_mode, other_mode);
 
@@ -1715,13 +2099,6 @@ bool CDir::Create(void) const
         return false;
     }
     return true;
-
-#elif defined(NCBI_OS_MAC)
-    OSErr err;
-    long dirID;
-    err = ::FSpDirCreate(&FSS(), smRoman, &dirID);
-    return err == noErr;
-
 #endif
 }
 
@@ -1753,28 +2130,119 @@ bool CDir::CreatePath(void) const
     return false;
 }
 
+
+bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
+{
+    CDir src(*this);
+    CDir dst(newname);
+
+    // Dereference links
+    bool follow = F_ISSET(flags, fCF_FollowLinks);
+    if ( follow ) {
+        src.DereferenceLink();
+        dst.DereferenceLink();
+    }
+    // The source dir must exists
+    EType src_type = src.GetType();
+    if ( src_type != eDir )  {
+        return false;
+    }
+    EType dst_type   = dst.GetType();
+    bool  dst_exists = (dst_type != eUnknown);
+    
+    // If destination exists...
+    if ( dst_exists ) {
+        // Can rename entries with different types?
+        if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
+            return false;
+        }
+
+        // Some operation can be made for top directory only
+
+        if ( F_ISSET(flags, fCF_TopDirOnly) ) {
+            // Can overwrite entry?
+            if ( !F_ISSET(flags, fCF_Overwrite)  &&
+                 !F_ISSET(flags, fCF_Backup) ) {
+                return false;
+            }
+            // Copy only if destination is older, otherwise just remove source
+            if ( F_ISSET(flags, fCF_Update)  && !src.IsNewer(dst.GetPath())) {
+                return src.Remove(eRecursive);
+            }
+            // Backup destination entry first
+            if ( F_ISSET(flags, fCF_Backup) ) {
+                // Use new CDirEntry object for 'dst', because its path
+                // will be changed after backup
+                if ( !CDirEntry(dst).Backup(GetBackupSuffix(),
+                                            eBackup_Rename) ) {
+                    return false;
+                }
+                // Create target directory
+                if ( !dst.CreatePath() ) {
+                    return false;
+                }
+            }
+            // Remove needless flags.
+            // All dir entries can be overwritten.
+            flags &= ~(fCF_TopDirOnly | fCF_Update | fCF_Backup);
+        }
+    } else {
+        // Create target directory
+        if ( !dst.CreatePath() ) {
+            return false;
+        }
+    }
+
+    // Read all entries in source directory
+    TEntries contents = src.GetEntries("*", eIgnoreRecursive);
+
+    // And copy each of them to target directory
+    ITERATE(TEntries, e, contents) {
+        CDirEntry& entry = **e;
+        if ( !F_ISSET(flags, fCF_Recursive)  &&
+             entry.IsDir(follow ? eFollowLinks : eIgnoreLinks)) {
+            continue;
+        }
+        // Copy entry
+        if ( !entry.CopyToDir(dst.GetPath(), flags, buf_size) ) {
+            return false;
+        }
+    }
+
+    // Preserve attributes
+    if ( flags & fCF_PreserveAll ) {
+        if ( !s_CopyAttrs(src.GetPath().c_str(),
+                          dst.GetPath().c_str(), eDir, flags) ) {
+            return false;
+        }
+    } else {
+        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool CDir::Remove(EDirRemoveMode mode) const
 {
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
         return CParent::Remove(eOnlyEmpty);
     }
-    // Read all entryes in derectory
+    // Read all entries in derectory
     TEntries contents = GetEntries();
 
     // Remove
     ITERATE(TEntries, entry, contents) {
         string name = (*entry)->GetName();
-#if defined(NCBI_OS_MAC)
-        CDirEntry& item = **entry;
-#else
         if ( name == "."  ||  name == ".."  ||  
              name == string(1,GetPathSeparator()) ) {
             continue;
         }
         // Get entry item with full pathname
         CDirEntry item(GetPath() + GetPathSeparator() + name);
-#endif
+
         if ( mode == eRecursive ) {
             if ( !item.Remove(eRecursive) ) {
                 return false;
@@ -1792,6 +2260,114 @@ bool CDir::Remove(EDirRemoveMode mode) const
     return CParent::Remove(eOnlyEmpty);
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CSymLink
+//
+
+CSymLink::~CSymLink(void)
+{ 
+    return;
+}
+
+
+bool CSymLink::Create(const string& path)
+{
+#if defined(NCBI_OS_UNIX)
+    char buf[PATH_MAX];
+    int  len = readlink(GetPath().c_str(), buf, sizeof(buf));
+    if ( len != -1 ) {
+        return false;
+    }
+    if ( symlink(path.c_str(), GetPath().c_str()) ) {
+        return false;
+    }
+    return true;
+#else
+    return false;
+#endif
+}
+
+
+bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
+{
+#if defined(NCBI_OS_UNIX)
+
+    // Dereference link if specified
+    if ( F_ISSET(flags, fCF_FollowLinks) ) {
+        switch ( GetType(eFollowLinks) ) {
+            case eFile:
+                return CFile(*this).Copy(new_path, flags, buf_size);
+            case eDir:
+                return CDir(*this).Copy(new_path, flags, buf_size);
+            case eLink:
+                return CSymLink(*this).Copy(new_path, flags, buf_size);
+            default:
+                return CDirEntry(*this).Copy(new_path, flags, buf_size);
+        }
+        // not reached
+    }
+
+    // The source link must exists
+    EType src_type = GetType(eIgnoreLinks);
+    if ( src_type == eUnknown)  {
+        return false;
+    }
+    CSymLink dst(new_path);
+    EType dst_type   = dst.GetType(eIgnoreLinks);
+    bool  dst_exists = (dst_type != eUnknown);
+
+    // If destination exists...
+    if ( dst_exists ) {
+        // Can copy entries with different types?
+        if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
+            return false;
+        }
+        // Can overwrite entry?
+        if ( !F_ISSET(flags, fCF_Overwrite) && !F_ISSET(flags, fCF_Backup) ) {
+            return false;
+        }
+        // Copy only if destination is older, otherwise just remove source
+        if ( F_ISSET(flags, fCF_Update)  &&  !IsNewer(dst.GetPath())) {
+            return Remove();
+        }
+        // Backup destination entry first
+        if ( F_ISSET(flags, fCF_Backup) ) {
+            // Use a new CDirEntry object for 'dst', because its path
+            // will be changed after backup
+            if ( !CDirEntry(dst).Backup(GetBackupSuffix(), eBackup_Rename) ) {
+                return false;
+            }
+        }
+        // Overwrite destination entry
+        if ( F_ISSET(flags, fCF_Overwrite) ) {
+            dst.Remove();
+        } 
+    }
+
+    // Copy symbolic link (create new one)
+    char buf[PATH_MAX];
+    int  len = readlink(GetPath().c_str(), buf, sizeof(buf));
+    if ( len < 1 ) {
+        return false;
+    }
+    buf[len] = '\0';
+    if ( symlink(buf, new_path.c_str()) ) {
+        return false;
+    }
+
+    // Preserve attributes
+    if ( flags & fCF_PreserveAll ) {
+        if (!s_CopyAttrs(GetPath().c_str(), new_path.c_str(), eLink, flags)) {
+            return false;
+        }
+    }
+    return true;
+#else
+    return CParent::Copy(new_path, flags, buf_size);
+#endif
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2102,7 +2678,8 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
     Int8 file_size = GetFileSize();
     if ( file_size < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileMap: The mapped file \"" + m_FileName +"\" must exists");
+            "CMemoryFileMap: The mapped file \"" + m_FileName +
+            "\" must exists");
     }
     // Open file
     if ( file_size == 0 ) {
@@ -2330,6 +2907,19 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2005/03/22 14:20:48  ivanov
+ * + CDirEntry:: operator=, Copy, CopyToDir, Get/SetBackupSuffix, Backup,
+ *               IsLink, LookupLink, DereferenceLink, IsNewer, Get/SetOwner
+ * + CFile:: Copy, Compare
+ * + CDir:: Copy
+ * + CSymLink
+ * Added default constructors to all CDirEntry based classes.
+ * CDirEntry::Rename -- added flags parameter.
+ * CDir::GetEntries, CDirEntry::MatchesMask - added parameter for case
+ * sensitive/insensitive matching.
+ * Added additional flag for find files algorithms, EFindFiles += fFF_Nocase.
+ * Dropped MacOS 9 support.
+ *
  * Revision 1.88  2005/03/15 15:05:33  dicuccio
  * Fixed typo: pathes -> paths
  *

@@ -34,19 +34,14 @@
 /// @file ncbifile.hpp
 /// Define files and directories accessory functions.
 ///
-/// Defines classes CDirEntry, CFile, CDir, CMemoryFile, CFileException
-/// to allow various file and directory operations.
+/// Defines classes CDirEntry, CFile, CDir, CSymLink, CMemoryFile,
+/// CFileException to allow various file and directory operations.
 
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <vector>
-
-#if defined(NCBI_OS_MAC)
-struct FSSpec;
-#endif
-
 
 /** @addtogroup Files
  *
@@ -91,7 +86,7 @@ public:
 };
 
 
-/// Whether to follow symbolic links (aka shortcuts or aliases)
+/// Whether to follow symbolic links (akin shortcuts or aliases)
 enum EFollowLinks {
     eIgnoreLinks,
     eFollowLinks
@@ -119,38 +114,25 @@ enum EFollowLinks {
 class NCBI_XNCBI_EXPORT CDirEntry
 {
 public:
-    /// Constructor.
-    CDirEntry();
-
-#  ifdef NCBI_OS_MAC
-    /// Copy constructor - for Mac file system.
-    CDirEntry(const CDirEntry& other);
-
-    /// Constructor with FSSpec argument - for Mac file system.
-    CDirEntry(const FSSpec& fss);
-
-    /// Assignment operator - for Mac file system.
-    CDirEntry& operator= (const CDirEntry& other);
-
-    /// Equality operator.
-    bool operator== (const CDirEntry& other) const;
-#  endif
+    /// Default constructor.
+    CDirEntry(void);
 
     /// Constructor using specified path string.
     CDirEntry(const string& path);
 
-    /// Reset path string.
-    void Reset(const string& path);
+    /// Copy constructor.
+    CDirEntry(const CDirEntry& other);
 
     /// Destructor.
     virtual ~CDirEntry(void);
 
-# if defined(NCBI_OS_MAC)
-    /// Get FSSpec setting - for Mac file system.
-    const FSSpec& FSS() const;
-#endif
+    /// Reset path string.
+    void Reset(const string& path);
 
-    /// Get directory entry path.
+    /// Assignment operator.
+    CDirEntry& operator= (const CDirEntry& other);
+
+    /// Get entry path.
     string GetPath(void) const;
 
 
@@ -189,7 +171,7 @@ public:
     ///   The directory component to make the path string. This will always
     ///   have a terminating path separator (example: "/usr/local/").
     /// @param base
-    ///   The basename of the file component that is used to make up the path.
+    ///   The base name of the file component that is used to make up the path.
     /// @param ext
     ///   The extension component. This will always start with a dot
     ///   (example: ".bat").
@@ -265,8 +247,7 @@ public:
     /// Normalize path.
     ///
     /// Remove from the "path" all redundancy, convert it to the more
-    /// simple form, if possible.
-    /// Note that the "path" must be for current OS. 
+    /// simple form, if possible. Note that the "path" must be for current OS.
     /// @param follow_links
     ///   Whether to follow symlinks (shortcuts, aliases)
     static string NormalizePath(const string& path,
@@ -278,16 +259,157 @@ public:
     //
 
     /// Match "name" against the filename "mask".
-    static bool MatchesMask(const char* name, const char* mask);
+    static bool MatchesMask(const char* name, const char* mask,
+                            NStr::ECase use_case = NStr::eCase);
 
     /// Match "name" against the set of "masks"
-    static bool MatchesMask(const char* name, const CMask& mask);
+    static bool MatchesMask(const char* name, const CMask& mask,
+                            NStr::ECase use_case = NStr::eCase);
 
-    /// Check existence of entry "path".
+    /// Check entry existence.
     virtual bool Exists(void) const;
 
-    /// Rename entry to specified "new_path".
-    bool Rename(const string& new_path);
+    /// Copy flags.
+    /// Note that update modification time for directory depends from OS.
+    /// Usualy it updates when new file has been added/removed.
+    /// Also, changing files inside directory doesn't change directory
+    /// modification time.
+    enum ECopyFlags {
+        /// Next flags say what to do if the destination entry already exists.
+        fCF_Update          = (1<< 1),  ///< Update older entries only
+        fCF_Backup          = (1<< 2),  ///< Backup destination
+        fCF_Overwrite       = (1<< 3),  ///< Remove destination
+
+        /// All previous flags can be applied to top directory only,
+        /// to process directory wholly, as single entry (for dir only).
+        fCF_TopDirOnly      = (1<< 6),
+
+        fCF_EqualTypes      = (1<< 7),  ///< If destination entry exists, it
+                                        ///< must have the same type as source
+        fCF_FollowLinks     = (1<< 8),  ///< Copy entries instead of sym.links
+        fCF_Verify          = (1<< 9),  ///< Verify data after copy
+        fCF_PreserveOwner   = (1<<10),  ///< Preserve owner/group
+        fCF_PreservePerm    = (1<<11),  ///< Preserve permissions/attributes
+        fCF_PreserveTime    = (1<<12),  ///< Preserve date/times
+        fCF_PreserveAll     = fCF_PreserveOwner | fCF_PreservePerm |
+                              fCF_PreserveTime,
+        fCF_Recursive       = (1<<14),  ///< Copy recursively (for dir only)
+        fCF_SkipUnsupported = (1<<15),  ///< Skip all entries for which we
+                                        ///< do not have Copy() method
+        fCF_Default         = fCF_Recursive | fCF_FollowLinks
+                                        ///< Default flags
+    };
+    typedef unsigned int TCopyFlags;    ///< Binary OR of "ECopyFlags"
+
+    /// Copy entry to specified "new_path".
+    ///
+    /// The Copy() method must be implement for each entry type separately.
+    /// The entry type and the type of the destination entry (if it exists)
+    /// must be the same. You cannot copy entries with different types one
+    /// to another.
+    /// @param new_path
+    ///   New path/name for entry.
+    /// @param flags
+    ///   Flags specified how to copy entry.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if operation was completed successful; FALSE, otherwise.
+    ///   Overloaded method from derived classes should be called.
+    ///   By default, CDirEntry::Copy() returns FALSE.
+    /// @sa
+    ///   CFile::Copy, CDir::Copy, CLink::Copy, CopyToDir
+    virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
+                      size_t buf_size = 0);
+
+    /// Copy entry to specified directory.
+    ///
+    /// Traget entry name will be "dir/entry".
+    /// @param dir
+    ///    Directory name to copy to.
+    /// @param flags
+    ///   Flags specified how to copy entry.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if operation was completed successful; FALSE, otherwise.
+    /// @sa
+    ///   Copy
+    bool CopyToDir(const string& dir, TCopyFlags flags = fCF_Default,
+                   size_t buf_size = 0);
+
+    /// Rename flags
+    enum ERenameFlags {
+        fRF_Update      = (1<<1),  ///< Update changed entries only
+        fRF_Backup      = (1<<2),  ///< Backup destination if it exists
+        fRF_Overwrite   = (1<<3),  ///< Remove destination if it exists
+        fRF_EqualTypes  = (1<<4),  ///< If destination entry exists, it must
+                                   ///< have the same type as source
+        fRF_FollowLinks = (1<<5),  ///< Copy entries instead of sym.links
+        fRF_Default     = 0        ///< Default flags
+    };
+    typedef int TRenameFlags;      ///< Binary OR of "ERenameFlags"
+
+    /// Rename entry.
+    ///
+    /// @param new_path
+    ///    New path/name for entry
+    /// @param flags
+    ///   Flags specified how to rename entry.
+    /// @return
+    ///   TRUE if operation was completed successful; FALSE, otherwise.
+    ///   Be aware, that if flag fRF_Update is set, function return TRUE and
+    ///   just remove current entry in the case if destination entry exists
+    ///   and have modification time newer than current entry.
+    /// @sa
+    ///   ERenameFlags, Copy
+    bool Rename(const string& new_path, TRenameFlags flags = fRF_Default);
+
+    /// Get backup suffix.
+    ///
+    /// @sa
+    ///   SetBackupSuffix, Backup, Rename, Copy
+    static string GetBackupSuffix(void);
+
+    /// Set backup suffix.
+    ///
+    /// @sa
+    ///   GetBackupSuffix, Backup, Rename, Copy
+    static void SetBackupSuffix(const string& suffix);
+
+    /// Backup modes
+    enum EBackupMode {
+        eBackup_Copy    = (1<<1),       ///< Copy entry
+        eBackup_Rename  = (1<<2),       ///< Rename entry
+        eBackup_Default = eBackup_Copy  ///< Default mode
+    };
+
+    /// Backup entry.
+    ///
+    /// Create a copy of current entry to the same name and extension
+    /// specified by SetBackupSuffix(). By default this extension is ".bak".
+    /// Backup can be created in 'copy' or 'rename' modes.
+    /// If entry with the name for backup already exists, that it will be
+    /// deleted (if possible).
+    /// @param suffix
+    ///   Extension added to renaming entry. If empty, GetBackupSuffix()
+    ///   will be used.
+    /// @param mode
+    ///    Backup mode. Specify what to do, copy entry or just rename it.
+    /// @param copyflags
+    ///    Flags to copy entry. Used only if mode is eBackup_Copy,
+    /// @param copybufsize
+    ///    Size of buffers used to copy files.
+    ///    Used only if 'mode' is eBackup_Copy,
+    /// @return
+    ///   TRUE is backup successfully created; FALSE otherwise.
+    /// @sa
+    bool Backup(const string& suffix      = kEmptyStr, 
+                EBackupMode   mode        = eBackup_Default,
+                TCopyFlags    copyflags   = fCF_Default,
+                size_t        copybufsize = 0);
 
     /// Directory remove mode.
     enum EDirRemoveMode {
@@ -304,16 +426,6 @@ public:
     ///   EDirRemoveMode
     virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
     
-    /// Check if directory entry a file.
-    /// @sa
-    ///   IsDir(), GetType()
-    bool IsFile(EFollowLinks follow = eFollowLinks) const;
-
-    /// Check if directory entry a directory.
-    /// @sa
-    ///   IsFile(), GetType()
-    bool IsDir(EFollowLinks follow = eFollowLinks) const;
-
     /// Which directory entry type.
     enum EType {
         eFile = 0,     ///< Regular file
@@ -333,17 +445,52 @@ public:
     /// @return
     ///   Return one of the values in EType. If the directory entry does
     ///   not exist return "eUnknown".
+    /// @sa
+    ///   IsFile, IsDir, IsLink
     EType GetType(EFollowLinks follow = eIgnoreLinks) const;
+
+    /// Check if directory entry a file.
+    /// @sa
+    ///   GetType
+    bool IsFile(EFollowLinks follow = eFollowLinks) const;
+
+    /// Check if directory entry a directory.
+    /// @sa
+    ///   GetType
+    bool IsDir(EFollowLinks follow = eFollowLinks) const;
+
+    /// Check if directory entry a symbolic link.
+    /// @sa
+    ///   GetType
+    bool IsLink(void) const;
+
+    /// Get entry name that link is pointed to.
+    ///
+    /// @return
+    ///   Name of the entry that link is pointed to. Return empty string
+    ///   if entry is not a link, or cannot be dereferenced.
+    ///   The dereferenced name also can be a symbolic link.
+    /// @sa 
+    ///   GetType, IsLink, DereferenceLink
+    string LookupLink(void);
+
+    /// Dereference link.
+    ///
+    /// If current entry is a symbolic link, than dereference it recursively.
+    /// Replace entry path string with dereferenced path.
+    /// @sa 
+    ///   GetType, IsLink, LookupLink, GetPath
+    void DereferenceLink(void);
 
     /// Get time stamp of directory entry.
     ///
-    /// The "creation" time under MS windows is actual creation time of the
+    /// The creation time under MS windows is an actual creation time of the
     /// entry. Under UNIX "creation" time is the time of last entry status
     /// change. 
     /// @return
     ///   TRUE if time was acquired or FALSE otherwise.
     /// @sa
-    ///   SetTime()
+    ///   SetTime
     bool GetTime(CTime* modification, CTime* creation = 0, 
                  CTime* last_access = 0) const;
 
@@ -352,6 +499,8 @@ public:
     /// The process must be the owner of the file or have write permissions
     /// in order to change the time. If value of parameters modification or
     /// last access time is zero that current time will be used.
+    /// Aware, that GetTime function may not return the same time information
+    /// set using SetTime, this depends from OS and used file system. 
     /// @param modification
     ///   New file modification time.
     /// @param last_access
@@ -360,8 +509,68 @@ public:
     /// @return
     ///   TRUE if time was changed or FALSE otherwise.
     /// @sa
-    ///   GetTime()
+    ///   GetTime
     bool SetTime(CTime* modification = 0 , CTime* last_access = 0) const;
+
+    /// Check if current entry is newer than some other.
+    ///
+    /// @param entry_name
+    ///   Entry name which used to compare modification times.
+    /// @return
+    ///   Return TRUE is modification time of current entry is newer than
+    ///   modification time of the specified entry, or that entry doesn't
+    ///   exists. Return FALSE otherwise.
+    /// @sa
+    ///   GetTime
+    bool IsNewer(const string& entry_name) const;
+
+    /// Get owner
+    ///
+    /// WINDOWS:
+    ///   Retrieve the name of the account and the name of the first
+    ///   group which account belong. The received group name can be an
+    ///   empty string, if we don't have permissions to get it.
+    ///   Win32 really does not use groups, but it exists for the sake
+    ///   of POSIX compatibility.
+    ///   Windows 2000/XP: In addition to looking up for local accounts,
+    ///   local domain accounts, and explicitly trusted domain accounts,
+    ///   it also can look for any account in any domain around. 
+    /// UNIX:
+    ///   Retrieve entry owner:group pair.
+    /// @param owner
+    ///   Pointer to string for owner name.
+    /// @param group
+    ///   Pointer to string for group name. 
+    /// @return
+    ///   TRUE is success; FALSE otherwise.
+    /// @sa
+    ///   SetOwner
+    bool GetOwner(string* owner, string* group = 0,
+                  EFollowLinks follow = eFollowLinks) const;
+
+    /// Set owner
+    ///
+    /// You should have administrative rights to change owner.
+    /// WINDOWS:
+    ///   Only administrative privileges (Backup, Restore and Take Ownership)
+    ///   grant a rights to change ownership. Without one of the privileges,
+    ///   administrator cannot take ownership of any file or give ownership
+    ///   back to the original owner. Also, we cannot change users group here,
+    ///   so it will be ignored.
+    /// UNIX:
+    ///   The owner of a file may change the group of the file to any group
+    ///   of which that owner is a member. The super-user may change
+    ///   the group arbitrarily.
+    /// @param owner
+    ///   New owner name.
+    /// @param group
+    ///   New group name.
+    /// @return
+    ///   TRUE is success; FALSE otherwise.
+    /// @sa
+    ///   GetOwner
+    bool SetOwner(const string& owner, const string& group = kEmptyStr,
+                  EFollowLinks follow = eFollowLinks) const;
 
     //
     // Access permissions.
@@ -398,7 +607,7 @@ public:
     /// @return
     ///   TRUE if successful return of permission settings; FALSE, otherwise.
     /// @sa
-    ///   SetMode()
+    ///   SetMode
     bool GetMode(TMode* user_mode,
                  TMode* group_mode = 0,
                  TMode* other_mode = 0) const;
@@ -412,7 +621,7 @@ public:
     /// @return
     ///   TRUE if permission successfully set;  FALSE, otherwise.
     /// @sa
-    ///   SetDefaultMode(), SetDefaultModeGlobal(), GetMode()
+    ///   SetDefaultMode, SetDefaultModeGlobal, GetMode
     bool SetMode(TMode user_mode,  // e.g. fDefault
                  TMode group_mode = fDefault,
                  TMode other_mode = fDefault) const;
@@ -468,27 +677,26 @@ protected:
                         TMode* other_mode) const;
 
 private:
-#  ifdef NCBI_OS_MAC
-    FSSpec* m_FSS;      ///< Mac OS specific file description
-#  else
-    string m_Path;      ///< Full directory entry path
-#  endif
+    string m_Path;    ///< Full directory entry path
 
     /// Which default mode: user, group, or other.
     ///
     /// Used as index into array that contains default mode values;
     /// so there is no "fDefault" as an enumeration value for EWho, here!
     enum EWho {
-        eUser = 0,      ///< User mode
-        eGroup,         ///< Group mode
-        eOther          ///< Other mode
+        eUser = 0,    ///< User mode
+        eGroup,       ///< Group mode
+        eOther        ///< Other mode
     };
 
     /// Holds default mode global values.
-    static TMode m_DefaultModeGlobal[eUnknown][3/*EWho*/];
+    static TMode  m_DefaultModeGlobal[eUnknown][3/*EWho*/];
 
     /// Holds default mode values.
-    TMode        m_DefaultMode[3/*EWho*/];
+    TMode         m_DefaultMode[3/*EWho*/];
+
+    /// Backup suffix
+    static string m_BackupSuffix;
 };
 
 
@@ -504,11 +712,17 @@ private:
 
 class NCBI_XNCBI_EXPORT CFile : public CDirEntry
 {
-    typedef CDirEntry CParent;    ///< CDirEntry is parent class
+    typedef CDirEntry CParent;    ///< CDirEntry is the parent class
 
 public:
-    /// Constructor.
+    /// Default constructor.
+    CFile(void);
+
+    /// Constructor using specified path string.
     CFile(const string& file);
+
+    /// Copy constructor.
+    CFile(const CDirEntry& file);
 
     /// Destructor.
     virtual ~CFile(void);
@@ -522,6 +736,33 @@ public:
     /// - size of file, if no error.
     /// - -1, if there was an error obtaining file size.
     Int8 GetLength(void) const;
+
+    /// Copy file.
+    ///
+    /// @param new_path
+    ///    Target entry path/name.
+    /// @param flags
+    ///   Flags specified how to copy entry.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if operation successful; FALSE, otherwise.
+    /// @sa
+    ///   TCopyFlags
+    virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
+                      size_t buf_size = 0);
+
+    /// Compare file's content.
+    ///
+    /// @param file
+    ///   File name to compare.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if files content is equal; FALSE otherwise.
+    bool Compare(const string& file, size_t buf_size = 0);
 
 
     //
@@ -542,7 +783,7 @@ public:
     ///   Name of temporary file, or "kEmptyStr" if there was an error
     ///   getting temporary file name.
     /// @sa
-    ///    GetTmpNameEx(), ETmpFileCreationMode
+    ///    GetTmpNameEx, ETmpFileCreationMode
     static string GetTmpName(ETmpFileCreationMode mode = eTmpFileGetName);
 
     /// Get temporary file name.
@@ -559,7 +800,7 @@ public:
     /// @param mode
     ///   Temporary file creation mode. 
     ///   If set to "eTmpFileCreate", empty file with unique name will be
-    ///   created. Please, do not forget to remove it youself as soon as it
+    ///   created. Please, do not forget to remove it yourself as soon as it
     ///   is no longer needed. On some platforms "eTmpFileCreate" mode is 
     ///   equal to "eTmpFileGetName".
     ///   If set to "eTmpFileGetName", returns only the name of the temporary
@@ -570,7 +811,7 @@ public:
     ///   Name of temporary file, or "kEmptyStr" if there was an error
     ///   getting temporary file name.
     /// @sa
-    ///    GetTmpName(), ETmpFileCreationMode
+    ///    GetTmpName, ETmpFileCreationMode
     static string GetTmpNameEx(const string&        dir    = kEmptyStr,
                                const string&        prefix = kEmptyStr,
                                ETmpFileCreationMode mode   = eTmpFileGetName);
@@ -608,7 +849,7 @@ public:
     ///   - Pointer to corresponding stream, or
     ///   - NULL if error encountered.
     /// @sa
-    ///   CreateTmpFileEx()
+    ///   CreateTmpFileEx
     static fstream* CreateTmpFile(const string& filename    = kEmptyStr,
                                   ETextBinary   text_binary = eBinary,
                                   EAllowRead    allow_read  = eAllowRead);
@@ -641,7 +882,7 @@ public:
     ///   - Pointer to corresponding stream, or
     ///   - NULL if error encountered.
     /// @sa
-    ///   CreateTmpFile()
+    ///   CreateTmpFile
     static fstream* CreateTmpFileEx(const string& dir         = ".",
                                     const string& prefix      = kEmptyStr,
                                     ETextBinary   text_binary = eBinary,
@@ -665,14 +906,14 @@ class NCBI_XNCBI_EXPORT CDir : public CDirEntry
     typedef CDirEntry CParent;  ///< CDirEntry is the parent class
 
 public:
-    /// Constructor.
-    CDir();
-#  if defined(NCBI_OS_MAC)
-    /// Constructor - for Mac OS.
-    CDir(const FSSpec& fss);
-#  endif
+    /// Default constructor.
+    CDir(void);
+
     /// Constructor using specified directory name.
     CDir(const string& dirname);
+
+    /// Copy constructor.
+    CDir(const CDirEntry& dir);
 
     /// Destructor.
     virtual ~CDir(void);
@@ -687,7 +928,7 @@ public:
     static string GetTmpDir(void);
 
     /// Get the current working directory.
-    static string GetCwd();
+    static string GetCwd(void);
 
     /// Define a vector of pointers to directory entries.
     typedef vector< AutoPtr<CDirEntry> > TEntries;
@@ -705,10 +946,16 @@ public:
     /// @param mask
     ///   Use to select only files that match this mask. Do not use file mask
     ///   if set to "kEmptyStr".
+    /// @param mode
+    ///   Defines which entries return.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const string&   mask = kEmptyStr,
-                        EGetEntriesMode mode = eAllEntries) const;
+    TEntries GetEntries(const string&   mask     = kEmptyStr,
+                        EGetEntriesMode mode     = eAllEntries,
+                        NStr::ECase     use_case = NStr::eCase) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
@@ -717,7 +964,8 @@ public:
     /// @return
     ///   An array containing all directory entries.
     TEntries GetEntries(const vector<string>& masks,
-                        EGetEntriesMode       mode = eAllEntries) const;
+                        EGetEntriesMode       mode     = eAllEntries,
+                        NStr::ECase           use_case = NStr::eCase) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
@@ -726,7 +974,8 @@ public:
     /// @return
     ///   An array containing all directory entries.
     TEntries GetEntries(const CMask&    masks,
-                        EGetEntriesMode mode = eAllEntries) const;
+                        EGetEntriesMode mode     = eAllEntries,
+                        NStr::ECase     use_case = NStr::eCase) const;
 
     /// Create the directory using "dirname" passed in the constructor.
     /// 
@@ -739,6 +988,22 @@ public:
     /// @return
     ///   TRUE if operation successful; FALSE otherwise.
     bool CreatePath(void) const;
+
+    /// Copy directory.
+    ///
+    /// @param new_path
+    ///   New path/name for entry.
+    /// @param flags
+    ///   Flags specified how to copy directory.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if operation successful; FALSE, otherwise.
+    /// @sa
+    ///   CDirEntry::TCopyFlags, CDirEntry::Copy, CFile::Copy
+    virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
+                      size_t buf_size = 0);
 
     /// Delete existing directory.
     ///
@@ -757,6 +1022,61 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CSymLink --
+///
+/// Define class to work with symbolic links.
+///
+/// Models the files in a file system. Basic functionality is derived from
+/// CDirEntry and extended for files.
+
+class NCBI_XNCBI_EXPORT CSymLink : public CDirEntry
+{
+    typedef CDirEntry CParent;    ///< CDirEntry is the parent class
+
+public:
+    /// Default constructor.
+    CSymLink(void);
+
+    /// Constructor using specified path string.
+    CSymLink(const string& link);
+
+    /// Copy constructor.
+    CSymLink(const CDirEntry& link);
+
+    /// Destructor.
+    virtual ~CSymLink(void);
+
+    /// Check existence of link.
+    virtual bool Exists(void) const;
+
+    /// Create symbolic link.
+    ///
+    /// @param path
+    ///   Path to some entry that link will be ponted to.
+    /// @return
+    ///   TRUE if operation successful; FALSE, otherwise.
+    ///   Return FALSE also if link already exists.
+    bool Create(const string& path);
+
+    /// Copy link.
+    ///
+    /// @param new_path
+    ///    Targed entry path/name.
+    /// @param flags
+    ///   Flags specified how to copy entry.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if operation successful; FALSE, otherwise.
+    /// @sa
+    ///   CDirEntry::TCopyFlags, CDirEntry::Copy, Create
+    virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
+                      size_t buf_size = 0);
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -767,11 +1087,11 @@ public:
 enum EFindFiles {
     fFF_File       = (1<<0),             ///< find files
     fFF_Dir        = (1<<1),             ///< find directories
-    fFF_Recursive  = (1<<2),             ///< decsend into sub-dirs
-    fFF_Default    = fFF_File | fFF_Dir  ///< default behaviour
+    fFF_Recursive  = (1<<2),             ///< descend into sub-dirs
+    fFF_Nocase     = (1<<3),             ///< case-insensitive names search
+    fFF_Default    = fFF_File | fFF_Dir  ///< default behaviur
 };
-
-/// bitwise OR of "EFindFiles"
+/// Bitwise OR of "EFindFiles"
 typedef int TFindFiles; 
 
 
@@ -782,7 +1102,9 @@ TFindFunc FindFilesInDir(const CDir&            dir,
                          TFindFunc              find_func,
                          TFindFiles             flags = fFF_Default)
 {
-    CDir::TEntries contents = dir.GetEntries(masks, CDir::eIgnoreRecursive);
+    NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
+    CDir::TEntries contents =
+        dir.GetEntries(masks, CDir::eIgnoreRecursive, use_case);
 
     ITERATE(CDir::TEntries, it, contents) {
         const CDirEntry& dir_entry = **it;
@@ -812,7 +1134,9 @@ TFindFunc FindFilesInDir(const CDir&   dir,
                          TFindFunc     find_func,
                          TFindFiles    flags = fFF_Default)
 {
-    CDir::TEntries contents = dir.GetEntries(masks, CDir::eIgnoreRecursive);
+    NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
+    CDir::TEntries contents =
+        dir.GetEntries(masks, CDir::eIgnoreRecursive, use_case);
 
     ITERATE(CDir::TEntries, it, contents) {
         const CDirEntry& dir_entry = **it;
@@ -824,7 +1148,7 @@ TFindFunc FindFilesInDir(const CDir&   dir,
             if (flags & fFF_Recursive) {
                 CDir nested_dir(dir_entry.GetPath());
                 find_func = 
-                  FindFilesInDir(nested_dir, masks, find_func, flags);
+                    FindFilesInDir(nested_dir, masks, find_func, flags);
             }
         }
         else if (dir_entry.IsFile() && (flags & fFF_File)) {
@@ -862,7 +1186,6 @@ TFindFunc FindFiles(TPathIterator path_begin,
 
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
-
         CDir dir(dir_name);
         find_func = FindFilesInDir(dir, masks, find_func, flags);
     }
@@ -986,7 +1309,7 @@ struct SMemoryFileAttrs;
 ///
 /// CMemoryFile_Base --
 ///
-/// Define base class for support file memory mapping. 
+/// Define base class for support file memory mapping.
 
 class NCBI_XNCBI_EXPORT CMemoryFile_Base
 {
@@ -1075,7 +1398,7 @@ public:
     /// @param length
     ///   Number of bytes to map. The parameter value should be more than 0.
     /// @sa
-    ///    EMemMapProtect, EMemMapShare, GetPtr(), GetSize(), GetOffset().
+    ///   EMemMapProtect, EMemMapShare, GetPtr, GetSize, GetOffset
     CMemoryFileSegment(SMemoryFileHandle& handle,
                        SMemoryFileAttrs&  attrs,
                        off_t              offset,
@@ -1098,7 +1421,7 @@ public:
     /// @return
     ///   Offset in bytes of mapped area from beginning of the file.
     ///   Always return value passed in constructor even if data
-    ///   was not succesfully mapped.
+    ///   was not successfully mapped.
     off_t GetOffset(void) const;
 
     /// Get length of the mapped area.
@@ -1112,13 +1435,13 @@ public:
     ///
     /// When the mapping object is creating and the offset is not a multiple
     /// of the allocation granularity, that offset and length can be adjusted
-    /// to match it. The "length" value will be automaticaly increased on the
+    /// to match it. The "length" value will be automatically increased on the
     /// difference between passed and real offsets.
     /// @return
     ///   - Pointer to start of data, or
     ///   - NULL if mapped to a file of zero length, or if not mapped.
     /// @sa
-    ///    GetRealOffset(), GetRealSize(), GetPtr(). 
+    ///    GetRealOffset, GetRealSize, GetPtr 
     void* GetRealPtr(void) const;
 
     /// Get real offset of the mapped area from beginning of file.
@@ -1127,9 +1450,9 @@ public:
     /// value and can be less than requested "offset" in the constructor.
     /// @return
     ///   Offset in bytes of mapped area from beginning of the file.
-    ///   Always return adjusted value even if data was not succesfully mapped.
+    ///   Always return adjusted value even if data was not successfully mapped.
     /// @sa
-    ///    GetRealPtr(), GetRealSize(), GetOffset(). 
+    ///    GetRealPtr, GetRealSize, GetOffset 
     off_t GetRealOffset(void) const;
 
     /// Get real length of the mapped area.
@@ -1140,7 +1463,7 @@ public:
     ///   - Length in bytes of the mapped area, or
     ///   - 0 if not mapped.
     /// @sa
-    ///    GetRealPtr(), GetRealOffset(), GetSize(). 
+    ///    GetRealPtr, GetRealOffset, GetSize 
     size_t GetRealSize(void) const;
 
     /// Flush by writing all modified copies of memory pages to the
@@ -1148,7 +1471,7 @@ public:
     ///
     /// NOTE: By default data will be flushed in the destructor.
     /// @return
-    ///   - TRUE, if all data was flushed succesfully.
+    ///   - TRUE, if all data was flushed successfully.
     ///   - FALSE, if not mapped or if an error occurs.
     bool Flush(void) const;
 
@@ -1177,17 +1500,17 @@ private:
 
 private:
     // Values for user
-    void*   m_DataPtr;     ///< Pointer to the begining of the mapped area.
+    void*   m_DataPtr;     ///< Pointer to the beginning of the mapped area.
                            ///> The user seen this one.
     off_t   m_Offset;      ///< Requested starting offset of the
-                           ///< mapped area from begining of file.
+                           ///< mapped area from beginning of file.
     size_t  m_Length;      ///< Requested length of the mapped area.
 
     // Internal real values
-    void*   m_DataPtrReal; ///< Real pointer to the begining of the mapped
+    void*   m_DataPtrReal; ///< Real pointer to the beginning of the mapped
                            ///< area which should be fried later.
     off_t   m_OffsetReal;  ///< Corrected starting offset of the
-                           ///< mapped area from begining of file.
+                           ///< mapped area from beginning of file.
     size_t  m_LengthReal;  ///< Corrected length of the mapped area.
 };
 
@@ -1237,7 +1560,7 @@ public:
     /// @param offset
     ///   The file offset where mapping is to begin. If the offset is not
     ///   a multiple of the allocation granularity, that it can be decreased 
-    ///   to match it. The "length" value will be automaticaly increased on
+    ///   to match it. The "length" value will be automatically increased on
     ///   the difference between passed and real offsets. The real offset can
     ///   be obtained using GetOffset(). The parameter must be more than 0.
     /// @param length
@@ -1249,7 +1572,7 @@ public:
     ///   - Pointer to start of data, or
     ///   - NULL if mapped to a file of zero length, or if not mapped.
     /// @sa
-    ///   Unmap()
+    ///   Unmap
     void* Map(off_t offset, size_t length);
 
     /// Unmap file segment.
@@ -1259,7 +1582,7 @@ public:
     /// @return
     ///   TRUE on success; or FALSE on error.
     /// @sa
-    ///   Map()
+    ///   Map
     bool Unmap(void* ptr);
 
     /// Unmap all mapped segment.
@@ -1302,7 +1625,7 @@ public:
     ///
     /// NOTE: By default data will be flushed in the destructor.
     /// @return
-    ///   - TRUE, if all data was flushed succesfully.
+    ///   - TRUE, if all data was flushed successfully.
     ///   - FALSE, if an error occurs.
     bool Flush(void* ptr) const;
 
@@ -1373,7 +1696,7 @@ public:
     /// @param offset
     ///   The file offset where mapping is to begin. If the offset is not
     ///   a multiple of the allocation granularity, that it can be decreased 
-    ///   to match it. The "length" value will be automaticaly increased on
+    ///   to match it. The "length" value will be automatically increased on
     ///   the difference between passed and real offsets. The real offset can
     ///   be obtained using GetOffset(). The parameter must be more than 0.
     /// @param length
@@ -1422,7 +1745,7 @@ public:
     ///
     /// NOTE: By default data will be flushed in the destructor.
     /// @return
-    ///   - TRUE, if all data was flushed succesfully.
+    ///   - TRUE, if all data was flushed successfully.
     ///   - FALSE, if an error occurs.
     bool Flush(void) const;
 
@@ -1460,14 +1783,17 @@ private:
 
 // CDirEntry
 
-#ifndef NCBI_OS_MAC
+inline
+CDirEntry::CDirEntry(void)
+{
+    return;
+}
 
 inline
 string CDirEntry::GetPath(void) const
 {
     return m_Path;
 }
-#endif
 
 inline
 string CDirEntry::GetDir(void) const
@@ -1514,13 +1840,81 @@ bool CDirEntry::IsDir(EFollowLinks follow) const
 }
 
 inline
+bool CDirEntry::IsLink(void) const
+{
+    return GetType(eIgnoreLinks) == eLink;
+}
+
+inline
 bool CDirEntry::Exists(void) const
 {
     return GetType() != eUnknown;
 }
 
+inline
+bool CDirEntry::MatchesMask(const char* name, const char* mask,
+                            NStr::ECase use_case)
+{
+    return NStr::MatchesMask(name, mask, use_case);
+}
+
+inline
+bool CDirEntry::MatchesMask(const char* name, const CMask& mask,
+                            NStr::ECase use_case) 
+{
+    return mask.Match(name, use_case);
+}
+
+inline 
+bool CDirEntry::Copy(const string& /*new_path*/, TCopyFlags flags,
+                     size_t /*buf_size*/)
+{
+    // We "don't know" how to copy entry, by default.
+    // Use overloaded Copy() method in derived classes.
+    return (flags & fCF_SkipUnsupported) == fCF_SkipUnsupported;
+}
+
+inline 
+bool CDirEntry::CopyToDir(const string& dir, TCopyFlags flags,
+                          size_t buf_size)
+{
+    string path = MakePath(dir, GetName());
+    return Copy(path, flags, buf_size);
+}
+
+inline
+string CDirEntry::GetBackupSuffix(void)
+{
+    return m_BackupSuffix;
+}
+
+inline
+void CDirEntry::SetBackupSuffix(const string& suffix)
+{
+    m_BackupSuffix = suffix;
+}
+
 
 // CFile
+
+inline
+CFile::CFile(void)
+{
+    return;
+}
+
+
+inline
+CFile::CFile(const string& filename) : CParent(filename)
+{ 
+    SetDefaultMode(eFile, fDefault, fDefault, fDefault);
+}
+
+inline
+CFile::CFile(const CDirEntry& file) : CParent(file)
+{
+    return;
+}
 
 inline
 bool CFile::Exists(void) const
@@ -1532,9 +1926,55 @@ bool CFile::Exists(void) const
 // CDir
 
 inline
+CDir::CDir(void)
+{
+    return;
+}
+
+inline
+CDir::CDir(const string& dirname) : CParent(dirname)
+{
+    SetDefaultMode(eDir, fDefault, fDefault, fDefault);
+}
+
+inline
+CDir::CDir(const CDirEntry& dir) : CDirEntry(dir)
+{
+    return;
+}
+
+inline
 bool CDir::Exists(void) const
 {
     return IsDir();
+}
+
+
+// CSymLink
+
+inline
+CSymLink::CSymLink(void)
+{
+    return;
+}
+
+inline
+CSymLink::CSymLink(const string& link) : CParent(link)
+{ 
+    // We dont need SetDefaultMode() here
+    return;
+}
+
+inline
+CSymLink::CSymLink(const CDirEntry& link) : CDirEntry(link)
+{
+    return;
+}
+
+inline
+bool CSymLink::Exists(void) const
+{
+    return IsLink();
 }
 
 
@@ -1662,6 +2102,19 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/03/22 14:20:48  ivanov
+ * + CDirEntry:: operator=, Copy, CopyToDir, Get/SetBackupSuffix, Backup,
+ *               IsLink, LookupLink, DereferenceLink, IsNewer, Get/SetOwner
+ * + CFile:: Copy, Compare
+ * + CDir:: Copy
+ * + CSymLink
+ * Added default constructors to all CDirEntry based classes.
+ * CDirEntry::Rename -- added flags parameter.
+ * CDir::GetEntries, CDirEntry::MatchesMask - added parameter for case
+ * sensitive/insensitive matching.
+ * Added additional flag for find files algorithms, EFindFiles += fFF_Nocase.
+ * Dropped MacOS 9 support.
+ *
  * Revision 1.51  2005/01/31 11:48:39  ivanov
  * Added CMask versions of:
  *     CDirEntries::MatchesMask(), CDirEntries::GetEntries()
