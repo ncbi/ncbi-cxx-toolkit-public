@@ -522,8 +522,11 @@ static EIO_Status s_Select(size_t                n,
         if (n_fds > 0)
             break;
 
-        if (n_fds < 0  &&  SOCK_ERRNO != SOCK_EINTR)
+        if (n_fds < 0  &&  SOCK_ERRNO != SOCK_EINTR) {
+            CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Trace,
+                           "[SOCK::s_Select]  Failed select()");
             return eIO_Unknown;
+        }
     }
 
     n_fds = 0;
@@ -811,8 +814,7 @@ static EIO_Status s_Connect(SOCK            sock,
             SOCK_ERRNO != SOCK_EWOULDBLOCK) {
             if ( CORE_GetLOG() ) {
                 char str[256];
-                sprintf(str,
-                        "[SOCK::s_Connect]  Failed connect() to %.64s:%d",
+                sprintf(str, "[SOCK::s_Connect]  Failed connect() to %.64s:%d",
                         host ? host : "???", (int) ntohs(x_port));
                 CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error, str);
             }
@@ -968,8 +970,8 @@ static int s_NCBI_Recv(SOCK        sock,
                        size_t      size,
                        int/*bool*/ peek)
 {
-    char   xx_buffer[4096];
     char*  x_buffer = (char*) buffer;
+    char   xx_buffer[4096];
     size_t n_read;
 
     /* read (or peek) from the internal buffer */
@@ -982,21 +984,20 @@ static int s_NCBI_Recv(SOCK        sock,
 
     /* read (not just peek) from the socket */
     do {
-        /* recv */
-        int    x_readsock;
         size_t n_todo = size - n_read;
-        if ( buffer ) {
-            /* read to the data buffer provided by user */
-            x_buffer += n_read;
-            x_readsock = recv(sock->sock, x_buffer, n_todo, 0);
-        } else {
+        int    x_readsock;
+        if ( !buffer ) {
             /* read to the temporary buffer (to store or discard later) */
             if (n_todo > sizeof(xx_buffer)) {
                 n_todo = sizeof(xx_buffer);
             }
-            x_readsock = recv(sock->sock, xx_buffer, n_todo, 0);
             x_buffer = xx_buffer;
+        } else {
+            /* read to the data buffer provided by user */
+            x_buffer += n_read;
         }
+        /* recv */
+        x_readsock = recv(sock->sock, x_buffer, n_todo, 0);
 
         /* catch EOF */
         if (x_readsock == 0  ||
@@ -1005,13 +1006,15 @@ static int s_NCBI_Recv(SOCK        sock,
             sock->is_eof   = 1/*true*/;
             break;
         }
-        /* catch unknown ERROR */
         if (x_readsock < 0) {
             int x_errno = SOCK_ERRNO;
             if (x_errno != SOCK_EWOULDBLOCK  &&
                 x_errno != SOCK_EAGAIN  &&
                 x_errno != SOCK_EINTR) {
+                /* catch unknown ERROR */
                 sock->r_status = eIO_Unknown;
+                CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Trace,
+                               "[SOCK::s_NCBI_Recv]  Failed recv()");
             }
             return n_read ? (int) n_read : -1;
         }
@@ -1844,6 +1847,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2002/07/01 20:52:23  lavr
+ * Error (trace) printouts added in s_Select() and s_NCBI_Recv()
+ *
  * Revision 6.50  2002/06/17 18:28:52  lavr
  * +BeOS specifics (by Vladimir Ivanov)
  *
