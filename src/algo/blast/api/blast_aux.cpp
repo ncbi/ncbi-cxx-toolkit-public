@@ -222,6 +222,8 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
     if (m_Ptr->matrix)
         DebugDumpValue(ddc, "matrix", m_Ptr->matrix);
+    if (m_Ptr->matrix_path)
+        DebugDumpValue(ddc, "matrix_path", m_Ptr->matrix_path);
     DebugDumpValue(ddc, "reward", m_Ptr->reward);
     DebugDumpValue(ddc, "penalty", m_Ptr->penalty);
     DebugDumpValue(ddc, "gapped_calculation", m_Ptr->gapped_calculation);
