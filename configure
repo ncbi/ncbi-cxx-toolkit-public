@@ -6658,8 +6658,7 @@ done
 
 if test "$with_mt" = "yes" ; then
 
-## gethostbyname_r() -- 3 different variants: 5-arg (Solaris), 6-arg (Linux),
-## 3-arg (OSF/1 cruft)
+## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 echo "$as_me:$LINENO: checking for gethostbyname_r" >&5
 echo $ECHO_N "checking for gethostbyname_r... $ECHO_C" >&6
@@ -6757,52 +6756,6 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest.$ac_ext
     fi
-    if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <netdb.h>
-int
-main ()
-{
-
-         void*                dummy = (void*) &gethostbyname_r;
-         int                  err;
-         struct hostent*      hp = 0;
-         struct hostent_data* hdp = 0;
-         err = gethostbyname_r("", hp, hdp);
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-
-         ncbi_cv_func_gethostbyname_r="3"
-
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-    fi
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_func_gethostbyname_r" >&5
 echo "${ECHO_T}$ncbi_cv_func_gethostbyname_r" >&6
@@ -6816,8 +6769,7 @@ _ACEOF
 fi
 
 
-## gethostbyaddr_r() -- 3 different variants: 7-arg (Solaris), 8-arg (Linux),
-## 5-arg (OSF/1 cruft)
+## gethostbyaddr_r() -- 2 different variants: 7-arg (Solaris), 8-arg (Linux).
 
 echo "$as_me:$LINENO: checking for gethostbyaddr_r" >&5
 echo $ECHO_N "checking for gethostbyaddr_r... $ECHO_C" >&6
@@ -6927,58 +6879,6 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest.$ac_ext
     fi
-    if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-         #include <netdb.h>
-         #include <sys/types.h>
-         #include <sys/socket.h>
-
-int
-main ()
-{
-
-         void* dummy = (void*) &gethostbyaddr_r;
-         int                  err;
-         unsigned int         host;
-         struct hostent*      hp = 0;
-         struct hostent_data* hdp = 0;
-         int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-                                   hp, hdp);
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-
-         ncbi_cv_func_gethostbyaddr_r="5"
-
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-    fi
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_func_gethostbyaddr_r" >&5
 echo "${ECHO_T}$ncbi_cv_func_gethostbyaddr_r" >&6
@@ -6992,8 +6892,7 @@ _ACEOF
 fi
 
 
-## getservbyname_r() -- 3 different variants: 5-arg (Solaris), 6-arg (Linux),
-## 4-arg (OSF/1 cruft)
+## getservbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 echo "$as_me:$LINENO: checking for getservbyname_r" >&5
 echo $ECHO_N "checking for getservbyname_r... $ECHO_C" >&6
@@ -7082,52 +6981,6 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (exit $ac_status); }; }; then
 
          ncbi_cv_func_getservbyname_r="6"
-
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-    fi
-    if test "$ncbi_cv_func_getservbyname_r" = "no" ; then
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <netdb.h>
-int
-main ()
-{
-
-         void*                dummy = (void*) &getservbyname_r;
-         int                  err;
-         struct servent*      sp = 0;
-         struct servent_data* sdp = 0;
-         err = getservbyname_r("", "", sp, sdp);
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-
-         ncbi_cv_func_getservbyname_r="4"
 
 
 else
@@ -13286,9 +13139,58 @@ echo "$as_me: Skipping checks for get{addr,name}info (new in Solaris 8)." >&6;}
 else
    orig_LIBS=$LIBS
    LIBS="$NETWORK_LIBS $orig_LIBS"
+   echo "$as_me:$LINENO: checking for getaddrinfo" >&5
+echo $ECHO_N "checking for getaddrinfo... $ECHO_C" >&6
+if test "${ac_cv_func_getaddrinfo+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+struct addrinfo *p; getaddrinfo("foo", "bar", p, &p);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_getaddrinfo=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_getaddrinfo=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_getaddrinfo" >&5
+echo "${ECHO_T}$ac_cv_func_getaddrinfo" >&6
+   test "$ac_cv_func_getaddrinfo" = "yes" && \
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETADDRINFO 1
+_ACEOF
 
 
-for ac_func in getaddrinfo getnameinfo
+for ac_func in getnameinfo
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5

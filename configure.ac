@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.246 2003/12/12 17:25:37 ucko Exp $
+#  $Id: configure.ac,v 1.247 2003/12/12 18:49:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1550,8 +1550,7 @@ AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
 
 if test "$with_mt" = "yes" ; then
 
-## gethostbyname_r() -- 3 different variants: 5-arg (Solaris), 6-arg (Linux),
-## 3-arg (OSF/1 cruft)
+## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
    [ncbi_cv_func_gethostbyname_r="no"
@@ -1582,32 +1581,16 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
          ncbi_cv_func_gethostbyname_r="6"
        ]
     )
-    fi
-    if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
-       [[
-         void*                dummy = (void*) &gethostbyname_r;
-         int                  err;
-         struct hostent*      hp = 0;
-         struct hostent_data* hdp = 0;
-         err = gethostbyname_r("", hp, hdp);
-       ]])],
-       [
-         ncbi_cv_func_gethostbyname_r="3"
-       ]
-    )
     fi])
 
 if test "$ncbi_cv_func_gethostbyname_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $ncbi_cv_func_gethostbyname_r,
     [If you have the `gethostbyname_r' function, define to the number of
-     arguments it takes (normally 3, 5 or 6).])
+     arguments it takes (normally 5 or 6).])
 fi
 
 
-## gethostbyaddr_r() -- 3 different variants: 7-arg (Solaris), 8-arg (Linux),
-## 5-arg (OSF/1 cruft)
+## gethostbyaddr_r() -- 2 different variants: 7-arg (Solaris), 8-arg (Linux).
 
 AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
    [ncbi_cv_func_gethostbyaddr_r="no"
@@ -1650,38 +1633,16 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
          ncbi_cv_func_gethostbyaddr_r="8"
        ]
     )
-    fi
-    if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[
-         #include <netdb.h>
-         #include <sys/types.h>
-         #include <sys/socket.h>
-       ]],
-       [[
-         void* dummy = (void*) &gethostbyaddr_r;
-         int                  err;
-         unsigned int         host;
-         struct hostent*      hp = 0;
-         struct hostent_data* hdp = 0;
-         int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-                                   hp, hdp);
-       ]])],
-       [
-         ncbi_cv_func_gethostbyaddr_r="5"
-       ]
-    )
     fi])
 
 if test "$ncbi_cv_func_gethostbyaddr_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $ncbi_cv_func_gethostbyaddr_r,
     [If you have the `gethostbyaddr_r' function, define to the number of
-     arguments it takes (normally 5, 7 or 8).])
+     arguments it takes (normally 7 or 8).])
 fi
 
 
-## getservbyname_r() -- 3 different variants: 5-arg (Solaris), 6-arg (Linux),
-## 4-arg (OSF/1 cruft)
+## getservbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
    [ncbi_cv_func_getservbyname_r="no"
@@ -1712,27 +1673,12 @@ AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
          ncbi_cv_func_getservbyname_r="6"
        ]
     )
-    fi
-    if test "$ncbi_cv_func_getservbyname_r" = "no" ; then
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
-       [[
-         void*                dummy = (void*) &getservbyname_r;
-         int                  err;
-         struct servent*      sp = 0;
-         struct servent_data* sdp = 0;
-         err = getservbyname_r("", "", sp, sdp);
-       ]])],
-       [
-         ncbi_cv_func_getservbyname_r="4"
-       ]
-    )
     fi])
 
 if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETSERVBYNAME_R, $ncbi_cv_func_getservbyname_r,
     [If you have the `getservbyname_r' function, define to the number of
-     arguments it takes (normally 4, 5 or 6).])
+     arguments it takes (normally 5 or 6).])
 fi
 
 
@@ -2034,7 +1980,15 @@ if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
 else
    orig_LIBS=$LIBS
    LIBS="$NETWORK_LIBS $orig_LIBS"
-   AC_CHECK_FUNCS(getaddrinfo getnameinfo)
+   AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
+      [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <netdb.h>]],
+          [[struct addrinfo *p; getaddrinfo("foo", "bar", p, &p);]])],
+          [ac_cv_func_getaddrinfo=yes], [ac_cv_func_getaddrinfo=no])])
+   test "$ac_cv_func_getaddrinfo" = "yes" && \
+     AC_DEFINE(HAVE_GETADDRINFO, 1,
+               [Define to 1 if you have the `getaddrinfo' function.])
+   AC_CHECK_FUNCS(getnameinfo)
    LIBS=$orig_LIBS
 fi
 

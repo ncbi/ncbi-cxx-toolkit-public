@@ -43,11 +43,11 @@
 #undef HAVE_GETADDRINFO
 
 /* If you have the `gethostbyaddr_r' function, define to the number of
-   arguments it takes (normally 5, 7 or 8). */
+   arguments it takes (normally 7 or 8). */
 #undef HAVE_GETHOSTBYADDR_R
 
 /* If you have the `gethostbyname_r' function, define to the number of
-   arguments it takes (normally 3, 5 or 6). */
+   arguments it takes (normally 5 or 6). */
 #undef HAVE_GETHOSTBYNAME_R
 
 /* Define to 1 if you have the `getloadavg' function. */
@@ -60,7 +60,7 @@
 #undef HAVE_GETPAGESIZE
 
 /* If you have the `getservbyname_r' function, define to the number of
-   arguments it takes (normally 4, 5 or 6). */
+   arguments it takes (normally 5 or 6). */
 #undef HAVE_GETSERVBYNAME_R
 
 /* Define to 1 if you have the <inttypes.h> header file. */
