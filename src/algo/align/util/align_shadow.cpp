@@ -1,0 +1,607 @@
+/* $Id$
+* ===========================================================================
+*
+*                            public DOMAIN NOTICE                          
+*               National Center for Biotechnology Information
+*                                                                          
+*  This software/database is a "United States Government Work" under the   
+*  terms of the United States Copyright Act.  It was written as part of    
+*  the author's official duties as a United States Government employee and 
+*  thus cannot be copyrighted.  This software/database is freely available 
+*  to the public for use. The National Library of Medicine and the U.S.    
+*  Government have not placed any restriction on its use or reproduction.  
+*                                                                          
+*  Although all reasonable efforts have been taken to ensure the accuracy  
+*  and reliability of the software and data, the NLM and the U.S.          
+*  Government do not and cannot warrant the performance or results that    
+*  may be obtained by using this software or data. The NLM and the U.S.    
+*  Government disclaim all warranties, express or implied, including       
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.                                                                
+*                                                                          
+*  Please cite the author in any work or product based on this material.   
+*
+* ===========================================================================
+*
+* Author:  Yuri Kapustin
+*
+* File Description:
+*   CAlignShadow class definition
+*
+*/
+
+#include <ncbi_pch.hpp>
+
+#include "messages.hpp"
+
+#include <algo/align/util/align_shadow.hpp>
+#include <algo/align/util/algo_align_util_exceptions.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+
+#include <numeric>
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(AlgoAlignUtil);
+USING_SCOPE(objects);
+
+
+/////////////////////////////////////////////////////////////////////////////
+// ctors/initializers
+
+template<class TId>
+CAlignShadow<TId>::CAlignShadow(void)
+{
+}
+
+
+// prohibited except when TId == CConstRef<CSeq_id>
+template<class TId>
+CAlignShadow<TId>::CAlignShadow(const CSeq_align& seq_align)
+{
+    NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+               g_msg_ImproperTemplateArgument);
+}
+
+
+// explicit specialization
+template<>
+CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const CSeq_align& seq_align)
+{
+    if (seq_align.CheckNumRows() != 2) {
+
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_IncorrectSeqAlignDim);
+    }
+
+    m_Id[0].Reset(&seq_align.GetSeq_id(0));
+    m_Id[1].Reset(&seq_align.GetSeq_id(1));
+
+    m_Box[0] = seq_align.GetSeqStart(0);
+    m_Box[1] = seq_align.GetSeqStop(0);
+    m_Box[2] = seq_align.GetSeqStart(1);
+    m_Box[3] = seq_align.GetSeqStop(1);
+
+    if (!seq_align.GetSegs().IsDenseg()) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_IncorrectSeqAlignType);
+    }
+
+    const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
+    const CDense_seg::TStrands& strands = ds.GetStrands();
+    const CDense_seg::TLens& lens = ds.GetLens();
+
+    if(strands[0] == eNa_strand_plus) {
+        m_Strand[0] = true;
+    }
+    else if(strands[0] == eNa_strand_minus) {
+        m_Strand[0] = false;
+    }
+    else {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_UnexpectedStrand);
+    }
+
+    if( strands[1] == eNa_strand_plus) {
+        m_Strand[1] = true;
+    }
+    else if(strands[1] == eNa_strand_minus) {
+        m_Strand[1] = false;
+    }
+    else {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_UnexpectedStrand);
+    }
+
+    m_Length = accumulate(lens.begin(), lens.end(), 0);
+
+    double matches;
+    seq_align.GetNamedScore("num_ident", matches);
+    m_Identity = matches / m_Length;
+
+    double score;
+    seq_align.GetNamedScore("bit_score", score);
+    m_Score = score;
+
+    double evalue;
+    seq_align.GetNamedScore("sum_e", evalue);
+    m_EValue = evalue;
+}
+
+
+template<class TId>
+CAlignShadow<TId>::CAlignShadow(const char* str)
+{
+    const char* p = str;
+    for(; *p && isspace(*p); ++p); // skip spaces
+    const char* p0 = p;
+    for(; *p && !isspace(*p); ++p); // get first id
+    string id1 (p0, p - p0);
+    CNcbiIstrstream iss1 (id1.c_str());
+    iss1 >> m_Id[0]; 
+
+    for(; *p && isspace(*p); ++p); // skip spaces
+    p0 = p;
+    for(; *p && !isspace(*p); ++p); // get second id
+    string id2 (p0, p - p0);
+    CNcbiIstrstream iss2 (id2.c_str());
+    iss2 >> m_Id[1];
+
+    for(; *p && isspace(*p); ++p); // skip spaces
+    x_InitFromString(p);
+}
+
+
+// explicit specialization
+template<>
+CAlignShadow<CConstRef<CSeq_id> >::CAlignShadow(const char* str)
+{
+    const char* p0 = str, *p = p0;
+    for(; *p && isspace(*p); ++p); // skip spaces
+    for(p0 = p; *p && !isspace(*p); ++p); // get token
+    if(*p) {
+        string id1 (p0, p - p0);
+        m_Id[0].Reset(new CSeq_id(id1));
+    }
+
+    for(; *p && isspace(*p); ++p); // skip spaces
+    for(p0 = p; *p && !isspace(*p); ++p); // get token
+    if(*p) {
+        string id2 (p0, p - p0);
+        m_Id[1].Reset(new CSeq_id(id2));
+    }
+
+    for(; *p && isspace(*p); ++p); // skip spaces
+    x_InitFromString(p);
+}
+
+
+template<class TId>
+void CAlignShadow<TId>::x_InitFromString(const char* str)
+{
+    CNcbiIstrstream iss (str);
+    double identity100, evalue, score;
+    Uint4 a, b, c, d;
+    iss >> identity100 >> m_Length >> m_Mismatches >> m_Gaps
+        >> a >> b >> c >> d >> evalue >> score;
+    
+    if(!iss.bad()) {
+
+        m_Identity = identity100 / 100;
+        m_EValue = evalue;
+        m_Score = score;
+
+        m_Strand[0] = a <= b;
+
+        if(m_Strand[0]) {
+            m_Box[0] = a - 1;
+            m_Box[1] = b - 1;
+        }
+        else {
+            m_Box[0] = b - 1;
+            m_Box[1] = a - 1;
+        }
+
+        m_Strand[1] = c <= d;
+
+        if(m_Strand[1]) {
+            m_Box[2] = c - 1;
+            m_Box[3] = d - 1;
+        }
+        else {
+            m_Box[2] = d - 1;
+            m_Box[3] = c - 1;
+        }
+    }
+    else {
+        const string err_msg = 
+            string(g_msg_FailedToInitFromString) + str;
+        NCBI_THROW(CAlgoAlignUtilException, eFormat, err_msg.c_str());
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// getters and  setters
+
+template<class TId> inline
+const TId& CAlignShadow<TId>::GetId(unsigned char where) const
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    return m_Id[where];
+}
+
+
+template<class TId> inline
+const TId& CAlignShadow<TId>::GetQueryId(void) const
+{
+    return m_Id[0];
+}
+
+
+template<class TId> inline
+const TId& CAlignShadow<TId>::GetSubjId(void) const
+{
+    return m_Id[1];
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetId(unsigned char where, const TId& id)
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    m_Id[where] = id;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetQueryId(const TId& id)
+{
+    m_Id[0] = id;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetSubjId(const TId& id)
+{
+    m_Id[1] = id;
+}
+
+
+template<class TId> inline
+bool  CAlignShadow<TId>::GetStrand(unsigned char where) const
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    return m_Strand[where];
+}
+
+
+template<class TId> inline
+bool CAlignShadow<TId>::GetQueryStrand(void) const
+{
+    return m_Strand[0];
+}
+
+
+template<class TId> inline
+bool CAlignShadow<TId>::GetSubjStrand(void) const
+{
+    return m_Strand[1];
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetStrand(unsigned char where, bool strand)
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    m_Strand[where] = strand;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetQueryStrand(bool strand)
+{
+    m_Strand[0] = strand;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetSubjStrand(bool strand)
+{
+    m_Strand[1] = strand;
+}
+
+
+template<class TId> inline
+const Uint4* CAlignShadow<TId>::GetBox(void) const
+{
+    return m_Box;
+}
+ 
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetMin(unsigned char where) const
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    return m_Box[where << 1];
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetMax(unsigned char where) const
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    return m_Box[(where << 1) | 1];
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetQueryMin(void) const
+{
+    return m_Box[0];
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetQueryMax(void) const
+{
+    return m_Box[1];
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetSubjMin(void) const
+{
+    return m_Box[2];
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetSubjMax(void) const
+{
+    return m_Box[3];
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetBox(const Uint4 box [4])
+{
+    copy(box, box + 4, m_Box);
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetMax(unsigned char where, Uint4 val)
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    m_Box[(where << 1) | 1] = val;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetMin(unsigned char where, Uint4 val)
+{
+    if(0 != where && where != 1) {
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   g_msg_ArgOutOfRange);
+    }
+    m_Box[where << 1] = val;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetQueryMin(Uint4 val)
+{
+    m_Box[0] = val;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetQueryMax(Uint4 val)
+{
+     m_Box[1] = val;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetSubjMin(Uint4 val)
+{
+    m_Box[2] = val;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetSubjMax(Uint4 val)
+{
+    m_Box[3] = val;
+}
+
+
+template<class TId> inline
+void  CAlignShadow<TId>::SetLength(Uint4 length)
+{
+    m_Length = length;
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetLength(void) const
+{
+    return m_Length;
+}
+
+
+template<class TId> inline
+void  CAlignShadow<TId>::SetMismatches(Uint4 mismatches)
+{
+    m_Mismatches = mismatches;
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetMismatches(void) const
+{
+    return m_Mismatches;
+}
+
+
+template<class TId> inline
+void  CAlignShadow<TId>::SetGaps(Uint4 gaps)
+{
+    m_Gaps = gaps;
+}
+
+
+template<class TId> inline
+Uint4 CAlignShadow<TId>::GetGaps(void) const
+{
+    return m_Gaps;
+}
+
+
+template<class TId> inline
+void CAlignShadow<TId>::SetEValue(double evalue)
+{
+    m_EValue = evalue;
+}
+ 
+
+template<class TId> inline
+double CAlignShadow<TId>::GetEValue(void) const
+{
+    return m_EValue;
+}
+
+
+template<class TId> inline
+void   CAlignShadow<TId>::SetIdentity(float identity)
+{
+    m_Identity = identity;
+}
+
+
+template<class TId> inline
+float CAlignShadow<TId>::GetIdentity(void) const
+{
+    return m_Identity;
+}
+
+
+template<class TId> inline
+void   CAlignShadow<TId>::SetScore(float score)
+{
+    m_Score = score;
+}
+
+
+template<class TId> inline
+float CAlignShadow<TId>::GetScore(void) const
+{
+    return m_Score;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// serialization
+
+template<class TId> 
+CNcbiOstream& operator<< (CNcbiOstream& os, 
+                       const CAlignShadow<TId>& align_shadow)
+{
+    os  << align_shadow.GetId(0) << '\t'
+        << align_shadow.GetId(1) << '\t';
+
+    align_shadow.x_Ser(os);
+
+    return os;
+}
+
+
+// explicit specialization
+template<> 
+CNcbiOstream& operator<< (
+    CNcbiOstream& os, const CAlignShadow<CConstRef<CSeq_id> >& align_shadow)
+{
+    os  << align_shadow.GetId(0)->GetSeqIdString(true) << '\t'
+        << align_shadow.GetId(1)->GetSeqIdString(true) << '\t';
+
+    align_shadow.x_Ser(os);
+
+    return os;
+}
+
+
+template<class TId>
+void CAlignShadow<TId>::x_Ser(CNcbiOstream& os) const
+{
+    const float identity100 = 100.0 * m_Identity;
+    os << identity100 << '\t'   << m_Length << '\t'
+       << m_Mismatches << '\t' << m_Gaps   << '\t';
+    
+    if(m_Strand[0]) {
+        os << m_Box[0] + 1 << '\t' << m_Box[1] + 1 << '\t';
+    }
+    else {
+        os << m_Box[1] + 1 << '\t' << m_Box[0] + 1 << '\t';
+    }
+
+    if(m_Strand[1]) {
+        os << m_Box[2] + 1 << '\t'  << m_Box[3] + 1 << '\t';
+    }
+    else {
+        os << m_Box[3] + 1 << '\t'  << m_Box[2] + 1 << '\t';
+    }
+
+    os << m_EValue << '\t' << m_Score;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+// explicit instantiations
+
+template class CAlignShadow<Uint4>;
+template class CAlignShadow<string>;
+template class CAlignShadow<CConstRef<CSeq_id> >;
+
+template CNcbiOstream& operator<< <CConstRef<CSeq_id> >
+    (CNcbiOstream& os, const CAlignShadow<CConstRef<CSeq_id> >& align_shadow);
+
+template CNcbiOstream& operator<< <Uint4>
+    (CNcbiOstream& os, const CAlignShadow<Uint4>& align_shadow);
+
+template CNcbiOstream& operator<< <string>
+    (CNcbiOstream& os, const CAlignShadow<string>& align_shadow);
+
+END_NCBI_SCOPE
+
+
+
+/* 
+ * $Log$
+ * Revision 1.1  2004/12/21 20:07:47  kapustin
+ * Initial revision
+ *
+ */
+

@@ -1,0 +1,8 @@
+# $Id$
+
+SRC = align_shadow
+
+LIB = xalgoalignutil
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)

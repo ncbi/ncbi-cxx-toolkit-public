@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (algo/align/util/demo/hfilter)
+#################################
+
+APP_PROJ = hfilter
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
