@@ -26,8 +26,8 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   C++ wrapper for the C "SOCK" API (UNIX, MS-Win, MacOS, Darwin)
- *   Implementation of CSocketAPI::Poll()
+ *   C++ wrappers for the C "SOCK" API (UNIX, MS-Win, MacOS, Darwin)
+ *   Implementation of out-of-line methods
  *
  */
 
@@ -277,37 +277,36 @@ unsigned int CSocketAPI::gethostbyname(const string& hostname)
 }
 
 
-EIO_Status CSocketAPI::Poll(vector<SPoll>&  sockets,
+EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
-    size_t n = sockets.size();
-    SSOCK_Poll* polls = 0;
+    size_t x_n = polls.size();
+    SSOCK_Poll* x_polls = 0;
 
-    if (n  &&  !(polls = new SSOCK_Poll[n]))
+    if (x_n  &&  !(x_polls = new SSOCK_Poll[x_n]))
         return eIO_Unknown;
 
-    for (size_t i = 0; i < n; i++) {
-        CSocket& s = sockets[i].m_Socket;
+    for (size_t i = 0; i < x_n; i++) {
+        CSocket& s = polls[i].m_Socket;
         if (s.GetStatus(eIO_Open) == eIO_Success) {
-            polls[i].sock = s.GetSOCK();
-            polls[i].event = sockets[i].m_Event;
-            polls[i].revent = eIO_Open;
+            x_polls[i].sock = s.GetSOCK();
+            x_polls[i].event = polls[i].m_Event;
         } else
-            polls[i].sock = 0;
+            x_polls[i].sock = 0;
     }
 
     size_t x_ready;
-    EIO_Status status = SOCK_Poll(n, polls, timeout, &x_ready);
+    EIO_Status status = SOCK_Poll(x_n, x_polls, timeout, &x_ready);
 
     if (status == eIO_Success) {
-        for (size_t i = 0; i < n; i++)
-            sockets[i].m_REvent = polls[i].revent;
+        for (size_t i = 0; i < x_n; i++)
+            polls[i].m_REvent = x_polls[i].revent;
     }
     if ( n_ready )
         *n_ready = x_ready;
 
-    delete[] polls;
+    delete[] x_polls;
 
     return status;
 }
@@ -319,6 +318,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/08/15 18:48:01  lavr
+ * Change all internal variables to have "x_" prefix in CSocketAPI::Poll()
+ *
  * Revision 6.3  2002/08/14 15:16:25  lavr
  * Do not use kEmptyStr for not to depend on xncbi(corelib) library
  *
