@@ -66,6 +66,9 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
 
 CSeqDBImpl::~CSeqDBImpl(void)
 {
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
     m_VolSet.UnLease();
     
     if (m_OIDList.NotEmpty()) {
@@ -169,10 +172,11 @@ CSeqDBImpl::GetNextOIDChunk(TOID         & begin_chunk, // out
 
 Uint4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
 {
+    CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqLength(vol_oid, false);
+        return vol->GetSeqLength(vol_oid, false, locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -182,10 +186,11 @@ Uint4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
 
 Uint4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
 {
+    CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqLength(vol_oid, true);
+        return vol->GetSeqLength(vol_oid, true, locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -198,10 +203,11 @@ CSeqDBImpl::GetBioseq(Uint4 oid,
                       bool  use_objmgr,
                       bool  insert_ctrlA) const
 {
+    CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetBioseq(vol_oid, use_objmgr, insert_ctrlA);
+        return vol->GetBioseq(vol_oid, use_objmgr, insert_ctrlA, locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -213,17 +219,19 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
 {
     // This can return either an allocated object or a reference to
     // part of a memory mapped region.
+    CSeqDBLockHold locked(m_Atlas);
     
-    m_Atlas.RetRegion(*buffer);
+    m_Atlas.RetRegion(*buffer, locked);
     *buffer = 0;
 }
 
 Uint4 CSeqDBImpl::GetSequence(Uint4 oid, const char ** buffer) const
 {
+    CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSequence(vol_oid, buffer);
+        return vol->GetSequence(vol_oid, buffer, locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -236,9 +244,11 @@ Uint4 CSeqDBImpl::GetAmbigSeq(Uint4           oid,
                               Uint4           nucl_code,
                               ESeqDBAllocType alloc_type) const
 {
+    CSeqDBLockHold locked(m_Atlas);
+    
     Uint4 vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type);
+        return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type, locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -248,10 +258,11 @@ Uint4 CSeqDBImpl::GetAmbigSeq(Uint4           oid,
 
 list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
 {
+    CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqIDs(vol_oid);
+        return vol->GetSeqIDs(vol_oid, locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -292,10 +303,11 @@ string CSeqDBImpl::GetDate(void) const
 
 CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(Uint4 oid) const
 {
+    CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetHdr(vol_oid);
+        return vol->GetHdr(vol_oid, locked);
     }
     
     NCBI_THROW(CSeqDBException,

@@ -37,16 +37,33 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
                            char                   prot_nucl)
     : m_RecentVol(0)
 {
-    for(Uint4 i = 0; i < vol_names.size(); i++) {
-        x_AddVolume(atlas, vol_names[i], prot_nucl);
+    try {
+        for(Uint4 i = 0; i < vol_names.size(); i++) {
+            x_AddVolume(atlas, vol_names[i], prot_nucl);
         
-        if (prot_nucl == kSeqTypeUnkn) {
-            // Once one volume picks a prot/nucl type, enforce that
-            // for the rest of the volumes.  This should happen at
-            // most once.
+            if (prot_nucl == kSeqTypeUnkn) {
+                // Once one volume picks a prot/nucl type, enforce that
+                // for the rest of the volumes.  This should happen at
+                // most once.
             
-            prot_nucl = m_VolList.back().Vol()->GetSeqType();
+                prot_nucl = m_VolList.back().Vol()->GetSeqType();
+            }
         }
+    }
+    catch(...) {
+        for(Uint4 i = 0; i < m_VolList.size(); i++) {
+            m_VolList[i].Free();
+        }
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Error: Could not construct all volumes.");
+    }
+}
+
+CSeqDBVolSet::~CSeqDBVolSet()
+{
+    for(Uint4 i = 0; i < m_VolList.size(); i++) {
+        m_VolList[i].Free();
     }
 }
 

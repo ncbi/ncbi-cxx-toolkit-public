@@ -53,14 +53,14 @@ char CSeqDBVol::x_GetSeqType(void) const
     return m_Idx.GetSeqType();
 }
 
-Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
+Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx, CSeqDBLockHold & locked) const
 {
     Uint8 start_offset = 0;
     Uint8 end_offset   = 0;
     
     Int8 length = -1;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset, locked))
         return -1;
     
     char seqtype = m_Idx.GetSeqType();
@@ -86,13 +86,13 @@ Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
             
             char amb_char = 0;
             
-            m_Seq.ReadBytes(& amb_char, end_offset - 1, end_offset);
+            m_Seq.ReadBytes(& amb_char, end_offset - 1, end_offset, locked);
             
             Int4 remainder = amb_char & 3;
             length = (whole_bytes * 4) + remainder;
         }
     }
-        
+    
     return length;
 }
 
@@ -311,7 +311,7 @@ s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
     };
     
     for(Uint4 i = 0; i < buf.size(); i++) {
-        buf[i] = trans_ncbina8_to_blastna8[ buf[i] ];
+        buf[i] = trans_ncbina8_to_blastna8[ (Uint4) buf[i] ];
     }
 }
 
@@ -568,7 +568,8 @@ void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
 CRef<CBioseq>
 CSeqDBVol::GetBioseq(Int4 oid,
                      bool /*use_objmgr,*/,
-                     bool /*insert_ctrlA*/) const
+                     bool /*insert_ctrlA*/,
+                     CSeqDBLockHold & locked) const
 {
     // 1. Declare variables.
     
@@ -587,7 +588,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     // the defline set and seqid set?  From readdb.c it looks like the
     // single items are the prized artifacts.
     
-    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid));
+    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid, locked));
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
     
@@ -622,7 +623,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     
     const char * seq_buffer = 0;
     
-    Int4 length = x_GetSequence(oid, & seq_buffer);
+    Int4 length = x_GetSequence(oid, & seq_buffer, false, locked);
     
     if (length < 1) {
         return null_result;
@@ -662,7 +663,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
         // nucl
         vector<Int4> ambchars;
         
-        if (! x_GetAmbChar(oid, ambchars)) {
+        if (! x_GetAmbChar(oid, ambchars, locked)) {
             return null_result;
         }
         
@@ -679,7 +680,6 @@ CSeqDBVol::GetBioseq(Int4 oid,
     }
     
     if (seq_buffer) {
-        m_Atlas.RetRegion(seq_buffer);
         seq_buffer = 0;
     }
     
@@ -724,12 +724,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     return bioseq;
 }
 
-Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer) const
-{
-    return x_GetSequence(oid, buffer);
-}
-
-char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type) const
+char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLockHold & locked) const
 {
     // Specifying an allocation type of zero uses the atlas to do the
     // allocation.  This is not intended to be visible to the end
@@ -752,43 +747,44 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type) const
         break;
         
     default:
-        retval = m_Atlas.Alloc(length);
+        retval = m_Atlas.Alloc(length, locked);
     }
     
     return retval;
 }
 
-Int4 CSeqDBVol::GetAmbigSeq(Int4            oid,
-                            char         ** buffer,
-                            Uint4           nucl_code,
-                            ESeqDBAllocType alloc_type) const
+Int4 CSeqDBVol::GetAmbigSeq(Int4               oid,
+                            char            ** buffer,
+                            Uint4              nucl_code,
+                            ESeqDBAllocType    alloc_type,
+                            CSeqDBLockHold   & locked) const
 {
     char * buf1 = 0;
-    Int4 baselen = x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type);
+    Int4 baselen = x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, locked);
     
     *buffer = buf1;
     return baselen;
 }
 
-Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
-                              char         ** buffer,
-                              Uint4           nucl_code,
-                              ESeqDBAllocType alloc_type) const
+Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
+                              char            ** buffer,
+                              Uint4              nucl_code,
+                              ESeqDBAllocType    alloc_type,
+                              CSeqDBLockHold   & locked) const
 {
     Int4 base_length = -1;
     
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
-        const char * buf2 = 0;
-        
-        base_length = x_GetSequence(oid, & buf2);
-        
         if (alloc_type == ESeqDBAllocType(0)) {
-            *buffer = (char*) buf2;
+            base_length = x_GetSequence(oid, (const char**) buffer, true, locked);
         } else {
-            char * obj = x_AllocType(base_length, alloc_type);
+            const char * buf2(0);
+            
+            base_length = x_GetSequence(oid, & buf2, false, locked);
+            
+            char * obj = x_AllocType(base_length, alloc_type, locked);
             
             memcpy(obj, buf2, base_length);
-            m_Atlas.RetRegion(buf2);
             
             *buffer = obj;
         }
@@ -803,7 +799,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
             
             const char * seq_buffer = 0;
             
-            base_length = x_GetSequence(oid, & seq_buffer);
+            base_length = x_GetSequence(oid, & seq_buffer, false, locked);
             
             if (base_length < 1) {
                 NCBI_THROW(CSeqDBException, eFileErr,
@@ -814,7 +810,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
             
             vector<Int4> ambchars;
             
-            if (! x_GetAmbChar(oid, ambchars) ) {
+            if (! x_GetAmbChar(oid, ambchars, locked) ) {
                 NCBI_THROW(CSeqDBException, eFileErr,
                            "File error: could not get ambiguity data.");
             }
@@ -830,18 +826,10 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
                 // Translate bytewise, in place.
                 s_SeqDBMapNcbiNA8ToBlastNA8(buffer_na8);
             }
-            
-            // Return probably-mmapped sequence
-            
-            m_Atlas.RetRegion(seq_buffer);
         }
         
-        // NOTE:!! This is a memory leak; this is known, and I am
-        // fixing it, but the fix involves reorganization of code, and
-        // I don't want to bundle any more in this checkin. (kmb)
-        
         int bytelen = buffer_na8.size();
-        char * uncomp_buf = x_AllocType(bytelen, alloc_type);
+        char * uncomp_buf = x_AllocType(bytelen, alloc_type, locked);
         
         for(int i = 0; i < bytelen; i++) {
             uncomp_buf[i] = buffer_na8[i];
@@ -853,14 +841,14 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
     return base_length;
 }
 
-Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer) const
+Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer, bool keep, CSeqDBLockHold & locked) const
 {
     Uint8 start_offset = 0;
     Uint8 end_offset   = 0;
     
     Int4 length = -1;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset, locked))
         return -1;
     
     char seqtype = m_Idx.GetSeqType();
@@ -872,29 +860,29 @@ Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer) const
                 
         length = end_offset - start_offset;
             
-        *buffer = m_Seq.GetRegion(start_offset, end_offset);
+        *buffer = m_Seq.GetRegion(start_offset, end_offset, keep, locked);
     } else if (kSeqTypeNucl == seqtype) {
         // The last byte is partially full; the last two bits of
         // the last byte store the number of nucleotides in the
         // last byte (0 to 3).
-            
-        *buffer = m_Seq.GetRegion(start_offset, end_offset);
-            
+        
+        *buffer = m_Seq.GetRegion(start_offset, end_offset, keep, locked);
+        
         Int4 whole_bytes = end_offset - start_offset - 1;
-            
+        
         char last_char = (*buffer)[whole_bytes];
         Int4 remainder = last_char & 3;
         length = (whole_bytes * 4) + remainder;
     }
-        
+    
     return length;
 }
 
-list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid) const
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) const
 {
     list< CRef< CSeq_id > > seqids;
     
-    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid));
+    CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid, locked));
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         CRef<CBlast_def_line> defline = defline_set->Get().front();
@@ -912,23 +900,23 @@ Uint8 CSeqDBVol::GetTotalLength(void) const
     return m_Idx.GetTotalLength();
 }
 
-CRef<CBlast_def_line_set> CSeqDBVol::GetHdr(Uint4 oid) const
+CRef<CBlast_def_line_set> CSeqDBVol::GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
 {
-    return x_GetHdr(oid);
+    return x_GetHdr(oid, locked);
 }
 
-CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
+CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> nullret;
-        
+    
     Uint8 hdr_start = 0;
     Uint8 hdr_end   = 0;
-        
-    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
+    
+    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end, locked)) {
         return nullret;
     }
     
-    const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end);
+    const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end, locked);
     
     // Now; create an ASN.1 object from the memory chunk provided
     // here.
@@ -944,8 +932,6 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
     
     istringstream asndata( string(asn_region, asn_region + (hdr_end - hdr_start)) );
     
-    m_Atlas.RetRegion(asn_region);
-    
     auto_ptr<CObjectIStream> inpstr(CObjectIStream::Open(eSerial_AsnBinary, asndata));
     
     CRef<objects::CBlast_def_line_set> phil(new objects::CBlast_def_line_set);
@@ -956,12 +942,12 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
     return phil;
 }
 
-bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
+bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars, CSeqDBLockHold & locked) const
 {
     Uint8 start_offset = 0;
     Uint8 end_offset   = 0;
     
-    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset);
+    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset, locked);
     
     if (! ok) {
         return false;
@@ -974,7 +960,7 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
     
     Int4 total = length / 4;
     
-    Int4 * buffer = (Int4*) m_Seq.GetRegion(start_offset, start_offset + (total * 4));
+    Int4 * buffer = (Int4*) m_Seq.GetRegion(start_offset, start_offset + (total * 4), false, locked);
     
     // This makes no sense...
     total &= 0x7FFFFFFF;
@@ -982,11 +968,8 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
     ambchars.resize(total);
     
     for(int i = 0; i<total; i++) {
-	//ambchars[i] = CByteSwap::GetInt4((const unsigned char *)(& buffer[i]));
 	ambchars[i] = SeqDB_GetStdOrd((const unsigned char *)(& buffer[i]));
     }
-    
-    m_Atlas.RetRegion((const char*) buffer);
     
     return true;
 }

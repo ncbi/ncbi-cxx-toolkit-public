@@ -56,32 +56,35 @@ BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
 
-class CSeqDBVol : public CObject {
+class CSeqDBVol {
 public:
     CSeqDBVol(CSeqDBAtlas   & atlas,
               const string  & name,
               char            prot_nucl);
     
-    Int4 GetSeqLength(Uint4 oid, bool approx) const;
+    Int4 GetSeqLength(Uint4 oid, bool approx, CSeqDBLockHold & locked) const;
     
-    Int4 GetSeqLengthApprox(Uint4 oid) const;
-    
-    CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
+    CRef<CBlast_def_line_set> GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
     
     char GetSeqType(void) const;
     
     CRef<CBioseq> GetBioseq(Int4 oid,
                             bool use_objmgr,
-                            bool insert_ctrlA) const;
+                            bool insert_ctrlA,
+                            CSeqDBLockHold & locked) const;
     
-    Int4 GetSequence(Int4 oid, const char ** buffer) const;
+    Int4 GetSequence(Int4 oid, const char ** buffer, CSeqDBLockHold & locked) const
+    {
+        return x_GetSequence(oid, buffer, true, locked);
+    }
     
-    Int4 GetAmbigSeq(Int4            oid,
-                     char         ** buffer,
-                     Uint4           nucl_code,
-                     ESeqDBAllocType alloc_type) const;
+    Int4 GetAmbigSeq(Int4              oid,
+                     char           ** buffer,
+                     Uint4             nucl_code,
+                     ESeqDBAllocType   alloc_type,
+                     CSeqDBLockHold  & locked) const;
     
-    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid) const;
+    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) const;
     
     string GetTitle(void) const;
     
@@ -106,21 +109,23 @@ public:
     }
     
 private:
-    CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid) const;
+    CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
 
     char   x_GetSeqType(void) const;
 
-    bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const;
+    bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars, CSeqDBLockHold & locked) const;
 
-    Int4   x_GetSequence(Int4 oid, const char ** buffer) const;
+    Int4   x_GetSequence(Int4 oid, const char ** buffer, bool keep, CSeqDBLockHold & locked) const;
 
-    Int4   x_GetAmbigSeq(Int4            oid,
-                         char         ** buffer,
-                         Uint4           nucl_code,
-                         ESeqDBAllocType alloc_type) const;
+    Int4   x_GetAmbigSeq(Int4               oid,
+                         char            ** buffer,
+                         Uint4              nucl_code,
+                         ESeqDBAllocType    alloc_type,
+                         CSeqDBLockHold   & locked) const;
     
-    char * x_AllocType(Uint4           length,
-                       ESeqDBAllocType alloc_type) const;
+    char * x_AllocType(Uint4             length,
+                       ESeqDBAllocType   alloc_type,
+                       CSeqDBLockHold  & locked) const;
     
     CSeqDBAtlas        & m_Atlas;
     string               m_VolName;

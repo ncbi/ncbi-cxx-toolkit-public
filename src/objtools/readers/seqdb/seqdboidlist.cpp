@@ -44,29 +44,33 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas  & atlas,
       m_BitEnd  (0),
       m_BitOwner(false)
 {
+    CSeqDBLockHold locked(m_Atlas);
     _ASSERT( volset.HasMask() );
     
     if (volset.HasSimpleMask()) {
-        x_Setup( volset.GetSimpleMask(), use_mmap );
+        x_Setup( volset.GetSimpleMask(), use_mmap, locked );
     } else {
-        x_Setup( volset, use_mmap );
+        x_Setup( volset, use_mmap, locked );
     }
 }
 
 CSeqDBOIDList::~CSeqDBOIDList()
 {
+    CSeqDBLockHold locked(m_Atlas);
+
     if (m_BitOwner) {
         _ASSERT(m_Bits != 0);
-        m_Atlas.Free((const char *) m_Bits);
+        m_Atlas.Free((const char *) m_Bits, locked);
     }
 }
 
-void CSeqDBOIDList::x_Setup(const string  & filename,
-                            bool            use_mmap)
+void CSeqDBOIDList::x_Setup(const string   & filename,
+                            bool             use_mmap,
+                            CSeqDBLockHold & locked)
 {
     Uint8 file_length = 0;
     
-    m_Atlas.GetFile(m_Lease, filename, file_length);
+    m_Atlas.GetFile(m_Lease, filename, file_length, locked);
     
     m_NumOIDs = SeqDB_GetStdOrd((Uint4 *) m_Lease.GetPtr(0));
     m_Bits    = (unsigned char*) m_Lease.GetPtr(sizeof(Uint4));
@@ -77,7 +81,7 @@ void CSeqDBOIDList::x_Setup(const string  & filename,
 // The general rule I am following in these methods is to use byte
 // computations except during actual looping.
 
-void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
+void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap, CSeqDBLockHold & locked)
 {
     _ASSERT(volset.HasMask() && (! volset.HasSimpleMask()));
     
@@ -88,7 +92,7 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
     Uint4 num_oids = volset.GetNumSeqs();
     Uint4 byte_length = ((num_oids + 31) / 32) * 4;
     
-    m_Bits   = (TUC*) m_Atlas.Alloc(byte_length);
+    m_Bits   = (TUC*) m_Atlas.Alloc(byte_length, locked);
     m_BitEnd = m_Bits + byte_length;
     m_BitOwner = true;
     
@@ -113,7 +117,7 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
                 mask_iter != mask_files.end();
                 ++mask_iter) {
                 
-                x_OrFileBits(*mask_iter, oid_start, oid_end, use_mmap);
+                x_OrFileBits(*mask_iter, oid_start, oid_end, use_mmap, locked);
             }
         }
     }
@@ -162,10 +166,11 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
 // anything" that the code would almost certainly never be written
 // that way.  For this reason, I have not yet implemented trimming.
 
-void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
-                                 Uint4          oid_start,
-                                 Uint4          /*oid_end*/,
-                                 bool           use_mmap)
+void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
+                                 Uint4            oid_start,
+                                 Uint4            /*oid_end*/,
+                                 bool             use_mmap,
+                                 CSeqDBLockHold & locked)
 {
     // Open file and get pointers
     
@@ -180,13 +185,13 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
         volmask.Open(mask_fname);
         
         CSeqDBMemLease lease(m_Atlas);
-        volmask.ReadSwapped(lease, 0, & num_oids);
+        volmask.ReadSwapped(lease, 0, & num_oids, locked);
         
         Uint4 file_length = (Uint4) volmask.GetFileLength();
         
         // Cast forces signed/unsigned conversion.
         
-        bitmap = (TCUC*) volmask.GetRegion(sizeof(Int4), file_length);
+        bitmap = (TCUC*) volmask.GetRegion(sizeof(Int4), file_length, locked);
         //bitend = bitmap + file_length - sizeof(Int4);
         bitend = bitmap + (((num_oids + 31) / 32) * 4);
     }
@@ -258,7 +263,7 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
         }
     }
     
-    m_Atlas.RetRegion((const char*) bitmap);
+    m_Atlas.RetRegion((const char*) bitmap, locked);
 }
 
 void CSeqDBOIDList::x_SetBitRange(Uint4          oid_start,

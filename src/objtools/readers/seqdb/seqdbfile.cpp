@@ -78,28 +78,11 @@ Uint8 BytesToUint8(char * bytes_sc)
     return value;
 }
 
-bool CSeqDBRawFile::Open(const string & name)
-{
-    bool success = m_Atlas.GetFileSize(name, m_Length);
-    
-    if (success) {
-        m_FileName = name;
-    }
-    
-    return success;
-}
 
-const char * CSeqDBRawFile::GetRegion(Uint8 start, Uint8 end) const
+Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4 * buf, CSeqDBLockHold & locked) const
 {
-    _ASSERT(! m_FileName.empty());
-    _ASSERT(start    <  end);
-    _ASSERT(m_Length >= end);
+    m_Atlas.Lock(locked);
     
-    return m_Atlas.GetRegion(m_FileName, start, end);
-}
-
-Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4 * buf) const
-{
     if (! lease.Contains(offset, offset + sizeof(*buf))) {
         m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*buf));
     }
@@ -111,8 +94,11 @@ Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4 * b
 
 Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
                                  Uint8            offset,
-                                 Uint8          * buf) const
+                                 Uint8          * buf,
+                                 CSeqDBLockHold & locked) const
 {
+    m_Atlas.Lock(locked);
+    
     if (! lease.Contains(offset, offset + sizeof(*buf))) {
         m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*buf));
     }
@@ -124,9 +110,12 @@ Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
 
 Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
                                  Uint8            offset,
-                                 string         * v) const
+                                 string         * v,
+                                 CSeqDBLockHold & locked) const
 {
     Uint4 len = 0;
+    
+    m_Atlas.Lock(locked);
     
     if (! lease.Contains(offset, offset + sizeof(len))) {
         m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(len));
@@ -151,8 +140,11 @@ Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
 bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
                               char           * buf,
                               Uint8            start,
-                              Uint8            end) const
+                              Uint8            end,
+                              CSeqDBLockHold & locked) const
 {
+    m_Atlas.Lock(locked);
+    
     if (! lease.Contains(start, end)) {
         m_Atlas.GetRegion(lease, m_FileName, start, end);
     }
@@ -185,9 +177,9 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
     }
 }
 
-CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas   & atlas,
-                             const string  & dbname,
-                             char            prot_nucl)
+CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
+                             const string   & dbname,
+                             char             prot_nucl)
     : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl),
       m_NumSeqs       (0),
       m_TotLen        (0),
@@ -215,8 +207,9 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas   & atlas,
     Uint4 f_db_seqtype = 0;
     
     CSeqDBMemLease lease(m_Atlas);
+    CSeqDBLockHold locked(m_Atlas);
     
-    offset = x_ReadSwapped(lease, offset, & f_format_version);
+    offset = x_ReadSwapped(lease, offset, & f_format_version, locked);
     
     if (f_format_version != 4) {
         NCBI_THROW(CSeqDBException,
@@ -224,12 +217,12 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas   & atlas,
                    "Error: Not a valid version 4 database.");
     }
     
-    offset = x_ReadSwapped(lease, offset, & f_db_seqtype);
-    offset = x_ReadSwapped(lease, offset, & m_Title);
-    offset = x_ReadSwapped(lease, offset, & m_Date);
-    offset = x_ReadSwapped(lease, offset, & m_NumSeqs);
-    offset = x_ReadSwapped(lease, offset, & m_TotLen);
-    offset = x_ReadSwapped(lease, offset, & m_MaxLen);
+    offset = x_ReadSwapped(lease, offset, & f_db_seqtype, locked);
+    offset = x_ReadSwapped(lease, offset, & m_Title,      locked);
+    offset = x_ReadSwapped(lease, offset, & m_Date,       locked);
+    offset = x_ReadSwapped(lease, offset, & m_NumSeqs,    locked);
+    offset = x_ReadSwapped(lease, offset, & m_TotLen,     locked);
+    offset = x_ReadSwapped(lease, offset, & m_MaxLen,     locked);
     
     Uint8 region_bytes = 4 * (m_NumSeqs + 1);
     
@@ -249,9 +242,6 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas   & atlas,
     m_HdrOffset     = off1;
     m_SeqOffset     = off2;
     m_AmbCharOffset = off3;
-    
-    // The file offset now lives on the stack.
-    //x_SetFileOffset(offend);
     
     char db_seqtype = ((f_db_seqtype == 1)
                        ? kSeqTypeProt

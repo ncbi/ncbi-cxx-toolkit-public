@@ -40,14 +40,30 @@ BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
 
-class CSeqDBVolSet : public CObject {
+class CSeqDBVolSet {
 public:
     CSeqDBVolSet(CSeqDBAtlas          & atlas,
                  const vector<string> & vol_names,
                  char                   prot_nucl);
     
+    ~CSeqDBVolSet();
+    
     const CSeqDBVol * FindVol(Uint4 oid, Uint4 & vol_oid) const
     {
+        Uint4 rec_indx = m_RecentVol;
+        
+        if (rec_indx < m_VolList.size()) {
+            const CVolEntry & rvol = m_VolList[rec_indx];
+            
+            if ((rvol.OIDStart() <= oid) &&
+                (rvol.OIDEnd()   >  oid)) {
+                
+                vol_oid = oid - rvol.OIDStart();
+                
+                return rvol.Vol();
+            }
+        }
+        
         for(Uint4 index = 0; index < m_VolList.size(); index++) {
             if ((m_VolList[index].OIDStart() <= oid) &&
                 (m_VolList[index].OIDEnd()   >  oid)) {
@@ -55,6 +71,7 @@ public:
                 m_RecentVol = index;
                 
                 vol_oid = oid - m_VolList[index].OIDStart();
+                
                 return m_VolList[index].Vol();
             }
         }
@@ -226,6 +243,17 @@ private:
         {
         }
         
+        // We do not delete the volume in a destructor.  This allows
+        // us to put elements into a vector without using CRef<>s.
+        
+        void Free()
+        {
+            if (m_Vol) {
+                delete m_Vol;
+                m_Vol = 0;
+            }
+        }
+        
         void SetStartEnd(Uint4 start)
         {
             m_OIDStart = start;
@@ -267,12 +295,12 @@ private:
         
         CSeqDBVol * Vol(void)
         {
-            return m_Vol.GetNonNullPointer();
+            return m_Vol;
         }
         
         const CSeqDBVol * Vol(void) const
         {
-            return m_Vol.GetNonNullPointer();
+            return m_Vol;
         }
         
         string GetSimpleMask(void) const
@@ -292,7 +320,7 @@ private:
         }
         
     private:
-        CRef<CSeqDBVol> m_Vol;
+        CSeqDBVol     * m_Vol;
         Uint4           m_OIDStart;
         Uint4           m_OIDEnd;
         bool            m_AllOIDs;

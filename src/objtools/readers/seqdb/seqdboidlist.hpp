@@ -73,9 +73,20 @@ private:
     void x_SetBit  (TOID   oid);
     bool x_FindNext(TOID & oid) const;
     
-    void x_Setup(const string & filename, bool use_mmap);
-    void x_Setup(CSeqDBVolSet & volset, bool use_mmap);
-    void x_OrFileBits(const string & mask_fname, Uint4 oid_start, Uint4 oid_end, bool use_mmap);
+    void x_Setup(const string & filename,
+                 bool use_mmap,
+                 CSeqDBLockHold & locked);
+    
+    void x_Setup(CSeqDBVolSet & volset,
+                 bool use_mmap,
+                 CSeqDBLockHold & locked);
+    
+    void x_OrFileBits(const string & mask_fname,
+                      Uint4 oid_start,
+                      Uint4 oid_end,
+                      bool use_mmap,
+                      CSeqDBLockHold & locked);
+    
     void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);
     
     // Data

@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 /// mmapped vs opened files.  This will probably become a thin wrapper
 /// around the Atlas functionality, which is fine.
 
-class CSeqDBRawFile : public CObject {
+class CSeqDBRawFile {
 public:
     CSeqDBRawFile(CSeqDBAtlas & atlas)
         : m_Atlas(atlas)
@@ -63,25 +63,55 @@ public:
     }
     
     /// MMap or Open a file.
-    bool Open(const string & name);
+    bool Open(const string & name)
+    {
+        bool success = m_Atlas.GetFileSize(name, m_Length);
+        
+        if (success) {
+            m_FileName = name;
+        }
+        
+        return success;
+    }
     
-    const char * GetRegion(Uint8 start, Uint8 end) const;
+    const char * GetRegion(CSeqDBMemLease & lease, Uint8 start, Uint8 end, CSeqDBLockHold & locked) const
+    {
+        _ASSERT(! m_FileName.empty());
+        _ASSERT(start    <  end);
+        _ASSERT(m_Length >= end);
+        
+        m_Atlas.Lock(locked);
+        
+        if (! lease.Contains(start, end)) {
+            m_Atlas.GetRegion(lease, m_FileName, start, end);
+        }
+        
+        return lease.GetPtr(start);
+    }
+    
+    const char * GetRegion(Uint8 start, Uint8 end, CSeqDBLockHold & locked) const
+    {
+        _ASSERT(! m_FileName.empty());
+        _ASSERT(start    <  end);
+        _ASSERT(m_Length >= end);
+        
+        return m_Atlas.GetRegion(m_FileName, start, end, locked);
+    }
     
     Uint8 GetFileLength(void) const
     {
         return m_Length;
     }
     
-    Uint8 Swap8(const char * input) const;
-    
-    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4  * z) const;
-    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint8  * z) const;
-    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, string * z) const;
+    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4  * z, CSeqDBLockHold & locked) const;
+    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint8  * z, CSeqDBLockHold & locked) const;
+    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, string * z, CSeqDBLockHold & locked) const;
     
     bool ReadBytes(CSeqDBMemLease & lease,
                    char           * buf,
                    Uint8            start,
-                   Uint8            end) const;
+                   Uint8            end,
+                   CSeqDBLockHold & locked) const;
     
 private:
     CSeqDBAtlas    & m_Atlas;
@@ -89,25 +119,6 @@ private:
     Uint8            m_Length;
 };
 
-
-inline Uint8 CSeqDBRawFile::Swap8(const char * input) const
-{
-    unsigned char * bytes = (unsigned char *) input;
-        
-    Uint8 value = bytes[7];
-    for(Int4 i = 7; i >= 0; i--) {
-        value += bytes[i];
-        if(i) value <<= 8;
-    }
-        
-    value = 0;
-    for(Int4 i = 7; i >= 0; i--) {
-        value += bytes[i];
-        if(i) value <<= 8;
-    }
-        
-    return value;
-}
 
 
 /// Database component file
@@ -136,27 +147,33 @@ public:
     }
     
 protected:
-    const char * x_GetRegion(Uint4 start, Uint4 end) const
+    const char * x_GetRegion(Uint4 start, Uint4 end, bool keep, CSeqDBLockHold & locked) const
     {
-        return m_File.GetRegion(start, end);
+        m_Atlas.Lock(locked);
+        
+        if (! m_Lease.Contains(start, end)) {
+            m_Atlas.GetRegion(m_Lease, m_FileName, start, end);
+        }
+        
+        if (keep) {
+            m_Lease.IncrementRefCnt();
+        }
+        
+        return m_Lease.GetPtr(start);
     }
     
     void x_ReadBytes(char           * buf,
                      Uint4            start,
-                     Uint4            end) const
+                     Uint4            end,
+                     CSeqDBLockHold & locked) const
     {
-        CSeqDBMemLease lease(m_Atlas);
-        m_Atlas.Dup(lease, m_Lease);
-        
-        m_File.ReadBytes(lease, buf, start, end);
-        
-        m_Atlas.Dup(m_Lease, lease);
+        m_File.ReadBytes(m_Lease, buf, start, end, locked);
     }
     
     template<class T>
-    Uint8 x_ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, T * value)
+    Uint8 x_ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, T * value, CSeqDBLockHold & locked)
     {
-        return m_File.ReadSwapped(lease, offset, value);
+        return m_File.ReadSwapped(lease, offset, value, locked);
     }
     
     char x_GetSeqType(void) const
@@ -201,28 +218,31 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 
 class CSeqDBIdxFile : public CSeqDBExtFile {
 public:
-    CSeqDBIdxFile(CSeqDBAtlas   & atlas,
-                  const string  & dbname,
-                  char            prot_nucl);
+    CSeqDBIdxFile(CSeqDBAtlas    & atlas,
+                  const string   & dbname,
+                  char             prot_nucl);
     
     virtual ~CSeqDBIdxFile()
     {
     }
     
     inline bool
-    GetSeqStartEnd(Uint4   oid,
-                   Uint8 & start,
-                   Uint8 & end) const;
+    GetSeqStartEnd(Uint4            oid,
+                   Uint8          & start,
+                   Uint8          & end,
+                   CSeqDBLockHold & locked) const;
     
     inline bool
     GetHdrStartEnd(Uint4   oid,
                    Uint8 & start,
-                   Uint8 & end) const;
+                   Uint8 & end,
+                   CSeqDBLockHold & locked) const;
     
     inline bool
     GetAmbStartEnd(Uint4   oid,
                    Uint8 & start,
-                   Uint8 & end) const;
+                   Uint8 & end,
+                   CSeqDBLockHold & locked) const;
     
     char GetSeqType(void) const
     {
@@ -254,7 +274,7 @@ public:
         return m_MaxLen;
     }
     
-    void UnLease(void)
+    void UnLease()
     {
         m_HdrLease.Clear();
         m_SeqLease.Clear();
@@ -262,10 +282,12 @@ public:
     }
     
 private:
-    Uint4 x_GetOffset(CSeqDBMemLease & lease, Uint8 offset, int oid) const
+    Uint4 x_GetOffset(CSeqDBMemLease & lease, Uint8 offset, int oid, CSeqDBLockHold & locked) const
     {
         Uint4 begin_pos = offset + (oid * 4);
         Uint4 end_pos = begin_pos + 4;
+        
+        m_Atlas.Lock(locked);
         
         if (! lease.Contains(begin_pos, end_pos)) {
             m_Atlas.GetRegion(lease, m_FileName, begin_pos, end_pos);
@@ -273,21 +295,6 @@ private:
         
 	const Uint4 * loc = (const Uint4 *)(lease.GetPtr(begin_pos));
 	return SeqDB_GetStdOrd( loc );
-    }
-    
-    Uint4 x_GetSeqOffset(CSeqDBMemLease & lease, int oid) const
-    {
-        return x_GetOffset(lease, m_SeqOffset, oid);
-    }
-    
-    Uint4 x_GetHdrOffset(CSeqDBMemLease & lease, int oid) const
-    {
-        return x_GetOffset(lease, m_HdrOffset, oid);
-    }
-    
-    Uint4 x_GetAmbCharOffset(CSeqDBMemLease & lease, int oid) const
-    {
-        return x_GetOffset(lease, m_AmbCharOffset, oid);
     }
     
     // Swapped data from .[pn]in file
@@ -315,48 +322,21 @@ private:
 
 
 bool
-CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint8 & start, Uint8 & end) const
+CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint8 & start, Uint8 & end, CSeqDBLockHold & locked) const
 {
-    CSeqDBMemLease lease(m_Atlas);
-    m_Atlas.Dup(lease, m_SeqLease);
+    start = x_GetOffset(m_HdrLease, m_HdrOffset, oid, locked);
+    end   = x_GetOffset(m_HdrLease, m_HdrOffset, oid + 1, locked);
     
-    start = x_GetSeqOffset(lease, oid);
-    
-    if (kSeqTypeProt == x_GetSeqType()) {
-        end = x_GetSeqOffset(lease, oid + 1);
-    } else {
-        end = x_GetAmbCharOffset(lease, oid);
-    }
-    
-    m_Atlas.Dup(m_SeqLease, lease);
     return true;
 }
 
 bool
-CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint8 & start, Uint8 & end) const
+CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint8 & start, Uint8 & end, CSeqDBLockHold & locked) const
 {
-    CSeqDBMemLease lease(m_Atlas);
-    m_Atlas.Dup(lease, m_HdrLease);
-    
-    start = x_GetHdrOffset(lease, oid);
-    end   = x_GetHdrOffset(lease, oid + 1);
-    
-    m_Atlas.Dup(m_HdrLease, lease);
-    return true;
-}
-
-bool
-CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint8 & start, Uint8 & end) const
-{
-    CSeqDBMemLease lease(m_Atlas);
-    m_Atlas.Dup(lease, m_AmbLease);
-    
     if (kSeqTypeNucl == x_GetSeqType()) {
-        start = x_GetAmbCharOffset(lease, oid);
-        end   = x_GetSeqOffset(lease, oid + 1);
-        
+        start = x_GetOffset(m_AmbLease, m_AmbCharOffset, oid, locked);
+        end   = x_GetOffset(m_AmbLease, m_SeqOffset, oid + 1, locked);
         if (start <= end) {
-            m_Atlas.Dup(m_AmbLease, lease);
             return true;
         }
     }
@@ -380,14 +360,15 @@ public:
     
     void ReadBytes(char           * buf,
                    Uint8            start,
-                   Uint8            end) const
+                   Uint8            end,
+                   CSeqDBLockHold & locked) const
     {
-        x_ReadBytes(buf, start, end);
+        x_ReadBytes(buf, start, end, locked);
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end) const
+    const char * GetRegion(Uint4 start, Uint4 end, bool keep, CSeqDBLockHold & locked) const
     {
-        return x_GetRegion(start, end);
+        return x_GetRegion(start, end, keep, locked);
     }
 };
 
@@ -407,16 +388,34 @@ public:
     
     void ReadBytes(char           * buf,
                    Uint8            start,
-                   Uint8            end) const
+                   Uint8            end,
+                   CSeqDBLockHold & locked) const
     {
-        x_ReadBytes(buf, start, end);
+        x_ReadBytes(buf, start, end, locked);
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end) const
+    const char * GetRegion(Uint4 start, Uint4 end, CSeqDBLockHold & locked) const
     {
-        return x_GetRegion(start, end);
+        return x_GetRegion(start, end, false, locked);
     }
 };
+
+bool
+CSeqDBIdxFile::GetSeqStartEnd(Uint4            oid,
+                              Uint8          & start,
+                              Uint8          & end,
+                              CSeqDBLockHold & locked) const
+{
+    start = x_GetOffset(m_SeqLease, m_SeqOffset, oid, locked);
+    
+    if (kSeqTypeProt == x_GetSeqType()) {
+        end = x_GetOffset(m_SeqLease, m_SeqOffset, oid + 1, locked);
+    } else {
+        end = x_GetOffset(m_SeqLease, m_AmbCharOffset, oid, locked);
+    }
+    
+    return true;
+}
 
 
 END_NCBI_SCOPE
