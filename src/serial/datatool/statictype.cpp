@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/02/22 15:07:34  gouriano
+* Corrected writing element's default value when generating XML schema
+*
 * Revision 1.38  2005/02/09 14:35:20  gouriano
 * Corrected formatting when writing DTD
 *
@@ -271,6 +274,11 @@ void CStaticDataType::PrintXMLSchemaElementWithTag(
     }
     if (!use.empty()) {
         out << " use=\"" << use << "\"";
+    } else {
+        const CDataMember* mem = GetDataMember();
+        if (mem && mem->Optional() && mem->GetDefault()) {
+            out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+        }
     }
     if (!contents.empty()) {
         out << ">\n" << contents << tagClose << ">\n";
@@ -431,7 +439,7 @@ const char* CRealDataType::GetXMLContents(void) const
 
 void CRealDataType::GetXMLSchemaContents(string& type, string& contents) const
 {
-    type = "xs:decimal";
+    type = "xs:double";
     contents.erase();
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/02/22 15:07:34  gouriano
+* Corrected writing element's default value when generating XML schema
+*
 * Revision 1.29  2005/02/09 14:33:57  gouriano
 * Corrected formatting when writing DTD
 *
@@ -303,7 +306,14 @@ void CEnumDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
             use = "optional";
         }
     }
-    out << "        <xs:attribute name=\"" << value << "\" use=\"" << use << "\">\n";
+    out << "        <xs:attribute name=\"" << value << "\" use=\"" << use << "\"";
+    if (!inAttlist) {
+        const CDataMember* mem = GetDataMember();
+        if (mem && mem->Optional() && mem->GetDefault()) {
+            out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+        }
+    }
+    out << ">\n";
     out << "          <xs:simpleType>\n";
     out << "            <xs:restriction base=\"xs:string\">\n";
 

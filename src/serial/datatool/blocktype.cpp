@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2005/02/22 15:07:34  gouriano
+* Corrected writing element's default value when generating XML schema
+*
 * Revision 1.56  2005/02/09 16:05:10  gouriano
 * Corrected schema generation for elements with mixed content
 *
@@ -648,9 +651,6 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
             out << "      <xs:element ref=\"" << member_name << "\"";
             if ( member.Optional()) {
                 out << " minOccurs=\"0\"";
-                if (member.GetDefault()) {
-                    out << " default=\"" << member.GetDefault()->GetXmlString() << "\"";
-                }
             }
             if (uniseq) {
                 out << " maxOccurs=\"unbounded\"";
