@@ -172,12 +172,28 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     }
     avg_tran = sum_tran / double(log.size());
 
+
+    double slow_median = (avg + max_time) / 2.0;
+    unsigned slow_cnt = 0;
+    ITERATE(vector<STransactionInfo>, it, log) {
+        double t = it->connection_time + it->transaction_time;
+        if (t >= slow_median) {
+            ++slow_cnt;
+        }
+    }
+
+
     NcbiCout << "Sum, Conn, Trans" << endl;
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
     NcbiCout << sum << ", " << sum_conn << ", " << sum_tran << NcbiEndl;
     NcbiCout << "Avg, Conn, Trans" << endl;
     NcbiCout << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
-    NcbiCout << "Max(slowest) turn around time:" << max_time << NcbiEndl;
+
+    NcbiCout << "Max(slowest) turnaround time:" << max_time 
+             << "  " << slow_cnt << " transactions in [" 
+             << max_time << " .. " << slow_median << "]" 
+             << " out of " << log.size()
+             << NcbiEndl;
 }
 
 
@@ -540,6 +556,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/12/27 17:47:50  kuznets
+ * Improved statistics
+ *
  * Revision 1.19  2004/12/27 17:00:27  kuznets
  * + worst case statistics
  *
