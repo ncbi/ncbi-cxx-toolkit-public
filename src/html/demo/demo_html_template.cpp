@@ -160,7 +160,7 @@ class CNumAdderCtx
 public:
     // Constructor.
     CNumAdderCtx(CHTMLPage* page)
-        : m_Page(page), m_Counter(0), m_Sum(0)
+        : m_Counter(0), m_Sum(0), m_Page(page)
         { srand((unsigned int)time(0)); }
 
     // Generate random number by module 10.
@@ -323,6 +323,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 18:49:38  ivanov
+ * Get rid of compilation warning
+ *
  * Revision 1.2  2004/02/02 15:14:26  ivanov
  * Lines wrapped at 79th column
  *
