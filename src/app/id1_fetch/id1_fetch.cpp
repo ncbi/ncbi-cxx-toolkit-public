@@ -113,9 +113,6 @@ private:
 
     void WriteFastaIDs     (const list< CRef< CSeq_id > >& ids);
 
-    void WriteFastaEntry   (const CBioseq& bioseq);
-    void WriteFastaEntry   (const CSeq_entry& seq);
-
     void WriteHistoryTable (const CID1server_back& id1_reply);
 
     void WriteQualityScores(const CID1server_back& id1_reply);
@@ -572,16 +569,18 @@ bool CId1FetchApp::LookUpGI(int gi)
             WriteFastaIDs( handle.GetBioseq().GetId());
         }
     } else if (fmt == "fasta"  &&  lt == "entry") {
+        CFastaOstream out(*m_OutputFile);
+        out.SetFlag(CFastaOstream::eAssembleParts);
         if (!use_objmgr) {
-            WriteFastaEntry(id1_reply.GetGotseqentry());
+            out.Write(id1_reply.SetGotseqentry());
         } else {
-            WriteFastaEntry(handle.GetTopLevelSeqEntry());
+            out.Write(handle);
         }
     } else if (fmt == "fasta"  &&  lt == "state") {
         int state = id1_reply.GetGistate();
         *m_OutputFile << "gi = " << gi << ", states: ";
         switch (state & 0xff) {
-        case  0: *m_OutputFile << "NONEXISTANT"; break; // was "NOT EXIST"
+        case  0: *m_OutputFile << "NONEXISTENT"; break; // was "NOT EXIST"
         case 10: *m_OutputFile << "DELETED";     break;
         case 20: *m_OutputFile << "REPLACED";    break;
         case 40: *m_OutputFile << "LIVE";        break;
@@ -735,49 +734,6 @@ void CId1FetchApp::WriteFastaIDs(const list< CRef< CSeq_id > >& ids)
 }
 
 
-void CId1FetchApp::WriteFastaEntry(const CBioseq& bioseq)
-{
-    CBioseq_Handle handle =
-        m_Scope->GetBioseqHandle(*(bioseq.GetId().front()));
-
-    // Print the identifier(s) and description.
-    *m_OutputFile << '>';
-    WriteFastaIDs(bioseq.GetId());
-    if (bioseq.IsSetDescr()) {
-        iterate (CSeq_descr::Tdata, it2, bioseq.GetDescr().Get()) {
-            if ((*it2)->IsName()) {
-                *m_OutputFile << ' ' << (*it2)->GetName();
-                break;
-            }
-        }
-    }
-    *m_OutputFile << ' ' << sequence::GetTitle(handle);
-
-    // Now print the actual sequence in an appropriate ASCII format.
-    {{
-        CSeqVector vec = handle.GetSeqVector();
-        vec.SetIupacCoding();
-        for (TSeqPos pos = 0;  pos < vec.size();  ++pos) {
-            if (pos % 70 == 0)
-                *m_OutputFile << NcbiEndl;
-            *m_OutputFile << vec[pos];
-        }
-        *m_OutputFile << NcbiEndl;
-    }}
-}
-
-void CId1FetchApp::WriteFastaEntry(const CSeq_entry& seq)
-{
-    if (seq.IsSeq()) {
-        WriteFastaEntry(seq.GetSeq());
-    } else {
-        iterate ( list< CRef< CSeq_entry > >, it, seq.GetSet().GetSeq_set()) {
-            WriteFastaEntry(**it);
-        }
-    }
-}
-
-
 // for formatting text
 class CTextColumn
 {
@@ -911,6 +867,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/08/27 21:41:53  ucko
+* Use CFastaOstream rather than custom code.
+* Fix spelling of NONEXISTENT.
+*
 * Revision 1.37  2002/08/14 20:28:02  ucko
 * Fix behavior when given a list of IDs.
 *
