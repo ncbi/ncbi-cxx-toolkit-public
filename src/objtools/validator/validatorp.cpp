@@ -1672,9 +1672,12 @@ void CValidError_imp::AddBioseqWithNoMolinfo(const CBioseq& seq)
 }
 
 
-void CValidError_imp::AddProtWithoutFullRef(const CBioseq& seq)
+void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 {
-    m_ProtWithNoFullRef.push_back(CConstRef<CBioseq>(&seq));
+    const CSeq_feat* cds = GetCDSForProduct(seq);
+    if ( cds != 0 ) {
+        m_ProtWithNoFullRef.push_back(CConstRef<CSeq_feat>(cds));
+    }
 }
 
 
@@ -2449,6 +2452,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/04/27 18:41:05  shomrat
+* ProtWithoutFullRef report CDS feature instead of protein bioseq
+*
 * Revision 1.48  2004/04/23 16:25:30  shomrat
 * Stop using CBioseq_Handle deprecated interface
 *

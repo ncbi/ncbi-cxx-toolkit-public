@@ -85,6 +85,7 @@ class CCdregion;
 class CRNA_ref;
 class CImp_feat;
 class CSeq_literal;
+class CBioseq_Handle;
 
 
 BEGIN_SCOPE(validator)
@@ -430,7 +431,7 @@ public:
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
     void AddBioseqWithNoMolinfo(const CBioseq& seq);
-    void AddProtWithoutFullRef(const CBioseq& seq);
+    void AddProtWithoutFullRef(const CBioseq_Handle& seq);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
     void ReportProtWithoutFullRef(void);
@@ -515,14 +516,14 @@ private:
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
     vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
-    // prot bioseqs without a full reference
-    vector< CConstRef<CBioseq> > m_ProtWithNoFullRef;
+    // prot bioseqs without a full reference (reporting cds feature)
+    vector< CConstRef<CSeq_feat> >  m_ProtWithNoFullRef;
     // Bioseqs without pubs (should be considered only if m_NoPubs is false)
-    vector< CConstRef<CBioseq> > m_BioseqWithNoPubs;
+    vector< CConstRef<CBioseq> >    m_BioseqWithNoPubs;
     // Bioseqs without source (should be considered only if m_NoSource is false)
-    vector< CConstRef<CBioseq> > m_BioseqWithNoSource;
+    vector< CConstRef<CBioseq> >    m_BioseqWithNoSource;
     // Bioseqs without MolInfo
-    vector< CConstRef<CBioseq> > m_BioseqWithNoMolinfo;
+    vector< CConstRef<CBioseq> >    m_BioseqWithNoMolinfo;
     // Map features to the annotation they are packed in.
     map < const CSeq_feat*, const CSeq_annot* > m_FeatAnnotMap;
 
@@ -685,7 +686,7 @@ private:
     void CheckTpaHistory(const CBioseq& seq);
 
     TSeqPos GetDataLen(const CSeq_inst& inst);
-    bool CdError(const CBioseq& seq);
+    bool CdError(const CBioseq_Handle& bsh);
     bool IsMrna(const CBioseq_Handle& bsh);
     bool IsPrerna(const CBioseq_Handle& bsh);
     size_t NumOfIntervals(const CSeq_loc& loc);
@@ -927,6 +928,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/04/27 18:40:50  shomrat
+* ProtWithoutFullRef report CDS feature instead of protein bioseq
+*
 * Revision 1.61  2004/04/23 16:26:35  shomrat
 * Use sequence::GetNucleotideParent() instead of GetNucGivenProt()
 *
