@@ -148,7 +148,7 @@ string SeqDB_FindBlastDBPath(const string & dbname,
 {
     // Local directory first;
     
-    string pathology(".:");
+    string pathology(CDir::GetCwd() + ":");
     
     // Then, BLASTDB;
     
