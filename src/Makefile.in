@@ -42,7 +42,7 @@ compress_tests:
 	for f in $(bindir)/*; do \
 	   case "`basename $$f`" in \
 	      blast | blast2seq | datatool | gbench* | id1_fetch | idwwwget \
-	        | lbsmc | one2all | testipub | test_mghbn ) ;; \
+	      | lbsmc | one2all | testipub | test_checksum | test_mghbn ) ;; \
 	      *test* | *demo* | *sample*) gzip -Nf $$f ;; \
 	      *) test "$(DEBUG_SFX)" = "Release" || gzip -Nf $$f ;; \
 	   esac; \
