@@ -285,13 +285,15 @@ string JoinNoRedund(const list<string>& l, const string& delim)
 
 
 // Validate the correct format of an accession string.
-bool ValidateAccession(const string& acc)
+bool IsValidAccession(const string& acc)
 {
+    static const size_t kMaxAccLength = 16;
+
     if ( acc.empty() ) {
         return false;
     }
 
-    if ( acc.length() >= 16 ) {
+    if ( acc.length() >= kMaxAccLength ) {
         return false;
     }
 
@@ -642,6 +644,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/11/15 20:05:03  shomrat
+* ValidateAccession -> IsValidAccession
+*
 * Revision 1.15  2004/10/05 15:50:00  shomrat
 * Use more efficeint NStr::EndsWith
 *

@@ -110,7 +110,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 
     if ( xtra != 0 ) {
         ITERATE (list<string>, it, *xtra) {
-            if ( ValidateAccession(*it) ) {
+            if ( IsValidAccession(*it) ) {
                 m_ExtraAccessions.push_back(*it);
             }
         }
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/11/15 20:04:50  shomrat
+* ValidateAccession -> IsValidAccession
+*
 * Revision 1.6  2004/09/01 15:33:44  grichenk
 * Check strand in GetStart and GetEnd. Circular length argument
 * made optional.

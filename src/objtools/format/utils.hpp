@@ -69,7 +69,7 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
 
 
-bool ValidateAccession(const string& accn);
+bool IsValidAccession(const string& accn);
 void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
 
 struct SDeltaSeqSummary
@@ -119,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/11/15 20:05:06  shomrat
+* ValidateAccession -> IsValidAccession
+*
 * Revision 1.13  2004/10/18 18:52:26  shomrat
 * Removed FindBestId
 *
