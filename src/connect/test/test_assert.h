@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/03/21 22:02:35  lavr
+ * Provide assert() for MSVC
+ *
  * Revision 6.3  2002/01/20 04:56:27  vakatov
  * Use #_MSC_VER rather than #include <ncbiconf.h> as the latter does not
  * exist when the code is compiled for the C Toolkit
@@ -52,9 +55,21 @@
 #  undef  NDEBUG
 #endif 
 
-#if !defined(_DEBUG)  &&  !defined(_MSC_VER)
-#  define _DEBUG
-#endif 
+#if !defined(_DEBUG)
+#  if !defined(_MSC_VER)
+#    define _DEBUG
+#  elif !defined(assert)
+#    include <stdio.h>
+#    include <stdlib.h>
+#    define assert(expr) if (expr) {                          \
+                             fprintf(stderr,                  \
+                                     "Assertion failed: %s"   \
+                                     ", %s line %d\n", #expr, \
+                                     __FILE__, __LINE__);     \
+                             abort();                         \
+                         }
+#  endif
+#endif
 
 
 #endif  /* CORELIB_TEST___TEST_ASSERT__H */
