@@ -1,5 +1,5 @@
-#ifndef NCBIDLL__HPP
-#define NCBIDLL__HPP
+#ifndef CORELIB___NCBIDLL__HPP
+#define CORELIB___NCBIDLL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,40 +26,15 @@
  *
  * ===========================================================================
  *
- * Author: Vladimir Ivanov
+ * Author:  Denis Vakatov, Vladimir Ivanov
  *
- * File Description:
- *    Portable DLL handling
+ * File Description:   Portable DLL handling.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.1  2002/01/15 19:06:07  ivanov
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
 
-#if defined NCBI_OS_MSWIN
-#   include <windows.h>
-#elif defined NCBI_OS_UNIX
-#   include <dlfcn.h>
-#else
-#   pragma message("Class CDll defined only for MS Windows and UNIX platforms.")
-#endif
-
-
 BEGIN_NCBI_SCOPE
-
-
-// Dll handle type definition
-#if defined NCBI_OS_MSWIN
-    typedef HMODULE TDllHandle;
-#elif defined NCBI_OS_UNIX
-    typedef void * TDllHandle;
-#endif
 
 
 //////////////////////////////////////////////////////////////////
@@ -68,29 +43,39 @@ BEGIN_NCBI_SCOPE
 //
 //////////////////////////////////////////////////////////////////
 //
-//  Order to search DLL:
 //
-//  These search rules will only be applied to path names that do not contain an
-//  embedded '/' or '\' symbols.
+//  The DLL name is considered basename if it does not contain
+//  embedded '/', '\', or ':' symbols.
+//  Also, in this case, if the DLL name does not match pattern
+//  "lib*.so", "lib*.so.*", or "*.dll" (and if eExactName flag not passed
+//  to the constructor), then it will be automagically transformed:
+//    UNIX:        <name>  --->  lib<name>.so
+//    MS Windows:  <name>  --->  <name>.dll
 //
-//  WINDOWS:
-//     If no file name extension is specified for DLL name, the default library extension 
-//     ".dll" is appended. 
-//     1) The directory from which the application loaded;
-//     2) The current directory; 
-//     3) The Windows system directory;
-//     4) The Windows directory;
-//     5) The directories that are listed in the PATH environment variable. 
-//  UNIX:
-//     1) The directories that are listed in the LD_LIBRARY_PATH environment variable
-//        (analyzed once at process startup);
-//     2) The directory from which the application loaded.
+//  If the DLL is specified by its basename, then it will be searched
+//  (after the transformation described above) in the following locations:
+//    UNIX:
+//      1) the directories that are listed in the LD_LIBRARY_PATH environment
+//         variable (analyzed once at the process startup);
+//      2) the directory from which the application loaded;
+//      3) hard-coded (e.g. with `ldconfig' on Linux) paths.
+//    MS Windows:
+//      1) the directory from which the application is loaded;
+//      2) the current directory; 
+//      3) the Windows system directory;
+//      4) the Windows directory;
+//      5) the directories that are listed in the PATH environment variable.
 //
+
+// fwd-decl of struct containing OS-specific DLL handle
+struct SDllHandle;
+
 
 class CDll
 {
 public:
-    // The exception to be thrown by this class
+    // All methods of this class (but destructor) throw exception on error!
+    // The exception specific for this class:
     class CException : public runtime_error {
     public:
         CException(const string& message) : runtime_error(message) {}
@@ -101,18 +86,32 @@ public:
         eLoadNow,   // immediately in the constructor
         eLoadLater  // later, using method Load()
     };
-
     // If to unload DLL in the destructor
     enum EAutoUnload {
-        eAutoUnload,   //  do     unload DLL in the destructor
-        eNoAutoUnload  //  do not unload DLL in the destructor
+        eAutoUnload,   // do     unload DLL in the destructor
+        eNoAutoUnload  // do not unload DLL in the destructor
+    };
+    // If to transform the DLL basename (like:  <name>  --->  lib<name>.so)
+    enum EBasename {
+        eBasename,  // treate as basename (if it looks like one)
+        eExactName  // use the name "as is" (no prefix/suffix adding)
     };
 
-
-    // On error, an exception will be thrown
-    CDll(const string& dll_name,
+    // The "name" can be either DLL basename (see explanations above) or
+    // an absolute file path.
+    CDll(const string& name,
          ELoad         when_to_load = eLoadNow,
-         EAutoUnload   auto_unload  = eNoAutoUnload);
+         EAutoUnload   auto_unload  = eNoAutoUnload,
+         EBasename     treate_as    = eBasename);
+
+    // The absolute file path to the DLL will be formed of the
+    // "path" and "name" in the following way:
+    //  UNIX:    <path>/lib<name>.so ;  <path>/<name> if "name" is not basename
+    //  MS-Win:  <path>\<name>.dll   ;  <path>\<name> if "name" is not basename
+    CDll(const string& path, const string& name,
+         ELoad         when_to_load = eLoadNow,
+         EAutoUnload   auto_unload  = eNoAutoUnload,
+         EBasename     treate_as    = eBasename);
 
     // Unload DLL if constructor was passed "eAutoUnload".
     // Destructor does not throw any exceptions.
@@ -121,11 +120,9 @@ public:
     // Load DLL (name specified in the constructor's "dll_name").
     // If Load() is called more than once without calling Unload() in between,
     // then it will do nothing.
-    // On error, an exception will be thrown.
     void Load(void);
 
     // Unload DLL. Do nothing (and no error) if the DLL is not loaded.
-    // On error, an exception will be thrown.
     void Unload(void);
 
     // Find an entry point (e.g. a function) with name "name" in the DLL.
@@ -146,17 +143,36 @@ private:
     // Return the entry point's address on success, NULL on error.
     void* x_GetEntryPoint(const string& name, size_t pointer_size);
 
-    // Throw exception if error accrued
+    // Throw exception ('CException' with system-specific error message)
     void  x_ThrowException(const string& what);
 
-private:
-    string      m_Name;         // DLL name
-    TDllHandle  m_Handle;       // DLL handle
-    EAutoUnload m_AutoUnload;   // Flag of automaticaly DLL unload in the destructor
-};
+    // Initialize object (called from constructors)
+    void  x_Init(const string& path, const string& name, 
+                 ELoad       when_to_load, 
+                 EAutoUnload auto_unload, 
+                 EBasename   treate_as);
 
+private:
+    string      m_Name;        // DLL name
+    SDllHandle* m_Handle;      // DLL handle
+    bool        m_AutoUnload;  // if to unload the DLL in the destructor
+};
 
 
 END_NCBI_SCOPE
 
-#endif  /* NCBIDLL__HPP */
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2002/01/16 18:48:13  ivanov
+ * Added new constructor and related "basename" rules for DLL names. Polished source code.
+ *
+ * Revision 1.1  2002/01/15 19:06:07  ivanov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
+
+#endif  /* CORELIB___NCBIDLL__HPP */

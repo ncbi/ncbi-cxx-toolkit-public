@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/16 18:47:44  ivanov
+ * Added new constructor and related "basename" rules for DLL names. Polished source code.
+ *
  * Revision 6.1  2002/01/15 19:09:20  ivanov
  * Initial revision
  *
@@ -55,11 +58,8 @@ USING_NCBI_SCOPE;
 
 static void s_TEST_SimpleDll(void)
 {
-#if defined NCBI_OS_MSWIN
-    CDll dll("./test_dll.dll", CDll::eLoadLater);
-#elif defined NCBI_OS_UNIX
-    CDll dll("./libtest_dll.so", CDll::eLoadLater);
-#endif
+    CDll dll("./","test_dll", CDll::eLoadLater);
+
     // Load DLL
     dll.Load();
 

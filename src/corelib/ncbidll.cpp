@@ -23,49 +23,108 @@
  *
  * ===========================================================================
  *
- * Author: Vladimir Ivanov
+ * Author: Vladimir Ivanov, Denis Vakatov
  *
  * File Description:
  *   Portable DLL handling
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/16 18:48:57  ivanov
+ * Added new constructor and related "basename" rules for DLL names. Polished source code.
+ *
  * Revision 1.1  2002/01/15 19:05:28  ivanov
  * Initial revision
- *
  *
  * ===========================================================================
  */
 
 #include <corelib/ncbidll.hpp>
+#include <corelib/ncbifile.hpp>
+
+
+#if defined(NCBI_OS_MSWIN)
+#  include <windows.h>
+#elif defined(NCBI_OS_UNIX)
+#  include <dlfcn.h>
+#else
+#  error "Class CDll defined only for MS Windows and UNIX platforms"
+#endif
 
 
 BEGIN_NCBI_SCOPE
 
 
-CDll::CDll(const string& dll_name, ELoad when_to_load, EAutoUnload auto_unload)
-{
-    // Members initialization
-    m_Name = dll_name;
-    m_Handle = NULL;
-    m_AutoUnload = auto_unload;
+// Platform-dependent DLL handle type definition
+struct SDllHandle {
+#if defined(NCBI_OS_MSWIN)
+    HMODULE handle;
+#elif defined(NCBI_OS_UNIX)
+    void*   handle;
+#endif
+};
 
-    // Load DLL now if indicated
-    if ( when_to_load == eLoadNow ) {
-        Load();
-    }
+
+CDll::CDll(const string& name, ELoad when_to_load, EAutoUnload auto_unload,
+           EBasename treate_as)
+{
+    x_Init(kEmptyStr, name, when_to_load, auto_unload, treate_as);
+}
+
+
+CDll::CDll(const string& path, const string& name, ELoad when_to_load,
+           EAutoUnload auto_unload, EBasename treate_as)
+{
+    x_Init(path, name, when_to_load, auto_unload, treate_as);
 }
 
 
 CDll::~CDll() 
 {
     // Unload DLL automaticaly
-    if ( m_AutoUnload == eAutoUnload ) {
+    if ( m_AutoUnload ) {
         try {
             Unload();
-        } catch( CException& ) {
-            // not process
+        } catch(CException& _DEBUG_ARG(e)) {
+            _TRACE(string("CDll::~CDll()  ") + e.what());
         }
+    }
+    delete m_Handle;
+}
+
+
+void CDll::x_Init(const string& path, const string& name, ELoad when_to_load, 
+           EAutoUnload  auto_unload, EBasename treate_as)
+{
+    // Init members
+    m_Handle = 0;
+    m_AutoUnload = auto_unload == eAutoUnload;
+
+    string x_name = name;
+#if defined(NCBI_OS_MSWIN)
+    NStr::ToLower(x_name);
+#endif
+    // Process DLL name
+    if (treate_as == eBasename  &&  
+        name.find_first_of(":/\\") == NPOS &&
+#if defined(NCBI_OS_MSWIN)
+        !CDirEntry::MatchesMask(name.c_str(),"*.dll")
+#elif defined(NCBI_OS_UNIX)
+        !CDirEntry::MatchesMask(name.c_str(),"lib*.so") &&
+        !CDirEntry::MatchesMask(name.c_str(),"lib*.so.*")
+#endif
+        ) {
+        // "name" is basename
+#if defined(NCBI_OS_MSWIN)
+        x_name = x_name + ".dll";
+#elif defined(NCBI_OS_UNIX)
+        x_name = "lib" + x_name + ".so";
+#endif
+    }
+    m_Name = CDirEntry::ConcatPath(path, x_name);  
+    // Load DLL now if indicated
+    if (when_to_load == eLoadNow) {
+        Load();
     }
 }
 
@@ -73,79 +132,86 @@ CDll::~CDll()
 void CDll::Load(void)
 {
     // DLL is already loaded
-    if ( m_Handle ) return;
+    if ( m_Handle ) {
+        return;
+    }
     // Load DLL
-#if defined NCBI_OS_MSWIN
-    if ( (m_Handle = LoadLibrary(m_Name.c_str())) != NULL ) {
-        return;
-    }
-#elif defined NCBI_OS_UNIX
-    if ( (m_Handle = dlopen(m_Name.c_str(), RTLD_LAZY | RTLD_GLOBAL)) != NULL ) {
-        return;
-    }
+#if defined(NCBI_OS_MSWIN)
+    HMODULE handle = LoadLibrary(m_Name.c_str());
+#elif defined(NCBI_OS_UNIX)
+    void* handle = dlopen(m_Name.c_str(), RTLD_LAZY | RTLD_GLOBAL);
 #endif
-    x_ThrowException("Load error");
+    if ( !handle ) {
+        x_ThrowException("Load error");
+    }
+    m_Handle = new SDllHandle;
+    m_Handle->handle = handle;
 }
 
 
 void CDll::Unload(void)
 {
     // DLL is not loaded
-    if ( !m_Handle ) return;
+    if ( !m_Handle ) {
+        return;
+    }
     // Unload DLL
-#if defined NCBI_OS_MSWIN
-    if ( FreeLibrary(m_Handle) ) {
-        return;
-    }
-#elif defined NCBI_OS_UNIX
-    if ( dlclose(m_Handle) == 0 ) {
-        return;
-    }
+#if defined(NCBI_OS_MSWIN)
+    BOOL unloaded = FreeLibrary(m_Handle->handle);
+#elif defined(NCBI_OS_UNIX)
+    bool unloaded = dlclose(m_Handle->handle) == 0;
 #endif
-    x_ThrowException("Unload error");
+    if ( !unloaded ) {
+        x_ThrowException("Unload error");
+    }
+
+    delete m_Handle;
+    m_Handle = 0;
 }
 
 
 void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
 {
     // Check pointer size
-    if ( pointer_size != sizeof(void*)) {
-        throw CException("CDll: GetEntryPoint(): incorrect entry pointer size");
+    if (pointer_size != sizeof(void*)) {
+        throw CException("CDll: GetEntryPoint():  incorrect entry ptr size");
     }
+
     // If DLL is not yet loaded
     if ( !m_Handle ) {
         Load();
     }
+
     // Return address of function
-#if defined NCBI_OS_MSWIN
-    return GetProcAddress(m_Handle, name.c_str());
-#elif defined NCBI_OS_UNIX
-    return dlsym(m_Handle, name.c_str());
+#if defined(NCBI_OS_MSWIN)
+    return GetProcAddress(m_Handle->handle, name.c_str());
+#elif defined(NCBI_OS_UNIX)
+    return dlsym(m_Handle->handle, name.c_str());
 #endif
 }
 
 
 void CDll::x_ThrowException(const string& what)
 {
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     char* ptr = NULL;
-    FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                   FORMAT_MESSAGE_FROM_SYSTEM | 
-                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                   NULL, GetLastError(), 
-                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                   (LPTSTR) &ptr, 0, NULL);
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                  FORMAT_MESSAGE_FROM_SYSTEM | 
+                  FORMAT_MESSAGE_IGNORE_INSERTS,
+                  NULL, GetLastError(), 
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  (LPTSTR) &ptr, 0, NULL);
     string errmsg = ptr ? ptr : "unknown reason";
     LocalFree(ptr);
-
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
     char* errmsg = dlerror();
     if ( !errmsg ) {
         errmsg = "unknown reason";
     }
 #endif
+
     // Throw exception
-    throw CException("CDll: " + what + ": "+ errmsg);
+    throw CException("CDll: " + what + ":  " + errmsg);
 }
 
 
