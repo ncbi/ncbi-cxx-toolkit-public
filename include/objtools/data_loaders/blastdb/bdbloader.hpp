@@ -84,13 +84,6 @@ public:
     
     virtual ~CBlastDbDataLoader(void);
     
-    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle  & idh,
-                                    const SRequestDetails & details)
-    {
-        // Without this wrapper, the base class version is hidden.
-        return CDataLoader::GetRecords(idh, details);
-    }
-    
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -135,6 +128,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.12  2004/10/25 16:53:37  vasilche
+ * No need to reimplement GetRecords as method name conflict is resolved.
+ *
  * Revision 1.11  2004/10/21 22:46:54  bealer
  * - Unhide inherited method.
  *
