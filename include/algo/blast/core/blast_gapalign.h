@@ -125,12 +125,30 @@ BlastHSPListPtr BlastHSPListNew(void);
 /** Deallocate memory for the HSP list */
 BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list);
 
+/** Mega BLAST function performing gapped alignment: 
+ *  Sorts initial HSPs by diagonal; 
+ *  For each HSP:
+ *    - Removes HSP if it is included in another already extended HSP;
+ *    - If required, performs ungapped extension;
+ *    - Performs greedy gapped extension;
+ *    - Saves qualifying HSPs with gapped information into an HSP list 
+ *      structure.
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param gap_align A placeholder for gapped alignment information and 
+ *        score block. [in] [out]
+ * @param score_options Options related to scoring alignments [in]
+ * @param ext_params Options related to alignment extension [in]
+ * @param hit_params Options related to saving HSPs [in]
+ * @param init_hitlist Contains all the initial hits [in]
+ * @param hsp_list_ptr List of HSPs with full extension information [out]
+*/
 Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
 			    BLAST_SequenceBlkPtr subject,
 			    BlastGapAlignStructPtr gap_align,
 			    BlastScoringOptionsPtr score_options, 
 			    BlastExtensionParametersPtr ext_params,
-			    BlastHitSavingOptionsPtr hit_options,
+			    BlastHitSavingParametersPtr hit_params,
 			    BlastInitHitListPtr init_hitlist,
 			    BlastHSPListPtr PNTR hsp_list_ptr);
 
@@ -145,7 +163,7 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options Options related to scoring [in]
  * @param ext_params Options and parameters related to extensions [in]
- * @param hit_options Options related to saving hits [in]
+ * @param hit_params Options related to saving hits [in]
  * @param init_hitlist List of initial HSPs (offset pairs with additional 
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
@@ -156,7 +174,7 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
 		      BlastGapAlignStructPtr gap_align,
 		      BlastScoringOptionsPtr score_options, 
 		      BlastExtensionParametersPtr ext_params,
-		      BlastHitSavingOptionsPtr hit_options,
+		      BlastHitSavingParametersPtr hit_params,
 		      BlastInitHitListPtr init_hitlist,
 		      BlastHSPListPtr PNTR hsp_list_ptr);
 
