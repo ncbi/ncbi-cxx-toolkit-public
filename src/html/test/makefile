@@ -71,6 +71,12 @@ purify:
 	rm -f $(EXE)
 	$(MAKE) debug "CCC=purify CC"
 
+testcase:
+	./test > nocmdline.out
+	diff nocmdline.out nocmdline.out2
+	./test docsum > docsum.out
+	diff docsum.out docsum.out2
+
 .KEEP_STATE:
 	
 
