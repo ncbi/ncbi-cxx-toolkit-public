@@ -50,6 +50,9 @@
 #include <corelib/ncbimisc.hpp>
 #include <algo/blast/core/blast_psi.h>
 #include <algo/blast/api/blast_exception.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objmgr/scope.hpp>
 
 class CPssmCreate;   // forward declaration of unit test class
 
@@ -57,12 +60,9 @@ BEGIN_NCBI_SCOPE
 
 // Forward declarations in objects scope
 BEGIN_SCOPE(objects)
-    class CScope;
+    class CDense_seg;
     class CSeq_loc;
     class CScore;
-    class CDense_seg;
-    class CSeq_id;
-    class CSeq_align_set;
 END_SCOPE(objects)
 
 // specialization of CDeleter template for PsiAlignmentData structure
@@ -179,6 +179,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/06/16 18:44:00  ucko
+ * Make sure to supply full declarations for C(Const)Refs' parameters,
+ * as forward declarations are not sufficient for all compilers.
+ *
  * Revision 1.4  2004/06/16 12:17:54  camacho
  * Fix for unit tests
  *
