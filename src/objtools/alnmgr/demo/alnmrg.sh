@@ -7,7 +7,7 @@ tmp_out=$test_dir/out.asn
 return_status=0
 
 run_prg() {
-  $CHECK_EXEC alnmrg -in $test_dir/$1.asn $2 > $tmp_out
+  $CHECK_EXEC alnmrg -in $test_dir/$1.asn -asnoutb $tmp_out $2
   if test "$?" != 0; then
       echo "FAILURE:"
       return_status=1
