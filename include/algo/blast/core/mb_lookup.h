@@ -44,9 +44,9 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#include <blast_def.h>
-#include <blast_options.h>
-#include <aa_lookup.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/aa_lookup.h>
 
 /* The fraction of sites that must have at least one hit to not use 
     PV_ARRAY. */

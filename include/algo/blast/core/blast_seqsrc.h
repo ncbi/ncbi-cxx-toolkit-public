@@ -32,7 +32,7 @@
 
 #ifndef BLAST_SEQSRC_H
 #define BLAST_SEQSRC_H
-#include <blast_def.h>
+#include <algo/blast/core/blast_def.h>
 
 #ifdef __cplusplus
 extern "C" {

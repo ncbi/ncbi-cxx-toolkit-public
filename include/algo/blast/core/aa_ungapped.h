@@ -29,9 +29,9 @@
 #ifndef AA_UNGAPPED__H
 #define AA_UNGAPPED__H
 
-#include <blast_def.h>
-#include <aa_lookup.h>
-#include <blast_extend.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/blast_extend.h>
 
 #ifdef _cplusplus
 extern "C" {

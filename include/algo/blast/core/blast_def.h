@@ -39,9 +39,9 @@ Detailed Contents:
 #ifndef __BLAST_DEF__
 #define __BLAST_DEF__
 
-#include <ncbi_std.h>
+#include <algo/blast/core/ncbi_std.h>
 #ifdef THREADS_IMPLEMENTED
-#include <ncbithr.h>
+#include <algo/blast/core/ncbithr.h>
 #endif
 
 #ifdef __cplusplus

@@ -26,8 +26,8 @@
 
 */
 
-#include <blast_def.h>
-#include <blast_options.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
 
 #ifndef AA_LOOKUP__H
 #define AA_LOOKUP__H

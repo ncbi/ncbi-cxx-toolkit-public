@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.23  2003/08/11 14:57:16  dondosha
+* Added algo/blast/core path to all #included headers
+*
 * Revision 1.22  2003/08/01 22:33:32  dondosha
 * Made BlastScoreBlkGappedFill static
 *
@@ -179,14 +182,14 @@ $Revision$
 extern "C" {
 #endif
 
-#include <blast_def.h>
-#include <blast_options.h>
-#include <blastkar.h>
-#include <mb_lookup.h>
-#include <aa_lookup.h>
-#include <na_lookup.h>
-#include <blast_extend.h>
-#include <blast_gapalign.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blastkar.h>
+#include <algo/blast/core/mb_lookup.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/na_lookup.h>
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_gapalign.h>
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
  * that is dependent on the ASN.1 structures.

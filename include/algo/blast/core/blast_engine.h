@@ -41,12 +41,12 @@ Contents: High level BLAST functions
 extern "C" {
 #endif
 
-#include <blast_def.h>
-#include <aa_lookup.h>
-#include <blast_extend.h>
-#include <blast_gapalign.h>
-#include <blast_hits.h>
-#include <blast_seqsrc.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_seqsrc.h>
 
 #define OFFSET_ARRAY_SIZE 4096
 

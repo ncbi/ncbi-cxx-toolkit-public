@@ -42,8 +42,8 @@ Contents: Functions to do gapped alignment with traceback and/or convert
 extern "C" {
 #endif
 
-#include <blast_seqsrc.h>
-#include <blast_hits.h>
+#include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_hits.h>
 
 /** Given the preliminary alignment results from a database search, redo 
  * the gapped alignment with traceback, if it has not yet been done.

@@ -43,7 +43,7 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#include <blast_def.h>
+#include <algo/blast/core/blast_def.h>
 
 /** Different types of sequence encodings for sequence retrieval from the 
  * BLAST database 

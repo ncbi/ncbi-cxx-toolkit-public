@@ -41,7 +41,7 @@ Contents: Structures definitions from gapxdrop.h in ncbitools
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <blast_def.h>
+#include <algo/blast/core/blast_def.h>
 
 #define GAPALIGN_SUB ((Uint1)0)  /*op types within the edit script*/
 #define GAPALIGN_INS ((Uint1)1)

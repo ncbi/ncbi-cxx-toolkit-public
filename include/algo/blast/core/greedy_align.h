@@ -37,7 +37,7 @@ Contents: Copy of mbalign.h from ncbitools library
 #ifndef _GREEDY_H_
 #define _GREEDY_H_
 
-#include <blast_def.h>
+#include <algo/blast/core/blast_def.h>
 
 #ifdef __cplusplus
 extern "C" {

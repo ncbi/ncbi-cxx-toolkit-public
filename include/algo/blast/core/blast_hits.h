@@ -41,8 +41,8 @@ Contents: Structures used for saving BLAST hits
 extern "C" {
 #endif
 
-#include <blast_seqsrc.h>
-#include <blast_gapalign.h>
+#include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_gapalign.h>
 
 /** The structure to contain all BLAST results for one query sequence */
 typedef struct BlastHitList {

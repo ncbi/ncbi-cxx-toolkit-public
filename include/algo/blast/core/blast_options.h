@@ -42,9 +42,9 @@ Detailed Contents:
 #ifndef __BLASTOPTIONS__
 #define __BLASTOPTIONS__
 
-#include <blast_def.h>
-#include <blast_message.h>
-#include <blastkar.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_message.h>
+#include <algo/blast/core/blastkar.h>
 
 #ifdef __cplusplus
 extern "C" {

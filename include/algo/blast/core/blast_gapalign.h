@@ -38,11 +38,11 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 #ifndef __BLAST_GAPALIGN__
 #define __BLAST_GAPALIGN__
 
-#include <blast_def.h>
-#include <blast_options.h>
-#include <blast_extend.h>
-#include <gapinfo.h>
-#include <greedy_align.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/gapinfo.h>
+#include <algo/blast/core/greedy_align.h>
 
 #ifdef __cplusplus
 extern "C" {

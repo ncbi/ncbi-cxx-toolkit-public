@@ -41,7 +41,7 @@ Contents: Functions to link HSPs using sum statistics
 extern "C" {
 #endif
 
-#include <blast_hits.h>
+#include <algo/blast/core/blast_hits.h>
 
 #define BLAST_SMALL_GAPS 0
 #define BLAST_LARGE_GAPS 1

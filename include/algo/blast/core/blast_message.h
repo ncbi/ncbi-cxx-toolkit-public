@@ -41,7 +41,7 @@ Detailed Contents:
 #ifndef __BLASTMESSAGES__
 #define __BLASTMESSAGES__
 
-#include <blast_def.h>
+#include <algo/blast/core/blast_def.h>
 
 #ifdef __cplusplus
 extern "C" {

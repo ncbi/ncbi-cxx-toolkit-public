@@ -40,6 +40,9 @@
 * -------  ----------  -----------------------------------------------------
 *
 * $Log$
+* Revision 1.2  2003/08/11 14:57:16  dondosha
+* Added algo/blast/core path to all #included headers
+*
 * Revision 1.1  2003/08/02 16:32:11  camacho
 * Moved ncbimath.h -> ncbi_math.h
 *
@@ -75,10 +78,7 @@
 * ==========================================================================
 */
 
-/*
-#include <ncbi.h>
-*/
-#include "ncbi_std.h" 
+#include <algo/blast/core/ncbi_std.h> 
 
 #ifndef _NCBIMATH_
 #define _NCBIMATH_
