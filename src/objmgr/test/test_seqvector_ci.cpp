@@ -112,7 +112,7 @@ void CTestApp::x_TestIterate(CSeqVector_CI& vit,
         start = vit.GetPos();
     }
 
-    cout << "Testing iterator, " << start << " - " << stop << "... ";
+    // cout << "Testing iterator, " << start << " - " << stop << "... ";
 
     if (start > stop) {
         // Moving down
@@ -143,7 +143,7 @@ void CTestApp::x_TestIterate(CSeqVector_CI& vit,
         }
     }
 
-    cout << "Done" << endl;
+    // cout << "OK" << endl;
 }
 
 
@@ -158,7 +158,7 @@ void CTestApp::x_TestGetData(CSeqVector_CI& vit,
     if (start > stop)
         swap(start, stop);
 
-    cout << "Testing GetSeqData(" << start << ", " << stop << ")... " << endl;
+    // cout << "Testing GetSeqData(" << start << ", " << stop << ")... " << endl;
 
     string buf;
     vit.GetSeqData(start, stop, buf);
@@ -174,7 +174,7 @@ void CTestApp::x_TestGetData(CSeqVector_CI& vit,
         cout << endl << "ERROR: Test failed -- invalid data" << endl;
         throw runtime_error("Test failed");
     }
-    cout << "Done" << endl;
+    // cout << "OK" << endl;
 }
 
 
@@ -187,7 +187,7 @@ void CTestApp::x_TestVector(TSeqPos start,
     if (stop >= m_Vect.size()) {
         stop = m_Vect.size() - 1;
     }
-    cout << "Testing vector[], " << start << " - " << stop << "... ";
+    // cout << "Testing vector[], " << start << " - " << stop << "... ";
 
     if (start > stop) {
         // Moving down
@@ -211,7 +211,7 @@ void CTestApp::x_TestVector(TSeqPos start,
         }
     }
 
-    cout << "Done" << endl;
+    // cout << "OK" << endl;
 }
 
 
@@ -266,7 +266,7 @@ int CTestApp::Run(void)
         cout << endl << "ERROR: Test failed -- got non-empty data" << endl;
         throw runtime_error("Empty range test failed");
     }
-    cout << "Done" << endl;
+    cout << "OK" << endl;
 
     // stop > length test
     cout << "Testing past-end read (stop > size)... ";
@@ -276,7 +276,7 @@ int CTestApp::Run(void)
         cout << "ERROR: GetSeqData() failed -- invalid data" << endl;
         throw runtime_error("Past-end read test failed");
     }
-    cout << "Done" << endl;
+    cout << "OK" << endl;
 
     buf = ""; // .erase();
 
@@ -294,14 +294,15 @@ int CTestApp::Run(void)
         cout << "ERROR: Invalid data length" << endl;
         throw runtime_error("Basic iterator test failed");
     }
-    cout << "Done" << endl;
+    cout << "OK" << endl;
 
-    // Partial retrieval with GetSeqData() test, limit to 10000 bases
-    cout << "Testing partial retrieval" << endl;
-    for (int i = max<int>(1, m_Vect.size() / 2 - 10000);
+    // Partial retrieval with GetSeqData() test, limit to 2000 bases
+    cout << "Testing partial retrieval... ";
+    for (int i = max<int>(1, m_Vect.size() / 2 - 2000);
         i < m_Vect.size() / 2; ++i) {
         x_TestGetData(vit, i, m_Vect.size() - i);
     }
+    cout << "OK" << endl;
 
     // Butterfly test
     cout << "Testing butterfly reading... ";
@@ -311,7 +312,7 @@ int CTestApp::Run(void)
             throw runtime_error("Butterfly read test failed");
         }
     }
-    cout << "Done" << endl;
+    cout << "OK" << endl;
 
     TSeqPos pos1 = 0;
     TSeqPos pos2 = 0;
@@ -338,7 +339,7 @@ int CTestApp::Run(void)
     }}
 
     // ========= Iterator tests ==========
-    cout << "===== Testing iterator - single segment =====" << endl;
+    cout << "Testing iterator - single segment... ";
     // Single segment test, start from the middle of the first segment
     vit = CSeqVector_CI(m_Vect, (pos1 + pos2) / 2);
     // Back to the first segment start
@@ -347,10 +348,11 @@ int CTestApp::Run(void)
     x_TestIterate(vit, kInvalidSeqPos, pos2);
     // Back to the first segment start again
     x_TestIterate(vit, kInvalidSeqPos, pos1);
+    cout << "OK" << endl;
 
     // Try to run multi-segment tests
     if ( pos3 ) {
-        cout << "===== Testing iterator - multiple segments =====" << endl;
+        cout << "Testing iterator - multiple segments... ";
         // Start from the middle of the second segment
         vit = CSeqVector_CI(m_Vect, (pos2 + pos3) / 2);
         // Back to the first segment start
@@ -359,10 +361,11 @@ int CTestApp::Run(void)
         x_TestIterate(vit, kInvalidSeqPos, pos4 ? pos4 : pos3);
         // Back to the first segment start again
         x_TestIterate(vit, kInvalidSeqPos, pos1);
+        cout << "OK" << endl;
     }
 
     // ========= GetSeqData() tests ==========
-    cout << "===== Testing GetSeqData() - single segment =====" << endl;
+    cout << "Testing GetSeqData() - single segment... ";
     // Single segment test, start from the middle of the first segment
     vit = CSeqVector_CI(m_Vect, (pos1 + pos2) / 2);
     // Back to the first segment start
@@ -371,10 +374,11 @@ int CTestApp::Run(void)
     x_TestGetData(vit, kInvalidSeqPos, pos2);
     // Back to the first segment start again
     x_TestGetData(vit, kInvalidSeqPos, pos1);
+    cout << "OK" << endl;
 
     // Try to run multi-segment tests
     if ( pos3 ) {
-        cout << "===== Testing GetSeqData() - multiple segments =====" << endl;
+        cout << "Testing GetSeqData() - multiple segments... ";
         // Start from the middle of the second segment
         vit = CSeqVector_CI(m_Vect, (pos2 + pos3) / 2);
         // Back to the first segment start
@@ -383,10 +387,11 @@ int CTestApp::Run(void)
         x_TestGetData(vit, kInvalidSeqPos, pos4 ? pos4 : pos3);
         // Back to the first segment start again
         x_TestGetData(vit, kInvalidSeqPos, pos1);
+        cout << "OK" << endl;
     }
 
     // ========= CSeqVector[] tests ==========
-    cout << "===== Testing operator[] - single segment =====" << endl;
+    cout << "Testing operator[] - single segment... ";
     // Single segment test, start from the middle of the first segment
     // Back to the first segment start
     x_TestVector((pos1 + pos2) / 2, pos1);
@@ -394,10 +399,11 @@ int CTestApp::Run(void)
     x_TestVector(pos1, pos2);
     // Back to the first segment start again
     x_TestVector(pos2, pos1);
+    cout << "OK" << endl;
 
     // Try to run multi-segment tests
     if ( pos3 ) {
-        cout << "===== Testing operator[] - multiple segments =====" << endl;
+        cout << "Testing operator[] - multiple segments... ";
         // Start from the middle of the second segment
         // Back to the first segment start
         x_TestVector((pos2 + pos3) / 2, pos1);
@@ -405,26 +411,30 @@ int CTestApp::Run(void)
         x_TestVector(pos1, pos4 ? pos4 : pos3);
         // Back to the first segment start again
         x_TestVector(pos4 ? pos4 : pos3, pos1);
+        cout << "OK" << endl;
     }
 
     // Random access tests
-    cout << "===== Testing random access =====" << endl;
+    cout << "Testing random access" << endl;
     srand((unsigned)time( NULL ));
     vit = CSeqVector_CI(m_Vect);
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 50; ++i) {
         TSeqPos start = random(m_Vect.size());
         TSeqPos stop = random(m_Vect.size());
         switch (i % 3) {
         case 0:
-            cout << i << " - using iterator" << endl;
+            cout << i << " - using iterator, "
+                 << start << " - " << stop << endl;
             x_TestIterate(vit, start, stop);
             break;
         case 1:
-            cout << i << " - using GetSeqData()" << endl;
+            cout << i << " - using GetSeqData()"
+                 << start << " - " << stop << endl;
             x_TestGetData(vit, start, stop);
             break;
         case 2:
-            cout << i << " - using operator[]" << endl;
+            cout << i << " - using operator[]"
+                 << start << " - " << stop << endl;
             x_TestVector(start, stop);
             break;
         }
@@ -453,6 +463,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/26 17:02:52  grichenk
+* Simplified output, decreased number of cycles.
+*
 * Revision 1.1  2003/06/24 19:50:02  grichenk
 * Added test for CSeqVector_CI
 *
