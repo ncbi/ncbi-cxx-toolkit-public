@@ -31,12 +31,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/02 22:10:15  sandomir
+* CNcbiApplication added; netest sample updated
+*
 * Revision 1.1  1998/11/02 15:31:56  sandomir
 * Portable exception classes
 *
 * ===========================================================================
 */
 
+#include <ncbiapp.hpp>
 #include <ncbiexcp.hpp>
 #include <iostream>
 
@@ -48,11 +52,29 @@
 #include <windows.h>
 #endif
 
-int main()
+class CMyApplication : public CNcbiApplication
 {
+public:
+
+  CMyApplication( int argc, char* argv[] ) throw()
+    : CNcbiApplication( argc, argv ) {}
+
+  virtual void Exit( void ); // cleanup
+
+  virtual int Run();
+
+};
+
+void CMyApplication::Exit()
+{
+  int x = 0;
+  x = 1 / x;
+}
+
+int CMyApplication::Run()
+{
+  
   try {
-    
-    CNcbiOSException::SetDefHandler();
     
 #ifdef UNIX
     raise( SIGILL );
@@ -60,12 +82,6 @@ int main()
     RaiseException( STATUS_ACCESS_VIOLATION, 0, 0, 0 );
 #endif
     
-  } catch( CNcbiMemException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( CNcbiFPEException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( CNcbiSystemException e ) {
-    std::cout << e.what() << std::endl;
   } catch( CNcbiOSException e ) {
     std::cout << e.what() << std::endl;
   } catch( std::runtime_error e ) {
@@ -73,20 +89,17 @@ int main()
   } catch( std::exception e ) {
     std::cout << e.what() << std::endl;
   }
-
-try {
-     
+  
+  std::cout << "try 1 OK" << std::endl;
+  
+  try {
+    
 #ifdef UNIX   
     raise( SIGFPE );
 #elif WIN32    
     RaiseException( STATUS_BREAKPOINT, 0, 0, 0 );
 #endif    
-  } catch( CNcbiMemException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( CNcbiFPEException e ) {
-    std::cout << e.what() << std::endl;
-  } catch( CNcbiSystemException e ) {
-    std::cout << e.what() << std::endl;
+
   } catch( CNcbiOSException e ) {
     std::cout << e.what() << std::endl;
   } catch( std::runtime_error e ) {
@@ -94,11 +107,13 @@ try {
   } catch( std::exception e ) {
     std::cout << e.what() << std::endl;
   }
-
-try {
-   
+  
+  std::cout << "try 2 OK" << std::endl;
+  
+  try {
+    
 #ifdef UNIX     
-  // this signal is blocked
+    // this signal is blocked
     raise( SIGHUP );
 #elif WIN32    
     RaiseException( STATUS_INTEGER_OVERFLOW, 0, 0, 0 );
@@ -106,14 +121,37 @@ try {
   } catch( CNcbiOSException e ) {
     std::cout << e.what() << std::endl;
   } catch( std::runtime_error e ) {
-    std::cout << e.what() << std::endl;
+        std::cout << e.what() << std::endl;
   } catch( std::exception e ) {
     std::cout << e.what() << std::endl;
   }
-
+  
+  std::cout << "try 3 OK" << std::endl;
+  
   std::cout << "Done" << std::endl;
-
+  
   return 0;
+}
+
+int main( int argc, char* argv[] )
+{
+
+  CMyApplication app( argc, argv );
+  int res = 1;
+  
+  try {
+    app.Init();
+    res = app.Run();
+    app.Exit();
+  } catch( CNcbiOSException e ) {
+    std::cout << "Failed " << e.what() << std::endl;
+    return res;
+  } catch( ... ) {
+    std::cout << "Failed" << std::endl;
+    return res;
+  }
+
+  return res;
 }
 
     
