@@ -50,9 +50,6 @@
 /* sysinfo() -- Linux-like, with 1 arg */
 #undef HAVE_SYSINFO_1
 
-/* getloadavg() */
-#undef HAVE_GETLOADAVG
-
 /* sysmp() */
 #undef HAVE_SYSMP
 
