@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/10/04 19:10:35  thiessen
+* fix root tax node name
+*
 * Revision 1.4  2002/10/04 18:45:28  thiessen
 * updates to taxonomy viewer
 *
@@ -235,7 +238,6 @@ static void AddNode(TaxonomyTreeMap *taxTree, const Sequence *seq,
     node.parentTaxid = parent;
     node.name = (taxData->IsSetOrg() && taxData->GetOrg().IsSetTaxname()) ?
         taxData->GetOrg().GetTaxname() : std::string("(error getting node name!)");
-    if (node.name.size() == 0) node.name = "Global Root";
     if (seq) {
         node.identifiers[seq->identifier]++;
         node.nDescendentLeaves++;
@@ -281,6 +283,7 @@ void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent, const BlockMultip
             }
         } while (taxid > 1);    // 1 is root tax node
     }
+    taxTree[1].name = "Global Root";
     TESTMSG("apparent # leaves in tree: " << taxTree[1].nDescendentLeaves);
     TaxonomyTreeNode *node = &(taxTree[1]);
     while (node->childTaxids.size() == 1) node = &(taxTree[node->childTaxids.begin()->first]);
