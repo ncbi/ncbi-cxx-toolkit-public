@@ -93,9 +93,6 @@ public:
     void Close(void);
     void ResetLocalHooks(void);
 
-    bool DetectLoops(void) const;
-    void DetectLoops(bool detectLoops);
-
     // when enabled, stream verifies data on output
     // and throws CUnassignedMember exception
 
@@ -526,6 +523,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2004/04/30 13:28:40  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.84  2004/03/10 23:18:11  gorelenk
 * Added prefix NCBI_XSERIAL_EXPORT for class CObjectOStream::CharBlock .
 *

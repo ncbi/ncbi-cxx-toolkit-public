@@ -167,8 +167,6 @@ public:
 
     TMemberIndex GetMemberIndex(void) const;
 
-    bool Optional(void) const;
-
     CObjectTypeInfoMI& operator++(void);
     CObjectTypeInfoMI& operator=(const CObjectTypeInfo& info);
 
@@ -229,7 +227,6 @@ class NCBI_XSERIAL_EXPORT CObjectTypeInfoVI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
 public:
-    CObjectTypeInfoVI(void);
     CObjectTypeInfoVI(const CObjectTypeInfo& info);
     CObjectTypeInfoVI(const CObjectTypeInfo& info, TMemberIndex index);
 
@@ -421,9 +418,6 @@ public:
     CConstObjectInfoCV(const CConstObjectInfo& object);
     CConstObjectInfoCV(const CConstObjectInfo& object, TMemberIndex index);
 
-    bool operator==(const CConstObjectInfoCV& var) const;
-    bool operator!=(const CConstObjectInfoCV& var) const;
-
     const CConstObjectInfo& GetChoiceObject(void) const;
     
     CConstObjectInfoCV& operator=(const CConstObjectInfo& object);
@@ -453,8 +447,6 @@ public:
     CObjectInfo GetVariant(void) const;
     CObjectInfo operator*(void) const;
 
-    void Erase(void);
-
 private:
     pair<TObjectPtr, TTypeInfo> GetVariantPair(void) const;
 
@@ -475,6 +467,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/04/30 13:28:39  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.10  2004/01/05 14:24:08  gouriano
 * Added possibility to set serialization hooks by stack path
 *

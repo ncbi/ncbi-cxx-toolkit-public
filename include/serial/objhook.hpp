@@ -148,8 +148,8 @@ public:
     
     virtual void SkipObject(CObjectIStream& stream,
                             const CObjectTypeInfo& type) = 0;
-    void DefaultSkip(CObjectIStream& stream,
-                     const CObjectTypeInfo& type);
+//    void DefaultSkip(CObjectIStream& stream,
+//                     const CObjectTypeInfo& type);
 };
 
 class NCBI_XSERIAL_EXPORT CSkipClassMemberHook : public CObject
@@ -161,8 +161,8 @@ public:
                                  const CObjectTypeInfoMI& member) = 0;
     virtual void SkipMissingClassMember(CObjectIStream& stream,
                                         const CObjectTypeInfoMI& member);
-    void DefaultSkip(CObjectIStream& stream,
-                     const CObjectTypeInfoMI& member);
+//    void DefaultSkip(CObjectIStream& stream,
+//                     const CObjectTypeInfoMI& member);
 };
 
 class NCBI_XSERIAL_EXPORT CSkipChoiceVariantHook : public CObject
@@ -172,8 +172,8 @@ public:
 
     virtual void SkipChoiceVariant(CObjectIStream& stream,
                                    const CObjectTypeInfoCV& variant) = 0;
-    void DefaultSkip(CObjectIStream& stream,
-                     const CObjectTypeInfoCV& variant);
+//    void DefaultSkip(CObjectIStream& stream,
+//                     const CObjectTypeInfoCV& variant);
 };
 
 
@@ -424,6 +424,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/04/30 13:28:40  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.14  2003/08/11 15:25:50  grichenk
 * Added possibility to reset an object member from
 * a read hook (including non-optional members).

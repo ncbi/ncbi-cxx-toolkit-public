@@ -66,8 +66,6 @@ public:
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
     virtual void SkipAnyContentObject(void);
 
-    Uint1 ReadByte(void);
-    void ReadBytes(Uint1* bytes, unsigned size);
     EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
@@ -156,7 +154,7 @@ private:
     void SkipObjectPointer(void);
     void SkipBlock(void);
 
-public:
+private:
     // low level methods
     char GetChar(void);
     char PeekChar(void);
@@ -164,7 +162,7 @@ public:
     // parse methods
     char GetChar(bool skipWhiteSpace);
     char PeekChar(bool skipWhiteSpace);
-private:
+
     bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
     bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
@@ -219,6 +217,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/04/30 13:28:40  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.60  2004/03/05 20:28:37  gouriano
 * make it possible to skip unknown data fields
 *

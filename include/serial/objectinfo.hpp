@@ -108,7 +108,6 @@ public:
     // container interface
     // only when GetTypeFamily() == CTypeInfo::eTypeContainer
     CObjectTypeInfo GetElementType(void) const;
-    EContainerType GetContainerType(void) const;
 
     // class interface
     // only when GetTypeFamily() == CTypeInfo::eTypeClass
@@ -298,19 +297,10 @@ public:
     TObjectPtr GetObjectPtr(void) const;
     pair<TObjectPtr, TTypeInfo> GetPair(void) const;
 
-    // read
-    void Read(CObjectIStream& in);
-
     // primitive type interface
     void SetPrimitiveValueBool(bool value);
     void SetPrimitiveValueChar(char value);
 
-    void SetPrimitiveValueInt4(Int4 value);
-    void SetPrimitiveValueUint4(Uint4 value);
-    void SetPrimitiveValueInt8(Int8 value);
-    void SetPrimitiveValueUint8(Uint8 value);
-    void SetPrimitiveValueInt(int value);
-    void SetPrimitiveValueUInt(unsigned value);
     void SetPrimitiveValueLong(long value);
     void SetPrimitiveValueULong(unsigned long value);
 
@@ -352,6 +342,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/04/30 13:29:09  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.8  2004/01/05 14:24:08  gouriano
 * Added possibility to set serialization hooks by stack path
 *

@@ -108,7 +108,6 @@ public:
                                 ESerialDataFormat format);
 
     bool DetectLoops(void) const;
-    void DetectLoops(bool detectLoops);
 
     // when enabled, stream verifies data on input
     // and throws CSerialException with eFormatError err.code
@@ -323,7 +322,6 @@ public:
     };
 
     void SkipPointer(TTypeInfo declaredType);
-    void SkipObjectInfo(void);
 
     // low level readers:
     enum EFailFlags {
@@ -672,6 +670,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2004/04/30 13:28:40  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.102  2004/03/23 15:39:52  gouriano
 * Added setup options for skipping unknown data members
 *

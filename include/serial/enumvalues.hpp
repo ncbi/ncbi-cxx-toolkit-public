@@ -86,8 +86,6 @@ public:
     // otherwise, throws exception
     const string& FindName(TEnumValueType value, bool allowBadValue) const;
 
-    TTypeInfo GetTypeInfoForSize(size_t size, TEnumValueType /*dummy*/) const;
-
     const TNameToValue& NameToValue(void) const;
     const TValueToName& ValueToName(void) const;
 
@@ -115,6 +113,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/04/30 13:28:39  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.8  2003/04/15 14:15:10  siyan
 * Added doxygen support
 *

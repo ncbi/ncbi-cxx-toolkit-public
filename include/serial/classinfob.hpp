@@ -95,8 +95,6 @@ public:
     // finds type info (throws runtime_error if absent)
     static TTypeInfo GetClassInfoByName(const string& name);
     static TTypeInfo GetClassInfoById(const type_info& id);
-    static TTypeInfo GetClassInfoBy(const type_info& id,
-                                    void (*creator)(void));
 
     const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
 
@@ -155,6 +153,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/04/30 13:28:39  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.14  2003/04/15 14:14:58  siyan
 * Added doxygen support
 *

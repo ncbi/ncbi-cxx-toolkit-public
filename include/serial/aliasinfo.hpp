@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/04/30 13:28:39  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.5  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *
@@ -64,10 +67,6 @@ class NCBI_XSERIAL_EXPORT CAliasTypeInfo : public CPointerTypeInfo
 public:
     CAliasTypeInfo(const string& name, TTypeInfo type);
 
-    static TTypeInfo GetTypeInfo(TTypeInfo base);
-
-    TTypeInfo GetReferencedType(void) const;
-    
     bool IsDefault(TConstObjectPtr object) const;
     bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
                 ESerialRecursionMode how = eRecursive) const;

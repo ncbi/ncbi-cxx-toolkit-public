@@ -78,11 +78,9 @@ public:
         eNoFileHeader
     };
     // copy without source typename
-    void Copy(const CObjectTypeInfo& type, ENoFileHeader noFileHeader);
     void Copy(TTypeInfo type, ENoFileHeader noFileHeader);
 
     // copy object
-    void CopyObject(const CObjectTypeInfo& type);
     void CopyObject(TTypeInfo type);
 
     void CopyExternalObject(TTypeInfo type);
@@ -149,6 +147,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/04/30 13:28:39  gouriano
+* Remove obsolete function declarations
+*
 * Revision 1.14  2004/01/05 14:24:08  gouriano
 * Added possibility to set serialization hooks by stack path
 *
