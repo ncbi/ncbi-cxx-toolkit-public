@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/01/07 16:58:21  vakatov
+* CNcbiApplication::GetArgs() -- a clearer error message
+*
 * Revision 1.18  2001/05/17 14:50:13  lavr
 * Typos corrected
 *
@@ -246,7 +249,7 @@ inline const CNcbiArguments& CNcbiApplication::GetArguments(void) const {
 
 inline const CArgs& CNcbiApplication::GetArgs(void) const {
     if ( !m_Args.get() ) {
-        throw runtime_error("CNcbiApplication::GetArgs() -- unset args");
+        throw runtime_error("CNcbiApplication::GetArgs() -- unset args:  must call SetupArgDescriptions(....)");
     }
     return *m_Args;
 }
