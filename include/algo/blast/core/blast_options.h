@@ -611,7 +611,7 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parameters);
  * @param parameters Resulting parameters [out]
  */
 Int2 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
-        int handle_results(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
+        int (*handle_results)(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
                            VoidPtr, VoidPtr), 
         BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
         BlastHitSavingParametersPtr *parameters);

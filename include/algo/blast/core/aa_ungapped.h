@@ -212,7 +212,7 @@ Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
  * @return the score of the hsp.
  */
 
-Int4 BlastAaExtendTwoHit(BLAST_DiagTablePtr diag,
+Int4 BlastAaExtendTwoHit(const BLAST_DiagTablePtr diag,
 			 Int4 ** matrix,
                          const BLAST_SequenceBlkPtr subject,
                          const BLAST_SequenceBlkPtr query,

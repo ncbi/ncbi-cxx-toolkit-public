@@ -143,7 +143,7 @@ Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap, /* in: the LUT */
   * @param lut handle to lookup table structure [in/modified]
   */
   
-Int4 BlastAaLookupNew(LookupTableOptionsPtr opt, LookupTablePtr * lut);
+Int4 BlastAaLookupNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut);
 
 
 /** Create a new lookup table.
@@ -152,7 +152,7 @@ Int4 BlastAaLookupNew(LookupTableOptionsPtr opt, LookupTablePtr * lut);
   * @param is_protein boolean indicating protein or nucleotide [in]
   */
   
-Int4 LookupTableNew(LookupTableOptionsPtr opt, LookupTablePtr * lut, 
+Int4 LookupTableNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut, 
 		    Boolean is_protein);
 
 /** Index an array of queries.

@@ -208,7 +208,7 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
 /* Description in na_lookup.h */
 Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,  
+       Uint4Ptr q_offsets, Uint4Ptr s_offsets, const Int4 max_hits,  
        Int4Ptr end_offset)
 {
    MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup_wrap->lut;

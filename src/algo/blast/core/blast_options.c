@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.23  2003/06/04 20:16:51  coulouri
+ * make prototypes and definitions agree
+ *
  * Revision 1.22  2003/06/03 15:50:39  coulouri
  * correct function pointer argument
  *
@@ -1151,7 +1154,7 @@ BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options)
 }
 
 
-Int2 BLAST_InitDefaultOptions(Uint1 program_number,
+Int2 BLAST_InitDefaultOptions(const Uint1 program_number,
    LookupTableOptionsPtr PNTR lookup_options,
    QuerySetUpOptionsPtr PNTR query_setup_options, 
    BlastInitialWordOptionsPtr PNTR word_options,
