@@ -289,7 +289,8 @@ void CDense_seg::SwapRows(TDim row1, TDim row2)
 }
 
 
-void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
+void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
+                            bool ignore_strand)
 {
     if (loc.IsWhole()) {
         return;
@@ -458,14 +459,16 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
     } // while iterating through segments
     
     // finally, modify the strands if different
-    if (loc_plus != row_plus) {
-        if (!strands.size()) {
-            // strands do not exist, create them
-            SetStrands().resize(GetNumseg() * GetDim(), eNa_strand_plus);
-        }
-        for (seg = 0, idx = row;
-             seg < GetNumseg(); seg++, idx += numrows) {
-            SetStrands()[idx] = loc_plus ? eNa_strand_plus : eNa_strand_minus;
+    if ( !ignore_strand ) {
+        if (loc_plus != row_plus) {
+            if (!strands.size()) {
+                // strands do not exist, create them
+                SetStrands().resize(GetNumseg() * GetDim(), eNa_strand_plus);
+            }
+            for (seg = 0, idx = row;
+                 seg < GetNumseg(); seg++, idx += numrows) {
+                SetStrands()[idx] = loc_plus ? eNa_strand_plus : eNa_strand_minus;
+            }
         }
     }
 
@@ -481,6 +484,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/05/06 18:23:54  todorov
+* + optional ignore_strand param to RemapToLoc
+*
 * Revision 1.11  2004/03/10 13:04:18  dicuccio
 * Compilation fix for Win32: don't add char* and char*
 *

@@ -89,7 +89,9 @@ public:
     void SwapRows(TDim row1, TDim row2);
 
     /// Remap row coords according to a given seq-loc
-    void RemapToLoc(TDim row, const CSeq_loc& loc);
+    /// Optionally, ignore the strand of the loc
+    void RemapToLoc(TDim row, const CSeq_loc& loc,
+                    bool ignore_strand = false);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -183,6 +185,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/06 18:23:35  todorov
+* + optional ignore_strand param to RemapToLoc
+*
 * Revision 1.7  2004/04/09 14:31:35  dicuccio
 * Back out previous commit - don't automatically set bit 1 and 2 in Set()
 *
