@@ -348,14 +348,8 @@ void CBDB_BLOB_Cache::Store(const string& key,
 
         m_BlobDB.Insert(data, size);
 
-        m_AttrDB.key = key;
-        m_AttrDB.version = version;
-
-        CTime time_stamp(CTime::eCurrent);
-        m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
         m_AttrDB.overflow = 0;
 
-        m_AttrDB.UpdateInsert();
     } else { // overflow BLOB
         CNcbiOfstream     oveflow_file;
         string path;
@@ -371,7 +365,17 @@ void CBDB_BLOB_Cache::Store(const string& key,
             return;
         }
         oveflow_file.write((char*)data, size);
+        m_AttrDB.overflow = 1;
+
     }
+
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
+
+    CTime time_stamp(CTime::eCurrent);
+    m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+
+    m_AttrDB.UpdateInsert();
 }
 
 
@@ -835,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/10/20 20:34:03  kuznets
+ * Fixed bug with writing BLOB overflow attribute
+ *
  * Revision 1.16  2003/10/20 20:15:30  kuznets
  * Fixed bug with expiration time retrieval
  *
