@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2002/10/22 20:22:13  gouriano
+* undo the prev change, but reduce severity of the ERR_POST to Info
+*
 * Revision 1.92  2002/10/22 19:02:59  gouriano
 * commented out ERR_POST in CObjectIStream::SetFailFlags
 *
@@ -534,13 +537,11 @@ unsigned CObjectIStream::SetFailFlags(unsigned flags, const char* message)
 {
     unsigned old = m_Fail;
     m_Fail |= flags;
-/*
     if ( !old && flags ) {
         // first fail
-        ERR_POST("CObjectIStream: error at "<<
+        ERR_POST(Info << "CObjectIStream: error at "<<
                  GetPosition()<<": "<<GetStackTrace() << ": " << message);
     }
-*/
     return old;
 }
 
