@@ -173,6 +173,7 @@ protected:
     virtual I_DriverContext* Context() const;
     virtual void PushMsgHandler(CDBUserHandler* h);
     virtual void PopMsgHandler (CDBUserHandler* h);
+    virtual void Release();
 
     virtual ~CTL_Connection();
 
@@ -550,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 15:41:28  soussov
+ * CTL_Connection::Release() added
+ *
  * Revision 1.3  2001/09/26 23:23:28  vakatov
  * Moved the err.message handlers' stack functionality (generic storage
  * and methods) to the "abstract interface" level.

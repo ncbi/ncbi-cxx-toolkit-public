@@ -321,6 +321,18 @@ void CTL_Connection::PopMsgHandler(CDBUserHandler* h)
 }
 
 
+void CTL_Connection::Release()
+{
+    m_BR = 0;
+    // close all commands first
+    while(m_CMDs.NofItems() > 0) {
+        CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
+        delete pCmd;
+        m_CMDs.Remove((int) 0);
+    }
+}
+
+
 CTL_Connection::~CTL_Connection()
 {
     if (!Refresh()  ||  ct_close(m_Link, CS_UNUSED) != CS_SUCCEED) {
@@ -580,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 15:42:09  soussov
+ * CTL_Connection::Release() added
+ *
  * Revision 1.2  2001/09/25 15:05:43  soussov
  * fixed typo in CTL_SendDataCmd::SendChunk
  *
