@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/03/15 16:08:09  vakatov
+* Fixed "{...}" macros to "do {...} while(0)" lest it to mess up with "if"s
+*
 * Revision 1.9  1999/03/12 18:04:06  vakatov
 * Added ERR_POST macro to perform a plain "standard" error posting
 *
@@ -87,10 +90,10 @@ typedef enum {
 } EDiagSev;
 
 // Auxiliary macro for a "standard" error posting
-#define ERR_POST(message)  { \
+#define ERR_POST(message)  do { \
     NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Error); \
     _diag_ << message; \
-}
+} while(0)
 
 
 //////////////////////////////////////////////////////////////////

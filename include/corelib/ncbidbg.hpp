@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/03/15 16:08:09  vakatov
+* Fixed "{...}" macros to "do {...} while(0)" lest it to mess up with "if"s
+*
 * Revision 1.10  1999/01/07 16:15:09  vakatov
 * Explicitely specify "NCBI_NS_NCBI::" in the preprocessor macros
 *
@@ -69,22 +72,22 @@ BEGIN_NCBI_SCOPE
 #  define _FILE_LINE \
 "{" << __FILE__ << ":" << __LINE__ << "} "
 
-#  define _TRACE(message)  { \
+#  define _TRACE(message)  do { \
     NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace); \
     _diag_ << _FILE_LINE << message; \
-}
+} while(0)
 
-#  define _TROUBLE  { \
+#  define _TROUBLE  do { \
     NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
     _diag_ << _FILE_LINE << "Trouble!"; \
-}
-#  define _ASSERT(expr)  { \
+} while(0)
+#  define _ASSERT(expr)  do { \
     if ( !(expr) ) \
         { \
               NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
               _diag_ << _FILE_LINE << "Assertion failed: " << #expr; \
         } \
-}
+} while(0)
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
