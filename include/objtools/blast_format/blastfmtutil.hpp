@@ -27,11 +27,12 @@
  * ===========================================================================
  *
  * Author:  Jian Ye
- * 12/2004
- * File Description:
- *blast formatter utilities
- *This classs contains misc functions for displaying blast result.
  */
+
+/** @file blastfmtutil.hpp
+ * BLAST formatter utilities.
+ */
+
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -44,6 +45,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
 
 
+/** This class contains misc functions for displaying BLAST results. */
 class CBlastFormatUtil 
 {
     
@@ -171,6 +173,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.4  2005/02/01 21:28:42  camacho
+Doxygen fixes
+
 Revision 1.3  2005/01/31 17:43:02  jianye
 change unsigned int to size_t
 

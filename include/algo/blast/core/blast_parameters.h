@@ -30,6 +30,7 @@
 /** @file blast_parameters.h
  * Structure and function definitions for BLAST parameter structures, which are
  * internal to the CORE of BLAST.
+ *
  * <pre>
  * These parameters are normally set by:
  *    1.) reading the options in blast_options.[ch] to find user preferences
@@ -41,7 +42,7 @@
  *       controlled by the structures and functions in blast_options.[ch]. 
  *       The parameter structures belong to algo/blast/core, the options
  *       structures belong to the user.
- * <pre>
+ * </pre>
  */
 
 #ifndef __BLASTPARAMETERS__

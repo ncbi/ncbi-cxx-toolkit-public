@@ -28,10 +28,12 @@
  *
  * Author:  Viatcheslav Gorelenkov
  *
- * File Description:
- *    Defines to provide correct exporting from CONNECT DLL in Windows.
- *    These are necessary to compile DLLs with Visual C++ - exports must be
- *    explicitly labeled as such.
+ */
+
+/** @file blast_export.h
+ * Defines to provide correct exporting from BLAST DLL in Windows.
+ * These are necessary to compile DLLs with Visual C++ - exports must be
+ * explicitly labeled as such.
  */
 
 
@@ -64,6 +66,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/02/01 21:25:23  camacho
+ * Doxygen fixes
+ *
  * Revision 1.2  2004/07/06 15:28:28  dondosha
  * Added end of group doxygen comment
  *

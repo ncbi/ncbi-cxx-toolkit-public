@@ -27,9 +27,26 @@
  * ===========================================================================
  *
  * Author:  Jian Ye
- * 11/2004
- * File Description:
- * This class displays the defline for blast result.
+ */
+
+/** @file showdefline.hpp
+ * Declares class to display one-line descriptions at the top of the BLAST
+ * report.
+ */
+
+#include <corelib/ncbireg.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/blastdb/Blast_def_line_set.hpp>
+
+//forward declarations
+class CShowBlastDeflineTest;  //For internal test only
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+/**
+ * This class displays the defline for BLAST result.
+ *
  * Example:
  * @code
  * int defline_option = 0;
@@ -43,19 +60,6 @@
  * sbd.DisplayBlastDefline(out);
  * @endcode
  */
-
-#include <corelib/ncbireg.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/blastdb/Blast_def_line_set.hpp>
-
-//forward declarations
-class CShowBlastDeflineTest;  //For internal test only
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-
-
 class CShowBlastDefline 
 {
 
@@ -269,6 +273,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.4  2005/02/01 21:28:42  camacho
+Doxygen fixes
+
 Revision 1.3  2005/01/31 17:43:02  jianye
 change unsigned int to size_t
 
