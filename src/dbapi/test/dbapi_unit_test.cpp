@@ -47,10 +47,49 @@ BEGIN_NCBI_SCOPE
 CPPUNIT_TEST_SUITE_REGISTRATION( CDBAPIUnitTest );
 
 ///////////////////////////////////////////////////////////////////////////////
+enum EServerType {
+    eUnknown,   //< Server type is not known
+    eSybase,    //< Sybase server
+    eMsSql,     //< Microsoft SQL server
+    eOracle     //< ORACLE server
+};
+
 string DriverName;
 string ServerName;
 string UserName;
 string UserPassword;
+
+string GetDriverName(void)
+{
+    return DriverName;
+}
+
+string GetServerName(void)
+{
+    return ServerName;
+}
+
+string GetUserName(void)
+{
+    return UserName;
+}
+
+string GetUserPassword(void)
+{
+    return UserPassword;
+}
+
+EServerType
+GetServerType(void)
+{
+    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+        return eSybase;
+    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+        return eMsSql;
+    }
+
+    return eUnknown;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 CTestTransaction::CTestTransaction(
@@ -87,14 +126,28 @@ CDBAPIUnitTest::CDBAPIUnitTest()
 }
 
 void
+CDBAPIUnitTest::SetDatabaseParameters(void)
+{
+    if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+        // BcpIn to it using protocol version other than "100".
+        m_DatabaseParameters["version"] = "100";
+    } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
+        // ftds forks with Sybase databases using protocol v42 only ...
+        m_DatabaseParameters["version"] = "42";
+    }
+}
+
+void
 CDBAPIUnitTest::setUp()
 {
     if ( m_DS == NULL ) {
-        m_DS = m_DM.CreateDs( DriverName );
+        SetDatabaseParameters();
+        m_DS = m_DM.CreateDs( DriverName, &m_DatabaseParameters );
     }
     m_Stmt.release();
     m_Conn.reset( m_DS->CreateConnection() );
-    m_Conn->Connect( UserName, UserPassword, ServerName, "DBAPI_Sample" );
+    m_Conn->Connect( GetUserName(), GetUserPassword(), GetServerName(), "DBAPI_Sample" );
     m_Stmt.reset( m_Conn->CreateStatement() );
 
     // Create a test table ...
@@ -283,6 +336,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/02/15 17:32:29  ssikorsk
+ * Added  TDS "version" parameter with database connection
+ *
  * Revision 1.3  2005/02/15 16:06:24  ssikorsk
  * Added driver and server parameters to the test-suite (handled via CNcbiApplication)
  *

@@ -85,10 +85,16 @@ public:
     // Test scenarios.
 
 private:
+    void SetDatabaseParameters(void);
+
+private:
+    typedef map<string, string> TDatabaseParameters;
+
     CDriverManager& m_DM;
     IDataSource* m_DS;
     auto_ptr<IConnection> m_Conn;
     auto_ptr<IStatement> m_Stmt;
+    TDatabaseParameters  m_DatabaseParameters;
 
 private:
     const string m_TableName;
@@ -112,6 +118,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/02/15 17:32:29  ssikorsk
+ * Added  TDS "version" parameter with database connection
+ *
  * Revision 1.3  2005/02/15 16:06:24  ssikorsk
  * Added driver and server parameters to the test-suite (handled via CNcbiApplication)
  *
