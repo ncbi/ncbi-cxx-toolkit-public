@@ -48,7 +48,6 @@ enum {
 };
 
 enum {         /* half of the (fixed) match score */
-    ERROR_FRACTION=2,  /* 1/this */
     MAX_SPACE=1000000,
     sC = 0, sI = 1, sD = 2, LARGE=100000000
 };
@@ -406,7 +405,6 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
 			  SGreedyAlignMem* gamp, MBGapEditScript *S,
                           Uint1 rem)
 {
-#define ICEIL(x,y) ((((x)-1)/(y))+1)
     Int4 col,			/* column number */
         d,				/* current distance */
         k,				/* current diagonal */
@@ -429,7 +427,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
     SMBSpace* space = gamp->space;
     Int4 max_len = len2;
  
-    MAX_D = (Int4) (len1/ERROR_FRACTION + 1);
+    MAX_D = (Int4) (len1/GREEDY_MAX_COST_FRACTION + 1);
     ORIGIN = MAX_D + 2;
     *e1 = *e2 = 0;
     
@@ -666,7 +664,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
     D_diff = ICEIL(xdrop_threshold+M_half, gd);
     
     
-    MAX_D = (Int4) (len1/ERROR_FRACTION + 1);
+    MAX_D = (Int4) (len1/GREEDY_MAX_COST_FRACTION + 1);
     max_d = MAX_D*GE_cost;
     ORIGIN = MAX_D + 2;
     max_cost = MAX(Mis_cost, GO_cost+GE_cost);
