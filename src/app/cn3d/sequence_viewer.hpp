@@ -26,10 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to display sequences and alignments
+*      Classes to interface with sequence viewer GUI
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/03 18:45:57  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.1  2000/08/30 19:49:04  thiessen
 * working sequence window
 *
@@ -44,38 +47,40 @@
 #include <corelib/ncbistl.hpp>
 
 
-// These classes will be defined in sequence_viewer_gui.hpp; it will hold all the
-// wxWindows stuff, in order to avoid requiring wxWindows includes in this
-// common header
-class SequenceViewerGUI;
-class SequenceDisplay;
+class ViewableAlignment; // base class for alignments to attach to SequenceViewerWidget
 
 
 BEGIN_SCOPE(Cn3D)
 
 class Sequence;
 class MultipleAlignment;
+class SequenceViewerWindow;
+class SequenceDisplay;
 
 class SequenceViewer
 {
-    friend class SequenceViewerGUI;
+    friend class SequenceViewerWindow;
 
 public:
     SequenceViewer(void);
     ~SequenceViewer(void);
+
+    void NewAlignment(const ViewableAlignment *display);
 
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;
     void DisplaySequences(const SequenceList *sequenceList);
     void DisplayAlignment(const MultipleAlignment *multipleAlignment);
 
+    void Refresh(void);
+
+    void ClearGUI(void);
     void DestroyGUI(void);
 
 private:
-    void NewDisplay(const SequenceDisplay *display);
 
+    SequenceViewerWindow *viewerWindow;
     SequenceDisplay *display;
-    SequenceViewerGUI *viewerGUI;
 };
 
 END_SCOPE(Cn3D)

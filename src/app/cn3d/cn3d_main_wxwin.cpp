@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/03 18:46:48  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.4  2000/08/30 19:48:41  thiessen
 * working sequence window
 *
@@ -129,8 +132,9 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-USING_SCOPE(Cn3D);
 
+
+BEGIN_SCOPE(Cn3D)
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
 // into a wxWindow. This log window can be closed anytime, but will be hidden,
@@ -215,7 +219,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
 
-Cn3DMainFrame::Cn3DMainFrame(Cn3DApp *app, Cn3D::SequenceViewer **seqViewer,
+Cn3DMainFrame::Cn3DMainFrame(Cn3DApp *app, SequenceViewer **seqViewer,
     wxFrame *frame, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :
     wxFrame(frame, -1, title, pos, size, style | wxTHICK_FRAME),
     glCanvas(NULL), parentApp(app), sequenceViewer(seqViewer)
@@ -410,10 +414,10 @@ BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
 
-Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, wxWindowID id,
+Cn3DGLCanvas::Cn3DGLCanvas(Cn3DMainFrame *parent, wxWindowID id,
     const wxPoint& pos, const wxSize& size, long style, const wxString& name, int *gl_attrib) :
     wxGLCanvas(parent, id, pos, size, style, name, gl_attrib), 
-    structureSet(NULL)
+    structureSet(NULL), parentFrame(parent)
 {
     SetCurrent();
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
@@ -465,6 +469,10 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 #endif
     SetCurrent();
 
+    // keep mouse focus while holding down button
+    if (event.LeftDown()) CaptureMouse();
+    if (event.LeftUp()) ReleaseMouse();
+
     if (event.LeftIsDown()) {
         if (!dragging) {
             dragging = true;
@@ -475,14 +483,16 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         }
         last_x = event.GetX();
         last_y = event.GetY();
-    } else
+    } else {
         dragging = false;
+    }
 
     if (event.RightDown()) {
         unsigned int name;
         if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name)) {
             structureSet->SelectedAtom(name);
             Refresh(false);
+            (*(parentFrame->sequenceViewer))->Refresh();
         }
     }
 }
@@ -508,3 +518,6 @@ void Cn3DGLCanvas::OnEraseBackground(wxEraseEvent& event)
 {
     // Do nothing, to avoid flashing.
 }
+
+END_SCOPE(Cn3D)
+

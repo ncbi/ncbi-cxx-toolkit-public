@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/03 18:46:48  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.3  2000/08/29 04:34:26  thiessen
 * working alignment manager, IBM
 *
@@ -165,6 +168,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
             new MasterSlaveAlignment(this, master, **s);
         alignments.push_back(alignment);
     }
+    TESTMSG("number of alignments: " << alignments.size());
 }
 
 MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
@@ -179,14 +183,14 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
         s = parentSet->sequenceSet->sequences.begin(),
         se = parentSet->sequenceSet->sequences.end();
 
-    // look for unaligned slave sequence, see if it matches this alignment
+    // find slave sequence for this alignment, and order (master or slave first)
     const SeqIdList& sids = seqAlign.GetSegs().IsDendiag() ?
         seqAlign.GetSegs().GetDendiag().front()->GetIds() :
         seqAlign.GetSegs().GetDenseg().GetIds();
         
     bool masterFirst = true;
     for (; s!=se; s++) {
-        if ((*s)->alignment != NULL || *s == master) continue;
+        if (*s == master) continue;
         if (IsAMatch(*s, sids.back().GetObject())) {
             break;
         } else if (IsAMatch(*s, sids.front().GetObject())) {
@@ -299,9 +303,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
         }
     }
 
-    // mark sequence as aligned
-    (const_cast<Sequence*>(slave))->alignment = this;
-    TESTMSG("got alignment for slave gi " << slave->gi);
+    //TESTMSG("got alignment for slave gi " << slave->gi);
 }
 
 END_SCOPE(Cn3D)

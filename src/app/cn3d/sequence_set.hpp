@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/03 18:45:57  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.5  2000/08/30 19:49:04  thiessen
 * working sequence window
 *
@@ -96,7 +99,7 @@ public:
     const Molecule *molecule;
 
     // corresponding alignment with master (if slave)
-    const MasterSlaveAlignment *alignment;
+    //const MasterSlaveAlignment *alignment;
 
     int Length(void) const { return sequenceString.size(); }
 };

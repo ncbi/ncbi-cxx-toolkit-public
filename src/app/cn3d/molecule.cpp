@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/03 18:46:48  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.12  2000/08/28 23:47:18  thiessen
 * functional denseg and dendiag alignment parsing
 *
@@ -77,6 +80,8 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
 #include "cn3d/bond.hpp"
+#include "cn3d/style_manager.hpp"
+#include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -165,6 +170,27 @@ Molecule::Molecule(StructureBase *parent,
             if (bond) interResidueBonds.push_back(bond);
         }
     }
+}
+
+Vector Molecule::GetResidueColor(int sequenceIndex) const
+{
+    static Vector gray(.5,.5,.5);
+
+    // this assumes that the "index" - the position of the residue in the sequence,
+    // starting from zero, is always one less than the residueID from the ASN1
+    // data, which starts from one.
+    ResidueMap::const_iterator r = residues.find(sequenceIndex + 1);
+
+    if (r == residues.end()) return gray;
+    const Residue *residue = r->second;
+
+    // if no known alpha atom, just use gray
+    if (residue->alphaID == Residue::NO_ALPHA_ID) return gray;
+
+    AtomStyle style;
+    AtomPntr atom(id, residue->id, residue->alphaID);
+    if (!parentSet->styleManager->GetAtomStyle(residue, atom, &style)) return gray;
+    return style.color;
 }
 
 END_SCOPE(Cn3D)

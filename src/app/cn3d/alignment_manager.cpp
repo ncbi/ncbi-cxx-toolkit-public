@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/03 18:46:47  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.3  2000/08/30 23:46:26  thiessen
 * working alignment display
 *
@@ -70,26 +73,13 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
     for (a=alignmentSet->alignments.begin(); a!=ae; a++) alignments.push_back(*a);
     CreateMultipleFromPairwiseWithIBM(alignments);
 
-    // crudely print out blocks
-    MultipleAlignment::BlockList::const_iterator block, be = currentMultipleAlignment->blocks.end();
-    MultipleAlignment::Block::const_iterator range, re;
-    MultipleAlignment::SequenceList::const_iterator seq;
-    TESTMSG("MultipleAlignment:");
-    for (block=currentMultipleAlignment->blocks.begin(); block!=be; block++) {
-        TESTMSG("block:");
-        re = block->end();
-        for (range=block->begin(), seq=currentMultipleAlignment->sequences->begin();
-             range!=re;
-             range++, seq++)
-            TESTMSG((*seq)->sequenceString.substr(range->from, range->to - range->from + 1)); 
-    }
-
     (*sequenceViewer)->DisplayAlignment(currentMultipleAlignment);
 }
 
 AlignmentManager::~AlignmentManager(void)
 {
     if (currentMultipleAlignment) delete currentMultipleAlignment;
+    (*sequenceViewer)->ClearGUI();
 }
 
 static bool AlignedToAllSlaves(int masterResidue,

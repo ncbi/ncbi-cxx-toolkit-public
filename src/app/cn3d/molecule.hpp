@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/03 18:45:56  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.11  2000/08/30 19:49:03  thiessen
 * working sequence window
 *
@@ -78,6 +81,7 @@
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/residue.hpp"
+#include "cn3d/vector_math.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
@@ -140,6 +144,10 @@ public:
         ERR_POST(ncbi::Warning << "Molecule #" << id << ": can't find residue #" << rID);
         return NULL;
     }
+
+    // residue color method - called by sequence/alignment viewer - note
+    // that sequenceIndex is numbered from zero.
+    Vector GetResidueColor(int sequenceIndex) const;
 
 private:
 };

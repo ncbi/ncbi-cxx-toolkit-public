@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/03 18:46:49  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.5  2000/08/30 23:46:27  thiessen
 * working alignment display
 *
@@ -104,6 +107,7 @@ SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) 
             UnpackSeqSet(s->GetObject().GetSet(), this, sequences);
         }
     }
+    TESTMSG("number of sequences: " << sequences.size());
 }
 
 const int Sequence::NOT_SET = -1;
@@ -168,7 +172,7 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
 }
 
 Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), gi(NOT_SET), pdbChain(NOT_SET), alignment(NULL), molecule(NULL)
+    StructureBase(parent), gi(NOT_SET), pdbChain(NOT_SET), /*alignment(NULL),*/ molecule(NULL)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
@@ -181,7 +185,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
                 pdbChain = s->GetObject().GetPdb().GetChain();
         }
     }
-    TESTMSG("sequence gi " << gi << ", PDB " << pdbID << " chain " << pdbChain);
+    //TESTMSG("sequence gi " << gi << ", PDB " << pdbID << " chain " << pdbChain);
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {

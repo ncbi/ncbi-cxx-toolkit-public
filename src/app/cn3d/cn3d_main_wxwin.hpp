@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/03 18:45:56  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.3  2000/08/30 19:49:03  thiessen
 * working sequence window
 *
@@ -85,8 +88,10 @@
 #include "cn3d/opengl_renderer.hpp"
 
 
+BEGIN_SCOPE(Cn3D)
+
 class Cn3DMainFrame;
-class Cn3D::SequenceViewer;
+class SequenceViewer;
 
 // Define a new application type
 class Cn3DApp: public wxApp
@@ -97,7 +102,7 @@ public:
     Cn3DMainFrame *structureWindow;
 
     // for now, there is only one sequence viewer
-	Cn3D::SequenceViewer *sequenceViewer;
+    SequenceViewer *sequenceViewer;
 };
 
 class Cn3DGLCanvas;
@@ -105,7 +110,7 @@ class Cn3DGLCanvas;
 class Cn3DMainFrame: public wxFrame
 {
 public:
-    Cn3DMainFrame(Cn3DApp *app, Cn3D::SequenceViewer **seqViewer,
+    Cn3DMainFrame(Cn3DApp *app, SequenceViewer **seqViewer,
         wxFrame *frame, const wxString& title,
         const wxPoint& pos, const wxSize& size, long style = wxDEFAULT_FRAME_STYLE);
     ~Cn3DMainFrame();
@@ -143,24 +148,26 @@ public:
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
 
+    // need to find a better way to do this...
+    SequenceViewer **sequenceViewer;
+
 DECLARE_EVENT_TABLE()
 
 private:
     Cn3DApp *parentApp;
-    Cn3D::SequenceViewer **sequenceViewer;
 };
 
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    Cn3DGLCanvas(wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
+    Cn3DGLCanvas(Cn3DMainFrame *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
         int *gl_attrib = NULL);
     ~Cn3DGLCanvas(void);
 
     // public data
-    Cn3D::StructureSet *structureSet;
-    Cn3D::OpenGLRenderer renderer;
+    StructureSet *structureSet;
+    OpenGLRenderer renderer;
     wxFont *font;
 
     // public methods
@@ -171,6 +178,12 @@ public:
     void OnMouseEvent(wxMouseEvent& event);
 
 DECLARE_EVENT_TABLE()
+
+private:
+    Cn3DMainFrame *parentFrame;
 };
+
+
+END_SCOPE(Cn3D)
 
 #endif // CN3D_MAIN__HPP

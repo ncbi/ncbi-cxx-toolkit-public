@@ -26,10 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to display sequences and alignments
+*      Classes to interface with sequence viewer GUI
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/03 18:46:49  thiessen
+* working generalized sequence viewer
+*
 * Revision 1.2  2000/08/30 23:46:28  thiessen
 * working alignment display
 *
@@ -45,16 +48,98 @@
 #include <wx/wx.h>
 
 #include "cn3d/sequence_viewer.hpp"
-#include "cn3d/sequence_viewer_gui.hpp"
+#include "cn3d/sequence_viewer_widget.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
+#include "cn3d/molecule.hpp"
+#include "cn3d/vector_math.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-SequenceViewer::SequenceViewer(void) : viewerGUI(NULL), display(NULL)
+class SequenceViewerWindow;
+
+// this is the class that holds the sequences/alignment formatted for display -
+// the equivalent of DDV's ParaG. 
+class SequenceDisplay : public ViewableAlignment
+{
+public:
+    SequenceDisplay(SequenceViewerWindow * const *parentViewer);
+    ~SequenceDisplay(void);
+
+    // each Cell is a character to display, and an index into the sequence;
+    // we could just look up the character from the index, but it's more
+    // efficient just to set it statically, as characters don't change once
+    // the display is created. (Color does change, so that will be looked up
+    // dynamically.) The index must be -1 if this isn't a sequence cell (e.g.
+    // a separator, ruler, gap, identifier, etc.).
+    typedef struct {
+        char character;
+        int index;
+    } Cell;
+    typedef std::vector < Cell > RowOfCells;
+
+    // add a (pre-constructed) RowOfCells to this display. The row passed in will
+    // be "owned" by the SequenceDisplay, which will handle its deconstuction.
+    void AddRow(const Sequence *sequence, RowOfCells *row);
+
+private:
+    typedef std::vector < const Sequence * > SequenceVector;
+    SequenceVector sequences;
+
+    typedef std::vector < RowOfCells * > RowList;
+    RowList rows;
+
+    int maxRowWidth;
+
+    SequenceViewerWindow * const *viewerWindow;
+
+public:
+    // methods required by ViewableAlignment base class
+    void GetSize(int *setColumns, int *setRows) const
+        { *setColumns = maxRowWidth; *setRows = rows.size(); }
+    bool GetCharacterTraitsAt(int column, int row,				// location
+        char *character,										// character to draw
+        wxColour *color,                                        // color of this character
+        bool *isHighlighted
+    ) const;
+    
+    // callbacks for ViewableAlignment
+    void MouseOver(int column, int row) const;
+
+    void SelectedRectangle(int columnLeft, int rowTop, 
+        int columnRight, int rowBottom, unsigned int controls) const
+        { TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
+            << columnRight << ',' << rowBottom); }
+
+    void DraggedCell(int columnFrom, int rowFrom,
+        int columnTo, int rowTo, unsigned int controls) const
+        { TESTMSG("got DraggedCell " << columnFrom << ',' << rowFrom << " to "
+            << columnTo << ',' << rowTo); }
+};
+
+class SequenceViewerWindow : public wxFrame
+{
+public:
+    SequenceViewerWindow(SequenceViewer *parent);
+    ~SequenceViewerWindow(void);
+
+    void NewAlignment(const ViewableAlignment *newAlignment);
+
+    DECLARE_EVENT_TABLE()
+
+private:
+    SequenceViewerWidget *viewerWidget;
+    SequenceViewer *viewer;
+
+public:
+    void Refresh(void) { viewerWidget->Refresh(false); }
+};
+
+
+SequenceViewer::SequenceViewer(void) : viewerWindow(NULL), display(NULL)
 {
 }
 
@@ -64,18 +149,31 @@ SequenceViewer::~SequenceViewer(void)
     if (display) delete display;
 }
 
+void SequenceViewer::ClearGUI(void)
+{
+    if (viewerWindow) viewerWindow->NewAlignment(NULL);
+}
+
 void SequenceViewer::DestroyGUI(void)
 {
-    if (viewerGUI) {
-        viewerGUI->Destroy();
-        viewerGUI = NULL;
+    if (viewerWindow) {
+        viewerWindow->Destroy();
+        viewerWindow = NULL;
     }
 }
 
-void SequenceViewer::NewDisplay(const SequenceDisplay *display)
+void SequenceViewer::Refresh(void)
 {
-    if (!viewerGUI) viewerGUI = new SequenceViewerGUI(this);
-    viewerGUI->NewDisplay(display);
+    if (viewerWindow)
+        viewerWindow->Refresh();
+    else
+        NewAlignment(display);
+}
+
+void SequenceViewer::NewAlignment(const ViewableAlignment *display)
+{
+    if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
+    viewerWindow->NewAlignment(display);
 }
 
 static inline int RangeLength(const MultipleAlignment::Range& range)
@@ -120,7 +218,7 @@ static void AddLeftJustifiedUAR(SequenceDisplay::RowOfCells *row, int startAddin
 void SequenceViewer::DisplayAlignment(const MultipleAlignment *multiple)
 {
     if (display) delete display;
-    display = new SequenceDisplay();
+    display = new SequenceDisplay(&viewerWindow);
 
     SequenceDisplay::RowOfCells *row;
 
@@ -208,7 +306,6 @@ void SequenceViewer::DisplayAlignment(const MultipleAlignment *multiple)
 
             // allocate new display row
             row = new SequenceDisplay::RowOfCells(alignmentLength);
-            TESTMSG("new row size " << row->size());
 
             int startAddingAt = 0, blockSize;
             for (b=multiple->blocks.begin(); b!=be; b++, UR_i++, UL_i++) {
@@ -239,15 +336,16 @@ void SequenceViewer::DisplayAlignment(const MultipleAlignment *multiple)
 
             display->AddRow(*s, row);
         }
+        TESTMSG("alignment display size: " << row->size() << 'x' << multiple->sequences->size());
     }
 
-    NewDisplay(display);
+    NewAlignment(display);
 }
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
     if (display) delete display;
-    display = new SequenceDisplay();
+    display = new SequenceDisplay(&viewerWindow);
 
     // populate each line of the display with one sequence - in lower case to
     // emphasize that they're unaligned
@@ -264,17 +362,12 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         display->AddRow(*s, row);
     }
 
-    NewDisplay(display);
+    NewAlignment(display);
 }
 
-END_SCOPE(Cn3D)
 
-
-/////////////////////////////////////////////////////////////////////////////
-// The stuff below here is the sequence viewer GUI (outside Cn3D namespace //
-/////////////////////////////////////////////////////////////////////////////
-
-SequenceDisplay::SequenceDisplay(void) : maxRowWidth(0)
+SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow) : 
+    maxRowWidth(0), viewerWindow(parentViewerWindow)
 {
 }
 
@@ -283,7 +376,7 @@ SequenceDisplay::~SequenceDisplay(void)
     for (int i=0; i<rows.size(); i++) delete rows[i];
 }
 
-void SequenceDisplay::AddRow(const Cn3D::Sequence *sequence, RowOfCells *row)
+void SequenceDisplay::AddRow(const Sequence *sequence, RowOfCells *row)
 {
     sequences.push_back(sequence);
 
@@ -293,138 +386,86 @@ void SequenceDisplay::AddRow(const Cn3D::Sequence *sequence, RowOfCells *row)
     if (row && row->size() > maxRowWidth) maxRowWidth = row->size();
 }
 
-
-BEGIN_EVENT_TABLE(SequenceViewerGUI, wxFrame)
-END_EVENT_TABLE()
-
-SequenceViewerGUI::SequenceViewerGUI(Cn3D::SequenceViewer *parent) :
-    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(500,200)),
-    drawingArea(NULL), viewerParent(parent)
+bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
+        char *character, wxColour *color, bool *isHighlighted) const
 {
-    drawingArea = new SequenceDrawingArea(this);
+    const RowOfCells *cells = rows[row];
+    if (!cells || column >= cells->size()) return false;
+
+    // set character
+    const Cell& cell = cells->at(column);
+    *character = cell.character;
+
+    // set color
+    const Sequence *seq = sequences[row];
+    if (seq && seq->molecule && cell.index >= 0) {
+        Vector colorVec = seq->molecule->GetResidueColor(cell.index);
+        color->Set(
+            static_cast<unsigned char>((colorVec[0] + 0.000001) * 255),
+            static_cast<unsigned char>((colorVec[1] + 0.000001) * 255),
+            static_cast<unsigned char>((colorVec[2] + 0.000001) * 255)
+        );
+    } else {
+        color->Set(0.5, 0.5, 0.5); // gray
+    }
+
+    // set highlighting
+    if (cell.character != '~')
+        *isHighlighted = true;
+    else
+        *isHighlighted = false;
+
+    return true;
 }
 
-SequenceViewerGUI::~SequenceViewerGUI(void)
+void SequenceDisplay::MouseOver(int column, int row) const
 {
-    viewerParent->viewerGUI = NULL; // make sure SequenceViewer knows the GUI is gone
-    drawingArea->Destroy();
-}
+    if (*viewerWindow) {
+        wxString message;
 
-void SequenceViewerGUI::NewDisplay(const SequenceDisplay *newDisplay)
-{
-    drawingArea->NewDisplay(newDisplay);
-    Show(true);
-}
-
-
-BEGIN_EVENT_TABLE(SequenceDrawingArea, wxScrolledWindow)
-END_EVENT_TABLE()
-
-SequenceDrawingArea::SequenceDrawingArea(SequenceViewerGUI *parent) :
-    wxScrolledWindow(parent, -1, wxPoint(0,0), wxDefaultSize, wxHSCROLL | wxVSCROLL)
-{
-    // set up cell size based on the font
-    font = wxFont(10, wxROMAN, wxNORMAL, wxNORMAL);
-    wxClientDC dc(this);
-    dc.SetFont(font);
-    wxCoord chW, chH;
-    dc.SetMapMode(wxMM_TEXT);
-    dc.GetTextExtent("A", &chW, &chH);
-    cellWidth = chW;
-    cellHeight = chH;
-
-    // set background
-    dc.SetBackgroundMode(wxTRANSPARENT);    // no font background
-}
-
-void SequenceDrawingArea::NewDisplay(const SequenceDisplay *newDisplay)
-{
-    display = newDisplay;
-
-    areaWidth = display->maxRowWidth;
-    areaHeight = display->rows.size();
-
-    // set size of virtual area
-    SetScrollbars(cellWidth, cellHeight, areaWidth, areaHeight);
-    Refresh(false);
-}
-
-void SequenceDrawingArea::OnDraw(wxDC& dc)
-{
-    int visX, visY, 
-        updLeft, updRight, updTop, updBottom,
-        firstCellX, firstCellY,
-        lastCellX, lastCellY,
-        x, y;
-
-    // set font for characters
-    dc.SetFont(font);
-
-    // get the update rect list, so that we can draw *only* the cells 
-    // in the part of the window that needs redrawing; update region
-    // coordinates are relative to the visible part of the drawing area
-    wxRegionIterator upd(GetUpdateRegion());
-
-    for (; upd; upd++) {
-
-        // figure out which cells contain the corners of the update region
-
-        // get upper left corner of visible area
-        GetViewStart(&visX, &visY);  // returns coordinates in scroll units (cells)
-        visX *= cellWidth;
-        visY *= cellHeight;
-
-        // get coordinates of update region corners relative to virtual area
-        updLeft = visX + upd.GetX();
-        updTop = visY + upd.GetY();
-        updRight = updLeft + upd.GetW() - 1;
-        updBottom = updTop + upd.GetH() - 1;
-
-        // draw background
-        dc.SetPen(*wxWHITE_PEN);
-        dc.SetBrush(*wxWHITE_BRUSH);
-        dc.DrawRectangle(updLeft, updTop, upd.GetW(), upd.GetH());
-
-        if (!display) continue;
-
-        // firstCell[X,Y] is upper leftmost cell to draw, and is the cell
-        // that contains the upper left corner of the update region
-        firstCellX = updLeft / cellWidth;
-        firstCellY = updTop / cellHeight;
-
-        // lastCell[X,Y] is the lower rightmost cell displayed; including partial
-        // cells if the visible area isn't an exact multiple of cell size. (It
-        // turns out to be very difficult to only display complete cells...)
-        lastCellX = updRight / cellWidth;
-        lastCellY = updBottom / cellHeight;
-
-        // restrict to size of virtual area, if visible area is larger
-        // than the virtual area
-        if (lastCellX >= areaWidth) lastCellX = areaWidth - 1;
-        if (lastCellY >= areaHeight) lastCellY = areaHeight - 1;
-
-        // draw cells
-        for (x=firstCellX; x<=lastCellX; x++) {
-            for (y=firstCellY; y<=lastCellY; y++) {
-                DrawCell(dc, x, y);
+        if (column != -1 && row != -1) {
+            const Sequence *seq = sequences[row];
+            if (seq) {
+                const RowOfCells *cells = rows[row];
+                if (cells && column < cells->size()) {
+                    const Cell& cell = cells->at(column);
+                    if (cell.index >= 0) {
+                        message.Printf("gi %i, loc %i", seq->gi, cell.index);
+                    }
+                }
             }
         }
+        (*viewerWindow)->SetStatusText(message, 0);
     }
 }
 
-void SequenceDrawingArea::DrawCell(wxDC& dc, int x, int y)
+
+BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
+END_EVENT_TABLE()
+
+SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
+    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(500,200)),
+    viewerWidget(NULL), viewer(parent)
 {
-    if (!display->rows[y] || x >= display->rows[y]->size()) return;
+    // status bar with a single field
+    CreateStatusBar(2);
+    int widths[2] = { 150, -1 };
+    SetStatusWidths(2, widths);
 
-    // measure character size
-    wxString buf(display->rows[y]->at(x).character);
-    wxCoord chW, chH;
-    dc.GetTextExtent(buf, &chW, &chH);
-
-    // draw character in the middle of the cell
-    dc.SetTextForeground(*wxBLACK);         // just black letters for now
-    dc.DrawText(buf,
-        x*cellWidth + (cellWidth - chW)/2,
-        y*cellHeight + (cellHeight - chH)/2
-    );
+    viewerWidget = new SequenceViewerWidget(this);
 }
+
+SequenceViewerWindow::~SequenceViewerWindow(void)
+{
+    viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
+    viewerWidget->Destroy();
+}
+
+void SequenceViewerWindow::NewAlignment(const ViewableAlignment *newAlignment)
+{
+    viewerWidget->AttachAlignment(newAlignment);
+    Show(true);
+}
+
+END_SCOPE(Cn3D)
+
