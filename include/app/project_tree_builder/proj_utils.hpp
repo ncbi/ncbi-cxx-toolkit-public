@@ -82,6 +82,9 @@ struct SProjectTreeInfo
 
     /// <impl> sub-branch of include/* project path
     string m_Impl;
+
+    /// Makefile in the tree node 
+    string m_TreeNode;
 };
 
 // Get parent directory
@@ -92,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/14 14:14:58  gorelenk
+ * Added m_TreeNode to struct SProjectTreeInfo .
+ *
  * Revision 1.12  2004/06/10 15:10:17  gorelenk
  * Changed function template EraseIf to be comply with standard STL map .
  *
