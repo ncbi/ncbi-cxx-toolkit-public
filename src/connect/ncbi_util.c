@@ -23,80 +23,11 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Auxiliary (optional) code for "ncbi_core.[ch]"
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.21  2002/06/18 17:07:44  lavr
- * Employ _strdate() & _strtime() if compiled by MSVC
- *
- * Revision 6.20  2002/05/07 18:22:10  lavr
- * Use fLOG_None in LOG_ComposeMessage()
- *
- * Revision 6.19  2002/02/11 20:36:44  lavr
- * Use "ncbi_config.h"
- *
- * Revision 6.18  2002/02/05 22:02:17  lavr
- * Minor tweak
- *
- * Revision 6.17  2002/01/28 20:22:39  lavr
- * Get rid of GCC warning about "'%D' yields only 2 last digits of year"
- *
- * Revision 6.16  2001/08/28 17:49:45  thiessen
- * oops, sorry - incorrect fix; reverted
- *
- * Revision 6.15  2001/08/28 17:21:22  thiessen
- * need ncbiconf.h for NCBI_CXX_TOOLKIT
- *
- * Revision 6.14  2001/08/09 16:25:06  lavr
- * Remove last (unneeded) parameter from LOG_Reset()
- * Added: fLOG_OmitNoteLevel format flag handling
- *
- * Revision 6.13  2001/07/30 14:41:37  lavr
- * Added: CORE_SetLOGFormatFlags()
- *
- * Revision 6.12  2001/07/26 15:13:02  lavr
- * Always do stream flush after message output (previously was in DEBUG only)
- *
- * Revision 6.11  2001/07/25 20:27:23  lavr
- * Included header files rearranged
- *
- * Revision 6.10  2001/07/25 19:12:57  lavr
- * Added date/time stamp for message logging
- *
- * Revision 6.9  2001/04/24 21:24:59  lavr
- * Make log flush in DEBUG mode
- *
- * Revision 6.8  2001/01/23 23:20:14  lavr
- * Comments added to some "boolean" 1s and 0s
- *
- * Revision 6.7  2001/01/12 23:50:38  lavr
- * "a+" -> "a" as a mode in fopen() for a logfile
- *
- * Revision 6.6  2000/08/28 20:05:51  vakatov
- * CORE_SetLOGFILE() -- typo fixed
- *
- * Revision 6.5  2000/06/23 19:34:45  vakatov
- * Added means to log binary data
- *
- * Revision 6.4  2000/05/30 23:23:26  vakatov
- * + CORE_SetLOGFILE_NAME()
- *
- * Revision 6.3  2000/03/31 17:19:11  kans
- * added continue statement to for loop to suppress missing body warning
- *
- * Revision 6.2  2000/03/24 23:12:09  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.1  2000/02/23 22:36:17  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include "ncbi_config.h"
@@ -559,3 +490,79 @@ extern const char* CORE_GetPlatform(void)
     return HOST;
 #endif /*NCBI_CXX_TOOLKIT*/
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.22  2002/10/11 19:52:10  lavr
+ * Log moved to end
+ *
+ * Revision 6.21  2002/06/18 17:07:44  lavr
+ * Employ _strdate() & _strtime() if compiled by MSVC
+ *
+ * Revision 6.20  2002/05/07 18:22:10  lavr
+ * Use fLOG_None in LOG_ComposeMessage()
+ *
+ * Revision 6.19  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
+ * Revision 6.18  2002/02/05 22:02:17  lavr
+ * Minor tweak
+ *
+ * Revision 6.17  2002/01/28 20:22:39  lavr
+ * Get rid of GCC warning about "'%D' yields only 2 last digits of year"
+ *
+ * Revision 6.16  2001/08/28 17:49:45  thiessen
+ * oops, sorry - incorrect fix; reverted
+ *
+ * Revision 6.15  2001/08/28 17:21:22  thiessen
+ * need ncbiconf.h for NCBI_CXX_TOOLKIT
+ *
+ * Revision 6.14  2001/08/09 16:25:06  lavr
+ * Remove last (unneeded) parameter from LOG_Reset()
+ * Added: fLOG_OmitNoteLevel format flag handling
+ *
+ * Revision 6.13  2001/07/30 14:41:37  lavr
+ * Added: CORE_SetLOGFormatFlags()
+ *
+ * Revision 6.12  2001/07/26 15:13:02  lavr
+ * Always do stream flush after message output (previously was in DEBUG only)
+ *
+ * Revision 6.11  2001/07/25 20:27:23  lavr
+ * Included header files rearranged
+ *
+ * Revision 6.10  2001/07/25 19:12:57  lavr
+ * Added date/time stamp for message logging
+ *
+ * Revision 6.9  2001/04/24 21:24:59  lavr
+ * Make log flush in DEBUG mode
+ *
+ * Revision 6.8  2001/01/23 23:20:14  lavr
+ * Comments added to some "boolean" 1s and 0s
+ *
+ * Revision 6.7  2001/01/12 23:50:38  lavr
+ * "a+" -> "a" as a mode in fopen() for a logfile
+ *
+ * Revision 6.6  2000/08/28 20:05:51  vakatov
+ * CORE_SetLOGFILE() -- typo fixed
+ *
+ * Revision 6.5  2000/06/23 19:34:45  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.4  2000/05/30 23:23:26  vakatov
+ * + CORE_SetLOGFILE_NAME()
+ *
+ * Revision 6.3  2000/03/31 17:19:11  kans
+ * added continue statement to for loop to suppress missing body warning
+ *
+ * Revision 6.2  2000/03/24 23:12:09  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.1  2000/02/23 22:36:17  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
