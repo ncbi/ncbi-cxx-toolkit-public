@@ -98,6 +98,9 @@ public:
 
     /// Constructor.
     CProcess(long process, EProcessType type = eHandle);
+#if defined(NCBI_OS_MSWIN)
+    CProcess(HANDLE process, EProcessType type = eHandle);
+#endif
 
     /// Get process identifier for a current running process.
     static TPid GetCurrentPid(void);
@@ -226,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/04 18:45:06  ivanov
+ * Added helper constructor for MS Windows to avoid cast from HANDLE to long
+ *
  * Revision 1.3  2003/12/03 17:04:00  ivanov
  * Comments changes
  *

@@ -63,6 +63,17 @@ CProcess::CProcess(long process, EProcessType type)
     return;
 }
 
+#if defined(NCBI_OS_MSWIN)
+// The helper constructor for MS Windows to avoid cast from HANDLE to long
+
+CProcess::CProcess(HANDLE process, EProcessType type)
+    : m_Process((long)process), m_Type(type)
+{
+    return;
+}
+
+#endif
+
 
 TPid CProcess::GetCurrentPid(void)
 {
@@ -370,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/04 18:45:35  ivanov
+ * Added helper constructor for MS Windows to avoid cast from HANDLE to long
+ *
  * Revision 1.4  2003/12/03 17:03:01  ivanov
  * Fixed Kill() to handle zero timeouts
  *
