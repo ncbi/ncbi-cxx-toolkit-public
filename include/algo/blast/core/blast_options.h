@@ -118,6 +118,8 @@ extern "C" {
 #define MB_LOOKUP_TABLE 1
 #define NA_LOOKUP_TABLE 2
 #define AA_LOOKUP_TABLE 3
+#define PHI_AA_LOOKUP 4
+#define PHI_NA_LOOKUP 5
 
 /** Defaults for PSI-BLAST options */
 #define PSI_ETHRESH 0.005
@@ -149,6 +151,9 @@ typedef struct LookupTableOptions {
    Int4 max_positions; /**< Max number of positions per word (MegaBlast only);
                          no restriction if 0 */
    Uint1 scan_step; /**< Step at which database sequence should be parsed */
+   char* phi_pattern;  /**< PHI-BLAST pattern */
+   Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
+                             PHI-BLAST */
    Boolean use_pssm; /**< Use a PSSM rather than a (protein) query to construct lookup table */
 } LookupTableOptions;
 
@@ -320,9 +325,6 @@ typedef struct PSIBlastOptions {
                               computation: WWW PSI-BLAST only */
    Boolean smith_waterman;  /**< PSI-BLAST */
    Boolean discontinuous;   /**< PSI-BLAST */
-   Boolean isPatternSearch; /**< PHI-BLAST */
-   char* phi_pattern;    /**< PHI-BLAST */
-   Int4 max_num_patterns; /**< PHI-BLAST */
    Boolean is_rps_blast;    /**< RPS-BLAST */
 } PSIBlastOptions;
 
