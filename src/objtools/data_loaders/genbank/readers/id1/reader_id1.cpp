@@ -33,73 +33,78 @@ BEGIN_SCOPE(objects)
 
 streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
 {
+  int gi=0;
   STimeout tmout;
   tmout.sec = 20;
   tmout.usec = 0;
   auto_ptr<CConn_ServiceStream> m_ID1_Server;
+  
   m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
 
-  CID1server_request id1_request;
-  id1_request.SetGetgi(seqId);
   CConn_ServiceStream *server = m_ID1_Server.get();
+
   {
+    CID1server_request id1_request;
+    id1_request.SetGetgi(seqId);
     CObjectOStreamAsnBinary server_output(*server);
     server_output << id1_request;
     server_output.Flush();
   }
 
-  CID1server_back id1_reply;
   CObjectIStream& server_input = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
+  CID1server_back id1_reply;
+
   server_input >> id1_reply;
-  
-  CID1server_request id1_request1;
-  {{
-    int gi = id1_reply.GetGotgi();
-    id1_request1.SetGetgirev(gi);
-  }}
+  gi = id1_reply.GetGotgi();
+
+  if(gi==0)
+    return m_Stream.rdbuf();
+
   {
+    CID1server_request id1_request1;
+    id1_request1.SetGetgirev(gi);
     CObjectOStreamAsnBinary server_output(*server);
     server_output << id1_request1;
     server_output.Flush();
   }
   server_input >> id1_reply;
-
+  
   for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
-  {
-    int number = 0;
-    string dbname;
-    int gi = 0;
-
-    iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
     {
-      if((*it2)->IsGi())
-      {
-        gi = (*it2)->GetGi();
-      }
-      else if((*it2)->IsGeneral())
-      {
-        dbname = (*it2)->GetGeneral().GetDb();
-        const CObject_id& tag = (*it2)->GetGeneral().GetTag();
-        if(tag.IsStr())
+      int number = 0;
+      string dbname;
+      int lgi = 0;
+      
+      iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
         {
-          number = NStr::StringToInt(tag.GetStr());
+          if((*it2)->IsGi())
+            {
+              lgi = (*it2)->GetGi();
+            }
+          else if((*it2)->IsGeneral())
+            {
+              dbname = (*it2)->GetGeneral().GetDb();
+              const CObject_id& tag = (*it2)->GetGeneral().GetTag();
+              if(tag.IsStr())
+                {
+                  number = NStr::StringToInt(tag.GetStr());
+                }
+              else
+                {
+                  number = (tag.GetId());
+                }
+            }
         }
-        else
-        {
-          number = (tag.GetId());
-        }
-      }
+      if(gi!=lgi) continue;
+      CId1Seqref id1Seqref;
+      id1Seqref.Gi() = gi;
+      id1Seqref.Sat() = dbname;
+      id1Seqref.SatKey() = number;
+      id1Seqref.Flag() = 0;
+      m_Stream << id1Seqref;
+      break; // mk - get only the first one
     }
-
-    CId1Seqref id1Seqref;
-    id1Seqref.Gi() = gi;
-    id1Seqref.Sat() = dbname;
-    id1Seqref.SatKey() = number;
-    id1Seqref.Flag() = 0;
-    m_Stream << id1Seqref;
-    break; // mk - get only the first one
-  }
-  return m_Stream.rdbuf();
+   return m_Stream.rdbuf();
 }
 
 void CId1Seqref::Save(ostream &os) const
@@ -249,6 +254,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2002/03/22 21:50:21  kimelman
+* bugfix: avoid history rtequest for nonexistent sequence
+*
 * Revision 1.5  2002/03/21 19:14:54  kimelman
 * GB related bugfixes
 *
