@@ -3352,7 +3352,7 @@ s_ReadAlignFileRaw
     EBool                    in_taxa_comment;
     EBool                    in_bracketed_comment = eFalse;
     TBracketedCommentListPtr comment_list = NULL, last_comment = NULL;
-    
+    EBool                    last_line_was_marked_id = eFalse;
 
 
     if (readfunc == NULL  ||  sequence_info == NULL) {
@@ -3455,13 +3455,24 @@ s_ReadAlignFileRaw
             }
   
             if (tmp [0] == '>'  &&  ! found_stop) {
-                afrp->marked_ids = eTrue;
+                /* this could be a block of organism lines in a
+                 * NEXUS file.  If there is no sequence data between
+                 * the lines, don't process this file for marked IDs.
+                 */
+                if (last_line_was_marked_id)
+                {
+                    afrp->marked_ids = eFalse;
+                }
+                else
+                {
+                    afrp->marked_ids = eTrue;
+                }
                 new_offset = s_IntLinkNew (overall_line_count + 1,
                                           afrp->offset_list);
                 if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
-            }
-
-            if (! afrp->marked_ids) {
+                last_line_was_marked_id = eTrue;
+            } else {
+                last_line_was_marked_id = eFalse;
                 /* add to length list for interleaved block search */
                 len = strcspn (tmp, " \t\r");
                 if (len > 0) {
@@ -5748,6 +5759,10 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/21 15:13:44  bollin
+ * handle blocks of organism definition lines in NEXUS files that do not
+ * separate the definition lines from the sequence data
+ *
  * Revision 1.14  2004/12/02 17:12:18  bollin
  * allow reading of an interleaved alignment with only one block
  *
