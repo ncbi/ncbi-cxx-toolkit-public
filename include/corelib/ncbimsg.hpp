@@ -33,17 +33,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  1998/10/02 22:53:09  vakatov
+* Revision 1.10  1998/10/05 23:03:44  vakatov
 * *** empty log message ***
-*
-* Revision 1.8  1998/10/01 22:35:52  vakatov
-* *** empty log message ***
-*
-* Revision 1.7  1998/10/01 21:36:03  vakatov
-* Renamed everything to the "message handling"(rather than "error handling")
 *
 * ==========================================================================
 */
+
+#include <ncbistd.hpp>
 
 #include <iostream>
 #include <strstream>
@@ -83,6 +79,9 @@ namespace ncbi_msg {
         friend CMessage& Error  (CMessage& msg); /// severity for the next
         friend CMessage& Fatal  (CMessage& msg); /// message
 
+        // a common symbolic name for the severity levels
+        static const char* sf_SeverityName(void);
+
     private:
         EMsgSeverity  m_Severity;  // severity level for the current message
         CMsgBuffer&   m_Buffer;    // this thread's error message buffer
@@ -113,7 +112,7 @@ namespace ncbi_msg {
     // on the program termination.
     // NOTE 1:  "message_buf" is in general NOT '\0'-terminated
     // NOTE 2:  "func()", "cleanup()" and "g_SetMessageHandler()" calls are
-    //          MT-protected, so that they will not be called simultaneously
+    //          MT-protected, so that they would never be called simultaneously
     //          from different threads
     typedef void (*FMessageHandler)(EMsgSeverity sev,
                                     const char*  message_buf,
