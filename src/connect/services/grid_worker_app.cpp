@@ -37,6 +37,10 @@
 #include <connect/services/netcache_nsstorage_imp.hpp>
 #include <connect/threaded_server.hpp>
 
+#if defined(NCBI_OS_UNIX)
+# include <signal.h>
+#endif
+
 BEGIN_NCBI_SCOPE
 
 
@@ -94,7 +98,8 @@ public:
     CWorkerNodeThreadedServer(unsigned int port, 
                               CGridWorkerNode& worker_node);
 
-    ~CWorkerNodeThreadedServer();
+    virtual ~CWorkerNodeThreadedServer();
+
     virtual void Process(SOCK sock);
 
     virtual bool ShutdownRequested(void) 
@@ -323,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 20:36:22  didenko
+ * Make it compile under CGG
+ *
  * Revision 1.1  2005/03/22 20:18:25  didenko
  * Initial version
  *

@@ -40,6 +40,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheNSStorage : public INetScheduleStorage
 {
 public:
     CNetCacheNSStorage(auto_ptr<CNetCacheClient> nc_client);
+    virtual ~CNetCacheNSStorage() {}
 
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0);
@@ -78,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 20:35:56  didenko
+ * Make it compile under CGG
+ *
  * Revision 1.1  2005/03/22 20:17:55  didenko
  * Initial version
  *

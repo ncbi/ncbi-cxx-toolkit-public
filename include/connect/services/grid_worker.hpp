@@ -154,13 +154,13 @@ public:
     void SetJobRunTimeout(unsigned time_to_run);
 
 private:    
-    friend CWorkerNodeRequest;  
+    friend class CWorkerNodeRequest;  
     void Reset();
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
     bool IsJobCommited() const       { return m_JobStatus; }
 
     /// Only a CGridWorkerNode can create an instance of this class
-    friend CGridWorkerNode;
+    friend class CGridWorkerNode;
     CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                           const string&    job_key,
                           const string&    job_input);
@@ -308,7 +308,7 @@ private:
     CMutex                       m_StorageFactoryMutex;
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
 
-    friend CWorkerNodeRequest;
+    friend class CWorkerNodeRequest;
     auto_ptr<IWorkerNodeJob> CreateJob()
     {
         CMutexGuard guard(m_JobFactoryMutex);
@@ -342,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 20:35:56  didenko
+ * Make it compile under CGG
+ *
  * Revision 1.1  2005/03/22 20:17:55  didenko
  * Initial version
  *
