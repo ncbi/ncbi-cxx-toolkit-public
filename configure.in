@@ -31,8 +31,9 @@
 #   USAGE:
 #    1) Process this file with "autoconf" to produce a "configure" script.
 #    2) Run the resultant "configure" script to produce
-#      a) "ncbiconf.h"
-#      a) "Makefile"s
+#      a) ".../inc/ncbiconf.h"
+#      b) ".../build/Makefile.mk"
+#      c) other "Makefile"s and scripts in ".../build"
 #
 #############################################################################
 
@@ -88,7 +89,27 @@ fi
 changequote([, ])dnl
 
 
-#### Use full path to the compiler, if safe
+#### Additional check for pre-defined compilers
+case "$compiler" in
+  WorkShop5 | MIPSpro73 | MSVC )
+    if test -z "$NCBI_COMPILER" ; then
+       echo
+       echo "Compiler \"${compiler}\" requires a special tuning, so you"
+       echo "better use a special shell script located in \"compilers/*.sh\"!"
+       echo
+       echo "Do you still want to proceed? [n/y]"
+       read answer
+       case "$answer" in
+         y )  AC_MSG_WARN([Proceeding at your own risk...]) ;;
+         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
+       esac
+       echo
+    fi ;;
+esac
+
+
+
+#### Use full path to the compiler, if possible
 set $CC
 x_CC="`which $1`"
 if test -x "$x_CC" ; then
@@ -291,7 +312,10 @@ if test -f "${ncbiconf}" ; then
    echo "There is already a built \"${ncbiconf}\"!"
    echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
    read answer
-   test "$answer" = "y"  ||  test "$answer" = "Y"  ||  exit
+   case "$answer" in
+      y | Y | yes | YES ) ;;
+      * )  AC_MSG_WARN([Re-configuration has been canceled by user.]) ; exit ;;
+   esac
 fi
 
 
@@ -800,16 +824,16 @@ cat << EOCONF
 Configuration completed.
 
 Optional configure flags:
- --without-debug         to build non-debug versions of libs and apps
- --without-optimization  to build the release versions of libs and apps
+ --without-debug         build non-debug versions of libs and apps
+ --without-optimization  turn off optimization flags
  --without-bincopy       do not check whether the copied binaries are identical
- --with-internal         to build all projects including the internal ones
+ --with-internal         build all projects including the internal ones
  --without-sybase        do not use SYBASE libraries
  --without-ncbi-c        do not use the NCBI C Toolkit
  --without-fastcgi       do not Fast-CGI library
  --without-sssdb         do not use NCBI SSS DB library
  --without-pubmed        do not use NCBI PubMed libraries
- --exec-prefix           to specify a non-default build directory name
+ --exec-prefix           specify a non-default build directory name
  --without-debug-sfx     do not add Release/Debug to the build dir name
  --with-hostspec         add full host specs(OS, CPU) to the build dir name
 
