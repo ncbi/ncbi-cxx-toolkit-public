@@ -158,7 +158,7 @@ CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db)
 
 CLDS_DataLoader::CLDS_DataLoader(const string& db_path)
  : CDataLoader("LDS_dataloader"),
-   m_LDS_db(*(new CLDS_Database(db_path))),
+   m_LDS_db(*(new CLDS_Database(db_path, db_path))),
    m_OwnDatabase(true)
 {
     try {
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/08 19:29:08  ucko
+ * Adapt to new (multi-DB-capable) LDS API.
+ *
  * Revision 1.7  2003/09/30 16:36:37  vasilche
  * Updated CDataLoader interface.
  *
