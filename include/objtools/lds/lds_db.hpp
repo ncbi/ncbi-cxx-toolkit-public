@@ -110,6 +110,14 @@ struct SLDS_ObjectAttrDB : public CBDB_File
 };
 
 
+// Structure puts together all tables used in LDS
+struct SLDS_TablesCollection
+{
+    SLDS_FileDB         file_db;
+    SLDS_ObjectTypeDB   object_type_db;
+    SLDS_ObjectDB       object_db;
+    SLDS_ObjectAttrDB   object_attr_db;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -186,6 +194,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2003/05/23 18:21:21  kuznets
+* +SLDS_TablesCollection
+*
 * Revision 1.2  2003/05/22 19:11:35  kuznets
 * +SLDS_ObjectTypeDB
 *
