@@ -11,8 +11,8 @@
  *  to the public for use. The National Library of Medicine and the U.S.
  *  Government have not placed any restriction on its use or reproduction.
  *
- *  Although all reasonable efforts have been taken to ensure the accuracy
- *  and reliability of the software and data, the NLM and the U.S.
+ *  and reliability of the software and data, the NLM 
+ *  Although all reasonable efforts have been taken to ensure the accuracyand the U.S.
  *  Government do not and cannot warrant the performance or results that
  *  may be obtained by using this software or data. The NLM and the U.S.
  *  Government disclaim all warranties, express or implied, including
@@ -101,6 +101,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/03/16 20:18:54  gorelenk
+ * Changed includes of private headers.
+ *
  * Revision 1.2  2003/10/24 21:28:41  lewisg
  * add omssa, xomssa, omssacl to win32 build, including dll
  *

@@ -37,7 +37,7 @@
 // standard includes
 
 // generated includes
-#include <Mod.hpp>
+#include "Mod.hpp"
 
 // generated classes
 
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/16 20:18:54  gorelenk
+* Changed includes of private headers.
+*
 * Revision 1.1  2004/03/01 18:24:07  lewisg
 * better mod handling
 *

@@ -44,10 +44,10 @@
 #include <deque>
 #include <math.h>
 
-#include <SpectrumSet.hpp>
-#include <omssa.hpp>
+#include "SpectrumSet.hpp"
+#include "omssa.hpp"
 
-#include <nrutil.h>
+#include "nrutil.h"
 #include <ncbimath.h>
 
 USING_NCBI_SCOPE;
@@ -844,6 +844,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.14  2004/03/16 20:18:54  gorelenk
+Changed includes of private headers.
+
 Revision 1.13  2004/03/01 18:24:08  lewisg
 better mod handling
 

@@ -46,7 +46,7 @@
 #include <deque>
 #include <map>
 #include <objects/omssa/MSRequest.hpp>
-#include <Mod.hpp>
+#include "Mod.hpp"
 
 // #include <corelib/ncbistd.hpp>
 
@@ -341,6 +341,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.5  2004/03/16 20:18:54  gorelenk
+  Changed includes of private headers.
+
   Revision 1.4  2004/03/01 18:24:07  lewisg
   better mod handling
 

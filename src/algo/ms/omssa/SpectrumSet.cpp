@@ -44,10 +44,10 @@
 
 
 // generated includes
-#include <SpectrumSet.hpp>
+#include "SpectrumSet.hpp"
 
 // added includes
-#include <msms.hpp>
+#include "msms.hpp"
 
 // generated classes
 BEGIN_NCBI_SCOPE
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/03/16 20:18:54  gorelenk
+ * Changed includes of private headers.
+ *
  * Revision 1.4  2003/10/22 15:03:32  lewisg
  * limits and string compare changed for gcc 2.95 compatibility
  *

@@ -36,9 +36,9 @@
 
 #include <objects/omssa/omssa__.hpp>
 
-#include <msms.hpp>
-#include <msladder.hpp>
-#include <mspeak.hpp>
+#include "msms.hpp"
+#include "msladder.hpp"
+#include "mspeak.hpp"
 
 #include <readdb.h>
 
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.8  2004/03/16 20:18:54  gorelenk
+  Changed includes of private headers.
+
   Revision 1.7  2004/03/12 16:25:07  lewisg
   add comments
 

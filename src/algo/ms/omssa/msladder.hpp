@@ -41,7 +41,7 @@
 #include <iostream>
 #include <vector>
 
-#include <msms.hpp>
+#include "msms.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.6  2004/03/16 20:18:54  gorelenk
+  Changed includes of private headers.
+
   Revision 1.5  2003/12/22 21:57:59  lewisg
   top hit code and variable mod fixes
 

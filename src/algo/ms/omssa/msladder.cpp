@@ -38,7 +38,7 @@
 
 #include <math.h>
 
-#include <msladder.hpp>
+#include "msladder.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

@@ -35,8 +35,8 @@
 
 #include <fstream>
 
-#include <msms.hpp>
-#include <Mod.hpp>
+#include "msms.hpp"
+#include "Mod.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -274,6 +274,9 @@ void CMassArray::Init(const CMSRequest::TFixed &Mods,
 
 /*
   $Log$
+  Revision 1.4  2004/03/16 20:18:54  gorelenk
+  Changed includes of private headers.
+
   Revision 1.3  2004/03/01 18:24:07  lewisg
   better mod handling
 

@@ -43,8 +43,8 @@
 #include <map>
 #include <string.h>
 
-#include <msms.hpp>
-#include <msladder.hpp>
+#include "msms.hpp"
+#include "msladder.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -701,6 +701,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.11  2004/03/16 20:18:54  gorelenk
+  Changed includes of private headers.
+
   Revision 1.10  2003/12/22 23:03:18  lewisg
   top hit code and variable mod fixes
 

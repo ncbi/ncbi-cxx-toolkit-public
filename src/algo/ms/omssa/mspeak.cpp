@@ -37,7 +37,7 @@
 
 #include <algorithm>
 
-#include <mspeak.hpp>
+#include "mspeak.hpp"
 
 
 USING_NCBI_SCOPE;
