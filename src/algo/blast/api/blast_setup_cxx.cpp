@@ -268,7 +268,9 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             strand = strand_opt;
         }
 
-        mask = CSeqLoc2BlastMask(*itr->mask, index);
+        if (itr->mask)
+            mask = CSeqLoc2BlastMask(*itr->mask, index);
+
         ++index;
 
         if (translate) {
@@ -744,6 +746,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/10/08 15:05:47  dondosha
+* Test if mask is not NULL before converting to a C structure
+*
 * Revision 1.35  2003/10/07 17:34:05  dondosha
 * Add lower case masks to SSeqLocs forming the vector of sequence locations
 *
