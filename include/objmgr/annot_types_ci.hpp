@@ -164,6 +164,7 @@ protected:
 private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
 
+    void x_Clear(void);
     void x_Initialize(const CBioseq_Handle& bioseq,
                       TSeqPos start, TSeqPos stop);
     void x_Initialize(const CHandleRangeMap& master_loc);
@@ -344,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/07/18 19:39:44  vasilche
+* Workaround for GCC 3.0.4 bug.
+*
 * Revision 1.42  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
