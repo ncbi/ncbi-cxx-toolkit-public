@@ -414,6 +414,18 @@ int CDemoApp::Run(void)
         scope.AddTopLevelSeqEntry(*entry);
     }
 
+    {{
+        CConstRef<CSeqref> sr = gb_loader->GetSatSatkey(*id);
+        if ( !sr ) {
+            ERR_POST("Cannot resolve Seq-id "<<id->AsFastaString());
+        }
+        else {
+            NcbiCout << "Resolved: "<<id->AsFastaString()<<
+                " gi="<<sr->GetGi()<<
+                " sat="<<sr->GetSat()<<" satkey="<<sr->GetSatKey()<<NcbiEndl;
+        }
+    }}
+
     // Get bioseq handle for the seq-id. Most of requests will use this handle.
     CBioseq_Handle handle = scope.GetBioseqHandle(*id);
     // Check if the handle is valid
@@ -432,16 +444,6 @@ int CDemoApp::Run(void)
             }
         }
     }
-    {{
-        CConstRef<CSeqref> sr = gb_loader->GetSatSatkey(*id);
-        if ( !sr ) {
-            ERR_POST("Cannot determine TSE sat/satkey");
-        }
-        else {
-            NcbiCout << "TSE sat="<<sr->GetSat()<<
-                " satkey="<<sr->GetSatKey()<<NcbiEndl;
-        }
-    }}
 
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
@@ -455,7 +457,7 @@ int CDemoApp::Run(void)
             CBioseq_CI bit;
             bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
             for ( ; bit; ++bit) {
-                NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
+                NcbiCout << "    "<<bit->GetSeqId()->DumpAsFasta()<<NcbiEndl;
             }
 
             // Get the bioseq
@@ -713,6 +715,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/12/30 20:00:41  vasilche
+* Added test for CGBDataLoader::GetSatSatKey().
+*
 * Revision 1.50  2003/12/30 19:51:54  vasilche
 * Test CGBDataLoader::GetSatSatkey() method.
 *
