@@ -1,6 +1,7 @@
 #include "testserial.hpp"
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
+#include <serial/serialasn.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/iterator.hpp>

@@ -1,8 +1,9 @@
 #ifndef TEST_WEBENV_HPP
 #define TEST_WEBENV_HPP
 
-#include <serial/serialasn.hpp>
+#include <serial/serialbase.hpp>
 
+#if HAVE_NCBI_C
 DECLARE_ASN_STRUCT_INFO(Web_Env);
 DECLARE_ASN_STRUCT_INFO(Argument);
 DECLARE_ASN_STRUCT_INFO(Db_Env);
@@ -15,5 +16,6 @@ DECLARE_ASN_CHOICE_INFO(Query_Command);
 DECLARE_ASN_STRUCT_INFO(Query_Search);
 DECLARE_ASN_STRUCT_INFO(Query_Select);
 DECLARE_ASN_STRUCT_INFO(Query_Related);
+#endif
 
 #endif
