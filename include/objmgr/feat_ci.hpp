@@ -162,7 +162,6 @@ public:
         { return GetOriginalFeature().GetExcept_text(); }
 
     CSeq_annot_Handle GetAnnot(void) const;
-    const CSeq_annot& GetSeq_annot(void) const;
 
 private:
     friend class CFeat_CI;
@@ -185,6 +184,12 @@ private:
     mutable CConstRef<CSeq_feat> m_OriginalSeq_feat;
     mutable CConstRef<CSeq_feat> m_MappedSeq_feat;
     mutable CConstRef<CSeq_loc>  m_MappedSeq_loc;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    const CSeq_annot& GetSeq_annot(void) const;
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -452,6 +457,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/10/29 17:47:12  grichenk
+* Marked CMappedFeat::GetSeq_annot as deprecated
+*
 * Revision 1.46  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *
