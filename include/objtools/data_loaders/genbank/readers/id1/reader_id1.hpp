@@ -132,7 +132,6 @@ protected:
                      const CBlob_id& blob_id);
     void x_SetBlobRequest(CID1server_request& request,
                           const CBlob_id& blob_id);
-    static TBlobVersion x_GetVersion(const CID1server_back& reply);
 
 private:
 
