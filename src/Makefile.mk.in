@@ -167,6 +167,8 @@ APP_OR_NULL = @APP_OR_NULL@
 LIB_OR_DLL = @LIB_OR_DLL@
 # library name suffix; either "-static" or empty
 STATIC     = @STATIC@
+# hard-coded; use only for "LIB_OR_DLL = both" libraries!
+FORCE_STATIC = -static
 
 LINK_DLL      = @LINK_DLL@
 LINK_LOADABLE = @LINK_LOADABLE@
