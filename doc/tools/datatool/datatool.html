@@ -1,41 +1,94 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-<head>
-<title>DATATOOL -- the data serialization utility (NCBI C++)</title>
-</head>
-
-<body>
-<h1>DATATOOL -- the data serialization utility (NCBI C++)</h1>
-
-<a name="ref_TableMisc">
-<table border=1 cellspacing=0>
-  <tr>
-	 <td><b>Location</b></td>
-	 <td><i>internal/c++/src/serial/tool</i></td>
-  </tr>
-
-  <tr>
-	 <td><b>Synopsis</b></td>
-	 <td> Using ASN.1 and XML data specifications, generate C++ classes to
-         serialize (read/write) the data
-    </td>
-  </tr>
-</table>
-
-<p>
-Sorry, this page is still under construction. Please come back later...
-
-
-<br></br>
-<hr>
-<table border=0 width="100%" cellspacing=0>
-<tr>
-<td align=left>
-  <address><a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a></address>
-</td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
-</tr>
-</table>
-</body>
+  <head>
+	<title>DATATOOL -- the data serialization utility (NCBI C++)</title>
+  </head>
+  
+  <body>
+	<h1>DATATOOL -- the data serialization utility (NCBI C++)</h1>
+	
+	<a name="ref_TableMisc"></a>
+	<table border=1 cellspacing=0>
+	  <tr>
+		<td>
+		  <b>Location</b>
+		</td>
+		<td>
+		  <i>c++/src/serial/tool</i>
+		</td>
+	  </tr>
+	  
+	  <tr>
+		<td><b>Synopsis</b></td>
+		<td> Using ASN.1 and XML data specifications, generate C++ classes to
+		  serialize (read/write) the data
+		</td>
+	  </tr>
+	</table>
+	
+	<p>
+	  This program is intended for data conversion between ASN.1 and XML and
+	  for generation of C++ class hierarchy based on ASN.1 or XML data definition.
+	<p>
+	<h2>Invocation</h2>
+	<h1>Main arguments</h1>
+	Equivalent to arguments of asntool
+	<p>
+	<table border=1 cellspacing=0>
+	  <tr><th>argument</th><th>effect</th><th>comment</th></tr>
+	  <tr><td> -H</td><td>display DATATOOL main arguments</td></tr>
+	  <tr><td> -oH</td><td>display DATATOOL code generation arguments</td></tr>
+	  <tr><td> -m &lt;file&gt;</td><td>ASN.1 module file</td><td rowspan=2>only one of these arguments is required</tr>
+	  <tr><td> -mx &lt;file&gt;</td><td>XML module file</td></tr>
+	  <tr><td> -M &lt;file&gt;</td><td>external ASN.1 module files</td><td rowspan=2>these modules are used for IMPORT type resolution</td></tr>
+	  <tr><td> -Mx &lt;file&gt;</td><td>external XML module files</td></tr>
+	  <tr><td> -i</td><td>ignore unresolved types</td></tr>
+	  <tr><td> -f &lt;file&gt;</td><td>write ASN.1 module file</td></tr>
+	  <tr><td> -fx &lt;file&gt;</td><td>write XML module file</td></tr>
+	  <tr><td> -v &lt;file&gt;</td><td>read value in ASN.1 text format</td></tr>
+	  <tr><td> -vx &lt;file&gt;</td><td>read value in XML format</td></tr>
+	  <tr><td> -p &lt;file&gt;</td><td>write value in ASN.1 text format</td></tr>
+	  <tr><td> -px &lt;file&gt;</td><td>write value in XML format</td></tr>
+	  <tr><td> -d &lt;file&gt;</td><td>read value in ASN.1 binary format</td><td>-t argument required</td></tr>
+	  <tr><td> -t &lt;type&gt;</td><td>binary value type</td></tr>
+	  <tr><td> -e &lt;file&gt;</td><td>write value in ASN.1 binary format</td></tr>
+	</table>
+	<h1>Code generation arguments</h1>
+	<table border=1 cellspacing=0>
+	  <tr><th> argument</th><th>effect</th><th>comment</th></tr>
+	  <tr><td> -oH</td><td>display DATATOOL code generation arguments</td></tr>
+	  <tr><td> -oA</td><td>generate C++ files for all types</td><td rowspan=2>only types from main module are used<br>(see -m and -mx argument)</td></tr>
+	  <tr><td> -ot &lt;types&gt;</td><td>generate C++ files for listed types</td></tr>
+	  <tr><td> -ox &lt;types&gt;</td><td> exclude types from generation</td></tr>
+	  <tr><td> -oX</td><td> turn off recursive type generation</td></tr>
+	  <tr><td> -od &lt;file&gt;</td><td> C++ code definition file</td><td>see <a href="#ref_DefFile">Definition file</a></td></tr>
+	  <tr><td> -of &lt;file&gt;</td><td> write list of generated C++ files</td></tr>
+	  <tr><td> -opm &lt;dir&gt;</td><td> directory for searching source modules</td></tr>
+	  <tr><td> -oph &lt;dir&gt;</td><td> directory for generated *.hpp files</td></tr>
+	  <tr><td> -opc &lt;dir&gt;</td><td> directory for generated *.cpp files</td></tr>
+	  <tr><td> -or &lt;prefix&gt;</td><td> add prefix to generated file names</td></tr>
+	  <tr><td> -ors</td><td> add source file dir to generated file names</td></tr>
+	  <tr><td> -orm</td><td> add module name to generated file names</td></tr>
+	  <tr><td> -orA</td><td> combine all -or* prefixes</td></tr>
+	  <tr><td> -oR &lt;dir&gt;</td><td> set -op* and -or* arguments for NCBI dir tree</td></tr>
+	</table>
+	
+	<a name="ref_DefFile"><h2>Definition file</h2></a>
+	
+	<br>
+	<hr>
+	<table border=0 width="100%" cellspacing=0>
+	  <tr>
+		<td align=left>
+		  <address>
+			<a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a>
+		  </address>
+		</td>
+		<!-- <td align=center><i>$Revision$</i></td> -->
+		<td align=right>
+		  <i>$Date$</i>
+		</td>
+	  </tr>
+	</table>
+  </body>
 </html>
