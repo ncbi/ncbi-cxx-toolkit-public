@@ -430,8 +430,9 @@ BlastMask2CSeqLoc(const BlastMask* mask, const TSeqLocVector& slp,
     EProgram program)
 {
     TSeqLocInfoVector retval;
-    int index, frame, num_frames;
+    int frame, num_frames;
     bool translated_query;
+    unsigned int index;
 
     translated_query = (program == eBlastx ||
                         program == eTblastx);
@@ -441,8 +442,10 @@ BlastMask2CSeqLoc(const BlastMask* mask, const TSeqLocVector& slp,
     TSeqLocInfo mask_info_list;
 
     for (index = 0; index < slp.size(); ++index) {
+        mask_info_list.clear();
+
         if (!mask) {
-            retval.push_back(0);
+            retval.push_back(mask_info_list);
             continue;
         }
         for ( ; mask && mask->index < index*num_frames;
@@ -450,8 +453,6 @@ BlastMask2CSeqLoc(const BlastMask* mask, const TSeqLocVector& slp,
         BlastSeqLoc* loc;
         CDisplaySeqalign::SeqlocInfo* seqloc_info =
             new CDisplaySeqalign::SeqlocInfo;
-
-        mask_info_list.clear();
 
         for ( ; mask && mask->index < (index+1)*num_frames;
               mask = mask->next) {
@@ -484,7 +485,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
     if (args["asnout"]) {
         auto_ptr<CObjectOStream> asnout(
             CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-        int query_index;
+        unsigned int query_index;
         for (query_index = 0; query_index < seqalignv.size(); ++query_index)
         {
             if (!seqalignv[query_index]->IsSet())
