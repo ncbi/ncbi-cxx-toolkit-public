@@ -34,12 +34,12 @@
  *
  */
 
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 
-#include <corelib/ncbistr.hpp>
 
-class CObject;
+class CDumpable;
 class CDebugDumpContext
 {
 protected:
@@ -58,7 +58,7 @@ public:
 
 public:
 
-    // First thing in the CObject::Dump function - call this function
+    // First thing in DebugDump() function - call this function
     // providing class type as the frame name
     void SetFrame(const string& frame);
     // Log data in the form [name, data, comment]
@@ -74,7 +74,7 @@ public:
              const string& comment = kEmptyStr);
     void Log(const string& name, const void* value,
              const string& comment = kEmptyStr);
-    void Log(const string& name, const CObject* value,
+    void Log(const string& name, const CDumpable* value,
              unsigned int depth);
 
 
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
+ *  Revision 1.2  2002/05/14 21:12:59  gouriano
+ *  DebugDump moved into a separate class
+ *
  *  Revision 1.1  2002/05/14 14:43:15  gouriano
  *  added DebugDump function to CObject
  *

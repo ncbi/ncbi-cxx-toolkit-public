@@ -1,5 +1,6 @@
-#ifndef TEXT_DUMP_CONTEXT__HPP
-#define TEXT_DUMP_CONTEXT__HPP
+#ifndef DUMPABLE__HPP
+#define DUMPABLE__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -28,51 +29,44 @@
  * Author:  Andrei Gourianov
  *
  * File Description:
- *   Formats object's dump as a text and sends it into any output stream
+ *   Abstract base class: defines DebugDump() functionality
  *
  */
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/debug_dump_context.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CTextDumpContext : public CDebugDumpContext
+class CDumpable
 {
 public:
-    // Only constructor is public (usually)
-    // DebugDump() function communicates then with
-    // CDebugDumpContext public methods only
-    CTextDumpContext(ostream& os, const string& bundle);
-    virtual ~CTextDumpContext(void);
+    CDumpable(void) {}
+    virtual ~CDumpable(void) {}
 
+    // Sets debug dump flag ON/OFF
+    static void SetDebugDumpFlag( bool on);
+    // Redirects the call to the similar protected function
+    // (if DebugDumpFlag is ON)
+    static void DebugDump(const CDumpable& obj,
+                          CDebugDumpContext& ddc, unsigned int depth);
 protected:
-    virtual bool StartBundle(unsigned int level, const string& bundle);
-    virtual void EndBundle(  unsigned int level, const string& bundle);
-
-    virtual bool StartFrame( unsigned int level, const string& frame);
-    virtual void EndFrame(   unsigned int level, const string& frame);
-
-    virtual void PutValue(  unsigned int level, const string& frame,
-                            const string& name, const string& value,
-                            const string& comment);
-
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const = 0;
 private:
-    void x_IndentLine(unsigned int level, char c = ' ', int len = 2);
-    void x_InsertPageBreak(const string& title = "", char c = '=', int len = 78);
-
-    ostream&     m_Out;
+    static bool sm_DumpOn;
 };
 
 END_NCBI_SCOPE
+
+
 /*
  * ===========================================================================
- *  $Log$
- *  Revision 1.2  2002/05/14 21:12:59  gouriano
- *  DebugDump moved into a separate class
+ * $Log$
+ * Revision 1.1  2002/05/14 21:12:59  gouriano
+ * DebugDump moved into a separate class
  *
- *  Revision 1.1  2002/05/14 14:43:15  gouriano
- *  added DebugDump function to CObject
  *
  * ===========================================================================
-*/
-#endif // TEXT_DUMP_CONTEXT__HPP
+ */
+
+#endif // DUMPABLE__HPP

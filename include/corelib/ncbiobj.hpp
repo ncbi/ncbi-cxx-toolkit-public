@@ -34,9 +34,9 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/dumpable.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/debug_dump_context.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -55,7 +55,7 @@ public:
 
 
 
-class CObject
+class CObject : virtual public CDumpable
 {
 public:
     // constructors
@@ -91,12 +91,6 @@ public:
     void operator delete(void* ptr);
     void operator delete[](void* ptr);
 
-    // Sets debug dump flag ON/OFF
-    static void SetDebugDumpFlag( bool on);
-    // Redirects the call to the similar protected function
-    // (if DebugDumpFlag is ON)
-    static void DebugDump(const CObject& obj,
-                          CDebugDumpContext& ddc, unsigned int depth);
 protected:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -143,7 +137,6 @@ private:
 
     mutable TCounter  m_Counter;  // reference counter
     static CFastMutex sm_ObjectMutex;   // reference counter's protective mutex
-    static bool sm_DumpOn;
 };
 
 
@@ -694,6 +687,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/05/14 21:12:59  gouriano
+ * DebugDump moved into a separate class
+ *
  * Revision 1.28  2002/05/14 14:42:13  gouriano
  * added DebugDump function to CObject
  *
