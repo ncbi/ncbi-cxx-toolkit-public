@@ -166,6 +166,10 @@ public:
          x_IntersectWith(r);
          return *this;
     }
+    bool    operator == (const TThisType& c) const
+    {
+         return x_Equals(c);         
+    }
     bool  IntersectingWith (const TRange& r) const
     {
         return x_Intersects(r).second;
@@ -342,6 +346,14 @@ protected:
             x_Subtract(*it);
         }
     }
+    bool    x_Equals(const TThisType &c) const
+    {
+        if(&c == this)  {
+            return true;
+        } else {
+            return m_vRanges == c.m_vRanges;
+        }
+    }
 
 protected:
     TRangeVector    m_vRanges;  
@@ -352,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/04 16:00:16  yazhuk
+ * Added operator == and x_Equals()
+ *
  * Revision 1.4  2004/04/26 14:51:43  ucko
  * Add "typename" and "this->" to accommodate GCC 3.4's stricter
  * treatment of templates.
