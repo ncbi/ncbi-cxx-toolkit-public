@@ -598,7 +598,7 @@
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
         </FileConfiguration>
       </File>
-      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_paramtree.cpp">
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_config.cpp">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
         </FileConfiguration>
@@ -652,11 +652,11 @@
       <File RelativePath="..\..\..\..\..\include\corelib\ncbitime.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbiutil.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_bswap.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_config.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mac.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mswin.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_unix.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_paramtree.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_process.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_safe_static.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_system.hpp"></File>

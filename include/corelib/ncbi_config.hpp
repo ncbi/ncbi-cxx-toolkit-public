@@ -1,5 +1,5 @@
-#ifndef CORELIB___NCBI_PARAMTREE__HPP
-#define CORELIB___NCBI_PARAMTREE__HPP
+#ifndef CORELIB___NCBI_CONFIG__HPP
+#define CORELIB___NCBI_CONFIG__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -63,6 +63,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/09/22 15:33:30  kuznets
+ * MAGIC: rename ncbi_paramtree->ncbi_config
+ *
  * Revision 1.1  2004/09/22 13:54:11  kuznets
  * Initial revision
  *

@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_paramtree.hpp>
+#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbireg.hpp>
 
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/09/22 15:34:18  kuznets
+ * MAGIC: rename ncbi_paramtree->ncbi_config
+ *
  * Revision 1.1  2004/09/22 13:54:25  kuznets
  * Initial revision
  *

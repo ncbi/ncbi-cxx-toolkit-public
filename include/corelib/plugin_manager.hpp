@@ -72,7 +72,7 @@
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbi_tree.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbi_paramtree.hpp>
+#include <corelib/ncbi_config.hpp>
 
 #include <set>
 #include <string>
@@ -845,6 +845,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/09/22 15:33:30  kuznets
+ * MAGIC: rename ncbi_paramtree->ncbi_config
+ *
  * Revision 1.33  2004/09/22 13:55:20  kuznets
  * All tree realted stuff moved to ncbi_paramtree.hpp
  *
