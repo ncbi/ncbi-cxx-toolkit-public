@@ -5,7 +5,7 @@
 
 REQUIRES = dbapi
 
-ASN_DEP  = seq general biblio
+ASN_DEP  = seq general biblio seqset
 
 SRC = snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       seq_descr_ci feat_ci graph_ci annot_object annot_object_index annot_ci \
