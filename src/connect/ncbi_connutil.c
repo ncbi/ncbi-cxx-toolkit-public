@@ -1265,6 +1265,7 @@ static const char* s_MIME_SubType[eMIME_Unknown+1] = {
     "html",
     "plain",
     "xml",
+    "xml+soap",
     "x-unknown"
 };
 
@@ -1487,6 +1488,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2004/01/14 18:52:39  lavr
+ * Recognize eMIME_XmlSoap and corresponding text representation "xml+soap"
+ *
  * Revision 6.62  2004/01/07 19:23:29  lavr
  * "xml" added as a MIME subtype
  *
