@@ -40,6 +40,7 @@
 #include <objmgr/impl/tse_lock.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <set>
 #include <vector>
@@ -85,6 +86,7 @@ public:
         eMappedObjType_not_set,
         eMappedObjType_Seq_loc,
         eMappedObjType_Seq_id,
+        eMappedObjType_Seq_feat,
         eMappedObjType_Seq_align,
         eMappedObjType_Seq_loc_Conv_Set
     };
@@ -126,6 +128,7 @@ public:
 
     const CSeq_loc& GetMappedSeq_loc(void) const;
     const CSeq_id& GetMappedSeq_id(void) const;
+    const CSeq_feat& GetMappedSeq_feat(void) const;
     const CSeq_align& GetMappedSeq_align(void) const;
 
     unsigned int GetAnnotObjectIndex(void) const;
@@ -134,7 +137,6 @@ public:
     void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
                              CRef<CSeq_point>&    pnt_ref,
                              CRef<CSeq_interval>& int_ref) const;
-
     void SetAnnotObjectRange(const TRange& range, bool product);
     void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
 
@@ -148,6 +150,10 @@ public:
     void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
     void SetTotalRange(const TRange& range);
     void SetMappedStrand(ENa_strand strand);
+    void SetMappedSeq_feat(CSeq_feat& feat);
+    // Copy non-modified members from original feature
+    // (all except partial flag and location/product, depending on mode.
+    void InitializeMappedSeq_feat(const CSeq_feat& src, CSeq_feat& dst) const;
 
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
@@ -193,6 +199,12 @@ private:
     SAnnotSelector& GetSelector(void);
     CScope::EGetBioseqFlag GetGetFlag(void) const;
     bool CanResolveId(const CSeq_id_Handle& idh, CBioseq_Handle& bh);
+
+    CConstRef<CSeq_feat> MakeOriginalFeature(const CAnnotObject_Ref& feat_ref);
+    CConstRef<CSeq_loc> MakeMappedLocation(const CAnnotObject_Ref& feat_ref);
+    CConstRef<CSeq_feat> MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
+                                           CSeq_feat& original_feat,
+                                           CSeq_loc& mapped_location);
 
     void x_Clear(void);
     void x_Initialize(const CBioseq_Handle& bioseq,
@@ -401,7 +413,6 @@ bool CAnnotObject_Ref::IsMapped(void) const
     _ASSERT((GetMappedObjectType() == eMappedObjType_not_set) ==
             !m_MappedObject);
     return GetMappedObjectType() != eMappedObjType_not_set;
-
 }
 
 
@@ -409,7 +420,6 @@ inline
 bool CAnnotObject_Ref::MappedSeq_locNeedsUpdate(void) const
 {
     return GetMappedObjectType() == eMappedObjType_Seq_id;
-
 }
 
 
@@ -430,6 +440,10 @@ bool CAnnotObject_Ref::IsMappedProduct(void) const
 inline
 const CSeq_loc& CAnnotObject_Ref::GetMappedSeq_loc(void) const
 {
+    if (GetMappedObjectType() == eMappedObjType_Seq_feat) {
+        return IsProduct() ? GetMappedSeq_feat().GetProduct()
+            : GetMappedSeq_feat().GetLocation();
+    }
     _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc);
     return static_cast<const CSeq_loc&>(*m_MappedObject);
 }
@@ -440,6 +454,14 @@ const CSeq_id& CAnnotObject_Ref::GetMappedSeq_id(void) const
 {
     _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
     return static_cast<const CSeq_id&>(*m_MappedObject);
+}
+
+
+inline
+const CSeq_feat& CAnnotObject_Ref::GetMappedSeq_feat(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_feat);
+    return static_cast<const CSeq_feat&>(*m_MappedObject);
 }
 
 
@@ -623,6 +645,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/10/08 14:18:34  grichenk
+* Moved MakeMappedXXXX methods to CAnnotCollector,
+* fixed mapped feature initialization bug.
+*
 * Revision 1.16  2004/09/30 15:03:41  grichenk
 * Fixed segments resolving
 *

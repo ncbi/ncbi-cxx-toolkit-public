@@ -347,182 +347,13 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 }
 
 
-const CSeq_feat& CMappedFeat::x_MakeOriginalFeature(void) const
-{
-    if ( m_FeatRef->IsSNPFeat() ) {
-        _ASSERT(!m_OriginalSeq_feat);
-        const CSeq_annot_SNP_Info& snp_annot =
-            m_FeatRef->GetSeq_annot_SNP_Info();
-        const SSNP_Info& snp_info =
-            snp_annot.GetSNP_Info(m_FeatRef->GetAnnotObjectIndex());
-        CRef<CSeq_feat> orig_feat;
-        m_Collector->m_CreatedOriginalSeq_feat.AtomicReleaseTo(orig_feat);
-        CRef<CSeq_point> created_point;
-        m_Collector->m_CreatedOriginalSeq_point.AtomicReleaseTo(created_point);
-        CRef<CSeq_interval> created_interval;
-        m_Collector->m_CreatedOriginalSeq_interval.
-            AtomicReleaseTo(created_interval);
-        snp_info.UpdateSeq_feat(orig_feat,
-                                created_point,
-                                created_interval,
-                                snp_annot);
-        m_OriginalSeq_feat = orig_feat;
-        m_Collector->m_CreatedOriginalSeq_feat.AtomicResetFrom(orig_feat);
-        m_Collector->m_CreatedOriginalSeq_point.AtomicResetFrom(created_point);
-        m_Collector->m_CreatedOriginalSeq_interval.
-            AtomicResetFrom(created_interval);
-    }
-    else {
-        m_OriginalSeq_feat.Reset(&m_FeatRef->GetFeat());
-    }
-    return *m_OriginalSeq_feat;
-}
-
-
-const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
-{
-    _ASSERT(!m_MappedSeq_loc);
-    if ( m_FeatRef->MappedSeq_locNeedsUpdate() ) {
-        _ASSERT(!m_MappedSeq_feat);
-        // need to covert Seq_id to Seq_loc
-        // clear references to mapped location from mapped feature
-        // Can not use m_MappedSeq_feat since it's a const-ref
-        CRef<CSeq_feat> mapped_feat;
-        m_Collector->m_CreatedMappedSeq_feat.AtomicReleaseTo(mapped_feat);
-        if ( mapped_feat ) {
-            if ( !mapped_feat->ReferencedOnlyOnce() ) {
-                mapped_feat.Reset();
-            }
-            else {
-                // hack with null pointer as ResetLocation doesn't reset CRef<>
-                CSeq_loc* loc = 0;
-                mapped_feat->SetLocation(*loc);
-                mapped_feat->ResetProduct();
-            }
-        }
-        m_MappedSeq_feat = mapped_feat;
-        m_Collector->m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
-
-        CRef<CSeq_loc> mapped_loc;
-        m_Collector->m_CreatedMappedSeq_loc.AtomicReleaseTo(mapped_loc);
-        CRef<CSeq_point> created_point;
-        m_Collector->m_CreatedMappedSeq_point.AtomicReleaseTo(created_point);
-        CRef<CSeq_interval> created_interval;
-        m_Collector->m_CreatedMappedSeq_interval.
-            AtomicReleaseTo(created_interval);
-        m_FeatRef->UpdateMappedSeq_loc(mapped_loc,
-                                       created_point,
-                                       created_interval);
-        m_MappedSeq_loc = mapped_loc;
-        m_Collector->m_CreatedMappedSeq_loc.AtomicResetFrom(mapped_loc);
-        m_Collector->m_CreatedMappedSeq_point.AtomicResetFrom(created_point);
-        m_Collector->m_CreatedMappedSeq_interval.
-            AtomicResetFrom(created_interval);
-    }
-    else if ( m_FeatRef->IsMapped() ) {
-        _ASSERT(!m_MappedSeq_feat);
-        m_MappedSeq_loc.Reset(&m_FeatRef->GetMappedSeq_loc());
-    }
-    return *m_MappedSeq_loc;
-}
-
-
 const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 {
-    if ( m_FeatRef->IsMapped() ) {
-        _ASSERT(!m_MappedSeq_feat);
-        // some Seq-loc object is mapped
-        CRef<CSeq_feat> mapped_feat;
-        m_Collector->m_CreatedMappedSeq_feat.AtomicReleaseTo(mapped_feat);
-        if ( !mapped_feat || !mapped_feat->ReferencedOnlyOnce() ) {
-            mapped_feat.Reset(new CSeq_feat);
-        }
-        CSeq_feat& dst = *mapped_feat;
-        CSeq_feat& src = const_cast<CSeq_feat&>(GetOriginalFeature());
-
-        if ( src.IsSetId() )
-            dst.SetId(src.SetId());
-        else
-            dst.ResetId();
-
-        dst.SetData(src.SetData());
-
-        if ( GetPartial() )
-            dst.SetPartial(true);
-        else
-            dst.ResetPartial();
-
-        if ( src.IsSetExcept() )
-            dst.SetExcept(src.GetExcept());
-        else
-            dst.ResetExcept();
-        
-        if ( src.IsSetComment() )
-            dst.SetComment(src.GetComment());
-        else
-            dst.ResetComment();
-
-        GetMappedLocation();
-
-        dst.SetLocation(const_cast<CSeq_loc&>(GetLocation()));
-
-        if ( src.IsSetProduct() ) {
-            dst.SetProduct(const_cast<CSeq_loc&>(GetProduct()));
-        }
-        else {
-            dst.ResetProduct();
-        }
-
-        if ( src.IsSetQual() )
-            dst.SetQual() = src.SetQual();
-        else
-            dst.ResetQual();
-
-        if ( src.IsSetTitle() )
-            dst.SetTitle(src.GetTitle());
-        else
-            dst.ResetTitle();
-
-        if ( src.IsSetExt() )
-            dst.SetExt(src.SetExt());
-        else
-            dst.ResetExt();
-
-        if ( src.IsSetCit() )
-            dst.SetCit(src.SetCit());
-        else
-            dst.ResetCit();
-
-        if ( src.IsSetExp_ev() )
-            dst.SetExp_ev(src.GetExp_ev());
-        else
-            dst.ResetExp_ev();
-
-        if ( src.IsSetXref() )
-            dst.SetXref() = src.SetXref();
-        else
-            dst.ResetXref();
-
-        if ( src.IsSetDbxref() )
-            dst.SetDbxref() = src.SetDbxref();
-        else
-            dst.ResetDbxref();
-
-        if ( src.IsSetPseudo() )
-            dst.SetPseudo(src.GetPseudo());
-        else
-            dst.ResetPseudo();
-
-        if ( src.IsSetExcept_text() )
-            dst.SetExcept_text(src.GetExcept_text());
-        else
-            dst.ResetExcept_text();
-        m_MappedSeq_feat = mapped_feat;
-        m_Collector->m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
-    }
-    else {
-        m_MappedSeq_feat.Reset(&GetOriginalFeature());
-    }
+    CSeq_feat& src = const_cast<CSeq_feat&>(GetOriginalFeature());
+    CSeq_loc& mapped_location = const_cast<CSeq_loc&>(GetMappedLocation());
+    m_MappedSeq_feat = m_Collector->MakeMappedFeature(*m_FeatRef,
+                                                      src,
+                                                      mapped_location);
     return *m_MappedSeq_feat;
 }
 
@@ -533,6 +364,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/10/08 14:18:34  grichenk
+* Moved MakeMappedXXXX methods to CAnnotCollector,
+* fixed mapped feature initialization bug.
+*
 * Revision 1.33  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

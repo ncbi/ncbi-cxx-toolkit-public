@@ -175,9 +175,7 @@ private:
                      const TIterator& annot);
     void Reset(void);
 
-    const CSeq_feat& x_MakeOriginalFeature(void) const;
     const CSeq_feat& x_MakeMappedFeature(void) const;
-    const CSeq_loc& x_MakeMappedLocation(void) const;
 
     const CSeq_loc& GetMappedLocation(void) const;
 
@@ -372,7 +370,10 @@ const CMappedFeat* CFeat_CI::operator-> (void) const
 inline
 const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
 {
-    return m_OriginalSeq_feat? *m_OriginalSeq_feat: x_MakeOriginalFeature();
+    if ( !m_OriginalSeq_feat ) {
+        m_OriginalSeq_feat = m_Collector->MakeOriginalFeature(*m_FeatRef);
+    }
+    return *m_OriginalSeq_feat;
 }
 
 
@@ -386,7 +387,11 @@ const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
 inline
 const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
 {
-    return m_MappedSeq_loc? *m_MappedSeq_loc: x_MakeMappedLocation();
+    if ( !m_MappedSeq_loc ) {
+        _ASSERT(!m_MappedSeq_feat);
+        m_MappedSeq_loc = m_Collector->MakeMappedLocation(*m_FeatRef);
+    }
+    return *m_MappedSeq_loc;
 }
 
 
@@ -399,6 +404,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/10/08 14:18:34  grichenk
+* Moved MakeMappedXXXX methods to CAnnotCollector,
+* fixed mapped feature initialization bug.
+*
 * Revision 1.44  2004/10/07 13:59:35  vasilche
 * Better name for member of CFeat_CI. Removed mutable.
 *
