@@ -412,6 +412,7 @@ on SetProjectData()
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
 			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"})}))
 		
+		AddGuiProject("gui_dlg", {}, "dialogs")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
 		AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
@@ -427,7 +428,7 @@ on SetProjectData()
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_gl", {}, "widgets:gl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
-		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
+		-- AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
 		-- AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
 		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
 			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
@@ -484,7 +485,7 @@ on SetProjectData()
 			GuiFileDataExcept("gui:core", {"settings_builtin.cpp"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_dlg", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
@@ -516,7 +517,7 @@ on SetProjectData()
 		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix", "w_seq_graphic"})
+			{"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix", "w_seq_graphic"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
