@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/04/15 19:07:33  kholodov
+* Removed global typecheck for CVariant
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -42,6 +45,8 @@
 */
 
 #include <exception>
+#include <corelib/ncbiexpt.hpp>
+
 /*
 #include <corelib/ncbiobj.hpp>
 
@@ -76,15 +81,7 @@ D CastTo(T* t) {
   return temp;
 }
 
-inline
-void crash(bool e) 
-{
-#ifdef _DEBUG
-  if( !e ) {
-    int *i = 0;
-    *i = 5;
-  }
-#endif
-}
+
+
 //=================================================================
 #endif // _ARRAY_HPP_
