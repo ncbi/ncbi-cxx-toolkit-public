@@ -29,7 +29,6 @@
  *
  */
 
-#include <connect/ncbi_core.h>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 
@@ -406,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/11/10 17:13:52  vakatov
+ * - #include <connect/ncbi_core.h>
+ *
  * Revision 1.33  2003/09/25 16:54:07  ivanov
  * CPIDGuard class moved to ncbi_process.cpp.
  *
