@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.88  2004/03/10 17:33:10  papadopo
+ * Make a separate lookup table type for RPS blast
+ *
  * Revision 1.87  2004/03/09 22:37:26  dondosha
  * Added const qualifiers to parameter arguments wherever relevant
  *
@@ -1066,7 +1069,7 @@ Int2
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program_number, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
-   Boolean use_pssm, RPSInfo *rps_info)
+   Boolean use_pssm, Boolean rps_blast)
 {
    if (!options)
       return 1;
@@ -1094,10 +1097,10 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    if (use_pssm)
       options->use_pssm = use_pssm;
+   if (rps_blast)
+      options->lut_type = RPS_LOOKUP_TABLE;
    if (word_size)
       options->word_size = word_size;
-   if (rps_info)
-      options->rps_info = rps_info;
    if (program_number == blast_type_blastn) {
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;

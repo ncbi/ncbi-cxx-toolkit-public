@@ -89,13 +89,15 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      Int4 array_size,
 			      BlastInitHitList* ungapped_hsps)
 {
-   LookupTable* lookup = lookup_wrap->lut;
-   Int4 wordsize = lookup->wordsize;
+   LookupTable* lookup=NULL;
+   RPSLookupTable* rps_lookup=NULL;
+   Boolean use_pssm;
+   Int4 wordsize;
    Int4 i;
    Int4 hits=0;
    Int4 totalhits=0;
    Int4 first_offset = 0;
-   Int4 last_offset  = subject->length - wordsize;
+   Int4 last_offset;
    Int4 score;
    Int4 hsp_q, hsp_s, hsp_len;
    Int4 window;
@@ -112,9 +114,20 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    diag_mask = diag->diag_mask;
    window = diag->window;
 
+   if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
+      rps_lookup = (RPSLookupTable *)lookup_wrap->lut;
+      wordsize = rps_lookup->wordsize;
+   }
+   else {
+      lookup = (LookupTable *)lookup_wrap->lut;
+      wordsize = lookup->wordsize;
+   }
+   last_offset  = subject->length - wordsize;
+   use_pssm = (rps_lookup != NULL) || (lookup->use_pssm);
+
    while(first_offset <= last_offset) {
       /* scan the subject sequence for hits */
-      if (lookup->rps_backbone)
+      if (rps_lookup)
          hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
                                 query_offsets, subject_offsets, array_size);
       else
@@ -161,7 +174,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                                         last_hit + wordsize, 
                                         subject_offsets[i], query_offsets[i], 
                                         dropoff, &hsp_q, &hsp_s, 
-                                        &hsp_len, lookup->use_pssm,
+                                        &hsp_len, use_pssm,
                                         wordsize, &right_extend, &s_last_off);
 
                /* if the hsp meets the score threshold, report it */
@@ -208,11 +221,14 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Int4 array_size,
                               BlastInitHitList* ungapped_hsps)
 {
-   LookupTable* lookup = lookup_wrap->lut;
+   LookupTable* lookup=NULL;
+   RPSLookupTable* rps_lookup=NULL;
+   Boolean use_pssm;
+   Int4 wordsize;
    Int4 hits=0;
    Int4 totalhits=0;
    Int4 first_offset = 0;
-   Int4 last_offset  = subject->length - lookup->wordsize;
+   Int4 last_offset;
    Int4 hsp_q, hsp_s, hsp_len;
    Int4 s_last_off;
    Int4 i;
@@ -227,10 +243,21 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    diag_array = diag->diag_array;
    diag_mask = diag->diag_mask;
    
+   if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
+      rps_lookup = (RPSLookupTable *)lookup_wrap->lut;
+      wordsize = rps_lookup->wordsize;
+   }
+   else {
+      lookup = (LookupTable *)lookup_wrap->lut;
+      wordsize = lookup->wordsize;
+   }
+   last_offset  = subject->length - wordsize;
+   use_pssm = (rps_lookup != NULL) || (lookup->use_pssm);
+
    while(first_offset <= last_offset)
    {
       /* scan the subject sequence for hits */
-      if (lookup->rps_backbone)
+      if (rps_lookup)
          hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
                                 query_offsets, subject_offsets, array_size);
       else
@@ -251,7 +278,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
          if (diff > 0) {
             score=BlastAaExtendOneHit(matrix, subject, query,
                      subject_offsets[i], query_offsets[i], dropoff,
-                     &hsp_q, &hsp_s, &hsp_len, lookup->use_pssm, &s_last_off);
+                     &hsp_q, &hsp_s, &hsp_len, use_pssm, &s_last_off);
 
             /* if the hsp meets the score threshold, report it */
             if (score >= cutoff) {

@@ -377,7 +377,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 {
    Int2 status = 0;
    BlastCoreAuxStruct* aux_struct;
-   Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE);
+   Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE ||
+                         lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
    Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
    Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
@@ -597,7 +598,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    Int8 dbsize;
    Int4 num_db_seqs;
    Uint4 avg_subj_length = 0;
-   LookupTable *lookup = (LookupTable *)lookup_wrap->lut;
+   RPSLookupTable *lookup = (RPSLookupTable *)lookup_wrap->lut;
    double scale_factor;
    BlastQueryInfo concat_db_info;
    BLAST_SequenceBlk concat_db;
@@ -622,13 +623,12 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    /* modify scoring and gap alignment structures for
       use with RPS blast.
 
-      XXX these should not all be done here, but scattered
+      FIXME these should not all be done here, but scattered
       among the relevant initialization functions */
 
    rps_info = lookup->rps_aux_info;
    scale_factor = rps_info->scale_factor;
    internal_psi_options->scalingFactor = scale_factor;
-   lookup->use_pssm = TRUE;
    gap_align->positionBased = TRUE;
    gap_align->rps_blast = TRUE;
    gap_align->sbp->posMatrix = lookup->rps_pssm;
@@ -742,7 +742,6 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    gap_align->sbp->posMatrix = NULL;
    gap_align->positionBased = FALSE;
    gap_align->rps_blast = FALSE;
-   lookup->use_pssm = FALSE;
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);

@@ -29,6 +29,7 @@
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_lookup.h>
+#include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/lookup_util.h>
 
 static char const rcsid[] = "$Id$";
@@ -60,23 +61,20 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt,
   return LookupTableNew(opt, lut, TRUE);
 }
 
-Int4 RPSLookupTableNew(const LookupTableOptions* opt,
-		      LookupTable* * lut)
+Int4 RPSLookupTableNew(const RPSInfo *info,
+		      RPSLookupTable* * lut)
 {
    Int4 i;
-   Int4 num_letters;
-   RPSInfo* info;
    RPSLookupFileHeader *lookup_header;
    RPSProfileHeader *profile_header;
-   LookupTable* lookup = *lut = 
-      (LookupTable*) calloc(1, sizeof(LookupTable));
+   RPSLookupTable* lookup = *lut = 
+      (RPSLookupTable*) calloc(1, sizeof(RPSLookupTable));
    Int4* pssm_start;
    Int4 num_profiles;
+   Int4 num_pssm_rows;
    Int4 longest_chain;
 
-   ASSERT(lookup != NULL);
-
-   info = opt->rps_info;
+   ASSERT(info != NULL);
 
    /* Fill in the lookup table information. */
 
@@ -84,7 +82,7 @@ Int4 RPSLookupTableNew(const LookupTableOptions* opt,
    if (lookup_header->magic_number != RPS_MAGIC_NUM)
       return -1;
 
-   lookup->rps_aux_info = &info->aux_info;
+   lookup->rps_aux_info = (RPSAuxInfo *)(&info->aux_info);
    lookup->wordsize = BLAST_WORDSIZE_PROT;
    lookup->alphabet_size = PSI_ALPHABET_SIZE;
    lookup->charsize = ilog2(lookup->alphabet_size) + 1;
@@ -97,7 +95,7 @@ Int4 RPSLookupTableNew(const LookupTableOptions* opt,
 			(lookup->backbone_size + 1)* sizeof(RPSBackboneCell));
    lookup->overflow_size = lookup_header->overflow_hits;
 
-   /* allocate the pv_array */
+   /* fill in the pv_array */
    
    lookup->pv = (PV_ARRAY_TYPE *)
       calloc((lookup->backbone_size >> PV_ARRAY_BTS) , sizeof(PV_ARRAY_TYPE));
@@ -117,15 +115,15 @@ Int4 RPSLookupTableNew(const LookupTableOptions* opt,
 
    profile_header = info->profile_header;
    if (profile_header->magic_number != RPS_MAGIC_NUM)
-      return -1;
+      return -2;
 
    lookup->rps_seq_offsets = profile_header->start_offsets;
    num_profiles = profile_header->num_profiles;
-   num_letters = lookup->rps_seq_offsets[num_profiles];
-   lookup->rps_pssm = (Int4 **)malloc((num_letters+1) * sizeof(Int4 **));
+   num_pssm_rows = lookup->rps_seq_offsets[num_profiles];
+   lookup->rps_pssm = (Int4 **)malloc((num_pssm_rows+1) * sizeof(Int4 *));
    pssm_start = profile_header->start_offsets + num_profiles + 1;
 
-   for (i = 0; i <= num_letters; i++) {
+   for (i = 0; i < num_pssm_rows + 1; i++) {
       lookup->rps_pssm[i] = pssm_start;
       pssm_start += lookup->alphabet_size;
    }
@@ -474,7 +472,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
   Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
-  LookupTable* lookup = lookup_wrap->lut;
+  RPSLookupTable* lookup = (RPSLookupTable *)lookup_wrap->lut;
   RPSBackboneCell *cell;
 
   s_first = sequence->sequence + *offset;
@@ -1085,16 +1083,18 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
 
 LookupTable* LookupTableDestruct(LookupTable* lookup)
 {
-   if (lookup->rps_backbone == NULL) {
-      sfree(lookup->thick_backbone);
-      sfree(lookup->overflow);
-   }
-   else {
-      /* For RPS blast, the following will only free
-         memory that was allocated by RPSLookupTableNew. */
-      sfree(lookup->rps_pssm);
-   }
+   sfree(lookup->thick_backbone);
+   sfree(lookup->overflow);
+   sfree(lookup->pv);
+   sfree(lookup);
+   return NULL;
+}
 
+RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup)
+{
+   /* The following will only free memory that was 
+      allocated by RPSLookupTableNew. */
+   sfree(lookup->rps_pssm);
    sfree(lookup->pv);
    sfree(lookup);
    return NULL;

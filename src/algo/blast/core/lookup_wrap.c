@@ -39,11 +39,12 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/phi_lookup.h>
+#include <algo/blast/core/blast_rps.h>
 
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
         ListNode* lookup_segments, BlastScoreBlk* sbp, 
-        LookupTableWrap** lookup_wrap_ptr)
+        LookupTableWrap** lookup_wrap_ptr, RPSInfo *rps_info)
 {
    LookupTableWrap* lookup_wrap;
    Boolean is_na;
@@ -53,11 +54,6 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       (LookupTableWrap*) calloc(1, sizeof(LookupTableWrap));
    lookup_wrap->lut_type = lookup_options->lut_type;
 
-   if (lookup_options->rps_info) {
-      return RPSLookupTableNew(lookup_options, 
-         (LookupTable* *) &(lookup_wrap->lut));
-   }
-      
    switch ( lookup_options->lut_type ) {
    case AA_LOOKUP_TABLE:
       BlastAaLookupNew(lookup_options, (LookupTable* *)
@@ -89,6 +85,11 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       sbp->effective_search_sp = 
          PHIBlastIndexQuery((PHILookupTable*) lookup_wrap->lut, query,
                             lookup_segments, is_na);
+      break;
+   case RPS_LOOKUP_TABLE:
+      RPSLookupTableNew(rps_info, (RPSLookupTable* *)(&lookup_wrap->lut));
+      break;
+      
    default:
       {
          /* FIXME - emit error condition here */
@@ -110,6 +111,9 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
               lookup->lut_type == PHI_NA_LOOKUP) {
       lookup->lut = (void*)
          PHILookupTableDestruct((PHILookupTable*)lookup->lut);
+   } else if (lookup->lut_type == RPS_LOOKUP_TABLE) {
+      lookup->lut = (void*) 
+         RPSLookupTableDestruct((RPSLookupTable*)lookup->lut);
    } else {
       lookup->lut = (void*) 
          LookupTableDestruct((LookupTable*)lookup->lut);
@@ -130,7 +134,7 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
    case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
       offset_array_size = MIN_PHI_LOOKUP_SIZE;
       break;
-   case AA_LOOKUP_TABLE: case NA_LOOKUP_TABLE: 
+   case AA_LOOKUP_TABLE: case NA_LOOKUP_TABLE: case RPS_LOOKUP_TABLE:
       offset_array_size = OFFSET_ARRAY_SIZE + 
          ((LookupTable*)lookup->lut)->longest_chain;
       break;
