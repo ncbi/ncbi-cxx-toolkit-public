@@ -84,6 +84,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     return copy;
 }
 
+/*
 static Int4 Round(double d)
 {
     if (d >= 0.0)
@@ -92,7 +93,6 @@ static Int4 Round(double d)
         return (Int4) (d - 0.5);
 }
 
-/*
 const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 {
     if (pssm) return pssm;
@@ -1432,7 +1432,7 @@ unsigned int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int r
         BlockMultipleAlignment::eUnalignedJustification justification) const
 {
     const Block::Range *range = GetRangeOfRow(row);
-    unsigned int seqIndex, rangeWidth, rangeMiddle, extraSpace;
+    unsigned int seqIndex = BlockMultipleAlignment::UNDEFINED, rangeWidth, rangeMiddle, extraSpace;
 
     switch (justification) {
         case BlockMultipleAlignment::eLeft:
@@ -1509,6 +1509,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 16:12:30  thiessen
+* fix GCC warnings
+*
 * Revision 1.1  2004/05/25 15:52:17  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *

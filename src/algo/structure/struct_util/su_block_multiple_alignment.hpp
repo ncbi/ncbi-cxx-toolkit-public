@@ -302,10 +302,10 @@ protected:
     Block(const BlockMultipleAlignment *multiple) :
         m_parentAlignment(multiple), m_ranges(multiple->NRows()) { }
 
+    const BlockMultipleAlignment *m_parentAlignment;
+
     typedef std::vector < Range > RangeList;
     RangeList m_ranges;
-
-    const BlockMultipleAlignment *m_parentAlignment;
 };
 
 
@@ -359,6 +359,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 16:12:30  thiessen
+* fix GCC warnings
+*
 * Revision 1.1  2004/05/25 15:52:18  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *

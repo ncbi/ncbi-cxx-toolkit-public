@@ -62,7 +62,7 @@ public:
     // Seq-id stuff
 	const ncbi::objects::CSeq_id& GetPreferredIdentifier(void) const;
 	bool MatchesSeqId(const ncbi::objects::CSeq_id& seqID) const;
-    string IdentifierString(void) const;
+    std::string IdentifierString(void) const;
 };
 
 class SequenceSet : public ncbi::CObject
@@ -82,6 +82,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/25 16:12:30  thiessen
+* fix GCC warnings
+*
 * Revision 1.2  2004/05/25 15:52:18  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *

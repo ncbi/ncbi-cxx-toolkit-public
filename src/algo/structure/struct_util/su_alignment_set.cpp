@@ -285,8 +285,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqA
 
         if (!block.IsSetDim() && block.GetDim() != 2 ||
                 block.GetIds().size() != 2 ||
-                block.GetStarts().size() != 2 * block.GetNumseg() ||
-                block.GetLens().size() != block.GetNumseg())
+                block.GetStarts().size() != ((unsigned int) 2 * block.GetNumseg()) ||
+                block.GetLens().size() != ((unsigned int) block.GetNumseg()))
             THROW_MESSAGE("MasterSlaveAlignment::MasterSlaveAlignment() - incorrect denseg block dimension");
 
         // make sure identities of master and slave sequences match in each block
@@ -309,7 +309,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqA
                 slaveRes = *(starts++);
                 masterRes = *(starts++);
             }
-            if (masterRes != UNALIGNED && slaveRes != UNALIGNED) { // skip gaps
+            if (masterRes != -1 && slaveRes != -1) { // skip gaps
                 if ((masterRes + *lens - 1) >= m_master->Length() ||
                         (slaveRes + *lens - 1) >= m_slave->Length())
                     THROW_MESSAGE("MasterSlaveAlignment::MasterSlaveAlignment() - "
@@ -330,6 +330,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/25 16:12:30  thiessen
+* fix GCC warnings
+*
 * Revision 1.2  2004/05/25 15:52:17  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *
