@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2000/10/20 22:33:37  vakatov
+ * CArgAllow_Integers, CArgAllow_Doubles:  swap min/max, if necessary
+ *
  * Revision 1.15  2000/10/20 22:23:28  vakatov
  * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
  *
@@ -1638,9 +1641,15 @@ string CArgAllow_Strings::GetUsage(void) const
 //
 
 CArgAllow_Integers::CArgAllow_Integers(long x_min, long x_max)
-    : CArgAllow(), m_Min(x_min), m_Max(x_max)
+    : CArgAllow()
 {
-    return;
+    if (x_min <= x_max) {
+        m_Min = x_min;
+        m_Max = x_max;
+    } else {
+        m_Min = x_max;
+        m_Max = x_min;
+    }
 }
 
 
@@ -1666,9 +1675,15 @@ string CArgAllow_Integers::GetUsage(void) const
 //
 
 CArgAllow_Doubles::CArgAllow_Doubles(double x_min, double x_max)
-    : CArgAllow(), m_Min(x_min), m_Max(x_max)
+    : CArgAllow()
 {
-    return;
+    if (x_min <= x_max) {
+        m_Min = x_min;
+        m_Max = x_max;
+    } else {
+        m_Min = x_max;
+        m_Max = x_min;
+    }
 }
 
 
