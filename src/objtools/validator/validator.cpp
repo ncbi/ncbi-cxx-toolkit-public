@@ -269,6 +269,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_HistoryGiCollision",
     "SEQ_INST_GiWithoutAccession",
     "SEQ_INST_MultipleAccessions",
+    "SEQ_INST_HistAssemblyMissing",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -374,6 +375,8 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_CollidingGeneNames",
     "SEQ_FEAT_MultiIntervalGene",
     "SEQ_FEAT_FeatContentDup",
+    "SEQ_FEAT_BadProductSeqId",
+    "SEQ_FEAT_RnaProductMismatch",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -995,6 +998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/01/24 20:37:54  shomrat
+* Added missing error strings
+*
 * Revision 1.5  2003/01/07 20:00:57  shomrat
 * Member function GetMessage() changed to GetMsg() due o conflict
 *
