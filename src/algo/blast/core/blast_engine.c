@@ -426,9 +426,9 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
                                           gap_align->sbp, 0, 1.0);
    }
    
-   /* Free the local query info structure when needed. */
+   /* Free the local query info structure when needed (in RPS BLAST). */
    if (query_info != query_info_in)
-      sfree(query_info);
+      BlastQueryInfoFree(query_info);
 
    /* Discard HSPs that don't pass the e-value test. */
    status = Blast_HSPListReapByEvalue(hsp_list, hit_options);

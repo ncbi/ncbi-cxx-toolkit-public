@@ -968,14 +968,15 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
    GetSeqArg seq_arg;
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;
-   BlastQueryInfo concat_db_info;
+   BlastQueryInfo* concat_db_info = NULL;
 
    if (!hsp_stream || !seq_src || !results) {
       return -1;
    }
    
+   concat_db_info = (BlastQueryInfo*) malloc(sizeof(BlastQueryInfo));
    if ((status = 
-        s_RPSGapAlignDataPrepare(&concat_db_info, gap_align, rps_info)) != 0)
+        s_RPSGapAlignDataPrepare(concat_db_info, gap_align, rps_info)) != 0)
       return status;
       
    sbp = gap_align->sbp;
@@ -1006,7 +1007,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
-      db_seq_start = concat_db_info.contexts[hsp_list->oid].query_offset;
+      db_seq_start = concat_db_info->contexts[hsp_list->oid].query_offset;
       
       /* Update the statistics for this database sequence
          (if not a translated search) */
@@ -1062,6 +1063,8 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
       Blast_HSPResultsInsertHSPList(results, hsp_list, 
                                     hit_params->options->hitlist_size);
    }
+
+   BlastQueryInfoFree(concat_db_info);
 
    /* Free the sequence block allocated inside the loop */
    BlastSequenceBlkFree(seq_arg.seq);
