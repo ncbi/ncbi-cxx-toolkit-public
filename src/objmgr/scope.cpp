@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/04/22 20:04:39  grichenk
+* Fixed TSE dropping, removed commented code
+*
 * Revision 1.17  2002/04/17 21:09:40  grichenk
 * Fixed annotations loading
 *
@@ -123,8 +126,6 @@ CScope::~CScope(void)
 {
     // Drop and release all TSEs
     iterate(TRequestHistory, it, m_History) {
-        m_pObjMgr->RemoveTopLevelSeqEntry(m_setDataSrc,
-            *(*it)->m_TSE);
         (*it)->Unlock();
     }
     m_pObjMgr->RevokeScope(*this);
@@ -147,15 +148,6 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
 {
     m_pObjMgr->AddTopLevelSeqEntry(m_setDataSrc, top_entry);
 }
-
-
-/*
-void CScope::DropTopLevelSeqEntry(CSeq_entry& top_entry)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    m_pObjMgr->RemoveTopLevelSeqEntry( m_setDataSrc, top_entry);
-}
-*/
 
 
 bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
@@ -323,14 +315,6 @@ bool CScope::x_GetSequence(const CBioseq_Handle& handle,
         return false;
     x_AddToHistory(*match.m_TSE);
     return match.m_DataSource->GetSequence(handle, point, seq_piece, *this);
-/*
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->GetSequence(handle, point, seq_piece, *this) ) {
-            return true;
-        }
-    }
-    return false;
-*/
 }
 
 
