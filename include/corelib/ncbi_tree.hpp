@@ -48,8 +48,8 @@ public:
     typedef V                          value_type;
     typedef CTreeNWay<V>               TTreeType;
     typedef list<TTreeType*>           TNodeList;
-    typedef TNodeList::iterator        nodelist_iterator;
-    typedef TNodeList::const_iterator  const_nodelist_iterator;
+    typedef TNodeList::iterator        TNodeList_I;
+    typedef TNodeList::const_iterator  TNodeList_CI;
 
     /// Tree node construction
     ///
@@ -74,16 +74,16 @@ public:
     TTreeType* GetParent() { return m_Parent; }
 
     /// Return first const iterator on subnode list
-    const_nodelist_iterator SubNodeBegin() const { return m_Nodes.begin(); }
+    TNodeList_CI SubNodeBegin() const { return m_Nodes.begin(); }
 
     /// Return first iterator on subnode list
-    nodelist_iterator SubNodeBegin() { return m_Nodes.begin(); }
+    TNodeList_I SubNodeBegin() { return m_Nodes.begin(); }
 
     /// Return last const iterator on subnode list
-    const_nodelist_iterator SubNodeEnd() const { return m_Nodes.end(); }
+    TNodeList_CI SubNodeEnd() const { return m_Nodes.end(); }
 
     /// Return last iterator on subnode list
-    nodelist_iterator SubNodeEnd() { return m_Nodes.end(); }
+    TNodeList_I SubNodeEnd() { return m_Nodes.end(); }
 
     /// Return node's value
     const V& GetValue() const { return m_Value; }
@@ -134,7 +134,7 @@ public:
     ///    subnode  direct subnode pointer
     ///
     /// @return subtree pointer or NULL if requested subnode does not exist
-    TTreeType* DetachNode(nodelist_iterator it);
+    TTreeType* DetachNode(TNodeList_I it);
 
     /// Add new subnode
     ///
@@ -231,7 +231,7 @@ void CTreeNWay<V>::RemoveNode(TTreeType* subnode)
 }
 
 template<class V>
-void CTreeNWay<V>::RemoveNode(nodelist_iterator it)
+void CTreeNWay<V>::RemoveNode(TNodeList_I it)
 {
     CTreeNWay* node = *it;
     m_Nodes.erase(it);
@@ -255,7 +255,7 @@ CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TTreeType* subnode)
 
 
 template<class V>
-CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(nodelist_iterator it)
+CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TNodeList_I it)
 {
     CTreeNWay* node = *it;
     m_Nodes.erase(it);
@@ -283,7 +283,7 @@ CTreeNWay<V>* CTreeNWay<V>::AddNode(const V& val)
 
 
 template<class V>
-void CTreeNWay<V>::InsertNode(nodelist_iterator it,
+void CTreeNWay<V>::InsertNode(TNodeList_I it,
                               TTreeType* subnode)
 {
     m_Nodes.insert(it, subnode);
@@ -297,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/09 13:27:39  kuznets
+ * Cosmetic fixes. nodelist_iterator renamed to match the NCBI coding policy.
+ *
  * Revision 1.4  2004/01/07 21:38:29  jcherry
  * Added method for adding child node given a value
  *
