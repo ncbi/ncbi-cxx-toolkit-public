@@ -133,17 +133,30 @@ public:
     /******************* GI List ***********************/
     void SetGIList(list<Int4> & gi_list)
     {
-        x_SetOneParam("GiList", &gi_list);
+        if (gi_list.empty()) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "Empty gi_list specified.");
+        }
+        x_SetOneParam("GiList", & gi_list);
     }
     
     /******************* DB/subject *******************/
     void SetDatabase(const string & x)
     {
+        if (x.empty()) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "Empty string specified for database.");
+        }
         SetDatabase(x.c_str());
     }
     
     void SetDatabase(const char * x)
     {
+        if (!x) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "NULL specified for database.");
+        }
+        
         CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
         subject_p->SetDatabase(x);
         m_QSR->SetSubject(*subject_p);
@@ -153,12 +166,20 @@ public:
     /******************* Entrez Query *******************/
     void SetEntrezQuery(const char * x)
     {
+        if (!x) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "NULL specified for entrez query.");
+        }
         x_SetOneParam("EntrezQuery", &x);
     }
     
     /******************* Queries *******************/
     void SetQueries(CRef<objects::CBioseq_set> bioseqs)
     {
+        if (bioseqs.Empty()) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "Empty reference for query.");
+        }
         m_QSR->SetQueries(*bioseqs);
         m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
     }
@@ -166,6 +187,10 @@ public:
     /******************* Queries *******************/
     void SetMatrixTable(CRef<objects::CScore_matrix_parameters> matrix)
     {
+        if (matrix.Empty()) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "Empty reference for matrix.");
+        }
         x_SetOneParam("MatrixTable", matrix);
     }
     
@@ -323,6 +348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/12 16:36:37  bealer
+ * - More parameter checking.
+ *
  * Revision 1.3  2004/03/23 22:30:27  bealer
  * - Verify that CRemoteBlast objects are configured properly.
  *
