@@ -1268,7 +1268,7 @@ void CMemoryFile::x_Map(const string& file_name)
         int fd = open(file_name.c_str(), O_RDONLY);
         if (fd < 0)
             break;
-        m_DataPtr = mmap(0, m_Size, PROT_READ, MAP_SHARED, fd, 0);
+        m_DataPtr = mmap(0, (size_t) m_Size, PROT_READ, MAP_SHARED, fd, 0);
         close(fd);
         if (m_DataPtr == MAP_FAILED)
             break;
@@ -1297,7 +1297,7 @@ bool CMemoryFile::Unmap(void)
         status = (CloseHandle(m_Handle->hMap) != 0);
 
 #elif defined(NCBI_OS_UNIX)
-    bool status = (munmap((char*) m_DataPtr, m_Size) == 0);
+    bool status = (munmap((char*) m_DataPtr, (size_t) m_Size) == 0);
 
 #endif
 
@@ -1317,6 +1317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/05/01 22:59:00  vakatov
+ * A couple of (size_t) type casts to avoid compiler warnings in 64-bit
+ *
  * Revision 1.21  2002/04/11 21:08:02  ivanov
  * CVS log moved to end of the file
  *
