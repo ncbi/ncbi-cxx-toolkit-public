@@ -291,8 +291,13 @@ typedef CMSHit * TMSHitList;
 #define MSCULLED2 2
 // original data
 #define MSORIGINAL 0
+// only the few most intense peaks
+#define MSTOPHITS 3
 // number of above cull states
-#define MSNUMDATA 3
+#define MSNUMDATA 4
+
+// the number of top hits to retain -- will be replaced by dynamic value
+#define MSNUMTOP 3
 
 // the maximum charge state that can be considered
 #define MSMAXCHARGE 4
@@ -404,6 +409,8 @@ public:
     int Compare(CLadder& Ladder, int Which = MSCULLED1);
     bool Contains(int value, int Which);
     bool ContainsFast(int value, int Which);
+    // compares only the top hits
+    bool CompareTop(CLadder& Ladder);
     int GetMaxI(int Which = MSORIGINAL);
     // returns the cull array index
     int GetWhich(int Charge);
@@ -465,7 +472,6 @@ private:
     int Charges[MSMAXCHARGE];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
     int tol;        // error tolerance of peptide
-    int Max, Min;   // max and min of input data
     double PlusOne;  // value used to determine if spectra is +1
     EChargeState ComputedCharge;  // algorithmically calculated 
     CAA AA;
@@ -597,6 +603,7 @@ inline void CMSPeak::ClearUsedAll(void)
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
 	ClearUsed(GetWhich(GetCharges()[iCharges]));
+    ClearUsed(MSTOPHITS);
 }
 
 // returns the cull array index
@@ -694,6 +701,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.10  2003/12/22 23:03:18  lewisg
+  top hit code and variable mod fixes
+
   Revision 1.9  2003/12/08 17:37:20  ucko
   #include <string.h> rather than <cstring>, since MIPSpro lacks the latter.
 
