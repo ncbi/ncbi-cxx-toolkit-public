@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/21 17:22:37  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.10  2000/08/17 14:24:05  thiessen
 * added working StyleManager
 *
@@ -84,7 +87,8 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph) :
-    StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST)
+    StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST),
+    moleculeToRedraw(-1)
 {
     static const CBiostruc_residue_graph_set* standardDictionary = NULL;
     if (!standardDictionary) {
@@ -214,6 +218,13 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     }
 }
 
+void ChemicalGraph::RedrawMolecule(int moleculeID)
+{
+    moleculeToRedraw = moleculeID;
+    DrawAll(NULL);
+    moleculeToRedraw = -1;
+}
+
 // This is where the work of breaking objects up into display lists gets done.
 bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 {
@@ -228,6 +239,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     MoleculeMap::const_iterator m, me=molecules.end();
     for (m=molecules.begin(); m!=me; m++) {
         if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
+        if (moleculeToRedraw >= 0 && m->second->id != moleculeToRedraw) continue;
 
         Molecule::DisplayListList::const_iterator md=m->second->displayLists.begin();
         for (a=atomSetList.begin(); a!=ae; a++, md++) {
@@ -266,11 +278,18 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
             if (!continueDraw) return false;
         }
+
+        // we're done if this was the single molecule meant to be redrawn
+        if (moleculeToRedraw >= 0) break;
     }
 
     // then put everything else (solvents, hets, intermolecule bonds) in a single display list
     if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
     TESTMSG("drawing hets/solvents/i-m bonds");
+    
+    // always redraw all these even if only a single molecule is to be redrawn -
+    // that way connections can show/hide in cases where a particular residue
+    // changes its display
     int n = 0;
     for (a=atomSetList.begin(); a!=ae; a++, n++) {
     

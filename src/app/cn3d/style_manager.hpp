@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/21 17:22:45  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.8  2000/08/18 18:57:44  thiessen
 * added transparent spheres
 *
@@ -155,6 +158,7 @@ class StrandStyle;
 class StyleManager
 {
 public:
+    StyleManager(void);
 
     // display styles for various types of objects
     enum eDisplayStyle {
@@ -183,11 +187,21 @@ public:
     bool GetStrandStyle(const StructureObject *object,
         const Strand3D& strand, StrandStyle *strandStyle) const;
 
-    StyleSettings globalStyle;
+    // just to test molecule redrawing for now
+    void HighlightResidue(const StructureObject *object, int moleculeID, int residueID);
+
 private:
+    const StructureObject *highlightObject;
+    int highlightMoleculeID, highlightResidueID;
+
+    StyleSettings globalStyle;
     // StyleSettings accessors
     const StyleSettings& GetStyleForResidue(const StructureObject *object,
         int moleculeID, int residueID) const;
+
+public:
+    void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
+    void SetToWireframe(void) { globalStyle.SetToWireframe(); }
 };
 
 // the following are convenience containers to tell the Draw functions how

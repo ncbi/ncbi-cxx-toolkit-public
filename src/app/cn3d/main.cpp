@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/08/21 17:22:37  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.18  2000/08/17 18:33:12  thiessen
 * minor fixes to StyleManager
 *
@@ -291,7 +294,7 @@ void Cn3DMainFrame::OnSetSecStruc(wxCommandEvent& event)
 {
     if (glCanvas->structureSet) {
         glCanvas->SetCurrent();
-        glCanvas->structureSet->styleManager->globalStyle.SetToSecondaryStructure();
+        glCanvas->structureSet->styleManager->SetToSecondaryStructure();
         glCanvas->renderer.Construct();
         glCanvas->Refresh(FALSE);
     }
@@ -301,7 +304,7 @@ void Cn3DMainFrame::OnSetWireframe(wxCommandEvent& event)
 {
     if (glCanvas->structureSet) {
         glCanvas->SetCurrent();
-        glCanvas->structureSet->styleManager->globalStyle.SetToWireframe();
+        glCanvas->structureSet->styleManager->SetToWireframe();
         glCanvas->renderer.Construct();
         glCanvas->Refresh(FALSE);
     }
@@ -440,8 +443,10 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 
     if (event.RightDown()) {
         unsigned int name;
-        if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name))
+        if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name)) {
             structureSet->SelectedAtom(name);
+            Refresh(FALSE);
+        }
     }
 }
 

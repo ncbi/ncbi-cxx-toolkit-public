@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/08/21 17:22:38  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.19  2000/08/17 14:24:06  thiessen
 * added working StyleManager
 *
@@ -289,10 +292,13 @@ void StructureSet::SelectedAtom(unsigned int name)
 
     // for now, if an atom is selected then use it as rotation center; use coordinate
     // from first CoordSet, default altConf
-    const StructureObject *object;
-    if (!residue->GetParentOfType(&object)) return;
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return;
+    const StructureObject *object;
+    if (!molecule->GetParentOfType(&object)) return;
+
+    object->parentSet->styleManager->HighlightResidue(object, molecule->id, residue->id);
+    object->graph->RedrawMolecule(molecule->id); // to test highlighting recolor for now
 
     TESTMSG("rotating about " << object->pdbID
         << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/21 17:22:45  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.16  2000/08/19 02:58:23  thiessen
 * fix tranparent sphere bug
 *
@@ -214,7 +217,12 @@ private:
     SphereMap transparentSphereMap;
     void AddTransparentSphere(const Vector& color, unsigned int name,
         const Vector& site, double radius, double alpha);
-    void ClearTransparentSpheres(void) { transparentSphereMap.clear(); }
+    void ClearTransparentSpheresForList(unsigned int list)
+    { 
+        SphereMap::iterator i = transparentSphereMap.find(list);
+        if (i != transparentSphereMap.end())
+            transparentSphereMap.erase(i);
+    }
 
     // stuff for rendering transparent spheres (done during Display())
     class SpherePtr
@@ -228,7 +236,7 @@ private:
     };
     typedef std::list < SpherePtr > SpherePtrList;
     SpherePtrList transparentSpheresToRender;
-    void AddTransparentSpheresFromList(unsigned int list);
+    void AddTransparentSpheresForList(unsigned int list);
     void RenderTransparentSpheres(void);
 };
 

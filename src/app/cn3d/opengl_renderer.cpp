@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/08/21 17:22:38  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.20  2000/08/19 02:59:04  thiessen
 * fix tranparent sphere bug
 *
@@ -267,8 +270,9 @@ void OpenGLRenderer::ResetCamera(void)
         double angle = cameraAngleRad, aspect = (static_cast<double>(Viewport[2])) / Viewport[3];
         if (aspect < 1.0) angle *= aspect;
         cameraDistance = structureSet->maxDistFromCenter / sin(angle/2);
-        cameraClipNear = cameraDistance - structureSet->maxDistFromCenter;
-        cameraClipFar = cameraDistance + structureSet->maxDistFromCenter;
+        // allow a little "extra" room between clipping planes
+        cameraClipNear = (cameraDistance - structureSet->maxDistFromCenter) * 0.66;
+        cameraClipFar = (cameraDistance + structureSet->maxDistFromCenter) * 1.2;
         // move structureSet's center to origin
         glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
         structureSet->rotationCenter = structureSet->center;
@@ -288,6 +292,8 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 {
     bool doTranslation = false;
     Vector rotCenter;
+    double pixelSize;
+    GLint viewport[4];
 
     // find out where rotation center is in current GL coordinates
     if (structureSet && (control==eXYRotateHV || control==eZRotateH) && 
@@ -304,29 +310,37 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
     // rotate relative to rotationCenter
     if (doTranslation) glTranslated(rotCenter.x, rotCenter.y, rotCenter.z);
 
-    double pixelSize = 0.05; // estimate for now, will do correctly later...
-
     switch (control) {
     case eXYRotateHV:
         glRotated(rotateSpeed*dY, 1.0, 0.0, 0.0);
         glRotated(rotateSpeed*dX, 0.0, 1.0, 0.0);
         break;
+
     case eZRotateH:
         glRotated(rotateSpeed*dX, 0.0, 0.0, 1.0);
         break;
+
     case eXYTranslateHV:
-        glTranslated(dX*pixelSize, dY*pixelSize, 0.0);
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        pixelSize = tan(cameraAngleRad / 2.0) * 2.0 * cameraDistance / viewport[3];
+        cameraLookAtX -= dX * pixelSize;
+        cameraLookAtY -= dY * pixelSize;
+        NewView();
         break;
+
     case eZoomHHVV:
         break;
+
     case eZoomOut:
         cameraAngleRad *= 1.5;
         NewView();
         break;
+
     case eZoomIn:
         cameraAngleRad /= 1.5;
         NewView();
         break;
+
     case eCenterCamera:
         cameraLookAtX = cameraLookAtY = 0.0;
         NewView();
@@ -366,6 +380,7 @@ void OpenGLRenderer::PopMatrix(void)
 // display list management stuff
 void OpenGLRenderer::StartDisplayList(unsigned int list)
 {
+    ClearTransparentSpheresForList(list);
     SetColor(GL_NONE); // reset color caches in SetColor
     TESTMSG("creating display list " << list);
     glNewList(list, GL_COMPILE);
@@ -440,14 +455,14 @@ void OpenGLRenderer::Display(void)
         if (currentFrame == ALL_FRAMES) {
             for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
                 glCallList(i);
-                AddTransparentSpheresFromList(i);
+                AddTransparentSpheresForList(i);
             }
         } else {
             StructureSet::DisplayLists::const_iterator
                 l, le=structureSet->frameMap[currentFrame].end();
             for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++) {
                 glCallList(*l);
-                AddTransparentSpheresFromList(*l);
+                AddTransparentSpheresForList(*l);
             }
         }
 
@@ -528,7 +543,6 @@ void OpenGLRenderer::Construct(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    ClearTransparentSpheres();
     if (structureSet) {
         structureSet->DrawAll();
     } else {
@@ -593,6 +607,7 @@ void OpenGLRenderer::ConstructLogo(void)
         prevNorm[LOGO_SIDES * 3], *pPrevNorm = prevNorm,
         length, startRad, midRad, phase, currentRad, CR[3], H[3], V[3];
 
+    ClearTransparentSpheresForList(FIRST_LIST);
     glNewList(FIRST_LIST, GL_COMPILE);
 
     /* create logo */
@@ -702,7 +717,8 @@ void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name
         sphereLT.second = currentSlaveTransform;
 }
 
-void OpenGLRenderer::AddTransparentSpheresFromList(unsigned int list)
+// add spheres associated with this display list; calculate distance from camera to each one
+void OpenGLRenderer::AddTransparentSpheresForList(unsigned int list)
 {
     SphereMap::const_iterator sLT = transparentSphereMap.find(list);
     if (sLT == transparentSphereMap.end()) return;
@@ -712,7 +728,6 @@ void OpenGLRenderer::AddTransparentSpheresFromList(unsigned int list)
     Matrix view;
     GL2Matrix(viewMatrix, &view);
 
-    // add spheres attached to this display list; calculate distance from camera to each one
     transparentSpheresToRender.resize(transparentSpheresToRender.size() + sphereList.size());
     SpherePtrList::reverse_iterator sph = transparentSpheresToRender.rbegin();
 

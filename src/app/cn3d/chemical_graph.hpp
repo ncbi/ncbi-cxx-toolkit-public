@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/21 17:22:45  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.7  2000/08/07 00:20:18  thiessen
 * add display list mechanism
 *
@@ -91,6 +94,7 @@ public:
 
     // public methods
 
+    void RedrawMolecule(int moleculeID);
     bool DrawAll(const AtomSet *atomSet = NULL) const;
     const Residue::AtomInfo * GetAtomInfo(const AtomPntr& atom) const
     { 
@@ -104,6 +108,7 @@ private:
     typedef LIST_TYPE < std::pair < AtomSet *, const std::string * > > AtomSetList;
     AtomSetList atomSetList;
     unsigned int displayListOtherStart;
+    int moleculeToRedraw;
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/21 17:22:38  thiessen
+* add primitive highlighting for testing
+*
 * Revision 1.7  2000/08/18 18:57:40  thiessen
 * added transparent spheres
 *
@@ -67,6 +70,11 @@ USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
+
+StyleManager::StyleManager(void) :
+    highlightObject(NULL)
+{
+}
 
 void StyleSettings::SetToSecondaryStructure(void)
 {
@@ -291,38 +299,44 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->radius = 0.0;
 
     // determine color
-    StyleSettings::eColorScheme colorScheme;
-    if (backboneStyle)
-        colorScheme = backboneStyle->colorScheme;
-    else
-        colorScheme = generalStyle->colorScheme;
+    if (object == highlightObject && molecule->id == highlightMoleculeID &&
+        residue->id == highlightResidueID)
+        atomStyle->color = Vector(1,1,0); // highlight color
+    else {
 
-    switch (colorScheme) {
-        case StyleSettings::eElement:
-            atomStyle->color = element->color;
-            break;
-        case StyleSettings::eMolecule:
-            // should actually be a color cycle...
-        case StyleSettings::eObject:
-            // should actually be a color cycle...
-            if (object->IsMaster())
-                atomStyle->color = Vector(1,0,1);
-            else
-                atomStyle->color = Vector(0,0,1);
-            break;
-        case StyleSettings::eSecondaryStructure:
-            // needs to be done right, once residue->secondary structure lookup is in place
-            atomStyle->color = Vector(0,1,1);
-            break;
-        case StyleSettings::eUserSelect:
-            if (backboneStyle)
-                atomStyle->color = backboneStyle->userColor;
-            else
-                atomStyle->color = generalStyle->userColor;
-            break;
-        default:
-            ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
-            return false;
+        StyleSettings::eColorScheme colorScheme;
+        if (backboneStyle)
+            colorScheme = backboneStyle->colorScheme;
+        else
+            colorScheme = generalStyle->colorScheme;
+
+        switch (colorScheme) {
+            case StyleSettings::eElement:
+                atomStyle->color = element->color;
+                break;
+            case StyleSettings::eMolecule:
+                // should actually be a color cycle...
+            case StyleSettings::eObject:
+                // should actually be a color cycle...
+                if (object->IsMaster())
+                    atomStyle->color = Vector(1,0,1);
+                else
+                    atomStyle->color = Vector(0,0,1);
+                break;
+            case StyleSettings::eSecondaryStructure:
+                // needs to be done right, once residue->secondary structure lookup is in place
+                atomStyle->color = Vector(0,1,1);
+                break;
+            case StyleSettings::eUserSelect:
+                if (backboneStyle)
+                    atomStyle->color = backboneStyle->userColor;
+                else
+                    atomStyle->color = generalStyle->userColor;
+                break;
+            default:
+                ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
+                return false;
+        }
     }
 
     // determine transparency
@@ -631,6 +645,14 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
     int moleculeID, int residueID) const
 { 
     return globalStyle;
+}
+
+// this is really braindead for now, for testing...
+void StyleManager::HighlightResidue(const StructureObject *object, int moleculeID, int residueID)
+{
+    highlightObject = object;
+    highlightMoleculeID = moleculeID;
+    highlightResidueID = residueID;
 }
 
 END_SCOPE(Cn3D)
