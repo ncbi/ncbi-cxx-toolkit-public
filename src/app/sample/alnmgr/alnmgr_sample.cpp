@@ -57,6 +57,7 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <objtools/alnmgr/alnmix.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -200,6 +201,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/03/01 18:42:16  ucko
+* Explicitly include alnvec.hpp, which alnmix.hpp no longer pulls in.
+*
 * Revision 1.9  2004/07/21 15:51:24  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
