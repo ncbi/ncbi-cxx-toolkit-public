@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/03 20:46:30  vakatov
+* HAVE_NAMESPACES(not just HAVE_NAMESPACE)
+* Removed extra semicolumn from NCBI_USING_STL
+*
 * Revision 1.2  1998/10/30 20:08:32  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -66,7 +70,7 @@
 #endif
 
 // Check if this compiler supports namespaces at all... (see in <ncbiconf.h>)
-#if !defined(NCBI_NO_NAMESPACES)  &&  !defined(HAVE_NAMESPACES)
+#if !defined(NCBI_NO_NAMESPACES)  &&  !defined(HAVE_NAMESPACE)
 #  define NCBI_NO_NAMESPACES
 #endif
 
@@ -74,7 +78,7 @@
 #if defined(NCBI_NO_NAMESPACES)
 #  define NCBI_USING_STL
 #else
-#  define NCBI_USING_STL using namespace std;
+#  define NCBI_USING_STL using namespace std
 #endif
 
 #endif /* NCBISTL__HPP */
