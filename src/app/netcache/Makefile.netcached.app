@@ -8,5 +8,5 @@ SRC = netcached
 REQUIRES = MT
 
 
-LIB = bdb xncbi xutil xconnect xthrserv
-LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
+LIB = bdb xconnect xthrserv xutil xncbi
+LIBS = $(BERKELEYDB_LIBS) $(DL_LIBS) $(ORIG_LIBS)
