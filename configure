@@ -3796,7 +3796,7 @@ fi
 
 
 #### Overall configuration mode summary
-signature="${compiler}${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
 
 #### Check if there is "${build_root}" dir
