@@ -185,6 +185,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                                 &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                                 NULL);
             if (m_Pipe != INVALID_HANDLE_VALUE) {
+                m_ReadStatus  = eIO_Success;
+                m_WriteStatus = eIO_Success;
                 return eIO_Success;
             }
 
@@ -239,6 +241,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             throw "Create named pipe \"" + pipename + "\" failed";
         }
+        m_ReadStatus  = eIO_Success;
+        m_WriteStatus = eIO_Success;
         return eIO_Success;
     }
     catch (const char* what) {
@@ -667,6 +671,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             eIO_Success) {
             throw "UNIX socket cannot convert to SOCK";
         }
+        m_ReadStatus  = eIO_Success;
+        m_WriteStatus = eIO_Success;
     }
     catch (const char* what) {
         if (sock >= 0) {
@@ -730,6 +736,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                   fcntl(m_LSocket, F_GETFL, 0) | O_NONBLOCK) == -1) {
             throw "UNIX socket set to non-blocking failed";
         }
+        m_ReadStatus  = eIO_Success;
+        m_WriteStatus = eIO_Success;
     }
     catch (const char* what) {
         Close();
@@ -1142,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/03 14:29:58  ivanov
+ * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
+ *
  * Revision 1.10  2003/09/02 19:51:17  ivanov
  * Fixed incorrect infinite timeout handling in the CNamedPipeHandle::Open()
  *

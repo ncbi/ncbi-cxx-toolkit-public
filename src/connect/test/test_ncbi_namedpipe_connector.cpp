@@ -63,7 +63,7 @@ static void Client(STimeout timeout)
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     log_file = fopen("test_namedpipe_con_client.log", "ab");
-    assert(log_file);
+    assert(log_file > 0);
 
     // Tests for NAMEDPIPE CONNECTOR
     LOG_POST(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/09/03 14:29:59  ivanov
+ * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
+ *
  * Revision 1.7  2003/09/03 13:59:44  ivanov
  * Renamed ncbi_namedpipe_connector.h -> ncbi_namedpipe_connector.hpp. Removed NAMEDPIPE_CreateConnectorEx().
  *

@@ -1090,7 +1090,12 @@ EIO_Status CPipe::Open(const string& cmd, const vector<string>& args,
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
-    return m_PipeHandle->Open(cmd, args, create_flags);
+    EIO_Status status = m_PipeHandle->Open(cmd, args, create_flags);
+    if (status == eIO_Success) {
+        m_ReadStatus  = eIO_Success;
+        m_WriteStatus = eIO_Success;
+    }
+    return status;
 }
 
 
@@ -1391,6 +1396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/09/03 14:29:58  ivanov
+ * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
+ *
  * Revision 1.23  2003/09/02 20:32:34  ivanov
  * Moved ncbipipe to CONNECT library from CORELIB.
  * Rewritten CPipe class using I/O timeouts.

@@ -274,8 +274,11 @@ END_NCBI_SCOPE
 
 
 /*
- * --------------------------------------------------------------------------
+ * ==========================================================================
  * $Log$
+ * Revision 1.2  2003/09/03 14:29:58  ivanov
+ * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
+ *
  * Revision 1.1  2003/09/02 20:33:04  ivanov
  * Initial revision
  *
