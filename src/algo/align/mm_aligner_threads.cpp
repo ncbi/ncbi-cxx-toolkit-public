@@ -36,15 +36,15 @@
 
 BEGIN_NCBI_SCOPE
 
+unsigned int g_nwmm_thread_count = 1;
 
-static unsigned int thread_count = 1;
 DEFINE_STATIC_FAST_MUTEX(thread_count_mutex);
 
 bool MM_RequestNewThread(const unsigned int max_threads)
 {
     CFastMutexGuard guard(thread_count_mutex);
-    if(thread_count < max_threads) {
-        ++thread_count;
+    if(g_nwmm_thread_count < max_threads) {
+        ++g_nwmm_thread_count;
         return true;
     }
     else
@@ -77,7 +77,7 @@ void* CThreadRunOnTop::Main()
 void CThreadRunOnTop::OnExit()
 {
     CFastMutexGuard guard(thread_count_mutex);
-    --thread_count;
+    --g_nwmm_thread_count;
 }
 
 //////////////////
@@ -105,7 +105,7 @@ void* CThreadDoSM::Main()
 void CThreadDoSM::OnExit()
 {
     CFastMutexGuard guard(thread_count_mutex);
-    --thread_count;
+    --g_nwmm_thread_count;
 }
 
 
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/14 18:41:31  kapustin
+ * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespace are not everywhere supported
+ *
  * Revision 1.2  2003/09/02 22:37:52  kapustin
  * Fix id header tag
  *
