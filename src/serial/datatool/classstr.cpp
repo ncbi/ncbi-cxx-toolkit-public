@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/06/27 13:22:00  vasilche
+* Added const modifier to generated IsSet*() methods.
+*
 * Revision 1.19  2000/06/16 16:31:38  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -427,10 +430,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate IsSet... method
             if ( i->optional ) {
                 code.ClassPublic() <<
-                    "    bool IsSet"<<i->cName<<"(void);\n";
+                    "    bool IsSet"<<i->cName<<"(void) const;\n";
                 inlineMethods <<
                     "inline\n"
-                    "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void)\n"
+                    "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n"
                     "{\n";
                 if ( i->haveFlag ) {
                     // use special boolean flag
