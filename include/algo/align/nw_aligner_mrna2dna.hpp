@@ -47,7 +47,10 @@
  */
 
 
-const unsigned char splice_type_count = 3;
+// There are three true splice types. The fourth
+// is a long gap which is internally treated as
+// a separate splice type.
+const unsigned char splice_type_count = 4;
 
 BEGIN_NCBI_SCOPE
 
@@ -60,9 +63,8 @@ public:
         throw(CNWAlignerException);
 
     // Setters
-    void SetWi  (unsigned char splice_type, TScore value) {
-        m_Wi[splice_type]  = value;
-    }
+    void SetWi  (unsigned char splice_type, TScore value);
+
     void SetIntronMinSize  (size_t s)  {
         m_IntronMinSize  = s;
     }
@@ -90,10 +92,6 @@ protected:
                             const char* seg2, size_t len2,
                             vector<ETranscriptSymbol>* transcript);
 
-    virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix,
-                          size_t N1, size_t N2,
-                          vector<ETranscriptSymbol>* transcript);
-
     virtual TScore x_ScoreByTranscript() const
         throw(CNWAlignerException);
 
@@ -103,6 +101,11 @@ protected:
     const char*   x_FindFingerPrint64( const char* beg, const char* end,
                                        unsigned char fingerprint,
                                        size_t size, size_t& err_index);
+private:
+
+    void x_DoBackTrace(const Uint2* backtrace_matrix,
+                       size_t N1, size_t N2,
+                       vector<ETranscriptSymbol>* transcript);
 };
 
 
@@ -115,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/05/23 18:23:22  kapustin
+ * Introduce a generic splice type. Make transcript symbol to be more specific about type of the intron. Backtrace procedure now takes double-byte matrix.
+ *
  * Revision 1.9  2003/04/14 18:59:31  kapustin
  * Add guide creation facility.  x_Run() -> x_Align()
  *
