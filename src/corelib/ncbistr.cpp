@@ -37,7 +37,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
-#include <stdarg.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -1391,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2003/12/12 20:06:44  rsmith
+ * Take out un-needed include of stdarg.h (included in ncbistr.hpp).
+ *
  * Revision 1.101  2003/12/12 20:04:24  rsmith
  * make sure stdarg.h is included to define va_list.
  *
