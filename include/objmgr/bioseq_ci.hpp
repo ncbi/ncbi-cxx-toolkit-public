@@ -36,12 +36,14 @@
 
 #include <objmgr/scope.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objmgr/scope.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJMGR_EXPORT CBioseq_CI : public CBioseq_CI_Base
+class CBioseq_CI : public CBioseq_CI_Base
 {
 public:
     // 'ctors
@@ -153,6 +155,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/09/16 14:38:13  dicuccio
+* Removed export specifier - the entire class is inlined, and the export
+* specifier confuses MSVC in such cases.  Added #include for scope.hpp, which
+* contains the base class (previously undefined without this).
+*
 * Revision 1.10  2003/09/03 19:59:59  grichenk
 * Added sequence filtering by level (mains/parts/all)
 *
