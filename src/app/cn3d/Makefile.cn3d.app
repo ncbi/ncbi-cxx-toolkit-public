@@ -71,7 +71,7 @@ LIB = \
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
-	-I$(srcdir)/.. \
+	-I$(srcdir)/.. -I$(top_srcdir)/src/algo/structure \
 	$(WXWIN_INCLUDE) \
 	$(NCBI_C_INCLUDE)
 
@@ -79,7 +79,7 @@ LIBS = \
 	$(WXWIN_LIBS) $(WXWIN_GL_LIBS) \
 	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi \
-	$(ORIG_LIBS)
+	-lxstruct_dp $(ORIG_LIBS)
 
 
 # for distribution on linux/gcc, do:
