@@ -208,6 +208,14 @@ Boolean
 BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
                 Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info);
 
+/** This function translates the context number of a context into the frame of 
+ * the sequence.
+ * @param prog_number Integer corresponding to the BLAST program
+ * @param context_number Context number 
+ * @return Sequence frame (+-1 for nucleotides, -3..3 for translations)
+*/
+Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number);
+
 #ifdef __cplusplus
 }
 #endif
