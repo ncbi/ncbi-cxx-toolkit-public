@@ -1503,23 +1503,22 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
     string str;
     string::size_type   begin = 0, end, textlen = text.length();
 
-    const string* legal_begin = s_LegalExceptionStrings;
-    const string* legal_end = 
+    const string* except_begin = s_LegalExceptionStrings;
+    const string* except_end = 
         &(s_LegalExceptionStrings[sizeof(s_LegalExceptionStrings) / sizeof(string)]);
-
+    const string* refseq_begin = s_RefseqExceptionStrings;
+    const string* refseq_end = 
+        &(s_RefseqExceptionStrings[sizeof(s_RefseqExceptionStrings) / sizeof(string)]);
     
     while ( begin < textlen ) {
         found = false;
         end = min( text.find_first_of(',', begin), textlen );
         str = NStr::TruncateSpaces( text.substr(begin, end) );
-        if ( find(legal_begin, legal_end, str) != legal_end ) {
+        if ( find(except_begin, except_end, str) != except_end ) {
             found = true;
         }
         if ( !found  &&  (m_Imp.IsGPS() || m_Imp.IsRefSeq()) ) {
-            legal_begin = s_RefseqExceptionStrings;
-            legal_end = 
-                &(s_RefseqExceptionStrings[sizeof(s_RefseqExceptionStrings) / sizeof(string)]);
-            if ( find(legal_begin, legal_end, str) != legal_end ) {
+            if ( find(refseq_begin, refseq_end, str) != refseq_end ) {
                found = true;
             }
         }
@@ -1530,6 +1529,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             PostErr(sev, eErr_SEQ_FEAT_InvalidQualifierValue,
                 str + " is not legal exception explanation", feat);
         }
+        begin = end + 1;
     }
 }
 
@@ -2069,6 +2069,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/01/29 17:50:06  shomrat
+* Bug fix in ValidateExceptText
+*
 * Revision 1.7  2003/01/24 21:21:00  shomrat
 * Bug fixes in ValidateMrnaTrans & ValidateBadGeneOverlap
 *
