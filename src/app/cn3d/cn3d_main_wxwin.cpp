@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2001/12/21 13:52:20  thiessen
+* add spin animation
+*
 * Revision 1.112  2001/12/20 21:41:45  thiessen
 * create/use user preferences directory
 *
@@ -1051,8 +1054,10 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_ALL_FRAMES, "&All Frames\ta");
     menu->AppendSeparator();
     subMenu = new wxMenu;
-    subMenu->Append(MID_PLAY, "&Play\tp", "", true);
+    subMenu->Append(MID_PLAY, "&Play Frames\tp", "", true);
     subMenu->Check(MID_PLAY, false);
+    subMenu->Append(MID_SPIN, "Spi&n\tn", "", true);
+    subMenu->Check(MID_SPIN, false);
     subMenu->Append(MID_STOP, "&Stop\ts", "", true);
     subMenu->Check(MID_STOP, true);
     subMenu->Append(MID_SET_DELAY, "Set &Delay");
@@ -1139,7 +1144,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menuBar->Append(menu, "&CDD");
 
     // accelerators for special keys
-    wxAcceleratorEntry entries[9];
+    wxAcceleratorEntry entries[10];
     entries[0].Set(wxACCEL_NORMAL, WXK_RIGHT, MID_NEXT_FRAME);
     entries[1].Set(wxACCEL_NORMAL, WXK_LEFT, MID_PREV_FRAME);
     entries[2].Set(wxACCEL_NORMAL, WXK_DOWN, MID_FIRST_FRAME);
@@ -1148,8 +1153,9 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     entries[5].Set(wxACCEL_NORMAL, 'x', MID_ZOOM_OUT);
     entries[6].Set(wxACCEL_NORMAL, 'a', MID_ALL_FRAMES);
     entries[7].Set(wxACCEL_NORMAL, 'p', MID_PLAY);
-    entries[8].Set(wxACCEL_NORMAL, 's', MID_STOP);
-    wxAcceleratorTable accel(9, entries);
+    entries[8].Set(wxACCEL_NORMAL, 'n', MID_SPIN);
+    entries[9].Set(wxACCEL_NORMAL, 's', MID_STOP);
+    wxAcceleratorTable accel(10, entries);
     SetAcceleratorTable(accel);
 
     SetMenuBar(menuBar);
@@ -1196,6 +1202,7 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
     if (event.GetId() == MID_PLAY) {
         if (glCanvas->structureSet->frameMap.size() > 1) {
             timer.Start(currentDelay, false);
+            animationMode = ANIM_FRAMES;
             menuBar->Check(MID_PLAY, true);
             menuBar->Check(MID_STOP, false);
         } else {
@@ -1204,10 +1211,20 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
         }
     }
 
+    // spin
+    if (event.GetId() == MID_SPIN) {
+        TESTMSG("starting spin");
+        timer.Start(20, false);
+        animationMode = ANIM_SPIN;
+        menuBar->Check(MID_SPIN, true);
+        menuBar->Check(MID_STOP, false);
+    }
+
     // stop
     else if (event.GetId() == MID_STOP) {
         timer.Stop();
         menuBar->Check(MID_PLAY, false);
+        menuBar->Check(MID_SPIN, false);
         menuBar->Check(MID_STOP, true);
     }
 
@@ -1229,8 +1246,16 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
 
 void Cn3DMainFrame::OnTimer(wxTimerEvent& event)
 {
-    // simply pretend the user selected "next frame"
-    Command(MID_NEXT_FRAME);
+    if (animationMode == ANIM_FRAMES) {
+        // simply pretend the user selected "next frame"
+        Command(MID_NEXT_FRAME);
+    }
+
+    else if (animationMode == ANIM_SPIN) {
+        // pretend the user dragged the mouse to the right
+        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV, 4, 0);
+        glCanvas->Refresh(false);
+    }
 }
 
 void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
@@ -1401,6 +1426,7 @@ void Cn3DMainFrame::OnShowWindow(wxCommandEvent& event)
 
 void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 {
+    timer.Stop();
     Command(MID_EXIT);
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/12/21 13:52:20  thiessen
+* add spin animation
+*
 * Revision 1.53  2001/12/14 14:52:45  thiessen
 * add apple event handler for open document
 *
@@ -329,6 +332,7 @@ public:
             MID_ALL_FRAMES,
             MID_ANIMATE,
                 MID_PLAY,
+                MID_SPIN,
                 MID_STOP,
                 MID_SET_DELAY,
         // Show/Hide menu
@@ -423,6 +427,8 @@ private:
     wxMenu *favoritesMenu;
 
     wxTimer timer;
+    enum { ANIM_FRAMES, ANIM_SPIN };    // animation modes
+    int animationMode;
 
     DECLARE_EVENT_TABLE()
 };
@@ -441,7 +447,7 @@ public:
     void SetGLFontFromRegistry(double fontScale = 1.0);
     bool MeasureText(const std::string& text, int *width, int *height, int *centerX, int *centerY);
     const wxFont& GetGLFont(void) const { return font; }
-    
+
     void SuspendRendering(bool suspend);
 
 private:
