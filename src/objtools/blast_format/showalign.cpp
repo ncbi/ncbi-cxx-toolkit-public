@@ -812,23 +812,43 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
             out << urlLink;
             
         }
+        
+        bool has_mismatch = false;
+        //change the alignment line to identity style
+        if (row>0 && m_AlignOption & eShowIdentity){
+            for (int index = j; index < j + actualLineLen && 
+                     index < (int)sequence[row].size(); index ++){
+                if (sequence[row][index] == sequence[0][index] &&
+                    isalpha(sequence[row][index])) {
+                    sequence[row][index] = k_IdentityChar;           
+                } else if (!has_mismatch) {
+                    has_mismatch = true;
+                }        
+            }
+	}
+
+        //highlight the seqid for pairwise-with-identity format
+        if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMultiAlign) &&
+           m_AlignOption&eShowIdentity && has_mismatch){
+          out<< "<font color = ff0000><b>";         
+        }
         out<<seqidArray[row]; 
         if(row>0&& m_AlignOption&eHtml && m_AlignOption&eMultiAlign && urlLink != NcbiEmptyString){
           out<<"</a>";
          
         }
+        //highlight the seqid for pairwise-with-identity format
+        if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMultiAlign)
+           && m_AlignOption&eShowIdentity && has_mismatch){
+            out<< "</b></font>";         
+        } 
+
         //adjust space between id and start
         AddSpace(out, maxIdLen-seqidArray[row].size()+m_IdStartMargin);
 	out << start;
         startLen=NStr::IntToString(start).size();
         AddSpace(out, maxStartLen-startLen+m_StartSequenceMargin);
-	if (row>0 && m_AlignOption & eShowIdentity){
-	  for (int index = j; index < j + actualLineLen && index < (int)sequence[row].size(); index ++){
-	    if (sequence[row][index] == sequence[0][index] && isalpha(sequence[row][index])) {
-	      sequence[row][index] = k_IdentityChar;           
-	    }         
-	  }
-	}
+
 	OutputSeq(sequence[row], m_AV->GetSeqId(row), j, actualLineLen, frame[row], (row > 0 && colorMismatch)?true:false,  alnLocList, out);
         AddSpace(out, m_SeqStopMargin);
 	out << end;
@@ -2207,6 +2227,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.54  2005/01/03 21:05:56  jianye
+*highlight subject seq for PairwiseWithIdentities format
+*
 *Revision 1.53  2004/12/28 16:59:19  jianye
 *added empty seqalign check
 *
