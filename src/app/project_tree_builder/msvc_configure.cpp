@@ -113,35 +113,23 @@ static void s_CreateThirdPartyLibsInstallMakefile
 }
 
 
-void CMsvcConfigure::operator() (CMsvcSite&         site, 
-                                 const list<SConfigInfo>& configs,
-                                 const string&            root_dir)
+void CMsvcConfigure::Configure(CMsvcSite&         site, 
+                               const list<SConfigInfo>& configs,
+                               const string&            root_dir)
 {
     LOG_POST(Info << "Starting configure.");
     
     InitializeFrom(site);
-    
-    ITERATE(list<string>, p, m_ConfigureDefines) {
-        const string& define = *p;
-        if( ProcessDefine(define, site, configs) ) {
-            LOG_POST(Info << "Configure define enabled : "  + define);
-            m_ConfigSite[define] = '1';
-        } else {
-            LOG_POST(Info << "Configure define disabled : " + define);
-            m_ConfigSite[define] = '0';
-        }
-    }
     site.ProcessMacros(configs);
-
-    // Write ncbi_conf_msvc_site.h:
-    string ncbi_conf_msvc_site_path = 
-        CDirEntry::ConcatPath(root_dir, m_ConfigureDefinesPath);
-    LOG_POST(Info << "MSVC site configuration will be in file : " 
-                      + ncbi_conf_msvc_site_path);
-    string candidate_path = ncbi_conf_msvc_site_path + ".candidate";
-    WriteNcbiconfMsvcSite(candidate_path);
-    PromoteIfDifferent(ncbi_conf_msvc_site_path, candidate_path);
-
+    
+    ITERATE(list<SConfigInfo>, p, configs) {
+        AnalyzeDefines( site, root_dir, *p, CBuildType(false));
+    }
+    list<SConfigInfo> dlls;
+    GetApp().GetDllsInfo().GetBuildConfigs(&dlls);
+    ITERATE(list<SConfigInfo>, p, dlls) {
+        AnalyzeDefines( site, root_dir, *p, CBuildType(true));
+    }
     LOG_POST(Info << "Configure finished.");
 
     // Write makefile uses to install 3-rd party dlls
@@ -193,7 +181,7 @@ void CMsvcConfigure::InitializeFrom(const CMsvcSite& site)
 
 bool CMsvcConfigure::ProcessDefine(const string& define, 
                                    const CMsvcSite& site, 
-                                   const list<SConfigInfo>& configs) const
+                                   const SConfigInfo& config) const
 {
     if ( !site.IsDescribed(define) ) {
         LOG_POST(Info << "Not defined in site: " + define);
@@ -203,18 +191,43 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
     site.GetComponents(define, &components);
     ITERATE(list<string>, p, components) {
         const string& component = *p;
-        ITERATE(list<SConfigInfo>, n, configs) {
-            const SConfigInfo& config = *n;
-            SLibInfo lib_info;
-            site.GetLibInfo(component, config, &lib_info);
-            if ( !IsLibOk(lib_info) )
-                return false;
-        }
+        SLibInfo lib_info;
+        site.GetLibInfo(component, config, &lib_info);
+        if ( !IsLibOk(lib_info) )
+            return false;
     }
-
     return true;
 }
 
+void CMsvcConfigure::AnalyzeDefines(
+    CMsvcSite& site, const string& root_dir,
+    const SConfigInfo& config, const CBuildType&  build_type)
+{
+    m_ConfigSite.clear();
+
+    ITERATE(list<string>, p, m_ConfigureDefines) {
+        const string& define = *p;
+        if( ProcessDefine(define, site, config) ) {
+            LOG_POST(Info << config.m_Name + ": " + define + " enabled");
+            m_ConfigSite[define] = '1';
+        } else {
+            LOG_POST(Info << config.m_Name + ": " + define + " disabled");
+            m_ConfigSite[define] = '0';
+        }
+    }
+    string ncbi_conf_msvc_site_path = 
+        CDirEntry::ConcatPath(root_dir, m_ConfigureDefinesPath);
+    string dir, base, ext;
+    CDirEntry::SplitPath(ncbi_conf_msvc_site_path, &dir, &base, &ext);
+    string filename = CDirEntry::ConcatPath( dir, base) + "." + config.m_Name + ext;
+    LOG_POST(Info << "Creating MSVC site configuration in: "  + filename);
+    string candidate_path = filename + ".candidate";
+
+    CDirEntry::SplitPath(filename, &dir);
+    CDir(dir).CreatePath();
+    WriteNcbiconfMsvcSite(candidate_path);
+    PromoteIfDifferent(filename, candidate_path);
+}
 
 void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
 {
@@ -228,7 +241,7 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
     ofs << endl;
     ofs << endl;
 
-    ofs <<"/* $Id$" << endl;
+    ofs <<"/* $" << "Id" << "$" << endl;
     ofs <<"* ===========================================================================" << endl;
     ofs <<"*" << endl;
     ofs <<"*                            PUBLIC DOMAIN NOTICE" << endl;
@@ -282,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/11/09 17:39:03  gouriano
+ * Changed generation rules for ncbiconf_msvc_site.h
+ *
  * Revision 1.15  2004/08/04 17:06:02  gouriano
  * Leave defines that do not meet definition criteria undefined
  * instead of defining them as 0

@@ -44,22 +44,24 @@ public:
     CMsvcConfigure(void);
     ~CMsvcConfigure(void);
     
-    void operator()   (CMsvcSite&         site, 
-                       const list<SConfigInfo>& configs,
-                       const string&            root_dir);
+    void Configure(CMsvcSite&         site, 
+                   const list<SConfigInfo>& configs,
+                   const string&            root_dir);
 
 private:
     string       m_ConfigureDefinesPath;
     list<string> m_ConfigureDefines;
-
-    void InitializeFrom(const CMsvcSite& site);
-
-    bool ProcessDefine (const string&            define, 
-                        const CMsvcSite&         site, 
-                        const list<SConfigInfo>& configs) const;
-
     typedef map<string, char> TConfigSite;
     TConfigSite m_ConfigSite;
+
+    void InitializeFrom(const CMsvcSite& site);
+    bool ProcessDefine (const string&      define, 
+                        const CMsvcSite&   site, 
+                        const SConfigInfo& config) const;
+    void AnalyzeDefines(CMsvcSite&         site,
+                        const string&      root_dir,
+                        const SConfigInfo& config,
+                        const CBuildType&  build_type);
     void WriteNcbiconfMsvcSite(const string& full_path) const;
 
     // No value semantics
@@ -73,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/11/09 17:37:17  gouriano
+ * Changed generation rules for ncbiconf_msvc_site.h
+ *
  * Revision 1.5  2004/07/20 13:39:29  gouriano
  * Added conditional macro definition
  *

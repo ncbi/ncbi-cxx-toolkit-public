@@ -280,9 +280,9 @@ int CProjBulderApp::Run(void)
 
     // Configure 
     CMsvcConfigure configure;
-    configure(const_cast<CMsvcSite&>(GetSite()), 
-              GetRegSettings().m_ConfigInfo, 
-              GetProjectTreeInfo().m_Root);
+    configure.Configure(const_cast<CMsvcSite&>(GetSite()), 
+                        GetRegSettings().m_ConfigInfo, 
+                        GetProjectTreeInfo().m_Root);
 
     // Build projects tree
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
@@ -822,6 +822,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/11/09 17:39:03  gouriano
+ * Changed generation rules for ncbiconf_msvc_site.h
+ *
  * Revision 1.46  2004/10/04 15:31:57  gouriano
  * Take into account LIB_OR_DLL Makefile parameter
  *
