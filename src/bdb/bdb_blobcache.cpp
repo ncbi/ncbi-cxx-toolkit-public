@@ -1721,6 +1721,7 @@ static const string kCFParam_mem_size       = "mem_size";
 static const string kCFParam_read_only      = "read_only";
 static const string kCFParam_read_update_limit = "read_update_limit";
 static const string kCFParam_write_sync        = "write_sync";
+static const string kCFParam_use_transactions  = "use_transactions";
 
 
 ICache* CBDB_CacheReaderCF::CreateInstance(
@@ -1787,10 +1788,15 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 
     ConfigureICache(drv.get(), params);
 
+    bool use_trans = 
+        GetParamBool(params, kCFParam_use_transactions, false, true);
+
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
-        drv->Open(path.c_str(), name.c_str(), lock, mem_size);
+        drv->Open(path.c_str(), name.c_str(), 
+                  lock, mem_size, 
+                  use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans);
     }
 
     unsigned ru_limit = 
@@ -1842,6 +1848,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2004/09/27 16:37:19  kuznets
+ * +use_transactions CF parameter
+ *
  * Revision 1.78  2004/09/27 14:04:28  kuznets
  * +option not to use transactions, and method to clean log files
  *
