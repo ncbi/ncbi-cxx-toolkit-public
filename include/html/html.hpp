@@ -1,5 +1,5 @@
-#ifndef HTML__HTML__HPP
-#define HTML__HTML__HPP
+#ifndef HTML___HTML__HPP
+#define HTML___HTML__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -47,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 
-// Macro for declare html elements
+// Macro for declare html elements.
 
 #define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
 
@@ -108,7 +108,7 @@ class CHTML_NAME(Tag) : public Parent \
 }
 
 
-// Macro for declare special chars
+// Macro for declare special chars.
 
 #define DECLARE_HTML_SPECIAL_CHAR(Tag, plain) \
 class CHTML_NAME(Tag) : public CHTMLSpecialChar \
@@ -122,7 +122,7 @@ public: \
 }
 
 
-// Event tag handler type 
+// Event tag handler type.
 //
 // NOTE: Availability of realization event-handlers for some tags
 //       stand on from browser's type! Set of event-handlers for tags can 
@@ -150,7 +150,7 @@ enum EHTML_EH_Attribute {
 };
 
 
-// Base class for html node
+// Base class for html node.
 class CHTMLNode : public CNCBINode
 {
     typedef CNCBINode CParent;
@@ -195,7 +195,7 @@ public:
     }
     ~CHTMLNode(void);
 
-    // Convenient way to set some common attributes
+    // Convenient way to set some common attributes.
     CHTMLNode* SetClass(const string& class_name);
     CHTMLNode* SetStyle(const string& style);
     CHTMLNode* SetId(const string& id);
@@ -213,18 +213,18 @@ public:
     CHTMLNode* SetTitle(const string& title);
     CHTMLNode* SetAccessKey(char key);
 
-    // Convenient way to add CHTMLPlainText or CHTMLText
+    // Convenient way to add CHTMLPlainText or CHTMLText.
     void AppendPlainText(const char* text, bool noEncode = false);
     void AppendPlainText(const string& text, bool noEncode = false);
     void AppendHTMLText (const char* text);
     void AppendHTMLText (const string& text);
 
-    // Get event handler name
+    // Get event handler name.
     string GetEventHandlerName(const EHTML_EH_Attribute event) const;
-    // Set tag event handler
+    // Set tag event handler.
     void SetEventHandler(const EHTML_EH_Attribute event, const string& value);
 
-    // Attach the specified popup menu to HTML node. Popup menu will be shown 
+    // Attach the specified popup menu to HTML node. Popup menu will be shown.
     // when the "event" occures. 
     // NOTE: For eKurdin menu type the parameter "event" is ignored and
     //       an eHTML_EH_MouseOver value is used always.
@@ -234,7 +234,7 @@ public:
 };
 
 
-// <@XXX@> mapping node
+// <@XXX@> mapping node.
 class CHTMLTagNode : public CNCBINode
 {
     typedef CNCBINode CParent;
@@ -247,7 +247,7 @@ public:
 };
 
 
-// Dual print node
+// Dual print node.
 class CHTMLDualNode : public CNCBINode
 {
     typedef CNCBINode CParent;
@@ -263,7 +263,7 @@ protected:
 };
 
 
-// A text node that contains plain text
+// A text node that contains plain text.
 class CHTMLPlainText : public CNCBINode
 {
     typedef CNCBINode CParent;
@@ -291,7 +291,7 @@ private:
 };
 
 
-// A text node that contains html text with tags and possibly <@TAG@>
+// A text node that contains html text with tags and possibly <@TAG@>.
 class CHTMLText : public CNCBINode
 {
     typedef CNCBINode CParent;
@@ -311,7 +311,7 @@ private:
 };
 
 
-// An <html> tag
+// HTML tag base class.
 class CHTMLOpenElement: public CHTMLNode
 {
     typedef CHTMLNode CParent;
@@ -342,12 +342,12 @@ public:
     { }
     ~CHTMLOpenElement(void);
 
-    // prints tag itself
+    // Print tag itself.
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);   
 };
 
 
-// An <html> tag
+// HTML inline tag
 class CHTMLInlineElement: public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -378,12 +378,12 @@ public:
     { }
     ~CHTMLInlineElement(void);
 
-    // prints tag close    
+    // Print tag close.
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
 };
 
 
-// An <html> tag
+// HTML tag
 class CHTMLElement: public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -414,12 +414,12 @@ public:
     { }
     ~CHTMLElement(void);
 
-    // prints tag close    
+    // Print tag close.
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
 };
 
 
-// An html block element
+// HTML block element.
 class CHTMLBlockElement: public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -450,18 +450,18 @@ public:
     { }
     ~CHTMLBlockElement(void);
 
-    // prints tag close
+    // Close tag.
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
 };
 
 
+// HTML comment.
 class CHTMLComment : public CHTMLNode
 {
     typedef CHTMLNode CParent;
 public:
     CHTMLComment(void)
-    {
-    }
+    { }
     CHTMLComment(const char* text)
     {
         AppendPlainText(text);
@@ -482,6 +482,7 @@ public:
 };
 
 
+// <list> tag.
 class CHTMLListElement : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -489,24 +490,27 @@ public:
     CHTMLListElement(const char* tagname, bool compact = false)
         : CParent(tagname)
     {
-        if ( compact )
+        if ( compact ) {
             SetCompact();
+        }
     }
     CHTMLListElement(const char* tagname, const char* type,
                      bool compact = false)
         : CParent(tagname)
     {
         SetType(type);
-        if ( compact )
+        if ( compact ) {
             SetCompact();
+        }
     }
     CHTMLListElement(const char* tagname, const string& type,
                      bool compact = false)
         : CParent(tagname)
     {
         SetType(type);
-        if ( compact )
+        if ( compact ) {
             SetCompact();
+        }
     }
     ~CHTMLListElement(void);
 
@@ -522,13 +526,13 @@ public:
 };
 
 
-// An HTML special char
+// HTML special char.
 class CHTMLSpecialChar: public CHTMLDualNode
 {
     typedef CHTMLDualNode CParent;
 public:
-    // the "html" argument will be automagically wrapped into '&...;', e.g.
-    // 'amp' --> '&amp;'
+    // The "html" argument will be automagically wrapped into '&...;',
+    // e.g. 'amp' --> '&amp;'
     CHTMLSpecialChar(const char* html, const char* plain, int count = 1);
     ~CHTMLSpecialChar(void);
 
@@ -539,10 +543,10 @@ private:
 };
 
 
-// the <html> tag
+// <html> tag
 class CHTML_html : public CHTMLElement
 {
-    // CParent, constructors, destructor
+    // CParent, constructors, destructor.
     DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(html, CHTMLElement);
    
     // Enable using popup menus, set URL for popup menu library.
@@ -557,44 +561,43 @@ class CHTML_html : public CHTMLElement
     void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
                          const string& menu_script_url = kEmptyStr,
                          bool use_dynamic_menu = false);
-
 private:
-    // Init members
+    // Init members.
     void Init(void);
     
     // Print all self childrens (automatic include code for support 
-    // popup menus, if it need )
+    // popup menus, if it needed).
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 
-    // The popup menu info structure
+    // The popup menu info structure.
     struct SPopupMenuInfo {
-        SPopupMenuInfo() {
-            m_UseDynamicMenu = false;
-        };
-        SPopupMenuInfo(const string& url, bool use_dynamic_menu) {
-            m_Url = url;
-            m_UseDynamicMenu = use_dynamic_menu;
-        }
+        SPopupMenuInfo() 
+            : m_UseDynamicMenu(false)
+        { };
+        SPopupMenuInfo(const string& url, bool use_dynamic_menu)
+            : m_Url(url), m_UseDynamicMenu(use_dynamic_menu)
+        { }
         string m_Url;
-        bool   m_UseDynamicMenu; // Only for eSmith menu type
+        bool   m_UseDynamicMenu; // Only for eSmith menu type.
     };
-    // The popup menus usage info
+    // The popup menus usage info.
     typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
     TPopupMenus m_PopupMenus;
 };
 
 
 
-// table classes
+// Table classes.
 
-class CHTML_table; // table
-class CHTML_tr;    // row
-class CHTML_tc;    // any cell
-class CHTML_th;    // header cell
-class CHTML_td;    // data cell
+class CHTML_table;   // Table
+class CHTML_tr;      // Row
+class CHTML_tc;      // Any cell
+class CHTML_th;      // Header cell
+class CHTML_td;      // Data cell
 class CHTML_tc_Cache;
 class CHTML_tr_Cache;
 class CHTML_table_Cache;
+
 
 class CHTML_tc : public CHTMLElement
 {
@@ -615,8 +618,7 @@ public:
     { }
     ~CHTML_tc(void);
 
-    // type for row and column indexing
-
+    // Type for row and column indexing.
     CHTML_tc* SetRowSpan(TIndex span);
     CHTML_tc* SetColSpan(TIndex span);
 
@@ -625,12 +627,12 @@ public:
 protected:
     virtual void DoSetAttribute(const string& name,
                                 const string& value, bool optional);
-
     friend class CHTML_tr;
     friend class CHTML_tc_Cache;
 
     CHTML_tr* m_Parent;
 };
+
 
 class CHTML_tr : public CHTMLElement
 {
@@ -658,12 +660,14 @@ protected:
     CHTML_table* m_Parent;
 };
 
-// the <table> tag
+
+// <table> tag.
+
 class CHTML_table : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
-    // type for row and column indexing
+    // Type for row and column indexing.
     typedef unsigned TIndex;
     enum ECellType {
         eAnyCell,
@@ -674,50 +678,50 @@ public:
     CHTML_table(void);
     ~CHTML_table(void);
 
-    // returns row, will add rows if needed
-    // throws exception if it is not left upper corner of cell
+    // Return row, will add rows if needed.
+    // Throws exception if it is not left upper corner of cell.
     CHTML_tr* Row(TIndex row);
 
-    // current insertion point
+    // Get/set current insertion point.
     void SetCurrentCell(TIndex row, TIndex col)
-    { m_CurrentRow = row; m_CurrentCol = col; }
+        { m_CurrentRow = row; m_CurrentCol = col; }
     TIndex GetCurrentRow(void) const
-    { return m_CurrentRow; }
+        { return m_CurrentRow; }
     TIndex GetCurrentCol(void) const
-    { return m_CurrentCol; }
+        { return m_CurrentCol; }
 
     class CTableInfo;
 
-    // returns cell, will add rows/columns if needed
-    // throws exception if it is not left upper corner of cell
-    // also sets current insertion point
+    // Return cell, will add rows/columns if needed.
+    // Throws exception if it is not left upper corner of cell
+    // also sets current insertion point.
     CHTML_tc* Cell(TIndex row, TIndex column, ECellType type = eAnyCell);
     CHTML_tc* Cell(TIndex row, TIndex column, ECellType type,
                    TIndex rowSpan, TIndex colSpan);
     CHTML_tc* HeaderCell(TIndex row, TIndex column)
-    { return Cell(row, column, eHeaderCell); }
+        { return Cell(row, column, eHeaderCell); }
     CHTML_tc* DataCell(TIndex row, TIndex column)
-    { return Cell(row, column, eDataCell); }
+        { return Cell(row, column, eDataCell); }
 
     CHTML_tc* NextCell(ECellType type = eAnyCell);
     CHTML_tc* NextHeaderCell(void)
-    { return NextCell(eHeaderCell); }
+        { return NextCell(eHeaderCell); }
     CHTML_tc* NextDataCell(void)
-    { return NextCell(eDataCell); }
+        { return NextCell(eDataCell); }
 
     CHTML_tc* NextRowCell(ECellType type = eAnyCell);
     CHTML_tc* NextRowHeaderCell(void)
-    { return NextRowCell(eHeaderCell); }
+        { return NextRowCell(eHeaderCell); }
     CHTML_tc* NextRowDataCell(void)
-    { return NextRowCell(eDataCell); }
+        { return NextRowCell(eDataCell); }
 
-    // checks table contents for validaty, throws exception if invalid
+    // Check table contents for validaty, throws exception if invalid.
     void CheckTable(void) const;
-    // returns width of table in columns. Should call CheckTable before
+    // Return width of table in columns. Should call CheckTable before.
     TIndex CalculateNumberOfColumns(void) const;
     TIndex CalculateNumberOfRows(void) const;
 
-    // return cell of insertion
+    // Return cell of insertion.
     CHTML_tc* InsertAt(TIndex row, TIndex column, CNCBINode* node);
     CHTML_tc* InsertAt(TIndex row, TIndex column, const string& text);
     CHTML_tc* InsertTextAt(TIndex row, TIndex column, const string& text);
@@ -737,12 +741,12 @@ public:
 
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 
-    // If to print horizontal row separator (affects ePlainText mode only)
+    // If to print horizontal row separator (affects ePlainText mode only).
     enum ERowPlainSep {
         ePrintRowSep,   // print
         eSkipRowSep     // do not print
     };
-    // Set rows and cols separators (affects ePlainText mode only)
+    // Set rows and cols separators (affects ePlainText mode only).
     void SetPlainSeparators(const string& col_left     = kEmptyStr,
                             const string& col_middle   = " ",
                             const string& col_right    = kEmptyStr,
@@ -764,7 +768,8 @@ protected:
     ERowPlainSep m_IsRowSep;
 };
 
-// the <form> tag
+
+// <form> tag
 class CHTML_form : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -786,7 +791,8 @@ public:
     void AddHidden(const string& name, int value);
 };
 
-// the <legend> tag
+
+// <legend> tag.
 class CHTML_legend : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -796,7 +802,8 @@ public:
     ~CHTML_legend(void);
 };
 
-// the <fieldset> tag
+
+// <fieldset> tag.
 class CHTML_fieldset : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -807,7 +814,8 @@ public:
     ~CHTML_fieldset(void);
 };
 
-// the <label> tag
+
+// <label> tag.
 class CHTML_label : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -819,7 +827,8 @@ public:
     void SetFor(const string& idRef);
 };
 
-// the <textarea> tag
+
+// <textarea> tag.
 class CHTML_textarea : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -830,7 +839,8 @@ public:
     ~CHTML_textarea(void);
 };
 
-// <input> tag
+
+// <input> tag.
 class CHTML_input : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -839,7 +849,8 @@ public:
     ~CHTML_input(void);
 };
 
-// <input type=checkbox> tag
+
+// <input type=checkbox> tag.
 class CHTML_checkbox : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -854,7 +865,8 @@ public:
     ~CHTML_checkbox(void);
 };
 
-// <input type=hidden> tag
+
+// <input type=hidden> tag.
 class CHTML_hidden : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -865,7 +877,8 @@ public:
     ~CHTML_hidden(void);
 };
 
-// <input type=image> tag
+
+// <input type=image> tag.
 class CHTML_image : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -878,7 +891,8 @@ public:
     ~CHTML_image(void);
 };
 
-// <input type=radio> tag
+
+// <input type=radio> tag.
 class CHTML_radio : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -890,7 +904,8 @@ public:
     ~CHTML_radio(void);
 };
 
-// <input type=text> tag
+
+// <input type=text> tag.
 class CHTML_reset : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -900,7 +915,8 @@ public:
     ~CHTML_reset(void);
 };
 
-// <input type=submit> tag
+
+// <input type=submit> tag.
 class CHTML_submit : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -911,7 +927,8 @@ public:
     ~CHTML_submit(void);
 };
 
-// the <button> tag
+
+// <button> tag.
 /*
   commented out because it's not supported in most browsers
   class CHTML_button : public CHTMLElement
@@ -937,7 +954,8 @@ public:
   };
 */
 
-// <input type=text> tag
+
+// <input type=text> tag.
 class CHTML_text : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -952,7 +970,8 @@ public:
     ~CHTML_text(void);
 };
 
-// <input type=file> tag
+
+// <input type=file> tag.
 class CHTML_file : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -962,7 +981,8 @@ public:
     ~CHTML_file(void);
 };
 
-// <select> tag
+
+// <select> tag.
 class CHTML_select : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -972,7 +992,7 @@ public:
     CHTML_select(const string& name, int size, bool multiple = false);
     ~CHTML_select(void);
 
-    // return 'this' to allow chained AppendOption
+    // Return 'this' to allow chained AppendOption().
     CHTML_select* AppendOption(const string& value, bool selected = false);
     CHTML_select* AppendOption(const string& value, const char* label,
                                bool selected = false);
@@ -981,7 +1001,8 @@ public:
     CHTML_select* SetMultiple(void);
 };
 
-//<option> tag.  rarely used alone.  see <select> tag
+
+// <option> tag. Rarely used alone. See <select> tag.
 class CHTML_option : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -998,7 +1019,8 @@ public:
     CHTML_option* SetSelected(void);
 };
 
-// the <a> tag
+
+// <a> tag.
 class CHTML_a : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -1013,7 +1035,8 @@ public:
     CHTML_a* SetHref(const string& href);
 };
 
-// <br> tag (break)
+
+// <br> tag (break).
 class CHTML_br : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -1027,7 +1050,7 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
-
+// <img> tag.
 class CHTML_img : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -1039,7 +1062,7 @@ public:
 };
 
 
-// <dl> tag
+// <dl> tag.
 class CHTML_dl : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -1048,7 +1071,7 @@ public:
     CHTML_dl(bool compact = false);
     ~CHTML_dl(void);
 
-    // return 'this' to allow chained AppendTerm
+    // Return 'this' to allow chained AppendTerm().
     CHTML_dl* AppendTerm(const string& term, CNCBINode* definition = 0);
     CHTML_dl* AppendTerm(const string& term, const string& definition);
     CHTML_dl* AppendTerm(CNCBINode* term, CNCBINode* definition = 0);
@@ -1058,6 +1081,7 @@ public:
 };
 
 
+// <ol> tag.
 class CHTML_ol : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -1075,6 +1099,7 @@ public:
 };
 
 
+// <ul> tag.
 class CHTML_ul : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -1087,6 +1112,7 @@ public:
 };
 
 
+// <dir> tag.
 class CHTML_dir : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -1099,6 +1125,7 @@ public:
 };
 
 
+// <menu> tag.
 class CHTML_menu : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -1111,6 +1138,7 @@ public:
 };
 
 
+// <font> tag.
 class CHTML_font : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -1179,8 +1207,7 @@ public:
 };
 
 
-// hr
-
+// <hr> tag.
 class CHTML_hr : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -1199,7 +1226,7 @@ public:
 };
 
 
-// <meta> tag
+// <meta> tag.
 class CHTML_meta : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -1214,7 +1241,7 @@ public:
 };
 
 
-// <script> tag
+// <scrpt> tag.
 class CHTML_script : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -1228,6 +1255,7 @@ public:
 };
 
 
+// Other tags (default implementation).
 
 DECLARE_HTML_ELEMENT( head,       CHTMLElement);
 DECLARE_HTML_ELEMENT( body,       CHTMLElement);
@@ -1296,17 +1324,21 @@ DECLARE_HTML_SPECIAL_CHAR( copy, "(c)");
 DECLARE_HTML_SPECIAL_CHAR( reg,  "(r)");
 
 
-/* @} */
-
-
 #include <html/html.inl>
 
+
 END_NCBI_SCOPE
+
+
+/* @} */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2003/11/03 14:47:39  ivanov
+ * Some formal code rearrangement
+ *
  * Revision 1.65  2003/10/01 15:54:31  ivanov
  * Added comments for AttachPopupMenu
  *
@@ -1535,4 +1567,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* HTML__HTNL__HPP */
+#endif  /* HTML___HTML__HPP */

@@ -33,17 +33,6 @@
  */
 
 inline
-CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
-                                      const string& s) const
-{
-    if (mode == eHTML) {
-        return out << s;
-    } else {
-        return out << CHTMLHelper::StripTags(s);
-    }
-}
-
-inline
 const string& CHTMLPlainText::GetText(void) const
 {
     return GetName();
@@ -141,18 +130,21 @@ inline
 CHTML_ol::CHTML_ol(bool compact)
     : CParent(sm_TagName, compact)
 {
+    return;
 }
 
 inline
 CHTML_ol::CHTML_ol(const char* type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
 CHTML_ol::CHTML_ol(const string& type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
@@ -180,54 +172,63 @@ inline
 CHTML_ul::CHTML_ul(bool compact)
     : CParent(sm_TagName, compact)
 {
+    return;
 }
 
 inline
 CHTML_ul::CHTML_ul(const char* type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
 CHTML_ul::CHTML_ul(const string& type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
 CHTML_dir::CHTML_dir(bool compact)
     : CParent(sm_TagName, compact)
 {
+    return;
 }
 
 inline
 CHTML_dir::CHTML_dir(const char* type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
 CHTML_dir::CHTML_dir(const string& type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
 CHTML_menu::CHTML_menu(bool compact)
     : CParent(sm_TagName, compact)
 {
+    return;
 }
 
 inline
 CHTML_menu::CHTML_menu(const char* type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
 CHTML_menu::CHTML_menu(const string& type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
+    return;
 }
 
 inline
@@ -262,8 +263,9 @@ inline
 CHTML_option::CHTML_option(const string& value, bool selected)
     : CParent(sm_TagName, value)
 {
-    if ( selected )
+    if ( selected ) {
         SetSelected();
+    }
 }
 
 inline
@@ -272,8 +274,9 @@ CHTML_option::CHTML_option(const string& value, const string& label,
     : CParent(sm_TagName, label)
 {
     SetValue(value);
-    if ( selected )
+    if ( selected ) {
         SetSelected();
+    }
 }
 
 inline
@@ -282,8 +285,9 @@ CHTML_option::CHTML_option(const string& value, const char* label,
     : CParent(sm_TagName, label)
 {
     SetValue(value);
-    if ( selected )
+    if ( selected ) {
         SetSelected();
+    }
 }
 
 inline
@@ -291,8 +295,9 @@ CHTML_select::CHTML_select(const string& name, bool multiple)
     : CParent(sm_TagName)
 {
     SetNameAttribute(name);
-    if ( multiple )
+    if ( multiple ) {
         SetMultiple();
+    }
 }
 
 inline
@@ -301,8 +306,9 @@ CHTML_select::CHTML_select(const string& name, int size, bool multiple)
 {
     SetNameAttribute(name);
     SetSize(size);
-    if ( multiple )
+    if ( multiple ) {
         SetMultiple();
+    }
 }
 
 inline
@@ -332,6 +338,7 @@ inline
 CHTML_br::CHTML_br(void)
     : CParent(sm_TagName)
 {
+    return;
 }
 
 inline
@@ -368,16 +375,18 @@ inline
 CHTML_font::CHTML_font(void)
     : CParent(sm_TagName)
 {
+    return;
 }
 
 inline
 CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
 {
-    if ( absolute )
+    if ( absolute ) {
         SetSize(size);
-    else
+    } else {
         SetRelativeSize(size);
     return this;
+    }
 }
 
 inline
@@ -523,8 +532,9 @@ CHTML_color::CHTML_color(const string& color, CNCBINode* node)
 inline
 CHTML_hr* CHTML_hr::SetNoShade(bool noShade)
 {
-    if ( noShade )
+    if ( noShade ) {
         SetNoShade();
+    }
     return this;
 }
 
@@ -565,6 +575,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/03 14:47:01  ivanov
+ * Some formal code rearrangement
+ *
  * Revision 1.28  2002/09/25 01:24:29  dicuccio
  * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
  * string
