@@ -114,7 +114,7 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("lcase", "lcase", "Should lower case be masked?",
                             CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("lookup", "lookup", 
-        "Type of lookup table: 0 default, 1 megablast",
+        "Type of lookup table: 0 default, 1 megablast, 2 RPS",
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("matrix", "matrix", "Scoring matrix name",
                             CArgDescriptions::eString, "BLOSUM62");
@@ -273,9 +273,20 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
     opt.SetFilterString(args["filter"].AsString().c_str());
     // FIXME: Handle lcase masking
 
-    if (args["lookup"].AsInteger()) {
-        opt.SetLookupTableType(args["lookup"].AsInteger());
+    // If lookup table type argument value is 0, the type will be set correctly
+    // automatically. Value 1 corresponds to megablast lookup table; 
+    // value 2 is RPS lookup table.
+    switch (args["lookup"].AsInteger()) {
+    case 1:
+        opt.SetLookupTableType(MB_LOOKUP_TABLE);
+        break;
+    case 2:
+        opt.SetLookupTableType(RPS_LOOKUP_TABLE);
+        break;
+    default:
+        break;
     }
+
     if (args["matrix"]) {
         opt.SetMatrixName(args["matrix"].AsString().c_str());
     }
@@ -547,6 +558,66 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
     }
 }
 
+static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
+                               Nlm_MemMap **rps_pssm_mmap, const char* dbname )
+{
+   char filename[256];
+   RPSInfo *info;
+   FILE *auxfile;
+   Int4 i;
+   Int4 seq_size;
+   Int4 num_db_seqs;
+   Nlm_MemMapPtr lut_mmap;
+   Nlm_MemMapPtr pssm_mmap;
+
+   info = (RPSInfo *)malloc(sizeof(RPSInfo));
+   if (info == NULL)
+      ErrPostEx(SEV_FATAL, 1, 0, "Memory allocation failed");
+
+   sprintf(filename, "%s.loo", dbname);
+   lut_mmap = Nlm_MemMapInit(filename);
+   if (lut_mmap == NULL)
+      ErrPostEx(SEV_FATAL, 1, 0, "Cannot map RPS BLAST lookup file");
+   info->lookup_header = (RPSLookupFileHeader *)lut_mmap->mmp_begin;
+
+   sprintf(filename, "%s.rps", dbname);
+   pssm_mmap = Nlm_MemMapInit(filename);
+   if (pssm_mmap == NULL)
+      ErrPostEx(SEV_FATAL, 1, 0, "Cannot map RPS BLAST profile file");
+   info->profile_header = (RPSProfileHeader *)pssm_mmap->mmp_begin;
+
+   num_db_seqs = info->profile_header->num_profiles;
+
+   sprintf(filename, "%s.aux", dbname);
+   auxfile = FileOpen(filename, "r");
+   if (auxfile == NULL)
+      ErrPostEx(SEV_FATAL, 1, 0,"Cannot open RPS BLAST parameters file");
+
+   fscanf(auxfile, "%s", info->aux_info.orig_score_matrix);
+   fscanf(auxfile, "%d", &info->aux_info.gap_open_penalty);
+   fscanf(auxfile, "%d", &info->aux_info.gap_extend_penalty);
+   fscanf(auxfile, "%le", &info->aux_info.ungapped_k);
+   fscanf(auxfile, "%le", &info->aux_info.ungapped_h);
+   fscanf(auxfile, "%d", &info->aux_info.max_db_seq_length);
+   fscanf(auxfile, "%d", &info->aux_info.db_length);
+   fscanf(auxfile, "%lf", &info->aux_info.scale_factor);
+
+   info->aux_info.karlin_k = (double *)malloc(num_db_seqs * sizeof(double));
+   for (i = 0; i < num_db_seqs && !feof(auxfile); i++) {
+      fscanf(auxfile, "%d", &seq_size); /* not used */
+      fscanf(auxfile, "%le", &info->aux_info.karlin_k[i]);
+   }
+
+   if (i < num_db_seqs)
+      ErrPostEx(SEV_FATAL, 1, 0, "Missing Karlin parameters");
+
+   FileClose(auxfile);
+   *ppinfo = info;
+   *rps_mmap = lut_mmap;
+   *rps_pssm_mmap = pssm_mmap;
+   return 0;
+}
+
 int CBlastApplication::Run(void)
 {
     Uint1 program_number;
@@ -587,12 +658,32 @@ int CBlastApplication::Run(void)
         ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
                               (program == eBlastp || program == eBlastx),
                               first_oid, last_oid, NULL);
-                                                 
 
-    CDbBlast blaster(query_loc, seq_src, program);
-    ProcessCommandLineArgs(blaster.SetOptions(), seq_src);
+    CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
+    ProcessCommandLineArgs(opts->SetOptions(), seq_src);
+
+    Nlm_MemMapPtr rps_mmap = NULL;
+    Nlm_MemMapPtr rps_pssm_mmap = NULL;
+    RPSInfo *rps_info = NULL;
+    // Need to set up the RPS database information structure too
+    if ((opts->GetOptions().GetLookupTableType() == RPS_LOOKUP_TABLE) &&
+        BLAST_FillRPSInfo(&rps_info, &rps_mmap,
+            &rps_pssm_mmap, args["db"].AsString().c_str()) != 0) 
+    {
+        NCBI_THROW(CBlastException, eBadParameter, 
+                   "Cannot initialize RPS BLAST database");
+    }        
+    
+    CDbBlast blaster(query_loc, seq_src, *opts, rps_info);
 
     TSeqAlignVector seqalignv = blaster.Run();
+
+    if (rps_info) {
+        Nlm_MemMapFini(rps_mmap);
+        Nlm_MemMapFini(rps_pssm_mmap);
+        sfree(rps_info->aux_info.karlin_k);
+        sfree(rps_info);
+    }
 
     FormatResults(blaster, seqalignv);
 
