@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/10/01 13:12:24  shomrat
+ * REBASE is legal refseq dbxref
+ *
  * Revision 6.8  2003/09/17 15:22:57  vasilche
  * Removed unnecessary array of strings and related memory leak.
  *
@@ -192,9 +195,12 @@ bool CDbtag::IsApproved(bool refseq) const
     }
     const string& db = GetDb();
 
-    // if refseq, first test if GenBank, EMBL or DDBJ
+    // if refseq, first test if GenBank, EMBL, DDBJ or REBASE
     if ( refseq ) {
-        if ( db == "GenBank"  ||  db == "EMBL"  ||  db == "DDBJ" ) {
+        if ( db == "GenBank"  ||
+             db == "EMBL"     ||  
+             db == "DDBJ"     ||  
+             db == "REBASE" ) {
             return true;
         }
     }
