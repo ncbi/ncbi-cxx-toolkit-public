@@ -1,0 +1,139 @@
+#ifndef LDS_COREOBJREADER_HPP__
+#define LDS_COREOBJREADER_HPP__
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Anatoliy Kuznetsov
+ *
+ * File Description: Core bio objects reader.
+ *
+ */
+
+
+#include <objects/util/obj_sniff.hpp>
+#include <stack>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+//////////////////////////////////////////////////////////////////
+//
+// Try and fail parser, used for discovery of files structure.
+//
+
+class CLDS_CoreObjectsReader : public CObjectsSniffer
+{
+public:
+    CLDS_CoreObjectsReader();
+
+    // Event function called when parser finds a top level object
+    virtual void OnTopObjectFoundPre(const CObjectInfo& object, 
+                                     size_t stream_offset);
+
+    // Event function alled after top object deserialization
+    virtual void OnTopObjectFoundPost(const CObjectInfo& object);
+
+    // Overload from CObjectsSniffer
+    virtual void OnObjectFoundPre(const CObjectInfo& object, 
+                                  size_t stream_offset);
+
+    // Overload from CObjectsSniffer
+    virtual void OnObjectFoundPost(const CObjectInfo& object);
+
+public:
+
+    struct SObjectDetails
+    {
+        CObjectInfo   info;
+        size_t        offset;
+        size_t        parent_offset;
+        size_t        top_level_offset;
+        bool          is_top_level;
+
+        SObjectDetails(const  CObjectInfo& object_info,
+                       size_t stream_offset,
+                       size_t p_offset,
+                       size_t top_offset,
+                       bool   is_top)
+        : info(object_info),
+          offset(stream_offset),
+          parent_offset(p_offset),
+          top_level_offset(top_offset),
+          is_top_level(is_top)
+        {}
+    };
+
+    typedef vector<SObjectDetails>    TObjectVector;
+
+protected:
+
+    struct SObjectParseDescr
+    {
+        const CObjectInfo*  object_info;
+        size_t              stream_offset;
+
+        SObjectParseDescr(const CObjectInfo* oi,
+                          size_t offset)
+        : object_info(oi),
+          stream_offset(offset)
+        {}
+        SObjectParseDescr() 
+        : object_info(0),
+          stream_offset(0)
+        {}
+    };
+
+    typedef stack<SObjectParseDescr>  TParseStack;
+
+protected:
+    // Find object in the objects vector (m_Objects) by the stream 
+    // offset. Returns objects' index in vector, -1 if "not found".
+    // This function works on the fact that only one object can 
+    // be found in one particular offset, and offset udentifies any
+    // object unqiely in its file.
+    int FindObject(size_t stream_offset);
+
+private:
+    TParseStack         m_Stack;
+    SObjectParseDescr   m_TopDescr;
+    TObjectVector       m_Objects;
+
+};
+
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2003/05/22 18:57:17  kuznets
+ * Work in progress
+ *
+ * ===========================================================================
+ */
+
+#endif

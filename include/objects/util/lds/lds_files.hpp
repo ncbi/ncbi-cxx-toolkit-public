@@ -33,9 +33,9 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <objects/util/LDS/lds_db.hpp>
-#include <objects/util/LDS/lds_set.hpp>
-#include <objects/util/LDS/lds_expt.hpp>
+#include <objects/util/lds/lds_db.hpp>
+#include <objects/util/lds/lds_set.hpp>
+#include <objects/util/lds/lds_expt.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/22 18:57:17  kuznets
+ * Work in progress
+ *
  * Revision 1.1  2003/05/22 13:24:45  kuznets
  * Initial revision
  *
