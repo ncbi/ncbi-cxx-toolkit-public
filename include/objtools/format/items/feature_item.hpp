@@ -165,13 +165,15 @@ private:
     void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_feat) const;
+    void x_AddQuals(const CGene_ref& gene, bool& pseudo,
+        CSeqFeatData::ESubtype subtype) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
     void x_ImportQuals(CBioseqContext& ctx) const;
     void x_AddRptUnitQual(const string& rpt_unit) const;
-    void x_CleanQuals(void) const;
+    void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax) const;
+    void x_CleanQuals(bool& had_prot_desc) const;
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
     // feature table quals
@@ -198,6 +200,7 @@ private:
     typedef CQualContainer<EFeatureQualifier> TQuals;
     typedef TQuals::iterator                  TQI;
     typedef TQuals::const_iterator            TQCI;
+    typedef IFlatQVal::TFlags                 TQualFlags;
     
     // qualifiers container
     void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const {
@@ -218,10 +221,9 @@ private:
     void x_FormatQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(EFeatureQualifier slot, const string& name,
-        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
+        CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
     void x_FormatNoteQual(EFeatureQualifier slot, const string& name, 
-        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const 
-        { x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote); }
+            CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
 
     // data
     mutable CSeqFeatData::ESubtype m_Type;
@@ -238,19 +240,9 @@ public:
 
     CSourceFeatureItem(const CBioSource& src, TRange range, CBioseqContext& ctx);
     CSourceFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
-                           const CSeq_loc* loc = 0)
-        : CFeatureItemBase(feat, ctx, loc), m_WasDesc(false)
-    {
-        x_GatherInfo(ctx);
-    }
+        const CSeq_loc* loc = NULL);
     CSourceFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
-                           const CSeq_loc* loc = 0)
-        : CFeatureItemBase(feat.GetOriginalFeature(), ctx,
-                           loc ? loc : &feat.GetLocation()),
-          m_WasDesc(false)
-    {
-        x_GatherInfo(ctx);
-    }
+        const CSeq_loc* loc = NULL);
 
     bool WasDesc(void) const { return m_WasDesc; }
     const CBioSource& GetSource(void) const {
@@ -258,7 +250,15 @@ public:
     }
     string GetKey(void) const { return "source"; }
 
+    bool IsFocus    (void) const { return m_IsFocus;     }
+    bool IsSynthetic(void) const { return m_IsSynthetic; }
+    void Subtract(const CSourceFeatureItem& other, CScope& scope);
+
 private:
+    typedef CQualContainer<ESourceQualifier> TQuals;
+    typedef TQuals::const_iterator           TQCI;
+    typedef IFlatQVal::TFlags                TQualFlags;
+
     void x_GatherInfo(CBioseqContext& ctx);
 
     void x_AddQuals(CBioseqContext& ctx);
@@ -274,24 +274,18 @@ private:
     void x_FormatGBNoteQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(ESourceQualifier slot, const string& name,
-        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const {
-            bool add_period = false;
-            x_FormatQual(slot, name, qvec, add_period, flags);
-    }
-    void x_FormatQual(ESourceQualifier slot, const string& name,
-        CFlatFeature::TQuals& qvec, bool& add_period,
-        IFlatQVal::TFlags flags = 0) const;
+            CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
     void x_FormatNoteQual(ESourceQualifier slot, const string& name,
-            CFlatFeature::TQuals& qvec, bool& add_period,
-            IFlatQVal::TFlags flags = 0) const {
-        x_FormatQual(slot, name, qvec, add_period, flags | IFlatQVal::fIsNote); 
+            CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const {
+        x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote);
     }
     
-    typedef CQualContainer<ESourceQualifier> TQuals;
-    typedef TQuals::const_iterator           TQCI;
+    
 
     bool           m_WasDesc;
     mutable TQuals m_Quals;
+    bool           m_IsFocus;
+    bool           m_IsSynthetic;
 };
 
 
@@ -302,6 +296,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/11/15 20:03:21  shomrat
+* Fixed /note qual
+*
 * Revision 1.20  2004/10/18 18:44:16  shomrat
 * + AddBondQuals
 *
