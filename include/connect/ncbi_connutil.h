@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/05 22:39:21  lavr
+ * SConnNetInfo modified to contain 'client_mode' instead of just 'firewall'
+ *
  * Revision 6.2  2000/09/26 22:01:30  lavr
  * Registry entries changed, HTTP request method added
  *
@@ -87,6 +90,13 @@ typedef enum {
 } EReqMethod;
 
 
+typedef enum {
+    eClientModeUnspecified = 0,
+    eClientModeFirewall,
+    eClientModeStatefulCapable
+} EClientMode;
+
+
 /* Network connection related configurable info struct
  */
 typedef struct {
@@ -102,8 +112,8 @@ typedef struct {
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server */
     char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
     int/*bool*/    debug_printout;   /* printout some debug info */
-    int/*bool*/    firewall;         /* if to work in the firewall mode */
     int/*bool*/    lb_disable;       /* to disable local load-balancing */
+    EClientMode    client_mode;      /* how to connect to the server */
     unsigned short ncbid_port;       /* port of NCBID CGI script(used by LB) */
     char           ncbid_path[256];  /* path to NCBID CGI script(used by LB) */
 
@@ -149,8 +159,8 @@ typedef struct {
 #define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
 #define DEF_CONN_DEBUG_PRINTOUT   ""
                                   
-#define REG_CONN_FIREWALL         "FIREWALL"
-#define DEF_CONN_FIREWALL         ""
+#define REG_CONN_CLIENT_MODE      "CLIENT_MODE"
+#define DEF_CONN_CLIENT_MODE      ""
                                   
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
@@ -172,13 +182,14 @@ typedef struct {
  *   port               PORT
  *   path               PATH
  *   args               ARGS
+ *   req_method         REQUEST_METHOD
  *   timeout            TIMEOUT             "<sec>.<usec>": "30.0", "0.005"
  *   max_try            MAX_TRY  
  *   http_proxy_host    HTTP_PROXY_HOST     no HTTP proxy if empty/NULL
  *   http_proxy_port    HTTP_PROXY_PORT
  *   proxy_host         PROXY_HOST
  *   debug_printout     DEBUG_PRINTOUT
- *   firewall           FIREWALL
+ *   client_mode        CLIENT_MODE
  *   lb_disable         LB_DISABLE
  *   ncbid_port         NCBID_PORT
  *   ncbid_path         NCBID_PATH
