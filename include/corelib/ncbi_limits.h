@@ -51,6 +51,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/05/30 16:17:23  vakatov
+* Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
+* only when absolutely necessary (otherwise it conflicted with
+* "long long" for the Intel C++ compiler).
+*
 * Revision 1.1  2001/01/03 17:34:56  vakatov
 * Initial revision
 *
@@ -74,7 +79,7 @@
 #  define NCBI_MIN_I8  0x8000000000000000LL
 #  define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFLL
 #  define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFULL
-#elif (SIZEOF___INT64 == 8)
+#elif defined(NCBI_USE_INT64)
 #  define NCBI_MIN_I8  0x8000000000000000i64
 #  define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFi64
 #  define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFui64
@@ -117,10 +122,10 @@ const signed   long long  kMax_LongLong   = 0x7FFFFFFFLL;
 const unsigned long long  kMax_ULongLong  = 0xFFFFFFFFULL;
 #  endif
 
-#  if (SIZEOF___INT64 == 8)
-const signed   __int64 kMin_Int64  = 0x8000000000000000i64;
-const signed   __int64 kMax_Int64  = 0x7FFFFFFFFFFFFFFFi64;
-const unsigned __int64 kMax_UInt64 = 0xFFFFFFFFFFFFFFFFui64;
+#  if defined(NCBI_USE_INT64)
+const signed   __int64 kMin_Int64  = NCBI_MIN_I8;
+const signed   __int64 kMax_Int64  = NCBI_MAX_I8;
+const unsigned __int64 kMax_UInt64 = NCBI_MAX_UI8;
 #  endif
 
 /* [C++]  built-in floating-point types */

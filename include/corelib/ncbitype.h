@@ -40,6 +40,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/05/30 16:17:23  vakatov
+* Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
+* only when absolutely necessary (otherwise it conflicted with
+* "long long" for the Intel C++ compiler).
+*
 * Revision 1.7  2001/04/16 18:51:05  vakatov
 * "Char" to become "char" rather than "signed char".
 * Introduced "Schar" for "signed char".
@@ -109,6 +114,7 @@ typedef unsigned int   Uint4;
 #elif (SIZEOF_LONG_LONG == 8)
 #  define INT8_TYPE long long
 #elif (SIZEOF___INT64 == 8)
+#  define NCBI_USE_INT64 1
 #  define INT8_TYPE __int64
 #else
 #  error "This platform does not support 8-byte integer"

@@ -57,6 +57,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/05/30 16:17:23  vakatov
+* Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
+* only when absolutely necessary (otherwise it conflicted with
+* "long long" for the Intel C++ compiler).
+*
 * Revision 1.1  2001/01/03 17:35:23  vakatov
 * Initial revision
 *
@@ -128,7 +133,7 @@ NCBI_NUMERIC_LIMITS          (signed   long long,  LongLong);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned long long, ULongLong);
 #endif
 
-#if (SIZEOF___INT64 == 8)
+#if defined(NCBI_USE_INT64)
 NCBI_NUMERIC_LIMITS          (signed   __int64,  Int64);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned __int64, UInt64);
 #endif
