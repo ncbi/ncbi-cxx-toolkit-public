@@ -30,33 +30,6 @@
  *     ncbi_core.[ch]
  *     ncbi_util.[ch]
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2002/03/22 19:46:57  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.7  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.6  2001/08/09 16:25:28  lavr
- * Remove last (unneeded) parameter from LOG_Reset() and its test
- *
- * Revision 6.5  2001/05/17 17:59:03  vakatov
- * TEST_UTIL_Log::  Set "errno" to zero before testing LOG_WRITE_ERRNO()
- *
- * Revision 6.4  2000/06/23 19:35:51  vakatov
- * Test the logging of binary data
- *
- * Revision 6.3  2000/06/01 18:35:12  vakatov
- * Dont log with level "eLOG_Fatal" (it exits/coredumps now)
- *
- * Revision 6.2  2000/04/07 20:00:51  vakatov
- * + <errno.h>
- *
- * Revision 6.1  2000/02/23 22:37:37  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_util.h>
@@ -105,11 +78,12 @@ static void TEST_CORE_Io(void)
 {
   /* EIO_Status, IO_StatusStr() */
   int x_status;
-  for (x_status = 0;  x_status <= (int)eIO_Unknown;  x_status++) {
+  for (x_status = 0;  x_status <= (int) eIO_Unknown;  x_status++) {
     switch ( (EIO_Status) x_status ) {
     case eIO_Success:
     case eIO_Timeout:
     case eIO_Closed:
+    case eIO_Interrupt:
     case eIO_InvalidArg:
     case eIO_NotSupported:
     case eIO_Unknown:
@@ -231,7 +205,7 @@ static void TEST_CORE_Log(void)
 
   /* ELOG_Level, LOG_LevelStr() */
   int x_level;
-  for (x_level = 0;  x_level <= (int)eIO_Unknown;  x_level++) {
+  for (x_level = 0;  x_level <= (int) eLOG_Fatal;  x_level++) {
     switch ( (ELOG_Level) x_level ) {
     case eLOG_Trace:
     case eLOG_Note:
@@ -383,3 +357,37 @@ int main(void)
   TEST_UTIL();
   return 0;
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.9  2002/08/14 03:35:26  lavr
+ * Fix ELOG_Level test; add eIO_Interrupt to EIO_Status test
+ *
+ * Revision 6.8  2002/03/22 19:46:57  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.7  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.6  2001/08/09 16:25:28  lavr
+ * Remove last (unneeded) parameter from LOG_Reset() and its test
+ *
+ * Revision 6.5  2001/05/17 17:59:03  vakatov
+ * TEST_UTIL_Log::  Set "errno" to zero before testing LOG_WRITE_ERRNO()
+ *
+ * Revision 6.4  2000/06/23 19:35:51  vakatov
+ * Test the logging of binary data
+ *
+ * Revision 6.3  2000/06/01 18:35:12  vakatov
+ * Dont log with level "eLOG_Fatal" (it exits/coredumps now)
+ *
+ * Revision 6.2  2000/04/07 20:00:51  vakatov
+ * + <errno.h>
+ *
+ * Revision 6.1  2000/02/23 22:37:37  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
