@@ -132,7 +132,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
     // Parse the location
     CHandleRange rlist(m_Value);      // all intervals pointing to the sequence
     CSeq_loc_CI loc_it(location);
-    for ( ; loc_it; loc_it++) {
+    for ( ; loc_it; ++loc_it) {
         if ( !x_IsSynonym(loc_it.GetSeq_id()) )
             continue;
         rlist.AddRange(loc_it.GetRange(), loc_it.GetStrand());
@@ -245,6 +245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.24  2002/11/08 22:15:51  grichenk
 * Added methods for removing/replacing annotations
 *

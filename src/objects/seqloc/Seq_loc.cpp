@@ -58,7 +58,7 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
     TRange total_range(TRange::GetEmptyFrom(), TRange::GetEmptyTo());
     CSeq_loc_CI loc_ci(*this);
-    for ( ; loc_ci; loc_ci++) {
+    for ( ; loc_ci; ++loc_ci) {
         total_range += loc_ci.GetRange();
     }
     return total_range;
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.18  2002/12/06 15:36:04  grichenk
+ * Added overlap type for annot-iterators
+ *
  * Revision 6.17  2002/10/03 20:22:50  ucko
  * Drop duplicate default arg. spec. for s_GetLabel.
  *

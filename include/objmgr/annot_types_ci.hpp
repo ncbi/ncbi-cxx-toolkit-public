@@ -79,13 +79,18 @@ public:
     CAnnotTypes_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector selector,
+                   CAnnot_CI::EOverlapType overlap_type,
                    EResolveMethod resolve);
     // Search only in TSE, containing the bioseq, by default get annotations
     // defined on segments in the same TSE (eResolve_TSE method).
+    // If "entry" is set, search only annotations from the seq-entry specified
+    // (but no its sub-entries or parent entry).
     CAnnotTypes_CI(CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector selector,
-                   EResolveMethod resolve);
+                   CAnnot_CI::EOverlapType overlap_type,
+                   EResolveMethod resolve,
+                   const CSeq_entry* entry);
     CAnnotTypes_CI(const CAnnotTypes_CI& it);
     virtual ~CAnnotTypes_CI(void);
 
@@ -161,8 +166,12 @@ private:
     mutable CRef<CScope>         m_Scope;
     // If non-zero, search annotations in the "native" TSE only
     CRef<CTSE_Info>              m_NativeTSE;
+    // Search only within this seq-entry if set
+    CConstRef<CSeq_entry>        m_SingleEntry;
     // Reference resolving method
     EResolveMethod               m_ResolveMethod;
+    // Overlap type for CAnnot_CI
+    CAnnot_CI::EOverlapType      m_OverlapType;
 };
 
 
@@ -181,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/12/06 15:35:57  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.21  2002/11/04 21:28:58  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

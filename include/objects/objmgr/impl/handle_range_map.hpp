@@ -59,15 +59,16 @@ public:
     // Get the ranges map
     const TLocMap& GetMap(void) const { return m_LocMap; }
 
-    bool IntersectingWithLoc(const CSeq_loc& loc);
-    bool IntersectingWithMap(const CHandleRangeMap& rmap);
+    bool IntersectingWithLoc(const CSeq_loc& loc) const;
+    bool IntersectingWithMap(const CHandleRangeMap& rmap) const;
+    bool TotalRangeIntersectingWith(const CHandleRangeMap& rmap) const;
 
 private:
     // Split the location and add range lists to the locmap
     void x_ProcessLocation(const CSeq_loc& loc);
 
     CSeq_id_Mapper* m_IdMapper;
-    TLocMap      m_LocMap;
+    mutable TLocMap m_LocMap;
 };
 
 
@@ -106,6 +107,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.6  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

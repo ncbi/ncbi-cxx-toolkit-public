@@ -73,12 +73,14 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
 CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                SAnnotSelector selector,
+                               CAnnot_CI::EOverlapType overlap_type,
                                EResolveMethod resolve)
     : m_Selector(selector),
       m_AnnotCopy(0),
       m_Scope(&scope),
       m_NativeTSE(0),
-      m_ResolveMethod(resolve)
+      m_ResolveMethod(resolve),
+      m_OverlapType(overlap_type)
 {
     x_Initialize(loc);
 }
@@ -87,12 +89,16 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
 CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                SAnnotSelector selector,
-                               EResolveMethod resolve)
+                               CAnnot_CI::EOverlapType overlap_type,
+                               EResolveMethod resolve,
+                               const CSeq_entry* entry)
     : m_Selector(selector),
       m_AnnotCopy(0),
       m_Scope(bioseq.m_Scope),
       m_NativeTSE(static_cast<CTSE_Info*>(bioseq.m_TSE)),
-      m_ResolveMethod(resolve)
+      m_SingleEntry(entry),
+      m_ResolveMethod(resolve),
+      m_OverlapType(overlap_type)
 {
     // Convert interval to the seq-loc
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -328,8 +334,10 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
             (*tse_it)->LockCounter();
         }
         CTSE_Info& tse_info = const_cast<CTSE_Info&>(tse_it->GetObject());
-        CAnnot_CI annot_it(tse_info, loc, m_Selector);
+        CAnnot_CI annot_it(tse_info, loc, m_Selector, m_OverlapType);
         for ( ; annot_it; ++annot_it ) {
+            if (bool(m_SingleEntry)  &&  (m_SingleEntry != &annot_it->GetSeq_entry()))
+                continue;
             m_AnnotSet.insert(CRef<CAnnotObject>(&(*annot_it)));
         }
     }
@@ -359,7 +367,8 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
                     fcopy->SetPartial() = true;
             }
             m_AnnotCopy.Reset(new CAnnotObject
-                              (*fcopy, annot_obj.GetSeq_annot()));
+                              (*fcopy, annot_obj.GetSeq_annot(),
+                              &annot_obj.GetSeq_entry()));
             break;
         }
     case CSeq_annot::C_Data::e_Align:
@@ -377,7 +386,8 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
             gcopy->Assign(gsrc);
             x_ConvertLocToMaster(gcopy->SetLoc());
             m_AnnotCopy.Reset(new CAnnotObject
-                              (*gcopy, annot_obj.GetSeq_annot()));
+                              (*gcopy, annot_obj.GetSeq_annot(),
+                              &annot_obj.GetSeq_entry()));
             break;
         }
     default:
@@ -590,6 +600,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.27  2002/12/05 19:28:32  grichenk
 * Prohibited postfix operator ++()
 *

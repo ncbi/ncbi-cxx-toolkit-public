@@ -51,13 +51,16 @@ class CAnnotObject : public CObject
 public:
     CAnnotObject(CDataSource& data_source,
                  const CSeq_feat&  feat,
-                 const CSeq_annot& annot);
+                 const CSeq_annot& annot,
+                 const CSeq_entry* entry);
     CAnnotObject(CDataSource& data_source,
                  const CSeq_align& align,
-                 const CSeq_annot& annot);
+                 const CSeq_annot& annot,
+                 const CSeq_entry* entry);
     CAnnotObject(CDataSource& data_source,
                  const CSeq_graph& graph,
-                 const CSeq_annot& annot);
+                 const CSeq_annot& annot,
+                 const CSeq_entry* entry);
     virtual ~CAnnotObject(void);
 
     SAnnotSelector::TAnnotChoice Which(void) const;
@@ -75,6 +78,8 @@ public:
 
     // Get Seq-annot, containing the element
     const CSeq_annot& GetSeq_annot(void) const;
+    // Get Seq-entry, containing the annotation
+    const CSeq_entry& GetSeq_entry(void) const;
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 private:
@@ -83,11 +88,14 @@ private:
     // containing the original annotation object.
     friend class CAnnotTypes_CI;
     CAnnotObject(const CSeq_feat&  feat,
-                 const CSeq_annot& annot);
+                 const CSeq_annot& annot,
+                 const CSeq_entry* entry);
     CAnnotObject(const CSeq_align& align,
-                 const CSeq_annot& annot);
+                 const CSeq_annot& annot,
+                 const CSeq_entry* entry);
     CAnnotObject(const CSeq_graph& graph,
-                 const CSeq_annot& annot);
+                 const CSeq_annot& annot,
+                 const CSeq_entry* entry);
 
     void x_ProcessAlign(const CSeq_align& align);
 
@@ -95,6 +103,7 @@ private:
     SAnnotSelector::TAnnotChoice m_Choice;
     CConstRef<CObject>           m_Object;
     CConstRef<CSeq_annot>        m_Annot;
+    CConstRef<CSeq_entry>        m_Entry;    // seq-entry, containing the annot.
     auto_ptr<CHandleRangeMap>    m_RangeMap; // may be null for fake objects
 };
 
@@ -110,11 +119,13 @@ private:
 inline
 CAnnotObject::CAnnotObject(CDataSource& data_source,
                            const CSeq_feat& feat,
-                           const CSeq_annot& annot)
+                           const CSeq_annot& annot,
+                           const CSeq_entry* entry)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Ftable),
       m_Object(dynamic_cast<const CObject*>(&feat)),
       m_Annot(&annot),
+      m_Entry(entry),
       m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
 {
     m_RangeMap->AddLocation(feat.GetLocation());
@@ -126,11 +137,13 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
 inline
 CAnnotObject::CAnnotObject(CDataSource& data_source,
                            const CSeq_align& align,
-                           const CSeq_annot& annot)
+                           const CSeq_annot& annot,
+                           const CSeq_entry* entry)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Align),
       m_Object(dynamic_cast<const CObject*>(&align)),
       m_Annot(&annot),
+      m_Entry(entry),
       m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
 {
     x_ProcessAlign(align);
@@ -140,11 +153,13 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
 inline
 CAnnotObject::CAnnotObject(CDataSource& data_source,
                            const CSeq_graph& graph,
-                           const CSeq_annot& annot)
+                           const CSeq_annot& annot,
+                           const CSeq_entry* entry)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Graph),
       m_Object(dynamic_cast<const CObject*>(&graph)),
       m_Annot(&annot),
+      m_Entry(entry),
       m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
 {
     m_RangeMap->AddLocation(graph.GetLoc());
@@ -223,14 +238,22 @@ const CSeq_annot& CAnnotObject::GetSeq_annot(void) const
     return *m_Annot;
 }
 
+inline
+const CSeq_entry& CAnnotObject::GetSeq_entry(void) const
+{
+    return *m_Entry;
+}
+
 
 inline
 CAnnotObject::CAnnotObject(const CSeq_feat& feat,
-                           const CSeq_annot& annot)
+                           const CSeq_annot& annot,
+                           const CSeq_entry* entry)
     : m_DataSource(0),
       m_Choice(CSeq_annot::C_Data::e_Ftable),
       m_Object(dynamic_cast<const CObject*>(&feat)),
       m_Annot(&annot),
+      m_Entry(entry),
       m_RangeMap(0)
 {
     return;
@@ -238,11 +261,13 @@ CAnnotObject::CAnnotObject(const CSeq_feat& feat,
 
 inline
 CAnnotObject::CAnnotObject(const CSeq_align& align,
-                           const CSeq_annot& annot)
+                           const CSeq_annot& annot,
+                           const CSeq_entry* entry)
     : m_DataSource(0),
       m_Choice(CSeq_annot::C_Data::e_Align),
       m_Object(dynamic_cast<const CObject*>(&align)),
       m_Annot(&annot),
+      m_Entry(entry),
       m_RangeMap(0)
 {
     return;
@@ -250,11 +275,13 @@ CAnnotObject::CAnnotObject(const CSeq_align& align,
 
 inline
 CAnnotObject::CAnnotObject(const CSeq_graph& graph,
-                           const CSeq_annot& annot)
+                           const CSeq_annot& annot,
+                           const CSeq_entry* entry)
     : m_DataSource(0),
       m_Choice(CSeq_annot::C_Data::e_Graph),
       m_Object(dynamic_cast<const CObject*>(&graph)),
       m_Annot(&annot),
+      m_Entry(entry),
       m_RangeMap(0)
 {
     return;
@@ -268,6 +295,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.9  2002/10/09 19:17:41  grichenk
 * Fixed ICC problem with dynamic_cast<>
 *

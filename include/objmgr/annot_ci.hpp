@@ -74,10 +74,16 @@ public:
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
     typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
 
+    enum EOverlapType {
+        eOverlap_Intervals,  // default - check overlapping of individual intervals
+        eOverlap_TotalRange  // check overlapping of total ranges only
+    };
+
     CAnnot_CI(void);
     CAnnot_CI(CTSE_Info& tse,
               CHandleRangeMap& loc,
-              SAnnotSelector selector);
+              SAnnotSelector selector,
+              EOverlapType overlap_type = eOverlap_Intervals);
     CAnnot_CI(const CAnnot_CI& iter);
     ~CAnnot_CI(void);
     CAnnot_CI& operator= (const CAnnot_CI& iter);
@@ -110,6 +116,7 @@ private:
     TRangeIter        m_Current;
     CHandleRangeMap*  m_HandleRangeMap;
     CSeq_id_Handle    m_CurrentHandle;
+    EOverlapType      m_OverlapType;
 };
 
 inline
@@ -146,6 +153,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/06 15:35:57  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.11  2002/12/05 19:28:29  grichenk
 * Prohibited postfix operator ++()
 *

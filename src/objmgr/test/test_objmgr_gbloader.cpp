@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/12/06 15:36:03  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.23  2002/11/04 21:29:14  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -193,7 +196,10 @@ int CTestApplication::Run()
           LOG_POST("CDS count (non-resolved) = " << fcount);
           fcount = 0;
           {{ // Creating a block to destroy the iterator after using it
-              CFeat_CI feat_it2(scope, *loc, CSeqFeatData::e_Cdregion, CFeat_CI::eResolve_All);
+              CFeat_CI feat_it2(scope, *loc,
+                                CSeqFeatData::e_Cdregion,
+                                CAnnot_CI::eOverlap_Intervals,
+                                CFeat_CI::eResolve_All);
               LOG_POST("Iterating CDS features, resolving references");
               for ( ; feat_it2;  ++feat_it2) {
                   fcount++;

@@ -117,7 +117,7 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
     for (CFeat_CI feat(handle, 0, 0, CSeqFeatData::e_not_set,
-                       CFeat_CI::eResolve_TSE);
+                       CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_TSE);
          feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2002/12/06 15:36:05  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.15  2002/11/18 19:48:45  grichenk
 * Removed "const" from datatool-generated setters
 *

@@ -52,15 +52,20 @@ public:
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              SAnnotSelector::TFeatChoice feat_choice,
+             CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
              CAnnotTypes_CI::EResolveMethod resolve =
              CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
     // the whole bioseq is searched. References are resolved depending on the
     // "resolve" flag (see above).
+    // If "entry" is set, search only features from the seq-entry specified
+    // (but no its sub-entries or parent entry).
     CFeat_CI(CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              SAnnotSelector::TFeatChoice feat_choice,
-                   EResolveMethod resolve = eResolve_TSE);
+             CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
+             EResolveMethod resolve = eResolve_TSE,
+             const CSeq_entry* entry = 0);
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);
@@ -84,10 +89,12 @@ inline
 CFeat_CI::CFeat_CI(CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector::TFeatChoice feat_choice,
-                   EResolveMethod resolve)
+                   CAnnot_CI::EOverlapType overlap_type,
+                   EResolveMethod resolve,
+                   const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
           SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
-          resolve)
+          overlap_type, resolve, entry)
 {
     return;
 }
@@ -132,6 +139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/12/06 15:35:57  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.13  2002/12/05 19:28:30  grichenk
 * Prohibited postfix operator ++()
 *

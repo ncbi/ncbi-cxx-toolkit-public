@@ -135,7 +135,7 @@ void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 {
     TSeqPos rg_end = 0;
     CSeq_loc_CI lit(view_loc);
-    for ( ; lit; lit++) {
+    for ( ; lit; ++lit) {
         if ( lit.IsEmpty() )
             continue;
         TSeqPos from = lit.GetRange().IsWholeFrom() ?
@@ -539,6 +539,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.34  2002/10/03 13:45:39  grichenk
 * CSeqVector::size() made const
 *

@@ -1616,23 +1616,23 @@ int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type
             }
             TSeqPos loc2start = it2.GetRange().GetFrom();
             // Find the first interval in loc1 intersecting with loc2
-            for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; it1++);
+            for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; ++it1);
             // Check intervals one by one
             while ( it1  &&  it2 ) {
                 if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
                     // The last interval from loc2 may be shorter than the
                     // current interval from loc1
                     if (it1.GetRange().GetTo() < it2.GetRange().GetTo()  ||
-                        it2++) {
+                        ++it2) {
                         return -1;
                     }
                     break;
                 }
                 // Go to the next interval start
-                if ( !(it2++) ) {
+                if ( !(++it2) ) {
                     break;
                 }
-                if ( !(it1++) ) {
+                if ( !(++it1) ) {
                     return -1; // loc1 has not enough intervals
                 }
                 if (it1.GetRange().GetFrom() != it2.GetRange().GetFrom()) {
@@ -1764,7 +1764,7 @@ static TGaps s_AdjustGaps(const TGaps& gaps, const CSeq_loc& location)
     SGap                  new_gap(kMaxPos, 0);
 
     for (CSeq_loc_CI loc_it(location);  loc_it  &&  gap_it != gaps.end();
-         pos += loc_it.GetRange().GetLength(), loc_it++) {
+         pos += loc_it.GetRange().GetLength(), ++loc_it) {
         CSeq_loc_CI::TRange range = loc_it.GetRange();
 
         if (new_gap.m_Start != kMaxPos) {
@@ -2464,6 +2464,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2002/12/06 15:36:05  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.20  2002/12/04 15:38:22  ucko
 * SourceToProduct, ProductToSource: just check whether the feature is a coding
 * region rather than attempting to determine molecule types; drop s_DeduceMol.

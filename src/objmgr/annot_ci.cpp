@@ -49,11 +49,13 @@ CAnnot_CI::CAnnot_CI(void)
 
 CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                      CHandleRangeMap& loc,
-                     SAnnotSelector selector)
+                     SAnnotSelector selector,
+                     EOverlapType overlap_type)
     : m_TSEInfo(&tse),
       m_Selector(selector),
       m_RangeMap(0),
-      m_HandleRangeMap(&loc)
+      m_HandleRangeMap(&loc),
+      m_OverlapType(overlap_type)
 {
     CTSE_Guard guard(tse);
     m_TSEInfo->LockCounter();
@@ -83,7 +85,8 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
       m_CoreRange(iter.m_CoreRange),
       m_Current(iter.m_Current),
       m_HandleRangeMap(iter.m_HandleRangeMap),
-      m_CurrentHandle(iter.m_CurrentHandle)
+      m_CurrentHandle(iter.m_CurrentHandle),
+      m_OverlapType(iter.m_OverlapType)
 {
     //### Prevent TSE destruction between "if" and "lock"
     if ( m_TSEInfo )
@@ -103,6 +106,7 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
     m_Current = iter.m_Current;
     m_HandleRangeMap = iter.m_HandleRangeMap;
     m_CurrentHandle = iter.m_CurrentHandle;
+    m_OverlapType = iter.m_OverlapType;
     //### Prevent TSE destruction between "if" and "lock"
     if ( m_TSEInfo )
         m_TSEInfo->LockCounter();
@@ -120,7 +124,13 @@ CAnnot_CI::~CAnnot_CI(void)
 
 bool CAnnot_CI::x_ValidLocation(const CHandleRangeMap& loc) const
 {
-    return m_HandleRangeMap->IntersectingWithMap(loc);
+    switch (m_OverlapType) {
+    case eOverlap_Intervals:
+        return m_HandleRangeMap->IntersectingWithMap(loc);
+    case eOverlap_TotalRange:
+        return m_HandleRangeMap->TotalRangeIntersectingWith(loc);
+    }
+    return false;
 }
 
 
@@ -184,6 +194,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.8  2002/07/08 20:51:00  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

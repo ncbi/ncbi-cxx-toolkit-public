@@ -183,7 +183,7 @@ void CHandleRangeMap::AddRanges(const CSeq_id_Handle& h,
 }
 
 
-bool CHandleRangeMap::IntersectingWithLoc(const CSeq_loc& loc)
+bool CHandleRangeMap::IntersectingWithLoc(const CSeq_loc& loc) const
 {
     CHandleRangeMap rmap(*m_IdMapper);
     rmap.AddLocation(loc);
@@ -191,7 +191,7 @@ bool CHandleRangeMap::IntersectingWithLoc(const CSeq_loc& loc)
 }
 
 
-bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap)
+bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap) const
 {
     iterate ( TLocMap, it1, rmap.m_LocMap ) {
         TLocMap::iterator it2 = m_LocMap.find(it1->first);
@@ -204,12 +204,29 @@ bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap)
 }
 
 
+bool CHandleRangeMap::TotalRangeIntersectingWith(const CHandleRangeMap& rmap) const
+{
+    iterate ( TLocMap, it1, rmap.m_LocMap ) {
+        TLocMap::iterator it2 = m_LocMap.find(it1->first);
+        if ( it2 == m_LocMap.end() )
+            continue;
+        if ( it1->second.GetOverlappingRange().IntersectingWith(
+            it2->second.GetOverlappingRange()) )
+            return true;
+    }
+    return false;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.6  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

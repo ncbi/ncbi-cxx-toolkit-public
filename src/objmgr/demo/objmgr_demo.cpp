@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/06 15:36:01  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.11  2002/12/05 19:28:33  grichenk
 * Prohibited postfix operator ++()
 *
@@ -230,7 +233,7 @@ int CDemoApp::Run(void)
     // segmented (constructed), search for features on the referenced
     // sequences in the same top level seq-entry, ignore far pointers.
     for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Cdregion,
-                          CFeat_CI::eResolve_TSE);
+        CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_TSE);
          feat_it;  ++feat_it) {
         count++;
         // Get seq vector filtered with the current feature location.

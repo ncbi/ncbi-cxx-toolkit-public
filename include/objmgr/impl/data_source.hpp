@@ -206,13 +206,16 @@ private:
     // Process a single data element
     void x_MapFeature(const CSeq_feat& feat,
                       const CSeq_annot& annot,
-                      CTSE_Info& tse);
+                      CTSE_Info& tse,
+                      const CSeq_entry* entry);
     void x_MapAlign(const CSeq_align& align,
                     const CSeq_annot& annot,
-                    CTSE_Info& tse);
+                    CTSE_Info& tse,
+                    const CSeq_entry* entry);
     void x_MapGraph(const CSeq_graph& graph,
                     const CSeq_annot& annot,
-                    CTSE_Info& tse);
+                    CTSE_Info& tse,
+                    const CSeq_entry* entry);
 
     // Check if the Seq-entry is handled by this data-source
     CSeq_entry* x_FindEntry(const CSeq_entry& entry);
@@ -224,9 +227,15 @@ private:
     void x_DropAnnotMapRecursive(const CSeq_entry& entry);
 
     // Process a single data element
-    void x_DropFeature(const CSeq_feat& feat, const CSeq_annot& annot);
-    void x_DropAlign(const CSeq_align& align, const CSeq_annot& annot);
-    void x_DropGraph(const CSeq_graph& graph, const CSeq_annot& annot);
+    void x_DropFeature(const CSeq_feat& feat,
+                       const CSeq_annot& annot,
+                       const CSeq_entry* entry);
+    void x_DropAlign(const CSeq_align& align,
+                     const CSeq_annot& annot,
+                     const CSeq_entry* entry);
+    void x_DropGraph(const CSeq_graph& graph,
+                     const CSeq_annot& annot,
+                     const CSeq_entry* entry);
 
     // Global cleanup -- search for unlocked TSEs and drop them.
     void x_CleanupUnusedEntries(void);
@@ -325,6 +334,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.30  2002/11/08 22:15:51  grichenk
 * Added methods for removing/replacing annotations
 *

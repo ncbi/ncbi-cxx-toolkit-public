@@ -39,20 +39,23 @@ BEGIN_SCOPE(objects)
 
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
+                     CAnnot_CI::EOverlapType overlap_type,
                      EResolveMethod resolve)
     : CAnnotTypes_CI(scope, loc,
       SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-      resolve)
+      overlap_type, resolve)
 {
     return;
 }
 
 
 CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-                     EResolveMethod resolve)
+                     CAnnot_CI::EOverlapType overlap_type,
+                     EResolveMethod resolve,
+                     const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
           SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-          resolve)
+          overlap_type, resolve, entry)
 {
     return;
 }
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/06 15:36:00  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.10  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

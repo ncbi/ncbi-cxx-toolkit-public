@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/12/06 15:36:03  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.3  2002/07/22 22:49:05  kimelman
 * test fixes for confidential data retrieval
 *
@@ -160,7 +163,9 @@ bool CTestOM::Thread_Run(int idx)
             count = 0;
             if ( idx%2 == 0 ) {
                 for (CFeat_CI feat_it(scope, loc,
-                    CSeqFeatData::e_not_set, CAnnotTypes_CI::eResolve_All);
+                                      CSeqFeatData::e_not_set,
+                                      CAnnot_CI::eOverlap_Intervals,
+                                      CAnnotTypes_CI::eResolve_All);
                     feat_it;  ++feat_it) {
                     count++;
                 }

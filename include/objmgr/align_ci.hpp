@@ -46,12 +46,17 @@ public:
     CAlign_CI(void);
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
+              CAnnot_CI::EOverlapType overlap_type =
+              CAnnot_CI::eOverlap_Intervals,
               CAnnotTypes_CI::EResolveMethod resolve =
               CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              CAnnot_CI::EOverlapType overlap_type =
+              CAnnot_CI::eOverlap_Intervals,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
+              CAnnotTypes_CI::eResolve_TSE,
+              const CSeq_entry* entry = 0);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
 
@@ -106,6 +111,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/12/06 15:35:57  grichenk
+* Added overlap type for annot-iterators
+*
 * Revision 1.12  2002/12/05 19:28:29  grichenk
 * Prohibited postfix operator ++()
 *
