@@ -195,9 +195,10 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
             string id_str = feat.GetNamedQual(qual_name);
             if ( !id_str.empty() ) {
                 CRef<CSeq_id> id(new CSeq_id(id_str));
-                if (id->Which() != CSeq_id::e_not_set) {
-                    feat.SetProduct().SetWhole(*id);
+                if (id->Which() == CSeq_id::e_not_set) {
+                    id.Reset(new CSeq_id("lcl|" + id_str));
                 }
+                feat.SetProduct().SetWhole(*id);
             }
         }
     }
@@ -1115,6 +1116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/03/17 18:28:44  dicuccio
+* Treat product-ids as local if they are not understood
+*
 * Revision 1.14  2005/03/15 15:05:00  dicuccio
 * Removed use of sequence:: namespace to avoid dependency on xobjutil
 *
