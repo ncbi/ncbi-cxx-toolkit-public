@@ -99,9 +99,8 @@ DEFINE_STATIC_FAST_MUTEX(sm_AtomicCounterMutex);
 
 CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 {
-    CFastMutexGuard LOCK(sm_Mutex);
-    //TValue* nv_value_p = const_cast<TValue*>(&m_Value);
-    return (m_Value) += delta;
+    CFastMutexGuard LOCK(sm_AtomicCounterMutex);
+    return m_Value += delta;
 }
 
 #endif
@@ -370,6 +369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2002/09/20 13:52:46  vasilche
+ * Renamed sm_Mutex -> sm_AtomicCounterMutex
+ *
  * Revision 1.32  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *
