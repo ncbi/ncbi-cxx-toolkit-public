@@ -696,6 +696,8 @@ CSeqDBVol::x_GetTaxDefline(Uint4            oid,
                 TBDLLIter eraseme = iter++;
                 
                 dl.erase(eraseme);
+            } else {
+                iter++;
             }
         }
     }
