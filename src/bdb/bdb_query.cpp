@@ -77,6 +77,11 @@ CBDB_QueryNode& CBDB_QueryNode::operator=(const CBDB_QueryNode& qnode)
     return *this;
 }
 
+CBDB_QueryNode::~CBDB_QueryNode()
+{
+}
+
+
 CBDB_QueryNode::ELogicalType CBDB_QueryNode::GetLogicType() const
 {
     if (m_NodeType == eLogical) {
@@ -105,9 +110,13 @@ void CBDB_QueryNode::SetField(int field_idx)
 //  CBDB_Query
 //
 
-CBDB_Query::CBDB_Query()
+CBDB_Query::CBDB_Query(TQueryClause* qc)
 {
-    m_QueryClause = new TQueryClause;
+    if (qc) {
+        m_QueryClause = qc;
+    } else {
+        m_QueryClause = new TQueryClause;
+    }
 }
 
 CBDB_Query::~CBDB_Query()
@@ -151,6 +160,30 @@ CBDB_Query::NewOperatorNode(CBDB_QueryNode::EOperatorType otype,
 
     tr->AddNode(new TQueryClause(CBDB_QueryNode(arg1)));
     tr->AddNode(new TQueryClause(CBDB_QueryNode(arg2)));
+
+    return tr.release();
+}
+
+CBDB_Query::TQueryClause* 
+CBDB_Query::NewOperatorNode(CBDB_QueryNode::EOperatorType otype,
+                            TQueryClause*  arg1, 
+                            TQueryClause*  arg2)
+{
+    auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(otype)));
+    tr->AddNode(arg1);
+    tr->AddNode(arg2);
+
+    return tr.release();
+}
+
+CBDB_Query::TQueryClause* 
+CBDB_Query::NewLogicalNode(CBDB_QueryNode::ELogicalType ltype,  
+                           TQueryClause*  arg1, 
+                           TQueryClause*  arg2)
+{
+    auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(ltype)));
+    tr->AddNode(arg1);
+    tr->AddNode(arg2);
 
     return tr.release();
 }
@@ -662,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/24 14:12:45  kuznets
+ * CBDB_Query add new constructor parameter and several helper functions
+ *
  * Revision 1.2  2004/02/19 17:35:57  kuznets
  * + BDB_PrintQueryTree (tree printing utility function for debugging)
  *
