@@ -168,7 +168,8 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
     WithoutPackages="$WithoutPackages $2"
  else
     WithPackages="$WithPackages $2"
-    AC_DEFINE(HAVE_LIB$2, 1, [Define to 1 if lib$3 is available.])
+    AC_DEFINE([HAVE_LIB]patsubst($2, [^LIB], []), 1,
+              [Define to 1 if lib$3 is available.])
  fi
  AC_SUBST($2_INCLUDE)
  AC_SUBST($2_LIBS)
