@@ -64,6 +64,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/12/30 19:39:36  lavr
+ * +ConnNetInfo_ParseURL()
+ *
  * Revision 6.18  2001/09/28 20:45:26  lavr
  * SConnNetInfo::max_try equal to 0 is now treated the same way as equal to 1
  *
@@ -180,6 +183,7 @@ typedef struct {
     /* the following field(s) are for the internal use only! */
     int/*bool*/    http_proxy_adjusted;
     STimeout       tmo;              /* default storage for finite timeout   */
+    const char*    service;          /* service for which this info created  */
 } SConnNetInfo;
 
 
@@ -289,6 +293,14 @@ extern void ConnNetInfo_SetUserHeader
  const char*   user_header
  );
 
+
+/* Parse URL into SConnNetInfo, using (service-specific, if any) defaults
+ */
+extern int/*bool*/ ConnNetInfo_ParseURL
+(SConnNetInfo* info,
+ const char*   url
+ );
+ 
 
 /* Printout the "*info" to file "fp".
  */
