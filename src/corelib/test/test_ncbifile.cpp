@@ -97,8 +97,23 @@ static void s_TEST_SplitPath(void)
     assert( path == "Hard Disk:Folder:file.ext" );
     path = CFile::MakePath("Hard Disk:Folder",   "file", "ext");
     assert( path == "Hard Disk:Folder:file.ext" );
-    
 #endif
+
+    CFile::SplitPath("name", &dir, &title, &ext);
+    assert( dir.empty() );
+    assert( title == "name" );
+    assert( ext.empty() );
+
+    path = CFile::MakePath(dir, title, ext);
+    assert( path == "name" );
+
+    CFile::SplitPath(kEmptyStr, &dir, &title, &ext);
+    assert( dir.empty() );
+    assert( title.empty() );
+    assert( ext.empty() );
+
+    path = CFile::MakePath(dir, title, ext);
+    assert( path.empty() );
 }
 
 
@@ -140,78 +155,109 @@ static void s_TEST_CheckPath(void)
 
     // Convert path to OS dependent test
 
-    assert( d.ConvertToOSPath("")             == "" );
-    assert( d.ConvertToOSPath("c:\\file")     == "c:\\file" );
-    assert( d.ConvertToOSPath("/dir/file")    == "/dir/file" );
-    assert( d.ConvertToOSPath("dir:file")     == "dir:file" );
+    assert( d.ConvertToOSPath("")               == "" );
+    assert( d.ConvertToOSPath("c:\\file")       == "c:\\file" );
+    assert( d.ConvertToOSPath("/dir/file")      == "/dir/file" );
+    assert( d.ConvertToOSPath("dir:file")       == "dir:file" );
 #if defined(NCBI_OS_MSWIN)
-    assert( d.ConvertToOSPath("dir")          == "dir" );
-    assert( d.ConvertToOSPath("dir\\file")    == "dir\\file" );
-    assert( d.ConvertToOSPath("dir/file")     == "dir\\file" );
-    assert( d.ConvertToOSPath(":dir:file")    == "dir\\file" );
-    assert( d.ConvertToOSPath(":dir::file")   == "dir\\..\\file" );
-    assert( d.ConvertToOSPath(":dir:::file")  == "dir\\..\\..\\file" );
-    assert( d.ConvertToOSPath("./dir/file")   == ".\\dir\\file" );
-    assert( d.ConvertToOSPath("../file")      == "..\\file" );
-    assert( d.ConvertToOSPath("../../file")   == "..\\..\\file" );
+    assert( d.ConvertToOSPath("dir")            == "dir" );
+    assert( d.ConvertToOSPath("dir\\file")      == "dir\\file" );
+    assert( d.ConvertToOSPath("dir/file")       == "dir\\file" );
+    assert( d.ConvertToOSPath(":dir:file")      == "dir\\file" );
+    assert( d.ConvertToOSPath(":dir::file")     == "dir\\..\\file" );
+    assert( d.ConvertToOSPath(":dir:::file")    == "dir\\..\\..\\file" );
+    assert( d.ConvertToOSPath("./dir/file")     == ".\\dir\\file" );
+    assert( d.ConvertToOSPath("../file")        == "..\\file" );
+    assert( d.ConvertToOSPath("../../file")     == "..\\..\\file" );
 #elif defined(NCBI_OS_UNIX)
-    assert( d.ConvertToOSPath("dir")          == "dir" );
-    assert( d.ConvertToOSPath("dir\\file")    == "dir/file" );
-    assert( d.ConvertToOSPath("dir/file")     == "dir/file" );
-    assert( d.ConvertToOSPath(":dir:file")    == "dir/file" );
-    assert( d.ConvertToOSPath(":dir::file")   == "dir/../file" );
-    assert( d.ConvertToOSPath(".\\dir\\file") == "./dir/file" );
-    assert( d.ConvertToOSPath("..\\file")     == "../file" );
-    assert( d.ConvertToOSPath("..\\..\\file") == "../../file" );
+    assert( d.ConvertToOSPath("dir")            == "dir" );
+    assert( d.ConvertToOSPath("dir\\file")      == "dir/file" );
+    assert( d.ConvertToOSPath("dir/file")       == "dir/file" );
+    assert( d.ConvertToOSPath(":dir:file")      == "dir/file" );
+    assert( d.ConvertToOSPath(":dir::file")     == "dir/../file" );
+    assert( d.ConvertToOSPath(".\\dir\\file")   == "./dir/file" );
+    assert( d.ConvertToOSPath("..\\file")       == "../file" );
+    assert( d.ConvertToOSPath("..\\..\\file")   == "../../file" );
 #elif defined(NCBI_OS_MAC)
-    assert( d.ConvertToOSPath("dir")          == ":dir" );
-    assert( d.ConvertToOSPath("dir\\file")    == ":dir:file" );
-    assert( d.ConvertToOSPath("dir/file")     == ":dir:file" );
-    assert( d.ConvertToOSPath(":dir:file")    == ":dir:file" );
-    assert( d.ConvertToOSPath("./dir/file")   == ":dir:file" );
-    assert( d.ConvertToOSPath("../file")      == "::file" );
-    assert( d.ConvertToOSPath("../../file")   == ":::file" );
-    assert( d.ConvertToOSPath("../.././../file")   == "::::file" );
+    assert( d.ConvertToOSPath("dir")            == ":dir" );
+    assert( d.ConvertToOSPath("dir\\file")      == ":dir:file" );
+    assert( d.ConvertToOSPath("dir/file")       == ":dir:file" );
+    assert( d.ConvertToOSPath(":dir:file")      == ":dir:file" );
+    assert( d.ConvertToOSPath("./dir/file")     == ":dir:file" );
+    assert( d.ConvertToOSPath("../file")        == "::file" );
+    assert( d.ConvertToOSPath("../../file")     == ":::file" );
+    assert( d.ConvertToOSPath("../.././../file")== "::::file" );
 #endif
 
     // ConcatPath() test
 
 #if defined(NCBI_OS_MSWIN)
-    assert( d.ConcatPath("c:", "file")     == "c:file");
-    assert( d.ConcatPath("dir", "file")    == "dir\\file");
-    assert( d.ConcatPath("dir", "\\file")  == "dir\\file");
-    assert( d.ConcatPath("dir\\", "file")  == "dir\\file");
-    assert( d.ConcatPath("\\dir\\", "file")== "\\dir\\file");
-    assert( d.ConcatPath("", "file")       == "file");
-    assert( d.ConcatPath("dir", "")        == "dir\\");
-    assert( d.ConcatPath("", "")           == "");
+    assert( d.ConcatPath("c:", "file")          == "c:file" );
+    assert( d.ConcatPath("dir", "file")         == "dir\\file" );
+    assert( d.ConcatPath("dir", "\\file")       == "dir\\file" );
+    assert( d.ConcatPath("dir\\", "file")       == "dir\\file" );
+    assert( d.ConcatPath("\\dir\\", "file")     == "\\dir\\file" );
+    assert( d.ConcatPath("", "file")            == "file" );
+    assert( d.ConcatPath("dir", "")             == "dir\\" );
+    assert( d.ConcatPath("", "")                == "" );
 #elif defined(NCBI_OS_UNIX)
-    assert( d.ConcatPath("dir", "file")    == "dir/file");
-    assert( d.ConcatPath("dir", "/file")   == "dir/file");
-    assert( d.ConcatPath("dir/", "file")   == "dir/file");
-    assert( d.ConcatPath("/dir/", "file")  == "/dir/file");
-    assert( d.ConcatPath("", "file")       == "file");
-    assert( d.ConcatPath("dir", "")        == "dir/");
-    assert( d.ConcatPath("", "")           == "");
+    assert( d.ConcatPath("dir", "file")         == "dir/file" );
+    assert( d.ConcatPath("dir", "/file")        == "dir/file" );
+    assert( d.ConcatPath("dir/", "file")        == "dir/file" );
+    assert( d.ConcatPath("/dir/", "file")       == "/dir/file" );
+    assert( d.ConcatPath("", "file")            == "file" );
+    assert( d.ConcatPath("dir", "")             == "dir/" );
+    assert( d.ConcatPath("", "")                == "" );
 #elif defined(NCBI_OS_MAC)
-    assert( d.ConcatPath("HD", "dir")      == "HD:dir");
-    assert( d.ConcatPath(":dir", "file")   == ":dir:file");
-    assert( d.ConcatPath("dir:", "file")   == "dir:file");
-    assert( d.ConcatPath("dir", ":file")   == "dir:file");
-    assert( d.ConcatPath("dir::", "file")  == "dir::file");
-    assert( d.ConcatPath("dir", "::file")  == "dir::file");
-    assert( d.ConcatPath("", "file")       == ":file");
-    assert( d.ConcatPath(":file", "")      == ":file:");
-    assert( d.ConcatPath("", "")           == ":");
+    assert( d.ConcatPath("HD", "dir")           == "HD:dir" );
+    assert( d.ConcatPath(":dir", "file")        == ":dir:file" );
+    assert( d.ConcatPath("dir:", "file")        == "dir:file" );
+    assert( d.ConcatPath("dir", ":file")        == "dir:file" );
+    assert( d.ConcatPath("dir::", "file")       == "dir::file" );
+    assert( d.ConcatPath("dir", "::file")       == "dir::file" );
+    assert( d.ConcatPath("", "file")            == ":file" );
+    assert( d.ConcatPath(":file", "")           == ":file:" );
+    assert( d.ConcatPath("", "")                == ":" );
 #endif
     // Concat any OS paths
-    assert( d.ConcatPathEx("dir/", "file")     == "dir/file");
-    assert( d.ConcatPathEx("/dir/", "file")    == "/dir/file");
-    assert( d.ConcatPathEx("dir\\", ":file")   == "dir\\file");
-    assert( d.ConcatPathEx("dir\\dir", "file") == "dir\\dir\\file");
-    assert( d.ConcatPathEx("dir/", ":file")    == "dir/file");
-    assert( d.ConcatPathEx("dir/dir", "file")  == "dir/dir/file");
-    assert( d.ConcatPathEx("dir:dir", "file")  == "dir:dir:file");
+    assert( d.ConcatPathEx("dir/", "file")      == "dir/file" );
+    assert( d.ConcatPathEx("/dir/", "file")     == "/dir/file" );
+    assert( d.ConcatPathEx("dir\\", ":file")    == "dir\\file" );
+    assert( d.ConcatPathEx("dir\\dir", "file")  == "dir\\dir\\file" );
+    assert( d.ConcatPathEx("dir/", ":file")     == "dir/file" );
+    assert( d.ConcatPathEx("dir/dir", "file")   == "dir/dir/file" );
+    assert( d.ConcatPathEx("dir:dir", "file")   == "dir:dir:file" );
+
+    // Normalize path test
+
+#if defined(NCBI_OS_MSWIN)
+    assert( d.NormalizePath("c:\\")             == "c:\\" );
+    assert( d.NormalizePath("c:\\file")         == "c:\\file" );
+    assert( d.NormalizePath("c:file")           == "c:file" );
+    assert( d.NormalizePath("c:\\dir\\..\\file")== "c:\\file" );
+    assert( d.NormalizePath("c:..\\file")       == "c:..\\file" );
+    assert( d.NormalizePath("..\\file")         == "..\\file" );
+    assert( d.NormalizePath("\\..\\file")       == "\\..\\file" );
+    assert( d.NormalizePath(".\\..\\dir\\..")   == ".\\..\\dir\\" );
+    assert( d.NormalizePath(".\\dir\\.")        == ".\\dir\\" );
+    assert( d.NormalizePath(".\\.\\.\\.")       == ".\\" );
+    assert( d.NormalizePath("..\\..\\..\\..")   == "..\\..\\..\\" );
+    assert( d.NormalizePath("\\\\machine\\dir") == "\\\\machine\\dir");
+    assert( d.NormalizePath("dir/file")         == "dir\\file" );
+#elif defined(NCBI_OS_UNIX )
+    assert( d.NormalizePath("/file")            == "/file" );
+    assert( d.NormalizePath("./file")           == "./file" );
+    assert( d.NormalizePath("dir/dir/../file")  == "dir/file" );
+    assert( d.NormalizePath("../file")          == "../file" );
+    assert( d.NormalizePath("/../file")         == "/../file" );
+    assert( d.NormalizePath("./../dir/..")      == "./../dir/" );
+    assert( d.NormalizePath("./dir/.")          == "./dir/" );
+    assert( d.NormalizePath("./././.")          == "./" );
+    assert( d.NormalizePath("../../../..")      == "../../../" );
+    assert( d.NormalizePath("dir\\file")        == "dir\\file" );
+#elif defined(NCBI_OS_MAC)
+    // Nothing to test
+#endif
 }
 
 
@@ -221,8 +267,8 @@ static void s_TEST_CheckPath(void)
 
 static void s_TEST_MatchesMask(void)
 {
-     CDirEntry d;
-
+    CDirEntry d;
+    
     assert( d.MatchesMask(""        ,""));
     assert( d.MatchesMask("file"    ,"*"));
     assert(!d.MatchesMask("file"    ,"*.*"));
@@ -586,6 +632,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/09/16 16:28:08  ivanov
+ * Added tests for SplitPath(). Minor cosmetics.
+ *
  * Revision 1.23  2003/08/08 14:30:06  meric
  * Accommodate rename of CFile::GetTmpNameExt() to CFile::GetTmpNameEx()
  *
@@ -608,7 +657,7 @@ int main(int argc, const char* argv[])
  * Get rid of some compilation warnings
  *
  * Revision 1.16  2002/06/07 16:11:38  ivanov
- * Chenget GetTime() -- using CTime instead time_t, modification time by default
+ * Chenget GetTime(): using CTime instead time_t, modification time by default
  *
  * Revision 1.15  2002/06/07 15:21:33  ivanov
  * Added CDirEntry::GetTime() test example
