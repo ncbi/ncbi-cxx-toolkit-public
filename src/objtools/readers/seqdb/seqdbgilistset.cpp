@@ -83,7 +83,7 @@ public:
                          const string   & fname,
                          CSeqDBLockHold & locked)
     {
-        Int8 file_size(0);
+        CSeqDBAtlas::TIndx file_size(0);
         
         CSeqDBMemLease memlease(atlas);
         atlas.GetFile(memlease, fname, file_size, locked);
