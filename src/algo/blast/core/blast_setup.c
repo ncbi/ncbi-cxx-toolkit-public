@@ -173,7 +173,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
       if (is_na)
          sbp = BLAST_ScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
       else
-         sbp = BLAST_ScoreBlkNew(Seq_code_ncbistdaa, total_num_contexts);
+         sbp = BLAST_ScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
       
       /* Set the ambiguous residue before the ScoreBlk is filled. */
       if (is_na) {
