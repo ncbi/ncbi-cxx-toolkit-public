@@ -465,9 +465,16 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
 
     if (maskInfo)
     {
-       maskInfo->filter_slp = filter_maskloc;
-       maskInfo->mask_at_hash = mask_at_hash;
-       filter_maskloc = NULL;
+        if (program_number == eBlastTypeBlastx || 
+            program_number == eBlastTypeTblastx ||
+            program_number == eBlastTypeRpsTblastn) {
+            /* Filter locations so far are in protein coordinates; 
+               convert them back to nucleotide here. */
+            BlastMaskLocProteinToDNA(filter_maskloc, query_info);
+        }
+        maskInfo->filter_slp = filter_maskloc;
+        maskInfo->mask_at_hash = mask_at_hash;
+        filter_maskloc = NULL;
     }
     else 
         filter_maskloc = BlastMaskLocFree(filter_maskloc);
