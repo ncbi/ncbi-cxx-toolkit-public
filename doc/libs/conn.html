@@ -85,7 +85,8 @@ returning the connector's handle. Connectors' constructors are defined in indivi
 header files, like <a href="../lxr/source/include/connect/ncbi_socket_connector.h"><i><b>connect/ncbi_socket_connector.h</b></i></a>,
 <a href="../lxr/source/include/connect/ncbi_http_connector.h"><i><b>connect/ncbi_http_connector.h</b></i></a>,
 <a href="../lxr/source/include/connect/ncbi_service_connector.h"><i><b>connect/ncbi_service_connector.h</b></i></a> etc.
-<b><i>CONN_Create()</i></b> <a href="#CONN_SetTimeout">resets</a> all timeouts to the default value <tt>CONN_DEFAULT_TIMEOUT</tt>.
+<b><i>CONN_Create()</i></b> <a href="#CONN_SetTimeout">resets</a> all timeouts to the default value
+<a href="../lxr/ident?i=CONN_DEBUG_PRINTOUT"><tt>CONN_DEFAULT_TIMEOUT</tt></a>.
 
 <p>
 After successful creation with <i><b>CONN_Create()</b></i>, the following
@@ -654,7 +655,7 @@ typedef enum {
   fSERV_HttpPost   = 0x8,
   fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
   fSERV_Firewall   = 0x10
-} <a href="../../lxr/ident?i=ESERV_Type">ESERV_Type</a>;
+} <a href="../lxr/ident?i=ESERV_Type">ESERV_Type</a>;
 
 #define fSERV_Any           0
 #define fSERV_StatelessOnly 0x80
