@@ -15162,7 +15162,7 @@ echo "${ECHO_T}$ncbi_cv_path_sybase_new" >&6
    fi # No local Sybase (requested)?
 
    # Lock in the version we found
-   SYBASE_PATH=`cd $SYBASE_PATH && /bin/pwd`
+   test -d "$SYBASE_PATH"  &&  SYBASE_PATH=`cd $SYBASE_PATH && /bin/pwd`
    if test -d "$SYBASE_LCL_PATH"; then
       SYBASE_LCL_PATH=`cd $SYBASE_LCL_PATH && /bin/pwd`
    elif test -n "$SYBASE_LCL_PATH"; then # assume identity

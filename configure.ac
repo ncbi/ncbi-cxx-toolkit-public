@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.342 2005/01/27 19:44:50 ssikorsk Exp $
+#  $Id: configure.ac,v 1.343 2005/01/27 22:12:59 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2526,7 +2526,7 @@ if test "$with_sybase" != "no" ; then
    fi # No local Sybase (requested)?
 
    # Lock in the version we found
-   SYBASE_PATH=`cd $SYBASE_PATH && /bin/pwd`
+   test -d "$SYBASE_PATH"  &&  SYBASE_PATH=`cd $SYBASE_PATH && /bin/pwd`
    if test -d "$SYBASE_LCL_PATH"; then
       SYBASE_LCL_PATH=`cd $SYBASE_LCL_PATH && /bin/pwd`
    elif test -n "$SYBASE_LCL_PATH"; then # assume identity
