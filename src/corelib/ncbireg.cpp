@@ -495,7 +495,7 @@ const string& CNcbiRegistry::Get(const string& section, const string& name,
 }
 
 
-const string& CNcbiRegistry::GetString
+const string CNcbiRegistry::GetString
 (const string& section,
  const string& name,
  const string& default_value,
@@ -847,6 +847,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/01/17 17:31:07  vakatov
+ * CNcbiRegistry::GetString() to return "string", not "string&" -- for safety
+ *
  * Revision 1.26  2002/12/30 23:23:07  vakatov
  * + GetString(), GetInt(), GetBool(), GetDouble() -- with defaults,
  * conversions and error handling control (to extend Get()'s functionality).

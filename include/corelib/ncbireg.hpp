@@ -138,8 +138,8 @@ public:
 
     // Like "GetString()", but if the config. parameter not found, then
     // return 'default_value' (rather than empty string)
-    const string& GetString(const string& section, const string& name,
-                            const string& default_value, TFlags flags = 0)
+    const string GetString(const string& section, const string& name,
+                           const string& default_value, TFlags flags = 0)
         const;
 
     // Like "GetString()", plus convert the value into 'int', 'bool', etc.
@@ -231,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/01/17 17:31:20  vakatov
+ * CNcbiRegistry::GetString() to return "string", not "string&" -- for safety
+ *
  * Revision 1.18  2002/12/30 23:23:06  vakatov
  * + GetString(), GetInt(), GetBool(), GetDouble() -- with defaults,
  * conversions and error handling control (to extend Get()'s functionality).
