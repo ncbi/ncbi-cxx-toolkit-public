@@ -280,6 +280,7 @@ public:
     static bool StrToSeverityLevel(const char* str_sev, EDiagSev& sev);
 
     /// Set file name to post.
+    NCBI_XNCBI_EXPORT
     const CNcbiDiag& SetFile(const char* file) const;
 
     /// Set line number for post.
@@ -888,6 +889,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.68  2004/03/12 21:16:56  gorelenk
+ * Added NCBI_XNCBI_EXPORT to member-function SetFile of class CNcbiDiag.
+ *
  * Revision 1.67  2004/03/10 18:40:21  gorelenk
  * Added/Removed NCBI_XNCBI_EXPORT prefixes.
  *
