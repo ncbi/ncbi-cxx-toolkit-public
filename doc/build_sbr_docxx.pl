@@ -112,14 +112,13 @@ sub PrepareFiles
     open(OUT, ">$targ");
 
     while(<IN>) {
-      s/\/\/+/\/\//;
-      s/\/\*+/\/\*/;
       s/BEGIN_NCBI_SCOPE//;
       s/END_NCBI_SCOPE//;
       s/BEGIN_objects_SCOPE//;
       s/END_objects_SCOPE//;
-      s/^(namespace [a-zA-Z]+)//;
-      s/^typedef enum/enum/;
+      s/^(namespace  *[a-zA-Z]+)//;
+      s/typedef  *enum/enum/;
+      s/typedef  *struct/struct/;
 
       next if(/def.*_HP*$/);
       
@@ -139,8 +138,8 @@ sub PrepareFiles
         s/^( *typedef.* +([_A-Za-z][_A-Za-z0-9]*));$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       } elsif(/^ *extern/) {
         s/^( *extern.* +([_A-Za-z][_A-Za-z0-9]*) *\(.*)$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
-      } elsif(/^ *# *define/) {
-        s/^( *# *define +([_A-Za-z][_A-Za-z0-9]*) *\(*.*)$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
+      } elsif(/^ *\# *define/) {
+        s/^( *\# *define +([_A-Za-z][_A-Za-z0-9]*) *\(*.*)$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
 
       if(! /^ *if[^A-Za-z_]/ && ! /^ *return[^A-Za-z_]/ && 
