@@ -39,6 +39,7 @@
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
+#include <connect/ncbi_conn_reader_writer.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/reader_writer.hpp>
 
@@ -49,13 +50,18 @@ BEGIN_NCBI_SCOPE
 
 class CSocket;
 
+/** @addtogroup NetCacheClient
+ *
+ * @{
+ */
+
 
 /// Client API for NetCache server
 ///
 /// After any Put, Get transactions connection socket
 /// is closed (part of NetCache protocol implemenation)
 ///
-/// @sa NetCache_ConfigureWithLB
+/// @sa NetCache_ConfigureWithLB, CNetCacheClient_LB
 ///
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
@@ -80,7 +86,7 @@ public:
     CNetCacheClient(CSocket*      sock,
                     const string& client_name);
 
-    ~CNetCacheClient();
+    virtual ~CNetCacheClient();
 
 
     /// Set communication timeout default for all new connections
@@ -101,6 +107,10 @@ public:
     ///
     void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
 
+    /// Detach and return current socket.
+    /// Caller is responsible for deletion.
+    CSocket* DetachSocket() {CSocket* s = m_Sock; m_Sock = 0; return s; }
+
 
     /// Put BLOB to server
     ///
@@ -111,28 +121,31 @@ public:
     /// Please note that time_to_live is controlled by the server-side
     /// parameter so if you set time_to_live higher than server-side value,
     /// server side TTL will be in effect.
+    virtual 
     string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
 
     /// Update an existing BLOB
     ///
+    virtual 
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
 
-
     /// Retrieve BLOB from server by key
     /// If BLOB not found method returns NULL
+    //
     /// Caller is responsible for deletion of the IReader*
+    /// IReader* MUST be deleted before calling any other
+    /// method and before destruction of CNetCacheClient.
     ///
     /// @note 
     ///   IReader implementation used here is TCP/IP socket 
-    ///   based, so when reading the BLOB please control 
+    ///   based, so when reading the BLOB please remember to check
     ///   IReader::Read return codes, it may not be able to read
     ///   the whole BLOB in one call because of network delays.
-    ///
     ///
     /// @param key
     ///    BLOB key to read (returned by PutData)
@@ -141,12 +154,16 @@ public:
     /// @return
     ///    IReader* (caller must delete this). 
     ///    When NULL BLOB was not found (expired).
+    virtual 
     IReader* GetData(const string& key, 
                      size_t*       blob_size = 0);
 
-    /// Remove BLOB
+    /// Remove BLOB by key
+    virtual 
     void Remove(const string& key);
 
+    /// Status of GetData() call
+    /// @sa GetData
     enum EReadResult {
         eReadComplete, ///< The whole BLOB has been read
         eNotFound,     ///< BLOB not found or error
@@ -156,11 +173,12 @@ public:
     /// Retrieve BLOB from server by key
     ///
     /// @note
-    ///    Function waits for enought data to arrive.
+    ///    Function waits for enough data to arrive.
+    virtual 
     EReadResult GetData(const string&  key,
                         void*          buf, 
                         size_t         buf_size, 
-                        size_t*        n_read = 0,
+                        size_t*        n_read    = 0,
                         size_t*        blob_size = 0);
 
 
@@ -195,15 +213,17 @@ protected:
     /// If client is not already connected to the primary server it 
     /// tries to connect to the server specified in the BLOB key
     /// (all infomation is encoded in there)
+    virtual 
     void CheckConnect(const string& key);
 
     /// Extract host/port info from connected socket
-    void x_RestoreHostPort();
+    void RestoreHostPort();
+
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
 
-private:
+protected:
     CSocket*       m_Sock;
     string         m_Host;
     unsigned short m_Port;
@@ -226,6 +246,91 @@ private:
 extern NCBI_XCONNECT_EXPORT
 void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
                               const string&    service_name);
+
+
+/// Client API for NetCache server.
+///
+/// The same API as provided by CNetCacheClient, 
+/// only integrated with NCBI load balancer
+///
+/// Rebalancing is based on a combination of rebalance parameters,
+/// when rebalance parameter is not zero and that parameter has been 
+/// reached client connects to NCBI load balancing service (could be a 
+/// daemon or a network instance) and obtains the most available server.
+/// 
+/// The intended use case for this client is long living programs like
+/// services or fast CGIs or any other program running a lot of NetCache
+/// requests.
+///
+/// @sa CNetCacheClient
+///
+class NCBI_XCONNECT_EXPORT CNetCacheClient_LB : public CNetCacheClient
+{
+public:
+
+    typedef CNetCacheClient  TParent;
+
+    /// Construct load-balanced client.
+    ///
+    ///
+    /// @param client_name
+    ///    Name of the client
+    /// @param lb_service_name
+    ///    Service name as listed in NCBI load balancer
+    ///
+    /// @param rebalance_time
+    ///    Number of seconds after which client is rebalanced
+    /// @param rebalance_requests
+    ///    Number of requests before rebalancing. 
+    /// @param rebalance_bytes
+    ///    Read/Write bytes before rebalancing occures
+    ///
+    CNetCacheClient_LB(const string& client_name,
+                       const string& lb_service_name,
+                       unsigned int  rebalance_time     = 10,
+                       unsigned int  rebalance_requests = 0,
+                       unsigned int  rebalance_bytes    = 0);
+
+    virtual 
+    string PutData(const void*   buf,
+                   size_t        size,
+                   unsigned int  time_to_live = 0);
+    virtual 
+    string PutData(const string& key,
+                   const void*   buf,
+                   size_t        size,
+                   unsigned int  time_to_live = 0);
+    virtual 
+    IReader* GetData(const string& key, 
+                            size_t*       blob_size = 0);
+    virtual 
+    void Remove(const string& key);
+    virtual 
+    EReadResult GetData(const string&  key,
+                        void*          buf, 
+                        size_t         buf_size, 
+                        size_t*        n_read    = 0,
+                        size_t*        blob_size = 0);
+
+protected:
+    virtual 
+    void CheckConnect(const string& key);
+private:
+    CNetCacheClient_LB(const CNetCacheClient_LB&);
+    CNetCacheClient_LB& operator=(const CNetCacheClient_LB&);
+
+private:
+    string   m_LB_ServiceName;
+
+    unsigned int  m_RebalanceTime;
+    unsigned int  m_RebalanceRequests;
+    unsigned int  m_RebalanceBytes;
+
+    time_t        m_LastRebalanceTime;
+    unsigned int  m_Requests;
+    unsigned int  m_RWBytes;
+    bool          m_StickToHost;
+};
 
 
 
@@ -284,6 +389,22 @@ void CNetCache_GenerateBlobKey(string*        key,
                                unsigned short port);
 
 
+/// IReader implementation returned by CNetCacheClient::GetData()
+///
+/// @internal
+///
+class CNetCacheSock_Reader : public CSocketReaderWriter
+{
+public:
+    CNetCacheSock_Reader(CSocket* sock) : CSocketReaderWriter(sock) {}
+    virtual ~CNetCacheSock_Reader() { if (m_Sock) m_Sock->Close(); }
+
+    void OwnSocket() { m_IsOwned = eTakeOwnership; }
+};
+
+
+/* @} */
+
 
 END_NCBI_SCOPE
 
@@ -291,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/01/19 12:21:10  kuznets
+ * +CNetCacheClient_LB
+ *
  * Revision 1.18  2005/01/05 17:45:34  kuznets
  * Removed default client name
  *

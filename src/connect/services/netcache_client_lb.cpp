@@ -84,6 +84,186 @@ err:
 }
 
 
+/// @internal
+///
+class CNC_BoolGuard {
+public:
+    CNC_BoolGuard(bool* flag) : m_Flag(*flag) {m_Flag = true;}
+    ~CNC_BoolGuard() { m_Flag = false; }
+private:
+    bool& m_Flag;
+};
+
+
+CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
+                                       const string& lb_service_name,
+                                       unsigned int  rebalance_time,
+                                       unsigned int  rebalance_requests,
+                                       unsigned int  rebalance_bytes)
+: CNetCacheClient(client_name),
+  m_LB_ServiceName(lb_service_name),
+  m_RebalanceTime(rebalance_time),
+  m_RebalanceRequests(rebalance_requests),
+  m_RebalanceBytes(rebalance_bytes),
+  m_LastRebalanceTime(0),
+  m_Requests(0),
+  m_RWBytes(0),
+  m_StickToHost(false)
+{
+    if (lb_service_name.empty()) {
+        NCBI_THROW(CNetCacheException, eCommunicationError,
+                   "Missing service name for load balancer.");
+    }
+}
+
+string CNetCacheClient_LB::PutData(const void*   buf,
+                                   size_t        size,
+                                   unsigned int  time_to_live)
+{
+    string k = TParent::PutData(buf, size, time_to_live);
+    m_RWBytes += size;
+    ++m_Requests;
+    return k;
+}
+
+string CNetCacheClient_LB::PutData(const string& key,
+                                   const void*   buf,
+                                   size_t        size,
+                                   unsigned int  time_to_live)
+{
+    CNetCache_Key blob_key;
+    if (!key.empty()) {
+        CNetCache_ParseBlobKey(&blob_key, key);
+    
+        if ((blob_key.hostname == m_Host) && 
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            string k = TParent::PutData(key, buf, size, time_to_live);
+            m_RWBytes += size;
+            ++m_Requests;
+            return k;
+        }
+    }
+
+    CNetCacheClient cl(m_ClientName);
+    return cl.PutData(key, buf, size, time_to_live);
+}
+
+IReader* CNetCacheClient_LB::GetData(const string& key, 
+                                     size_t*       blob_size)
+{
+    CNetCache_Key blob_key;
+    if (!key.empty()) {
+        CNetCache_ParseBlobKey(&blob_key, key);
+    
+        size_t bsize = 0;
+        IReader* rdr;
+
+        if ((blob_key.hostname == m_Host) && 
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            rdr = TParent::GetData(key, &bsize);
+            m_RWBytes += bsize;
+            ++m_Requests;
+
+            if (blob_size) {
+                *blob_size = bsize;
+            }
+            return rdr;
+        }
+    }
+
+    CNetCacheClient cl(m_ClientName);
+    IReader* rd = cl.GetData(key, blob_size);
+    cl.DetachSocket();
+    CNetCacheSock_Reader* rw = dynamic_cast<CNetCacheSock_Reader*>(rd);
+    if (rw) {
+        rw->OwnSocket();
+    } else {
+        _ASSERT(0);
+    }
+    return rd;
+}
+
+void CNetCacheClient_LB::Remove(const string& key)
+{
+    CNetCache_Key blob_key;
+    if (!key.empty()) {
+        CNetCache_ParseBlobKey(&blob_key, key);
+        if ((blob_key.hostname == m_Host) && 
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            TParent::Remove(key);
+            ++m_Requests;
+            return;
+        }
+    }
+    CNetCacheClient cl(m_ClientName);
+    cl.Remove(key);
+}
+
+CNetCacheClient::EReadResult 
+CNetCacheClient_LB::GetData(const string&  key,
+                    void*          buf, 
+                    size_t         buf_size, 
+                    size_t*        n_read,
+                    size_t*        blob_size)
+{
+    CNetCache_Key blob_key;
+    if (!key.empty()) {
+        CNetCache_ParseBlobKey(&blob_key, key);
+
+        if ((blob_key.hostname == m_Host) && 
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            size_t bsize = 0;
+            CNetCacheClient::EReadResult r =
+                TParent::GetData(key, buf, buf_size, n_read, &bsize);
+            if (blob_size)
+                *blob_size = bsize;
+            ++m_Requests;
+            m_RWBytes += bsize;
+            return r;
+        }
+    }
+    CNetCacheClient cl(m_ClientName);
+    return cl.GetData(key, buf, buf_size, n_read, blob_size);
+}
+
+void CNetCacheClient_LB::CheckConnect(const string& key)
+{
+    if (m_StickToHost) { // restore connection to the specified host
+        TParent::CheckConnect(key);
+        return;
+    }
+
+    if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+        return; // we are connected, nothing to do
+    } 
+
+    // in this implimentaion Get requests should be intercepted 
+    // on the upper level
+    _ASSERT(key.empty()); 
+
+    time_t curr = time(0);
+
+    if ((m_LastRebalanceTime == 0) ||
+        (m_RebalanceTime && 
+          (int(curr - m_LastRebalanceTime) >= int(m_RebalanceTime)))||
+        (m_RebalanceRequests && (m_Requests >= m_RebalanceRequests)) ||
+        (m_RebalanceBytes && (m_RWBytes >= m_RebalanceBytes))
+        ) {
+        m_LastRebalanceTime = curr;
+        m_Requests = m_RWBytes = 0;
+        NetCache_ConfigureWithLB(this, m_LB_ServiceName);
+        return;
+    }
+
+}
 
 END_NCBI_SCOPE
 
@@ -91,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/01/19 12:21:58  kuznets
+ * +CNetCacheClient_LB
+ *
  * Revision 1.3  2004/12/20 17:29:27  ucko
  * +<memory> (once indirectly included?) for auto_ptr<>
  *
