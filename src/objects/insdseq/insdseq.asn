@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --************************************************************************
 --
 -- ASN.1 and XML for the components of a GenBank/EMBL/DDBJ sequence record
@@ -44,7 +44,7 @@ BEGIN
 --
 --  There are also a number of elements that could have been more exactly
 --   specified, but in the interest of simplicity have been simply left as
---   options. For example:
+--   optional. For example:
 --
 --  accession and accession.version will always appear in a public record
 --   they are optional because this format can also be used for non-public
@@ -114,9 +114,9 @@ INSDSeq ::= SEQUENCE {
 	primary-accession VisibleString OPTIONAL ,
 	entry-version VisibleString OPTIONAL ,
 	accession-version VisibleString OPTIONAL ,
-	other-seqids SEQUENCE OF Seqid OPTIONAL ,
-	secondary-accessions SEQUENCE OF Secondary-accn OPTIONAL,
-	keywords SEQUENCE OF Keyword OPTIONAL ,
+	other-seqids SEQUENCE OF INSDSeqid OPTIONAL ,
+	secondary-accessions SEQUENCE OF INSDSecondary-accn OPTIONAL,
+	keywords SEQUENCE OF INSDKeyword OPTIONAL ,
 	segment VisibleString OPTIONAL ,
 	source VisibleString OPTIONAL ,
 	organism VisibleString OPTIONAL ,
@@ -130,11 +130,11 @@ INSDSeq ::= SEQUENCE {
 	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
 	contig VisibleString OPTIONAL }
 
-	Secondary-accn ::= VisibleString
+	INSDSeqid ::= VisibleString
 
-	Seqid ::= VisibleString
+	INSDSecondary-accn ::= VisibleString
 
-	Keyword ::= VisibleString
+	INSDKeyword ::= VisibleString
 
 	INSDReference ::= SEQUENCE {
 		reference VisibleString ,
