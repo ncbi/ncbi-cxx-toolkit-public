@@ -228,7 +228,7 @@ public:
     void SetEventHandler(const EHTML_EH_Attribute event, const string& value);
 
     // Attach the specified popup menu to HTML node.
-    // Popup menu will be shown when the "event" occures.
+    // Popup menu will be shown when the "event" occurs.
     // NOTES:
     //   2) For eKurdin menu type the parameter "event" cannot be an
     //      eHTML_EH_MouseOut, because it is used to hide the menu.
@@ -1360,6 +1360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2004/04/01 14:14:01  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.73  2004/02/03 19:45:41  ivanov
  * Binded dummy names for the unnamed nodes
  *

@@ -296,7 +296,7 @@ public:
 
     //--------------------------------------------------
     // Get error message after latest erroneous operation
-    // Returns: error message, or empty string if no error occured
+    // Returns: error message, or empty string if no error occurred
     ///
     const string& GetLastError() const { return m_sLastError; }
 
@@ -356,7 +356,7 @@ public:
     //--------------------------------------------------
     // This function returnes an iterator of a cached partial tree positioned
     // at the tree node with tax_id.
-    // Returns: NULL if node doesn't exist or some other error occured
+    // Returns: NULL if node doesn't exist or some other error occurred
     ///
     CRef< ITreeIterator > GetTreeIterator( int tax_id, EIteratorMode mode
 					   = eIteratorMode_Default );
@@ -646,6 +646,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.16  2004/04/01 14:14:01  lavr
+// Spell "occurred", "occurrence", and "occurring"
+//
 // Revision 1.15  2004/03/12 20:07:24  domrach
 // CheckOrgRef() function added for checking the user orgref against the orgref from Taxonomy db
 //

@@ -199,6 +199,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 6.12  2004/02/23 15:23:42  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *
@@ -206,7 +209,7 @@ int main(int argc, const char* argv[])
  * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
  *
  * Revision 6.10  2002/11/22 15:09:40  lavr
- * Replace all occurances of "ray" with "yar"
+ * Replace all occurrences of "ray" with "yar"
  *
  * Revision 6.9  2002/10/28 15:47:12  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()

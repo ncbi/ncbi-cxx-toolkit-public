@@ -1,4 +1,4 @@
---$Revision: 1.6 $
+--$Revision: 1.7 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -224,7 +224,7 @@ ID2-Reply-Seq-id-To-Gi ::= SEQUENCE {
         seq-id          Seq-id,
 
         -- gi of requested Seq-id
-        -- not set if error occured
+        -- not set if error occurred
         gi              INTEGER OPTIONAL
 }
 
@@ -237,7 +237,7 @@ ID2-Reply-Gi-To-TSE-Id ::= SEQUENCE {
         source          VisibleString DEFAULT "",
 
         -- tse set with requested gi
-        -- not set if error occured
+        -- not set if error occurred
         tses            SET OF ID2-TSE-Id-Info OPTIONAL
 }
 
@@ -255,7 +255,7 @@ ID2-Reply-Get-TSE ::= SEQUENCE {
         tse-id          ID2-TSE-Id,
 
         -- whole tse or tse skeleton
-        -- not set if error occured
+        -- not set if error occurred
         data            ID2-Reply-Data OPTIONAL
 }
 
@@ -267,7 +267,7 @@ ID2S-Reply-Get-TSE-Info ::= SEQUENCE {
         split-version   INTEGER,
 
         -- tse split info
-        -- not set if error occured
+        -- not set if error occurred
         info            ID2-Reply-Data OPTIONAL
 }
 
@@ -278,7 +278,7 @@ ID2S-Reply-Get-Chunk ::= SEQUENCE {
         chunk-id        ID2S-Chunk-Id,
 
         -- chunk data
-        -- not set if error occured
+        -- not set if error occurred
         data            ID2-Reply-Data OPTIONAL
 }
 

@@ -415,7 +415,7 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
 					    (*i)->SetSubtype( COrgMod::TSubtype( pInfo->GetIval2() ) );
 					}
 				    } else if( pInfo->GetIval1() != 0 ) {
-					// Another redirection occured
+					// Another redirection occurred
 					// leave modifier but issue warning
 					NCBI_NS_NCBI::CNcbiDiag(eDiag_Warning)
 					    << "OrgMod type="
@@ -1796,7 +1796,7 @@ ITreeIterator::TraverseAncestors(I4Each& cb)
     while( GoParent() ) {
 	stat = cb.Execute(GetNode());
 	switch( stat ) {
-	case eStop: return eStop; // Stop scan, some error occured
+	case eStop: return eStop; // Stop scan, some error occurred
 	default:
 	case eOk:
 	case eSkip: // Means skip further scan, no error generated
@@ -1945,6 +1945,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.24  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 6.23  2004/03/12 20:07:24  domrach
  * CheckOrgRef() function added for checking the user orgref against the orgref from Taxonomy db
  *

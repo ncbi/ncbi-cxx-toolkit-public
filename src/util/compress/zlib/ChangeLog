@@ -166,7 +166,7 @@ Changes in 1.0.7 (20 Jan 1998)
 Changes in 1.0.6 (19 Jan 1998)
 - add functions gzprintf, gzputc, gzgetc, gztell, gzeof, gzseek, gzrewind and
   gzsetparams (thanks to Roland Giersig and Kevin Ruland for some of this code)
-- Fix a deflate bug occuring only with compression level 0 (thanks to
+- Fix a deflate bug occurring only with compression level 0 (thanks to
   Andy Buckler for finding this one).
 - In minigzip, pass transparently also the first byte for .Z files.
 - return Z_BUF_ERROR instead of Z_OK if output buffer full in uncompress()
@@ -225,7 +225,7 @@ Changes in 1.0.6 (19 Jan 1998)
 - use _fdopen instead of fdopen for MSC >= 6.0 (Thomas Fanslau)
 - added makelcc.bat for lcc-win32 (Tom St Denis)
 - in Makefile.dj2, use copy and del instead of install and rm (Frank Donahoe)
-- Avoid expanded $Id: ChangeLog,v 1.1 2003/04/07 19:58:16 ivanov Exp $. Use "rcs -kb" or "cvs admin -kb" to avoid Id expansion.
+- Avoid expanded $Id: ChangeLog,v 1.2 2004/04/01 14:14:03 lavr Exp $. Use "rcs -kb" or "cvs admin -kb" to avoid Id expansion.
 - check for unistd.h in configure (for off_t)
 - remove useless check parameter in inflate_blocks_free
 - avoid useless assignment of s->check to itself in inflate_blocks_new

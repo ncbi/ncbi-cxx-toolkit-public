@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.52  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.51  2004/03/31 17:50:09  papadopo
  * Mike Gertz' changes for length adjustment calculations
  *
@@ -1968,7 +1971,7 @@ CleanUp:
 /**
  * Find positive solution to sum_{i=low}^{high} exp(i lambda) = 1.
  * 
- * @param probs probabilities of a score occuring 
+ * @param probs probabilities of a score occurring 
  * @param d the gcd of the possible scores. This equals 1 if the scores
  * are not a lattice
  * @param low the lowest possible score
@@ -2174,7 +2177,7 @@ See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
 
     A program that calls this routine must provide the value of the lowest
     possible score, the value of the greatest possible score, and a pointer
-    to an array of probabilities for the occurence of all scores between
+    to an array of probabilities for the occurrence of all scores between
     these two extreme scores.  For example, if score -2 occurs with
     probability 0.7, score 0 occurs with probability 0.1, and score 3
     occurs with probability 0.2, then the subroutine must be called with

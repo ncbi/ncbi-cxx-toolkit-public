@@ -302,6 +302,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 6.13  2004/01/14 18:53:09  lavr
  * Use "application/xml+soap" in the test case
  *
@@ -312,7 +315,7 @@ int main(void)
  * Move log to end
  *
  * Revision 6.10  2002/11/22 15:09:40  lavr
- * Replace all occurances of "ray" with "yar"
+ * Replace all occurrences of "ray" with "yar"
  *
  * Revision 6.9  2002/10/11 19:57:17  lavr
  * Add tests for ConnNetInfo_*UserHeader() routines

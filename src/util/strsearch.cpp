@@ -57,7 +57,7 @@ CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
   m_PatLen(pattern.length()), 
   m_CaseSensitive(case_sensitive), 
   m_WholeWord(whole_word),
-  m_LastOccurance(sm_AlphabetSize),
+  m_LastOccurrence(sm_AlphabetSize),
   m_WordDelimiters(sm_AlphabetSize)
 {
     x_InitPattern();
@@ -77,7 +77,7 @@ CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
   m_PatLen(pattern.length()), 
   m_CaseSensitive(case_sensitive), 
   m_WholeWord(true),
-  m_LastOccurance(sm_AlphabetSize),
+  m_LastOccurrence(sm_AlphabetSize),
   m_WordDelimiters(sm_AlphabetSize)
 {
     x_InitPattern();
@@ -159,18 +159,18 @@ void CBoyerMooreMatcher::x_InitPattern(void)
         NStr::ToUpper(m_Pattern);
     }
     
-    // For each character in the alpahbet compute its last occurance in 
+    // For each character in the alpahbet compute its last occurrence in 
     // the pattern.
     
     // Initilalize vector
-    size_t size = m_LastOccurance.size();
+    size_t size = m_LastOccurrence.size();
     for ( size_t i = 0;  i < size;  ++i ) {
-        m_LastOccurance[i] = m_PatLen;
+        m_LastOccurrence[i] = m_PatLen;
     }
     
-    // compute right-most occurance
+    // compute right-most occurrence
     for ( int j = 0;  j < (int)m_PatLen - 1;  ++j ) {
-        int lo = m_LastOccurance[(int)m_Pattern[j]] = m_PatLen - j - 1;
+        int lo = m_LastOccurrence[(int)m_Pattern[j]] = m_PatLen - j - 1;
    }
 }
 
@@ -194,7 +194,7 @@ size_t CBoyerMooreMatcher::Search(const char*  text,
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
             } else {
-                shift += (unsigned int)m_LastOccurance[text[shift + j]];
+                shift += (unsigned int)m_LastOccurrence[text[shift + j]];
             }
         }
     } else { // case insensitive NStr::eNocase
@@ -209,7 +209,7 @@ size_t CBoyerMooreMatcher::Search(const char*  text,
                 return  shift;
             } else {
                 shift += 
-                    (unsigned int)m_LastOccurance[toupper(text[shift + j])];
+                    (unsigned int)m_LastOccurrence[toupper(text[shift + j])];
             }
         }
     }
@@ -259,6 +259,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/04/01 14:14:02  lavr
+* Spell "occurred", "occurrence", and "occurring"
+*
 * Revision 1.14  2004/03/11 17:02:53  kuznets
 * Fixed misspelling in comments
 *

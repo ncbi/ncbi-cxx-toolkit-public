@@ -36,11 +36,11 @@
 BEGIN_NCBI_SCOPE
 
 
-// Find all occurences of a pattern (regular expression) in a sequence.
+// Find all occurrences of a pattern (regular expression) in a sequence.
 void CFindPattern::Find(const string& seq, const string& pattern,
                        vector<TSeqPos>& starts, vector<TSeqPos>& ends) {
 
-    // do a case-insensitive r.e. search for "all" (non-overlapping) occurences
+    // do a case-insensitive r.e. search for "all" (non-overlapping) occurrences
     // note that it's somewhat ambiguous what this means
 
     // want to ignore case, and to allow white space (and comments) in pattern
@@ -59,7 +59,7 @@ void CFindPattern::Find(const string& seq, const string& pattern,
 }
 
 
-/// Find cases of at least min_repeats consecutive occurences of any
+/// Find cases of at least min_repeats consecutive occurrences of any
 /// *particular* match to pattern.
 /// N.B.: pattern = "[ag]c" and min_repeats = 2 will match
 /// "acac" and "gcgc" but NOT "acgc" or "gcac".
@@ -75,7 +75,7 @@ void CFindPattern::FindRepeatsOf(const string& seq, const string& pattern,
 }
 
 
-/// Find all cases of at least min_repeats consecutive occurences
+/// Find all cases of at least min_repeats consecutive occurrences
 /// of any n-mer consisting of unambiguous nucleotides ({a, g, c, t}).
 /// Note that, e.g., dinucelotide repeats can also qualify as
 /// tetranucleotide repeats.
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.8  2003/12/16 18:02:22  jcherry
  * Moved find_pattern to algo/sequence
  *

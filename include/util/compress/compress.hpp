@@ -217,7 +217,7 @@ public:
     virtual ~CCompressionFile(void);
 
     // Opens a compressed file for reading or writing.
-    // Return NULL if error has been occured.
+    // Return NULL if error has been occurred.
     virtual bool Open(const string& path, EMode mode) = 0; 
 
     // Read up to "len" uncompressed bytes from the compressed file "file"
@@ -258,7 +258,7 @@ public:
         // Logical end of (compressed) stream is detected, no errors occurred.
         // All subsequent inquiries about data processing should be ignored.
         eStatus_EndOfData,
-        // Error has occured. The error code can be acquired by GetLastError() 
+        // Error has occurred. The error code can be acquired by GetLastError() 
         eStatus_Error,
         // Output buffer overflow - not enough output space.
         // Buffer must be emptied and the last action repeated.
@@ -379,6 +379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.6  2003/07/15 15:50:00  ivanov
  * Improved error diagnostics. Renamed GetLastError() -> GetErrorCode().
  * Added GetErrorDescription(). Added second parameter for SetError().

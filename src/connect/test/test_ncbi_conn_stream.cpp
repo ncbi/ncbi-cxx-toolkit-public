@@ -238,6 +238,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 6.31  2004/01/27 17:06:45  ucko
  * Reorder headers to ensure hitting the conflicting LOG_DATA definitions
  * in the right order on AIX.
@@ -264,7 +267,7 @@ int main(void)
  * Show that timeouts are set from CONN stream ctors
  *
  * Revision 6.23  2002/11/22 15:09:40  lavr
- * Replace all occurances of "ray" with "yar"
+ * Replace all occurrences of "ray" with "yar"
  *
  * Revision 6.22  2002/06/10 19:55:11  lavr
  * Take advantage of CONNECT_Init() call

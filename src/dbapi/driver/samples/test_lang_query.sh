@@ -32,7 +32,7 @@ RunTest()
     fi
   fi
 
-  # error occured
+  # error occurred
   n_err=`expr $n_err + 1`
   sum_list="$sum_list XXX_SEPARATOR -  $cmd '$sql'"
 

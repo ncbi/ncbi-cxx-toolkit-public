@@ -194,7 +194,7 @@ private:
     size_t                  m_PatLen;
     NStr::ECase             m_CaseSensitive;
     unsigned int            m_WholeWord;
-    vector<size_t>          m_LastOccurance;
+    vector<size_t>          m_LastOccurrence;
     vector<unsigned char>   m_WordDelimiters;
     
 };
@@ -535,6 +535,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/04/01 14:14:01  lavr
+* Spell "occurred", "occurrence", and "occurring"
+*
 * Revision 1.16  2004/03/05 15:45:23  kuznets
 * fixed compilation warnings on 64-bit (Sun)
 *

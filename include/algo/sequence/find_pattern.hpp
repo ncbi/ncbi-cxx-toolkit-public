@@ -43,14 +43,14 @@ public:
     /// Find non-overlapping matches of regular expression in sequence.
     static void Find(const string& seq, const string& pattern,
                      vector<TSeqPos>& starts, vector<TSeqPos>& ends);
-    /// Find cases of at least min_repeats consecutive occurences of any
+    /// Find cases of at least min_repeats consecutive occurrences of any
     /// *particular* match to pattern.
     /// N.B.: pattern = "[ag]c" and min_repeats = 2 will match
     /// "acac" and "gcgc" but NOT "acgc" or "gcac".
     static void FindRepeatsOf(const string& seq, const string& pattern,
                               int min_repeats,
                               vector<TSeqPos>& starts, vector<TSeqPos>& ends);
-    /// Find all cases of at least min_repeats consecutive occurences
+    /// Find all cases of at least min_repeats consecutive occurrences
     /// of any n-mer consisting of unambiguous nucleotides ({a, g, c, t}).
     /// Note that, e.g., dinucelotide repeats can also qualify as
     /// tetranucleotide repeats.
@@ -67,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/01 14:14:01  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.10  2003/12/16 20:10:16  jcherry
  * Added export specifier
  *

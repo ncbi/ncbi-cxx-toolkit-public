@@ -567,9 +567,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/01 14:14:03  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.5  2003/07/15 15:46:31  ivanov
  * Improved error diagnostics. Save status codes and it's description after
- * each compression operation, and ERR_POST it if error occured.
+ * each compression operation, and ERR_POST it if error occurred.
  *
  * Revision 1.4  2003/07/10 16:26:23  ivanov
  * Implemented CompressFile/DecompressFile functions.

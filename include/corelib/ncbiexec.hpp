@@ -442,7 +442,7 @@ public:
     ///   Time-out interval. By default it is infinite.
     /// @return
     ///   - Exit code of child process, if no errors.
-    ///   - (-1), if error has occured.
+    ///   - (-1), if error has occurred.
     static int Wait(int handle, unsigned long timeout = kMax_ULong);
 };
 
@@ -456,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/04/01 14:14:01  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.12  2003/09/25 17:59:12  ivanov
  * Comment changes
  *

@@ -69,6 +69,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.10  2003/05/14 03:58:43  lavr
  * Match changes in respective APIs of the tests
  *
@@ -76,7 +79,7 @@ int main(int argc, char* argv[])
  * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
  *
  * Revision 1.8  2002/11/22 15:09:40  lavr
- * Replace all occurances of "ray" with "yar"
+ * Replace all occurrences of "ray" with "yar"
  *
  * Revision 1.7  2002/06/10 19:55:10  lavr
  * Take advantage of CONNECT_Init() call

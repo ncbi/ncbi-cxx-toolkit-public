@@ -416,7 +416,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
     Uint4  tj=0; /*temporary copy of j*/
     Int4 tempInputPatternMasked[MaxP]; /*local copy of parts
             of inputPatternMasked*/
-    Uint1 c;  /*character occuring in pattern*/
+    Uint1 c;  /*character occurring in pattern*/
     Uint1 localPattern[MaxP]; /*local variable to hold
                                for each position whether it is
                                last in pattern (1) or not (0) */

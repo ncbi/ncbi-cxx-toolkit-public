@@ -142,6 +142,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 6.14  2003/11/04 12:26:06  lavr
  * s_GetReg() marked with ARGSUSED, because user_data is not used in there
  *
@@ -155,7 +158,7 @@ int main(void)
  * Open log file in append mode
  *
  * Revision 6.10  2002/11/22 15:09:40  lavr
- * Replace all occurances of "ray" with "yar"
+ * Replace all occurrences of "ray" with "yar"
  *
  * Revision 6.9  2002/10/28 15:47:12  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()

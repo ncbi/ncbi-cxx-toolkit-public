@@ -1373,7 +1373,7 @@ int len_sqlstate;
 		tds->msg_info->proc_name=strdup("");
 	}
 
-	/* line number in the sql statement where the problem occured */
+	/* line number in the sql statement where the problem occurred */
 	tds->msg_info->line_number = tds_get_smallint(tds);
 
 	if (tds->msg_info->priv_msg_type)  {

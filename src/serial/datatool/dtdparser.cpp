@@ -314,7 +314,7 @@ void DTDParser::EndElementContent(DTDElement& node)
     }
 //    _ASSERT(NextToken().GetSymbol() == ')');
     Consume();
-// occurence
+// occurrence
     char symbol;
     switch (Next()) {
     default:
@@ -1009,6 +1009,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.16  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.15  2004/01/12 16:51:01  gouriano
  * Improved diagnostics when parsing a DTD
  *

@@ -1496,7 +1496,7 @@ BioSource ::= SEQUENCE {
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
-      natmut (2) ,                     -- naturally occuring mutant
+      natmut (2) ,                     -- naturally occurring mutant
       mut (3) ,                        -- artificially mutagenized
       artificial (4) ,                 -- artificially engineered
       synthetic (5) ,                  -- purely synthetic

@@ -95,7 +95,7 @@ public:
     /// Write up to count bytes from the buffer pointed to by
     /// buf argument onto output device.  Store the number
     /// of bytes actually written, or 0 if either count was
-    /// passed as 0 (buf is ignored in this case) or an error occured,
+    /// passed as 0 (buf is ignored in this case) or an error occurred,
     /// via the "bytes_written" pointer, if provided.
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/01 14:14:01  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.10  2004/03/23 19:49:46  lavr
  * Fix IReader::PendingCount() description
  *

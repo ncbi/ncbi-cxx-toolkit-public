@@ -133,7 +133,7 @@ public:
     ///   Time-out interval. By default it is infinite.
     /// @return
     ///   - Exit code of the process, if no errors.
-    ///   - (-1), if error has occured.
+    ///   - (-1), if error has occurred.
     int Wait(unsigned long timeout = kMax_ULong) const;
 
 private:
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/01 14:14:01  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
  * Revision 1.5  2003/12/23 19:05:24  ivanov
  * Get rid of Sun Workshop compilation warning about x_Assign
  *
