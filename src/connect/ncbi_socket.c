@@ -1210,20 +1210,22 @@ extern EIO_Status LSOCK_Create(unsigned short port,
                                unsigned short backlog,
                                LSOCK*         lsock)
 {
-    return LSOCK_CreateEx(port, backlog, lsock, eDefault);
+    return LSOCK_CreateEx(port, backlog, lsock, fLSCE_LogDefault);
 }
 
 
 extern EIO_Status LSOCK_CreateEx(unsigned short port,
                                  unsigned short backlog,
                                  LSOCK*         lsock,
-                                 ESwitch        log)
+                                 TLSCE_Flags    flags)
 {
+    ESwitch            log = (ESwitch)(flags & 0xF);
     unsigned int       x_id = ++s_ID_Counter;
     TSOCK_Handle       x_lsock;
     struct sockaddr_in addr;
-
+    unsigned int       ip;
     *lsock = 0;
+
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
@@ -1254,9 +1256,10 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
     }
 
     /* bind */
+    ip = flags & fLSCE_BindLocal ? INADDR_LOOPBACK : INADDR_ANY;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_addr.s_addr = htonl(ip);
     addr.sin_port        = htons(port);
 #ifdef HAVE_SIN_LEN
     addr.sin_len         = sizeof(addr);
@@ -1264,8 +1267,10 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
     if (bind(x_lsock, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("LSOCK#%u[%u]: [LSOCK::Create]  Failed bind(:%hu)",
-                            x_id, (unsigned int) x_lsock, port));
+                           ("LSOCK#%u[%u]: [LSOCK::Create] "
+                            " Failed bind(%s:%hu)", x_id,
+                            (unsigned int) x_lsock,
+                            ip == INADDR_LOOPBACK ? "127.0.0.1" : "", port));
         SOCK_CLOSE(x_lsock);
         return x_errno == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
@@ -1300,8 +1305,9 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
 
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
-        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Listening at port :%hu",
-                               x_id, (unsigned int) x_lsock, port));
+        CORE_LOGF(eLOG_Trace,("LSOCK#%u[%u]: Listening at  %s:%hu",
+                              x_id, (unsigned int) x_lsock,
+                              ip == INADDR_LOOPBACK ? "127.0.0.1" : "", port));
     }
 
     return eIO_Success;
@@ -4057,6 +4063,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.146  2004/07/23 19:05:52  lavr
+ * LSOCK_CreateEx() to accept flags and allow to bind to localhost
+ *
  * Revision 6.145  2004/05/05 11:31:16  ivanov
  * Fixed compile errors
  *
