@@ -34,11 +34,13 @@
 
 BEGIN_NCBI_SCOPE
 
+
 void C_DriverMgr::RegisterDriver(const string& driver_name,
-				 FDBAPI_CreateContext driver_ctx_func)
+                                 FDBAPI_CreateContext driver_ctx_func)
 {
     m_Drivers[driver_name]= driver_ctx_func;
 }
+
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
 {
@@ -47,7 +49,7 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
 
     if (drv == m_Drivers.end()) {
         if (!LoadDriverDll(driver_name)) {
-	    m_Mutex.Unlock();
+            m_Mutex.Unlock();
             return 0;
         }
     }
@@ -56,13 +58,16 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
     return (FDBAPI_CreateContext)(m_Drivers[driver_name]);
 }
 
+
 static void DriverDllName(string& dll_name, const string& driver_name)
 {
     dll_name= "dbapi_driver_";
     dll_name+= driver_name;
 }
 
-static void DriverEntryPointName(string& entry_point_name, const string& driver_name)
+
+static void DriverEntryPointName(string& entry_point_name,
+                                 const string& driver_name)
 {
     entry_point_name= "DBAPI_E_";
     entry_point_name+= driver_name;
@@ -75,23 +80,24 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name)
     DriverDllName(dll_name, driver_name);
 
     try {
-	CDll drvDll(dll_name);
-	string entry_point_name;
-	DriverEntryPointName(entry_point_name, driver_name);
+        CDll drvDll(dll_name);
+        string entry_point_name;
+        DriverEntryPointName(entry_point_name, driver_name);
 
-	FDllEntryPoint entry_point;
-	if(!drvDll.GetEntryPoint(entry_point_name, &entry_point)) {
-	    drvDll.Unload();
-	    return false;
-	}
-	FDriverRegister reg= (FDriverRegister)((*entry_point)());
-	(*reg)(*this);
-	return true;
+        FDllEntryPoint entry_point;
+        if ( !drvDll.GetEntryPoint(entry_point_name, &entry_point) ) {
+            drvDll.Unload();
+            return false;
+        }
+        FDriverRegister reg= (FDriverRegister)(entry_point());
+        (*reg)(*this);
+        return true;
     }
     catch (exception&) {
-	return false;
+        return false;
     }
 }
+
 
 END_NCBI_SCOPE
 
@@ -100,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/01/20 05:24:42  vakatov
+ * identation
+ *
  * Revision 1.2  2002/01/17 23:19:13  soussov
  * makes gcc happy
  *
