@@ -300,6 +300,30 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  );
 
 
+/* [SERVER-side]  Create a socket on top of OS-dependent "handle"
+ * (file descriptor on Unix). Returned socket is not reopenable to its
+ * default peer (SOCK_Reconnect may not specify zeros for the connection
+ * point).  All timeouts are set to its default [infinite] values.
+ * SOCK_Close() closes the "handle" only if the "close_on_close" parameter
+ * is passes non-zero.
+ * Return eIO_Success on success; otherwise: eIO_Closed if the "handle" does
+ * not refer to an open socket [but e.g. to a normal file or a pipe];
+ * other error codes in case of other errors.
+ */
+typedef enum {
+    eSCOT_KeepOnClose,    /* Do not close "handle" on SOCK_Close() */
+    eSCOT_CloseOnClose    /* Do close "handle" on SOCK_Close() */
+} ESCOT_OnClose;
+
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
+(const void*   handle,      /* [in]  OS-dependent "handle" to be converted */
+ size_t        handle_size, /* [in]  "handle" size                         */
+ SOCK*         sock,        /* [out] SOCK built on top of OS "handle"      */
+ ESCOT_OnClose on_close,    /* [in]  if to keep "handle" in  SOCK_Close()  */
+ ESwitch       do_log       /* [in]  data logging for the resulting SOCK   */
+ );
+
+
 /* [CLIENT-side]  Close the socket referred by "sock" and then connect
  * it to another "host:port";  fail if it takes more than "timeout".
  * (close() + connect() [+ select()])
@@ -694,6 +718,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2003/04/04 21:00:09  lavr
+ * +SOCK_CreateOnTop()
+ *
  * Revision 6.31  2003/01/17 01:32:30  lavr
  * +LSOCK_CreateEx()
  *

@@ -134,7 +134,7 @@
 
 
 /******************************************************************************
- *  TYPEDEF & MACRO
+ *  TYPEDEFS & MACROS
  */
 
 
@@ -228,6 +228,13 @@ typedef int TSOCK_Handle;
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
 
+#ifdef HAVE_SOCKLEN_T
+typedef socklen_t  SOCK_socklen_t;
+#else
+typedef int        SOCK_socklen_t;
+#endif /*HAVE_SOCKLEN_T*/
+
+
 /* Listening socket
  */
 typedef struct LSOCK_tag {
@@ -283,6 +290,7 @@ typedef struct SOCK_tag {
     size_t          n_out;      /* DSOCK: msg #; SOCK: total # of bytes sent */
 
     ESockType       type;       /* socket type: client- or server-side, dgram*/
+    ESCOT_OnClose   on_close;   /* whether to close handle on SOCK_Close()   */
 } SOCK_struct;
 
 
@@ -540,7 +548,8 @@ static void s_DoLogData
             CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- %s %s:%hu",
                                    sock->id, (unsigned int) size,
                                    sock->type == eSOCK_ClientSide
-                                   ? "connecting to" : "accepted from",
+                                   ? "connecting to" : data
+                                   ? "connected to" : "accepted from",
                                    head, ntohs(sin->sin_port)));
         }
         break;
@@ -589,8 +598,10 @@ static void s_DoLogData
                         sock->n_in == 1 ? "" : "s");
             }
         }}
-        CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- closing (out: %s, in: %s)",
-                               sock->id, (unsigned int)sock->sock, head,tail));
+        CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- %s (out: %s, in: %s)",
+                               sock->id, (unsigned int) sock->sock,
+                               sock->on_close ? "closing" : "leaving",
+                               head, tail));
         break;
     default:
         CORE_LOG(eLOG_Error, "[SOCK::s_DoLogData]  Invalid event");
@@ -1030,11 +1041,6 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     }}
 
     {{ /* accept next connection */
-#ifdef HAVE_SOCKLEN_T
-        typedef socklen_t  SOCK_socklen_t;
-#else
-        typedef int        SOCK_socklen_t;
-#endif /*HAVE_SOCKLEN_T*/
         SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
         if ((x_sock = accept(lsock->sock, (struct sockaddr*) &addr, &addrlen))
             == SOCK_INVALID) {
@@ -1074,6 +1080,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->id       = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
     (*sock)->log_data = lsock->log;
     (*sock)->type     = eSOCK_ServerSide;
+    (*sock)->on_close = eSCOT_CloseOnClose;
 
     /* statistics & logging */
     lsock->n_accept++;
@@ -1224,11 +1231,6 @@ static EIO_Status s_Connect(SOCK            sock,
             SOCK_struct       sock;
             struct timeval    tv;
 #ifdef NCBI_OS_UNIX
-#  ifdef HAVE_SOCKLEN_T
-            typedef socklen_t SOCK_socklen_t;
-#  else
-            typedef int       SOCK_socklen_t;
-#  endif /*HAVE_SOCKLEN_T*/
             SOCK_socklen_t    x_len = (SOCK_socklen_t) sizeof(x_errno);
 #endif /*NCBI_OS_UNIX*/
 
@@ -1315,7 +1317,7 @@ static EIO_Status s_Close(SOCK sock)
     s_WipeRBuf(sock);
     if (sock->type == eSOCK_Datagram) {
         s_WipeWBuf(sock);
-    } else {
+    } else if (sock->on_close) {
         /* set the socket back to blocking mode */
         if ( !s_SetNonblock(sock->sock, 0/*false*/) ) {
             CORE_LOG(eLOG_Error, "[SOCK::s_Close] "
@@ -1352,19 +1354,21 @@ static EIO_Status s_Close(SOCK sock)
         (sock->log_data == eDefault  &&  s_LogData == eOn)) {
         s_DoLogData(sock, eIO_Close, 0, 0, 0);
     }
+    if (sock->on_close) {
+        for (;;) { /* close persistently - retry if interrupted by a signal */
+            if (SOCK_CLOSE(sock->sock) == 0)
+                break;
 
-    for (;;) { /* close persistently - retry if interrupted by a signal */
-        if (SOCK_CLOSE(sock->sock) == 0)
-            break;
-
-        /* error */
-        if (SOCK_ERRNO != SOCK_EINTR) {
-            int x_errno = SOCK_ERRNO;
-            CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                              "[SOCK::s_Close]  Failed close()");
-            sock->sock = SOCK_INVALID;
-            return (SOCK_ERRNO == SOCK_ECONNRESET || SOCK_ERRNO == SOCK_EPIPE)
-                ? eIO_Closed : eIO_Unknown;
+            /* error */
+            if (SOCK_ERRNO != SOCK_EINTR) {
+                int x_errno = SOCK_ERRNO;
+                CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno,SOCK_STRERROR(x_errno),
+                                  "[SOCK::s_Close]  Failed close()");
+                sock->sock = SOCK_INVALID;
+                return
+                    (SOCK_ERRNO == SOCK_ECONNRESET || SOCK_ERRNO == SOCK_EPIPE)
+                    ? eIO_Closed : eIO_Unknown;
+            }
         }
     }
     /* success */
@@ -1758,6 +1762,7 @@ extern EIO_Status SOCK_CreateEx(const char*     host,
     x_sock->id       = ++s_ID_Counter * 1000;
     x_sock->log_data = log_data;
     x_sock->type     = eSOCK_ClientSide;
+    x_sock->on_close = eSCOT_CloseOnClose;
 
     /* connect */
     {{
@@ -1775,6 +1780,52 @@ extern EIO_Status SOCK_CreateEx(const char*     host,
     x_sock->r_on_w   = eDefault;
     x_sock->i_on_sig = eDefault;
     *sock = x_sock;
+    return eIO_Success;
+}
+
+
+extern EIO_Status SOCK_CreateOnTop(const void*   handle,
+                                   size_t        handle_size,
+                                   SOCK*         sock,
+                                   ESCOT_OnClose on_close,
+                                   ESwitch       log_data)
+{
+    struct sockaddr_in addr;
+    SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
+    TSOCK_Handle       x_sock;
+
+    if (!handle || handle_size != sizeof(x_sock))
+        return eIO_InvalidArg;
+    memcpy(&x_sock, handle, sizeof(x_sock));
+
+    if (getpeername(x_sock, (struct sockaddr*) &addr, &addrlen) != 0 ||
+        addrlen != sizeof(addr) || addr.sin_family != AF_UNIX)
+        return eIO_Closed;
+
+    if (!(*sock = calloc(1, sizeof(**sock))))
+        return eIO_Unknown;
+
+    /* success */
+    (*sock)->sock     = x_sock;
+    /* all timeouts zeroed - infinite */
+    (*sock)->host     = addr.sin_addr.s_addr;
+    (*sock)->port     = addr.sin_port;
+    (*sock)->r_on_w   = eDefault;
+    (*sock)->i_on_sig = eDefault;
+    BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
+    /* w_buf is unused for stream sockets */
+    (*sock)->is_eof   = 0/*false*/;
+    (*sock)->r_status = eIO_Success;
+    (*sock)->w_status = eIO_Success;
+    (*sock)->id       = ++s_ID_Counter * 1000;
+    (*sock)->log_data = log_data;
+    (*sock)->type     = eSOCK_ServerSide;
+    (*sock)->on_close = on_close;
+
+    /* statistics & logging */
+    if (log_data == eOn  ||  (log_data == eDefault  &&  s_LogData == eOn))
+        s_DoLogData(*sock, eIO_Open, &addr, x_sock, &addr);
+
     return eIO_Success;
 }
 
@@ -1814,7 +1865,8 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
                      "server-side socket as client one to its peer address");
             return eIO_InvalidArg;
         }
-        sock->type = eSOCK_ClientSide;
+        sock->type     = eSOCK_ClientSide;
+        sock->on_close = eSCOT_CloseOnClose;
     }
 
     /* connect */
@@ -2979,6 +3031,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.92  2003/04/04 21:00:37  lavr
+ * +SOCK_CreateOnTop()
+ *
  * Revision 6.91  2003/04/04 20:44:35  rsmith
  * do not include arpa/inet.h on CW with MSL.
  *
