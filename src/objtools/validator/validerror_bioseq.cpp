@@ -147,6 +147,19 @@ void CValidError_bioseq::ValidateSeqIds
             }
         }
 
+        CConstRef<CBioseq> core = m_Scope->GetBioseqHandle(**i).GetBioseqCore();
+        if ( !core ) {
+            if ( !m_Imp.IsPatent() ) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
+                    "BioseqFind (" + (*i)->AsFastaString() + 
+                    ") unable to find itself - possible internal error", seq);
+            }
+        } else if ( core.GetPointer() != &seq ) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
+                "SeqID " + (*i)->AsFastaString() + 
+                " is present on multiple Bioseqs in record", seq);
+        }
+
         if ( (*i)->IsGi() ) {
             has_gi = true;
         }
@@ -492,7 +505,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     }
     
     // Check that proteins in nuc_prot set have a CdRegion
-    if ( CdError(seq) ) {
+    if ( seq.IsAa()  &&  CdError(seq) ) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_NoCdRegionPtr,
             "No CdRegion in nuc-prot set points to this protein", seq);
     }
@@ -737,12 +750,12 @@ bool CValidError_bioseq::CdError(const CBioseq& seq)
                          CFeat_CI::e_Product,
                          nps);  // restrict search to the nuc-prot set.
             if ( cds ) {
-                return true;
+                return false;
             }
         }
     }
 
-    return false;
+    return true;
 }
 
 
@@ -1653,7 +1666,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
         CSeq_loc_CI si(fi->GetLocation());
 
-        if ( !(++CSeq_loc_CI(si)) ) {  // if only a single interval
+        if ( !(++si) ) {  // if only a single interval
             continue;
         }
         
@@ -2052,6 +2065,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/01/29 21:56:31  shomrat
+* Added check for id on multiple bioseqs; Bug fixes
+*
 * Revision 1.9  2003/01/29 17:19:55  ucko
 * Use TTech (with no cast) rather than ETech, in preparation for CIntEnum<>.
 *
