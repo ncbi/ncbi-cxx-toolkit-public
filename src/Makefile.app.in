@@ -49,8 +49,11 @@ ASK_REBUILD = \
     fi
 
 SKIP_REBUILD = true
+ALL          = $(XAPP)
 @IF_REBUILDING_LIBS@ SKIP_REBUILD = false
+@IF_REBUILDING_LIBS@ ALL          = rebuild-libs
 @IF_REBUILDING_CONDITIONALLY@ SKIP_REBUILD = ($(ASK_REBUILD))
+@IF_REBUILDING_CONDITIONALLY@ ALL          = rebuild-libs
 
 rebuild-libs:
 	@for l in $(XLIBDEP) /dev/null ; do \
@@ -71,8 +74,9 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 
 # Kludge: done this way to force proper serialization
 MAKEFILE = $(builddir)/Makefile.app.tmpl
-all: rebuild-libs
-	@$(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
+
+all: $(ALL)
+	@test "$(ALL)" = "$(XAPP)" || $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
 
 clean:
 	-$(RMDIR) SunWS_cache
