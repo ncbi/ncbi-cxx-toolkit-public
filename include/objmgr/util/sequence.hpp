@@ -41,6 +41,7 @@
 
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <util/strsearch.hpp>
 
@@ -52,7 +53,6 @@ class CSeq_id;
 class CSeq_loc_mix;
 class CSeq_point;
 class CPacked_seqpnt;
-class CSeq_interval;
 class CScope;
 class CBioseq_Handle;
 class CCdregion;
@@ -493,6 +493,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2003/01/09 17:48:26  ucko
+* Include Seq_interval.hpp rather than just forward-declaring
+* CSeq_interval now that we use CRef<CSeq_interval> here.
+*
 * Revision 1.23  2003/01/08 20:43:05  ucko
 * Adjust SRelLoc to use (ID-less) Seq-intervals for ranges, so that it
 * will be possible to add support for fuzz and strandedness/orientation.
