@@ -38,8 +38,7 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_annot_Handle::CSeq_annot_Handle(void)
-    : m_Scope(0),
-      m_Seq_annot(0)
+    : m_Seq_annot(0)
 {
 }
 
@@ -116,6 +115,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/10/08 17:55:53  vasilche
+* Fixed null initialization of CHeapScope.
+*
 * Revision 1.3  2003/10/08 14:14:27  vasilche
 * Use CHeapScope instead of CRef<CScope> internally.
 *

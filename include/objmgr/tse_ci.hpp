@@ -71,7 +71,6 @@ private:
 
 inline
 CTSE_CI::CTSE_CI(void)
-    : m_Scope(0)
 {
     m_Current = m_Entries.end();
 }
@@ -150,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/10/08 17:55:53  vasilche
+* Fixed null initialization of CHeapScope.
+*
 * Revision 1.4  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

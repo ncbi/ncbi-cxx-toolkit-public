@@ -102,7 +102,6 @@ private:
 
 inline
 CSeq_annot_CI::CSeq_annot_CI(void)
-    : m_Scope(0)
 {
 }
 
@@ -163,6 +162,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/10/08 17:55:53  vasilche
+* Fixed null initialization of CHeapScope.
+*
 * Revision 1.6  2003/10/08 14:14:53  vasilche
 * Use CHeapScope instead of CRef<CScope> internally.
 *
