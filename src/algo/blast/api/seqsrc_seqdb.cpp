@@ -183,6 +183,7 @@ static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
 
     BlastSetUp_SeqBlkNew((Uint1*)buf, len, 0, &seqdb_args->seq, 
                          buffer_allocated);
+    
     /* If there is no sentinel byte, and buffer is allocated, i.e. this is
        the traceback stage of a translated search, set "sequence" to the same 
        position as "sequence_start". */
@@ -192,6 +193,29 @@ static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
     seqdb_args->seq->oid = oid;
 
     return BLAST_SEQSRC_SUCCESS;
+}
+
+/** Returns the memory allocated for the sequence buffer to the CSeqDB 
+ * interface.
+ * @param seqdb_handle Pointer to initialized CSeqDB object [in]
+ * @param args Pointer to the GetSeqArgs structure, containing sequence block
+ *             with the buffer that needs to be deallocated. [in]
+ * @return return codes defined in blast_seqsrc.h
+ */
+static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
+{
+    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    GetSeqArg* seqdb_args = (GetSeqArg*) args;
+
+    if (!seqdb || !seqdb_args)
+        return BLAST_SEQSRC_ERROR;
+
+    if (seqdb_args->seq->sequence_start_allocated) {
+        seqdb->RetSequence((const char**)&seqdb_args->seq->sequence_start);
+        seqdb_args->seq->sequence_start_allocated = FALSE;
+        seqdb_args->seq->sequence_start = NULL;
+    }
+    return 0;
 }
 
 /** Retrieves the sequence identifier meeting the criteria defined by its 
@@ -369,7 +393,8 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 
     string db_name(rargs->dbname);
     char db_type = static_cast<char>((rargs->is_protein ? 'p' : 'n'));
-    CSeqDB* seqdb(new CSeqDB(db_name, db_type));
+    CSeqDB* seqdb(new CSeqDB(db_name, db_type, (Uint4)rargs->first_db_seq, 
+                             (Uint4)rargs->final_db_seq, true));
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
@@ -392,6 +417,7 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     SetGetNextChunk(retval, &SeqDbGetNextChunk);
     SetIterNext(retval, &SeqDbIteratorNext);
     SetGetError(retval, &SeqDbGetError);
+    SetRetSequence(retval, &SeqDbRetSequence);
 
     return retval;
 }
@@ -409,8 +435,8 @@ BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* seq_src)
 }
 
 BlastSeqSrc* 
-SeqDbSrcInit(const char* dbname, Boolean is_prot, int first_seq, 
-                      int last_seq, void*)
+SeqDbSrcInit(const char* dbname, Boolean is_prot, Int4 first_seq, 
+                      Int4 last_seq, void*)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
@@ -418,8 +444,8 @@ SeqDbSrcInit(const char* dbname, Boolean is_prot, int first_seq,
         (SSeqDbSrcNewArgs*) calloc(1, sizeof(SSeqDbSrcNewArgs));;
     seqdb_args->dbname = strdup(dbname);
     seqdb_args->is_protein = is_prot;
-    seqdb_args->first_db_seq = first_seq;   /* FIXME: why do we need these? */
-    seqdb_args->final_db_seq = last_seq;    /* FIXME: why do we need these? */
+    seqdb_args->first_db_seq = first_seq;
+    seqdb_args->final_db_seq = last_seq; 
     bssn_info.constructor = &SeqDbSrcNew;
     bssn_info.ctor_argument = (void*) seqdb_args;
 
@@ -440,6 +466,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/04/28 19:38:20  dondosha
+ * Added implementation of BLASTSeqSrcRetSequence function
+ *
  * Revision 1.4  2004/04/12 14:58:42  ucko
  * Avoid placing static C functions inside namespace blocks to keep the
  * SGI MIPSpro compiler from segfaulting in Scope Setup.

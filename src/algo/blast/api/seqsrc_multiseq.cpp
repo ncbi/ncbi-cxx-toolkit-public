@@ -221,6 +221,21 @@ static Int2 MultiSeqGetSequence(void* multiseq_handle, void* args)
     return BLAST_SEQSRC_SUCCESS;
 }
 
+/** Deallocates the uncompressed sequence buffer if necessary.
+ * @param multiseq_handle Pointer to the structure containing sequences [in]
+ * @param args Pointer to GetSeqArg structure [in]
+ * @return return codes defined in blast_seqsrc.h
+ */
+static Int2 MultiSeqRetSequence(void* multiseq_handle, void* args)
+{
+    GetSeqArg* seq_args = (GetSeqArg*) args;
+
+    ASSERT(seq_args);
+    if (seq_args->seq->sequence_start_allocated)
+        sfree(seq_args->seq->sequence_start);
+    return 0;
+}
+
 /** Retrieves the sequence identifier given its index into the sequence vector.
  * Client code is responsible for deallocating the return value. 
  * @param multiseq_handle Pointer to the structure containing sequences [in]
@@ -387,6 +402,7 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     SetGetNextChunk(retval, &MultiSeqGetNextChunk);
     SetIterNext(retval, &MultiSeqIteratorNext);
     SetGetError(retval, &MultiSeqGetErrorMessage);
+    SetRetSequence(retval, &MultiSeqRetSequence);
 
     return retval;
 }
@@ -445,6 +461,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/04/28 19:38:20  dondosha
+ * Added implementation of BLASTSeqSrcRetSequence function
+ *
  * Revision 1.13  2004/03/26 19:18:40  dondosha
  * Minor correction in assigning sequence pointer in returned sequence block
  *
