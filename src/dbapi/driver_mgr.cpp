@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/04/01 22:31:40  kholodov
+* Fixed DLL entry point names
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -115,13 +118,13 @@ bool CDriverManager::LoadDriverDll(const string& driver_name)
 
   FEntryPoint func = 0;
   if( driver_name == "ctlib" ) {
-    dll.GetEntryPoint("DBAPI_RegisterDriver_CTLIB", &func);
+    dll.GetEntryPoint("DBAPI_E_ctlib", &func);
   }
   else if( driver_name == "dblib" ) {
-    dll.GetEntryPoint("DBAPI_RegisterDriver_DBLIB", &func);
+    dll.GetEntryPoint("DBAPI_E_dblib", &func);
   }
   else if( driver_name == "ftds" ) {
-    dll.GetEntryPoint("DBAPI_RegisterDriver_FTDS", &func);
+    dll.GetEntryPoint("DBAPI_E_ftds", &func);
   }
 
   if( func != 0 ) {
