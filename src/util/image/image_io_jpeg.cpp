@@ -230,7 +230,7 @@ static void s_JpegReadSetup(j_decompress_ptr cinfo,
     sptr->pub.init_source       = s_JpegReadInit;
     sptr->pub.fill_input_buffer = s_JpegReadBuffer;
     sptr->pub.skip_input_data   = s_JpegReadSkipData;
-    sptr->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+    sptr->pub.resync_to_restart = jpeg_resync_to_restart;
     sptr->pub.term_source       = s_JpegReadTerminate;
 
     // make sure the structure knows we're just starting now
@@ -306,16 +306,40 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
         jpeg_start_decompress(&cinfo);
 
         // allocate an image to hold our data
-        image.Reset(new CImage(cinfo.output_width, cinfo.output_height,
-                               cinfo.out_color_components));
+        image.Reset(new CImage(cinfo.output_width, cinfo.output_height, 3));
 
         // we process the image 1 scanline at a time
-        unsigned char *data[1];
-        data[0] = image->SetData();
-        size_t stride = image->GetWidth() * image->GetDepth();
-        for (size_t i = 0;  i < image->GetHeight();  ++i) {
-            jpeg_read_scanlines(&cinfo, data, 1);
-            data[0] += stride;
+        unsigned char *scanline[1];
+        const size_t stride = cinfo.output_width * cinfo.out_color_components;
+        switch (cinfo.out_color_components) {
+        case 1:
+            {{
+                 unsigned char* data = image->SetData();
+                 vector<unsigned char> scan_buf(stride);
+                 scanline[0] = &scan_buf[0];
+                 for (size_t i = 0;  i < image->GetHeight();  ++i) {
+                     jpeg_read_scanlines(&cinfo, scanline, 1);
+
+                     for (size_t j = 0;  j < stride;  ++j) {
+                         *data++ = scanline[0][j];
+                         *data++ = scanline[0][j];
+                         *data++ = scanline[0][j];
+                     }
+                 }
+             }}
+            break;
+
+        case 3:
+            scanline[0] = image->SetData();
+            for (size_t i = 0;  i < image->GetHeight();  ++i) {
+                jpeg_read_scanlines(&cinfo, scanline, 1);
+                scanline[0] += stride;
+            }
+            break;
+
+        default:
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOJpeg::ReadImage(): Unhandled color components");
         }
 
         // standard clean-up
@@ -365,12 +389,21 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
         //jpeg_stdio_src(&cinfo, fp);
         jpeg_read_header(&cinfo, TRUE);
 
+        // decompression parameters
+        cinfo.dct_method = JDCT_FLOAT;
+        jpeg_start_decompress(&cinfo);
+
         // further validation: make sure we're actually on the image
         if (x >= cinfo.output_width  ||  y >= cinfo.output_height) {
             string msg("CImageIOJpeg::ReadImage(): invalid starting position: ");
             msg += NStr::IntToString(x);
             msg += ", ";
             msg += NStr::IntToString(y);
+            msg += " (image dimensions: ";
+            msg += NStr::IntToString(cinfo.output_width);
+            msg += ", ";
+            msg += NStr::IntToString(cinfo.output_height);
+            msg += ")";
             NCBI_THROW(CImageException, eReadError, msg);
         }
 
@@ -387,36 +420,55 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
                      << "CImageIOJpeg::ReadImage(): clamped height to " << h);
         }
 
-        // decompression parameters
-        cinfo.dct_method = JDCT_FLOAT;
-        jpeg_start_decompress(&cinfo);
-
 
         // allocate an image to store the subimage's data
-        CRef<CImage> image(new CImage(w, h, cinfo.out_color_components));
+        image.Reset(new CImage(w, h, 3));
 
-        // also allocate a single scanline
-        // we plan to process the input file on a line-by-line basis
-        vector<unsigned char> row(cinfo.output_width * image->GetDepth());
-        unsigned char *data[1];
-        data[0] = &row[0];
+        // we process the image 1 scanline at a time
+        unsigned char *scanline[1];
+        const size_t stride = cinfo.output_width * cinfo.out_color_components;
+        vector<unsigned char> row(stride);
+        scanline[0] = &row[0];
 
         size_t i;
 
         // start by skipping a number of scan lines
         for (i = 0;  i < y;  ++i) {
-            jpeg_read_scanlines(&cinfo, data, 1);
+            jpeg_read_scanlines(&cinfo, scanline, 1);
         }
 
-        // read the chunk of interest
-        unsigned char* to_data = image->SetData();
-        size_t to_stride  = image->GetWidth() * image->GetDepth();
-        size_t offs       = x * image->GetDepth();
-        size_t scan_width = w * image->GetDepth();
-        for (;  i < y + h;  ++i) {
-            jpeg_read_scanlines(&cinfo, data, 1);
-            memcpy(to_data, data[0] + offs, scan_width);
-            to_data += to_stride;
+        // now read the actual data
+        unsigned char* data = image->SetData();
+        switch (cinfo.out_color_components) {
+        case 1:
+            for ( ;  i < y + h;  ++i) {
+                jpeg_read_scanlines(&cinfo, scanline, 1);
+
+                for (size_t j = x;  j < x + w;  ++j) {
+                    *data++ = scanline[0][j];
+                    *data++ = scanline[0][j];
+                    *data++ = scanline[0][j];
+                }
+            }
+            break;
+
+        case 3:
+            {{
+                 const size_t offs      = x * image->GetDepth();
+                 const size_t scan_w    = w * image->GetDepth();
+                 const size_t to_stride = image->GetWidth() * image->GetDepth();
+                 for ( ;  i < y + h;  ++i) {
+                     jpeg_read_scanlines(&cinfo, scanline, 1);
+                     memcpy(data, scanline[0] + offs, scan_w);
+                     data += to_stride;
+                     scanline[0] += stride;
+                 }
+             }}
+            break;
+
+        default:
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOJpeg::ReadImage(): Unhandled color components");
         }
 
         // standard clean-up
@@ -662,6 +714,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/31 17:52:10  dicuccio
+ * Added support for black & white JPG images (color components = 1).  Fixed
+ * reading of sub-images
+ *
  * Revision 1.6  2003/12/16 16:12:27  dicuccio
  * Fixed compilation problems on Linux - return value of read function is not
  * always unsigned char
