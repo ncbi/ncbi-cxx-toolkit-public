@@ -28,7 +28,7 @@ script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
 # Run command
-sleep 1  &&  "$@" &
+"$@" &
 pid=$!
 trap 'kill $pid' 1 2 15
 
