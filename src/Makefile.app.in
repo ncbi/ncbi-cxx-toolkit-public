@@ -24,14 +24,14 @@ default_rule: all
 
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = $(OBJ)
+SOURCES      = @UNIX_SRC@ $(SRC) $(OBJ)
 include $(builddir)/Makefile.$(Rules)
 
 
 ### Standard application build rules
 
 XAPP = $(APP)@exe_ext@
-XOBJ = $(OBJ:=@obj_ext@)
+XOBJ = $(SOURCES:=@obj_ext@)
 XLIB = @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(LIB:%=$(libdir)/.%.dep)
 

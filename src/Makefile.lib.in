@@ -26,13 +26,13 @@ default_rule: all
 
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = $(LIBOBJ)
+SOURCES      = @UNIX_SRC@ $(SRC) $(LIBOBJ)
 include $(builddir)/Makefile.$(Rules)
 
 
 ### The library build rule
 
-XLIBOBJ = $(LIBOBJ:=@obj_ext@)
+XLIBOBJ = $(SOURCES:=@obj_ext@)
 XLOBJ   = $(LOBJ:=@obj_ext@)
 XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 XLIBDEP = .$(LIB).dep

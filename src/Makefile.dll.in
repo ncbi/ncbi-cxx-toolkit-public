@@ -37,13 +37,13 @@ CXXFLAGS_ALL = @f_compile@ \
 	$(CXXFLAGS) $(CXXFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ \
 	$(CFLAGS) $(CFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = $(LIBOBJ)
+SOURCES      = @UNIX_SRC@ $(SRC) $(LIBOBJ)
 include $(builddir)/Makefile.$(Rules)
 
 
 ### The library build rule
 
-XLIBOBJ     = $(LIBOBJ:=@obj_ext@)
+XLIBOBJ     = $(SOURCES:=@obj_ext@)
 XLOBJ       = $(LOBJ:=@obj_ext@)
 XLIB        = $(LIB:%=@lib_pre@%@dll_ext@)
 XLIBDEP     = .$(LIB).dep
