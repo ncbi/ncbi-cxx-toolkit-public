@@ -506,8 +506,8 @@ static string s_TitleFromBioSource(const CBioSource& source,
         sfx = ' ' + suffix;
     }
 
-    string title = NStr::TruncateSpaces(name + chromosome + clone + map_
-                                        + strain + sfx);
+    string title = NStr::TruncateSpaces(name + strain + chromosome + clone
+                                        + map_ + sfx);
     if (islower(title[0])) {
         title[0] = toupper(title[0]);
     }
@@ -866,6 +866,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.44  2004/10/27 21:32:00  ucko
+* s_TitleFromBioSource: list strain before other qualifiers per C Toolkit.
+*
 * Revision 1.43  2004/10/14 20:30:00  ucko
 * Add a flag fGetTitle_AllProteins (off by default) that governs whether
 * to include all protein names or just the first, per recent changes to
