@@ -176,11 +176,10 @@ void CBlastTabularInfo::Print(ETabularOption opt)
          
     /* Calculate percentage of identities */
     double perc_ident = ((double)m_NumIdent)/m_AlignLength * 100;
-    char perc_ident_buf[6];
-    sprintf(perc_ident_buf, "%.2f", perc_ident);
     Int4 num_mismatches = m_AlignLength - m_NumIdent - m_NumGaps;
     
-    m_Ostream << m_QueryId << "\t" << m_SubjectId << "\t" << perc_ident_buf << 
+    m_Ostream << m_QueryId << "\t" << m_SubjectId << "\t" <<
+        NStr::DoubleToString(perc_ident, 2) << 
         "\t" << m_AlignLength << "\t" << num_mismatches << "\t" << 
         m_NumGapOpens << "\t" << m_QueryStart << "\t" << m_QueryEnd << "\t" << 
         m_SubjectStart << "\t" << m_SubjectEnd << "\t" << evalue_str << "\t" <<
@@ -239,6 +238,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/14 21:12:29  ucko
+* Print: use DoubleToString rather than sprintf, which hasn't
+* necessarily been declared.
+*
 * Revision 1.1  2005/03/14 20:11:30  dondosha
 * Tabular formatting of BLAST results
 *
