@@ -1409,7 +1409,7 @@
 #  define NCBI_GUIMATH_EXPORT
 #  define NCBI_GUIOPENGL_EXPORT
 #  define NCBI_GUIUTILS_EXPORT
-#  define NCBI_GUIOBJUTILS_EXPORTS
+#  define NCBI_GUIOBJUTILS_EXPORT
 #  define NCBI_GUIWIDGETSALN_EXPORT
 #  define NCBI_GUIWIDGETSSEQ_EXPORT
 #  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORT
@@ -1510,6 +1510,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.71  2004/05/03 13:25:32  dicuccio
+ * Corrected export specifier
+ *
  * Revision 1.70  2004/05/03 12:36:36  dicuccio
  * added export specifier for library gui_objutils
  *
