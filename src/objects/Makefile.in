@@ -13,4 +13,4 @@ include @builddir@/Makefile.meta
 asn2asn: seqset $(SEQ_LIBS) pub medline biblio general
 objmgr: id1 seqset $(SEQ_LIBS) pub medline biblio general
 util: objmgr
-validator flat: util
+validator flat alnmgr: util submit
