@@ -32,6 +32,7 @@
  */
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 #include <objtools/lds/lds.hpp>
 #include <map>
@@ -45,6 +46,10 @@ CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(SLDS_TablesCollection& lds_db,
                                              const map<string, int>& type_map,
                                              int object_id);
 
+// Load annotation.
+CRef<CSeq_annot> 
+NCBI_LDS_EXPORT LDS_LoadAnnot(SLDS_TablesCollection& lds_db, 
+                              const CLDS_Query::SObjectDescr& obj_descr);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -52,6 +57,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/14 19:46:26  kuznets
+ * + annotation reading function
+ *
  * Revision 1.3  2003/06/11 15:35:44  kuznets
  * + DLL export/import specifier
  *
