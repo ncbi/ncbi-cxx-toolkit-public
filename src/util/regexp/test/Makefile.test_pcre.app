@@ -3,7 +3,7 @@
 SRC = pcretest
 APP = test_regexp
 
-CFLAGS = $(ORIG_CFLAGS) -I$(includedir)/internal/regexp -I$(srcdir)/../
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/internal/regexp -I$(srcdir)/..
 
 LIBS = -lregexp
 
