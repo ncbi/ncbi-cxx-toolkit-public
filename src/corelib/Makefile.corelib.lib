@@ -1,0 +1,10 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Build library "XNCBI"
+#################################
+
+LIBOBJ = ncbidiag ncbiexpt ncbistre ncbicgi ncbiapp ncbireg ncbicgir ncbires ncbistd
+LIB    = xncbi

@@ -1,0 +1,9 @@
+#################################
+# $Id$
+#################################
+
+# Build library "XHTML"
+#################################
+
+LIBOBJ = node html htmlhelper page nodemap components querypages
+LIB    = xhtml

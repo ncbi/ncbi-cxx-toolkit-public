@@ -1,0 +1,11 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Standard application build template
+#################################
+
+include @builddir@/Makefile.mk
+include $(srcdir)/Makefile.$(TMPL).app
+include @builddir@/Makefile.app
