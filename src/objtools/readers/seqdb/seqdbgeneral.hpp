@@ -98,7 +98,7 @@ inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 #define ALIGNED_TO_POW2(x,y)  (! ((x) & (-y)))
 
 #define PTR_ALIGNED_TO_SELF_SIZE(x) \
-    (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2(int(x), sizeof(*x)))
+    (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2(size_t(x), sizeof(*x)))
 
 // Portable byte swapping from marshalled version
 
