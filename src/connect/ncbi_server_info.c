@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/16 15:09:02  lavr
+ * Added explicit type casting to get "very smart" compilers happy
+ *
  * Revision 6.3  2000/05/15 19:06:09  lavr
  * Use home-made ANSI extentions (NCBI_***)
  *
@@ -162,7 +165,7 @@ static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
 
     addr.sin_addr.s_addr = host;
     return sprintf(str, "%s:%hu", host ? inet_ntoa(addr.sin_addr) : "",
-                   ntohs(port));
+                   (unsigned short)ntohs(port));
 }
 
 #define N_FLAG_TAGS 2
@@ -274,7 +277,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                             s = str;
                         }
                     } else {
-                        info->time = temp;
+                        info->time = (time_t)temp;
                     }
                     if (*s) {
                         unsigned short i;
