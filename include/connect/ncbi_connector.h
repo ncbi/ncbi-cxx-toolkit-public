@@ -45,10 +45,6 @@
  */
 
 
-#define CONN_DEFAULT_TIMEOUT  ((STimeout*) (-1))
-#define CONN_INFINITE_TIMEOUT ((STimeout*) 0)
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -293,6 +289,9 @@ typedef EIO_Status (*FConnectorWaitAsync)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/08/25 14:47:59  lavr
+ * Get rid of old ...TIMEOUT constants [now replaced with k...Timeout]
+ *
  * Revision 6.15  2003/05/21 17:52:37  lavr
  * Pre- and post-conditions clarified for read and write virtual methods
  *
