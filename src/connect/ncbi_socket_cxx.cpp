@@ -323,10 +323,10 @@ EIO_Status CDatagramSocket::Connect(const string&  host,
 }
 
 
-EIO_Status CDatagramSocket::Send(const string&   host,
-                                 unsigned short  port,
-                                 const void*     data,
-                                 size_t          datalen)
+EIO_Status CDatagramSocket::Send(const void*     data,
+                                 size_t          datalen,
+                                 const string&   host,
+                                 unsigned short  port)
 {
     return m_Socket
         ? DSOCK_SendMsg(m_Socket, host.c_str(), port, data, datalen)
@@ -334,12 +334,12 @@ EIO_Status CDatagramSocket::Send(const string&   host,
 }
 
 
-EIO_Status CDatagramSocket::Recv(size_t*         msglen,
+EIO_Status CDatagramSocket::Recv(void*           buf,
+                                 size_t          buflen,
+                                 size_t*         msglen,
                                  string*         sender_host,
                                  unsigned short* sender_port,
-                                 size_t          msgsize,
-                                 void*           buf,
-                                 size_t          buflen)
+                                 size_t          maxmsglen)
 {
     EIO_Status   status;
     unsigned int addr;
@@ -347,8 +347,8 @@ EIO_Status CDatagramSocket::Recv(size_t*         msglen,
     if ( !m_Socket )
         return eIO_Closed;
 
-    status = DSOCK_RecvMsg(m_Socket, msgsize, buf, buflen, msglen,
-                           &addr, sender_port);
+    status = DSOCK_RecvMsg(m_Socket, buf, buflen, maxmsglen,
+                           msglen, &addr, sender_port);
     if ( sender_host )
         *sender_host = CSocketAPI::ntoa(addr);
 
@@ -523,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/04/30 17:03:33  lavr
+ * Modified prototypes for CDatagramSocket::Send() and CDatagramSocket::Recv()
+ *
  * Revision 6.13  2003/04/11 20:59:30  lavr
  * CDatagramSocket:: API defined completely
  *

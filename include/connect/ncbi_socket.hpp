@@ -141,8 +141,8 @@ public:
     EOwnership SetOwnership(EOwnership if_to_own);
 
     // Access to the underlying "SOCK" and the system-specific socket handle.
-    SOCK       GetSOCK     (void) const;
-    EIO_Status GetOSHandle (void* handle_buf, size_t handle_size) const;
+    SOCK       GetSOCK    (void) const;
+    EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
     // NOTE:  use CSocketAPI::SetReadOnWrite() to set the default value
     void SetReadOnWrite(ESwitch read_on_write = eOn);
@@ -208,17 +208,17 @@ public:
 
     EIO_Status Wait(const STimeout* timeout = 0);
 
-    EIO_Status Send(const string&   host    = string(),
-                    unsigned short  port    = 0,
-                    const void*     data    = 0,
-                    size_t          datalen = 0);
+    EIO_Status Send(const void*     data    = 0,
+                    size_t          datalen = 0,
+                    const string&   host    = string(),
+                    unsigned short  port    = 0);
 
-    EIO_Status Recv(size_t*         msglen      = 0,
+    EIO_Status Recv(void*           buf         = 0,
+                    size_t          buflen      = 0,
+                    size_t*         msglen      = 0,
                     string*         sender_host = 0,
                     unsigned short* sender_port = 0,
-                    size_t          msgsize     = 0,
-                    void*           buf         = 0,
-                    size_t          buflen      = 0);
+                    size_t          maxmsglen   = 0);
 
     EIO_Status Clear(EIO_Event direction);
 
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/04/30 17:03:22  lavr
+ * Modified prototypes for CDatagramSocket::Send() and CDatagramSocket::Recv()
+ *
  * Revision 6.22  2003/04/11 20:58:12  lavr
  * CDatagramSocket:: API defined completely
  *
