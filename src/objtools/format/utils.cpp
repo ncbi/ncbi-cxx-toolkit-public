@@ -131,25 +131,25 @@ static bool s_IsWholeWord(const string& str, size_t pos, const string& word)
 }
 
 
-void JoinNoRedund(string& str1, const string& str2, const string& delim)
+void JoinNoRedund(string& to, const string& prefix, const string& str)
 {
-    if ( str2.empty() ) {
+    if ( str.empty() ) {
         return;
     }
 
-    if ( str1.empty() ) {
-        str1 = str2;
+    if ( to.empty() ) {
+        to += str;
         return;
     }
     
     size_t pos = NPOS;
-    for ( pos = NStr::Find(str1, str2);
-          pos != NPOS  &&  !s_IsWholeWord(str1, pos, str2);
-          pos += str2.length());
+    for ( pos = NStr::Find(to, str);
+          pos != NPOS  &&  !s_IsWholeWord(to, pos, str);
+          pos += str.length());
 
-    if ( pos == NPOS  ||  !s_IsWholeWord(str1, pos, str2) ) {
-        str1 += delim;
-        str1 += str2;
+    if ( pos == NPOS  ||  !s_IsWholeWord(to, pos, str) ) {
+        to += prefix;
+        to += str;
     }
 }
 
@@ -163,7 +163,7 @@ string JoinNoRedund(const list<string>& l, const string& delim)
     string result = l.front();
     list<string>::const_iterator it = l.begin();
     while ( ++it != l.end() ) {
-        JoinNoRedund(result, *it, delim);
+        JoinNoRedund(result, delim, *it);
     }
 
     return result;
@@ -515,6 +515,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/18 15:35:17  shomrat
+* Fixes in JoinNoRedund
+*
 * Revision 1.3  2004/03/08 20:55:32  shomrat
 * Use case sensetive search when looking for redundent content
 *
