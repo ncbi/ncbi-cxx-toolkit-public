@@ -40,8 +40,9 @@
 #include <algo/blast/api/blast_options.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
+#include <connect/ncbi_core.h>
 
-// NewBlast includes
+// Core BLAST engine includes
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_setup.h>
@@ -68,9 +69,10 @@ void CDbBlast::x_InitFields()
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
-                   EProgram p, RPSInfo* rps_info, BlastHSPStream* hsp_stream)
+                   EProgram p, RPSInfo* rps_info, BlastHSPStream* hsp_stream,
+                   MT_LOCK lock)
     : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
-      m_pHspStream(hsp_stream) 
+      m_pHspStream(hsp_stream), m_pLock(lock) 
 {
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
     x_InitFields();
@@ -78,9 +80,9 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
                    CBlastOptionsHandle& opts, RPSInfo* rps_info, 
-                   BlastHSPStream* hsp_stream)
+                   BlastHSPStream* hsp_stream, MT_LOCK lock)
     : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
-      m_pHspStream(hsp_stream) 
+      m_pHspStream(hsp_stream), m_pLock(lock) 
 {
     m_OptsHandle.Reset(&opts);    
     x_InitFields();
@@ -293,10 +295,10 @@ CDbBlast::RunSearchEngine()
         num_results = ((m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) ?
                        BLASTSeqSrcGetNumSeqs(m_pSeqSrc) : 
                        m_iclsQueryInfo->num_queries);
-        hsp_stream = Blast_HSPListCollectorInit(
+        hsp_stream = Blast_HSPListCollectorInitMT(
                         m_OptsHandle->GetOptions().GetProgram(), 
                         m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                        num_results, TRUE);
+                        num_results, TRUE, m_pLock);
         results_ptr = &m_ipResults;
     }
 
@@ -364,6 +366,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2004/06/23 14:06:15  dondosha
+ * Added MT_LOCK argument in constructors
+ *
  * Revision 1.33  2004/06/15 18:49:07  dondosha
  * Added optional BlastHSPStream argument to constructors, to allow use of HSP
  * stream by a separate thread doing on-the-fly formatting
