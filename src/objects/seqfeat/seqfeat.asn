@@ -1,4 +1,4 @@
---$Revision: 6.8 $
+--$Revision: 6.9 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -362,6 +362,9 @@ OrgMod ::= SEQUENCE {
         anamorph (29) ,
         teleomorph (30) ,
         breed (31) ,
+        gb-acronym (32) ,       -- used by taxonomy database
+        gb-anamorph (33) ,      -- used by taxonomy database
+        gb-synonym (34) ,       -- used by taxonomy database
         old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
