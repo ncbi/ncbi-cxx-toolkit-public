@@ -513,6 +513,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    return status;
 }
 
+#define BLAST_DB_CHUNK_SIZE 1024
+
 #ifdef THREADS_IMPLEMENTED
 static Boolean 
 BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4* start, Int4* stop, 
@@ -614,7 +616,6 @@ BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4* start, Int4* stop,
     return done;
 }
 
-#define BLAST_DB_CHUNK_SIZE 1024
 static BlastThrInfo* BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
 {
    BlastThrInfo* thr_info;
@@ -655,10 +656,10 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 {
    BlastCoreAuxStruct* aux_struct = NULL;
    BlastThrInfo* thr_info = NULL;
+#ifdef THREADS_IMPLEMENTED
    Int4 start = 0, stop = 0, index;
    Int4* oid_list = NULL;
    Boolean use_oid_list = FALSE;
-#ifdef THREADS_IMPLEMENTED
    Int4 oid, oid_list_length = 0; /* Subject ordinal id in the database */
 #endif
    BlastHSPList* hsp_list; 
@@ -668,6 +669,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BlastGapAlignStruct* gap_align;
    GetSeqArg seq_arg;
    Int2 status = 0;
+   BlastSeqSrcIterator* itr = NULL;
    
    if ((status = 
        BLAST_SetUpAuxStructures(program_number, bssp,
@@ -680,13 +682,21 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
+   /* Encoding is set so there are no sentinel bytes, and protein/nucleotide
+      sequences are retieved in ncbistdaa/ncbi2na encodings respectively. */
+   seq_arg.encoding = BLASTP_ENCODING; 
+
+   /* Initialize the iterator */
+   if ( !(itr = BlastSeqSrcIteratorNew(BLAST_DB_CHUNK_SIZE))) {
+      /** NEED AN ERROR MESSAGE HERE? */
+      return -1;
+   }
+
 #ifdef THREADS_IMPLEMENTED
    /* FIXME: will only work for full databases */
    thr_info = BLAST_ThrInfoNew(eff_len_options->dbseq_num);
-#endif
    stop = eff_len_options->dbseq_num;
 
-#ifdef THREADS_IMPLEMENTED
    while (!BLAST_GetDbChunk(rdfp, &start, &stop, oid_list, 
                             &oid_list_length, thr_info)) {
       use_oid_list = (oid_list && (oid_list_length > 0));
@@ -694,12 +704,12 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
          start = 0;
          stop = oid_list_length;
       }
+      for (index = start; index < stop; index++) {
+         seq_arg.oid = (use_oid_list ? oid_list[index] : index);
 #endif
-   
    /* iterate over all subject sequences */
-   for (index = start; index < stop; index++) {
-      seq_arg.oid = (use_oid_list ? oid_list[index] : index);
-      seq_arg.encoding = BLASTP_ENCODING; /* shouldn't use a different encoding?*/
+   while ( (seq_arg.oid = BlastSeqSrcIteratorNext(bssp, itr)) 
+           != BLAST_SEQSRC_EOF) {
       BlastSequenceBlkClean(seq_arg.seq);
       if (BLASTSeqSrcGetSequence(bssp, (void*) &seq_arg) < 0)
           continue;
@@ -722,9 +732,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    }    /* end while!(BLAST_GetDbChunk...) */
 
    BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
+   sfree(oid_list);
 #endif
 
-   sfree(oid_list);
    BlastSequenceBlkFree(seq_arg.seq);
 
    /* Now sort the hit lists for all queries */
