@@ -33,6 +33,13 @@
  *      
  */
 
+
+/** @addtogroup Exception
+ *
+ * @{
+ */
+
+
 #include <ncbiconf.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -50,9 +57,15 @@
 #endif
 
 
+/* @} *
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/01 14:19:42  siyan
+ * Added doxygen support
+ *
  * Revision 1.2  2003/02/14 15:48:44  ucko
  * Add a workaround for Mac OS X 10.2, where <cmath> clobbers <math.h>'s
  * #define of isnan but doesn't replace it with anything.

@@ -38,6 +38,12 @@
 #include <vector>
 
 
+/** @addtogroup Pipes
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -179,9 +185,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/04/01 14:20:13  siyan
+ * Added doxygen support
+ *
  * Revision 1.8  2003/03/03 14:46:02  dicuccio
  * Reimplemented CPipe using separate private platform-specific implementations
  *

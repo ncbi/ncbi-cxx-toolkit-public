@@ -56,6 +56,12 @@
 #include <float.h>
 
 
+/** @addtogroup Portability
+ *
+ * @{
+ */
+
+
 /* Int8, Uint8
  *   NOTE:  "NCBI_MIN/MAX_***8" are temporary preprocessor definitions, so
  *          do not use them... always use "kMax_*" and "kMin_*" instead!
@@ -207,9 +213,15 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 #endif  /* __cplusplus */
 
 
+/* @} */
+
+
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2003/04/01 14:18:44  siyan
+ * Added doxygen support
+ *
  * Revision 1.3  2002/04/11 20:39:15  ivanov
  * CVS log moved to end of the file
  *

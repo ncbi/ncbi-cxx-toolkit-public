@@ -41,6 +41,12 @@
 #include <map>
 
 
+/** @addtogroup Registry
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -257,10 +263,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/04/01 14:20:28  siyan
+ * Added doxygen support
+ *
  * Revision 1.23  2003/02/28 19:24:42  vakatov
  * Get rid of redundant "const" in the return type of GetInt/Bool/Double()
  *

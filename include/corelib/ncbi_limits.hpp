@@ -60,6 +60,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
+
+/** @addtogroup Portability
+ *
+ * @{
+ */
+
+
 #if defined(HAVE_LIMITS) && !defined(NCBI_COMPILER_WORKSHOP)
 // Ideally, we would use std::numeric_limits<> whenever available.
 // However, certain compilers leave out support for extensions such as
@@ -139,9 +146,15 @@ END_NCBI_SCOPE
 #endif // !HAVE_LIMITS  ||  NCBI_COMPILER_WORKSHOP
 
 
+/* @} */
+
+
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2003/04/01 14:18:50  siyan
+ * Added doxygen support
+ *
  * Revision 1.5  2002/11/04 21:47:56  ucko
  * Use system numeric_limits<> whenever <limits> exists, except on
  * WorkShop (which has "long long" but not numeric_limits<long long>).

@@ -37,6 +37,14 @@
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ddumpable.hpp>
 
+
+/** @addtogroup Object
+ *
+ * @{
+ */
+
+
+
 BEGIN_NCBI_SCOPE
 
 enum ENull {
@@ -751,6 +759,8 @@ private:
 };
 
 
+/* @} */
+
 
 #include <corelib/ncbiobj.inl>
 
@@ -760,6 +770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2003/04/01 14:19:58  siyan
+ * Added doxygen support
+ *
  * Revision 1.42  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp

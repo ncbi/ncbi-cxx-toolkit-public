@@ -58,6 +58,12 @@
 #endif /* _MSC_VER >= 1200 */
 
 
+/** @addtogroup stl STL Use Hints
+ *
+ * @{
+ */
+
+
 #define BEGIN_SCOPE(ns) namespace ns {
 #define END_SCOPE(ns) }
 #define USING_SCOPE(ns) using namespace ns
@@ -119,9 +125,15 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #endif
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/04/01 14:20:37  siyan
+ * Added doxygen support
+ *
  * Revision 1.29  2003/01/07 21:34:05  lavr
  * mswin_export.hpp -> mswin_export.h
  *
