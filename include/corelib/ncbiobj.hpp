@@ -119,11 +119,10 @@ private:
 
         eCounterValid     = eStateBitsValid,
 
-        eSpecialValueMask = eStateBitsValid - eCounterStep,
-        eCounterDeleted   = int((0x5b4d9f34 | ((0xada87e65 << 16) << 16))
-                                & eSpecialValueMask),
-        eCounterNew       = int((0x3423cb13 | ((0xfe234228 << 16) << 16))
-                                & eSpecialValueMask)
+        eSpecialValueMask = (unsigned int)eStateBitsValid -
+                            (unsigned int)eCounterStep,
+        eCounterDeleted   = (unsigned int)(0x5b4d9f34 & eSpecialValueMask),
+        eCounterNew       = (unsigned int)(0x3423cb13 & eSpecialValueMask)
     };
 
     // special methods for parsing object state number
@@ -695,6 +694,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2002/05/31 15:16:51  gouriano
+ * more unsigned ints in EObjectState flags
+ *
  * Revision 1.32  2002/05/30 18:32:14  gouriano
  * changed eStateBitsValid to "unsigned int" to make some compilers happy
  *
