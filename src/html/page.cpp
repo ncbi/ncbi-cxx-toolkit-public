@@ -36,6 +36,15 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+
+// The buffer size for reading from stream.
+const SIZE_TYPE kBufferSize = 4096;
+
+extern const char* kTagStart;
+extern const char* kTagEnd;
+extern const char* kTagStartEnd;
  
 
 // CHTMLBasicPage
@@ -50,7 +59,8 @@ CHTMLBasicPage::CHTMLBasicPage(void)
 
 CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
     : m_CgiApplication(application),
-      m_Style(style)
+      m_Style(style),
+      m_PrintMode(eHTML)
 {
     return;
 }
@@ -102,7 +112,6 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 }
 
 
-
 // CHTMLPage
 
 CHTMLPage::CHTMLPage(const string& title)
@@ -120,7 +129,7 @@ CHTMLPage::CHTMLPage(const string& title, const string& template_file)
 }
 
 
-CHTMLPage::CHTMLPage(const string& title, const istream& template_stream)
+CHTMLPage::CHTMLPage(const string& title, istream& template_stream)
     : m_Title(title)
 {
     Init();
@@ -129,7 +138,7 @@ CHTMLPage::CHTMLPage(const string& title, const istream& template_stream)
 
 
 CHTMLPage::CHTMLPage(const string& /*title*/,
-                     const void* template_buffer, size_t size)
+                     const void* template_buffer, SIZE_TYPE size)
 {
     Init();
     SetTemplateBuffer(template_buffer, size);
@@ -170,6 +179,89 @@ void CHTMLPage::CreateSubNodes(void)
 }
 
 
+CNCBINode* CHTMLPage::CreateTitle(void) 
+{
+    if ( GetStyle() & fNoTITLE )
+        return 0;
+
+    return new CHTMLText(m_Title);
+}
+
+
+CNCBINode* CHTMLPage::CreateView(void) 
+{
+    return 0;
+}
+
+
+void CHTMLPage::EnablePopupMenu(CHTMLPopupMenu::EType type,
+                                 const string& menu_script_url,
+                                 bool use_dynamic_menu)
+{
+    SPopupMenuInfo info(menu_script_url, use_dynamic_menu);
+    m_PopupMenus[type] = info;
+}
+
+
+static bool s_CheckUsePopupMenus(const CNCBINode* node,
+                                 CHTMLPopupMenu::EType type)
+{
+    if ( !node  ||  !node->HaveChildren() ) {
+        return false;
+    }
+    ITERATE ( CNCBINode::TChildren, i, node->Children() ) {
+        const CNCBINode* cnode = node->Node(i);
+        if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
+            const CHTMLPopupMenu* menu
+                = dynamic_cast<const CHTMLPopupMenu*>(cnode);
+            if ( menu->GetType() == type )
+                return true;
+        }
+        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode, type)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CHTMLPage::AddTagMap(const string& name, CNCBINode* node)
+{
+    CParent::AddTagMap(name, node);
+
+    for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ )
+    {
+        CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+        if ( m_PopupMenus.find(type) == m_PopupMenus.end() ) {
+            if ( s_CheckUsePopupMenus(node, type) ) {
+                EnablePopupMenu(type);
+                m_UsePopupMenus = true;
+            }
+        } else {
+            m_UsePopupMenus = true;
+        }
+    }
+}
+
+
+void CHTMLPage::AddTagMap(const string& name, BaseTagMapper* mapper)
+{
+    CParent::AddTagMap(name,mapper);
+}
+
+
+CNcbiOstream& CHTMLPage::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    if (HaveChildren()) {
+        return CParent::PrintChildren(out, mode);
+    } else {
+        m_PrintMode = mode;
+        AppendChild(CreateTemplate(&out, mode));
+        return out;
+    }
+}
+
+
 CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 {
     // Get template stream
@@ -191,21 +283,16 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                                        CNCBINode::TMode mode)
 {
     string str;
-    char   buf[4096];
+    char   buf[kBufferSize];
 
     if ( !is.good() ) {
-        // tmp diagnostics to find error //
-        if( errno > 0 ) { // #include <errno.h>
-            ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror(errno) );
-        }
-
-        ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(is.rdstate()));
         NCBI_THROW(CHTMLException, eTemplateAccess,
                    "CHTMLPage::CreateTemplate(): failed to open template");
     }
 
-    // special case: stream large templates on the first pass to reduce latency
-    if (out  &&  !m_UsePopupMenus ) {
+    // Special case: stream large templates on the first pass
+    // to reduce latency.
+    if (out  &&  !m_UsePopupMenus) {
         auto_ptr<CNCBINode> node(new CNCBINode);
 
         while (is) {
@@ -234,7 +321,7 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
         return node.release();
     }
 
-    if (m_TemplateSize) {
+    if ( m_TemplateSize ) {
         str.reserve(m_TemplateSize);
     }
     while ( is ) {
@@ -242,8 +329,9 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
         if (m_TemplateSize == 0  &&  is.gcount() > 0
             &&  str.size() == str.capacity()) {
             // We don't know how big str will need to be, so we grow it
-            // exponentially to avoid O(N^2) behavior from copying.
-            str.reserve(str.size() + max((size_t)is.gcount(), str.size() / 2));
+            // exponentially.
+            str.reserve(str.size() +
+                        max((SIZE_TYPE)is.gcount(), str.size() / 2));
         }
         str.append(buf, is.gcount());
     }
@@ -268,11 +356,14 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
             }
 
             // Insert code for load popup menu library
-            for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
+            for (int t = CHTMLPopupMenu::ePMFirst;
+                 t <= CHTMLPopupMenu::ePMLast; t++ ) 
+            {
                 CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
                 TPopupMenus::const_iterator info = m_PopupMenus.find(type);
                 if ( info != m_PopupMenus.end() ) {
-                    string script = CHTMLPopupMenu::GetCodeHead(type, info->second.m_Url);
+                    string script
+                        = CHTMLPopupMenu::GetCodeHead(type,info->second.m_Url);
                     str.insert(pos, script);
                     pos += script.length();
                 }
@@ -289,7 +380,8 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
             }
 
             // Insert code for init popup menus
-            for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
+            for (int t = CHTMLPopupMenu::ePMFirst;
+                 t <= CHTMLPopupMenu::ePMLast; t++ ) {
                 CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
                 TPopupMenus::const_iterator info = m_PopupMenus.find(type);
                 if ( info != m_PopupMenus.end() ) {
@@ -301,7 +393,6 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
         }
         while (false);
     }
-
     {{
         auto_ptr<CHTMLText> node(new CHTMLText(str));
         if (out) {
@@ -312,90 +403,161 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
 }
 
 
-CNCBINode* CHTMLPage::CreateTitle(void) 
+void CHTMLPage::SetTemplateFile(const string& template_file)
 {
-    if ( GetStyle() & fNoTITLE )
-        return 0;
-
-    return new CHTMLText(m_Title);
-}
-
-CNCBINode* CHTMLPage::CreateView(void) 
-{
-    return 0;
-}
-
-
-void CHTMLPage::EnablePopupMenu(CHTMLPopupMenu::EType type,
-                                 const string& menu_script_url,
-                                 bool use_dynamic_menu)
-{
-    SPopupMenuInfo info(menu_script_url, use_dynamic_menu);
-    m_PopupMenus[type] = info;
-}
-
-
-static bool s_CheckUsePopupMenus(const CNCBINode* node, CHTMLPopupMenu::EType type)
-{
-    if ( !node  ||  !node->HaveChildren() ) {
-        return false;
-    }
-    ITERATE ( CNCBINode::TChildren, i, node->Children() ) {
-        const CNCBINode* cnode = node->Node(i);
-        if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
-            const CHTMLPopupMenu* menu = dynamic_cast<const CHTMLPopupMenu*>(cnode);
-            if ( menu->GetType() == type )
-                return true;
-        }
-        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode, type)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-void CHTMLPage::AddTagMap(const string& name, CNCBINode* node)
-{
-    CParent::AddTagMap(name, node);
-
-    for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
-        CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
-        if ( m_PopupMenus.find(type) == m_PopupMenus.end() ) {
-            if ( s_CheckUsePopupMenus(node, type) ) {
-                EnablePopupMenu(type);
-                m_UsePopupMenus = true;
-            }
+    m_TemplateFile   = template_file;
+    m_TemplateStream = 0;
+    m_TemplateBuffer = 0;
+    {{
+        Int8 size = CFile(template_file).GetLength();
+        if (size <= 0) {
+            m_TemplateSize = 0;
+        } else if (size >= numeric_limits<size_t>::max()) {
+            NCBI_THROW(CHTMLException, eTemplateTooBig,
+                       "CHTMLPage: input template " + template_file
+                       + " too big to handle");
         } else {
-            m_UsePopupMenus = true;
+            m_TemplateSize = (SIZE_TYPE)size;
         }
+    }}
+}
+
+
+void CHTMLPage::LoadTemplateLibFile(const string& template_file)
+{
+    Int8 size = CFile(template_file).GetLength();
+
+    if (size <= 0) {
+        return;
+    } else if (size >= numeric_limits<size_t>::max()) {
+        NCBI_THROW(CHTMLException, eTemplateTooBig,
+                   "CHTMLPage: input template " + template_file
+                   + " too big to handle");
+    }
+    CNcbiIfstream is(template_file.c_str());
+    x_LoadTemplateLib(is, (SIZE_TYPE)size);
+}
+
+
+static SIZE_TYPE s_Find(const string& s, const char* target,
+                        SIZE_TYPE start = 0)
+{
+    // Return s.find(target);
+    // Some implementations of string::find call memcmp at every
+    // possible position, which is way too slow.
+    if ( start >= s.size() ) {
+        return NPOS;
+    }
+    const char* cstr = s.c_str();
+    const char* p    = strstr(cstr + start, target);
+    return p ? p - cstr : NPOS;
+}
+
+
+void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size)
+{
+    string str("\n");
+    char   buf[kBufferSize];
+
+    // Load template in memory all-in-all
+
+    if ( size ) {
+        str.reserve(size);
+    }
+    while (is) {
+        is.read(buf, sizeof(buf));
+        if (size == 0  &&  is.gcount() > 0
+            &&  str.size() == str.capacity()) {
+            // We don't know how big str will need to be, so we grow it
+            // exponentially.
+            str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
+                        str.size() / 2));
+        }
+        str.append(buf, is.gcount());
+    }
+    if ( !is.eof() ) {
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::x_LoadTemplate(): error reading template");
+    }
+
+    // Parse template
+
+    const string kTagStartBOL(string("\n") + kTagStart); 
+    SIZE_TYPE ts_size  = kTagStartBOL.length();
+    SIZE_TYPE te_size  = strlen(kTagEnd);
+    SIZE_TYPE tse_size = strlen(kTagStartEnd);
+
+    SIZE_TYPE tag_start = s_Find(str, kTagStartBOL.c_str());
+
+    while ( tag_start != NPOS ) {
+
+        // Get name
+        string name;
+        SIZE_TYPE name_start = tag_start + ts_size;
+        SIZE_TYPE name_end   = s_Find(str, kTagEnd, name_start);
+        if ( name_end == NPOS ) {
+            // Tag not closed
+            NCBI_THROW(CHTMLException, eTextUnclosedTag,
+                "opening tag \"" + name + "\" not closed, " \
+                "stream pos = " + NStr::IntToString(tag_start));
+        }
+        if (name_end != name_start) {
+            // Tag found
+            name = str.substr(name_start, name_end - name_start);
+        }
+        SIZE_TYPE tag_end = name_end + te_size;
+
+        // Find close tags for "name"
+        string close_str = kTagStartEnd;
+        if ( !name.empty() ) {
+            close_str += name + kTagEnd;
+        }
+        SIZE_TYPE last = s_Find(str, close_str.c_str(), tag_end);
+        if ( last == NPOS ) {
+            // Tag not closed
+            NCBI_THROW(CHTMLException, eTextUnclosedTag,
+                "closing tag \"" + name + "\" not closed, " \
+                "stream pos = " + NStr::IntToString(tag_end));
+        }
+        if ( name.empty() ) {
+            tag_start = s_Find(str, kTagStartBOL.c_str(), last + tse_size);
+            continue;
+        }
+
+        // Is it a multi-line template? Remove redundand line breaks.
+        SIZE_TYPE pos = str.find_first_not_of(" ", tag_end);
+        if (pos != NPOS  &&  str[pos] == '\n') {
+            tag_end = pos + 1;
+        }
+        pos = str.find_first_not_of(" ", last - 1);
+        if (pos != NPOS  &&  str[pos] == '\n') {
+            last = pos;
+        }
+
+        // Get sub-template
+        string subtemplate = str.substr(tag_end, last - tag_end);
+
+
+        // Add sub-template resolver
+        AddTagMap(name, CreateTagMapper(new CHTMLText(subtemplate)));
+
+        // Find next
+        tag_start = s_Find(str, kTagStartBOL.c_str(),
+                           last + te_size + name_end - name_start + tse_size);
+
     }
 }
 
-
-void CHTMLPage::AddTagMap(const string& name, BaseTagMapper* mapper)
-{
-    CParent::AddTagMap(name,mapper);
-}
-
-
-CNcbiOstream& CHTMLPage::PrintChildren(CNcbiOstream& out, TMode mode)
-{
-    if (HaveChildren()) {
-        return CParent::PrintChildren(out, mode);
-    } else {
-        AppendChild(CreateTemplate(&out, mode));
-        return out;
-    }
-}
-
-
+    
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/02/02 14:27:49  ivanov
+ * Added HTML template support
+ *
  * Revision 1.40  2003/12/02 14:26:35  ivanov
  * Removed obsolete functions GetCodeBodyTag[Handler|Action]().
  *

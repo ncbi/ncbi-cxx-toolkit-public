@@ -28,8 +28,6 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  The HTML page
- *
  */
 
 /// @file page.hpp 
@@ -58,6 +56,7 @@ BEGIN_NCBI_SCOPE
 
 // Forward declarations.
 class CCgiApplication;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -90,7 +89,7 @@ public:
     virtual CCgiApplication* GetApplication(void) const;
     virtual void SetApplication(CCgiApplication* App);
 
-    int GetStyle(void) const;
+    int  GetStyle(void) const;
     void SetStyle(int style);
 
     /// Resolve <@XXX@> tag.
@@ -102,7 +101,9 @@ public:
 
 protected:
     CCgiApplication* m_CgiApplication;  ///< Pointer to runtime information
-    int m_Style;
+    int     m_Style;
+    TMode   m_PrintMode;                ///< Current print mode
+                                        ///< (used by RepeatHook).
 
     /// Tag resolvers (as registered by AddTagMap).
     TTagMap m_TagMap;
@@ -133,10 +134,10 @@ public:
     /// Constructors.
     CHTMLPage(const string& title = kEmptyStr);
     CHTMLPage(const string& title, const string&  template_file);
-    CHTMLPage(const string& title, const istream& template_stream);
-    // HINT: use SetTemplateString to read the page from '\0'-terminated string
     CHTMLPage(const string& title,
               const void* template_buffer, size_t size);
+    CHTMLPage(const string& title, istream& template_stream);
+    // HINT: use SetTemplateString to read the page from '\0'-terminated string
 
     CHTMLPage(CCgiApplication* app,
               TFlags           style         = 0,
@@ -159,14 +160,23 @@ public:
 
     /// To set title or template outside(after) the constructor.
     void SetTitle(const string&  title);
-    /// Set source that contain the template.
+
+    /// Set source which contains the template.
     ///
     /// Each function assign new template source and annihilate any other.
     /// installed before.
     void SetTemplateFile  (const string&  template_file);
-    void SetTemplateStream(const istream& template_stream);
     void SetTemplateString(const char*    template_string);
     void SetTemplateBuffer(const void*    template_buffer, size_t size);
+    void SetTemplateStream(istream& template_stream);
+
+    /// Load template library.
+    ///
+    /// Automaticaly map all sub-templates from loaded library.
+    void LoadTemplateLibFile  (const string&  template_file);
+    void LoadTemplateLibString(const char*    template_string);
+    void LoadTemplateLibBuffer(const void*    template_buffer, size_t size);
+    void LoadTemplateLibStream(istream& template_stream);
 
     /// Enable using popup menus. Set URL for popup menu library.
     ///
@@ -189,6 +199,7 @@ public:
                          const string& menu_script_url= kEmptyStr,
                          bool use_dynamic_menu = false);
 
+    /// Tag mappers. 
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
 
@@ -198,19 +209,32 @@ public:
 private:
     void Init(void);
 
-    /// Create the static part of the page (here - read it from
-    /// <m_TemplateFile>). This is an internal version that gets around some
+    /// Create the static part of the page.
+    ///
+    /// This is an internal version that gets around some
     /// issues with local versus externally-supplied streams.
     CNCBINode* x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                                 TMode mode);
 
-    string   m_Title;
+    /// Load template library.
+    ///
+    /// This is an internal version that works only with streams.
+    /// @param is
+    ///   Menu type to enable
+    /// @param size
+    ///   Size of input, if known (0 otherwise).
+    /// @sa
+    ///   LoadTemplateLibFile(), LoadTemplateLibString(),
+    ///   LoadTemplateLibBuffer(), LoadTemplateLibStream()
+    void x_LoadTemplateLib(CNcbiIstream& is, size_t size = 0);
+
+private:
+    string      m_Title;          ///< Page title
 
     /// Template sources.
     string      m_TemplateFile;   ///< File name
     istream*    m_TemplateStream; ///< Stream
     const void* m_TemplateBuffer; ///< Some buffer
-
     size_t      m_TemplateSize;   ///< Size of input, if known (0 otherwise)
 
     /// Popup menu info structure.
@@ -225,6 +249,7 @@ private:
         string m_Url;             ///< Menu library URL 
         bool   m_UseDynamicMenu;  ///< Dynamic/static. Only for eSmith type.
     };
+
     /// Popup menus usage info.
     typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
     TPopupMenus m_PopupMenus;
@@ -236,22 +261,21 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
+//
 //  IMPLEMENTATION of INLINE functions
+//
 /////////////////////////////////////////////////////////////////////////////
 
 
-
-///////////////////////////////////////////////////////
+//
 //  CHTMLBasicPage::
 //
-
 
 inline CCgiApplication* CHTMLBasicPage::GetApplication(void) const
 {
     return m_CgiApplication;
 }
+
 
 inline int CHTMLBasicPage::GetStyle(void) const
 {
@@ -260,47 +284,21 @@ inline int CHTMLBasicPage::GetStyle(void) const
 
 
 
-///////////////////////////////////////////////////////
+//
 //  CHTMLPage::
 //
-
 
 inline CHTMLBasicPage* CHTMLPage::New(void)
 {
     return new CHTMLPage;
 }
 
+
 inline void CHTMLPage::SetTitle(const string& title)
 {
     m_Title = title;
 }
 
-inline void CHTMLPage::SetTemplateFile(const string& template_file)
-{
-    m_TemplateFile   = template_file;
-    m_TemplateStream = 0;
-    m_TemplateBuffer = 0;
-    {{
-        Int8 size = CFile(template_file).GetLength();
-        if (size <= 0) {
-            m_TemplateSize = 0;
-        } else if (size >= numeric_limits<size_t>::max()) {
-            NCBI_THROW(CHTMLException, eTemplateTooBig,
-                       "CHTMLPage: input template " + template_file
-                       + " too big to handle");
-        } else {
-            m_TemplateSize = (size_t)size;
-        }
-    }}
-}
-
-inline void CHTMLPage::SetTemplateStream(const istream& template_stream)
-{
-    m_TemplateFile   = kEmptyStr;
-    m_TemplateStream = const_cast<istream*>(&template_stream);
-    m_TemplateBuffer = 0;
-    m_TemplateSize   = 0;
-}
 
 inline void CHTMLPage::SetTemplateString(const char* template_string)
 {
@@ -309,6 +307,7 @@ inline void CHTMLPage::SetTemplateString(const char* template_string)
     m_TemplateBuffer = template_string;
     m_TemplateSize   = strlen(template_string);
 }
+
 
 inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer,
                                          size_t size)
@@ -320,12 +319,46 @@ inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer,
 }
 
 
+inline void CHTMLPage::SetTemplateStream(istream& template_stream)
+{
+    m_TemplateFile   = kEmptyStr;
+    m_TemplateStream = &template_stream;
+    m_TemplateBuffer = 0;
+    m_TemplateSize   = 0;
+}
+
+
+inline void CHTMLPage::LoadTemplateLibString(const char* template_string)
+{
+    size_t size = strlen(template_string);
+    CNcbiIstrstream is(template_string, size);
+    x_LoadTemplateLib(is, size);
+}
+
+
+inline void CHTMLPage::LoadTemplateLibBuffer(const void* template_buffer,
+                                             size_t size)
+{
+    CNcbiIstrstream is((char*)template_buffer, size);
+    x_LoadTemplateLib(is, size);
+}
+
+
+inline void CHTMLPage::LoadTemplateLibStream(istream& template_stream)
+{
+    x_LoadTemplateLib(template_stream);
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/02/02 14:27:05  ivanov
+ * Added HTML template support
+ *
  * Revision 1.33  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *
