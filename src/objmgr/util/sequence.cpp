@@ -715,8 +715,15 @@ ECompare s_Compare
         return eNoOverlap;
     }
 
-    // If point in interval, then interval contains point
     TSeqPos pnt = point.GetPoint();
+
+    // If the interval is of length 1 and contains the point, then they are
+    // identical
+    if (interval.GetFrom() == pnt  &&  interval.GetTo() == pnt ) {
+        return eSame;
+    }
+
+    // If point in interval, then interval contains point
     if (interval.GetFrom() <= pnt  &&  interval.GetTo() >= pnt ) {
         return eContains;
     }
@@ -4057,6 +4064,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.75  2004/03/01 18:28:18  dicuccio
+* Changed sequence::Compare() such that a seq-interval of length 1 and a
+* corresponding seq-point compare as the same
+*
 * Revision 1.74  2004/03/01 18:24:22  shomrat
 * Removed branching in the main cdregion translation loop; Added alternative start flag
 *
