@@ -53,7 +53,7 @@ Detailed Contents:
 #include <assert.h>
 
 /* which toolkit are we using? */
-#include "ncbi_config.h"
+#include "blast_toolkit.h"
 
 #include <algo/blast/core/ncbi_math.h>
 
