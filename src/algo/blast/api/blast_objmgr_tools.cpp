@@ -842,6 +842,11 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
         if (!hsp_list)
             continue;
 
+        // Sort HSPs with e-values as first priority and scores as 
+        // tie-breakers, since that is the order we want to see them in 
+        // in Seq-aligns.
+        Blast_HSPListSortByEvalue(hsp_list);
+
         x_GetSequenceLengthAndId(seqinfo_src, hsp_list->oid,
                                  subject_id, &subj_length);
 
@@ -928,6 +933,11 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
         }
 
         if (hsp_list) {
+            // Sort HSPs with e-values as first priority and scores as 
+            // tie-breakers, since that is the order we want to see them in 
+            // in Seq-aligns.
+            Blast_HSPListSortByEvalue(hsp_list);
+
             CRef<CSeq_align> hit_align;
             CConstRef<CSeq_id> 
                 query_id(&sequence::GetId(*query[index].seqloc, 
@@ -966,6 +976,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/10/19 16:09:39  dondosha
+* Sort HSPs by e-value before converting results to Seq-align, since they are sorted by score coming in.
+*
 * Revision 1.22  2004/10/06 18:42:08  dondosha
 * Cosmetic fix for SunOS compiler warning
 *
