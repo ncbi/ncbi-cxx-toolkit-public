@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.4  2003/04/03 22:57:50  dondosha
+ * Uninitialized variable fix
+ *
  * Revision 1.3  2003/04/02 17:20:41  dondosha
  * Added calculation of ungapped cutoff score in correct place
  *
@@ -287,7 +290,7 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    BlastQueryInfoPtr query_info, BlastInitialWordParametersPtr *parameters)
 {
    Int4 context = query_info->first_context;
-   Int4 cutoff_score;
+   Int4 cutoff_score = 0;
 
    if (!word_options || !hit_options || !sbp || !sbp->kbp_std[context])
       return 8;
