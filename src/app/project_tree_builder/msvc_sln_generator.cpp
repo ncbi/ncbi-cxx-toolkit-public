@@ -34,6 +34,7 @@
 #include <corelib/ncbistr.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/msvc_makefile.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -320,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/10 18:20:16  gorelenk
+ * Changed LOG_POST messages.
+ *
  * Revision 1.7  2004/02/05 00:00:48  gorelenk
  * Changed log messages generation.
  *
