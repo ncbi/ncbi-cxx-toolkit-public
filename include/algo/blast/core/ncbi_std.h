@@ -126,9 +126,19 @@ Int8 FileLength(char* fileName);
 #endif /* NCBI_C_TOOLKIT */
 
 /****************************** Functions from ncbimath ***********************/
+#define Nint	Nlm_Nint
+#define Powi	Nlm_Powi
+#define Expm1	Nlm_Expm1
+#define Log1p	Nlm_Log1p
+#define PolyGamma	Nlm_PolyGamma
+#define Factorial	Nlm_Factorial
+#define LnGamma	Nlm_LnGamma
+#define RombergIntegrate	Nlm_RombergIntegrate
+#define Gcd	Nlm_Gcd
+#define LnGammaInt Nlm_LnGammaInt
+
 /* Round a floating point number to the nearest integer */
 long Nlm_Nint(register double x);
-#define Nint Nlm_Nint
 
 /*
 integer power function
@@ -136,20 +146,20 @@ integer power function
 Original submission by John Spouge, 6/25/90
 Added to shared library by WRG
 */
-double Powi(double x, Int4 n);
+double Nlm_Powi(double x, Int4 n);
 
 /*
     Nlm_Expm1(x)
     Return values accurate to approx. 16 digits for the quantity exp(x)-1
     for all x.
 */
-double Expm1(register double	x);
+double Nlm_Expm1(register double	x);
 
 /*
     Nlm_Log1p(x)
     Return accurate values for the quantity log(x+1) for all x > -1.
 */
-double Log1p(register double x);
+double Nlm_Log1p(register double x);
 
 /* Nth order derivative of log(gamma) */
 double Nlm_PolyGamma (double x, Int4 order);
@@ -157,9 +167,7 @@ double Nlm_Factorial(Int4 n);  /* Factorial */
 double Nlm_LnGamma(double x); /* log(gamma(x)) */
 
 /* Nlm_LnGammaInt(n) -- return log(Gamma(n)) for integral n */
-double LnGammaInt(Int4 n);
-
-double LnFactorial (double x); /* Logarithm of the factorial Fn */
+double Nlm_LnGammaInt(Int4 n);
 
 /*
 	Romberg numerical integrator
@@ -175,7 +183,7 @@ double LnFactorial (double x); /* Logarithm of the factorial Fn */
 #define F(x)  ((*f)((x), fargs))
 #define ROMBERG_ITMAX 20
 
-double RombergIntegrate(
+double Nlm_RombergIntegrate(
         double (*f) (double,void*), void* fargs, double p, 
         double q, double eps, Int4 epsit, Int4 itmin);
 
@@ -184,7 +192,7 @@ Nlm_Gcd(a, b)
 Return the greatest common divisor of a and b.
 Adapted 8-15-90 by WRG from code by S. Altschul.
 */
-long Gcd(register long a, register long b);
+long Nlm_Gcd(register long a, register long b);
 
 /******************************************************************************/
 
