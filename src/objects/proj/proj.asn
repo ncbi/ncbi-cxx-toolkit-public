@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --****************************************************************
 --
 --  NCBI Project Definition Module
@@ -27,7 +27,7 @@ Project-item ::= CHOICE {
     protuid SET OF INTEGER ,
     nucuid SET OF INTEGER ,
     sequid SET OF INTEGER ,
-    genomeid SET OF INTEGER ,
+    genomeuid SET OF INTEGER ,
     structuid SET OF INTEGER ,
     pmid SET OF PubMedId ,
     protid SET OF Seq-id ,
