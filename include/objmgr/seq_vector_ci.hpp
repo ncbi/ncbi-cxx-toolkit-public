@@ -33,10 +33,19 @@
 *
 */
 
-#include <objmgr/seq_vector.hpp>
+
+#include <objmgr/seq_map.hpp>
+#include <objects/seq/Seq_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+static const TSeqPos kCacheSize = 1024;
+
+
+class CSeqVector;
+
 
 class NCBI_XOBJMGR_EXPORT CSeqVector_CI
 {
@@ -47,7 +56,7 @@ public:
     CSeqVector_CI(const CSeqVector_CI& sv_it);
     CSeqVector_CI& operator=(const CSeqVector_CI& sv_it);
 
-    typedef CSeqVector::TResidue     TResidue;
+    typedef unsigned char TResidue;
 
     // Fill the buffer string with the sequence data for the interval
     // [start, stop).
@@ -63,21 +72,24 @@ public:
     operator bool(void) const;
 
 private:
+    void x_InitializeCache(void);
+    void x_ClearCache(void);
+    void x_ResizeCache(size_t size);
+    void x_SwapCache(void);
+    void x_UpdateCache(TSeqPos pos);
+    void x_FillCache(TSeqPos start, TSeqPos count);
+
     void x_NextCacheSeg(void);
     void x_PrevCacheSeg(void);
-    void x_UpdateCache(TSeqPos pos);
-    void x_FillCache(TSeqPos count);
+
+    TSeqPos x_CacheEnd(void) const;
+    TSeqPos x_BackupEnd(void) const;
 
     friend class CSeqVector;
 
-    typedef vector<char> TCacheData;
-    typedef TCacheData::iterator TCache_I;
-    typedef CSeqVector::TCoding TCoding;
-
-    void x_ResizeCache(size_t size);
-    void x_UpdateCachePtr(void);
-    TSeqPos x_CacheEnd(void) const;
-    TSeqPos x_BackupEnd(void) const;
+    typedef char* TCacheData;
+    typedef char* TCache_I;
+    typedef CSeq_data::E_Choice   TCoding;
 
     CConstRef<CSeqVector>   m_Vector;
     TCoding                 m_Coding;
@@ -85,10 +97,12 @@ private:
     // Current cache
     TSeqPos                 m_CachePos;
     TCacheData              m_CacheData;
+    TCache_I                m_CacheEnd;
     TCache_I                m_Cache;
     // Backup cache
     TSeqPos                 m_BackupPos;
     TCacheData              m_BackupData;
+    TCache_I                m_BackupEnd;
 };
 
 
@@ -98,57 +112,12 @@ private:
 //
 /////////////////////////////////////////////////////////////////////
 
-inline
-CSeqVector_CI::CSeqVector_CI(void)
-    : m_Vector(0),
-      m_Coding(CSeq_data::e_not_set),
-      m_CachePos(kInvalidSeqPos),
-      m_BackupPos(kInvalidSeqPos)
-{
-    m_Cache = m_CacheData.end();
-    return;
-}
-
-inline
-CSeqVector_CI::~CSeqVector_CI(void)
-{
-    return;
-}
-
-inline
-CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
-    : m_Vector(sv_it.m_Vector),
-      m_Coding(sv_it.m_Coding),
-      m_Seg(sv_it.m_Seg),
-      m_CachePos(sv_it.m_CachePos),
-      m_CacheData(sv_it.m_CacheData),
-      m_BackupPos(sv_it.m_BackupPos),
-      m_BackupData(sv_it.m_BackupData)
-{
-    m_Cache = m_CacheData.begin() + (&*sv_it.m_Cache - &*sv_it.m_CacheData.begin());
-}
-
-inline
-CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
-{
-    if (this == &sv_it)
-        return *this;
-    m_Vector = sv_it.m_Vector;
-    m_Coding = sv_it.m_Coding;
-    m_Seg = sv_it.m_Seg;
-    m_CachePos = sv_it.m_CachePos;
-    m_CacheData = sv_it.m_CacheData;
-    m_BackupPos = sv_it.m_BackupPos;
-    m_BackupData = sv_it.m_BackupData;
-    m_Cache = m_CacheData.begin() + (&*sv_it.m_Cache - &*sv_it.m_CacheData.begin());
-    return *this;
-}
 
 inline
 CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
-    _ASSERT(m_Cache < m_CacheData.end());
-    if (++m_Cache >= m_CacheData.end()) {
+    _ASSERT(m_Cache != m_CacheEnd);
+    if (++m_Cache >= m_CacheEnd) {
             x_NextCacheSeg();
     }
     return *this;
@@ -157,8 +126,8 @@ CSeqVector_CI& CSeqVector_CI::operator++(void)
 inline
 CSeqVector_CI& CSeqVector_CI::operator--(void)
 {
-    _ASSERT(bool(m_Vector)  &&  m_Cache >= m_CacheData.begin());
-    if (m_Cache == m_CacheData.begin()) {
+    _ASSERT(m_Cache >= m_CacheData);
+    if (m_Cache == m_CacheData) {
             x_PrevCacheSeg();
     }
     else {
@@ -170,32 +139,61 @@ CSeqVector_CI& CSeqVector_CI::operator--(void)
 inline
 TSeqPos CSeqVector_CI::GetPos(void) const
 {
-    return (&*m_Cache - &*m_CacheData.begin()) + m_CachePos;
+    return (m_Cache - m_CacheData) + m_CachePos;
 }
 
 inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
-    _ASSERT(m_Cache < m_CacheData.end());
+    _ASSERT(m_Cache < m_CacheEnd);
     return *m_Cache;
 }
 
 inline
 CSeqVector_CI::operator bool(void) const
 {
-    return m_Cache < m_CacheData.end();
+    return m_Cache < m_CacheEnd;
 }
 
 inline
 TSeqPos CSeqVector_CI::x_CacheEnd(void) const
 {
-    return m_CachePos + m_CacheData.size();
+    return m_CachePos + (m_CacheEnd - m_CacheData);
 }
 
 inline
 TSeqPos CSeqVector_CI::x_BackupEnd(void) const
 {
-    return m_BackupPos + m_BackupData.size();
+    return m_BackupPos + (m_BackupEnd - m_BackupData);
+}
+
+inline
+void CSeqVector_CI::x_InitializeCache(void)
+{
+    m_CachePos = kInvalidSeqPos;
+    m_CacheData = new char[kCacheSize];
+    m_BackupPos = kInvalidSeqPos;
+    m_BackupData = new char[kCacheSize];
+    m_CacheEnd = m_CacheData;
+    m_BackupEnd = m_BackupData;
+    m_Cache = m_CacheEnd;
+}
+
+inline
+void CSeqVector_CI::x_ClearCache(void)
+{
+    m_CachePos = kInvalidSeqPos;
+    m_CacheEnd = m_CacheData;
+    m_Cache = m_CacheEnd;
+}
+
+inline
+void CSeqVector_CI::x_SwapCache(void)
+{
+    swap(m_CacheData, m_BackupData);
+    swap(m_CacheEnd, m_BackupEnd);
+    swap(m_CachePos, m_BackupPos);
+    m_Cache = m_CacheData;
 }
 
 
@@ -205,6 +203,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/06/24 19:46:41  grichenk
+* Changed cache from vector<char> to char*. Made
+* CSeqVector::operator[] inline.
+*
 * Revision 1.8  2003/06/17 22:03:37  dicuccio
 * Added missing export specifier
 *

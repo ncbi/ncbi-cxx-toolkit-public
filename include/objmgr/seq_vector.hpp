@@ -35,6 +35,7 @@
 
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <vector>
 
@@ -58,8 +59,8 @@ struct NCBI_XOBJMGR_EXPORT SSeqData {
 class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject
 {
 public:
-    typedef unsigned char         TResidue;
-    typedef CSeq_data::E_Choice   TCoding;
+    typedef CSeqVector_CI::TResidue TResidue;
+    typedef CSeqVector_CI::TCoding  TCoding;
     typedef CBioseq_Handle::EVectorCoding EVectorCoding;
 
     CSeqVector(void);
@@ -118,6 +119,7 @@ private:
     void x_InitSequenceType(void);
     TResidue x_GetGapChar(TCoding coding) const;
     const CSeqMap& x_GetSeqMap(void) const;
+    CSeqVector_CI& x_GetIterator(void) const;
 
     static const char* sx_GetConvertTable(TCoding src, TCoding dst);
     static const char* sx_GetComplementTable(TCoding coding);
@@ -140,6 +142,23 @@ private:
 
 
 inline
+CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
+{
+    CSeqVector_CI& it = x_GetIterator();
+    TSeqPos old_pos = it.GetPos();
+    if (pos == old_pos+1) {
+        ++it;
+    }
+    else if (pos == old_pos-1) {
+        --it;
+    }
+    else if (pos != old_pos) {
+        it.SetPos(pos);
+    }
+    return *it;
+}
+
+inline
 CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
     TCoding coding = m_Coding;
@@ -158,6 +177,15 @@ const CSeqMap& CSeqVector::x_GetSeqMap(void) const
     return *m_SeqMap;
 }
 
+inline
+CSeqVector_CI& CSeqVector::x_GetIterator(void) const
+{
+    if ( !m_Iterator.get() ) {
+        m_Iterator.reset(new CSeqVector_CI(*this, 0));
+    }
+    return *m_Iterator;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -165,6 +193,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/06/24 19:46:41  grichenk
+* Changed cache from vector<char> to char*. Made
+* CSeqVector::operator[] inline.
+*
 * Revision 1.38  2003/06/13 19:40:14  grichenk
 * Removed _ASSERT() from x_GetSeqMap()
 *

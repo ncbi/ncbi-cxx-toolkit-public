@@ -52,7 +52,8 @@ BEGIN_SCOPE(objects)
 
 
 CSeqVector::CSeqVector(void)
-    : m_Scope(0)
+    : m_Scope(0),
+      m_Iterator(0)
 {
 }
 
@@ -62,7 +63,8 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
       m_Scope(vec.m_Scope),
       m_Coding(vec.m_Coding),
       m_Strand(vec.m_Strand),
-      m_SequenceType(vec.m_SequenceType)
+      m_SequenceType(vec.m_SequenceType),
+      m_Iterator(0)
 {
 }
 
@@ -73,7 +75,8 @@ CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
-      m_SequenceType(eType_not_set)
+      m_SequenceType(eType_not_set),
+      m_Iterator(0)
 {
     SetCoding(coding);
 }
@@ -85,7 +88,8 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
-      m_SequenceType(eType_not_set)
+      m_SequenceType(eType_not_set),
+      m_Iterator(0)
 {
     SetCoding(coding);
 }
@@ -93,27 +97,6 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
 
 CSeqVector::~CSeqVector(void)
 {
-}
-
-
-CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
-{
-    if ( !m_Iterator.get() ) {
-        m_Iterator.reset(new CSeqVector_CI(*this, pos));
-    }
-    else {
-        TSeqPos old_pos = m_Iterator->GetPos();
-        if (old_pos+1 == pos) {
-            ++(*m_Iterator);
-        }
-        else if (old_pos-1 == pos) {
-            --(*m_Iterator);
-        }
-        else if (old_pos != pos) {
-            m_Iterator->SetPos(pos);
-        }
-    }
-    return **m_Iterator;
 }
 
 
@@ -384,10 +367,7 @@ CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
 
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
-    if ( !m_Iterator.get() ) {
-        m_Iterator.reset(new CSeqVector_CI(*this, start));
-    }
-    m_Iterator->GetSeqData(start, stop, buffer);
+    x_GetIterator().GetSeqData(start, stop, buffer);
 }
 
 
@@ -397,6 +377,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/06/24 19:46:43  grichenk
+* Changed cache from vector<char> to char*. Made
+* CSeqVector::operator[] inline.
+*
 * Revision 1.56  2003/06/17 20:35:39  grichenk
 * CSeqVector_CI-related improvements
 *
