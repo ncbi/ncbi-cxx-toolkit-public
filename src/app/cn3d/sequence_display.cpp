@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/22 19:09:31  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.18  2001/05/14 16:04:31  thiessen
 * fix minor row reordering bug
 *
@@ -373,10 +376,8 @@ void SequenceDisplay::MouseOver(int column, int row) const
                     if (index >= 0) {
                         wxString title;
                         wxColour color;
-                        if (GetRowTitle(row, &title, &color)) {
-                            idLoc.Printf(", loc %i", index + 1);    // show one-based numbering
-                            idLoc = title + idLoc;
-                        }
+                        if (GetRowTitle(row, &title, &color))
+                            idLoc.Printf("%s, loc %i", title.c_str(), index + 1); // show one-based numbering
                     }
                 }
 
@@ -387,7 +388,7 @@ void SequenceDisplay::MouseOver(int column, int row) const
                         wxString n = residue->namePDB.c_str();
                         n = n.Strip(wxString::both);
                         if (n.size() > 0)
-                            idLoc.Printf("%s (PDB %s)", idLoc, n.c_str());
+                            idLoc = idLoc + " (PDB " + n + ")";
                     }
                 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/05/22 19:09:31  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.34  2001/05/17 18:34:25  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -1423,24 +1426,33 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 }
 
 #if defined(__WXMSW__)
-
 bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
 {
-    HDC hdc = wglGetCurrentDC();
     fontHandle = newFontHandle;
+    HDC hdc = wglGetCurrentDC();
     HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(fontHandle));
-    BOOL okay = wglUseFontBitmaps(hdc, 0, 255, FONT_BASE);
+    BOOL okay = wglUseFontBitmaps(hdc, 0, 256, FONT_BASE);
     SelectObject(hdc, currentFont);
     if (!okay) {
         ERR_POST(Error << "OpenGLRenderer::SetFont_Windows() - wglUseFontBitmaps() failed");
         return false;
     }
-    GlobalMessenger()->PostRedrawAllStructures(); // text position dependent on font details
-	return true;
+    return true;
 }
+
+#elif defined(__WXGTK__)
+bool OpenGLRenderer::SetFont_GTK(GdkFont *newFont)
+{
+    font = newFont;
+    glXUseXFont(gdk_font_id(font), 0, 256, FONT_BASE);
+    return true;
+}
+
+#endif
 
 bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *height)
 {
+#if defined(__WXMSW__)
     HDC hdc = wglGetCurrentDC();
     HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(fontHandle));
     SIZE textSize;
@@ -1449,23 +1461,29 @@ bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *heigh
     *width = textSize.cx;
     *height = 0.6 * textSize.cy; // windows' text heights seem a little off..
     return (okay != 0);
-}
 
+#elif defined(__WXGTK__)
+    gint lbearing, rbearing, w = 0, ascent = 0, descent = 0;
+    gdk_string_extents(font, text.c_str(), &lbearing, &rbearing, &w, &ascent, &descent);
+    *width = w;
+    *height = ascent + descent;
+    return (*width > 0 && *height > 0);
+    
 #else
-
-bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *height)
-{
-    ERR_POST(Error << "OpenGLRenderer::MeasureText undefined on this platform!");
+    ERR_POST(Error << "OpenGLRenderer::MeasureText() undefined on this platform!");
     return false;
-}
-
 #endif
+}
 
 void OpenGLRenderer::Label(const std::string& text, const Vector& center, const Vector& color)
 {
     int width, height;
 
-    if (text.empty() || !MeasureText(text, &width, &height)) return;
+    if (text.empty()) return;
+    if (!MeasureText(text, &width, &height)) {
+        ERR_POST(Error << "OpenGLRenderer::MeasureText() failed");
+        return;
+    }
 
     SetColor(GL_AMBIENT, color[0], color[1], color[2]);
     glListBase(FONT_BASE);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/22 19:09:32  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.12  2001/05/17 18:34:26  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -77,6 +80,7 @@
 #endif
 
 #include <wx/wx.h>
+#include <wx/stattext.h>
 
 #include "cn3d/update_viewer_window.hpp"
 #include "cn3d/update_viewer.hpp"
@@ -244,41 +248,35 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
 
     box = new wxStaticBox(this, -1, "Available Threader Options");
     box->SetBackgroundColour(*wxLIGHT_GREY);
-    wxStaticText
-        *tWeight = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
-        *tLoops = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
-        *tStarts = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
-        *tResults = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
-        *tMerge = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
-        *tFreeze = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+    
+    wxStaticText *tWeight = new wxStaticText(box, -1, "Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
+    wxStaticText *tLoops = new wxStaticText(box, -1, "Loop length multiplier? [0.1 .. 10]", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
+    wxStaticText *tStarts = new wxStaticText(box, -1, "Number of random starts? [1 .. 100]", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
+    wxStaticText *tResults = new wxStaticText(box, -1, "Number of result alignments per row? [1 .. 20]", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
+    wxStaticText *tMerge = new wxStaticText(box, -1, "Merge results after each row is threaded?", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
+    wxStaticText *tFreeze = new wxStaticText(box, -1, "Freeze isolated blocks?", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
 
-    tWeight->SetLabel("Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only");
     if (tWeight->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tWeight->GetBestSize().GetWidth();
     fpWeight = new FloatingPointSpinCtrl(box, 0.0, 1.0, 0.05, 0.5);
     boxClientHeight += fpWeight->GetBestSize().GetHeight() + margin;
 
-    tLoops->SetLabel("Loop length multiplier? [0.1 .. 10]");
     if (tLoops->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tLoops->GetBestSize().GetWidth();
     fpLoops = new FloatingPointSpinCtrl(box, 0.1, 10.0, 0.25, 1.5);
     boxClientHeight += fpLoops->GetBestSize().GetHeight() + margin;
 
-    tStarts->SetLabel("Number of random starts? [1 .. 100]");
     if (tStarts->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tStarts->GetBestSize().GetWidth();
     iStarts = new IntegerSpinCtrl(box, 1, 100, 5, 1);
     boxClientHeight += iStarts->GetBestSize().GetHeight() + margin;
 
-    tResults->SetLabel("Number of result alignments per row? [1 .. 20]");
     if (tResults->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tResults->GetBestSize().GetWidth();
     iResults = new IntegerSpinCtrl(box, 1, 20, 1, 1);
     boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
 
-    tMerge->SetLabel("Merge results after each row is threaded?");
     if (tMerge->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tMerge->GetBestSize().GetWidth();
     bMerge = new wxCheckBox(box, -1, wxEmptyString);
     bMerge->SetValue(true);
     boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
 
-    tFreeze->SetLabel("Freeze isolated blocks?");
     if (tFreeze->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tFreeze->GetBestSize().GetWidth();
     bFreeze = new wxCheckBox(box, -1, wxEmptyString);
     bFreeze->SetValue(true);

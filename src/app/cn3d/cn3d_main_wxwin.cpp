@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/05/22 19:09:30  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.42  2001/05/21 22:06:51  thiessen
 * fix initial glcanvas size bug
 *
@@ -813,21 +816,31 @@ Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
     structureSet(NULL)
 {
+#if defined(__WXGTK__)
     // must create window and establish context before creating OpenGLRenderer
     parent->Show(true);
+    SetCurrent();
+#endif
+    
     renderer = new OpenGLRenderer();
 
+#if defined(__WXGTK__)
     // set initial size to fill parent window's client area
     int width, height;
-    GetClientSize(&width, &height);
+    parent->GetClientSize(&width, &height);
     renderer->SetSize(width, height);
+#endif
 
     // set up font used by OpenGL
+#if defined(__WXMSW__)
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
-
-#ifdef __WXMSW__
     renderer->SetFont_Windows(font->GetHFONT());
+
+#elif defined(__WXGTK__)
+    font = new wxFont(16, wxSWISS, wxNORMAL, wxNORMAL);
+    renderer->SetFont_GTK(font->GetInternalFont());
 #endif
+
 }
 
 Cn3DGLCanvas::~Cn3DGLCanvas(void)

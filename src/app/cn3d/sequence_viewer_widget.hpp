@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/22 19:09:10  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.15  2001/05/03 14:38:32  thiessen
 * put ViewableAlignment in its own (non-wx) header
 *
@@ -178,6 +181,8 @@ public:
     void TitleAreaOff(void);
     void TitleAreaToggle(void);
 
+    void Refresh(bool eraseBackground = TRUE, const wxRect *rect = NULL);
+    
 private:
     SequenceViewerWidget_SequenceArea *sequenceArea;
     SequenceViewerWidget_TitleArea *titleArea;

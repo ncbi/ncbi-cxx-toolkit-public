@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/05/22 19:09:09  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.26  2001/05/17 18:34:00  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -124,6 +127,10 @@
 #include <vector>
 #include <string>
 
+#ifdef __WXGTK__
+#include <gdk/gdk.h>    // needed for GdkFont
+#endif
+
 #include "cn3d/vector_math.hpp"
 
 
@@ -217,15 +224,24 @@ public:
     void SetMediumQuality(void);
     void SetHighQuality(void);
 
-#ifdef __WXMSW__
+    // set font used by OpenGL (should be part of wxGLCanvas...)
+#if defined(__WXMSW__)
     // must be same as return type (WXHFONT) of wxFont::GetHFONT()
     bool SetFont_Windows(unsigned long newFontHandle);
+    
+#elif defined(__WXGTK__)
+    bool SetFont_GTK(GdkFont *newFont);
+
 #endif
 
 private:
-#ifdef __WXMSW__
+    // save platform-specific font info
+#if defined(__WXMSW__)
     unsigned long fontHandle;
+#elif defined(__WXGTK__)
+    GdkFont *font;
 #endif
+
     bool MeasureText(const std::string& text, int *width, int *height);
 
     StructureSet *structureSet;

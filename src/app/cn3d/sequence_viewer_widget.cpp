@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/22 19:09:31  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
 * Revision 1.21  2001/05/03 14:39:14  thiessen
 * put ViewableAlignment in its own (non-wx) header
 *
@@ -333,6 +336,7 @@ void SequenceViewerWidget_SequenceArea::SetRubberbandColor(const wxColor& rubber
 
 void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 {
+//    ERR_POST(Info << "entered SequenceViewerWidget_SequenceArea::OnPaint()");
     wxMemoryDC memDC;
     bitmap->SetWidth(GetSize().GetWidth());
     bitmap->SetHeight(GetSize().GetHeight());
@@ -1071,3 +1075,9 @@ void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
     sequenceArea->GetViewStart(vsX, vsY);
 }
 
+void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
+{
+//    ERR_POST(Info << "called SequenceViewerWidget::Refresh()");
+    sequenceArea->Refresh(eraseBackground, rect);
+    titleArea->Refresh(eraseBackground, rect);
+}
