@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.92  2004/03/22 20:11:37  dondosha
+ * Do not allow small gaps cutoff to be less than gap trigger
+ *
  * Revision 1.91  2004/03/17 15:19:10  camacho
  * Add missing casts
  *
@@ -1400,7 +1403,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
          cutoff are saved until the sum statistics is applied to potentially
          link them with other HSPs and improve their e-values. 
          However this does not apply to the ungapped search! */
-      if (params->do_sum_stats && gapped_calculation) {
+      if (params->do_sum_stats) {
          params->cutoff_score = 
             MIN(params->cutoff_score, (Int4) ext_params->gap_trigger);
       }
@@ -1408,7 +1411,8 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
       params->cutoff_score = 0;
    }
    
-   params->cutoff_small_gap = params->cutoff_score;
+   params->cutoff_small_gap = 
+      MIN(params->cutoff_score, (Int4) ext_params->gap_trigger);
       
    return 0;
 }
@@ -1583,7 +1587,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
       x_variable = y_variable*(gap_size*gap_size);
       x_variable /= (gap_prob + MY_EPS);
       hit_params->cutoff_small_gap = 
-         (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
+         MAX(hit_params->cutoff_small_gap, 
+             (Int4) floor((log(x_variable)/kbp->Lambda)) + 1);
+
       hit_params->ignore_small_gaps = FALSE;
    } else {
       hit_params->cutoff_big_gap = 
