@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/04/13 14:09:34  grichenk
+ * Next debug version, still not working
+ *
  * Revision 1.1  2001/04/10 22:39:04  vakatov
  * Initial revision.
  * Compiles and links, but apparently is not working yet.
@@ -52,6 +55,7 @@
 #include <serial/objostrasnb.hpp>
 
 #include <objects/id1/ID1server_request.hpp>
+#include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/id1/ID1server_back.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -147,10 +151,12 @@ int CId1FetchApp::Run(void)
     // Compose request to ID1 server
     CID1server_request id1_request;
     int gi = args["gi"].AsInteger();
-    id1_request.SetGetgi().SetGi() = gi;
+    //    id1_request.SetGetsefromgi().SetGi() = gi;
+    id1_request.SetGetseqidsfromgi() = gi;
 
     // Open connection to ID1 server
-    CConn_ServiceStream id1_server("ID1");
+    STimeout tmout;  tmout.sec = 999999;  tmout.usec = 0;  
+    CConn_ServiceStream     id1_server("ID1", fSERV_Any, 0, &tmout);
     CObjectOStreamAsnBinary id1_server_output(id1_server);
 
     // Send request to the server
@@ -168,13 +174,16 @@ int CId1FetchApp::Run(void)
     }
 
     // Read server response in ASN.1 binary format
-    CID1server_back id1_response;
     CObjectIStreamAsnBinary id1_server_input(id1_server);
+
+    CID1server_back id1_response;
     id1_server_input >> id1_response;
-    CSeq_entry& seq_entry = id1_response.GetGotseqentry();
+
+    //// CSeq_entry& seq_entry = id1_response.GetGotseqentry();
+    list< CRef< CSeq_id > >& seq_entry = id1_response.GetIds();
 
 
-    // Dump server response in the specified format
+    //// Dump server response in the specified format
     ESerialDataFormat format;
     if        (fmt == "asn") {
         format = eSerial_AsnText;
@@ -185,9 +194,14 @@ int CId1FetchApp::Run(void)
     }
 
     auto_ptr<CObjectOStream> id1_client_output
-        (CObjectOStream::Open(format, datafile, eSerial_StdWhenAny));
+        (CObjectOStream::Open(format, datafile));
     
-    *id1_client_output << seq_entry;
+    //// *id1_client_output << seq_entry;
+    *id1_client_output << **seq_entry.begin();
+
+    if (fmt == "asn"  ||  fmt == "xml") {
+        datafile << NcbiEndl;
+    }
 
     return 0;  // Done
 }
