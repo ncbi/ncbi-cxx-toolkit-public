@@ -126,6 +126,11 @@ query_offset_compare_hsps(const void* v1, const void* v2)
 	if (h1->query.offset > h2->query.offset)
 		return 1;
 
+	if (h1->subject.offset < h2->subject.offset)
+		return -1;
+	if (h1->subject.offset > h2->subject.offset)
+		return 1;
+
 	return 0;
 }
 
@@ -153,6 +158,11 @@ query_end_compare_hsps(const void* v1, const void* v2)
 	if (h1->query.end < h2->query.end)
 		return -1;
 	if (h1->query.end > h2->query.end)
+		return 1;
+
+	if (h1->subject.end < h2->subject.end)
+		return -1;
+	if (h1->subject.end > h2->subject.end)
 		return 1;
 
 	return 0;
@@ -198,7 +208,7 @@ CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
    Int4 increment = 1;
    Int4 retval = 0;
 
-   if (*hsp_array == NULL || hsp_count == 0)
+   if (hsp_array == NULL || hsp_count == 0)
       return 0;
    
    qsort(hsp_array, hsp_count, sizeof(BlastHSP*), query_offset_compare_hsps);
