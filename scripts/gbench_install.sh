@@ -18,7 +18,7 @@ export DYLD_BIND_AT_LAUNCH
 
 PLUGINS='algo_align algo_basic net_blast algo_stdio algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator'
 BINS='gbench-bin gbench_plugin_scan'
-LIBS='gui_doc gui_view gui_algo xgbplugin'
+LIBS='gui_core xgbplugin'
 
 
 Usage()
