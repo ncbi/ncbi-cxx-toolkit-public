@@ -409,6 +409,15 @@ case "$compiler" in
    ;;
 esac
 
+case "$host:$compiler" in
+ *-linux*:GCC | *:WorkShop* )
+   CONF_f_runpath="-R"
+   ;;
+ mips-sgi-irix6\.*:GCC | *:MIPSpro73 )
+   CONF_f_runpath="-rpath "
+   ;;
+esac
+
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host:$compiler" in
@@ -622,6 +631,7 @@ if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_
 if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_outobj:=-o }" ; fi
 if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
 if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
+if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_runpath:=$CONF_f_libpath}" ; fi
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
@@ -1241,6 +1251,7 @@ AC_SUBST(f_compile)
 AC_SUBST(f_outobj)
 AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
+AC_SUBST(f_runpath)
 AC_SUBST(f_outexe)
 
 AC_SUBST(THREAD_LIBS)
