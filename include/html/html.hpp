@@ -135,24 +135,24 @@ public: \
 //       fluctuate in different browsers.
 
 enum EHTML_EH_Attribute {
-    //                  work with next HTML-tags (tag's group):
-    eHTML_EH_Blur,      //   select, text, textarea
-    eHTML_EH_Change,    //   select, text, textarea 
-    eHTML_EH_Click,     //   button, checkbox, radio, link, reset, submit
-    eHTML_EH_DblClick,  //   
-    eHTML_EH_Focus,     //   select, text, textarea  
-    eHTML_EH_Load,      //   body, frameset
-    eHTML_EH_Unload,    //   body, frameset
-    eHTML_EH_MouseDown, //
-    eHTML_EH_MouseUp,   //
-    eHTML_EH_MouseMove, //
-    eHTML_EH_MouseOver, //
-    eHTML_EH_MouseOut,  //
-    eHTML_EH_Select,    //   text, textarea
-    eHTML_EH_Submit,    //   form  
-    eHTML_EH_KeyDown,   //
-    eHTML_EH_KeyPress,  //
-    eHTML_EH_KeyUp      //
+    //                    work with next HTML-tags (tag's group):
+    eHTML_EH_Blur,        //   select, text, textarea
+    eHTML_EH_Change,      //   select, text, textarea 
+    eHTML_EH_Click,       //   button, checkbox, radio, link, reset, submit
+    eHTML_EH_DblClick,    //   
+    eHTML_EH_Focus,       //   select, text, textarea  
+    eHTML_EH_Load,        //   body, frameset
+    eHTML_EH_Unload,      //   body, frameset
+    eHTML_EH_MouseDown,   //
+    eHTML_EH_MouseUp,     //
+    eHTML_EH_MouseMove,   //
+    eHTML_EH_MouseOver,   //
+    eHTML_EH_MouseOut,    //
+    eHTML_EH_Select,      //   text, textarea
+    eHTML_EH_Submit,      //   form  
+    eHTML_EH_KeyDown,     //
+    eHTML_EH_KeyPress,    //
+    eHTML_EH_KeyUp        //
 };
 
 
@@ -230,13 +230,14 @@ public:
     // Set tag event handler.
     void SetEventHandler(const EHTML_EH_Attribute event, const string& value);
 
-    // Attach the specified popup menu to HTML node. Popup menu will be shown.
-    // when the "event" occures. 
-    // NOTE: For eKurdin menu type the parameter "event" is ignored and
-    //       an eHTML_EH_MouseOver value is used always.
-    // NOTE: For eKurdinSide menu type the parameter "event" is not used.
-    void AttachPopupMenu(const CHTMLPopupMenu* menu, 
-                         EHTML_EH_Attribute event = eHTML_EH_MouseOver);
+    // Attach the specified popup menu to HTML node.
+    // Popup menu will be shown when the "event" occures.
+    // NOTES:
+    //   2) For eKurdin menu type the parameter "event" cannot be an
+    //      eHTML_EH_MouseOut, because it is used to hide the menu.
+    //   3) For eKurdinSide menu type the event parameters are not used.
+    void AttachPopupMenu(const CHTMLPopupMenu*  menu,
+                         EHTML_EH_Attribute     event = eHTML_EH_MouseOver);
 };
 
 
@@ -1342,6 +1343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2003/12/02 14:18:52  ivanov
+ * AttachPopupMenu() comment changes
+ *
  * Revision 1.68  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *
