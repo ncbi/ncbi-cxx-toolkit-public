@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/08/14 17:14:22  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
 * Revision 1.8  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -104,7 +108,8 @@ public:
 
     const CNamespace& GetNamespace(void) const;
 
-    const string& GetClassName(void) const
+    // DT added to avoid conflict with the standard Windows interfaces
+    const string& GetClassNameDT(void) const
         {
             return m_ClassName;
         }

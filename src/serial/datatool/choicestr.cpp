@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/08/14 17:14:25  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
 * Revision 1.32  2002/07/25 15:02:41  grichenk
 * Removed non-const GetXXX() method, use SetXXX() instead
 *
@@ -260,7 +264,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     bool haveSimple = false;
     bool haveString = false;
     bool delayed = false;
-    string codeClassName = GetClassName();
+    string codeClassName = GetClassNameDT();
     if ( haveUserClass )
         codeClassName += "_Base";
     // generate variants code
@@ -851,7 +855,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     else
         methods << "BEGIN_NAMED_CHOICE_INFO";
     methods <<
-        "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
+        "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
     if ( !GetModuleName().empty() ) {
         methods <<

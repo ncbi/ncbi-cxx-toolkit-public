@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/08/14 17:14:25  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
 * Revision 1.35  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -151,7 +155,7 @@ void CClassCode::AddCPPCode(const CNcbiOstrstream& code)
 
 string CClassCode::GetMethodPrefix(void) const
 {
-    return m_Code.GetMethodPrefix() + GetClassName() + "::";
+    return m_Code.GetMethodPrefix() + GetClassNameDT() + "::";
 }
 
 bool CClassCode::InternalClass(void) const
@@ -218,7 +222,7 @@ CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
     header <<
-        "class "<<GetClassName();
+        "class "<<GetClassNameDT();
     string parentNamespaceRef;
     if ( !GetParentClassName().empty() ) {
         parentNamespaceRef =
@@ -271,11 +275,11 @@ CNcbiOstream& CClassCode::GenerateUserHPP(CNcbiOstream& header) const
         return header;
     }
     header <<
-        "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
+        "class "<<GetClassNameDT()<<" : public "<<GetClassNameDT()<<"_Base\n"
         "{\n"
         "public:\n"
-        "    "<<GetClassName()<<"();\n"
-        "    "<<'~'<<GetClassName()<<"();\n"
+        "    "<<GetClassNameDT()<<"();\n"
+        "    "<<'~'<<GetClassNameDT()<<"();\n"
         "\n"
         "};\n";
     return header;
@@ -287,11 +291,11 @@ CNcbiOstream& CClassCode::GenerateUserCPP(CNcbiOstream& code) const
         return code;
     }
     code <<
-        GetClassName()<<"::"<<GetClassName()<<"()\n"
+        GetClassNameDT()<<"::"<<GetClassNameDT()<<"()\n"
         "{\n"
         "}\n"
         "\n"
-         <<GetClassName()<<"::~"<<GetClassName()<<"()\n"
+         <<GetClassNameDT()<<"::~"<<GetClassNameDT()<<"()\n"
         "{\n"
         "}\n"
         "\n";

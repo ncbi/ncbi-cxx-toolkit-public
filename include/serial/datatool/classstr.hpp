@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/08/14 17:14:22  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
 * Revision 1.13  2001/06/11 14:34:58  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -151,7 +155,8 @@ public:
         {
             return m_ExternalName;
         }
-    const string& GetClassName(void) const
+    // DT added to avoid conflict with the standard Windows interfaces
+    const string& GetClassNameDT(void) const
         {
             return m_ClassName;
         }

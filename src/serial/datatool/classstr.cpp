@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/08/14 17:14:25  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
 * Revision 1.37  2002/05/15 20:22:04  grichenk
 * Added CSerialObject -- base class for all generated ASN.1 classes
 *
@@ -298,12 +302,12 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
 
 string CClassTypeStrings::GetCType(const CNamespace& /*ns*/) const
 {
-    return GetClassName();
+    return GetClassNameDT();
 }
 
 string CClassTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
-    return "CLASS, ("+GetClassName()+')';
+    return "CLASS, ("+GetClassNameDT()+')';
 }
 
 string CClassTypeStrings::NewInstance(const string& init) const
@@ -349,7 +353,7 @@ CNcbiOstream& DeclareDestructor(CNcbiOstream& out, const string className,
 void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
     bool haveUserClass = HaveUserClass();
-    string codeClassName = GetClassName();
+    string codeClassName = GetClassNameDT();
     if ( haveUserClass )
         codeClassName += "_Base";
     CClassCode code(ctx, codeClassName);
@@ -458,14 +462,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             string cType = info.type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
                 "    // data copy constructor\n"
-                "    "<<code.GetClassName()<<"(const "<<cType<<"& value);\n"
+                "    "<<code.GetClassNameDT()<<"(const "<<cType<<"& value);\n"
                 "\n"
                 "    // data assignment operator\n"
                 "    void operator=(const "<<cType<<"& value);\n"
                 "\n";
             inlineMethods <<
                 "inline\n"<<
-                methodPrefix<<code.GetClassName()<<"(const "<<info.tName<<"& value)\n"
+                methodPrefix<<code.GetClassNameDT()<<"(const "<<info.tName<<"& value)\n"
                 "    : "<<info.mName<<"(value)\n"
                 "{\n"
                 "}\n"
@@ -754,10 +758,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPrivate() <<
             "    // Prohibit copy constructor and assignment operator\n" <<
-            "    " << code.GetClassName() <<
-            "(const " << code.GetClassName() << "&);\n" <<
-            "    " << code.GetClassName() << "& operator=(const " <<
-            code.GetClassName() << "&);\n" <<
+            "    " << code.GetClassNameDT() <<
+            "(const " << code.GetClassNameDT() << "&);\n" <<
+            "    " << code.GetClassNameDT() << "& operator=(const " <<
+            code.GetClassNameDT() << "&);\n" <<
             "\n";
         code.ClassPrivate() <<
             "    // members' data\n";
@@ -879,7 +883,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     if ( wrapperClass )
         methods << "IMPLICIT_";
     methods <<
-        "CLASS_INFO(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
+        "CLASS_INFO(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
     if ( !GetModuleName().empty() ) {
         methods <<
@@ -1022,28 +1026,28 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     bool generateCopy = wrapperClass && m_Members.front().type->CanBeCopied();
 
     out <<
-        "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
+        "class "<<GetClassNameDT()<<" : public "<<GetClassNameDT()<<"_Base\n"
         "{\n"
-        "    typedef "<<GetClassName()<<"_Base Tparent;\n"
+        "    typedef "<<GetClassNameDT()<<"_Base Tparent;\n"
         "public:\n";
-    DeclareConstructor(out, GetClassName());
-    DeclareDestructor(out, GetClassName(), false);
+    DeclareConstructor(out, GetClassNameDT());
+    DeclareDestructor(out, GetClassNameDT(), false);
 
     if ( generateCopy ) {
         const SMemberInfo& info = m_Members.front();
         string cType = info.type->GetCType(GetNamespace());
         out <<
             "    // data copy constructor\n"
-            "    "<<GetClassName()<<"(const "<<cType<<"& value);\n"
+            "    "<<GetClassNameDT()<<"(const "<<cType<<"& value);\n"
             "\n"
             "    // data assignment operator\n"
-            "    "<<GetClassName()<<"& operator=(const "<<cType<<"& value);\n"
+            "    "<<GetClassNameDT()<<"& operator=(const "<<cType<<"& value);\n"
             "\n";
     }
     out << "private:\n" <<
         "    // Prohibit copy constructor and assignment operator\n"
-        "    "<<GetClassName()<<"(const "<<GetClassName()<<"& value);\n"
-        "    "<<GetClassName()<<"& operator=(const "<<GetClassName()<<
+        "    "<<GetClassNameDT()<<"(const "<<GetClassNameDT()<<"& value);\n"
+        "    "<<GetClassNameDT()<<"& operator=(const "<<GetClassNameDT()<<
         "& value);\n"
         "\n";
 
@@ -1052,11 +1056,11 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "\n"
         "\n"
         "\n"
-        "/////////////////// "<<GetClassName()<<" inline methods\n"
+        "/////////////////// "<<GetClassNameDT()<<" inline methods\n"
         "\n"
         "// constructor\n"
         "inline\n"<<
-        GetClassName()<<"::"<<GetClassName()<<"(void)\n"
+        GetClassNameDT()<<"::"<<GetClassNameDT()<<"(void)\n"
         "{\n"
         "}\n"
         "\n";
@@ -1065,14 +1069,14 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         out <<
             "// data copy constructors\n"
             "inline\n"<<
-            GetClassName()<<"::"<<GetClassName()<<"(const "<<info.tName<<"& value)\n"
+            GetClassNameDT()<<"::"<<GetClassNameDT()<<"(const "<<info.tName<<"& value)\n"
             "    : Tparent(value)\n"
             "{\n"
             "}\n"
             "\n"
             "// data assignment operators\n"
             "inline\n"<<
-            GetClassName()<<"& "<<GetClassName()<<"::operator=(const "<<info.tName<<"& value)\n"
+            GetClassNameDT()<<"& "<<GetClassNameDT()<<"::operator=(const "<<info.tName<<"& value)\n"
             "{\n"
             "    Set(value);\n"
             "    return *this;\n"
@@ -1081,7 +1085,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     }
     out <<
         "\n"
-        "/////////////////// end of "<<GetClassName()<<" inline methods\n"
+        "/////////////////// end of "<<GetClassNameDT()<<" inline methods\n"
         "\n"
         "\n";
 }
@@ -1090,7 +1094,7 @@ void CClassTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
 {
     out <<
         "// destructor\n"<<
-        GetClassName()<<"::~"<<GetClassName()<<"(void)\n"
+        GetClassNameDT()<<"::~"<<GetClassNameDT()<<"(void)\n"
         "{\n"
         "}\n"
         "\n";

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/08/14 17:14:25  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
 * Revision 1.4  2002/07/01 15:42:08  grichenk
 * Fixed 'unused variable' warnings, removed commented code.
 *
@@ -85,7 +89,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
                                               bool haveUserClass,
                                               const string& classPrefix) const
 {
-    string codeClassName = GetClassName();
+    string codeClassName = GetClassNameDT();
     if ( haveUserClass )
         codeClassName += "_Base";
     // generate variants code
@@ -166,7 +170,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
     else
         code.Methods() << "BEGIN_NAMED_ABSTRACT_CLASS_INFO";
     code.Methods() <<
-        "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassName()<<")\n"
+        "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
     {
         iterate ( TVariants, i, m_Variants ) {
@@ -183,7 +187,9 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
     code.Methods() <<
         "const NCBI_NS_NCBI::CTypeInfo* "<<methodPrefix<<REFCHOICE_TYPE_METHOD"(void)\n"
         "{\n"
-        "    return NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo(NCBI_NS_NCBI::CRefTypeInfo<"<<classPrefix<<GetClassName()<<">::GetTypeInfo("<<classPrefix<<GetClassName()<<"::GetTypeInfo()));\n"
+        "    return NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo(NCBI_NS_NCBI::CRefTypeInfo<"<<
+        classPrefix<<GetClassNameDT()<<">::GetTypeInfo("<<classPrefix<<GetClassNameDT()<<
+        "::GetTypeInfo()));\n"
         "}\n"
         "\n";
 }
