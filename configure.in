@@ -150,7 +150,8 @@ for x_arg in "$@" ; do
       ;;
 
       --with-extra-action=* | --exec-prefix=* \
-      | --cache-file=* | --build=* | --host=* | --target=* | --with-runpath=* )
+      | --cache-file=* | --build=* | --host=* \
+      | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
       * )
@@ -630,7 +631,7 @@ mkdir -p "$builddir" "$exec_prefix/lib" "$exec_prefix/bin"
 
 
 #### Check if the target directory already has a configured system in it
-if test -f "${ncbiconf}" ; then
+if test "$no_create" != "yes"  -a  -f "${ncbiconf}" ; then
    echo
    echo "There is already a built \"${ncbiconf}\"!"
 changequote(, )dnl
@@ -639,7 +640,7 @@ changequote([, ])dnl
    read answer
    case "$answer" in
       y | Y | yes | YES ) ;;
-      * )  AC_MSG_WARN([Re-configuration has been canceled by user.]) ; exit ;;
+      * )  AC_MSG_ERROR([Re-configuration has been canceled by user.]) ;;
    esac
    echo
 fi
@@ -1518,9 +1519,11 @@ find "$exec_prefix/." -name '*.sh' -print | while read x_file ; do
 done
 
 dnl save status, cache, and log files to the build tree dir "status/"
-status_dir="$exec_prefix/status"
-test -d  "$status_dir"  ||  mkdir -p "$status_dir"
-mv config.status config.cache config.log "$status_dir"/
+if test -f config.status -a -f config.cache -a -f config.log ; then
+   status_dir="$exec_prefix/status"
+   test -d  "$status_dir"  ||  mkdir -p "$status_dir"
+   mv config.status config.cache config.log "$status_dir"/
+fi
 
 dnl execute extra-action
 if test -n "$with_extra_action" ; then
