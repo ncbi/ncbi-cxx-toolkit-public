@@ -40,15 +40,16 @@
 BEGIN_NCBI_SCOPE
 
 /// Read an agp file from a stream, constructing delta sequences
-void NCBI_XOBJREAD_EXPORT AgpRead(CNcbiIstream& is,
-                                  vector<CRef<objects::CBioseq> >& bioseqs);
+NCBI_XOBJREAD_EXPORT
+void AgpRead(CNcbiIstream& is, vector<CRef<objects::CBioseq> >& bioseqs);
 
 /// Same thing, but wrap bioseqs in Seq-entry's.
-void NCBI_XOBJREAD_EXPORT AgpRead(CNcbiIstream& is,
-                                  vector<CRef<objects::CSeq_entry> >& entries);
+NCBI_XOBJREAD_EXPORT
+void AgpRead(CNcbiIstream& is, vector<CRef<objects::CSeq_entry> >& entries);
 
 /// Return a Bioseq-set containing everything.
-CRef<objects::CBioseq_set> NCBI_XOBJREAD_EXPORT AgpRead(CNcbiIstream& is);
+NCBI_XOBJREAD_EXPORT
+CRef<objects::CBioseq_set> AgpRead(CNcbiIstream& is);
 
 END_NCBI_SCOPE
 
@@ -57,6 +58,9 @@ END_NCBI_SCOPE
 /*
  * =========================================================================
  * $Log$
+ * Revision 1.2  2004/08/19 13:07:53  dicuccio
+ * Repositioned export specifier to precede function declaration's return value
+ *
  * Revision 1.1  2003/12/08 15:49:33  jcherry
  * Initial version
  *
